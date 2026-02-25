@@ -91,30 +91,40 @@ const VaultPage = () => {
       return;
     }
     
+    if (uploadLockType === 'password' && !uploadLockPassword) {
+      toast.error('Please set a password for the locked document');
+      return;
+    }
+    
     setUploading(true);
     try {
       const formData = new FormData();
       formData.append('file', uploadFile);
-      formData.append('estate_id', estate.id);
-      formData.append('name', uploadName);
-      formData.append('category', uploadCategory);
+      
+      let url = `${API_URL}/documents/upload?estate_id=${estate.id}&name=${encodeURIComponent(uploadName)}&category=${uploadCategory}`;
       if (uploadLockType !== 'none') {
-        formData.append('lock_type', uploadLockType);
+        url += `&lock_type=${uploadLockType}`;
+        if (uploadLockType === 'password' && uploadLockPassword) {
+          url += `&lock_password=${encodeURIComponent(uploadLockPassword)}`;
+        }
       }
       
-      await axios.post(
-        `${API_URL}/documents/upload?estate_id=${estate.id}&name=${encodeURIComponent(uploadName)}&category=${uploadCategory}${uploadLockType !== 'none' ? `&lock_type=${uploadLockType}` : ''}`,
-        formData,
-        {
-          ...getAuthHeaders(),
-          headers: {
-            ...getAuthHeaders().headers,
-            'Content-Type': 'multipart/form-data'
-          }
+      const response = await axios.post(url, formData, {
+        ...getAuthHeaders(),
+        headers: {
+          ...getAuthHeaders().headers,
+          'Content-Type': 'multipart/form-data'
         }
-      );
+      });
       
-      toast.success('Document uploaded successfully');
+      toast.success('Document uploaded and encrypted successfully');
+      
+      // Show backup code if provided
+      if (response.data.backup_code) {
+        setBackupCode(response.data.backup_code);
+        setShowBackupCodeModal(true);
+      }
+      
       setShowUploadModal(false);
       resetUploadForm();
       fetchData();
@@ -123,6 +133,75 @@ const VaultPage = () => {
       toast.error('Failed to upload document');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleUnlock = async () => {
+    if (!selectedDoc) return;
+    
+    setUnlocking(true);
+    try {
+      await axios.post(
+        `${API_URL}/documents/${selectedDoc.id}/unlock`,
+        {
+          password: unlockPassword || null,
+          backup_code: unlockBackupCode || null
+        },
+        getAuthHeaders()
+      );
+      
+      toast.success('Document unlocked! You can now download it.');
+      setShowLockModal(false);
+      setUnlockPassword('');
+      setUnlockBackupCode('');
+      
+      // Trigger download after unlock
+      handleDownload(selectedDoc, unlockPassword, unlockBackupCode);
+    } catch (error) {
+      console.error('Unlock error:', error);
+      toast.error(error.response?.data?.detail || 'Failed to unlock document');
+    } finally {
+      setUnlocking(false);
+    }
+  };
+
+  const handleDownload = async (doc, password = null, backupCode = null) => {
+    setDownloading(doc.id);
+    try {
+      let url = `${API_URL}/documents/${doc.id}/download`;
+      const params = [];
+      if (password) params.push(`password=${encodeURIComponent(password)}`);
+      if (backupCode) params.push(`backup_code=${encodeURIComponent(backupCode)}`);
+      if (params.length > 0) url += `?${params.join('&')}`;
+      
+      const response = await axios.get(url, {
+        ...getAuthHeaders(),
+        responseType: 'blob'
+      });
+      
+      // Create download link
+      const blob = new Blob([response.data], { type: doc.file_type });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = doc.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+      
+      toast.success('Document downloaded');
+    } catch (error) {
+      console.error('Download error:', error);
+      if (error.response?.status === 401) {
+        // Need to unlock first
+        setSelectedDoc(doc);
+        setShowLockModal(true);
+      } else {
+        toast.error('Failed to download document');
+      }
+    } finally {
+      setDownloading(null);
     }
   };
 
@@ -137,6 +216,11 @@ const VaultPage = () => {
       console.error('Delete error:', error);
       toast.error('Failed to delete document');
     }
+  };
+
+  const copyBackupCode = () => {
+    navigator.clipboard.writeText(backupCode);
+    toast.success('Backup code copied to clipboard');
   };
 
   const resetUploadForm = () => {
