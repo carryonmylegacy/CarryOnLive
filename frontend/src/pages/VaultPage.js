@@ -664,6 +664,23 @@ const VaultPage = () => {
               </div>
             )}
             
+            {uploadLockType === 'voice' && (
+              <div className="space-y-2">
+                <Label className="text-[#94a3b8]">Set Voice Passphrase</Label>
+                <Input
+                  type="text"
+                  value={uploadVoicePassphrase}
+                  onChange={(e) => setUploadVoicePassphrase(e.target.value)}
+                  placeholder="e.g., 'Open sesame' or 'Family first'"
+                  className="input-field"
+                  data-testid="upload-voice-passphrase-input"
+                />
+                <p className="text-[#64748b] text-xs">
+                  You'll need to speak this phrase to unlock the document. A backup code will also be generated.
+                </p>
+              </div>
+            )}
+            
             <div className="space-y-2">
               <Label className="text-[#94a3b8]">File</Label>
               <div className="border-2 border-dashed border-white/10 rounded-xl p-6 text-center hover:border-[#d4af37]/50 transition-colors">
