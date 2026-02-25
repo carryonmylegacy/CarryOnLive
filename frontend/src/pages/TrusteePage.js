@@ -410,7 +410,7 @@ const TrusteePage = () => {
           {createStep === 4 && (<>
             <h3 className="text-lg font-bold text-[var(--t)] mb-4">Review & Submit Request</h3>
             <div className="rounded-xl p-4 mb-4" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
-              {[['Task Type', typeConfig[newTask.type]?.label], ['Title', newTask.title], ['Confidentiality', confConfig[newTask.confidential]?.label], newTask.discloseTo ? ['Disclosed To', newTask.discloseTo] : null, newTask.timedRelease ? ['Timed Release', newTask.timedRelease] : null].filter(Boolean).map(([k, v], i, a) => (
+              {[newTask.beneficiary ? ['Beneficiary', newTask.beneficiary] : null, ['Task Type', typeConfig[newTask.type]?.label], ['Title', newTask.title], ['Confidentiality', confConfig[newTask.confidential]?.label], newTask.discloseTo ? ['Disclosed To', newTask.discloseTo] : null, newTask.timedRelease ? ['Timed Release', newTask.timedRelease] : null].filter(Boolean).map(([k, v], i, a) => (
                 <div key={k} className="flex justify-between py-2 text-sm" style={{ borderBottom: i < a.length - 1 ? '1px solid var(--b)' : 'none' }}>
                   <span className="text-[var(--t4)]">{k}</span>
                   <span className="text-[var(--t)] font-bold">{v}</span>
@@ -427,7 +427,7 @@ const TrusteePage = () => {
               </p>
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" className="border-[var(--b)] text-[var(--t3)]" onClick={() => setCreateStep(2)}><ChevronLeft className="w-4 h-4 mr-1" /> Back</Button>
+              <Button variant="outline" className="border-[var(--b)] text-[var(--t3)]" onClick={() => setCreateStep(3)}><ChevronLeft className="w-4 h-4 mr-1" /> Back</Button>
               <Button className="gold-button flex-1" onClick={submitNewTask}>
                 <Send className="w-4 h-4 mr-2" /> Submit Request to DTS Team
               </Button>
