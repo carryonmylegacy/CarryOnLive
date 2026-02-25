@@ -35,7 +35,7 @@ const actionIcons = {
 const actionColors = {
   estate_created: '#d4af37',
   estate_updated: '#d4af37',
-  document_uploaded: '#3b82f6',
+  document_uploaded: '#2563eb',
   document_deleted: '#ef4444',
   message_created: '#10b981',
   message_deleted: '#ef4444',
