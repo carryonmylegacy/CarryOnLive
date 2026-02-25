@@ -291,12 +291,12 @@
   .nav-divider {
     width: 87.5%;
     height: 1px;
-    margin: 0 auto;
-    background: #4A5E85;
+    margin: 3px auto;
+    background: #64779E;
   }
 
   [data-theme="light"] .nav-divider {
-    background: rgba(30,64,130,0.2);
+    background: rgba(30,64,130,0.25);
   }
   
   .nav-item:hover {
