@@ -84,7 +84,7 @@ const ChecklistPage = () => {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6">
         <Skeleton className="h-12 w-64 bg-white/5" />
         <Skeleton className="h-24 w-full bg-white/5 rounded-2xl" />
         <div className="space-y-4">
@@ -97,7 +97,7 @@ const ChecklistPage = () => {
   }
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in" data-testid="action-checklist">
+    <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in" data-testid="action-checklist">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>
