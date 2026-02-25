@@ -12,42 +12,78 @@ import {
   Shield,
   Clock,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Plus
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import { Skeleton } from '../components/ui/skeleton';
+import EstateSelector from '../components/estate/EstateSelector';
+import ActivityTimeline from '../components/estate/ActivityTimeline';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const DashboardPage = () => {
   const { user, getAuthHeaders } = useAuth();
   const navigate = useNavigate();
+  const [estates, setEstates] = useState([]);
   const [estate, setEstate] = useState(null);
   const [checklists, setChecklists] = useState([]);
   const [stats, setStats] = useState({ documents: 0, messages: 0, beneficiaries: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchDashboardData();
+    fetchEstates();
   }, []);
 
-  const fetchDashboardData = async () => {
-    try {
-      const [estatesRes, checklistsRes] = await Promise.all([
-        axios.get(`${API_URL}/estates`, getAuthHeaders()),
-        axios.get(`${API_URL}/estates`, getAuthHeaders()).then(async (res) => {
-          if (res.data.length > 0) {
-            return axios.get(`${API_URL}/checklists/${res.data[0].id}`, getAuthHeaders());
-          }
-          return { data: [] };
-        })
-      ]);
+  useEffect(() => {
+    if (estate) {
+      fetchEstateData(estate.id);
+    }
+  }, [estate]);
 
-      if (estatesRes.data.length > 0) {
-        const estateData = estatesRes.data[0];
-        setEstate(estateData);
+  const fetchEstates = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/estates`, getAuthHeaders());
+      setEstates(response.data);
+      if (response.data.length > 0) {
+        // Get saved estate from localStorage or use first one
+        const savedEstateId = localStorage.getItem('selected_estate_id');
+        const savedEstate = response.data.find(e => e.id === savedEstateId);
+        setEstate(savedEstate || response.data[0]);
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error('Fetch estates error:', error);
+      setLoading(false);
+    }
+  };
+
+  const fetchEstateData = async (estateId) => {
+    try {
+      const [docsRes, msgsRes, bensRes, checklistRes] = await Promise.all([
+        axios.get(`${API_URL}/documents/${estateId}`, getAuthHeaders()),
+        axios.get(`${API_URL}/messages/${estateId}`, getAuthHeaders()),
+        axios.get(`${API_URL}/beneficiaries/${estateId}`, getAuthHeaders()),
+        axios.get(`${API_URL}/checklists/${estateId}`, getAuthHeaders())
+      ]);
+      
+      setStats({
+        documents: docsRes.data.length,
+        messages: msgsRes.data.length,
+        beneficiaries: bensRes.data.length
+      });
+      setChecklists(checklistRes.data);
+    } catch (error) {
+      console.error('Fetch estate data error:', error);
+    }
+  };
+
+  const handleEstateChange = (newEstate) => {
+    setEstate(newEstate);
+    localStorage.setItem('selected_estate_id', newEstate.id);
+  };
         
         // Fetch additional stats
         const [docsRes, msgsRes, bensRes] = await Promise.all([
