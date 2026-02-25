@@ -290,13 +290,14 @@
   /* Bright divider line between nav items — 7/8 width, centered */
   .nav-divider {
     width: 87.5%;
-    height: 1px;
-    margin: 3px auto;
-    background: #64779E;
+    height: 2px;
+    margin: 4px auto;
+    background: #8899BB;
+    border-radius: 1px;
   }
 
   [data-theme="light"] .nav-divider {
-    background: rgba(30,64,130,0.25);
+    background: rgba(30,64,130,0.3);
   }
   
   .nav-item:hover {
