@@ -129,6 +129,7 @@ function AppRoutes() {
         <Route path="/beneficiary/vault" element={<BeneficiaryVaultPage />} />
         <Route path="/beneficiary/messages" element={<BeneficiaryMessagesPage />} />
         <Route path="/beneficiary/checklist" element={<BeneficiaryChecklistPage />} />
+        <Route path="/beneficiary/guardian" element={<BeneficiaryGuardianPage />} />
         <Route path="/beneficiary/milestone" element={<MilestoneReportPage />} />
       </Route>
 
