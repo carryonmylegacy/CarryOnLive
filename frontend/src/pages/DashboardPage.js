@@ -134,12 +134,12 @@ const DashboardPage = () => {
           </g>
         </svg>
         
-        {/* Score display */}
-        <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-center">
+        {/* Score display - moved down to avoid needle overlap */}
+        <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 text-center">
           <div className="text-4xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
             {score}
           </div>
-          <div className="text-base font-semibold" style={{ color: scoreInfo.color }}>
+          <div className="text-base font-bold" style={{ color: scoreInfo.color }}>
             {scoreInfo.label}
           </div>
         </div>
