@@ -1050,6 +1050,60 @@ async def delete_estate(estate_id: str, current_user: dict = Depends(get_current
     
     return {"message": "Estate deleted"}
 
+# ===================== READINESS SCORE ROUTES =====================
+
+@api_router.get("/estate/{estate_id}/readiness")
+async def get_estate_readiness(estate_id: str, current_user: dict = Depends(get_current_user)):
+    """Get detailed estate readiness score breakdown"""
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
+    if not estate:
+        raise HTTPException(status_code=404, detail="Estate not found")
+    
+    # Ensure default checklist exists
+    await ensure_default_checklist(estate_id)
+    
+    # Calculate fresh readiness
+    result = await calculate_estate_readiness(estate_id)
+    
+    # Persist updated score
+    await db.estates.update_one(
+        {"id": estate_id},
+        {"$set": {
+            "readiness_score": result["overall_score"],
+            "readiness_breakdown": {
+                "documents": result["documents"],
+                "messages": result["messages"],
+                "checklist": result["checklist"]
+            }
+        }}
+    )
+    
+    return result
+
+@api_router.post("/estate/{estate_id}/readiness")
+async def recalculate_estate_readiness(estate_id: str, current_user: dict = Depends(get_current_user)):
+    """Recalculate and return estate readiness score"""
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
+    if not estate:
+        raise HTTPException(status_code=404, detail="Estate not found")
+    
+    await ensure_default_checklist(estate_id)
+    result = await calculate_estate_readiness(estate_id)
+    
+    await db.estates.update_one(
+        {"id": estate_id},
+        {"$set": {
+            "readiness_score": result["overall_score"],
+            "readiness_breakdown": {
+                "documents": result["documents"],
+                "messages": result["messages"],
+                "checklist": result["checklist"]
+            }
+        }}
+    )
+    
+    return result
+
 # ===================== ACTIVITY LOG ROUTES =====================
 
 @api_router.get("/activity/{estate_id}")
