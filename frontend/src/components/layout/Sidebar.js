@@ -40,7 +40,7 @@ const Sidebar = () => {
         { to: '/checklist', icon: CheckSquare, label: 'Immediate Action Checklist' },
         { to: '/messages', icon: MessageSquare, label: 'Milestone Messages' },
         { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
-        { to: '/trustee', icon: Shield, label: 'Trustee Services' },
+        { to: '/trustee', icon: Shield, label: 'Designated Trustee Services' },
       ]
     },
     {
