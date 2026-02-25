@@ -228,25 +228,38 @@ const MessagesPage = () => {
   }
 
   return (
-    <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in" data-testid="milestone-messages">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>
-            Milestone Messages
-          </h1>
-          <p className="text-[#94a3b8] mt-1">
-            Create heartfelt messages for life's special moments
-          </p>
+    <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="milestone-messages"
+      style={{ background: 'radial-gradient(ellipse at top left, rgba(139,92,246,0.15), transparent 55%), radial-gradient(ellipse at bottom right, rgba(124,58,237,0.08), transparent 55%)' }}>
+      {/* Header - matching prototype */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.2), rgba(124,58,237,0.15))' }}>
+            <MessageSquare className="w-5 h-5 text-[#B794F6]" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              Milestone Messages
+            </h1>
+            <p className="text-xs text-[var(--t5)]">
+              {messages.length} messages · Delivered at life milestones
+            </p>
+          </div>
         </div>
         <Button
-          className="gold-button"
+          className="gold-button w-full sm:w-auto"
           onClick={() => setShowCreateModal(true)}
           data-testid="create-message-button"
         >
           <Plus className="w-5 h-5 mr-2" />
           Create Message
         </Button>
+      </div>
+
+      {/* Delivery info */}
+      <div className="rounded-xl p-3" style={{ background: 'rgba(37,99,235,0.04)', border: '1px solid rgba(37,99,235,0.1)' }}>
+        <p className="text-xs text-[var(--bl3)] leading-relaxed">
+          Messages will be securely stored and automatically delivered when the beneficiary reports each milestone through the platform. You can edit or delete any message at any time before transition.
+        </p>
       </div>
 
       {/* Tabs */}
