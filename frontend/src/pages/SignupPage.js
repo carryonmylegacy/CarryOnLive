@@ -288,16 +288,16 @@ const SignupPage = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748b] hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#525C72] hover:text-white transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-[#94a3b8] text-sm">Confirm *</Label>
+                <Label htmlFor="confirmPassword" className="text-[#A0AABF] text-sm">Confirm *</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748b]" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#525C72]" />
                   <Input
                     id="confirmPassword"
                     type={showPassword ? 'text' : 'password'}
@@ -314,12 +314,12 @@ const SignupPage = () => {
 
             {/* Role */}
             <div className="space-y-2">
-              <Label htmlFor="role" className="text-[#94a3b8] text-sm">I am a...</Label>
+              <Label htmlFor="role" className="text-[#A0AABF] text-sm">I am a...</Label>
               <Select value={role} onValueChange={setRole}>
                 <SelectTrigger className="input-field" data-testid="signup-role-select">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-[#0f1d35] border-white/10">
+                <SelectContent className="bg-[#0D1018] border-white/[0.07]">
                   <SelectItem value="benefactor">Benefactor (Estate Owner)</SelectItem>
                   <SelectItem value="beneficiary">Beneficiary (Family Member)</SelectItem>
                 </SelectContent>
@@ -344,8 +344,8 @@ const SignupPage = () => {
           </form>
 
           <div className="mt-4 text-center">
-            <span className="text-[#64748b] text-sm">Already have an account? </span>
-            <Link to="/login" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors">
+            <span className="text-[#7B879E] text-sm">Already have an account? </span>
+            <Link to="/login" className="text-[#7AABFD] text-sm font-semibold hover:text-[#A5C6FE] transition-colors">
               Sign In
             </Link>
           </div>
@@ -353,7 +353,7 @@ const SignupPage = () => {
 
         {/* Security Badge */}
         <div className="mt-4 text-center">
-          <p className="text-[#64748b] text-xs">
+          <p className="text-[#525C72] text-xs">
             AES-256 Encrypted · Zero-Knowledge · SOC 2
           </p>
         </div>
