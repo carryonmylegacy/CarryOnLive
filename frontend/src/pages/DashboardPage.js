@@ -364,7 +364,13 @@ const DashboardPage = () => {
       {/* Bottom Section - Vault, Messages & Checklist Previews */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Secure Document Vault Preview - Blue */}
-        <div className="glass-card p-4 lg:p-6 border-l-4 border-l-[#2563eb]" data-testid="preview-vault">
+        <div 
+          className={`glass-card p-4 lg:p-6 border-l-4 border-l-[#2563eb] transition-all duration-300 cursor-pointer ${hoveredSection === 'vault' ? 'shadow-lg shadow-[#2563eb]/20 scale-[1.02] border-l-[6px]' : ''}`}
+          data-testid="preview-vault"
+          onMouseEnter={() => setHoveredSection('vault')}
+          onMouseLeave={() => setHoveredSection(null)}
+          onClick={() => navigate('/vault')}
+        >
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <FolderLock className="w-5 h-5 text-[#2563eb]" />
@@ -394,7 +400,13 @@ const DashboardPage = () => {
         </div>
 
         {/* Milestone Messages Preview - Purple */}
-        <div className="glass-card p-4 lg:p-6 border-l-4 border-l-[#8b5cf6]" data-testid="preview-messages">
+        <div 
+          className={`glass-card p-4 lg:p-6 border-l-4 border-l-[#8b5cf6] transition-all duration-300 cursor-pointer ${hoveredSection === 'messages' ? 'shadow-lg shadow-[#8b5cf6]/20 scale-[1.02] border-l-[6px]' : ''}`}
+          data-testid="preview-messages"
+          onMouseEnter={() => setHoveredSection('messages')}
+          onMouseLeave={() => setHoveredSection(null)}
+          onClick={() => navigate('/messages')}
+        >
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-[#8b5cf6]" />
@@ -425,7 +437,13 @@ const DashboardPage = () => {
         </div>
 
         {/* Immediate Action Checklist Preview - Orange */}
-        <div className="glass-card p-4 lg:p-6 border-l-4 border-l-[#f97316]" data-testid="preview-checklist">
+        <div 
+          className={`glass-card p-4 lg:p-6 border-l-4 border-l-[#f97316] transition-all duration-300 cursor-pointer ${hoveredSection === 'checklist' ? 'shadow-lg shadow-[#f97316]/20 scale-[1.02] border-l-[6px]' : ''}`}
+          data-testid="preview-checklist"
+          onMouseEnter={() => setHoveredSection('checklist')}
+          onMouseLeave={() => setHoveredSection(null)}
+          onClick={() => navigate('/checklist')}
+        >
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <CheckSquare className="w-5 h-5 text-[#f97316]" />
