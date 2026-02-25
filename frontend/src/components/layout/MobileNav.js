@@ -79,7 +79,7 @@ const MobileNav = () => {
       <header className="lg:hidden fixed top-0 left-0 w-full h-14 mobile-header z-50 flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
           <img 
-            src="/carryon-logo.jpg" 
+            src="/carryon-app-icon.jpg" 
             alt="CarryOn" 
             className="w-10 h-10 rounded-xl object-cover"
           />
