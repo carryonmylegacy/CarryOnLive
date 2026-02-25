@@ -361,15 +361,15 @@ const SignupPage = () => {
 
       {/* OTP Modal */}
       <Dialog open={showOtpModal} onOpenChange={setShowOtpModal}>
-        <DialogContent className="glass-card border-white/10 sm:max-w-md">
+        <DialogContent className="glass-card border-white/[0.07] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-white text-xl font-semibold" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            <DialogTitle className="text-[#F1F3F8] text-xl font-semibold" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Verify Your Email
             </DialogTitle>
-            <DialogDescription className="text-[#94a3b8]">
+            <DialogDescription className="text-[#A0AABF]">
               Enter the 6-digit code sent to {registeredEmail}
               {otpHint && (
-                <span className="block mt-1 text-[#d4af37]">
+                <span className="block mt-1 text-[#E0AD2B]">
                   (Hint: starts with {otpHint})
                 </span>
               )}
@@ -388,7 +388,7 @@ const SignupPage = () => {
               data-testid="signup-otp-input"
               autoFocus
             />
-            <p className="text-[#64748b] text-sm mt-2">
+            <p className="text-[#525C72] text-sm mt-2">
               {otp.length}/6 digits entered
             </p>
 
