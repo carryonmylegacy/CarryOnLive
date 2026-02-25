@@ -1,134 +1,153 @@
 {
   "identity": {
     "name": "CarryOn™",
+    "tagline": "Every American Family. Ready.",
     "archetype": "Jewel & Luxury (Legacy Edition)",
-    "tone": "Secure, Premium, Trustworthy, Timeless",
-    "mission": "Secure estate planning and legacy management for American families."
+    "tone": "Secure, Premium, Trustworthy, Timeless"
   },
   "typography": {
     "headings": {
-      "family": "Outfit, sans-serif",
-      "weights": ["500", "600", "700"],
-      "usage": "All headings (h1-h6), Hero text, Feature titles"
+      "family": "'Outfit', system-ui, sans-serif",
+      "weights": ["500", "600", "700"]
     },
     "body": {
-      "family": "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-      "weights": ["400", "500"],
-      "usage": "Paragraphs, inputs, labels, buttons"
+      "family": "'DM Sans', system-ui, sans-serif",
+      "weights": ["400", "500"]
     },
-    "special": {
-      "benefactor_label": {
-        "letter_spacing": "0.05em",
-        "case": "uppercase",
-        "size": "text-xs or text-sm"
-      }
+    "serif": {
+      "family": "'Cormorant Garamond', Georgia, serif",
+      "usage": "Special accent text"
     }
   },
   "colors": {
-    "palette": {
-      "background": {
-        "primary": "#08090F",
-        "secondary": "#0D1018",
-        "tertiary": "#12151F"
-      },
-      "accent": {
-        "gold_primary": "#E0AD2B",
-        "gold_secondary": "#F0C95C",
-        "gold_gradient_start": "#E0AD2B",
-        "gold_gradient_end": "#F0C95C"
-      },
+    "dark_theme": {
+      "bg": "#08090F",
+      "bg2": "#0D1018",
+      "bg3": "#12151F",
+      "surface": "rgba(255,255,255,0.035)",
+      "border": "rgba(255,255,255,0.07)",
+      "border_highlight": "rgba(255,255,255,0.12)",
       "text": {
         "primary": "#F1F3F8",
-        "secondary": "#A0AABF",
-        "tertiary": "#7B879E",
-        "quaternary": "#525C72"
+        "secondary": "#D8DEE9",
+        "tertiary": "#A0AABF",
+        "muted": "#7B879E",
+        "subtle": "#525C72"
       },
-      "border": {
-        "subtle": "rgba(255, 255, 255, 0.07)",
-        "highlight": "rgba(255, 255, 255, 0.15)"
+      "accent": {
+        "blue": "#3B7BF7",
+        "blue2": "#5B93FA",
+        "blue3": "#7AABFD",
+        "blue_bg": "rgba(59,123,247,0.12)",
+        "green": "#22C993",
+        "green2": "#4EDBA8",
+        "green_bg": "rgba(34,201,147,0.1)",
+        "purple": "#8B5CF6",
+        "purple2": "#B794F6",
+        "purple_bg": "rgba(139,92,246,0.1)",
+        "yellow": "#F5A623",
+        "yellow2": "#FFCB57",
+        "yellow_bg": "rgba(245,166,35,0.1)",
+        "red": "#F05252",
+        "red2": "#F98080",
+        "red_bg": "rgba(240,82,82,0.1)",
+        "gold": "#E0AD2B",
+        "gold2": "#F0C95C",
+        "gold_bg": "rgba(217,119,6,0.12)"
       }
     },
-    "gradients": {
-      "gold_button": "linear-gradient(135deg, #E0AD2B 0%, #F0C95C 100%)",
-      "dark_overlay": "linear-gradient(to bottom, rgba(8,9,15,0) 0%, rgba(8,9,15,0.8) 100%)"
+    "light_theme": {
+      "bg": "#F8FAFC",
+      "bg2": "#F1F5F9",
+      "bg3": "#E2E8F0",
+      "surface": "rgba(0,0,0,0.02)",
+      "border": "rgba(0,0,0,0.08)",
+      "text": {
+        "primary": "#0F172A",
+        "secondary": "#475569",
+        "muted": "#94A3B8"
+      }
     }
   },
   "components": {
+    "sidebar": {
+      "width": "260px",
+      "collapsed_width": "72px",
+      "background": "linear-gradient(180deg, rgba(13,16,24,0.98) 0%, rgba(8,9,15,0.99) 100%)",
+      "border": "1px solid rgba(255,255,255,0.05)"
+    },
+    "cards": {
+      "background": "rgba(13,16,24,0.6)",
+      "backdrop_filter": "blur(12px)",
+      "border": "1px solid rgba(255,255,255,0.07)",
+      "border_radius": "16px",
+      "hover_border": "rgba(255,255,255,0.15)"
+    },
     "buttons": {
       "primary": {
+        "background": "linear-gradient(135deg, #3B7BF7 0%, #5B93FA 100%)",
+        "text": "#FFFFFF",
+        "border_radius": "10px"
+      },
+      "gold": {
         "background": "linear-gradient(135deg, #E0AD2B 0%, #F0C95C 100%)",
-        "text_color": "#08090F",
-        "border_radius": "9999px",
-        "font_weight": "600",
-        "hover": "brightness(110%) shadow-[0_0_20px_rgba(224,173,43,0.4)]",
-        "transition": "all 0.3s ease"
+        "text": "#08090F",
+        "border_radius": "9999px"
       },
       "secondary": {
-        "background": "rgba(255, 255, 255, 0.05)",
-        "text_color": "#F1F3F8",
-        "border": "1px solid rgba(255, 255, 255, 0.07)",
-        "border_radius": "9999px",
-        "hover": "bg-white/10"
+        "background": "rgba(255,255,255,0.05)",
+        "border": "1px solid rgba(255,255,255,0.07)",
+        "text": "#F1F3F8"
       }
     },
     "inputs": {
-      "background": "rgba(255, 255, 255, 0.03)",
-      "border": "1px solid rgba(255, 255, 255, 0.07)",
+      "background": "rgba(255,255,255,0.03)",
+      "border": "1px solid rgba(255,255,255,0.07)",
       "border_radius": "11px",
-      "text_color": "#F1F3F8",
-      "placeholder_color": "#525C72",
-      "focus": "border-[#E0AD2B] ring-1 ring-[#E0AD2B]/50"
+      "focus_border": "#3B7BF7"
     },
-    "cards": {
-      "background": "rgba(13, 16, 24, 0.6)",
-      "backdrop_filter": "blur(12px)",
-      "border": "1px solid rgba(255, 255, 255, 0.07)",
-      "border_radius": "18px",
-      "shadow": "0 4px 24px -1px rgba(0, 0, 0, 0.2)"
-    },
-    "readiness_gauge": {
-      "type": "donut_chart",
-      "colors": ["#E0AD2B", "rgba(255, 255, 255, 0.1)"],
-      "center_text": "Score"
+    "navigation_item": {
+      "padding": "12px 16px",
+      "border_radius": "10px",
+      "active_bg": "linear-gradient(90deg, rgba(224,173,43,0.12) 0%, rgba(224,173,43,0.04) 100%)",
+      "active_indicator": "3px solid #E0AD2B"
     }
   },
   "layout": {
-    "grid_system": "Bento Grid (CSS Grid)",
-    "spacing": {
-      "container_padding": "p-6 md:p-12",
-      "gap": "gap-6"
+    "page": {
+      "padding": "36px 42px",
+      "max_width": "1200px"
     },
-    "z_index": {
-      "modal": 50,
-      "dropdown": 40,
-      "sticky_nav": 30,
-      "default": 1
+    "grid": {
+      "type": "CSS Grid",
+      "gap": "24px"
+    },
+    "breakpoints": {
+      "mobile": "640px",
+      "tablet": "768px",
+      "desktop": "1024px"
     }
   },
-  "assets": {
-    "images": {
-      "family_portrait": "https://images.unsplash.com/photo-1771924368785-c874f754c516",
-      "documents_bg": "https://images.unsplash.com/photo-1544377193-33dcf4d68fb5",
-      "gold_texture": "https://images.pexels.com/photos/11035543/pexels-photo-11035543.jpeg"
-    },
-    "icons": {
-      "library": "lucide-react",
-      "style": "Stroke width 1.5px, Gold color (#E0AD2B) for active/primary icons"
-    }
-  },
-  "instructions_to_main_agent": [
-    "UPDATE CSS VARIABLES: You MUST update /app/frontend/src/index.css to match the 'colors.palette' section exactly. The existing values are incorrect.",
-    "FONT INSTALLATION: Ensure 'Outfit' is imported from Google Fonts in index.css.",
-    "LOGIN/SIGNUP: Implement the 'Split Screen' layout. Left side: Branding/Tagline ('Every American Family.\\nReady.'). Right side: Form.",
-    "LOGO: Use the 'Shield' icon from lucide-react with a gold color (#E0AD2B) if the custom image is missing, but style it with a 'drop-shadow' to mimic the premium look.",
-    "TAGLINE: The tagline 'Every American Family. Ready.' must be broken into two lines as specified.",
-    "INPUTS: Enforce the 11px border-radius on all inputs. This is a specific design requirement.",
-    "TESTING: Add data-testid to all inputs (e.g., 'login-email', 'signup-password') and buttons."
-  ],
-  "universal_guidelines": [
-    "Do not use gradients for text unless specified.",
-    "Avoid 'Inter' font for headings; use 'Outfit'.",
-    "Use 'sonner' for toast notifications.",
-    "Ensure all interactive elements have hover states (brightness-110 or bg-white/5)."
-  ]
+  "navigation_structure": {
+    "sections": [
+      {
+        "title": "MY LEGACY",
+        "items": [
+          {"id": "dashboard", "label": "Dashboard", "icon": "LayoutDashboard"},
+          {"id": "vault", "label": "Secure Document Vault", "icon": "FolderLock"},
+          {"id": "guardian", "label": "Estate Guardian", "icon": "Sparkles"},
+          {"id": "checklist", "label": "Immediate Action Checklist", "icon": "CheckSquare"},
+          {"id": "messages", "label": "Milestone Messages", "icon": "MessageSquare"},
+          {"id": "beneficiaries", "label": "Beneficiaries", "icon": "Users"},
+          {"id": "trustee", "label": "Trustee Services", "icon": "Shield"}
+        ]
+      },
+      {
+        "title": "ACCOUNT",
+        "items": [
+          {"id": "settings", "label": "Settings", "icon": "Settings"}
+        ]
+      }
+    ]
+  }
 }
