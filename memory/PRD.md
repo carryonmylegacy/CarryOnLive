@@ -57,6 +57,9 @@ Build a secure estate planning and legacy management platform where benefactors 
   - Gold gradient buttons
 - Updated Login page with two-line tagline display
 - Created design_guidelines.json for design system reference
+- **Integrated Official CarryOn Logos:**
+  - App icon (favicon): carryon-icon.jpg
+  - Platform screens logo: carryon-logo.jpg (replaces Shield icon)
 
 ## Test Accounts
 - Benefactor: pete@mitchell.com / password123
