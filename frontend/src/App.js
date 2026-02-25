@@ -30,6 +30,7 @@ import BeneficiaryGuardianPage from './pages/beneficiary/BeneficiaryGuardianPage
 import MilestoneReportPage from './pages/beneficiary/MilestoneReportPage';
 import UploadCertificatePage from './pages/beneficiary/UploadCertificatePage';
 import CondolencePage from './pages/beneficiary/CondolencePage';
+import BeneficiarySettingsPage from './pages/beneficiary/BeneficiarySettingsPage';
 
 // Layout
 import DashboardLayout from './components/layout/DashboardLayout';
@@ -132,6 +133,7 @@ function AppRoutes() {
         <Route path="/beneficiary/checklist" element={<BeneficiaryChecklistPage />} />
         <Route path="/beneficiary/guardian" element={<BeneficiaryGuardianPage />} />
         <Route path="/beneficiary/milestone" element={<MilestoneReportPage />} />
+        <Route path="/beneficiary/settings" element={<BeneficiarySettingsPage />} />
       </Route>
 
       {/* Beneficiary Full-Screen Routes (no sidebar) */}
