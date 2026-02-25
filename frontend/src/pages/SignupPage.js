@@ -151,9 +151,11 @@ const SignupPage = () => {
         
         {/* Logo & Branding */}
         <div className="text-center mb-6">
-          <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-[#E0AD2B] to-[#F0C95C] flex items-center justify-center gold-glow">
-            <Shield className="w-8 h-8 text-[#08090F]" />
-          </div>
+          <img 
+            src="/carryon-logo.jpg" 
+            alt="CarryOn™ Logo" 
+            className="w-[160px] h-auto mx-auto mb-3"
+          />
           <h1 className="text-2xl font-bold text-[#F1F3F8] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
             Create Your Account
           </h1>
