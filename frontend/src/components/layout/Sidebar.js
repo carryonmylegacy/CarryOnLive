@@ -111,8 +111,19 @@ const Sidebar = () => {
     {
       title: 'ADMINISTRATION',
       items: [
-        { to: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
-        { to: '/admin/certificates', icon: FileKey, label: 'Review Certificates' },
+        { to: '/admin', icon: LayoutDashboard, label: 'Dashboard & Users' },
+      ]
+    },
+    {
+      title: 'VERIFICATION',
+      items: [
+        { to: '/admin/transition', icon: FileKey, label: 'Transition Verification' },
+      ]
+    },
+    {
+      title: 'DTS',
+      items: [
+        { to: '/admin/dts', icon: Shield, label: 'DTS Management' },
       ]
     },
     {
