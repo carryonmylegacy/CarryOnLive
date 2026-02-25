@@ -158,7 +158,7 @@ const DashboardPage = () => {
       <div className="text-2xl lg:text-4xl font-bold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
         {value}
       </div>
-      <div className="opacity-80 text-xs lg:text-sm font-medium leading-tight">
+      <div className="opacity-80 text-sm lg:text-base font-medium leading-tight">
         {label}
       </div>
     </div>
