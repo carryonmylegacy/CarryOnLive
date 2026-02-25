@@ -101,6 +101,9 @@ const Sidebar = () => {
             <p className="text-white font-medium truncate">{user?.name || 'User'}</p>
             <p className="text-xs text-[#64748b] truncate">{user?.email || ''}</p>
           </div>
+          {currentEstateId && user?.role === 'benefactor' && (
+            <NotificationCenter estateId={currentEstateId} />
+          )}
         </div>
       </div>
 
