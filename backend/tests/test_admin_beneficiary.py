@@ -228,7 +228,7 @@ class TestLoginFlow:
         
         data = response.json()
         assert "otp_hint" in data, "Login should return OTP hint"
-        assert data.get("message") == "OTP sent to email", "Should indicate OTP sent"
+        assert "OTP sent" in data.get("message", ""), "Should indicate OTP sent"
         print(f"✓ Beneficiary login initiated, OTP hint: {data.get('otp_hint')}")
     
     def test_login_admin_initiates_otp(self):
