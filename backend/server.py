@@ -20,6 +20,9 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from emergentintegrations.llm.chat import LlmChat, UserMessage
+import pdfplumber
+import io
+import json as json_module
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -255,6 +258,7 @@ class EstateCreate(BaseModel):
 class EstateUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
+    state: Optional[str] = None
 
 class ChatMessage(BaseModel):
     role: str
