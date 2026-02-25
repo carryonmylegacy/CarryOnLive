@@ -852,6 +852,16 @@ async def upload_document(
     # Update estate readiness
     await update_estate_readiness(estate_id)
     
+    # Log activity
+    await log_activity(
+        estate_id=estate_id,
+        user_id=current_user["id"],
+        user_name=current_user["name"],
+        action="document_uploaded",
+        description=f"Uploaded document: {name} ({category})",
+        metadata={"document_name": name, "category": category, "is_locked": lock_type is not None}
+    )
+    
     response = {"id": document.id, "name": document.name, "message": "Document uploaded and encrypted"}
     if backup_code:
         response["backup_code"] = backup_code
