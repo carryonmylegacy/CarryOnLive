@@ -438,16 +438,22 @@ const VaultPage = () => {
   }
 
   return (
-    <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in" data-testid="document-vault">
-      {/* Header */}
+    <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="document-vault"
+      style={{ background: 'radial-gradient(ellipse at top left, rgba(37,99,235,0.15), transparent 55%), radial-gradient(ellipse at bottom right, rgba(59,130,246,0.08), transparent 55%)' }}>
+      {/* Header - matching prototype */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>
-            Document Vault
-          </h1>
-          <p className="text-[#94a3b8] mt-1 text-sm sm:text-base">
-            Securely store and organize your important documents
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(37,99,235,0.2), rgba(59,130,246,0.15))' }}>
+            <FolderLock className="w-5 h-5 text-[#60A5FA]" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              Secure Document Vault
+            </h1>
+            <p className="text-xs text-[var(--t5)]">
+              AES-256 encrypted · {documents.length} documents
+            </p>
+          </div>
         </div>
         <Button
           className="gold-button w-full sm:w-auto"
@@ -457,6 +463,18 @@ const VaultPage = () => {
           <Upload className="w-5 h-5 mr-2" />
           Upload Document
         </Button>
+      </div>
+
+      {/* Search bar */}
+      <div className="flex items-center gap-2 pb-2" style={{ borderBottom: '1px solid var(--b)' }}>
+        <Search className="w-4 h-4 text-[var(--t5)]" />
+        <input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search documents..."
+          className="flex-1 bg-transparent border-none text-[var(--t)] text-sm outline-none placeholder:text-[var(--t5)]"
+          data-testid="vault-search"
+        />
       </div>
 
       {/* Category Tabs */}
