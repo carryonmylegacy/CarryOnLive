@@ -112,6 +112,11 @@ const VaultPage = () => {
       return;
     }
     
+    if (uploadLockType === 'voice' && !uploadVoicePassphrase) {
+      toast.error('Please set a voice passphrase for voice verification');
+      return;
+    }
+    
     setUploading(true);
     try {
       const formData = new FormData();
@@ -132,6 +137,15 @@ const VaultPage = () => {
           'Content-Type': 'multipart/form-data'
         }
       });
+      
+      // If voice lock, set up the passphrase
+      if (uploadLockType === 'voice' && uploadVoicePassphrase) {
+        await axios.post(
+          `${API_URL}/documents/${response.data.id}/voice/setup?passphrase=${encodeURIComponent(uploadVoicePassphrase)}`,
+          {},
+          getAuthHeaders()
+        );
+      }
       
       toast.success('Document uploaded and encrypted successfully');
       
