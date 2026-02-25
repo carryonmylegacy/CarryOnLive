@@ -116,9 +116,11 @@ class Beneficiary(BaseModel):
     estate_id: str
     user_id: Optional[str] = None
     name: str
-    relation: str
+    relation: str  # spouse, child, parent, sibling, grandchild, friend, other
     email: EmailStr
     phone: Optional[str] = None
+    date_of_birth: Optional[str] = None  # ISO date string
+    gender: Optional[str] = None  # male, female, other
     avatar_color: str = "#d4af37"
     initials: str = ""
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
@@ -129,6 +131,8 @@ class BeneficiaryCreate(BaseModel):
     relation: str
     email: EmailStr
     phone: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    gender: Optional[str] = None
     avatar_color: str = "#d4af37"
 
 class Document(BaseModel):
