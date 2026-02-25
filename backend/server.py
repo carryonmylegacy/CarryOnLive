@@ -651,7 +651,10 @@ async def delete_beneficiary(beneficiary_id: str, current_user: dict = Depends(g
 
 @api_router.get("/documents/{estate_id}")
 async def get_documents(estate_id: str, current_user: dict = Depends(get_current_user)):
-    documents = await db.documents.find({"estate_id": estate_id}, {"_id": 0, "file_data": 0}).to_list(100)
+    documents = await db.documents.find(
+        {"estate_id": estate_id}, 
+        {"_id": 0, "file_data": 0, "lock_password_hash": 0, "backup_code": 0}
+    ).to_list(100)
     return documents
 
 @api_router.post("/documents/upload")
@@ -660,6 +663,7 @@ async def upload_document(
     name: str,
     category: str,
     lock_type: Optional[str] = None,
+    lock_password: Optional[str] = None,
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user)
 ):
@@ -667,7 +671,15 @@ async def upload_document(
         raise HTTPException(status_code=403, detail="Only benefactors can upload documents")
     
     content = await file.read()
-    file_data = base64.b64encode(content).decode()
+    
+    # Encrypt the file data
+    encrypted_data = encrypt_data(content)
+    
+    # Generate backup code for locked documents
+    backup_code = generate_backup_code() if lock_type else None
+    
+    # Hash password if provided
+    password_hash = hash_password(lock_password) if lock_password and lock_type == "password" else None
     
     document = Document(
         estate_id=estate_id,
@@ -675,9 +687,12 @@ async def upload_document(
         category=category,
         file_type=file.content_type or "application/octet-stream",
         file_size=len(content),
-        file_data=file_data,
+        file_data=encrypted_data,
         is_locked=lock_type is not None,
         lock_type=lock_type,
+        lock_password_hash=password_hash,
+        backup_code=backup_code,
+        is_encrypted=True,
         uploaded_by=current_user["id"]
     )
     await db.documents.insert_one(document.model_dump())
@@ -685,7 +700,103 @@ async def upload_document(
     # Update estate readiness
     await update_estate_readiness(estate_id)
     
-    return {"id": document.id, "name": document.name, "message": "Document uploaded"}
+    response = {"id": document.id, "name": document.name, "message": "Document uploaded and encrypted"}
+    if backup_code:
+        response["backup_code"] = backup_code
+        response["backup_message"] = "Save this backup code securely - it can be used to unlock this document"
+    
+    return response
+
+@api_router.post("/documents/{document_id}/unlock")
+async def unlock_document(
+    document_id: str,
+    unlock_data: DocumentUnlockRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Unlock a protected document"""
+    document = await db.documents.find_one({"id": document_id}, {"_id": 0})
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    if not document.get("is_locked"):
+        return {"message": "Document is not locked", "unlocked": True}
+    
+    lock_type = document.get("lock_type")
+    
+    # Verify unlock credentials
+    if lock_type == "password":
+        if not unlock_data.password:
+            raise HTTPException(status_code=400, detail="Password required")
+        if not document.get("lock_password_hash"):
+            raise HTTPException(status_code=400, detail="Document has no password set")
+        if not verify_password(unlock_data.password, document["lock_password_hash"]):
+            # Try backup code
+            if unlock_data.backup_code and document.get("backup_code") == unlock_data.backup_code:
+                pass  # Backup code valid
+            else:
+                raise HTTPException(status_code=401, detail="Invalid password")
+    
+    elif lock_type == "backup":
+        if not unlock_data.backup_code:
+            raise HTTPException(status_code=400, detail="Backup code required")
+        if document.get("backup_code") != unlock_data.backup_code:
+            raise HTTPException(status_code=401, detail="Invalid backup code")
+    
+    elif lock_type == "voice":
+        # Voice verification would be implemented with a voice recognition API
+        # For now, accept backup code as fallback
+        if not unlock_data.backup_code:
+            raise HTTPException(status_code=400, detail="Voice verification not available. Use backup code.")
+        if document.get("backup_code") != unlock_data.backup_code:
+            raise HTTPException(status_code=401, detail="Invalid backup code")
+    
+    return {"message": "Document unlocked successfully", "unlocked": True, "document_id": document_id}
+
+@api_router.get("/documents/{document_id}/download")
+async def download_document(
+    document_id: str,
+    password: Optional[str] = None,
+    backup_code: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Download a document (decrypted)"""
+    document = await db.documents.find_one({"id": document_id}, {"_id": 0})
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    # Check if document is locked and verify credentials
+    if document.get("is_locked"):
+        lock_type = document.get("lock_type")
+        
+        if lock_type == "password" and document.get("lock_password_hash"):
+            if password and verify_password(password, document["lock_password_hash"]):
+                pass  # Valid password
+            elif backup_code and document.get("backup_code") == backup_code:
+                pass  # Valid backup code
+            else:
+                raise HTTPException(status_code=401, detail="Invalid credentials for locked document")
+        
+        elif lock_type in ["backup", "voice"]:
+            if not backup_code or document.get("backup_code") != backup_code:
+                raise HTTPException(status_code=401, detail="Invalid backup code")
+    
+    # Decrypt the file data
+    if not document.get("file_data"):
+        raise HTTPException(status_code=404, detail="Document data not found")
+    
+    try:
+        decrypted_data = decrypt_data(document["file_data"])
+    except Exception as e:
+        logger.error(f"Decryption error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to decrypt document")
+    
+    return Response(
+        content=decrypted_data,
+        media_type=document.get("file_type", "application/octet-stream"),
+        headers={
+            "Content-Disposition": f'attachment; filename="{document["name"]}"'
+        }
+    )
 
 @api_router.delete("/documents/{document_id}")
 async def delete_document(document_id: str, current_user: dict = Depends(get_current_user)):
