@@ -204,7 +204,7 @@ const DashboardPage = () => {
         <h1 className="text-2xl lg:text-4xl font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
           Welcome back, {getUserFirstName()}
         </h1>
-        <p className="text-[var(--t4)] text-sm lg:text-lg">
+        <p className="text-[var(--t4)] text-base lg:text-xl">
           Your legacy is taking shape. Here's your overview.
         </p>
       </div>
@@ -221,9 +221,9 @@ const DashboardPage = () => {
 
       {/* Estate Readiness Score Card */}
       <div className="glass-card p-6 lg:p-8 mb-4" data-testid="readiness-card">
-        <h3 className="text-center text-xs lg:text-sm font-semibold text-[var(--t4)] uppercase tracking-wider mb-4 lg:mb-6">
+        <h2 className="text-center text-2xl lg:text-4xl font-bold text-[var(--t4)] uppercase tracking-wider mb-4 lg:mb-6" style={{ fontFamily: 'Outfit, sans-serif' }}>
           Estate Readiness Score
-        </h3>
+        </h2>
         
         <SpeedometerGauge score={readinessScore} />
         
@@ -231,15 +231,15 @@ const DashboardPage = () => {
         <div className="flex justify-center gap-4 lg:gap-8 mt-16 lg:mt-20">
           <div className="flex items-center gap-2">
             <span className="w-4 h-2 lg:w-5 lg:h-2.5 rounded-full bg-[#3b82f6]" />
-            <span className="text-[var(--t3)] text-xs lg:text-sm">{docsPercent}% Docs</span>
+            <span className="text-[var(--t3)] text-base lg:text-lg">{docsPercent}% Docs</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-4 h-2 lg:w-5 lg:h-2.5 rounded-full bg-[#8b5cf6]" />
-            <span className="text-[var(--t3)] text-xs lg:text-sm">{msgsPercent}% Messages</span>
+            <span className="text-[var(--t3)] text-base lg:text-lg">{msgsPercent}% Messages</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-4 h-2 lg:w-5 lg:h-2.5 rounded-full bg-[#f97316]" />
-            <span className="text-[var(--t3)] text-xs lg:text-sm">{checklistPercent}% Checklist</span>
+            <span className="text-[var(--t3)] text-base lg:text-lg">{checklistPercent}% Checklist</span>
           </div>
         </div>
       </div>
