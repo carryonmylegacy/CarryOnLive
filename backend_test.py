@@ -66,6 +66,23 @@ class CarryOnAPITester:
             print(f"❌ Failed - Error: {str(e)}")
             return False, {}
 
+    def get_otp_from_logs(self, email):
+        """Extract OTP from backend logs"""
+        try:
+            import subprocess
+            result = subprocess.run(['tail', '-n', '10', '/var/log/supervisor/backend.err.log'], 
+                                  capture_output=True, text=True)
+            logs = result.stdout
+            
+            # Look for OTP line for this email
+            for line in logs.split('\n'):
+                if f"OTP for {email}:" in line:
+                    otp = line.split(f"OTP for {email}: ")[1].strip()
+                    return otp
+            return None
+        except:
+            return None
+
     def test_login_flow(self, email, password):
         """Test complete login flow with OTP"""
         print(f"\n🔐 Testing login flow for {email}")
@@ -85,16 +102,13 @@ class CarryOnAPITester:
         otp_hint = response.get('otp_hint', '')
         print(f"   OTP Hint: {otp_hint}")
         
-        # For testing, we'll use known OTP codes from backend logs
-        # In real scenario, this would come from email/SMS
-        otp_codes = {
-            "pete@mitchell.com": "544291",
-            "penny@mitchell.com": "001254", 
-            "admin@carryon.com": "800583"
-        }
+        # Get the actual OTP from backend logs
+        import time
+        time.sleep(0.5)  # Give logs time to write
+        test_otp = self.get_otp_from_logs(email)
         
-        if email in otp_codes:
-            test_otp = otp_codes[email]
+        if test_otp:
+            print(f"   Found OTP: {test_otp}")
             
             # Step 2: Verify OTP
             success, response = self.run_test(
