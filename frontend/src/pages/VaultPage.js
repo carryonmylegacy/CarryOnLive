@@ -422,9 +422,9 @@ const VaultPage = () => {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const filteredDocs = activeCategory === 'all' 
-    ? documents 
-    : documents.filter(d => d.category === activeCategory);
+  const filteredDocs = documents
+    .filter(d => activeCategory === 'all' || d.category === activeCategory)
+    .filter(d => !searchQuery || d.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   if (loading) {
     return (
