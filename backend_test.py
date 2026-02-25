@@ -452,6 +452,7 @@ def main():
                 all_tests_passed = False
             if not tester.test_messages():
                 all_tests_passed = False
+            # Note: Beneficiaries cannot create messages, only view delivered ones
                 
         elif account['role'] == 'admin':
             # Test admin features
