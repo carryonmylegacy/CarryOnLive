@@ -585,13 +585,27 @@ async def register(data: UserCreate):
     if len(data.password) < 6:
         raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
     
+    # Build full name
+    name_parts = [data.first_name]
+    if data.middle_name:
+        name_parts.append(data.middle_name)
+    name_parts.append(data.last_name)
+    if data.suffix:
+        name_parts.append(data.suffix)
+    full_name = " ".join(name_parts)
+    
     # Create user
     user_id = str(uuid.uuid4())
     user = {
         "id": user_id,
         "email": data.email,
         "password": hash_password(data.password),
-        "name": data.name,
+        "name": full_name,
+        "first_name": data.first_name,
+        "middle_name": data.middle_name,
+        "last_name": data.last_name,
+        "suffix": data.suffix,
+        "gender": data.gender,
         "role": data.role if data.role in ["benefactor", "beneficiary"] else "benefactor",
         "created_at": datetime.now(timezone.utc).isoformat()
     }
@@ -606,7 +620,7 @@ async def register(data: UserCreate):
     )
     
     # Send OTP via email
-    await send_otp_email(data.email, otp, data.name)
+    await send_otp_email(data.email, otp, data.first_name)
     logger.info(f"Registration OTP for {data.email}: {otp}")
     
     return {"message": "Account created. Please verify with OTP.", "email": data.email, "otp_hint": otp[:2] + "****"}
