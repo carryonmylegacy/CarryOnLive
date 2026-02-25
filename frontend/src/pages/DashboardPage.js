@@ -66,10 +66,10 @@ const DashboardPage = () => {
   const totalTasks = checklists.length || 5;
   const readinessScore = estate?.readiness_score || 0;
 
-  // Calculate percentages for the gauge breakdown
-  const docsPercent = Math.min(100, stats.documents * 10);
-  const msgsPercent = Math.min(100, stats.messages * 15);
-  const checklistPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  // Use real readiness breakdown from API
+  const docsPercent = readiness?.documents?.score ?? 0;
+  const msgsPercent = readiness?.messages?.score ?? 0;
+  const checklistPercent = readiness?.checklist?.score ?? 0;
 
   // Get score label and color
   const getScoreLabel = (score) => {
