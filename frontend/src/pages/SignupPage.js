@@ -131,7 +131,7 @@ const SignupPage = () => {
     <div 
       className="min-h-screen flex items-center justify-center p-4 py-12"
       style={{
-        background: 'linear-gradient(145deg, #0b1120, #0f1d35 40%, #0a1628)'
+        background: 'linear-gradient(145deg, #08090F, #0D1018 40%, #08090F)'
       }}
     >
       <div 
@@ -144,20 +144,20 @@ const SignupPage = () => {
       
       <div className="w-full max-w-lg relative z-10 animate-fade-in">
         {/* Back to Login */}
-        <Link to="/login" className="inline-flex items-center gap-2 text-[#94a3b8] hover:text-white mb-6 transition-colors">
+        <Link to="/login" className="inline-flex items-center gap-2 text-[#A0AABF] hover:text-white mb-6 transition-colors">
           <ArrowLeft className="w-4 h-4" />
           Back to Login
         </Link>
         
         {/* Logo & Branding */}
         <div className="text-center mb-6">
-          <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-[#d4af37] to-[#fcd34d] flex items-center justify-center gold-glow">
-            <Shield className="w-8 h-8 text-[#0b1120]" />
+          <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-[#E0AD2B] to-[#F0C95C] flex items-center justify-center gold-glow">
+            <Shield className="w-8 h-8 text-[#08090F]" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <h1 className="text-2xl font-bold text-[#F1F3F8] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
             Create Your Account
           </h1>
-          <p className="text-[#94a3b8] text-sm">
+          <p className="text-[#A0AABF] text-sm">
             Start securing your family's legacy today
           </p>
         </div>
@@ -165,10 +165,10 @@ const SignupPage = () => {
         {/* Signup Form */}
         <div className="glass-card p-6">
           {/* Legal Disclaimer */}
-          <div className="mb-6 p-3 bg-[#f59e0b]/10 border border-[#f59e0b]/20 rounded-xl">
+          <div className="mb-6 p-3 bg-[#F5A623]/10 border border-[#F5A623]/20 rounded-xl">
             <div className="flex items-start gap-2">
-              <AlertCircle className="w-5 h-5 text-[#f59e0b] flex-shrink-0 mt-0.5" />
-              <p className="text-[#f59e0b] text-xs">
+              <AlertCircle className="w-5 h-5 text-[#F5A623] flex-shrink-0 mt-0.5" />
+              <p className="text-[#F5A623] text-xs">
                 <strong>Important:</strong> Please enter your name exactly as it appears on your legal documents. 
                 This ensures CarryOn™ can fully support your estate planning needs and legal document verification.
               </p>
@@ -179,7 +179,7 @@ const SignupPage = () => {
             {/* Name Fields Row */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="firstName" className="text-[#94a3b8] text-sm">First Name *</Label>
+                <Label htmlFor="firstName" className="text-[#A0AABF] text-sm">First Name *</Label>
                 <Input
                   id="firstName"
                   type="text"
@@ -192,7 +192,7 @@ const SignupPage = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="middleName" className="text-[#94a3b8] text-sm">Middle Name</Label>
+                <Label htmlFor="middleName" className="text-[#A0AABF] text-sm">Middle Name</Label>
                 <Input
                   id="middleName"
                   type="text"
