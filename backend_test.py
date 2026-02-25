@@ -18,6 +18,8 @@ class CarryOnAPITester:
         self.document_id = None
         self.message_id = None
         self.checklist_item_id = None
+        self.test_document_id = None
+        self.test_backup_code = None
 
     def run_test(self, name, method, endpoint, expected_status, data=None, files=None):
         """Run a single API test"""
