@@ -72,7 +72,7 @@ const Sidebar = () => {
     {
       title: 'ACCOUNT',
       items: [
-        { to: '/settings', icon: Settings, label: 'Settings' },
+        { to: '/beneficiary/settings', icon: Settings, label: 'Settings' },
       ]
     }
   ];
