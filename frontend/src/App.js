@@ -25,6 +25,7 @@ import BeneficiaryDashboardPage from './pages/beneficiary/BeneficiaryDashboardPa
 import BeneficiaryVaultPage from './pages/beneficiary/BeneficiaryVaultPage';
 import BeneficiaryMessagesPage from './pages/beneficiary/BeneficiaryMessagesPage';
 import BeneficiaryChecklistPage from './pages/beneficiary/BeneficiaryChecklistPage';
+import BeneficiaryGuardianPage from './pages/beneficiary/BeneficiaryGuardianPage';
 import MilestoneReportPage from './pages/beneficiary/MilestoneReportPage';
 import UploadCertificatePage from './pages/beneficiary/UploadCertificatePage';
 import CondolencePage from './pages/beneficiary/CondolencePage';
