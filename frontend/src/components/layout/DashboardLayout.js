@@ -5,7 +5,30 @@ import MobileNav from './MobileNav';
 
 const DashboardLayout = () => {
   return (
-    <div className="min-h-screen bg-[var(--carryon-bg)]">
+    <div className="app">
+      {/* Background decorations */}
+      <div 
+        className="floating-orb" 
+        style={{
+          top: '10%',
+          left: '60%',
+          width: '400px',
+          height: '400px',
+          background: 'radial-gradient(circle, rgba(59,123,247,0.06), transparent 70%)'
+        }}
+      />
+      <div 
+        className="floating-orb" 
+        style={{
+          top: '50%',
+          right: '10%',
+          width: '300px',
+          height: '300px',
+          background: 'radial-gradient(circle, rgba(224,173,43,0.04), transparent 70%)',
+          animationDelay: '-10s'
+        }}
+      />
+      
       {/* Desktop Sidebar */}
       <Sidebar />
       
@@ -13,7 +36,7 @@ const DashboardLayout = () => {
       <MobileNav />
       
       {/* Main Content */}
-      <main className="lg:ml-64 pt-16 lg:pt-0 pb-20 lg:pb-0 min-h-screen">
+      <main className="main-content">
         <Outlet />
       </main>
     </div>
