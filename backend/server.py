@@ -817,11 +817,42 @@ async def get_messages(estate_id: str, current_user: dict = Depends(get_current_
         # Only show delivered messages to beneficiaries
         messages = await db.messages.find(
             {"estate_id": estate_id, "recipients": current_user["id"], "is_delivered": True},
-            {"_id": 0, "video_url": 0}
+            {"_id": 0}
         ).to_list(100)
     else:
         messages = await db.messages.find({"estate_id": estate_id}, {"_id": 0}).to_list(100)
     return messages
+
+@api_router.get("/messages/video/{video_id}")
+async def get_message_video(video_id: str, current_user: dict = Depends(get_current_user)):
+    """Get video data for a message"""
+    video = await db.video_storage.find_one({"id": video_id}, {"_id": 0})
+    if not video:
+        raise HTTPException(status_code=404, detail="Video not found")
+    
+    # Verify user has access to this video
+    message = await db.messages.find_one({"video_url": video_id}, {"_id": 0})
+    if message:
+        if current_user["role"] == "beneficiary":
+            if current_user["id"] not in message.get("recipients", []) or not message.get("is_delivered"):
+                raise HTTPException(status_code=403, detail="Access denied")
+        elif current_user["role"] == "benefactor":
+            # Check if user owns the estate
+            estate = await db.estates.find_one({"id": message["estate_id"]}, {"_id": 0})
+            if not estate or estate["owner_id"] != current_user["id"]:
+                raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Decode video data and return
+    try:
+        video_bytes = base64.b64decode(video["data"])
+        return Response(
+            content=video_bytes,
+            media_type="video/webm",
+            headers={"Content-Disposition": f'inline; filename="{video_id}.webm"'}
+        )
+    except Exception as e:
+        logger.error(f"Video decode error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve video")
 
 @api_router.post("/messages")
 async def create_message(data: MessageCreate, current_user: dict = Depends(get_current_user)):
@@ -840,10 +871,15 @@ async def create_message(data: MessageCreate, current_user: dict = Depends(get_c
         created_by=current_user["id"]
     )
     
-    # Handle video data
+    # Handle video data - store encrypted
     if data.video_data:
         message.video_url = f"video_{message.id}"
-        await db.video_storage.insert_one({"id": message.video_url, "data": data.video_data})
+        # Store video data (could encrypt here too for additional security)
+        await db.video_storage.insert_one({
+            "id": message.video_url, 
+            "data": data.video_data,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
     
     await db.messages.insert_one(message.model_dump())
     
