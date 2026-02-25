@@ -61,13 +61,21 @@ logger = logging.getLogger(__name__)
 
 class UserBase(BaseModel):
     email: EmailStr
-    name: str
+    first_name: str
+    middle_name: Optional[str] = None
+    last_name: str
+    suffix: Optional[str] = None
+    gender: Optional[str] = None
     role: str = "benefactor"  # benefactor, beneficiary, admin
 
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
-    name: str
+    first_name: str
+    middle_name: Optional[str] = None
+    last_name: str
+    suffix: Optional[str] = None
+    gender: Optional[str] = None
     role: str = "benefactor"
 
 class UserLogin(BaseModel):
