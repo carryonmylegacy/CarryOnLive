@@ -149,15 +149,9 @@ const DashboardPage = () => {
           
           {/* Needle assembly */}
           <g style={{ transform: `rotate(${angle}deg)`, transformOrigin: '100px 100px', transition: 'transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)' }} filter="url(#needleShadow)">
-            {/* Counterweight (back of needle) - extended tail */}
+            {/* Full needle - continuous taper from tip to wide tail */}
             <polygon 
-              points="100,118 96,105 104,105" 
-              fill="#475569"
-            />
-            
-            {/* Main needle - tapered shape */}
-            <polygon 
-              points="100,25 96,95 100,100 104,95" 
+              points="100,25 97,90 94,118 100,122 106,118 103,90" 
               fill="url(#needleGradient)"
               stroke="#64748b"
               strokeWidth="0.5"
@@ -169,11 +163,8 @@ const DashboardPage = () => {
               fill="#dc2626"
             />
             
-            {/* Center hub - outer ring */}
+            {/* Center hub - chrome ring only */}
             <circle cx="100" cy="100" r="12" fill="url(#hubGradient)" stroke="#94a3b8" strokeWidth="1" />
-            
-            {/* Center hub - inner detail (smaller) */}
-            <circle cx="100" cy="100" r="5" fill="#1e293b" stroke="#475569" strokeWidth="0.5" />
           </g>
         </svg>
         
