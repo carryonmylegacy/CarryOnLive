@@ -85,12 +85,11 @@ const DashboardPage = () => {
 
   // Speedometer gauge component
   const SpeedometerGauge = ({ score }) => {
-    const angle = (score / 100) * 180 - 90; // -90 to 90 degrees
+    const angle = (score / 100) * 180 - 90;
     
     return (
       <div className="relative w-48 h-32 mx-auto">
         <svg viewBox="0 0 200 110" className="w-full h-full">
-          {/* Gradient definition */}
           <defs>
             <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#ef4444" />
@@ -105,7 +104,7 @@ const DashboardPage = () => {
           <path
             d="M 20 95 A 80 80 0 0 1 180 95"
             fill="none"
-            stroke="rgba(255,255,255,0.1)"
+            stroke="rgba(128,128,128,0.2)"
             strokeWidth="18"
             strokeLinecap="round"
           />
@@ -126,18 +125,18 @@ const DashboardPage = () => {
               y1="95"
               x2="100"
               y2="30"
-              stroke="white"
+              stroke="var(--t)"
               strokeWidth="3"
               strokeLinecap="round"
             />
-            <circle cx="100" cy="95" r="8" fill="white" />
-            <circle cx="100" cy="95" r="4" fill="var(--bg)" />
+            <circle cx="100" cy="95" r="8" fill="var(--t)" />
+            <circle cx="100" cy="95" r="4" fill="var(--content-bg)" />
           </g>
         </svg>
         
-        {/* Score display - positioned below the gauge */}
+        {/* Score display */}
         <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-center">
-          <div className="text-4xl font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <div className="text-4xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
             {score}
           </div>
           <div className="text-base font-semibold" style={{ color: scoreInfo.color }}>
@@ -148,19 +147,18 @@ const DashboardPage = () => {
     );
   };
 
-  // Stat card component with gradients
-  const StatCard = ({ icon: Icon, value, label, gradient, onClick, className = '' }) => (
+  // Stat card component - uses CSS class for theme-adaptive colors
+  const StatCard = ({ icon: Icon, value, label, cardClass, onClick, className = '' }) => (
     <div 
-      className={`rounded-2xl p-4 lg:p-6 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] ${className}`}
-      style={{ background: gradient }}
+      className={`${cardClass} rounded-2xl p-4 lg:p-6 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] ${className}`}
       onClick={onClick}
       data-testid={`stat-card-${label.toLowerCase().replace(/\s+/g, '-')}`}
     >
-      <Icon className="w-6 h-6 lg:w-8 lg:h-8 text-white/80 mb-2 lg:mb-4" />
-      <div className="text-2xl lg:text-4xl font-bold text-white mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
+      <Icon className="stat-icon w-6 h-6 lg:w-8 lg:h-8 opacity-70 mb-2 lg:mb-4" />
+      <div className="text-2xl lg:text-4xl font-bold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
         {value}
       </div>
-      <div className="text-white/80 text-xs lg:text-sm font-medium leading-tight">
+      <div className="opacity-80 text-xs lg:text-sm font-medium leading-tight">
         {label}
       </div>
     </div>
@@ -169,11 +167,11 @@ const DashboardPage = () => {
   if (loading) {
     return (
       <div className="p-4 lg:p-8 pt-20 lg:pt-8 animate-fade-in">
-        <div className="h-8 w-64 bg-white/5 rounded-lg mb-4 animate-pulse" />
-        <div className="h-5 w-80 bg-white/5 rounded-lg mb-6 animate-pulse" />
-        <div className="h-48 bg-white/5 rounded-2xl mb-4 animate-pulse" />
+        <div className="h-8 w-64 bg-[var(--s)] rounded-lg mb-4 animate-pulse" />
+        <div className="h-5 w-80 bg-[var(--s)] rounded-lg mb-6 animate-pulse" />
+        <div className="h-48 bg-[var(--s)] rounded-2xl mb-4 animate-pulse" />
         <div className="grid grid-cols-3 gap-3">
-          {[1,2,3].map(i => <div key={i} className="h-28 bg-white/5 rounded-2xl animate-pulse" />)}
+          {[1,2,3].map(i => <div key={i} className="h-28 bg-[var(--s)] rounded-2xl animate-pulse" />)}
         </div>
       </div>
     );
@@ -186,7 +184,7 @@ const DashboardPage = () => {
           <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-[var(--gold)]/20 flex items-center justify-center">
             <FolderLock className="w-8 h-8 text-[var(--gold)]" />
           </div>
-          <h2 className="text-xl lg:text-2xl font-bold text-white mb-3">Create Your First Estate</h2>
+          <h2 className="text-xl lg:text-2xl font-bold text-[var(--t)] mb-3">Create Your First Estate</h2>
           <p className="text-[var(--t4)] mb-6 text-sm lg:text-base">Start organizing your legacy by creating an estate.</p>
           <EstateSelector 
             currentEstate={null} 
@@ -203,7 +201,7 @@ const DashboardPage = () => {
     <div className="p-4 lg:p-8 pt-20 lg:pt-8 pb-24 lg:pb-8 animate-fade-in" data-testid="benefactor-dashboard">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl lg:text-4xl font-bold text-white mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
+        <h1 className="text-2xl lg:text-4xl font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
           Welcome back, {getUserFirstName()}
         </h1>
         <p className="text-[var(--t4)] text-sm lg:text-lg">
@@ -246,28 +244,27 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* Stat Cards - Mobile: 3 in row, then full-width Beneficiaries */}
-      {/* Desktop: 4 in row */}
+      {/* Stat Cards */}
       <div className="grid grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4 mb-4">
         <StatCard 
           icon={FolderLock}
           value={stats.documents}
           label="Secure Document Vault"
-          gradient="linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)"
+          cardClass="stat-card-vault"
           onClick={() => navigate('/vault')}
         />
         <StatCard 
           icon={MessageSquare}
           value={stats.messages}
           label="Milestone Messages"
-          gradient="linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)"
+          cardClass="stat-card-messages"
           onClick={() => navigate('/messages')}
         />
         <StatCard 
           icon={CheckSquare}
           value={totalTasks}
           label="Immediate Action Checklist"
-          gradient="linear-gradient(135deg, #f97316 0%, #ea580c 100%)"
+          cardClass="stat-card-checklist"
           onClick={() => navigate('/checklist')}
         />
         {/* Desktop only - 4th card in same row */}
@@ -275,7 +272,7 @@ const DashboardPage = () => {
           icon={Users}
           value={stats.beneficiaries}
           label="Beneficiaries"
-          gradient="linear-gradient(135deg, #22c55e 0%, #16a34a 100%)"
+          cardClass="stat-card-beneficiaries"
           onClick={() => navigate('/beneficiaries')}
           className="hidden lg:block"
         />
@@ -284,17 +281,16 @@ const DashboardPage = () => {
       {/* Mobile only - Beneficiaries full width */}
       <div className="lg:hidden mb-4">
         <div 
-          className="rounded-2xl p-4 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center gap-4"
-          style={{ background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' }}
+          className="stat-card-beneficiaries rounded-2xl p-4 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center gap-4"
           onClick={() => navigate('/beneficiaries')}
           data-testid="stat-card-beneficiaries-mobile"
         >
-          <Users className="w-8 h-8 text-white/80" />
+          <Users className="stat-icon w-8 h-8 opacity-70" />
           <div className="flex items-center gap-3">
-            <span className="text-3xl font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            <span className="text-3xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>
               {stats.beneficiaries}
             </span>
-            <span className="text-white/80 text-sm font-medium">Beneficiaries</span>
+            <span className="opacity-80 text-sm font-medium">Beneficiaries</span>
           </div>
         </div>
       </div>
@@ -304,12 +300,12 @@ const DashboardPage = () => {
         {/* Secure Document Vault Preview */}
         <div className="glass-card p-4 lg:p-6">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-base lg:text-lg font-semibold text-white">Secure Document Vault</h3>
+            <h3 className="text-base lg:text-lg font-semibold text-[var(--t)]">Secure Document Vault</h3>
             <span className="text-[var(--t4)] text-xs lg:text-sm">
               {stats.documents > 0 ? `${(stats.documents * 0.5).toFixed(0)} MB` : '0 MB'} / 10 GB
             </span>
           </div>
-          <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+          <div className="h-2 bg-[var(--b)] rounded-full overflow-hidden">
             <div 
               className="h-full bg-gradient-to-r from-[#3b82f6] to-[#1d4ed8] rounded-full transition-all"
               style={{ width: `${Math.min(100, (stats.documents * 0.5 / 10000) * 100)}%` }}
@@ -326,18 +322,18 @@ const DashboardPage = () => {
         {/* Milestone Messages Preview */}
         <div className="glass-card p-4 lg:p-6">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-base lg:text-lg font-semibold text-white">Milestone Messages</h3>
+            <h3 className="text-base lg:text-lg font-semibold text-[var(--t)]">Milestone Messages</h3>
             <span className="text-[var(--t4)] text-xs lg:text-sm">
               {stats.messages} message{stats.messages !== 1 ? 's' : ''}
             </span>
           </div>
           {stats.messages > 0 ? (
-            <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
+            <div className="flex items-center gap-3 p-3 bg-[var(--s)] rounded-lg">
               <MessageSquare className="w-5 h-5 text-[#14b8a6]" />
               <span className="text-[var(--t3)] text-sm">Messages ready for your loved ones</span>
             </div>
           ) : (
-            <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
+            <div className="flex items-center gap-3 p-3 bg-[var(--s)] rounded-lg">
               <Clock className="w-5 h-5 text-[var(--t5)]" />
               <span className="text-[var(--t4)] text-sm">No messages yet</span>
             </div>
