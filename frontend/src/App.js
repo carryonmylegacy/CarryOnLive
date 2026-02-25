@@ -151,6 +151,8 @@ function AppRoutes() {
         </ProtectedRoute>
       }>
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/admin/transition" element={<AdminPage />} />
+        <Route path="/admin/dts" element={<AdminPage />} />
         <Route path="/admin/certificates" element={<AdminPage />} />
       </Route>
 
