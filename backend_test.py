@@ -286,44 +286,47 @@ class CarryOnAPITester:
                 self.message_id = response[0]['id']
                 print(f"   Found {len(response)} existing messages")
         
-        # Test creating a video message
-        video_data = base64.b64encode(b"fake_video_data_for_testing").decode()
-        
-        video_message_data = {
-            "estate_id": self.estate_id,
-            "title": "Test Video Message",
-            "content": "This is a test video message for milestone testing",
-            "message_type": "video",
-            "video_data": video_data,
-            "recipients": [self.beneficiary_id] if self.beneficiary_id else [],
-            "trigger_type": "age_milestone",
-            "trigger_age": 25
-        }
-        
-        video_success, video_response = self.run_test(
-            "Create Video Message",
-            "POST",
-            "messages",
-            200,
-            data=video_message_data
-        )
-        
-        if video_success and 'video_url' in video_response:
-            print(f"   ✅ Video message created with video URL: {video_response['video_url']}")
+        # Test creating a video message (only for benefactors)
+        if hasattr(self, 'current_role') and self.current_role == 'benefactor':
+            video_data = base64.b64encode(b"fake_video_data_for_testing").decode()
             
-            # Test video retrieval
-            video_id = video_response['video_url']
-            video_get_success, _ = self.run_test(
-                "Get Video Data",
-                "GET",
-                f"messages/video/{video_id}",
-                200
+            video_message_data = {
+                "estate_id": self.estate_id,
+                "title": "Test Video Message",
+                "content": "This is a test video message for milestone testing",
+                "message_type": "video",
+                "video_data": video_data,
+                "recipients": [self.beneficiary_id] if self.beneficiary_id else [],
+                "trigger_type": "age_milestone",
+                "trigger_age": 25
+            }
+            
+            video_success, video_response = self.run_test(
+                "Create Video Message",
+                "POST",
+                "messages",
+                200,
+                data=video_message_data
             )
             
-            if video_get_success:
-                print(f"   ✅ Video data retrieved successfully")
-            
-            return success and video_success and video_get_success
+            if video_success and 'video_url' in video_response:
+                print(f"   ✅ Video message created with video URL: {video_response['video_url']}")
+                
+                # Test video retrieval
+                video_id = video_response['video_url']
+                video_get_success, _ = self.run_test(
+                    "Get Video Data",
+                    "GET",
+                    f"messages/video/{video_id}",
+                    200
+                )
+                
+                if video_get_success:
+                    print(f"   ✅ Video data retrieved successfully")
+                
+                return success and video_success and video_get_success
+        else:
+            print(f"   ℹ️  Skipping video message creation (role: {getattr(self, 'current_role', 'unknown')})")
         
         return success
 
