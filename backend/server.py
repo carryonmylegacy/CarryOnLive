@@ -131,9 +131,12 @@ class Document(BaseModel):
     category: str  # financial, legal, personal, medical
     file_type: str
     file_size: int
-    file_data: Optional[str] = None  # Base64 encoded
+    file_data: Optional[str] = None  # Base64 encoded and encrypted
     is_locked: bool = False
     lock_type: Optional[str] = None  # password, voice, backup
+    lock_password_hash: Optional[str] = None  # Hashed password for password lock
+    backup_code: Optional[str] = None  # Backup unlock code
+    is_encrypted: bool = True  # Whether file data is encrypted
     uploaded_by: str
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
