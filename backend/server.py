@@ -523,7 +523,9 @@ async def login(data: UserLogin):
         upsert=True
     )
     
-    logger.info(f"OTP for {data.email}: {otp}")  # In production, send via email/SMS
+    # Send OTP via email (falls back to logging if not configured)
+    await send_otp_email(data.email, otp, user.get("name", "User"))
+    logger.info(f"OTP for {data.email}: {otp}")  # Also log for debugging
     
     return {"message": "OTP sent", "email": data.email, "otp_hint": otp[:2] + "****"}
 
