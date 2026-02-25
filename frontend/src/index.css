@@ -1,75 +1,75 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-    margin: 0;
-    font-family:
-        -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-        "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-        sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-code {
-    font-family:
-        source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
-}
-
 @layer base {
     :root {
-        --background: 0 0% 100%;
-        --foreground: 0 0% 3.9%;
-        --card: 0 0% 100%;
-        --card-foreground: 0 0% 3.9%;
-        --popover: 0 0% 100%;
-        --popover-foreground: 0 0% 3.9%;
-        --primary: 0 0% 9%;
-        --primary-foreground: 0 0% 98%;
-        --secondary: 0 0% 96.1%;
-        --secondary-foreground: 0 0% 9%;
-        --muted: 0 0% 96.1%;
-        --muted-foreground: 0 0% 45.1%;
-        --accent: 0 0% 96.1%;
-        --accent-foreground: 0 0% 9%;
-        --destructive: 0 84.2% 60.2%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 89.8%;
-        --input: 0 0% 89.8%;
-        --ring: 0 0% 3.9%;
-        --chart-1: 12 76% 61%;
-        --chart-2: 173 58% 39%;
-        --chart-3: 197 37% 24%;
-        --chart-4: 43 74% 66%;
-        --chart-5: 27 87% 67%;
-        --radius: 0.5rem;
+        --background: 220 47% 6%;
+        --foreground: 210 40% 98%;
+        --card: 220 47% 10%;
+        --card-foreground: 210 40% 98%;
+        --popover: 220 47% 8%;
+        --popover-foreground: 210 40% 98%;
+        --primary: 43 74% 52%;
+        --primary-foreground: 220 47% 6%;
+        --secondary: 220 37% 14%;
+        --secondary-foreground: 210 40% 98%;
+        --muted: 220 37% 14%;
+        --muted-foreground: 215 20% 55%;
+        --accent: 43 74% 52%;
+        --accent-foreground: 220 47% 6%;
+        --destructive: 0 84% 60%;
+        --destructive-foreground: 210 40% 98%;
+        --border: 220 30% 18%;
+        --input: 220 30% 18%;
+        --ring: 43 74% 52%;
+        --radius: 0.75rem;
+        
+        /* Custom CarryOn Colors */
+        --carryon-bg: #0b1120;
+        --carryon-bg-secondary: #0f1d35;
+        --carryon-bg-tertiary: #1e293b;
+        --carryon-gold: #d4af37;
+        --carryon-gold-hover: #b8960c;
+        --carryon-gold-light: #fcd34d;
+        --carryon-text: #f8fafc;
+        --carryon-text-secondary: #94a3b8;
+        --carryon-text-muted: #64748b;
+        --carryon-success: #10b981;
+        --carryon-warning: #f59e0b;
+        --carryon-error: #ef4444;
+        --carryon-info: #3b82f6;
     }
-    .dark {
-        --background: 0 0% 3.9%;
-        --foreground: 0 0% 98%;
-        --card: 0 0% 3.9%;
-        --card-foreground: 0 0% 98%;
-        --popover: 0 0% 3.9%;
-        --popover-foreground: 0 0% 98%;
-        --primary: 0 0% 98%;
-        --primary-foreground: 0 0% 9%;
-        --secondary: 0 0% 14.9%;
-        --secondary-foreground: 0 0% 98%;
-        --muted: 0 0% 14.9%;
-        --muted-foreground: 0 0% 63.9%;
-        --accent: 0 0% 14.9%;
-        --accent-foreground: 0 0% 98%;
-        --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 14.9%;
-        --input: 0 0% 14.9%;
-        --ring: 0 0% 83.1%;
-        --chart-1: 220 70% 50%;
-        --chart-2: 160 60% 45%;
-        --chart-3: 30 80% 55%;
-        --chart-4: 280 65% 60%;
-        --chart-5: 340 75% 55%;
+
+    .light {
+        --background: 0 0% 100%;
+        --foreground: 222 47% 11%;
+        --card: 0 0% 100%;
+        --card-foreground: 222 47% 11%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 222 47% 11%;
+        --primary: 43 74% 49%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 210 40% 96%;
+        --secondary-foreground: 222 47% 11%;
+        --muted: 210 40% 96%;
+        --muted-foreground: 215 16% 47%;
+        --accent: 43 74% 49%;
+        --accent-foreground: 222 47% 11%;
+        --destructive: 0 84% 60%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 214 32% 91%;
+        --input: 214 32% 91%;
+        --ring: 43 74% 49%;
+        
+        --carryon-bg: #f8fafc;
+        --carryon-bg-secondary: #f1f5f9;
+        --carryon-bg-tertiary: #e2e8f0;
+        --carryon-text: #0f172a;
+        --carryon-text-secondary: #475569;
+        --carryon-text-muted: #94a3b8;
     }
 }
 
@@ -77,39 +77,112 @@ code {
     * {
         @apply border-border;
     }
+    
+    html {
+        scroll-behavior: smooth;
+    }
+    
     body {
-        @apply bg-background text-foreground;
+        @apply bg-[var(--carryon-bg)] text-[var(--carryon-text)];
+        font-family: 'DM Sans', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Outfit', sans-serif;
     }
 }
 
-@layer base {
-    [data-debug-wrapper="true"] {
-        display: contents !important;
+@layer components {
+    .glass-card {
+        @apply bg-[#0f1d35]/60 backdrop-blur-xl border border-white/10 shadow-xl rounded-2xl;
     }
+    
+    .glass-nav {
+        @apply bg-[#0b1120]/80 backdrop-blur-md border-b border-white/5;
+    }
+    
+    .gold-glow {
+        box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
+    }
+    
+    .gold-button {
+        @apply bg-[#d4af37] text-[#0b1120] hover:bg-[#b8960c] font-semibold rounded-full px-8 py-3 transition-all hover:scale-105 active:scale-95;
+        box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+    }
+    
+    .secondary-button {
+        @apply bg-white/5 text-white hover:bg-white/10 border border-white/10 rounded-full px-6 py-2 backdrop-blur-sm transition-all;
+    }
+    
+    .input-field {
+        @apply bg-[#0b1120]/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:border-[#d4af37]/50 focus:ring-1 focus:ring-[#d4af37]/50 transition-all outline-none w-full;
+    }
+    
+    .sidebar-link {
+        @apply flex items-center gap-3 px-4 py-3 rounded-xl text-[#94a3b8] hover:text-white hover:bg-white/5 transition-all;
+    }
+    
+    .sidebar-link.active {
+        @apply text-white bg-[#d4af37]/10 border-l-2 border-[#d4af37];
+    }
+    
+    .progress-arc {
+        transition: stroke-dashoffset 0.5s ease-in-out;
+    }
+    
+    .lock-overlay {
+        @apply absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center rounded-2xl z-10;
+    }
+    
+    .animate-fade-in {
+        animation: fadeIn 0.5s ease-out;
+    }
+    
+    .animate-slide-up {
+        animation: slideUp 0.5s ease-out;
+    }
+}
 
-    [data-debug-wrapper="true"] > * {
-        margin-left: inherit;
-        margin-right: inherit;
-        margin-top: inherit;
-        margin-bottom: inherit;
-        padding-left: inherit;
-        padding-right: inherit;
-        padding-top: inherit;
-        padding-bottom: inherit;
-        column-gap: inherit;
-        row-gap: inherit;
-        gap: inherit;
-        border-left-width: inherit;
-        border-right-width: inherit;
-        border-top-width: inherit;
-        border-bottom-width: inherit;
-        border-left-style: inherit;
-        border-right-style: inherit;
-        border-top-style: inherit;
-        border-bottom-style: inherit;
-        border-left-color: inherit;
-        border-right-color: inherit;
-        border-top-color: inherit;
-        border-bottom-color: inherit;
+@layer utilities {
+    .text-balance {
+        text-wrap: balance;
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--carryon-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--carryon-text-muted);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--carryon-text-secondary);
+}
+
+/* Mobile bottom nav safe area */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .mobile-nav {
+        padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
     }
 }
