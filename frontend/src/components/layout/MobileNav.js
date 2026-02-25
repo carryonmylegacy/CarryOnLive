@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import {
   LayoutDashboard,
   FolderLock,
@@ -13,12 +14,16 @@ import {
   Settings,
   LogOut,
   FileKey,
-  Home
+  Home,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '../ui/sheet';
+import { Switch } from '../ui/switch';
 
 const MobileNav = () => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
@@ -88,31 +93,36 @@ const MobileNav = () => {
   return (
     <>
       {/* Top Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 w-full h-14 bg-[var(--bg)]/95 backdrop-blur-lg border-b border-white/5 z-50 flex items-center justify-between px-4">
+      <header className="lg:hidden fixed top-0 left-0 w-full h-14 mobile-header z-50 flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-[var(--gold)] flex items-center justify-center">
-            <Shield className="w-4 h-4 text-[var(--bg)]" />
-          </div>
-          <span className="text-white font-bold text-lg" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <img 
+            src="/carryon-logo.jpg" 
+            alt="CarryOn" 
+            className="w-8 h-8 rounded-lg object-cover"
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+          <span className="text-[var(--t)] font-bold text-lg" style={{ fontFamily: 'Outfit, sans-serif' }}>
             CarryOn™
           </span>
         </div>
 
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <button className="p-2 text-white" data-testid="mobile-menu-button">
+            <button className="p-2 text-[var(--t)]" data-testid="mobile-menu-button">
               <Menu className="w-6 h-6" />
             </button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-72 bg-[var(--bg)] border-l border-white/10 p-0">
+          <SheetContent side="right" className="w-72 bg-[var(--bg)] border-l border-[var(--b)] p-0">
             <div className="flex flex-col h-full">
               {/* Header */}
-              <div className="p-4 border-b border-white/10 flex items-center gap-3">
+              <div className="p-4 border-b border-[var(--b)] flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--gold)] to-[var(--gold2)] flex items-center justify-center text-[var(--bg)] font-bold text-lg">
                   {getUserInitials()}
                 </div>
                 <div>
-                  <p className="text-white font-semibold">{getUserDisplayName()}</p>
+                  <p className="text-[var(--t)] font-semibold">{getUserDisplayName()}</p>
                   <p className="text-xs text-[var(--t5)] capitalize">{user?.role || 'User'}</p>
                 </div>
               </div>
@@ -127,7 +137,7 @@ const MobileNav = () => {
                         `flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                           isActive 
                             ? 'bg-[var(--gold)]/15 text-[var(--gold)]' 
-                            : 'text-[var(--t3)] hover:bg-white/5'
+                            : 'text-[var(--t3)] hover:bg-[var(--s)]'
                         }`
                       }
                     >
@@ -138,8 +148,25 @@ const MobileNav = () => {
                 ))}
               </nav>
 
+              {/* Theme Toggle */}
+              <div className="px-4 py-3 border-t border-[var(--b)]">
+                <div 
+                  className="flex items-center justify-between px-4 py-3 rounded-xl bg-[var(--s)] cursor-pointer"
+                  onClick={toggleTheme}
+                >
+                  <div className="flex items-center gap-3 text-[var(--t3)]">
+                    {theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                    <span className="font-medium">{theme === 'dark' ? 'Dark' : 'Light'} Mode</span>
+                  </div>
+                  <Switch
+                    checked={theme === 'dark'}
+                    onCheckedChange={toggleTheme}
+                  />
+                </div>
+              </div>
+
               {/* Logout */}
-              <div className="p-4 border-t border-white/10">
+              <div className="p-4 border-t border-[var(--b)]">
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-3 px-4 py-3 rounded-xl w-full text-[var(--rd)] hover:bg-[var(--rd)]/10 transition-all"
@@ -153,8 +180,8 @@ const MobileNav = () => {
         </Sheet>
       </header>
 
-      {/* Bottom Navigation - 5 items with elevated center Home */}
-      <nav className="lg:hidden fixed bottom-0 left-0 w-full bg-[var(--bg2)]/95 backdrop-blur-lg border-t border-white/5 z-50 pb-safe">
+      {/* Bottom Navigation */}
+      <nav className="lg:hidden fixed bottom-0 left-0 w-full mobile-bottom-nav z-50 pb-safe">
         <div className="flex justify-around items-end h-16 px-2">
           {getBottomNav().map((item) => (
             <NavLink
@@ -162,10 +189,8 @@ const MobileNav = () => {
               to={item.to}
               className={({ isActive }) =>
                 item.isCenter 
-                  ? `flex flex-col items-center -mt-6` // Elevated center item
-                  : `flex flex-col items-center gap-1 py-2 ${
-                      isActive ? 'text-[var(--gold)]' : 'text-[var(--t5)]'
-                    }`
+                  ? `flex flex-col items-center -mt-6`
+                  : `mobile-nav-item flex flex-col items-center gap-1 py-2 ${isActive ? 'active' : ''}`
               }
               data-testid={`mobile-nav-${item.label.toLowerCase()}`}
             >
@@ -175,8 +200,8 @@ const MobileNav = () => {
                     {/* Elevated Home button */}
                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-all ${
                       isActive 
-                        ? 'bg-gradient-to-br from-[var(--gold)] to-[var(--gold2)] text-[var(--bg)]' 
-                        : 'bg-[var(--bg3)] text-[var(--t3)] border border-white/10'
+                        ? 'bg-gradient-to-br from-[var(--gold)] to-[var(--gold2)] text-[#08090F]' 
+                        : 'bg-[var(--bg3)] text-[var(--t3)] border border-[var(--b)]'
                     }`}>
                       <item.icon className="w-6 h-6" />
                     </div>
