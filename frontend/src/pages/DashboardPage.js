@@ -142,8 +142,8 @@ const DashboardPage = () => {
           </g>
         </svg>
         
-        {/* Score display - positioned well below gauge to avoid overlap */}
-        <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 text-center">
+        {/* Score display - centered between gauge and percentage breakdown */}
+        <div className="absolute -bottom-20 left-1/2 transform -translate-x-1/2 text-center">
           <div className="text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
             {score}
           </div>
