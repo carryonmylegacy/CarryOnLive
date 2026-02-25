@@ -168,13 +168,13 @@ class CarryOnAPITester:
         return False
 
     def test_documents(self):
-        """Test document management"""
+        """Test document management including new encryption features"""
         if not self.estate_id:
             return False
             
-        print(f"\n📄 Testing Document Management")
+        print(f"\n📄 Testing Document Management with Encryption")
         
-        # Get documents
+        # Get existing documents
         success, response = self.run_test(
             "Get Documents",
             "GET",
@@ -185,9 +185,66 @@ class CarryOnAPITester:
         if success:
             if response:
                 self.document_id = response[0]['id']
-                print(f"   Found {len(response)} documents")
-            return True
-        return False
+                print(f"   Found {len(response)} existing documents")
+        
+        # Test document upload with password protection
+        test_content = b"This is a test document for password protection"
+        files = {'file': ('test_document.txt', io.BytesIO(test_content), 'text/plain')}
+        
+        upload_url = f"documents/upload?estate_id={self.estate_id}&name=Test%20Password%20Document&category=legal&lock_type=password&lock_password=testpass123"
+        
+        success, upload_response = self.run_test(
+            "Upload Password-Protected Document",
+            "POST",
+            upload_url,
+            200,
+            files=files
+        )
+        
+        if success and 'backup_code' in upload_response:
+            print(f"   ✅ Document uploaded with backup code: {upload_response['backup_code']}")
+            self.test_document_id = upload_response['id']
+            self.test_backup_code = upload_response['backup_code']
+            
+            # Test document unlock with password
+            unlock_success, _ = self.run_test(
+                "Unlock Document with Password",
+                "POST",
+                f"documents/{self.test_document_id}/unlock",
+                200,
+                data={"password": "testpass123"}
+            )
+            
+            if unlock_success:
+                print(f"   ✅ Document unlocked with password")
+            
+            # Test document unlock with backup code
+            unlock_backup_success, _ = self.run_test(
+                "Unlock Document with Backup Code",
+                "POST",
+                f"documents/{self.test_document_id}/unlock",
+                200,
+                data={"backup_code": self.test_backup_code}
+            )
+            
+            if unlock_backup_success:
+                print(f"   ✅ Document unlocked with backup code")
+            
+            # Test document download with password
+            download_url = f"documents/{self.test_document_id}/download?password=testpass123"
+            download_success, _ = self.run_test(
+                "Download Document with Password",
+                "GET",
+                download_url,
+                200
+            )
+            
+            if download_success:
+                print(f"   ✅ Document downloaded successfully")
+            
+            return success and unlock_success and unlock_backup_success and download_success
+        
+        return success
 
     def test_messages(self):
         """Test milestone messages"""
