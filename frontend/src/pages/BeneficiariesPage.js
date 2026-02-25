@@ -18,6 +18,7 @@ import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
 import { toast } from 'sonner';
+import { SectionLockBanner } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -161,6 +162,9 @@ const BeneficiariesPage = () => {
           Add Beneficiary
         </Button>
       </div>
+
+      {/* Section Lock */}
+      <SectionLockBanner sectionId="beneficiaries" />
 
       {/* Invitation info */}
       <div className="rounded-xl p-3" style={{ background: 'rgba(37,99,235,0.04)', border: '1px solid rgba(37,99,235,0.1)' }}>
