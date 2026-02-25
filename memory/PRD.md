@@ -28,9 +28,12 @@ Build a secure estate planning and legacy management platform where benefactors 
 - **Backend**: FastAPI + MongoDB
 - **AI Integration**: OpenAI GPT-5.2 via Emergent LLM Key
 - **Auth**: JWT + OTP 2FA
+- **Email**: Resend (requires domain verification for production)
+- **Encryption**: AES-256 via Fernet (cryptography library)
 
-## What's Been Implemented (2026-02-25)
-### Backend
+## What's Been Implemented
+
+### Phase 1 (2026-02-25) - MVP
 - User authentication (login + OTP verification)
 - JWT token management
 - Estate CRUD operations
@@ -41,22 +44,16 @@ Build a secure estate planning and legacy management platform where benefactors 
 - Death certificate upload
 - Admin approval workflow
 - Estate Guardian AI chat
+- All portal pages (Benefactor, Beneficiary, Admin)
 
-### Frontend
-- Login page with OTP modal
-- Benefactor Dashboard (readiness gauge, stats, quick actions)
-- Document Vault (categories, lock overlays)
-- Milestone Messages page (create text/video messages)
-- Beneficiaries page
-- Estate Guardian AI chat interface
-- Action Checklist page
-- Trustee Services page
-- Estate Transition page
-- Settings page (theme toggle)
-- Beneficiary Hub page
-- Beneficiary Vault/Messages/Milestone pages
-- Admin Dashboard
-- Responsive sidebar & mobile navigation
+### Phase 2 (2026-02-25) - Security & Media Features
+- ✅ Document unlock with password/backup code verification
+- ✅ AES-256 file encryption for all uploaded documents
+- ✅ Backup code generation for locked documents
+- ✅ Video message storage and retrieval endpoints
+- ✅ Video playback in beneficiary messages view
+- ✅ Resend email integration for OTP delivery (requires domain verification)
+- ✅ Improved OTP input UX
 
 ## Test Accounts
 - Benefactor: pete@mitchell.com / password123
@@ -65,22 +62,22 @@ Build a secure estate planning and legacy management platform where benefactors 
 
 ## Prioritized Backlog
 
-### P0 (Critical)
+### P0 (Critical) - DONE
 - ✅ Complete authentication flow
 - ✅ All core features functional
+- ✅ Document encryption
+- ✅ Document unlock functionality
 
 ### P1 (High Priority)
-- Document download functionality
-- Video recording and playback
-- Document lock/unlock verification
-- Password/voice/backup unlock implementation
+- Verify custom domain for Resend email delivery
+- Voice verification integration (currently uses backup code fallback)
+- Document preview before download
 
 ### P2 (Medium Priority)
-- Email notifications for OTP
-- Real file encryption (AES-256)
 - Multi-estate support for benefactors
 - Estate timeline/activity log
 - Notification center
+- Push notifications (PWA)
 
 ### P3 (Future)
 - Payment gateway integration for Trustee Services
@@ -90,8 +87,7 @@ Build a secure estate planning and legacy management platform where benefactors 
 - PWA offline support
 
 ## Next Tasks
-1. Implement document unlock functionality
-2. Add video playback for recorded messages
+1. Verify domain in Resend for production email delivery
+2. Add document preview functionality
 3. Build notification system for transitions
-4. Add email delivery for OTP codes
-5. Implement file encryption at rest
+4. Implement voice verification API integration
