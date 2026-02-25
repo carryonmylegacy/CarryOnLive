@@ -5,85 +5,38 @@ Build a secure estate planning and legacy management platform where benefactors 
 
 ## What's Been Implemented
 
-### Phase 1 - MVP (Complete)
-- Authentication with email/password + OTP 2FA
-- Enhanced Signup Form (First/Middle/Last name, suffix, gender)
-- Benefactor Dashboard with readiness gauge
-- Document Vault with categorized uploads and lock overlays
-- Milestone Messages (text/video with triggers)
-- Beneficiary Manager
-- Estate Guardian AI Chat (OpenAI GPT-5.2)
-- Immediate Action Checklist
-- Trustee Services plans
-- Estate Transition with death certificate upload
-- Admin review workflow
-- Beneficiary Portal (post-transition)
-- Dark/Light theme toggle
-- Mobile-responsive design
+### Phases 1-5: Core MVP + Design (Complete)
+- Auth with OTP 2FA, Document Vault (AES-256), Milestone Messages, Beneficiary Manager
+- Estate Guardian AI (50-state law), Checklist, Estate Transition, Admin review
+- Multi-estate, Activity timeline, Notifications, Dark/Light theme, Mobile/PWA
 
-### Phase 2 - Security & Media (Complete)
-- AES-256 file encryption, backup codes, voice passphrase
-- Video message storage and playback
-- Resend email integration for OTP
+### Phase 6: Estate Readiness Score Algorithm (Complete)
+- Documents, Messages, Checklist scoring with auto-recalculation
 
-### Phase 3-4 - Features (Complete)
-- Document preview, voice verification (Web Speech API)
-- Multi-estate support, activity timeline, notification center
+### Phase 7: Smart Estate Guardian AI (Complete)
+- Vault analysis, checklist auto-population, readiness analysis, legal disclaimer
 
-### Phase 5 - Design System Update (Complete)
-- Full UI redesign, dark/light theme, Swiss chronometer gauge, mobile/PWA layout
+### Phase 8: Dashboard + UI Refinements (Complete)
+- Checklist preview card, color-coded previews, darker vault blue
+- Sidebar nav buttons with solid borders, synchronized hover effects
+- Dark navy background, light blue light-mode, sidebar theme adaptation
 
-### Phase 6 - Estate Readiness Score Algorithm (Complete - Feb 2025)
-- Documents Score: 5 required legal docs with fuzzy name matching
-- Messages Score: Milestone-based per beneficiary (age/relation/gender)
-- Checklist Score: 25+ items required, completion tracking
-- Overall Score: Average of 3 categories
+### Phase 9: HTML Prototype Alignment (In Progress - Feb 2025)
+- **Burger menu fixed:** Removed double X close button, added 7/8ths width divider lines between items
+- **Renamed:** "Trustee Services" → "Designated Trustee Services" in all nav
+- **Settings pricing:** Added 6 subscription tiers from prototype (Premium $8.99, Standard $7.99, Base $6.99, New Adult $3.99, Military/FR $5.99, Hospice Free) with billing toggle
+- **Estate Guardian disclaimer:** Added UPL legal disclaimer from prototype
 
-### Phase 7 - Smart Estate Guardian AI (Complete - Feb 2025)
-- 50-state estate law expertise system prompt
-- Document Vault analysis with PDF text extraction (pdfplumber)
-- AI Checklist auto-population from vault analysis
-- Readiness Score analysis with state-specific recommendations
-
-### Phase 8 - Dashboard UI Refinements (Complete - Feb 2025)
-- **Checklist Preview Card:** Added "most recent" summary card for Immediate Action Checklist alongside Vault and Messages previews (3-column grid)
-- **Color-Coded Preview Cards:** Each preview card has a colored left border, matching icon, and matching link color: Vault=Blue (#2563eb), Messages=Purple (#8b5cf6), Checklist=Orange (#f97316)
-- **Darker Vault Blue:** Updated Secure Document Vault blue from #3b82f6 to #2563eb across all associated elements (stat cards, readiness dots, preview cards, activity timeline, Guardian AI)
-- **Sidebar Nav Enhancement:** Nav items enlarged to 15px font, 22px icons, 14px/18px padding, 12px border-radius, button-like styling with subtle borders and background
+## Remaining from Phase 9 (P0)
+- **Two-Level Section Security:** Password + voice + backup question locking for Vault, Messages, DTS, Beneficiaries, Checklist (from LOCKABLE in prototype)
+- **DTS Workflow:** Full Designated Trustee Services page rebuild with request creation, quoting, line item approval, credential vault, task lifecycle
+- **Section Disclaimers:** Pull remaining disclaimers/instructions from HTML into Vault, Checklist, Messages, Beneficiaries pages
 
 ## Test Accounts
 - Benefactor: pete@mitchell.com / password123
-- Beneficiary: penny@mitchell.com / password123
-- Admin: admin@carryon.com / admin123
 - OTP: `tail -n 5 /var/log/supervisor/backend.err.log | grep -oP 'OTP for.*: \\K\\d+' | tail -1`
-
-## Architecture
-```
-/app/backend/server.py - FastAPI (all routes, models, AI logic)
-/app/frontend/src/pages/DashboardPage.js - Readiness gauge + preview cards
-/app/frontend/src/pages/GuardianPage.js - AI chat with action buttons
-/app/frontend/src/index.css - Design system, nav styles, card colors
-/app/frontend/src/components/layout/Sidebar.js - Navigation
-```
-
-## Remaining Backlog
-
-### P1
-- Voice Verification - real voice recognition API (MOCKED)
-- Push Notifications - PWA features
-- Beneficiary email invitation flow
-
-### P2
-- PDF export, enhanced beneficiary onboarding
-
-### P3
-- Stripe for Trustee Services, digital asset management, PWA offline
-
-### Refactoring
-- Split server.py into routes/models/services
-- Break down VaultPage.js
 
 ## Mocked Features
 - Voice Verification: Always returns success
-- Death Certificate Verification: Stub (admin approval always works)
-- Trustee Services: UI only
+- Death Certificate Verification: Stub
+- Designated Trustee Services: Needs full rebuild from prototype
