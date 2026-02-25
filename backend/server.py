@@ -776,6 +776,16 @@ async def create_beneficiary(data: BeneficiaryCreate, current_user: dict = Depen
             {"$addToSet": {"beneficiaries": existing_user["id"]}}
         )
     
+    # Log activity
+    await log_activity(
+        estate_id=data.estate_id,
+        user_id=current_user["id"],
+        user_name=current_user["name"],
+        action="beneficiary_added",
+        description=f"Added beneficiary: {data.name} ({data.relation})",
+        metadata={"beneficiary_name": data.name, "relation": data.relation}
+    )
+    
     return beneficiary
 
 @api_router.delete("/beneficiaries/{beneficiary_id}")
