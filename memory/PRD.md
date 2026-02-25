@@ -45,40 +45,82 @@ Build a secure estate planning and legacy management platform where benefactors 
 - Activity logging for documents, messages, beneficiaries
 - Notification center with unread count badge
 
-### Phase 5 - Design System Update (Feb 2025)
-- Updated color palette to match original HTML prototype:
-  - Background: #08090F (darker)
-  - Gold accent: #E0AD2B
-  - Text hierarchy: #F1F3F8, #A0AABF, #7B879E, #525C72
-  - Blue links: #7AABFD
-- Updated component styling:
-  - Glass-card with 18px border-radius and backdrop-blur
-  - Input fields with 11px border-radius
-  - Gold gradient buttons
-- Updated Login page with two-line tagline display
-- Created design_guidelines.json for design system reference
-- **Integrated Official CarryOn Logos:**
-  - App icon (favicon): carryon-icon.jpg
-  - Platform screens logo: carryon-logo.jpg (replaces Shield icon)
+### Phase 5 - Design System Update (Feb 2025) - COMPLETE
+- **Full UI Redesign to Match HTML Prototype:**
+  - Updated color palette:
+    - Background: #08090F (primary), #0D1018 (secondary), #12151F (tertiary)
+    - Gold accent: #E0AD2B (primary), #F0C95C (secondary)
+    - Text hierarchy: #F1F3F8, #D8DEE9, #A0AABF, #7B879E, #525C72
+    - Blue accent: #3B7BF7
+    - Green accent: #22C993
+    - Purple accent: #8B5CF6
+  - **Sidebar Redesign:**
+    - Gradient background
+    - Two navigation sections: "MY LEGACY" and "ACCOUNT"
+    - Gold highlighting for active nav items with left border indicator
+    - User avatar and info in footer
+    - Dark/Light mode toggle
+  - **Dashboard Redesign:**
+    - Bento grid layout
+    - Circular readiness gauge with score
+    - Quick action cards (Upload Document, Create Message, Add Beneficiary, Ask Guardian)
+    - Checklist preview with progress bar
+    - Activity timeline
+    - Security badge footer
+  - **Component Updates:**
+    - Glass-morphic cards with backdrop blur
+    - Updated button styles (primary blue, gold accent, secondary)
+    - Input fields with proper styling
+    - Progress bars with gold gradient
+  - **Official Logo Integration:**
+    - App icon (favicon): carryon-icon.jpg
+    - Platform screens logo: carryon-logo.jpg
 
 ## Test Accounts
 - Benefactor: pete@mitchell.com / password123
 - Beneficiary: penny@mitchell.com / password123
 - Admin: admin@carryon.com / admin123
+- OTP: Check backend logs `tail -1 /var/log/supervisor/backend.err.log | grep -oP 'OTP for.*: \K\d+'`
+
+## Architecture
+```
+/app/
+├── backend/
+│   ├── server.py (FastAPI with all routes and models)
+│   ├── requirements.txt
+│   └── .env (MONGO_URL, DB_NAME, RESEND_API_KEY, OPENAI_API_KEY)
+├── frontend/
+│   ├── src/
+│   │   ├── pages/ (Login, Signup, Dashboard, Vault, Messages, etc.)
+│   │   ├── components/ (layout/Sidebar, layout/MobileNav, ui/*)
+│   │   ├── contexts/ (AuthContext, ThemeContext)
+│   │   ├── index.css (Design system with CSS variables)
+│   │   └── App.js (Routing)
+│   └── public/
+│       ├── carryon-logo.jpg
+│       └── carryon-icon.jpg
+└── design_guidelines.json (Design system reference)
+```
 
 ## Remaining Backlog
 
 ### P1 - Next Up
-- Propagate design updates to Dashboard and other internal pages
 - Voice Verification - Integrate real voice recognition API (currently MOCKED)
 - Push Notifications - Implement PWA features
+- Beneficiary email invitation flow
 
 ### P2
-- Multi-estate Support for Benefactors - Create multiple estates
+- PDF export for estate summary
+- Enhanced beneficiary onboarding
 
 ### P3
 - Payment gateway for Trustee Services (Stripe)
-- Digital asset management
+- Digital asset management (crypto wallets, social media)
 - Family mediation scheduling
 - Annual estate review reminders
 - PWA offline support
+
+## Mocked Features
+- **Voice Verification**: Always returns success
+- **Death Certificate Verification**: Stub implementation (admin approval always works)
+- **Trustee Services**: UI only, no actual payment integration
