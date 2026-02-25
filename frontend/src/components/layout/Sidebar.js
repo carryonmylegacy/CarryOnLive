@@ -144,16 +144,20 @@ const Sidebar = () => {
         {getNavSections().map((section, idx) => (
           <div key={idx} className="nav-section">
             <div className="nav-section-title">{section.title}</div>
-            {section.items.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
-              >
-                <item.icon />
-                <span>{item.label}</span>
-              </NavLink>
+            {section.items.map((item, itemIdx) => (
+              <React.Fragment key={item.to}>
+                <NavLink
+                  to={item.to}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                  data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                >
+                  <item.icon />
+                  <span>{item.label}</span>
+                </NavLink>
+                {itemIdx < section.items.length - 1 && (
+                  <div className="nav-divider" />
+                )}
+              </React.Fragment>
             ))}
           </div>
         ))}
