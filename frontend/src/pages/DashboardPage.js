@@ -99,36 +99,31 @@ const DashboardPage = () => {
               <stop offset="75%" stopColor="#84cc16" />
               <stop offset="100%" stopColor="#22c55e" />
             </linearGradient>
+            
+            {/* Blur filter for outer glow */}
+            <filter id="gaugeBlur" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="6" />
+            </filter>
           </defs>
           
-          {/* Outer faded arc (larger, more transparent) */}
+          {/* Blurred outer glow arc */}
           <path
-            d="M 8 100 A 92 92 0 0 1 192 100"
+            d="M 20 100 A 80 80 0 0 1 180 100"
             fill="none"
             stroke="url(#gaugeGradient)"
-            strokeWidth="12"
+            strokeWidth="35"
             strokeLinecap="round"
-            opacity="0.2"
+            filter="url(#gaugeBlur)"
+            opacity="0.6"
           />
           
-          {/* Middle arc (medium opacity) */}
+          {/* Main solid rainbow arc */}
           <path
-            d="M 15 100 A 85 85 0 0 1 185 100"
-            fill="none"
-            stroke="url(#gaugeGradient)"
-            strokeWidth="18"
-            strokeLinecap="round"
-            opacity="0.4"
-          />
-          
-          {/* Main solid rainbow arc (inner, full opacity) */}
-          <path
-            d="M 25 100 A 75 75 0 0 1 175 100"
+            d="M 20 100 A 80 80 0 0 1 180 100"
             fill="none"
             stroke="url(#gaugeGradient)"
             strokeWidth="28"
             strokeLinecap="round"
-            opacity="1"
           />
           
           {/* Needle */}
