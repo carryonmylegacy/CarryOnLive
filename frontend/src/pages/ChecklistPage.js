@@ -14,6 +14,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Progress } from '../components/ui/progress';
 import { toast } from 'sonner';
+import { SectionLockBanner } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -113,6 +114,9 @@ const ChecklistPage = () => {
           </p>
         </div>
       </div>
+
+      {/* Section Lock */}
+      <SectionLockBanner sectionId="checklist" />
 
       {/* Benefactor View info box - from prototype */}
       <div className="rounded-xl p-4" style={{ background: 'rgba(37,99,235,0.05)', border: '1px solid rgba(37,99,235,0.1)' }}>
