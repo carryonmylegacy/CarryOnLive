@@ -757,6 +757,11 @@ const VaultPage = () => {
         if (!open) {
           setUnlockPassword('');
           setUnlockBackupCode('');
+          setSpokenText('');
+          setIsListening(false);
+          if (recognitionRef.current) {
+            recognitionRef.current.stop();
+          }
         }
       }}>
         <DialogContent className="glass-card border-white/10 sm:max-w-md">
@@ -766,7 +771,7 @@ const VaultPage = () => {
             </DialogTitle>
             <DialogDescription className="text-[#94a3b8]">
               {selectedDoc?.lock_type === 'password' && 'Enter the password to access this document'}
-              {selectedDoc?.lock_type === 'voice' && 'Voice verification not available. Use backup code.'}
+              {selectedDoc?.lock_type === 'voice' && 'Speak your passphrase or use backup code'}
               {selectedDoc?.lock_type === 'backup' && 'Enter your backup code'}
             </DialogDescription>
           </DialogHeader>
@@ -794,9 +799,79 @@ const VaultPage = () => {
               </div>
             )}
             
+            {selectedDoc?.lock_type === 'voice' && (
+              <div className="space-y-4">
+                <div className="p-4 bg-white/5 rounded-xl text-center">
+                  <div className="flex justify-center mb-3">
+                    <button
+                      onClick={isListening ? stopVoiceRecognition : startVoiceRecognition}
+                      className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${
+                        isListening 
+                          ? 'bg-[#ef4444] animate-pulse' 
+                          : 'bg-[#d4af37]/20 hover:bg-[#d4af37]/30'
+                      }`}
+                    >
+                      {isListening ? (
+                        <MicOff className="w-8 h-8 text-white" />
+                      ) : (
+                        <Mic className="w-8 h-8 text-[#d4af37]" />
+                      )}
+                    </button>
+                  </div>
+                  
+                  <p className="text-white text-sm">
+                    {isListening ? 'Listening... Speak now' : 'Click to start voice recognition'}
+                  </p>
+                  
+                  {voiceHint && (
+                    <p className="text-[#64748b] text-xs mt-2">
+                      Hint: "{voiceHint}"
+                    </p>
+                  )}
+                  
+                  {spokenText && (
+                    <div className="mt-3 p-2 bg-[#0b1120] rounded-lg">
+                      <p className="text-[#94a3b8] text-xs">Heard:</p>
+                      <p className="text-white">{spokenText}</p>
+                    </div>
+                  )}
+                </div>
+                
+                {spokenText && (
+                  <Button 
+                    onClick={verifyVoice}
+                    disabled={unlocking}
+                    className="gold-button w-full"
+                  >
+                    {unlocking ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Verifying...
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 className="w-5 h-5 mr-2" />
+                        Verify Voice
+                      </>
+                    )}
+                  </Button>
+                )}
+                
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-white/10"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-[#0f1d35] px-2 text-[#64748b]">Or use backup code</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="space-y-2">
               <Label className="text-[#94a3b8]">
-                {selectedDoc?.lock_type === 'password' ? 'Or use Backup Code' : 'Backup Code'}
+                {selectedDoc?.lock_type === 'password' ? 'Or use Backup Code' : 
+                 selectedDoc?.lock_type === 'voice' ? 'Backup Code' : 'Backup Code'}
               </Label>
               <Input
                 type="text"
@@ -817,24 +892,46 @@ const VaultPage = () => {
             >
               Cancel
             </Button>
-            <Button 
-              onClick={handleUnlock}
-              disabled={unlocking || (!unlockPassword && !unlockBackupCode)}
-              className="gold-button"
-              data-testid="unlock-submit-button"
-            >
-              {unlocking ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Unlocking...
-                </>
-              ) : (
-                <>
-                  <Unlock className="w-5 h-5 mr-2" />
-                  Unlock & Download
-                </>
-              )}
-            </Button>
+            {selectedDoc?.lock_type !== 'voice' && (
+              <Button 
+                onClick={handleUnlock}
+                disabled={unlocking || (!unlockPassword && !unlockBackupCode)}
+                className="gold-button"
+                data-testid="unlock-submit-button"
+              >
+                {unlocking ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Unlocking...
+                  </>
+                ) : (
+                  <>
+                    <Unlock className="w-5 h-5 mr-2" />
+                    Unlock & Download
+                  </>
+                )}
+              </Button>
+            )}
+            {selectedDoc?.lock_type === 'voice' && unlockBackupCode && (
+              <Button 
+                onClick={handleUnlock}
+                disabled={unlocking}
+                className="gold-button"
+                data-testid="unlock-submit-button"
+              >
+                {unlocking ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Unlocking...
+                  </>
+                ) : (
+                  <>
+                    <Unlock className="w-5 h-5 mr-2" />
+                    Unlock with Backup
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </DialogContent>
       </Dialog>
