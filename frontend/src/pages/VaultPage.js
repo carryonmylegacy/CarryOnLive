@@ -440,17 +440,17 @@ const VaultPage = () => {
   return (
     <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in" data-testid="document-vault">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>
             Document Vault
           </h1>
-          <p className="text-[#94a3b8] mt-1">
+          <p className="text-[#94a3b8] mt-1 text-sm sm:text-base">
             Securely store and organize your important documents
           </p>
         </div>
         <Button
-          className="gold-button"
+          className="gold-button w-full sm:w-auto"
           onClick={() => setShowUploadModal(true)}
           data-testid="upload-document-button"
         >
@@ -461,7 +461,8 @@ const VaultPage = () => {
 
       {/* Category Tabs */}
       <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-        <TabsList className="bg-white/5 p-1">
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <TabsList className="bg-white/5 p-1 w-max sm:w-auto">
           {categories.map((cat) => (
             <TabsTrigger
               key={cat.id}
