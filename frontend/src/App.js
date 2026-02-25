@@ -20,8 +20,11 @@ import AdminPage from './pages/AdminPage';
 
 // Beneficiary Pages
 import BeneficiaryHubPage from './pages/beneficiary/BeneficiaryHubPage';
+import PreTransitionPage from './pages/beneficiary/PreTransitionPage';
+import BeneficiaryDashboardPage from './pages/beneficiary/BeneficiaryDashboardPage';
 import BeneficiaryVaultPage from './pages/beneficiary/BeneficiaryVaultPage';
 import BeneficiaryMessagesPage from './pages/beneficiary/BeneficiaryMessagesPage';
+import BeneficiaryChecklistPage from './pages/beneficiary/BeneficiaryChecklistPage';
 import MilestoneReportPage from './pages/beneficiary/MilestoneReportPage';
 
 // Layout
@@ -118,8 +121,11 @@ function AppRoutes() {
         </ProtectedRoute>
       }>
         <Route path="/beneficiary" element={<BeneficiaryHubPage />} />
+        <Route path="/beneficiary/pre" element={<PreTransitionPage />} />
+        <Route path="/beneficiary/dashboard" element={<BeneficiaryDashboardPage />} />
         <Route path="/beneficiary/vault" element={<BeneficiaryVaultPage />} />
         <Route path="/beneficiary/messages" element={<BeneficiaryMessagesPage />} />
+        <Route path="/beneficiary/checklist" element={<BeneficiaryChecklistPage />} />
         <Route path="/beneficiary/milestone" element={<MilestoneReportPage />} />
       </Route>
 
