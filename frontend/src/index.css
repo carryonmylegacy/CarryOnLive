@@ -99,36 +99,72 @@
 
 @layer components {
     .glass-card {
-        @apply bg-[#0f1d35]/60 backdrop-blur-xl border border-white/10 shadow-xl rounded-2xl;
+        background: rgba(13, 16, 24, 0.6);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 18px;
+        box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
     }
     
     .glass-nav {
-        @apply bg-[#0b1120]/80 backdrop-blur-md border-b border-white/5;
+        @apply bg-[#08090F]/80 backdrop-blur-md border-b border-white/5;
     }
     
     .gold-glow {
-        box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
+        box-shadow: 0 0 30px rgba(224, 173, 43, 0.25);
     }
     
     .gold-button {
-        @apply bg-[#d4af37] text-[#0b1120] hover:bg-[#b8960c] font-semibold rounded-full px-8 py-3 transition-all hover:scale-105 active:scale-95;
-        box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+        background: linear-gradient(135deg, #E0AD2B 0%, #F0C95C 100%);
+        color: #08090F;
+        font-weight: 600;
+        border-radius: 9999px;
+        padding: 12px 32px;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 15px rgba(224, 173, 43, 0.3);
+    }
+    
+    .gold-button:hover {
+        filter: brightness(110%);
+        box-shadow: 0 0 25px rgba(224, 173, 43, 0.4);
+        transform: scale(1.02);
+    }
+    
+    .gold-button:active {
+        transform: scale(0.98);
     }
     
     .secondary-button {
-        @apply bg-white/5 text-white hover:bg-white/10 border border-white/10 rounded-full px-6 py-2 backdrop-blur-sm transition-all;
+        @apply bg-white/5 text-white hover:bg-white/10 border border-white/[0.07] rounded-full px-6 py-2 backdrop-blur-sm transition-all;
     }
     
     .input-field {
-        @apply bg-[#0b1120]/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:border-[#d4af37]/50 focus:ring-1 focus:ring-[#d4af37]/50 transition-all outline-none w-full;
+        background: rgba(255, 255, 255, 0.035);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 11px;
+        padding: 12px 16px;
+        color: #F1F3F8;
+        width: 100%;
+        outline: none;
+        transition: all 0.2s ease;
+    }
+    
+    .input-field::placeholder {
+        color: #525C72;
+    }
+    
+    .input-field:focus {
+        border-color: #E0AD2B;
+        box-shadow: 0 0 0 1px rgba(224, 173, 43, 0.5);
     }
     
     .sidebar-link {
-        @apply flex items-center gap-3 px-4 py-3 rounded-xl text-[#94a3b8] hover:text-white hover:bg-white/5 transition-all;
+        @apply flex items-center gap-3 px-4 py-3 rounded-xl text-[#A0AABF] hover:text-white hover:bg-white/5 transition-all;
     }
     
     .sidebar-link.active {
-        @apply text-white bg-[#d4af37]/10 border-l-2 border-[#d4af37];
+        @apply text-white bg-[#E0AD2B]/10 border-l-2 border-[#E0AD2B];
     }
     
     .progress-arc {
