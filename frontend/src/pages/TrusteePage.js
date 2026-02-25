@@ -270,7 +270,7 @@ const TrusteePage = () => {
 
   // === CREATE NEW REQUEST ===
   if (view === 'create') {
-    const steps = ['Task Type', 'Instructions', 'Confidentiality', 'Submit'];
+    const steps = ['Beneficiary', 'Task Type', 'Instructions', 'Confidentiality', 'Submit'];
     return (
       <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="dts-create">
         <Button variant="outline" size="sm" className="border-[var(--b)] text-[var(--t3)]" onClick={() => { setView('list'); setCreateStep(0); }}>
@@ -292,8 +292,53 @@ const TrusteePage = () => {
         </div>
 
         <Card className="glass-card"><CardContent className="p-5 lg:p-8">
-          {/* Step 0: Task Type */}
+          {/* Step 0: Beneficiary Selection (optional) */}
           {createStep === 0 && (<>
+            <h3 className="text-lg font-bold text-[var(--t)] mb-2">Who is this task related to?</h3>
+            <p className="text-sm text-[var(--t4)] mb-4">Select a beneficiary this task involves, or skip if it's not related to a specific person.</p>
+            <div className="space-y-2 mb-4">
+              <div
+                onClick={() => setNewTask(p => ({ ...p, beneficiary: '' }))}
+                className={`flex items-center gap-3 p-4 rounded-xl cursor-pointer transition-all ${
+                  newTask.beneficiary === '' ? 'border-2 border-[var(--gold)]' : 'border border-[var(--b)]'
+                }`}
+                style={{ background: newTask.beneficiary === '' ? 'rgba(224,173,43,0.06)' : 'var(--s)' }}
+              >
+                <div className="w-10 h-10 rounded-full bg-[var(--s)] flex items-center justify-center text-[var(--t4)]">
+                  <Shield className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="font-bold text-[var(--t)]">No specific beneficiary</div>
+                  <div className="text-xs text-[var(--t4)]">General task not tied to a person</div>
+                </div>
+              </div>
+              {beneficiaries.map(ben => (
+                <div
+                  key={ben.id}
+                  onClick={() => setNewTask(p => ({ ...p, beneficiary: ben.name }))}
+                  className={`flex items-center gap-3 p-4 rounded-xl cursor-pointer transition-all ${
+                    newTask.beneficiary === ben.name ? 'border-2 border-[var(--gold)]' : 'border border-[var(--b)]'
+                  }`}
+                  style={{ background: newTask.beneficiary === ben.name ? 'rgba(224,173,43,0.06)' : 'var(--s)' }}
+                >
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm"
+                    style={{ backgroundColor: ben.avatar_color + '30', color: ben.avatar_color }}
+                  >
+                    {ben.initials || ben.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="font-bold text-[var(--t)]">{ben.name}</div>
+                    <div className="text-xs text-[var(--t4)]">{ben.relation}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Button className="gold-button w-full" onClick={() => setCreateStep(1)}>Continue <ChevronRight className="w-4 h-4 ml-1" /></Button>
+          </>)}
+
+          {/* Step 1: Task Type */}
+          {createStep === 1 && (<>
             <h3 className="text-lg font-bold text-[var(--t)] mb-4">What type of task?</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {Object.entries(typeConfig).map(([key, cfg]) => (
