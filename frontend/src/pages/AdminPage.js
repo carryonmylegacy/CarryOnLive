@@ -68,7 +68,7 @@ const AdminPage = () => {
 
   if (user?.role !== 'admin') {
     return (
-      <div className="p-6 animate-fade-in">
+      <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 animate-fade-in">
         <Card className="glass-card">
           <CardContent className="p-12 text-center">
             <Shield className="w-16 h-16 mx-auto text-[#ef4444] mb-4" />
@@ -84,7 +84,7 @@ const AdminPage = () => {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6">
         <Skeleton className="h-12 w-64 bg-white/5" />
         <div className="space-y-4">
           {[1, 2, 3].map(i => (
@@ -96,7 +96,7 @@ const AdminPage = () => {
   }
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in" data-testid="admin-dashboard">
+    <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in" data-testid="admin-dashboard">
       {/* Header */}
       <div className="flex items-center gap-4">
         <div className="w-12 h-12 rounded-xl bg-[#d4af37]/20 flex items-center justify-center">
