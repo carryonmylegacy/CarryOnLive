@@ -26,6 +26,8 @@ import BeneficiaryVaultPage from './pages/beneficiary/BeneficiaryVaultPage';
 import BeneficiaryMessagesPage from './pages/beneficiary/BeneficiaryMessagesPage';
 import BeneficiaryChecklistPage from './pages/beneficiary/BeneficiaryChecklistPage';
 import MilestoneReportPage from './pages/beneficiary/MilestoneReportPage';
+import UploadCertificatePage from './pages/beneficiary/UploadCertificatePage';
+import CondolencePage from './pages/beneficiary/CondolencePage';
 
 // Layout
 import DashboardLayout from './components/layout/DashboardLayout';
@@ -128,6 +130,14 @@ function AppRoutes() {
         <Route path="/beneficiary/checklist" element={<BeneficiaryChecklistPage />} />
         <Route path="/beneficiary/milestone" element={<MilestoneReportPage />} />
       </Route>
+
+      {/* Beneficiary Full-Screen Routes (no sidebar) */}
+      <Route path="/beneficiary/upload-certificate" element={
+        <ProtectedRoute allowedRoles={['beneficiary']}><UploadCertificatePage /></ProtectedRoute>
+      } />
+      <Route path="/beneficiary/condolence" element={
+        <ProtectedRoute allowedRoles={['beneficiary']}><CondolencePage /></ProtectedRoute>
+      } />
 
       {/* Admin Routes */}
       <Route element={
