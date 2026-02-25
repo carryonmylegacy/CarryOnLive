@@ -89,6 +89,11 @@ function AppRoutes() {
           <LoginPage />
         </PublicRoute>
       } />
+      <Route path="/signup" element={
+        <PublicRoute>
+          <SignupPage />
+        </PublicRoute>
+      } />
 
       {/* Benefactor Routes */}
       <Route element={
