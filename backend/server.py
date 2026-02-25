@@ -136,6 +136,8 @@ class Document(BaseModel):
     lock_type: Optional[str] = None  # password, voice, backup
     lock_password_hash: Optional[str] = None  # Hashed password for password lock
     backup_code: Optional[str] = None  # Backup unlock code
+    voice_passphrase_hash: Optional[str] = None  # Hashed voice passphrase
+    voice_passphrase_hint: Optional[str] = None  # Hint for voice passphrase
     is_encrypted: bool = True  # Whether file data is encrypted
     uploaded_by: str
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
