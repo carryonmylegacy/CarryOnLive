@@ -1093,6 +1093,8 @@ async def create_beneficiary(data: BeneficiaryCreate, current_user: dict = Depen
         relation=data.relation,
         email=data.email,
         phone=data.phone,
+        date_of_birth=data.date_of_birth,
+        gender=data.gender,
         avatar_color=data.avatar_color,
         initials=initials
     )
@@ -1750,31 +1752,19 @@ async def get_chat_history(session_id: str, current_user: dict = Depends(get_cur
 # ===================== HELPER FUNCTIONS =====================
 
 async def update_estate_readiness(estate_id: str):
-    """Calculate and update estate readiness score"""
-    # Count completed checklist items
-    total_items = await db.checklists.count_documents({"estate_id": estate_id})
-    completed_items = await db.checklists.count_documents({"estate_id": estate_id, "is_completed": True})
-    
-    # Count documents
-    doc_count = await db.documents.count_documents({"estate_id": estate_id})
-    
-    # Count beneficiaries
-    beneficiary_count = await db.beneficiaries.count_documents({"estate_id": estate_id})
-    
-    # Count messages
-    message_count = await db.messages.count_documents({"estate_id": estate_id})
-    
-    # Calculate score (weighted)
-    checklist_score = (completed_items / max(total_items, 1)) * 40
-    doc_score = min(doc_count * 10, 30)
-    beneficiary_score = min(beneficiary_count * 5, 15)
-    message_score = min(message_count * 5, 15)
-    
-    total_score = int(checklist_score + doc_score + beneficiary_score + message_score)
+    """Calculate and update estate readiness score using the detailed algorithm"""
+    result = await calculate_estate_readiness(estate_id)
     
     await db.estates.update_one(
         {"id": estate_id},
-        {"$set": {"readiness_score": min(total_score, 100)}}
+        {"$set": {
+            "readiness_score": result["overall_score"],
+            "readiness_breakdown": {
+                "documents": result["documents"],
+                "messages": result["messages"],
+                "checklist": result["checklist"]
+            }
+        }}
     )
 
 # ===================== STARTUP =====================
