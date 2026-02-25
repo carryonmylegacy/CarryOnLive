@@ -1,160 +1,134 @@
 {
+  "identity": {
+    "name": "CarryOn™",
+    "archetype": "Jewel & Luxury (Legacy Edition)",
+    "tone": "Secure, Premium, Trustworthy, Timeless",
+    "mission": "Secure estate planning and legacy management for American families."
+  },
   "typography": {
-    "font_family": {
-      "headings": "Outfit, sans-serif",
-      "body": "DM Sans, sans-serif",
-      "mono": "JetBrains Mono, monospace"
+    "headings": {
+      "family": "Outfit, sans-serif",
+      "weights": ["500", "600", "700"],
+      "usage": "All headings (h1-h6), Hero text, Feature titles"
     },
-    "weights": {
-      "light": 300,
-      "regular": 400,
-      "medium": 500,
-      "semibold": 600,
-      "bold": 700
+    "body": {
+      "family": "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      "weights": ["400", "500"],
+      "usage": "Paragraphs, inputs, labels, buttons"
     },
-    "sizes": {
-      "h1": "text-4xl md:text-6xl tracking-tight font-bold",
-      "h2": "text-3xl md:text-5xl tracking-tight font-semibold",
-      "h3": "text-2xl md:text-3xl font-semibold",
-      "body_lg": "text-lg leading-relaxed",
-      "body_base": "text-base leading-relaxed",
-      "caption": "text-sm text-muted-foreground uppercase tracking-widest"
-    },
-    "imports": [
-      "https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap"
-    ]
+    "special": {
+      "benefactor_label": {
+        "letter_spacing": "0.05em",
+        "case": "uppercase",
+        "size": "text-xs or text-sm"
+      }
+    }
   },
   "colors": {
     "palette": {
-      "primary": {
-        "DEFAULT": "#d4af37",
-        "foreground": "#0b1120",
-        "hover": "#b8960c",
-        "light": "#fcd34d"
-      },
       "background": {
-        "DEFAULT": "#0b1120",
-        "secondary": "#0f1d35",
-        "tertiary": "#1e293b"
+        "primary": "#08090F",
+        "secondary": "#0D1018",
+        "tertiary": "#12151F"
       },
-      "surface": {
-        "glass": "rgba(15, 29, 53, 0.6)",
-        "glass_border": "rgba(255, 255, 255, 0.08)"
+      "accent": {
+        "gold_primary": "#E0AD2B",
+        "gold_secondary": "#F0C95C",
+        "gold_gradient_start": "#E0AD2B",
+        "gold_gradient_end": "#F0C95C"
       },
       "text": {
-        "primary": "#f8fafc",
-        "secondary": "#94a3b8",
-        "muted": "#64748b"
+        "primary": "#F1F3F8",
+        "secondary": "#A0AABF",
+        "tertiary": "#7B879E",
+        "quaternary": "#525C72"
       },
-      "status": {
-        "success": "#10b981",
-        "warning": "#f59e0b",
-        "error": "#ef4444",
-        "info": "#3b82f6"
+      "border": {
+        "subtle": "rgba(255, 255, 255, 0.07)",
+        "highlight": "rgba(255, 255, 255, 0.15)"
       }
     },
     "gradients": {
-      "gold_rush": "bg-gradient-to-r from-[#d4af37] to-[#fcd34d]",
-      "deep_ocean": "bg-gradient-to-b from-[#0b1120] to-[#0f1d35]",
-      "glass_shine": "bg-gradient-to-br from-white/10 to-transparent"
+      "gold_button": "linear-gradient(135deg, #E0AD2B 0%, #F0C95C 100%)",
+      "dark_overlay": "linear-gradient(to bottom, rgba(8,9,15,0) 0%, rgba(8,9,15,0.8) 100%)"
     }
   },
-  "visual_enhancers": {
-    "glassmorphism": {
-      "card": "bg-[#0f1d35]/60 backdrop-blur-xl border border-white/10 shadow-xl",
-      "overlay": "bg-black/40 backdrop-blur-sm",
-      "nav": "bg-[#0b1120]/80 backdrop-blur-md border-b border-white/5"
-    },
-    "borders": {
-      "subtle": "border border-white/5",
-      "highlight": "border border-[#d4af37]/30"
-    },
-    "shadows": {
-      "glow": "shadow-[0_0_20px_rgba(212,175,55,0.15)]",
-      "deep": "shadow-2xl shadow-black/50"
-    },
-    "radius": {
-      "card": "rounded-2xl",
-      "button": "rounded-full",
-      "input": "rounded-xl"
-    }
-  },
-  "component_guidelines": {
+  "components": {
     "buttons": {
-      "primary": "bg-[#d4af37] text-[#0b1120] hover:bg-[#b8960c] font-semibold rounded-full px-8 py-3 transition-all hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.3)]",
-      "secondary": "bg-white/5 text-white hover:bg-white/10 border border-white/10 rounded-full px-6 py-2 backdrop-blur-sm transition-all",
-      "ghost": "text-[#d4af37] hover:text-[#fcd34d] hover:bg-[#d4af37]/10 rounded-lg px-4 py-2"
-    },
-    "cards": {
-      "default": "bg-[#0f1d35]/50 backdrop-blur-md border border-white/5 rounded-2xl p-6 hover:border-white/10 transition-colors",
-      "interactive": "group cursor-pointer hover:bg-[#0f1d35]/70 transition-all hover:-translate-y-1 hover:shadow-xl"
+      "primary": {
+        "background": "linear-gradient(135deg, #E0AD2B 0%, #F0C95C 100%)",
+        "text_color": "#08090F",
+        "border_radius": "9999px",
+        "font_weight": "600",
+        "hover": "brightness(110%) shadow-[0_0_20px_rgba(224,173,43,0.4)]",
+        "transition": "all 0.3s ease"
+      },
+      "secondary": {
+        "background": "rgba(255, 255, 255, 0.05)",
+        "text_color": "#F1F3F8",
+        "border": "1px solid rgba(255, 255, 255, 0.07)",
+        "border_radius": "9999px",
+        "hover": "bg-white/10"
+      }
     },
     "inputs": {
-      "default": "bg-[#0b1120]/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:border-[#d4af37]/50 focus:ring-1 focus:ring-[#d4af37]/50 transition-all outline-none"
+      "background": "rgba(255, 255, 255, 0.03)",
+      "border": "1px solid rgba(255, 255, 255, 0.07)",
+      "border_radius": "11px",
+      "text_color": "#F1F3F8",
+      "placeholder_color": "#525C72",
+      "focus": "border-[#E0AD2B] ring-1 ring-[#E0AD2B]/50"
+    },
+    "cards": {
+      "background": "rgba(13, 16, 24, 0.6)",
+      "backdrop_filter": "blur(12px)",
+      "border": "1px solid rgba(255, 255, 255, 0.07)",
+      "border_radius": "18px",
+      "shadow": "0 4px 24px -1px rgba(0, 0, 0, 0.2)"
+    },
+    "readiness_gauge": {
+      "type": "donut_chart",
+      "colors": ["#E0AD2B", "rgba(255, 255, 255, 0.1)"],
+      "center_text": "Score"
     }
   },
-  "layout_strategies": {
-    "grid_system": {
-      "dashboard": "grid grid-cols-1 md:grid-cols-12 gap-6 p-6",
-      "bento_hero": "col-span-full md:col-span-8 row-span-2",
-      "bento_sidebar": "col-span-full md:col-span-4 row-span-2"
-    },
+  "layout": {
+    "grid_system": "Bento Grid (CSS Grid)",
     "spacing": {
-      "section_gap": "gap-8 md:gap-12",
-      "container_padding": "p-4 md:p-8 lg:p-12"
+      "container_padding": "p-6 md:p-12",
+      "gap": "gap-6"
     },
-    "navigation": {
-      "desktop": "fixed left-0 top-0 h-full w-64 border-r border-white/5 bg-[#0b1120]",
-      "mobile": "fixed bottom-0 left-0 w-full h-16 bg-[#0b1120]/90 backdrop-blur-lg border-t border-white/5 z-50 flex justify-around items-center"
+    "z_index": {
+      "modal": 50,
+      "dropdown": 40,
+      "sticky_nav": 30,
+      "default": 1
     }
   },
-  "motion": {
-    "transitions": {
-      "default": "transition-all duration-300 ease-out",
-      "slow": "transition-all duration-700 ease-in-out"
+  "assets": {
+    "images": {
+      "family_portrait": "https://images.unsplash.com/photo-1771924368785-c874f754c516",
+      "documents_bg": "https://images.unsplash.com/photo-1544377193-33dcf4d68fb5",
+      "gold_texture": "https://images.pexels.com/photos/11035543/pexels-photo-11035543.jpeg"
     },
-    "animations": {
-      "fade_in": "animate-in fade-in duration-500",
-      "slide_up": "animate-in slide-in-from-bottom-4 duration-500",
-      "pulse_glow": "animate-pulse"
+    "icons": {
+      "library": "lucide-react",
+      "style": "Stroke width 1.5px, Gold color (#E0AD2B) for active/primary icons"
     }
   },
-  "image_urls": {
-    "hero_background": {
-      "url": "https://images.unsplash.com/photo-1684827053611-ae9957102f3e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODF8MHwxfHNlYXJjaHwyfHxwZWFjZWZ1bCUyMHN1bnNldCUyMGxhbmRzY2FwZSUyMG1vdW50YWluc3xlbnwwfHx8fDE3NzIwMDE2MDF8MA&ixlib=rb-4.1.0&q=85",
-      "desc": "Peaceful lake and mountain sunset for login/landing background"
-    },
-    "benefactor_avatar": {
-      "url": "https://images.unsplash.com/photo-1758686253706-15c16f83743a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwyfHxoYXBweSUyMHNlbmlvciUyMGNvdXBsZSUyMHBvcnRyYWl0fGVufDB8fHx8MTc3MjAwMTYwM3ww&ixlib=rb-4.1.0&q=85",
-      "desc": "Loving senior couple for profile/dashboard placeholder"
-    },
-    "vault_abstract": {
-      "url": "https://images.unsplash.com/photo-1639152201978-931fd2ec8083?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA4Mzl8MHwxfHNlYXJjaHwxfHxmdXR1cmlzdGljJTIwc2VjdXJlJTIwZGlnaXRhbCUyMHZhdWx0JTIwYWJzdHJhY3R8ZW58MHx8fHwxNzcyMDAxNjA1fDA&ixlib=rb-4.1.0&q=85",
-      "desc": "Abstract digital block for vault section background"
-    },
-    "ai_guardian": {
-      "url": "https://images.unsplash.com/photo-1625314887424-9f190599bd56?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODF8MHwxfHNlYXJjaHwzfHxmcmllbmRseSUyMGFpJTIwYXNzaXN0YW50JTIwYXZhdGFyJTIwZnV0dXJpc3RpY3xlbnwwfHx8fDE3NzIwMDE2MDd8MA&ixlib=rb-4.1.0&q=85",
-      "desc": "Clean robot illustration for Estate Guardian AI chat"
-    }
-  },
-  "icons": {
-    "library": "lucide-react",
-    "style": "stroke-1.5"
-  },
-  "universal_guidelines": {
-    "anti_ai_rules": [
-      "Do not use generic centered layouts.",
-      "Avoid 'Inter' font for headings; use 'Outfit'.",
-      "Do not use full-screen gradients; use subtle noise or dark backgrounds.",
-      "Use 2-3x more spacing than typical designs.",
-      "Never use pure black (#000000); use tinted darks (#0b1120)."
-    ],
-    "accessibility": [
-      "Ensure text contrast ratio of 4.5:1.",
-      "Use data-testid on all interactive elements.",
-      "Respect prefers-reduced-motion."
-    ],
-    "theme_strategy": "Dark mode is the DEFAULT. Light mode is secondary. Design for dark first."
-  },
-  "instructions_to_main_agent": "You are building CarryOn™, a secure estate planning app. Follow the 'Jewel & Luxury' archetype. Use the provided image URLs for specific sections. Implement the 'Bento' grid for the dashboard. Use 'Outfit' for all headings and 'DM Sans' for body text. Prioritize glassmorphism and gold accents on dark navy backgrounds."
+  "instructions_to_main_agent": [
+    "UPDATE CSS VARIABLES: You MUST update /app/frontend/src/index.css to match the 'colors.palette' section exactly. The existing values are incorrect.",
+    "FONT INSTALLATION: Ensure 'Outfit' is imported from Google Fonts in index.css.",
+    "LOGIN/SIGNUP: Implement the 'Split Screen' layout. Left side: Branding/Tagline ('Every American Family.\\nReady.'). Right side: Form.",
+    "LOGO: Use the 'Shield' icon from lucide-react with a gold color (#E0AD2B) if the custom image is missing, but style it with a 'drop-shadow' to mimic the premium look.",
+    "TAGLINE: The tagline 'Every American Family. Ready.' must be broken into two lines as specified.",
+    "INPUTS: Enforce the 11px border-radius on all inputs. This is a specific design requirement.",
+    "TESTING: Add data-testid to all inputs (e.g., 'login-email', 'signup-password') and buttons."
+  ],
+  "universal_guidelines": [
+    "Do not use gradients for text unless specified.",
+    "Avoid 'Inter' font for headings; use 'Outfit'.",
+    "Use 'sonner' for toast notifications.",
+    "Ensure all interactive elements have hover states (brightness-110 or bg-white/5)."
+  ]
 }
