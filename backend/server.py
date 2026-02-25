@@ -975,26 +975,7 @@ async def create_estate(data: EstateCreate, current_user: dict = Depends(get_cur
     )
     
     # Create default checklist items for new estate
-    default_checklist = [
-        {"title": "Upload Will", "description": "Upload your last will and testament", "category": "legal", "order": 1},
-        {"title": "Add Beneficiaries", "description": "Add all family members who should receive assets", "category": "family", "order": 2},
-        {"title": "Upload Financial Documents", "description": "Add bank statements, investment accounts, etc.", "category": "financial", "order": 3},
-        {"title": "Create Milestone Messages", "description": "Record messages for special occasions", "category": "messages", "order": 4},
-        {"title": "Assign Power of Attorney", "description": "Designate someone to handle affairs", "category": "legal", "order": 5},
-    ]
-    
-    for item in default_checklist:
-        checklist = {
-            "id": str(uuid.uuid4()),
-            "estate_id": estate.id,
-            "title": item["title"],
-            "description": item["description"],
-            "category": item["category"],
-            "is_completed": False,
-            "completed_at": None,
-            "order": item["order"]
-        }
-        await db.checklists.insert_one(checklist)
+    await ensure_default_checklist(estate.id)
     
     return estate
 
