@@ -40,8 +40,8 @@ const SignupPage = () => {
   const [firstName, setFirstName] = useState('');
   const [middleName, setMiddleName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [suffix, setSuffix] = useState('');
-  const [gender, setGender] = useState('');
+  const [suffix, setSuffix] = useState('none');
+  const [gender, setGender] = useState('not_selected');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
