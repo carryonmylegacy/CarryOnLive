@@ -453,6 +453,74 @@
     color: #475569;
   }
   
+  /* ===== LIGHT MODE SIDEBAR ===== */
+  [data-theme="light"] .sb {
+    background: linear-gradient(180deg, #C7D6F0 0%, #B8CAE8 100%);
+    border-right: 1px solid rgba(30,64,130,0.12);
+  }
+  
+  [data-theme="light"] .sb-logo {
+    border-bottom: 1px solid rgba(30,64,130,0.1);
+  }
+  
+  [data-theme="light"] .sb-logo-title {
+    color: #92400E;
+  }
+  
+  [data-theme="light"] .sb-logo-subtitle {
+    color: #475569;
+  }
+  
+  [data-theme="light"] .nav-section-title {
+    color: #64748B;
+  }
+  
+  [data-theme="light"] .nav-item {
+    color: #334155;
+    background: rgba(255,255,255,0.08);
+    border-color: transparent;
+  }
+  
+  [data-theme="light"] .nav-item:hover {
+    background: rgba(255,255,255,0.3);
+    color: #1E293B;
+    border-color: rgba(255,255,255,0.2);
+  }
+  
+  [data-theme="light"] .nav-item.active {
+    background: rgba(255,255,255,0.4);
+    color: #92400E;
+    border-color: rgba(146,64,14,0.25);
+  }
+  
+  [data-theme="light"] .nav-item.active::before {
+    background: #92400E;
+  }
+  
+  [data-theme="light"] .sb-user {
+    border-top: 1px solid rgba(30,64,130,0.1);
+  }
+  
+  [data-theme="light"] .sb-user-info {
+    background: rgba(255,255,255,0.25);
+  }
+  
+  [data-theme="light"] .sb-user-name {
+    color: #1E293B;
+  }
+  
+  [data-theme="light"] .sb-user-email {
+    color: #64748B;
+  }
+  
+  [data-theme="light"] .theme-toggle {
+    background: rgba(255,255,255,0.25);
+  }
+  
+  [data-theme="light"] .theme-toggle-label {
+    color: #334155;
+  }
+  
   /* Progress Bar */
   .progress-bar {
     height: 8px;
