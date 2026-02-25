@@ -158,16 +158,24 @@ const DashboardPage = () => {
   // Stat card component - uses CSS class for theme-adaptive colors
   const StatCard = ({ icon: Icon, value, label, cardClass, onClick, className = '' }) => (
     <div 
-      className={`${cardClass} rounded-2xl p-4 lg:p-6 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] ${className}`}
+      className={`${cardClass} rounded-2xl p-4 lg:p-6 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] flex flex-col items-center justify-center ${className}`}
       onClick={onClick}
       data-testid={`stat-card-${label.toLowerCase().replace(/\s+/g, '-')}`}
     >
-      <Icon className="stat-icon w-6 h-6 lg:w-8 lg:h-8 opacity-70 mb-2 lg:mb-4 mx-auto" />
-      <div className="text-2xl lg:text-4xl font-bold mb-1 text-center" style={{ fontFamily: 'Outfit, sans-serif' }}>
+      <Icon className="stat-icon w-6 h-6 lg:w-8 lg:h-8 opacity-70 mb-2 lg:mb-4" />
+      <div className="text-3xl lg:text-5xl font-bold mb-2 text-center" style={{ fontFamily: 'Outfit, sans-serif' }}>
         {value}
       </div>
-      <div className="opacity-80 text-sm lg:text-base font-bold leading-tight text-center">
-        {label}
+      <div className="opacity-80 text-base lg:text-lg font-bold leading-tight text-center">
+        {label.split(' ').length > 2 ? (
+          <>
+            {label.split(' ').slice(0, Math.ceil(label.split(' ').length / 2)).join(' ')}
+            <br />
+            {label.split(' ').slice(Math.ceil(label.split(' ').length / 2)).join(' ')}
+          </>
+        ) : (
+          label
+        )}
       </div>
     </div>
   );
