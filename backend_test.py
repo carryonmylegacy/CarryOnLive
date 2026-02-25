@@ -170,11 +170,11 @@ class CarryOnAPITester:
         return False
 
     def test_documents(self):
-        """Test document management including new encryption features"""
+        """Test document management including new encryption and voice verification features"""
         if not self.estate_id:
             return False
             
-        print(f"\n📄 Testing Document Management with Encryption")
+        print(f"\n📄 Testing Document Management with Encryption & Voice Verification")
         
         # Get existing documents
         success, response = self.run_test(
@@ -203,6 +203,11 @@ class CarryOnAPITester:
             files=files
         )
         
+        password_test_success = False
+        backup_test_success = False
+        voice_test_success = False
+        preview_test_success = False
+        
         if success and 'backup_code' in upload_response:
             print(f"   ✅ Document uploaded with backup code: {upload_response['backup_code']}")
             self.test_document_id = upload_response['id']
@@ -219,36 +224,7 @@ class CarryOnAPITester:
             
             if unlock_success:
                 print(f"   ✅ Document unlocked with password")
-            
-            # Test document unlock with backup code (for backup-only locked documents)
-            # First create a backup-only locked document
-            backup_files = {'file': ('backup_test.txt', io.BytesIO(b"backup test content"), 'text/plain')}
-            backup_upload_url = f"documents/upload?estate_id={self.estate_id}&name=Backup%20Test%20Document&category=legal&lock_type=backup"
-            
-            backup_success, backup_response = self.run_test(
-                "Upload Backup-Only Document",
-                "POST",
-                backup_upload_url,
-                200,
-                files=backup_files
-            )
-            
-            if backup_success and 'backup_code' in backup_response:
-                backup_doc_id = backup_response['id']
-                backup_code = backup_response['backup_code']
-                
-                unlock_backup_success, _ = self.run_test(
-                    "Unlock Backup Document with Code",
-                    "POST",
-                    f"documents/{backup_doc_id}/unlock",
-                    200,
-                    data={"backup_code": backup_code}
-                )
-                
-                if unlock_backup_success:
-                    print(f"   ✅ Backup document unlocked with backup code")
-            else:
-                unlock_backup_success = False
+                password_test_success = True
             
             # Test document download with password
             download_url = f"documents/{self.test_document_id}/download?password=testpass123"
@@ -261,10 +237,163 @@ class CarryOnAPITester:
             
             if download_success:
                 print(f"   ✅ Document downloaded successfully")
-            
-            return success and unlock_success and unlock_backup_success and download_success
         
-        return success
+        # Test backup-only locked document
+        backup_files = {'file': ('backup_test.txt', io.BytesIO(b"backup test content"), 'text/plain')}
+        backup_upload_url = f"documents/upload?estate_id={self.estate_id}&name=Backup%20Test%20Document&category=legal&lock_type=backup"
+        
+        backup_success, backup_response = self.run_test(
+            "Upload Backup-Only Document",
+            "POST",
+            backup_upload_url,
+            200,
+            files=backup_files
+        )
+        
+        if backup_success and 'backup_code' in backup_response:
+            backup_doc_id = backup_response['id']
+            backup_code = backup_response['backup_code']
+            
+            unlock_backup_success, _ = self.run_test(
+                "Unlock Backup Document with Code",
+                "POST",
+                f"documents/{backup_doc_id}/unlock",
+                200,
+                data={"backup_code": backup_code}
+            )
+            
+            if unlock_backup_success:
+                print(f"   ✅ Backup document unlocked with backup code")
+                backup_test_success = True
+        
+        # Test voice verification features
+        voice_files = {'file': ('voice_test.txt', io.BytesIO(b"voice verification test content"), 'text/plain')}
+        voice_upload_url = f"documents/upload?estate_id={self.estate_id}&name=Voice%20Test%20Document&category=legal&lock_type=voice"
+        
+        voice_upload_success, voice_response = self.run_test(
+            "Upload Voice-Protected Document",
+            "POST",
+            voice_upload_url,
+            200,
+            files=voice_files
+        )
+        
+        if voice_upload_success and 'backup_code' in voice_response:
+            voice_doc_id = voice_response['id']
+            voice_backup_code = voice_response['backup_code']
+            print(f"   ✅ Voice document uploaded with backup code: {voice_backup_code}")
+            
+            # Test voice passphrase setup
+            voice_setup_success, setup_response = self.run_test(
+                "Setup Voice Passphrase",
+                "POST",
+                f"documents/{voice_doc_id}/voice/setup?passphrase=open%20sesame",
+                200
+            )
+            
+            if voice_setup_success:
+                print(f"   ✅ Voice passphrase set up successfully")
+                
+                # Test voice hint retrieval
+                hint_success, hint_response = self.run_test(
+                    "Get Voice Hint",
+                    "GET",
+                    f"documents/{voice_doc_id}/voice/hint",
+                    200
+                )
+                
+                if hint_success and hint_response.get('has_passphrase'):
+                    print(f"   ✅ Voice hint retrieved: {hint_response.get('hint', 'N/A')}")
+                    
+                    # Test voice verification
+                    verify_success, verify_response = self.run_test(
+                        "Verify Voice Passphrase",
+                        "POST",
+                        f"documents/{voice_doc_id}/voice/verify",
+                        200,
+                        data={"document_id": voice_doc_id, "spoken_text": "open sesame"}
+                    )
+                    
+                    if verify_success and verify_response.get('verified'):
+                        print(f"   ✅ Voice verification successful")
+                        voice_test_success = True
+                    
+                    # Test voice unlock with backup code fallback
+                    voice_unlock_success, _ = self.run_test(
+                        "Unlock Voice Document with Backup",
+                        "POST",
+                        f"documents/{voice_doc_id}/unlock",
+                        200,
+                        data={"backup_code": voice_backup_code}
+                    )
+                    
+                    if voice_unlock_success:
+                        print(f"   ✅ Voice document unlocked with backup code")
+        
+        # Test document preview functionality (NEW P1 FEATURE)
+        # Create a PDF-like document for preview testing
+        pdf_files = {'file': ('test_preview.pdf', io.BytesIO(b"fake PDF content for preview testing"), 'application/pdf')}
+        pdf_upload_url = f"documents/upload?estate_id={self.estate_id}&name=Preview%20Test%20PDF&category=legal"
+        
+        pdf_success, pdf_response = self.run_test(
+            "Upload PDF for Preview Test",
+            "POST",
+            pdf_upload_url,
+            200,
+            files=pdf_files
+        )
+        
+        if pdf_success:
+            pdf_doc_id = pdf_response['id']
+            
+            # Test document preview endpoint
+            preview_success, _ = self.run_test(
+                "Preview Document (PDF)",
+                "GET",
+                f"documents/{pdf_doc_id}/preview",
+                200
+            )
+            
+            if preview_success:
+                print(f"   ✅ Document preview successful")
+                preview_test_success = True
+            
+            # Test preview with locked document
+            locked_pdf_files = {'file': ('locked_preview.pdf', io.BytesIO(b"locked PDF content"), 'application/pdf')}
+            locked_pdf_url = f"documents/upload?estate_id={self.estate_id}&name=Locked%20Preview%20PDF&category=legal&lock_type=password&lock_password=preview123"
+            
+            locked_pdf_success, locked_pdf_response = self.run_test(
+                "Upload Locked PDF for Preview",
+                "POST",
+                locked_pdf_url,
+                200,
+                files=locked_pdf_files
+            )
+            
+            if locked_pdf_success:
+                locked_pdf_id = locked_pdf_response['id']
+                
+                # Test preview with credentials
+                locked_preview_success, _ = self.run_test(
+                    "Preview Locked Document with Password",
+                    "GET",
+                    f"documents/{locked_pdf_id}/preview?password=preview123",
+                    200
+                )
+                
+                if locked_preview_success:
+                    print(f"   ✅ Locked document preview with password successful")
+        
+        # Overall success check
+        overall_success = (success and password_test_success and backup_test_success and 
+                          voice_test_success and preview_test_success)
+        
+        if overall_success:
+            print(f"   🎉 All document features tested successfully!")
+        else:
+            print(f"   ⚠️  Some document features failed: Password={password_test_success}, Backup={backup_test_success}, Voice={voice_test_success}, Preview={preview_test_success}")
+        
+        return overall_success
 
     def test_messages(self):
         """Test milestone messages including video messages"""
