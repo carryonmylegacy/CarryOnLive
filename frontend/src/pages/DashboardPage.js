@@ -149,11 +149,11 @@ const DashboardPage = () => {
             strokeLinecap="round"
           />
           
-          {/* Needle assembly */}
+          {/* Needle assembly - enlarged */}
           <g style={{ transform: `rotate(${angle}deg)`, transformOrigin: '100px 100px', transition: 'transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)' }} filter="url(#needleShadow)">
             {/* Full needle - continuous taper from tip to wide tail */}
             <polygon 
-              points="100,25 97,90 94,118 100,122 106,118 103,90" 
+              points="100,18 96,88 92,125 100,130 108,125 104,88" 
               fill="url(#needleGradient)"
               stroke="#64748b"
               strokeWidth="0.5"
@@ -161,17 +161,17 @@ const DashboardPage = () => {
             
             {/* Needle tip - sharp red point */}
             <polygon 
-              points="100,25 98,45 100,48 102,45" 
+              points="100,18 97,42 100,46 103,42" 
               fill="#dc2626"
             />
             
             {/* Center hub - smaller chrome ring with enhanced depth */}
-            <circle cx="100" cy="100" r="9" fill="url(#hubGradient)" stroke="#475569" strokeWidth="1.5" />
+            <circle cx="100" cy="100" r="11" fill="url(#hubGradient)" stroke="#475569" strokeWidth="1.5" />
           </g>
         </svg>
         
-        {/* Score display - centered between gauge and percentage breakdown */}
-        <div className="absolute -bottom-20 left-1/2 transform -translate-x-1/2 text-center">
+        {/* Score display - moved down for enlarged needle */}
+        <div className="absolute -bottom-24 left-1/2 transform -translate-x-1/2 text-center">
           <div className="text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
             {score}%
           </div>
