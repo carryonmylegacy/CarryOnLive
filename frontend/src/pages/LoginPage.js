@@ -205,22 +205,20 @@ const LoginPage = () => {
           </DialogHeader>
           
           <div className="flex flex-col items-center py-6">
-            <InputOTP
+            <Input
+              type="text"
+              inputMode="numeric"
               maxLength={6}
               value={otp}
-              onChange={setOtp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="000000"
+              className="input-field text-center text-3xl tracking-[0.5em] font-mono w-full"
               data-testid="otp-input"
-            >
-              <InputOTPGroup>
-                {[0, 1, 2, 3, 4, 5].map((index) => (
-                  <InputOTPSlot
-                    key={index}
-                    index={index}
-                    className="w-12 h-14 text-xl bg-[#0b1120]/50 border-white/10 text-white"
-                  />
-                ))}
-              </InputOTPGroup>
-            </InputOTP>
+              autoFocus
+            />
+            <p className="text-[#64748b] text-sm mt-2">
+              {otp.length}/6 digits entered
+            </p>
 
             <Button
               onClick={handleVerifyOtp}
