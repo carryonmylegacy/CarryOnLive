@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { SectionLockProvider } from './components/security/SectionLock';
 import { Toaster } from './components/ui/sonner';
 
 // Pages
@@ -171,6 +172,7 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
+        <SectionLockProvider>
         <BrowserRouter>
           <AppRoutes />
           <Toaster 
@@ -184,6 +186,7 @@ function App() {
             }}
           />
         </BrowserRouter>
+        </SectionLockProvider>
       </AuthProvider>
     </ThemeProvider>
   );
