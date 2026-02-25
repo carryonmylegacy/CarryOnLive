@@ -62,10 +62,10 @@ const MobileNav = () => {
 
   const beneficiaryBottomNav = [
     { to: '/beneficiary/vault', icon: FolderLock, label: 'Vault' },
+    { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Checklist' },
+    { to: '/beneficiary/dashboard', icon: Home, label: 'Home', isCenter: true },
     { to: '/beneficiary/messages', icon: MessageSquare, label: 'Messages' },
-    { to: '/beneficiary', icon: Home, label: 'Home', isCenter: true },
-    { to: '/beneficiary/milestone', icon: CheckSquare, label: 'Milestone' },
-    { to: '/settings', icon: Settings, label: 'Settings' },
+    { to: '/beneficiary', icon: Users, label: 'Estates' },
   ];
 
   const getBottomNav = () => {
