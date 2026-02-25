@@ -38,36 +38,33 @@ Build a secure estate planning and legacy management platform where benefactors 
 - Messages Score: Milestone-based per beneficiary (age/relation/gender)
 - Checklist Score: 25+ items required, completion tracking
 - Overall Score: Average of 3 categories
-- Auto-recalculation on all CRUD operations
-- GET/POST /api/estate/{estate_id}/readiness endpoints
 
 ### Phase 7 - Smart Estate Guardian AI (Complete - Feb 2025)
-- **50-State Estate Law Expertise:** Comprehensive system prompt covering community property vs common law, probate requirements, estate/inheritance taxes, trust law, POA variations, healthcare directives, homestead exemptions, digital assets, beneficiary designations
-- **Document Vault Analysis:** AI reads and analyzes actual document contents (PDF text extraction via pdfplumber, text files). Identifies gaps, inconsistencies, missing provisions, and state-specific compliance issues
-- **AI Checklist Auto-Population:** Generates prioritized, estate-specific checklist items from vault analysis. Items categorized by urgency (immediate, first_week, two_weeks, first_month). Deduplicates against existing items
-- **Readiness Score Analysis:** AI explains readiness score with detailed breakdown, identifies missing documents/messages/items, provides state-specific actionable recommendations
-- **Context Injection:** Every AI call includes full estate context (documents, beneficiaries, checklist status, readiness breakdown, messages)
-- **Estate State Field:** Added state field to Estate model for state-specific law application
-- **Frontend:** Three action buttons (Analyze Vault, Generate Checklist, Analyze Readiness), markdown rendering, action badges, readiness breakdown cards
+- 50-state estate law expertise system prompt
+- Document Vault analysis with PDF text extraction (pdfplumber)
+- AI Checklist auto-population from vault analysis
+- Readiness Score analysis with state-specific recommendations
+
+### Phase 8 - Dashboard UI Refinements (Complete - Feb 2025)
+- **Checklist Preview Card:** Added "most recent" summary card for Immediate Action Checklist alongside Vault and Messages previews (3-column grid)
+- **Color-Coded Preview Cards:** Each preview card has a colored left border, matching icon, and matching link color: Vault=Blue (#2563eb), Messages=Purple (#8b5cf6), Checklist=Orange (#f97316)
+- **Darker Vault Blue:** Updated Secure Document Vault blue from #3b82f6 to #2563eb across all associated elements (stat cards, readiness dots, preview cards, activity timeline, Guardian AI)
+- **Sidebar Nav Enhancement:** Nav items enlarged to 15px font, 22px icons, 14px/18px padding, 12px border-radius, button-like styling with subtle borders and background
 
 ## Test Accounts
 - Benefactor: pete@mitchell.com / password123
 - Beneficiary: penny@mitchell.com / password123
 - Admin: admin@carryon.com / admin123
-- OTP: `tail -n 5 /var/log/supervisor/backend.err.log | grep -oP 'OTP for.*: \K\d+' | tail -1`
+- OTP: `tail -n 5 /var/log/supervisor/backend.err.log | grep -oP 'OTP for.*: \\K\\d+' | tail -1`
 
 ## Architecture
 ```
 /app/backend/server.py - FastAPI (all routes, models, AI logic)
+/app/frontend/src/pages/DashboardPage.js - Readiness gauge + preview cards
 /app/frontend/src/pages/GuardianPage.js - AI chat with action buttons
-/app/frontend/src/pages/DashboardPage.js - Readiness gauge + breakdown
-/app/frontend/src/pages/BeneficiariesPage.js - DOB/gender fields
+/app/frontend/src/index.css - Design system, nav styles, card colors
+/app/frontend/src/components/layout/Sidebar.js - Navigation
 ```
-
-## Key API Endpoints
-- `POST /api/chat/guardian` - AI chat with action support (analyze_vault, generate_checklist, analyze_readiness)
-- `GET/POST /api/estate/{estate_id}/readiness` - Readiness score breakdown
-- `PATCH /api/estates/{estate_id}` - Update estate (including state field)
 
 ## Remaining Backlog
 
