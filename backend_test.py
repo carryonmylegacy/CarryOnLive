@@ -70,16 +70,16 @@ class CarryOnAPITester:
         """Extract OTP from backend logs"""
         try:
             import subprocess
-            result = subprocess.run(['tail', '-n', '10', '/var/log/supervisor/backend.err.log'], 
+            result = subprocess.run(['tail', '-n', '20', '/var/log/supervisor/backend.err.log'], 
                                   capture_output=True, text=True)
             logs = result.stdout
             
-            # Look for OTP line for this email
+            # Look for the most recent OTP line for this email
+            otp = None
             for line in logs.split('\n'):
                 if f"OTP for {email}:" in line:
                     otp = line.split(f"OTP for {email}: ")[1].strip()
-                    return otp
-            return None
+            return otp  # Returns the last (most recent) OTP found
         except:
             return None
 
