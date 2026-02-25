@@ -83,12 +83,11 @@ const LoginPage = () => {
       <div className="w-full max-w-[400px] relative z-10 animate-fade-in">
         {/* Logo & Branding */}
         <div className="text-center mb-7">
-          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#E0AD2B] to-[#F0C95C] flex items-center justify-center gold-glow">
-            <Shield className="w-10 h-10 text-[#08090F]" />
-          </div>
-          <h1 className="text-2xl font-bold text-[#F1F3F8] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
-            CarryOn™
-          </h1>
+          <img 
+            src="/carryon-logo.jpg" 
+            alt="CarryOn™ Logo" 
+            className="w-[200px] h-auto mx-auto mb-4"
+          />
           <div className="text-[#F1F3F8] text-[15px] font-semibold tracking-wide" style={{ letterSpacing: '0.04em' }}>
             <div>Every American Family.</div>
             <div>Ready.</div>
