@@ -114,11 +114,13 @@ const DashboardPage = () => {
               <stop offset="100%" stopColor="#94a3b8" />
             </linearGradient>
             
-            {/* Center hub gradient - chrome effect */}
-            <radialGradient id="hubGradient" cx="50%" cy="30%" r="70%">
+            {/* Center hub gradient - chrome effect with more depth */}
+            <radialGradient id="hubGradient" cx="35%" cy="25%" r="70%">
               <stop offset="0%" stopColor="#ffffff" />
-              <stop offset="50%" stopColor="#cbd5e1" />
-              <stop offset="100%" stopColor="#64748b" />
+              <stop offset="20%" stopColor="#e2e8f0" />
+              <stop offset="45%" stopColor="#94a3b8" />
+              <stop offset="70%" stopColor="#64748b" />
+              <stop offset="100%" stopColor="#334155" />
             </radialGradient>
             
             {/* Drop shadow for needle */}
