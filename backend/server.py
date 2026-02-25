@@ -1175,6 +1175,16 @@ async def create_message(data: MessageCreate, current_user: dict = Depends(get_c
     # Update estate readiness
     await update_estate_readiness(data.estate_id)
     
+    # Log activity
+    await log_activity(
+        estate_id=data.estate_id,
+        user_id=current_user["id"],
+        user_name=current_user["name"],
+        action="message_created",
+        description=f"Created {data.message_type} message: {data.title}",
+        metadata={"message_title": data.title, "message_type": data.message_type, "trigger_type": data.trigger_type}
+    )
+    
     return message
 
 @api_router.delete("/messages/{message_id}")
