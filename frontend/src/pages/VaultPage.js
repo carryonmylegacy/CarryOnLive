@@ -623,7 +623,7 @@ const VaultPage = () => {
                 <SelectTrigger className="input-field" data-testid="upload-category-select">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-[#0f1d35] border-white/10">
+                <SelectContent className="bg-[#1A2440] border-white/10">
                   <SelectItem value="legal">Legal</SelectItem>
                   <SelectItem value="financial">Financial</SelectItem>
                   <SelectItem value="personal">Personal</SelectItem>
@@ -638,7 +638,7 @@ const VaultPage = () => {
                 <SelectTrigger className="input-field" data-testid="upload-lock-select">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-[#0f1d35] border-white/10">
+                <SelectContent className="bg-[#1A2440] border-white/10">
                   <SelectItem value="none">No Lock</SelectItem>
                   <SelectItem value="password">Password Protected</SelectItem>
                   <SelectItem value="voice">Voice Verification</SelectItem>
@@ -830,7 +830,7 @@ const VaultPage = () => {
                   )}
                   
                   {spokenText && (
-                    <div className="mt-3 p-2 bg-[#0b1120] rounded-lg">
+                    <div className="mt-3 p-2 bg-[#0F1629] rounded-lg">
                       <p className="text-[#94a3b8] text-xs">Heard:</p>
                       <p className="text-white">{spokenText}</p>
                     </div>
@@ -862,7 +862,7 @@ const VaultPage = () => {
                     <div className="w-full border-t border-white/10"></div>
                   </div>
                   <div className="relative flex justify-center text-xs">
-                    <span className="bg-[#0f1d35] px-2 text-[#64748b]">Or use backup code</span>
+                    <span className="bg-[#1A2440] px-2 text-[#64748b]">Or use backup code</span>
                   </div>
                 </div>
               </div>
@@ -950,7 +950,7 @@ const VaultPage = () => {
           </DialogHeader>
           
           <div className="py-4">
-            <div className="bg-[#0b1120]/50 rounded-xl p-4 text-center mb-4">
+            <div className="bg-[#0F1629]/50 rounded-xl p-4 text-center mb-4">
               <p className="text-2xl font-mono text-[#d4af37] tracking-wider">{backupCode}</p>
             </div>
             
