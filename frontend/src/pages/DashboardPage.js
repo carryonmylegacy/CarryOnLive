@@ -88,8 +88,8 @@ const DashboardPage = () => {
     const angle = (score / 100) * 180 - 90;
     
     return (
-      <div className="relative w-72 h-44 mx-auto">
-        <svg viewBox="0 0 200 120" className="w-full h-full overflow-visible">
+      <div className="relative w-72 h-48 mx-auto">
+        <svg viewBox="0 0 200 110" className="w-full h-full overflow-visible">
           <defs>
             {/* Main rainbow gradient */}
             <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -99,56 +99,56 @@ const DashboardPage = () => {
               <stop offset="75%" stopColor="#84cc16" />
               <stop offset="100%" stopColor="#22c55e" />
             </linearGradient>
-            
-            {/* Radial gradient for outer edge fade - fades OUT at outer edge */}
-            <radialGradient id="outerFadeGradient" cx="50%" cy="100%" r="55%">
-              <stop offset="50%" stopColor="white" stopOpacity="1" />
-              <stop offset="85%" stopColor="white" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="white" stopOpacity="0" />
-            </radialGradient>
-            
-            <mask id="outerFadeMask">
-              <ellipse cx="100" cy="105" rx="90" ry="90" fill="url(#outerFadeGradient)" />
-            </mask>
           </defs>
           
-          {/* Background arc */}
+          {/* Outer faded arc (larger, more transparent) */}
           <path
-            d="M 15 105 A 85 85 0 0 1 185 105"
-            fill="none"
-            stroke="rgba(128,128,128,0.15)"
-            strokeWidth="35"
-            strokeLinecap="round"
-          />
-          
-          {/* Main rainbow arc with outer fade */}
-          <path
-            d="M 15 105 A 85 85 0 0 1 185 105"
+            d="M 8 100 A 92 92 0 0 1 192 100"
             fill="none"
             stroke="url(#gaugeGradient)"
-            strokeWidth="35"
+            strokeWidth="12"
             strokeLinecap="round"
-            mask="url(#outerFadeMask)"
+            opacity="0.2"
+          />
+          
+          {/* Middle arc (medium opacity) */}
+          <path
+            d="M 15 100 A 85 85 0 0 1 185 100"
+            fill="none"
+            stroke="url(#gaugeGradient)"
+            strokeWidth="18"
+            strokeLinecap="round"
+            opacity="0.4"
+          />
+          
+          {/* Main solid rainbow arc (inner, full opacity) */}
+          <path
+            d="M 25 100 A 75 75 0 0 1 175 100"
+            fill="none"
+            stroke="url(#gaugeGradient)"
+            strokeWidth="28"
+            strokeLinecap="round"
+            opacity="1"
           />
           
           {/* Needle */}
-          <g style={{ transform: `rotate(${angle}deg)`, transformOrigin: '100px 105px', transition: 'transform 0.5s ease-out' }}>
+          <g style={{ transform: `rotate(${angle}deg)`, transformOrigin: '100px 100px', transition: 'transform 0.5s ease-out' }}>
             <line
               x1="100"
-              y1="105"
+              y1="100"
               x2="100"
-              y2="35"
+              y2="30"
               stroke="var(--t)"
               strokeWidth="4"
               strokeLinecap="round"
             />
-            <circle cx="100" cy="105" r="12" fill="var(--t)" />
-            <circle cx="100" cy="105" r="6" fill="var(--content-bg)" />
+            <circle cx="100" cy="100" r="12" fill="var(--t)" />
+            <circle cx="100" cy="100" r="6" fill="var(--content-bg)" />
           </g>
         </svg>
         
         {/* Score display */}
-        <div className="absolute -bottom-14 left-1/2 transform -translate-x-1/2 text-center">
+        <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 text-center">
           <div className="text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
             {score}
           </div>
