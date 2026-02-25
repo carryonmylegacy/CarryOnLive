@@ -103,15 +103,8 @@ const MobileNav = () => {
             }}
           >
             <div className="flex flex-col h-full">
-              {/* Close button */}
-              <div className="flex justify-end p-4">
-                <button 
-                  onClick={() => setOpen(false)}
-                  className="p-1 text-[var(--t4)] hover:text-[var(--t)]"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
+              {/* Spacer for built-in close button */}
+              <div className="h-12" />
 
               {/* MY LEGACY Section */}
               <nav className="flex-1 px-4 overflow-y-auto">
@@ -122,28 +115,40 @@ const MobileNav = () => {
                   >
                     MY LEGACY
                   </h3>
-                  <div className="space-y-1">
-                    {myLegacyItems.map((item) => (
-                      <NavLink
-                        key={item.to}
-                        to={item.to}
-                        onClick={handleNavClick}
-                        className={({ isActive }) =>
-                          `flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
-                            isActive 
-                              ? 'text-[#E0AD2B]' 
-                              : theme === 'dark' ? 'text-[#D8DEE9]' : 'text-[#334155]'
-                          }`
-                        }
-                        style={({ isActive }) => ({
-                          backgroundColor: isActive 
-                            ? (theme === 'dark' ? 'rgba(224,173,43,0.1)' : 'rgba(224,173,43,0.1)')
-                            : 'transparent'
-                        })}
-                      >
-                        <item.icon className="w-5 h-5" />
-                        <span className="font-medium text-sm">{item.label}</span>
-                      </NavLink>
+                  <div>
+                    {myLegacyItems.map((item, idx) => (
+                      <div key={item.to}>
+                        <NavLink
+                          to={item.to}
+                          onClick={handleNavClick}
+                          className={({ isActive }) =>
+                            `flex items-center gap-3 px-3 py-3.5 rounded-xl transition-all ${
+                              isActive 
+                                ? 'text-[#E0AD2B]' 
+                                : theme === 'dark' ? 'text-[#D8DEE9]' : 'text-[#334155]'
+                            }`
+                          }
+                          style={({ isActive }) => ({
+                            backgroundColor: isActive 
+                              ? (theme === 'dark' ? 'rgba(224,173,43,0.1)' : 'rgba(224,173,43,0.1)')
+                              : 'transparent',
+                            fontWeight: 700,
+                            fontSize: '15px'
+                          })}
+                        >
+                          <item.icon className="w-5 h-5" />
+                          <span>{item.label}</span>
+                        </NavLink>
+                        {idx < myLegacyItems.length - 1 && (
+                          <div className="flex justify-center">
+                            <div style={{ 
+                              width: '87.5%', 
+                              height: '1px', 
+                              background: theme === 'dark' ? '#2E3B56' : 'rgba(30,64,130,0.12)'
+                            }} />
+                          </div>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </div>
