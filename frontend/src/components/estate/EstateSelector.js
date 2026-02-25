@@ -135,19 +135,19 @@ const EstateSelector = ({ currentEstate, onEstateChange, estates, onEstatesUpdat
 
       {/* Create Estate Modal */}
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="glass-card border-white/10 sm:max-w-md">
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            <DialogTitle className="text-[var(--t)] text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Create New Estate
             </DialogTitle>
-            <DialogDescription className="text-[#94a3b8]">
+            <DialogDescription className="text-[var(--t4)]">
               Create a new estate to organize your legacy planning
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label className="text-[#94a3b8]">Estate Name</Label>
+              <Label className="text-[var(--t4)]">Estate Name</Label>
               <Input
                 value={newEstateName}
                 onChange={(e) => setNewEstateName(e.target.value)}
@@ -165,7 +165,7 @@ const EstateSelector = ({ currentEstate, onEstateChange, estates, onEstatesUpdat
                 setShowCreateModal(false);
                 setNewEstateName('');
               }}
-              className="border-white/10 text-white"
+              className="border-[var(--b)] text-[var(--t)]"
             >
               Cancel
             </Button>
