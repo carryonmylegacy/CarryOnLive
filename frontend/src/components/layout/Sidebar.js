@@ -53,12 +53,19 @@ const Sidebar = () => {
 
   const beneficiaryNavSections = [
     {
-      title: 'ESTATE ACCESS',
+      title: 'LEGACY ACCESS',
       items: [
-        { to: '/beneficiary', icon: Home, label: 'Estate Hub' },
-        { to: '/beneficiary/vault', icon: FolderLock, label: 'Document Vault' },
-        { to: '/beneficiary/messages', icon: MessageSquare, label: 'Messages' },
-        { to: '/beneficiary/milestone', icon: CheckSquare, label: 'Report Milestone' },
+        { to: '/beneficiary/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+        { to: '/beneficiary/vault', icon: FolderLock, label: 'Secure Document Vault' },
+        { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Immediate Action Checklist' },
+        { to: '/beneficiary/messages', icon: MessageSquare, label: 'Milestone Messages' },
+        { to: '/beneficiary/milestone', icon: Home, label: 'Report Milestone' },
+      ]
+    },
+    {
+      title: 'ESTATES',
+      items: [
+        { to: '/beneficiary', icon: Users, label: 'All Estates' },
       ]
     },
     {
