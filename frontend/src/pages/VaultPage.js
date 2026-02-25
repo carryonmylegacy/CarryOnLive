@@ -731,7 +731,7 @@ const VaultPage = () => {
             </Button>
             <Button
               onClick={handleUpload}
-              disabled={uploading || !uploadFile || !uploadName || (uploadLockType === 'password' && !uploadLockPassword)}
+              disabled={uploading || !uploadFile || !uploadName || (uploadLockType === 'password' && !uploadLockPassword) || (uploadLockType === 'voice' && !uploadVoicePassphrase)}
               className="gold-button"
               data-testid="upload-submit-button"
             >
