@@ -158,7 +158,7 @@ const TrusteePage = () => {
           <h2 className="text-2xl font-bold text-[var(--t)] mb-3" style={{ fontFamily: 'Cormorant Garamond, serif' }}>Request Submitted</h2>
           <p className="text-[var(--t3)] mb-3 leading-relaxed">Your Designated Trustee Service request has been encrypted and submitted to the CarryOn DTS team.</p>
           <p className="text-[var(--t4)] mb-8 text-sm leading-relaxed">You will receive a detailed itemized quote within 2-3 business days. You can then approve or reject each line item individually.</p>
-          <Button className="gold-button" onClick={() => { setView('list'); setCreateStep(0); setNewTask({ type: '', title: '', desc: '', confidential: 'full', discloseTo: '', timedRelease: '' }); }}>
+          <Button className="gold-button" onClick={() => { setView('list'); setCreateStep(0); setNewTask({ type: '', title: '', desc: '', confidential: 'full', discloseTo: '', timedRelease: '', beneficiary: '' }); }}>
             Back to Trustee Services
           </Button>
         </div>
