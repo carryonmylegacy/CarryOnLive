@@ -13,7 +13,7 @@ import axios from 'axios';
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const suffixOptions = [
-  { value: '', label: 'None' },
+  { value: 'none', label: 'None' },
   { value: 'Jr.', label: 'Jr.' },
   { value: 'Sr.', label: 'Sr.' },
   { value: 'II', label: 'II' },
@@ -26,7 +26,7 @@ const suffixOptions = [
 ];
 
 const genderOptions = [
-  { value: '', label: 'Select...' },
+  { value: 'not_selected', label: 'Select...' },
   { value: 'male', label: 'Male' },
   { value: 'female', label: 'Female' },
   { value: 'other', label: 'Other' },
