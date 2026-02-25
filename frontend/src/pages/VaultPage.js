@@ -547,7 +547,13 @@ const VaultPage = () => {
       </Dialog>
 
       {/* Lock Modal */}
-      <Dialog open={showLockModal} onOpenChange={setShowLockModal}>
+      <Dialog open={showLockModal} onOpenChange={(open) => {
+        setShowLockModal(open);
+        if (!open) {
+          setUnlockPassword('');
+          setUnlockBackupCode('');
+        }
+      }}>
         <DialogContent className="glass-card border-white/10 sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
@@ -555,21 +561,47 @@ const VaultPage = () => {
             </DialogTitle>
             <DialogDescription className="text-[#94a3b8]">
               {selectedDoc?.lock_type === 'password' && 'Enter the password to access this document'}
-              {selectedDoc?.lock_type === 'voice' && 'Use voice verification to unlock'}
-              {selectedDoc?.lock_type === 'backup' && 'Enter your backup key'}
+              {selectedDoc?.lock_type === 'voice' && 'Voice verification not available. Use backup code.'}
+              {selectedDoc?.lock_type === 'backup' && 'Enter your backup code'}
             </DialogDescription>
           </DialogHeader>
           
-          <div className="py-6 text-center">
-            <Shield className="w-16 h-16 mx-auto text-[#d4af37] mb-4" />
-            <p className="text-[#94a3b8]">
-              This document is protected with {selectedDoc?.lock_type} security.
-            </p>
-            <Input
-              type="password"
-              placeholder={selectedDoc?.lock_type === 'password' ? 'Enter password' : 'Enter backup key'}
-              className="input-field mt-4"
-            />
+          <div className="py-4 space-y-4">
+            <div className="text-center">
+              <Shield className="w-12 h-12 mx-auto text-[#d4af37] mb-2" />
+              <p className="text-white font-medium">{selectedDoc?.name}</p>
+              <p className="text-[#64748b] text-sm">
+                Protected with {selectedDoc?.lock_type} security
+              </p>
+            </div>
+            
+            {selectedDoc?.lock_type === 'password' && (
+              <div className="space-y-2">
+                <Label className="text-[#94a3b8]">Password</Label>
+                <Input
+                  type="password"
+                  value={unlockPassword}
+                  onChange={(e) => setUnlockPassword(e.target.value)}
+                  placeholder="Enter document password"
+                  className="input-field"
+                  data-testid="unlock-password-input"
+                />
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label className="text-[#94a3b8]">
+                {selectedDoc?.lock_type === 'password' ? 'Or use Backup Code' : 'Backup Code'}
+              </Label>
+              <Input
+                type="text"
+                value={unlockBackupCode}
+                onChange={(e) => setUnlockBackupCode(e.target.value)}
+                placeholder="e.g., 1234-5678-9012"
+                className="input-field"
+                data-testid="unlock-backup-input"
+              />
+            </div>
           </div>
           
           <div className="flex justify-end gap-3">
@@ -580,11 +612,69 @@ const VaultPage = () => {
             >
               Cancel
             </Button>
-            <Button className="gold-button">
-              <Unlock className="w-5 h-5 mr-2" />
-              Unlock
+            <Button 
+              onClick={handleUnlock}
+              disabled={unlocking || (!unlockPassword && !unlockBackupCode)}
+              className="gold-button"
+              data-testid="unlock-submit-button"
+            >
+              {unlocking ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Unlocking...
+                </>
+              ) : (
+                <>
+                  <Unlock className="w-5 h-5 mr-2" />
+                  Unlock & Download
+                </>
+              )}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Backup Code Modal */}
+      <Dialog open={showBackupCodeModal} onOpenChange={setShowBackupCodeModal}>
+        <DialogContent className="glass-card border-white/10 sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white text-xl flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <Key className="w-5 h-5 text-[#d4af37]" />
+              Save Your Backup Code
+            </DialogTitle>
+            <DialogDescription className="text-[#94a3b8]">
+              This code can be used to unlock your document if you forget the password.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="bg-[#0b1120]/50 rounded-xl p-4 text-center mb-4">
+              <p className="text-2xl font-mono text-[#d4af37] tracking-wider">{backupCode}</p>
+            </div>
+            
+            <Button
+              onClick={copyBackupCode}
+              variant="outline"
+              className="w-full border-white/10 text-white mb-4"
+            >
+              <Copy className="w-4 h-4 mr-2" />
+              Copy to Clipboard
+            </Button>
+            
+            <div className="p-3 bg-[#f59e0b]/10 rounded-xl">
+              <p className="text-[#f59e0b] text-sm">
+                ⚠️ Store this code securely. It cannot be recovered if lost.
+              </p>
+            </div>
+          </div>
+          
+          <Button
+            onClick={() => setShowBackupCodeModal(false)}
+            className="gold-button w-full"
+          >
+            <CheckCircle2 className="w-5 h-5 mr-2" />
+            I've Saved My Code
+          </Button>
         </DialogContent>
       </Dialog>
     </div>
