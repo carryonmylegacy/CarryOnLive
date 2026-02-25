@@ -1,186 +1,109 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
-import {
-  FileText,
-  Lock,
-  Download,
-  FolderOpen,
-  File,
-  FileImage,
-  FileArchive
-} from 'lucide-react';
-import { Card, CardContent } from '../../components/ui/card';
+import { FolderLock, Lock, FileText, Search, ChevronLeft, Download } from 'lucide-react';
 import { Button } from '../../components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
-import { toast } from 'sonner';
 import { Skeleton } from '../../components/ui/skeleton';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-const categories = [
-  { id: 'all', label: 'All Documents', icon: FolderOpen },
-  { id: 'legal', label: 'Legal', icon: FileText },
-  { id: 'financial', label: 'Financial', icon: File },
-  { id: 'personal', label: 'Personal', icon: FileImage },
-  { id: 'medical', label: 'Medical', icon: FileArchive },
-];
-
 const BeneficiaryVaultPage = () => {
   const { getAuthHeaders } = useAuth();
+  const navigate = useNavigate();
   const [documents, setDocuments] = useState([]);
-  const [estates, setEstates] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchDocs(); }, []);
 
-  const fetchData = async () => {
+  const fetchDocs = async () => {
     try {
-      const estatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders());
-      setEstates(estatesRes.data);
-      
-      // Fetch documents from all accessible estates
-      const transitionedEstates = estatesRes.data.filter(e => e.status === 'transitioned');
-      const allDocs = [];
-      
-      for (const estate of transitionedEstates) {
-        const docsRes = await axios.get(`${API_URL}/documents/${estate.id}`, getAuthHeaders());
-        allDocs.push(...docsRes.data.map(d => ({ ...d, estate_name: estate.name })));
-      }
-      
-      setDocuments(allDocs);
-    } catch (error) {
-      console.error('Fetch error:', error);
-      toast.error('Failed to load documents');
-    } finally {
-      setLoading(false);
-    }
+      const estateId = localStorage.getItem('beneficiary_estate_id');
+      if (!estateId) { navigate('/beneficiary'); return; }
+      const res = await axios.get(`${API_URL}/documents/${estateId}`, getAuthHeaders());
+      setDocuments(res.data);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   };
 
-  const getFileIcon = (fileType) => {
-    if (fileType?.includes('image')) return FileImage;
-    if (fileType?.includes('zip') || fileType?.includes('archive')) return FileArchive;
-    return FileText;
-  };
+  const categories = ['all', ...new Set(documents.map(d => d.category))];
+  const filtered = documents
+    .filter(d => activeCategory === 'all' || d.category === activeCategory)
+    .filter(d => !searchQuery || d.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  const formatFileSize = (bytes) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
-  const filteredDocs = activeCategory === 'all' 
-    ? documents 
-    : documents.filter(d => d.category === activeCategory);
-
-  const hasAccessibleEstates = estates.some(e => e.status === 'transitioned');
+  const fB = (b) => { if (!b) return '0 B'; const k = 1024; const s = ['B', 'KB', 'MB', 'GB']; const i = Math.floor(Math.log(b) / Math.log(k)); return (b / Math.pow(k, i)).toFixed(1) + ' ' + s[i]; };
 
   if (loading) {
-    return (
-      <div className="p-6 space-y-6">
-        <Skeleton className="h-12 w-64 bg-white/5" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map(i => (
-            <Skeleton key={i} className="h-40 bg-white/5 rounded-2xl" />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (!hasAccessibleEstates) {
-    return (
-      <div className="p-6 animate-fade-in">
-        <h1 className="text-3xl font-bold text-white mb-6" style={{ fontFamily: 'Outfit, sans-serif' }}>
-          Document Vault
-        </h1>
-        <Card className="glass-card">
-          <CardContent className="p-12 text-center">
-            <Lock className="w-16 h-16 mx-auto text-[#f59e0b] mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">Documents Locked</h3>
-            <p className="text-[#94a3b8]">
-              You'll have access to estate documents once the estate has been transitioned.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-4"><Skeleton className="h-10 w-64 bg-[var(--s)]" /><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{[1,2,3].map(i => <Skeleton key={i} className="h-32 bg-[var(--s)] rounded-2xl" />)}</div></div>;
   }
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in" data-testid="beneficiary-vault">
+    <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="beneficiary-vault"
+      style={{ background: 'radial-gradient(ellipse at top left, rgba(37,99,235,0.12), transparent 55%)' }}>
+      {/* Back */}
+      <button onClick={() => navigate('/beneficiary/dashboard')} className="inline-flex items-center gap-1 text-sm font-bold text-[#60A5FA]">
+        <ChevronLeft className="w-4 h-4" /> Back to Dashboard
+      </button>
+
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>
-          Document Vault
-        </h1>
-        <p className="text-[#94a3b8] mt-1">
-          Access documents from your inherited estates
-        </p>
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(37,99,235,0.2), rgba(59,130,246,0.15))' }}>
+          <FolderLock className="w-5 h-5 text-[#60A5FA]" />
+        </div>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Secure Document Vault</h1>
+          <p className="text-xs text-[var(--t5)]">{documents.length} documents · Sealed</p>
+        </div>
       </div>
 
-      {/* Category Tabs */}
-      <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-        <TabsList className="bg-white/5 p-1">
-          {categories.map((cat) => (
-            <TabsTrigger
-              key={cat.id}
-              value={cat.id}
-              className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-[#0b1120]"
-            >
-              <cat.icon className="w-4 h-4 mr-2" />
-              {cat.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      {/* Sealed Banner */}
+      <div className="glass-card p-4 flex items-start gap-3">
+        <Lock className="w-5 h-5 text-[var(--gold)] flex-shrink-0 mt-0.5" />
+        <div>
+          <div className="font-bold text-[var(--gold)] text-sm">Vault Sealed — Read Only</div>
+          <p className="text-xs text-[var(--t4)]">Immutably sealed. No documents can be added, modified, or removed.</p>
+        </div>
+      </div>
 
-        <TabsContent value={activeCategory} className="mt-6">
-          {filteredDocs.length === 0 ? (
-            <Card className="glass-card">
-              <CardContent className="p-12 text-center">
-                <FolderOpen className="w-16 h-16 mx-auto text-[#64748b] mb-4" />
-                <h3 className="text-xl font-semibold text-white mb-2">No documents in this category</h3>
-                <p className="text-[#94a3b8]">
-                  Check other categories or wait for more documents to be added.
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredDocs.map((doc) => {
-                const FileIcon = getFileIcon(doc.file_type);
-                return (
-                  <Card key={doc.id} className="glass-card group" data-testid={`doc-${doc.id}`}>
-                    <CardContent className="p-5">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="w-12 h-12 rounded-xl bg-[#d4af37]/20 flex items-center justify-center">
-                          <FileIcon className="w-6 h-6 text-[#d4af37]" />
-                        </div>
-                      </div>
-                      
-                      <h3 className="text-white font-medium mb-1 truncate">{doc.name}</h3>
-                      <p className="text-[#64748b] text-sm mb-1">
-                        {formatFileSize(doc.file_size)} · {doc.category}
-                      </p>
-                      <p className="text-[#94a3b8] text-xs mb-3">
-                        From: {doc.estate_name}
-                      </p>
-                      
-                      <Button variant="ghost" size="sm" className="text-[#d4af37] hover:text-[#fcd34d]">
-                        <Download className="w-4 h-4 mr-2" />
-                        Download
-                      </Button>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+      {/* Search */}
+      <div className="flex items-center gap-2 pb-2" style={{ borderBottom: '1px solid var(--b)' }}>
+        <Search className="w-4 h-4 text-[var(--t5)]" />
+        <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search documents..."
+          className="flex-1 bg-transparent border-none text-[var(--t)] text-sm outline-none placeholder:text-[var(--t5)]" />
+      </div>
+
+      {/* Category filters */}
+      <div className="flex gap-2 flex-wrap">
+        {categories.map(c => (
+          <button key={c} onClick={() => setActiveCategory(c)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${
+              activeCategory === c ? 'bg-[var(--bl)] text-white' : 'bg-[var(--s)] text-[var(--t4)] border border-[var(--b)]'
+            }`}>
+            {c === 'all' ? 'All' : c.replace(/_/g, ' ')}
+          </button>
+        ))}
+      </div>
+
+      {/* Document Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filtered.map(doc => (
+          <div key={doc.id} className="glass-card p-4 cursor-pointer transition-all hover:border-[var(--b2)]" data-testid={`ben-doc-${doc.id}`}>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(59,130,246,0.1)' }}>
+                <FileText className="w-4 h-4 text-[#60A5FA]" />
+              </div>
+              <span className="text-xs px-2 py-0.5 rounded bg-[var(--s)] text-[var(--t4)] capitalize">{doc.category?.replace(/_/g, ' ')}</span>
             </div>
-          )}
-        </TabsContent>
-      </Tabs>
+            <h3 className="font-bold text-[var(--t)] text-sm mb-1 leading-tight">{doc.name}</h3>
+            <div className="flex justify-between text-xs text-[var(--t5)]">
+              <span>{fB(doc.file_size)}</span>
+              <span>{doc.file_type}</span>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
