@@ -119,7 +119,7 @@ const Sidebar = () => {
       {/* Logo Section */}
       <div className="sb-logo">
         <img 
-          src="/carryon-logo.jpg" 
+          src="/carryon-app-icon.jpg" 
           alt="CarryOn™" 
           className="sb-logo-img"
           onError={(e) => {
