@@ -7,11 +7,7 @@ Build a secure estate planning and legacy management platform where benefactors 
 
 ### Phase 1 - MVP (Complete)
 - Authentication with email/password + OTP 2FA
-- **Enhanced Signup Form (Feb 2025):**
-  - Separate First Name, Middle Name (optional), Last Name fields
-  - Suffix dropdown (Jr., Sr., II, III, IV, V, Esq., MD, PhD)
-  - Gender dropdown (Male, Female, Other, Prefer not to say)
-  - Legal disclaimer for name accuracy
+- Enhanced Signup Form (First/Middle/Last name, suffix, gender)
 - Benefactor Dashboard with readiness gauge
 - Document Vault with categorized uploads and lock overlays
 - Milestone Messages (text/video with triggers)
@@ -45,42 +41,26 @@ Build a secure estate planning and legacy management platform where benefactors 
 - Activity logging for documents, messages, beneficiaries
 - Notification center with unread count badge
 
-### Phase 5 - Design System Update (Feb 2025) - COMPLETE
-- **Full UI Redesign to Match HTML Prototype:**
-  - Updated color palette:
-    - Background: #08090F (primary), #0D1018 (secondary), #12151F (tertiary)
-    - Gold accent: #E0AD2B (primary), #F0C95C (secondary)
-    - Text hierarchy: #F1F3F8, #D8DEE9, #A0AABF, #7B879E, #525C72
-    - Blue accent: #3B7BF7
-    - Green accent: #22C993
-    - Purple accent: #8B5CF6
-  - **Sidebar Redesign:**
-    - Gradient background
-    - Two navigation sections: "MY LEGACY" and "ACCOUNT"
-    - Gold highlighting for active nav items with left border indicator
-    - User avatar and info in footer
-    - Dark/Light mode toggle
-  - **Dashboard Redesign:**
-    - Bento grid layout
-    - Circular readiness gauge with score
-    - Quick action cards (Upload Document, Create Message, Add Beneficiary, Ask Guardian)
-    - Checklist preview with progress bar
-    - Activity timeline
-    - Security badge footer
-  - **Component Updates:**
-    - Glass-morphic cards with backdrop blur
-    - Updated button styles (primary blue, gold accent, secondary)
-    - Input fields with proper styling
-    - Progress bars with gold gradient
-  - **Official Logo Integration:**
-    - App icon (favicon): carryon-icon.jpg
-    - Platform screens logo: carryon-logo.jpg
+### Phase 5 - Design System Update (Complete)
+- Full UI redesign to match HTML prototype
+- Dark/Light mode with Swiss chronometer gauge
+- Mobile/PWA responsive layout
+- Custom needle design and color scheme
+
+### Phase 6 - Estate Readiness Score Algorithm (Complete - Feb 2025)
+- **Documents Score (0-100%):** Checks for 5 required legal documents: Last Will, Revocable Living Trust, Financial PoA, Medical PoA, Healthcare Directive/Living Will. Fuzzy name matching.
+- **Messages Score (0-100%):** Calculates expected milestones per beneficiary based on age, relation, and gender. Milestones include education, marriage, career events, etc.
+- **Checklist Score (0-100%):** Requires 25+ items. Score based on item count coverage (50%) and completion rate (50%). 30 default items auto-created for new estates.
+- **Overall Score:** Average of the three category scores.
+- **Beneficiary form:** Added date_of_birth and gender fields for milestone calculation.
+- **Endpoints:** GET/POST `/api/estate/{estate_id}/readiness` for detailed breakdown.
+- **Auto-recalculation:** Triggered on document upload, message creation, checklist toggle, and beneficiary add.
 
 ## Test Accounts
 - Benefactor: pete@mitchell.com / password123
 - Beneficiary: penny@mitchell.com / password123
 - Admin: admin@carryon.com / admin123
-- OTP: Check backend logs `tail -1 /var/log/supervisor/backend.err.log | grep -oP 'OTP for.*: \K\d+'`
+- OTP: Check backend logs `tail -n 5 /var/log/supervisor/backend.err.log | grep -oP 'OTP for.*: \K\d+' | tail -1`
 
 ## Architecture
 ```
@@ -88,6 +68,7 @@ Build a secure estate planning and legacy management platform where benefactors 
 ├── backend/
 │   ├── server.py (FastAPI with all routes and models)
 │   ├── requirements.txt
+│   ├── tests/test_readiness_score.py
 │   └── .env (MONGO_URL, DB_NAME, RESEND_API_KEY, OPENAI_API_KEY)
 ├── frontend/
 │   ├── src/
@@ -99,8 +80,16 @@ Build a secure estate planning and legacy management platform where benefactors 
 │   └── public/
 │       ├── carryon-logo.jpg
 │       └── carryon-icon.jpg
-└── design_guidelines.json (Design system reference)
+└── design_guidelines.json
 ```
+
+## Key API Endpoints
+- `GET /api/estate/{estate_id}/readiness` - Detailed readiness breakdown
+- `POST /api/estate/{estate_id}/readiness` - Recalculate readiness
+- `POST /api/beneficiaries` - Create beneficiary (now with date_of_birth, gender)
+- `POST /api/documents/upload` - Upload document (triggers readiness recalc)
+- `POST /api/messages` - Create message (triggers readiness recalc)
+- `PATCH /api/checklists/{item_id}/toggle` - Toggle checklist (triggers readiness recalc)
 
 ## Remaining Backlog
 
@@ -119,6 +108,10 @@ Build a secure estate planning and legacy management platform where benefactors 
 - Family mediation scheduling
 - Annual estate review reminders
 - PWA offline support
+
+### Refactoring
+- Split monolithic server.py into routes/models/services
+- Break down large frontend components (VaultPage.js)
 
 ## Mocked Features
 - **Voice Verification**: Always returns success
