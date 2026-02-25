@@ -459,6 +459,23 @@ const VaultPage = () => {
               </Select>
             </div>
             
+            {uploadLockType === 'password' && (
+              <div className="space-y-2">
+                <Label className="text-[#94a3b8]">Set Document Password</Label>
+                <Input
+                  type="password"
+                  value={uploadLockPassword}
+                  onChange={(e) => setUploadLockPassword(e.target.value)}
+                  placeholder="Enter a secure password"
+                  className="input-field"
+                  data-testid="upload-password-input"
+                />
+                <p className="text-[#64748b] text-xs">
+                  This password will be required to access the document. A backup code will also be generated.
+                </p>
+              </div>
+            )}
+            
             <div className="space-y-2">
               <Label className="text-[#94a3b8]">File</Label>
               <div className="border-2 border-dashed border-white/10 rounded-xl p-6 text-center hover:border-[#d4af37]/50 transition-colors">
@@ -509,14 +526,14 @@ const VaultPage = () => {
             </Button>
             <Button
               onClick={handleUpload}
-              disabled={uploading || !uploadFile || !uploadName}
+              disabled={uploading || !uploadFile || !uploadName || (uploadLockType === 'password' && !uploadLockPassword)}
               className="gold-button"
               data-testid="upload-submit-button"
             >
               {uploading ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Uploading...
+                  Encrypting...
                 </>
               ) : (
                 <>
