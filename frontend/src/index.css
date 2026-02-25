@@ -7,10 +7,10 @@
 @layer base {
   :root {
     /* ===== DARK MODE (Default) ===== */
-    --bg: #08090F;
-    --bg2: #0D1018;
-    --bg3: #12151F;
-    --content-bg: #08090F;
+    --bg: #0F1629;
+    --bg2: #141C33;
+    --bg3: #1A2440;
+    --content-bg: #0F1629;
     
     /* Surface & Border Colors */
     --s: rgba(255,255,255,0.035);
@@ -58,11 +58,11 @@
     --card-beneficiaries: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
     
     /* Glass card */
-    --glass-bg: rgba(13,16,24,0.6);
-    --glass-border: rgba(255,255,255,0.07);
+    --glass-bg: rgba(20,28,51,0.65);
+    --glass-border: rgba(255,255,255,0.08);
     
     /* Mobile nav */
-    --mobile-nav-bg: rgba(13,16,24,0.95);
+    --mobile-nav-bg: rgba(15,22,41,0.96);
     --mobile-nav-text: #525C72;
     --mobile-nav-active: #E0AD2B;
     
@@ -76,24 +76,24 @@
     --sidebar-width: 260px;
     
     /* Shadcn Variables */
-    --background: 220 47% 4%;
+    --background: 224 42% 11%;
     --foreground: 220 20% 96%;
-    --card: 220 47% 6%;
+    --card: 224 42% 14%;
     --card-foreground: 220 20% 96%;
-    --popover: 220 47% 5%;
+    --popover: 224 42% 12%;
     --popover-foreground: 220 20% 96%;
     --primary: 43 74% 52%;
-    --primary-foreground: 220 47% 4%;
-    --secondary: 220 30% 12%;
+    --primary-foreground: 224 42% 11%;
+    --secondary: 224 30% 18%;
     --secondary-foreground: 220 20% 96%;
-    --muted: 220 30% 14%;
+    --muted: 224 30% 20%;
     --muted-foreground: 220 15% 55%;
     --accent: 43 74% 52%;
     --accent-foreground: 220 47% 4%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 25% 14%;
-    --input: 220 25% 14%;
+    --border: 224 25% 19%;
+    --input: 224 25% 19%;
     --ring: 43 74% 52%;
     --radius: 0.75rem;
   }
@@ -203,7 +203,7 @@
     top: 0;
     height: 100vh;
     width: var(--sidebar-width);
-    background: linear-gradient(180deg, rgba(13,16,24,0.98) 0%, rgba(8,9,15,0.99) 100%);
+    background: linear-gradient(180deg, rgba(20,28,51,0.98) 0%, rgba(15,22,41,0.99) 100%);
     border-right: 1px solid rgba(255,255,255,0.05);
     display: flex;
     flex-direction: column;
