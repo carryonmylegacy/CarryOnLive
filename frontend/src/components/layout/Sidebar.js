@@ -24,6 +24,35 @@ const Sidebar = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const [benEstates, setBenEstates] = useState([]);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+
+  // Fetch estates for beneficiary sidebar switcher
+  useEffect(() => {
+    if (user?.role === 'beneficiary') {
+      const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+      const token = localStorage.getItem('carryon_token');
+      if (token) {
+        axios.get(`${API_URL}/estates`, { headers: { Authorization: `Bearer ${token}` } })
+          .then(res => setBenEstates(res.data))
+          .catch(() => {});
+      }
+    }
+  }, [user]);
+
+  const activeEstateId = localStorage.getItem('beneficiary_estate_id');
+  const activeEstate = benEstates.find(e => e.id === activeEstateId);
+
+  const switchEstate = (estate) => {
+    localStorage.setItem('beneficiary_estate_id', estate.id);
+    setSwitcherOpen(false);
+    if (estate.status === 'transitioned') {
+      navigate('/beneficiary/dashboard');
+    } else {
+      navigate('/beneficiary/pre');
+    }
+    window.location.reload();
+  };
 
   const handleLogout = () => {
     logout();
