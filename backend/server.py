@@ -400,6 +400,272 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 def generate_otp() -> str:
     return ''.join([str(random.randint(0, 9)) for _ in range(6)])
 
+# ===================== ESTATE READINESS SCORE CALCULATION =====================
+
+# Required documents for 100% document score
+REQUIRED_DOCUMENTS = {
+    "legal": [
+        {"name": "Last Will and Testament", "category": "legal"},
+        {"name": "Revocable Living Trust", "category": "legal"},
+        {"name": "Financial Power of Attorney", "category": "legal"},
+        {"name": "Medical Power of Attorney", "category": "legal"},
+        {"name": "Healthcare Directive/Living Will", "category": "legal"},
+    ]
+}
+
+# Life milestones based on age and relationship
+def get_expected_milestones(beneficiary: dict) -> list:
+    """Calculate expected milestone messages based on beneficiary demographics"""
+    milestones = ["Upon Death"]  # Everyone gets this
+    
+    relation = beneficiary.get("relation", "").lower()
+    gender = beneficiary.get("gender", "").lower()
+    dob_str = beneficiary.get("date_of_birth")
+    
+    # Calculate age if DOB is provided
+    age = None
+    if dob_str:
+        try:
+            dob = datetime.fromisoformat(dob_str.replace('Z', '+00:00'))
+            today = datetime.now(timezone.utc)
+            age = (today - dob).days // 365
+        except:
+            pass
+    
+    # Child milestones based on age
+    if relation in ["child", "son", "daughter", "grandchild", "grandson", "granddaughter"]:
+        if age is not None:
+            if age < 12:
+                milestones.extend(["Elementary School Graduation", "Middle School Graduation", 
+                                   "High School Graduation", "College Acceptance", "College Graduation",
+                                   "Engagement", "Marriage", "First Child", "First Home Purchase"])
+            elif age < 14:
+                milestones.extend(["Middle School Graduation", "High School Graduation", 
+                                   "College Acceptance", "College Graduation", "Engagement", 
+                                   "Marriage", "First Child", "First Home Purchase"])
+            elif age < 18:
+                milestones.extend(["High School Graduation", "College Acceptance", "College Graduation",
+                                   "Engagement", "Marriage", "First Child", "First Home Purchase"])
+            elif age < 22:
+                milestones.extend(["College Graduation", "First Job", "Engagement", 
+                                   "Marriage", "First Child", "First Home Purchase"])
+            elif age < 30:
+                milestones.extend(["Engagement", "Marriage", "First Child", "First Home Purchase",
+                                   "Career Milestone", "30th Birthday"])
+            elif age < 40:
+                milestones.extend(["Marriage", "First Child", "First Home Purchase", 
+                                   "40th Birthday", "Career Milestone"])
+            else:
+                milestones.extend(["Major Birthday (50th, 60th)", "Retirement", "First Grandchild"])
+        else:
+            # Default milestones for children without DOB
+            milestones.extend(["High School Graduation", "College Graduation", "Marriage", "First Child"])
+    
+    # Spouse milestones
+    elif relation in ["spouse", "wife", "husband", "partner"]:
+        milestones.extend(["First Anniversary After Passing", "Retirement", "First Grandchild",
+                          "Major Health Milestone", "Travel/Dream Vacation", "70th Birthday", "80th Birthday"])
+    
+    # Parent milestones
+    elif relation in ["parent", "mother", "father"]:
+        milestones.extend(["First Anniversary After Passing", "Major Birthday", 
+                          "Health Milestone", "Special Occasion"])
+    
+    # Sibling milestones
+    elif relation in ["sibling", "brother", "sister"]:
+        milestones.extend(["First Anniversary After Passing", "Major Life Event",
+                          "Retirement", "Special Family Occasion"])
+    
+    # Friend or other
+    else:
+        milestones.extend(["First Anniversary After Passing", "Special Occasion"])
+    
+    return milestones
+
+# Default checklist items (25+ items)
+DEFAULT_CHECKLIST_ITEMS = [
+    # Immediate (Day 1-3)
+    {"title": "Notify immediate family members", "description": "Call or visit closest family members to inform them of the passing", "category": "immediate", "order": 1},
+    {"title": "Contact funeral home", "description": "Arrange for transportation and begin funeral planning", "category": "immediate", "order": 2},
+    {"title": "Secure the residence", "description": "Ensure home is locked and secure, collect mail, adjust thermostat", "category": "immediate", "order": 3},
+    {"title": "Locate important documents", "description": "Find will, trust documents, insurance policies, and financial records", "category": "immediate", "order": 4},
+    {"title": "Notify employer (if applicable)", "description": "Contact HR department about final paycheck and benefits", "category": "immediate", "order": 5},
+    {"title": "Contact estate attorney", "description": "Schedule meeting to review will and begin probate process", "category": "immediate", "order": 6},
+    {"title": "Obtain death certificates", "description": "Order at least 10-15 certified copies from funeral home or vital records", "category": "immediate", "order": 7},
+    
+    # First Week
+    {"title": "Notify Social Security Administration", "description": "Report death and inquire about survivor benefits", "category": "first_week", "order": 8},
+    {"title": "Contact life insurance companies", "description": "File claims with all life insurance providers", "category": "first_week", "order": 9},
+    {"title": "Notify banks and financial institutions", "description": "Inform all banks, credit unions, and investment accounts", "category": "first_week", "order": 10},
+    {"title": "Contact credit card companies", "description": "Close accounts and pay off balances from estate", "category": "first_week", "order": 11},
+    {"title": "Notify pension/retirement plan administrators", "description": "Contact 401k, IRA, and pension providers", "category": "first_week", "order": 12},
+    {"title": "Cancel or transfer utilities", "description": "Electric, gas, water, internet, phone services", "category": "first_week", "order": 13},
+    {"title": "Forward mail", "description": "Set up mail forwarding with USPS to executor's address", "category": "first_week", "order": 14},
+    {"title": "Secure digital accounts", "description": "Change passwords or memorialize social media accounts", "category": "first_week", "order": 15},
+    
+    # First Two Weeks
+    {"title": "File for probate (if required)", "description": "Submit will to probate court and begin legal process", "category": "two_weeks", "order": 16},
+    {"title": "Notify health insurance provider", "description": "Cancel coverage and handle COBRA for dependents", "category": "two_weeks", "order": 17},
+    {"title": "Contact mortgage company", "description": "Discuss options for property transfer or assumption", "category": "two_weeks", "order": 18},
+    {"title": "Cancel subscriptions and memberships", "description": "Gym, streaming services, magazines, clubs", "category": "two_weeks", "order": 19},
+    {"title": "Notify DMV", "description": "Cancel driver's license and transfer vehicle titles", "category": "two_weeks", "order": 20},
+    {"title": "Review and update beneficiary designations", "description": "Ensure surviving family members update their own documents", "category": "two_weeks", "order": 21},
+    
+    # First Month
+    {"title": "File final tax return", "description": "Prepare or arrange for preparation of final income tax return", "category": "first_month", "order": 22},
+    {"title": "Pay outstanding debts", "description": "Review and pay legitimate debts from estate assets", "category": "first_month", "order": 23},
+    {"title": "Distribute personal belongings", "description": "Follow will instructions or family agreement for distribution", "category": "first_month", "order": 24},
+    {"title": "Notify Veterans Affairs (if applicable)", "description": "Report death and inquire about burial benefits", "category": "first_month", "order": 25},
+    {"title": "Update property deeds", "description": "Transfer real estate titles to beneficiaries or trust", "category": "first_month", "order": 26},
+    {"title": "Close or transfer business interests", "description": "Handle any business ownership transitions", "category": "first_month", "order": 27},
+    {"title": "Cancel voter registration", "description": "Notify county election office", "category": "first_month", "order": 28},
+    {"title": "Return medical equipment", "description": "Return any rented hospital beds, wheelchairs, oxygen equipment", "category": "first_month", "order": 29},
+    {"title": "Notify professional organizations", "description": "Cancel memberships in professional associations", "category": "first_month", "order": 30},
+]
+
+async def calculate_document_score(estate_id: str) -> dict:
+    """Calculate document completeness score (0-100)"""
+    documents = await db.documents.find({"estate_id": estate_id}, {"_id": 0}).to_list(100)
+    
+    required_docs = REQUIRED_DOCUMENTS["legal"]
+    found_docs = 0
+    missing_docs = []
+    
+    doc_names_lower = [d.get("name", "").lower() for d in documents]
+    
+    for req_doc in required_docs:
+        req_name = req_doc["name"].lower()
+        # Check if any uploaded document matches (fuzzy matching)
+        found = any(
+            req_name in doc_name or 
+            doc_name in req_name or
+            ("will" in req_name and "will" in doc_name and "living" not in doc_name) or
+            ("trust" in req_name and "trust" in doc_name) or
+            ("financial power" in req_name and "financial" in doc_name and "power" in doc_name) or
+            ("medical power" in req_name and "medical" in doc_name and "power" in doc_name) or
+            ("healthcare directive" in req_name and ("directive" in doc_name or "living will" in doc_name))
+            for doc_name in doc_names_lower
+        )
+        if found:
+            found_docs += 1
+        else:
+            missing_docs.append(req_doc["name"])
+    
+    score = int((found_docs / len(required_docs)) * 100) if required_docs else 0
+    
+    return {
+        "score": score,
+        "found": found_docs,
+        "required": len(required_docs),
+        "missing": missing_docs
+    }
+
+async def calculate_messages_score(estate_id: str) -> dict:
+    """Calculate milestone messages completeness score (0-100)"""
+    beneficiaries = await db.beneficiaries.find({"estate_id": estate_id}, {"_id": 0}).to_list(100)
+    messages = await db.messages.find({"estate_id": estate_id}, {"_id": 0}).to_list(500)
+    
+    if not beneficiaries:
+        return {"score": 0, "found": 0, "required": 1, "missing": ["Add at least one beneficiary"]}
+    
+    total_expected = 0
+    total_found = 0
+    missing_milestones = []
+    
+    for ben in beneficiaries:
+        expected_milestones = get_expected_milestones(ben)
+        total_expected += len(expected_milestones)
+        
+        # Check how many messages exist for this beneficiary
+        ben_messages = [m for m in messages if ben["id"] in m.get("recipients", []) or not m.get("recipients")]
+        
+        # Count unique milestone types covered
+        message_triggers = set()
+        for msg in ben_messages:
+            trigger = msg.get("trigger_type", "immediate")
+            trigger_value = msg.get("trigger_value", "")
+            message_triggers.add(f"{trigger}:{trigger_value}")
+        
+        # Simple heuristic: each message covers one milestone
+        found_for_ben = min(len(ben_messages), len(expected_milestones))
+        total_found += found_for_ben
+        
+        if found_for_ben < len(expected_milestones):
+            missing_count = len(expected_milestones) - found_for_ben
+            missing_milestones.append(f"{ben['name']}: {missing_count} more milestone messages needed")
+    
+    score = int((total_found / max(total_expected, 1)) * 100)
+    
+    return {
+        "score": min(score, 100),
+        "found": total_found,
+        "required": total_expected,
+        "missing": missing_milestones[:5]  # Limit to top 5
+    }
+
+async def calculate_checklist_score(estate_id: str) -> dict:
+    """Calculate checklist completeness score (0-100)"""
+    checklist_items = await db.checklists.find({"estate_id": estate_id}, {"_id": 0}).to_list(100)
+    
+    total_items = len(checklist_items)
+    completed_items = sum(1 for item in checklist_items if item.get("is_completed"))
+    
+    # Minimum 25 items for 100%
+    min_required = 25
+    
+    if total_items < min_required:
+        # Score based on both having enough items AND completing them
+        item_coverage = total_items / min_required
+        completion_rate = completed_items / max(total_items, 1)
+        score = int((item_coverage * 0.5 + completion_rate * 0.5) * 100)
+    else:
+        score = int((completed_items / total_items) * 100)
+    
+    missing = []
+    if total_items < min_required:
+        missing.append(f"Add {min_required - total_items} more checklist items")
+    incomplete = total_items - completed_items
+    if incomplete > 0:
+        missing.append(f"Complete {incomplete} remaining items")
+    
+    return {
+        "score": min(score, 100),
+        "found": completed_items,
+        "required": max(total_items, min_required),
+        "missing": missing
+    }
+
+async def calculate_estate_readiness(estate_id: str) -> dict:
+    """Calculate comprehensive estate readiness score"""
+    doc_result = await calculate_document_score(estate_id)
+    msg_result = await calculate_messages_score(estate_id)
+    checklist_result = await calculate_checklist_score(estate_id)
+    
+    # Average of three categories
+    overall_score = int((doc_result["score"] + msg_result["score"] + checklist_result["score"]) / 3)
+    
+    return {
+        "overall_score": overall_score,
+        "documents": doc_result,
+        "messages": msg_result,
+        "checklist": checklist_result
+    }
+
+async def ensure_default_checklist(estate_id: str):
+    """Ensure estate has default checklist items"""
+    existing = await db.checklists.count_documents({"estate_id": estate_id})
+    if existing == 0:
+        # Add default checklist items
+        for item in DEFAULT_CHECKLIST_ITEMS:
+            checklist_item = ChecklistItem(
+                estate_id=estate_id,
+                title=item["title"],
+                description=item["description"],
+                category=item["category"],
+                order=item["order"]
+            )
+            await db.checklists.insert_one(checklist_item.model_dump())
+
 # ===================== ACTIVITY LOGGING =====================
 
 async def log_activity(estate_id: str, user_id: str, user_name: str, action: str, description: str, metadata: dict = None):
