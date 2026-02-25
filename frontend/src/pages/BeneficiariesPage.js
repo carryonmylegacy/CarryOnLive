@@ -43,6 +43,8 @@ const BeneficiariesPage = () => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [relation, setRelation] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [gender, setGender] = useState('');
   const [avatarColor, setAvatarColor] = useState(avatarColors[0]);
 
   useEffect(() => {
@@ -79,6 +81,8 @@ const BeneficiariesPage = () => {
         email,
         phone: phone || null,
         relation,
+        date_of_birth: dateOfBirth || null,
+        gender: gender || null,
         avatar_color: avatarColor
       }, getAuthHeaders());
       
@@ -112,6 +116,8 @@ const BeneficiariesPage = () => {
     setEmail('');
     setPhone('');
     setRelation('');
+    setDateOfBirth('');
+    setGender('');
     setAvatarColor(avatarColors[0]);
   };
 
