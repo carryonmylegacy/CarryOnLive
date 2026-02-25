@@ -227,6 +227,7 @@ const VaultPage = () => {
     setUploadName('');
     setUploadCategory('legal');
     setUploadLockType('none');
+    setUploadLockPassword('');
     setUploadFile(null);
   };
 
