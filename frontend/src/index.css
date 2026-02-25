@@ -100,15 +100,15 @@
   
   /* ===== LIGHT MODE ===== */
   [data-theme="light"] {
-    --bg: #E8F0FE;
-    --bg2: #DCE8FA;
-    --bg3: #CDDCF5;
-    --content-bg: #EDF3FF;
+    --bg: #DBEAFE;
+    --bg2: #CFDDF8;
+    --bg3: #BFD0F0;
+    --content-bg: #E3EDFC;
     
     /* Surface & Border */
-    --s: rgba(30,64,130,0.05);
+    --s: rgba(30,64,130,0.06);
     --b: rgba(30,64,130,0.1);
-    --b2: rgba(30,64,130,0.15);
+    --b2: rgba(30,64,130,0.16);
     
     /* Text Colors - Dark text for light mode */
     --t: #1E293B;
@@ -129,33 +129,33 @@
     --card-beneficiaries: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
     
     /* Glass card - Light mode */
-    --glass-bg: rgba(255,255,255,0.75);
+    --glass-bg: rgba(255,255,255,0.6);
     --glass-border: rgba(30,64,130,0.12);
     
     /* Mobile nav - Light */
-    --mobile-nav-bg: rgba(232,240,254,0.96);
+    --mobile-nav-bg: rgba(219,234,254,0.96);
     --mobile-nav-text: #64748B;
     --mobile-nav-active: #B8860B;
     
     /* Shadcn Variables */
-    --background: 220 60% 95%;
+    --background: 214 80% 92%;
     --foreground: 222 47% 11%;
-    --card: 220 60% 98%;
+    --card: 214 80% 96%;
     --card-foreground: 222 47% 11%;
-    --popover: 220 60% 97%;
+    --popover: 214 80% 95%;
     --popover-foreground: 222 47% 11%;
     --primary: 43 74% 45%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 50% 92%;
+    --secondary: 220 50% 90%;
     --secondary-foreground: 222 47% 11%;
-    --muted: 220 50% 92%;
+    --muted: 220 50% 90%;
     --muted-foreground: 215 16% 47%;
     --accent: 43 74% 45%;
     --accent-foreground: 222 47% 11%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 40% 88%;
-    --input: 220 40% 88%;
+    --border: 220 40% 85%;
+    --input: 220 40% 85%;
     --ring: 43 74% 45%;
   }
 }
