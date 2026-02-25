@@ -475,7 +475,7 @@ const VaultPage = () => {
             </TabsTrigger>
           ))}
         </TabsList>
-
+        </div>
         <TabsContent value={activeCategory} className="mt-6">
           {filteredDocs.length === 0 ? (
             <Card className="glass-card">
