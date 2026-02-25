@@ -216,7 +216,7 @@ const MessagesPage = () => {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6">
         <Skeleton className="h-12 w-64 bg-white/5" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map(i => (
@@ -228,7 +228,7 @@ const MessagesPage = () => {
   }
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in" data-testid="milestone-messages">
+    <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in" data-testid="milestone-messages">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
