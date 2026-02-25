@@ -224,6 +224,25 @@ class MilestoneReportCreate(BaseModel):
     event_description: str
     event_date: str
 
+class ActivityLog(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    estate_id: str
+    user_id: str
+    user_name: str
+    action: str  # document_upload, beneficiary_added, message_created, checklist_completed, etc.
+    description: str
+    metadata: Optional[Dict[str, Any]] = None
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+class EstateCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+class EstateUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+
 class ChatMessage(BaseModel):
     role: str
     content: str
