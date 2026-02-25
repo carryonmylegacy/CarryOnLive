@@ -162,8 +162,8 @@ const Sidebar = () => {
       {/* Footer - Theme Toggle & User */}
       <div className="sb-user">
         {/* Theme Toggle */}
-        <div className="theme-toggle mb-4" onClick={toggleTheme} data-testid="theme-toggle">
-          <div className="theme-toggle-label">
+        <div className="theme-toggle mb-4" data-testid="theme-toggle">
+          <div className="theme-toggle-label" onClick={toggleTheme}>
             {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
             <span>{theme === 'dark' ? 'Dark' : 'Light'} Mode</span>
           </div>
