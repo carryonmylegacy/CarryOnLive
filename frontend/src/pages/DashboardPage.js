@@ -8,9 +8,7 @@ import {
   Users,
   Bot,
   ChevronRight,
-  TrendingUp,
   Shield,
-  Clock,
   CheckCircle2,
   AlertCircle,
   Plus
@@ -48,7 +46,6 @@ const DashboardPage = () => {
       const response = await axios.get(`${API_URL}/estates`, getAuthHeaders());
       setEstates(response.data);
       if (response.data.length > 0) {
-        // Get saved estate from localStorage or use first one
         const savedEstateId = localStorage.getItem('selected_estate_id');
         const savedEstate = response.data.find(e => e.id === savedEstateId);
         setEstate(savedEstate || response.data[0]);
@@ -84,29 +81,6 @@ const DashboardPage = () => {
     setEstate(newEstate);
     localStorage.setItem('selected_estate_id', newEstate.id);
   };
-        
-        // Fetch additional stats
-        const [docsRes, msgsRes, bensRes] = await Promise.all([
-          axios.get(`${API_URL}/documents/${estateData.id}`, getAuthHeaders()),
-          axios.get(`${API_URL}/messages/${estateData.id}`, getAuthHeaders()),
-          axios.get(`${API_URL}/beneficiaries/${estateData.id}`, getAuthHeaders())
-        ]);
-        
-        setStats({
-          documents: docsRes.data.length,
-          messages: msgsRes.data.length,
-          beneficiaries: bensRes.data.length
-        });
-        
-        const checklistData = await axios.get(`${API_URL}/checklists/${estateData.id}`, getAuthHeaders());
-        setChecklists(checklistData.data);
-      }
-    } catch (error) {
-      console.error('Dashboard fetch error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const completedTasks = checklists.filter(c => c.is_completed).length;
   const totalTasks = checklists.length;
@@ -133,6 +107,32 @@ const DashboardPage = () => {
     );
   }
 
+  if (!estate && estates.length === 0) {
+    return (
+      <div className="p-6 animate-fade-in">
+        <Card className="glass-card max-w-lg mx-auto mt-12">
+          <CardContent className="p-12 text-center">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#d4af37]/20 flex items-center justify-center">
+              <Plus className="w-10 h-10 text-[#d4af37]" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              Create Your First Estate
+            </h2>
+            <p className="text-[#94a3b8] mb-6">
+              Start organizing your legacy by creating an estate. You can add documents, messages, and beneficiaries.
+            </p>
+            <EstateSelector 
+              currentEstate={null}
+              estates={[]}
+              onEstateChange={handleEstateChange}
+              onEstatesUpdate={fetchEstates}
+            />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6 animate-fade-in" data-testid="benefactor-dashboard">
       {/* Header */}
@@ -145,9 +145,17 @@ const DashboardPage = () => {
             {estate?.name || 'Your Estate'} · Last updated today
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Shield className="w-5 h-5 text-[#10b981]" />
-          <span className="text-sm text-[#10b981]">All systems secure</span>
+        <div className="flex items-center gap-3">
+          <EstateSelector
+            currentEstate={estate}
+            estates={estates}
+            onEstateChange={handleEstateChange}
+            onEstatesUpdate={fetchEstates}
+          />
+          <div className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-[#10b981]" />
+            <span className="text-sm text-[#10b981]">Secure</span>
+          </div>
         </div>
       </div>
 
@@ -158,21 +166,9 @@ const DashboardPage = () => {
             {/* Progress Arc */}
             <div className="relative w-48 h-48">
               <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="45" fill="none" stroke="#1e293b" strokeWidth="8" />
                 <circle
-                  cx="50"
-                  cy="50"
-                  r="45"
-                  fill="none"
-                  stroke="#1e293b"
-                  strokeWidth="8"
-                />
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="45"
-                  fill="none"
-                  stroke="url(#goldGradient)"
-                  strokeWidth="8"
+                  cx="50" cy="50" r="45" fill="none" stroke="url(#goldGradient)" strokeWidth="8"
                   strokeLinecap="round"
                   strokeDasharray={`${(estate?.readiness_score || 0) * 2.83} 283`}
                   className="progress-arc"
@@ -249,50 +245,52 @@ const DashboardPage = () => {
         ))}
       </div>
 
-      {/* Checklist Preview */}
-      <Card className="glass-card" data-testid="checklist-preview">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>
-            Immediate Action Checklist
-          </CardTitle>
-          <Button
-            variant="ghost"
-            className="text-[#d4af37] hover:text-[#fcd34d]"
-            onClick={() => navigate('/checklist')}
-          >
-            View All <ChevronRight className="w-4 h-4 ml-1" />
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[#94a3b8] text-sm">{completedTasks} of {totalTasks} completed</span>
-              <span className="text-[#d4af37] font-semibold">{progressPercent}%</span>
+      {/* Two Column Layout: Checklist + Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Checklist Preview */}
+        <Card className="glass-card" data-testid="checklist-preview">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              Immediate Action Checklist
+            </CardTitle>
+            <Button variant="ghost" className="text-[#d4af37] hover:text-[#fcd34d]" onClick={() => navigate('/checklist')}>
+              View All <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-[#94a3b8] text-sm">{completedTasks} of {totalTasks} completed</span>
+                <span className="text-[#d4af37] font-semibold">{progressPercent}%</span>
+              </div>
+              <Progress value={progressPercent} className="h-2 bg-white/10" />
+              
+              <div className="mt-4 space-y-2">
+                {checklists.slice(0, 4).map((item) => (
+                  <div
+                    key={item.id}
+                    className={`flex items-center gap-3 p-3 rounded-xl ${
+                      item.is_completed ? 'bg-[#10b981]/10' : 'bg-white/5'
+                    }`}
+                  >
+                    {item.is_completed ? (
+                      <CheckCircle2 className="w-5 h-5 text-[#10b981]" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-[#f59e0b]" />
+                    )}
+                    <span className={`flex-1 ${item.is_completed ? 'text-[#94a3b8] line-through' : 'text-white'}`}>
+                      {item.title}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <Progress value={progressPercent} className="h-2 bg-white/10" />
-            
-            <div className="mt-4 space-y-2">
-              {checklists.slice(0, 4).map((item) => (
-                <div
-                  key={item.id}
-                  className={`flex items-center gap-3 p-3 rounded-xl ${
-                    item.is_completed ? 'bg-[#10b981]/10' : 'bg-white/5'
-                  }`}
-                >
-                  {item.is_completed ? (
-                    <CheckCircle2 className="w-5 h-5 text-[#10b981]" />
-                  ) : (
-                    <AlertCircle className="w-5 h-5 text-[#f59e0b]" />
-                  )}
-                  <span className={`flex-1 ${item.is_completed ? 'text-[#94a3b8] line-through' : 'text-white'}`}>
-                    {item.title}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        {/* Activity Timeline */}
+        {estate && <ActivityTimeline estateId={estate.id} limit={10} />}
+      </div>
 
       {/* Footer Security Badge */}
       <div className="flex items-center justify-center gap-4 py-4 text-[#64748b] text-sm">
