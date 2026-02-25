@@ -104,6 +104,7 @@ class Estate(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     owner_id: str
     name: str
+    state: Optional[str] = None  # US state for estate law context
     status: str = "pre-transition"  # pre-transition, active, transitioned
     readiness_score: int = 0
     beneficiaries: List[str] = []
@@ -262,10 +263,13 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     session_id: Optional[str] = None
+    estate_id: Optional[str] = None
+    action: Optional[str] = None  # "analyze_vault", "generate_checklist", "analyze_readiness"
 
 class ChatResponse(BaseModel):
     response: str
     session_id: str
+    action_result: Optional[Dict[str, Any]] = None
 
 class DocumentUnlockRequest(BaseModel):
     password: Optional[str] = None
