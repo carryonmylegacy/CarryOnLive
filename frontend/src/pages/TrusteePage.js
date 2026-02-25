@@ -103,12 +103,29 @@ const HOW_IT_WORKS = [
   '7. All records permanently destroyed',
 ];
 
+const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
 const TrusteePage = () => {
+  const { getAuthHeaders } = useAuth();
   const [tasks, setTasks] = useState(INITIAL_TASKS);
   const [view, setView] = useState('list');
   const [selectedId, setSelectedId] = useState(null);
   const [createStep, setCreateStep] = useState(0);
-  const [newTask, setNewTask] = useState({ type: '', title: '', desc: '', confidential: 'full', discloseTo: '', timedRelease: '' });
+  const [newTask, setNewTask] = useState({ type: '', title: '', desc: '', confidential: 'full', discloseTo: '', timedRelease: '', beneficiary: '' });
+  const [beneficiaries, setBeneficiaries] = useState([]);
+
+  useEffect(() => {
+    const fetchBens = async () => {
+      try {
+        const estatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders());
+        if (estatesRes.data.length > 0) {
+          const bensRes = await axios.get(`${API_URL}/beneficiaries/${estatesRes.data[0].id}`, getAuthHeaders());
+          setBeneficiaries(bensRes.data);
+        }
+      } catch (e) { console.error('Fetch beneficiaries error:', e); }
+    };
+    fetchBens();
+  }, []);
 
   const totalCost = (items) => items.reduce((s, i) => s + (i.approved !== false ? i.cost : 0), 0);
   const selectedTask = tasks.find(t => t.id === selectedId);
