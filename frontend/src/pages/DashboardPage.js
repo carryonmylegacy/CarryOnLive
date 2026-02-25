@@ -193,11 +193,11 @@ const DashboardPage = () => {
       onClick={onClick}
       data-testid={`stat-card-${label.toLowerCase().replace(/\s+/g, '-')}`}
     >
-      <Icon className="stat-icon w-6 h-6 lg:w-8 lg:h-8 opacity-70 mb-2 lg:mb-4" />
-      <div className="text-2xl lg:text-4xl font-bold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
+      <Icon className="stat-icon w-6 h-6 lg:w-8 lg:h-8 opacity-70 mb-2 lg:mb-4 mx-auto" />
+      <div className="text-2xl lg:text-4xl font-bold mb-1 text-center" style={{ fontFamily: 'Outfit, sans-serif' }}>
         {value}
       </div>
-      <div className="opacity-80 text-sm lg:text-base font-medium leading-tight">
+      <div className="opacity-80 text-sm lg:text-base font-bold leading-tight text-center">
         {label}
       </div>
     </div>
