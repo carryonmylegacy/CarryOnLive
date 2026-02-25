@@ -433,7 +433,7 @@ const MessagesPage = () => {
                     <div className="space-y-4">
                       <video
                         ref={videoRef}
-                        className="w-full rounded-lg max-h-[200px] bg-[#0b1120]"
+                        className="w-full rounded-lg max-h-[200px] bg-[#0F1629]"
                         muted
                       />
                       <div className="flex justify-center gap-3">
@@ -495,7 +495,7 @@ const MessagesPage = () => {
                 <SelectTrigger className="input-field">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-[#0f1d35] border-white/10">
+                <SelectContent className="bg-[#1A2440] border-white/10">
                   <SelectItem value="immediate">
                     <div className="flex items-center gap-2">
                       <Send className="w-4 h-4" />
@@ -541,7 +541,7 @@ const MessagesPage = () => {
                   <SelectTrigger className="input-field">
                     <SelectValue placeholder="Select event type" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#0f1d35] border-white/10">
+                  <SelectContent className="bg-[#1A2440] border-white/10">
                     {eventTypes.map((event) => (
                       <SelectItem key={event.value} value={event.value}>
                         <div className="flex items-center gap-2">
