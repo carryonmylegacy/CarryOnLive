@@ -21,6 +21,7 @@ const DashboardPage = () => {
   const [estate, setEstate] = useState(null);
   const [checklists, setChecklists] = useState([]);
   const [stats, setStats] = useState({ documents: 0, messages: 0, beneficiaries: 0 });
+  const [readiness, setReadiness] = useState({ documents: { score: 0 }, messages: { score: 0 }, checklist: { score: 0 } });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetchEstates(); }, []);
@@ -41,14 +42,18 @@ const DashboardPage = () => {
 
   const fetchEstateData = async (estateId) => {
     try {
-      const [docsRes, msgsRes, bensRes, checklistRes] = await Promise.all([
+      const [docsRes, msgsRes, bensRes, checklistRes, readinessRes] = await Promise.all([
         axios.get(`${API_URL}/documents/${estateId}`, getAuthHeaders()),
         axios.get(`${API_URL}/messages/${estateId}`, getAuthHeaders()),
         axios.get(`${API_URL}/beneficiaries/${estateId}`, getAuthHeaders()),
-        axios.get(`${API_URL}/checklists/${estateId}`, getAuthHeaders())
+        axios.get(`${API_URL}/checklists/${estateId}`, getAuthHeaders()),
+        axios.get(`${API_URL}/estate/${estateId}/readiness`, getAuthHeaders())
       ]);
       setStats({ documents: docsRes.data.length, messages: msgsRes.data.length, beneficiaries: bensRes.data.length });
       setChecklists(checklistRes.data);
+      setReadiness(readinessRes.data);
+      // Update estate's readiness_score locally to match
+      setEstate(prev => prev ? { ...prev, readiness_score: readinessRes.data.overall_score } : prev);
     } catch (error) { console.error('Fetch estate data error:', error); }
   };
 
