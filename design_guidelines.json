@@ -1,0 +1,160 @@
+{
+  "typography": {
+    "font_family": {
+      "headings": "Outfit, sans-serif",
+      "body": "DM Sans, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
+    "weights": {
+      "light": 300,
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700
+    },
+    "sizes": {
+      "h1": "text-4xl md:text-6xl tracking-tight font-bold",
+      "h2": "text-3xl md:text-5xl tracking-tight font-semibold",
+      "h3": "text-2xl md:text-3xl font-semibold",
+      "body_lg": "text-lg leading-relaxed",
+      "body_base": "text-base leading-relaxed",
+      "caption": "text-sm text-muted-foreground uppercase tracking-widest"
+    },
+    "imports": [
+      "https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap"
+    ]
+  },
+  "colors": {
+    "palette": {
+      "primary": {
+        "DEFAULT": "#d4af37",
+        "foreground": "#0b1120",
+        "hover": "#b8960c",
+        "light": "#fcd34d"
+      },
+      "background": {
+        "DEFAULT": "#0b1120",
+        "secondary": "#0f1d35",
+        "tertiary": "#1e293b"
+      },
+      "surface": {
+        "glass": "rgba(15, 29, 53, 0.6)",
+        "glass_border": "rgba(255, 255, 255, 0.08)"
+      },
+      "text": {
+        "primary": "#f8fafc",
+        "secondary": "#94a3b8",
+        "muted": "#64748b"
+      },
+      "status": {
+        "success": "#10b981",
+        "warning": "#f59e0b",
+        "error": "#ef4444",
+        "info": "#3b82f6"
+      }
+    },
+    "gradients": {
+      "gold_rush": "bg-gradient-to-r from-[#d4af37] to-[#fcd34d]",
+      "deep_ocean": "bg-gradient-to-b from-[#0b1120] to-[#0f1d35]",
+      "glass_shine": "bg-gradient-to-br from-white/10 to-transparent"
+    }
+  },
+  "visual_enhancers": {
+    "glassmorphism": {
+      "card": "bg-[#0f1d35]/60 backdrop-blur-xl border border-white/10 shadow-xl",
+      "overlay": "bg-black/40 backdrop-blur-sm",
+      "nav": "bg-[#0b1120]/80 backdrop-blur-md border-b border-white/5"
+    },
+    "borders": {
+      "subtle": "border border-white/5",
+      "highlight": "border border-[#d4af37]/30"
+    },
+    "shadows": {
+      "glow": "shadow-[0_0_20px_rgba(212,175,55,0.15)]",
+      "deep": "shadow-2xl shadow-black/50"
+    },
+    "radius": {
+      "card": "rounded-2xl",
+      "button": "rounded-full",
+      "input": "rounded-xl"
+    }
+  },
+  "component_guidelines": {
+    "buttons": {
+      "primary": "bg-[#d4af37] text-[#0b1120] hover:bg-[#b8960c] font-semibold rounded-full px-8 py-3 transition-all hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.3)]",
+      "secondary": "bg-white/5 text-white hover:bg-white/10 border border-white/10 rounded-full px-6 py-2 backdrop-blur-sm transition-all",
+      "ghost": "text-[#d4af37] hover:text-[#fcd34d] hover:bg-[#d4af37]/10 rounded-lg px-4 py-2"
+    },
+    "cards": {
+      "default": "bg-[#0f1d35]/50 backdrop-blur-md border border-white/5 rounded-2xl p-6 hover:border-white/10 transition-colors",
+      "interactive": "group cursor-pointer hover:bg-[#0f1d35]/70 transition-all hover:-translate-y-1 hover:shadow-xl"
+    },
+    "inputs": {
+      "default": "bg-[#0b1120]/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:border-[#d4af37]/50 focus:ring-1 focus:ring-[#d4af37]/50 transition-all outline-none"
+    }
+  },
+  "layout_strategies": {
+    "grid_system": {
+      "dashboard": "grid grid-cols-1 md:grid-cols-12 gap-6 p-6",
+      "bento_hero": "col-span-full md:col-span-8 row-span-2",
+      "bento_sidebar": "col-span-full md:col-span-4 row-span-2"
+    },
+    "spacing": {
+      "section_gap": "gap-8 md:gap-12",
+      "container_padding": "p-4 md:p-8 lg:p-12"
+    },
+    "navigation": {
+      "desktop": "fixed left-0 top-0 h-full w-64 border-r border-white/5 bg-[#0b1120]",
+      "mobile": "fixed bottom-0 left-0 w-full h-16 bg-[#0b1120]/90 backdrop-blur-lg border-t border-white/5 z-50 flex justify-around items-center"
+    }
+  },
+  "motion": {
+    "transitions": {
+      "default": "transition-all duration-300 ease-out",
+      "slow": "transition-all duration-700 ease-in-out"
+    },
+    "animations": {
+      "fade_in": "animate-in fade-in duration-500",
+      "slide_up": "animate-in slide-in-from-bottom-4 duration-500",
+      "pulse_glow": "animate-pulse"
+    }
+  },
+  "image_urls": {
+    "hero_background": {
+      "url": "https://images.unsplash.com/photo-1684827053611-ae9957102f3e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODF8MHwxfHNlYXJjaHwyfHxwZWFjZWZ1bCUyMHN1bnNldCUyMGxhbmRzY2FwZSUyMG1vdW50YWluc3xlbnwwfHx8fDE3NzIwMDE2MDF8MA&ixlib=rb-4.1.0&q=85",
+      "desc": "Peaceful lake and mountain sunset for login/landing background"
+    },
+    "benefactor_avatar": {
+      "url": "https://images.unsplash.com/photo-1758686253706-15c16f83743a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwyfHxoYXBweSUyMHNlbmlvciUyMGNvdXBsZSUyMHBvcnRyYWl0fGVufDB8fHx8MTc3MjAwMTYwM3ww&ixlib=rb-4.1.0&q=85",
+      "desc": "Loving senior couple for profile/dashboard placeholder"
+    },
+    "vault_abstract": {
+      "url": "https://images.unsplash.com/photo-1639152201978-931fd2ec8083?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA4Mzl8MHwxfHNlYXJjaHwxfHxmdXR1cmlzdGljJTIwc2VjdXJlJTIwZGlnaXRhbCUyMHZhdWx0JTIwYWJzdHJhY3R8ZW58MHx8fHwxNzcyMDAxNjA1fDA&ixlib=rb-4.1.0&q=85",
+      "desc": "Abstract digital block for vault section background"
+    },
+    "ai_guardian": {
+      "url": "https://images.unsplash.com/photo-1625314887424-9f190599bd56?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODF8MHwxfHNlYXJjaHwzfHxmcmllbmRseSUyMGFpJTIwYXNzaXN0YW50JTIwYXZhdGFyJTIwZnV0dXJpc3RpY3xlbnwwfHx8fDE3NzIwMDE2MDd8MA&ixlib=rb-4.1.0&q=85",
+      "desc": "Clean robot illustration for Estate Guardian AI chat"
+    }
+  },
+  "icons": {
+    "library": "lucide-react",
+    "style": "stroke-1.5"
+  },
+  "universal_guidelines": {
+    "anti_ai_rules": [
+      "Do not use generic centered layouts.",
+      "Avoid 'Inter' font for headings; use 'Outfit'.",
+      "Do not use full-screen gradients; use subtle noise or dark backgrounds.",
+      "Use 2-3x more spacing than typical designs.",
+      "Never use pure black (#000000); use tinted darks (#0b1120)."
+    ],
+    "accessibility": [
+      "Ensure text contrast ratio of 4.5:1.",
+      "Use data-testid on all interactive elements.",
+      "Respect prefers-reduced-motion."
+    ],
+    "theme_strategy": "Dark mode is the DEFAULT. Light mode is secondary. Design for dark first."
+  },
+  "instructions_to_main_agent": "You are building CarryOn™, a secure estate planning app. Follow the 'Jewel & Luxury' archetype. Use the provided image URLs for specific sections. Implement the 'Bento' grid for the dashboard. Use 'Outfit' for all headings and 'DM Sans' for body text. Prioritize glassmorphism and gold accents on dark navy backgrounds."
+}
