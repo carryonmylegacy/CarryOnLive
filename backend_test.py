@@ -524,6 +524,112 @@ class CarryOnAPITester:
             return True
         return False
 
+    def test_multi_estate_support(self):
+        """Test multi-estate support (P2 feature)"""
+        print(f"\n🏘️ Testing Multi-Estate Support (P2)")
+        
+        # Create a new estate
+        new_estate_data = {
+            "name": "Test Secondary Estate",
+            "description": "Testing multi-estate functionality"
+        }
+        
+        success, response = self.run_test(
+            "Create New Estate",
+            "POST",
+            "estates",
+            200,
+            data=new_estate_data
+        )
+        
+        if success and 'id' in response:
+            new_estate_id = response['id']
+            print(f"   ✅ New estate created: {response['name']} (ID: {new_estate_id})")
+            
+            # Get all estates to verify multi-estate support
+            success, estates_response = self.run_test(
+                "Get All Estates (Multi-Estate)",
+                "GET",
+                "estates",
+                200
+            )
+            
+            if success and len(estates_response) >= 2:
+                print(f"   ✅ Found {len(estates_response)} estates - multi-estate support confirmed")
+                
+                # Test switching between estates by getting data for the new estate
+                success, estate_data = self.run_test(
+                    "Get Specific Estate Data",
+                    "GET",
+                    f"estates/{new_estate_id}",
+                    200
+                )
+                
+                if success:
+                    print(f"   ✅ Successfully retrieved data for new estate")
+                    
+                    # Clean up - delete the test estate
+                    delete_success, _ = self.run_test(
+                        "Delete Test Estate",
+                        "DELETE",
+                        f"estates/{new_estate_id}",
+                        200
+                    )
+                    
+                    if delete_success:
+                        print(f"   ✅ Test estate cleaned up successfully")
+                    
+                    return True
+        
+        return False
+
+    def test_activity_timeline(self):
+        """Test activity timeline (P2 feature)"""
+        if not self.estate_id:
+            return False
+            
+        print(f"\n📊 Testing Activity Timeline (P2)")
+        
+        success, response = self.run_test(
+            "Get Activity Timeline",
+            "GET",
+            f"activity/{self.estate_id}",
+            200
+        )
+        
+        if success:
+            activities = response if isinstance(response, list) else []
+            print(f"   ✅ Found {len(activities)} activity entries")
+            
+            if activities:
+                # Check activity structure
+                first_activity = activities[0]
+                required_fields = ['id', 'action', 'description', 'user_name', 'created_at']
+                has_all_fields = all(field in first_activity for field in required_fields)
+                
+                if has_all_fields:
+                    print(f"   ✅ Activity structure valid: {first_activity['action']} - {first_activity['description']}")
+                    
+                    # Test with limit parameter
+                    limited_success, limited_response = self.run_test(
+                        "Get Limited Activity Timeline",
+                        "GET",
+                        f"activity/{self.estate_id}?limit=5",
+                        200
+                    )
+                    
+                    if limited_success:
+                        limited_activities = limited_response if isinstance(limited_response, list) else []
+                        print(f"   ✅ Limited query returned {len(limited_activities)} activities (max 5)")
+                        return True
+                else:
+                    print(f"   ❌ Activity structure missing required fields")
+            else:
+                print(f"   ℹ️  No activities found (this is normal for new estates)")
+                return True
+        
+        return False
+
 def main():
     """Main test execution"""
     print("🚀 Starting CarryOn™ API Tests")
