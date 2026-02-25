@@ -316,6 +316,7 @@ const DashboardPage = () => {
           label="Secure Document Vault"
           cardClass="stat-card-vault"
           onClick={() => navigate('/vault')}
+          sectionKey="vault"
         />
         <StatCard 
           icon={MessageSquare}
@@ -323,6 +324,7 @@ const DashboardPage = () => {
           label="Milestone Messages"
           cardClass="stat-card-messages"
           onClick={() => navigate('/messages')}
+          sectionKey="messages"
         />
         <StatCard 
           icon={CheckSquare}
@@ -330,6 +332,7 @@ const DashboardPage = () => {
           label="Immediate Action Checklist"
           cardClass="stat-card-checklist"
           onClick={() => navigate('/checklist')}
+          sectionKey="checklist"
         />
         {/* Desktop only - 4th card in same row */}
         <StatCard 
@@ -339,6 +342,7 @@ const DashboardPage = () => {
           cardClass="stat-card-beneficiaries"
           onClick={() => navigate('/beneficiaries')}
           className="hidden lg:block"
+          sectionKey="beneficiaries"
         />
       </div>
 
