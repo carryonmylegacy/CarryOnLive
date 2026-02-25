@@ -98,7 +98,7 @@ const MobileNav = () => {
             side="right" 
             className="w-72 p-0 border-l"
             style={{ 
-              background: theme === 'dark' ? '#0D1018' : '#F8FAFC',
+              background: theme === 'dark' ? '#141C33' : '#F8FAFC',
               borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'
             }}
           >

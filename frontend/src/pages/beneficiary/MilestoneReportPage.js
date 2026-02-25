@@ -187,7 +187,7 @@ const MilestoneReportPage = () => {
                     <SelectTrigger className="input-field">
                       <SelectValue placeholder="Select estate" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#0f1d35] border-white/10">
+                    <SelectContent className="bg-[#1A2440] border-white/10">
                       {estates.map((estate) => (
                         <SelectItem key={estate.id} value={estate.id}>{estate.name}</SelectItem>
                       ))}
@@ -203,7 +203,7 @@ const MilestoneReportPage = () => {
                   <SelectTrigger className="input-field" data-testid="event-type-select">
                     <SelectValue placeholder="Select event type" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#0f1d35] border-white/10">
+                  <SelectContent className="bg-[#1A2440] border-white/10">
                     {eventTypes.map((event) => (
                       <SelectItem key={event.value} value={event.value}>
                         <div className="flex items-center gap-2">

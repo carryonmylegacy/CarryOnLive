@@ -291,7 +291,7 @@ const BeneficiariesPage = () => {
                 <SelectTrigger className="input-field" data-testid="beneficiary-relation-select">
                   <SelectValue placeholder="Select relationship" />
                 </SelectTrigger>
-                <SelectContent className="bg-[#0f1d35] border-white/10">
+                <SelectContent className="bg-[#1A2440] border-white/10">
                   {relations.map((rel) => (
                     <SelectItem key={rel} value={rel}>{rel}</SelectItem>
                   ))}
@@ -343,7 +343,7 @@ const BeneficiariesPage = () => {
                 <SelectTrigger className="input-field" data-testid="beneficiary-gender-select">
                   <SelectValue placeholder="Select gender" />
                 </SelectTrigger>
-                <SelectContent className="bg-[#0f1d35] border-white/10">
+                <SelectContent className="bg-[#1A2440] border-white/10">
                   <SelectItem value="male">Male</SelectItem>
                   <SelectItem value="female">Female</SelectItem>
                   <SelectItem value="other">Other</SelectItem>
