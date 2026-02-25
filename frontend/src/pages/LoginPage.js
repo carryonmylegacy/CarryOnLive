@@ -162,9 +162,9 @@ const LoginPage = () => {
 
           <div className="mt-6 text-center">
             <span className="text-[#64748b] text-sm">New to CarryOn™? </span>
-            <button className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors">
+            <a href="/signup" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors">
               Create Account
-            </button>
+            </a>
           </div>
         </div>
 
