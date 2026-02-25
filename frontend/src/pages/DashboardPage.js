@@ -300,8 +300,8 @@ const DashboardPage = () => {
         {/* Secure Document Vault Preview */}
         <div className="glass-card p-4 lg:p-6">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-base lg:text-lg font-semibold text-[var(--t)]">Secure Document Vault</h3>
-            <span className="text-[var(--t4)] text-xs lg:text-sm">
+            <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">Secure Document Vault</h3>
+            <span className="text-[var(--t4)] text-base">
               {stats.documents > 0 ? `${(stats.documents * 0.5).toFixed(0)} MB` : '0 MB'} / 10 GB
             </span>
           </div>
@@ -313,36 +313,36 @@ const DashboardPage = () => {
           </div>
           <button 
             onClick={() => navigate('/vault')}
-            className="mt-3 text-[var(--gold)] hover:text-[var(--gold2)] text-sm font-medium flex items-center gap-1"
+            className="mt-3 text-[var(--gold)] hover:text-[var(--gold2)] text-base font-medium flex items-center gap-1"
           >
-            View All Documents <ChevronRight className="w-4 h-4" />
+            View All Documents <ChevronRight className="w-5 h-5" />
           </button>
         </div>
 
         {/* Milestone Messages Preview */}
         <div className="glass-card p-4 lg:p-6">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-base lg:text-lg font-semibold text-[var(--t)]">Milestone Messages</h3>
-            <span className="text-[var(--t4)] text-xs lg:text-sm">
+            <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">Milestone Messages</h3>
+            <span className="text-[var(--t4)] text-base">
               {stats.messages} message{stats.messages !== 1 ? 's' : ''}
             </span>
           </div>
           {stats.messages > 0 ? (
             <div className="flex items-center gap-3 p-3 bg-[var(--s)] rounded-lg">
               <MessageSquare className="w-5 h-5 text-[#14b8a6]" />
-              <span className="text-[var(--t3)] text-sm">Messages ready for your loved ones</span>
+              <span className="text-[var(--t3)] text-base">Messages ready for your loved ones</span>
             </div>
           ) : (
             <div className="flex items-center gap-3 p-3 bg-[var(--s)] rounded-lg">
               <Clock className="w-5 h-5 text-[var(--t5)]" />
-              <span className="text-[var(--t4)] text-sm">No messages yet</span>
+              <span className="text-[var(--t4)] text-base">No messages yet</span>
             </div>
           )}
           <button 
             onClick={() => navigate('/messages')}
-            className="mt-3 text-[var(--gold)] hover:text-[var(--gold2)] text-sm font-medium flex items-center gap-1"
+            className="mt-3 text-[var(--gold)] hover:text-[var(--gold2)] text-base font-medium flex items-center gap-1"
           >
-            Create Message <ChevronRight className="w-4 h-4" />
+            Create Message <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </div>
