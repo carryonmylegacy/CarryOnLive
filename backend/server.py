@@ -1020,7 +1020,7 @@ async def update_estate(estate_id: str, data: EstateUpdate, current_user: dict =
             user_id=current_user["id"],
             user_name=current_user["name"],
             action="estate_updated",
-            description=f"Updated estate settings"
+            description="Updated estate settings"
         )
     
     return {"message": "Estate updated"}
@@ -1810,7 +1810,7 @@ async def extract_document_text(document: dict) -> str:
     
     except Exception as e:
         logger.warning(f"Document extraction error for {document['name']}: {e}")
-        return f"[Document content unavailable - decryption error]"
+        return "[Document content unavailable - decryption error]"
 
 
 async def gather_estate_context(estate_id: str, include_doc_content: bool = False) -> str:
@@ -1957,7 +1957,7 @@ async def chat_with_guardian(data: ChatRequest, current_user: dict = Depends(get
     user_message_text = data.message
     
     if data.action == "generate_checklist":
-        user_message_text = f"""Based on my estate documents and current situation, generate a comprehensive, prioritized Immediate Action Checklist. 
+        user_message_text = """Based on my estate documents and current situation, generate a comprehensive, prioritized Immediate Action Checklist. 
         
 Requirements:
 - Create at least 25 items if I don't already have enough
@@ -1969,11 +1969,11 @@ Requirements:
 
 Return your response as helpful advice, and also return the checklist items in this exact JSON format at the END of your response, wrapped in ```checklist_json``` tags:
 ```checklist_json
-[{{"title": "Item title", "description": "Detailed description", "category": "immediate|first_week|two_weeks|first_month", "order": 1}}]
+[{"title": "Item title", "description": "Detailed description", "category": "immediate|first_week|two_weeks|first_month", "order": 1}]
 ```"""
     
     elif data.action == "analyze_readiness":
-        user_message_text = f"""Analyze my Estate Readiness Score in detail. For each of the three categories (Documents, Messages, Checklist):
+        user_message_text = """Analyze my Estate Readiness Score in detail. For each of the three categories (Documents, Messages, Checklist):
 1. Explain what I have and what I'm missing
 2. Provide specific, actionable steps to improve each score
 3. Reference my state's specific requirements where applicable
@@ -1982,7 +1982,7 @@ Return your response as helpful advice, and also return the checklist items in t
 Also identify any potential legal issues or gaps in my estate plan based on the documents in my vault."""
     
     elif data.action == "analyze_vault":
-        user_message_text = f"""Perform a comprehensive analysis of all documents in my Secure Document Vault. For each document:
+        user_message_text = """Perform a comprehensive analysis of all documents in my Secure Document Vault. For each document:
 1. Summarize the key contents and provisions
 2. Identify any potential issues, gaps, or inconsistencies
 3. Check if the documents work together properly (e.g., will and trust alignment)
