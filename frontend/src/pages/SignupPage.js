@@ -208,7 +208,7 @@ const SignupPage = () => {
             {/* Last Name and Suffix Row */}
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-2 space-y-2">
-                <Label htmlFor="lastName" className="text-[#94a3b8] text-sm">Last Name *</Label>
+                <Label htmlFor="lastName" className="text-[#A0AABF] text-sm">Last Name *</Label>
                 <Input
                   id="lastName"
                   type="text"
@@ -221,12 +221,12 @@ const SignupPage = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="suffix" className="text-[#94a3b8] text-sm">Suffix</Label>
+                <Label htmlFor="suffix" className="text-[#A0AABF] text-sm">Suffix</Label>
                 <Select value={suffix} onValueChange={setSuffix}>
                   <SelectTrigger className="input-field" data-testid="signup-suffix-select">
                     <SelectValue placeholder="None" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#0f1d35] border-white/10">
+                  <SelectContent className="bg-[#0D1018] border-white/[0.07]">
                     {suffixOptions.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                     ))}
@@ -237,12 +237,12 @@ const SignupPage = () => {
 
             {/* Gender */}
             <div className="space-y-2">
-              <Label htmlFor="gender" className="text-[#94a3b8] text-sm">Gender</Label>
+              <Label htmlFor="gender" className="text-[#A0AABF] text-sm">Gender</Label>
               <Select value={gender} onValueChange={setGender}>
                 <SelectTrigger className="input-field" data-testid="signup-gender-select">
                   <SelectValue placeholder="Select..." />
                 </SelectTrigger>
-                <SelectContent className="bg-[#0f1d35] border-white/10">
+                <SelectContent className="bg-[#0D1018] border-white/[0.07]">
                   {genderOptions.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                   ))}
@@ -252,9 +252,9 @@ const SignupPage = () => {
 
             {/* Email */}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-[#94a3b8] text-sm">Email *</Label>
+              <Label htmlFor="email" className="text-[#A0AABF] text-sm">Email *</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748b]" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#525C72]" />
                 <Input
                   id="email"
                   type="email"
@@ -271,9 +271,9 @@ const SignupPage = () => {
             {/* Password Fields */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-[#94a3b8] text-sm">Password *</Label>
+                <Label htmlFor="password" className="text-[#A0AABF] text-sm">Password *</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748b]" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#525C72]" />
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
