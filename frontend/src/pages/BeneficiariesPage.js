@@ -323,6 +323,33 @@ const BeneficiariesPage = () => {
                 className="input-field"
               />
             </div>
+
+            {/* Date of Birth */}
+            <div className="space-y-2">
+              <Label className="text-[#94a3b8]">Date of Birth (Optional)</Label>
+              <Input
+                type="date"
+                value={dateOfBirth}
+                onChange={(e) => setDateOfBirth(e.target.value)}
+                className="input-field"
+                data-testid="beneficiary-dob-input"
+              />
+            </div>
+
+            {/* Gender */}
+            <div className="space-y-2">
+              <Label className="text-[#94a3b8]">Gender (Optional)</Label>
+              <Select value={gender} onValueChange={setGender}>
+                <SelectTrigger className="input-field" data-testid="beneficiary-gender-select">
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#0f1d35] border-white/10">
+                  <SelectItem value="male">Male</SelectItem>
+                  <SelectItem value="female">Female</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           
           <div className="flex justify-end gap-3">
