@@ -4,143 +4,190 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import {
   LayoutDashboard,
-  FileText,
+  FolderLock,
   MessageSquare,
   Users,
-  Bot,
+  Sparkles,
   CheckSquare,
-  Award,
+  Shield,
   Settings,
   LogOut,
-  Shield,
   Moon,
   Sun,
   FileKey,
-  Home,
-  Bell
+  Home
 } from 'lucide-react';
 import { Switch } from '../ui/switch';
-import NotificationCenter from '../estate/NotificationCenter';
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
-  const [currentEstateId, setCurrentEstateId] = React.useState(() => localStorage.getItem('selected_estate_id'));
-
-  React.useEffect(() => {
-    const handleStorage = () => setCurrentEstateId(localStorage.getItem('selected_estate_id'));
-    window.addEventListener('storage', handleStorage);
-    const interval = setInterval(() => setCurrentEstateId(localStorage.getItem('selected_estate_id')), 1000);
-    return () => { window.removeEventListener('storage', handleStorage); clearInterval(interval); };
-  }, []);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const benefactorLinks = [
-    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/vault', icon: FileText, label: 'Document Vault' },
-    { to: '/messages', icon: MessageSquare, label: 'Milestone Messages' },
-    { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
-    { to: '/guardian', icon: Bot, label: 'Estate Guardian' },
-    { to: '/checklist', icon: CheckSquare, label: 'Action Checklist' },
-    { to: '/trustee', icon: Award, label: 'Trustee Services' },
-    { to: '/transition', icon: FileKey, label: 'Estate Transition' },
-    { to: '/settings', icon: Settings, label: 'Settings' },
+  // Navigation structure matching prototype
+  const benefactorNavSections = [
+    {
+      title: 'MY LEGACY',
+      items: [
+        { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+        { to: '/vault', icon: FolderLock, label: 'Secure Document Vault' },
+        { to: '/guardian', icon: Sparkles, label: 'Estate Guardian' },
+        { to: '/checklist', icon: CheckSquare, label: 'Immediate Action Checklist' },
+        { to: '/messages', icon: MessageSquare, label: 'Milestone Messages' },
+        { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
+        { to: '/trustee', icon: Shield, label: 'Trustee Services' },
+      ]
+    },
+    {
+      title: 'ACCOUNT',
+      items: [
+        { to: '/settings', icon: Settings, label: 'Settings' },
+      ]
+    }
   ];
 
-  const beneficiaryLinks = [
-    { to: '/beneficiary', icon: Home, label: 'Estate Hub' },
-    { to: '/beneficiary/vault', icon: FileText, label: 'Document Vault' },
-    { to: '/beneficiary/messages', icon: MessageSquare, label: 'Messages' },
-    { to: '/beneficiary/milestone', icon: CheckSquare, label: 'Report Milestone' },
-    { to: '/settings', icon: Settings, label: 'Settings' },
+  const beneficiaryNavSections = [
+    {
+      title: 'ESTATE ACCESS',
+      items: [
+        { to: '/beneficiary', icon: Home, label: 'Estate Hub' },
+        { to: '/beneficiary/vault', icon: FolderLock, label: 'Document Vault' },
+        { to: '/beneficiary/messages', icon: MessageSquare, label: 'Messages' },
+        { to: '/beneficiary/milestone', icon: CheckSquare, label: 'Report Milestone' },
+      ]
+    },
+    {
+      title: 'ACCOUNT',
+      items: [
+        { to: '/settings', icon: Settings, label: 'Settings' },
+      ]
+    }
   ];
 
-  const adminLinks = [
-    { to: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/admin/certificates', icon: FileKey, label: 'Review Certificates' },
-    { to: '/settings', icon: Settings, label: 'Settings' },
+  const adminNavSections = [
+    {
+      title: 'ADMINISTRATION',
+      items: [
+        { to: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
+        { to: '/admin/certificates', icon: FileKey, label: 'Review Certificates' },
+      ]
+    },
+    {
+      title: 'ACCOUNT',
+      items: [
+        { to: '/settings', icon: Settings, label: 'Settings' },
+      ]
+    }
   ];
 
-  const getLinks = () => {
-    if (user?.role === 'admin') return adminLinks;
-    if (user?.role === 'beneficiary') return beneficiaryLinks;
-    return benefactorLinks;
+  const getNavSections = () => {
+    if (user?.role === 'admin') return adminNavSections;
+    if (user?.role === 'beneficiary') return beneficiaryNavSections;
+    return benefactorNavSections;
+  };
+
+  const getUserInitials = () => {
+    if (user?.first_name && user?.last_name) {
+      return `${user.first_name[0]}${user.last_name[0]}`.toUpperCase();
+    }
+    if (user?.name) {
+      return user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    }
+    return 'U';
+  };
+
+  const getUserDisplayName = () => {
+    if (user?.first_name && user?.last_name) {
+      return `${user.first_name} ${user.last_name}`;
+    }
+    return user?.name || 'User';
+  };
+
+  const getRoleLabel = () => {
+    if (user?.role === 'beneficiary') return 'BENEFICIARY';
+    if (user?.role === 'admin') return 'ADMINISTRATOR';
+    return 'BENEFACTOR PORTAL';
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-[var(--carryon-bg)] border-r border-white/5 flex flex-col z-40 hidden lg:flex">
-      {/* Logo */}
-      <div className="p-6 border-b border-white/5">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#d4af37] to-[#fcd34d] flex items-center justify-center">
-            <Shield className="w-5 h-5 text-[#0b1120]" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              CarryOn™
-            </h1>
-            <p className="text-xs text-[#64748b] uppercase tracking-wider">
-              {user?.role === 'beneficiary' ? 'Beneficiary' : user?.role === 'admin' ? 'Admin' : 'Benefactor'}
-            </p>
-          </div>
+    <aside className="sb hidden lg:flex" data-testid="sidebar">
+      {/* Logo Section */}
+      <div className="sb-logo">
+        <img 
+          src="/carryon-logo.jpg" 
+          alt="CarryOn™" 
+          className="sb-logo-img"
+          onError={(e) => {
+            e.target.style.display = 'none';
+            e.target.nextSibling.style.display = 'flex';
+          }}
+        />
+        <div 
+          className="sb-avatar" 
+          style={{ display: 'none', width: '42px', height: '42px', borderRadius: '10px' }}
+        >
+          <Shield className="w-5 h-5" />
+        </div>
+        <div className="sb-logo-text">
+          <span className="sb-logo-title">CarryOn™</span>
+          <span className="sb-logo-subtitle">{getRoleLabel()}</span>
         </div>
       </div>
 
-      {/* User Info */}
-      <div className="p-4 border-b border-white/5">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#d4af37]/20 flex items-center justify-center text-[#d4af37] font-semibold">
-            {user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+      {/* Navigation Sections */}
+      <nav className="flex-1 overflow-y-auto py-4">
+        {getNavSections().map((section, idx) => (
+          <div key={idx} className="nav-section">
+            <div className="nav-section-title">{section.title}</div>
+            {section.items.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+              >
+                <item.icon />
+                <span>{item.label}</span>
+              </NavLink>
+            ))}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-white font-medium truncate">{user?.name || 'User'}</p>
-            <p className="text-xs text-[#64748b] truncate">{user?.email || ''}</p>
-          </div>
-          {currentEstateId && user?.role === 'benefactor' && (
-            <NotificationCenter estateId={currentEstateId} />
-          )}
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        {getLinks().map((link) => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            className={({ isActive }) =>
-              `sidebar-link ${isActive ? 'active' : ''}`
-            }
-            data-testid={`nav-${link.label.toLowerCase().replace(/\s+/g, '-')}`}
-          >
-            <link.icon className="w-5 h-5" />
-            <span>{link.label}</span>
-          </NavLink>
         ))}
       </nav>
 
-      {/* Theme Toggle & Logout */}
-      <div className="p-4 border-t border-white/5 space-y-3">
-        <div className="flex items-center justify-between px-4 py-2">
-          <div className="flex items-center gap-2 text-[#94a3b8]">
+      {/* Footer - Theme Toggle & User */}
+      <div className="sb-user">
+        {/* Theme Toggle */}
+        <div className="theme-toggle mb-4" onClick={toggleTheme} data-testid="theme-toggle">
+          <div className="theme-toggle-label">
             {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-            <span className="text-sm">Dark Mode</span>
+            <span>{theme === 'dark' ? 'Dark' : 'Light'} Mode</span>
           </div>
           <Switch
             checked={theme === 'dark'}
             onCheckedChange={toggleTheme}
-            data-testid="theme-toggle"
           />
         </div>
-        
+
+        {/* User Info */}
+        <div className="sb-user-info">
+          <div className="sb-avatar">
+            {getUserInitials()}
+          </div>
+          <div className="sb-user-details">
+            <div className="sb-user-name">{getUserDisplayName()}</div>
+            <div className="sb-user-email">{user?.email || ''}</div>
+          </div>
+        </div>
+
+        {/* Logout Button */}
         <button
           onClick={handleLogout}
-          className="sidebar-link w-full text-[#ef4444] hover:bg-[#ef4444]/10"
+          className="nav-item w-full mt-3 text-[var(--rd)] hover:bg-[var(--rdbg)]"
           data-testid="logout-button"
         >
           <LogOut className="w-5 h-5" />
