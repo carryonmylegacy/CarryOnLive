@@ -173,6 +173,7 @@
     background: var(--bg);
     color: var(--t);
     font-family: var(--body);
+    font-weight: 700;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -180,6 +181,11 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--sans);
     color: var(--t);
+    font-weight: 700;
+  }
+  
+  p, span, div, a, button, input, textarea, select, label {
+    font-weight: 700;
   }
 }
 
