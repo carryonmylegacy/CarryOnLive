@@ -547,12 +547,24 @@ const VaultPage = () => {
                       </p>
                       
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {isPreviewable(doc.file_type) && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-[#3b82f6] hover:text-[#60a5fa]"
+                            onClick={() => doc.is_locked ? (setSelectedDoc(doc), setShowLockModal(true)) : handlePreview(doc)}
+                            title="Preview"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        )}
                         <Button 
                           variant="ghost" 
                           size="sm" 
                           className="text-[#94a3b8] hover:text-white"
                           onClick={() => doc.is_locked ? (setSelectedDoc(doc), setShowLockModal(true)) : handleDownload(doc)}
                           disabled={downloading === doc.id}
+                          title="Download"
                         >
                           {downloading === doc.id ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -566,6 +578,7 @@ const VaultPage = () => {
                             size="sm"
                             className="text-[#ef4444] hover:text-[#ef4444]"
                             onClick={() => handleDelete(doc.id)}
+                            title="Delete"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
