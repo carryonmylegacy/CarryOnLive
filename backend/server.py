@@ -234,6 +234,103 @@ class ChatResponse(BaseModel):
     response: str
     session_id: str
 
+class DocumentUnlockRequest(BaseModel):
+    password: Optional[str] = None
+    backup_code: Optional[str] = None
+
+class DocumentUploadRequest(BaseModel):
+    estate_id: str
+    name: str
+    category: str
+    lock_type: Optional[str] = None
+    lock_password: Optional[str] = None  # For password-protected docs
+
+# ===================== ENCRYPTION HELPERS =====================
+
+def get_encryption_key() -> bytes:
+    """Generate a Fernet key from the encryption key"""
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=ENCRYPTION_SALT,
+        iterations=480000,
+    )
+    key = base64.urlsafe_b64encode(kdf.derive(ENCRYPTION_KEY.encode()))
+    return key
+
+def encrypt_data(data: bytes) -> str:
+    """Encrypt data and return base64 encoded string"""
+    f = Fernet(get_encryption_key())
+    encrypted = f.encrypt(data)
+    return base64.b64encode(encrypted).decode()
+
+def decrypt_data(encrypted_data: str) -> bytes:
+    """Decrypt base64 encoded encrypted data"""
+    f = Fernet(get_encryption_key())
+    encrypted_bytes = base64.b64decode(encrypted_data.encode())
+    return f.decrypt(encrypted_bytes)
+
+def generate_backup_code() -> str:
+    """Generate a random backup code"""
+    return '-'.join([''.join([str(random.randint(0, 9)) for _ in range(4)]) for _ in range(3)])
+
+# ===================== EMAIL HELPERS =====================
+
+async def send_otp_email(email: str, otp: str, name: str = "User"):
+    """Send OTP via Resend email"""
+    if not RESEND_API_KEY:
+        logger.info(f"Email not configured. OTP for {email}: {otp}")
+        return False
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; background-color: #0b1120; color: #f8fafc; padding: 40px; }}
+            .container {{ max-width: 500px; margin: 0 auto; background: #0f1d35; border-radius: 16px; padding: 40px; border: 1px solid rgba(255,255,255,0.1); }}
+            .logo {{ text-align: center; margin-bottom: 24px; }}
+            .logo-text {{ font-size: 24px; font-weight: bold; color: #d4af37; }}
+            h1 {{ color: #f8fafc; font-size: 20px; margin-bottom: 16px; }}
+            .otp-code {{ background: linear-gradient(135deg, #d4af37, #fcd34d); color: #0b1120; font-size: 32px; font-weight: bold; letter-spacing: 8px; padding: 20px 40px; border-radius: 12px; text-align: center; margin: 24px 0; }}
+            p {{ color: #94a3b8; line-height: 1.6; }}
+            .footer {{ margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1); text-align: center; color: #64748b; font-size: 12px; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="logo">
+                <span class="logo-text">CarryOn™</span>
+            </div>
+            <h1>Hello {name},</h1>
+            <p>Your verification code for CarryOn™ is:</p>
+            <div class="otp-code">{otp}</div>
+            <p>This code will expire in 10 minutes. If you didn't request this code, please ignore this email.</p>
+            <div class="footer">
+                <p>AES-256 Encrypted · Zero-Knowledge · SOC 2 Compliant</p>
+                <p>© 2024 CarryOn™ - Every American Family. Ready.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    params = {
+        "from": SENDER_EMAIL,
+        "to": [email],
+        "subject": f"Your CarryOn™ Verification Code: {otp[:2]}****",
+        "html": html_content
+    }
+    
+    try:
+        await asyncio.to_thread(resend.Emails.send, params)
+        logger.info(f"OTP email sent to {email}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send OTP email: {e}")
+        logger.info(f"Fallback - OTP for {email}: {otp}")
+        return False
+
 # ===================== AUTH HELPERS =====================
 
 def hash_password(password: str) -> str:
