@@ -577,7 +577,13 @@ async def calculate_messages_score(estate_id: str) -> dict:
         total_expected += len(expected_milestones)
         
         # Check how many messages exist for this beneficiary
-        ben_messages = [m for m in messages if ben["id"] in m.get("recipients", []) or not m.get("recipients")]
+        # Match by beneficiary record id OR user_id
+        ben_id = ben["id"]
+        ben_user_id = ben.get("user_id")
+        ben_messages = [m for m in messages if 
+            ben_id in m.get("recipients", []) or 
+            (ben_user_id and ben_user_id in m.get("recipients", [])) or
+            not m.get("recipients")]
         
         # Count unique milestone types covered
         message_triggers = set()
