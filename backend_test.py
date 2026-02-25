@@ -420,6 +420,9 @@ def main():
             all_tests_passed = False
             continue
         
+        # Set current role for role-specific tests
+        tester.current_role = account['role']
+        
         # Test user info
         success, response = tester.run_test(
             "Get User Info",
