@@ -36,6 +36,7 @@ const BeneficiaryMessagesPage = () => {
   // Message Detail View
   if (selectedMsg) {
     const m = selectedMsg;
+    const formatLabel = m.message_type === 'text' ? 'Written Message' : m.message_type === 'video' ? 'Video Recording' : 'Voice Recording';
     return (
       <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 animate-fade-in" data-testid="ben-message-detail">
         <button onClick={() => setSelectedMsg(null)} className="inline-flex items-center gap-1 text-sm font-bold text-[#60A5FA] mb-5">
@@ -45,16 +46,75 @@ const BeneficiaryMessagesPage = () => {
           <span className="text-3xl">{typeEmoji[m.trigger_type] || '💌'}</span>
           <div>
             <h1 className="text-xl lg:text-2xl font-bold text-[var(--t)]">{m.title}</h1>
-            <p className="text-sm text-[var(--pr2)] capitalize">{m.trigger_type?.replace(/_/g, ' ')} · {m.message_type === 'text' ? 'Written Message' : 'Video Message'}</p>
+            <p className="text-sm text-[var(--pr2)] capitalize">{m.trigger_type?.replace(/_/g, ' ')} · {formatLabel}</p>
           </div>
         </div>
-        <Card className="glass-card">
-          <CardContent className="p-5 lg:p-8">
-            <p className="text-[var(--t)] text-sm lg:text-base leading-relaxed whitespace-pre-wrap" style={{ fontFamily: 'Georgia, serif', letterSpacing: '.01em' }}>
-              {m.content}
-            </p>
-          </CardContent>
-        </Card>
+
+        {/* Format badge */}
+        <div className="mb-4">
+          <span className="inline-block px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'rgba(37,99,235,0.15)', color: 'var(--bl3)' }}>
+            {m.message_type === 'text' ? '✍️ Written Message' : m.message_type === 'video' ? '🎬 Video Recording' : '🎤 Voice Recording'}
+          </span>
+        </div>
+
+        {/* Text message */}
+        {m.message_type === 'text' && (
+          <Card className="glass-card">
+            <CardContent className="p-5 lg:p-8">
+              <p className="text-[var(--t)] text-sm lg:text-base leading-relaxed whitespace-pre-wrap" style={{ fontFamily: 'Georgia, serif', letterSpacing: '.01em' }}>
+                {m.content}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Voice message player */}
+        {(m.message_type === 'voice' || (m.message_type !== 'text' && m.message_type !== 'video')) && m.message_type !== 'text' && m.video_url && (
+          <Card className="glass-card">
+            <CardContent className="p-5 lg:p-8 text-center">
+              <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center cursor-pointer transition-all" style={{ background: 'rgba(37,99,235,0.15)', border: '3px solid var(--bl3)' }}>
+                <Play className="w-8 h-8 text-[var(--bl3)] ml-1" />
+              </div>
+              <div className="text-sm font-bold text-[var(--t)] mb-1">Voice Message</div>
+              <div className="text-xs text-[var(--t4)]">Tap to play</div>
+              <div className="h-1 bg-[var(--b)] rounded-full mt-4 overflow-hidden">
+                <div className="h-full rounded-full" style={{ width: '0%', background: 'linear-gradient(90deg, #2563EB, #0EA5E9)' }} />
+              </div>
+              {m.content && <p className="text-sm text-[var(--t3)] mt-4 leading-relaxed">{m.content}</p>}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Video message player */}
+        {m.message_type === 'video' && (
+          <Card className="glass-card">
+            <CardContent className="p-5 lg:p-8">
+              {m.video_url ? (
+                <div className="rounded-xl overflow-hidden mb-4" style={{ background: '#000', aspectRatio: '16/9' }}>
+                  <video
+                    controls
+                    className="w-full h-full"
+                    src={`${process.env.REACT_APP_BACKEND_URL}/api/messages/video/${m.video_url}`}
+                  >
+                    Your browser does not support video playback.
+                  </video>
+                </div>
+              ) : (
+                <div className="rounded-xl flex items-center justify-center mb-4" style={{ background: 'rgba(37,99,235,0.05)', border: '2px dashed rgba(37,99,235,0.2)', aspectRatio: '16/9' }}>
+                  <div className="text-center">
+                    <Play className="w-12 h-12 mx-auto text-[var(--bl3)] mb-2" />
+                    <div className="text-sm text-[var(--t4)]">Video message</div>
+                  </div>
+                </div>
+              )}
+              {m.content && <p className="text-sm text-[var(--t3)] leading-relaxed">{m.content}</p>}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Text fallback for non-text types */}
+        {m.message_type === 'text' || (!m.video_url && m.message_type !== 'video') ? null : null}
+
         {m.is_delivered && m.delivered_at && (
           <p className="text-xs text-[var(--t5)] mt-3 text-center">
             Delivered: {new Date(m.delivered_at).toLocaleDateString()}
