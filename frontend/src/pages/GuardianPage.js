@@ -198,7 +198,7 @@ const GuardianPage = () => {
   };
 
   const actionButtons = [
-    { key: 'analyze_vault', label: 'Analyze Vault', icon: FileSearch, color: '#3b82f6' },
+    { key: 'analyze_vault', label: 'Analyze Vault', icon: FileSearch, color: '#2563eb' },
     { key: 'generate_checklist', label: 'Generate Checklist', icon: ListChecks, color: '#22c993' },
     { key: 'analyze_readiness', label: 'Analyze Readiness', icon: Gauge, color: '#f59e0b' },
   ];
@@ -282,7 +282,7 @@ const GuardianPage = () => {
                   {msg.readiness && (
                     <div className="mt-3 grid grid-cols-3 gap-2">
                       {[
-                        { label: 'Docs', score: msg.readiness.documents.score, color: '#3b82f6' },
+                        { label: 'Docs', score: msg.readiness.documents.score, color: '#2563eb' },
                         { label: 'Messages', score: msg.readiness.messages.score, color: '#8b5cf6' },
                         { label: 'Checklist', score: msg.readiness.checklist.score, color: '#f97316' },
                       ].map(({ label, score, color }) => (
