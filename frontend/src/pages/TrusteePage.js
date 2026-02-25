@@ -108,24 +108,41 @@ const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const TrusteePage = () => {
   const { getAuthHeaders } = useAuth();
-  const [tasks, setTasks] = useState(INITIAL_TASKS);
+  const [tasks, setTasks] = useState([]);
   const [view, setView] = useState('list');
   const [selectedId, setSelectedId] = useState(null);
   const [createStep, setCreateStep] = useState(0);
   const [newTask, setNewTask] = useState({ type: '', title: '', desc: '', confidential: 'full', discloseTo: '', timedRelease: '', beneficiary: '' });
   const [beneficiaries, setBeneficiaries] = useState([]);
+  const [estateId, setEstateId] = useState(null);
 
   useEffect(() => {
-    const fetchBens = async () => {
+    const fetchData = async () => {
       try {
         const estatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders());
         if (estatesRes.data.length > 0) {
-          const bensRes = await axios.get(`${API_URL}/beneficiaries/${estatesRes.data[0].id}`, getAuthHeaders());
+          const eid = localStorage.getItem('selected_estate_id') || estatesRes.data[0].id;
+          setEstateId(eid);
+          const [bensRes, dtsRes] = await Promise.all([
+            axios.get(`${API_URL}/beneficiaries/${eid}`, getAuthHeaders()),
+            axios.get(`${API_URL}/dts/tasks/${eid}`, getAuthHeaders()).catch(() => ({ data: [] })),
+          ]);
           setBeneficiaries(bensRes.data);
+          // Map backend fields to frontend expected format
+          setTasks((dtsRes.data || []).map(t => ({
+            ...t,
+            type: t.task_type || t.type,
+            desc: t.description || t.desc,
+            lineItems: (t.line_items || t.lineItems || []),
+            paymentMethod: t.payment_method || t.paymentMethod,
+            discloseTo: t.disclose_to || t.discloseTo || [],
+            timedRelease: t.timed_release || t.timedRelease,
+            created: t.created_at?.split('T')[0] || t.created,
+          })));
         }
-      } catch (e) { console.error('Fetch beneficiaries error:', e); }
+      } catch (e) { console.error('Fetch error:', e); }
     };
-    fetchBens();
+    fetchData();
   }, []);
 
   const totalCost = (items) => items.reduce((s, i) => s + (i.approved !== false ? i.cost : 0), 0);
