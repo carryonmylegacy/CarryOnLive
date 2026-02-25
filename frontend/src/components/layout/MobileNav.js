@@ -161,14 +161,14 @@ const MobileNav = () => {
                   >
                     ACCOUNT
                   </h3>
-                  <div className="space-y-1">
+                  <div>
                     {accountItems.map((item) => (
                       <NavLink
                         key={item.to}
                         to={item.to}
                         onClick={handleNavClick}
                         className={({ isActive }) =>
-                          `flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
+                          `flex items-center gap-3 px-3 py-3.5 rounded-xl transition-all ${
                             isActive 
                               ? 'text-[#E0AD2B]' 
                               : theme === 'dark' ? 'text-[#D8DEE9]' : 'text-[#334155]'
@@ -177,11 +177,13 @@ const MobileNav = () => {
                         style={({ isActive }) => ({
                           backgroundColor: isActive 
                             ? (theme === 'dark' ? 'rgba(224,173,43,0.1)' : 'rgba(224,173,43,0.1)')
-                            : 'transparent'
+                            : 'transparent',
+                          fontWeight: 700,
+                          fontSize: '15px'
                         })}
                       >
                         <item.icon className="w-5 h-5" />
-                        <span className="font-medium text-sm">{item.label}</span>
+                        <span>{item.label}</span>
                       </NavLink>
                     ))}
                   </div>
