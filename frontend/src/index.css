@@ -688,6 +688,7 @@
   .main-content {
     margin-left: 0;
     padding-bottom: 80px;
+    overflow-x: hidden;
   }
   
   .page {
