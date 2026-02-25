@@ -10,6 +10,9 @@ export const ThemeProvider = ({ children }) => {
 
   useEffect(() => {
     const root = document.documentElement;
+    // Set data-theme attribute for CSS variable switching
+    root.setAttribute('data-theme', theme);
+    // Also set class for any legacy styling
     if (theme === 'light') {
       root.classList.add('light');
       root.classList.remove('dark');
