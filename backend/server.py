@@ -1010,6 +1010,8 @@ async def update_estate(estate_id: str, data: EstateUpdate, current_user: dict =
         update_data["name"] = data.name
     if data.description:
         update_data["description"] = data.description
+    if data.state is not None:
+        update_data["state"] = data.state
     
     if update_data:
         await db.estates.update_one({"id": estate_id}, {"$set": update_data})
