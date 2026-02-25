@@ -88,8 +88,8 @@ const DashboardPage = () => {
     const angle = (score / 100) * 180 - 90;
     
     return (
-      <div className="relative w-64 h-40 mx-auto">
-        <svg viewBox="0 0 200 100" className="w-full h-full">
+      <div className="relative w-72 h-44 mx-auto">
+        <svg viewBox="0 0 200 120" className="w-full h-full overflow-visible">
           <defs>
             {/* Main rainbow gradient */}
             <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -100,71 +100,55 @@ const DashboardPage = () => {
               <stop offset="100%" stopColor="#22c55e" />
             </linearGradient>
             
-            {/* Gradient for fading outer edge */}
-            <linearGradient id="outerFade" gradientUnits="userSpaceOnUse" x1="100" y1="10" x2="100" y2="50">
-              <stop offset="0%" stopColor="white" stopOpacity="0.15" />
-              <stop offset="100%" stopColor="white" stopOpacity="1" />
-            </linearGradient>
+            {/* Radial gradient for outer edge fade - fades OUT at outer edge */}
+            <radialGradient id="outerFadeGradient" cx="50%" cy="100%" r="55%">
+              <stop offset="50%" stopColor="white" stopOpacity="1" />
+              <stop offset="85%" stopColor="white" stopOpacity="0.6" />
+              <stop offset="100%" stopColor="white" stopOpacity="0" />
+            </radialGradient>
             
-            {/* Mask to fade outer edge */}
-            <mask id="fadeMask">
-              <path
-                d="M 15 90 A 85 85 0 0 1 185 90"
-                fill="none"
-                stroke="url(#outerFade)"
-                strokeWidth="50"
-                strokeLinecap="round"
-              />
+            <mask id="outerFadeMask">
+              <ellipse cx="100" cy="105" rx="90" ry="90" fill="url(#outerFadeGradient)" />
             </mask>
           </defs>
           
-          {/* Background arc - subtle */}
+          {/* Background arc */}
           <path
-            d="M 20 90 A 80 80 0 0 1 180 90"
+            d="M 15 105 A 85 85 0 0 1 185 105"
             fill="none"
-            stroke="rgba(128,128,128,0.12)"
-            strokeWidth="40"
+            stroke="rgba(128,128,128,0.15)"
+            strokeWidth="35"
             strokeLinecap="round"
           />
           
-          {/* Main colored arc with outer fade mask */}
-          <g mask="url(#fadeMask)">
-            <path
-              d="M 20 90 A 80 80 0 0 1 180 90"
-              fill="none"
-              stroke="url(#gaugeGradient)"
-              strokeWidth="40"
-              strokeLinecap="round"
-            />
-          </g>
-          
-          {/* Solid inner portion of arc (no fade) */}
+          {/* Main rainbow arc with outer fade */}
           <path
-            d="M 35 90 A 65 65 0 0 1 165 90"
+            d="M 15 105 A 85 85 0 0 1 185 105"
             fill="none"
             stroke="url(#gaugeGradient)"
-            strokeWidth="18"
+            strokeWidth="35"
             strokeLinecap="round"
+            mask="url(#outerFadeMask)"
           />
           
           {/* Needle */}
-          <g style={{ transform: `rotate(${angle}deg)`, transformOrigin: '100px 90px', transition: 'transform 0.5s ease-out' }}>
+          <g style={{ transform: `rotate(${angle}deg)`, transformOrigin: '100px 105px', transition: 'transform 0.5s ease-out' }}>
             <line
               x1="100"
-              y1="90"
+              y1="105"
               x2="100"
-              y2="30"
+              y2="35"
               stroke="var(--t)"
               strokeWidth="4"
               strokeLinecap="round"
             />
-            <circle cx="100" cy="90" r="10" fill="var(--t)" />
-            <circle cx="100" cy="90" r="5" fill="var(--content-bg)" />
+            <circle cx="100" cy="105" r="12" fill="var(--t)" />
+            <circle cx="100" cy="105" r="6" fill="var(--content-bg)" />
           </g>
         </svg>
         
-        {/* Score display - positioned well below gauge */}
-        <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 text-center">
+        {/* Score display */}
+        <div className="absolute -bottom-14 left-1/2 transform -translate-x-1/2 text-center">
           <div className="text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
             {score}
           </div>
