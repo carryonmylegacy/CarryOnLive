@@ -165,8 +165,8 @@ const DashboardPage = () => {
               fill="#dc2626"
             />
             
-            {/* Center hub - chrome ring only */}
-            <circle cx="100" cy="100" r="12" fill="url(#hubGradient)" stroke="#94a3b8" strokeWidth="1" />
+            {/* Center hub - smaller chrome ring with enhanced depth */}
+            <circle cx="100" cy="100" r="9" fill="url(#hubGradient)" stroke="#475569" strokeWidth="1.5" />
           </g>
         </svg>
         
