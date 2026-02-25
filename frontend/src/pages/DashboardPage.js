@@ -227,18 +227,18 @@ const DashboardPage = () => {
         
         <SpeedometerGauge score={readinessScore} />
         
-        {/* Percentage breakdown */}
-        <div className="flex justify-center gap-4 lg:gap-8 mt-14 lg:mt-16">
+        {/* Percentage breakdown - oval dots with matching card colors */}
+        <div className="flex justify-center gap-4 lg:gap-8 mt-16 lg:mt-20">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 lg:w-3 lg:h-3 rounded-full bg-[#3b82f6]" />
+            <span className="w-4 h-2 lg:w-5 lg:h-2.5 rounded-full bg-[#3b82f6]" />
             <span className="text-[var(--t3)] text-xs lg:text-sm">{docsPercent}% Docs</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 lg:w-3 lg:h-3 rounded-full bg-[#14b8a6]" />
+            <span className="w-4 h-2 lg:w-5 lg:h-2.5 rounded-full bg-[#8b5cf6]" />
             <span className="text-[var(--t3)] text-xs lg:text-sm">{msgsPercent}% Messages</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 lg:w-3 lg:h-3 rounded-full bg-[#f59e0b]" />
+            <span className="w-4 h-2 lg:w-5 lg:h-2.5 rounded-full bg-[#f97316]" />
             <span className="text-[var(--t3)] text-xs lg:text-sm">{checklistPercent}% Checklist</span>
           </div>
         </div>
