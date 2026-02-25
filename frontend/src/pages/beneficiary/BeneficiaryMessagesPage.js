@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
-import { MessageSquare, ChevronLeft, Lock, Heart } from 'lucide-react';
+import { MessageSquare, ChevronLeft, Lock, Heart, Play, Pause, Volume2 } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/card';
 import { Skeleton } from '../../components/ui/skeleton';
 
