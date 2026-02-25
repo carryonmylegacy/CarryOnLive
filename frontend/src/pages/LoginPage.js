@@ -68,7 +68,7 @@ const LoginPage = () => {
     <div 
       className="min-h-screen flex items-center justify-center p-4"
       style={{
-        background: 'linear-gradient(145deg, #0b1120, #0f1d35 40%, #0a1628)'
+        background: 'linear-gradient(145deg, #08090F, #0D1018 40%, #08090F)'
       }}
     >
       {/* Background glow */}
@@ -80,20 +80,21 @@ const LoginPage = () => {
         }}
       />
       
-      <div className="w-full max-width-[400px] max-w-md relative z-10 animate-fade-in">
+      <div className="w-full max-w-[400px] relative z-10 animate-fade-in">
         {/* Logo & Branding */}
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#d4af37] to-[#fcd34d] flex items-center justify-center gold-glow">
-            <Shield className="w-10 h-10 text-[#0b1120]" />
+        <div className="text-center mb-7">
+          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#E0AD2B] to-[#F0C95C] flex items-center justify-center gold-glow">
+            <Shield className="w-10 h-10 text-[#08090F]" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <h1 className="text-2xl font-bold text-[#F1F3F8] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
             CarryOn™
           </h1>
-          <p className="text-[#94a3b8] text-sm tracking-wider">
-            Every American Family. Ready.
-          </p>
-          <div className="mt-3 px-4 py-1.5 bg-[#0f1d35]/60 backdrop-blur rounded-full inline-block">
-            <span className="text-xs text-[#64748b] tracking-widest uppercase">
+          <div className="text-[#F1F3F8] text-[15px] font-semibold tracking-wide" style={{ letterSpacing: '0.04em' }}>
+            <div>Every American Family.</div>
+            <div>Ready.</div>
+          </div>
+          <div className="mt-3">
+            <span className="text-[#525C72] text-[16.5px] tracking-[0.05em] uppercase">
               Benefactor Portal
             </span>
           </div>
@@ -103,15 +104,15 @@ const LoginPage = () => {
         <div className="glass-card p-8">
           <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-[#94a3b8] text-sm">Email</Label>
+              <Label htmlFor="email" className="text-[#A0AABF] text-sm">Email</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748b]" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#525C72]" />
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="pete@mitchell.com"
+                  placeholder="pete.mitchell@email.com"
                   className="input-field pl-11"
                   data-testid="login-email-input"
                   required
@@ -120,9 +121,9 @@ const LoginPage = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-[#94a3b8] text-sm">Password</Label>
+              <Label htmlFor="password" className="text-[#A0AABF] text-sm">Password</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748b]" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#525C72]" />
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
@@ -136,7 +137,7 @@ const LoginPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748b] hover:text-white transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#525C72] hover:text-white transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -161,8 +162,8 @@ const LoginPage = () => {
           </form>
 
           <div className="mt-6 text-center">
-            <span className="text-[#64748b] text-sm">New to CarryOn™? </span>
-            <a href="/signup" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors">
+            <span className="text-[#7B879E] text-[15.5px]">New to CarryOn™? </span>
+            <a href="/signup" className="text-[#7AABFD] text-[15.5px] font-semibold hover:text-[#A5C6FE] transition-colors cursor-pointer">
               Create Account
             </a>
           </div>
@@ -170,15 +171,15 @@ const LoginPage = () => {
 
         {/* Security Badge */}
         <div className="mt-6 text-center">
-          <p className="text-[#64748b] text-sm">
+          <p className="text-[#525C72] text-[16.5px]">
             AES-256 Encrypted · Zero-Knowledge · SOC 2
           </p>
         </div>
 
         {/* Test Credentials Hint */}
-        <div className="mt-4 p-3 bg-[#0f1d35]/40 rounded-xl border border-white/5">
-          <p className="text-xs text-[#64748b] text-center">
-            <strong className="text-[#94a3b8]">Test Accounts:</strong><br />
+        <div className="mt-4 p-3 glass-card">
+          <p className="text-xs text-[#525C72] text-center">
+            <strong className="text-[#A0AABF]">Test Accounts:</strong><br />
             Benefactor: pete@mitchell.com / password123<br />
             Beneficiary: penny@mitchell.com / password123<br />
             Admin: admin@carryon.com / admin123
