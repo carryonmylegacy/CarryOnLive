@@ -267,7 +267,7 @@
     margin-bottom: 8px;
   }
   
-  /* Navigation Item - Bold button style */
+  /* Navigation Item */
   .nav-item {
     display: flex;
     align-items: center;
@@ -281,16 +281,27 @@
     cursor: pointer;
     transition: all 0.25s ease;
     position: relative;
-    margin-bottom: 5px;
+    margin-bottom: 0;
     background: #1C2641;
-    border: 1px solid #2E3B56;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    border: none;
+    box-shadow: none;
+  }
+
+  /* Bright divider line between nav items — 7/8 width, centered */
+  .nav-divider {
+    width: 87.5%;
+    height: 1px;
+    margin: 0 auto;
+    background: #4A5E85;
+  }
+
+  [data-theme="light"] .nav-divider {
+    background: rgba(30,64,130,0.2);
   }
   
   .nav-item:hover {
     background: #243052;
     color: #FFFFFF;
-    border-color: #3D4F72;
     box-shadow: 0 3px 10px rgba(0,0,0,0.35);
     transform: translateX(3px);
   }
@@ -298,7 +309,6 @@
   .nav-item.active {
     background: linear-gradient(135deg, #2A2415 0%, #1F1C14 100%);
     color: #F0C95C;
-    border-color: #5C4A1E;
     box-shadow: 0 2px 8px rgba(224,173,43,0.12);
   }
   
