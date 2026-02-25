@@ -344,54 +344,117 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* Bottom Section - Vault & Messages Preview */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Secure Document Vault Preview */}
-        <div className="glass-card p-4 lg:p-6">
+      {/* Bottom Section - Vault, Messages & Checklist Previews */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Secure Document Vault Preview - Blue */}
+        <div className="glass-card p-4 lg:p-6 border-l-4 border-l-[#2563eb]" data-testid="preview-vault">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">Secure Document Vault</h3>
-            <span className="text-[var(--t4)] text-base">
+            <div className="flex items-center gap-2">
+              <FolderLock className="w-5 h-5 text-[#2563eb]" />
+              <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">Secure Document Vault</h3>
+            </div>
+            <span className="text-[var(--t4)] text-sm">
               {stats.documents > 0 ? `${(stats.documents * 0.5).toFixed(0)} MB` : '0 MB'} / 10 GB
             </span>
           </div>
           <div className="h-2 bg-[var(--b)] rounded-full overflow-hidden">
             <div 
-              className="h-full bg-gradient-to-r from-[#3b82f6] to-[#1d4ed8] rounded-full transition-all"
-              style={{ width: `${Math.min(100, (stats.documents * 0.5 / 10000) * 100)}%` }}
+              className="h-full rounded-full transition-all"
+              style={{ 
+                background: 'linear-gradient(90deg, #2563eb, #1e3a8a)',
+                width: `${Math.min(100, (stats.documents * 0.5 / 10000) * 100)}%` 
+              }}
             />
           </div>
+          <p className="text-[var(--t4)] text-sm mt-2">{stats.documents} document{stats.documents !== 1 ? 's' : ''} encrypted</p>
           <button 
             onClick={() => navigate('/vault')}
-            className="mt-3 text-[var(--gold)] hover:text-[var(--gold2)] text-base font-medium flex items-center gap-1"
+            className="mt-2 text-[#2563eb] hover:text-[#3b82f6] text-base font-medium flex items-center gap-1"
+            data-testid="preview-vault-link"
           >
             View All Documents <ChevronRight className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Milestone Messages Preview */}
-        <div className="glass-card p-4 lg:p-6">
+        {/* Milestone Messages Preview - Purple */}
+        <div className="glass-card p-4 lg:p-6 border-l-4 border-l-[#8b5cf6]" data-testid="preview-messages">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">Milestone Messages</h3>
-            <span className="text-[var(--t4)] text-base">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-[#8b5cf6]" />
+              <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">Milestone Messages</h3>
+            </div>
+            <span className="text-[var(--t4)] text-sm">
               {stats.messages} message{stats.messages !== 1 ? 's' : ''}
             </span>
           </div>
           {stats.messages > 0 ? (
-            <div className="flex items-center gap-3 p-3 bg-[var(--s)] rounded-lg">
-              <MessageSquare className="w-5 h-5 text-[#14b8a6]" />
-              <span className="text-[var(--t3)] text-base">Messages ready for your loved ones</span>
+            <div className="flex items-center gap-3 p-3 bg-[#8b5cf6]/10 rounded-lg">
+              <MessageSquare className="w-5 h-5 text-[#8b5cf6]" />
+              <span className="text-[var(--t3)] text-sm">Messages ready for your loved ones</span>
             </div>
           ) : (
             <div className="flex items-center gap-3 p-3 bg-[var(--s)] rounded-lg">
               <Clock className="w-5 h-5 text-[var(--t5)]" />
-              <span className="text-[var(--t4)] text-base">No messages yet</span>
+              <span className="text-[var(--t4)] text-sm">No messages yet</span>
             </div>
           )}
           <button 
             onClick={() => navigate('/messages')}
-            className="mt-3 text-[var(--gold)] hover:text-[var(--gold2)] text-base font-medium flex items-center gap-1"
+            className="mt-2 text-[#8b5cf6] hover:text-[#a78bfa] text-base font-medium flex items-center gap-1"
+            data-testid="preview-messages-link"
           >
             Create Message <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Immediate Action Checklist Preview - Orange */}
+        <div className="glass-card p-4 lg:p-6 border-l-4 border-l-[#f97316]" data-testid="preview-checklist">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <CheckSquare className="w-5 h-5 text-[#f97316]" />
+              <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">Action Checklist</h3>
+            </div>
+            <span className="text-[var(--t4)] text-sm">
+              {completedTasks}/{totalTasks} done
+            </span>
+          </div>
+          {/* Progress bar */}
+          <div className="h-2 bg-[var(--b)] rounded-full overflow-hidden mb-3">
+            <div 
+              className="h-full rounded-full transition-all"
+              style={{ 
+                background: 'linear-gradient(90deg, #f97316, #ea580c)',
+                width: `${totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0}%` 
+              }}
+            />
+          </div>
+          {/* Recent checklist items */}
+          <div className="space-y-1.5">
+            {checklists.slice(0, 3).map((item) => (
+              <div key={item.id} className="flex items-center gap-2 text-sm">
+                {item.is_completed ? (
+                  <CheckCircle2 className="w-4 h-4 text-[#f97316] flex-shrink-0" />
+                ) : (
+                  <Circle className="w-4 h-4 text-[var(--t5)] flex-shrink-0" />
+                )}
+                <span className={`truncate ${item.is_completed ? 'text-[var(--t4)] line-through' : 'text-[var(--t3)]'}`}>
+                  {item.title}
+                </span>
+              </div>
+            ))}
+            {checklists.length === 0 && (
+              <div className="flex items-center gap-3 p-3 bg-[var(--s)] rounded-lg">
+                <Clock className="w-5 h-5 text-[var(--t5)]" />
+                <span className="text-[var(--t4)] text-sm">No checklist items yet</span>
+              </div>
+            )}
+          </div>
+          <button 
+            onClick={() => navigate('/checklist')}
+            className="mt-2 text-[#f97316] hover:text-[#fb923c] text-base font-medium flex items-center gap-1"
+            data-testid="preview-checklist-link"
+          >
+            View Full Checklist <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </div>
