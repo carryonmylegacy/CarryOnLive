@@ -83,7 +83,7 @@ const MobileNav = () => {
             alt="CarryOn" 
             className="w-10 h-10 rounded-xl object-cover"
           />
-          <span className="text-[var(--t)] font-bold text-lg" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <span className="text-[#E0AD2B] font-bold text-lg" style={{ fontFamily: 'Outfit, sans-serif' }}>
             CarryOn™
           </span>
         </div>
