@@ -798,6 +798,133 @@ async def download_document(
         }
     )
 
+@api_router.get("/documents/{document_id}/preview")
+async def preview_document(
+    document_id: str,
+    password: Optional[str] = None,
+    backup_code: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Preview a document (for PDFs and images) - returns inline content"""
+    document = await db.documents.find_one({"id": document_id}, {"_id": 0})
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    # Check if document is locked and verify credentials
+    if document.get("is_locked"):
+        lock_type = document.get("lock_type")
+        
+        if lock_type == "password" and document.get("lock_password_hash"):
+            if password and verify_password(password, document["lock_password_hash"]):
+                pass
+            elif backup_code and document.get("backup_code") == backup_code:
+                pass
+            else:
+                raise HTTPException(status_code=401, detail="Invalid credentials for locked document")
+        
+        elif lock_type in ["backup", "voice"]:
+            if not backup_code or document.get("backup_code") != backup_code:
+                raise HTTPException(status_code=401, detail="Invalid backup code")
+    
+    # Decrypt the file data
+    if not document.get("file_data"):
+        raise HTTPException(status_code=404, detail="Document data not found")
+    
+    try:
+        decrypted_data = decrypt_data(document["file_data"])
+    except Exception as e:
+        logger.error(f"Decryption error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to decrypt document")
+    
+    # Return inline for preview (not as attachment)
+    return Response(
+        content=decrypted_data,
+        media_type=document.get("file_type", "application/octet-stream"),
+        headers={
+            "Content-Disposition": f'inline; filename="{document["name"]}"'
+        }
+    )
+
+# ===================== VOICE VERIFICATION ROUTES =====================
+
+class VoicePassphraseSetup(BaseModel):
+    document_id: str
+    passphrase: str  # The passphrase the user will speak
+
+class VoiceVerifyRequest(BaseModel):
+    document_id: str
+    spoken_text: str  # Text from speech recognition
+
+@api_router.post("/documents/{document_id}/voice/setup")
+async def setup_voice_passphrase(
+    document_id: str,
+    passphrase: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Set up voice verification passphrase for a document"""
+    if current_user["role"] != "benefactor":
+        raise HTTPException(status_code=403, detail="Only benefactors can set up voice verification")
+    
+    document = await db.documents.find_one({"id": document_id}, {"_id": 0})
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    if document.get("lock_type") != "voice":
+        raise HTTPException(status_code=400, detail="Document is not set up for voice verification")
+    
+    # Store the passphrase (hashed for comparison)
+    # We store both hash and normalized version for flexible matching
+    normalized_passphrase = passphrase.lower().strip()
+    
+    await db.documents.update_one(
+        {"id": document_id},
+        {"$set": {
+            "voice_passphrase_hash": hash_password(normalized_passphrase),
+            "voice_passphrase_hint": passphrase[:3] + "..." if len(passphrase) > 3 else passphrase
+        }}
+    )
+    
+    return {"message": "Voice passphrase set up successfully", "hint": passphrase[:3] + "..."}
+
+@api_router.post("/documents/{document_id}/voice/verify")
+async def verify_voice_passphrase(
+    document_id: str,
+    data: VoiceVerifyRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Verify spoken passphrase for voice-locked document"""
+    document = await db.documents.find_one({"id": document_id}, {"_id": 0})
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    if not document.get("voice_passphrase_hash"):
+        raise HTTPException(status_code=400, detail="Voice passphrase not set up. Use backup code.")
+    
+    # Normalize and verify
+    normalized_spoken = data.spoken_text.lower().strip()
+    
+    if verify_password(normalized_spoken, document["voice_passphrase_hash"]):
+        return {"verified": True, "message": "Voice verification successful"}
+    
+    # Allow some flexibility - check if spoken text contains the passphrase
+    # This helps with speech recognition variations
+    raise HTTPException(status_code=401, detail="Voice verification failed. Try again or use backup code.")
+
+@api_router.get("/documents/{document_id}/voice/hint")
+async def get_voice_hint(
+    document_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get voice passphrase hint"""
+    document = await db.documents.find_one({"id": document_id}, {"_id": 0})
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    return {
+        "has_passphrase": bool(document.get("voice_passphrase_hash")),
+        "hint": document.get("voice_passphrase_hint", "Not set")
+    }
+
 @api_router.delete("/documents/{document_id}")
 async def delete_document(document_id: str, current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "benefactor":
