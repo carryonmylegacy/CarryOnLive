@@ -187,9 +187,13 @@ const BeneficiaryMessagesPage = () => {
           <div className="py-4">
             {selectedMessage?.message_type === 'video' && selectedMessage?.video_url && (
               <div className="mb-4 rounded-xl overflow-hidden bg-black/20">
-                <div className="aspect-video flex items-center justify-center">
-                  <p className="text-[#94a3b8]">Video player placeholder</p>
-                </div>
+                <video
+                  controls
+                  className="w-full aspect-video"
+                  src={`${process.env.REACT_APP_BACKEND_URL}/api/messages/video/${selectedMessage.video_url}`}
+                >
+                  Your browser does not support video playback.
+                </video>
               </div>
             )}
             
