@@ -152,17 +152,25 @@ const TrusteePage = () => {
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, lineItems: t.lineItems.map(li => li.id === liId ? { ...li, approved: val } : li) } : t));
   };
 
-  const submitNewTask = () => {
-    const task = {
-      id: 'dt' + Date.now(), title: newTask.title, type: newTask.type, status: 'submitted',
-      confidential: newTask.confidential, created: new Date().toISOString().split('T')[0],
-      desc: newTask.desc, lineItems: [], paymentMethod: null,
-      discloseTo: newTask.discloseTo ? newTask.discloseTo.split(',').map(s => s.trim()).filter(Boolean) : [],
-      timedRelease: newTask.timedRelease || null,
-    };
-    setTasks(prev => [...prev, task]);
-    setView('submitted');
-    toast.success('Request submitted to DTS team');
+  const submitNewTask = async () => {
+    if (!estateId) return;
+    try {
+      await axios.post(`${API_URL}/dts/tasks`, {
+        estate_id: estateId,
+        title: newTask.title,
+        description: newTask.desc,
+        task_type: newTask.type,
+        confidential: newTask.confidential,
+        disclose_to: newTask.discloseTo ? newTask.discloseTo.split(',').map(s => s.trim()).filter(Boolean) : [],
+        timed_release: newTask.timedRelease || null,
+        beneficiary: newTask.beneficiary || null,
+      }, getAuthHeaders());
+      setView('submitted');
+      toast.success('Request submitted to DTS team');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to submit request');
+    }
   };
 
   // === SUBMITTED SUCCESS ===
