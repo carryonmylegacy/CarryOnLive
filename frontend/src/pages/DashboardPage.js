@@ -88,9 +88,10 @@ const DashboardPage = () => {
     const angle = (score / 100) * 180 - 90;
     
     return (
-      <div className="relative w-48 h-32 mx-auto">
-        <svg viewBox="0 0 200 110" className="w-full h-full">
+      <div className="relative w-64 h-44 mx-auto">
+        <svg viewBox="0 0 200 120" className="w-full h-full">
           <defs>
+            {/* Main rainbow gradient */}
             <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#ef4444" />
               <stop offset="25%" stopColor="#f97316" />
@@ -98,48 +99,86 @@ const DashboardPage = () => {
               <stop offset="75%" stopColor="#84cc16" />
               <stop offset="100%" stopColor="#22c55e" />
             </linearGradient>
+            
+            {/* Radial gradient for outer fade effect */}
+            <radialGradient id="gaugeFade" cx="50%" cy="100%" r="80%" fx="50%" fy="100%">
+              <stop offset="60%" stopColor="white" stopOpacity="1" />
+              <stop offset="100%" stopColor="white" stopOpacity="0" />
+            </radialGradient>
+            
+            {/* Mask for fading outer edge */}
+            <mask id="gaugeMask">
+              <path
+                d="M 10 100 A 90 90 0 0 1 190 100"
+                fill="none"
+                stroke="url(#gaugeFade)"
+                strokeWidth="50"
+                strokeLinecap="round"
+              />
+            </mask>
           </defs>
           
-          {/* Background arc */}
+          {/* Background arc - subtle */}
           <path
-            d="M 20 95 A 80 80 0 0 1 180 95"
+            d="M 25 100 A 75 75 0 0 1 175 100"
             fill="none"
-            stroke="rgba(128,128,128,0.2)"
-            strokeWidth="18"
+            stroke="rgba(128,128,128,0.15)"
+            strokeWidth="42"
             strokeLinecap="round"
           />
           
-          {/* Colored arc */}
+          {/* Outer glow/fade layer */}
           <path
-            d="M 20 95 A 80 80 0 0 1 180 95"
+            d="M 25 100 A 75 75 0 0 1 175 100"
             fill="none"
             stroke="url(#gaugeGradient)"
-            strokeWidth="14"
+            strokeWidth="48"
             strokeLinecap="round"
+            opacity="0.3"
+            style={{ filter: 'blur(8px)' }}
+          />
+          
+          {/* Main colored arc - thick */}
+          <path
+            d="M 25 100 A 75 75 0 0 1 175 100"
+            fill="none"
+            stroke="url(#gaugeGradient)"
+            strokeWidth="36"
+            strokeLinecap="round"
+          />
+          
+          {/* Inner highlight for depth */}
+          <path
+            d="M 35 100 A 65 65 0 0 1 165 100"
+            fill="none"
+            stroke="url(#gaugeGradient)"
+            strokeWidth="8"
+            strokeLinecap="round"
+            opacity="0.9"
           />
           
           {/* Needle */}
-          <g style={{ transform: `rotate(${angle}deg)`, transformOrigin: '100px 95px', transition: 'transform 0.5s ease-out' }}>
+          <g style={{ transform: `rotate(${angle}deg)`, transformOrigin: '100px 100px', transition: 'transform 0.5s ease-out' }}>
             <line
               x1="100"
-              y1="95"
+              y1="100"
               x2="100"
-              y2="30"
+              y2="35"
               stroke="var(--t)"
-              strokeWidth="3"
+              strokeWidth="4"
               strokeLinecap="round"
             />
-            <circle cx="100" cy="95" r="8" fill="var(--t)" />
-            <circle cx="100" cy="95" r="4" fill="var(--content-bg)" />
+            <circle cx="100" cy="100" r="10" fill="var(--t)" />
+            <circle cx="100" cy="100" r="5" fill="var(--content-bg)" />
           </g>
         </svg>
         
         {/* Score display - moved down to avoid needle overlap */}
-        <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 text-center">
-          <div className="text-4xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+        <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-center">
+          <div className="text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
             {score}
           </div>
-          <div className="text-base font-bold" style={{ color: scoreInfo.color }}>
+          <div className="text-lg font-bold" style={{ color: scoreInfo.color }}>
             {scoreInfo.label}
           </div>
         </div>
