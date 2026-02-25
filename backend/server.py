@@ -565,6 +565,44 @@ async def login(data: UserLogin):
     
     return {"message": "OTP sent", "email": data.email, "otp_hint": otp[:2] + "****"}
 
+@api_router.post("/auth/register")
+async def register(data: UserCreate):
+    """Register a new user account"""
+    # Check if email already exists
+    existing = await db.users.find_one({"email": data.email}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Validate password
+    if len(data.password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    
+    # Create user
+    user_id = str(uuid.uuid4())
+    user = {
+        "id": user_id,
+        "email": data.email,
+        "password": hash_password(data.password),
+        "name": data.name,
+        "role": data.role if data.role in ["benefactor", "beneficiary"] else "benefactor",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.users.insert_one(user)
+    
+    # Generate OTP for verification
+    otp = generate_otp()
+    await db.otps.update_one(
+        {"email": data.email},
+        {"$set": {"otp": otp, "created_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    
+    # Send OTP via email
+    await send_otp_email(data.email, otp, data.name)
+    logger.info(f"Registration OTP for {data.email}: {otp}")
+    
+    return {"message": "Account created. Please verify with OTP.", "email": data.email, "otp_hint": otp[:2] + "****"}
+
 @api_router.post("/auth/verify-otp", response_model=TokenResponse)
 async def verify_otp(data: OTPVerify):
     stored_otp = await db.otps.find_one({"email": data.email}, {"_id": 0})
