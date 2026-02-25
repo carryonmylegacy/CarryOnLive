@@ -7,6 +7,11 @@ Build a secure estate planning and legacy management platform where benefactors 
 
 ### Phase 1 - MVP (Complete)
 - Authentication with email/password + OTP 2FA
+- **Enhanced Signup Form (Feb 2025):**
+  - Separate First Name, Middle Name (optional), Last Name fields
+  - Suffix dropdown (Jr., Sr., II, III, IV, V, Esq., MD, PhD)
+  - Gender dropdown (Male, Female, Other, Prefer not to say)
+  - Legal disclaimer for name accuracy
 - Benefactor Dashboard with readiness gauge
 - Document Vault with categorized uploads and lock overlays
 - Milestone Messages (text/video with triggers)
