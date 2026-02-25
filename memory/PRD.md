@@ -38,6 +38,7 @@ Build a secure estate planning and legacy management platform where benefactors 
 - Estate selector dropdown in dashboard
 - Activity timeline tracking all actions
 - Activity logging for documents, messages, beneficiaries
+- Notification center with unread count badge
 
 ## Test Accounts
 - Benefactor: pete@mitchell.com / password123
@@ -47,7 +48,6 @@ Build a secure estate planning and legacy management platform where benefactors 
 ## Remaining Backlog
 
 ### P2
-- Notification center (in-app alerts)
 - Push notifications (PWA)
 
 ### P3
