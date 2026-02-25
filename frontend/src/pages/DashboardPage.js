@@ -104,6 +104,27 @@ const DashboardPage = () => {
             <filter id="gaugeBlur" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur in="SourceGraphic" stdDeviation="6" />
             </filter>
+            
+            {/* Needle gradient - metallic silver effect */}
+            <linearGradient id="needleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#94a3b8" />
+              <stop offset="30%" stopColor="#f1f5f9" />
+              <stop offset="50%" stopColor="#ffffff" />
+              <stop offset="70%" stopColor="#f1f5f9" />
+              <stop offset="100%" stopColor="#94a3b8" />
+            </linearGradient>
+            
+            {/* Center hub gradient - chrome effect */}
+            <radialGradient id="hubGradient" cx="50%" cy="30%" r="70%">
+              <stop offset="0%" stopColor="#ffffff" />
+              <stop offset="50%" stopColor="#cbd5e1" />
+              <stop offset="100%" stopColor="#64748b" />
+            </radialGradient>
+            
+            {/* Drop shadow for needle */}
+            <filter id="needleShadow" x="-50%" y="-50%" width="200%" height="200%">
+              <feDropShadow dx="2" dy="2" stdDeviation="2" floodColor="#000000" floodOpacity="0.4"/>
+            </filter>
           </defs>
           
           {/* Blurred outer glow arc */}
@@ -126,19 +147,33 @@ const DashboardPage = () => {
             strokeLinecap="round"
           />
           
-          {/* Needle */}
-          <g style={{ transform: `rotate(${angle}deg)`, transformOrigin: '100px 100px', transition: 'transform 0.5s ease-out' }}>
-            <line
-              x1="100"
-              y1="100"
-              x2="100"
-              y2="30"
-              stroke="var(--t)"
-              strokeWidth="4"
-              strokeLinecap="round"
+          {/* Needle assembly */}
+          <g style={{ transform: `rotate(${angle}deg)`, transformOrigin: '100px 100px', transition: 'transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)' }} filter="url(#needleShadow)">
+            {/* Counterweight (back of needle) */}
+            <ellipse cx="100" cy="112" rx="6" ry="4" fill="#475569" />
+            
+            {/* Main needle - tapered shape */}
+            <polygon 
+              points="100,25 96,95 100,100 104,95" 
+              fill="url(#needleGradient)"
+              stroke="#64748b"
+              strokeWidth="0.5"
             />
-            <circle cx="100" cy="100" r="12" fill="var(--t)" />
-            <circle cx="100" cy="100" r="6" fill="var(--content-bg)" />
+            
+            {/* Needle tip - sharp red point */}
+            <polygon 
+              points="100,25 98,45 100,48 102,45" 
+              fill="#dc2626"
+            />
+            
+            {/* Center hub - outer ring */}
+            <circle cx="100" cy="100" r="14" fill="url(#hubGradient)" stroke="#94a3b8" strokeWidth="1" />
+            
+            {/* Center hub - inner detail */}
+            <circle cx="100" cy="100" r="8" fill="#1e293b" stroke="#475569" strokeWidth="1" />
+            
+            {/* Center hub - highlight dot */}
+            <circle cx="97" cy="97" r="2" fill="rgba(255,255,255,0.6)" />
           </g>
         </svg>
         
