@@ -97,91 +97,82 @@ const ChecklistPage = () => {
   }
 
   return (
-    <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in" data-testid="action-checklist">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>
-          Immediate Action Checklist
-        </h1>
-        <p className="text-[#94a3b8] mt-1">
-          Complete these tasks to ensure your estate is ready
+    <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="action-checklist"
+      style={{ background: 'radial-gradient(ellipse at top left, rgba(245,158,11,0.15), transparent 55%), radial-gradient(ellipse at bottom right, rgba(217,119,6,0.08), transparent 55%)' }}>
+      {/* Header - matching prototype */}
+      <div className="flex items-center gap-3 mb-2">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.2), rgba(217,119,6,0.15))' }}>
+          <CheckSquare className="w-5 h-5 text-[#F59E0B]" />
+        </div>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            Immediate Action Checklist
+          </h1>
+          <p className="text-xs text-[var(--t5)]">
+            {totalCount} items · Available to beneficiaries after transition
+          </p>
+        </div>
+      </div>
+
+      {/* Benefactor View info box - from prototype */}
+      <div className="rounded-xl p-4" style={{ background: 'rgba(37,99,235,0.05)', border: '1px solid rgba(37,99,235,0.1)' }}>
+        <div className="text-sm font-bold text-[#7AABFD] mb-1">Benefactor View</div>
+        <p className="text-sm text-[var(--t4)] leading-relaxed">
+          You are building this checklist for your beneficiaries. They will be able to check items off after transition. You can edit, delete, or add items at any time.
         </p>
       </div>
 
-      {/* Progress Card */}
-      <Card className="glass-card">
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-            <div>
-              <h2 className="text-xl font-semibold text-white">Overall Progress</h2>
-              <p className="text-[#94a3b8]">{completedCount} of {totalCount} tasks completed</p>
-            </div>
-            <div className="text-4xl font-bold text-[#d4af37]" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              {progressPercent}%
-            </div>
+      {/* Progress */}
+      <div className="glass-card p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="font-bold text-[var(--t)]">Overall Progress</h2>
+            <p className="text-sm text-[var(--t4)]">{completedCount} of {totalCount} tasks completed</p>
           </div>
-          <Progress value={progressPercent} className="h-3 bg-white/10" />
-        </CardContent>
-      </Card>
+          <div className="text-3xl font-bold text-[var(--gold)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            {progressPercent}%
+          </div>
+        </div>
+        <Progress value={progressPercent} className="h-2 bg-[var(--b)]" />
+      </div>
 
-      {/* Checklist by Category */}
-      <div className="space-y-6">
-        {Object.entries(groupedChecklists).map(([category, items]) => {
-          const CategoryIcon = categoryIcons[category] || CheckSquare;
-          const categoryCompleted = items.filter(i => i.is_completed).length;
+      {/* Checklist Items - flat list with priority borders */}
+      <div className="space-y-2">
+        {checklists.sort((a, b) => a.order - b.order).map((item) => {
+          const priColors = { critical: '#ef4444', high: '#f97316', medium: '#eab308', low: '#22c55e' };
+          const priColor = priColors[item.category] || priColors.medium;
           
           return (
-            <Card key={category} className="glass-card" data-testid={`checklist-category-${category}`}>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#d4af37]/20 flex items-center justify-center">
-                      <CategoryIcon className="w-5 h-5 text-[#d4af37]" />
-                    </div>
-                    <CardTitle className="text-white capitalize">{category}</CardTitle>
-                  </div>
-                  <span className="text-sm text-[#94a3b8]">
-                    {categoryCompleted}/{items.length}
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {items.sort((a, b) => a.order - b.order).map((item) => (
-                  <div
-                    key={item.id}
-                    onClick={() => toggleItem(item.id)}
-                    className={`flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-all ${
-                      item.is_completed 
-                        ? 'bg-[#10b981]/10 border border-[#10b981]/20' 
-                        : 'bg-white/5 hover:bg-white/10 border border-transparent'
-                    }`}
-                    data-testid={`checklist-item-${item.id}`}
-                  >
-                    <div className={`flex-shrink-0 ${updating === item.id ? 'animate-pulse' : ''}`}>
-                      {item.is_completed ? (
-                        <CheckCircle2 className="w-6 h-6 text-[#10b981]" />
-                      ) : (
-                        <Square className="w-6 h-6 text-[#64748b]" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className={`font-medium ${
-                        item.is_completed ? 'text-[#94a3b8] line-through' : 'text-white'
-                      }`}>
-                        {item.title}
-                      </h3>
-                      <p className="text-[#64748b] text-sm truncate">{item.description}</p>
-                    </div>
-                    {item.is_completed && item.completed_at && (
-                      <div className="flex items-center gap-1 text-[#64748b] text-xs">
-                        <Clock className="w-3 h-3" />
-                        <span>Done</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+            <div
+              key={item.id}
+              className="glass-card flex items-center gap-3 p-4 cursor-pointer transition-all hover:border-[var(--b2)]"
+              style={{ borderLeft: `3px solid ${priColor}` }}
+              onClick={() => toggleItem(item.id)}
+              data-testid={`checklist-item-${item.id}`}
+            >
+              <div className={`flex-shrink-0 ${updating === item.id ? 'animate-pulse' : ''}`}>
+                {item.is_completed ? (
+                  <CheckCircle2 className="w-5 h-5 text-[#10b981]" />
+                ) : (
+                  <CheckSquare className="w-5 h-5 text-[var(--t5)]" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className={`text-sm font-bold ${item.is_completed ? 'text-[var(--t4)] line-through' : 'text-[var(--t)]'}`}>
+                  {item.title}
+                </h3>
+                {item.description && (
+                  <p className="text-xs text-[var(--t5)] truncate mt-0.5">{item.description}</p>
+                )}
+              </div>
+              <span className="text-xs px-2 py-0.5 rounded-md font-bold capitalize flex-shrink-0" style={{ 
+                background: priColor + '15', 
+                color: priColor,
+                border: `1px solid ${priColor}33`
+              }}>
+                {item.category}
+              </span>
+            </div>
           );
         })}
       </div>
