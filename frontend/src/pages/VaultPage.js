@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -19,7 +19,11 @@ import {
   FileArchive,
   Key,
   Copy,
-  CheckCircle2
+  CheckCircle2,
+  Eye,
+  Mic,
+  MicOff,
+  Volume2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -42,7 +46,7 @@ const categories = [
 ];
 
 const VaultPage = () => {
-  const { user, getAuthHeaders } = useAuth();
+  const { user, getAuthHeaders, token } = useAuth();
   const [documents, setDocuments] = useState([]);
   const [estate, setEstate] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -51,18 +55,30 @@ const VaultPage = () => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showLockModal, setShowLockModal] = useState(false);
   const [showBackupCodeModal, setShowBackupCodeModal] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showVoiceSetupModal, setShowVoiceSetupModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [unlockPassword, setUnlockPassword] = useState('');
   const [unlockBackupCode, setUnlockBackupCode] = useState('');
   const [unlocking, setUnlocking] = useState(false);
   const [downloading, setDownloading] = useState(null);
   const [backupCode, setBackupCode] = useState('');
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  
+  // Voice verification state
+  const [isListening, setIsListening] = useState(false);
+  const [voicePassphrase, setVoicePassphrase] = useState('');
+  const [spokenText, setSpokenText] = useState('');
+  const [voiceHint, setVoiceHint] = useState('');
+  const recognitionRef = useRef(null);
   
   // Upload form state
   const [uploadName, setUploadName] = useState('');
   const [uploadCategory, setUploadCategory] = useState('legal');
   const [uploadLockType, setUploadLockType] = useState('none');
   const [uploadLockPassword, setUploadLockPassword] = useState('');
+  const [uploadVoicePassphrase, setUploadVoicePassphrase] = useState('');
   const [uploadFile, setUploadFile] = useState(null);
 
   useEffect(() => {
