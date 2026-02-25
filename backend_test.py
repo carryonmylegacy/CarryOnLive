@@ -674,6 +674,10 @@ def main():
             # Test all benefactor features
             if not tester.test_estates():
                 all_tests_passed = False
+            if not tester.test_multi_estate_support():
+                all_tests_passed = False
+            if not tester.test_activity_timeline():
+                all_tests_passed = False
             if not tester.test_beneficiaries():
                 all_tests_passed = False
             if not tester.test_documents():
