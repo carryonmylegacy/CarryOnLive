@@ -297,17 +297,15 @@ const DashboardPage = () => {
       {/* Mobile only - Beneficiaries full width */}
       <div className="lg:hidden mb-4">
         <div 
-          className="stat-card-beneficiaries rounded-2xl p-4 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center gap-4"
+          className="stat-card-beneficiaries rounded-2xl p-4 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] flex flex-col items-center justify-center"
           onClick={() => navigate('/beneficiaries')}
           data-testid="stat-card-beneficiaries-mobile"
         >
-          <Users className="stat-icon w-8 h-8 opacity-70" />
-          <div className="flex items-center gap-3">
-            <span className="text-3xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              {stats.beneficiaries}
-            </span>
-            <span className="opacity-80 text-sm font-medium">Beneficiaries</span>
-          </div>
+          <Users className="stat-icon w-8 h-8 opacity-70 mb-2" />
+          <span className="text-3xl font-bold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            {stats.beneficiaries}
+          </span>
+          <span className="opacity-80 text-base lg:text-lg font-bold text-center">Beneficiaries</span>
         </div>
       </div>
 
