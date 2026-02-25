@@ -88,8 +88,8 @@ const DashboardPage = () => {
     const angle = (score / 100) * 180 - 90;
     
     return (
-      <div className="relative w-64 h-44 mx-auto">
-        <svg viewBox="0 0 200 120" className="w-full h-full">
+      <div className="relative w-64 h-40 mx-auto">
+        <svg viewBox="0 0 200 100" className="w-full h-full">
           <defs>
             {/* Main rainbow gradient */}
             <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -100,18 +100,18 @@ const DashboardPage = () => {
               <stop offset="100%" stopColor="#22c55e" />
             </linearGradient>
             
-            {/* Radial gradient for outer fade effect */}
-            <radialGradient id="gaugeFade" cx="50%" cy="100%" r="80%" fx="50%" fy="100%">
-              <stop offset="60%" stopColor="white" stopOpacity="1" />
-              <stop offset="100%" stopColor="white" stopOpacity="0" />
-            </radialGradient>
+            {/* Gradient for fading outer edge */}
+            <linearGradient id="outerFade" gradientUnits="userSpaceOnUse" x1="100" y1="10" x2="100" y2="50">
+              <stop offset="0%" stopColor="white" stopOpacity="0.15" />
+              <stop offset="100%" stopColor="white" stopOpacity="1" />
+            </linearGradient>
             
-            {/* Mask for fading outer edge */}
-            <mask id="gaugeMask">
+            {/* Mask to fade outer edge */}
+            <mask id="fadeMask">
               <path
-                d="M 10 100 A 90 90 0 0 1 190 100"
+                d="M 15 90 A 85 85 0 0 1 185 90"
                 fill="none"
-                stroke="url(#gaugeFade)"
+                stroke="url(#outerFade)"
                 strokeWidth="50"
                 strokeLinecap="round"
               />
@@ -120,65 +120,55 @@ const DashboardPage = () => {
           
           {/* Background arc - subtle */}
           <path
-            d="M 25 100 A 75 75 0 0 1 175 100"
+            d="M 20 90 A 80 80 0 0 1 180 90"
             fill="none"
-            stroke="rgba(128,128,128,0.15)"
-            strokeWidth="42"
+            stroke="rgba(128,128,128,0.12)"
+            strokeWidth="40"
             strokeLinecap="round"
           />
           
-          {/* Outer glow/fade layer */}
-          <path
-            d="M 25 100 A 75 75 0 0 1 175 100"
-            fill="none"
-            stroke="url(#gaugeGradient)"
-            strokeWidth="48"
-            strokeLinecap="round"
-            opacity="0.3"
-            style={{ filter: 'blur(8px)' }}
-          />
+          {/* Main colored arc with outer fade mask */}
+          <g mask="url(#fadeMask)">
+            <path
+              d="M 20 90 A 80 80 0 0 1 180 90"
+              fill="none"
+              stroke="url(#gaugeGradient)"
+              strokeWidth="40"
+              strokeLinecap="round"
+            />
+          </g>
           
-          {/* Main colored arc - thick */}
+          {/* Solid inner portion of arc (no fade) */}
           <path
-            d="M 25 100 A 75 75 0 0 1 175 100"
+            d="M 35 90 A 65 65 0 0 1 165 90"
             fill="none"
             stroke="url(#gaugeGradient)"
-            strokeWidth="36"
+            strokeWidth="18"
             strokeLinecap="round"
-          />
-          
-          {/* Inner highlight for depth */}
-          <path
-            d="M 35 100 A 65 65 0 0 1 165 100"
-            fill="none"
-            stroke="url(#gaugeGradient)"
-            strokeWidth="8"
-            strokeLinecap="round"
-            opacity="0.9"
           />
           
           {/* Needle */}
-          <g style={{ transform: `rotate(${angle}deg)`, transformOrigin: '100px 100px', transition: 'transform 0.5s ease-out' }}>
+          <g style={{ transform: `rotate(${angle}deg)`, transformOrigin: '100px 90px', transition: 'transform 0.5s ease-out' }}>
             <line
               x1="100"
-              y1="100"
+              y1="90"
               x2="100"
-              y2="35"
+              y2="30"
               stroke="var(--t)"
               strokeWidth="4"
               strokeLinecap="round"
             />
-            <circle cx="100" cy="100" r="10" fill="var(--t)" />
-            <circle cx="100" cy="100" r="5" fill="var(--content-bg)" />
+            <circle cx="100" cy="90" r="10" fill="var(--t)" />
+            <circle cx="100" cy="90" r="5" fill="var(--content-bg)" />
           </g>
         </svg>
         
-        {/* Score display - moved down to avoid needle overlap */}
-        <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-center">
+        {/* Score display - positioned well below gauge */}
+        <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 text-center">
           <div className="text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
             {score}
           </div>
-          <div className="text-lg font-bold" style={{ color: scoreInfo.color }}>
+          <div className="text-2xl font-bold" style={{ color: scoreInfo.color }}>
             {scoreInfo.label}
           </div>
         </div>
