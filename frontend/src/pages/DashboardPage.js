@@ -173,7 +173,7 @@ const DashboardPage = () => {
         {/* Score display - centered between gauge and percentage breakdown */}
         <div className="absolute -bottom-20 left-1/2 transform -translate-x-1/2 text-center">
           <div className="text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
-            {score}
+            {score}%
           </div>
           <div className="text-2xl font-bold" style={{ color: scoreInfo.color }}>
             {scoreInfo.label}
