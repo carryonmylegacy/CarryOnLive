@@ -90,42 +90,42 @@ const EstateSelector = ({ currentEstate, onEstateChange, estates, onEstatesUpdat
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
-            className="border-white/10 bg-white/5 text-white hover:bg-white/10 gap-2"
+            className="border-[var(--b)] bg-[var(--s)] text-[var(--t)] hover:bg-[var(--b)] gap-2"
             data-testid="estate-selector"
           >
-            <Home className="w-4 h-4 text-[#d4af37]" />
+            <Home className="w-4 h-4 text-[var(--gold)]" />
             <span className="max-w-[150px] truncate">{currentEstate?.name || 'Select Estate'}</span>
             <ChevronDown className="w-4 h-4 opacity-50" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56 bg-[#0f1d35] border-white/10">
+        <DropdownMenuContent className="w-56 bg-[var(--bg2)] border-[var(--b)]">
           {estates.map((estate) => (
             <DropdownMenuItem
               key={estate.id}
               onClick={() => onEstateChange && onEstateChange(estate)}
-              className="text-white hover:bg-white/10 cursor-pointer flex items-center justify-between"
+              className="text-[var(--t)] hover:bg-[var(--s)] cursor-pointer flex items-center justify-between"
             >
               <span className="flex items-center gap-2">
                 {currentEstate?.id === estate.id && (
-                  <Check className="w-4 h-4 text-[#d4af37]" />
+                  <Check className="w-4 h-4 text-[var(--gold)]" />
                 )}
                 <span className={currentEstate?.id !== estate.id ? 'ml-6' : ''}>{estate.name}</span>
               </span>
               <span className={`text-xs px-2 py-0.5 rounded-full ${
                 estate.status === 'transitioned' 
                   ? 'bg-[#10b981]/20 text-[#10b981]' 
-                  : 'bg-[#d4af37]/20 text-[#d4af37]'
+                  : 'bg-[var(--gold)]/20 text-[var(--gold)]'
               }`}>
                 {estate.readiness_score}%
               </span>
             </DropdownMenuItem>
           ))}
           
-          <DropdownMenuSeparator className="bg-white/10" />
+          <DropdownMenuSeparator className="bg-[var(--b)]" />
           
           <DropdownMenuItem
             onClick={() => setShowCreateModal(true)}
-            className="text-[#d4af37] hover:bg-white/10 cursor-pointer"
+            className="text-[var(--gold)] hover:bg-[var(--s)] cursor-pointer"
           >
             <Plus className="w-4 h-4 mr-2" />
             Create New Estate
