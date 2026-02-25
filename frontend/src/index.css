@@ -27,20 +27,23 @@
         --ring: 43 74% 52%;
         --radius: 0.75rem;
         
-        /* Custom CarryOn Colors */
-        --carryon-bg: #0b1120;
-        --carryon-bg-secondary: #0f1d35;
-        --carryon-bg-tertiary: #1e293b;
-        --carryon-gold: #d4af37;
-        --carryon-gold-hover: #b8960c;
-        --carryon-gold-light: #fcd34d;
-        --carryon-text: #f8fafc;
-        --carryon-text-secondary: #94a3b8;
-        --carryon-text-muted: #64748b;
-        --carryon-success: #10b981;
-        --carryon-warning: #f59e0b;
-        --carryon-error: #ef4444;
-        --carryon-info: #3b82f6;
+        /* Custom CarryOn Colors - Matching Original Prototype */
+        --carryon-bg: #08090F;
+        --carryon-bg-secondary: #0D1018;
+        --carryon-bg-tertiary: #12151F;
+        --carryon-gold: #E0AD2B;
+        --carryon-gold-hover: #D4A422;
+        --carryon-gold-light: #F0C95C;
+        --carryon-text: #F1F3F8;
+        --carryon-text-secondary: #A0AABF;
+        --carryon-text-muted: #7B879E;
+        --carryon-text-subtle: #525C72;
+        --carryon-border: rgba(255, 255, 255, 0.07);
+        --carryon-border-highlight: rgba(255, 255, 255, 0.15);
+        --carryon-success: #22C993;
+        --carryon-warning: #F5A623;
+        --carryon-error: #F05252;
+        --carryon-info: #3B7BF7;
     }
 
     .light {
