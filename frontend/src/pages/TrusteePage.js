@@ -351,11 +351,11 @@ const TrusteePage = () => {
                 </div>
               ))}
             </div>
-            <Button className="gold-button w-full mt-5" disabled={!newTask.type} onClick={() => setCreateStep(1)}>Continue <ChevronRight className="w-4 h-4 ml-1" /></Button>
+            <Button className="gold-button w-full mt-5" disabled={!newTask.type} onClick={() => setCreateStep(2)}>Continue <ChevronRight className="w-4 h-4 ml-1" /></Button>
           </>)}
 
-          {/* Step 1: Instructions */}
-          {createStep === 1 && (<>
+          {/* Step 2: Instructions */}
+          {createStep === 2 && (<>
             <h3 className="text-lg font-bold text-[var(--t)] mb-4">Describe the Task</h3>
             <div className="rounded-xl p-3 mb-4" style={{ background: 'rgba(59,123,247,0.05)', border: '1px solid rgba(59,123,247,0.1)' }}>
               <p className="text-sm text-[var(--bl3)] leading-relaxed">Be as detailed as possible. Include names, addresses, account numbers, amounts, and any specific sequencing. The DTS team will use this to build your itemized quote.</p>
@@ -368,13 +368,13 @@ const TrusteePage = () => {
               </div>
             </div>
             <div className="flex gap-3 mt-5">
-              <Button variant="outline" className="border-[var(--b)] text-[var(--t3)]" onClick={() => setCreateStep(0)}><ChevronLeft className="w-4 h-4 mr-1" /> Back</Button>
-              <Button className="gold-button flex-1" disabled={!newTask.title || !newTask.desc} onClick={() => setCreateStep(2)}>Continue <ChevronRight className="w-4 h-4 ml-1" /></Button>
+              <Button variant="outline" className="border-[var(--b)] text-[var(--t3)]" onClick={() => setCreateStep(1)}><ChevronLeft className="w-4 h-4 mr-1" /> Back</Button>
+              <Button className="gold-button flex-1" disabled={!newTask.title || !newTask.desc} onClick={() => setCreateStep(3)}>Continue <ChevronRight className="w-4 h-4 ml-1" /></Button>
             </div>
           </>)}
 
-          {/* Step 2: Confidentiality */}
-          {createStep === 2 && (<>
+          {/* Step 3: Confidentiality */}
+          {createStep === 3 && (<>
             <h3 className="text-lg font-bold text-[var(--t)] mb-1">Confidentiality Level</h3>
             <p className="text-sm text-[var(--t4)] mb-4">Who, if anyone, should know this task exists or was completed?</p>
             <div className="space-y-3 mb-4">
@@ -401,13 +401,13 @@ const TrusteePage = () => {
               </div>
             )}
             <div className="flex gap-3 mt-5">
-              <Button variant="outline" className="border-[var(--b)] text-[var(--t3)]" onClick={() => setCreateStep(1)}><ChevronLeft className="w-4 h-4 mr-1" /> Back</Button>
-              <Button className="gold-button flex-1" onClick={() => setCreateStep(3)}>Continue <ChevronRight className="w-4 h-4 ml-1" /></Button>
+              <Button variant="outline" className="border-[var(--b)] text-[var(--t3)]" onClick={() => setCreateStep(2)}><ChevronLeft className="w-4 h-4 mr-1" /> Back</Button>
+              <Button className="gold-button flex-1" onClick={() => setCreateStep(4)}>Continue <ChevronRight className="w-4 h-4 ml-1" /></Button>
             </div>
           </>)}
 
-          {/* Step 3: Review & Submit */}
-          {createStep === 3 && (<>
+          {/* Step 4: Review & Submit */}
+          {createStep === 4 && (<>
             <h3 className="text-lg font-bold text-[var(--t)] mb-4">Review & Submit Request</h3>
             <div className="rounded-xl p-4 mb-4" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
               {[['Task Type', typeConfig[newTask.type]?.label], ['Title', newTask.title], ['Confidentiality', confConfig[newTask.confidential]?.label], newTask.discloseTo ? ['Disclosed To', newTask.discloseTo] : null, newTask.timedRelease ? ['Timed Release', newTask.timedRelease] : null].filter(Boolean).map(([k, v], i, a) => (
