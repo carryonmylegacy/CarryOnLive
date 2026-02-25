@@ -16,14 +16,24 @@ import {
   Moon,
   Sun,
   FileKey,
-  Home
+  Home,
+  Bell
 } from 'lucide-react';
 import { Switch } from '../ui/switch';
+import NotificationCenter from '../estate/NotificationCenter';
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const [currentEstateId, setCurrentEstateId] = React.useState(() => localStorage.getItem('selected_estate_id'));
+
+  React.useEffect(() => {
+    const handleStorage = () => setCurrentEstateId(localStorage.getItem('selected_estate_id'));
+    window.addEventListener('storage', handleStorage);
+    const interval = setInterval(() => setCurrentEstateId(localStorage.getItem('selected_estate_id')), 1000);
+    return () => { window.removeEventListener('storage', handleStorage); clearInterval(interval); };
+  }, []);
 
   const handleLogout = () => {
     logout();
