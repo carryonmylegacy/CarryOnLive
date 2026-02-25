@@ -945,6 +945,50 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         created_at=current_user["created_at"]
     )
 
+# ===================== ADMIN ROUTES =====================
+
+@api_router.get("/admin/users")
+async def get_all_users(current_user: dict = Depends(get_current_user)):
+    """Get all users — admin only"""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
+    return users
+
+@api_router.get("/admin/stats")
+async def get_admin_stats(current_user: dict = Depends(get_current_user)):
+    """Get platform stats — admin only"""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    total_users = await db.users.count_documents({})
+    benefactors = await db.users.count_documents({"role": "benefactor"})
+    beneficiaries = await db.users.count_documents({"role": "beneficiary"})
+    admins = await db.users.count_documents({"role": "admin"})
+    total_estates = await db.estates.count_documents({})
+    transitioned = await db.estates.count_documents({"status": "transitioned"})
+    total_docs = await db.documents.count_documents({})
+    total_messages = await db.messages.count_documents({})
+    pending_certs = await db.death_certificates.count_documents({"status": "pending"})
+    return {
+        "users": {"total": total_users, "benefactors": benefactors, "beneficiaries": beneficiaries, "admins": admins},
+        "estates": {"total": total_estates, "transitioned": transitioned, "active": total_estates - transitioned},
+        "documents": total_docs,
+        "messages": total_messages,
+        "pending_certificates": pending_certs
+    }
+
+@api_router.delete("/admin/users/{user_id}")
+async def delete_user(user_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a user — admin only"""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    if user_id == current_user["id"]:
+        raise HTTPException(status_code=400, detail="Cannot delete yourself")
+    result = await db.users.delete_one({"id": user_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"message": "User deleted"}
+
 # ===================== ESTATE ROUTES =====================
 
 @api_router.get("/estates")
