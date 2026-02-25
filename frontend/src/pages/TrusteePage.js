@@ -24,6 +24,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
+import { SectionLockBanner } from '../components/security/SectionLock';
 
 const typeConfig = {
   delivery: { icon: Package, label: 'Delivery / Mailing', desc: 'Send packages, letters, cash, or items to a recipient', color: '#8b5cf6' },
