@@ -34,6 +34,16 @@ JWT_SECRET = os.environ.get('JWT_SECRET', 'carryon-secure-jwt-secret')
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24
 
+# Encryption Configuration
+ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY', 'carryon-default-encryption-key-32b!')
+ENCRYPTION_SALT = b'carryon_salt_2024'
+
+# Resend Configuration
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY')
+SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
+if RESEND_API_KEY:
+    resend.api_key = RESEND_API_KEY
+
 # Create the main app
 app = FastAPI(title="CarryOn™ API", version="1.0.0")
 
