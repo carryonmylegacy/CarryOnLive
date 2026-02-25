@@ -8,7 +8,9 @@ import {
   Users, 
   CheckSquare,
   ChevronRight,
-  Clock
+  Clock,
+  CheckCircle2,
+  Circle
 } from 'lucide-react';
 import EstateSelector from '../components/estate/EstateSelector';
 
@@ -279,7 +281,7 @@ const DashboardPage = () => {
         {/* Percentage breakdown - oval dots with matching card colors */}
         <div className="flex justify-center gap-4 lg:gap-8 mt-36 lg:mt-40">
           <div className="flex items-center gap-2">
-            <span className="w-4 h-2 lg:w-5 lg:h-2.5 rounded-full bg-[#3b82f6]" />
+            <span className="w-4 h-2 lg:w-5 lg:h-2.5 rounded-full bg-[#2563eb]" />
             <span className="text-[var(--t3)] text-base lg:text-lg">{docsPercent}% Docs</span>
           </div>
           <div className="flex items-center gap-2">
