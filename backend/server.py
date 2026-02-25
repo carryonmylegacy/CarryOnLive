@@ -1172,6 +1172,9 @@ async def create_beneficiary(data: BeneficiaryCreate, current_user: dict = Depen
         metadata={"beneficiary_name": data.name, "relation": data.relation}
     )
     
+    # Recalculate estate readiness (beneficiaries affect message score)
+    await update_estate_readiness(data.estate_id)
+    
     return beneficiary
 
 @api_router.delete("/beneficiaries/{beneficiary_id}")
