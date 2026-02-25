@@ -135,25 +135,38 @@ const BeneficiariesPage = () => {
   }
 
   return (
-    <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in" data-testid="beneficiaries-page">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>
-            Beneficiaries
-          </h1>
-          <p className="text-[#94a3b8] mt-1">
-            Manage your family members and designated beneficiaries
-          </p>
+    <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="beneficiaries-page"
+      style={{ background: 'radial-gradient(ellipse at top left, rgba(34,197,94,0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(22,163,74,0.06), transparent 55%)' }}>
+      {/* Header - matching prototype */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(34,197,94,0.2), rgba(22,163,74,0.15))' }}>
+            <Users className="w-5 h-5 text-[#4EDBA8]" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              Beneficiaries
+            </h1>
+            <p className="text-xs text-[var(--t5)]">
+              {beneficiaries.length} configured · Manage your family members
+            </p>
+          </div>
         </div>
         <Button
-          className="gold-button"
+          className="gold-button w-full sm:w-auto"
           onClick={() => setShowAddModal(true)}
           data-testid="add-beneficiary-button"
         >
           <Plus className="w-5 h-5 mr-2" />
           Add Beneficiary
         </Button>
+      </div>
+
+      {/* Invitation info */}
+      <div className="rounded-xl p-3" style={{ background: 'rgba(37,99,235,0.04)', border: '1px solid rgba(37,99,235,0.1)' }}>
+        <p className="text-xs text-[var(--bl3)] leading-relaxed">
+          The invitation email will include: a link to create their CarryOn™ account, instructions to download the app, and a brief explanation of what CarryOn™ is. They will NOT be told any details about your estate, documents, or messages.
+        </p>
       </div>
 
       {/* Beneficiaries Grid */}
