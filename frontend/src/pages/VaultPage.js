@@ -54,6 +54,7 @@ const VaultPage = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showLockModal, setShowLockModal] = useState(false);
   const [showBackupCodeModal, setShowBackupCodeModal] = useState(false);
