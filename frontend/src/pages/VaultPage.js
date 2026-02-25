@@ -16,7 +16,10 @@ import {
   File,
   FileImage,
   FileVideo,
-  FileArchive
+  FileArchive,
+  Key,
+  Copy,
+  CheckCircle2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -47,12 +50,19 @@ const VaultPage = () => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showLockModal, setShowLockModal] = useState(false);
+  const [showBackupCodeModal, setShowBackupCodeModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
+  const [unlockPassword, setUnlockPassword] = useState('');
+  const [unlockBackupCode, setUnlockBackupCode] = useState('');
+  const [unlocking, setUnlocking] = useState(false);
+  const [downloading, setDownloading] = useState(null);
+  const [backupCode, setBackupCode] = useState('');
   
   // Upload form state
   const [uploadName, setUploadName] = useState('');
   const [uploadCategory, setUploadCategory] = useState('legal');
   const [uploadLockType, setUploadLockType] = useState('none');
+  const [uploadLockPassword, setUploadLockPassword] = useState('');
   const [uploadFile, setUploadFile] = useState(null);
 
   useEffect(() => {
