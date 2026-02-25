@@ -220,17 +220,35 @@ class CarryOnAPITester:
             if unlock_success:
                 print(f"   ✅ Document unlocked with password")
             
-            # Test document unlock with backup code
-            unlock_backup_success, _ = self.run_test(
-                "Unlock Document with Backup Code",
+            # Test document unlock with backup code (for backup-only locked documents)
+            # First create a backup-only locked document
+            backup_files = {'file': ('backup_test.txt', io.BytesIO(b"backup test content"), 'text/plain')}
+            backup_upload_url = f"documents/upload?estate_id={self.estate_id}&name=Backup%20Test%20Document&category=legal&lock_type=backup"
+            
+            backup_success, backup_response = self.run_test(
+                "Upload Backup-Only Document",
                 "POST",
-                f"documents/{self.test_document_id}/unlock",
+                backup_upload_url,
                 200,
-                data={"backup_code": self.test_backup_code}
+                files=backup_files
             )
             
-            if unlock_backup_success:
-                print(f"   ✅ Document unlocked with backup code")
+            if backup_success and 'backup_code' in backup_response:
+                backup_doc_id = backup_response['id']
+                backup_code = backup_response['backup_code']
+                
+                unlock_backup_success, _ = self.run_test(
+                    "Unlock Backup Document with Code",
+                    "POST",
+                    f"documents/{backup_doc_id}/unlock",
+                    200,
+                    data={"backup_code": backup_code}
+                )
+                
+                if unlock_backup_success:
+                    print(f"   ✅ Backup document unlocked with backup code")
+            else:
+                unlock_backup_success = False
             
             # Test document download with password
             download_url = f"documents/{self.test_document_id}/download?password=testpass123"
