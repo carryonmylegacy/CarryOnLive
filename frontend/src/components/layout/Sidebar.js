@@ -57,6 +57,7 @@ const Sidebar = () => {
       items: [
         { to: '/beneficiary/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
         { to: '/beneficiary/vault', icon: FolderLock, label: 'Secure Document Vault' },
+        { to: '/beneficiary/guardian', icon: Sparkles, label: 'Estate Guardian' },
         { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Immediate Action Checklist' },
         { to: '/beneficiary/messages', icon: MessageSquare, label: 'Milestone Messages' },
         { to: '/beneficiary/milestone', icon: Home, label: 'Report Milestone' },
