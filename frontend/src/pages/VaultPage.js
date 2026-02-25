@@ -372,8 +372,18 @@ const VaultPage = () => {
                       </p>
                       
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="sm" className="text-[#94a3b8] hover:text-white">
-                          <Download className="w-4 h-4" />
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-[#94a3b8] hover:text-white"
+                          onClick={() => doc.is_locked ? (setSelectedDoc(doc), setShowLockModal(true)) : handleDownload(doc)}
+                          disabled={downloading === doc.id}
+                        >
+                          {downloading === doc.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Download className="w-4 h-4" />
+                          )}
                         </Button>
                         {user?.role === 'benefactor' && (
                           <Button
