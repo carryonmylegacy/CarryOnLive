@@ -66,7 +66,7 @@ const plans = [
 
 const TrusteePage = () => {
   return (
-    <div className="p-6 space-y-6 animate-fade-in" data-testid="trustee-services">
+    <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in" data-testid="trustee-services">
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto mb-8">
         <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#d4af37] to-[#fcd34d] flex items-center justify-center gold-glow">
