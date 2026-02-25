@@ -8,18 +8,17 @@ import {
   MessageSquare,
   Users,
   Menu,
+  X,
   Shield,
   Sparkles,
   CheckSquare,
   Settings,
   LogOut,
-  FileKey,
   Home,
   Moon,
   Sun
 } from 'lucide-react';
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from '../ui/sheet';
-import { Switch } from '../ui/switch';
+import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 
 const MobileNav = () => {
   const { user, logout } = useAuth();
@@ -32,6 +31,25 @@ const MobileNav = () => {
     navigate('/login');
     setOpen(false);
   };
+
+  const handleNavClick = () => {
+    setOpen(false);
+  };
+
+  // Navigation structure matching prototype - with sections
+  const myLegacyItems = [
+    { to: '/dashboard', icon: Home, label: 'Dashboard' },
+    { to: '/vault', icon: FolderLock, label: 'Secure Document Vault' },
+    { to: '/guardian', icon: Sparkles, label: 'Estate Guardian' },
+    { to: '/checklist', icon: CheckSquare, label: 'Immediate Action Checklist' },
+    { to: '/messages', icon: MessageSquare, label: 'Milestone Messages' },
+    { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
+    { to: '/trustee', icon: Shield, label: 'Trustee Services' },
+  ];
+
+  const accountItems = [
+    { to: '/settings', icon: Settings, label: 'Settings' },
+  ];
 
   // Bottom nav for benefactor - 5 items with Home in center
   const benefactorBottomNav = [
@@ -55,41 +73,6 @@ const MobileNav = () => {
     return benefactorBottomNav;
   };
 
-  const allLinks = user?.role === 'beneficiary' ? [
-    { to: '/beneficiary', icon: Home, label: 'Estate Hub' },
-    { to: '/beneficiary/vault', icon: FolderLock, label: 'Document Vault' },
-    { to: '/beneficiary/messages', icon: MessageSquare, label: 'Messages' },
-    { to: '/beneficiary/milestone', icon: CheckSquare, label: 'Report Milestone' },
-    { to: '/settings', icon: Settings, label: 'Settings' },
-  ] : [
-    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/vault', icon: FolderLock, label: 'Document Vault' },
-    { to: '/guardian', icon: Sparkles, label: 'Estate Guardian' },
-    { to: '/checklist', icon: CheckSquare, label: 'Action Checklist' },
-    { to: '/messages', icon: MessageSquare, label: 'Milestone Messages' },
-    { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
-    { to: '/trustee', icon: Shield, label: 'Trustee Services' },
-    { to: '/transition', icon: FileKey, label: 'Estate Transition' },
-    { to: '/settings', icon: Settings, label: 'Settings' },
-  ];
-
-  const getUserInitials = () => {
-    if (user?.first_name && user?.last_name) {
-      return `${user.first_name[0]}${user.last_name[0]}`.toUpperCase();
-    }
-    if (user?.name) {
-      return user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-    }
-    return 'U';
-  };
-
-  const getUserDisplayName = () => {
-    if (user?.first_name && user?.last_name) {
-      return `${user.first_name} ${user.last_name}`;
-    }
-    return user?.name || 'User';
-  };
-
   return (
     <>
       {/* Top Mobile Header */}
@@ -98,10 +81,7 @@ const MobileNav = () => {
           <img 
             src="/carryon-logo.jpg" 
             alt="CarryOn" 
-            className="w-8 h-8 rounded-lg object-cover"
-            onError={(e) => {
-              e.target.style.display = 'none';
-            }}
+            className="w-10 h-10 rounded-xl object-cover"
           />
           <span className="text-[var(--t)] font-bold text-lg" style={{ fontFamily: 'Outfit, sans-serif' }}>
             CarryOn™
@@ -114,65 +94,117 @@ const MobileNav = () => {
               <Menu className="w-6 h-6" />
             </button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-72 bg-[var(--bg)] border-l border-[var(--b)] p-0">
+          <SheetContent 
+            side="right" 
+            className="w-72 p-0 border-l"
+            style={{ 
+              background: theme === 'dark' ? '#0D1018' : '#F8FAFC',
+              borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'
+            }}
+          >
             <div className="flex flex-col h-full">
-              {/* Header */}
-              <div className="p-4 border-b border-[var(--b)] flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--gold)] to-[var(--gold2)] flex items-center justify-center text-[var(--bg)] font-bold text-lg">
-                  {getUserInitials()}
-                </div>
-                <div>
-                  <p className="text-[var(--t)] font-semibold">{getUserDisplayName()}</p>
-                  <p className="text-xs text-[var(--t5)] capitalize">{user?.role || 'User'}</p>
-                </div>
+              {/* Close button */}
+              <div className="flex justify-end p-4">
+                <button 
+                  onClick={() => setOpen(false)}
+                  className="p-1 text-[var(--t4)] hover:text-[var(--t)]"
+                >
+                  <X className="w-6 h-6" />
+                </button>
               </div>
 
-              {/* Links */}
-              <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-                {allLinks.map((link) => (
-                  <SheetClose asChild key={link.to}>
-                    <NavLink
-                      to={link.to}
-                      className={({ isActive }) =>
-                        `flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                          isActive 
-                            ? 'bg-[var(--gold)]/15 text-[var(--gold)]' 
-                            : 'text-[var(--t3)] hover:bg-[var(--s)]'
-                        }`
-                      }
-                    >
-                      <link.icon className="w-5 h-5" />
-                      <span className="font-medium">{link.label}</span>
-                    </NavLink>
-                  </SheetClose>
-                ))}
+              {/* MY LEGACY Section */}
+              <nav className="flex-1 px-4 overflow-y-auto">
+                <div className="mb-6">
+                  <h3 
+                    className="text-xs font-semibold tracking-wider uppercase mb-3 px-2"
+                    style={{ color: theme === 'dark' ? '#525C72' : '#64748B' }}
+                  >
+                    MY LEGACY
+                  </h3>
+                  <div className="space-y-1">
+                    {myLegacyItems.map((item) => (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        onClick={handleNavClick}
+                        className={({ isActive }) =>
+                          `flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
+                            isActive 
+                              ? 'text-[#E0AD2B]' 
+                              : theme === 'dark' ? 'text-[#D8DEE9]' : 'text-[#334155]'
+                          }`
+                        }
+                        style={({ isActive }) => ({
+                          backgroundColor: isActive 
+                            ? (theme === 'dark' ? 'rgba(224,173,43,0.1)' : 'rgba(224,173,43,0.1)')
+                            : 'transparent'
+                        })}
+                      >
+                        <item.icon className="w-5 h-5" />
+                        <span className="font-medium text-sm">{item.label}</span>
+                      </NavLink>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ACCOUNT Section */}
+                <div className="mb-6">
+                  <h3 
+                    className="text-xs font-semibold tracking-wider uppercase mb-3 px-2"
+                    style={{ color: theme === 'dark' ? '#525C72' : '#64748B' }}
+                  >
+                    ACCOUNT
+                  </h3>
+                  <div className="space-y-1">
+                    {accountItems.map((item) => (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        onClick={handleNavClick}
+                        className={({ isActive }) =>
+                          `flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${
+                            isActive 
+                              ? 'text-[#E0AD2B]' 
+                              : theme === 'dark' ? 'text-[#D8DEE9]' : 'text-[#334155]'
+                          }`
+                        }
+                        style={({ isActive }) => ({
+                          backgroundColor: isActive 
+                            ? (theme === 'dark' ? 'rgba(224,173,43,0.1)' : 'rgba(224,173,43,0.1)')
+                            : 'transparent'
+                        })}
+                      >
+                        <item.icon className="w-5 h-5" />
+                        <span className="font-medium text-sm">{item.label}</span>
+                      </NavLink>
+                    ))}
+                  </div>
+                </div>
               </nav>
 
-              {/* Theme Toggle */}
-              <div className="px-4 py-3 border-t border-[var(--b)]">
-                <div 
-                  className="flex items-center justify-between px-4 py-3 rounded-xl bg-[var(--s)] cursor-pointer"
-                  onClick={toggleTheme}
-                >
-                  <div className="flex items-center gap-3 text-[var(--t3)]">
-                    {theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
-                    <span className="font-medium">{theme === 'dark' ? 'Dark' : 'Light'} Mode</span>
-                  </div>
-                  <Switch
-                    checked={theme === 'dark'}
-                    onCheckedChange={toggleTheme}
-                  />
-                </div>
-              </div>
-
-              {/* Logout */}
-              <div className="p-4 border-t border-[var(--b)]">
+              {/* Theme Toggle Button - Matching prototype style */}
+              <div className="px-4 pb-6">
                 <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl w-full text-[var(--rd)] hover:bg-[var(--rd)]/10 transition-all"
+                  onClick={toggleTheme}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all"
+                  style={{
+                    backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                    border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                    color: theme === 'dark' ? '#A0AABF' : '#475569'
+                  }}
                 >
-                  <LogOut className="w-5 h-5" />
-                  <span className="font-medium">Sign Out</span>
+                  {theme === 'dark' ? (
+                    <>
+                      <Sun className="w-5 h-5" />
+                      <span className="font-medium">Light Mode</span>
+                    </>
+                  ) : (
+                    <>
+                      <Moon className="w-5 h-5" />
+                      <span className="font-medium">Dark Mode</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
