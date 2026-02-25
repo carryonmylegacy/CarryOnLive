@@ -388,6 +388,21 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 def generate_otp() -> str:
     return ''.join([str(random.randint(0, 9)) for _ in range(6)])
 
+# ===================== ACTIVITY LOGGING =====================
+
+async def log_activity(estate_id: str, user_id: str, user_name: str, action: str, description: str, metadata: dict = None):
+    """Log an activity to the estate timeline"""
+    activity = ActivityLog(
+        estate_id=estate_id,
+        user_id=user_id,
+        user_name=user_name,
+        action=action,
+        description=description,
+        metadata=metadata
+    )
+    await db.activity_logs.insert_one(activity.model_dump())
+    return activity
+
 # ===================== SEED DATA =====================
 
 async def seed_mock_data():
