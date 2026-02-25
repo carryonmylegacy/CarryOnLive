@@ -258,7 +258,148 @@ const VaultPage = () => {
     setUploadCategory('legal');
     setUploadLockType('none');
     setUploadLockPassword('');
+    setUploadVoicePassphrase('');
     setUploadFile(null);
+  };
+
+  // Preview functions
+  const handlePreview = async (doc, password = null, backupCode = null) => {
+    // Check if file type is previewable
+    const previewableTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+    if (!previewableTypes.some(type => doc.file_type?.includes(type.split('/')[1]))) {
+      toast.error('This file type cannot be previewed. Please download instead.');
+      return;
+    }
+    
+    setSelectedDoc(doc);
+    setPreviewLoading(true);
+    setShowPreviewModal(true);
+    
+    try {
+      let url = `${API_URL}/documents/${doc.id}/preview`;
+      const params = [];
+      if (password) params.push(`password=${encodeURIComponent(password)}`);
+      if (backupCode) params.push(`backup_code=${encodeURIComponent(backupCode)}`);
+      if (params.length > 0) url += `?${params.join('&')}`;
+      
+      const response = await axios.get(url, {
+        ...getAuthHeaders(),
+        responseType: 'blob'
+      });
+      
+      const blob = new Blob([response.data], { type: doc.file_type });
+      const objectUrl = URL.createObjectURL(blob);
+      setPreviewUrl(objectUrl);
+    } catch (error) {
+      console.error('Preview error:', error);
+      if (error.response?.status === 401) {
+        setShowPreviewModal(false);
+        setShowLockModal(true);
+      } else {
+        toast.error('Failed to preview document');
+        setShowPreviewModal(false);
+      }
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const closePreview = () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setPreviewUrl(null);
+    setShowPreviewModal(false);
+    setSelectedDoc(null);
+  };
+
+  // Voice verification functions
+  const startVoiceRecognition = async () => {
+    // Check for browser support
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error('Voice recognition is not supported in your browser. Please use Chrome or Edge.');
+      return;
+    }
+    
+    // Get voice hint first
+    if (selectedDoc) {
+      try {
+        const hintRes = await axios.get(`${API_URL}/documents/${selectedDoc.id}/voice/hint`, getAuthHeaders());
+        setVoiceHint(hintRes.data.hint);
+        if (!hintRes.data.has_passphrase) {
+          toast.error('Voice passphrase not set up for this document. Use backup code.');
+          return;
+        }
+      } catch (error) {
+        console.error('Failed to get voice hint:', error);
+      }
+    }
+    
+    recognitionRef.current = new SpeechRecognition();
+    recognitionRef.current.continuous = false;
+    recognitionRef.current.interimResults = true;
+    recognitionRef.current.lang = 'en-US';
+    
+    recognitionRef.current.onstart = () => {
+      setIsListening(true);
+      setSpokenText('');
+    };
+    
+    recognitionRef.current.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map(result => result[0].transcript)
+        .join('');
+      setSpokenText(transcript);
+    };
+    
+    recognitionRef.current.onend = () => {
+      setIsListening(false);
+    };
+    
+    recognitionRef.current.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+      setIsListening(false);
+      if (event.error === 'not-allowed') {
+        toast.error('Microphone access denied. Please allow microphone access.');
+      }
+    };
+    
+    recognitionRef.current.start();
+  };
+
+  const stopVoiceRecognition = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+  };
+
+  const verifyVoice = async () => {
+    if (!spokenText || !selectedDoc) {
+      toast.error('Please speak your passphrase first');
+      return;
+    }
+    
+    setUnlocking(true);
+    try {
+      await axios.post(
+        `${API_URL}/documents/${selectedDoc.id}/voice/verify`,
+        { document_id: selectedDoc.id, spoken_text: spokenText },
+        getAuthHeaders()
+      );
+      
+      toast.success('Voice verified! Downloading document...');
+      setShowLockModal(false);
+      setSpokenText('');
+      
+      // Download with voice verification passed (use backup code internally)
+      handleDownload(selectedDoc, null, selectedDoc.backup_code);
+    } catch (error) {
+      console.error('Voice verification failed:', error);
+      toast.error(error.response?.data?.detail || 'Voice verification failed. Try again or use backup code.');
+    } finally {
+      setUnlocking(false);
+    }
   };
 
   const getFileIcon = (fileType) => {
@@ -266,6 +407,10 @@ const VaultPage = () => {
     if (fileType?.includes('video')) return FileVideo;
     if (fileType?.includes('zip') || fileType?.includes('archive')) return FileArchive;
     return FileText;
+  };
+
+  const isPreviewable = (fileType) => {
+    return fileType?.includes('pdf') || fileType?.includes('image');
   };
 
   const formatFileSize = (bytes) => {
