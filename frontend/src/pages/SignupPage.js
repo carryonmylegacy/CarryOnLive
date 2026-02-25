@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Shield, Mail, Lock, Eye, EyeOff, Loader2, User, ArrowLeft } from 'lucide-react';
+import { Shield, Mail, Lock, Eye, EyeOff, Loader2, User, ArrowLeft, AlertCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -12,11 +12,36 @@ import axios from 'axios';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
+const suffixOptions = [
+  { value: '', label: 'None' },
+  { value: 'Jr.', label: 'Jr.' },
+  { value: 'Sr.', label: 'Sr.' },
+  { value: 'II', label: 'II' },
+  { value: 'III', label: 'III' },
+  { value: 'IV', label: 'IV' },
+  { value: 'V', label: 'V' },
+  { value: 'Esq.', label: 'Esq.' },
+  { value: 'MD', label: 'MD' },
+  { value: 'PhD', label: 'PhD' },
+];
+
+const genderOptions = [
+  { value: '', label: 'Select...' },
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+  { value: 'other', label: 'Other' },
+  { value: 'prefer_not_to_say', label: 'Prefer not to say' },
+];
+
 const SignupPage = () => {
   const navigate = useNavigate();
   const { verifyOtp } = useAuth();
   
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [middleName, setMiddleName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [suffix, setSuffix] = useState('');
+  const [gender, setGender] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -31,8 +56,12 @@ const SignupPage = () => {
   const handleSignup = async (e) => {
     e.preventDefault();
     
-    if (!name.trim()) {
-      toast.error('Please enter your name');
+    if (!firstName.trim()) {
+      toast.error('Please enter your first name');
+      return;
+    }
+    if (!lastName.trim()) {
+      toast.error('Please enter your last name');
       return;
     }
     if (!email.trim()) {
@@ -52,7 +81,11 @@ const SignupPage = () => {
     
     try {
       const response = await axios.post(`${API_URL}/auth/register`, {
-        name,
+        first_name: firstName,
+        middle_name: middleName || null,
+        last_name: lastName,
+        suffix: suffix || null,
+        gender: gender || null,
         email,
         password,
         role
@@ -96,7 +129,7 @@ const SignupPage = () => {
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center p-4"
+      className="min-h-screen flex items-center justify-center p-4 py-12"
       style={{
         background: 'linear-gradient(145deg, #0b1120, #0f1d35 40%, #0a1628)'
       }}
@@ -109,7 +142,7 @@ const SignupPage = () => {
         }}
       />
       
-      <div className="w-full max-w-md relative z-10 animate-fade-in">
+      <div className="w-full max-w-lg relative z-10 animate-fade-in">
         {/* Back to Login */}
         <Link to="/login" className="inline-flex items-center gap-2 text-[#94a3b8] hover:text-white mb-6 transition-colors">
           <ArrowLeft className="w-4 h-4" />
@@ -117,11 +150,11 @@ const SignupPage = () => {
         </Link>
         
         {/* Logo & Branding */}
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#d4af37] to-[#fcd34d] flex items-center justify-center gold-glow">
-            <Shield className="w-10 h-10 text-[#0b1120]" />
+        <div className="text-center mb-6">
+          <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-[#d4af37] to-[#fcd34d] flex items-center justify-center gold-glow">
+            <Shield className="w-8 h-8 text-[#0b1120]" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <h1 className="text-2xl font-bold text-white mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
             Create Your Account
           </h1>
           <p className="text-[#94a3b8] text-sm">
@@ -130,27 +163,96 @@ const SignupPage = () => {
         </div>
 
         {/* Signup Form */}
-        <div className="glass-card p-8">
+        <div className="glass-card p-6">
+          {/* Legal Disclaimer */}
+          <div className="mb-6 p-3 bg-[#f59e0b]/10 border border-[#f59e0b]/20 rounded-xl">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-[#f59e0b] flex-shrink-0 mt-0.5" />
+              <p className="text-[#f59e0b] text-xs">
+                <strong>Important:</strong> Please enter your name exactly as it appears on your legal documents. 
+                This ensures CarryOn™ can fully support your estate planning needs and legal document verification.
+              </p>
+            </div>
+          </div>
+
           <form onSubmit={handleSignup} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-[#94a3b8] text-sm">Full Name</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748b]" />
+            {/* Name Fields Row */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="firstName" className="text-[#94a3b8] text-sm">First Name *</Label>
                 <Input
-                  id="name"
+                  id="firstName"
                   type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="John Mitchell"
-                  className="input-field pl-11"
-                  data-testid="signup-name-input"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="John"
+                  className="input-field"
+                  data-testid="signup-firstname-input"
                   required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="middleName" className="text-[#94a3b8] text-sm">Middle Name</Label>
+                <Input
+                  id="middleName"
+                  type="text"
+                  value={middleName}
+                  onChange={(e) => setMiddleName(e.target.value)}
+                  placeholder="William"
+                  className="input-field"
+                  data-testid="signup-middlename-input"
                 />
               </div>
             </div>
 
+            {/* Last Name and Suffix Row */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="lastName" className="text-[#94a3b8] text-sm">Last Name *</Label>
+                <Input
+                  id="lastName"
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Mitchell"
+                  className="input-field"
+                  data-testid="signup-lastname-input"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="suffix" className="text-[#94a3b8] text-sm">Suffix</Label>
+                <Select value={suffix} onValueChange={setSuffix}>
+                  <SelectTrigger className="input-field" data-testid="signup-suffix-select">
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#0f1d35] border-white/10">
+                    {suffixOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Gender */}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-[#94a3b8] text-sm">Email</Label>
+              <Label htmlFor="gender" className="text-[#94a3b8] text-sm">Gender</Label>
+              <Select value={gender} onValueChange={setGender}>
+                <SelectTrigger className="input-field" data-testid="signup-gender-select">
+                  <SelectValue placeholder="Select..." />
+                </SelectTrigger>
+                <SelectContent className="bg-[#0f1d35] border-white/10">
+                  {genderOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Email */}
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-[#94a3b8] text-sm">Email *</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748b]" />
                 <Input
@@ -166,48 +268,51 @@ const SignupPage = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-[#94a3b8] text-sm">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748b]" />
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••"
-                  className="input-field pl-11 pr-11"
-                  data-testid="signup-password-input"
-                  required
-                  minLength={6}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748b] hover:text-white transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
+            {/* Password Fields */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-[#94a3b8] text-sm">Password *</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748b]" />
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="input-field pl-11 pr-11"
+                    data-testid="signup-password-input"
+                    required
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748b] hover:text-white transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="text-[#94a3b8] text-sm">Confirm *</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748b]" />
+                  <Input
+                    id="confirmPassword"
+                    type={showPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="input-field pl-11"
+                    data-testid="signup-confirm-password-input"
+                    required
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-[#94a3b8] text-sm">Confirm Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748b]" />
-                <Input
-                  id="confirmPassword"
-                  type={showPassword ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••••"
-                  className="input-field pl-11"
-                  data-testid="signup-confirm-password-input"
-                  required
-                />
-              </div>
-            </div>
-
+            {/* Role */}
             <div className="space-y-2">
               <Label htmlFor="role" className="text-[#94a3b8] text-sm">I am a...</Label>
               <Select value={role} onValueChange={setRole}>
@@ -224,7 +329,7 @@ const SignupPage = () => {
             <Button
               type="submit"
               disabled={loading}
-              className="gold-button w-full mt-6"
+              className="gold-button w-full mt-4"
               data-testid="signup-submit-button"
             >
               {loading ? (
@@ -238,7 +343,7 @@ const SignupPage = () => {
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-4 text-center">
             <span className="text-[#64748b] text-sm">Already have an account? </span>
             <Link to="/login" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors">
               Sign In
@@ -247,8 +352,8 @@ const SignupPage = () => {
         </div>
 
         {/* Security Badge */}
-        <div className="mt-6 text-center">
-          <p className="text-[#64748b] text-sm">
+        <div className="mt-4 text-center">
+          <p className="text-[#64748b] text-xs">
             AES-256 Encrypted · Zero-Knowledge · SOC 2
           </p>
         </div>
