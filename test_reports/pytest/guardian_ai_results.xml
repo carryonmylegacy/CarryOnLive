@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="10" skipped="0" tests="12" time="398.397" timestamp="2026-02-25T20:00:57.682839+00:00" hostname="agent-env-094be0cf-f985-4674-b909-ea0846dde98b"><testcase classname="backend.tests.test_guardian_ai.TestEstateGuardianChat" name="test_basic_chat_message" time="8.072" /><testcase classname="backend.tests.test_guardian_ai.TestEstateGuardianChat" name="test_chat_response_includes_action_result_field" time="2.515" /><testcase classname="backend.tests.test_guardian_ai.TestEstateGuardianChat" name="test_analyze_vault_action" time="60.280"><failure message="AssertionError: Analyze vault failed: The preview environment is not responding. It may be starting up.&#10;  &#10;assert 502 == 200&#10; +  where 502 = &lt;Response [502]&gt;.status_code">backend/tests/test_guardian_ai.py:140: in test_analyze_vault_action
+    assert response.status_code == 200, f"Analyze vault failed: {response.text}"
+E   AssertionError: Analyze vault failed: The preview environment is not responding. It may be starting up.
+E     
+E   assert 502 == 200
+E    +  where 502 = &lt;Response [502]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_guardian_ai.TestEstateGuardianChat" name="test_generate_checklist_action" time="120.519"><failure message="AssertionError: Generate checklist failed: The preview environment is not responding. It may be starting up.&#10;  &#10;assert 502 == 200&#10; +  where 502 = &lt;Response [502]&gt;.status_code">backend/tests/test_guardian_ai.py:175: in test_generate_checklist_action
+    assert response.status_code == 200, f"Generate checklist failed: {response.text}"
+E   AssertionError: Generate checklist failed: The preview environment is not responding. It may be starting up.
+E     
+E   assert 502 == 200
+E    +  where 502 = &lt;Response [502]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_guardian_ai.TestEstateGuardianChat" name="test_analyze_readiness_action" time="60.233"><failure message="AssertionError: Analyze readiness failed: The preview environment is not responding. It may be starting up.&#10;  &#10;assert 502 == 200&#10; +  where 502 = &lt;Response [502]&gt;.status_code">backend/tests/test_guardian_ai.py:204: in test_analyze_readiness_action
+    assert response.status_code == 200, f"Analyze readiness failed: {response.text}"
+E   AssertionError: Analyze readiness failed: The preview environment is not responding. It may be starting up.
+E     
+E   assert 502 == 200
+E    +  where 502 = &lt;Response [502]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_guardian_ai.TestEstateGuardianChat" name="test_chat_with_estate_id_fetches_context" time="60.216"><failure message="assert 502 == 200&#10; +  where 502 = &lt;Response [502]&gt;.status_code">backend/tests/test_guardian_ai.py:242: in test_chat_with_estate_id_fetches_context
+    assert response.status_code == 200
+E   assert 502 == 200
+E    +  where 502 = &lt;Response [502]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_guardian_ai.TestEstateStateField" name="test_estate_has_state_field" time="60.143"><failure message="assert 502 == 200&#10; +  where 502 = &lt;Response [502]&gt;.status_code">backend/tests/test_guardian_ai.py:265: in test_estate_has_state_field
+    assert response.status_code == 200
+E   assert 502 == 200
+E    +  where 502 = &lt;Response [502]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_guardian_ai.TestEstateStateField" name="test_patch_estate_with_state" time="25.563"><failure message="AssertionError: Patch failed: The preview environment is not responding. It may be starting up.&#10;  &#10;assert 502 == 200&#10; +  where 502 = &lt;Response [502]&gt;.status_code">backend/tests/test_guardian_ai.py:283: in test_patch_estate_with_state
+    assert patch_response.status_code == 200, f"Patch failed: {patch_response.text}"
+E   AssertionError: Patch failed: The preview environment is not responding. It may be starting up.
+E     
+E   assert 502 == 200
+E    +  where 502 = &lt;Response [502]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_guardian_ai.TestEstateStateField" name="test_state_used_in_ai_context" time="0.257"><failure message="assert 502 == 200&#10; +  where 502 = &lt;Response [502]&gt;.status_code">backend/tests/test_guardian_ai.py:316: in test_state_used_in_ai_context
+    assert response.status_code == 200
+E   assert 502 == 200
+E    +  where 502 = &lt;Response [502]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_guardian_ai.TestChatRequestModel" name="test_chat_request_accepts_estate_id" time="0.157"><failure message="AssertionError: Should accept estate_id parameter&#10;assert 502 == 200&#10; +  where 502 = &lt;Response [502]&gt;.status_code">backend/tests/test_guardian_ai.py:351: in test_chat_request_accepts_estate_id
+    assert response.status_code == 200, "Should accept estate_id parameter"
+E   AssertionError: Should accept estate_id parameter
+E   assert 502 == 200
+E    +  where 502 = &lt;Response [502]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_guardian_ai.TestChatRequestModel" name="test_chat_request_accepts_action" time="0.133"><failure message="AssertionError: Should accept action parameter&#10;assert 502 == 200&#10; +  where 502 = &lt;Response [502]&gt;.status_code">backend/tests/test_guardian_ai.py:366: in test_chat_request_accepts_action
+    assert response.status_code == 200, "Should accept action parameter"
+E   AssertionError: Should accept action parameter
+E   assert 502 == 200
+E    +  where 502 = &lt;Response [502]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_guardian_ai.TestChatRequestModel" name="test_chat_without_estate_id_uses_first_estate" time="0.176"><failure message="AssertionError: Chat failed: The preview environment is not responding. It may be starting up.&#10;  &#10;assert 502 == 200&#10; +  where 502 = &lt;Response [502]&gt;.status_code">backend/tests/test_guardian_ai.py:380: in test_chat_without_estate_id_uses_first_estate
+    assert response.status_code == 200, f"Chat failed: {response.text}"
+E   AssertionError: Chat failed: The preview environment is not responding. It may be starting up.
+E     
+E   assert 502 == 200
+E    +  where 502 = &lt;Response [502]&gt;.status_code</failure></testcase></testsuite></testsuites>
