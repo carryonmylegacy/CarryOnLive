@@ -765,7 +765,7 @@ const DevSwitcherConfig = ({ users, getAuthHeaders }) => {
 
   useEffect(() => {
     fetchConfig();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchConfig = async () => {
     try {
@@ -960,7 +960,7 @@ const SubscriptionsAdmin = ({ getAuthHeaders, users }) => {
 
   const headers = getAuthHeaders()?.headers || {};
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
     try {
