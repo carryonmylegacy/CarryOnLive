@@ -186,7 +186,7 @@ async def send_push_to_all_admins(title: str, body: str, url: str = "/admin", ta
 
 async def update_estate_readiness(estate_id: str):
     """Calculate and update estate readiness score using the detailed algorithm"""
-    from models import calculate_estate_readiness
+    from services.readiness import calculate_estate_readiness
     result = await calculate_estate_readiness(estate_id)
 
     await db.estates.update_one(

@@ -13,7 +13,8 @@ import base64
 import json as json_module
 import random
 
-from models import Estate, EstateCreate, EstateUpdate, calculate_estate_readiness, ensure_default_checklist, ActivityLog
+from models import Estate, EstateCreate, EstateUpdate, ActivityLog
+from services.readiness import calculate_estate_readiness, ensure_default_checklist
 
 router = APIRouter()
 

@@ -13,7 +13,8 @@ import base64
 import json as json_module
 import random
 
-from models import ChatRequest, ChatResponse, ChatMessage, ChecklistItem, calculate_estate_readiness
+from models import ChatRequest, ChatResponse, ChatMessage, ChecklistItem
+from services.readiness import calculate_estate_readiness
 import io
 import pdfplumber
 
