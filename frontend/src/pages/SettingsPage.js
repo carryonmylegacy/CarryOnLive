@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Switch } from '../components/ui/switch';
 import { Separator } from '../components/ui/separator';
+import NotificationSettings from '../components/NotificationSettings';
 
 const plans = [
   { name: 'Premium', price: '$8.99', benPrice: '$2.99', features: ['Full platform access', 'Estate Guardian AI', 'Unlimited vault storage', 'Unlimited milestone messages', 'Immediate Action Checklist', 'Beneficiary management', 'Priority support'], extra: 'Priority access to Eternal Echo AI Digital Corpus when available' },
