@@ -499,6 +499,10 @@ const DevSwitcherConfig = ({ users, getAuthHeaders }) => {
 
   const benefactors = users.filter(u => u.role === 'benefactor');
   const beneficiaries = users.filter(u => u.role === 'beneficiary');
+  
+  // Check if the saved email exists in the user list, or show it anyway
+  const savedBenefactorExists = !config.benefactor_email || benefactors.some(u => u.email === config.benefactor_email);
+  const savedBeneficiaryExists = !config.beneficiary_email || beneficiaries.some(u => u.email === config.beneficiary_email);
 
   if (loading) {
     return <Skeleton className="h-64 w-full" />;
@@ -522,17 +526,28 @@ const DevSwitcherConfig = ({ users, getAuthHeaders }) => {
               <div className="w-3 h-3 rounded-full bg-blue-500" />
               Benefactor Account
             </Label>
-            <select
-              value={config.benefactor_email}
-              onChange={(e) => setConfig(prev => ({ ...prev, benefactor_email: e.target.value, benefactor_password: '' }))}
-              className="w-full p-3 rounded-lg bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm"
-            >
-              <option value="">Select a benefactor...</option>
-              {benefactors.map(u => (
-                <option key={u.id} value={u.email}>{u.name} ({u.email})</option>
-              ))}
-            </select>
-            {config.benefactor_email && (
+            {benefactors.length === 0 ? (
+              <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-sm text-yellow-400">
+                No benefactor accounts found. Create a benefactor account first via /signup.
+                {config.benefactor_email && (
+                  <div className="mt-2 text-xs text-[var(--t5)]">
+                    Previously configured: {config.benefactor_email}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <select
+                value={config.benefactor_email}
+                onChange={(e) => setConfig(prev => ({ ...prev, benefactor_email: e.target.value, benefactor_password: '' }))}
+                className="w-full p-3 rounded-lg bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm"
+              >
+                <option value="">Select a benefactor...</option>
+                {benefactors.map(u => (
+                  <option key={u.id} value={u.email}>{u.name} ({u.email})</option>
+                ))}
+              </select>
+            )}
+            {config.benefactor_email && benefactors.length > 0 && (
               <div className="space-y-2">
                 <Label className="text-[var(--t5)] text-sm">Password for {config.benefactor_email}</Label>
                 <Input
@@ -552,12 +567,22 @@ const DevSwitcherConfig = ({ users, getAuthHeaders }) => {
               <div className="w-3 h-3 rounded-full bg-purple-500" />
               Beneficiary Account
             </Label>
-            <select
-              value={config.beneficiary_email}
-              onChange={(e) => setConfig(prev => ({ ...prev, beneficiary_email: e.target.value, beneficiary_password: '' }))}
-              className="w-full p-3 rounded-lg bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm"
-            >
-              <option value="">Select a beneficiary...</option>
+            {beneficiaries.length === 0 ? (
+              <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-sm text-yellow-400">
+                No beneficiary accounts found. Invite a beneficiary from the Beneficiaries page.
+                {config.beneficiary_email && (
+                  <div className="mt-2 text-xs text-[var(--t5)]">
+                    Previously configured: {config.beneficiary_email}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <select
+                value={config.beneficiary_email}
+                onChange={(e) => setConfig(prev => ({ ...prev, beneficiary_email: e.target.value, beneficiary_password: '' }))}
+                className="w-full p-3 rounded-lg bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm"
+              >
+                <option value="">Select a beneficiary...</option>
               {beneficiaries.map(u => (
                 <option key={u.id} value={u.email}>{u.name} ({u.email})</option>
               ))}
