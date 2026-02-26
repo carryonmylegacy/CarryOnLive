@@ -1500,7 +1500,7 @@ async def accept_invitation(data: AcceptInvitationRequest):
         )
         
         # Generate token for auto-login
-        token = create_jwt_token(existing_user["id"], existing_user["email"], existing_user["role"])
+        token = create_token(existing_user["id"], existing_user["email"], existing_user["role"])
         return {
             "message": "Account linked successfully",
             "access_token": token,
@@ -1555,7 +1555,7 @@ async def accept_invitation(data: AcceptInvitationRequest):
     )
     
     # Generate token for auto-login
-    token = create_jwt_token(user_id, beneficiary["email"], "beneficiary")
+    token = create_token(user_id, beneficiary["email"], "beneficiary")
     
     return {
         "message": "Account created successfully",
