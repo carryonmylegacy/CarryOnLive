@@ -808,7 +808,7 @@ class ComprehensiveCarryOnTester:
             if response.status_code in [200, 201]:
                 data = response.json()
                 self.log_test("Create Digital Wallet Entry", True, 
-                            f"Digital wallet entry created: {wallet_data['service_name']}", 
+                            f"Digital wallet entry created: {wallet_data['account_name']}", 
                             http_status=response.status_code)
             else:
                 self.log_test("Create Digital Wallet Entry", False, 
