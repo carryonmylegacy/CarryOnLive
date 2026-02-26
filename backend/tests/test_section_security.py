@@ -126,7 +126,7 @@ class TestSecuritySettingsRetrieval:
             assert "lock_mode" in section, f"Missing lock_mode for {section_id}"
             assert "is_active" in section, f"Missing is_active for {section_id}"
             
-        print(f"✓ All 6 sections returned with expected fields")
+        print("✓ All 6 sections returned with expected fields")
     
     def test_security_settings_structure(self, auth_headers):
         """Verify security settings have correct structure and types"""
