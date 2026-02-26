@@ -282,6 +282,8 @@ curl -X POST https://your-backend-url/api/auth/register \
 | `TWILIO_PHONE_NUMBER` | No | Twilio phone number |
 | `REACT_APP_BACKEND_URL` | Yes | Backend URL (frontend build-time) |
 | `REACT_APP_VAPID_PUBLIC_KEY` | Yes | VAPID public key (frontend build-time) |
+| `REACT_APP_STRIPE_PUBLISHABLE_KEY` | Yes | Stripe publishable key (frontend build-time, `pk_test_...` or `pk_live_...`) |
+| `CI` | No | Set to `false` for Render builds (prevents warnings failing build) |
 
 ---
 
