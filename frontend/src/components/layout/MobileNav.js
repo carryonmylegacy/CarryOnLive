@@ -245,6 +245,7 @@ const MobileNav = () => {
                       ? `flex flex-col items-center -mt-6 flex-1`
                       : `mobile-nav-item flex flex-col items-center gap-1 py-2 flex-1 ${isActive ? 'active' : ''}`
                   }
+                  style={({ isActive }) => (!isCenter && !isActive ? { color: 'rgba(255,255,255,0.7)' } : {})}
                   data-testid={`mobile-nav-${item.label.toLowerCase()}`}
                 >
                   {({ isActive }) => (
@@ -258,7 +259,7 @@ const MobileNav = () => {
                         }`}>
                           <item.icon className="w-6 h-6" />
                         </div>
-                        <span className={`text-xs mt-1 font-medium ${isActive ? 'text-[var(--gold)]' : 'text-[var(--t5)]'}`}>
+                        <span className={`text-xs mt-1 font-medium ${isActive ? 'text-[var(--gold)]' : 'text-white/70'}`}>
                           {item.label}
                         </span>
                       </>
@@ -273,8 +274,8 @@ const MobileNav = () => {
                 {/* Vertical divider between all buttons */}
                 {showDivider && (
                   <div 
-                    className="h-10 w-px bg-gray-500/30 flex-shrink-0" 
-                    style={{ alignSelf: 'center' }}
+                    className="h-10 flex-shrink-0" 
+                    style={{ alignSelf: 'center', width: '2px', backgroundColor: 'rgba(255,255,255,0.35)' }}
                   />
                 )}
               </React.Fragment>
