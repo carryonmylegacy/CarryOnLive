@@ -105,12 +105,34 @@ const AdminPage = () => {
       }, getAuthHeaders());
       setConvMessages(prev => [...prev, res.data]);
       setNewMessage('');
-      fetchConversations(); // Refresh conversation list
+      fetchConversations();
     } catch (err) {
       toast.error('Failed to send message');
     } finally {
       setSendingMessage(false);
     }
+  };
+
+  const handleRoleChange = async (userId, userName, newRole) => {
+    setRoleChanging(userId);
+    try {
+      await axios.put(`${API_URL}/admin/users/${userId}/role`, { role: newRole }, getAuthHeaders());
+      toast.success(`${userName}'s role changed to ${newRole}`);
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to change role');
+    } finally {
+      setRoleChanging(null);
+    }
+  };
+
+  const fetchActivityLog = async () => {
+    setActivityLoading(true);
+    try {
+      const res = await axios.get(`${API_URL}/admin/activity`, getAuthHeaders());
+      setActivityLog(res.data);
+    } catch (err) { console.error('Error fetching activity:', err); }
+    finally { setActivityLoading(false); }
   };
 
   // Fetch conversations when support tab is selected
