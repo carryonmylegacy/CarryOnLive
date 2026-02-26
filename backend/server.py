@@ -4637,17 +4637,7 @@ async def get_vapid_public_key():
         logger.error(f"Error getting VAPID public key: {e}")
         raise HTTPException(status_code=500, detail="Failed to get VAPID public key")
 
-        else:
-            raise HTTPException(status_code=500, detail="VAPID not configured")
-    except Exception as e:
-        logger.error(f"Error getting VAPID public key: {e}")
-        raise HTTPException(status_code=500, detail="Failed to get VAPID public key")
-
-async def send_push_notification(user_id: str, title: str, body: str, url: str = "/", tag: str = "carryon-notification", notification_type: str = "general"):
-    """Send push notification to a specific user"""
-    if not vapid:
-        logger.warning("VAPID not configured, skipping push notification")
-        return False
+# ===================== HEALTH CHECK =====================
     
     subscriptions = await db.push_subscriptions.find({"user_id": user_id, "active": True}, {"_id": 0}).to_list(100)
     
