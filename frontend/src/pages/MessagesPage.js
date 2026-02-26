@@ -42,6 +42,7 @@ const triggerIcons = {
   immediate: Send,
   age_milestone: Calendar,
   event: Star,
+  specific_date: CalendarDays,
 };
 
 const eventTypes = [
