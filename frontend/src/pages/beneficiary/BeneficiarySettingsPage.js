@@ -30,7 +30,7 @@ const BeneficiarySettingsPage = () => {
       }
     };
     fetchEstate();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLogout = () => { logout(); navigate('/login'); };
   const benefactorFirst = estate?.name?.split(' ')[0] || 'Your benefactor';
