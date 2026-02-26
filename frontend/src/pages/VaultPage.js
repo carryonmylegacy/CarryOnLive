@@ -262,6 +262,47 @@ const VaultPage = () => {
     }
   };
 
+  const openEditModal = (doc) => {
+    setEditingDoc(doc);
+    setEditName(doc.name || '');
+    setEditCategory(doc.category || 'legal');
+    setEditNotes(doc.notes || '');
+    setShowEditModal(true);
+  };
+
+  const handleEditDocument = async () => {
+    if (!editingDoc || !editName) {
+      toast.error('Document name is required');
+      return;
+    }
+    
+    setSaving(true);
+    try {
+      const formData = new FormData();
+      formData.append('name', editName);
+      formData.append('category', editCategory);
+      formData.append('notes', editNotes || '');
+      
+      await axios.put(`${API_URL}/documents/${editingDoc.id}`, formData, {
+        ...getAuthHeaders(),
+        headers: {
+          ...getAuthHeaders().headers,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      toast.success('Document updated successfully');
+      setShowEditModal(false);
+      setEditingDoc(null);
+      fetchData();
+    } catch (error) {
+      console.error('Update error:', error);
+      toast.error(error.response?.data?.detail || 'Failed to update document');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const copyBackupCode = () => {
     navigator.clipboard.writeText(backupCode);
     toast.success('Backup code copied to clipboard');
