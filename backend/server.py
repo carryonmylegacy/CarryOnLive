@@ -918,17 +918,41 @@ async def login(data: UserLogin):
     
     # Generate and store OTP
     otp = generate_otp()
+    otp_method = data.otp_method or "email"
+    
     await db.otps.update_one(
         {"email": data.email},
-        {"$set": {"otp": otp, "created_at": datetime.now(timezone.utc).isoformat()}},
+        {"$set": {
+            "otp": otp, 
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "method": otp_method,
+            "phone": data.phone if otp_method == "sms" else None
+        }},
         upsert=True
     )
     
-    # Send OTP via email (falls back to logging if not configured)
-    await send_otp_email(data.email, otp, user.get("name", "User"))
-    logger.info(f"OTP for {data.email}: {otp}")  # Also log for debugging
-    
-    return {"message": "OTP sent", "email": data.email, "otp_hint": otp[:2] + "****", "dev_otp": otp}
+    # Send OTP via selected method
+    if otp_method == "sms" and data.phone:
+        await send_otp_sms(data.phone, otp)
+        logger.info(f"SMS OTP for {data.email} to {data.phone}: {otp}")
+        return {
+            "message": "OTP sent via SMS", 
+            "email": data.email, 
+            "otp_hint": otp[:2] + "****", 
+            "otp_method": "sms",
+            "phone_hint": data.phone[-4:] if data.phone else None,
+            "dev_otp": otp
+        }
+    else:
+        await send_otp_email(data.email, otp, user.get("name", "User"))
+        logger.info(f"Email OTP for {data.email}: {otp}")
+        return {
+            "message": "OTP sent via email", 
+            "email": data.email, 
+            "otp_hint": otp[:2] + "****", 
+            "otp_method": "email",
+            "dev_otp": otp
+        }
 
 @api_router.post("/auth/register")
 async def register(data: UserCreate):
