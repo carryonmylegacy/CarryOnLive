@@ -611,7 +611,7 @@ class TestP1Support:
         d = r.json()
         if "conversation_id" in d:
             S.support_conversation_id = d["conversation_id"]
-        print(f"  Support message sent")
+        print("  Support message sent")
 
     def test_02_get_messages(self):
         r = requests.get(
@@ -810,7 +810,7 @@ class TestP2Subscriptions:
         assert r.status_code == 200
         d = r.json()
         assert "plan" in d or "subscription" in d or "status" in d
-        print(f"  Subscription status retrieved")
+        print("  Subscription status retrieved")
 
     def test_03_admin_settings(self):
         if not S.admin_token:
