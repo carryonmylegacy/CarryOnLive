@@ -176,11 +176,11 @@ const AdminPage = () => {
       {/* Tabs */}
       <div className="flex gap-2 overflow-x-auto">
         {[
-          { key: 'users', label: 'All Users', icon: Users },
-          { key: 'transition', label: 'Transition Verification', icon: FileKey },
-          { key: 'dts', label: 'DTS Management', icon: Shield },
+          { key: 'users', label: 'All Users', icon: Users, path: '/admin' },
+          { key: 'transition', label: 'Transition Verification', icon: FileKey, path: '/admin/transition' },
+          { key: 'dts', label: 'DTS Management', icon: Shield, path: '/admin/dts' },
         ].map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)}
+          <button key={t.key} onClick={() => navigate(t.path)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
               tab === t.key ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'
             }`} data-testid={`admin-tab-${t.key}`}>
