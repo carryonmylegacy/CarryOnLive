@@ -87,7 +87,7 @@ async def export_estate_pdf(estate_id: str, current_user: dict = Depends(get_cur
     pdf.set_font("Helvetica", "B", 16)
     pdf.set_fill_color(212, 175, 55)
     pdf.set_text_color(255, 255, 255)
-    pdf.cell(0, 10, "  ACTION ITEMS — What You Need To Do", new_x="LMARGIN", new_y="NEXT", fill=True)
+    pdf.cell(0, 10, _safe("  ACTION ITEMS - What You Need To Do"), new_x="LMARGIN", new_y="NEXT", fill=True)
     pdf.set_text_color(0, 0, 0)
     pdf.ln(3)
 
