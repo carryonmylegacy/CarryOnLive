@@ -1,10 +1,18 @@
 """CarryOn™ Backend — Beneficiary Routes"""
+
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timezone
 from config import db, logger, RESEND_API_KEY, SENDER_EMAIL
-from utils import get_current_user, hash_password, create_token, log_activity, send_push_notification, update_estate_readiness
+from utils import (
+    get_current_user,
+    hash_password,
+    create_token,
+    log_activity,
+    send_push_notification,
+    update_estate_readiness,
+)
 from models import Beneficiary, BeneficiaryCreate
 import uuid
 import os
@@ -16,18 +24,28 @@ router = APIRouter()
 
 # ===================== BENEFICIARY ROUTES =====================
 
+
 @router.get("/beneficiaries/{estate_id}")
-async def get_beneficiaries(estate_id: str, current_user: dict = Depends(get_current_user)):
+async def get_beneficiaries(
+    estate_id: str, current_user: dict = Depends(get_current_user)
+):
     """List all beneficiaries for an estate."""
-    beneficiaries = await db.beneficiaries.find({"estate_id": estate_id}, {"_id": 0}).to_list(100)
+    beneficiaries = await db.beneficiaries.find(
+        {"estate_id": estate_id}, {"_id": 0}
+    ).to_list(100)
     return beneficiaries
 
+
 @router.post("/beneficiaries")
-async def create_beneficiary(data: BeneficiaryCreate, current_user: dict = Depends(get_current_user)):
+async def create_beneficiary(
+    data: BeneficiaryCreate, current_user: dict = Depends(get_current_user)
+):
     """Add a new beneficiary to the estate."""
     if current_user["role"] != "benefactor":
-        raise HTTPException(status_code=403, detail="Only benefactors can add beneficiaries")
-    
+        raise HTTPException(
+            status_code=403, detail="Only benefactors can add beneficiaries"
+        )
+
     # Build full name from parts
     name_parts = [data.first_name]
     if data.middle_name:
@@ -36,13 +54,13 @@ async def create_beneficiary(data: BeneficiaryCreate, current_user: dict = Depen
     if data.suffix:
         name_parts.append(data.suffix)
     full_name = " ".join(name_parts)
-    
+
     # Generate initials
     initials = (data.first_name[0] + data.last_name[0]).upper()
-    
+
     # Generate invitation token
     invitation_token = str(uuid.uuid4())
-    
+
     beneficiary = Beneficiary(
         estate_id=data.estate_id,
         first_name=data.first_name,
@@ -64,25 +82,25 @@ async def create_beneficiary(data: BeneficiaryCreate, current_user: dict = Depen
         avatar_color=data.avatar_color,
         initials=initials,
         invitation_token=invitation_token,
-        invitation_status="pending"
+        invitation_status="pending",
     )
     await db.beneficiaries.insert_one(beneficiary.model_dump())
-    
+
     # Add to estate's beneficiary list if user exists
     existing_user = await db.users.find_one({"email": data.email}, {"_id": 0})
     if existing_user:
         await db.estates.update_one(
             {"id": data.estate_id},
-            {"$addToSet": {"beneficiaries": existing_user["id"]}}
+            {"$addToSet": {"beneficiaries": existing_user["id"]}},
         )
         # Mark as accepted if they already have an account
         await db.beneficiaries.update_one(
             {"id": beneficiary.id},
-            {"$set": {"user_id": existing_user["id"], "invitation_status": "accepted"}}
+            {"$set": {"user_id": existing_user["id"], "invitation_status": "accepted"}},
         )
         beneficiary.user_id = existing_user["id"]
         beneficiary.invitation_status = "accepted"
-    
+
     # Log activity
     await log_activity(
         estate_id=data.estate_id,
@@ -90,36 +108,48 @@ async def create_beneficiary(data: BeneficiaryCreate, current_user: dict = Depen
         user_name=current_user["name"],
         action="beneficiary_added",
         description=f"Added beneficiary: {full_name} ({data.relation})",
-        metadata={"beneficiary_name": full_name, "relation": data.relation}
+        metadata={"beneficiary_name": full_name, "relation": data.relation},
     )
-    
+
     # Recalculate estate readiness (beneficiaries affect message score)
     await update_estate_readiness(data.estate_id)
-    
+
     return beneficiary
 
+
 @router.delete("/beneficiaries/{beneficiary_id}")
-async def delete_beneficiary(beneficiary_id: str, current_user: dict = Depends(get_current_user)):
+async def delete_beneficiary(
+    beneficiary_id: str, current_user: dict = Depends(get_current_user)
+):
     """Remove a beneficiary from the estate."""
     if current_user["role"] != "benefactor":
-        raise HTTPException(status_code=403, detail="Only benefactors can remove beneficiaries")
-    
+        raise HTTPException(
+            status_code=403, detail="Only benefactors can remove beneficiaries"
+        )
+
     result = await db.beneficiaries.delete_one({"id": beneficiary_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Beneficiary not found")
-    
+
     return {"message": "Beneficiary removed"}
 
+
 @router.put("/beneficiaries/{beneficiary_id}")
-async def update_beneficiary(beneficiary_id: str, data: BeneficiaryCreate, current_user: dict = Depends(get_current_user)):
+async def update_beneficiary(
+    beneficiary_id: str,
+    data: BeneficiaryCreate,
+    current_user: dict = Depends(get_current_user),
+):
     """Update an existing beneficiary"""
     if current_user["role"] != "benefactor":
-        raise HTTPException(status_code=403, detail="Only benefactors can update beneficiaries")
-    
+        raise HTTPException(
+            status_code=403, detail="Only benefactors can update beneficiaries"
+        )
+
     beneficiary = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0})
     if not beneficiary:
         raise HTTPException(status_code=404, detail="Beneficiary not found")
-    
+
     # Build full name from parts
     name_parts = [data.first_name]
     if data.middle_name:
@@ -128,10 +158,10 @@ async def update_beneficiary(beneficiary_id: str, data: BeneficiaryCreate, curre
     if data.suffix:
         name_parts.append(data.suffix)
     full_name = " ".join(name_parts)
-    
+
     # Generate initials
     initials = (data.first_name[0] + data.last_name[0]).upper()
-    
+
     update_data = {
         "first_name": data.first_name,
         "middle_name": data.middle_name,
@@ -152,21 +182,19 @@ async def update_beneficiary(beneficiary_id: str, data: BeneficiaryCreate, curre
         "avatar_color": data.avatar_color,
         "initials": initials,
     }
-    
-    await db.beneficiaries.update_one(
-        {"id": beneficiary_id},
-        {"$set": update_data}
-    )
-    
+
+    await db.beneficiaries.update_one({"id": beneficiary_id}, {"$set": update_data})
+
     # Get updated beneficiary
     updated = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0})
     return updated
+
 
 @router.post("/beneficiaries/{beneficiary_id}/photo")
 async def upload_beneficiary_photo(
     beneficiary_id: str,
     file: UploadFile = File(...),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
 ):
     """Upload a profile photo for a beneficiary. Resizes to 200x200 and stores as base64."""
     if current_user["role"] not in ("benefactor", "admin"):
@@ -218,19 +246,27 @@ async def upload_beneficiary_photo(
 
         await db.beneficiaries.update_one(
             {"id": beneficiary_id},
-            {"$set": {"photo_url": photo_url, "updated_at": datetime.now(timezone.utc).isoformat()}}
+            {
+                "$set": {
+                    "photo_url": photo_url,
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                }
+            },
         )
 
         return {"success": True, "photo_url": photo_url}
 
     except Exception as e:
         logger.error(f"Photo upload failed: {e}")
-        raise HTTPException(status_code=400, detail="Could not process image. Please try a different file.")
+        raise HTTPException(
+            status_code=400,
+            detail="Could not process image. Please try a different file.",
+        )
+
 
 @router.delete("/beneficiaries/{beneficiary_id}/photo")
 async def delete_beneficiary_photo(
-    beneficiary_id: str,
-    current_user: dict = Depends(get_current_user)
+    beneficiary_id: str, current_user: dict = Depends(get_current_user)
 ):
     """Remove the profile photo for a beneficiary."""
     if current_user["role"] not in ("benefactor", "admin"):
@@ -238,36 +274,50 @@ async def delete_beneficiary_photo(
 
     await db.beneficiaries.update_one(
         {"id": beneficiary_id},
-        {"$set": {"photo_url": None, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        {
+            "$set": {
+                "photo_url": None,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
     )
     return {"success": True}
 
+
 @router.post("/beneficiaries/{beneficiary_id}/invite")
-async def send_beneficiary_invitation(beneficiary_id: str, current_user: dict = Depends(get_current_user)):
+async def send_beneficiary_invitation(
+    beneficiary_id: str, current_user: dict = Depends(get_current_user)
+):
     """Send invitation email to a beneficiary"""
     if current_user["role"] != "benefactor":
-        raise HTTPException(status_code=403, detail="Only benefactors can send invitations")
-    
+        raise HTTPException(
+            status_code=403, detail="Only benefactors can send invitations"
+        )
+
     beneficiary = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0})
     if not beneficiary:
         raise HTTPException(status_code=404, detail="Beneficiary not found")
-    
+
     if beneficiary.get("invitation_status") == "accepted":
-        raise HTTPException(status_code=400, detail="Beneficiary has already accepted the invitation")
-    
+        raise HTTPException(
+            status_code=400, detail="Beneficiary has already accepted the invitation"
+        )
+
     # Generate new token if needed
     invitation_token = beneficiary.get("invitation_token") or str(uuid.uuid4())
-    
+
     # Get benefactor info for the email
     benefactor = current_user
-    
+
     # Send invitation email
     try:
         if RESEND_API_KEY:
             # Get frontend URL for the invitation link
-            frontend_url = os.environ.get('FRONTEND_URL', 'https://backend-polish-2.preview.emergentagent.com')
+            frontend_url = os.environ.get(
+                "FRONTEND_URL", "https://backend-polish-2.preview.emergentagent.com"
+            )
             invitation_link = f"{frontend_url}/accept-invitation/{invitation_token}"
-            
+
             email_html = f"""
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
                 <div style="text-align: center; margin-bottom: 30px;">
@@ -275,14 +325,14 @@ async def send_beneficiary_invitation(beneficiary_id: str, current_user: dict = 
                     <p style="color: #666;">Secure Estate Planning</p>
                 </div>
                 
-                <h2 style="color: #333;">You've Been Added to {benefactor['name']}'s Estate</h2>
+                <h2 style="color: #333;">You've Been Added to {benefactor["name"]}'s Estate</h2>
                 
                 <p style="color: #555; line-height: 1.6;">
-                    Dear {beneficiary['first_name']},
+                    Dear {beneficiary["first_name"]},
                 </p>
                 
                 <p style="color: #555; line-height: 1.6;">
-                    {benefactor['name']} has added you as a beneficiary on CarryOn™, a secure estate planning platform. 
+                    {benefactor["name"]} has added you as a beneficiary on CarryOn™, a secure estate planning platform. 
                     This means they've chosen you to be part of their legacy planning.
                 </p>
                 
@@ -298,7 +348,7 @@ async def send_beneficiary_invitation(beneficiary_id: str, current_user: dict = 
                 </p>
                 
                 <ul style="color: #555; line-height: 1.8;">
-                    <li>View your connection to {benefactor['first_name']}'s estate</li>
+                    <li>View your connection to {benefactor["first_name"]}'s estate</li>
                     <li>Receive important updates and notifications</li>
                     <li>Access documents and messages when the time is right</li>
                 </ul>
@@ -318,40 +368,46 @@ async def send_beneficiary_invitation(beneficiary_id: str, current_user: dict = 
                 
                 <p style="color: #888; font-size: 12px; line-height: 1.6;">
                     <strong>Note:</strong> At this time, you will not have access to any specific details about the estate. 
-                    This invitation simply connects you to {benefactor['first_name']}'s CarryOn™ account for future reference.
+                    This invitation simply connects you to {benefactor["first_name"]}'s CarryOn™ account for future reference.
                 </p>
                 
                 <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
                 
                 <p style="color: #888; font-size: 12px; text-align: center;">
-                    If you didn't expect this email or have questions, please contact {benefactor['name']} directly.
+                    If you didn't expect this email or have questions, please contact {benefactor["name"]} directly.
                 </p>
             </div>
             """
-            
-            resend.Emails.send({
-                "from": SENDER_EMAIL,
-                "to": beneficiary["email"],
-                "subject": f"{benefactor['name']} has added you to their CarryOn™ Estate",
-                "html": email_html
-            })
+
+            resend.Emails.send(
+                {
+                    "from": SENDER_EMAIL,
+                    "to": beneficiary["email"],
+                    "subject": f"{benefactor['name']} has added you to their CarryOn™ Estate",
+                    "html": email_html,
+                }
+            )
             logger.info(f"Invitation email sent to {beneficiary['email']}")
         else:
-            logger.info(f"[DEV MODE] Invitation would be sent to {beneficiary['email']} with token {invitation_token}")
+            logger.info(
+                f"[DEV MODE] Invitation would be sent to {beneficiary['email']} with token {invitation_token}"
+            )
     except Exception as e:
         logger.error(f"Failed to send invitation email: {e}")
         # Don't fail the request, still update the status
-    
+
     # Update beneficiary record
     await db.beneficiaries.update_one(
         {"id": beneficiary_id},
-        {"$set": {
-            "invitation_status": "sent",
-            "invitation_token": invitation_token,
-            "invitation_sent_at": datetime.now(timezone.utc).isoformat()
-        }}
+        {
+            "$set": {
+                "invitation_status": "sent",
+                "invitation_token": invitation_token,
+                "invitation_sent_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
     )
-    
+
     # Log activity
     await log_activity(
         estate_id=beneficiary["estate_id"],
@@ -359,73 +415,85 @@ async def send_beneficiary_invitation(beneficiary_id: str, current_user: dict = 
         user_name=current_user["name"],
         action="invitation_sent",
         description=f"Sent invitation to {beneficiary['name']} ({beneficiary['email']})",
-        metadata={"beneficiary_id": beneficiary_id, "email": beneficiary["email"]}
+        metadata={"beneficiary_id": beneficiary_id, "email": beneficiary["email"]},
     )
-    
+
     return {"message": "Invitation sent successfully", "email": beneficiary["email"]}
+
 
 @router.get("/invitations/{token}")
 async def get_invitation_details(token: str):
     """Get invitation details for a beneficiary to accept"""
-    beneficiary = await db.beneficiaries.find_one({"invitation_token": token}, {"_id": 0})
+    beneficiary = await db.beneficiaries.find_one(
+        {"invitation_token": token}, {"_id": 0}
+    )
     if not beneficiary:
         raise HTTPException(status_code=404, detail="Invalid or expired invitation")
-    
+
     if beneficiary.get("invitation_status") == "accepted":
-        raise HTTPException(status_code=400, detail="This invitation has already been accepted")
-    
+        raise HTTPException(
+            status_code=400, detail="This invitation has already been accepted"
+        )
+
     # Get estate info (limited)
     estate = await db.estates.find_one({"id": beneficiary["estate_id"]}, {"_id": 0})
-    
+
     # Get benefactor info (limited)
     benefactor = None
     if estate:
-        benefactor = await db.users.find_one({"id": estate.get("owner_id")}, {"_id": 0, "password": 0})
-    
+        benefactor = await db.users.find_one(
+            {"id": estate.get("owner_id")}, {"_id": 0, "password": 0}
+        )
+
     return {
         "beneficiary": {
             "first_name": beneficiary["first_name"],
             "last_name": beneficiary["last_name"],
             "email": beneficiary["email"],
-            "relation": beneficiary["relation"]
+            "relation": beneficiary["relation"],
         },
-        "benefactor_name": benefactor["name"] if benefactor else "Your benefactor"
+        "benefactor_name": benefactor["name"] if benefactor else "Your benefactor",
     }
+
 
 class AcceptInvitationRequest(BaseModel):
     token: str
     password: str
     phone: Optional[str] = None
 
+
 @router.post("/invitations/accept")
 async def accept_invitation(data: AcceptInvitationRequest):
     """Accept an invitation and create a beneficiary user account"""
-    beneficiary = await db.beneficiaries.find_one({"invitation_token": data.token}, {"_id": 0})
+    beneficiary = await db.beneficiaries.find_one(
+        {"invitation_token": data.token}, {"_id": 0}
+    )
     if not beneficiary:
         raise HTTPException(status_code=404, detail="Invalid or expired invitation")
-    
+
     if beneficiary.get("invitation_status") == "accepted":
-        raise HTTPException(status_code=400, detail="This invitation has already been accepted")
-    
+        raise HTTPException(
+            status_code=400, detail="This invitation has already been accepted"
+        )
+
     # Check if email already has an account
     existing_user = await db.users.find_one({"email": beneficiary["email"]}, {"_id": 0})
     if existing_user:
         # Link existing account to this beneficiary record
         await db.beneficiaries.update_one(
             {"id": beneficiary["id"]},
-            {"$set": {
-                "user_id": existing_user["id"],
-                "invitation_status": "accepted"
-            }}
+            {"$set": {"user_id": existing_user["id"], "invitation_status": "accepted"}},
         )
         # Add to estate's beneficiary list
         await db.estates.update_one(
             {"id": beneficiary["estate_id"]},
-            {"$addToSet": {"beneficiaries": existing_user["id"]}}
+            {"$addToSet": {"beneficiaries": existing_user["id"]}},
         )
-        
+
         # Generate token for auto-login
-        token = create_token(existing_user["id"], existing_user["email"], existing_user["role"])
+        token = create_token(
+            existing_user["id"], existing_user["email"], existing_user["role"]
+        )
         return {
             "message": "Account linked successfully",
             "access_token": token,
@@ -435,19 +503,24 @@ async def accept_invitation(data: AcceptInvitationRequest):
                 "email": existing_user["email"],
                 "name": existing_user["name"],
                 "role": existing_user["role"],
-                "created_at": existing_user["created_at"]
-            }
+                "created_at": existing_user["created_at"],
+            },
         }
-    
+
     # Create new user account
     user_id = str(uuid.uuid4())
-    full_name = " ".join(filter(None, [
-        beneficiary["first_name"],
-        beneficiary.get("middle_name"),
-        beneficiary["last_name"],
-        beneficiary.get("suffix")
-    ]))
-    
+    full_name = " ".join(
+        filter(
+            None,
+            [
+                beneficiary["first_name"],
+                beneficiary.get("middle_name"),
+                beneficiary["last_name"],
+                beneficiary.get("suffix"),
+            ],
+        )
+    )
+
     new_user = {
         "id": user_id,
         "email": beneficiary["email"],
@@ -460,40 +533,40 @@ async def accept_invitation(data: AcceptInvitationRequest):
         "gender": beneficiary.get("gender"),
         "phone": data.phone or beneficiary.get("phone"),
         "role": "beneficiary",
-        "created_at": datetime.now(timezone.utc).isoformat()
+        "created_at": datetime.now(timezone.utc).isoformat(),
     }
     await db.users.insert_one(new_user)
-    
+
     # Update beneficiary record
     await db.beneficiaries.update_one(
         {"id": beneficiary["id"]},
-        {"$set": {
-            "user_id": user_id,
-            "invitation_status": "accepted"
-        }}
+        {"$set": {"user_id": user_id, "invitation_status": "accepted"}},
     )
-    
+
     # Add to estate's beneficiary list
     await db.estates.update_one(
-        {"id": beneficiary["estate_id"]},
-        {"$addToSet": {"beneficiaries": user_id}}
+        {"id": beneficiary["estate_id"]}, {"$addToSet": {"beneficiaries": user_id}}
     )
-    
+
     # Notify the benefactor that the invitation was accepted
-    estate = await db.estates.find_one({"id": beneficiary["estate_id"]}, {"_id": 0, "user_id": 1})
+    estate = await db.estates.find_one(
+        {"id": beneficiary["estate_id"]}, {"_id": 0, "user_id": 1}
+    )
     if estate:
-        asyncio.create_task(send_push_notification(
-            estate["user_id"],
-            "Invitation Accepted",
-            f"{full_name} has accepted your invitation and joined your estate plan",
-            "/beneficiaries",
-            "invitation-accepted",
-            "beneficiary"
-        ))
-    
+        asyncio.create_task(
+            send_push_notification(
+                estate["user_id"],
+                "Invitation Accepted",
+                f"{full_name} has accepted your invitation and joined your estate plan",
+                "/beneficiaries",
+                "invitation-accepted",
+                "beneficiary",
+            )
+        )
+
     # Generate token for auto-login
     token = create_token(user_id, beneficiary["email"], "beneficiary")
-    
+
     return {
         "message": "Account created successfully",
         "access_token": token,
@@ -503,8 +576,6 @@ async def accept_invitation(data: AcceptInvitationRequest):
             "email": beneficiary["email"],
             "name": full_name,
             "role": "beneficiary",
-            "created_at": new_user["created_at"]
-        }
+            "created_at": new_user["created_at"],
+        },
     }
-
-

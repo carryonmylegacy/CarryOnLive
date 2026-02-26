@@ -1,4 +1,5 @@
 """CarryOn™ Backend — Pydantic Models"""
+
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
@@ -14,6 +15,7 @@ class UserBase(BaseModel):
     gender: Optional[str] = None
     role: str = "benefactor"  # benefactor, beneficiary, admin
 
+
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
@@ -24,15 +26,18 @@ class UserCreate(BaseModel):
     gender: Optional[str] = None
     role: str = "benefactor"
 
+
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
     otp_method: str = "email"  # "email" or "sms"
     phone: Optional[str] = None  # Required if otp_method is "sms"
 
+
 class OTPVerify(BaseModel):
     email: EmailStr
     otp: str
+
 
 class UserResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -42,10 +47,12 @@ class UserResponse(BaseModel):
     role: str
     created_at: str
 
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
 
 class Estate(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -56,8 +63,11 @@ class Estate(BaseModel):
     status: str = "pre-transition"  # pre-transition, active, transitioned
     readiness_score: int = 0
     beneficiaries: List[str] = []
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
     transitioned_at: Optional[str] = None
+
 
 class Beneficiary(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -90,7 +100,10 @@ class Beneficiary(BaseModel):
     invitation_status: str = "pending"  # pending, sent, accepted
     invitation_token: Optional[str] = None
     invitation_sent_at: Optional[str] = None
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+
 
 class BeneficiaryCreate(BaseModel):
     estate_id: str
@@ -111,6 +124,7 @@ class BeneficiaryCreate(BaseModel):
     notes: Optional[str] = None
     avatar_color: str = "#d4af37"
 
+
 class Document(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -128,13 +142,17 @@ class Document(BaseModel):
     voice_passphrase_hint: Optional[str] = None  # Hint for voice passphrase
     is_encrypted: bool = True  # Whether file data is encrypted
     uploaded_by: str
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+
 
 class DocumentCreate(BaseModel):
     estate_id: str
     name: str
     category: str
     lock_type: Optional[str] = None
+
 
 class Message(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -151,7 +169,10 @@ class Message(BaseModel):
     is_delivered: bool = False
     delivered_at: Optional[str] = None
     created_by: str
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+
 
 class MessageCreate(BaseModel):
     estate_id: str
@@ -165,6 +186,7 @@ class MessageCreate(BaseModel):
     trigger_age: Optional[int] = None
     trigger_date: Optional[str] = None  # ISO date string for specific_date trigger
 
+
 class MessageUpdate(BaseModel):
     title: Optional[str] = None
     content: Optional[str] = None
@@ -176,6 +198,7 @@ class MessageUpdate(BaseModel):
     trigger_age: Optional[int] = None
     trigger_date: Optional[str] = None
 
+
 class ChecklistItem(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -183,20 +206,25 @@ class ChecklistItem(BaseModel):
     title: str
     description: str = ""
     category: str = "general"  # legal, financial, insurance, property, medical, personal, government, general
-    priority: str = "medium"   # critical, high, medium, low
+    priority: str = "medium"  # critical, high, medium, low
     action_type: str = "custom"  # call, email, visit, file_paperwork, notify, custom
     contact_name: Optional[str] = None
     contact_phone: Optional[str] = None
     contact_email: Optional[str] = None
     contact_address: Optional[str] = None
     notes: Optional[str] = None
-    due_timeframe: str = "first_week"  # immediate, first_week, two_weeks, first_month, no_rush
+    due_timeframe: str = (
+        "first_week"  # immediate, first_week, two_weeks, first_month, no_rush
+    )
     is_completed: bool = False
     completed_at: Optional[str] = None
     completed_by: Optional[str] = None
     order: int = 0
     created_by: str = "benefactor"  # benefactor or ai_suggested
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+
 
 class ChecklistItemCreate(BaseModel):
     estate_id: str
@@ -213,6 +241,7 @@ class ChecklistItemCreate(BaseModel):
     due_timeframe: str = "first_week"
     order: int = 0
 
+
 class ChecklistItemUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
@@ -227,6 +256,7 @@ class ChecklistItemUpdate(BaseModel):
     due_timeframe: Optional[str] = None
     order: Optional[int] = None
 
+
 class DeathCertificate(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -237,7 +267,10 @@ class DeathCertificate(BaseModel):
     status: str = "pending"  # pending, approved, rejected
     reviewed_by: Optional[str] = None
     reviewed_at: Optional[str] = None
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+
 
 class MilestoneReport(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -249,13 +282,17 @@ class MilestoneReport(BaseModel):
     event_date: str
     proof_data: Optional[str] = None  # Base64 encoded
     status: str = "pending"  # pending, verified, rejected
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+
 
 class MilestoneReportCreate(BaseModel):
     estate_id: str
     event_type: str
     event_description: str
     event_date: str
+
 
 class ActivityLog(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -266,35 +303,46 @@ class ActivityLog(BaseModel):
     action: str  # document_upload, beneficiary_added, message_created, checklist_completed, etc.
     description: str
     metadata: Optional[Dict[str, Any]] = None
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+
 
 class EstateCreate(BaseModel):
     name: str
     description: Optional[str] = None
+
 
 class EstateUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     state: Optional[str] = None
 
+
 class ChatMessage(BaseModel):
     role: str
     content: str
+
 
 class ChatRequest(BaseModel):
     message: str
     session_id: Optional[str] = None
     estate_id: Optional[str] = None
-    action: Optional[str] = None  # "analyze_vault", "generate_checklist", "analyze_readiness"
+    action: Optional[str] = (
+        None  # "analyze_vault", "generate_checklist", "analyze_readiness"
+    )
+
 
 class ChatResponse(BaseModel):
     response: str
     session_id: str
     action_result: Optional[Dict[str, Any]] = None
 
+
 class DocumentUnlockRequest(BaseModel):
     password: Optional[str] = None
     backup_code: Optional[str] = None
+
 
 class DocumentUploadRequest(BaseModel):
     estate_id: str
@@ -302,4 +350,3 @@ class DocumentUploadRequest(BaseModel):
     category: str
     lock_type: Optional[str] = None
     lock_password: Optional[str] = None  # For password-protected docs
-

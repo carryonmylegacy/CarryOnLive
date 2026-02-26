@@ -1,4 +1,5 @@
 """CarryOn™ Backend — Digital Wallet Vault"""
+
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from typing import Optional
@@ -11,6 +12,7 @@ router = APIRouter()
 
 # ===================== DIGITAL WALLET VAULT =====================
 
+
 class DigitalWalletEntry(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     estate_id: str
@@ -21,8 +23,13 @@ class DigitalWalletEntry(BaseModel):
     notes: Optional[str] = None
     assigned_beneficiary_id: Optional[str] = None
     assigned_beneficiary_name: Optional[str] = None
-    category: str = "other"  # crypto, social_media, email, banking, cloud, subscription, other
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    category: str = (
+        "other"  # crypto, social_media, email, banking, cloud, subscription, other
+    )
+    created_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+
 
 class DigitalWalletCreate(BaseModel):
     account_name: str
@@ -33,6 +40,7 @@ class DigitalWalletCreate(BaseModel):
     assigned_beneficiary_id: Optional[str] = None
     category: str = "other"
 
+
 class DigitalWalletUpdate(BaseModel):
     account_name: Optional[str] = None
     login_username: Optional[str] = None
@@ -42,8 +50,11 @@ class DigitalWalletUpdate(BaseModel):
     assigned_beneficiary_id: Optional[str] = None
     category: Optional[str] = None
 
+
 @router.get("/digital-wallet/{estate_id}")
-async def get_digital_wallet(estate_id: str, current_user: dict = Depends(get_current_user)):
+async def get_digital_wallet(
+    estate_id: str, current_user: dict = Depends(get_current_user)
+):
     """List all digital wallet entries for an estate."""
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
     if not estate:
@@ -53,47 +64,66 @@ async def get_digital_wallet(estate_id: str, current_user: dict = Depends(get_cu
     is_owner = estate.get("owner_id") == current_user["id"]
     is_transitioned = estate.get("transitioned", False)
 
-    entries = await db.digital_wallet.find({"estate_id": estate_id}, {"_id": 0}).to_list(200)
+    entries = await db.digital_wallet.find(
+        {"estate_id": estate_id}, {"_id": 0}
+    ).to_list(200)
 
     if is_owner:
         # Owner sees all entries with decrypted passwords
         for entry in entries:
             if entry.get("encrypted_password"):
                 try:
-                    entry["password"] = decrypt_data(entry["encrypted_password"]).decode()
+                    entry["password"] = decrypt_data(
+                        entry["encrypted_password"]
+                    ).decode()
                 except Exception:
                     entry["password"] = ""
             if entry.get("encrypted_additional"):
                 try:
-                    entry["additional_access"] = decrypt_data(entry["encrypted_additional"]).decode()
+                    entry["additional_access"] = decrypt_data(
+                        entry["encrypted_additional"]
+                    ).decode()
                 except Exception:
                     entry["additional_access"] = ""
         return entries
     elif is_transitioned:
         # Beneficiary sees only entries assigned to them
-        my_entries = [e for e in entries if e.get("assigned_beneficiary_id") == current_user["id"]]
+        my_entries = [
+            e for e in entries if e.get("assigned_beneficiary_id") == current_user["id"]
+        ]
         for entry in my_entries:
             if entry.get("encrypted_password"):
                 try:
-                    entry["password"] = decrypt_data(entry["encrypted_password"]).decode()
+                    entry["password"] = decrypt_data(
+                        entry["encrypted_password"]
+                    ).decode()
                 except Exception:
                     entry["password"] = ""
             if entry.get("encrypted_additional"):
                 try:
-                    entry["additional_access"] = decrypt_data(entry["encrypted_additional"]).decode()
+                    entry["additional_access"] = decrypt_data(
+                        entry["encrypted_additional"]
+                    ).decode()
                 except Exception:
                     entry["additional_access"] = ""
         return my_entries
     else:
         raise HTTPException(status_code=403, detail="Access denied")
 
+
 @router.post("/digital-wallet")
-async def create_digital_wallet_entry(data: DigitalWalletCreate, current_user: dict = Depends(get_current_user)):
+async def create_digital_wallet_entry(
+    data: DigitalWalletCreate, current_user: dict = Depends(get_current_user)
+):
     """Create a new digital wallet entry."""
     if current_user.get("role") != "benefactor":
-        raise HTTPException(status_code=403, detail="Only benefactors can add digital wallet entries")
+        raise HTTPException(
+            status_code=403, detail="Only benefactors can add digital wallet entries"
+        )
 
-    estates = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0}).to_list(1)
+    estates = await db.estates.find(
+        {"owner_id": current_user["id"]}, {"_id": 0}
+    ).to_list(1)
     if not estates:
         raise HTTPException(status_code=404, detail="No estate found")
 
@@ -102,7 +132,10 @@ async def create_digital_wallet_entry(data: DigitalWalletCreate, current_user: d
     # Get beneficiary name if assigned
     ben_name = None
     if data.assigned_beneficiary_id:
-        ben = await db.beneficiaries.find_one({"id": data.assigned_beneficiary_id}, {"_id": 0, "first_name": 1, "last_name": 1})
+        ben = await db.beneficiaries.find_one(
+            {"id": data.assigned_beneficiary_id},
+            {"_id": 0, "first_name": 1, "last_name": 1},
+        )
         if ben:
             ben_name = f"{ben.get('first_name', '')} {ben.get('last_name', '')}".strip()
 
@@ -110,7 +143,9 @@ async def create_digital_wallet_entry(data: DigitalWalletCreate, current_user: d
         estate_id=estate_id,
         account_name=data.account_name,
         login_username=data.login_username,
-        encrypted_password=encrypt_data(data.password.encode()) if data.password else None,
+        encrypted_password=encrypt_data(data.password.encode())
+        if data.password
+        else None,
         additional_access=data.additional_access,
         notes=data.notes,
         assigned_beneficiary_id=data.assigned_beneficiary_id,
@@ -127,8 +162,13 @@ async def create_digital_wallet_entry(data: DigitalWalletCreate, current_user: d
     await db.digital_wallet.insert_one(doc)
     return {"id": entry.id, "message": "Digital wallet entry added"}
 
+
 @router.put("/digital-wallet/{entry_id}")
-async def update_digital_wallet_entry(entry_id: str, data: DigitalWalletUpdate, current_user: dict = Depends(get_current_user)):
+async def update_digital_wallet_entry(
+    entry_id: str,
+    data: DigitalWalletUpdate,
+    current_user: dict = Depends(get_current_user),
+):
     """Update an existing wallet entry."""
     entry = await db.digital_wallet.find_one({"id": entry_id}, {"_id": 0})
     if not entry:
@@ -154,8 +194,15 @@ async def update_digital_wallet_entry(entry_id: str, data: DigitalWalletUpdate, 
     if data.assigned_beneficiary_id is not None:
         update["assigned_beneficiary_id"] = data.assigned_beneficiary_id
         if data.assigned_beneficiary_id:
-            ben = await db.beneficiaries.find_one({"id": data.assigned_beneficiary_id}, {"_id": 0, "first_name": 1, "last_name": 1})
-            update["assigned_beneficiary_name"] = f"{ben.get('first_name', '')} {ben.get('last_name', '')}".strip() if ben else None
+            ben = await db.beneficiaries.find_one(
+                {"id": data.assigned_beneficiary_id},
+                {"_id": 0, "first_name": 1, "last_name": 1},
+            )
+            update["assigned_beneficiary_name"] = (
+                f"{ben.get('first_name', '')} {ben.get('last_name', '')}".strip()
+                if ben
+                else None
+            )
         else:
             update["assigned_beneficiary_name"] = None
 
@@ -164,8 +211,11 @@ async def update_digital_wallet_entry(entry_id: str, data: DigitalWalletUpdate, 
 
     return {"success": True, "message": "Entry updated"}
 
+
 @router.delete("/digital-wallet/{entry_id}")
-async def delete_digital_wallet_entry(entry_id: str, current_user: dict = Depends(get_current_user)):
+async def delete_digital_wallet_entry(
+    entry_id: str, current_user: dict = Depends(get_current_user)
+):
     """Delete a digital wallet entry."""
     entry = await db.digital_wallet.find_one({"id": entry_id}, {"_id": 0})
     if not entry:
@@ -177,5 +227,3 @@ async def delete_digital_wallet_entry(entry_id: str, current_user: dict = Depend
 
     await db.digital_wallet.delete_one({"id": entry_id})
     return {"success": True, "message": "Entry deleted"}
-
-
