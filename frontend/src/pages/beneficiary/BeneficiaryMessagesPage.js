@@ -15,7 +15,8 @@ const BeneficiaryMessagesPage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedMsg, setSelectedMsg] = useState(null);
 
-  useEffect(() => { fetchMessages(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchMessages();
   }, []);
 
   const fetchMessages = async () => {

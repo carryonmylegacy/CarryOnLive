@@ -16,7 +16,8 @@ const BeneficiaryVaultPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
 
-  useEffect(() => { fetchDocs(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchDocs();
   }, []);
 
   const fetchDocs = async () => {
