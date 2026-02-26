@@ -265,7 +265,7 @@ async def send_beneficiary_invitation(beneficiary_id: str, current_user: dict = 
     try:
         if RESEND_API_KEY:
             # Get frontend URL for the invitation link
-            frontend_url = os.environ.get('FRONTEND_URL', 'https://estate-legal.preview.emergentagent.com')
+            frontend_url = os.environ.get('FRONTEND_URL', 'https://backend-polish-2.preview.emergentagent.com')
             invitation_link = f"{frontend_url}/accept-invitation/{invitation_token}"
             
             email_html = f"""
