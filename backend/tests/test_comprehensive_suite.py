@@ -678,8 +678,9 @@ class TestP1Security:
         )
         assert r.status_code == 200
         d = r.json()
-        assert isinstance(d, list)
-        print(f"  Security questions: {len(d)}")
+        assert "questions" in d
+        assert isinstance(d["questions"], list)
+        print(f"  Security questions: {len(d['questions'])}")
 
 
 # =====================================================================
