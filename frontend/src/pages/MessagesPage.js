@@ -619,6 +619,20 @@ const MessagesPage = () => {
                 </Select>
               </div>
             )}
+
+            {triggerType === 'specific_date' && (
+              <div className="space-y-2">
+                <Label className="text-[#94a3b8]">Delivery Date</Label>
+                <Input
+                  type="date"
+                  value={triggerDate}
+                  onChange={(e) => setTriggerDate(e.target.value)}
+                  className="input-field"
+                  data-testid="message-trigger-date"
+                />
+                <p className="text-xs text-[var(--t5)]">Message will be delivered to the selected beneficiary(ies) on this date, after transition.</p>
+              </div>
+            )}
           </div>
           
           <div className="flex justify-end gap-3">
