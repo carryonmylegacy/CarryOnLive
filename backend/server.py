@@ -3442,19 +3442,32 @@ async def get_unread_support_count(current_user: dict = Depends(get_current_user
 
 # ===================== PUSH NOTIFICATIONS =====================
 
-# Load VAPID keys
+# Load VAPID keys - supports both file path and inline env var
 VAPID_PRIVATE_KEY_PATH = os.environ.get("VAPID_PRIVATE_KEY_PATH", "/tmp/vapid_private.pem")
+VAPID_PRIVATE_KEY_INLINE = os.environ.get("VAPID_PRIVATE_KEY")  # PEM content as env var
 VAPID_PUBLIC_KEY_PATH = os.environ.get("VAPID_PUBLIC_KEY_PATH", "/tmp/vapid_public.pem")
 VAPID_CLAIMS_EMAIL = os.environ.get("VAPID_CLAIMS_EMAIL", "mailto:support@carryon.us")
 
 # Initialize VAPID
 vapid = None
+vapid_private_key_for_webpush = None
 try:
-    if os.path.exists(VAPID_PRIVATE_KEY_PATH):
+    if VAPID_PRIVATE_KEY_INLINE:
+        # Write inline key to temp file for pywebpush compatibility
+        import tempfile
+        tmp_key = tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False)
+        tmp_key.write(VAPID_PRIVATE_KEY_INLINE)
+        tmp_key.close()
+        VAPID_PRIVATE_KEY_PATH = tmp_key.name
         vapid = Vapid.from_file(VAPID_PRIVATE_KEY_PATH)
-        logger.info("VAPID keys loaded successfully")
+        vapid_private_key_for_webpush = VAPID_PRIVATE_KEY_PATH
+        logger.info("VAPID keys loaded from inline env var")
+    elif os.path.exists(VAPID_PRIVATE_KEY_PATH):
+        vapid = Vapid.from_file(VAPID_PRIVATE_KEY_PATH)
+        vapid_private_key_for_webpush = VAPID_PRIVATE_KEY_PATH
+        logger.info("VAPID keys loaded from file")
     else:
-        logger.warning(f"VAPID private key not found at {VAPID_PRIVATE_KEY_PATH}")
+        logger.warning(f"VAPID private key not found - push notifications disabled")
 except Exception as e:
     logger.error(f"Failed to load VAPID keys: {e}")
 
@@ -3545,7 +3558,7 @@ async def send_push_notification(user_id: str, title: str, body: str, url: str =
                     "keys": sub["keys"]
                 },
                 data=payload,
-                vapid_private_key=VAPID_PRIVATE_KEY_PATH,
+                vapid_private_key=vapid_private_key_for_webpush,
                 vapid_claims={"sub": VAPID_CLAIMS_EMAIL}
             )
             success_count += 1
