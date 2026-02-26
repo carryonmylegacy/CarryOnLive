@@ -55,9 +55,19 @@ const AdminPage = () => {
     setActionLoading(certId);
     try {
       await axios.post(`${API_URL}/transition/approve/${certId}`, {}, getAuthHeaders());
-      toast.success('Certificate approved — estate transitioned, beneficiary access granted');
+      toast.success('Certificate approved — benefactor sealed, beneficiary access granted');
       fetchAll();
     } catch (err) { toast.error('Failed to approve'); }
+    finally { setActionLoading(null); }
+  };
+
+  const handleBeginReview = async (certId) => {
+    setActionLoading(certId);
+    try {
+      await axios.post(`${API_URL}/transition/begin-review/${certId}`, {}, getAuthHeaders());
+      toast.success('Review started — beneficiary can now see you are reviewing');
+      fetchAll();
+    } catch (err) { toast.error('Failed to begin review'); }
     finally { setActionLoading(null); }
   };
 
