@@ -97,6 +97,7 @@ Railway is the simplest option — it auto-detects Dockerfiles and handles every
 | `MONGO_URL` | Your MongoDB Atlas connection string |
 | `DB_NAME` | `carryon_db` |
 | `JWT_SECRET` | (generate: `openssl rand -hex 32`) |
+| `ENCRYPTION_KEY` | (generate: `openssl rand -hex 32`) |
 | `CORS_ORIGINS` | Your frontend URL (set after deploying frontend) |
 | `RESEND_API_KEY` | Your Resend API key |
 | `SENDER_EMAIL` | `noreply@yourdomain.com` |
