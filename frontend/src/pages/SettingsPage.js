@@ -91,6 +91,12 @@ const SettingsPage = () => {
         </CardContent>
       </Card>
 
+      {/* Push Notifications */}
+      <NotificationSettings getAuthHeaders={() => {
+        const token = localStorage.getItem('carryon_token');
+        return { headers: { Authorization: `Bearer ${token}` } };
+      }} />
+
       {/* Subscription Plans */}
       <Card className="glass-card">
         <CardHeader>
