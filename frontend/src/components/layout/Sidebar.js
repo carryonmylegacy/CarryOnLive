@@ -79,6 +79,7 @@ const Sidebar = () => {
       title: 'ACCOUNT',
       items: [
         { to: '/settings', icon: Settings, label: 'Settings' },
+        { to: '/security-settings', icon: ShieldCheck, label: 'Security Settings' },
         { to: '/support', icon: Headphones, label: 'Customer Support' },
       ]
     }
