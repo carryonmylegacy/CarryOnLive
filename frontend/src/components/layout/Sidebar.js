@@ -305,3 +305,26 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
+
+// Beta Banner Component
+const BetaBanner = () => {
+  const [isBeta, setIsBeta] = useState(null);
+  
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/subscriptions/plans`);
+        setIsBeta(res.data.beta_mode);
+      } catch { setIsBeta(null); }
+    };
+    check();
+  }, []);
+
+  if (!isBeta) return null;
+
+  return (
+    <div className="mx-3 mb-2 px-2.5 py-1.5 rounded-lg text-center" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }} data-testid="beta-banner">
+      <span className="text-[10px] font-bold text-[var(--gn2)] tracking-wider">BETA = FREE</span>
+    </div>
+  );
+};
