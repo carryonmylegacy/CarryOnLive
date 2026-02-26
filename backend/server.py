@@ -23,6 +23,7 @@ from emergentintegrations.llm.chat import LlmChat, UserMessage
 import pdfplumber
 import io
 import json as json_module
+import stripe
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
