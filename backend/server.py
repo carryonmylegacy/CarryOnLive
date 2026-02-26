@@ -2197,6 +2197,30 @@ async def delete_document(document_id: str, current_user: dict = Depends(get_cur
     
     return {"message": "Document deleted"}
 
+@api_router.put("/documents/{document_id}")
+async def update_document(document_id: str, current_user: dict = Depends(get_current_user), name: str = Form(None), category: str = Form(None), notes: str = Form(None)):
+    """Update document metadata (name, category, notes)"""
+    if current_user["role"] != "benefactor":
+        raise HTTPException(status_code=403, detail="Only benefactors can update documents")
+    
+    doc = await db.documents.find_one({"id": document_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    update_data = {}
+    if name is not None:
+        update_data["name"] = name
+    if category is not None:
+        update_data["category"] = category
+    if notes is not None:
+        update_data["notes"] = notes
+    
+    if update_data:
+        await db.documents.update_one({"id": document_id}, {"$set": update_data})
+    
+    updated = await db.documents.find_one({"id": document_id}, {"_id": 0})
+    return updated
+
 # ===================== MESSAGE ROUTES =====================
 
 @api_router.get("/messages/{estate_id}")
