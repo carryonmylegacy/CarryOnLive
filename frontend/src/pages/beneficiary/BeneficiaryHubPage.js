@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { toast } from 'sonner';
 import { Skeleton } from '../../components/ui/skeleton';
+import OrbitVisualization from '../../components/estate/OrbitVisualization';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
