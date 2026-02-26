@@ -1,0 +1,63 @@
+# Render Blueprint - deploy CarryOn with one click
+# https://render.com/docs/infrastructure-as-code
+
+services:
+  # Backend API
+  - type: web
+    name: carryon-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: starter
+    envVars:
+      - key: MONGO_URL
+        sync: false  # Set manually (MongoDB Atlas connection string)
+      - key: DB_NAME
+        value: carryon_db
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false  # Set to your frontend URL
+      - key: RESEND_API_KEY
+        sync: false
+      - key: SENDER_EMAIL
+        value: noreply@carryon.us
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_PHONE_NUMBER
+        sync: false
+      - key: STRIPE_API_KEY
+        sync: false
+      - key: EMERGENT_LLM_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_CLAIMS_EMAIL
+        value: mailto:support@carryon.us
+    healthCheckPath: /api/health
+
+  # Frontend (static site)
+  - type: web
+    name: carryon-web
+    runtime: static
+    buildCommand: cd frontend && yarn install && yarn build
+    staticPublishPath: ./frontend/build
+    pullRequestPreviewsEnabled: true
+    headers:
+      - path: /static/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /sw-push.js
+        name: Cache-Control
+        value: no-store
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: REACT_APP_BACKEND_URL
+        sync: false  # Set to your backend URL
+      - key: REACT_APP_VAPID_PUBLIC_KEY
+        sync: false
