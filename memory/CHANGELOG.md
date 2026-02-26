@@ -12,6 +12,37 @@
 - **Added `tests/__init__.py`** for proper Python package structure
 - Result: `ruff check .` → **All checks passed**, `ruff format --check .` → **38 files already formatted**
 
+## Feb 26, 2026 — Comprehensive Test Suite (P0-P3)
+
+### Created
+- `tests/test_comprehensive_suite.py`: 91 automated tests covering every API endpoint
+  - **P0 Auth (13 tests)**: Full registration → OTP → login lifecycle, bad token rejection, duplicate email, missing fields
+  - **P1 Estates (8 tests)**: CRUD, readiness score, activity log, nonexistent ID handling
+  - **P1 Beneficiaries (5 tests)**: CRUD, invite, missing fields validation
+  - **P1 Checklist (6 tests)**: CRUD, toggle completion (on/off), reorder
+  - **P1 Documents (5 tests)**: List, upload, update, download
+  - **P1 Messages (3 tests)**: Create, list, update with trigger types
+  - **P1 Digital Wallet (5 tests)**: Full CRUD lifecycle
+  - **P1 Support (4 tests)**: Send message, get messages, admin conversations, unread count
+  - **P1 Security (2 tests)**: Settings and questions endpoints
+  - **P2 Admin (7 tests)**: Stats, users, activity, role-based access rejection, dev switcher
+  - **P2 Services (5 tests)**: Digest prefs on/off, preview, VAPID key
+  - **P2 Subscriptions (3 tests)**: Plans, status, admin settings
+  - **P2 Family Plan (1 test)**: Status check
+  - **P2 DTS (2 tests)**: Task listing, admin-only all-tasks
+  - **P2 Transition (2 tests)**: Certificates (admin), status
+  - **P2 PDF Export (1 test)**: Estate export
+  - **P3 Guardian AI (3 tests)**: Auth requirement, chat, history
+  - **P3 Edge Cases (11 tests)**: Invalid JSON, empty body, 404, cross-user access, SQL injection, XSS, oversized payload, MongoDB _id leak checks (4 collections)
+  - **Cleanup (5 tests)**: Deletes all test data
+
+### Also Fixed
+- Hardcoded preview URL → production domain in `routes/beneficiaries.py`
+- 36 import sorting violations fixed
+- 21 trailing whitespace issues in HTML email templates
+- Modernized `os.path`/`os.unlink` → `pathlib.Path` in 3 files
+- Added `tests/__init__.py` for proper package structure
+
 ## Feb 26, 2026 — Code Quality Perfection Pass #1
 
 ### Backend Fixes
