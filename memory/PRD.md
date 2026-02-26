@@ -1,56 +1,54 @@
 # CarryOn™ - Estate Planning & Legacy Management Platform
 
-## Original Problem Statement
-Build a full-stack web app called CarryOn™ — a secure estate planning and legacy management platform with three distinct portals: Benefactor, Beneficiary, and Admin.
+## What's Been Implemented
 
-## What's Been Implemented (Complete)
-
-### Authentication & Security
-- Email/Password login with 6-digit OTP 2FA (email + SMS)
-- Triple Lock Section Security: Password + Voice Biometric + Security Question per section
-- 3 lock behavior modes per section (auto on page leave, on logout, manual)
-- Dedicated Security Settings page in nav
-
-### Admin Portal
-- User Management, TVT, DTS Management, Customer Support Team
-- **Subscription Management** (NEW): Beta mode toggle, plan pricing editor, per-user free access + custom discounts
-- Dev Switcher Configuration
-
-### Benefactor Portal
-- SDV, MM, BM, IAC, DTS, EGA — all with Triple Lock security support
-- Estate Guardian AI (powered by Grok/xAI)
+### Core Features
+- Authentication (OTP 2FA), Admin/Benefactor/Beneficiary portals
+- Secure Document Vault (SDV), Milestone Messages (MM), Beneficiary Management (BM)
+- Immediate Action Checklist (IAC), Designated Trustee Services (DTS)
+- Estate Guardian AI (EGA) — powered by xAI Grok
 - Estate Readiness Score, Customer Support Chat, Push Notifications
 
-### Beneficiary Portal
-- Estate Hub, Pre/Post-Transition views, Sealed Vault access
+### Digital Wallet Vault (NEW)
+- Store digital account credentials (crypto, email, social media, banking, cloud, subscriptions)
+- AES-256 encrypted passwords and access info
+- Per-entry beneficiary assignment — each account assigned to specific beneficiary
+- Post-transition: beneficiaries see only their assigned accounts
+- Sidebar nav only (not on dashboard tiles or mobile bottom bar)
 
-### Stripe Subscription System (NEW - Feb 2026)
-- 6 plan tiers: Premium ($8.99), Standard ($7.99), Base ($6.99), New Adult ($3.99), Military ($5.99), Hospice (Free)
-- Admin controls: platform-wide beta toggle, per-plan pricing editor, per-user free access + custom discount
-- Stripe checkout integration via emergentintegrations
-- Payment transactions tracked in MongoDB
-- Beta banner ("BETA = FREE") when beta mode is ON
+### PDF Estate Plan Export (NEW)
+- Prominent "Export Estate Plan" button on Estate Guardian AI page
+- Action items FIRST (missing documents, pending checklist, incomplete beneficiary info, DTS tasks)
+- Estate status backup (documents list, beneficiaries, checklist, messages, DTS summary)
+- Branded PDF with legal disclaimer
+
+### Triple Lock Section Security
+- 3 layers: Password, Voice Biometric (MFCC), Security Question
+- 3 lock modes per section, dedicated Security Settings page
+
+### Stripe Subscription System
+- 6 plan tiers, beta mode toggle, per-user overrides
+- Admin: pricing editor, free access toggle, custom discounts
 
 ### Deployment Ready
-- Dockerfiles, docker-compose.yml, render.yaml, DEPLOY_GUIDE.md
+- Dockerfiles, render.yaml, DEPLOY_GUIDE.md
 
-## Subscription Pricing Notes
-- Premium/Standard/Base: Adjustable (launch discount = $1 off final price)
-- Final prices: Premium $9.99, Standard $8.99, Base $7.99
-- New Adult/Military/Hospice: Fixed pricing, no discounts
-- Beneficiary pricing based on benefactor's plan tier
-- Billing: monthly, quarterly (2.7x), annual (10x)
+## API Keys Configured
+- xAI Grok (Estate Guardian AI)
+- Stripe (test keys — publishable + secret)
+- Emergent LLM Key (voice/Whisper)
+- Picovoice Eagle — pending trial approval (24hr)
 
-## 3rd Party Integrations
-- xAI Grok (EGA), OpenAI Whisper (voice STT), Resend, Twilio, Stripe
+## Upcoming Tasks (P1)
+1. Family Plan system (admin-toggled, full pricing model per strategy doc)
+2. Picovoice Eagle upgrade (when trial approved)
+3. Production deployment to Render
 
-## Upcoming Tasks
-1. Picovoice Eagle upgrade for voice biometric (awaiting API key)
-2. Get user's Stripe API key (instructions provided)
-3. Get user's xAI API key
-4. Multi-estate support, Backend refactoring
+## Parked Tasks
+- Multi-estate support (single benefactor managing multiple estates)
 
-## Future/Backlog
-1. Digital Asset Management, PDF Export
-2. Family plan pricing, Minor beneficiary free access
-3. Frontend component decomposition
+## Future/Backlog (P2)
+- Family plan pricing implementation
+- Minor beneficiary free access until 18
+- Backend refactoring (server.py → modular)
+- Frontend component decomposition
