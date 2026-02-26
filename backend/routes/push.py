@@ -1,12 +1,14 @@
 """CarryOn™ Backend — Push Notifications"""
 
-from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
-from typing import Dict, Optional
+import base64
 from datetime import datetime, timezone
+from typing import Dict, Optional
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+
 from config import db, logger
 from utils import get_current_user, vapid
-import base64
 
 router = APIRouter()
 

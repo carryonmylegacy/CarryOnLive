@@ -1,21 +1,23 @@
 """CarryOn™ Backend — Section Security (Triple Lock)"""
 
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
-from pydantic import BaseModel
-from typing import Optional
+import os
 from datetime import datetime, timezone
+from typing import Optional
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from pydantic import BaseModel
+
 from config import db, logger
-from utils import get_current_user, hash_password, verify_password
 from services.voice_biometrics import (
-    extract_voiceprint,
-    verify_voiceprint,
+    compare_voiceprints_legacy,
     compute_enrollment_model,
+    extract_voiceprint,
+    extract_voiceprint_legacy,
     is_outlier_sample,
     match_passphrase,
-    extract_voiceprint_legacy,
-    compare_voiceprints_legacy,
+    verify_voiceprint,
 )
-import os
+from utils import get_current_user, hash_password, verify_password
 
 router = APIRouter()
 

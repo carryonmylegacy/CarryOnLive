@@ -1,20 +1,21 @@
 """CarryOn™ Backend — Authentication Routes"""
 
-from fastapi import APIRouter, HTTPException, Depends
+import uuid
 from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, HTTPException
+
 from config import db, logger
+from models import OTPVerify, TokenResponse, UserCreate, UserLogin, UserResponse
 from utils import (
-    get_current_user,
-    hash_password,
-    verify_password,
     create_token,
     generate_otp,
+    get_current_user,
+    hash_password,
     send_otp_email,
     send_otp_sms,
+    verify_password,
 )
-import uuid
-
-from models import TokenResponse, UserResponse, UserLogin, UserCreate, OTPVerify
 
 router = APIRouter()
 

@@ -1,12 +1,14 @@
 """CarryOn™ Backend — Weekly Estate Readiness Digest"""
 
-from fastapi import APIRouter, HTTPException, Depends
-from datetime import datetime, timezone, timedelta
-from config import db, logger, RESEND_API_KEY, SENDER_EMAIL
-from utils import get_current_user
-from services.readiness import calculate_estate_readiness
-import resend
 import asyncio
+from datetime import datetime, timedelta, timezone
+
+import resend
+from fastapi import APIRouter, Depends, HTTPException
+
+from config import RESEND_API_KEY, SENDER_EMAIL, db, logger
+from services.readiness import calculate_estate_readiness
+from utils import get_current_user
 
 router = APIRouter()
 

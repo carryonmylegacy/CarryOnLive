@@ -4,30 +4,32 @@ Refactored: shared code in config.py, utils.py, models.py
 Routes organized in /routes/*.py
 """
 
-from fastapi import FastAPI, APIRouter
+import asyncio
+import os
+from datetime import datetime, timedelta, timezone
+
+from fastapi import APIRouter, FastAPI
 from starlette.middleware.cors import CORSMiddleware
-from config import db, logger, client
-from routes.auth import router as auth_router
+
+from config import client, db, logger
 from routes.admin import router as admin_router
-from routes.estates import router as estates_router
+from routes.auth import router as auth_router
 from routes.beneficiaries import router as beneficiaries_router
-from routes.documents import router as documents_router
-from routes.messages import router as messages_router
 from routes.checklist import router as checklist_router
-from routes.transition import router as transition_router
+from routes.digest import router as digest_router
+from routes.digital_wallet import router as digital_wallet_router
+from routes.documents import router as documents_router
 from routes.dts import router as dts_router
+from routes.estates import router as estates_router
+from routes.family_plan import router as family_plan_router
 from routes.guardian import router as guardian_router
+from routes.messages import router as messages_router
+from routes.pdf_export import router as pdf_export_router
+from routes.push import router as push_router
+from routes.security import router as security_router
 from routes.subscriptions import router as subscriptions_router
 from routes.support import router as support_router
-from routes.family_plan import router as family_plan_router
-from routes.digital_wallet import router as digital_wallet_router
-from routes.pdf_export import router as pdf_export_router
-from routes.security import router as security_router
-from routes.push import router as push_router
-from routes.digest import router as digest_router
-import os
-import asyncio
-from datetime import datetime, timezone, timedelta
+from routes.transition import router as transition_router
 
 # Create the main app
 app = FastAPI(title="CarryOn™ API", version="1.0.0")

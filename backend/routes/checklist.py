@@ -1,10 +1,12 @@
 """CarryOn™ Backend — Checklist Routes (IAC — Immediate Action Checklist)"""
 
-from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, HTTPException
+
 from config import db
-from utils import get_current_user, update_estate_readiness
 from models import ChecklistItem, ChecklistItemCreate, ChecklistItemUpdate
+from utils import get_current_user, update_estate_readiness
 
 router = APIRouter()
 

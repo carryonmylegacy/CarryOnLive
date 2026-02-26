@@ -1,10 +1,12 @@
 """CarryOn™ Backend — PDF Estate Plan Export"""
 
-from fastapi import APIRouter, HTTPException, Depends, Response
 from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, HTTPException, Response
+from fpdf import FPDF
+
 from config import db
 from utils import get_current_user
-from fpdf import FPDF
 
 router = APIRouter()
 

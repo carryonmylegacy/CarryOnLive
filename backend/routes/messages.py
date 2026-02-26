@@ -1,12 +1,13 @@
 """CarryOn™ Backend — Milestone Message Routes"""
 
-from fastapi import APIRouter, HTTPException, Depends, Response
-from datetime import datetime, timezone
-from config import db, logger
-from utils import get_current_user, log_activity, update_estate_readiness
 import base64
+from datetime import datetime, timezone
 
+from fastapi import APIRouter, Depends, HTTPException, Response
+
+from config import db, logger
 from models import Message, MessageCreate, MessageUpdate
+from utils import get_current_user, log_activity, update_estate_readiness
 
 router = APIRouter()
 

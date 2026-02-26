@@ -1,10 +1,10 @@
 """CarryOn™ Backend — Estate Readiness Score Calculation & Seed Data"""
 
+import uuid
 from datetime import datetime, timezone
+
 from config import db, logger
 from utils import hash_password
-import uuid
-
 
 # ===================== REQUIRED DOCUMENTS =====================
 
