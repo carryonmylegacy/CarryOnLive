@@ -35,6 +35,8 @@ import BeneficiarySettingsPage from './pages/beneficiary/BeneficiarySettingsPage
 // Layout
 import DashboardLayout from './components/layout/DashboardLayout';
 
+import DevSwitcher from './components/dev/DevSwitcher';
+
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading, isAuthenticated } = useAuth();
@@ -179,6 +181,7 @@ function App() {
         <SectionLockProvider>
         <BrowserRouter>
           <AppRoutes />
+          <DevSwitcher />
           <Toaster 
             position="top-right"
             toastOptions={{
