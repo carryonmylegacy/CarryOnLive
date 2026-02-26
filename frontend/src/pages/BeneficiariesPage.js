@@ -252,6 +252,8 @@ const BeneficiariesPage = () => {
     setSsnLastFour('');
     setNotes('');
     setAvatarColor(avatarColors[0]);
+    setPhotoFile(null);
+    setPhotoPreview(null);
   };
 
   const getInvitationStatusBadge = (ben) => {
