@@ -152,7 +152,7 @@ const DashboardPage = () => {
           />
           
           {/* Needle assembly - enlarged */}
-          <g style={{ transform: `rotate(${angle}deg)`, transformOrigin: '100px 100px', transition: 'transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)' }} filter="url(#needleShadow)">
+          <g style={{ transform: `rotate(${angle}deg)`, transformOrigin: '100px 100px', transition: 'transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
             {/* Full needle - continuous taper from tip to wide tail */}
             <polygon 
               points="100,18 96,88 92,125 100,130 108,125 104,88" 
