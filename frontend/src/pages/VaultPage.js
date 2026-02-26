@@ -86,6 +86,14 @@ const VaultPage = () => {
   const [uploadLockPassword, setUploadLockPassword] = useState('');
   const [uploadVoicePassphrase, setUploadVoicePassphrase] = useState('');
   const [uploadFile, setUploadFile] = useState(null);
+  
+  // Edit form state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingDoc, setEditingDoc] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [editCategory, setEditCategory] = useState('legal');
+  const [editNotes, setEditNotes] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchData();
