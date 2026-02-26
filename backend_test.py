@@ -8,7 +8,7 @@ import base64
 import io
 
 class CarryOnAPITester:
-    def __init__(self, base_url="https://estate-vault-3.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://platform-handoff.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.token = None
         self.tests_run = 0
