@@ -3092,6 +3092,99 @@ async def update_estate_readiness(estate_id: str):
         }}
     )
 
+# ===================== STRIPE PAYMENT METHOD =====================
+
+# Initialize Stripe
+stripe.api_key = os.environ.get("STRIPE_API_KEY")
+
+class SetupIntentResponse(BaseModel):
+    client_secret: str
+    setup_intent_id: str
+
+class SavePaymentMethodRequest(BaseModel):
+    task_id: str
+    payment_method_id: str
+    card_last4: str
+    card_exp_month: int
+    card_exp_year: int
+    card_holder_name: Optional[str] = None
+
+@api_router.post("/stripe/create-setup-intent", response_model=SetupIntentResponse)
+async def create_setup_intent(user: dict = Depends(get_current_user)):
+    """Create a Stripe SetupIntent for saving a payment method for later use"""
+    try:
+        # Create a customer if one doesn't exist
+        user_doc = await db.users.find_one({"id": user["id"]})
+        stripe_customer_id = user_doc.get("stripe_customer_id") if user_doc else None
+        
+        if not stripe_customer_id:
+            customer = stripe.Customer.create(
+                email=user.get("email"),
+                name=user.get("name", user.get("email")),
+                metadata={"carryon_user_id": user["id"]}
+            )
+            stripe_customer_id = customer.id
+            await db.users.update_one(
+                {"id": user["id"]},
+                {"$set": {"stripe_customer_id": stripe_customer_id}}
+            )
+        
+        # Create SetupIntent for saving payment method
+        setup_intent = stripe.SetupIntent.create(
+            customer=stripe_customer_id,
+            payment_method_types=["card"],
+            metadata={"carryon_user_id": user["id"]}
+        )
+        
+        return SetupIntentResponse(
+            client_secret=setup_intent.client_secret,
+            setup_intent_id=setup_intent.id
+        )
+    except Exception as e:
+        logger.error(f"Error creating setup intent: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/dts/tasks/{task_id}/payment-method")
+async def save_dts_payment_method(
+    task_id: str,
+    request: SavePaymentMethodRequest,
+    user: dict = Depends(get_current_user)
+):
+    """Save a payment method to a DTS task for charging upon transition"""
+    try:
+        # Verify task belongs to user's estate
+        task = await db.dts_tasks.find_one({"id": task_id})
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+        
+        estate = await db.estates.find_one({"id": task["estate_id"], "user_id": user["id"]})
+        if not estate:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        
+        # Update task with payment method info
+        payment_info = {
+            "payment_method_id": request.payment_method_id,
+            "last4": request.card_last4,
+            "exp": f"{request.card_exp_month:02d}/{str(request.card_exp_year)[-2:]}",
+            "name": request.card_holder_name or user.get("name", ""),
+            "saved_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        await db.dts_tasks.update_one(
+            {"id": task_id},
+            {"$set": {
+                "payment_method": payment_info,
+                "status": "ready"
+            }}
+        )
+        
+        return {"success": True, "message": "Payment method saved successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error saving payment method: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ===================== STARTUP =====================
 
 @app.on_event("startup")
