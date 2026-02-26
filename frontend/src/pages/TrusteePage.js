@@ -438,9 +438,33 @@ const TrusteePage = () => {
 
     return (
       <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="dts-detail">
-        <Button variant="outline" size="sm" className="border-[var(--b)] text-[var(--t3)]" onClick={() => { setView('list'); setSelectedId(null); }}>
-          <ChevronLeft className="w-4 h-4 mr-1" /> All Tasks
-        </Button>
+        <div className="flex items-center justify-between">
+          <Button variant="outline" size="sm" className="border-[var(--b)] text-[var(--t3)]" onClick={() => { setView('list'); setSelectedId(null); }}>
+            <ChevronLeft className="w-4 h-4 mr-1" /> All Tasks
+          </Button>
+          
+          {/* Edit & Delete buttons */}
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="border-[var(--bl3)]/30 text-[var(--bl3)] hover:bg-[var(--blbg)]"
+              onClick={() => openEditModal(t)}
+              data-testid="edit-dts-task-button"
+            >
+              <Edit2 className="w-4 h-4 mr-1" /> Edit
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="border-[var(--rd)]/30 text-[var(--rd)] hover:bg-[var(--rdbg)]"
+              onClick={() => setShowDeleteDialog(true)}
+              data-testid="delete-dts-task-button"
+            >
+              <Trash2 className="w-4 h-4 mr-1" /> Delete
+            </Button>
+          </div>
+        </div>
 
         {/* Header */}
         <div className="flex items-start gap-4">
