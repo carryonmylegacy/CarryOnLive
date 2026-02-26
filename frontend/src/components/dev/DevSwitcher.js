@@ -19,16 +19,29 @@ const DevSwitcher = () => {
   const handleSwitch = async (account) => {
     setSwitching(account.email);
     try {
-      logout();
-      await new Promise(r => setTimeout(r, 100));
-      const u = await devLogin(account.email, account.password);
-      toast.success(`Switched to ${u.name} (${u.role})`);
-      navigate(account.redirect);
-      window.location.reload();
+      // Clear everything first
+      localStorage.removeItem('carryon_token');
+      localStorage.removeItem('selected_estate_id');
+      localStorage.removeItem('beneficiary_estate_id');
+      
+      // Call dev-login to get new token
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/dev-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: account.email, password: account.password }),
+      });
+      const data = await response.json();
+      
+      if (!response.ok) throw new Error(data.detail || 'Login failed');
+      
+      // Set new token directly in localStorage
+      localStorage.setItem('carryon_token', data.access_token);
+      
+      // Hard navigate — forces full app reload with new token
+      window.location.href = account.redirect;
     } catch (err) {
       console.error(err);
-      toast.error('Switch failed');
-    } finally {
+      toast.error('Switch failed: ' + err.message);
       setSwitching(null);
     }
   };
