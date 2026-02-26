@@ -294,10 +294,17 @@ const AdminPage = () => {
 
                   {/* What happens on approval */}
                   {cert.status === 'pending' && (
+                    <div className="mt-4 rounded-xl p-3" style={{ background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.12)' }}>
+                      <p className="text-xs text-[#7AABFD] leading-relaxed">
+                        Click "Begin Review" to let the beneficiary know you are actively reviewing their submission. They will see this update in real time on their status page.
+                      </p>
+                    </div>
+                  )}
+                  {cert.status === 'reviewing' && (
                     <div className="mt-4 rounded-xl p-3" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.12)' }}>
                       <p className="text-xs text-[var(--yw)] leading-relaxed">
                         <AlertTriangle className="w-3 h-3 inline mr-1" />
-                        Upon approval: Benefactor account immutably sealed · All immediate messages delivered to beneficiaries · Beneficiary access granted to vault, checklist, messages, and Estate Guardian as specified
+                        Upon approval: Benefactor account immutably sealed · All immediate messages delivered · Beneficiary access granted to vault, checklist, messages, and Estate Guardian. The beneficiary sees each step happen in real time.
                       </p>
                     </div>
                   )}
