@@ -33,7 +33,7 @@ const PreTransitionPage = () => {
       finally { setLoading(false); }
     };
     fetchEstate();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const firstName = user?.name?.split(' ')[0] || 'there';
   const benefactorName = estate?.name?.split(' ')[0] || 'your benefactor';
