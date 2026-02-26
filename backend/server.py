@@ -3024,8 +3024,7 @@ async def gather_estate_context(estate_id: str, include_doc_content: bool = Fals
 
 @api_router.post("/chat/guardian", response_model=ChatResponse)
 async def chat_with_guardian(data: ChatRequest, current_user: dict = Depends(get_current_user)):
-    api_key = os.environ.get('EMERGENT_LLM_KEY')
-    if not api_key:
+    if not xai_client:
         raise HTTPException(status_code=500, detail="AI service not configured")
     
     session_id = data.session_id or f"chat_{current_user['id']}_{str(uuid.uuid4())[:8]}"
@@ -3036,20 +3035,17 @@ async def chat_with_guardian(data: ChatRequest, current_user: dict = Depends(get
     estate_id = data.estate_id
     
     if not estate_id:
-        # Try to get the user's first estate
         estates = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0}).to_list(1)
         if estates:
             estate_id = estates[0]["id"]
     
     if estate_id:
-        # Determine if we need document content based on action or message
         needs_content = data.action in ("analyze_vault",) or any(
             keyword in data.message.lower() 
             for keyword in ["analyze", "review", "read", "what does", "contents", "says", "summary", "summarize", "check my"]
         )
         estate_context = await gather_estate_context(estate_id, include_doc_content=needs_content)
     
-    # Build system message with context
     system_message = ESTATE_GUARDIAN_SYSTEM_PROMPT.format(
         estate_context=estate_context if estate_context else "No estate context available. Ask the user to select an estate."
     )
