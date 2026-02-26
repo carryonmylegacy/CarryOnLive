@@ -273,10 +273,10 @@ async def enroll_voiceprint_endpoint(
             "message": f"Voice enrolled. {tip}",
         }
     finally:
-        if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
-        if os.path.exists(wav_path):
-            os.unlink(wav_path)
+        if Path(tmp_path).exists():
+            Path(tmp_path).unlink()
+        if Path(wav_path).exists():
+            Path(wav_path).unlink()
 
 
 @router.post("/security/verify/{section_id}")
@@ -425,10 +425,10 @@ async def verify_section_security(
                 "passphrase_score": text_match_result.get("score", 1.0),
             }
         finally:
-            if os.path.exists(tmp_path):
-                os.unlink(tmp_path)
-            if os.path.exists(wav_path):
-                os.unlink(wav_path)
+            if Path(tmp_path).exists():
+                Path(tmp_path).unlink()
+            if Path(wav_path).exists():
+                Path(wav_path).unlink()
 
     # Layer 3: Security Question
     if settings.get("security_question_enabled") and settings.get(
