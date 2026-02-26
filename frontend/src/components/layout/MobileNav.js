@@ -232,40 +232,48 @@ const MobileNav = () => {
       {/* Bottom Navigation */}
       <nav className="lg:hidden fixed bottom-0 left-0 w-full mobile-bottom-nav z-50 pb-safe">
         <div className="flex justify-around items-end h-16 px-2">
-          {getBottomNav().map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                item.isCenter 
-                  ? `flex flex-col items-center -mt-6`
-                  : `mobile-nav-item flex flex-col items-center gap-1 py-2 ${isActive ? 'active' : ''}`
-              }
-              data-testid={`mobile-nav-${item.label.toLowerCase()}`}
-            >
-              {({ isActive }) => (
-                item.isCenter ? (
-                  <>
-                    {/* Elevated Home button */}
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-all ${
-                      isActive 
-                        ? 'bg-gradient-to-br from-[var(--gold)] to-[var(--gold2)] text-[#08090F]' 
-                        : 'bg-[var(--bg3)] text-[var(--t3)] border border-[var(--b)]'
-                    }`}>
-                      <item.icon className="w-6 h-6" />
-                    </div>
-                    <span className={`text-xs mt-1 font-medium ${isActive ? 'text-[var(--gold)]' : 'text-[var(--t5)]'}`}>
-                      {item.label}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <item.icon className="w-5 h-5" />
-                    <span className="text-[10px] font-medium">{item.label}</span>
-                  </>
-                )
+          {getBottomNav().map((item, index) => (
+            <React.Fragment key={item.to}>
+              <NavLink
+                to={item.to}
+                className={({ isActive }) =>
+                  item.isCenter 
+                    ? `flex flex-col items-center -mt-6`
+                    : `mobile-nav-item flex flex-col items-center gap-1 py-2 ${isActive ? 'active' : ''}`
+                }
+                data-testid={`mobile-nav-${item.label.toLowerCase()}`}
+              >
+                {({ isActive }) => (
+                  item.isCenter ? (
+                    <>
+                      {/* Elevated Home button */}
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-all ${
+                        isActive 
+                          ? 'bg-gradient-to-br from-[var(--gold)] to-[var(--gold2)] text-[#08090F]' 
+                          : 'bg-[var(--bg3)] text-[var(--t3)] border border-[var(--b)]'
+                      }`}>
+                        <item.icon className="w-6 h-6" />
+                      </div>
+                      <span className={`text-xs mt-1 font-medium ${isActive ? 'text-[var(--gold)]' : 'text-[var(--t5)]'}`}>
+                        {item.label}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <item.icon className="w-5 h-5" />
+                      <span className="text-[10px] font-medium">{item.label}</span>
+                    </>
+                  )
+                )}
+              </NavLink>
+              {/* Vertical divider between buttons */}
+              {index < getBottomNav().length - 1 && (
+                <div 
+                  className="h-10 w-px bg-gray-500/30" 
+                  style={{ alignSelf: 'center' }}
+                />
               )}
-            </NavLink>
+            </React.Fragment>
           ))}
         </div>
       </nav>
