@@ -914,8 +914,7 @@ class ComprehensiveCarryOnTester:
             
         try:
             support_data = {
-                "subject": "Comprehensive Test Support Ticket",
-                "message": "This is a test support message sent during comprehensive backend testing."
+                "content": "This is a comprehensive test support message sent during backend testing."
             }
             
             response = self.session.post(f"{BACKEND_URL}/support/messages", json=support_data)
