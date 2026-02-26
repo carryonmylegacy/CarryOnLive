@@ -13,6 +13,9 @@ import base64
 import json as json_module
 import random
 
+from models import ChatRequest, ChatResponse, ChatMessage, ChecklistItem, calculate_estate_readiness
+import io
+
 router = APIRouter()
 
 from config import xai_client, XAI_MODEL
