@@ -31,6 +31,7 @@ const NotificationSettings = ({ getAuthHeaders }) => {
   const [loading, setLoading] = useState(true);
   const [subscribing, setSubscribing] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     checkPushSupport();
   }, []);
