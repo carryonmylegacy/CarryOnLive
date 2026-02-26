@@ -128,6 +128,7 @@ function AppRoutes() {
         <Route path="/checklist" element={<ChecklistPage />} />
         <Route path="/trustee" element={<TrusteePage />} />
         <Route path="/transition" element={<TransitionPage />} />
+        <Route path="/digital-wallet" element={<DigitalWalletPage />} />
       </Route>
 
       {/* Beneficiary Routes */}
