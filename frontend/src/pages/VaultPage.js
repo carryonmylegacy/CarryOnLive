@@ -1135,6 +1135,104 @@ const VaultPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Document Modal */}
+      <Dialog open={showEditModal} onOpenChange={(open) => {
+        setShowEditModal(open);
+        if (!open) {
+          setEditingDoc(null);
+          setEditName('');
+          setEditCategory('legal');
+          setEditNotes('');
+        }
+      }}>
+        <DialogContent className="glass-card border-white/10 sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white text-xl flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <Edit2 className="w-5 h-5 text-[#d4af37]" />
+              Edit Document
+            </DialogTitle>
+            <DialogDescription className="text-[#94a3b8]">
+              Update the document metadata
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label className="text-[#94a3b8]">Document Name</Label>
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="e.g., Last Will & Testament"
+                className="input-field"
+                data-testid="edit-document-name-input"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-[#94a3b8]">Category</Label>
+              <Select value={editCategory} onValueChange={setEditCategory}>
+                <SelectTrigger className="input-field" data-testid="edit-document-category-select">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-[#1A2440] border-white/10">
+                  <SelectItem value="legal">Legal</SelectItem>
+                  <SelectItem value="financial">Financial</SelectItem>
+                  <SelectItem value="personal">Personal</SelectItem>
+                  <SelectItem value="medical">Medical</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-[#94a3b8]">Notes (Optional)</Label>
+              <Textarea
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                placeholder="Add any notes about this document..."
+                className="input-field min-h-[80px]"
+                rows={3}
+                data-testid="edit-document-notes-input"
+              />
+            </div>
+            
+            {editingDoc && (
+              <div className="p-3 bg-white/5 rounded-xl">
+                <p className="text-xs text-[#64748b]">File info</p>
+                <p className="text-sm text-white">{editingDoc.file_type} · {editingDoc.file_size ? `${(editingDoc.file_size / 1024).toFixed(1)} KB` : 'Unknown size'}</p>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowEditModal(false)}
+              className="border-white/10 text-white"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleEditDocument}
+              disabled={saving || !editName}
+              className="gold-button"
+              data-testid="edit-document-submit-button"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Edit2 className="w-5 h-5 mr-2" />
+                  Save Changes
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
