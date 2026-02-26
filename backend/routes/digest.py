@@ -1,4 +1,5 @@
 """CarryOn™ Backend — Weekly Estate Readiness Digest"""
+
 from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime, timezone, timedelta
 from config import db, logger, RESEND_API_KEY, SENDER_EMAIL
@@ -10,7 +11,9 @@ import asyncio
 router = APIRouter()
 
 
-def build_digest_html(name: str, score: int, prev_score: int, actions: list, dashboard_url: str) -> str:
+def build_digest_html(
+    name: str, score: int, prev_score: int, actions: list, dashboard_url: str
+) -> str:
     """Build Outlook-safe HTML email for weekly digest"""
     # Trend
     diff = score - prev_score
@@ -44,8 +47,8 @@ def build_digest_html(name: str, score: int, prev_score: int, actions: list, das
 <div style="width:28px;height:28px;background-color:rgba(212,175,55,0.15);border-radius:8px;text-align:center;line-height:28px;font-size:13px;font-weight:bold;color:#d4af37;">{i}</div>
 </td>
 <td valign="top">
-<p style="margin:0;color:#f8fafc;font-size:14px;font-weight:600;">{action['title']}</p>
-<p style="margin:4px 0 0 0;color:#94a3b8;font-size:12px;line-height:1.4;">{action['detail']}</p>
+<p style="margin:0;color:#f8fafc;font-size:14px;font-weight:600;">{action["title"]}</p>
+<p style="margin:4px 0 0 0;color:#94a3b8;font-size:12px;line-height:1.4;">{action["detail"]}</p>
 </td>
 </tr></table>
 </td></tr>"""
@@ -96,7 +99,9 @@ def build_digest_html(name: str, score: int, prev_score: int, actions: list, das
 </body></html>"""
 
 
-def prioritize_actions(doc_result: dict, msg_result: dict, checklist_result: dict) -> list:
+def prioritize_actions(
+    doc_result: dict, msg_result: dict, checklist_result: dict
+) -> list:
     """Generate top 3 most impactful actions, ranked by potential score lift."""
     actions = []
 
@@ -104,48 +109,58 @@ def prioritize_actions(doc_result: dict, msg_result: dict, checklist_result: dic
     if doc_result["missing"]:
         top_missing = doc_result["missing"][0]
         remaining = len(doc_result["missing"])
-        actions.append({
-            "title": f"Upload your {top_missing}",
-            "detail": f"{remaining} key document{'s' if remaining > 1 else ''} missing from your vault. Each one lifts your score.",
-            "impact": (100 - doc_result["score"]) * 0.33,
-            "category": "documents",
-        })
+        actions.append(
+            {
+                "title": f"Upload your {top_missing}",
+                "detail": f"{remaining} key document{'s' if remaining > 1 else ''} missing from your vault. Each one lifts your score.",
+                "impact": (100 - doc_result["score"]) * 0.33,
+                "category": "documents",
+            }
+        )
 
     # Messages — milestone messages for beneficiaries
     if msg_result["missing"]:
         top_msg = msg_result["missing"][0]
-        actions.append({
-            "title": "Record milestone messages",
-            "detail": top_msg,
-            "impact": (100 - msg_result["score"]) * 0.33,
-            "category": "messages",
-        })
+        actions.append(
+            {
+                "title": "Record milestone messages",
+                "detail": top_msg,
+                "impact": (100 - msg_result["score"]) * 0.33,
+                "category": "messages",
+            }
+        )
 
     # Checklist — items to add or complete
     for gap in checklist_result.get("missing", []):
         if "Add" in gap:
-            actions.append({
-                "title": "Expand your action checklist",
-                "detail": f"{gap}. Use AI Suggest from Vault to auto-generate items.",
-                "impact": (100 - checklist_result["score"]) * 0.33 * 0.5,
-                "category": "checklist",
-            })
+            actions.append(
+                {
+                    "title": "Expand your action checklist",
+                    "detail": f"{gap}. Use AI Suggest from Vault to auto-generate items.",
+                    "impact": (100 - checklist_result["score"]) * 0.33 * 0.5,
+                    "category": "checklist",
+                }
+            )
         elif "Complete" in gap:
-            actions.append({
-                "title": "Complete checklist items",
-                "detail": f"{gap} on your Immediate Action Checklist.",
-                "impact": (100 - checklist_result["score"]) * 0.33 * 0.5,
-                "category": "checklist",
-            })
+            actions.append(
+                {
+                    "title": "Complete checklist items",
+                    "detail": f"{gap} on your Immediate Action Checklist.",
+                    "impact": (100 - checklist_result["score"]) * 0.33 * 0.5,
+                    "category": "checklist",
+                }
+            )
 
     # If score is high and few gaps, add encouragement
     if len(actions) == 0:
-        actions.append({
-            "title": "You're in great shape!",
-            "detail": "Review your estate plan periodically to keep everything current.",
-            "impact": 0,
-            "category": "general",
-        })
+        actions.append(
+            {
+                "title": "You're in great shape!",
+                "detail": "Review your estate plan periodically to keep everything current.",
+                "impact": 0,
+                "category": "general",
+            }
+        )
 
     # Sort by impact and take top 3
     actions.sort(key=lambda a: a["impact"], reverse=True)
@@ -155,9 +170,7 @@ def prioritize_actions(doc_result: dict, msg_result: dict, checklist_result: dic
 async def send_digest_for_user(user: dict, dashboard_url: str) -> bool:
     """Send weekly digest to a single benefactor. Returns True if sent."""
     # Find their estates
-    estates = await db.estates.find(
-        {"owner_id": user["id"]}, {"_id": 0}
-    ).to_list(10)
+    estates = await db.estates.find({"owner_id": user["id"]}, {"_id": 0}).to_list(10)
 
     if not estates:
         return False
@@ -185,18 +198,20 @@ async def send_digest_for_user(user: dict, dashboard_url: str) -> bool:
     )
     await db.readiness_history.update_one(
         {"estate_id": estate_id, "week_start": week_start.isoformat()},
-        {"$set": {
-            "estate_id": estate_id,
-            "user_id": user["id"],
-            "score": current_score,
-            "breakdown": {
-                "documents": result["documents"]["score"],
-                "messages": result["messages"]["score"],
-                "checklist": result["checklist"]["score"],
-            },
-            "week_start": week_start.isoformat(),
-            "created_at": now.isoformat(),
-        }},
+        {
+            "$set": {
+                "estate_id": estate_id,
+                "user_id": user["id"],
+                "score": current_score,
+                "breakdown": {
+                    "documents": result["documents"]["score"],
+                    "messages": result["messages"]["score"],
+                    "checklist": result["checklist"]["score"],
+                },
+                "week_start": week_start.isoformat(),
+                "created_at": now.isoformat(),
+            }
+        },
         upsert=True,
     )
 
@@ -232,17 +247,13 @@ async def run_weekly_digest(dashboard_url: str):
         logger.warning("Resend not configured — skipping weekly digest")
         return {"sent": 0, "skipped": 0}
 
-    benefactors = await db.users.find(
-        {"role": "benefactor"}, {"_id": 0}
-    ).to_list(500)
+    benefactors = await db.users.find({"role": "benefactor"}, {"_id": 0}).to_list(500)
 
     sent = 0
     skipped = 0
     for u in benefactors:
         # Check opt-out
-        prefs = await db.user_preferences.find_one(
-            {"user_id": u["id"]}, {"_id": 0}
-        )
+        prefs = await db.user_preferences.find_one({"user_id": u["id"]}, {"_id": 0})
         if prefs and prefs.get("weekly_digest") is False:
             skipped += 1
             continue
@@ -263,6 +274,7 @@ async def run_weekly_digest(dashboard_url: str):
 
 # ===================== API ENDPOINTS =====================
 
+
 @router.get("/digest/preferences")
 async def get_digest_preferences(current_user: dict = Depends(get_current_user)):
     """Get user's digest email preferences."""
@@ -273,7 +285,9 @@ async def get_digest_preferences(current_user: dict = Depends(get_current_user))
 
 
 @router.put("/digest/preferences")
-async def update_digest_preferences(body: dict, current_user: dict = Depends(get_current_user)):
+async def update_digest_preferences(
+    body: dict, current_user: dict = Depends(get_current_user)
+):
     """Update user's digest email preferences."""
     weekly_digest = body.get("weekly_digest", True)
     await db.user_preferences.update_one(
@@ -285,7 +299,9 @@ async def update_digest_preferences(body: dict, current_user: dict = Depends(get
 
 
 @router.post("/digest/send-weekly")
-async def trigger_weekly_digest(body: dict = None, current_user: dict = Depends(get_current_user)):
+async def trigger_weekly_digest(
+    body: dict = None, current_user: dict = Depends(get_current_user)
+):
     """Manually trigger the weekly digest — admin only."""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")

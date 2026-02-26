@@ -21,23 +21,23 @@ logger = logging.getLogger(__name__)
 # ======================== CONSTANTS ========================
 
 SAMPLE_RATE = 16000
-MIN_DURATION_SEC = 1.0        # Minimum useful audio length
-MAX_ENROLLMENT_SAMPLES = 5    # Keep last N enrollment samples
+MIN_DURATION_SEC = 1.0  # Minimum useful audio length
+MAX_ENROLLMENT_SAMPLES = 5  # Keep last N enrollment samples
 MIN_SAMPLES_FOR_ENROLLED = 1  # Minimum samples to count as enrolled
 PRE_EMPHASIS_COEFF = 0.97
 
 # Verification thresholds
-DEFAULT_THRESHOLD = 0.78       # Combined confidence threshold
+DEFAULT_THRESHOLD = 0.78  # Combined confidence threshold
 HIGH_CONFIDENCE_THRESHOLD = 0.88
 LOW_CONFIDENCE_THRESHOLD = 0.70
 
 # Quality thresholds
-MIN_SNR_DB = 6.0              # Minimum signal-to-noise ratio
-MAX_CLIPPING_RATIO = 0.02     # Max fraction of clipped samples
-MIN_RMS_ENERGY = 0.005        # Minimum RMS to consider non-silent
+MIN_SNR_DB = 6.0  # Minimum signal-to-noise ratio
+MAX_CLIPPING_RATIO = 0.02  # Max fraction of clipped samples
+MIN_RMS_ENERGY = 0.005  # Minimum RMS to consider non-silent
 
 # Passphrase matching
-PASSPHRASE_THRESHOLD = 0.65   # difflib sequence match ratio
+PASSPHRASE_THRESHOLD = 0.65  # difflib sequence match ratio
 
 # ======================== AUDIO PREPROCESSING ========================
 
@@ -52,7 +52,9 @@ def preprocess_audio(audio: np.ndarray, sr: int) -> np.ndarray:
         audio_trimmed = audio
 
     # Pre-emphasis filter (boosts high-frequency formant detail)
-    audio_emph = np.append(audio_trimmed[0], audio_trimmed[1:] - PRE_EMPHASIS_COEFF * audio_trimmed[:-1])
+    audio_emph = np.append(
+        audio_trimmed[0], audio_trimmed[1:] - PRE_EMPHASIS_COEFF * audio_trimmed[:-1]
+    )
 
     return audio_emph
 
@@ -63,7 +65,7 @@ def assess_audio_quality(audio: np.ndarray, sr: int) -> dict:
     Returns dict with quality metrics and an overall pass/fail + score.
     """
     duration = len(audio) / sr
-    rms = float(np.sqrt(np.mean(audio ** 2)))
+    rms = float(np.sqrt(np.mean(audio**2)))
 
     # Clipping detection (samples near ±1.0)
     clipped = np.sum(np.abs(audio) > 0.98) / len(audio)
@@ -72,7 +74,7 @@ def assess_audio_quality(audio: np.ndarray, sr: int) -> dict:
     frame_len = int(0.025 * sr)
     hop = int(0.010 * sr)
     frames = librosa.util.frame(audio, frame_length=frame_len, hop_length=hop)
-    frame_energies = np.mean(frames ** 2, axis=0)
+    frame_energies = np.mean(frames**2, axis=0)
 
     if len(frame_energies) > 4:
         # Noise floor = bottom 10th percentile of frame energies
@@ -149,14 +151,16 @@ def extract_voiceprint(audio_bytes: bytes) -> dict | None:
         feature_names = []
 
         # --- 1. MFCC features (20 coefficients × 3 = 60 dims) ---
-        mfccs = librosa.feature.mfcc(y=audio_clean, sr=sr, n_mfcc=20, n_fft=512, hop_length=160)
+        mfccs = librosa.feature.mfcc(
+            y=audio_clean, sr=sr, n_mfcc=20, n_fft=512, hop_length=160
+        )
         delta_mfccs = librosa.feature.delta(mfccs)
         delta2_mfccs = librosa.feature.delta(mfccs, order=2)
 
         # Mean + std for each MFCC coefficient
-        mfcc_mean = np.mean(mfccs, axis=1)          # 20 dims
-        mfcc_std = np.std(mfccs, axis=1)             # 20 dims
-        delta_mean = np.mean(delta_mfccs, axis=1)    # 20 dims
+        mfcc_mean = np.mean(mfccs, axis=1)  # 20 dims
+        mfcc_std = np.std(mfccs, axis=1)  # 20 dims
+        delta_mean = np.mean(delta_mfccs, axis=1)  # 20 dims
         delta2_mean = np.mean(delta2_mfccs, axis=1)  # 20 dims
 
         features.extend(mfcc_mean)
@@ -173,20 +177,34 @@ def extract_voiceprint(audio_bytes: bytes) -> dict | None:
         spectral_bw = librosa.feature.spectral_bandwidth(y=audio_clean, sr=sr)
         spectral_rolloff = librosa.feature.spectral_rolloff(y=audio_clean, sr=sr)
         spectral_flatness = librosa.feature.spectral_flatness(y=audio_clean)
-        spectral_contrast = librosa.feature.spectral_contrast(y=audio_clean, sr=sr, n_bands=6)  # 7 bands
+        spectral_contrast = librosa.feature.spectral_contrast(
+            y=audio_clean, sr=sr, n_bands=6
+        )  # 7 bands
 
-        features.extend([
-            float(np.mean(spectral_centroid)), float(np.std(spectral_centroid)),
-            float(np.mean(spectral_bw)), float(np.std(spectral_bw)),
-            float(np.mean(spectral_rolloff)), float(np.std(spectral_rolloff)),
-            float(np.mean(spectral_flatness)), float(np.std(spectral_flatness)),
-        ])
-        feature_names.extend([
-            "spec_centroid_mean", "spec_centroid_std",
-            "spec_bw_mean", "spec_bw_std",
-            "spec_rolloff_mean", "spec_rolloff_std",
-            "spec_flatness_mean", "spec_flatness_std",
-        ])
+        features.extend(
+            [
+                float(np.mean(spectral_centroid)),
+                float(np.std(spectral_centroid)),
+                float(np.mean(spectral_bw)),
+                float(np.std(spectral_bw)),
+                float(np.mean(spectral_rolloff)),
+                float(np.std(spectral_rolloff)),
+                float(np.mean(spectral_flatness)),
+                float(np.std(spectral_flatness)),
+            ]
+        )
+        feature_names.extend(
+            [
+                "spec_centroid_mean",
+                "spec_centroid_std",
+                "spec_bw_mean",
+                "spec_bw_std",
+                "spec_rolloff_mean",
+                "spec_rolloff_std",
+                "spec_flatness_mean",
+                "spec_flatness_std",
+            ]
+        )
 
         # Spectral contrast per band (mean only)
         contrast_means = np.mean(spectral_contrast, axis=1)  # 7 dims
@@ -195,18 +213,19 @@ def extract_voiceprint(audio_bytes: bytes) -> dict | None:
 
         # --- 3. Pitch / F0 features (5 dims) ---
         f0, voiced_flag, _ = librosa.pyin(
-            audio_clean, fmin=60, fmax=500, sr=sr,
-            frame_length=1024, hop_length=160
+            audio_clean, fmin=60, fmax=500, sr=sr, frame_length=1024, hop_length=160
         )
         f0_voiced = f0[voiced_flag] if voiced_flag is not None else f0[~np.isnan(f0)]
         if len(f0_voiced) > 2:
-            features.extend([
-                float(np.mean(f0_voiced)),
-                float(np.std(f0_voiced)),
-                float(np.min(f0_voiced)),
-                float(np.max(f0_voiced)),
-                float(np.max(f0_voiced) - np.min(f0_voiced)),  # pitch range
-            ])
+            features.extend(
+                [
+                    float(np.mean(f0_voiced)),
+                    float(np.std(f0_voiced)),
+                    float(np.min(f0_voiced)),
+                    float(np.max(f0_voiced)),
+                    float(np.max(f0_voiced) - np.min(f0_voiced)),  # pitch range
+                ]
+            )
         else:
             # Fallback: no reliable pitch detected
             features.extend([150.0, 30.0, 80.0, 300.0, 220.0])
@@ -214,28 +233,40 @@ def extract_voiceprint(audio_bytes: bytes) -> dict | None:
 
         # --- 4. Energy / RMS features (4 dims) ---
         rms = librosa.feature.rms(y=audio_clean, frame_length=512, hop_length=160)[0]
-        features.extend([
-            float(np.mean(rms)),
-            float(np.std(rms)),
-            float(np.max(rms) - np.min(rms)),  # dynamic range
-            float(np.percentile(rms, 90) / max(np.percentile(rms, 10), 1e-8)),  # energy ratio
-        ])
-        feature_names.extend(["rms_mean", "rms_std", "rms_dynamic_range", "rms_energy_ratio"])
+        features.extend(
+            [
+                float(np.mean(rms)),
+                float(np.std(rms)),
+                float(np.max(rms) - np.min(rms)),  # dynamic range
+                float(
+                    np.percentile(rms, 90) / max(np.percentile(rms, 10), 1e-8)
+                ),  # energy ratio
+            ]
+        )
+        feature_names.extend(
+            ["rms_mean", "rms_std", "rms_dynamic_range", "rms_energy_ratio"]
+        )
 
         # --- 5. Temporal features (4 dims) ---
-        zcr = librosa.feature.zero_crossing_rate(audio_clean, frame_length=512, hop_length=160)[0]
-        features.extend([
-            float(np.mean(zcr)),
-            float(np.std(zcr)),
-        ])
+        zcr = librosa.feature.zero_crossing_rate(
+            audio_clean, frame_length=512, hop_length=160
+        )[0]
+        features.extend(
+            [
+                float(np.mean(zcr)),
+                float(np.std(zcr)),
+            ]
+        )
         feature_names.extend(["zcr_mean", "zcr_std"])
 
         # Tempo-related: onset strength statistics
         onset_env = librosa.onset.onset_strength(y=audio_clean, sr=sr)
-        features.extend([
-            float(np.mean(onset_env)),
-            float(np.std(onset_env)),
-        ])
+        features.extend(
+            [
+                float(np.mean(onset_env)),
+                float(np.std(onset_env)),
+            ]
+        )
         feature_names.extend(["onset_strength_mean", "onset_strength_std"])
 
         # Convert to numpy for normalization
@@ -265,7 +296,9 @@ def extract_voiceprint(audio_bytes: bytes) -> dict | None:
 # ======================== ENROLLMENT ========================
 
 
-def is_outlier_sample(new_voiceprint: list, existing_samples: list, threshold: float = 0.50) -> bool:
+def is_outlier_sample(
+    new_voiceprint: list, existing_samples: list, threshold: float = 0.50
+) -> bool:
     """
     Check if a new sample is an outlier compared to existing enrollment.
     Returns True if the sample is too different (potential impostor or bad recording).
@@ -457,7 +490,9 @@ def extract_voiceprint_legacy(audio_bytes: bytes) -> list | None:
         if len(audio) < sr * 0.5:
             return None
         audio = np.append(audio[0], audio[1:] - PRE_EMPHASIS_COEFF * audio[:-1])
-        mfccs = librosa.feature.mfcc(y=audio, sr=sr, n_mfcc=20, n_fft=512, hop_length=160)
+        mfccs = librosa.feature.mfcc(
+            y=audio, sr=sr, n_mfcc=20, n_fft=512, hop_length=160
+        )
         delta_mfccs = librosa.feature.delta(mfccs)
         delta2_mfccs = librosa.feature.delta(mfccs, order=2)
         features = np.vstack([mfccs, delta_mfccs, delta2_mfccs])
@@ -467,7 +502,9 @@ def extract_voiceprint_legacy(audio_bytes: bytes) -> list | None:
         return None
 
 
-def compare_voiceprints_legacy(enrolled: list, test: list, threshold: float = 0.80) -> tuple:
+def compare_voiceprints_legacy(
+    enrolled: list, test: list, threshold: float = 0.80
+) -> tuple:
     """Legacy comparison for old 60-dim voiceprints."""
     similarity = 1 - cosine_distance(np.array(enrolled), np.array(test))
     return float(similarity), similarity >= threshold

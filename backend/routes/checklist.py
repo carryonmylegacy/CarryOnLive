@@ -1,4 +1,5 @@
 """CarryOn™ Backend — Checklist Routes (IAC — Immediate Action Checklist)"""
+
 from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime, timezone
 from config import db
@@ -9,18 +10,29 @@ router = APIRouter()
 
 # ===================== BENEFACTOR CRUD =====================
 
+
 @router.get("/checklists/{estate_id}")
-async def get_checklists(estate_id: str, current_user: dict = Depends(get_current_user)):
+async def get_checklists(
+    estate_id: str, current_user: dict = Depends(get_current_user)
+):
     """Get all checklist items for an estate."""
-    checklists = await db.checklists.find({"estate_id": estate_id}, {"_id": 0}).sort("order", 1).to_list(200)
+    checklists = (
+        await db.checklists.find({"estate_id": estate_id}, {"_id": 0})
+        .sort("order", 1)
+        .to_list(200)
+    )
     return checklists
 
 
 @router.post("/checklists")
-async def create_checklist_item(data: ChecklistItemCreate, current_user: dict = Depends(get_current_user)):
+async def create_checklist_item(
+    data: ChecklistItemCreate, current_user: dict = Depends(get_current_user)
+):
     """Benefactor creates a new IAC item."""
     if current_user["role"] not in ("benefactor", "admin"):
-        raise HTTPException(status_code=403, detail="Only benefactors can create checklist items")
+        raise HTTPException(
+            status_code=403, detail="Only benefactors can create checklist items"
+        )
 
     # Auto-set order if not provided
     if data.order == 0:
@@ -49,10 +61,16 @@ async def create_checklist_item(data: ChecklistItemCreate, current_user: dict = 
 
 
 @router.put("/checklists/{item_id}")
-async def update_checklist_item(item_id: str, data: ChecklistItemUpdate, current_user: dict = Depends(get_current_user)):
+async def update_checklist_item(
+    item_id: str,
+    data: ChecklistItemUpdate,
+    current_user: dict = Depends(get_current_user),
+):
     """Benefactor edits an existing IAC item."""
     if current_user["role"] not in ("benefactor", "admin"):
-        raise HTTPException(status_code=403, detail="Only benefactors can edit checklist items")
+        raise HTTPException(
+            status_code=403, detail="Only benefactors can edit checklist items"
+        )
 
     item = await db.checklists.find_one({"id": item_id}, {"_id": 0})
     if not item:
@@ -70,10 +88,14 @@ async def update_checklist_item(item_id: str, data: ChecklistItemUpdate, current
 
 
 @router.delete("/checklists/{item_id}")
-async def delete_checklist_item(item_id: str, current_user: dict = Depends(get_current_user)):
+async def delete_checklist_item(
+    item_id: str, current_user: dict = Depends(get_current_user)
+):
     """Benefactor deletes an IAC item."""
     if current_user["role"] not in ("benefactor", "admin"):
-        raise HTTPException(status_code=403, detail="Only benefactors can delete checklist items")
+        raise HTTPException(
+            status_code=403, detail="Only benefactors can delete checklist items"
+        )
 
     item = await db.checklists.find_one({"id": item_id}, {"_id": 0})
     if not item:
@@ -86,8 +108,11 @@ async def delete_checklist_item(item_id: str, current_user: dict = Depends(get_c
 
 # ===================== BENEFICIARY TOGGLE =====================
 
+
 @router.patch("/checklists/{item_id}/toggle")
-async def toggle_checklist_item(item_id: str, current_user: dict = Depends(get_current_user)):
+async def toggle_checklist_item(
+    item_id: str, current_user: dict = Depends(get_current_user)
+):
     """Beneficiary (or benefactor) toggles completion status."""
     item = await db.checklists.find_one({"id": item_id}, {"_id": 0})
     if not item:
@@ -106,8 +131,11 @@ async def toggle_checklist_item(item_id: str, current_user: dict = Depends(get_c
 
 # ===================== REORDER =====================
 
+
 @router.post("/checklists/reorder")
-async def reorder_checklists(data: dict, current_user: dict = Depends(get_current_user)):
+async def reorder_checklists(
+    data: dict, current_user: dict = Depends(get_current_user)
+):
     """Benefactor reorders IAC items. Expects: {item_ids: ["id1", "id2", ...]}"""
     if current_user["role"] not in ("benefactor", "admin"):
         raise HTTPException(status_code=403, detail="Only benefactors can reorder")
