@@ -1875,10 +1875,12 @@ async def approve_death_certificate(certificate_id: str, current_user: dict = De
 
 @api_router.get("/transition/status/{estate_id}")
 async def get_transition_status(estate_id: str, current_user: dict = Depends(get_current_user)):
-    certificate = await db.death_certificates.find_one(
+    # Get the MOST RECENT certificate for this estate
+    certificates = await db.death_certificates.find(
         {"estate_id": estate_id},
         {"_id": 0, "file_data": 0}
-    )
+    ).sort("created_at", -1).to_list(1)
+    certificate = certificates[0] if certificates else None
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
     
     return {
