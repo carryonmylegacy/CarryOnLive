@@ -19,17 +19,35 @@ const LoginPage = () => {
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otp, setOtp] = useState('');
   const [otpHint, setOtpHint] = useState('');
+  const [otpMethod, setOtpMethod] = useState('email'); // 'email' or 'sms'
+  const [phone, setPhone] = useState('');
+  const [showPhoneInput, setShowPhoneInput] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    
+    // If SMS is selected but no phone, show phone input first
+    if (otpMethod === 'sms' && !phone && !showPhoneInput) {
+      setShowPhoneInput(true);
+      return;
+    }
+    
+    if (otpMethod === 'sms' && !phone) {
+      toast.error('Please enter your phone number for SMS verification');
+      return;
+    }
+    
     setLoading(true);
     
     try {
-      const result = await login(email, password);
+      const result = await login(email, password, otpMethod, phone);
       setOtpHint(result.otp_hint);
       if (result.dev_otp) setOtp(result.dev_otp);
       setShowOtpModal(true);
-      toast.success('OTP sent to your email');
+      setShowPhoneInput(false);
+      toast.success(otpMethod === 'sms' 
+        ? `OTP sent to ***${phone.slice(-4)}` 
+        : 'OTP sent to your email');
     } catch (error) {
       console.error('Login error:', error);
       toast.error(error.response?.data?.detail || 'Invalid credentials');
