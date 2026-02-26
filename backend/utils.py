@@ -225,7 +225,7 @@ try:
         vapid = Vapid.from_file(_vapid_path)
         vapid_private_key_for_webpush = _vapid_path
         logger.info("VAPID keys loaded from inline env var")
-    elif os.path.exists(VAPID_PRIVATE_KEY_PATH):
+    elif Path(VAPID_PRIVATE_KEY_PATH).exists():
         vapid = Vapid.from_file(VAPID_PRIVATE_KEY_PATH)
         vapid_private_key_for_webpush = VAPID_PRIVATE_KEY_PATH
         logger.info("VAPID keys loaded from file")
