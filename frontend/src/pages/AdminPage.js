@@ -846,8 +846,6 @@ const DevSwitcherConfig = ({ users, getAuthHeaders }) => {
   );
 };
 
-export default AdminPage;
-
 // ===================== SUBSCRIPTIONS ADMIN =====================
 
 const SubscriptionsAdmin = ({ getAuthHeaders, users }) => {
