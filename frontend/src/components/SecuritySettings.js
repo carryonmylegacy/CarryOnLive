@@ -35,6 +35,7 @@ const SecuritySettings = ({ getAuthHeaders }) => {
 
   const headers = getAuthHeaders()?.headers || {};
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchAll();
   }, []);
