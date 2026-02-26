@@ -23,6 +23,7 @@
 - Designated Trustee Services
 - Two-Level Section Security (Password + Voice Passphrase)
 - Estate Readiness Score
+- **Edit Functionality** - Edit beneficiary details and document metadata (name, category, notes)
 
 ### Beneficiary Portal
 - Estate Hub with generational orbit visualization
