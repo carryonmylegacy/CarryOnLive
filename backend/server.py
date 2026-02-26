@@ -3089,14 +3089,29 @@ Also identify any potential legal issues or gaps in my estate plan based on the 
 Provide a clear, organized analysis with specific findings and recommendations."""
     
     try:
-        chat = LlmChat(
-            api_key=api_key,
-            session_id=session_id,
-            system_message=system_message
-        ).with_model("openai", "gpt-5.2")
+        # Build conversation history from DB for multi-turn context
+        history_messages = [{"role": "system", "content": system_message}]
         
-        user_message = UserMessage(text=user_message_text)
-        response = await chat.send_message(user_message)
+        # Load previous messages from this session
+        prev_messages = await db.chat_history.find(
+            {"session_id": session_id, "user_id": current_user["id"]},
+            {"_id": 0}
+        ).sort("created_at", 1).to_list(50)
+        
+        for msg in prev_messages:
+            history_messages.append({"role": msg["role"], "content": msg["content"]})
+        
+        # Add the current user message
+        history_messages.append({"role": "user", "content": user_message_text})
+        
+        # Call xAI Grok
+        completion = xai_client.chat.completions.create(
+            model=XAI_MODEL,
+            messages=history_messages,
+            temperature=0.7,
+            max_tokens=4096
+        )
+        response = completion.choices[0].message.content
         
         # Handle checklist generation action
         if data.action == "generate_checklist" and "checklist_json" in response:
