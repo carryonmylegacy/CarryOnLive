@@ -18,6 +18,7 @@ const BeneficiarySettingsPage = () => {
   const [estate, setEstate] = useState(null);
   const [billingTab, setBillingTab] = useState(0);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const fetchEstate = async () => {
       const eid = localStorage.getItem('beneficiary_estate_id');
@@ -29,7 +30,6 @@ const BeneficiarySettingsPage = () => {
       }
     };
     fetchEstate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleLogout = () => { logout(); navigate('/login'); };
