@@ -203,6 +203,8 @@ const BeneficiariesPage = () => {
     setSsnLastFour(ben.ssn_last_four || '');
     setNotes(ben.notes || '');
     setAvatarColor(ben.avatar_color || avatarColors[0]);
+    setPhotoFile(null);
+    setPhotoPreview(ben.photo_url || null);
     setShowAddModal(true);
   };
 
