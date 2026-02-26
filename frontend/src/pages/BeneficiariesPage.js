@@ -331,15 +331,26 @@ const BeneficiariesPage = () => {
                     </div>
                   </div>
                   
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-[#ef4444] opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => handleDelete(ben.id)}
-                    data-testid={`delete-beneficiary-${ben.id}`}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-[#3b82f6] opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => openEditModal(ben)}
+                      data-testid={`edit-beneficiary-${ben.id}`}
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-[#ef4444] opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => handleDelete(ben.id)}
+                      data-testid={`delete-beneficiary-${ben.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
                 
                 <div className="space-y-2 text-sm">
