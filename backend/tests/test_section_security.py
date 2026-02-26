@@ -187,9 +187,9 @@ class TestPasswordSecurityLayer:
             headers=auth_headers
         )
         settings = settings_response.json()
-        assert settings["sdv"]["password_enabled"] == True, "Password not enabled"
-        assert settings["sdv"]["has_password"] == True, "Password hash not saved"
-        assert settings["sdv"]["is_active"] == True, "Section not active"
+        assert settings["sdv"]["password_enabled"], "Password not enabled"
+        assert settings["sdv"]["has_password"], "Password hash not saved"
+        assert settings["sdv"]["is_active"], "Section not active"
         print("✓ Password security verified in settings")
     
     def test_verify_correct_password(self, auth_headers):
@@ -202,9 +202,9 @@ class TestPasswordSecurityLayer:
         assert response.status_code == 200, f"Verification failed: {response.text}"
         
         data = response.json()
-        assert data.get("verified") == True, f"Not verified: {data}"
+        assert data.get("verified"), f"Not verified: {data}"
         assert "results" in data, "Missing results"
-        assert data["results"].get("password") == True, "Password verification result missing"
+        assert data["results"].get("password"), "Password verification result missing"
         print("✓ Correct password verification passed")
     
     def test_verify_wrong_password_returns_401(self, auth_headers):
@@ -242,7 +242,7 @@ class TestSecurityQuestionLayer:
         assert response.status_code == 200, f"Failed to create security question: {response.text}"
         
         data = response.json()
-        assert data.get("success") == True, f"Success not true: {data}"
+        assert data.get("success"), f"Success not true: {data}"
         print("✓ Security question created for MM section")
         
         # Verify the setting was saved
@@ -251,8 +251,8 @@ class TestSecurityQuestionLayer:
             headers=auth_headers
         )
         settings = settings_response.json()
-        assert settings["mm"]["security_question_enabled"] == True
-        assert settings["mm"]["has_security_question"] == True
+        assert settings["mm"]["security_question_enabled"]
+        assert settings["mm"]["has_security_question"]
         assert settings["mm"]["security_question"] == TEST_SECURITY_QUESTION
         assert settings["mm"]["lock_mode"] == "on_page_leave"
         print("✓ Security question verified in settings")
@@ -267,8 +267,8 @@ class TestSecurityQuestionLayer:
         assert response.status_code == 200, f"Verification failed: {response.text}"
         
         data = response.json()
-        assert data.get("verified") == True
-        assert data.get("results", {}).get("security_question") == True
+        assert data.get("verified")
+        assert data.get("results", {}).get("security_question")
         print("✓ Correct security answer verification passed")
     
     def test_verify_wrong_security_answer_returns_401(self, auth_headers):
@@ -371,13 +371,13 @@ class TestRemoveSecurity:
         assert response.status_code == 200, f"Delete failed: {response.text}"
         
         data = response.json()
-        assert data.get("success") == True
+        assert data.get("success")
         print("✓ Security successfully removed from SDV")
         
         # Verify it's removed
         settings = requests.get(f"{BASE_URL}/api/security/settings", headers=auth_headers).json()
-        assert settings["sdv"]["is_active"] == False, "Section should be inactive"
-        assert settings["sdv"]["password_enabled"] == False, "Password should be disabled"
+        assert not settings["sdv"]["is_active"], "Section should be inactive"
+        assert not settings["sdv"]["password_enabled"], "Password should be disabled"
         print("✓ SDV section verified as inactive")
 
 
@@ -434,7 +434,7 @@ class TestNoSecurityConfigured:
         assert response.status_code == 200, f"Failed: {response.text}"
         
         data = response.json()
-        assert data.get("verified") == True
+        assert data.get("verified")
         assert "No security configured" in data.get("message", "")
         print("✓ No security configured returns verified=true")
 
