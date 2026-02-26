@@ -425,6 +425,26 @@ async def send_otp_email(email: str, otp: str, name: str = "User"):
         logger.info(f"Fallback - OTP for {email}: {otp}")
         return False
 
+async def send_otp_sms(phone: str, otp: str):
+    """Send OTP via Twilio SMS"""
+    if not twilio_client or not TWILIO_PHONE_NUMBER:
+        logger.info(f"SMS not configured. OTP for {phone}: {otp}")
+        return False
+    
+    try:
+        message = await asyncio.to_thread(
+            twilio_client.messages.create,
+            body=f"Your CarryOn™ verification code is: {otp}. This code expires in 10 minutes.",
+            from_=TWILIO_PHONE_NUMBER,
+            to=phone
+        )
+        logger.info(f"OTP SMS sent to {phone}, SID: {message.sid}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send OTP SMS: {e}")
+        logger.info(f"Fallback - OTP for {phone}: {otp}")
+        return False
+
 # ===================== AUTH HELPERS =====================
 
 def hash_password(password: str) -> str:
