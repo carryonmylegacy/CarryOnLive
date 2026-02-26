@@ -10,6 +10,7 @@ services:
       - MONGO_URL=mongodb://mongo:27017
       - DB_NAME=carryon_db
       - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - CORS_ORIGINS=${FRONTEND_URL:-http://localhost:3000}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - SENDER_EMAIL=${SENDER_EMAIL:-noreply@carryon.us}
