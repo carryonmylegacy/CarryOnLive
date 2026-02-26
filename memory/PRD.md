@@ -1,10 +1,13 @@
 # CarryOn™ - Estate Planning & Legacy Management Platform
 
+## Original Problem Statement
+Build a full-stack web app called CarryOn™ — a secure estate planning and legacy management platform with three distinct portals: Benefactor, Beneficiary, and Admin.
+
 ## What's Been Implemented (Complete)
 
 ### Authentication
 - Email/Password login with 6-digit OTP 2FA
-- **SMS OTP option** - Users can choose to receive OTP via text message (requires Twilio setup)
+- SMS OTP option (requires Twilio setup)
 - JWT tokens with 24-hour expiration
 - Role-based access (benefactor, beneficiary, admin)
 
@@ -12,48 +15,21 @@
 - User Management (view, delete users)
 - Transition Verification Team (TVT) - review death certificates
 - Designated Trustee Services (DTS) Management
-- **Customer Support Team** - Real-time messaging portal to respond to user inquiries
-- **Dev Switcher Configuration** - Admin can specify which benefactor/beneficiary accounts appear in the DEV quick-switch panel
+- Customer Support Team - Real-time messaging portal
+- Dev Switcher Configuration
 
 ### Benefactor Portal
 - Document Vault (AES-256 encrypted)
-- Milestone Messages (text/video with editable triggers and specific date options)
+- Milestone Messages (text/video with editable triggers)
 - Beneficiary Management with enhanced demographics
-- Estate Guardian AI (document analysis, checklist generation, state-specific legal guidance)
+- Estate Guardian AI (document analysis, checklist generation)
 - Immediate Action Checklist
-- Designated Trustee Services with **Stripe Payment Integration**
+- Designated Trustee Services with Stripe Payment Integration
 - Two-Level Section Security (Password + Voice Passphrase)
 - Estate Readiness Score
-- **Edit Functionality** - Edit beneficiary details and document metadata (name, category, notes)
-- **Customer Support Chat** - Text messaging portal to contact CarryOn support
-- **Push Notifications** - PWA push notifications for important alerts
-
-### Push Notifications (NEW)
-Implemented as PWA feature with service worker:
-- **User notifications for:**
-  - Support message replies from CarryOn team
-  - DTS quote updates (when quote is ready)
-  - Invitation acceptance notifications
-- **Admin notifications for:**
-  - New support messages from users
-- Settings toggle in Settings page to enable/disable
-- VAPID keys for secure web push
-
-### Customer Support Messaging (NEW)
-- Users can send messages to CarryOn support team
-- Real-time chat interface with auto-refresh
-- Admin "Customer Support Team" tab to view all conversations
-- Unread message indicators
-- Message history with timestamps
-
-### DTS Payment Flow (NEW)
-1. User submits DTS task request
-2. DTS team reviews and sends itemized quote
-3. User approves/rejects line items
-4. **Credit card input form appears** using Stripe Elements
-5. User enters card details (stored securely for later charging)
-6. Card is charged ONLY upon verified transition
-7. All records permanently destroyed after execution
+- Edit Functionality for beneficiaries and documents
+- Customer Support Chat
+- Push Notifications (PWA)
 
 ### Beneficiary Portal
 - Estate Hub with generational orbit visualization
@@ -63,87 +39,44 @@ Implemented as PWA feature with service worker:
 - Post-Transition Dashboard
 - Sealed Vault, Messages, Checklist access
 
-### Beneficiary Management (Enhanced)
-- Full demographics: First/Middle/Last Name, Suffix, DOB, Gender
-- Contact: Email, Phone
-- Address: Street, City, State, ZIP
-- Additional: SSN (last 4), Notes
-- **Invitation Flow**: Email invitations, status tracking, account creation from invitation links
+### Deployment (NEW - Feb 2026)
+- Backend Dockerfile (Python/FastAPI/uvicorn)
+- Frontend Dockerfile (multi-stage: React build + nginx)
+- docker-compose.yml for local development
+- render.yaml for one-click Render deployment
+- Production build script (strips Emergent-specific scripts)
+- Health check endpoint (/api/health)
+- VAPID key inline env var support (for managed services)
+- Comprehensive DEPLOYMENT.md guide (Railway, Render, Docker Compose)
 
 ## Test Accounts
 - **Admin**: `founder@carryon.us` / `CarryOntheWisdom!`
-- All other accounts wiped - ready for real user registration
 
-## Key API Endpoints
+## Key Architecture
+- **Backend**: FastAPI monolith (server.py ~3600 lines)
+- **Frontend**: React SPA with Tailwind/shadcn
+- **Database**: MongoDB
+- **Deployment**: Dockerized, ready for Railway/Render/VPS
 
-### Authentication
-- `POST /api/auth/login` - Login with email/password, supports `otp_method` (email/sms)
-- `POST /api/auth/verify-otp` - Verify OTP
-- `POST /api/auth/register` - Register new account
-- `POST /api/auth/dev-login` - Bypass OTP (dev mode)
-
-### Beneficiary Management
-- `GET /api/beneficiaries/{estate_id}` - List beneficiaries
-- `POST /api/beneficiaries` - Create beneficiary
-- `PUT /api/beneficiaries/{beneficiary_id}` - Update beneficiary details
-- `DELETE /api/beneficiaries/{beneficiary_id}` - Remove beneficiary
-- `POST /api/beneficiaries/{beneficiary_id}/invite` - Send invitation email
-
-### Document Vault
-- `GET /api/documents/{estate_id}` - List documents
-- `POST /api/documents/upload` - Upload new document
-- `PUT /api/documents/{document_id}` - Update document metadata (name, category, notes)
-- `DELETE /api/documents/{document_id}` - Delete document
-- `GET /api/documents/{document_id}/download` - Download document
-
-### Admin - Dev Switcher
-- `GET /api/admin/dev-switcher` - Get dev switcher config
-- `PUT /api/admin/dev-switcher` - Update dev switcher config
-- `GET /api/dev-switcher/config` - Public endpoint for frontend
-
-## Setting Up SMS OTP (Twilio)
-
-To enable SMS verification codes, you need a Twilio account:
-
-### Step 1: Create Twilio Account
-1. Go to https://www.twilio.com/try-twilio
-2. Sign up for a free account
-3. Verify your email and phone number
-
-### Step 2: Get Twilio Credentials
-1. Go to Console → Account Info
-2. Copy your **Account SID**
-3. Copy your **Auth Token**
-4. Go to Phone Numbers → Manage → Buy a Number
-5. Purchase a phone number with SMS capability (~$1/month)
-
-### Step 3: Add to Backend Environment
-Add these to `/app/backend/.env`:
-```
-TWILIO_ACCOUNT_SID=your_account_sid_here
-TWILIO_AUTH_TOKEN=your_auth_token_here
-TWILIO_PHONE_NUMBER=+1234567890
-```
-
-### Step 4: Restart Backend
-```bash
-sudo supervisorctl restart backend
-```
-
-### Costs
-- Twilio Phone Number: ~$1/month
-- SMS Messages: ~$0.0079 per message (US)
-- Free trial includes $15 credit
-
-## Upcoming Tasks (P1)
-1. **Push Notifications** - PWA features for important event alerts
-2. **Multi-estate Support** - Manage multiple estates per benefactor
-
-## Future/Backlog (P2)
-1. **Payment Gateway** - Stripe integration
-2. **Digital Asset Management** - Cryptocurrency, social media
-3. **PDF Export** - Estate plan summaries
+## 3rd Party Integrations
+- OpenAI GPT-4o (Estate Guardian AI) via Emergent LLM Key
+- OpenAI Whisper (voice passphrase) via Emergent LLM Key
+- Resend (email OTP/invitations)
+- Twilio (SMS OTP)
+- Stripe (Setup Intents for DTS payments)
 
 ## Known Configuration Notes
-- **Resend Email**: Currently uses fallback (logs OTP). For production, configure valid Resend API key with matching domain.
-- **SMS OTP**: Requires Twilio setup (see above)
+- **Resend Email**: API key domain must match SENDER_EMAIL domain for production
+- **SMS OTP**: Requires Twilio A2P 10DLC registration for production
+- **Encryption Key**: Must be set via ENCRYPTION_KEY env var in production
+
+## Upcoming Tasks (P1)
+1. Multi-estate Support - Manage multiple estates per benefactor
+2. Backend Refactoring - Break server.py into /routers, /models, /services
+
+## Future/Backlog (P2)
+1. Full Payment/Subscription Gateway (Stripe)
+2. Digital Asset Management (cryptocurrency, social media)
+3. PDF Export of estate plan summaries
+4. Frontend component decomposition (TrusteePage, AdminPage)
+5. Frontend lint warnings cleanup
