@@ -143,7 +143,7 @@ async def export_estate_pdf(estate_id: str, current_user: dict = Depends(get_cur
             if not b.get("phone"):
                 missing.append("phone")
             pdf.cell(5)
-            pdf.cell(0, 6, f"[ ] {name} — add {', '.join(missing)}", new_x="LMARGIN", new_y="NEXT")
+            pdf.cell(0, 6, _safe(f"[ ] {name} - add {', '.join(missing)}"), new_x="LMARGIN", new_y="NEXT")
         pdf.ln(3)
 
     # DTS tasks needing attention
