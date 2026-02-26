@@ -3293,6 +3293,26 @@ async def send_support_message(data: SupportMessageCreate, current_user: dict = 
     
     await db.support_messages.insert_one(message)
     
+    # Send push notification
+    if current_user["role"] == "admin":
+        # Admin sent message -> notify user
+        asyncio.create_task(send_push_notification(
+            conversation_id,
+            "CarryOn™ Support",
+            data.content[:100] + "..." if len(data.content) > 100 else data.content,
+            "/support",
+            "support-message",
+            "support"
+        ))
+    else:
+        # User sent message -> notify admins
+        asyncio.create_task(send_push_to_all_admins(
+            f"New Support Message",
+            f"{current_user.get('name', 'User')}: {data.content[:80]}...",
+            "/admin/support",
+            "admin-support"
+        ))
+    
     return {k: v for k, v in message.items() if k != "_id"}
 
 @api_router.get("/support/messages")
