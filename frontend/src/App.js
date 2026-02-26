@@ -23,6 +23,8 @@ import AdminPage from './pages/AdminPage';
 import SupportChatPage from './pages/SupportChatPage';
 import SecuritySettingsPage from './pages/SecuritySettingsPage';
 import DigitalWalletPage from './pages/DigitalWalletPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsPage from './pages/TermsPage';
 
 // Beneficiary Pages
 import BeneficiaryHubPage from './pages/beneficiary/BeneficiaryHubPage';
@@ -112,6 +114,10 @@ function AppRoutes() {
         </PublicRoute>
       } />
       
+      {/* Legal Pages - Public */}
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms" element={<TermsPage />} />
+
       {/* Invitation Accept Route - Public */}
       <Route path="/accept-invitation/:token" element={<AcceptInvitationPage />} />
 
