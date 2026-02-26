@@ -1447,6 +1447,102 @@ class VoiceVerifyRequest(BaseModel):
     document_id: str
     spoken_text: str  # Text from speech recognition
 
+@api_router.post("/voice/transcribe")
+async def transcribe_voice(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Transcribe audio using OpenAI Whisper for voice verification"""
+    from emergentintegrations.llm.openai import OpenAISpeechToText
+    
+    api_key = os.environ.get('EMERGENT_LLM_KEY')
+    if not api_key:
+        raise HTTPException(status_code=500, detail="Voice service not configured")
+    
+    try:
+        content = await file.read()
+        if len(content) > 25 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="File too large. Max 25MB.")
+        
+        # Save to temp file
+        import tempfile
+        suffix = '.' + (file.filename or 'audio.webm').split('.')[-1]
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+            tmp.write(content)
+            tmp_path = tmp.name
+        
+        stt = OpenAISpeechToText(api_key=api_key)
+        with open(tmp_path, 'rb') as audio_file:
+            response = await stt.transcribe(
+                file=audio_file,
+                model="whisper-1",
+                response_format="json",
+                language="en"
+            )
+        
+        # Clean up
+        os.unlink(tmp_path)
+        
+        transcription = response.text.strip()
+        logger.info(f"Voice transcription for {current_user['email']}: '{transcription}'")
+        
+        return {"transcription": transcription}
+    except Exception as e:
+        logger.error(f"Voice transcription error: {e}")
+        raise HTTPException(status_code=500, detail="Voice transcription failed")
+
+@api_router.post("/voice/verify-passphrase")
+async def verify_voice_passphrase(
+    file: UploadFile = File(...),
+    expected_passphrase: str = "",
+    current_user: dict = Depends(get_current_user)
+):
+    """Transcribe audio and verify against expected passphrase"""
+    from emergentintegrations.llm.openai import OpenAISpeechToText
+    
+    api_key = os.environ.get('EMERGENT_LLM_KEY')
+    if not api_key:
+        raise HTTPException(status_code=500, detail="Voice service not configured")
+    
+    try:
+        content = await file.read()
+        import tempfile
+        suffix = '.' + (file.filename or 'audio.webm').split('.')[-1]
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+            tmp.write(content)
+            tmp_path = tmp.name
+        
+        stt = OpenAISpeechToText(api_key=api_key)
+        with open(tmp_path, 'rb') as audio_file:
+            response = await stt.transcribe(
+                file=audio_file,
+                model="whisper-1",
+                response_format="json",
+                language="en"
+            )
+        
+        os.unlink(tmp_path)
+        
+        transcription = response.text.strip().lower()
+        expected = expected_passphrase.strip().lower()
+        
+        # Fuzzy match — allow minor differences
+        from difflib import SequenceMatcher
+        similarity = SequenceMatcher(None, transcription, expected).ratio()
+        verified = similarity >= 0.7  # 70% match threshold
+        
+        logger.info(f"Voice verify: '{transcription}' vs '{expected}' = {similarity:.2f} ({'PASS' if verified else 'FAIL'})")
+        
+        return {
+            "verified": verified,
+            "transcription": transcription,
+            "similarity": round(similarity, 2),
+            "message": "Voice verified successfully" if verified else "Voice verification failed. Please try again."
+        }
+    except Exception as e:
+        logger.error(f"Voice verification error: {e}")
+        raise HTTPException(status_code=500, detail="Voice verification failed")
+
 @api_router.post("/documents/{document_id}/voice/setup")
 async def setup_voice_passphrase(
     document_id: str,
