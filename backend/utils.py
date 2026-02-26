@@ -66,22 +66,40 @@ async def send_otp_email(email: str, otp: str, name: str = "User"):
     if not RESEND_API_KEY:
         logger.info(f"Email not configured. OTP for {email}: {otp}")
         return False
-    html_content = f"""<!DOCTYPE html><html><head><style>
-    body {{ font-family: Arial, sans-serif; background-color: #0b1120; color: #f8fafc; padding: 40px; }}
-    .container {{ max-width: 500px; margin: 0 auto; background: #0f1d35; border-radius: 16px; padding: 40px; border: 1px solid rgba(255,255,255,0.1); }}
-    .logo {{ text-align: center; margin-bottom: 24px; }}
-    .logo-text {{ font-size: 24px; font-weight: bold; color: #d4af37; }}
-    h1 {{ color: #f8fafc; font-size: 20px; margin-bottom: 16px; }}
-    .otp-code {{ background: linear-gradient(135deg, #d4af37, #fcd34d); color: #0b1120; font-size: 32px; font-weight: bold; letter-spacing: 8px; padding: 20px 40px; border-radius: 12px; text-align: center; margin: 24px 0; }}
-    p {{ color: #94a3b8; line-height: 1.6; }}
-    .footer {{ margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1); text-align: center; color: #64748b; font-size: 12px; }}
-    </style></head><body><div class="container">
-    <div class="logo"><span class="logo-text">CarryOn™</span></div>
-    <h1>Hello {name},</h1><p>Your verification code for CarryOn™ is:</p>
-    <div class="otp-code">{otp}</div>
-    <p>This code will expire in 10 minutes. If you didn't request this code, please ignore this email.</p>
-    <div class="footer"><p>AES-256 Encrypted · Zero-Knowledge · SOC 2 Compliant</p>
-    <p>© 2024 CarryOn™ - Every American Family. Ready.</p></div></div></body></html>"""
+    html_content = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#0b1120;font-family:Arial,Helvetica,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0b1120;padding:40px 20px;">
+<tr><td align="center">
+<table role="presentation" width="500" cellpadding="0" cellspacing="0" style="max-width:500px;background-color:#0f1d35;border-radius:16px;border:1px solid #1e293b;">
+<tr><td style="padding:40px;">
+
+<p style="text-align:center;margin:0 0 24px 0;"><span style="font-size:24px;font-weight:bold;color:#d4af37;">CarryOn</span></p>
+
+<h1 style="color:#f8fafc;font-size:20px;margin:0 0 16px 0;">Hello {name},</h1>
+<p style="color:#94a3b8;font-size:16px;line-height:1.6;margin:0 0 8px 0;">Your verification code for CarryOn is:</p>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+<tr><td align="center" style="padding:24px 0;">
+<table role="presentation" cellpadding="0" cellspacing="0">
+<tr><td style="background-color:#d4af37;color:#0b1120;font-size:32px;font-weight:bold;letter-spacing:8px;padding:20px 40px;border-radius:12px;text-align:center;">{otp}</td></tr>
+</table>
+</td></tr>
+</table>
+
+<p style="color:#94a3b8;font-size:16px;line-height:1.6;margin:0 0 8px 0;">This code will expire in 10 minutes. If you didn't request this code, please ignore this email.</p>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:32px;padding-top:24px;border-top:1px solid #1e293b;">
+<tr><td style="text-align:center;color:#64748b;font-size:12px;">
+<p style="margin:0 0 4px 0;">AES-256 Encrypted - Zero-Knowledge - SOC 2 Compliant</p>
+<p style="margin:0;">2025 CarryOn - Every American Family. Ready.</p>
+</td></tr>
+</table>
+
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body></html>"""
     try:
         await asyncio.to_thread(resend.Emails.send, {"from": SENDER_EMAIL, "to": [email], "subject": f"Your CarryOn™ Verification Code: {otp[:2]}****", "html": html_content})
         logger.info(f"OTP email sent to {email}")
