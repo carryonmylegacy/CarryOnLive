@@ -24,7 +24,10 @@ const AdminPage = () => {
   const { user, getAuthHeaders } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const pathTab = location.pathname === '/admin/transition' ? 'transition' : location.pathname === '/admin/dts' ? 'dts' : 'users';
+  const pathTab = location.pathname === '/admin/transition' ? 'transition' 
+    : location.pathname === '/admin/dts' ? 'dts' 
+    : location.pathname === '/admin/dev-switcher' ? 'dev-switcher'
+    : 'users';
   const [tab, setTab] = useState(pathTab);
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState(null);
