@@ -137,7 +137,7 @@ You need your code on GitHub so Render can access it.
 4. Fill in:
    - **Name**: `carryon-web`
    - **Root Directory**: `frontend`
-   - **Build Command**: `yarn install && yarn build`
+   - **Build Command**: `yarn install && chmod +x build-prod.sh && bash build-prod.sh`
    - **Publish Directory**: `build`
 5. Add these **Environment Variables**:
 
@@ -145,6 +145,8 @@ You need your code on GitHub so Render can access it.
 |-----|-------|
 | `REACT_APP_BACKEND_URL` | The backend URL from step 4b (e.g., `https://carryon-api-xxxx.onrender.com`) |
 | `REACT_APP_VAPID_PUBLIC_KEY` | See Step 5 below |
+| `REACT_APP_STRIPE_PUBLISHABLE_KEY` | Your Stripe publishable key (starts with `pk_test_...` or `pk_live_...`) |
+| `CI` | `false` |
 
 6. Under **Redirects/Rewrites**, add one rule:
    - Source: `/*`
