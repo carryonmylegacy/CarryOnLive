@@ -1715,6 +1715,9 @@ async def create_message(data: MessageCreate, current_user: dict = Depends(get_c
         trigger_age=data.trigger_age,
         created_by=current_user["id"]
     )
+    msg_dict = message.model_dump()
+    if data.trigger_date:
+        msg_dict["trigger_date"] = data.trigger_date
     
     # Handle video data - store encrypted
     if data.video_data:
@@ -1726,7 +1729,7 @@ async def create_message(data: MessageCreate, current_user: dict = Depends(get_c
             "created_at": datetime.now(timezone.utc).isoformat()
         })
     
-    await db.messages.insert_one(message.model_dump())
+    await db.messages.insert_one(msg_dict)
     
     # Update estate readiness
     await update_estate_readiness(data.estate_id)
