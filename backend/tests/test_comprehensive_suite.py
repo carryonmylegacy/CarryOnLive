@@ -623,11 +623,29 @@ class TestP1Support:
         print(f"  Support messages: {len(d)}")
 
     def test_03_get_conversations(self):
-        r = requests.get(
-            f"{BASE_URL}/api/support/conversations", headers=auth_header()
-        )
-        assert r.status_code == 200
-        print("  Conversations retrieved")
+        # Admin-only endpoint — use admin token if available
+        if not S.admin_token:
+            # Try getting admin token first
+            r = requests.post(
+                f"{BASE_URL}/api/auth/dev-login",
+                json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
+            )
+            if r.status_code == 200:
+                S.admin_token = r.json()["access_token"]
+        if S.admin_token:
+            r = requests.get(
+                f"{BASE_URL}/api/support/conversations",
+                headers=auth_header(S.admin_token),
+            )
+            assert r.status_code == 200
+            print("  Conversations retrieved (admin)")
+        else:
+            # Verify non-admin gets 403
+            r = requests.get(
+                f"{BASE_URL}/api/support/conversations", headers=auth_header()
+            )
+            assert r.status_code == 403
+            print("  Conversations: admin-only (403 for regular user)")
 
     def test_04_unread_count(self):
         r = requests.get(
