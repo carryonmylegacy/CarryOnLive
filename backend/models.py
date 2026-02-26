@@ -2,6 +2,7 @@
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
+from config import db, logger
 import uuid
 
 
