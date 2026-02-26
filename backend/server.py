@@ -32,6 +32,7 @@ from routes.digital_wallet import router as digital_wallet_router
 from routes.pdf_export import router as pdf_export_router
 from routes.security import router as security_router
 from routes.push import router as push_router
+from routes.digest import router as digest_router
 
 # Include all routers
 api_router.include_router(auth_router)
@@ -51,6 +52,7 @@ api_router.include_router(digital_wallet_router)
 api_router.include_router(pdf_export_router)
 api_router.include_router(security_router)
 api_router.include_router(push_router)
+api_router.include_router(digest_router)
 
 # Health check
 @api_router.get("/health")
