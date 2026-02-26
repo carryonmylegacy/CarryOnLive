@@ -1,19 +1,17 @@
 """CarryOn™ Backend — Estate Guardian AI & PDF Export"""
 from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime, timezone
-from config import db, logger
+from config import db, logger, xai_client, XAI_MODEL
 from utils import get_current_user, decrypt_data, log_activity, update_estate_readiness
-import uuid
-import json as json_module
-
 from models import ChatRequest, ChatResponse, ChecklistItem
 from services.readiness import calculate_estate_readiness
+import uuid
+import json as json_module
 import io
 import pdfplumber
 
 router = APIRouter()
 
-from config import xai_client, XAI_MODEL
 # ===================== AI CHAT ROUTES =====================
 
 # Comprehensive estate law system prompt
