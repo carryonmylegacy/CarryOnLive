@@ -31,6 +31,7 @@ const AdminPage = () => {
     : location.pathname === '/admin/subscriptions' ? 'subscriptions'
     : 'users';
   const [tab, setTab] = useState(pathTab);
+  useEffect(() => { setTab(pathTab); }, [pathTab]);
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState(null);
   const [certificates, setCertificates] = useState([]);
