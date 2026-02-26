@@ -41,11 +41,11 @@ const MobileNav = () => {
   const myLegacyItems = [
     { to: '/dashboard', icon: Home, label: 'Dashboard' },
     { to: '/vault', icon: FolderLock, label: 'Secure Document Vault' },
-    { to: '/guardian', icon: Sparkles, label: 'Estate Guardian' },
-    { to: '/checklist', icon: CheckSquare, label: 'Immediate Action Checklist' },
     { to: '/messages', icon: MessageSquare, label: 'Milestone Messages' },
+    { to: '/checklist', icon: CheckSquare, label: 'Immediate Action Checklist' },
     { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
     { to: '/trustee', icon: Shield, label: 'Designated Trustee Services' },
+    { to: '/guardian', icon: Sparkles, label: 'Estate Guardian' },
   ];
 
   const accountItems = [
