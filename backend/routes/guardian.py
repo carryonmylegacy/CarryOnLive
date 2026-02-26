@@ -287,8 +287,8 @@ async def chat_with_guardian(
     user_message_text = data.message
 
     if data.action == "generate_checklist":
-        user_message_text = """Based on my estate documents and current situation, generate a comprehensive, prioritized Immediate Action Checklist. 
-        
+        user_message_text = """Based on my estate documents and current situation, generate a comprehensive, prioritized Immediate Action Checklist.
+
 Requirements:
 - Create at least 25 items if I don't already have enough
 - Prioritize based on urgency: immediate (day 1-3), first_week, two_weeks, first_month
