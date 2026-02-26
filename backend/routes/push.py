@@ -70,9 +70,15 @@ async def get_vapid_public_key():
             public_key_b64 = base64.urlsafe_b64encode(raw_bytes).decode('utf-8').rstrip('=')
             return {"public_key": public_key_b64}
         else:
-            raise HTTPException(status_code=500, detail="VAPID not configured")
+            # VAPID not configured — push notifications unavailable
+            raise HTTPException(
+                status_code=503,
+                detail="Push notifications not configured. Set VAPID_PRIVATE_KEY environment variable to enable."
+            )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error getting VAPID public key: {e}")
-        raise HTTPException(status_code=500, detail="Failed to get VAPID public key")
+        raise HTTPException(status_code=503, detail="Push notifications not available")
 
 
