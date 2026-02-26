@@ -3,52 +3,44 @@
 ## What's Been Implemented
 
 ### Core Features
-- Authentication (OTP 2FA), Admin/Benefactor/Beneficiary portals
-- Secure Document Vault (SDV), Milestone Messages (MM), Beneficiary Management (BM)
-- Immediate Action Checklist (IAC), Designated Trustee Services (DTS)
-- Estate Guardian AI (EGA) — powered by xAI Grok
-- Estate Readiness Score, Customer Support Chat, Push Notifications
+- Auth (OTP 2FA), Admin/Benefactor/Beneficiary portals
+- SDV, MM, BM, IAC, DTS, EGA (Grok-powered)
+- Triple Lock Security, Estate Readiness Score
+- Customer Support Chat, Push Notifications (PWA)
+- Digital Wallet Vault, PDF Estate Plan Export
 
-### Digital Wallet Vault (NEW)
-- Store digital account credentials (crypto, email, social media, banking, cloud, subscriptions)
-- AES-256 encrypted passwords and access info
-- Per-entry beneficiary assignment — each account assigned to specific beneficiary
-- Post-transition: beneficiaries see only their assigned accounts
-- Sidebar nav only (not on dashboard tiles or mobile bottom bar)
+### Subscription System
+- 6 plan tiers with Stripe checkout
+- Admin: beta toggle, pricing editor, per-user overrides (free access, custom discount)
+- Beta banner ("BETA = FREE")
 
-### PDF Estate Plan Export (NEW)
-- Prominent "Export Estate Plan" button on Estate Guardian AI page
-- Action items FIRST (missing documents, pending checklist, incomplete beneficiary info, DTS tasks)
-- Estate status backup (documents list, beneficiaries, checklist, messages, DTS summary)
-- Branded PDF with legal disclaimer
-
-### Triple Lock Section Security
-- 3 layers: Password, Voice Biometric (MFCC), Security Question
-- 3 lock modes per section, dedicated Security Settings page
-
-### Stripe Subscription System
-- 6 plan tiers, beta mode toggle, per-user overrides
-- Admin: pricing editor, free access toggle, custom discounts
+### Family Plan (Admin-Toggled, Currently Hidden)
+- FPO (Family Plan Owner) + Successor designation
+- $1/mo discount for added benefactors (floor-exempt tiers excluded)
+- Flat $3.49/mo for all beneficiaries
+- Admin toggle to show/hide from users
+- Succession logic: Successor inherits FPO role on transition
+- Recommended launch: L+3 to L+4 months
 
 ### Deployment Ready
 - Dockerfiles, render.yaml, DEPLOY_GUIDE.md
+- All API keys configured (xAI Grok, Stripe, Emergent LLM)
 
-## API Keys Configured
-- xAI Grok (Estate Guardian AI)
-- Stripe (test keys — publishable + secret)
-- Emergent LLM Key (voice/Whisper)
-- Picovoice Eagle — pending trial approval (24hr)
-
-## Upcoming Tasks (P1)
-1. Family Plan system (admin-toggled, full pricing model per strategy doc)
-2. Picovoice Eagle upgrade (when trial approved)
-3. Production deployment to Render
+## Pricing
+- Premium: $8.99 (launch) → $9.99 (post-launch)
+- Standard: $7.99 → $8.99
+- Base: $6.99 → $7.99
+- New Adult: $3.99 (fixed), Military: $5.99 (fixed), Hospice: Free (fixed)
+- Beneficiary: tier-based ($2.99-$4.99), Family Plan flat: $3.49
 
 ## Parked Tasks
-- Multi-estate support (single benefactor managing multiple estates)
+- Multi-estate support (manage multiple estates from one account)
 
-## Future/Backlog (P2)
-- Family plan pricing implementation
-- Minor beneficiary free access until 18
-- Backend refactoring (server.py → modular)
+## Upcoming
+1. Picovoice Eagle upgrade (when trial approved)
+2. Production deployment to Render
+3. Backend refactoring (post-launch housekeeping)
+
+## Future/Backlog
 - Frontend component decomposition
+- Minor beneficiary free access until 18
