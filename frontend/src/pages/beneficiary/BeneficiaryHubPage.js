@@ -54,6 +54,22 @@ const BeneficiaryHubPage = () => {
         </p>
       </div>
 
+      {/* Orbit Visualization */}
+      {estates.length > 0 && (
+        <OrbitVisualization
+          estates={estates}
+          userInitials={user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
+          onEstateClick={(estate) => {
+            localStorage.setItem('beneficiary_estate_id', estate.id);
+            if (estate.status === 'transitioned') {
+              navigate('/beneficiary/dashboard');
+            } else {
+              navigate('/beneficiary/pre');
+            }
+          }}
+        />
+      )}
+
       {/* Estate Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto mb-8">
         {estates.map(estate => {
