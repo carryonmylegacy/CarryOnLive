@@ -109,7 +109,7 @@ async def register(data: UserCreate):
     
     # Send OTP via email
     await send_otp_email(data.email, otp, data.first_name)
-    logger.info(f"Registration OTP for {data.email}: {otp}")
+    logger.info(f"Registration OTP sent for {data.email}")
     
     return {"message": "Account created. Please verify with OTP.", "email": data.email, "otp_hint": otp[:2] + "****"}
 
