@@ -144,3 +144,89 @@ async def delete_user(user_id: str, current_user: dict = Depends(get_current_use
     return {"message": "User deleted"}
 
 
+@router.put("/admin/users/{user_id}/role")
+async def update_user_role(user_id: str, body: dict, current_user: dict = Depends(get_current_user)):
+    """Change a user's role — admin only"""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    new_role = body.get("role", "")
+    if new_role not in ("benefactor", "beneficiary", "admin"):
+        raise HTTPException(status_code=400, detail="Invalid role")
+    if user_id == current_user["id"]:
+        raise HTTPException(status_code=400, detail="Cannot change your own role")
+    result = await db.users.update_one({"id": user_id}, {"$set": {"role": new_role}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    await db.activity_log.insert_one({
+        "id": str(uuid4()),
+        "action": "role_change",
+        "actor_id": current_user["id"],
+        "actor_name": current_user.get("name", "Admin"),
+        "target_id": user_id,
+        "details": f"Changed role to {new_role}",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+    return {"message": f"Role updated to {new_role}"}
+
+
+@router.get("/admin/activity")
+async def get_activity_log(current_user: dict = Depends(get_current_user)):
+    """Get recent platform activity — admin only"""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    # Collect recent activity from multiple collections
+    activities = []
+    # Recent user registrations
+    recent_users = await db.users.find(
+        {}, {"_id": 0, "id": 1, "name": 1, "email": 1, "role": 1, "created_at": 1}
+    ).sort("created_at", -1).to_list(20)
+    for u in recent_users:
+        if u.get("created_at"):
+            activities.append({
+                "type": "user_registered",
+                "icon": "user-plus",
+                "description": f"{u.get('name', u['email'])} registered as {u.get('role', 'user')}",
+                "timestamp": u["created_at"],
+            })
+    # Recent estates
+    recent_estates = await db.estates.find(
+        {}, {"_id": 0, "id": 1, "name": 1, "created_at": 1, "status": 1}
+    ).sort("created_at", -1).to_list(20)
+    for e in recent_estates:
+        if e.get("created_at"):
+            activities.append({
+                "type": "estate_created",
+                "icon": "folder-lock",
+                "description": f"Estate '{e.get('name', 'Unnamed')}' created",
+                "timestamp": e["created_at"],
+                "status": e.get("status"),
+            })
+    # Recent documents
+    recent_docs = await db.documents.find(
+        {}, {"_id": 0, "id": 1, "name": 1, "created_at": 1}
+    ).sort("created_at", -1).to_list(10)
+    for d in recent_docs:
+        if d.get("created_at"):
+            activities.append({
+                "type": "document_uploaded",
+                "icon": "file-up",
+                "description": f"Document '{d.get('name', 'file')}' uploaded",
+                "timestamp": d["created_at"],
+            })
+    # Admin actions from activity_log collection
+    admin_actions = await db.activity_log.find(
+        {}, {"_id": 0}
+    ).sort("created_at", -1).to_list(20)
+    for a in admin_actions:
+        activities.append({
+            "type": a.get("action", "admin_action"),
+            "icon": "shield",
+            "description": f"{a.get('actor_name', 'Admin')}: {a.get('details', '')}",
+            "timestamp": a.get("created_at", ""),
+        })
+    # Sort all activities by timestamp descending
+    activities.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+    return activities[:50]
+
+
+
