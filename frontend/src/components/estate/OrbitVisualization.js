@@ -1,21 +1,71 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
-const OrbitVisualization = ({ estates, userInitials, onEstateClick }) => {
-  const orbitR = 95, cx = 150, cy = 135, bs = 38, hbs = 19;
-  const angles = [90, 30, 330, 270, 210, 150];
-  const positions = angles.map(a => ({
-    left: cx + orbitR * Math.cos(a * Math.PI / 180) - hbs,
-    top: cy - orbitR * Math.sin(a * Math.PI / 180) - hbs,
-  }));
+// Map relationships to generational orbit levels (0 = innermost)
+const getOrbitLevel = (relation) => {
+  const r = (relation || '').toLowerCase();
+  
+  // Level 0 (innermost): Spouse and Children
+  if (['spouse', 'wife', 'husband', 'partner', 'son', 'daughter', 'child', 'children'].includes(r)) {
+    return 0;
+  }
+  
+  // Level 1: Parents and Siblings
+  if (['parent', 'mother', 'father', 'mom', 'dad', 'sibling', 'brother', 'sister'].includes(r)) {
+    return 1;
+  }
+  
+  // Level 2: Grandparents and Grandchildren
+  if (['grandparent', 'grandmother', 'grandfather', 'grandma', 'grandpa', 'grandchild', 'grandson', 'granddaughter'].includes(r)) {
+    return 2;
+  }
+  
+  // Level 3: Great-grandparents
+  if (r.includes('great-grand') || r.includes('great grand')) {
+    return 3;
+  }
+  
+  // Default: Level 1 for friends, other relatives
+  return 1;
+};
 
+// Colors for each orbit level
+const orbitColors = [
+  ['linear-gradient(135deg, #D4AF37, #F5D76E)', 'rgba(212,175,55,0.3)'], // Gold for innermost (spouse/children)
+  ['linear-gradient(135deg, #6D28D9, #A855F7)', 'rgba(139,92,246,0.3)'], // Purple for parents
+  ['linear-gradient(135deg, #0D9488, #14B8A6)', 'rgba(20,184,166,0.3)'], // Teal for grandparents
+  ['linear-gradient(135deg, #1E40AF, #3B82F6)', 'rgba(59,130,246,0.3)'], // Blue for great-grandparents
+];
+
+const OrbitVisualization = ({ estates, userInitials, onEstateClick, benefactors }) => {
+  // Use benefactors if provided (organized by relationship), otherwise fall back to estates
+  const members = benefactors || estates || [];
+  
+  // Center and base sizing
+  const cx = 150, cy = 150;
+  const baseOrbitR = 55; // Innermost orbit radius
+  const orbitSpacing = 40; // Space between orbits
+  const centerSize = 70;
+  const ballSize = 32;
+  
   const containerRef = useRef(null);
   const angleRef = useRef(0);
-  const velRef = useRef(0.35);
+  const velRef = useRef(0.25);
   const dragRef = useRef(false);
   const lastARef = useRef(0);
-  const lastTRef = useRef(0);
+  const lastTRef.current = useRef(0);
   const clickGuard = useRef(false);
   const [rot, setRot] = useState(0);
+
+  // Group members by orbit level
+  const orbitGroups = members.reduce((acc, member) => {
+    const level = getOrbitLevel(member.relation);
+    if (!acc[level]) acc[level] = [];
+    acc[level].push(member);
+    return acc;
+  }, {});
+
+  // Get max orbit level that has members
+  const maxOrbitLevel = Math.max(...Object.keys(orbitGroups).map(Number), 0);
 
   const getAngle = useCallback((px, py) => {
     if (!containerRef.current) return 0;
@@ -29,7 +79,7 @@ const OrbitVisualization = ({ estates, userInitials, onEstateClick }) => {
     const tick = () => {
       if (!dragRef.current) {
         velRef.current *= 0.997;
-        if (Math.abs(velRef.current) < 0.005) velRef.current = 0;
+        if (Math.abs(velRef.current) < 0.003) velRef.current = 0;
       }
       angleRef.current += velRef.current;
       setRot(angleRef.current);
@@ -80,94 +130,248 @@ const OrbitVisualization = ({ estates, userInitials, onEstateClick }) => {
     };
   }, [onMove]);
 
-  const estateColors = [
-    'linear-gradient(135deg, #6D28D9, #A855F7)',
-    'linear-gradient(135deg, #B45309, #D97706)',
-    'linear-gradient(135deg, #1E40AF, #3B82F6)',
-    'linear-gradient(135deg, #0F766E, #14B8A6)',
-    'linear-gradient(135deg, #BE185D, #EC4899)',
-    'linear-gradient(135deg, #7C2D12, #DC2626)',
-  ];
+  // Calculate positions for members on an orbit
+  const getPositionsForOrbit = (memberCount, orbitRadius, startAngle = 90) => {
+    const positions = [];
+    const angleStep = 360 / Math.max(memberCount, 1);
+    for (let i = 0; i < memberCount; i++) {
+      const angle = startAngle + (i * angleStep);
+      positions.push({
+        left: cx + orbitRadius * Math.cos(angle * Math.PI / 180) - ballSize / 2,
+        top: cy - orbitRadius * Math.sin(angle * Math.PI / 180) - ballSize / 2,
+        angle,
+      });
+    }
+    return positions;
+  };
+
+  // Orbit labels
+  const orbitLabels = ['Spouse & Children', 'Parents & Siblings', 'Grandparents', 'Great-Grandparents'];
+
+  // Calculate container size based on orbits needed
+  const containerSize = (maxOrbitLevel + 1) * orbitSpacing * 2 + baseOrbitR * 2 + 60;
 
   return (
     <div
       ref={containerRef}
-      style={{ position: 'relative', width: 300, height: 300, margin: '0 auto 20px', cursor: 'grab', userSelect: 'none', touchAction: 'none', overflow: 'hidden' }}
+      style={{ 
+        position: 'relative', 
+        width: Math.max(300, containerSize), 
+        height: Math.max(300, containerSize), 
+        margin: '0 auto 20px', 
+        cursor: 'grab', 
+        userSelect: 'none', 
+        touchAction: 'none', 
+        overflow: 'visible' 
+      }}
       onMouseDown={onDown}
       onTouchStart={onDown}
       data-testid="orbit-visualization"
     >
-      {/* Orbit track ring */}
-      <div style={{
-        position: 'absolute', left: cx - orbitR, top: cy - orbitR,
-        width: orbitR * 2, height: orbitR * 2, borderRadius: '50%',
-        border: '1px dashed rgba(224,173,43,0.15)',
-        transform: `rotate(${rot}deg)`,
-      }} />
-      {/* Outer ring */}
-      <div style={{
-        position: 'absolute', left: cx - orbitR - 15, top: cy - orbitR - 15,
-        width: (orbitR + 15) * 2, height: (orbitR + 15) * 2, borderRadius: '50%',
-        border: '1px solid rgba(224,173,43,0.05)',
-      }} />
+      {/* Orbit track rings */}
+      {[0, 1, 2, 3].map(level => {
+        const orbitR = baseOrbitR + (level * orbitSpacing);
+        const hasMembers = orbitGroups[level]?.length > 0;
+        const [, ringColor] = orbitColors[level] || orbitColors[0];
+        
+        return (
+          <div
+            key={`orbit-ring-${level}`}
+            style={{
+              position: 'absolute',
+              left: cx - orbitR,
+              top: cy - orbitR,
+              width: orbitR * 2,
+              height: orbitR * 2,
+              borderRadius: '50%',
+              border: hasMembers 
+                ? `2px solid ${ringColor}` 
+                : '1px dashed rgba(148,163,184,0.15)',
+              transform: `rotate(${rot * (1 - level * 0.1)}deg)`, // Slower rotation for outer rings
+              transition: 'border-color 0.3s',
+              pointerEvents: 'none',
+            }}
+          />
+        );
+      })}
 
-      {/* Center node (user) */}
-      <div style={{ position: 'absolute', left: cx - 44, top: cy - 44, width: 88, height: 88, zIndex: 5, pointerEvents: 'none' }}>
+      {/* Center node (user/beneficiary) */}
+      <div style={{ 
+        position: 'absolute', 
+        left: cx - centerSize / 2, 
+        top: cy - centerSize / 2, 
+        width: centerSize, 
+        height: centerSize, 
+        zIndex: 10, 
+        pointerEvents: 'none' 
+      }}>
         <div style={{
-          width: 88, height: 88, borderRadius: '50%',
-          background: 'linear-gradient(135deg, #6D28D9, #7C3AED)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 26, fontWeight: 700, color: 'white',
-          border: '3px solid var(--gold2)',
-          boxShadow: '0 0 40px rgba(124,58,237,0.3), 0 0 80px rgba(224,173,43,0.12)',
+          width: centerSize,
+          height: centerSize,
+          borderRadius: '50%',
+          background: 'linear-gradient(135deg, #7C3AED, #A855F7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 22,
+          fontWeight: 700,
+          color: 'white',
+          border: '3px solid rgba(212,175,55,0.5)',
+          boxShadow: '0 0 30px rgba(124,58,237,0.4), 0 0 60px rgba(212,175,55,0.15)',
           position: 'relative',
         }}>
+          {/* Pulse animation */}
           <div style={{
-            position: 'absolute', inset: -6, borderRadius: '50%',
-            border: '2px solid rgba(224,173,43,0.15)',
+            position: 'absolute',
+            inset: -8,
+            borderRadius: '50%',
+            border: '2px solid rgba(212,175,55,0.2)',
             animation: 'pulse 3s ease-in-out infinite',
           }} />
           {userInitials}
+          <div style={{
+            position: 'absolute',
+            bottom: -18,
+            fontSize: 10,
+            color: 'var(--t4)',
+            whiteSpace: 'nowrap',
+          }}>
+            You
+          </div>
         </div>
       </div>
 
-      {/* Orbiting estates */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        transform: `rotate(${rot}deg)`,
-        transformOrigin: `${cx}px ${cy}px`,
-      }}>
-        {estates.slice(0, 6).map((estate, i) => {
-          const isTransitioned = estate.status === 'transitioned';
-          const pos = positions[i];
-          const initials = estate.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??';
-          const color = estateColors[i % estateColors.length];
+      {/* Orbiting members grouped by generation */}
+      {Object.entries(orbitGroups).map(([levelStr, levelMembers]) => {
+        const level = parseInt(levelStr);
+        const orbitR = baseOrbitR + (level * orbitSpacing);
+        const positions = getPositionsForOrbit(levelMembers.length, orbitR, 90 + level * 30);
+        const [gradient] = orbitColors[level] || orbitColors[0];
+        const rotationSpeed = 1 - level * 0.15; // Outer orbits rotate slower
 
-          return (
-            <div key={estate.id} style={{ position: 'absolute', left: pos.left, top: pos.top, width: bs, height: bs, zIndex: 3 }}>
-              {/* Counter-rotate to keep text upright */}
-              <div style={{ transform: `rotate(${-rot}deg)`, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
-                <div
-                  onClick={(ev) => {
-                    if (clickGuard.current) { ev.stopPropagation(); return; }
-                    onEstateClick?.(estate);
-                  }}
-                  style={{
-                    width: bs, height: bs, borderRadius: '50%',
-                    background: color,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 13, fontWeight: 700, color: 'white',
-                    boxShadow: isTransitioned ? '0 0 20px rgba(224,173,43,0.35), 0 0 40px rgba(224,173,43,0.12)' : 'none',
-                    border: isTransitioned ? '2.5px solid rgba(224,173,43,0.5)' : '2px dashed var(--b2)',
-                    opacity: isTransitioned ? 1 : 0.5,
-                    cursor: 'pointer', flexShrink: 0,
-                    filter: isTransitioned ? 'brightness(1.2) saturate(1.2)' : 'brightness(0.7) saturate(0.6)',
-                    pointerEvents: 'auto',
+        return (
+          <div
+            key={`orbit-group-${level}`}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              transform: `rotate(${rot * rotationSpeed}deg)`,
+              transformOrigin: `${cx}px ${cy}px`,
+            }}
+          >
+            {levelMembers.map((member, i) => {
+              const pos = positions[i];
+              const isTransitioned = member.status === 'transitioned';
+              const initials = member.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) 
+                || member.first_name?.[0]?.toUpperCase() + member.last_name?.[0]?.toUpperCase()
+                || '??';
+
+              return (
+                <div 
+                  key={member.id || `member-${i}`} 
+                  style={{ 
+                    position: 'absolute', 
+                    left: pos.left, 
+                    top: pos.top, 
+                    width: ballSize, 
+                    height: ballSize, 
+                    zIndex: 5 - level 
                   }}
                 >
-                  {initials}
+                  {/* Counter-rotate to keep content upright */}
+                  <div style={{ 
+                    transform: `rotate(${-rot * rotationSpeed}deg)`, 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    alignItems: 'center',
+                    position: 'relative',
+                  }}>
+                    <div
+                      onClick={(ev) => {
+                        if (clickGuard.current) { ev.stopPropagation(); return; }
+                        onEstateClick?.(member);
+                      }}
+                      title={`${member.name || member.first_name + ' ' + member.last_name} (${member.relation})`}
+                      style={{
+                        width: ballSize,
+                        height: ballSize,
+                        borderRadius: '50%',
+                        background: gradient,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: level === 0 ? '#1a1a2e' : 'white',
+                        boxShadow: isTransitioned 
+                          ? '0 0 15px rgba(212,175,55,0.4)' 
+                          : '0 2px 8px rgba(0,0,0,0.3)',
+                        border: isTransitioned 
+                          ? '2px solid rgba(212,175,55,0.6)' 
+                          : '2px solid rgba(255,255,255,0.2)',
+                        cursor: 'pointer',
+                        transition: 'transform 0.2s, box-shadow 0.2s',
+                        opacity: isTransitioned ? 1 : 0.85,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.15)';
+                        e.currentTarget.style.boxShadow = '0 0 20px rgba(212,175,55,0.5)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.boxShadow = isTransitioned 
+                          ? '0 0 15px rgba(212,175,55,0.4)' 
+                          : '0 2px 8px rgba(0,0,0,0.3)';
+                      }}
+                    >
+                      {initials}
+                    </div>
+                    {/* Name label on hover - visible always for clarity */}
+                    <div style={{
+                      position: 'absolute',
+                      top: ballSize + 4,
+                      fontSize: 9,
+                      color: 'var(--t4)',
+                      whiteSpace: 'nowrap',
+                      textAlign: 'center',
+                      maxWidth: 60,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}>
+                      {(member.name || `${member.first_name} ${member.last_name}`).split(' ')[0]}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              );
+            })}
+          </div>
+        );
+      })}
+
+      {/* Legend */}
+      <div style={{
+        position: 'absolute',
+        bottom: -10,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        display: 'flex',
+        gap: 12,
+        fontSize: 9,
+        color: 'var(--t5)',
+      }}>
+        {[0, 1, 2, 3].map(level => {
+          const hasMembers = orbitGroups[level]?.length > 0;
+          if (!hasMembers && level > maxOrbitLevel) return null;
+          const [gradient] = orbitColors[level];
+          return (
+            <div key={level} style={{ display: 'flex', alignItems: 'center', gap: 4, opacity: hasMembers ? 1 : 0.4 }}>
+              <div style={{ 
+                width: 8, 
+                height: 8, 
+                borderRadius: '50%', 
+                background: gradient,
+              }} />
+              <span>{orbitLabels[level]}</span>
             </div>
           );
         })}
