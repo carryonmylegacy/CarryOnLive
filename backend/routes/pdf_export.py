@@ -16,6 +16,32 @@ import random
 router = APIRouter()
 
 from fpdf import FPDF
+
+# Unicode → ASCII mapping for FPDF (Helvetica doesn't support Unicode)
+_UNICODE_MAP = {
+    "\u2014": "-",   # em dash —
+    "\u2013": "-",   # en dash –
+    "\u2018": "'",   # left single quote '
+    "\u2019": "'",   # right single quote '
+    "\u201c": '"',   # left double quote "
+    "\u201d": '"',   # right double quote "
+    "\u2026": "...", # ellipsis …
+    "\u2122": "(TM)",# trademark ™
+    "\u00a9": "(c)", # copyright ©
+    "\u00ae": "(R)", # registered ®
+    "\u2022": "-",   # bullet •
+    "\u2713": "[x]", # check mark ✓
+    "\u2717": "[ ]", # cross ✗
+    "\u2192": "->",  # right arrow →
+}
+
+def _safe(text: str) -> str:
+    """Replace Unicode characters with ASCII equivalents for FPDF Helvetica."""
+    for uchar, replacement in _UNICODE_MAP.items():
+        text = text.replace(uchar, replacement)
+    # Strip any remaining non-latin1 characters
+    return text.encode("latin-1", errors="replace").decode("latin-1")
+
 # ===================== PDF ESTATE PLAN EXPORT =====================
 
 
