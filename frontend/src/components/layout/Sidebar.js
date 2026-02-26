@@ -194,6 +194,9 @@ const Sidebar = () => {
         </div>
       </div>
 
+      {/* Beta Banner */}
+      <BetaBanner />
+
       {/* Beneficiary Estate Switcher */}
       {user?.role === 'beneficiary' && benEstates.length > 0 && (
         <div className="px-3 mb-1 relative">
