@@ -183,18 +183,51 @@ class ChecklistItem(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     estate_id: str
     title: str
-    description: str
-    category: str
+    description: str = ""
+    category: str = "general"  # legal, financial, insurance, property, medical, personal, government, general
+    priority: str = "medium"   # critical, high, medium, low
+    action_type: str = "custom"  # call, email, visit, file_paperwork, notify, custom
+    contact_name: Optional[str] = None
+    contact_phone: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_address: Optional[str] = None
+    notes: Optional[str] = None
+    due_timeframe: str = "first_week"  # immediate, first_week, two_weeks, first_month, no_rush
     is_completed: bool = False
     completed_at: Optional[str] = None
+    completed_by: Optional[str] = None
     order: int = 0
+    created_by: str = "benefactor"  # benefactor or ai_suggested
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class ChecklistItemCreate(BaseModel):
     estate_id: str
     title: str
-    description: str
-    category: str
+    description: str = ""
+    category: str = "general"
+    priority: str = "medium"
+    action_type: str = "custom"
+    contact_name: Optional[str] = None
+    contact_phone: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_address: Optional[str] = None
+    notes: Optional[str] = None
+    due_timeframe: str = "first_week"
     order: int = 0
+
+class ChecklistItemUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[str] = None
+    priority: Optional[str] = None
+    action_type: Optional[str] = None
+    contact_name: Optional[str] = None
+    contact_phone: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_address: Optional[str] = None
+    notes: Optional[str] = None
+    due_timeframe: Optional[str] = None
+    order: Optional[int] = None
 
 class DeathCertificate(BaseModel):
     model_config = ConfigDict(extra="ignore")
