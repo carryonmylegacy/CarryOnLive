@@ -55,9 +55,9 @@ const OnboardingPage = () => {
   const [notes, setNotes] = useState('');
   const [avatarColor, setAvatarColor] = useState(avatarColors[0]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchData = async () => {
