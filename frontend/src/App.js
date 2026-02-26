@@ -117,6 +117,7 @@ function AppRoutes() {
         </ProtectedRoute>
       }>
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/vault" element={<VaultPage />} />
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/beneficiaries" element={<BeneficiariesPage />} />
