@@ -22,6 +22,7 @@ import SettingsPage from './pages/SettingsPage';
 import AdminPage from './pages/AdminPage';
 import SupportChatPage from './pages/SupportChatPage';
 import SecuritySettingsPage from './pages/SecuritySettingsPage';
+import DigitalWalletPage from './pages/DigitalWalletPage';
 
 // Beneficiary Pages
 import BeneficiaryHubPage from './pages/beneficiary/BeneficiaryHubPage';
