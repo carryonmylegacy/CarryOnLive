@@ -59,6 +59,7 @@ const MessagesPage = () => {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [editingMessage, setEditingMessage] = useState(null);
   const [activeTab, setActiveTab] = useState('all');
   
   // Form state
@@ -69,6 +70,7 @@ const MessagesPage = () => {
   const [triggerType, setTriggerType] = useState('immediate');
   const [triggerValue, setTriggerValue] = useState('');
   const [triggerAge, setTriggerAge] = useState('');
+  const [triggerDate, setTriggerDate] = useState('');
   
   // Video recording state
   const [isRecording, setIsRecording] = useState(false);
