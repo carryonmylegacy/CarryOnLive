@@ -159,7 +159,7 @@ class TestEstateGuardianChat:
             f"{BASE_URL}/api/checklists/{estate_id}",
             headers=auth_headers
         )
-        count_before = len(checklist_before.json()) if checklist_before.status_code == 200 else 0
+        count_before = len(checklist_before.json()) if checklist_before.status_code == 200 else 0  # noqa: F841
         
         response = requests.post(
             f"{BASE_URL}/api/chat/guardian",
