@@ -381,4 +381,47 @@ const GuardianPage = () => {
   );
 };
 
+const ExportPDFButton = () => {
+  const { getAuthHeaders } = useAuth();
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const headers = getAuthHeaders()?.headers;
+      const estatesRes = await axios.get(`${API_URL}/estates`, { headers });
+      if (!estatesRes.data.length) { toast.error('No estate found'); setExporting(false); return; }
+      const estateId = estatesRes.data[0].id;
+
+      const res = await axios.get(`${API_URL}/estate/${estateId}/export-pdf`, {
+        headers, responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `CarryOn_Estate_Plan_${new Date().toISOString().split('T')[0]}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success('Estate Plan PDF downloaded');
+    } catch (err) {
+      toast.error('Failed to export PDF');
+    }
+    setExporting(false);
+  };
+
+  return (
+    <button
+      onClick={handleExport}
+      disabled={exporting}
+      className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all hover:-translate-y-0.5"
+      style={{ background: 'linear-gradient(135deg, #d4af37, #fcd34d)', color: '#0b1120' }}
+      data-testid="export-pdf-btn"
+    >
+      {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+      Export Estate Plan
+    </button>
+  );
+};
+
 export default GuardianPage;
