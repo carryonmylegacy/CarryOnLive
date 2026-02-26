@@ -63,31 +63,7 @@ class SectionVerifyRequest(BaseModel):
     security_answer: Optional[str] = None
     # voice is sent as a file separately
 
-def extract_voiceprint(audio_bytes: bytes) -> list:
-    """Extract MFCC-based voiceprint from audio bytes"""
-    try:
-        audio, sr = librosa.load(io.BytesIO(audio_bytes), sr=16000, mono=True)
-        if len(audio) < sr * 0.5:
-            return None
-        # Pre-emphasis filter
-        audio = np.append(audio[0], audio[1:] - 0.97 * audio[:-1])
-        # Extract MFCCs (13 coefficients)
-        mfccs = librosa.feature.mfcc(y=audio, sr=sr, n_mfcc=20, n_fft=512, hop_length=160)
-        delta_mfccs = librosa.feature.delta(mfccs)
-        delta2_mfccs = librosa.feature.delta(mfccs, order=2)
-        features = np.vstack([mfccs, delta_mfccs, delta2_mfccs])
-        voiceprint = np.mean(features, axis=1).tolist()
-        return voiceprint
-    except Exception as e:
-        logger.error(f"Voice feature extraction failed: {e}")
-        return None
-
-def compare_voiceprints(enrolled: list, test: list, threshold: float = 0.80) -> tuple:
-    """Compare two voiceprints using cosine similarity"""
-    enrolled_np = np.array(enrolled)
-    test_np = np.array(test)
-    similarity = 1 - cosine_distance(enrolled_np, test_np)
-    return float(similarity), similarity >= threshold
+# NOTE: extract_voiceprint, verify_voiceprint, etc. are now in voice_biometrics.py
 
 @router.get("/security/settings")
 async def get_security_settings(current_user: dict = Depends(get_current_user)):
