@@ -6,7 +6,7 @@ Verify that all endpoints return expected HTTP status codes and structures
 import requests
 import json
 
-BACKEND_URL = "https://platform-handoff.preview.emergentagent.com/api"
+BACKEND_URL = "https://estate-legal.preview.emergentagent.com/api"
 
 def test_endpoint_structure():
     """Test that all required endpoints exist and return correct status codes"""
