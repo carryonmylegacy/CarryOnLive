@@ -15,7 +15,7 @@ ENV REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
 ARG REACT_APP_VAPID_PUBLIC_KEY
 ENV REACT_APP_VAPID_PUBLIC_KEY=${REACT_APP_VAPID_PUBLIC_KEY}
 
-RUN yarn build
+RUN chmod +x build-prod.sh && bash build-prod.sh
 
 # Stage 2: Serve with nginx
 FROM nginx:alpine
