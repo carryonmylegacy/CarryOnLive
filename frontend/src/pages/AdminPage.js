@@ -23,6 +23,7 @@ const statusColors = { submitted: 'var(--bl3)', quoted: 'var(--yw)', approved: '
 const AdminPage = () => {
   const { user, getAuthHeaders } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const pathTab = location.pathname === '/admin/transition' ? 'transition' : location.pathname === '/admin/dts' ? 'dts' : 'users';
   const [tab, setTab] = useState(pathTab);
   const [users, setUsers] = useState([]);
