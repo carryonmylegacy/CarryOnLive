@@ -154,7 +154,7 @@ async def export_estate_pdf(estate_id: str, current_user: dict = Depends(get_cur
         pdf.set_font("Helvetica", "", 10)
         for t in pending_dts:
             pdf.cell(5)
-            pdf.cell(0, 6, f"[ ] {t.get('title', '')} — Status: {t.get('status', '')}", new_x="LMARGIN", new_y="NEXT")
+            pdf.cell(0, 6, _safe(f"[ ] {t.get('title', '')} - Status: {t.get('status', '')}"), new_x="LMARGIN", new_y="NEXT")
         pdf.ln(3)
 
     # General recommendations
