@@ -376,15 +376,26 @@ const MessagesPage = () => {
                           {msg.recipients?.length || 0} recipients
                         </div>
                         
-                        {user?.role === 'benefactor' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-[#ef4444] opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => handleDelete(msg.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                        {user?.role === 'benefactor' && !msg.is_delivered && (
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-[#60A5FA]"
+                              onClick={() => openEdit(msg)}
+                              data-testid={`edit-message-${msg.id}`}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-[#ef4444]"
+                              onClick={() => handleDelete(msg.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         )}
                       </div>
                     </CardContent>
