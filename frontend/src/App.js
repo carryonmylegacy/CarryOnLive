@@ -173,6 +173,7 @@ function AppRoutes() {
         </ProtectedRoute>
       }>
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/support" element={<SupportChatPage />} />
       </Route>
 
       {/* Default Redirect */}
