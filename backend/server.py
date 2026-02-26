@@ -1931,6 +1931,14 @@ async def create_dts_task(data: DTSTaskCreate, current_user: dict = Depends(get_
     await log_activity(data.estate_id, current_user["id"], current_user["name"], "dts_request_created", f"DTS request: {data.title}")
     return {k: v for k, v in task.items() if k != "_id"}
 
+@api_router.get("/dts/tasks/all")
+async def get_all_dts_tasks(current_user: dict = Depends(get_current_user)):
+    """Admin gets all DTS tasks across all estates"""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    tasks = await db.dts_tasks.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    return tasks
+
 @api_router.get("/dts/tasks/{estate_id}")
 async def get_dts_tasks(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Get DTS tasks for an estate (benefactor) or all tasks (admin)"""
