@@ -70,7 +70,7 @@ async def export_estate_pdf(estate_id: str, current_user: dict = Depends(get_cur
 
     # Header
     pdf.set_font("Helvetica", "B", 24)
-    pdf.cell(0, 15, "CarryOn Estate Plan Summary", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.cell(0, 15, _safe("CarryOn Estate Plan Summary"), new_x="LMARGIN", new_y="NEXT", align="C")
     pdf.set_font("Helvetica", "", 10)
     pdf.set_text_color(120, 120, 120)
     pdf.cell(0, 6, f"Generated: {datetime.now(timezone.utc).strftime('%B %d, %Y at %I:%M %p UTC')}", new_x="LMARGIN", new_y="NEXT", align="C")
