@@ -73,8 +73,8 @@ async def export_estate_pdf(estate_id: str, current_user: dict = Depends(get_cur
     pdf.cell(0, 15, _safe("CarryOn Estate Plan Summary"), new_x="LMARGIN", new_y="NEXT", align="C")
     pdf.set_font("Helvetica", "", 10)
     pdf.set_text_color(120, 120, 120)
-    pdf.cell(0, 6, f"Generated: {datetime.now(timezone.utc).strftime('%B %d, %Y at %I:%M %p UTC')}", new_x="LMARGIN", new_y="NEXT", align="C")
-    pdf.cell(0, 6, f"Estate Owner: {user.get('first_name', '')} {user.get('last_name', '')}", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.cell(0, 6, _safe(f"Generated: {datetime.now(timezone.utc).strftime('%B %d, %Y at %I:%M %p UTC')}"), new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.cell(0, 6, _safe(f"Estate Owner: {user.get('first_name', '')} {user.get('last_name', '')}"), new_x="LMARGIN", new_y="NEXT", align="C")
     pdf.ln(5)
 
     # Readiness Score
