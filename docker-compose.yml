@@ -1,0 +1,48 @@
+version: "3.8"
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+      - MONGO_URL=mongodb://mongo:27017
+      - DB_NAME=carryon_db
+      - JWT_SECRET=${JWT_SECRET}
+      - CORS_ORIGINS=${FRONTEND_URL:-http://localhost:3000}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - SENDER_EMAIL=${SENDER_EMAIL:-noreply@carryon.us}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER}
+      - STRIPE_API_KEY=${STRIPE_API_KEY}
+      - EMERGENT_LLM_KEY=${EMERGENT_LLM_KEY}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
+      - VAPID_CLAIMS_EMAIL=mailto:support@carryon.us
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        REACT_APP_BACKEND_URL: ${BACKEND_URL:-http://localhost:8001}
+        REACT_APP_VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY}
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
