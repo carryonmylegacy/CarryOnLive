@@ -335,6 +335,81 @@ const TrusteePage = () => {
     }
   };
 
+  // Open edit modal with task data
+  const openEditModal = (task) => {
+    setEditTask({
+      id: task.id,
+      title: task.title,
+      desc: task.desc || task.description,
+      type: task.type || task.task_type,
+      confidential: task.confidential,
+      discloseTo: Array.isArray(task.discloseTo) ? task.discloseTo.join(', ') : (task.discloseTo || ''),
+      timedRelease: task.timedRelease || task.timed_release || '',
+      beneficiary: task.beneficiary || '',
+    });
+    setShowEditModal(true);
+  };
+
+  // Handle edit submission
+  const handleEditTask = async () => {
+    if (!editTask) return;
+    setSaving(true);
+    try {
+      await axios.put(`${API_URL}/dts/tasks/${editTask.id}`, {
+        title: editTask.title,
+        description: editTask.desc,
+        task_type: editTask.type,
+        confidential: editTask.confidential,
+        disclose_to: editTask.discloseTo ? editTask.discloseTo.split(',').map(s => s.trim()).filter(Boolean) : [],
+        timed_release: editTask.timedRelease || null,
+        beneficiary: editTask.beneficiary || null,
+      }, getAuthHeaders());
+      
+      toast.success('Task updated and sent back for re-quoting');
+      setShowEditModal(false);
+      setEditTask(null);
+      
+      // Update local state
+      setTasks(prev => prev.map(t => t.id === editTask.id ? {
+        ...t,
+        title: editTask.title,
+        desc: editTask.desc,
+        type: editTask.type,
+        confidential: editTask.confidential,
+        discloseTo: editTask.discloseTo ? editTask.discloseTo.split(',').map(s => s.trim()).filter(Boolean) : [],
+        timedRelease: editTask.timedRelease,
+        beneficiary: editTask.beneficiary,
+        status: 'submitted',
+        lineItems: [],
+        paymentMethod: null,
+      } : t));
+      
+    } catch (err) {
+      console.error('Edit error:', err);
+      toast.error(err.response?.data?.detail || 'Failed to update task');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Handle delete
+  const handleDeleteTask = async (taskId) => {
+    setDeleting(true);
+    try {
+      await axios.delete(`${API_URL}/dts/tasks/${taskId}`, getAuthHeaders());
+      toast.success('Task deleted successfully');
+      setShowDeleteDialog(false);
+      setTasks(prev => prev.filter(t => t.id !== taskId));
+      setView('list');
+      setSelectedId(null);
+    } catch (err) {
+      console.error('Delete error:', err);
+      toast.error(err.response?.data?.detail || 'Failed to delete task');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   // === SUBMITTED SUCCESS ===
   if (view === 'submitted') {
     return (
