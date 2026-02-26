@@ -281,7 +281,7 @@ class TestReadinessScoreAlgorithm:
             )
 
             # Verify some expected categories
-            categories = set(item["category"] for item in checklists)
+            categories = {item["category"] for item in checklists}
             expected_categories = {
                 "immediate",
                 "first_week",
