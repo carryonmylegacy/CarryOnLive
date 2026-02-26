@@ -1,46 +1,47 @@
 # CarryOn™ - Estate Planning & Legacy Management Platform
 
-## What's Been Implemented
+## Architecture (Refactored Feb 2026)
+```
+/app/backend/
+├── server.py          84 lines  — App init, router composition, middleware
+├── config.py          73 lines  — DB, env vars, external service clients
+├── utils.py          164 lines  — Encryption, auth, email, SMS, push, logging
+├── models.py         685 lines  — Pydantic models, readiness calc, seed data
+└── routes/
+    ├── auth.py       172 lines  — Login, register, OTP, dev-login
+    ├── admin.py      146 lines  — User mgmt, stats, dev switcher
+    ├── estates.py    237 lines  — Estate CRUD, readiness routes
+    ├── beneficiaries.py 433 lines — Beneficiary CRUD, invitations
+    ├── documents.py  439 lines  — Vault CRUD, voice verification
+    ├── messages.py   162 lines  — Milestone messages
+    ├── checklist.py   65 lines  — IAC
+    ├── transition.py 155 lines  — Death cert, transition flow
+    ├── dts.py        290 lines  — Trustee services, Stripe setup
+    ├── guardian.py   395 lines  — AI chat (Grok), estate analysis
+    ├── subscriptions.py 478 lines — Plans, checkout, admin pricing
+    ├── support.py    174 lines  — Customer support chat
+    ├── family_plan.py 267 lines — Family plan system
+    ├── digital_wallet.py 183 lines — Digital wallet vault
+    ├── pdf_export.py 241 lines  — PDF estate plan export
+    ├── security.py   402 lines  — Triple lock section security
+    └── push.py        78 lines  — Push notification routes
+```
 
-### Core Features
+## Implemented Features
 - Auth (OTP 2FA), Admin/Benefactor/Beneficiary portals
-- SDV, MM, BM, IAC, DTS, EGA (Grok-powered)
-- Triple Lock Security, Estate Readiness Score
-- Customer Support Chat, Push Notifications (PWA)
-- Digital Wallet Vault, PDF Estate Plan Export
+- SDV, MM, BM, IAC, DTS, EGA (Grok), Digital Wallet Vault
+- Triple Lock Security, PDF Export, Push Notifications
+- Stripe Subscriptions with admin controls (beta toggle, pricing, per-user overrides)
+- Family Plan (admin-toggled, FPO + Successor + pricing model)
+- Deployment ready (Dockerfiles, render.yaml, DEPLOY_GUIDE.md)
 
-### Subscription System
-- 6 plan tiers with Stripe checkout
-- Admin: beta toggle, pricing editor, per-user overrides (free access, custom discount)
-- Beta banner ("BETA = FREE")
-
-### Family Plan (Admin-Toggled, Currently Hidden)
-- FPO (Family Plan Owner) + Successor designation
-- $1/mo discount for added benefactors (floor-exempt tiers excluded)
-- Flat $3.49/mo for all beneficiaries
-- Admin toggle to show/hide from users
-- Succession logic: Successor inherits FPO role on transition
-- Recommended launch: L+3 to L+4 months
-
-### Deployment Ready
-- Dockerfiles, render.yaml, DEPLOY_GUIDE.md
-- All API keys configured (xAI Grok, Stripe, Emergent LLM)
-
-## Pricing
-- Premium: $8.99 (launch) → $9.99 (post-launch)
-- Standard: $7.99 → $8.99
-- Base: $6.99 → $7.99
-- New Adult: $3.99 (fixed), Military: $5.99 (fixed), Hospice: Free (fixed)
-- Beneficiary: tier-based ($2.99-$4.99), Family Plan flat: $3.49
-
-## Parked Tasks
-- Multi-estate support (manage multiple estates from one account)
+## API Keys Active
+- xAI Grok, Stripe (test), Emergent LLM (Whisper)
+- Picovoice Eagle: pending trial approval
 
 ## Upcoming
-1. Picovoice Eagle upgrade (when trial approved)
+1. Picovoice Eagle voice biometric upgrade
 2. Production deployment to Render
-3. Backend refactoring (post-launch housekeeping)
 
-## Future/Backlog
-- Frontend component decomposition
-- Minor beneficiary free access until 18
+## Parked
+- Multi-estate support
