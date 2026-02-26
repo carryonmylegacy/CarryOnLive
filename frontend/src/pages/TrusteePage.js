@@ -270,6 +270,13 @@ const TrusteePage = () => {
   const [newTask, setNewTask] = useState({ type: '', title: '', desc: '', confidential: 'full', discloseTo: '', timedRelease: '', beneficiary: '' });
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [estateId, setEstateId] = useState(null);
+  
+  // Edit/Delete state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [editTask, setEditTask] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
