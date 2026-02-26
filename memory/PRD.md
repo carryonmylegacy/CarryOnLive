@@ -20,10 +20,19 @@
 - Beneficiary Management with enhanced demographics
 - Estate Guardian AI (document analysis, checklist generation, state-specific legal guidance)
 - Immediate Action Checklist
-- Designated Trustee Services
+- Designated Trustee Services with **Stripe Payment Integration**
 - Two-Level Section Security (Password + Voice Passphrase)
 - Estate Readiness Score
 - **Edit Functionality** - Edit beneficiary details and document metadata (name, category, notes)
+
+### DTS Payment Flow (NEW)
+1. User submits DTS task request
+2. DTS team reviews and sends itemized quote
+3. User approves/rejects line items
+4. **Credit card input form appears** using Stripe Elements
+5. User enters card details (stored securely for later charging)
+6. Card is charged ONLY upon verified transition
+7. All records permanently destroyed after execution
 
 ### Beneficiary Portal
 - Estate Hub with generational orbit visualization
