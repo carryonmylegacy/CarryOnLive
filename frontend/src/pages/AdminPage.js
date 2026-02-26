@@ -56,11 +56,7 @@ const AdminPage = () => {
 
   useEffect(() => { fetchAll(); }, []);
 
-  // Sync tab with URL when sidebar nav is clicked
-  useEffect(() => {
-  useEffect(() => {
-    // Tab is computed directly from pathname, no need to set it
-  }, [location.pathname]);
+  // Tab is computed directly from pathname via pathTab
 
   const fetchAll = async () => {
     try {
