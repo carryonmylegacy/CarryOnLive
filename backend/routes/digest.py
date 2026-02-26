@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime, timezone, timedelta
 from config import db, logger, RESEND_API_KEY, SENDER_EMAIL
 from utils import get_current_user
-from models import calculate_estate_readiness
+from services.readiness import calculate_estate_readiness
 import resend
 import asyncio
 
