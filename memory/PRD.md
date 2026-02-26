@@ -2,74 +2,103 @@
 
 ## What's Been Implemented (Complete)
 
-### Benefactor Side
-- Auth with OTP 2FA, Document Vault (AES-256), Milestone Messages, Beneficiary Manager
-- Estate Guardian AI (50-state law, vault analysis, checklist generation, readiness analysis)
-- Immediate Action Checklist, Designated Trustee Services (REAL backend), Estate Transition
-- Multi-estate, Activity timeline, Notifications, Dark/Light theme, Mobile/PWA
-- Estate Readiness Score, Settings with 6 pricing tiers
-- Two-Level Section Security (Password + Voice with Whisper API + Backup) on 5 sections
-- **Milestone Messages**: Edit existing messages + specific date trigger option
+### Authentication
+- Email/Password login with 6-digit OTP 2FA
+- **SMS OTP option** - Users can choose to receive OTP via text message (requires Twilio setup)
+- JWT tokens with 24-hour expiration
+- Role-based access (benefactor, beneficiary, admin)
 
-### Beneficiary Management (Enhanced Feb 2026)
-- **Enhanced Demographics**: First/Middle/Last Name, Suffix, Relationship, Gender, DOB
-- **Contact Info**: Email, Phone
-- **Address Fields**: Street, City, State (US dropdown), ZIP
-- **Additional Info**: SSN (last 4 digits), Notes/Special Instructions
-- **Invitation Flow**: 
-  - Benefactors can send email invitations to beneficiaries
-  - Invitation status tracking: pending → sent → accepted
-  - Resend capability for pending invitations
-  - AcceptInvitationPage allows beneficiaries to create accounts from invitation links
-  - Auto-links beneficiary record to new user account
+### Admin Portal
+- User Management (view, delete users)
+- Transition Verification Team (TVT) - review death certificates
+- Designated Trustee Services (DTS) Management
+- **Dev Switcher Configuration** - Admin can specify which benefactor/beneficiary accounts appear in the DEV quick-switch panel
 
-### Beneficiary Side (11 pages)
-- Estate Hub with **generational orbit visualization** (family members organized by generation: spouse/children → parents/siblings → grandparents → great-grandparents)
-- Pre-Transition, Upload Certificate (3-step wizard), Condolence Splash (5-phase)
-- Post-Transition Dashboard, Sealed Vault, Checkable Checklist
-- Messages (text/voice/video playback), Estate Guardian (read-only)
-- Report Milestone, Settings, Estate Switcher in sidebar
+### Benefactor Portal
+- Document Vault (AES-256 encrypted)
+- Milestone Messages (text/video with editable triggers and specific date options)
+- Beneficiary Management with enhanced demographics
+- Estate Guardian AI (document analysis, checklist generation, state-specific legal guidance)
+- Immediate Action Checklist
+- Designated Trustee Services
+- Two-Level Section Security (Password + Voice Passphrase)
+- Estate Readiness Score
 
-### Admin / Internal Team Portals (3 tabs)
-- **All Users**: Full database, search + role filter, delete users
-- **Transition Verification Team**: Review death certificates, approve (seals benefactor + grants beneficiary access) or reject, view uploaded documents
-- **DTS Management Team**: View requests, submit itemized quotes, update status lifecycle
+### Beneficiary Portal
+- Estate Hub with generational orbit visualization
+- Pre-Transition view
+- Death Certificate Upload (3-step wizard)
+- Condolence Splash with 5-phase real-time status
+- Post-Transition Dashboard
+- Sealed Vault, Messages, Checklist access
 
-### Backend Infrastructure
-- DTS: Full CRUD (create tasks, list, submit quotes, approve items, update status)
-- Transition: Enhanced verification (enriched certificates, reject, view document)
-- Voice: Real OpenAI Whisper integration for passphrase transcription + verification
-- Beneficiary Invitation: Create, send, accept endpoints
-- All endpoints tested and passing (iteration_12: 100% backend, 100% frontend)
+### Beneficiary Management (Enhanced)
+- Full demographics: First/Middle/Last Name, Suffix, DOB, Gender
+- Contact: Email, Phone
+- Address: Street, City, State, ZIP
+- Additional: SSN (last 4), Notes
+- **Invitation Flow**: Email invitations, status tracking, account creation from invitation links
 
 ## Test Accounts
-- **Benefactor**: barnetharris@mac.com / 9170873 (NEW - Real user)
-- **Benefactor**: pete@mitchell.com / password123 (Test)
-- **Beneficiary**: sarah.harris@test.com / sarah123 (Created via invitation)
-- **Beneficiary**: penny@mitchell.com / password123 (Test)
-- **Admin**: admin@carryon.com / admin123
-- **Pending Invitation**: Kent Harris - pieva2021@gmail.com (token: 4ab000de-129d-4230-8b85-bec04d4b011e)
-- OTP: Auto-filled in dev mode, also in logs: `tail -n 5 /var/log/supervisor/backend.err.log`
+- **Admin**: `founder@carryon.us` / `CarryOntheWisdom!`
+- All other accounts wiped - ready for real user registration
 
 ## Key API Endpoints
 
-### Beneficiary Management
-- `POST /api/beneficiaries` - Create with enhanced demographics
-- `DELETE /api/beneficiaries/{id}` - Remove beneficiary
-- `POST /api/beneficiaries/{id}/invite` - Send invitation email
-- `GET /api/invitations/{token}` - Get invitation details (public)
-- `POST /api/invitations/accept` - Accept invitation & create account (public)
-- `GET /api/beneficiary/family-connections` - Get family connections with relationship data for orbit visualization
+### Authentication
+- `POST /api/auth/login` - Login with email/password, supports `otp_method` (email/sms)
+- `POST /api/auth/verify-otp` - Verify OTP
+- `POST /api/auth/register` - Register new account
+- `POST /api/auth/dev-login` - Bypass OTP (dev mode)
+
+### Admin - Dev Switcher
+- `GET /api/admin/dev-switcher` - Get dev switcher config
+- `PUT /api/admin/dev-switcher` - Update dev switcher config
+- `GET /api/dev-switcher/config` - Public endpoint for frontend
+
+## Setting Up SMS OTP (Twilio)
+
+To enable SMS verification codes, you need a Twilio account:
+
+### Step 1: Create Twilio Account
+1. Go to https://www.twilio.com/try-twilio
+2. Sign up for a free account
+3. Verify your email and phone number
+
+### Step 2: Get Twilio Credentials
+1. Go to Console → Account Info
+2. Copy your **Account SID**
+3. Copy your **Auth Token**
+4. Go to Phone Numbers → Manage → Buy a Number
+5. Purchase a phone number with SMS capability (~$1/month)
+
+### Step 3: Add to Backend Environment
+Add these to `/app/backend/.env`:
+```
+TWILIO_ACCOUNT_SID=your_account_sid_here
+TWILIO_AUTH_TOKEN=your_auth_token_here
+TWILIO_PHONE_NUMBER=+1234567890
+```
+
+### Step 4: Restart Backend
+```bash
+sudo supervisorctl restart backend
+```
+
+### Costs
+- Twilio Phone Number: ~$1/month
+- SMS Messages: ~$0.0079 per message (US)
+- Free trial includes $15 credit
 
 ## Upcoming Tasks (P1)
 1. **Push Notifications** - PWA features for important event alerts
-2. **Multi-estate Support for Benefactors** - Manage multiple estates from one account
+2. **Multi-estate Support** - Manage multiple estates per benefactor
 
-## Future/Backlog Tasks (P2)
-1. **Payment Gateway** - Stripe integration for subscriptions & DTS payments
-2. **Digital Asset Management** - Cryptocurrency wallets & social media accounts
-3. **PDF Export** - Export estate plan summaries
+## Future/Backlog (P2)
+1. **Payment Gateway** - Stripe integration
+2. **Digital Asset Management** - Cryptocurrency, social media
+3. **PDF Export** - Estate plan summaries
 
-## Known Issues (Low Priority)
-1. **Resend Domain Mismatch** - Email API key needs production domain config
-2. **Frontend Lint Warnings** - react-hooks/exhaustive-deps warnings in some components
+## Known Configuration Notes
+- **Resend Email**: Currently uses fallback (logs OTP). For production, configure valid Resend API key with matching domain.
+- **SMS OTP**: Requires Twilio setup (see above)
