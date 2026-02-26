@@ -171,7 +171,7 @@ async def export_estate_pdf(estate_id: str, current_user: dict = Depends(get_cur
     if not any(b.get("status") == "accepted" for b in beneficiaries):
         recs.append("Invite your beneficiaries to create their CarryOn accounts")
     if readiness < 50:
-        recs.append("Your readiness score is below 50% — focus on uploading key documents and completing checklist items")
+        recs.append("Your readiness score is below 50% - focus on uploading key documents and completing checklist items")
     if not recs:
         recs.append("Your estate plan is in good shape! Review periodically for life changes.")
     for r in recs:
