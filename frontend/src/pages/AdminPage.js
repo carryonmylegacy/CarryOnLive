@@ -136,30 +136,27 @@ const AdminPage = () => {
   };
 
   // Fetch conversations when support tab is selected
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (tab === 'support') {
       fetchConversations();
       const interval = setInterval(fetchConversations, 15000);
       return () => clearInterval(interval);
     }
-  }, [tab]);
+  }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch activity log when activity tab is selected
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (tab === 'activity') fetchActivityLog();
-  }, [tab]);
+  }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch messages when conversation is selected
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (selectedConv) {
       fetchConversationMessages(selectedConv.conversation_id);
       const interval = setInterval(() => fetchConversationMessages(selectedConv.conversation_id), 10000);
       return () => clearInterval(interval);
     }
-  }, [selectedConv]);
+  }, [selectedConv]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleApproveCert = async (certId) => {
     setActionLoading(certId);
