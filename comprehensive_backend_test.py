@@ -120,7 +120,7 @@ class ComprehensiveCarryOnTester:
                 self.log_test("Auth Register", True, 
                             f"User registration successful", 
                             http_status=response.status_code)
-            elif response.status_code == 400 and "already exists" in response.text.lower():
+            elif response.status_code == 400 and ("already exists" in response.text.lower() or "already registered" in response.text.lower()):
                 # User already exists - that's fine for testing
                 self.log_test("Auth Register", True, 
                             "User already exists (expected for repeated tests)", 
