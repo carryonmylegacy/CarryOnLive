@@ -210,19 +210,22 @@ const GuardianPage = () => {
       <SectionLockBanner sectionId="guardian" />
       {/* Header */}
       <div className="mb-4">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#d4af37] to-[#fcd34d] flex items-center justify-center gold-glow">
-            <Bot className="w-6 h-6 text-[#0b1120]" />
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#d4af37] to-[#fcd34d] flex items-center justify-center gold-glow">
+              <Bot className="w-6 h-6 text-[#0b1120]" />
+            </div>
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                Estate Guardian
+              </h1>
+              <p className="text-[var(--t4)] text-sm flex items-center gap-1">
+                <Sparkles className="w-3 h-3" />
+                AI estate law specialist — all 50 states
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              Estate Guardian
-            </h1>
-            <p className="text-[var(--t4)] text-sm flex items-center gap-1">
-              <Sparkles className="w-3 h-3" />
-              AI estate law specialist — all 50 states
-            </p>
-          </div>
+          <ExportPDFButton />
         </div>
       </div>
 
