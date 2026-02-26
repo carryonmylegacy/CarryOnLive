@@ -108,13 +108,15 @@ class CarryOnBackendTester:
                 
                 if login_response.status_code == 200:
                     login_result = login_response.json()
+                    print(f"DEBUG: Login response: {login_result}")
                     if "access_token" in login_result:
                         self.user_token = login_result["access_token"]
                         self.session.headers.update({"Authorization": f"Bearer {self.user_token}"})
                         self.log_test("Auth Flow (Register + Login)", True, "User registered and logged in successfully")
                     else:
-                        self.log_test("Auth Flow (Register + Login)", False, "No access_token in login response")
+                        self.log_test("Auth Flow (Register + Login)", False, f"No access_token in login response. Got: {login_result}")
                 else:
+                    print(f"DEBUG: Login failed response: {login_response.text}")
                     self.log_test("Auth Flow (Register + Login)", False, f"Login failed with status: {login_response.status_code}")
             
             elif register_response.status_code == 400:
