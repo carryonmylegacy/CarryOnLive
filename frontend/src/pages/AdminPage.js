@@ -319,7 +319,25 @@ const AdminPage = () => {
                     <div className="font-bold text-[var(--t)] text-sm truncate">{u.name || 'No name'}</div>
                     <div className="text-xs text-[var(--t4)] truncate">{u.email}</div>
                   </div>
-                  <span className="text-xs px-2 py-0.5 rounded-md font-bold capitalize" style={{ background: rc.bg, color: rc.color }}>{u.role}</span>
+                  <div className="relative">
+                    <select
+                      value={u.role}
+                      onChange={(e) => handleRoleChange(u.id, u.name, e.target.value)}
+                      disabled={u.id === user.id || roleChanging === u.id}
+                      className="text-xs px-2 py-1 pr-6 rounded-md font-bold capitalize appearance-none cursor-pointer border-0 outline-none"
+                      style={{ background: rc.bg, color: rc.color }}
+                      data-testid={`admin-role-select-${u.id}`}
+                    >
+                      <option value="benefactor">benefactor</option>
+                      <option value="beneficiary">beneficiary</option>
+                      <option value="admin">admin</option>
+                    </select>
+                    {roleChanging === u.id ? (
+                      <Loader2 className="w-3 h-3 animate-spin absolute right-1 top-1/2 -translate-y-1/2" style={{ color: rc.color }} />
+                    ) : (
+                      <ChevronDown className="w-3 h-3 absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: rc.color }} />
+                    )}
+                  </div>
                   <div className="text-xs text-[var(--t5)] hidden sm:block">{u.created_at ? new Date(u.created_at).toLocaleDateString() : ''}</div>
                   {u.id !== user.id && (
                     <Button variant="ghost" size="sm" className="text-[var(--rd)] hover:bg-[var(--rdbg)]" onClick={() => handleDeleteUser(u.id, u.name)} disabled={actionLoading === u.id}>
