@@ -27,6 +27,7 @@ const LoginPage = () => {
     try {
       const result = await login(email, password);
       setOtpHint(result.otp_hint);
+      if (result.dev_otp) setOtp(result.dev_otp);
       setShowOtpModal(true);
       toast.success('OTP sent to your email');
     } catch (error) {
