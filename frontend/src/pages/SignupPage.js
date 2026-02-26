@@ -117,7 +117,8 @@ const SignupPage = () => {
       if (user.role === 'beneficiary') {
         navigate('/beneficiary');
       } else {
-        navigate('/dashboard');
+        // New benefactors go to onboarding to add beneficiaries
+        navigate('/onboarding');
       }
     } catch (error) {
       console.error('OTP error:', error);
