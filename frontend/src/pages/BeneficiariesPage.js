@@ -165,9 +165,11 @@ const BeneficiariesPage = () => {
 
       if (editingBeneficiary) {
         await axios.put(`${API_URL}/beneficiaries/${editingBeneficiary.id}`, payload, getAuthHeaders());
+        if (photoFile) await uploadPhoto(editingBeneficiary.id);
         toast.success('Beneficiary updated');
       } else {
-        await axios.post(`${API_URL}/beneficiaries`, payload, getAuthHeaders());
+        const res = await axios.post(`${API_URL}/beneficiaries`, payload, getAuthHeaders());
+        if (photoFile && res.data?.id) await uploadPhoto(res.data.id);
         toast.success('Beneficiary added successfully');
       }
       
