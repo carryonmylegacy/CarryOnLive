@@ -274,7 +274,7 @@ async def verify_section_security(
             raise HTTPException(status_code=401, detail="Incorrect section password")
         results["password"] = True
 
-    # Layer 2: Voice biometric
+    # Layer 2: Voice biometric (enhanced multi-metric)
     if settings.get("voice_enabled") and settings.get("voiceprint"):
         if not voice_file:
             raise HTTPException(status_code=400, detail="Voice verification required")
@@ -286,8 +286,8 @@ async def verify_section_security(
             tmp.write(content)
             tmp_path = tmp.name
 
+        wav_path = tmp_path + '.wav'
         try:
-            wav_path = tmp_path + '.wav'
             import subprocess
             subprocess.run(
                 ['ffmpeg', '-y', '-i', tmp_path, '-ar', '16000', '-ac', '1', '-f', 'wav', wav_path],
@@ -296,14 +296,37 @@ async def verify_section_security(
             with open(wav_path, 'rb') as f:
                 wav_bytes = f.read()
 
-            test_voiceprint = extract_voiceprint(wav_bytes)
-            if test_voiceprint is None:
-                raise HTTPException(status_code=400, detail="Could not process voice sample")
+            # Detect voiceprint version and extract accordingly
+            is_v2 = settings.get("voiceprint_version") == "v2"
 
-            similarity, is_match = compare_voiceprints(settings["voiceprint"], test_voiceprint)
+            if is_v2:
+                # Enhanced extraction
+                extraction = extract_voiceprint(wav_bytes)
+                if extraction is None:
+                    raise HTTPException(status_code=400, detail="Could not process voice sample. Please try again in a quieter environment.")
+
+                test_vp = extraction["voiceprint"]
+
+                # Build enrolled model dict for verification
+                enrolled_model = {
+                    "voiceprint": settings["voiceprint"],
+                    "sample_count": len(settings.get("voiceprint_samples", [1])),
+                    "consistency": settings.get("enrollment_consistency", 0.8),
+                }
+                vresult = verify_voiceprint(enrolled_model, test_vp)
+                is_match = vresult["is_match"]
+                similarity = vresult["confidence"]
+                confidence_level = vresult["confidence_level"]
+            else:
+                # Legacy 60-dim voiceprint — use backward-compatible verification
+                test_vp = extract_voiceprint_legacy(wav_bytes)
+                if test_vp is None:
+                    raise HTTPException(status_code=400, detail="Could not process voice sample")
+                similarity, is_match = compare_voiceprints_legacy(settings["voiceprint"], test_vp)
+                confidence_level = "high" if similarity >= 0.88 else "medium" if is_match else "low"
 
             # Also verify the passphrase text via Whisper if available
-            text_match = True
+            text_match_result = {"match": True, "score": 1.0}
             if settings.get("voice_passphrase"):
                 try:
                     from emergentintegrations.llm.openai import OpenAISpeechToText
@@ -312,24 +335,33 @@ async def verify_section_security(
                         stt = OpenAISpeechToText(api_key=api_key)
                         with open(wav_path, 'rb') as af:
                             stt_response = await stt.transcribe(file=af, model="whisper-1", response_format="json", language="en")
-                        spoken = stt_response.text.strip().lower()
-                        expected = settings["voice_passphrase"].strip().lower()
-                        # Fuzzy match
-                        spoken_words = set(spoken.split())
-                        expected_words = set(expected.split())
-                        overlap = len(spoken_words & expected_words) / max(len(expected_words), 1)
-                        text_match = overlap >= 0.6
+                        spoken = stt_response.text.strip()
+                        expected = settings["voice_passphrase"].strip()
+                        text_match_result = match_passphrase(spoken, expected)
                 except Exception as e:
                     logger.warning(f"Whisper text verification failed, relying on voiceprint only: {e}")
 
             if not is_match:
-                raise HTTPException(status_code=401, detail=f"Voice mismatch ({int(similarity * 100)}% similarity). Please try again.")
-            if not text_match:
-                raise HTTPException(status_code=401, detail="Passphrase words did not match. Please speak your passphrase clearly.")
+                pct = int(similarity * 100)
+                raise HTTPException(
+                    status_code=401,
+                    detail=f"Voice mismatch ({pct}% confidence, {confidence_level}). Please try again."
+                )
+            if not text_match_result["match"]:
+                raise HTTPException(
+                    status_code=401,
+                    detail=f"Passphrase did not match (score: {text_match_result['score']:.0%}). Please speak your passphrase clearly."
+                )
 
-            results["voice"] = {"verified": True, "similarity": round(similarity, 3)}
+            results["voice"] = {
+                "verified": True,
+                "confidence": round(similarity, 3),
+                "confidence_level": confidence_level,
+                "passphrase_score": text_match_result.get("score", 1.0),
+            }
         finally:
-            os.unlink(tmp_path)
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
             if os.path.exists(wav_path):
                 os.unlink(wav_path)
 
