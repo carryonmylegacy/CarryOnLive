@@ -19,11 +19,8 @@ import librosa
 import numpy as np
 from scipy.spatial.distance import cosine as cosine_distance
 import io
-# ===================== SECTION SECURITY (Triple Lock) =====================
 
-import librosa
-import numpy as np
-from scipy.spatial.distance import cosine as cosine_distance
+# ===================== SECTION SECURITY (Triple Lock) =====================
 
 LOCKABLE_SECTIONS = {
     "sdv": "Secure Document Vault",
