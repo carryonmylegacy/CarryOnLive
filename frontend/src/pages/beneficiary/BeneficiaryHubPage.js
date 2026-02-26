@@ -15,15 +15,21 @@ const BeneficiaryHubPage = () => {
   const { user, getAuthHeaders } = useAuth();
   const navigate = useNavigate();
   const [estates, setEstates] = useState([]);
+  const [familyConnections, setFamilyConnections] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { fetchEstates(); }, []);
+  useEffect(() => { fetchData(); }, []);
 
-  const fetchEstates = async () => {
+  const fetchData = async () => {
     try {
-      const res = await axios.get(`${API_URL}/estates`, getAuthHeaders());
-      setEstates(res.data);
-    } catch (err) { console.error('Fetch estates error:', err); }
+      // Fetch both estates and family connections for orbit visualization
+      const [estatesRes, connectionsRes] = await Promise.all([
+        axios.get(`${API_URL}/estates`, getAuthHeaders()),
+        axios.get(`${API_URL}/beneficiary/family-connections`, getAuthHeaders()).catch(() => ({ data: [] }))
+      ]);
+      setEstates(estatesRes.data);
+      setFamilyConnections(connectionsRes.data);
+    } catch (err) { console.error('Fetch data error:', err); }
     finally { setLoading(false); }
   };
 
