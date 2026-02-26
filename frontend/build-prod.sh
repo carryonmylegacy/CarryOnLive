@@ -57,7 +57,7 @@ yarn build
 BUILD_EXIT=$?
 
 # Restore original index.html
-mv public/index.html.bak public/index.html
+mv /tmp/index.html.carryon.bak public/index.html
 
 if [ $BUILD_EXIT -eq 0 ]; then
     echo "Production build complete! Output in ./build/"
