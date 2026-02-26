@@ -34,6 +34,8 @@ services:
         sync: false
       - key: EMERGENT_LLM_KEY
         sync: false
+      - key: XAI_API_KEY
+        sync: false
       - key: VAPID_PRIVATE_KEY
         sync: false
       - key: VAPID_CLAIMS_EMAIL

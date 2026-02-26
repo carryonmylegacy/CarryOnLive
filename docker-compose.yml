@@ -19,6 +19,7 @@ services:
       - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER}
       - STRIPE_API_KEY=${STRIPE_API_KEY}
       - EMERGENT_LLM_KEY=${EMERGENT_LLM_KEY}
+      - XAI_API_KEY=${XAI_API_KEY}
       - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
       - VAPID_CLAIMS_EMAIL=mailto:support@carryon.us
     depends_on:
