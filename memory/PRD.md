@@ -1,4 +1,4 @@
-# CarryOn™ - Estate Planning & Legacy Management Platform
+# CarryOn - Estate Planning & Legacy Management Platform
 
 ## Architecture (Refactored Feb 2026)
 ```
@@ -35,24 +35,30 @@
 - Stripe Subscriptions with admin controls (beta toggle, pricing, per-user overrides)
 - Family Plan (admin-toggled, FPO + Successor + pricing model)
 - Deployment ready (Dockerfiles, render.yaml, DEPLOY_GUIDE.md)
+- **Legal Pages**: Privacy Policy (/privacy) and Terms of Service (/terms) — public pages with SMS/A2P 10DLC compliant content
+- **SMS Consent Checkbox**: Mandatory opt-in on signup form for Twilio A2P 10DLC compliance
+- Footer legal links on Login and Signup pages
 
 ## API Keys Active
 - xAI Grok, Stripe (test), Emergent LLM (Whisper)
 
 ## Recently Completed
 1. Enhanced voice biometric engine (voice_biometrics.py)
-   - ~130-dimension voiceprint (MFCCs + spectral + pitch + energy + temporal)
-   - Audio quality assessment (SNR, clipping, duration, energy)
-   - Outlier rejection during enrollment
-   - Multi-metric verification (cosine + Euclidean + Pearson correlation)
-   - Adaptive thresholds based on enrollment quality
-   - Sequence-based passphrase matching (difflib)
-   - Backward compatible with legacy 60-dim voiceprints
 2. Production deployment readiness (Dockerfiles, render.yaml, build-prod.sh, deploy guides)
 3. Full code cleanup: 0 Python lint errors, 0 JS lint errors
+4. Beneficiary photo uploads (end-to-end)
+5. IAC overhaul (benefactor CRUD + beneficiary checklist view)
+6. Safari pulsating fix, Outlook OTP email fix
+7. **Legal Pages & SMS Consent for Twilio A2P 10DLC** (Feb 2026)
+   - Privacy Policy page with dedicated SMS/Text Messaging section
+   - Terms of Service page with SMS Communications Consent section
+   - SMS consent checkbox on registration form (mandatory)
+   - Footer links to legal pages on Login and Signup pages
 
 ## Upcoming
-1. Production deployment to Render
+1. P0: Estate Guardian AI - "AI Suggest from Vault" (xAI/Grok reads SDV docs to suggest IAC items)
+2. P1: Admin Panel buildout (user management, analytics)
+3. P2: Web Push Notifications (VAPID keys, service worker)
 
 ## Parked
 - Multi-estate support
