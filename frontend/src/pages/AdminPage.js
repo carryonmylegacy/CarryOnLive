@@ -254,6 +254,18 @@ const AdminPage = () => {
                     </div>
                     {cert.status === 'pending' && (
                       <div className="flex flex-col gap-2 flex-shrink-0">
+                        <Button size="sm" className="text-xs" style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', color: 'white' }}
+                          onClick={() => handleBeginReview(cert.id)} disabled={actionLoading === cert.id}>
+                          {actionLoading === cert.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4 mr-1" />} Begin Review
+                        </Button>
+                        <a href={`${API_URL}/transition/certificate/${cert.id}/document`} target="_blank" rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-bold text-[var(--bl3)] hover:underline justify-center">
+                          <Eye className="w-3 h-3" /> View Document
+                        </a>
+                      </div>
+                    )}
+                    {cert.status === 'reviewing' && (
+                      <div className="flex flex-col gap-2 flex-shrink-0">
                         <Button size="sm" className="text-xs" style={{ background: 'linear-gradient(135deg, #22C993, #16a34a)', color: 'white' }}
                           onClick={() => handleApproveCert(cert.id)} disabled={actionLoading === cert.id}>
                           {actionLoading === cert.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-1" />} Approve & Transition
@@ -263,7 +275,7 @@ const AdminPage = () => {
                           <XCircle className="w-4 h-4 mr-1" /> Reject
                         </Button>
                         <a href={`${API_URL}/transition/certificate/${cert.id}/document`} target="_blank" rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-xs font-bold text-[var(--bl3)] hover:underline">
+                          className="inline-flex items-center gap-1 text-xs font-bold text-[var(--bl3)] hover:underline justify-center">
                           <Eye className="w-3 h-3" /> View Document
                         </a>
                       </div>
