@@ -279,13 +279,13 @@ async def get_checkout_status(session_id: str, current_user: dict = Depends(get_
         raise HTTPException(status_code=500, detail="Payment service not configured")
     
     stripe_checkout = StripeCheckout(api_key=api_key, webhook_url="")
-    status = await stripe_checkout.get_checkout_status(session_id)
+    checkout_status = await stripe_checkout.get_checkout_status(session_id)
     
     # Update transaction
     txn = await db.payment_transactions.find_one({"session_id": session_id})
     if txn and txn.get("payment_status") != "paid":
-        new_status = status.payment_status
-        update_data = {"payment_status": new_status, "status": status.status, "updated_at": datetime.now(timezone.utc).isoformat()}
+        new_status = checkout_status.payment_status
+        update_data = {"payment_status": new_status, "status": checkout_status.status, "updated_at": datetime.now(timezone.utc).isoformat()}
         await db.payment_transactions.update_one({"session_id": session_id}, {"$set": update_data})
         
         # If paid, activate subscription
