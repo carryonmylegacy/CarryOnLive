@@ -81,9 +81,9 @@ const MessagesPage = () => {
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchData = async () => {
