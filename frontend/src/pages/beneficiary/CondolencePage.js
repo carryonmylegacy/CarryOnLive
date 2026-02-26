@@ -31,7 +31,7 @@ const CondolencePage = () => {
   }, []);
 
   // Poll transition status every 4 seconds
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     const poll = async () => {
       if (!estateId) return;
@@ -56,6 +56,7 @@ const CondolencePage = () => {
     pollRef.current = setInterval(poll, 4000);
     return () => clearInterval(pollRef.current);
   }, [estateId]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const getStepState = (stepKey) => {
     const order = ['pending', 'submitted', 'reviewing', 'authenticated', 'sealing', 'approved'];
