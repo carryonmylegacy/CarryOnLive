@@ -33,12 +33,55 @@ const plans = [
   { name: 'Hospice', price: 'Free', benPrice: '$4.99', features: ['Full platform access', 'Estate Guardian AI', 'Unlimited vault storage', 'Unlimited milestone messages', 'Immediate Action Checklist', 'Beneficiary management', 'Compassionate support'], note: 'Requires hospice verification' },
 ];
 
+const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
 const SettingsPage = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [activePlan, setActivePlan] = useState('Premium');
   const [billing, setBilling] = useState('monthly');
+  const [weeklyDigest, setWeeklyDigest] = useState(true);
+  const [digestLoading, setDigestLoading] = useState(false);
+  const [digestSending, setDigestSending] = useState(false);
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('carryon_token');
+    return { headers: { Authorization: `Bearer ${token}` } };
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const fetchDigestPref = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/digest/preferences`, getAuthHeaders());
+        setWeeklyDigest(res.data.weekly_digest);
+      } catch (e) { /* default to true */ }
+    };
+    fetchDigestPref();
+  }, []);
+
+  const toggleDigest = async (val) => {
+    setDigestLoading(true);
+    try {
+      await axios.put(`${API_URL}/digest/preferences`, { weekly_digest: val }, getAuthHeaders());
+      setWeeklyDigest(val);
+    } catch (e) { /* ignore */ }
+    finally { setDigestLoading(false); }
+  };
+
+  const sendPreview = async () => {
+    setDigestSending(true);
+    try {
+      await axios.post(`${API_URL}/digest/preview`, {}, getAuthHeaders());
+      const { toast } = await import('sonner');
+      toast.success('Preview digest sent to your email!');
+    } catch (e) {
+      const { toast } = await import('sonner');
+      toast.error('Could not send preview — do you have an estate?');
+    }
+    finally { setDigestSending(false); }
+  };
 
   const handleLogout = () => {
     logout();
