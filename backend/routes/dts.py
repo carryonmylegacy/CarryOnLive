@@ -162,15 +162,15 @@ async def approve_dts_task(task_id: str, current_user: dict = Depends(get_curren
     return {"message": "Task approved"}
 
 @router.post("/dts/tasks/{task_id}/status")
-async def update_dts_status(task_id: str, status: str, current_user: dict = Depends(get_current_user)):
+async def update_dts_status(task_id: str, task_status: str, current_user: dict = Depends(get_current_user)):
     """Admin updates task status"""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Only DTS team can update status")
     valid = ["submitted", "quoted", "approved", "ready", "executed", "destroyed"]
-    if status not in valid:
+    if task_status not in valid:
         raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {valid}")
-    await db.dts_tasks.update_one({"id": task_id}, {"$set": {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}})
-    return {"message": f"Status updated to {status}"}
+    await db.dts_tasks.update_one({"id": task_id}, {"$set": {"status": task_status, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    return {"message": f"Status updated to {task_status}"}
 
 class DTSTaskUpdate(BaseModel):
     title: Optional[str] = None
