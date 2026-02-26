@@ -55,6 +55,17 @@ if RESEND_API_KEY:
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# xAI Grok Configuration (Estate Guardian AI)
+XAI_API_KEY = os.environ.get('XAI_API_KEY')
+XAI_BASE_URL = "https://api.x.ai/v1"
+XAI_MODEL = os.environ.get('XAI_MODEL', 'grok-4')
+xai_client = None
+if XAI_API_KEY:
+    xai_client = XAIClient(api_key=XAI_API_KEY, base_url=XAI_BASE_URL)
+    logger.info(f"xAI Grok configured (model: {XAI_MODEL})")
+else:
+    logger.warning("XAI_API_KEY not set - Estate Guardian AI disabled")
+
 # Twilio Configuration for SMS OTP
 TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID')
 TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN')
