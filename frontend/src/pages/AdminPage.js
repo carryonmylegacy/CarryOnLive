@@ -256,12 +256,11 @@ const AdminPage = () => {
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { v: stats.users.total, l: 'Users', icon: Users, color: '#60A5FA' },
-            { v: stats.users.benefactors, l: 'Benefactors', icon: UserCircle, color: '#60A5FA' },
-            { v: stats.users.beneficiaries, l: 'Beneficiaries', icon: UserCircle, color: '#B794F6' },
+            { v: stats.users.total, l: 'Total Users', icon: Users, color: '#60A5FA' },
             { v: stats.estates.total, l: 'Estates', icon: FolderLock, color: '#22C993' },
+            { v: stats.documents, l: 'Documents', icon: FileUp, color: '#B794F6' },
             { v: stats.pending_certificates, l: 'Pending Certs', icon: FileKey, color: '#F59E0B' },
           ].map(s => (
             <div key={s.l} className="glass-card p-3 text-center">
