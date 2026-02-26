@@ -1106,7 +1106,7 @@ class ComprehensiveCarryOnTester:
 
     # 19. Estate Readiness
     def test_estate_readiness(self):
-        """Test GET /api/estates/{estate_id}/readiness (get readiness score)"""
+        """Test GET /api/estate/{estate_id}/readiness (get readiness score)"""
         if not self.user_token:
             self.log_test("Estate Readiness", False, "No auth token available")
             return
@@ -1116,13 +1116,14 @@ class ComprehensiveCarryOnTester:
             return
             
         try:
-            response = self.session.get(f"{BACKEND_URL}/estates/{self.estate_id}/readiness")
+            response = self.session.get(f"{BACKEND_URL}/estate/{self.estate_id}/readiness")
             
             if response.status_code == 200:
                 data = response.json()
-                if "readiness_score" in data:
+                if "readiness_score" in data or "overall_score" in data:
+                    score = data.get("readiness_score", data.get("overall_score", "N/A"))
                     self.log_test("Estate Readiness", True, 
-                                f"Estate readiness score: {data['readiness_score']}", 
+                                f"Estate readiness score: {score}", 
                                 http_status=response.status_code)
                 else:
                     self.log_test("Estate Readiness", True, 
