@@ -176,6 +176,7 @@ function AppRoutes() {
         </ProtectedRoute>
       }>
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/security-settings" element={<SecuritySettingsPage />} />
         <Route path="/support" element={<SupportChatPage />} />
       </Route>
 
