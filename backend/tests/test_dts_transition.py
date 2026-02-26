@@ -166,7 +166,7 @@ class TestDTSBackend:
         task = task_response.json()
         assert task["status"] == "quoted"
         assert len(task["line_items"]) == 3
-        print(f"✓ Task status updated to 'quoted'")
+        print("✓ Task status updated to 'quoted'")
     
     def test_admin_update_status(self, admin_session, benefactor_session, estate_id):
         """Admin can update DTS task status"""
@@ -193,7 +193,7 @@ class TestDTSBackend:
         assert task_response.status_code == 200
         task = task_response.json()
         assert task["status"] == "ready"
-        print(f"✓ Admin updated task status to 'ready'")
+        print("✓ Admin updated task status to 'ready'")
 
 
 class TestTransitionVerification:

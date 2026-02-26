@@ -186,7 +186,7 @@ class TestEstateGuardianChat:
             print(f"PASS: Checklist generated, {items_added} items added")
         else:
             # May not have JSON if AI didn't format correctly, but response should exist
-            print(f"PASS: Checklist action completed (items_added may be 0 if all exist)")
+            print("PASS: Checklist action completed (items_added may be 0 if all exist)")
     
     def test_analyze_readiness_action(self, auth_headers, estate_id):
         """POST /api/chat/guardian with action='analyze_readiness' returns readiness analysis"""

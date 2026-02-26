@@ -253,7 +253,7 @@ class TestEditFunctionality:
             headers={"Authorization": auth_headers["Authorization"]}
         )
         assert restore_response.status_code == 200, f"Failed to restore document: {restore_response.text}"
-        print(f"✓ Restored document to original values")
+        print("✓ Restored document to original values")
         
         return updated
     
@@ -302,7 +302,7 @@ class TestEditFunctionality:
         # Category should remain unchanged
         assert updated["category"] == original_category, f"Category changed unexpectedly: {updated['category']}"
         
-        print(f"✓ Partial update successful - only name changed, category preserved")
+        print("✓ Partial update successful - only name changed, category preserved")
         
         # Restore
         requests.put(
@@ -310,7 +310,7 @@ class TestEditFunctionality:
             data={"name": original_name},
             headers={"Authorization": auth_headers["Authorization"]}
         )
-        print(f"✓ Restored document name")
+        print("✓ Restored document name")
 
 
 class TestCleanup:

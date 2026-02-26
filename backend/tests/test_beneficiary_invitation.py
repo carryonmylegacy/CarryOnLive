@@ -144,7 +144,7 @@ class TestBeneficiaryInvitationFlow:
         assert created["invitation_status"] == "pending", "Initial status should be pending"
         
         self.__class__.created_beneficiary_id = created["id"]
-        print(f"✓ Created beneficiary with all demographic fields")
+        print("✓ Created beneficiary with all demographic fields")
         print(f"  Name: {created['name']}")
         print(f"  ID: {created['id']}")
     
@@ -195,7 +195,7 @@ class TestBeneficiaryInvitationFlow:
         assert "benefactor_name" in data, "No benefactor name in response"
         assert data["beneficiary"]["first_name"] == "TEST_John", "Wrong beneficiary data"
         
-        print(f"✓ Invitation details retrieved")
+        print("✓ Invitation details retrieved")
         print(f"  Benefactor: {data['benefactor_name']}")
         print(f"  Beneficiary: {data['beneficiary']['first_name']} {data['beneficiary']['last_name']}")
     
@@ -219,7 +219,7 @@ class TestBeneficiaryInvitationFlow:
         assert "user" in data, "No user data returned"
         assert data["user"]["role"] == "beneficiary", "User should be beneficiary role"
         
-        print(f"✓ Invitation accepted, account created")
+        print("✓ Invitation accepted, account created")
         print(f"  User ID: {data['user']['id']}")
         print(f"  Email: {data['user']['email']}")
     
@@ -241,7 +241,7 @@ class TestBeneficiaryInvitationFlow:
         assert test_ben["invitation_status"] == "accepted", f"Status should be 'accepted', got: {test_ben['invitation_status']}"
         assert test_ben.get("user_id"), "user_id should be set after acceptance"
         
-        print(f"✓ Beneficiary status verified as 'accepted'")
+        print("✓ Beneficiary status verified as 'accepted'")
         print(f"  user_id linked: {test_ben['user_id']}")
     
     def test_09_cleanup_test_beneficiary(self):
@@ -256,7 +256,7 @@ class TestBeneficiaryInvitationFlow:
         
         # Accept both 200 and 204 as success
         assert response.status_code in [200, 204], f"Failed to delete: {response.text}"
-        print(f"✓ Test beneficiary cleaned up")
+        print("✓ Test beneficiary cleaned up")
 
 
 class TestExistingInvitationToken:
@@ -270,12 +270,12 @@ class TestExistingInvitationToken:
         
         if response.status_code == 200:
             data = response.json()
-            print(f"✓ Kent Harris invitation found")
+            print("✓ Kent Harris invitation found")
             print(f"  Benefactor: {data.get('benefactor_name', 'N/A')}")
             print(f"  Beneficiary: {data['beneficiary']['first_name']} {data['beneficiary']['last_name']}")
             print(f"  Relation: {data['beneficiary']['relation']}")
         elif response.status_code == 404:
-            print(f"⚠ Invitation token not found or already used")
+            print("⚠ Invitation token not found or already used")
         else:
             print(f"⚠ Unexpected response: {response.status_code} - {response.text}")
 
