@@ -59,6 +59,7 @@
 - `POST /api/beneficiaries/{id}/invite` - Send invitation email
 - `GET /api/invitations/{token}` - Get invitation details (public)
 - `POST /api/invitations/accept` - Accept invitation & create account (public)
+- `GET /api/beneficiary/family-connections` - Get family connections with relationship data for orbit visualization
 
 ## Upcoming Tasks (P1)
 1. **Push Notifications** - PWA features for important event alerts
