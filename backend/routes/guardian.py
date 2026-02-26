@@ -219,7 +219,7 @@ async def chat_with_guardian(data: ChatRequest, current_user: dict = Depends(get
             estate_id = estates[0]["id"]
     
     if estate_id:
-        needs_content = data.action in ("analyze_vault",) or any(
+        needs_content = data.action in ("analyze_vault", "generate_checklist") or any(
             keyword in data.message.lower() 
             for keyword in ["analyze", "review", "read", "what does", "contents", "says", "summary", "summarize", "check my"]
         )
