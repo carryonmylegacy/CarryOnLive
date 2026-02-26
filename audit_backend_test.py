@@ -668,7 +668,7 @@ class CarryOnAuditTester:
         """Test POST /api/support/messages → 200 (message: "Test support message")"""
         try:
             support_data = {
-                "message": "Test support message"
+                "content": "Test support message"
             }
             
             response = self.session.post(f"{BACKEND_URL}/support/messages", json=support_data)
