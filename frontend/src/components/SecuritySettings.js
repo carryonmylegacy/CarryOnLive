@@ -35,10 +35,11 @@ const SecuritySettings = ({ getAuthHeaders }) => {
 
   const headers = getAuthHeaders()?.headers || {};
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     fetchAll();
   }, []);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const fetchAll = async () => {
     try {
