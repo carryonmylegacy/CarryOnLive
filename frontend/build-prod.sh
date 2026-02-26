@@ -10,8 +10,8 @@ echo "Preparing production build..."
 # Prevent CI from treating warnings as errors
 export CI=false
 
-# Create a backup of index.html
-cp public/index.html public/index.html.bak
+# Create a backup of index.html (outside public/ so it doesn't get included in build)
+cp public/index.html /tmp/index.html.carryon.bak
 
 # Use Python to cleanly strip Emergent-specific code from index.html
 python3 -c "
