@@ -119,24 +119,50 @@ class Beneficiary(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     estate_id: str
     user_id: Optional[str] = None
-    name: str
+    # Name fields
+    first_name: str
+    middle_name: Optional[str] = None
+    last_name: str
+    suffix: Optional[str] = None
+    name: str  # Full computed name
     relation: str  # spouse, child, parent, sibling, grandchild, friend, other
     email: EmailStr
     phone: Optional[str] = None
     date_of_birth: Optional[str] = None  # ISO date string
     gender: Optional[str] = None  # male, female, other
+    # Address fields
+    address_street: Optional[str] = None
+    address_city: Optional[str] = None
+    address_state: Optional[str] = None
+    address_zip: Optional[str] = None
+    # Additional fields
+    ssn_last_four: Optional[str] = None  # Last 4 of SSN for estate planning
+    notes: Optional[str] = None  # Special instructions or notes
     avatar_color: str = "#d4af37"
     initials: str = ""
+    # Invitation tracking
+    invitation_status: str = "pending"  # pending, sent, accepted
+    invitation_token: Optional[str] = None
+    invitation_sent_at: Optional[str] = None
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class BeneficiaryCreate(BaseModel):
     estate_id: str
-    name: str
+    first_name: str
+    middle_name: Optional[str] = None
+    last_name: str
+    suffix: Optional[str] = None
     relation: str
     email: EmailStr
     phone: Optional[str] = None
     date_of_birth: Optional[str] = None
     gender: Optional[str] = None
+    address_street: Optional[str] = None
+    address_city: Optional[str] = None
+    address_state: Optional[str] = None
+    address_zip: Optional[str] = None
+    ssn_last_four: Optional[str] = None
+    notes: Optional[str] = None
     avatar_color: str = "#d4af37"
 
 class Document(BaseModel):
