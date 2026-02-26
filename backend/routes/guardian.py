@@ -1,19 +1,12 @@
 """CarryOn™ Backend — Estate Guardian AI & PDF Export"""
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status, Response, Form
-from fastapi.security import HTTPAuthorizationCredentials
-from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional, Dict, Any
-from datetime import datetime, timezone, timedelta
+from fastapi import APIRouter, HTTPException, Depends
+from datetime import datetime, timezone
 from config import db, logger
 from utils import get_current_user, decrypt_data, log_activity, update_estate_readiness
 import uuid
-import os
-import asyncio
-import base64
 import json as json_module
-import random
 
-from models import ChatRequest, ChatResponse, ChatMessage, ChecklistItem
+from models import ChatRequest, ChatResponse, ChecklistItem
 from services.readiness import calculate_estate_readiness
 import io
 import pdfplumber

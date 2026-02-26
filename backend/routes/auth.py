@@ -1,17 +1,9 @@
 """CarryOn™ Backend — Authentication Routes"""
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status, Response, Form
-from fastapi.security import HTTPAuthorizationCredentials
-from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional, Dict, Any
-from datetime import datetime, timezone, timedelta
+from fastapi import APIRouter, HTTPException, Depends
+from datetime import datetime, timezone
 from config import db, logger
 from utils import get_current_user, hash_password, verify_password, create_token, generate_otp, send_otp_email, send_otp_sms
 import uuid
-import os
-import asyncio
-import base64
-import json as json_module
-import random
 
 from models import TokenResponse, UserResponse, UserLogin, UserCreate, OTPVerify
 

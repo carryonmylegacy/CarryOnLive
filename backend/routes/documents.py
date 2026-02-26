@@ -1,19 +1,12 @@
 """CarryOn™ Backend — Document & Voice Routes"""
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status, Response, Form
-from fastapi.security import HTTPAuthorizationCredentials
-from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional, Dict, Any
-from datetime import datetime, timezone, timedelta
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Response, Form
+from pydantic import BaseModel
+from typing import Optional
 from config import db, logger
 from utils import get_current_user, encrypt_data, decrypt_data, hash_password, verify_password, generate_backup_code, log_activity, update_estate_readiness
-import uuid
 import os
-import asyncio
-import base64
-import json as json_module
-import random
 
-from models import Document, DocumentCreate, DocumentUploadRequest, DocumentUnlockRequest
+from models import Document, DocumentUnlockRequest
 
 router = APIRouter()
 
