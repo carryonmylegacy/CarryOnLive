@@ -938,6 +938,41 @@ const SubscriptionsAdmin = ({ getAuthHeaders, users }) => {
         </CardContent>
       </Card>
 
+      {/* Family Plan Toggle */}
+      <Card className="glass-card">
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-[var(--t)] flex items-center gap-2">
+                <Users className="w-5 h-5 text-[var(--gold)]" />
+                Family Plan
+              </h3>
+              <p className="text-sm text-[var(--t4)] mt-1">
+                {settings?.family_plan_enabled
+                  ? 'Family plans are visible to users. FPOs get $1/mo discount for added benefactors, flat $3.49/mo for beneficiaries.'
+                  : 'Family plans are hidden from all users. Toggle ON when ready to launch (recommended L+3 to L+4 months).'}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className={`text-sm font-bold ${settings?.family_plan_enabled ? 'text-[var(--gn2)]' : 'text-[var(--t5)]'}`}>
+                {settings?.family_plan_enabled ? 'Visible' : 'Hidden'}
+              </span>
+              <Switch
+                checked={settings?.family_plan_enabled || false}
+                onCheckedChange={async () => {
+                  try {
+                    await axios.put(`${API_URL}/admin/family-plan-settings`, {}, { headers });
+                    toast.success(settings?.family_plan_enabled ? 'Family plans hidden' : 'Family plans visible to users');
+                    fetchData();
+                  } catch (err) { toast.error('Failed to update'); }
+                }}
+                data-testid="family-plan-toggle"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Pricing Management */}
       <Card className="glass-card">
         <CardContent className="p-5">
