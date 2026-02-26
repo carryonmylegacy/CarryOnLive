@@ -6,19 +6,24 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone, timedelta
 from config import db, logger
 from utils import get_current_user, encrypt_data, decrypt_data, hash_password, verify_password, create_token, generate_otp, generate_backup_code, send_otp_email, send_otp_sms, log_activity, send_push_notification, send_push_to_all_admins
+from voice_biometrics import (
+    extract_voiceprint,
+    verify_voiceprint,
+    compute_enrollment_model,
+    is_outlier_sample,
+    match_passphrase,
+    extract_voiceprint_legacy,
+    compare_voiceprints_legacy,
+)
 import uuid
 import os
 import asyncio
 import base64
 import json as json_module
 import random
+import numpy as np
 
 router = APIRouter()
-
-import librosa
-import numpy as np
-from scipy.spatial.distance import cosine as cosine_distance
-import io
 
 # ===================== SECTION SECURITY (Triple Lock) =====================
 
