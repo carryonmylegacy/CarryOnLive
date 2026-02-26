@@ -165,9 +165,7 @@ class TestEstateGuardianChat:
         checklist_before = requests.get(
             f"{BASE_URL}/api/checklists/{estate_id}", headers=auth_headers
         )
-        _ = (
-            len(checklist_before.json()) if checklist_before.status_code == 200 else 0
-        )
+        _ = len(checklist_before.json()) if checklist_before.status_code == 200 else 0
 
         response = requests.post(
             f"{BASE_URL}/api/chat/guardian",
