@@ -299,7 +299,7 @@ def get_expected_milestones(beneficiary: dict) -> list:
             dob = datetime.fromisoformat(dob_str.replace('Z', '+00:00'))
             today = datetime.now(timezone.utc)
             age = (today - dob).days // 365
-        except:
+        except Exception:
             pass
     
     # Child milestones based on age
