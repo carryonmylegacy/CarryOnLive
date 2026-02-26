@@ -206,6 +206,7 @@ const GuardianPage = () => {
 
   return (
     <div className="p-4 lg:p-6 h-[calc(100vh-4rem)] lg:h-screen flex flex-col animate-fade-in pt-20 lg:pt-6" data-testid="estate-guardian">
+      <SectionLockBanner sectionId="guardian" />
       {/* Header */}
       <div className="mb-4">
         <div className="flex items-center gap-3 mb-2">
