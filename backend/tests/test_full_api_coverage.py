@@ -375,7 +375,7 @@ class TestDigest:
         })
         assert response.status_code == 200
         data = response.json()
-        assert data["weekly_digest"] == False
+        assert not data["weekly_digest"]
         print("✓ Digest preferences updated")
 
 
