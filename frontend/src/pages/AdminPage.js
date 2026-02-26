@@ -27,6 +27,7 @@ const AdminPage = () => {
   const pathTab = location.pathname === '/admin/transition' ? 'transition' 
     : location.pathname === '/admin/dts' ? 'dts' 
     : location.pathname === '/admin/dev-switcher' ? 'dev-switcher'
+    : location.pathname === '/admin/support' ? 'support'
     : 'users';
   const [tab, setTab] = useState(pathTab);
   const [users, setUsers] = useState([]);
@@ -39,6 +40,13 @@ const AdminPage = () => {
   const [actionLoading, setActionLoading] = useState(null);
   const [selectedDts, setSelectedDts] = useState(null);
   const [quoteItems, setQuoteItems] = useState([{ description: '', cost: '' }]);
+  
+  // Support chat state
+  const [conversations, setConversations] = useState([]);
+  const [selectedConv, setSelectedConv] = useState(null);
+  const [convMessages, setConvMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   useEffect(() => { fetchAll(); }, []);
 
