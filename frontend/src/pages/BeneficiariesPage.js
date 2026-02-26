@@ -426,15 +426,21 @@ const BeneficiariesPage = () => {
         </div>
       )}
 
-      {/* Add Beneficiary Modal - Enhanced */}
-      <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+      {/* Add/Edit Beneficiary Modal - Enhanced */}
+      <Dialog open={showAddModal} onOpenChange={(open) => {
+        setShowAddModal(open);
+        if (!open) {
+          setEditingBeneficiary(null);
+          resetForm();
+        }
+      }}>
         <DialogContent className="glass-card border-white/10 sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              Add Beneficiary
+              {editingBeneficiary ? 'Edit Beneficiary' : 'Add Beneficiary'}
             </DialogTitle>
             <DialogDescription className="text-[#94a3b8]">
-              Add a family member or loved one to your estate plan
+              {editingBeneficiary ? 'Update the details for this beneficiary' : 'Add a family member or loved one to your estate plan'}
             </DialogDescription>
           </DialogHeader>
           
@@ -681,6 +687,7 @@ const BeneficiariesPage = () => {
               variant="outline"
               onClick={() => {
                 setShowAddModal(false);
+                setEditingBeneficiary(null);
                 resetForm();
               }}
               className="border-white/10 text-white"
@@ -688,20 +695,20 @@ const BeneficiariesPage = () => {
               Cancel
             </Button>
             <Button
-              onClick={handleAdd}
+              onClick={handleAddOrEdit}
               disabled={adding || !firstName || !lastName || !email || !relation}
               className="gold-button"
-              data-testid="add-beneficiary-submit"
+              data-testid="beneficiary-submit-button"
             >
               {adding ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Adding...
+                  {editingBeneficiary ? 'Saving...' : 'Adding...'}
                 </>
               ) : (
                 <>
-                  <Plus className="w-5 h-5 mr-2" />
-                  Add Beneficiary
+                  {editingBeneficiary ? <Edit2 className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
+                  {editingBeneficiary ? 'Save Changes' : 'Add Beneficiary'}
                 </>
               )}
             </Button>
