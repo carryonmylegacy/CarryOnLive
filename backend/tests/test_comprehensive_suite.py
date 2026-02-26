@@ -550,10 +550,10 @@ class TestP1DigitalWallet:
             headers=auth_header(),
             json={
                 "estate_id": S.estate_id,
-                "name": "Bank Login",
+                "account_name": "Bank Login",
                 "category": "financial",
-                "username": "user@bank.com",
-                "password": "SecretPass123",
+                "login_username": "user@bank.com",
+                "login_password": "SecretPass123",
                 "url": "https://mybank.com",
                 "notes": "Main checking account",
             },
@@ -579,7 +579,7 @@ class TestP1DigitalWallet:
             headers=auth_header(),
             json={
                 "estate_id": S.estate_id,
-                "name": "Primary Bank",
+                "account_name": "Primary Bank",
                 "notes": "Updated notes",
             },
         )
