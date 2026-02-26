@@ -1746,6 +1746,45 @@ async def create_message(data: MessageCreate, current_user: dict = Depends(get_c
     
     return message
 
+@api_router.put("/messages/{message_id}")
+async def update_message(message_id: str, data: MessageUpdate, current_user: dict = Depends(get_current_user)):
+    """Edit an existing message (benefactor only, before transition)"""
+    if current_user["role"] != "benefactor":
+        raise HTTPException(status_code=403, detail="Only benefactors can edit messages")
+    
+    existing = await db.messages.find_one({"id": message_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Message not found")
+    if existing.get("is_delivered"):
+        raise HTTPException(status_code=400, detail="Cannot edit a delivered message")
+    
+    update_fields = {}
+    for field in ["title", "content", "message_type", "recipients", "trigger_type", "trigger_value", "trigger_age", "trigger_date"]:
+        val = getattr(data, field, None)
+        if val is not None:
+            update_fields[field] = val
+    
+    # Handle video update
+    if data.video_data:
+        video_id = f"video_{message_id}"
+        await db.video_storage.update_one(
+            {"id": video_id},
+            {"$set": {"data": data.video_data, "created_at": datetime.now(timezone.utc).isoformat()}},
+            upsert=True
+        )
+        update_fields["video_url"] = video_id
+    
+    if update_fields:
+        update_fields["updated_at"] = datetime.now(timezone.utc).isoformat()
+        await db.messages.update_one({"id": message_id}, {"$set": update_fields})
+    
+    updated = await db.messages.find_one({"id": message_id}, {"_id": 0})
+    
+    # Update estate readiness
+    await update_estate_readiness(existing["estate_id"])
+    
+    return updated
+
 @api_router.delete("/messages/{message_id}")
 async def delete_message(message_id: str, current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "benefactor":
