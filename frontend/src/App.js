@@ -21,6 +21,7 @@ import TransitionPage from './pages/TransitionPage';
 import SettingsPage from './pages/SettingsPage';
 import AdminPage from './pages/AdminPage';
 import SupportChatPage from './pages/SupportChatPage';
+import SecuritySettingsPage from './pages/SecuritySettingsPage';
 
 // Beneficiary Pages
 import BeneficiaryHubPage from './pages/beneficiary/BeneficiaryHubPage';
@@ -126,6 +127,7 @@ function AppRoutes() {
         <Route path="/checklist" element={<ChecklistPage />} />
         <Route path="/trustee" element={<TrusteePage />} />
         <Route path="/transition" element={<TransitionPage />} />
+        <Route path="/security-settings" element={<SecuritySettingsPage />} />
       </Route>
 
       {/* Beneficiary Routes */}
