@@ -18,6 +18,7 @@ import { Input } from '../components/ui/input';
 import { ScrollArea } from '../components/ui/scroll-area';
 import { toast } from 'sonner';
 import { SectionLockBanner } from '../components/security/SectionLock';
+import { FileDown } from 'lucide-react';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
