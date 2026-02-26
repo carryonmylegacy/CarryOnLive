@@ -216,9 +216,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Health check endpoint"
     - "Production build succeeds"
-    - "Backend Dockerfile with HEALTHCHECK"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
