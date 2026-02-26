@@ -134,13 +134,13 @@ async def update_security_settings(
     return {"success": True, "section_id": section_id, "message": f"{LOCKABLE_SECTIONS[section_id]} security updated"}
 
 @router.post("/security/voice/enroll/{section_id}")
-async def enroll_voiceprint(
+async def enroll_voiceprint_endpoint(
     section_id: str,
     passphrase: str = Form(...),
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user)
 ):
-    """Enroll voice biometric for a section — records voiceprint from audio sample"""
+    """Enroll voice biometric for a section — enhanced multi-feature voiceprint"""
     if section_id not in LOCKABLE_SECTIONS:
         raise HTTPException(status_code=400, detail=f"Invalid section: {section_id}")
 
@@ -155,9 +155,9 @@ async def enroll_voiceprint(
         tmp.write(content)
         tmp_path = tmp.name
 
+    wav_path = tmp_path + '.wav'
     try:
         # Convert to WAV if needed using ffmpeg
-        wav_path = tmp_path + '.wav'
         import subprocess
         result = subprocess.run(
             ['ffmpeg', '-y', '-i', tmp_path, '-ar', '16000', '-ac', '1', '-f', 'wav', wav_path],
@@ -169,30 +169,52 @@ async def enroll_voiceprint(
         with open(wav_path, 'rb') as f:
             wav_bytes = f.read()
 
-        voiceprint = extract_voiceprint(wav_bytes)
-        if voiceprint is None:
-            raise HTTPException(status_code=400, detail="Could not extract voice features. Please record a longer sample (at least 2 seconds).")
+        # Enhanced extraction
+        extraction = extract_voiceprint(wav_bytes)
+        if extraction is None:
+            raise HTTPException(
+                status_code=400,
+                detail="Could not extract voice features. Please record a longer, clearer sample (at least 2 seconds in a quiet environment)."
+            )
 
-        # Get existing enrollment to average multiple samples
+        new_voiceprint = extraction["voiceprint"]
+        quality = extraction["quality"]
+
+        # Get existing enrollment
         existing = await db.section_security.find_one(
             {"user_id": current_user["id"], "section_id": section_id},
-            {"_id": 0, "voiceprint_samples": 1}
+            {"_id": 0, "voiceprint_samples": 1, "voiceprint_version": 1}
         )
-        samples = existing.get("voiceprint_samples", []) if existing else []
-        samples.append(voiceprint)
+
+        samples = []
+        if existing and existing.get("voiceprint_version") == "v2":
+            samples = existing.get("voiceprint_samples", [])
+
+        # Outlier rejection: reject samples that don't sound like the enrolled user
+        if samples and is_outlier_sample(new_voiceprint, samples):
+            raise HTTPException(
+                status_code=400,
+                detail="This voice sample sounds too different from your existing enrollment. "
+                       "Please try again in a quiet environment, speaking naturally."
+            )
+
+        samples.append(new_voiceprint)
         if len(samples) > 5:
             samples = samples[-5:]
 
-        # Average all samples for a more robust voiceprint
-        avg_voiceprint = np.mean(samples, axis=0).tolist()
+        # Build enrollment model (smart averaging + consistency scoring)
+        model = compute_enrollment_model(samples)
 
         await db.section_security.update_one(
             {"user_id": current_user["id"], "section_id": section_id},
             {"$set": {
                 "user_id": current_user["id"],
                 "section_id": section_id,
-                "voiceprint": avg_voiceprint,
+                "voiceprint": model["voiceprint"],
                 "voiceprint_samples": samples,
+                "voiceprint_version": "v2",
+                "voiceprint_dimension": extraction["dimension"],
+                "enrollment_consistency": model["consistency"],
                 "voice_passphrase": passphrase.strip(),
                 "voice_enabled": True,
                 "voice_enrolled_at": datetime.now(timezone.utc).isoformat(),
@@ -201,13 +223,25 @@ async def enroll_voiceprint(
             upsert=True
         )
 
+        # Feedback message based on enrollment quality
+        sample_count = len(samples)
+        if sample_count == 1:
+            tip = "Record 1-2 more samples for better accuracy."
+        elif sample_count < 3:
+            tip = f"Good — {sample_count} samples recorded. One more recommended."
+        else:
+            tip = f"Excellent — {sample_count} samples, consistency {model['consistency']:.0%}."
+
         return {
             "success": True,
-            "samples_recorded": len(samples),
-            "message": f"Voice enrolled ({len(samples)} sample{'s' if len(samples) > 1 else ''}). Record more samples for better accuracy."
+            "samples_recorded": sample_count,
+            "enrollment_consistency": model["consistency"],
+            "audio_quality": quality,
+            "message": f"Voice enrolled. {tip}"
         }
     finally:
-        os.unlink(tmp_path)
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
         if os.path.exists(wav_path):
             os.unlink(wav_path)
 
