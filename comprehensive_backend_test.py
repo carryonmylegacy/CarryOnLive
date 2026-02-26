@@ -414,17 +414,18 @@ class ComprehensiveCarryOnTester:
             try:
                 with open(doc_file, 'rb') as f:
                     files = {"file": ("test_document.txt", f, "text/plain")}
-                    data = {
+                    params = {
                         "estate_id": self.estate_id,
-                        "category": "Will"
+                        "name": "Comprehensive Test Document",
+                        "category": "legal"
                     }
                     
-                    response = self.session.post(f"{BACKEND_URL}/documents/upload", files=files, data=data)
+                    response = self.session.post(f"{BACKEND_URL}/documents/upload", files=files, params=params)
                     
                 if response.status_code in [200, 201]:
                     result = response.json()
                     self.log_test("Upload Document", True, 
-                                f"Document uploaded successfully: {result.get('filename', 'N/A')}", 
+                                f"Document uploaded successfully: {result.get('name', 'N/A')}", 
                                 http_status=response.status_code)
                 else:
                     self.log_test("Upload Document", False, 
