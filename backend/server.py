@@ -3387,6 +3387,135 @@ async def get_unread_support_count(current_user: dict = Depends(get_current_user
         })
     return {"unread_count": count}
 
+# ===================== PUSH NOTIFICATIONS =====================
+
+# Load VAPID keys
+VAPID_PRIVATE_KEY_PATH = os.environ.get("VAPID_PRIVATE_KEY_PATH", "/tmp/vapid_private.pem")
+VAPID_PUBLIC_KEY_PATH = os.environ.get("VAPID_PUBLIC_KEY_PATH", "/tmp/vapid_public.pem")
+VAPID_CLAIMS_EMAIL = os.environ.get("VAPID_CLAIMS_EMAIL", "mailto:support@carryon.us")
+
+# Initialize VAPID
+vapid = None
+try:
+    if os.path.exists(VAPID_PRIVATE_KEY_PATH):
+        vapid = Vapid.from_file(VAPID_PRIVATE_KEY_PATH)
+        logger.info("VAPID keys loaded successfully")
+    else:
+        logger.warning(f"VAPID private key not found at {VAPID_PRIVATE_KEY_PATH}")
+except Exception as e:
+    logger.error(f"Failed to load VAPID keys: {e}")
+
+class PushSubscription(BaseModel):
+    endpoint: str
+    keys: Dict[str, str]
+
+class PushNotificationRequest(BaseModel):
+    user_id: Optional[str] = None
+    title: str
+    body: str
+    url: Optional[str] = "/"
+    tag: Optional[str] = "carryon-notification"
+    type: Optional[str] = "general"
+
+@api_router.post("/push/subscribe")
+async def subscribe_push(subscription: PushSubscription, current_user: dict = Depends(get_current_user)):
+    """Subscribe to push notifications"""
+    sub_data = {
+        "user_id": current_user["id"],
+        "endpoint": subscription.endpoint,
+        "keys": subscription.keys,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "active": True
+    }
+    
+    # Upsert subscription (update if endpoint exists, else insert)
+    await db.push_subscriptions.update_one(
+        {"endpoint": subscription.endpoint},
+        {"$set": sub_data},
+        upsert=True
+    )
+    
+    logger.info(f"Push subscription saved for user {current_user['id']}")
+    return {"success": True, "message": "Subscribed to push notifications"}
+
+@api_router.delete("/push/unsubscribe")
+async def unsubscribe_push(subscription: PushSubscription, current_user: dict = Depends(get_current_user)):
+    """Unsubscribe from push notifications"""
+    await db.push_subscriptions.delete_one({"endpoint": subscription.endpoint})
+    return {"success": True, "message": "Unsubscribed from push notifications"}
+
+@api_router.get("/push/vapid-public-key")
+async def get_vapid_public_key():
+    """Get the VAPID public key for push subscription"""
+    try:
+        if vapid:
+            from cryptography.hazmat.primitives import serialization
+            raw_bytes = vapid.public_key.public_bytes(
+                encoding=serialization.Encoding.X962,
+                format=serialization.PublicFormat.UncompressedPoint
+            )
+            public_key_b64 = base64.urlsafe_b64encode(raw_bytes).decode('utf-8').rstrip('=')
+            return {"public_key": public_key_b64}
+        else:
+            raise HTTPException(status_code=500, detail="VAPID not configured")
+    except Exception as e:
+        logger.error(f"Error getting VAPID public key: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get VAPID public key")
+
+async def send_push_notification(user_id: str, title: str, body: str, url: str = "/", tag: str = "carryon-notification", notification_type: str = "general"):
+    """Send push notification to a specific user"""
+    if not vapid:
+        logger.warning("VAPID not configured, skipping push notification")
+        return False
+    
+    subscriptions = await db.push_subscriptions.find({"user_id": user_id, "active": True}, {"_id": 0}).to_list(100)
+    
+    if not subscriptions:
+        logger.info(f"No active push subscriptions for user {user_id}")
+        return False
+    
+    payload = json_module.dumps({
+        "title": title,
+        "body": body,
+        "url": url,
+        "tag": tag,
+        "type": notification_type,
+        "icon": "/logo192.png"
+    })
+    
+    success_count = 0
+    for sub in subscriptions:
+        try:
+            webpush(
+                subscription_info={
+                    "endpoint": sub["endpoint"],
+                    "keys": sub["keys"]
+                },
+                data=payload,
+                vapid_private_key=VAPID_PRIVATE_KEY_PATH,
+                vapid_claims={"sub": VAPID_CLAIMS_EMAIL}
+            )
+            success_count += 1
+            logger.info(f"Push notification sent to user {user_id}")
+        except WebPushException as e:
+            logger.error(f"Push notification failed: {e}")
+            # If subscription is invalid (410 Gone), mark as inactive
+            if e.response and e.response.status_code == 410:
+                await db.push_subscriptions.update_one(
+                    {"endpoint": sub["endpoint"]},
+                    {"$set": {"active": False}}
+                )
+        except Exception as e:
+            logger.error(f"Unexpected push error: {e}")
+    
+    return success_count > 0
+
+async def send_push_to_all_admins(title: str, body: str, url: str = "/admin", tag: str = "admin-notification"):
+    """Send push notification to all admin users"""
+    admins = await db.users.find({"role": "admin"}, {"_id": 0, "id": 1}).to_list(100)
+    for admin in admins:
+        await send_push_notification(admin["id"], title, body, url, tag, "admin")
+
 # ===================== STARTUP =====================
 
 @app.on_event("startup")
