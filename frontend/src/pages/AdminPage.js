@@ -245,6 +245,7 @@ const AdminPage = () => {
           { key: 'users', label: 'All Users', icon: Users, path: '/admin' },
           { key: 'transition', label: 'Transition Verification', icon: FileKey, path: '/admin/transition' },
           { key: 'dts', label: 'DTS Management', icon: Shield, path: '/admin/dts' },
+          { key: 'support', label: 'Customer Support', icon: Headphones, path: '/admin/support' },
           { key: 'dev-switcher', label: 'Dev Switcher', icon: Settings, path: '/admin/dev-switcher' },
         ].map(t => (
           <button key={t.key} onClick={() => navigate(t.path)}
