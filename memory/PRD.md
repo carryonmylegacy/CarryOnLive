@@ -6,6 +6,7 @@
 ├── server.py          84 lines  — App init, router composition, middleware
 ├── config.py          73 lines  — DB, env vars, external service clients
 ├── utils.py          164 lines  — Encryption, auth, email, SMS, push, logging
+├── voice_biometrics.py 310 lines — Enhanced voice biometric engine
 ├── models.py         685 lines  — Pydantic models, readiness calc, seed data
 └── routes/
     ├── auth.py       172 lines  — Login, register, OTP, dev-login
