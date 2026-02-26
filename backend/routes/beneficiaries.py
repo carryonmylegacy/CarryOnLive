@@ -275,7 +275,6 @@ async def send_beneficiary_invitation(beneficiary_id: str, current_user: dict = 
     )
     
     # Log activity
-    estate = await db.estates.find_one({"id": beneficiary["estate_id"]}, {"_id": 0})
     await log_activity(
         estate_id=beneficiary["estate_id"],
         user_id=current_user["id"],
