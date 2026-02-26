@@ -1062,6 +1062,88 @@ async def dev_login(data: UserLogin):
 
 # ===================== ADMIN ROUTES =====================
 
+class DevSwitcherConfig(BaseModel):
+    benefactor_email: str = ""
+    benefactor_password: str = ""
+    beneficiary_email: str = ""
+    beneficiary_password: str = ""
+    enabled: bool = True
+
+@api_router.get("/admin/dev-switcher")
+async def get_dev_switcher_config(current_user: dict = Depends(get_current_user)):
+    """Get dev switcher configuration — admin only"""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    config = await db.dev_config.find_one({"id": "dev_switcher"}, {"_id": 0})
+    if not config:
+        config = {"id": "dev_switcher", "benefactor_email": "", "benefactor_password": "", 
+                  "beneficiary_email": "", "beneficiary_password": "", "enabled": True}
+        await db.dev_config.insert_one(config)
+    
+    # Don't expose passwords in GET response - just indicate if set
+    return {
+        "benefactor_email": config.get("benefactor_email", ""),
+        "benefactor_configured": bool(config.get("benefactor_password")),
+        "beneficiary_email": config.get("beneficiary_email", ""),
+        "beneficiary_configured": bool(config.get("beneficiary_password")),
+        "enabled": config.get("enabled", True)
+    }
+
+@api_router.put("/admin/dev-switcher")
+async def update_dev_switcher_config(data: DevSwitcherConfig, current_user: dict = Depends(get_current_user)):
+    """Update dev switcher configuration — admin only"""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Validate that the accounts exist if provided
+    if data.benefactor_email:
+        user = await db.users.find_one({"email": data.benefactor_email}, {"_id": 0})
+        if not user:
+            raise HTTPException(status_code=400, detail=f"Benefactor account not found: {data.benefactor_email}")
+        if user["role"] != "benefactor":
+            raise HTTPException(status_code=400, detail=f"Account is not a benefactor: {data.benefactor_email}")
+    
+    if data.beneficiary_email:
+        user = await db.users.find_one({"email": data.beneficiary_email}, {"_id": 0})
+        if not user:
+            raise HTTPException(status_code=400, detail=f"Beneficiary account not found: {data.beneficiary_email}")
+        if user["role"] != "beneficiary":
+            raise HTTPException(status_code=400, detail=f"Account is not a beneficiary: {data.beneficiary_email}")
+    
+    await db.dev_config.update_one(
+        {"id": "dev_switcher"},
+        {"$set": {
+            "benefactor_email": data.benefactor_email,
+            "benefactor_password": data.benefactor_password,
+            "beneficiary_email": data.beneficiary_email,
+            "beneficiary_password": data.beneficiary_password,
+            "enabled": data.enabled
+        }},
+        upsert=True
+    )
+    
+    return {"message": "Dev switcher config updated"}
+
+@api_router.get("/dev-switcher/config")
+async def get_public_dev_switcher_config():
+    """Get dev switcher config for frontend (public, returns credentials for dev login)"""
+    config = await db.dev_config.find_one({"id": "dev_switcher"}, {"_id": 0})
+    if not config or not config.get("enabled", True):
+        return {"enabled": False}
+    
+    return {
+        "enabled": config.get("enabled", True),
+        "benefactor": {
+            "email": config.get("benefactor_email", ""),
+            "password": config.get("benefactor_password", "")
+        } if config.get("benefactor_email") else None,
+        "beneficiary": {
+            "email": config.get("beneficiary_email", ""),
+            "password": config.get("beneficiary_password", "")
+        } if config.get("beneficiary_email") else None
+    }
+
 @api_router.get("/admin/users")
 async def get_all_users(current_user: dict = Depends(get_current_user)):
     """Get all users — admin only"""
