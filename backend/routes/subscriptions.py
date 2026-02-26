@@ -6,11 +6,11 @@ from datetime import datetime, timezone, timedelta
 from config import db, logger
 from utils import get_current_user
 import os
+import stripe
+from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest
 
 router = APIRouter()
 
-import stripe
-from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest
 # ===================== STRIPE PAYMENT METHOD =====================
 
 # Initialize Stripe
