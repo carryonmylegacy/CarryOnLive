@@ -3,10 +3,9 @@ from fastapi import APIRouter, HTTPException, Depends, Response
 from datetime import datetime, timezone
 from config import db
 from utils import get_current_user
+from fpdf import FPDF
 
 router = APIRouter()
-
-from fpdf import FPDF
 
 # Unicode → ASCII mapping for FPDF (Helvetica doesn't support Unicode)
 _UNICODE_MAP = {
