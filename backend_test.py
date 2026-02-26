@@ -664,7 +664,7 @@ class CarryOnAPITester:
             "Register Endpoint Exists",
             "POST",
             "auth/register",
-            400,  # Expect 400 for missing data, not 404 for missing endpoint
+            422,  # Expect 422 for validation error, not 404 for missing endpoint
             data={}
         )
         
