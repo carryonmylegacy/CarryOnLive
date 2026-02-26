@@ -87,6 +87,7 @@ class Beneficiary(BaseModel):
     notes: Optional[str] = None  # Special instructions or notes
     avatar_color: str = "#d4af37"
     initials: str = ""
+    photo_url: Optional[str] = None  # Base64 profile photo or URL
     # Invitation tracking
     invitation_status: str = "pending"  # pending, sent, accepted
     invitation_token: Optional[str] = None
