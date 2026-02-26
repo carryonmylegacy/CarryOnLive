@@ -175,10 +175,17 @@ const ChecklistPage = () => {
     try {
       const res = await axios.post(`${API_URL}/chat/guardian`, {
         estate_id: estate.id,
-        message: 'Based on the documents in my vault, suggest specific immediate action checklist items my beneficiaries should follow. For each item, include the category, priority, action type, and any contact information (phone numbers, addresses, company names) you can find in the documents. Format as a numbered list.',
+        action: 'generate_checklist',
+        message: 'Analyze all documents in my Secure Digital Vault and generate specific, actionable checklist items my beneficiaries should follow. Extract contact info (names, phones, addresses) from the documents where possible.',
       }, getAuthHeaders());
 
-      toast.success('AI suggestions added to chat! Review them in the Guardian, then add the best ones here.');
+      const added = res.data?.action_result?.items_added || 0;
+      if (added > 0) {
+        toast.success(`${added} new checklist items generated from your vault documents`);
+        fetchData();
+      } else {
+        toast.info('No new items to add — your checklist is already comprehensive');
+      }
     } catch (err) {
       toast.error('AI suggestion failed — try again later');
     } finally {
