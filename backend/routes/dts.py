@@ -179,12 +179,12 @@ class DTSTaskUpdate(BaseModel):
 @router.put("/dts/tasks/{task_id}")
 async def update_dts_task(task_id: str, data: DTSTaskUpdate, current_user: dict = Depends(get_current_user)):
     """Edit a DTS task - resets status to 'submitted' for re-quoting"""
-    task = await db.dts_tasks.find_one({"id": task_id})
+    task = await db.dts_tasks.find_one({"id": task_id}, {"_id": 0})
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     
     # Verify ownership - check estate ownership, task owner, or benefactor role with matching estate
-    estate = await db.estates.find_one({"id": task["estate_id"], "user_id": current_user["id"]})
+    estate = await db.estates.find_one({"id": task["estate_id"], "user_id": current_user["id"]}, {"_id": 0})
     is_task_owner = task.get("owner_id") == current_user["id"]
     # Also allow if user is benefactor and has an estate matching the task's estate_id
     user_estates = await db.estates.find({"user_id": current_user["id"]}, {"_id": 0, "id": 1}).to_list(100)
@@ -210,12 +210,12 @@ async def update_dts_task(task_id: str, data: DTSTaskUpdate, current_user: dict 
 @router.delete("/dts/tasks/{task_id}")
 async def delete_dts_task(task_id: str, current_user: dict = Depends(get_current_user)):
     """Delete a DTS task completely"""
-    task = await db.dts_tasks.find_one({"id": task_id})
+    task = await db.dts_tasks.find_one({"id": task_id}, {"_id": 0})
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     
     # Verify ownership - check estate ownership, task owner, or benefactor with estate access
-    estate = await db.estates.find_one({"id": task["estate_id"], "user_id": current_user["id"]})
+    estate = await db.estates.find_one({"id": task["estate_id"], "user_id": current_user["id"]}, {"_id": 0})
     is_task_owner = task.get("owner_id") == current_user["id"]
     # Also allow if user has an estate matching the task's estate_id
     user_estates = await db.estates.find({"user_id": current_user["id"]}, {"_id": 0, "id": 1}).to_list(100)
