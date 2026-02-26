@@ -205,8 +205,44 @@ const LockSetupModal = ({ sectionId, onClose, onComplete }) => {
   const steps = ['Section Password', 'Voice Passphrase', 'Backup Recovery', 'Confirm & Lock'];
 
   const handleRecord = () => {
+    if (recording) return;
     setRecording(true);
-    setTimeout(() => { setRecording(false); setVoiceRecorded(true); }, 3000);
+    
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        const chunks = [];
+        
+        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+        mediaRecorder.onstop = async () => {
+          stream.getTracks().forEach(t => t.stop());
+          const blob = new Blob(chunks, { type: 'audio/webm' });
+          
+          // Send to Whisper for transcription verification
+          try {
+            const formData = new FormData();
+            formData.append('file', blob, 'voice.webm');
+            const token = localStorage.getItem('carryon_token');
+            const res = await axios.post(`${API_URL}/voice/transcribe`, formData, {
+              headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
+            });
+            if (res.data.transcription) {
+              setVoiceRecorded(true);
+              toast.success(`Voice recorded: "${res.data.transcription}"`);
+            }
+          } catch (err) {
+            toast.error('Voice recording failed. Try again.');
+          }
+          setRecording(false);
+        };
+        
+        mediaRecorder.start();
+        setTimeout(() => mediaRecorder.stop(), 4000); // 4 second recording
+      })
+      .catch(() => {
+        toast.error('Microphone access denied');
+        setRecording(false);
+      });
   };
 
   const handleComplete = () => {
