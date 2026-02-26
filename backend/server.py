@@ -4638,72 +4638,6 @@ async def get_vapid_public_key():
         raise HTTPException(status_code=500, detail="Failed to get VAPID public key")
 
 # ===================== HEALTH CHECK =====================
-    
-    subscriptions = await db.push_subscriptions.find({"user_id": user_id, "active": True}, {"_id": 0}).to_list(100)
-    
-    if not subscriptions:
-        logger.info(f"No active push subscriptions for user {user_id}")
-        return False
-    
-    payload = json_module.dumps({
-        "title": title,
-        "body": body,
-        "url": url,
-        "tag": tag,
-        "type": notification_type,
-        "icon": "/logo192.png"
-    })
-    
-    success_count = 0
-    for sub in subscriptions:
-        try:
-            webpush(
-                subscription_info={
-                    "endpoint": sub["endpoint"],
-                    "keys": sub["keys"]
-                },
-                data=payload,
-                vapid_private_key=vapid_private_key_for_webpush,
-                vapid_claims={"sub": VAPID_CLAIMS_EMAIL}
-            )
-            success_count += 1
-            logger.info(f"Push notification sent to user {user_id}")
-        except WebPushException as e:
-            logger.error(f"Push notification failed: {e}")
-            # If subscription is invalid (410 Gone), mark as inactive
-            if e.response and e.response.status_code == 410:
-                await db.push_subscriptions.update_one(
-                    {"endpoint": sub["endpoint"]},
-                    {"$set": {"active": False}}
-                )
-        except Exception as e:
-            logger.error(f"Unexpected push error: {e}")
-    
-    return success_count > 0
-
-async def send_push_to_all_admins(title: str, body: str, url: str = "/admin", tag: str = "admin-notification"):
-    """Send push notification to all admin users"""
-    admins = await db.users.find({"role": "admin"}, {"_id": 0, "id": 1}).to_list(100)
-    for admin in admins:
-        await send_push_notification(admin["id"], title, body, url, tag, "admin")
-
-# ===================== HEALTH CHECK =====================
-
-@api_router.get("/health")
-async def health_check():
-    """Health check endpoint for deployment platforms"""
-    try:
-        await db.command("ping")
-        db_status = "connected"
-    except Exception:
-        db_status = "disconnected"
-    return {
-        "status": "healthy",
-        "database": db_status,
-        "version": "1.0.0"
-    }
-
-# ===================== HEALTH CHECK =====================
 
 @api_router.get("/health")
 async def health_check():
@@ -4723,7 +4657,6 @@ async def health_check():
 
 @app.on_event("startup")
 async def startup_event():
-    # No seed data - starting fresh with real accounts only
     logger.info("CarryOn™ API started - ready for real accounts")
 
 @app.on_event("shutdown")
