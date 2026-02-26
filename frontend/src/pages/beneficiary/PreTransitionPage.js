@@ -32,6 +32,7 @@ const PreTransitionPage = () => {
       finally { setLoading(false); }
     };
     fetchEstate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const firstName = user?.name?.split(' ')[0] || 'there';

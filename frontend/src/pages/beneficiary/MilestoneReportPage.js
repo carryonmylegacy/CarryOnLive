@@ -38,6 +38,7 @@ const MilestoneReportPage = () => {
       }
     };
     fetchEstate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const benefactorFirst = estate?.name?.split(' ')[0] || 'your benefactor';
