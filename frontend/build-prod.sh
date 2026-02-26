@@ -52,8 +52,12 @@ print('Emergent-specific scripts stripped from index.html')
 
 echo "Building production bundle..."
 
-# Run the build
-yarn build
+# Run the build (use yarn if available, fall back to npm)
+if command -v yarn >/dev/null 2>&1; then
+    yarn build
+else
+    npm run build
+fi
 BUILD_EXIT=$?
 
 # Restore original index.html
