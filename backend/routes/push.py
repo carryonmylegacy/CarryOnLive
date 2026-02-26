@@ -1,7 +1,7 @@
 """CarryOn™ Backend — Push Notifications"""
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from typing import Dict
+from typing import Dict, Optional
 from datetime import datetime, timezone
 from config import db, logger
 from utils import get_current_user, vapid
