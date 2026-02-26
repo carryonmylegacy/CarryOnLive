@@ -357,6 +357,7 @@ const MessagesPage = () => {
                               {msg.trigger_type === 'immediate' && 'Deliver on transition'}
                               {msg.trigger_type === 'age_milestone' && `At age ${msg.trigger_age}`}
                               {msg.trigger_type === 'event' && `On ${msg.trigger_value}`}
+                              {msg.trigger_type === 'specific_date' && `On ${msg.trigger_date || 'specific date'}`}
                             </p>
                           </div>
                         </div>
@@ -640,6 +641,7 @@ const MessagesPage = () => {
               variant="outline"
               onClick={() => {
                 setShowCreateModal(false);
+                setEditingMessage(null);
                 resetForm();
               }}
               className="border-white/10 text-white"
