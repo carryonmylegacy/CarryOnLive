@@ -650,15 +650,27 @@ const VaultPage = () => {
                           )}
                         </Button>
                         {user?.role === 'benefactor' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-[#ef4444] hover:text-[#ef4444]"
-                            onClick={() => handleDelete(doc.id)}
-                            title="Delete"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-[#d4af37] hover:text-[#f5d050]"
+                              onClick={() => openEditModal(doc)}
+                              title="Edit"
+                              data-testid={`edit-document-${doc.id}`}
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-[#ef4444] hover:text-[#ef4444]"
+                              onClick={() => handleDelete(doc.id)}
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </>
                         )}
                       </div>
                     </CardContent>
