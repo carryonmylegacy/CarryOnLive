@@ -167,7 +167,7 @@ class TestEstates:
         data = response.json()
         assert data["id"] == TestState.estate_id
         assert data["name"] == "Test Estate"
-        print(f"✓ Get estate by ID successful")
+        print("✓ Get estate by ID successful")
     
     def test_update_estate(self, api_client):
         """PATCH /api/estates/{estate_id} - Update estate"""
@@ -453,7 +453,7 @@ class TestAdminEndpoints:
         if response.status_code == 200:
             data = response.json()
             TestState.admin_token = data["access_token"]
-            print(f"✓ Admin login successful")
+            print("✓ Admin login successful")
         else:
             print("✓ Admin account not available - skipping admin tests")
             pytest.skip("Admin account not available")
