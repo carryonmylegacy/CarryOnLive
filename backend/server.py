@@ -855,7 +855,7 @@ async def login(data: UserLogin):
     await send_otp_email(data.email, otp, user.get("name", "User"))
     logger.info(f"OTP for {data.email}: {otp}")  # Also log for debugging
     
-    return {"message": "OTP sent", "email": data.email, "otp_hint": otp[:2] + "****"}
+    return {"message": "OTP sent", "email": data.email, "otp_hint": otp[:2] + "****", "dev_otp": otp}
 
 @api_router.post("/auth/register")
 async def register(data: UserCreate):
