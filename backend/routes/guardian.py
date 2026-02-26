@@ -197,6 +197,7 @@ async def gather_estate_context(estate_id: str, include_doc_content: bool = Fals
 
 @router.post("/chat/guardian", response_model=ChatResponse)
 async def chat_with_guardian(data: ChatRequest, current_user: dict = Depends(get_current_user)):
+    """Send a message to the Estate Guardian AI."""
     if not xai_client:
         raise HTTPException(status_code=500, detail="AI service not configured")
     
@@ -363,6 +364,7 @@ Provide a clear, organized analysis with specific findings and recommendations."
 
 @router.get("/chat/history/{session_id}")
 async def get_chat_history(session_id: str, current_user: dict = Depends(get_current_user)):
+    """Retrieve chat history with the Estate Guardian."""
     history = await db.chat_history.find(
         {"session_id": session_id, "user_id": current_user["id"]},
         {"_id": 0}

@@ -14,6 +14,7 @@ router = APIRouter()
 
 @router.get("/documents/{estate_id}")
 async def get_documents(estate_id: str, current_user: dict = Depends(get_current_user)):
+    """List all documents for an estate."""
     documents = await db.documents.find(
         {"estate_id": estate_id}, 
         {"_id": 0, "file_data": 0, "lock_password_hash": 0, "backup_code": 0}
@@ -30,6 +31,7 @@ async def upload_document(
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user)
 ):
+    """Upload a new document to the estate vault."""
     if current_user["role"] != "benefactor":
         raise HTTPException(status_code=403, detail="Only benefactors can upload documents")
     
@@ -396,6 +398,7 @@ async def get_voice_hint(
 
 @router.delete("/documents/{document_id}")
 async def delete_document(document_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a document from the vault."""
     if current_user["role"] != "benefactor":
         raise HTTPException(status_code=403, detail="Only benefactors can delete documents")
     

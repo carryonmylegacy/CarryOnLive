@@ -17,6 +17,7 @@ async def upload_death_certificate(
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user)
 ):
+    """Upload a death certificate for verification."""
     content = await file.read()
     file_data = base64.b64encode(content).decode()
     
@@ -32,6 +33,7 @@ async def upload_death_certificate(
 
 @router.get("/transition/certificates")
 async def get_pending_certificates(current_user: dict = Depends(get_current_user)):
+    """List pending death certificates for admin review."""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Only admins can view pending certificates")
     
@@ -54,6 +56,7 @@ async def begin_review(certificate_id: str, current_user: dict = Depends(get_cur
 
 @router.post("/transition/approve/{certificate_id}")
 async def approve_death_certificate(certificate_id: str, current_user: dict = Depends(get_current_user)):
+    """Approve or reject a death certificate."""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Only admins can approve certificates")
     
@@ -98,6 +101,7 @@ async def approve_death_certificate(certificate_id: str, current_user: dict = De
 @router.get("/transition/status/{estate_id}")
 async def get_transition_status(estate_id: str, current_user: dict = Depends(get_current_user)):
     # Get the MOST RECENT certificate for this estate
+    """Check the transition status of an estate."""
     certificates = await db.death_certificates.find(
         {"estate_id": estate_id},
         {"_id": 0, "file_data": 0}
@@ -114,6 +118,7 @@ async def get_transition_status(estate_id: str, current_user: dict = Depends(get
 
 @router.post("/milestones/report")
 async def report_milestone(data: MilestoneReportCreate, current_user: dict = Depends(get_current_user)):
+    """Report a milestone event for a beneficiary."""
     if current_user["role"] != "beneficiary":
         raise HTTPException(status_code=403, detail="Only beneficiaries can report milestones")
     

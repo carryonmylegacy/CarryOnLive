@@ -44,6 +44,7 @@ class DigitalWalletUpdate(BaseModel):
 
 @router.get("/digital-wallet/{estate_id}")
 async def get_digital_wallet(estate_id: str, current_user: dict = Depends(get_current_user)):
+    """List all digital wallet entries for an estate."""
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
     if not estate:
         raise HTTPException(status_code=404, detail="Estate not found")
@@ -88,6 +89,7 @@ async def get_digital_wallet(estate_id: str, current_user: dict = Depends(get_cu
 
 @router.post("/digital-wallet")
 async def create_digital_wallet_entry(data: DigitalWalletCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new digital wallet entry."""
     if current_user.get("role") != "benefactor":
         raise HTTPException(status_code=403, detail="Only benefactors can add digital wallet entries")
 
@@ -127,6 +129,7 @@ async def create_digital_wallet_entry(data: DigitalWalletCreate, current_user: d
 
 @router.put("/digital-wallet/{entry_id}")
 async def update_digital_wallet_entry(entry_id: str, data: DigitalWalletUpdate, current_user: dict = Depends(get_current_user)):
+    """Update an existing wallet entry."""
     entry = await db.digital_wallet.find_one({"id": entry_id}, {"_id": 0})
     if not entry:
         raise HTTPException(status_code=404, detail="Entry not found")
@@ -163,6 +166,7 @@ async def update_digital_wallet_entry(entry_id: str, data: DigitalWalletUpdate, 
 
 @router.delete("/digital-wallet/{entry_id}")
 async def delete_digital_wallet_entry(entry_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a digital wallet entry."""
     entry = await db.digital_wallet.find_one({"id": entry_id}, {"_id": 0})
     if not entry:
         raise HTTPException(status_code=404, detail="Entry not found")

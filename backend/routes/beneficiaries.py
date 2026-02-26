@@ -20,11 +20,13 @@ from config import RESEND_API_KEY, SENDER_EMAIL
 
 @router.get("/beneficiaries/{estate_id}")
 async def get_beneficiaries(estate_id: str, current_user: dict = Depends(get_current_user)):
+    """List all beneficiaries for an estate."""
     beneficiaries = await db.beneficiaries.find({"estate_id": estate_id}, {"_id": 0}).to_list(100)
     return beneficiaries
 
 @router.post("/beneficiaries")
 async def create_beneficiary(data: BeneficiaryCreate, current_user: dict = Depends(get_current_user)):
+    """Add a new beneficiary to the estate."""
     if current_user["role"] != "benefactor":
         raise HTTPException(status_code=403, detail="Only benefactors can add beneficiaries")
     
@@ -100,6 +102,7 @@ async def create_beneficiary(data: BeneficiaryCreate, current_user: dict = Depen
 
 @router.delete("/beneficiaries/{beneficiary_id}")
 async def delete_beneficiary(beneficiary_id: str, current_user: dict = Depends(get_current_user)):
+    """Remove a beneficiary from the estate."""
     if current_user["role"] != "benefactor":
         raise HTTPException(status_code=403, detail="Only benefactors can remove beneficiaries")
     
