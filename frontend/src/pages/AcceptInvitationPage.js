@@ -36,10 +36,11 @@ const AcceptInvitationPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [accepted, setAccepted] = useState(false);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     fetchInvitationDetails();
   }, [token]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const fetchInvitationDetails = async () => {
     try {
