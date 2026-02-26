@@ -97,6 +97,8 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+    otp_method: str = "email"  # "email" or "sms"
+    phone: Optional[str] = None  # Required if otp_method is "sms"
 
 class OTPVerify(BaseModel):
     email: EmailStr
