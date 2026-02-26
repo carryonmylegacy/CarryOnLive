@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import {
   Shield,
   Plus,
@@ -17,7 +19,8 @@ import {
   AlertTriangle,
   CreditCard,
   Key,
-  Send
+  Send,
+  Loader2
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -25,6 +28,9 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
 import { SectionLockBanner } from '../components/security/SectionLock';
+
+// Initialize Stripe with test key
+const stripePromise = loadStripe('pk_test_emergent');
 
 const typeConfig = {
   delivery: { icon: Package, label: 'Delivery / Mailing', desc: 'Send packages, letters, cash, or items to a recipient', color: '#8b5cf6' },
