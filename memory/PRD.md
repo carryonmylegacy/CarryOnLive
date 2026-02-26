@@ -52,6 +52,20 @@
 - `POST /api/auth/register` - Register new account
 - `POST /api/auth/dev-login` - Bypass OTP (dev mode)
 
+### Beneficiary Management
+- `GET /api/beneficiaries/{estate_id}` - List beneficiaries
+- `POST /api/beneficiaries` - Create beneficiary
+- `PUT /api/beneficiaries/{beneficiary_id}` - Update beneficiary details
+- `DELETE /api/beneficiaries/{beneficiary_id}` - Remove beneficiary
+- `POST /api/beneficiaries/{beneficiary_id}/invite` - Send invitation email
+
+### Document Vault
+- `GET /api/documents/{estate_id}` - List documents
+- `POST /api/documents/upload` - Upload new document
+- `PUT /api/documents/{document_id}` - Update document metadata (name, category, notes)
+- `DELETE /api/documents/{document_id}` - Delete document
+- `GET /api/documents/{document_id}/download` - Download document
+
 ### Admin - Dev Switcher
 - `GET /api/admin/dev-switcher` - Get dev switcher config
 - `PUT /api/admin/dev-switcher` - Update dev switcher config
