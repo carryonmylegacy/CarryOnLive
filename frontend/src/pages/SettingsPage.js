@@ -19,7 +19,6 @@ import { Button } from '../components/ui/button';
 import { Switch } from '../components/ui/switch';
 import { Separator } from '../components/ui/separator';
 import NotificationSettings from '../components/NotificationSettings';
-import SecuritySettings from '../components/SecuritySettings';
 
 const plans = [
   { name: 'Premium', price: '$8.99', benPrice: '$2.99', features: ['Full platform access', 'Estate Guardian AI', 'Unlimited vault storage', 'Unlimited milestone messages', 'Immediate Action Checklist', 'Beneficiary management', 'Priority support'], extra: 'Priority access to Eternal Echo AI Digital Corpus when available' },
@@ -94,12 +93,6 @@ const SettingsPage = () => {
 
       {/* Push Notifications */}
       <NotificationSettings getAuthHeaders={() => {
-        const token = localStorage.getItem('carryon_token');
-        return { headers: { Authorization: `Bearer ${token}` } };
-      }} />
-
-      {/* Section Security (Triple Lock) */}
-      <SecuritySettings getAuthHeaders={() => {
         const token = localStorage.getItem('carryon_token');
         return { headers: { Authorization: `Bearer ${token}` } };
       }} />
