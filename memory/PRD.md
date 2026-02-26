@@ -24,7 +24,7 @@
   - Auto-links beneficiary record to new user account
 
 ### Beneficiary Side (11 pages)
-- Estate Hub with orbiting balls physics animation
+- Estate Hub with **generational orbit visualization** (family members organized by generation: spouse/children → parents/siblings → grandparents → great-grandparents)
 - Pre-Transition, Upload Certificate (3-step wizard), Condolence Splash (5-phase)
 - Post-Transition Dashboard, Sealed Vault, Checkable Checklist
 - Messages (text/voice/video playback), Estate Guardian (read-only)
