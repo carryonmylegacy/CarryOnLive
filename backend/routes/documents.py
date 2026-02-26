@@ -363,7 +363,7 @@ async def setup_voice_passphrase(
     return {"message": "Voice passphrase set up successfully", "hint": passphrase[:3] + "..."}
 
 @router.post("/documents/{document_id}/voice/verify")
-async def verify_voice_passphrase(
+async def verify_document_voice_passphrase(
     document_id: str,
     data: VoiceVerifyRequest,
     current_user: dict = Depends(get_current_user)
