@@ -351,10 +351,16 @@ const LockSetupModal = ({ sectionId, onClose, onComplete }) => {
               </div>
               <div>
                 <Label className="text-[var(--t4)] text-xs">Security Question</Label>
-                <select value={backupQ} onChange={e => setBackupQ(e.target.value)} className="input-field mt-1 w-full rounded-lg p-3 bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm">
-                  <option value="">Choose a question...</option>
-                  {SECURITY_QUESTIONS.map(q => <option key={q} value={q}>{q}</option>)}
-                </select>
+                <Select value={backupQ} onValueChange={setBackupQ}>
+                  <SelectTrigger className="input-field mt-1 w-full">
+                    <SelectValue placeholder="Choose a question..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#141C33] border-[var(--b)]" style={{ zIndex: 99999 }}>
+                    {SECURITY_QUESTIONS.map(q => (
+                      <SelectItem key={q} value={q} className="text-[var(--t2)] hover:bg-[var(--s)] cursor-pointer">{q}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label className="text-[var(--t4)] text-xs">Your Answer</Label>
