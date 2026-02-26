@@ -309,7 +309,7 @@ class TestReadinessAPIResponses:
     @pytest.fixture(scope="class")
     def auth_token(self):
         """Get authentication token"""
-        login_resp = requests.post(f"{BASE_URL}/api/auth/login", json={
+        login_resp = requests.post(f"{BASE_URL}/api/auth/login", json={  # noqa: F841
             "email": "pete@mitchell.com",
             "password": "password123"
         })
