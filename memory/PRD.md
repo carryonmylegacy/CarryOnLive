@@ -65,7 +65,14 @@
 - Backend: `ruff check .` → All checks passed (0 errors)
 - Backend: `ruff format .` → All files formatted
 - Frontend: `yarn build` → Compiled successfully (0 warnings)
-- Testing: 40/40 backend API tests passed, all frontend UI verified
+- Testing: 91/91 comprehensive pytest tests passing (P0-P3 coverage)
+  - `tests/test_comprehensive_suite.py`: 91 tests covering auth, estates, beneficiaries, checklist, documents, messages, digital wallet, support, security, admin, digest, push, subscriptions, family plan, DTS, transition, PDF export, Guardian AI, edge cases, _id leak checks, and cleanup
+
+## Test Coverage
+- **P0 Auth**: Registration, duplicate rejection, OTP flow (send/wrong/correct), dev-login, bad tokens, nonexistent users
+- **P1 CRUD**: Full create/read/update/delete for estates, beneficiaries, checklist, documents, messages, digital wallet, support
+- **P2 Admin/Services**: Stats, users, activity, role-based rejection, digest prefs, VAPID, subscriptions, family plan, DTS, transition, PDF export
+- **P3 Edge Cases**: Invalid JSON, empty body, 404s, cross-user access, SQL injection, XSS, oversized payloads, MongoDB _id leak verification
 
 ## Upcoming / Backlog
 - Admin analytics dashboard with charts
