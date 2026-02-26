@@ -266,6 +266,7 @@ curl -X POST https://your-backend-url/api/auth/register \
 | `MONGO_URL` | Yes | MongoDB connection string |
 | `DB_NAME` | Yes | Database name (default: `carryon_db`) |
 | `JWT_SECRET` | Yes | Secret for JWT tokens |
+| `ENCRYPTION_KEY` | Yes | AES encryption key for document vault (32+ chars) |
 | `CORS_ORIGINS` | Yes | Allowed origins (comma-separated) |
 | `RESEND_API_KEY` | Yes | Resend API key for emails |
 | `SENDER_EMAIL` | Yes | From address for emails |
