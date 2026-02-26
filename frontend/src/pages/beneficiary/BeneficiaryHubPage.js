@@ -61,13 +61,15 @@ const BeneficiaryHubPage = () => {
       </div>
 
       {/* Orbit Visualization */}
-      {estates.length > 0 && (
+      {(familyConnections.length > 0 || estates.length > 0) && (
         <OrbitVisualization
           estates={estates}
+          benefactors={familyConnections.length > 0 ? familyConnections : estates}
           userInitials={user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
-          onEstateClick={(estate) => {
-            localStorage.setItem('beneficiary_estate_id', estate.id);
-            if (estate.status === 'transitioned') {
+          onEstateClick={(member) => {
+            const estateId = member.estate_id || member.id;
+            localStorage.setItem('beneficiary_estate_id', estateId);
+            if (member.status === 'transitioned') {
               navigate('/beneficiary/dashboard');
             } else {
               navigate('/beneficiary/pre');
