@@ -45,7 +45,7 @@ print('Emergent-specific scripts stripped from index.html')
 " || {
     echo "Python stripping failed, falling back to sed..."
     # Fallback: just remove the known script lines
-    cp public/index.html.bak public/index.html
+    cp /tmp/index.html.carryon.bak public/index.html
     sed -i '/DataCloneError/d' public/index.html
     sed -i '/assets\.emergent\.sh/d' public/index.html
 }
