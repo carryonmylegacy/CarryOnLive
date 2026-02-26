@@ -23,7 +23,7 @@ import json as json_module
 import stripe
 
 # Import shared modules
-from config import db, logger, client, xai_client, XAI_MODEL, SENDER_EMAIL
+from config import db, logger, client, xai_client, XAI_MODEL, SENDER_EMAIL, RESEND_API_KEY
 from utils import (
     encrypt_data, decrypt_data, generate_backup_code,
     hash_password, verify_password, create_token, decode_token,
