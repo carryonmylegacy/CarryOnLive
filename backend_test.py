@@ -728,25 +728,308 @@ class CarryOnAPITester:
         
         return overall_success
 
+    def create_test_user(self):
+        """Create a test user for complete flow testing"""
+        print(f"\n👤 Creating Test User")
+        
+        test_email = f"test.user.{datetime.now().strftime('%Y%m%d%H%M%S')}@carryon-test.com"
+        test_password = "SecurePass123!"
+        
+        # Create test user
+        user_data = {
+            "email": test_email,
+            "password": test_password,
+            "first_name": "John",
+            "last_name": "Doe",
+            "role": "benefactor"
+        }
+        
+        success, response = self.run_test(
+            "Create Test User",
+            "POST",
+            "auth/register",
+            200,
+            data=user_data
+        )
+        
+        if success:
+            print(f"   ✅ Test user created: {test_email}")
+            
+            # Login with the new user
+            login_success = self.test_login_flow(test_email, test_password)
+            
+            if login_success:
+                print(f"   ✅ Test user login successful")
+                return True, test_email, test_password
+        
+        return False, None, None
+    
+    def create_test_estate(self):
+        """Create a test estate for the user"""
+        print(f"\n🏠 Creating Test Estate")
+        
+        estate_data = {
+            "name": f"Test Estate {datetime.now().strftime('%Y%m%d%H%M%S')}",
+            "description": "Test estate for comprehensive flow testing"
+        }
+        
+        success, response = self.run_test(
+            "Create Test Estate",
+            "POST",
+            "estates",
+            200,
+            data=estate_data
+        )
+        
+        if success and 'id' in response:
+            self.estate_id = response['id']
+            print(f"   ✅ Test estate created: {response['name']} (ID: {self.estate_id})")
+            return True
+        
+        return False
+    
+    def create_test_beneficiary(self):
+        """Create a test beneficiary for the estate"""
+        print(f"\n👥 Creating Test Beneficiary")
+        
+        beneficiary_data = {
+            "estate_id": self.estate_id,
+            "first_name": "Jane",
+            "last_name": "Smith", 
+            "relation": "Sister",
+            "email": f"jane.smith.{datetime.now().strftime('%H%M%S')}@test.com",
+            "phone": "+1234567890",
+            "date_of_birth": "1985-05-15T00:00:00Z",
+            "gender": "female",
+            "address_street": "123 Test St",
+            "address_city": "Test City",
+            "address_state": "CA",
+            "address_zip": "90210",
+            "avatar_color": "#3B82F6"
+        }
+        
+        success, response = self.run_test(
+            "Create Test Beneficiary",
+            "POST",
+            "beneficiaries",
+            200,
+            data=beneficiary_data
+        )
+        
+        if success and 'id' in response:
+            self.beneficiary_id = response['id']
+            print(f"   ✅ Test beneficiary created: {response['name']} (ID: {self.beneficiary_id})")
+            return True
+        
+        return False
+    
+    def test_comprehensive_flows(self):
+        """Test all the critical flows mentioned in the review request"""
+        print(f"\n🔄 Testing Comprehensive Backend Flows")
+        
+        all_success = True
+        
+        # 1. Health check
+        print(f"\n1️⃣ Health Check Flow")
+        health_success, health_response = self.run_test(
+            "Health Check",
+            "GET", 
+            "health",
+            200
+        )
+        
+        if health_success:
+            expected_fields = ["status", "database", "version"]
+            has_all_fields = all(field in health_response for field in expected_fields)
+            if has_all_fields and health_response["status"] == "healthy":
+                print(f"   ✅ Health check passed: {health_response}")
+            else:
+                print(f"   ❌ Health check format issue: {health_response}")
+                all_success = False
+        else:
+            all_success = False
+        
+        # 2. Create test user and login  
+        print(f"\n2️⃣ Auth Flow (Register + Login)")
+        user_success, test_email, test_password = self.create_test_user()
+        if not user_success:
+            print(f"   ❌ User creation/login failed")
+            all_success = False
+        
+        # 3. Estate creation
+        print(f"\n3️⃣ Estate Creation Flow") 
+        if user_success:
+            estate_success = self.create_test_estate()
+            if not estate_success:
+                print(f"   ❌ Estate creation failed")
+                all_success = False
+        else:
+            estate_success = False
+            all_success = False
+        
+        # 4. Beneficiary flow
+        print(f"\n4️⃣ Beneficiary Flow")
+        if estate_success:
+            beneficiary_success = self.create_test_beneficiary()
+            if not beneficiary_success:
+                print(f"   ❌ Beneficiary creation failed")
+                all_success = False
+        else:
+            beneficiary_success = False
+            all_success = False
+        
+        # 5. Document upload
+        print(f"\n5️⃣ Document Upload Flow")
+        if estate_success:
+            doc_success = self.test_document_upload_basic()
+            if not doc_success:
+                print(f"   ❌ Document upload failed")
+                all_success = False
+        else:
+            doc_success = False
+            all_success = False
+        
+        # 6. Guardian AI chat
+        print(f"\n6️⃣ Guardian AI Flow")
+        if estate_success:
+            ai_success = self.test_guardian_ai_basic()
+            if not ai_success:
+                print(f"   ❌ Guardian AI failed")
+                all_success = False
+        else:
+            ai_success = False
+            all_success = False
+        
+        # 7. Checklist
+        print(f"\n7️⃣ Checklist Flow")
+        if estate_success:
+            checklist_success = self.test_checklist_basic()
+            if not checklist_success:
+                print(f"   ❌ Checklist failed")
+                all_success = False
+        else:
+            checklist_success = False
+            all_success = False
+        
+        # Summary
+        print(f"\n{'='*60}")
+        print(f"🔍 COMPREHENSIVE FLOW TEST RESULTS:")
+        print(f"   1️⃣ Health Check: {'✅' if health_success else '❌'}")
+        print(f"   2️⃣ Auth Flow: {'✅' if user_success else '❌'}")  
+        print(f"   3️⃣ Estate Creation: {'✅' if estate_success else '❌'}")
+        print(f"   4️⃣ Beneficiary Flow: {'✅' if beneficiary_success else '❌'}")
+        print(f"   5️⃣ Document Upload: {'✅' if doc_success else '❌'}")
+        print(f"   6️⃣ Guardian AI: {'✅' if ai_success else '❌'}")
+        print(f"   7️⃣ Checklist: {'✅' if checklist_success else '❌'}")
+        
+        return all_success
+    
+    def test_document_upload_basic(self):
+        """Basic document upload test"""
+        test_content = b"This is a test document for comprehensive flow testing"
+        files = {'file': ('test_flow_document.txt', io.BytesIO(test_content), 'text/plain')}
+        
+        upload_url = f"documents/upload?estate_id={self.estate_id}&name=Flow%20Test%20Document&category=legal"
+        
+        success, response = self.run_test(
+            "Basic Document Upload",
+            "POST",
+            upload_url,
+            200,
+            files=files
+        )
+        
+        if success and 'id' in response:
+            self.document_id = response['id']
+            print(f"   ✅ Document uploaded successfully: {response['name']}")
+            
+            # Test retrieving documents
+            get_success, get_response = self.run_test(
+                "Get Documents",
+                "GET", 
+                f"documents/{self.estate_id}",
+                200
+            )
+            
+            if get_success and get_response:
+                print(f"   ✅ Documents retrieved: {len(get_response)} documents")
+                return True
+        
+        return False
+    
+    def test_guardian_ai_basic(self):
+        """Basic Guardian AI test"""
+        chat_data = {
+            "message": "What is estate planning?",
+            "estate_id": self.estate_id
+        }
+        
+        success, response = self.run_test(
+            "Guardian AI Chat",
+            "POST", 
+            "chat/guardian",
+            200,
+            data=chat_data
+        )
+        
+        if success and 'response' in response:
+            print(f"   ✅ Guardian AI responded: {response['response'][:100]}...")
+            return True
+        
+        return False
+        
+    def test_checklist_basic(self):
+        """Basic checklist test"""
+        success, response = self.run_test(
+            "Get Checklist Items",
+            "GET",
+            f"checklists/{self.estate_id}",
+            200
+        )
+        
+        if success:
+            checklist_count = len(response) if response else 0
+            print(f"   ✅ Checklist retrieved: {checklist_count} items")
+            
+            if response and len(response) > 0:
+                # Test toggling an item
+                item_id = response[0]['id']
+                toggle_success, toggle_response = self.run_test(
+                    "Toggle Checklist Item",
+                    "PATCH",
+                    f"checklists/{item_id}/toggle",
+                    200
+                )
+                
+                if toggle_success:
+                    print(f"   ✅ Checklist item toggled successfully")
+                    return True
+            else:
+                # No items yet, which is ok for new estate
+                print(f"   ℹ️  No checklist items found (normal for new estate)")
+                return True
+        
+        return False
+
 def main():
-    """Main test execution focused on production readiness"""
-    print("🚀 Starting CarryOn™ Production Readiness Tests")
+    """Main test execution for the comprehensive backend flows"""
+    print("🚀 Starting CarryOn™ Comprehensive Backend Testing")
     print("=" * 60)
     
     tester = CarryOnAPITester()
     
-    # Focus on production readiness tests
-    production_ready = tester.test_production_readiness()
+    # Run the comprehensive flow tests as requested
+    comprehensive_success = tester.test_comprehensive_flows()
     
     # Print final results
     print(f"\n{'='*60}")
     print(f"📊 Test Results: {tester.tests_passed}/{tester.tests_run} passed")
     
-    if production_ready and tester.tests_passed == tester.tests_run:
-        print("🎉 Backend is production ready!")
+    if comprehensive_success:
+        print("🎉 All critical backend flows are working!")
         return 0
     else:
-        print("❌ Backend production readiness issues found")
+        print("❌ Some critical backend flows have issues")
         return 1
 
 if __name__ == "__main__":
