@@ -577,27 +577,30 @@ const DevSwitcherConfig = ({ users, getAuthHeaders }) => {
                 )}
               </div>
             ) : (
-              <select
-                value={config.beneficiary_email}
-                onChange={(e) => setConfig(prev => ({ ...prev, beneficiary_email: e.target.value, beneficiary_password: '' }))}
-                className="w-full p-3 rounded-lg bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm"
-              >
-                <option value="">Select a beneficiary...</option>
-              {beneficiaries.map(u => (
-                <option key={u.id} value={u.email}>{u.name} ({u.email})</option>
-              ))}
-            </select>
-            {config.beneficiary_email && (
-              <div className="space-y-2">
-                <Label className="text-[var(--t5)] text-sm">Password for {config.beneficiary_email}</Label>
-                <Input
-                  type="password"
-                  value={config.beneficiary_password}
-                  onChange={(e) => setConfig(prev => ({ ...prev, beneficiary_password: e.target.value }))}
-                  placeholder="Enter password for quick switch"
-                  className="input-field"
-                />
-              </div>
+              <>
+                <select
+                  value={config.beneficiary_email}
+                  onChange={(e) => setConfig(prev => ({ ...prev, beneficiary_email: e.target.value, beneficiary_password: '' }))}
+                  className="w-full p-3 rounded-lg bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm"
+                >
+                  <option value="">Select a beneficiary...</option>
+                  {beneficiaries.map(u => (
+                    <option key={u.id} value={u.email}>{u.name} ({u.email})</option>
+                  ))}
+                </select>
+                {config.beneficiary_email && (
+                  <div className="space-y-2">
+                    <Label className="text-[var(--t5)] text-sm">Password for {config.beneficiary_email}</Label>
+                    <Input
+                      type="password"
+                      value={config.beneficiary_password}
+                      onChange={(e) => setConfig(prev => ({ ...prev, beneficiary_password: e.target.value }))}
+                      placeholder="Enter password for quick switch"
+                      className="input-field"
+                    />
+                  </div>
+                )}
+              </>
             )}
           </div>
 
