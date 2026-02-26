@@ -16,7 +16,8 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
-  Edit2
+  Edit2,
+  Camera
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
