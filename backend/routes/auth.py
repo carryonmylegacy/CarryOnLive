@@ -43,24 +43,22 @@ async def login(data: UserLogin):
     # Send OTP via selected method
     if otp_method == "sms" and data.phone:
         await send_otp_sms(data.phone, otp)
-        logger.info(f"SMS OTP for {data.email} to {data.phone}: {otp}")
+        logger.info(f"SMS OTP sent for {data.email} to {data.phone}")
         return {
             "message": "OTP sent via SMS", 
             "email": data.email, 
             "otp_hint": otp[:2] + "****", 
             "otp_method": "sms",
-            "phone_hint": data.phone[-4:] if data.phone else None,
-            "dev_otp": otp
+            "phone_hint": data.phone[-4:] if data.phone else None
         }
     else:
         await send_otp_email(data.email, otp, user.get("name", "User"))
-        logger.info(f"Email OTP for {data.email}: {otp}")
+        logger.info(f"Email OTP sent for {data.email}")
         return {
             "message": "OTP sent via email", 
             "email": data.email, 
             "otp_hint": otp[:2] + "****", 
-            "otp_method": "email",
-            "dev_otp": otp
+            "otp_method": "email"
         }
 
 @router.post("/auth/register")
