@@ -175,16 +175,6 @@ const LoginPage = () => {
             AES-256 Encrypted · Zero-Knowledge · SOC 2
           </p>
         </div>
-
-        {/* Test Credentials Hint */}
-        <div className="mt-4 p-3 glass-card">
-          <p className="text-xs text-[#525C72] text-center">
-            <strong className="text-[#A0AABF]">Test Accounts:</strong><br />
-            Benefactor: pete@mitchell.com / password123<br />
-            Beneficiary: penny@mitchell.com / password123<br />
-            Admin: admin@carryon.com / admin123
-          </p>
-        </div>
       </div>
 
       {/* OTP Modal */}
