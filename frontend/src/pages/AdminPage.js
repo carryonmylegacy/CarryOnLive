@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   Shield, Users, FileKey, Clock, CheckCircle2, XCircle, Trash2, Loader2,
   FolderLock, Search, UserCircle, Eye, Package, Lock, DollarSign, Mail, Flame,
-  ChevronRight, AlertTriangle, Settings, Headphones, Send, MessageCircle
+  ChevronRight, AlertTriangle, Settings, Headphones, Send, MessageCircle, CreditCard, ToggleLeft
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -28,6 +28,7 @@ const AdminPage = () => {
     : location.pathname === '/admin/dts' ? 'dts' 
     : location.pathname === '/admin/dev-switcher' ? 'dev-switcher'
     : location.pathname === '/admin/support' ? 'support'
+    : location.pathname === '/admin/subscriptions' ? 'subscriptions'
     : 'users';
   const [tab, setTab] = useState(pathTab);
   const [users, setUsers] = useState([]);
