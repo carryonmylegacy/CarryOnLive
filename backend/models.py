@@ -290,7 +290,6 @@ def get_expected_milestones(beneficiary: dict) -> list:
     milestones = ["Upon Death"]  # Everyone gets this
     
     relation = beneficiary.get("relation", "").lower()
-    gender = beneficiary.get("gender", "").lower()
     dob_str = beneficiary.get("date_of_birth")
     
     # Calculate age if DOB is provided
