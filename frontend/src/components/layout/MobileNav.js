@@ -234,9 +234,7 @@ const MobileNav = () => {
         <div className="flex items-end h-16 px-1">
           {getBottomNav().map((item, index) => {
             const isCenter = item.isCenter;
-            const isBeforeCenter = index === 1;
-            const isAfterCenter = index === 3;
-            const showDivider = index < getBottomNav().length - 1 && !isBeforeCenter && !isCenter;
+            const showDivider = index < getBottomNav().length - 1;
             
             return (
               <React.Fragment key={item.to}>
@@ -267,12 +265,12 @@ const MobileNav = () => {
                     ) : (
                       <>
                         <item.icon className="w-5 h-5" />
-                        <span className="text-[10px] font-medium">{item.label}</span>
+                        <span className="text-xs font-medium">{item.label}</span>
                       </>
                     )
                   )}
                 </NavLink>
-                {/* Vertical divider - skip around Home button */}
+                {/* Vertical divider between all buttons */}
                 {showDivider && (
                   <div 
                     className="h-10 w-px bg-gray-500/30 flex-shrink-0" 
