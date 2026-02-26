@@ -3,30 +3,33 @@
 ## Architecture (Refactored Feb 2026)
 ```
 /app/backend/
-├── server.py          — App init, router composition, middleware, weekly digest scheduler
-├── config.py          — DB, env vars, external service clients
-├── utils.py           — Encryption, auth, email, SMS, push, logging
-├── voice_biometrics.py — Enhanced voice biometric engine
-├── models.py          — Pydantic models, readiness calc, seed data
-└── routes/
-    ├── auth.py        — Login, register, OTP, dev-login
-    ├── admin.py       — User mgmt, role management, activity log, stats
-    ├── estates.py     — Estate CRUD, readiness routes
-    ├── beneficiaries.py — Beneficiary CRUD, invitations, photos
-    ├── documents.py   — Vault CRUD, voice verification
-    ├── messages.py    — Milestone messages
-    ├── checklist.py   — IAC CRUD
-    ├── transition.py  — Death cert, transition flow
-    ├── dts.py         — Trustee services, Stripe setup
-    ├── guardian.py    — AI chat (Grok), estate analysis, generate_checklist from vault
-    ├── subscriptions.py — Plans, checkout, admin pricing
-    ├── support.py     — Customer support chat
-    ├── family_plan.py — Family plan system
-    ├── digital_wallet.py — Digital wallet vault
-    ├── pdf_export.py  — PDF estate plan export
-    ├── security.py    — Triple lock section security
-    ├── push.py        — Push notification routes (subscribe/unsubscribe/VAPID)
-    └── digest.py      — Weekly estate readiness digest (email, scheduler, preferences)
+├── server.py          110 lines — App init, router composition, digest scheduler
+├── config.py           73 lines — DB, env vars, external service clients
+├── utils.py           202 lines — Auth helpers (token, password, OTP, email, SMS, push)
+├── models.py          305 lines — Pydantic models and schemas ONLY
+├── services/
+│   ├── readiness.py   362 lines — Estate readiness scoring, milestones, seed data
+│   └── voice_biometrics.py 473 lines — Voice biometric engine (librosa + scipy)
+├── routes/
+│   ├── auth.py        170 lines — Login, register, OTP, dev-login
+│   ├── admin.py       233 lines — User mgmt, role management, activity log, stats
+│   ├── estates.py     238 lines — Estate CRUD, readiness routes
+│   ├── beneficiaries.py 512 lines — Beneficiary CRUD, invitations, photos
+│   ├── documents.py   439 lines — Vault CRUD, voice verification
+│   ├── messages.py    162 lines — Milestone messages
+│   ├── checklist.py   120 lines — IAC CRUD
+│   ├── transition.py  155 lines — Death cert, transition flow
+│   ├── dts.py         290 lines — Trustee services, Stripe setup
+│   ├── guardian.py    376 lines — AI chat (Grok), estate analysis, checklist gen
+│   ├── subscriptions.py 477 lines — Plans, checkout, admin pricing
+│   ├── support.py     174 lines — Customer support chat
+│   ├── family_plan.py 267 lines — Family plan system
+│   ├── digital_wallet.py 183 lines — Digital wallet vault
+│   ├── pdf_export.py  266 lines — PDF estate plan export
+│   ├── security.py    386 lines — Triple lock section security
+│   ├── push.py         84 lines — Push notification routes
+│   └── digest.py      306 lines — Weekly readiness digest (email, scheduler, prefs)
+└── tests/             10 test files
 ```
 
 ## Implemented Features
@@ -37,28 +40,26 @@
 - Family Plan (admin-toggled)
 - Legal Pages: Privacy Policy (/privacy) and Terms of Service (/terms)
 - SMS Consent Checkbox (Twilio A2P 10DLC compliance)
-- P0: AI Suggest from Vault — EGA auto-generates IAC items from vault documents
-- P1: Admin Panel — user role management, activity log tab
-- P2: Web Push Notifications — VAPID keys, service worker, settings toggle
-- **Weekly Estate Readiness Digest** — Monday 8AM EST email with score trend + top 3 actions
+- AI Suggest from Vault — EGA auto-generates IAC items from vault documents
+- Admin Panel — user role management, activity log tab
+- Web Push Notifications — VAPID keys, service worker, settings toggle
+- Weekly Estate Readiness Digest — Monday 8AM EST email with score trend + top 3 actions
 
-## Key API Endpoints (Digest)
-- `GET /api/digest/preferences` — Get user's digest opt-in status
-- `PUT /api/digest/preferences` — Toggle weekly digest on/off
-- `POST /api/digest/send-weekly` — Admin-only manual trigger
-- `POST /api/digest/preview` — Send preview digest to current user
+## Key API Endpoints
+- Auth: `/api/auth/login`, `/api/auth/verify-otp`, `/api/auth/dev-login`
+- Admin: `/api/admin/stats`, `/api/admin/users/{id}/role`, `/api/admin/activity`
+- Estates: `/api/estates`, `/api/estates/{id}/readiness`
+- Digest: `/api/digest/preferences`, `/api/digest/send-weekly`, `/api/digest/preview`
+- Push: `/api/push/vapid-public-key`, `/api/push/subscribe`
 
-## DB Collections (Digest)
-- `readiness_history` — Weekly score snapshots per estate (for trend calculation)
-- `user_preferences` — Digest opt-in/out per user
+## DB Collections
+- `users`, `estates`, `beneficiaries`, `documents`, `messages`, `checklists`
+- `readiness_history` — Weekly score snapshots
+- `user_preferences` — Digest opt-in/out
+- `activity_log` — Admin action audit trail
 
-## Recently Completed (Feb 2026)
-1. Legal Pages & SMS Consent for Twilio A2P 10DLC
-2. Full codebase audit: 0 Python lint errors, 0 JS warnings
-3. P0: AI Suggest from Vault
-4. P1: Admin Panel (role management, activity log)
-5. P2: Web Push Notifications (VAPID keys, service worker)
-6. Weekly Estate Readiness Digest
+## API Keys Active
+- xAI Grok, Stripe (test), Resend, Twilio, Emergent LLM (Whisper), VAPID keys
 
 ## Upcoming / Backlog
 - Admin analytics dashboard with charts
