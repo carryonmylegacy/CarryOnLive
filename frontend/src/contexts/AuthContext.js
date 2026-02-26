@@ -29,8 +29,12 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, [token]);
 
-  const login = async (email, password) => {
-    const response = await axios.post(`${API_URL}/auth/login`, { email, password });
+  const login = async (email, password, otpMethod = 'email', phone = null) => {
+    const payload = { email, password, otp_method: otpMethod };
+    if (otpMethod === 'sms' && phone) {
+      payload.phone = phone;
+    }
+    const response = await axios.post(`${API_URL}/auth/login`, payload);
     setPendingEmail(email);
     return response.data;
   };
