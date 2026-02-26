@@ -105,6 +105,9 @@ function AppRoutes() {
           <SignupPage />
         </PublicRoute>
       } />
+      
+      {/* Invitation Accept Route - Public */}
+      <Route path="/accept-invitation/:token" element={<AcceptInvitationPage />} />
 
       {/* Benefactor Routes */}
       <Route element={
