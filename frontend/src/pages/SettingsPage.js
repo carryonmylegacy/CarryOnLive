@@ -252,6 +252,36 @@ const SettingsPage = () => {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
+              <h4 className="text-[var(--t)] font-medium flex items-center gap-2">
+                <Mail className="w-4 h-4 text-[var(--t4)]" />
+                Weekly Estate Digest
+              </h4>
+              <p className="text-[var(--t5)] text-sm">Monday morning readiness report with your top 3 action items</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {digestLoading && <Loader2 className="w-4 h-4 animate-spin text-[var(--gold)]" />}
+              <Switch
+                checked={weeklyDigest}
+                onCheckedChange={toggleDigest}
+                disabled={digestLoading}
+                data-testid="settings-weekly-digest-toggle"
+              />
+            </div>
+          </div>
+          {weeklyDigest && user?.role === 'benefactor' && (
+            <button
+              onClick={sendPreview}
+              disabled={digestSending}
+              className="text-xs text-[var(--gold)] hover:underline flex items-center gap-1"
+              data-testid="settings-digest-preview"
+            >
+              {digestSending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
+              Send me a preview now
+            </button>
+          )}
+          <Separator className="bg-[var(--b)]" />
+          <div className="flex items-center justify-between">
+            <div>
               <h4 className="text-[var(--t)] font-medium">Email Notifications</h4>
               <p className="text-[var(--t5)] text-sm">Receive updates via email</p>
             </div>
