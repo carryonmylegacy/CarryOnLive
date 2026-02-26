@@ -2695,11 +2695,15 @@ async def update_dts_task(task_id: str, data: DTSTaskUpdate, current_user: dict 
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     
-    # Verify ownership - check both estate ownership and task owner
+    # Verify ownership - check estate ownership, task owner, or benefactor role with matching estate
     estate = await db.estates.find_one({"id": task["estate_id"], "user_id": current_user["id"]})
     is_task_owner = task.get("owner_id") == current_user["id"]
+    # Also allow if user is benefactor and has an estate matching the task's estate_id
+    user_estates = await db.estates.find({"user_id": current_user["id"]}, {"_id": 0, "id": 1}).to_list(100)
+    user_estate_ids = [e["id"] for e in user_estates]
+    has_estate_access = task["estate_id"] in user_estate_ids
     
-    if not estate and not is_task_owner and current_user["role"] != "admin":
+    if not estate and not is_task_owner and not has_estate_access and current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Not authorized to edit this task")
     
     # Build update dict from provided fields
@@ -2722,11 +2726,15 @@ async def delete_dts_task(task_id: str, current_user: dict = Depends(get_current
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     
-    # Verify ownership - check both estate ownership and task owner
+    # Verify ownership - check estate ownership, task owner, or benefactor with estate access
     estate = await db.estates.find_one({"id": task["estate_id"], "user_id": current_user["id"]})
     is_task_owner = task.get("owner_id") == current_user["id"]
+    # Also allow if user has an estate matching the task's estate_id
+    user_estates = await db.estates.find({"user_id": current_user["id"]}, {"_id": 0, "id": 1}).to_list(100)
+    user_estate_ids = [e["id"] for e in user_estates]
+    has_estate_access = task["estate_id"] in user_estate_ids
     
-    if not estate and not is_task_owner and current_user["role"] != "admin":
+    if not estate and not is_task_owner and not has_estate_access and current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Not authorized to delete this task")
     
     await db.dts_tasks.delete_one({"id": task_id})
