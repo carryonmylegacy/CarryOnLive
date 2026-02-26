@@ -2878,7 +2878,8 @@ async def update_estate_readiness(estate_id: str):
 
 @app.on_event("startup")
 async def startup_event():
-    await seed_mock_data()
+    # No seed data - starting fresh with real accounts only
+    logger.info("CarryOn™ API started - ready for real accounts")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
