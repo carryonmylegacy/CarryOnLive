@@ -64,7 +64,7 @@ class TestDigestPreferences:
         )
         assert resp.status_code == 200, f"Expected 200 but got {resp.status_code}: {resp.text}"
         data = resp.json()
-        assert data.get("weekly_digest") == False, f"Expected weekly_digest=False, got {data}"
+        assert not data.get("weekly_digest"), f"Expected weekly_digest=False, got {data}"
         print(f"PUT /api/digest/preferences (off): {data}")
     
     def test_put_preferences_toggle_on(self, admin_token):
@@ -77,7 +77,7 @@ class TestDigestPreferences:
         )
         assert resp.status_code == 200, f"Expected 200 but got {resp.status_code}: {resp.text}"
         data = resp.json()
-        assert data.get("weekly_digest") == True, f"Expected weekly_digest=True, got {data}"
+        assert data.get("weekly_digest"), f"Expected weekly_digest=True, got {data}"
         print(f"PUT /api/digest/preferences (on): {data}")
     
     def test_put_preferences_requires_auth(self):
