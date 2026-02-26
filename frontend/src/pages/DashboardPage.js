@@ -147,17 +147,6 @@ const DashboardPage = () => {
             </filter>
           </defs>
           
-          {/* Blurred outer glow arc */}
-          <path
-            d="M 20 100 A 80 80 0 0 1 180 100"
-            fill="none"
-            stroke="url(#gaugeGradient)"
-            strokeWidth="35"
-            strokeLinecap="round"
-            filter="url(#gaugeBlur)"
-            opacity="0.6"
-          />
-          
           {/* Main solid rainbow arc */}
           <path
             d="M 20 100 A 80 80 0 0 1 180 100"
