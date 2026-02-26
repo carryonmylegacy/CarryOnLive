@@ -5,68 +5,52 @@ Build a full-stack web app called CarryOn™ — a secure estate planning and le
 
 ## What's Been Implemented (Complete)
 
-### Authentication
+### Authentication & Security
 - Email/Password login with 6-digit OTP 2FA (email + SMS)
-- JWT tokens with 24-hour expiration
-- Role-based access (benefactor, beneficiary, admin)
+- Triple Lock Section Security: Password + Voice Biometric + Security Question per section
+- 3 lock behavior modes per section (auto on page leave, on logout, manual)
+- Dedicated Security Settings page in nav
 
 ### Admin Portal
-- User Management, TVT, DTS Management
-- Customer Support Team messaging portal
+- User Management, TVT, DTS Management, Customer Support Team
+- **Subscription Management** (NEW): Beta mode toggle, plan pricing editor, per-user free access + custom discounts
 - Dev Switcher Configuration
 
 ### Benefactor Portal
-- Secure Document Vault (SDV) — AES-256 encrypted
-- Milestone Messages (MM) — text/video with editable triggers
-- Beneficiary Management (BM) — enhanced demographics
-- Estate Guardian AI (EGA) — now powered by Grok/xAI
-- Immediate Action Checklist (IAC)
-- Designated Trustee Services (DTS) — with Stripe
-- Estate Readiness Score
-- Customer Support Chat, Push Notifications (PWA)
+- SDV, MM, BM, IAC, DTS, EGA — all with Triple Lock security support
+- Estate Guardian AI (powered by Grok/xAI)
+- Estate Readiness Score, Customer Support Chat, Push Notifications
 
 ### Beneficiary Portal
-- Estate Hub with generational orbit visualization
-- Pre/Post-Transition views, Death Certificate Upload
-- Sealed Vault, Messages, Checklist access
+- Estate Hub, Pre/Post-Transition views, Sealed Vault access
 
-### Triple Lock Section Security (NEW - Feb 2026)
-Three independently toggleable security layers per section, configurable from Settings:
-- **Layer 1: Password** — section-specific password
-- **Layer 2: Voice Biometric** — MFCC-based voiceprint verification (both words + voice identity)
-- **Layer 3: Security Question** — preset list OR custom question
-Three lock behavior modes per section:
-- Auto-lock on page leave
-- Auto-lock on logout
-- Manual lock only (on command)
-Protected sections: SDV, MM, BM, IAC, DTS, EGA
-Backend: MongoDB-backed security settings, voice enrollment with ffmpeg/librosa, bcrypt-hashed credentials
-Frontend: SecuritySettings component in Settings page, SectionLockBanner on all protected pages, UnlockModal with multi-step verification
+### Stripe Subscription System (NEW - Feb 2026)
+- 6 plan tiers: Premium ($8.99), Standard ($7.99), Base ($6.99), New Adult ($3.99), Military ($5.99), Hospice (Free)
+- Admin controls: platform-wide beta toggle, per-plan pricing editor, per-user free access + custom discount
+- Stripe checkout integration via emergentintegrations
+- Payment transactions tracked in MongoDB
+- Beta banner ("BETA = FREE") when beta mode is ON
 
-### Deployment Ready (Feb 2026)
-- Backend + Frontend Dockerfiles, docker-compose.yml, render.yaml
-- DEPLOY_GUIDE.md (plain English for non-developers)
-- Health check endpoint, VAPID inline env var support, production build script
+### Deployment Ready
+- Dockerfiles, docker-compose.yml, render.yaml, DEPLOY_GUIDE.md
 
-### AI Migration (Feb 2026)
-- Estate Guardian AI switched from OpenAI GPT-5.2 to xAI Grok
-- Voice passphrase (Whisper) still uses Emergent LLM Key
+## Subscription Pricing Notes
+- Premium/Standard/Base: Adjustable (launch discount = $1 off final price)
+- Final prices: Premium $9.99, Standard $8.99, Base $7.99
+- New Adult/Military/Hospice: Fixed pricing, no discounts
+- Beneficiary pricing based on benefactor's plan tier
+- Billing: monthly, quarterly (2.7x), annual (10x)
 
 ## 3rd Party Integrations
-- **xAI Grok** (Estate Guardian AI) — requires XAI_API_KEY
-- **OpenAI Whisper** (voice STT) — via Emergent LLM Key
-- **Resend** (email), **Twilio** (SMS), **Stripe** (payments)
+- xAI Grok (EGA), OpenAI Whisper (voice STT), Resend, Twilio, Stripe
 
-## Test Accounts
-- **Admin**: `founder@carryon.us` / `CarryOntheWisdom!`
+## Upcoming Tasks
+1. Picovoice Eagle upgrade for voice biometric (awaiting API key)
+2. Get user's Stripe API key (instructions provided)
+3. Get user's xAI API key
+4. Multi-estate support, Backend refactoring
 
-## Upcoming Tasks (P1)
-1. Multi-estate Support for benefactors
-2. Backend Refactoring (server.py → modular structure)
-
-## Future/Backlog (P2)
-1. Full Payment/Subscription Gateway (Stripe)
-2. Digital Asset Management
-3. PDF Export
-4. Frontend component decomposition
-5. Frontend lint warnings cleanup
+## Future/Backlog
+1. Digital Asset Management, PDF Export
+2. Family plan pricing, Minor beneficiary free access
+3. Frontend component decomposition
