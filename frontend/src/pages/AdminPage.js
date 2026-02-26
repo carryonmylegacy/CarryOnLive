@@ -38,6 +38,12 @@ const AdminPage = () => {
 
   useEffect(() => { fetchAll(); }, []);
 
+  // Sync tab with URL when sidebar nav is clicked
+  useEffect(() => {
+    const newTab = location.pathname === '/admin/transition' ? 'transition' : location.pathname === '/admin/dts' ? 'dts' : 'users';
+    setTab(newTab);
+  }, [location.pathname]);
+
   const fetchAll = async () => {
     try {
       const [usersRes, statsRes, certsRes, dtsRes] = await Promise.all([
