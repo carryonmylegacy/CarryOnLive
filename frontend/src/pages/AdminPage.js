@@ -31,6 +31,9 @@ const AdminPage = () => {
     : location.pathname === '/admin/subscriptions' ? 'subscriptions'
     : 'users';
   const tab = pathTab;
+  const setTab = (v) => navigate(
+    v === 'users' ? '/admin' : `/admin/${v}`
+  );
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState(null);
   const [certificates, setCertificates] = useState([]);
