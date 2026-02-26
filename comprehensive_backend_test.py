@@ -889,7 +889,11 @@ class ComprehensiveCarryOnTester:
             
             if response.status_code == 200:
                 data = response.json()
-                if isinstance(data, list):
+                if "plans" in data and isinstance(data["plans"], list):
+                    self.log_test("Subscription Plans", True, 
+                                f"Retrieved {len(data['plans'])} subscription plans", 
+                                http_status=response.status_code)
+                elif isinstance(data, list):
                     self.log_test("Subscription Plans", True, 
                                 f"Retrieved {len(data)} subscription plans", 
                                 http_status=response.status_code)
