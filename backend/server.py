@@ -3582,6 +3582,22 @@ async def send_push_to_all_admins(title: str, body: str, url: str = "/admin", ta
     for admin in admins:
         await send_push_notification(admin["id"], title, body, url, tag, "admin")
 
+# ===================== HEALTH CHECK =====================
+
+@api_router.get("/health")
+async def health_check():
+    """Health check endpoint for deployment platforms"""
+    try:
+        await db.command("ping")
+        db_status = "connected"
+    except Exception:
+        db_status = "disconnected"
+    return {
+        "status": "healthy",
+        "database": db_status,
+        "version": "1.0.0"
+    }
+
 # ===================== STARTUP =====================
 
 @app.on_event("startup")
