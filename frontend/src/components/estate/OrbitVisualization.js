@@ -1,27 +1,48 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 // Map relationships to generational orbit levels (0 = innermost)
+// Note: The relationship stored is from the BENEFACTOR's perspective
+// (i.e., how the benefactor relates to the beneficiary)
+// So we need to INVERT some relationships:
+// - If benefactor says "Daughter" → beneficiary views them as "Parent"
+// - If benefactor says "Grandchild" → beneficiary views them as "Grandparent"
 const getOrbitLevel = (relation) => {
   const r = (relation || '').toLowerCase();
   
   // Level 0 (innermost): Spouse and Children
-  if (['spouse', 'wife', 'husband', 'partner', 'son', 'daughter', 'child', 'children'].includes(r)) {
+  // Spouse relationships are symmetric
+  if (['spouse', 'wife', 'husband', 'partner'].includes(r)) {
     return 0;
+  }
+  // If benefactor calls you their child, THEY are your parent (Level 1)
+  // If benefactor calls you their parent, THEY are your child (Level 0)
+  if (['parent', 'mother', 'father', 'mom', 'dad'].includes(r)) {
+    return 0; // They are your child
   }
   
   // Level 1: Parents and Siblings
-  if (['parent', 'mother', 'father', 'mom', 'dad', 'sibling', 'brother', 'sister'].includes(r)) {
-    return 1;
+  if (['son', 'daughter', 'child', 'children'].includes(r)) {
+    return 1; // They are your parent
+  }
+  if (['sibling', 'brother', 'sister'].includes(r)) {
+    return 1; // Siblings stay on same level
   }
   
-  // Level 2: Grandparents and Grandchildren
-  if (['grandparent', 'grandmother', 'grandfather', 'grandma', 'grandpa', 'grandchild', 'grandson', 'granddaughter'].includes(r)) {
-    return 2;
+  // Level 2: Grandparents and Grandchildren  
+  if (['grandchild', 'grandson', 'granddaughter'].includes(r)) {
+    return 2; // They are your grandparent
+  }
+  if (['grandparent', 'grandmother', 'grandfather', 'grandma', 'grandpa'].includes(r)) {
+    return 0; // They are your grandchild (innermost)
   }
   
   // Level 3: Great-grandparents
-  if (r.includes('great-grand') || r.includes('great grand')) {
-    return 3;
+  if (r.includes('great-grandchild') || r.includes('great grandchild')) {
+    return 3; // They are your great-grandparent
+  }
+  if (r.includes('great-grandparent') || r.includes('great grandparent') || 
+      r.includes('great-grand') || r.includes('great grand')) {
+    return 0; // They are your great-grandchild
   }
   
   // Default: Level 1 for friends, other relatives
