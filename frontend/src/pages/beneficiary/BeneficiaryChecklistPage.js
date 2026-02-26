@@ -32,7 +32,8 @@ const BeneficiaryChecklistPage = () => {
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState(null);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchData = async () => {
     try {

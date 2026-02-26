@@ -29,6 +29,7 @@ const BeneficiarySettingsPage = () => {
       }
     };
     fetchEstate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleLogout = () => { logout(); navigate('/login'); };
