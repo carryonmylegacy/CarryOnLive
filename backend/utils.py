@@ -162,3 +162,22 @@ async def send_push_to_all_admins(title: str, body: str, url: str = "/admin", ta
     admins = await db.users.find({"role": "admin"}, {"_id": 0, "id": 1}).to_list(100)
     for admin in admins:
         await send_push_notification(admin["id"], title, body, url, tag, "admin")
+
+# ===================== ESTATE READINESS =====================
+
+async def update_estate_readiness(estate_id: str):
+    """Calculate and update estate readiness score using the detailed algorithm"""
+    from models import calculate_estate_readiness
+    result = await calculate_estate_readiness(estate_id)
+
+    await db.estates.update_one(
+        {"id": estate_id},
+        {"$set": {
+            "readiness_score": result["overall_score"],
+            "readiness_breakdown": {
+                "documents": result["documents"],
+                "messages": result["messages"],
+                "checklist": result["checklist"]
+            }
+        }}
+    )
