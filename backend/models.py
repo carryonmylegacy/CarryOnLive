@@ -303,18 +303,6 @@ class DocumentUploadRequest(BaseModel):
     lock_type: Optional[str] = None
     lock_password: Optional[str] = None  # For password-protected docs
 
-# ===================== ESTATE READINESS SCORE CALCULATION =====================
-
-# Required documents for 100% document score
-REQUIRED_DOCUMENTS = {
-    "legal": [
-        {"name": "Last Will and Testament", "category": "legal"},
-        {"name": "Revocable Living Trust", "category": "legal"},
-        {"name": "Financial Power of Attorney", "category": "legal"},
-        {"name": "Medical Power of Attorney", "category": "legal"},
-        {"name": "Healthcare Directive/Living Will", "category": "legal"},
-    ]
-}
 
 # Life milestones based on age and relationship
 def get_expected_milestones(beneficiary: dict) -> list:
