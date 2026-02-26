@@ -582,10 +582,10 @@ class CarryOnAuditTester:
         """Test POST /api/digital-wallet → 200 (estate_id, service_name: "Gmail", username: "test@gmail.com", password: "pass123")"""
         try:
             wallet_data = {
-                "service_name": "Gmail",
-                "username": "test@gmail.com",
+                "account_name": "Gmail",
+                "login_username": "test@gmail.com",
                 "password": "pass123",
-                "estate_id": self.estate_id
+                "category": "email"
             }
             
             response = self.session.post(f"{BACKEND_URL}/digital-wallet", json=wallet_data)
