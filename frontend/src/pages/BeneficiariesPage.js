@@ -477,12 +477,12 @@ const BeneficiariesPage = () => {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[#94a3b8]">Suffix</Label>
-                  <Select value={suffix} onValueChange={setSuffix}>
+                  <Select value={suffix} onValueChange={(val) => setSuffix(val === 'none' ? '' : val)}>
                     <SelectTrigger className="input-field">
                       <SelectValue placeholder="None" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#1A2440] border-white/10">
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       <SelectItem value="Jr.">Jr.</SelectItem>
                       <SelectItem value="Sr.">Sr.</SelectItem>
                       <SelectItem value="II">II</SelectItem>
