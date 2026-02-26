@@ -2695,9 +2695,11 @@ async def update_dts_task(task_id: str, data: DTSTaskUpdate, current_user: dict 
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     
-    # Verify ownership
+    # Verify ownership - check both estate ownership and task owner
     estate = await db.estates.find_one({"id": task["estate_id"], "user_id": current_user["id"]})
-    if not estate and current_user["role"] != "admin":
+    is_task_owner = task.get("owner_id") == current_user["id"]
+    
+    if not estate and not is_task_owner and current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Not authorized to edit this task")
     
     # Build update dict from provided fields
