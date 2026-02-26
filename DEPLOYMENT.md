@@ -159,10 +159,10 @@ Go back to your **backend** service variables and set `CORS_ORIGINS` to your fro
 **Frontend:**
 1. Click **"New"** → **"Static Site"**
 2. Connect your GitHub repo
-3. Build Command: `cd frontend && yarn install && yarn build`
+3. Build Command: `cd frontend && yarn install && chmod +x build-prod.sh && bash build-prod.sh`
 4. Publish Directory: `frontend/build`
 5. Add the rewrite rule: `/* → /index.html` (for SPA routing)
-6. Add environment variables: `REACT_APP_BACKEND_URL` and `REACT_APP_VAPID_PUBLIC_KEY`
+6. Add environment variables: `REACT_APP_BACKEND_URL`, `REACT_APP_VAPID_PUBLIC_KEY`, `REACT_APP_STRIPE_PUBLISHABLE_KEY`, and `CI=false`
 
 ---
 
