@@ -247,6 +247,10 @@ async def run_weekly_digest(dashboard_url: str):
             skipped += 1
             continue
 
+        # Rate limit: Resend allows 2 req/sec
+        if sent > 0:
+            await asyncio.sleep(0.6)
+
         ok = await send_digest_for_user(u, dashboard_url)
         if ok:
             sent += 1
