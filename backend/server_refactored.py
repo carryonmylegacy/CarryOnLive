@@ -21,6 +21,7 @@ import asyncio
 import io
 import json as json_module
 import stripe
+import pdfplumber
 
 # Import shared modules
 from config import db, logger, client, xai_client, XAI_MODEL, SENDER_EMAIL, RESEND_API_KEY
