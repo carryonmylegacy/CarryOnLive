@@ -194,11 +194,11 @@ async def export_estate_pdf(estate_id: str, current_user: dict = Depends(get_cur
     pdf.set_font("Helvetica", "", 10)
     if documents:
         for doc in documents:
-            name = doc.get("name", "Unnamed")[:50]
-            cat = doc.get("category", "uncategorized")
+            name = _safe(doc.get("name", "Unnamed")[:50])
+            cat = _safe(doc.get("category", "uncategorized"))
             locked = " [LOCKED]" if doc.get("is_locked") else ""
             pdf.cell(5)
-            pdf.cell(0, 5, f"  {name} ({cat}){locked}", new_x="LMARGIN", new_y="NEXT")
+            pdf.cell(0, 5, _safe(f"  {name} ({cat}){locked}"), new_x="LMARGIN", new_y="NEXT")
     else:
         pdf.cell(5)
         pdf.cell(0, 6, "  No documents uploaded yet", new_x="LMARGIN", new_y="NEXT")
