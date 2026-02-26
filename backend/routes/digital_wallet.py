@@ -66,12 +66,12 @@ async def get_digital_wallet(estate_id: str, current_user: dict = Depends(get_cu
             if entry.get("encrypted_password"):
                 try:
                     entry["password"] = decrypt_data(entry["encrypted_password"]).decode()
-                except:
+                except Exception:
                     entry["password"] = ""
             if entry.get("encrypted_additional"):
                 try:
                     entry["additional_access"] = decrypt_data(entry["encrypted_additional"]).decode()
-                except:
+                except Exception:
                     entry["additional_access"] = ""
         return entries
     elif is_transitioned:
@@ -81,12 +81,12 @@ async def get_digital_wallet(estate_id: str, current_user: dict = Depends(get_cu
             if entry.get("encrypted_password"):
                 try:
                     entry["password"] = decrypt_data(entry["encrypted_password"]).decode()
-                except:
+                except Exception:
                     entry["password"] = ""
             if entry.get("encrypted_additional"):
                 try:
                     entry["additional_access"] = decrypt_data(entry["encrypted_additional"]).decode()
-                except:
+                except Exception:
                     entry["additional_access"] = ""
         return my_entries
     else:
