@@ -213,7 +213,7 @@ async def export_estate_pdf(estate_id: str, current_user: dict = Depends(get_cur
         rel = b.get("relationship", "")
         ben_status = b.get("status", "pending")
         pdf.cell(5)
-        pdf.cell(0, 5, f"  {name} — {rel} (Status: {ben_status})", new_x="LMARGIN", new_y="NEXT")
+        pdf.cell(0, 5, _safe(f"  {name} - {rel} (Status: {ben_status})"), new_x="LMARGIN", new_y="NEXT")
     pdf.ln(3)
 
     # Checklist summary
