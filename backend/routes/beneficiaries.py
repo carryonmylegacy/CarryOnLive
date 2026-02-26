@@ -164,6 +164,86 @@ async def update_beneficiary(beneficiary_id: str, data: BeneficiaryCreate, curre
     updated = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0})
     return updated
 
+@router.post("/beneficiaries/{beneficiary_id}/photo")
+async def upload_beneficiary_photo(
+    beneficiary_id: str,
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Upload a profile photo for a beneficiary. Resizes to 200x200 and stores as base64."""
+    if current_user["role"] not in ("benefactor", "admin"):
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    beneficiary = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0})
+    if not beneficiary:
+        raise HTTPException(status_code=404, detail="Beneficiary not found")
+
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large (max 10MB)")
+
+    content_type = file.content_type or "image/jpeg"
+    if not content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+
+    try:
+        from PIL import Image
+        import io
+
+        img = Image.open(io.BytesIO(content))
+
+        # Convert to RGB if necessary (handles RGBA, P mode, etc.)
+        if img.mode in ("RGBA", "P", "LA"):
+            background = Image.new("RGB", img.size, (255, 255, 255))
+            if img.mode == "P":
+                img = img.convert("RGBA")
+            background.paste(img, mask=img.split()[-1] if "A" in img.mode else None)
+            img = background
+        elif img.mode != "RGB":
+            img = img.convert("RGB")
+
+        # Crop to square (center crop)
+        w, h = img.size
+        size = min(w, h)
+        left = (w - size) // 2
+        top = (h - size) // 2
+        img = img.crop((left, top, left + size, top + size))
+
+        # Resize to 200x200
+        img = img.resize((200, 200), Image.LANCZOS)
+
+        # Save as JPEG base64
+        buffer = io.BytesIO()
+        img.save(buffer, format="JPEG", quality=85)
+        b64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+        photo_url = f"data:image/jpeg;base64,{b64}"
+
+        await db.beneficiaries.update_one(
+            {"id": beneficiary_id},
+            {"$set": {"photo_url": photo_url, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+
+        return {"success": True, "photo_url": photo_url}
+
+    except Exception as e:
+        logger.error(f"Photo upload failed: {e}")
+        raise HTTPException(status_code=400, detail="Could not process image. Please try a different file.")
+
+@router.delete("/beneficiaries/{beneficiary_id}/photo")
+async def delete_beneficiary_photo(
+    beneficiary_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Remove the profile photo for a beneficiary."""
+    if current_user["role"] not in ("benefactor", "admin"):
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    await db.beneficiaries.update_one(
+        {"id": beneficiary_id},
+        {"$set": {"photo_url": None, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"success": True}
+
 @router.post("/beneficiaries/{beneficiary_id}/invite")
 async def send_beneficiary_invitation(beneficiary_id: str, current_user: dict = Depends(get_current_user)):
     """Send invitation email to a beneficiary"""
