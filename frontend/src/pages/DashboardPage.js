@@ -268,7 +268,7 @@ const DashboardPage = () => {
       </div>
 
       {/* Estate Readiness Score Card */}
-      <div className="glass-card p-6 lg:p-8 mb-4" data-testid="readiness-card" style={{ backdropFilter: 'none', WebkitBackdropFilter: 'none', transition: 'none' }}>
+      <div className="glass-card p-6 lg:p-8 mb-4" data-testid="readiness-card">
         <h2 className="text-center text-2xl lg:text-4xl font-bold text-[var(--t4)] uppercase tracking-wider mb-4 lg:mb-6" style={{ fontFamily: 'Outfit, sans-serif' }}>
           Estate Readiness Score
         </h2>
