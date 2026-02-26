@@ -1,9 +1,7 @@
-"""CarryOn™ Backend — Pydantic Models & Estate Readiness Calculation"""
+"""CarryOn™ Backend — Pydantic Models"""
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
-from config import db, logger
-from utils import hash_password
 import uuid
 
 
