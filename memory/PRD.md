@@ -4,33 +4,32 @@
 
 ### Benefactor Side
 - Auth with OTP 2FA, Document Vault (AES-256), Milestone Messages, Beneficiary Manager
-- Estate Guardian AI (50-state law), Immediate Action Checklist, DTS (real backend), Estate Transition
+- Estate Guardian AI (50-state law, vault analysis, checklist generation, readiness analysis)
+- Immediate Action Checklist, Designated Trustee Services (REAL backend), Estate Transition
 - Multi-estate, Activity timeline, Notifications, Dark/Light theme, Mobile/PWA
 - Estate Readiness Score, Settings with 6 pricing tiers
-- Two-Level Section Security (Password + Voice + Backup) on 5 sections
-- DTS connected to real backend (create tasks, receive quotes, approve line items)
+- Two-Level Section Security (Password + Voice with Whisper API + Backup) on 5 sections
 
 ### Beneficiary Side (11 pages)
-- Estate Hub, Pre-Transition, Upload Certificate, Condolence Splash
+- Estate Hub with orbiting balls physics animation
+- Pre-Transition, Upload Certificate (3-step wizard), Condolence Splash (5-phase)
 - Post-Transition Dashboard, Sealed Vault, Checkable Checklist
 - Messages (text/voice/video playback), Estate Guardian (read-only)
-- Report Milestone, Settings (subscription pricing)
-- Estate Switcher dropdown in sidebar
+- Report Milestone, Settings, Estate Switcher in sidebar
 
-### Admin / Internal Team Portals
-- **Admin Dashboard**: Full user database, search + role filter, platform stats
-- **Transition Verification Team**: Review death certificates, approve (seals benefactor, grants beneficiary access, delivers immediate messages) or reject, view uploaded documents
-- **DTS Management Team**: View incoming requests, research feasibility/cost, submit itemized quotes, update task status lifecycle (submitted→quoted→approved→ready→executed→destroyed)
-- Backend: Full DTS CRUD (POST /api/dts/tasks, GET tasks, POST quote, approve items, update status), enhanced transition endpoints (certificates/all, reject, view document)
+### Admin / Internal Team Portals (3 tabs)
+- **All Users**: Full database, search + role filter, delete users
+- **Transition Verification Team**: Review death certificates, approve (seals benefactor + grants beneficiary access) or reject, view uploaded documents
+- **DTS Management Team**: View requests, submit itemized quotes, update status lifecycle
+
+### Backend Infrastructure
+- DTS: Full CRUD (create tasks, list, submit quotes, approve items, update status)
+- Transition: Enhanced verification (enriched certificates, reject, view document)
+- Voice: Real OpenAI Whisper integration for passphrase transcription + verification
+- All endpoints tested and passing (iteration_11: 100% backend, 100% frontend)
 
 ## Test Accounts
 - Benefactor: pete@mitchell.com / password123
 - Beneficiary: penny@mitchell.com / password123
 - Admin: admin@carryon.com / admin123
 - OTP: tail -n 5 /var/log/supervisor/backend.err.log
-
-## Remaining Work
-- Voice verification API integration
-- Orbiting balls animation for beneficiary hub
-- Mobile/PWA refinements
-- End-to-end testing
