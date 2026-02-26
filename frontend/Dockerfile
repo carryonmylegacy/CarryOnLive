@@ -3,6 +3,9 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
+# Install bash and sed for build-prod.sh
+RUN apk add --no-cache bash sed
+
 COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile
 
@@ -14,6 +17,12 @@ ENV REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
 
 ARG REACT_APP_VAPID_PUBLIC_KEY
 ENV REACT_APP_VAPID_PUBLIC_KEY=${REACT_APP_VAPID_PUBLIC_KEY}
+
+ARG REACT_APP_STRIPE_PUBLISHABLE_KEY
+ENV REACT_APP_STRIPE_PUBLISHABLE_KEY=${REACT_APP_STRIPE_PUBLISHABLE_KEY}
+
+# Prevent CI from treating warnings as errors
+ENV CI=false
 
 RUN chmod +x build-prod.sh && bash build-prod.sh
 
