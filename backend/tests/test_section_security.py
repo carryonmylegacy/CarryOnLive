@@ -177,7 +177,7 @@ class TestPasswordSecurityLayer:
         assert response.status_code == 200, f"Failed to create password security: {response.text}"
         
         data = response.json()
-        assert data.get("success") == True, f"Success not true: {data}"
+        assert data.get("success"), f"Success not true: {data}"
         assert data.get("section_id") == "sdv", f"Wrong section_id: {data}"
         print("✓ Password security created for SDV section")
         
