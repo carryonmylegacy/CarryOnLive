@@ -6,17 +6,6 @@ Routes organized in /routes/*.py
 from fastapi import FastAPI, APIRouter
 from starlette.middleware.cors import CORSMiddleware
 from config import db, logger, client
-import os
-import asyncio
-from datetime import datetime, timezone, timedelta
-
-# Create the main app
-app = FastAPI(title="CarryOn™ API", version="1.0.0")
-
-# Create the /api prefix router
-api_router = APIRouter(prefix="/api")
-
-# Import all route modules
 from routes.auth import router as auth_router
 from routes.admin import router as admin_router
 from routes.estates import router as estates_router
@@ -35,6 +24,15 @@ from routes.pdf_export import router as pdf_export_router
 from routes.security import router as security_router
 from routes.push import router as push_router
 from routes.digest import router as digest_router
+import os
+import asyncio
+from datetime import datetime, timezone, timedelta
+
+# Create the main app
+app = FastAPI(title="CarryOn™ API", version="1.0.0")
+
+# Create the /api prefix router
+api_router = APIRouter(prefix="/api")
 
 # Include all routers
 api_router.include_router(auth_router)
@@ -56,9 +54,11 @@ api_router.include_router(security_router)
 api_router.include_router(push_router)
 api_router.include_router(digest_router)
 
+
 # Health check
 @api_router.get("/health")
 async def health_check():
+    """Check API and database health."""
     try:
         await db.command("ping")
         db_status = "connected"
@@ -66,8 +66,10 @@ async def health_check():
         db_status = "disconnected"
     return {"status": "healthy", "database": db_status, "version": "1.0.0"}
 
+
 # Include the main router
 app.include_router(api_router)
+
 
 # Startup/Shutdown
 async def weekly_digest_scheduler():
@@ -91,14 +93,19 @@ async def weekly_digest_scheduler():
         except Exception as e:
             logger.error(f"Weekly digest failed: {e}")
 
+
 @app.on_event("startup")
 async def startup_event():
+    """Initialize background tasks on startup."""
     logger.info("CarryOn™ API started - ready for real accounts")
     asyncio.create_task(weekly_digest_scheduler())
 
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
+    """Close database connection on shutdown."""
     client.close()
+
 
 # CORS Middleware
 app.add_middleware(
