@@ -239,11 +239,16 @@ const LoginPage = () => {
           </div>
         </div>
 
-        {/* Security Badge */}
-        <div className="mt-6 text-center">
+        {/* Security Badge & Legal Links */}
+        <div className="mt-6 text-center space-y-2">
           <p className="text-[#525C72] text-[16.5px]">
             AES-256 Encrypted · Zero-Knowledge · SOC 2
           </p>
+          <div className="flex items-center justify-center gap-3">
+            <a href="/privacy" className="text-[#7B879E] text-xs hover:text-[#A0AABF] transition-colors" data-testid="login-footer-privacy-link">Privacy Policy</a>
+            <span className="text-[#525C72] text-xs">·</span>
+            <a href="/terms" className="text-[#7B879E] text-xs hover:text-[#A0AABF] transition-colors" data-testid="login-footer-terms-link">Terms of Service</a>
+          </div>
         </div>
       </div>
 
