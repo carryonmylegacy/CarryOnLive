@@ -59,11 +59,13 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   if (allowedRoles && !allowedRoles.includes(user?.role)) {
+    // Admins can access ALL pages during development
+    if (user?.role === 'admin') {
+      return children;
+    }
     // Redirect based on role
     if (user?.role === 'beneficiary') {
       return <Navigate to="/beneficiary" replace />;
-    } else if (user?.role === 'admin') {
-      return <Navigate to="/admin" replace />;
     }
     return <Navigate to="/dashboard" replace />;
   }
