@@ -37,8 +37,8 @@ const DashboardPage = () => {
     return () => { delete document.documentElement.dataset.hoverSection; };
   }, [hoveredSection]);
 
-  useEffect(() => { fetchEstates(); }, []);
-  useEffect(() => { if (estate) fetchEstateData(estate.id); }, [estate]);
+  useEffect(() => { fetchEstates(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (estate) fetchEstateData(estate.id); }, [estate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchEstates = async () => {
     try {

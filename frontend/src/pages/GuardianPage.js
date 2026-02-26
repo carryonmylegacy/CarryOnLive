@@ -124,7 +124,7 @@ const GuardianPage = () => {
       role: 'assistant',
       content: `Hello ${user?.name?.split(' ')[0] || 'there'}! I'm the Estate Guardian — your AI estate planning specialist with expertise in the estate laws of all 50 states.\n\nI can **analyze your Document Vault**, **generate a personalized Immediate Action Checklist**, and **evaluate your Estate Readiness Score** with specific recommendations.\n\nUse the action buttons below or just ask me anything about your estate plan.`
     }]);
-  }, [user]);
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (scrollRef.current) {
