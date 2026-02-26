@@ -1,4 +1,4 @@
-# Render Blueprint - deploy CarryOn with one click
+# Render Blueprint - deploy CarryOn™ with one click
 # https://render.com/docs/infrastructure-as-code
 
 services:
@@ -9,6 +9,7 @@ services:
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     plan: starter
+    healthCheckPath: /api/health
     envVars:
       - key: MONGO_URL
         sync: false  # Set manually (MongoDB Atlas connection string)
@@ -19,7 +20,7 @@ services:
       - key: ENCRYPTION_KEY
         generateValue: true
       - key: CORS_ORIGINS
-        sync: false  # Set to your frontend URL
+        sync: false  # Set to your frontend URL (e.g., https://carryon-web.onrender.com)
       - key: RESEND_API_KEY
         sync: false
       - key: SENDER_EMAIL
@@ -40,13 +41,12 @@ services:
         sync: false
       - key: VAPID_CLAIMS_EMAIL
         value: mailto:support@carryon.us
-    healthCheckPath: /api/health
 
   # Frontend (static site)
   - type: web
     name: carryon-web
     runtime: static
-    buildCommand: cd frontend && yarn install && yarn build
+    buildCommand: cd frontend && yarn install && chmod +x build-prod.sh && bash build-prod.sh
     staticPublishPath: ./frontend/build
     pullRequestPreviewsEnabled: true
     headers:
@@ -62,6 +62,10 @@ services:
         destination: /index.html
     envVars:
       - key: REACT_APP_BACKEND_URL
-        sync: false  # Set to your backend URL
+        sync: false  # Set to your backend URL (e.g., https://carryon-api.onrender.com)
       - key: REACT_APP_VAPID_PUBLIC_KEY
         sync: false
+      - key: REACT_APP_STRIPE_PUBLISHABLE_KEY
+        sync: false  # Set to your Stripe publishable key (pk_live_... or pk_test_...)
+      - key: CI
+        value: "false"
