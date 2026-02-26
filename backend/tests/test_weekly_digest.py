@@ -142,7 +142,7 @@ class TestDigestSendWeekly:
         headers = {"Authorization": f"Bearer {non_admin_token}"}
         resp = requests.post(f"{BASE_URL}/api/digest/send-weekly", headers=headers)
         assert resp.status_code == 403, f"Expected 403 but got {resp.status_code}: {resp.text}"
-        print(f"POST /api/digest/send-weekly as non-admin: 403 (expected)")
+        print("POST /api/digest/send-weekly as non-admin: 403 (expected)")
     
     def test_send_weekly_admin_allowed(self, admin_token):
         """POST /api/digest/send-weekly works for admin"""
@@ -219,7 +219,7 @@ class TestSchedulerLogging:
         
         # Verify it shows next Monday
         assert "2026-03" in log_content or "13:00:00" in log_content, \
-            f"Scheduler should show next Monday at 13:00 UTC"
+            "Scheduler should show next Monday at 13:00 UTC"
         
         print("PASS: Weekly digest scheduler logged next Monday send time on startup")
 
