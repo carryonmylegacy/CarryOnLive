@@ -278,6 +278,7 @@ const TrusteePage = () => {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -305,7 +306,6 @@ const TrusteePage = () => {
       } catch (e) { console.error('Fetch error:', e); }
     };
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const totalCost = (items) => items.reduce((s, i) => s + (i.approved !== false ? i.cost : 0), 0);
