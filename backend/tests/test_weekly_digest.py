@@ -168,7 +168,7 @@ class TestDigestPreview:
         """Get admin auth token"""
         resp = requests.post(f"{BASE_URL}/api/auth/dev-login", json=ADMIN_CREDENTIALS)
         if resp.status_code == 200:
-            return resp.json().get("token")
+            return resp.json().get("access_token")
         pytest.skip(f"Admin login failed: {resp.status_code}")
     
     def test_preview_requires_auth(self):
