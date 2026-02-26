@@ -98,6 +98,12 @@ const SettingsPage = () => {
         return { headers: { Authorization: `Bearer ${token}` } };
       }} />
 
+      {/* Section Security (Triple Lock) */}
+      <SecuritySettings getAuthHeaders={() => {
+        const token = localStorage.getItem('carryon_token');
+        return { headers: { Authorization: `Bearer ${token}` } };
+      }} />
+
       {/* Subscription Plans */}
       <Card className="glass-card">
         <CardHeader>
