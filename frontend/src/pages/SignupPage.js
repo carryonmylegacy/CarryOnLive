@@ -334,6 +334,31 @@ const SignupPage = () => {
               </Select>
             </div>
 
+            {/* SMS & Terms Consent */}
+            <div className="flex items-start gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setSmsConsent(!smsConsent)}
+                className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded border-2 transition-all flex items-center justify-center ${
+                  smsConsent
+                    ? 'bg-[#d4af37] border-[#d4af37]'
+                    : 'border-[#525C72] hover:border-[#7B879E]'
+                }`}
+                data-testid="sms-consent-checkbox"
+              >
+                {smsConsent && <CheckSquare className="w-4 h-4 text-[#0F1629]" />}
+              </button>
+              <label
+                onClick={() => setSmsConsent(!smsConsent)}
+                className="text-[#A0AABF] text-xs leading-relaxed cursor-pointer select-none"
+                data-testid="sms-consent-label"
+              >
+                I agree to receive text messages from CarryOn&trade; for account verification and security purposes. Message and data rates may apply. Reply STOP to opt out at any time. By creating an account, I also agree to the{' '}
+                <Link to="/terms" className="text-[#7AABFD] hover:text-[#A5C6FE] underline" data-testid="signup-terms-link">Terms of Service</Link>{' '}and{' '}
+                <Link to="/privacy" className="text-[#7AABFD] hover:text-[#A5C6FE] underline" data-testid="signup-privacy-link">Privacy Policy</Link>.
+              </label>
+            </div>
+
             <Button
               type="submit"
               disabled={loading}
