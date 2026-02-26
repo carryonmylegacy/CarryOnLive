@@ -13,6 +13,8 @@ import base64
 import json as json_module
 import random
 
+from models import TokenResponse, UserResponse, UserLogin, UserCreate, OTPVerify
+
 router = APIRouter()
 
 # ===================== AUTH ROUTES =====================
