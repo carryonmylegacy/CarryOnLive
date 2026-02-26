@@ -76,6 +76,9 @@ const BeneficiariesPage = () => {
   const [ssnLastFour, setSsnLastFour] = useState('');
   const [notes, setNotes] = useState('');
   const [avatarColor, setAvatarColor] = useState(avatarColors[0]);
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(null);
 
   useEffect(() => {
     fetchData();
