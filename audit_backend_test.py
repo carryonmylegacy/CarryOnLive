@@ -13,7 +13,7 @@ import tempfile
 import os
 
 # Backend URL from environment
-BACKEND_URL = "https://platform-handoff.preview.emergentagent.com/api"
+BACKEND_URL = "https://estate-legal.preview.emergentagent.com/api"
 
 class CarryOnAuditTester:
     def __init__(self):

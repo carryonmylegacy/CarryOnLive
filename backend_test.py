@@ -15,7 +15,7 @@ import tempfile
 import subprocess
 
 # Backend URL from frontend .env
-BACKEND_URL = "https://platform-handoff.preview.emergentagent.com/api"
+BACKEND_URL = "https://estate-legal.preview.emergentagent.com/api"
 
 class CarryOnBackendTester:
     def __init__(self):
