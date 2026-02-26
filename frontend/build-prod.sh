@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Production build script for CarryOn frontend
 # Removes Emergent-specific development scripts from index.html before building
 
@@ -7,35 +7,21 @@ echo "Preparing production build..."
 # Create a backup of index.html
 cp public/index.html public/index.html.bak
 
-# Remove Emergent badge (the <a id="emergent-badge"> block)
-python3 -c "
-import re
-with open('public/index.html', 'r') as f:
-    content = f.read()
+# Remove Emergent-specific scripts using sed
+# 1. Remove the emergent-main.js script tag
+sed -i '/<script src="https:\/\/assets.emergent.sh/d' public/index.html
 
-# Remove Emergent badge link
-content = re.sub(r'<a\s+id=\"emergent-badge\".*?</a>', '', content, flags=re.DOTALL)
+# 2. Remove DataCloneError handler (single line script)
+sed -i '/DataCloneError/d' public/index.html
 
-# Remove Emergent main script
-content = re.sub(r'<script src=\"https://assets.emergent.sh/scripts/emergent-main.js\"></script>\n?', '', content)
+# 3. Remove the visual edits iframe loader block
+sed -i '/\/\/ Only load visual edit scripts/,/<\/script>/d' public/index.html
 
-# Remove visual edits iframe loader
-content = re.sub(r'<script>\s*// Only load visual edit scripts.*?</script>', '', content, flags=re.DOTALL)
+# 4. Remove the Emergent badge
+sed -i '/<a$/,/<\/a>/{ /id="emergent-badge"/,/<\/a>/d }' public/index.html
 
-# Remove PostHog analytics
-content = re.sub(r'<script>\s*!\(function.*?posthog\.init\(.*?\);\s*</script>', '', content, flags=re.DOTALL)
-
-# Remove DataCloneError handler
-content = re.sub(r'<script>window\.addEventListener\(\"error\".*?</script>\n?', '', content)
-
-# Clean up extra whitespace
-content = re.sub(r'\n{3,}', '\n\n', content)
-
-with open('public/index.html', 'w') as f:
-    f.write(content)
-
-print('Cleaned index.html for production')
-"
+# 5. Remove PostHog analytics
+sed -i '/posthog/,/<\/script>/d' public/index.html
 
 # Run the build
 yarn build
