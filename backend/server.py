@@ -4064,7 +4064,7 @@ async def update_family_plan_settings(current_user: dict = Depends(get_current_u
         upsert=True
     )
 
-    return {"success": True, "family_plan_enabled": new_state, "message": f"Family plans {'enabled' for new_state else 'disabled'}"}
+    return {"success": True, "family_plan_enabled": new_state, "message": "Family plans enabled" if new_state else "Family plans disabled"}
 
 @api_router.get("/admin/family-plans")
 async def get_all_family_plans(current_user: dict = Depends(get_current_user)):
