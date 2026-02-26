@@ -283,31 +283,6 @@ const DashboardPage = () => {
         />
       </div>
 
-      {/* Estate Readiness Score Card */}
-      <div className="glass-card p-6 lg:p-8 mb-4" data-testid="readiness-card">
-        <h2 className="text-center text-2xl lg:text-4xl font-bold text-[var(--t4)] uppercase tracking-wider mb-4 lg:mb-6" style={{ fontFamily: 'Outfit, sans-serif' }}>
-          Estate Readiness Score
-        </h2>
-        
-        <SpeedometerGauge score={readinessScore} />
-        
-        {/* Percentage breakdown - oval dots with matching card colors */}
-        <div className="flex justify-center gap-4 lg:gap-8 mt-36 lg:mt-40">
-          <div className="flex items-center gap-2">
-            <span className="w-4 h-2 lg:w-5 lg:h-2.5 rounded-full bg-[#2563eb]" />
-            <span className="text-[var(--t3)] text-base lg:text-lg">{docsPercent}% Docs</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-4 h-2 lg:w-5 lg:h-2.5 rounded-full bg-[#8b5cf6]" />
-            <span className="text-[var(--t3)] text-base lg:text-lg">{msgsPercent}% Messages</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-4 h-2 lg:w-5 lg:h-2.5 rounded-full bg-[#f97316]" />
-            <span className="text-[var(--t3)] text-base lg:text-lg">{checklistPercent}% Checklist</span>
-          </div>
-        </div>
-      </div>
-
       {/* Stat Cards */}
       <div className="grid grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4 mb-4">
         <StatCard 
