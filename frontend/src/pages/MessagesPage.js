@@ -573,6 +573,12 @@ const MessagesPage = () => {
                       On Life Event
                     </div>
                   </SelectItem>
+                  <SelectItem value="specific_date">
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="w-4 h-4" />
+                      On Specific Date
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
