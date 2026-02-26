@@ -24,6 +24,7 @@ const BeneficiaryGuardianPage = () => {
   const [documents, setDocuments] = useState([]);
   const scrollRef = useRef(null);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const eid = localStorage.getItem('beneficiary_estate_id');
     setEstateId(eid);
@@ -32,7 +33,6 @@ const BeneficiaryGuardianPage = () => {
       role: 'assistant',
       content: `Hello ${user?.name?.split(' ')[0] || 'there'}. I'm the Estate Guardian — your AI estate law specialist.\n\nI have access to the **sealed vault documents** and can help you understand the estate plan, answer questions about the documents, and provide guidance on the action checklist.\n\n**Note:** The vault is sealed and read-only. I can analyze documents but cannot modify anything.`
     }]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   useEffect(() => {
