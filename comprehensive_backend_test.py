@@ -795,16 +795,12 @@ class ComprehensiveCarryOnTester:
             self.log_test("Create Digital Wallet Entry", False, "No auth token available")
             return
             
-        if not self.estate_id:
-            self.log_test("Create Digital Wallet Entry", False, "No estate ID available")
-            return
-            
         try:
             wallet_data = {
-                "estate_id": self.estate_id,
-                "service_name": "Test Bank Account",
-                "username": "testuser@bank.com",
-                "password": "SecurePassword123!"
+                "account_name": "Test Bank Account",
+                "login_username": "testuser@bank.com",
+                "password": "SecurePassword123!",
+                "category": "banking"
             }
             
             response = self.session.post(f"{BACKEND_URL}/digital-wallet", json=wallet_data)
