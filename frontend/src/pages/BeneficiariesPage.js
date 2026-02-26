@@ -56,6 +56,7 @@ const BeneficiariesPage = () => {
   const [adding, setAdding] = useState(false);
   const [sendingInvite, setSendingInvite] = useState(null);
   const [expandedCard, setExpandedCard] = useState(null);
+  const [editingBeneficiary, setEditingBeneficiary] = useState(null);
   
   // Form state - enhanced demographics
   const [firstName, setFirstName] = useState('');
@@ -95,7 +96,7 @@ const BeneficiariesPage = () => {
     }
   };
 
-  const handleAdd = async () => {
+  const handleAddOrEdit = async () => {
     if (!firstName || !lastName || !email || !relation) {
       toast.error('Please fill all required fields (First Name, Last Name, Email, Relationship)');
       return;
@@ -103,7 +104,7 @@ const BeneficiariesPage = () => {
     
     setAdding(true);
     try {
-      await axios.post(`${API_URL}/beneficiaries`, {
+      const payload = {
         estate_id: estate.id,
         first_name: firstName,
         middle_name: middleName || null,
@@ -118,6 +119,51 @@ const BeneficiariesPage = () => {
         address_city: addressCity || null,
         address_state: addressState || null,
         address_zip: addressZip || null,
+        ssn_last_four: ssnLastFour || null,
+        notes: notes || null,
+        avatar_color: avatarColor
+      };
+
+      if (editingBeneficiary) {
+        await axios.put(`${API_URL}/beneficiaries/${editingBeneficiary.id}`, payload, getAuthHeaders());
+        toast.success('Beneficiary updated');
+      } else {
+        await axios.post(`${API_URL}/beneficiaries`, payload, getAuthHeaders());
+        toast.success('Beneficiary added successfully');
+      }
+      
+      setShowAddModal(false);
+      setEditingBeneficiary(null);
+      resetForm();
+      fetchData();
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error(error.response?.data?.detail || 'Failed to save beneficiary');
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const openEditModal = (ben) => {
+    setEditingBeneficiary(ben);
+    setFirstName(ben.first_name || ben.name?.split(' ')[0] || '');
+    setMiddleName(ben.middle_name || '');
+    setLastName(ben.last_name || ben.name?.split(' ').slice(-1)[0] || '');
+    setSuffix(ben.suffix || '');
+    setEmail(ben.email || '');
+    setPhone(ben.phone || '');
+    setRelation(ben.relation || '');
+    setDateOfBirth(ben.date_of_birth || '');
+    setGender(ben.gender || '');
+    setAddressStreet(ben.address_street || '');
+    setAddressCity(ben.address_city || '');
+    setAddressState(ben.address_state || '');
+    setAddressZip(ben.address_zip || '');
+    setSsnLastFour(ben.ssn_last_four || '');
+    setNotes(ben.notes || '');
+    setAvatarColor(ben.avatar_color || avatarColors[0]);
+    setShowAddModal(true);
+  };
         ssn_last_four: ssnLastFour || null,
         notes: notes || null,
         avatar_color: avatarColor
