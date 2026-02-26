@@ -160,12 +160,25 @@ class TestBeneficiaryInvitationFlow:
         assert response.status_code == 200, f"Failed to send invitation: {response.text}"
         result = response.json()
         
-        assert "invitation_token" in result, "No invitation token returned"
-        assert result.get("invitation_status") == "sent", "Status should be 'sent'"
+        assert "message" in result, "No message in response"
+        assert "email" in result, "No email in response"
+        print(f"✓ Invitation sent successfully to {result['email']}")
         
-        self.__class__.invitation_token = result["invitation_token"]
-        print(f"✓ Invitation sent successfully")
-        print(f"  Token: {result['invitation_token'][:20]}...")
+        # Fetch beneficiary to get the invitation token
+        ben_response = self.session.get(
+            f"{BASE_URL}/api/beneficiaries/{self.__class__.estate_id}",
+            headers={"Authorization": f"Bearer {self.__class__.token}"}
+        )
+        assert ben_response.status_code == 200
+        beneficiaries = ben_response.json()
+        
+        test_ben = next((b for b in beneficiaries if b["id"] == self.__class__.created_beneficiary_id), None)
+        assert test_ben, "Test beneficiary not found"
+        assert test_ben.get("invitation_token"), "No invitation token set"
+        assert test_ben.get("invitation_status") == "sent", f"Status should be 'sent', got: {test_ben.get('invitation_status')}"
+        
+        self.__class__.invitation_token = test_ben["invitation_token"]
+        print(f"  Token: {self.__class__.invitation_token[:20]}...")
     
     def test_06_get_invitation_details(self):
         """Test getting invitation details by token"""
