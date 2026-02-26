@@ -318,10 +318,10 @@ async def get_checkout_status(session_id: str, current_user: dict = Depends(get_
             )
     
     return {
-        "status": status.status,
-        "payment_status": status.payment_status,
-        "amount_total": status.amount_total,
-        "currency": status.currency,
+        "status": checkout_status.status,
+        "payment_status": checkout_status.payment_status,
+        "amount_total": checkout_status.amount_total,
+        "currency": checkout_status.currency,
     }
 
 @router.post("/webhook/stripe")
