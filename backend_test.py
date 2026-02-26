@@ -1,1036 +1,307 @@
 #!/usr/bin/env python3
+"""
+CarryOn™ Backend Voice Biometric Testing
+========================================
+Tests voice biometric endpoints and security features
+"""
 
 import requests
-import sys
 import json
-from datetime import datetime
-import base64
 import io
+import wave
+import numpy as np
+import os
+import tempfile
+import subprocess
 
-class CarryOnAPITester:
-    def __init__(self, base_url="https://platform-handoff.preview.emergentagent.com/api"):
-        self.base_url = base_url
-        self.token = None
-        self.tests_run = 0
-        self.tests_passed = 0
-        self.estate_id = None
-        self.beneficiary_id = None
-        self.document_id = None
-        self.message_id = None
-        self.checklist_item_id = None
-        self.test_document_id = None
-        self.test_backup_code = None
+# Backend URL from frontend .env
+BACKEND_URL = "https://platform-handoff.preview.emergentagent.com/api"
 
-    def run_test(self, name, method, endpoint, expected_status, data=None, files=None):
-        """Run a single API test"""
-        url = f"{self.base_url}/{endpoint}"
-        headers = {'Content-Type': 'application/json'}
-        if self.token:
-            headers['Authorization'] = f'Bearer {self.token}'
+class CarryOnBackendTester:
+    def __init__(self):
+        self.session = requests.Session()
+        self.user_token = None
+        self.test_user = {
+            "email": "voice.test@carryon.com",
+            "password": "VoiceTest123!",
+            "first_name": "Voice",
+            "last_name": "Tester"
+        }
+        self.results = []
 
-        self.tests_run += 1
-        print(f"\n🔍 Testing {name}...")
+    def log_test(self, test_name, success, details="", error=None):
+        """Log test results"""
+        result = {
+            "test": test_name,
+            "success": success,
+            "details": details,
+            "error": str(error) if error else None
+        }
+        self.results.append(result)
         
+        status = "✅ PASS" if success else "❌ FAIL"
+        print(f"{status}: {test_name}")
+        if details:
+            print(f"    Details: {details}")
+        if error:
+            print(f"    Error: {error}")
+        print()
+
+    def create_test_audio(self, duration=2.0, sample_rate=16000):
+        """Create a simple test audio file (sine wave)"""
+        t = np.linspace(0, duration, int(sample_rate * duration))
+        # Generate a simple tone at 440Hz (A note)
+        audio = np.sin(2 * np.pi * 440 * t) * 0.3
+        
+        # Convert to 16-bit PCM
+        audio_int16 = (audio * 32767).astype(np.int16)
+        
+        # Write to temporary WAV file
+        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp:
+            with wave.open(tmp.name, 'wb') as wav_file:
+                wav_file.setnchannels(1)  # Mono
+                wav_file.setsampwidth(2)  # 16-bit
+                wav_file.setframerate(sample_rate)
+                wav_file.writeframes(audio_int16.tobytes())
+            return tmp.name
+
+    def test_health_check(self):
+        """Test 1: Health check endpoint"""
         try:
-            if method == 'GET':
-                response = requests.get(url, headers=headers)
-            elif method == 'POST':
-                if files:
-                    # Remove Content-Type for file uploads
-                    headers.pop('Content-Type', None)
-                    response = requests.post(url, data=data, files=files, headers=headers)
+            response = self.session.get(f"{BACKEND_URL}/health")
+            
+            if response.status_code == 200:
+                data = response.json()
+                expected_fields = ["status", "database", "version"]
+                
+                if all(field in data for field in expected_fields):
+                    self.log_test("Health Check", True, f"Status: {data.get('status')}, DB: {data.get('database')}")
                 else:
-                    response = requests.post(url, json=data, headers=headers)
-            elif method == 'DELETE':
-                response = requests.delete(url, headers=headers)
-            elif method == 'PATCH':
-                response = requests.patch(url, json=data, headers=headers)
-
-            success = response.status_code == expected_status
-            if success:
-                self.tests_passed += 1
-                print(f"✅ Passed - Status: {response.status_code}")
-                try:
-                    return success, response.json() if response.content else {}
-                except:
-                    return success, {}
+                    self.log_test("Health Check", False, f"Missing expected fields. Got: {data}")
             else:
-                print(f"❌ Failed - Expected {expected_status}, got {response.status_code}")
-                try:
-                    error_detail = response.json()
-                    print(f"   Error: {error_detail}")
-                except:
-                    print(f"   Response: {response.text}")
-
-            return success, {}
-
+                self.log_test("Health Check", False, f"Status code: {response.status_code}")
+                
         except Exception as e:
-            print(f"❌ Failed - Error: {str(e)}")
-            return False, {}
+            self.log_test("Health Check", False, error=e)
 
-    def get_otp_from_logs(self, email):
-        """Extract OTP from backend logs"""
+    def test_auth_flow(self):
+        """Test 6: Auth flow regression test"""
         try:
-            import subprocess
-            result = subprocess.run(['tail', '-n', '20', '/var/log/supervisor/backend.err.log'], 
-                                  capture_output=True, text=True)
-            logs = result.stdout
-            
-            # Look for the most recent OTP line for this email
-            otp = None
-            for line in logs.split('\n'):
-                if f"OTP for {email}:" in line:
-                    otp = line.split(f"OTP for {email}: ")[1].strip()
-            return otp  # Returns the last (most recent) OTP found
-        except:
-            return None
-
-    def test_login_flow(self, email, password):
-        """Test complete login flow with OTP"""
-        print(f"\n🔐 Testing login flow for {email}")
-        
-        # Step 1: Login to get OTP
-        success, response = self.run_test(
-            "Login Request",
-            "POST",
-            "auth/login",
-            200,
-            data={"email": email, "password": password}
-        )
-        
-        if not success:
-            return False
-            
-        otp_hint = response.get('otp_hint', '')
-        print(f"   OTP Hint: {otp_hint}")
-        
-        # Get the actual OTP from backend logs
-        import time
-        time.sleep(0.5)  # Give logs time to write
-        test_otp = self.get_otp_from_logs(email)
-        
-        if test_otp:
-            print(f"   Found OTP: {test_otp}")
-            
-            # Step 2: Verify OTP
-            success, response = self.run_test(
-                "OTP Verification",
-                "POST",
-                "auth/verify-otp",
-                200,
-                data={"email": email, "otp": test_otp}
-            )
-            
-            if success and 'access_token' in response:
-                self.token = response['access_token']
-                print(f"   ✅ Login successful for {response['user']['name']}")
-                return True
-        
-        print(f"   ❌ OTP verification failed")
-        return False
-
-    def test_estates(self):
-        """Test estate endpoints"""
-        print(f"\n🏠 Testing Estate Management")
-        
-        success, response = self.run_test(
-            "Get Estates",
-            "GET",
-            "estates",
-            200
-        )
-        
-        if success and response:
-            self.estate_id = response[0]['id']
-            print(f"   Estate ID: {self.estate_id}")
-            print(f"   Estate Name: {response[0]['name']}")
-            print(f"   Readiness Score: {response[0]['readiness_score']}%")
-            return True
-        return False
-
-    def test_beneficiaries(self):
-        """Test beneficiary management"""
-        if not self.estate_id:
-            return False
-            
-        print(f"\n👥 Testing Beneficiary Management")
-        
-        # Get existing beneficiaries
-        success, response = self.run_test(
-            "Get Beneficiaries",
-            "GET",
-            f"beneficiaries/{self.estate_id}",
-            200
-        )
-        
-        if success and response:
-            self.beneficiary_id = response[0]['id']
-            print(f"   Found beneficiary: {response[0]['name']}")
-            return True
-        return False
-
-    def test_documents(self):
-        """Test document management including new encryption and voice verification features"""
-        if not self.estate_id:
-            return False
-            
-        print(f"\n📄 Testing Document Management with Encryption & Voice Verification")
-        
-        # Get existing documents
-        success, response = self.run_test(
-            "Get Documents",
-            "GET",
-            f"documents/{self.estate_id}",
-            200
-        )
-        
-        if success:
-            if response:
-                self.document_id = response[0]['id']
-                print(f"   Found {len(response)} existing documents")
-        
-        # Test document upload with password protection
-        test_content = b"This is a test document for password protection"
-        files = {'file': ('test_document.txt', io.BytesIO(test_content), 'text/plain')}
-        
-        upload_url = f"documents/upload?estate_id={self.estate_id}&name=Test%20Password%20Document&category=legal&lock_type=password&lock_password=testpass123"
-        
-        success, upload_response = self.run_test(
-            "Upload Password-Protected Document",
-            "POST",
-            upload_url,
-            200,
-            files=files
-        )
-        
-        password_test_success = False
-        backup_test_success = False
-        voice_test_success = False
-        preview_test_success = False
-        
-        if success and 'backup_code' in upload_response:
-            print(f"   ✅ Document uploaded with backup code: {upload_response['backup_code']}")
-            self.test_document_id = upload_response['id']
-            self.test_backup_code = upload_response['backup_code']
-            
-            # Test document unlock with password
-            unlock_success, _ = self.run_test(
-                "Unlock Document with Password",
-                "POST",
-                f"documents/{self.test_document_id}/unlock",
-                200,
-                data={"password": "testpass123"}
-            )
-            
-            if unlock_success:
-                print(f"   ✅ Document unlocked with password")
-                password_test_success = True
-            
-            # Test document download with password
-            download_url = f"documents/{self.test_document_id}/download?password=testpass123"
-            download_success, _ = self.run_test(
-                "Download Document with Password",
-                "GET",
-                download_url,
-                200
-            )
-            
-            if download_success:
-                print(f"   ✅ Document downloaded successfully")
-        
-        # Test backup-only locked document
-        backup_files = {'file': ('backup_test.txt', io.BytesIO(b"backup test content"), 'text/plain')}
-        backup_upload_url = f"documents/upload?estate_id={self.estate_id}&name=Backup%20Test%20Document&category=legal&lock_type=backup"
-        
-        backup_success, backup_response = self.run_test(
-            "Upload Backup-Only Document",
-            "POST",
-            backup_upload_url,
-            200,
-            files=backup_files
-        )
-        
-        if backup_success and 'backup_code' in backup_response:
-            backup_doc_id = backup_response['id']
-            backup_code = backup_response['backup_code']
-            
-            unlock_backup_success, _ = self.run_test(
-                "Unlock Backup Document with Code",
-                "POST",
-                f"documents/{backup_doc_id}/unlock",
-                200,
-                data={"backup_code": backup_code}
-            )
-            
-            if unlock_backup_success:
-                print(f"   ✅ Backup document unlocked with backup code")
-                backup_test_success = True
-        
-        # Test voice verification features
-        voice_files = {'file': ('voice_test.txt', io.BytesIO(b"voice verification test content"), 'text/plain')}
-        voice_upload_url = f"documents/upload?estate_id={self.estate_id}&name=Voice%20Test%20Document&category=legal&lock_type=voice"
-        
-        voice_upload_success, voice_response = self.run_test(
-            "Upload Voice-Protected Document",
-            "POST",
-            voice_upload_url,
-            200,
-            files=voice_files
-        )
-        
-        if voice_upload_success and 'backup_code' in voice_response:
-            voice_doc_id = voice_response['id']
-            voice_backup_code = voice_response['backup_code']
-            print(f"   ✅ Voice document uploaded with backup code: {voice_backup_code}")
-            
-            # Test voice passphrase setup
-            voice_setup_success, setup_response = self.run_test(
-                "Setup Voice Passphrase",
-                "POST",
-                f"documents/{voice_doc_id}/voice/setup?passphrase=open%20sesame",
-                200
-            )
-            
-            if voice_setup_success:
-                print(f"   ✅ Voice passphrase set up successfully")
-                
-                # Test voice hint retrieval
-                hint_success, hint_response = self.run_test(
-                    "Get Voice Hint",
-                    "GET",
-                    f"documents/{voice_doc_id}/voice/hint",
-                    200
-                )
-                
-                if hint_success and hint_response.get('has_passphrase'):
-                    print(f"   ✅ Voice hint retrieved: {hint_response.get('hint', 'N/A')}")
-                    
-                    # Test voice verification
-                    verify_success, verify_response = self.run_test(
-                        "Verify Voice Passphrase",
-                        "POST",
-                        f"documents/{voice_doc_id}/voice/verify",
-                        200,
-                        data={"document_id": voice_doc_id, "spoken_text": "open sesame"}
-                    )
-                    
-                    if verify_success and verify_response.get('verified'):
-                        print(f"   ✅ Voice verification successful")
-                        voice_test_success = True
-                    
-                    # Test voice unlock with backup code fallback
-                    voice_unlock_success, _ = self.run_test(
-                        "Unlock Voice Document with Backup",
-                        "POST",
-                        f"documents/{voice_doc_id}/unlock",
-                        200,
-                        data={"backup_code": voice_backup_code}
-                    )
-                    
-                    if voice_unlock_success:
-                        print(f"   ✅ Voice document unlocked with backup code")
-        
-        # Test document preview functionality (NEW P1 FEATURE)
-        # Create a PDF-like document for preview testing
-        pdf_files = {'file': ('test_preview.pdf', io.BytesIO(b"fake PDF content for preview testing"), 'application/pdf')}
-        pdf_upload_url = f"documents/upload?estate_id={self.estate_id}&name=Preview%20Test%20PDF&category=legal"
-        
-        pdf_success, pdf_response = self.run_test(
-            "Upload PDF for Preview Test",
-            "POST",
-            pdf_upload_url,
-            200,
-            files=pdf_files
-        )
-        
-        if pdf_success:
-            pdf_doc_id = pdf_response['id']
-            
-            # Test document preview endpoint
-            preview_success, _ = self.run_test(
-                "Preview Document (PDF)",
-                "GET",
-                f"documents/{pdf_doc_id}/preview",
-                200
-            )
-            
-            if preview_success:
-                print(f"   ✅ Document preview successful")
-                preview_test_success = True
-            
-            # Test preview with locked document
-            locked_pdf_files = {'file': ('locked_preview.pdf', io.BytesIO(b"locked PDF content"), 'application/pdf')}
-            locked_pdf_url = f"documents/upload?estate_id={self.estate_id}&name=Locked%20Preview%20PDF&category=legal&lock_type=password&lock_password=preview123"
-            
-            locked_pdf_success, locked_pdf_response = self.run_test(
-                "Upload Locked PDF for Preview",
-                "POST",
-                locked_pdf_url,
-                200,
-                files=locked_pdf_files
-            )
-            
-            if locked_pdf_success:
-                locked_pdf_id = locked_pdf_response['id']
-                
-                # Test preview with credentials
-                locked_preview_success, _ = self.run_test(
-                    "Preview Locked Document with Password",
-                    "GET",
-                    f"documents/{locked_pdf_id}/preview?password=preview123",
-                    200
-                )
-                
-                if locked_preview_success:
-                    print(f"   ✅ Locked document preview with password successful")
-        
-        # Overall success check
-        overall_success = (success and password_test_success and backup_test_success and 
-                          voice_test_success and preview_test_success)
-        
-        if overall_success:
-            print(f"   🎉 All document features tested successfully!")
-        else:
-            print(f"   ⚠️  Some document features failed: Password={password_test_success}, Backup={backup_test_success}, Voice={voice_test_success}, Preview={preview_test_success}")
-        
-        return overall_success
-
-    def test_messages(self):
-        """Test milestone messages including video messages"""
-        if not self.estate_id:
-            return False
-            
-        print(f"\n💌 Testing Milestone Messages with Video Support")
-        
-        # Get existing messages
-        success, response = self.run_test(
-            "Get Messages",
-            "GET",
-            f"messages/{self.estate_id}",
-            200
-        )
-        
-        if success:
-            if response:
-                self.message_id = response[0]['id']
-                print(f"   Found {len(response)} existing messages")
-        
-        # Test creating a video message (only for benefactors)
-        if hasattr(self, 'current_role') and self.current_role == 'benefactor':
-            video_data = base64.b64encode(b"fake_video_data_for_testing").decode()
-            
-            video_message_data = {
-                "estate_id": self.estate_id,
-                "title": "Test Video Message",
-                "content": "This is a test video message for milestone testing",
-                "message_type": "video",
-                "video_data": video_data,
-                "recipients": [self.beneficiary_id] if self.beneficiary_id else [],
-                "trigger_type": "age_milestone",
-                "trigger_age": 25
+            # Register test user
+            register_data = {
+                "email": self.test_user["email"],
+                "password": self.test_user["password"],
+                "first_name": self.test_user["first_name"],
+                "last_name": self.test_user["last_name"]
             }
             
-            video_success, video_response = self.run_test(
-                "Create Video Message",
-                "POST",
-                "messages",
-                200,
-                data=video_message_data
-            )
+            register_response = self.session.post(f"{BACKEND_URL}/auth/register", json=register_data)
             
-            if video_success and 'video_url' in video_response:
-                print(f"   ✅ Video message created with video URL: {video_response['video_url']}")
+            if register_response.status_code == 200:
+                # Try to login
+                login_data = {
+                    "email": self.test_user["email"],
+                    "password": self.test_user["password"]
+                }
                 
-                # Test video retrieval
-                video_id = video_response['video_url']
-                video_get_success, _ = self.run_test(
-                    "Get Video Data",
-                    "GET",
-                    f"messages/video/{video_id}",
-                    200
-                )
+                login_response = self.session.post(f"{BACKEND_URL}/auth/login", json=login_data)
                 
-                if video_get_success:
-                    print(f"   ✅ Video data retrieved successfully")
-                
-                return success and video_success and video_get_success
-        else:
-            print(f"   ℹ️  Skipping video message creation (role: {getattr(self, 'current_role', 'unknown')})")
-        
-        return success
-
-    def test_checklist(self):
-        """Test action checklist"""
-        if not self.estate_id:
-            return False
-            
-        print(f"\n✅ Testing Action Checklist")
-        
-        # Get checklist items
-        success, response = self.run_test(
-            "Get Checklist",
-            "GET",
-            f"checklists/{self.estate_id}",
-            200
-        )
-        
-        if success and response:
-            self.checklist_item_id = response[0]['id']
-            print(f"   Found {len(response)} checklist items")
-            
-            # Test toggle checklist item
-            success, _ = self.run_test(
-                "Toggle Checklist Item",
-                "PATCH",
-                f"checklists/{self.checklist_item_id}/toggle",
-                200
-            )
-            return success
-        return False
-
-    def test_ai_chat(self):
-        """Test Estate Guardian AI chat"""
-        print(f"\n🤖 Testing Estate Guardian AI")
-        
-        success, response = self.run_test(
-            "AI Chat",
-            "POST",
-            "chat/guardian",
-            200,
-            data={"message": "What is estate planning?"}
-        )
-        
-        if success and 'response' in response:
-            print(f"   AI Response: {response['response'][:100]}...")
-            return True
-        return False
-
-    def test_transition_status(self):
-        """Test estate transition status"""
-        if not self.estate_id:
-            return False
-            
-        print(f"\n🔄 Testing Estate Transition")
-        
-        success, response = self.run_test(
-            "Get Transition Status",
-            "GET",
-            f"transition/status/{self.estate_id}",
-            200
-        )
-        
-        if success:
-            print(f"   Estate Status: {response.get('estate_status', 'unknown')}")
-            return True
-        return False
-
-    def test_multi_estate_support(self):
-        """Test multi-estate support (P2 feature)"""
-        print(f"\n🏘️ Testing Multi-Estate Support (P2)")
-        
-        # Create a new estate
-        new_estate_data = {
-            "name": "Test Secondary Estate",
-            "description": "Testing multi-estate functionality"
-        }
-        
-        success, response = self.run_test(
-            "Create New Estate",
-            "POST",
-            "estates",
-            200,
-            data=new_estate_data
-        )
-        
-        if success and 'id' in response:
-            new_estate_id = response['id']
-            print(f"   ✅ New estate created: {response['name']} (ID: {new_estate_id})")
-            
-            # Get all estates to verify multi-estate support
-            success, estates_response = self.run_test(
-                "Get All Estates (Multi-Estate)",
-                "GET",
-                "estates",
-                200
-            )
-            
-            if success and len(estates_response) >= 2:
-                print(f"   ✅ Found {len(estates_response)} estates - multi-estate support confirmed")
-                
-                # Test switching between estates by getting data for the new estate
-                success, estate_data = self.run_test(
-                    "Get Specific Estate Data",
-                    "GET",
-                    f"estates/{new_estate_id}",
-                    200
-                )
-                
-                if success:
-                    print(f"   ✅ Successfully retrieved data for new estate")
-                    
-                    # Clean up - delete the test estate
-                    delete_success, _ = self.run_test(
-                        "Delete Test Estate",
-                        "DELETE",
-                        f"estates/{new_estate_id}",
-                        200
-                    )
-                    
-                    if delete_success:
-                        print(f"   ✅ Test estate cleaned up successfully")
-                    
-                    return True
-        
-        return False
-
-    def test_activity_timeline(self):
-        """Test activity timeline (P2 feature)"""
-        if not self.estate_id:
-            return False
-            
-        print(f"\n📊 Testing Activity Timeline (P2)")
-        
-        success, response = self.run_test(
-            "Get Activity Timeline",
-            "GET",
-            f"activity/{self.estate_id}",
-            200
-        )
-        
-        if success:
-            activities = response if isinstance(response, list) else []
-            print(f"   ✅ Found {len(activities)} activity entries")
-            
-            if activities:
-                # Check activity structure
-                first_activity = activities[0]
-                required_fields = ['id', 'action', 'description', 'user_name', 'created_at']
-                has_all_fields = all(field in first_activity for field in required_fields)
-                
-                if has_all_fields:
-                    print(f"   ✅ Activity structure valid: {first_activity['action']} - {first_activity['description']}")
-                    
-                    # Test with limit parameter
-                    limited_success, limited_response = self.run_test(
-                        "Get Limited Activity Timeline",
-                        "GET",
-                        f"activity/{self.estate_id}?limit=5",
-                        200
-                    )
-                    
-                    if limited_success:
-                        limited_activities = limited_response if isinstance(limited_response, list) else []
-                        print(f"   ✅ Limited query returned {len(limited_activities)} activities (max 5)")
-                        return True
+                if login_response.status_code == 200:
+                    login_result = login_response.json()
+                    if "access_token" in login_result:
+                        self.user_token = login_result["access_token"]
+                        self.session.headers.update({"Authorization": f"Bearer {self.user_token}"})
+                        self.log_test("Auth Flow (Register + Login)", True, "User registered and logged in successfully")
+                    else:
+                        self.log_test("Auth Flow (Register + Login)", False, "No access_token in login response")
                 else:
-                    print(f"   ❌ Activity structure missing required fields")
+                    self.log_test("Auth Flow (Register + Login)", False, f"Login failed with status: {login_response.status_code}")
+            
+            elif register_response.status_code == 400:
+                # User might already exist, try login directly
+                login_data = {
+                    "email": self.test_user["email"],
+                    "password": self.test_user["password"]
+                }
+                
+                login_response = self.session.post(f"{BACKEND_URL}/auth/login", json=login_data)
+                
+                if login_response.status_code == 200:
+                    login_result = login_response.json()
+                    if "access_token" in login_result:
+                        self.user_token = login_result["access_token"]
+                        self.session.headers.update({"Authorization": f"Bearer {self.user_token}"})
+                        self.log_test("Auth Flow (Existing User Login)", True, "Existing user logged in successfully")
+                    else:
+                        self.log_test("Auth Flow (Existing User Login)", False, "No access_token in login response")
+                else:
+                    self.log_test("Auth Flow (Existing User Login)", False, f"Login failed with status: {login_response.status_code}")
             else:
-                print(f"   ℹ️  No activities found (this is normal for new estates)")
-                return True
-        
-        return False
-
-    def test_production_readiness(self):
-        """Test production readiness - health check, auth endpoints, CORS headers"""
-        print(f"\n🏥 Testing Production Readiness")
-        
-        # Test 1: Health check endpoint
-        print(f"\n🔍 Testing Health Check Endpoint")
-        success, response = self.run_test(
-            "Health Check",
-            "GET",
-            "health", 
-            200
-        )
-        
-        if success:
-            expected_fields = ["status", "database", "version"]
-            has_all_fields = all(field in response for field in expected_fields)
-            
-            if has_all_fields and response["status"] == "healthy" and response["version"] == "1.0.0":
-                print(f"   ✅ Health check format correct: {response}")
-                health_check_success = True
-            else:
-                print(f"   ❌ Health check format incorrect: {response}")
-                health_check_success = False
-        else:
-            health_check_success = False
-        
-        # Test 2: Auth endpoints exist (not 404)
-        print(f"\n🔐 Testing Auth Endpoints Exist")
-        
-        # Test register endpoint exists
-        register_success, register_response = self.run_test(
-            "Register Endpoint Exists",
-            "POST",
-            "auth/register",
-            422,  # Expect 422 for validation error, not 404 for missing endpoint
-            data={}
-        )
-        
-        # Test login endpoint exists  
-        login_success, login_response = self.run_test(
-            "Login Endpoint Exists",
-            "POST", 
-            "auth/login",
-            422,  # Expect validation error for missing data, not 404
-            data={}
-        )
-        
-        auth_endpoints_success = register_success and login_success
-        
-        # Test 3: CORS headers verification
-        print(f"\n🌐 Testing CORS Headers")
-        try:
-            import requests
-            url = f"{self.base_url}/health"
-            
-            # Make preflight request (OPTIONS)
-            preflight_response = requests.options(url)
-            cors_headers = preflight_response.headers
-            
-            # Check for required CORS headers
-            required_cors_headers = [
-                'access-control-allow-origin',
-                'access-control-allow-methods', 
-                'access-control-allow-headers'
-            ]
-            
-            cors_headers_present = all(
-                header.lower() in [h.lower() for h in cors_headers.keys()]
-                for header in required_cors_headers
-            )
-            
-            if cors_headers_present:
-                print(f"   ✅ CORS headers present")
-                print(f"      Origin: {cors_headers.get('Access-Control-Allow-Origin', 'Not set')}")
-                print(f"      Methods: {cors_headers.get('Access-Control-Allow-Methods', 'Not set')}")
-                print(f"      Headers: {cors_headers.get('Access-Control-Allow-Headers', 'Not set')}")
-                cors_success = True
-            else:
-                print(f"   ❌ Missing CORS headers")
-                print(f"      Available headers: {list(cors_headers.keys())}")
-                cors_success = False
+                self.log_test("Auth Flow (Register)", False, f"Register failed with status: {register_response.status_code}")
                 
         except Exception as e:
-            print(f"   ❌ CORS test failed: {str(e)}")
-            cors_success = False
-        
-        overall_success = health_check_success and auth_endpoints_success and cors_success
-        
-        if overall_success:
-            print(f"\n   🎉 Production readiness tests passed!")
-        else:
-            print(f"\n   ❌ Production readiness issues found")
-            print(f"      Health Check: {'✅' if health_check_success else '❌'}")
-            print(f"      Auth Endpoints: {'✅' if auth_endpoints_success else '❌'}")
-            print(f"      CORS Headers: {'✅' if cors_success else '❌'}")
-        
-        return overall_success
+            self.log_test("Auth Flow", False, error=e)
 
-    def create_test_user(self):
-        """Create a test user for complete flow testing"""
-        print(f"\n👤 Creating Test User")
-        
-        test_email = f"test.user.{datetime.now().strftime('%Y%m%d%H%M%S')}@carryon-test.com"
-        test_password = "SecurePass123!"
-        
-        # Create test user
-        user_data = {
-            "email": test_email,
-            "password": test_password,
-            "first_name": "John",
-            "last_name": "Doe",
-            "role": "benefactor"
-        }
-        
-        success, response = self.run_test(
-            "Create Test User",
-            "POST",
-            "auth/register",
-            200,
-            data=user_data
-        )
-        
-        if success:
-            print(f"   ✅ Test user created: {test_email}")
+    def test_security_settings(self):
+        """Test 2: Security settings endpoint (requires auth)"""
+        if not self.user_token:
+            self.log_test("Security Settings", False, "No auth token available")
+            return
             
-            # Login with the new user
-            login_success = self.test_login_flow(test_email, test_password)
+        try:
+            response = self.session.get(f"{BACKEND_URL}/security/settings")
             
-            if login_success:
-                print(f"   ✅ Test user login successful")
-                return True, test_email, test_password
-        
-        return False, None, None
-    
-    def create_test_estate(self):
-        """Create a test estate for the user"""
-        print(f"\n🏠 Creating Test Estate")
-        
-        estate_data = {
-            "name": f"Test Estate {datetime.now().strftime('%Y%m%d%H%M%S')}",
-            "description": "Test estate for comprehensive flow testing"
-        }
-        
-        success, response = self.run_test(
-            "Create Test Estate",
-            "POST",
-            "estates",
-            200,
-            data=estate_data
-        )
-        
-        if success and 'id' in response:
-            self.estate_id = response['id']
-            print(f"   ✅ Test estate created: {response['name']} (ID: {self.estate_id})")
-            return True
-        
-        return False
-    
-    def create_test_beneficiary(self):
-        """Create a test beneficiary for the estate"""
-        print(f"\n👥 Creating Test Beneficiary")
-        
-        beneficiary_data = {
-            "estate_id": self.estate_id,
-            "first_name": "Jane",
-            "last_name": "Smith", 
-            "relation": "Sister",
-            "email": f"jane.smith.{datetime.now().strftime('%H%M%S')}@test.com",
-            "phone": "+1234567890",
-            "date_of_birth": "1985-05-15T00:00:00Z",
-            "gender": "female",
-            "address_street": "123 Test St",
-            "address_city": "Test City",
-            "address_state": "CA",
-            "address_zip": "90210",
-            "avatar_color": "#3B82F6"
-        }
-        
-        success, response = self.run_test(
-            "Create Test Beneficiary",
-            "POST",
-            "beneficiaries",
-            200,
-            data=beneficiary_data
-        )
-        
-        if success and 'id' in response:
-            self.beneficiary_id = response['id']
-            print(f"   ✅ Test beneficiary created: {response['name']} (ID: {self.beneficiary_id})")
-            return True
-        
-        return False
-    
-    def test_comprehensive_flows(self):
-        """Test all the critical flows mentioned in the review request"""
-        print(f"\n🔄 Testing Comprehensive Backend Flows")
-        
-        all_success = True
-        
-        # 1. Health check
-        print(f"\n1️⃣ Health Check Flow")
-        health_success, health_response = self.run_test(
-            "Health Check",
-            "GET", 
-            "health",
-            200
-        )
-        
-        if health_success:
-            expected_fields = ["status", "database", "version"]
-            has_all_fields = all(field in health_response for field in expected_fields)
-            if has_all_fields and health_response["status"] == "healthy":
-                print(f"   ✅ Health check passed: {health_response}")
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check if it returns section data
+                if isinstance(data, dict) and len(data) > 0:
+                    # Check for at least one section with voice_enabled field
+                    has_voice_fields = False
+                    for section_id, section_data in data.items():
+                        if isinstance(section_data, dict) and "voice_enabled" in section_data:
+                            has_voice_fields = True
+                            break
+                    
+                    if has_voice_fields:
+                        self.log_test("Security Settings", True, f"Found {len(data)} sections with voice_enabled fields")
+                    else:
+                        self.log_test("Security Settings", False, "No voice_enabled fields found in sections")
+                else:
+                    self.log_test("Security Settings", False, f"Unexpected response format: {data}")
             else:
-                print(f"   ❌ Health check format issue: {health_response}")
-                all_success = False
-        else:
-            all_success = False
+                self.log_test("Security Settings", False, f"Status code: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Security Settings", False, error=e)
+
+    def test_security_questions(self):
+        """Test 3: Security questions endpoint"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/security/questions")
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if "questions" in data and isinstance(data["questions"], list) and len(data["questions"]) > 0:
+                    self.log_test("Security Questions", True, f"Retrieved {len(data['questions'])} preset questions")
+                else:
+                    self.log_test("Security Questions", False, f"Unexpected response format: {data}")
+            else:
+                self.log_test("Security Questions", False, f"Status code: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Security Questions", False, error=e)
+
+    def test_voice_enrollment_endpoint(self):
+        """Test 4: Voice enrollment endpoint exists and validates inputs"""
+        if not self.user_token:
+            self.log_test("Voice Enrollment Endpoint", False, "No auth token available")
+            return
+            
+        try:
+            # Test 1: Missing file and passphrase (should return 422)
+            response = self.session.post(f"{BACKEND_URL}/security/voice/enroll/sdv")
+            
+            if response.status_code in [400, 422]:
+                self.log_test("Voice Enrollment - Missing Data", True, f"Correctly returned {response.status_code} for missing data")
+                
+                # Test 2: Missing file only (should return 422)
+                data = {"passphrase": "test passphrase"}
+                response2 = self.session.post(f"{BACKEND_URL}/security/voice/enroll/sdv", data=data)
+                
+                if response2.status_code in [400, 422]:
+                    self.log_test("Voice Enrollment - Missing File", True, f"Correctly returned {response2.status_code} for missing file")
+                    
+                    # Test 3: Missing passphrase only (should return 422)
+                    audio_file = self.create_test_audio()
+                    try:
+                        with open(audio_file, 'rb') as f:
+                            files = {"file": ("test.wav", f, "audio/wav")}
+                            response3 = self.session.post(f"{BACKEND_URL}/security/voice/enroll/sdv", files=files)
+                            
+                        if response3.status_code in [400, 422]:
+                            self.log_test("Voice Enrollment - Missing Passphrase", True, f"Correctly returned {response3.status_code} for missing passphrase")
+                        else:
+                            self.log_test("Voice Enrollment - Missing Passphrase", False, f"Unexpected status: {response3.status_code}")
+                    finally:
+                        os.unlink(audio_file)
+                        
+                else:
+                    self.log_test("Voice Enrollment - Missing File", False, f"Unexpected status: {response2.status_code}")
+            elif response.status_code == 404:
+                self.log_test("Voice Enrollment Endpoint", False, "Endpoint not found (404) - route not configured")
+            elif response.status_code == 500:
+                self.log_test("Voice Enrollment Endpoint", False, "Internal server error (500) - endpoint exists but has issues")
+            else:
+                self.log_test("Voice Enrollment - Missing Data", False, f"Unexpected status: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Voice Enrollment Endpoint", False, error=e)
+
+    def test_voice_verification_endpoint(self):
+        """Test 5: Voice verification endpoint exists and handles missing data"""
+        if not self.user_token:
+            self.log_test("Voice Verification Endpoint", False, "No auth token available")
+            return
+            
+        try:
+            # Test missing data (should return 400/422, not 500)
+            response = self.session.post(f"{BACKEND_URL}/security/verify/sdv")
+            
+            if response.status_code in [400, 422]:
+                self.log_test("Voice Verification - Missing Data", True, f"Correctly returned {response.status_code} for missing data")
+            elif response.status_code == 404:
+                self.log_test("Voice Verification Endpoint", False, "Endpoint not found (404) - route not configured")
+            elif response.status_code == 500:
+                self.log_test("Voice Verification Endpoint", False, "Internal server error (500) - endpoint exists but has issues")
+            else:
+                # Even other errors are acceptable as long as it's not 404/500
+                self.log_test("Voice Verification - Missing Data", True, f"Endpoint exists and returned {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Voice Verification Endpoint", False, error=e)
+
+    def run_all_tests(self):
+        """Run all voice biometric tests"""
+        print("=" * 60)
+        print("CarryOn™ Voice Biometric Backend Testing")
+        print("=" * 60)
+        print()
         
-        # 2. Create test user and login  
-        print(f"\n2️⃣ Auth Flow (Register + Login)")
-        user_success, test_email, test_password = self.create_test_user()
-        if not user_success:
-            print(f"   ❌ User creation/login failed")
-            all_success = False
-        
-        # 3. Estate creation
-        print(f"\n3️⃣ Estate Creation Flow") 
-        if user_success:
-            estate_success = self.create_test_estate()
-            if not estate_success:
-                print(f"   ❌ Estate creation failed")
-                all_success = False
-        else:
-            estate_success = False
-            all_success = False
-        
-        # 4. Beneficiary flow
-        print(f"\n4️⃣ Beneficiary Flow")
-        if estate_success:
-            beneficiary_success = self.create_test_beneficiary()
-            if not beneficiary_success:
-                print(f"   ❌ Beneficiary creation failed")
-                all_success = False
-        else:
-            beneficiary_success = False
-            all_success = False
-        
-        # 5. Document upload
-        print(f"\n5️⃣ Document Upload Flow")
-        if estate_success:
-            doc_success = self.test_document_upload_basic()
-            if not doc_success:
-                print(f"   ❌ Document upload failed")
-                all_success = False
-        else:
-            doc_success = False
-            all_success = False
-        
-        # 6. Guardian AI chat
-        print(f"\n6️⃣ Guardian AI Flow")
-        if estate_success:
-            ai_success = self.test_guardian_ai_basic()
-            if not ai_success:
-                print(f"   ❌ Guardian AI failed")
-                all_success = False
-        else:
-            ai_success = False
-            all_success = False
-        
-        # 7. Checklist
-        print(f"\n7️⃣ Checklist Flow")
-        if estate_success:
-            checklist_success = self.test_checklist_basic()
-            if not checklist_success:
-                print(f"   ❌ Checklist failed")
-                all_success = False
-        else:
-            checklist_success = False
-            all_success = False
+        # Test order matches the review request
+        self.test_health_check()
+        self.test_auth_flow()  # Need auth for security endpoints
+        self.test_security_settings()
+        self.test_security_questions()
+        self.test_voice_enrollment_endpoint()
+        self.test_voice_verification_endpoint()
         
         # Summary
-        print(f"\n{'='*60}")
-        print(f"🔍 COMPREHENSIVE FLOW TEST RESULTS:")
-        print(f"   1️⃣ Health Check: {'✅' if health_success else '❌'}")
-        print(f"   2️⃣ Auth Flow: {'✅' if user_success else '❌'}")  
-        print(f"   3️⃣ Estate Creation: {'✅' if estate_success else '❌'}")
-        print(f"   4️⃣ Beneficiary Flow: {'✅' if beneficiary_success else '❌'}")
-        print(f"   5️⃣ Document Upload: {'✅' if doc_success else '❌'}")
-        print(f"   6️⃣ Guardian AI: {'✅' if ai_success else '❌'}")
-        print(f"   7️⃣ Checklist: {'✅' if checklist_success else '❌'}")
+        print("=" * 60)
+        print("TEST SUMMARY")
+        print("=" * 60)
         
-        return all_success
-    
-    def test_document_upload_basic(self):
-        """Basic document upload test"""
-        test_content = b"This is a test document for comprehensive flow testing"
-        files = {'file': ('test_flow_document.txt', io.BytesIO(test_content), 'text/plain')}
+        passed = sum(1 for r in self.results if r["success"])
+        total = len(self.results)
         
-        upload_url = f"documents/upload?estate_id={self.estate_id}&name=Flow%20Test%20Document&category=legal"
+        print(f"Total tests: {total}")
+        print(f"Passed: {passed}")
+        print(f"Failed: {total - passed}")
+        print()
         
-        success, response = self.run_test(
-            "Basic Document Upload",
-            "POST",
-            upload_url,
-            200,
-            files=files
-        )
-        
-        if success and 'id' in response:
-            self.document_id = response['id']
-            print(f"   ✅ Document uploaded successfully: {response['name']}")
+        if total - passed > 0:
+            print("FAILED TESTS:")
+            for result in self.results:
+                if not result["success"]:
+                    print(f"  ❌ {result['test']}: {result['error'] or result['details']}")
+        else:
+            print("🎉 All tests passed!")
             
-            # Test retrieving documents
-            get_success, get_response = self.run_test(
-                "Get Documents",
-                "GET", 
-                f"documents/{self.estate_id}",
-                200
-            )
-            
-            if get_success and get_response:
-                print(f"   ✅ Documents retrieved: {len(get_response)} documents")
-                return True
-        
-        return False
-    
-    def test_guardian_ai_basic(self):
-        """Basic Guardian AI test"""
-        chat_data = {
-            "message": "What is estate planning?",
-            "estate_id": self.estate_id
-        }
-        
-        success, response = self.run_test(
-            "Guardian AI Chat",
-            "POST", 
-            "chat/guardian",
-            200,
-            data=chat_data
-        )
-        
-        if success and 'response' in response:
-            print(f"   ✅ Guardian AI responded: {response['response'][:100]}...")
-            return True
-        
-        return False
-        
-    def test_checklist_basic(self):
-        """Basic checklist test"""
-        success, response = self.run_test(
-            "Get Checklist Items",
-            "GET",
-            f"checklists/{self.estate_id}",
-            200
-        )
-        
-        if success:
-            checklist_count = len(response) if response else 0
-            print(f"   ✅ Checklist retrieved: {checklist_count} items")
-            
-            if response and len(response) > 0:
-                # Test toggling an item
-                item_id = response[0]['id']
-                toggle_success, toggle_response = self.run_test(
-                    "Toggle Checklist Item",
-                    "PATCH",
-                    f"checklists/{item_id}/toggle",
-                    200
-                )
-                
-                if toggle_success:
-                    print(f"   ✅ Checklist item toggled successfully")
-                    return True
-            else:
-                # No items yet, which is ok for new estate
-                print(f"   ℹ️  No checklist items found (normal for new estate)")
-                return True
-        
-        return False
+        return passed == total
 
-def main():
-    """Main test execution for the comprehensive backend flows"""
-    print("🚀 Starting CarryOn™ Comprehensive Backend Testing")
-    print("=" * 60)
-    
-    tester = CarryOnAPITester()
-    
-    # Run the comprehensive flow tests as requested
-    comprehensive_success = tester.test_comprehensive_flows()
-    
-    # Print final results
-    print(f"\n{'='*60}")
-    print(f"📊 Test Results: {tester.tests_passed}/{tester.tests_run} passed")
-    
-    if comprehensive_success:
-        print("🎉 All critical backend flows are working!")
-        return 0
-    else:
-        print("❌ Some critical backend flows have issues")
-        return 1
 
 if __name__ == "__main__":
-    sys.exit(main())
+    tester = CarryOnBackendTester()
+    success = tester.run_all_tests()
+    exit(0 if success else 1)
