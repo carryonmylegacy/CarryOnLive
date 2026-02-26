@@ -228,10 +228,10 @@ async def export_estate_pdf(estate_id: str, current_user: dict = Depends(get_cur
     pdf.cell(0, 8, f"Milestone Messages ({len(messages)}):", new_x="LMARGIN", new_y="NEXT")
     pdf.set_font("Helvetica", "", 10)
     for m in messages[:10]:
-        title = m.get("title", "Untitled")[:50]
+        title = _safe(m.get("title", "Untitled")[:50])
         trigger = m.get("trigger", "on_transition")
         pdf.cell(5)
-        pdf.cell(0, 5, f"  {title} (trigger: {trigger})", new_x="LMARGIN", new_y="NEXT")
+        pdf.cell(0, 5, _safe(f"  {title} (trigger: {trigger})"), new_x="LMARGIN", new_y="NEXT")
     pdf.ln(3)
 
     # DTS summary
