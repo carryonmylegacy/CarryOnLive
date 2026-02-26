@@ -1839,22 +1839,23 @@ async def approve_death_certificate(certificate_id: str, current_user: dict = De
     if not certificate:
         raise HTTPException(status_code=404, detail="Certificate not found")
     
-    # Update certificate status
+    # Update certificate status — authenticated
     await db.death_certificates.update_one(
         {"id": certificate_id},
         {"$set": {
-            "status": "approved",
+            "status": "authenticated",
             "reviewed_by": current_user["id"],
             "reviewed_at": datetime.now(timezone.utc).isoformat()
         }}
     )
     
-    # Transition the estate
+    # Seal the benefactor's estate (immutable)
     await db.estates.update_one(
         {"id": certificate["estate_id"]},
         {"$set": {
             "status": "transitioned",
-            "transitioned_at": datetime.now(timezone.utc).isoformat()
+            "transitioned_at": datetime.now(timezone.utc).isoformat(),
+            "sealed_by": current_user["id"]
         }}
     )
     
@@ -1864,7 +1865,13 @@ async def approve_death_certificate(certificate_id: str, current_user: dict = De
         {"$set": {"is_delivered": True, "delivered_at": datetime.now(timezone.utc).isoformat()}}
     )
     
-    return {"message": "Certificate approved, estate transitioned"}
+    # Mark certificate as fully complete
+    await db.death_certificates.update_one(
+        {"id": certificate_id},
+        {"$set": {"status": "approved", "transition_completed_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {"message": "Certificate approved, benefactor sealed, beneficiary access granted"}
 
 @api_router.get("/transition/status/{estate_id}")
 async def get_transition_status(estate_id: str, current_user: dict = Depends(get_current_user)):
