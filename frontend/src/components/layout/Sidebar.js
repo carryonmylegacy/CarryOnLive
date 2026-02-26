@@ -132,6 +132,7 @@ const Sidebar = () => {
       title: 'ACCOUNT',
       items: [
         { to: '/settings', icon: Settings, label: 'Settings' },
+        { to: '/support', icon: Headphones, label: 'Customer Support' },
       ]
     }
   ];
