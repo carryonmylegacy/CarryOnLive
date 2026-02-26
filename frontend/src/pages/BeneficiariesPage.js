@@ -9,7 +9,14 @@ import {
   Phone,
   UserCircle,
   Loader2,
-  X
+  Send,
+  CheckCircle,
+  Clock,
+  MapPin,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  Edit2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -17,6 +24,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
+import { Textarea } from '../components/ui/textarea';
 import { toast } from 'sonner';
 import { SectionLockBanner } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
@@ -31,6 +39,14 @@ const avatarColors = [
   '#d4af37', '#3b82f6', '#10b981', '#8b5cf6', '#ef4444', '#f59e0b', '#ec4899', '#06b6d4'
 ];
 
+const usStates = [
+  'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+  'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+  'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+  'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+  'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'DC'
+];
+
 const BeneficiariesPage = () => {
   const { getAuthHeaders } = useAuth();
   const [beneficiaries, setBeneficiaries] = useState([]);
@@ -38,14 +54,25 @@ const BeneficiariesPage = () => {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [sendingInvite, setSendingInvite] = useState(null);
+  const [expandedCard, setExpandedCard] = useState(null);
   
-  // Form state
-  const [name, setName] = useState('');
+  // Form state - enhanced demographics
+  const [firstName, setFirstName] = useState('');
+  const [middleName, setMiddleName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [suffix, setSuffix] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [relation, setRelation] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [gender, setGender] = useState('');
+  const [addressStreet, setAddressStreet] = useState('');
+  const [addressCity, setAddressCity] = useState('');
+  const [addressState, setAddressState] = useState('');
+  const [addressZip, setAddressZip] = useState('');
+  const [ssnLastFour, setSsnLastFour] = useState('');
+  const [notes, setNotes] = useState('');
   const [avatarColor, setAvatarColor] = useState(avatarColors[0]);
 
   useEffect(() => {
@@ -69,8 +96,8 @@ const BeneficiariesPage = () => {
   };
 
   const handleAdd = async () => {
-    if (!name || !email || !relation) {
-      toast.error('Please fill all required fields');
+    if (!firstName || !lastName || !email || !relation) {
+      toast.error('Please fill all required fields (First Name, Last Name, Email, Relationship)');
       return;
     }
     
@@ -78,12 +105,21 @@ const BeneficiariesPage = () => {
     try {
       await axios.post(`${API_URL}/beneficiaries`, {
         estate_id: estate.id,
-        name,
+        first_name: firstName,
+        middle_name: middleName || null,
+        last_name: lastName,
+        suffix: suffix || null,
         email,
         phone: phone || null,
         relation,
         date_of_birth: dateOfBirth || null,
         gender: gender || null,
+        address_street: addressStreet || null,
+        address_city: addressCity || null,
+        address_state: addressState || null,
+        address_zip: addressZip || null,
+        ssn_last_four: ssnLastFour || null,
+        notes: notes || null,
         avatar_color: avatarColor
       }, getAuthHeaders());
       
@@ -93,9 +129,23 @@ const BeneficiariesPage = () => {
       fetchData();
     } catch (error) {
       console.error('Add error:', error);
-      toast.error('Failed to add beneficiary');
+      toast.error(error.response?.data?.detail || 'Failed to add beneficiary');
     } finally {
       setAdding(false);
+    }
+  };
+
+  const handleSendInvitation = async (beneficiaryId) => {
+    setSendingInvite(beneficiaryId);
+    try {
+      await axios.post(`${API_URL}/beneficiaries/${beneficiaryId}/invite`, {}, getAuthHeaders());
+      toast.success('Invitation sent successfully');
+      fetchData();
+    } catch (error) {
+      console.error('Invite error:', error);
+      toast.error(error.response?.data?.detail || 'Failed to send invitation');
+    } finally {
+      setSendingInvite(null);
     }
   };
 
@@ -113,14 +163,52 @@ const BeneficiariesPage = () => {
   };
 
   const resetForm = () => {
-    setName('');
+    setFirstName('');
+    setMiddleName('');
+    setLastName('');
+    setSuffix('');
     setEmail('');
     setPhone('');
     setRelation('');
     setDateOfBirth('');
     setGender('');
+    setAddressStreet('');
+    setAddressCity('');
+    setAddressState('');
+    setAddressZip('');
+    setSsnLastFour('');
+    setNotes('');
     setAvatarColor(avatarColors[0]);
   };
+
+  const getInvitationStatusBadge = (ben) => {
+    if (ben.user_id || ben.invitation_status === 'accepted') {
+      return (
+        <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-[#10b981]/20 text-[#10b981]">
+          <CheckCircle className="w-3 h-3" />
+          Account Linked
+        </span>
+      );
+    }
+    if (ben.invitation_status === 'sent') {
+      return (
+        <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-[#3b82f6]/20 text-[#3b82f6]">
+          <Mail className="w-3 h-3" />
+          Invitation Sent
+        </span>
+      );
+    }
+    return (
+      <span className="flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-[#f59e0b]/20 text-[#f59e0b]">
+        <Clock className="w-3 h-3" />
+        Pending Invite
+      </span>
+    );
+  };
+
+  const displayName = firstName && lastName 
+    ? `${firstName}${middleName ? ' ' + middleName : ''} ${lastName}${suffix ? ' ' + suffix : ''}`
+    : '';
 
   if (loading) {
     return (
@@ -138,7 +226,7 @@ const BeneficiariesPage = () => {
   return (
     <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="beneficiaries-page"
       style={{ background: 'radial-gradient(ellipse at top left, rgba(34,197,94,0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(22,163,74,0.06), transparent 55%)' }}>
-      {/* Header - matching prototype */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(34,197,94,0.2), rgba(22,163,74,0.15))' }}>
@@ -169,7 +257,8 @@ const BeneficiariesPage = () => {
       {/* Invitation info */}
       <div className="rounded-xl p-3" style={{ background: 'rgba(37,99,235,0.04)', border: '1px solid rgba(37,99,235,0.1)' }}>
         <p className="text-xs text-[var(--bl3)] leading-relaxed">
-          The invitation email will include: a link to create their CarryOn™ account, instructions to download the app, and a brief explanation of what CarryOn™ is. They will NOT be told any details about your estate, documents, or messages.
+          When you send an invitation, the beneficiary will receive an email with a link to create their CarryOn™ account. 
+          They will NOT be told any details about your estate, documents, or messages until the appropriate time.
         </p>
       </div>
 
@@ -202,7 +291,9 @@ const BeneficiariesPage = () => {
                         color: ben.avatar_color
                       }}
                     >
-                      {ben.initials || ben.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                      {ben.initials || (ben.first_name && ben.last_name 
+                        ? (ben.first_name[0] + ben.last_name[0]).toUpperCase()
+                        : ben.name?.split(' ').map(n => n[0]).join('').toUpperCase())}
                     </div>
                     <div>
                       <h3 className="text-white font-semibold text-lg">{ben.name}</h3>
@@ -232,16 +323,72 @@ const BeneficiariesPage = () => {
                       <span>{ben.phone}</span>
                     </div>
                   )}
+                  {ben.date_of_birth && (
+                    <div className="flex items-center gap-2 text-[#94a3b8]">
+                      <Calendar className="w-4 h-4" />
+                      <span>{new Date(ben.date_of_birth).toLocaleDateString()}</span>
+                    </div>
+                  )}
+                  {(ben.address_city || ben.address_state) && (
+                    <div className="flex items-center gap-2 text-[#94a3b8]">
+                      <MapPin className="w-4 h-4" />
+                      <span>{[ben.address_city, ben.address_state].filter(Boolean).join(', ')}</span>
+                    </div>
+                  )}
                 </div>
+
+                {/* Expandable Details */}
+                {(ben.address_street || ben.notes || ben.ssn_last_four) && (
+                  <div className="mt-3">
+                    <button
+                      onClick={() => setExpandedCard(expandedCard === ben.id ? null : ben.id)}
+                      className="text-xs text-[#d4af37] flex items-center gap-1 hover:underline"
+                    >
+                      {expandedCard === ben.id ? (
+                        <>Less details <ChevronUp className="w-3 h-3" /></>
+                      ) : (
+                        <>More details <ChevronDown className="w-3 h-3" /></>
+                      )}
+                    </button>
+                    
+                    {expandedCard === ben.id && (
+                      <div className="mt-2 pt-2 border-t border-white/5 space-y-1 text-xs text-[#94a3b8]">
+                        {ben.address_street && (
+                          <p><span className="text-[#64748b]">Address:</span> {ben.address_street}, {ben.address_city}, {ben.address_state} {ben.address_zip}</p>
+                        )}
+                        {ben.ssn_last_four && (
+                          <p><span className="text-[#64748b]">SSN:</span> ***-**-{ben.ssn_last_four}</p>
+                        )}
+                        {ben.notes && (
+                          <p><span className="text-[#64748b]">Notes:</span> {ben.notes}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
                 
-                <div className="mt-4 pt-4 border-t border-white/5">
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    ben.user_id 
-                      ? 'bg-[#10b981]/20 text-[#10b981]' 
-                      : 'bg-[#f59e0b]/20 text-[#f59e0b]'
-                  }`}>
-                    {ben.user_id ? 'Account Linked' : 'Invite Pending'}
-                  </span>
+                <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
+                  {getInvitationStatusBadge(ben)}
+                  
+                  {ben.invitation_status !== 'accepted' && !ben.user_id && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37]/10"
+                      onClick={() => handleSendInvitation(ben.id)}
+                      disabled={sendingInvite === ben.id}
+                      data-testid={`send-invite-${ben.id}`}
+                    >
+                      {sendingInvite === ben.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Send className="w-3 h-3 mr-1" />
+                          {ben.invitation_status === 'sent' ? 'Resend' : 'Send Invite'}
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -249,19 +396,19 @@ const BeneficiariesPage = () => {
         </div>
       )}
 
-      {/* Add Beneficiary Modal */}
+      {/* Add Beneficiary Modal - Enhanced */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-        <DialogContent className="glass-card border-white/10 sm:max-w-md">
+        <DialogContent className="glass-card border-white/10 sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Add Beneficiary
             </DialogTitle>
             <DialogDescription className="text-[#94a3b8]">
-              Add a family member or loved one to your estate
+              Add a family member or loved one to your estate plan
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="space-y-6 py-4">
             {/* Avatar Preview */}
             <div className="flex justify-center">
               <div
@@ -271,7 +418,9 @@ const BeneficiariesPage = () => {
                   color: avatarColor
                 }}
               >
-                {name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : <UserCircle className="w-10 h-10" />}
+                {firstName && lastName 
+                  ? (firstName[0] + lastName[0]).toUpperCase() 
+                  : <UserCircle className="w-10 h-10" />}
               </div>
             </div>
             
@@ -288,88 +437,216 @@ const BeneficiariesPage = () => {
                 />
               ))}
             </div>
-            
-            {/* Name */}
-            <div className="space-y-2">
-              <Label className="text-[#94a3b8]">Full Name *</Label>
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="John Mitchell"
-                className="input-field"
-                data-testid="beneficiary-name-input"
-              />
-            </div>
-            
-            {/* Relation */}
-            <div className="space-y-2">
-              <Label className="text-[#94a3b8]">Relationship *</Label>
-              <Select value={relation} onValueChange={setRelation}>
-                <SelectTrigger className="input-field" data-testid="beneficiary-relation-select">
-                  <SelectValue placeholder="Select relationship" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#1A2440] border-white/10">
-                  {relations.map((rel) => (
-                    <SelectItem key={rel} value={rel}>{rel}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Email */}
-            <div className="space-y-2">
-              <Label className="text-[#94a3b8]">Email Address *</Label>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="john@email.com"
-                className="input-field"
-                data-testid="beneficiary-email-input"
-              />
-            </div>
-            
-            {/* Phone */}
-            <div className="space-y-2">
-              <Label className="text-[#94a3b8]">Phone Number (Optional)</Label>
-              <Input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+1-555-0123"
-                className="input-field"
-              />
+
+            {/* Name Section */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-[#d4af37] uppercase tracking-wide">Personal Information</h3>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-[#94a3b8]">First Name *</Label>
+                  <Input
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="John"
+                    className="input-field"
+                    data-testid="beneficiary-first-name-input"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[#94a3b8]">Middle Name</Label>
+                  <Input
+                    value={middleName}
+                    onChange={(e) => setMiddleName(e.target.value)}
+                    placeholder="Michael"
+                    className="input-field"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-[#94a3b8]">Last Name *</Label>
+                  <Input
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Mitchell"
+                    className="input-field"
+                    data-testid="beneficiary-last-name-input"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[#94a3b8]">Suffix</Label>
+                  <Select value={suffix} onValueChange={setSuffix}>
+                    <SelectTrigger className="input-field">
+                      <SelectValue placeholder="None" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1A2440] border-white/10">
+                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="Jr.">Jr.</SelectItem>
+                      <SelectItem value="Sr.">Sr.</SelectItem>
+                      <SelectItem value="II">II</SelectItem>
+                      <SelectItem value="III">III</SelectItem>
+                      <SelectItem value="IV">IV</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-[#94a3b8]">Relationship *</Label>
+                  <Select value={relation} onValueChange={setRelation}>
+                    <SelectTrigger className="input-field" data-testid="beneficiary-relation-select">
+                      <SelectValue placeholder="Select relationship" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1A2440] border-white/10">
+                      {relations.map((rel) => (
+                        <SelectItem key={rel} value={rel}>{rel}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[#94a3b8]">Gender</Label>
+                  <Select value={gender} onValueChange={setGender}>
+                    <SelectTrigger className="input-field" data-testid="beneficiary-gender-select">
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1A2440] border-white/10">
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-[#94a3b8]">Date of Birth</Label>
+                <Input
+                  type="date"
+                  value={dateOfBirth}
+                  onChange={(e) => setDateOfBirth(e.target.value)}
+                  className="input-field"
+                  data-testid="beneficiary-dob-input"
+                />
+              </div>
             </div>
 
-            {/* Date of Birth */}
-            <div className="space-y-2">
-              <Label className="text-[#94a3b8]">Date of Birth (Optional)</Label>
-              <Input
-                type="date"
-                value={dateOfBirth}
-                onChange={(e) => setDateOfBirth(e.target.value)}
-                className="input-field"
-                data-testid="beneficiary-dob-input"
-              />
+            {/* Contact Section */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-[#d4af37] uppercase tracking-wide">Contact Information</h3>
+              
+              <div className="space-y-2">
+                <Label className="text-[#94a3b8]">Email Address *</Label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="john@email.com"
+                  className="input-field"
+                  data-testid="beneficiary-email-input"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-[#94a3b8]">Phone Number</Label>
+                <Input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+1-555-0123"
+                  className="input-field"
+                />
+              </div>
             </div>
 
-            {/* Gender */}
-            <div className="space-y-2">
-              <Label className="text-[#94a3b8]">Gender (Optional)</Label>
-              <Select value={gender} onValueChange={setGender}>
-                <SelectTrigger className="input-field" data-testid="beneficiary-gender-select">
-                  <SelectValue placeholder="Select gender" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#1A2440] border-white/10">
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+            {/* Address Section */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-[#d4af37] uppercase tracking-wide">Address</h3>
+              
+              <div className="space-y-2">
+                <Label className="text-[#94a3b8]">Street Address</Label>
+                <Input
+                  value={addressStreet}
+                  onChange={(e) => setAddressStreet(e.target.value)}
+                  placeholder="123 Main Street, Apt 4B"
+                  className="input-field"
+                />
+              </div>
+              
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-[#94a3b8]">City</Label>
+                  <Input
+                    value={addressCity}
+                    onChange={(e) => setAddressCity(e.target.value)}
+                    placeholder="San Diego"
+                    className="input-field"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[#94a3b8]">State</Label>
+                  <Select value={addressState} onValueChange={setAddressState}>
+                    <SelectTrigger className="input-field">
+                      <SelectValue placeholder="State" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1A2440] border-white/10 max-h-48">
+                      {usStates.map((st) => (
+                        <SelectItem key={st} value={st}>{st}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[#94a3b8]">ZIP Code</Label>
+                  <Input
+                    value={addressZip}
+                    onChange={(e) => setAddressZip(e.target.value)}
+                    placeholder="92101"
+                    className="input-field"
+                    maxLength={10}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Info Section */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-[#d4af37] uppercase tracking-wide">Additional Information</h3>
+              
+              <div className="space-y-2">
+                <Label className="text-[#94a3b8]">SSN (Last 4 digits)</Label>
+                <Input
+                  value={ssnLastFour}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                    setSsnLastFour(val);
+                  }}
+                  placeholder="1234"
+                  className="input-field"
+                  maxLength={4}
+                />
+                <p className="text-xs text-[#64748b]">
+                  Optional. May be needed for certain estate planning documents.
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-[#94a3b8]">Notes / Special Instructions</Label>
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Any special notes about this beneficiary..."
+                  className="input-field min-h-[80px]"
+                  rows={3}
+                />
+              </div>
             </div>
           </div>
           
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
             <Button
               variant="outline"
               onClick={() => {
@@ -382,7 +659,7 @@ const BeneficiariesPage = () => {
             </Button>
             <Button
               onClick={handleAdd}
-              disabled={adding || !name || !email || !relation}
+              disabled={adding || !firstName || !lastName || !email || !relation}
               className="gold-button"
               data-testid="add-beneficiary-submit"
             >
