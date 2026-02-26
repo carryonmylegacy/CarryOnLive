@@ -423,8 +423,46 @@ const UnlockModal = ({ sectionId, lockState, onClose, onUnlocked }) => {
   };
 
   const handleVoiceRecord = () => {
+    if (recording) return;
     setRecording(true);
-    setTimeout(() => { setRecording(false); setVoiceOk(true); }, 3000);
+    
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        const chunks = [];
+        
+        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+        mediaRecorder.onstop = async () => {
+          stream.getTracks().forEach(t => t.stop());
+          const blob = new Blob(chunks, { type: 'audio/webm' });
+          
+          try {
+            const formData = new FormData();
+            formData.append('file', blob, 'voice.webm');
+            formData.append('expected_passphrase', ls?.voice || '');
+            const token = localStorage.getItem('carryon_token');
+            const res = await axios.post(`${API_URL}/voice/verify-passphrase?expected_passphrase=${encodeURIComponent(ls?.voice || '')}`, formData, {
+              headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
+            });
+            if (res.data.verified) {
+              setVoiceOk(true);
+              toast.success(`Voice verified (${Math.round(res.data.similarity * 100)}% match)`);
+            } else {
+              toast.error(`Voice mismatch (${Math.round(res.data.similarity * 100)}% match). Try again.`);
+            }
+          } catch (err) {
+            toast.error('Voice verification failed. Try again.');
+          }
+          setRecording(false);
+        };
+        
+        mediaRecorder.start();
+        setTimeout(() => mediaRecorder.stop(), 4000);
+      })
+      .catch(() => {
+        toast.error('Microphone access denied');
+        setRecording(false);
+      });
   };
 
   const handleBackupCheck = () => {
