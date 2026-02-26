@@ -118,11 +118,6 @@ const DashboardPage = () => {
               <stop offset="100%" stopColor="#22c55e" />
             </linearGradient>
             
-            {/* Blur filter for outer glow */}
-            <filter id="gaugeBlur" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur in="SourceGraphic" stdDeviation="6" />
-            </filter>
-            
             {/* Needle gradient - metallic silver effect */}
             <linearGradient id="needleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#94a3b8" />
