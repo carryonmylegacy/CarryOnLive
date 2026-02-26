@@ -52,6 +52,16 @@ export const AuthProvider = ({ children }) => {
     setPendingEmail(null);
   };
 
+  const devLogin = async (email, password) => {
+    const response = await axios.post(`${API_URL}/auth/dev-login`, { email, password });
+    const { access_token, user: userData } = response.data;
+    localStorage.setItem('carryon_token', access_token);
+    setToken(access_token);
+    setUser(userData);
+    setPendingEmail(null);
+    return userData;
+  };
+
   const getAuthHeaders = () => ({
     headers: { Authorization: `Bearer ${token}` }
   });
@@ -64,6 +74,7 @@ export const AuthProvider = ({ children }) => {
       pendingEmail,
       login,
       verifyOtp,
+      devLogin,
       logout,
       getAuthHeaders,
       isAuthenticated: !!user
