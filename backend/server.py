@@ -47,6 +47,19 @@ SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
 if RESEND_API_KEY:
     resend.api_key = RESEND_API_KEY
 
+# Twilio Configuration for SMS OTP
+TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID')
+TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN')
+TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER')
+twilio_client = None
+if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
+    try:
+        from twilio.rest import Client as TwilioClient
+        twilio_client = TwilioClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+        logger.info("Twilio SMS configured successfully")
+    except ImportError:
+        logger.warning("Twilio library not installed - SMS OTP disabled")
+
 # Create the main app
 app = FastAPI(title="CarryOn™ API", version="1.0.0")
 
