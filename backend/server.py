@@ -1496,6 +1496,58 @@ async def delete_beneficiary(beneficiary_id: str, current_user: dict = Depends(g
     
     return {"message": "Beneficiary removed"}
 
+@api_router.put("/beneficiaries/{beneficiary_id}")
+async def update_beneficiary(beneficiary_id: str, data: BeneficiaryCreate, current_user: dict = Depends(get_current_user)):
+    """Update an existing beneficiary"""
+    if current_user["role"] != "benefactor":
+        raise HTTPException(status_code=403, detail="Only benefactors can update beneficiaries")
+    
+    beneficiary = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0})
+    if not beneficiary:
+        raise HTTPException(status_code=404, detail="Beneficiary not found")
+    
+    # Build full name from parts
+    name_parts = [data.first_name]
+    if data.middle_name:
+        name_parts.append(data.middle_name)
+    name_parts.append(data.last_name)
+    if data.suffix:
+        name_parts.append(data.suffix)
+    full_name = " ".join(name_parts)
+    
+    # Generate initials
+    initials = (data.first_name[0] + data.last_name[0]).upper()
+    
+    update_data = {
+        "first_name": data.first_name,
+        "middle_name": data.middle_name,
+        "last_name": data.last_name,
+        "suffix": data.suffix,
+        "name": full_name,
+        "relation": data.relation,
+        "email": data.email,
+        "phone": data.phone,
+        "date_of_birth": data.date_of_birth,
+        "gender": data.gender,
+        "address_street": data.address_street,
+        "address_city": data.address_city,
+        "address_state": data.address_state,
+        "address_zip": data.address_zip,
+        "ssn_last_four": data.ssn_last_four,
+        "notes": data.notes,
+        "avatar_color": data.avatar_color,
+        "initials": initials,
+    }
+    
+    await db.beneficiaries.update_one(
+        {"id": beneficiary_id},
+        {"$set": update_data}
+    )
+    
+    # Get updated beneficiary
+    updated = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0})
+    return updated
+
 @api_router.post("/beneficiaries/{beneficiary_id}/invite")
 async def send_beneficiary_invitation(beneficiary_id: str, current_user: dict = Depends(get_current_user)):
     """Send invitation email to a beneficiary"""
