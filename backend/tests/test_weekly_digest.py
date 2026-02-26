@@ -98,7 +98,7 @@ class TestDigestSendWeekly:
         """Get admin auth token"""
         resp = requests.post(f"{BASE_URL}/api/auth/dev-login", json=ADMIN_CREDENTIALS)
         if resp.status_code == 200:
-            return resp.json().get("token")
+            return resp.json().get("access_token")
         pytest.skip(f"Admin login failed: {resp.status_code}")
     
     @pytest.fixture(scope="class")
@@ -109,7 +109,7 @@ class TestDigestSendWeekly:
         if admin_resp.status_code != 200:
             pytest.skip("Cannot get admin token to find benefactors")
         
-        admin_token = admin_resp.json().get("token")
+        admin_token = admin_resp.json().get("access_token")
         headers = {"Authorization": f"Bearer {admin_token}"}
         
         # Get users list to find a benefactor
@@ -124,7 +124,7 @@ class TestDigestSendWeekly:
                         json={"email": user["email"], "password": "password123"}
                     )
                     if benefactor_resp.status_code == 200:
-                        return benefactor_resp.json().get("token")
+                        return benefactor_resp.json().get("access_token")
         
         pytest.skip("No benefactor account available for testing")
     
