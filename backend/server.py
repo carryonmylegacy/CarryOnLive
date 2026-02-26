@@ -2626,18 +2626,39 @@ async def submit_dts_quote(task_id: str, data: DTSQuoteCreate, current_user: dic
     """Admin/DTS team submits a quote for a task"""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Only DTS team can submit quotes")
+    
+    task = await db.dts_tasks.find_one({"id": task_id}, {"_id": 0})
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
     line_items = []
+    total_cost = 0
     for item in data.line_items:
+        cost = float(item.get("cost", 0))
+        total_cost += cost
         line_items.append({
             "id": str(uuid.uuid4()),
             "description": item.get("description", ""),
-            "cost": float(item.get("cost", 0)),
+            "cost": cost,
             "approved": None,
         })
     await db.dts_tasks.update_one(
         {"id": task_id},
         {"$set": {"line_items": line_items, "status": "quoted", "quote_notes": data.notes, "updated_at": datetime.now(timezone.utc).isoformat()}}
     )
+    
+    # Notify the task owner about the quote
+    estate = await db.estates.find_one({"id": task["estate_id"]}, {"_id": 0, "user_id": 1})
+    if estate:
+        asyncio.create_task(send_push_notification(
+            estate["user_id"],
+            "DTS Quote Ready",
+            f"Your DTS request '{task['title']}' has a quote: ${total_cost:,.2f}",
+            "/trustee",
+            "dts-quote",
+            "dts"
+        ))
+    
     return {"message": "Quote submitted", "line_items": len(line_items)}
 
 @api_router.post("/dts/tasks/{task_id}/approve-item")
