@@ -846,3 +846,215 @@ const DevSwitcherConfig = ({ users, getAuthHeaders }) => {
 };
 
 export default AdminPage;
+
+// ===================== SUBSCRIPTIONS ADMIN =====================
+import { Switch } from '../components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Separator } from '../components/ui/separator';
+
+const SubscriptionsAdmin = ({ getAuthHeaders, users }) => {
+  const [settings, setSettings] = useState(null);
+  const [userSubs, setUserSubs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editingPrice, setEditingPrice] = useState(null);
+  const [newPrice, setNewPrice] = useState('');
+  const [editingUser, setEditingUser] = useState(null);
+  const [discountInput, setDiscountInput] = useState('');
+
+  const headers = getAuthHeaders()?.headers || {};
+
+  useEffect(() => { fetchData(); }, []);
+
+  const fetchData = async () => {
+    try {
+      const [settingsRes, usersRes] = await Promise.all([
+        axios.get(`${API_URL}/admin/subscription-settings`, { headers }),
+        axios.get(`${API_URL}/admin/user-subscriptions`, { headers }),
+      ]);
+      setSettings(settingsRes.data);
+      setUserSubs(usersRes.data);
+    } catch (err) { toast.error('Failed to load subscription data'); }
+    setLoading(false);
+  };
+
+  const toggleBeta = async () => {
+    try {
+      await axios.put(`${API_URL}/admin/subscription-settings`, { beta_mode: !settings.beta_mode }, { headers: { ...headers, 'Content-Type': 'application/json' } });
+      toast.success(settings.beta_mode ? 'Beta mode OFF - subscriptions required' : 'Beta mode ON - all features free');
+      fetchData();
+    } catch (err) { toast.error('Failed to update'); }
+  };
+
+  const updatePrice = async (planId) => {
+    try {
+      const formData = new FormData();
+      formData.append('price', parseFloat(newPrice));
+      await axios.put(`${API_URL}/admin/plans/${planId}/price`, formData, { headers });
+      toast.success('Price updated');
+      setEditingPrice(null);
+      fetchData();
+    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update price'); }
+  };
+
+  const updateUserOverride = async (userId, data) => {
+    try {
+      await axios.put(`${API_URL}/admin/user-subscription/${userId}`, data, { headers: { ...headers, 'Content-Type': 'application/json' } });
+      toast.success('User override updated');
+      fetchData();
+    } catch (err) { toast.error('Failed to update'); }
+  };
+
+  if (loading) return <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-[var(--gold)]" /></div>;
+
+  return (
+    <div className="space-y-6" data-testid="subscriptions-admin">
+      {/* Beta Mode Toggle */}
+      <Card className="glass-card">
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-[var(--t)] flex items-center gap-2">
+                <ToggleLeft className="w-5 h-5 text-[var(--gold)]" />
+                Beta Mode
+              </h3>
+              <p className="text-sm text-[var(--t4)] mt-1">
+                {settings?.beta_mode ? 'All features are FREE for all users. Turn off to require subscriptions.' : 'Subscriptions are ACTIVE. Users must pay to access the platform.'}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className={`text-sm font-bold ${settings?.beta_mode ? 'text-[var(--gn2)]' : 'text-[var(--rd2)]'}`}>
+                {settings?.beta_mode ? 'ON (Free)' : 'OFF (Paid)'}
+              </span>
+              <Switch checked={settings?.beta_mode || false} onCheckedChange={toggleBeta} data-testid="beta-mode-toggle" />
+            </div>
+          </div>
+          {/* Stats */}
+          <div className="flex gap-4 mt-4 text-sm">
+            <div className="px-3 py-1.5 rounded-lg bg-[var(--s)]">
+              <span className="text-[var(--t4)]">Active Subs: </span>
+              <span className="font-bold text-[var(--t)]">{settings?.stats?.active_subscriptions || 0}</span>
+            </div>
+            <div className="px-3 py-1.5 rounded-lg bg-[var(--s)]">
+              <span className="text-[var(--t4)]">Free Access: </span>
+              <span className="font-bold text-[var(--t)]">{settings?.stats?.free_access_users || 0}</span>
+            </div>
+            <div className="px-3 py-1.5 rounded-lg bg-[var(--s)]">
+              <span className="text-[var(--t4)]">Discounted: </span>
+              <span className="font-bold text-[var(--t)]">{settings?.stats?.discounted_users || 0}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Pricing Management */}
+      <Card className="glass-card">
+        <CardContent className="p-5">
+          <h3 className="text-lg font-bold text-[var(--t)] flex items-center gap-2 mb-4">
+            <DollarSign className="w-5 h-5 text-[var(--gold)]" />
+            Plan Pricing
+          </h3>
+          <div className="space-y-2">
+            {(settings?.plans || []).map(plan => (
+              <div key={plan.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--s)]" data-testid={`plan-row-${plan.id}`}>
+                <div>
+                  <span className="font-bold text-[var(--t)]">{plan.name}</span>
+                  {plan.note && <span className="text-xs text-[var(--t5)] ml-2">({plan.note})</span>}
+                </div>
+                <div className="flex items-center gap-3">
+                  {editingPrice === plan.id ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[var(--t4)]">$</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={newPrice}
+                        onChange={e => setNewPrice(e.target.value)}
+                        className="input-field w-20 text-sm"
+                        autoFocus
+                      />
+                      <Button size="sm" className="gold-button text-xs" onClick={() => updatePrice(plan.id)}>Save</Button>
+                      <Button size="sm" variant="outline" className="text-xs border-[var(--b)]" onClick={() => setEditingPrice(null)}>Cancel</Button>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="text-[var(--gold)] font-bold text-lg">${plan.price?.toFixed(2)}</span>
+                      <span className="text-xs text-[var(--t5)]">/mo</span>
+                      {plan.adjustable !== false && (
+                        <Button size="sm" variant="outline" className="text-xs border-[var(--b)] text-[var(--t4)]" onClick={() => { setEditingPrice(plan.id); setNewPrice(plan.price?.toString() || ''); }}>
+                          Edit
+                        </Button>
+                      )}
+                      {plan.adjustable === false && <span className="text-[10px] text-[var(--t5)]">Fixed</span>}
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Per-User Overrides */}
+      <Card className="glass-card">
+        <CardContent className="p-5">
+          <h3 className="text-lg font-bold text-[var(--t)] flex items-center gap-2 mb-4">
+            <Users className="w-5 h-5 text-[var(--gold)]" />
+            User Subscription Overrides
+          </h3>
+          <div className="space-y-2">
+            {userSubs.filter(u => u.role !== 'admin').map(u => {
+              const override = u.override || {};
+              const sub = u.subscription;
+              return (
+                <div key={u.id} className="p-3 rounded-xl bg-[var(--s)]" data-testid={`user-sub-${u.id}`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="font-bold text-[var(--t)] text-sm">{u.name || u.email}</span>
+                      <span className="text-xs text-[var(--t5)] ml-2">{u.email}</span>
+                      <span className="text-xs ml-2 px-1.5 py-0.5 rounded bg-[var(--b)] text-[var(--t4)]">{u.role}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {sub && <span className="text-xs text-[var(--gn2)]">{sub.plan_name}</span>}
+                      {override.free_access && <span className="text-xs bg-[var(--gn2)]/10 text-[var(--gn2)] px-2 py-0.5 rounded-full font-bold">Free</span>}
+                      {override.custom_discount > 0 && <span className="text-xs bg-[var(--yw)]/10 text-[var(--yw)] px-2 py-0.5 rounded-full font-bold">{override.custom_discount}% off</span>}
+                    </div>
+                  </div>
+                  {editingUser === u.id ? (
+                    <div className="mt-3 flex items-center gap-4 pt-3" style={{ borderTop: '1px solid var(--b)' }}>
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs text-[var(--t4)]">Free Access</Label>
+                        <Switch
+                          checked={override.free_access || false}
+                          onCheckedChange={(v) => updateUserOverride(u.id, { free_access: v })}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs text-[var(--t4)]">Discount %</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={discountInput || override.custom_discount || ''}
+                          onChange={e => setDiscountInput(e.target.value)}
+                          className="input-field w-16 text-sm"
+                        />
+                        <Button size="sm" className="text-xs gold-button" onClick={() => { updateUserOverride(u.id, { custom_discount: parseFloat(discountInput || '0') }); setEditingUser(null); }}>
+                          Apply
+                        </Button>
+                      </div>
+                      <Button size="sm" variant="outline" className="text-xs border-[var(--b)]" onClick={() => setEditingUser(null)}>Done</Button>
+                    </div>
+                  ) : (
+                    <button onClick={() => { setEditingUser(u.id); setDiscountInput(override.custom_discount?.toString() || ''); }} className="text-xs text-[var(--bl3)] mt-1 font-bold">
+                      Manage
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
