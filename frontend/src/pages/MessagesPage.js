@@ -655,12 +655,12 @@ const MessagesPage = () => {
               {creating ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Creating...
+                  {editingMessage ? 'Saving...' : 'Creating...'}
                 </>
               ) : (
                 <>
-                  <Plus className="w-5 h-5 mr-2" />
-                  Create Message
+                  {editingMessage ? <Pencil className="w-5 h-5 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
+                  {editingMessage ? 'Save Changes' : 'Create Message'}
                 </>
               )}
             </Button>
