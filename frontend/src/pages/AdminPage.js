@@ -76,6 +76,57 @@ const AdminPage = () => {
     finally { setLoading(false); }
   };
 
+  // Support functions
+  const fetchConversations = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/support/conversations`, getAuthHeaders());
+      setConversations(res.data);
+    } catch (err) { console.error('Error fetching conversations:', err); }
+  };
+
+  const fetchConversationMessages = async (convId) => {
+    try {
+      const res = await axios.get(`${API_URL}/support/messages/${convId}`, getAuthHeaders());
+      setConvMessages(res.data);
+    } catch (err) { console.error('Error fetching messages:', err); }
+  };
+
+  const sendSupportMessage = async () => {
+    if (!newMessage.trim() || !selectedConv) return;
+    setSendingMessage(true);
+    try {
+      const res = await axios.post(`${API_URL}/support/messages`, {
+        content: newMessage.trim(),
+        conversation_id: selectedConv.conversation_id
+      }, getAuthHeaders());
+      setConvMessages(prev => [...prev, res.data]);
+      setNewMessage('');
+      fetchConversations(); // Refresh conversation list
+    } catch (err) {
+      toast.error('Failed to send message');
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
+  // Fetch conversations when support tab is selected
+  useEffect(() => {
+    if (tab === 'support') {
+      fetchConversations();
+      const interval = setInterval(fetchConversations, 15000);
+      return () => clearInterval(interval);
+    }
+  }, [tab]);
+
+  // Fetch messages when conversation is selected
+  useEffect(() => {
+    if (selectedConv) {
+      fetchConversationMessages(selectedConv.conversation_id);
+      const interval = setInterval(() => fetchConversationMessages(selectedConv.conversation_id), 10000);
+      return () => clearInterval(interval);
+    }
+  }, [selectedConv]);
+
   const handleApproveCert = async (certId) => {
     setActionLoading(certId);
     try {
