@@ -166,7 +166,7 @@ async def gather_estate_context(estate_id: str, include_doc_content: bool = Fals
                     dob = datetime.fromisoformat(ben["date_of_birth"].replace('Z', '+00:00'))
                     age = (datetime.now(timezone.utc) - dob).days // 365
                     age_info = f", Age: {age}"
-                except:
+                except Exception:
                     pass
             gender_info = f", Gender: {ben.get('gender', 'not specified')}" if ben.get("gender") else ""
             context_parts.append(f"- {ben['name']} (Relation: {ben['relation']}{age_info}{gender_info}, Email: {ben['email']})")
