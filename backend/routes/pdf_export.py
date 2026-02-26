@@ -176,7 +176,7 @@ async def export_estate_pdf(estate_id: str, current_user: dict = Depends(get_cur
         recs.append("Your estate plan is in good shape! Review periodically for life changes.")
     for r in recs:
         pdf.cell(5)
-        pdf.cell(0, 6, f"  {r}", new_x="LMARGIN", new_y="NEXT")
+        pdf.cell(0, 6, _safe(f"  {r}"), new_x="LMARGIN", new_y="NEXT")
     pdf.ln(5)
 
     # ===== SECTION 2: ESTATE STATUS (backup info) =====
