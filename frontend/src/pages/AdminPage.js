@@ -55,6 +55,7 @@ const AdminPage = () => {
     const newTab = location.pathname === '/admin/transition' ? 'transition' 
       : location.pathname === '/admin/dts' ? 'dts' 
       : location.pathname === '/admin/dev-switcher' ? 'dev-switcher'
+      : location.pathname === '/admin/support' ? 'support'
       : 'users';
     setTab(newTab);
   }, [location.pathname]);
