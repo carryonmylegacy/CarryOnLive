@@ -1057,6 +1057,45 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
         estates = await db.estates.find({}, {"_id": 0}).to_list(100)
     return estates
 
+@api_router.get("/beneficiary/family-connections")
+async def get_family_connections(current_user: dict = Depends(get_current_user)):
+    """Get all family connections for a beneficiary with relationship data for orbit visualization"""
+    if current_user["role"] != "beneficiary":
+        raise HTTPException(status_code=403, detail="Only beneficiaries can access family connections")
+    
+    # Find all beneficiary records for this user (to get relationship info)
+    beneficiary_records = await db.beneficiaries.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0}
+    ).to_list(100)
+    
+    connections = []
+    for ben_record in beneficiary_records:
+        # Get the estate
+        estate = await db.estates.find_one({"id": ben_record["estate_id"]}, {"_id": 0})
+        if not estate:
+            continue
+        
+        # Get the benefactor (estate owner)
+        benefactor = await db.users.find_one({"id": estate.get("owner_id")}, {"_id": 0, "password": 0})
+        if not benefactor:
+            continue
+        
+        # Combine estate and relationship info
+        connections.append({
+            "id": estate["id"],
+            "estate_id": estate["id"],
+            "name": benefactor.get("name", "Unknown"),
+            "first_name": benefactor.get("first_name"),
+            "last_name": benefactor.get("last_name"),
+            "relation": ben_record.get("relation", "Other"),
+            "status": estate.get("status", "pre-transition"),
+            "readiness_score": estate.get("readiness_score", 0),
+            "benefactor_id": benefactor.get("id"),
+        })
+    
+    return connections
+
 @api_router.get("/estates/{estate_id}")
 async def get_estate(estate_id: str, current_user: dict = Depends(get_current_user)):
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
