@@ -436,11 +436,18 @@
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--glass-border);
     border-radius: 16px;
-    transition: all 0.3s ease;
+    transition: border-color 0.3s ease;
   }
   
   .glass-card:hover {
     border-color: var(--b2);
+  }
+  
+  /* Readiness card - disable backdrop blur to prevent Safari pulsating issue */
+  [data-testid="readiness-card"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--bg2);
   }
   
   /* Stat Card - Uses CSS variables */
