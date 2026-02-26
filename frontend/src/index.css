@@ -7,10 +7,10 @@
 @layer base {
   :root {
     /* ===== DARK MODE (Default) ===== */
-    --bg: #151D32;
-    --bg2: #1A2440;
-    --bg3: #212B4A;
-    --content-bg: #151D32;
+    --bg: #0F1629;
+    --bg2: #141C33;
+    --bg3: #1A2440;
+    --content-bg: #0F1629;
     
     /* Surface & Border Colors */
     --s: rgba(255,255,255,0.035);
