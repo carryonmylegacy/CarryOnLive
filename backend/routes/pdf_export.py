@@ -125,7 +125,7 @@ async def export_estate_pdf(estate_id: str, current_user: dict = Depends(get_cur
                 pdf.set_font("Helvetica", "", 9)
                 for item in items[:10]:
                     pdf.cell(10)
-                    title = item.get("title", "")[:70]
+                    title = _safe(item.get("title", "")[:70])
                     pdf.cell(0, 5, f"[ ] {title}", new_x="LMARGIN", new_y="NEXT")
         pdf.ln(3)
 
