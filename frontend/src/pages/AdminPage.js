@@ -56,12 +56,8 @@ const AdminPage = () => {
 
   // Sync tab with URL when sidebar nav is clicked
   useEffect(() => {
-    const newTab = location.pathname === '/admin/transition' ? 'transition' 
-      : location.pathname === '/admin/dts' ? 'dts' 
-      : location.pathname === '/admin/dev-switcher' ? 'dev-switcher'
-      : location.pathname === '/admin/support' ? 'support'
-      : 'users';
-    setTab(newTab);
+  useEffect(() => {
+    // Tab is computed directly from pathname, no need to set it
   }, [location.pathname]);
 
   const fetchAll = async () => {
