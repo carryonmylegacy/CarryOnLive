@@ -18,7 +18,8 @@ import {
   Moon,
   Sun,
   FileKey,
-  Headphones
+  Headphones,
+  ShieldCheck
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 
@@ -51,6 +52,7 @@ const MobileNav = () => {
 
   const accountItems = [
     { to: user?.role === 'beneficiary' ? '/beneficiary/settings' : '/settings', icon: Settings, label: 'Settings' },
+    { to: '/security-settings', icon: ShieldCheck, label: 'Security Settings' },
     { to: '/support', icon: Headphones, label: 'Customer Support' },
   ];
 
