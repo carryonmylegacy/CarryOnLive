@@ -166,6 +166,12 @@ const SettingsPage = () => {
         </CardContent>
       </Card>
 
+      {/* Family Plan (only visible when admin enables it) */}
+      <FamilyPlanSettings getAuthHeaders={() => {
+        const token = localStorage.getItem('carryon_token');
+        return { headers: { Authorization: `Bearer ${token}` } };
+      }} />
+
       {/* Appearance */}
       <Card className="glass-card">
         <CardHeader>
