@@ -27,6 +27,7 @@ class FamilyPlanSuccessor(BaseModel):
     successor_user_id: str
 
 async def is_family_plan_enabled():
+    """Check if family plan feature is enabled."""
     settings = await get_subscription_settings()
     return settings.get("family_plan_enabled", False)
 

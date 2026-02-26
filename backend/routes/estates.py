@@ -12,6 +12,7 @@ router = APIRouter()
 
 @router.get("/estates")
 async def get_estates(current_user: dict = Depends(get_current_user)):
+    """List all estates for the current user."""
     if current_user["role"] == "benefactor":
         estates = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0}).to_list(100)
     elif current_user["role"] == "beneficiary":
@@ -61,6 +62,7 @@ async def get_family_connections(current_user: dict = Depends(get_current_user))
 
 @router.get("/estates/{estate_id}")
 async def get_estate(estate_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a single estate by ID."""
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
     if not estate:
         raise HTTPException(status_code=404, detail="Estate not found")
@@ -75,6 +77,7 @@ async def get_estate(estate_id: str, current_user: dict = Depends(get_current_us
 
 @router.post("/estates")
 async def create_estate(data: EstateCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new estate."""
     if current_user["role"] != "benefactor":
         raise HTTPException(status_code=403, detail="Only benefactors can create estates")
     
@@ -97,6 +100,7 @@ async def create_estate(data: EstateCreate, current_user: dict = Depends(get_cur
 
 @router.patch("/estates/{estate_id}")
 async def update_estate(estate_id: str, data: EstateUpdate, current_user: dict = Depends(get_current_user)):
+    """Update an existing estate."""
     if current_user["role"] != "benefactor":
         raise HTTPException(status_code=403, detail="Only benefactors can update estates")
     
@@ -129,6 +133,7 @@ async def update_estate(estate_id: str, data: EstateUpdate, current_user: dict =
 
 @router.delete("/estates/{estate_id}")
 async def delete_estate(estate_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete an estate and all associated data."""
     if current_user["role"] != "benefactor":
         raise HTTPException(status_code=403, detail="Only benefactors can delete estates")
     

@@ -13,6 +13,7 @@ router = APIRouter()
 
 @router.post("/auth/login")
 async def login(data: UserLogin):
+    """Initiate login and send OTP to user."""
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
     if not user or not verify_password(data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -107,6 +108,7 @@ async def register(data: UserCreate):
 
 @router.post("/auth/verify-otp", response_model=TokenResponse)
 async def verify_otp(data: OTPVerify):
+    """Verify OTP and return access token."""
     stored_otp = await db.otps.find_one({"email": data.email}, {"_id": 0})
     if not stored_otp or stored_otp["otp"] != data.otp:
         raise HTTPException(status_code=401, detail="Invalid OTP")
@@ -133,6 +135,7 @@ async def verify_otp(data: OTPVerify):
 
 @router.get("/auth/me", response_model=UserResponse)
 async def get_me(current_user: dict = Depends(get_current_user)):
+    """Get the current authenticated user's profile."""
     return UserResponse(
         id=current_user["id"],
         email=current_user["email"],

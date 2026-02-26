@@ -13,6 +13,7 @@ router = APIRouter()
 
 @router.get("/messages/{estate_id}")
 async def get_messages(estate_id: str, current_user: dict = Depends(get_current_user)):
+    """List all milestone messages for an estate."""
     if current_user["role"] == "beneficiary":
         # Only show delivered messages to beneficiaries
         messages = await db.messages.find(
@@ -56,6 +57,7 @@ async def get_message_video(video_id: str, current_user: dict = Depends(get_curr
 
 @router.post("/messages")
 async def create_message(data: MessageCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new milestone message."""
     if current_user["role"] != "benefactor":
         raise HTTPException(status_code=403, detail="Only benefactors can create messages")
     
@@ -142,6 +144,7 @@ async def update_message(message_id: str, data: MessageUpdate, current_user: dic
 
 @router.delete("/messages/{message_id}")
 async def delete_message(message_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a milestone message."""
     if current_user["role"] != "benefactor":
         raise HTTPException(status_code=403, detail="Only benefactors can delete messages")
     
