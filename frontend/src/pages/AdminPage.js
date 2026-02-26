@@ -636,6 +636,11 @@ const AdminPage = () => {
         </div>
       )}
 
+      {/* ============ SUBSCRIPTIONS TAB ============ */}
+      {tab === 'subscriptions' && (
+        <SubscriptionsAdmin getAuthHeaders={getAuthHeaders} users={users} />
+      )}
+
       {/* ============ DEV SWITCHER TAB ============ */}
       {tab === 'dev-switcher' && (
         <DevSwitcherConfig users={users} getAuthHeaders={getAuthHeaders} />
