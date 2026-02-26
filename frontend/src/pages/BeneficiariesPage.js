@@ -360,15 +360,19 @@ const BeneficiariesPage = () => {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
                     <div
-                      className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold"
+                      className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold overflow-hidden"
                       style={{
-                        backgroundColor: ben.avatar_color + '30',
+                        backgroundColor: ben.photo_url ? 'transparent' : ben.avatar_color + '30',
                         color: ben.avatar_color
                       }}
                     >
-                      {ben.initials || (ben.first_name && ben.last_name 
-                        ? (ben.first_name[0] + ben.last_name[0]).toUpperCase()
-                        : ben.name?.split(' ').map(n => n[0]).join('').toUpperCase())}
+                      {ben.photo_url ? (
+                        <img src={ben.photo_url} alt={ben.name} className="w-full h-full object-cover" />
+                      ) : (
+                        ben.initials || (ben.first_name && ben.last_name 
+                          ? (ben.first_name[0] + ben.last_name[0]).toUpperCase()
+                          : ben.name?.split(' ').map(n => n[0]).join('').toUpperCase())
+                      )}
                     </div>
                     <div>
                       <h3 className="text-white font-semibold text-lg">{ben.name}</h3>
