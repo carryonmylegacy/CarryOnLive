@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   Shield, Users, FileKey, Clock, CheckCircle2, XCircle, Trash2, Loader2,
   FolderLock, Search, UserCircle, Eye, Package, Lock, DollarSign, Mail, Flame,
-  ChevronRight, AlertTriangle
+  ChevronRight, AlertTriangle, Settings
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
