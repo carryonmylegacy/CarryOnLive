@@ -15,6 +15,7 @@ const PreTransitionPage = () => {
   const [estate, setEstate] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const fetchEstate = async () => {
       try {
@@ -32,7 +33,6 @@ const PreTransitionPage = () => {
       finally { setLoading(false); }
     };
     fetchEstate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const firstName = user?.name?.split(' ')[0] || 'there';

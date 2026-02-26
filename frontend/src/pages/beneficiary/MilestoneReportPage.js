@@ -27,6 +27,7 @@ const MilestoneReportPage = () => {
   const [deliveredCount, setDeliveredCount] = useState(0);
   const [estate, setEstate] = useState(null);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const fetchEstate = async () => {
       const eid = localStorage.getItem('beneficiary_estate_id');
@@ -38,7 +39,6 @@ const MilestoneReportPage = () => {
       }
     };
     fetchEstate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const benefactorFirst = estate?.name?.split(' ')[0] || 'your benefactor';
