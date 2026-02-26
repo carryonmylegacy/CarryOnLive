@@ -374,23 +374,3 @@ async def get_chat_history(session_id: str, current_user: dict = Depends(get_cur
         {"_id": 0}
     ).sort("created_at", 1).to_list(100)
     return history
-
-# ===================== HELPER FUNCTIONS =====================
-
-async def update_estate_readiness(estate_id: str):
-    """Calculate and update estate readiness score using the detailed algorithm"""
-    result = await calculate_estate_readiness(estate_id)
-    
-    await db.estates.update_one(
-        {"id": estate_id},
-        {"$set": {
-            "readiness_score": result["overall_score"],
-            "readiness_breakdown": {
-                "documents": result["documents"],
-                "messages": result["messages"],
-                "checklist": result["checklist"]
-            }
-        }}
-    )
-
-
