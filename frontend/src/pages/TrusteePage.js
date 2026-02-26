@@ -409,6 +409,62 @@ const TrusteePage = () => {
           </CardContent></Card>
         )}
 
+        {/* Payment Method Section - Shows after approval */}
+        {t.status === 'approved' && !t.paymentMethod && (
+          <Card className="glass-card" data-testid="payment-method-card">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(34,197,94,0.2), rgba(22,163,74,0.15))' }}>
+                  <CreditCard className="w-5 h-5 text-[var(--gn2)]" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-[var(--t)]">Add Payment Method</h3>
+                  <p className="text-xs text-[var(--t4)]">Your card will only be charged upon verified transition</p>
+                </div>
+              </div>
+              
+              <Elements stripe={stripePromise}>
+                <PaymentForm 
+                  task={t} 
+                  getAuthHeaders={getAuthHeaders}
+                  onPaymentSaved={(paymentInfo) => {
+                    setTasks(prev => prev.map(x => x.id === t.id ? { ...x, status: 'ready', paymentMethod: paymentInfo } : x));
+                  }} 
+                />
+              </Elements>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Saved Payment Method Display */}
+        {t.paymentMethod && (
+          <Card className="glass-card" data-testid="saved-payment-card">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--gnbg)' }}>
+                    <CheckCircle2 className="w-5 h-5 text-[var(--gn2)]" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-[var(--t)]">Payment Method Saved</h3>
+                    <p className="text-sm text-[var(--t3)]">
+                      <CreditCard className="w-4 h-4 inline mr-1" />
+                      •••• {t.paymentMethod.last4} — Expires {t.paymentMethod.exp}
+                    </p>
+                    {t.paymentMethod.name && (
+                      <p className="text-xs text-[var(--t4)]">{t.paymentMethod.name}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-bold text-[var(--gn2)]">Ready</div>
+                  <div className="text-xs text-[var(--t4)]">Charged on transition</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Security notice for credentials */}
         {(t.status === 'approved' || t.status === 'ready') && (
           <div className="rounded-xl p-4" style={{ background: 'rgba(240,82,82,0.05)', border: '1px solid rgba(240,82,82,0.12)' }}>
