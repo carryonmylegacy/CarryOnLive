@@ -15,6 +15,7 @@ import random
 
 from models import ChatRequest, ChatResponse, ChatMessage, ChecklistItem, calculate_estate_readiness
 import io
+import pdfplumber
 
 router = APIRouter()
 
