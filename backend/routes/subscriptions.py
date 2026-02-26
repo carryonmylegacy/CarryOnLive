@@ -33,7 +33,7 @@ async def create_setup_intent(user: dict = Depends(get_current_user)):
     """Create a Stripe SetupIntent for saving a payment method for later use"""
     try:
         # Create a customer if one doesn't exist
-        user_doc = await db.users.find_one({"id": user["id"]})
+        user_doc = await db.users.find_one({"id": user["id"]}, {"_id": 0})
         stripe_customer_id = user_doc.get("stripe_customer_id") if user_doc else None
         
         if not stripe_customer_id:
@@ -72,11 +72,11 @@ async def save_dts_payment_method(
     """Save a payment method to a DTS task for charging upon transition"""
     try:
         # Verify task belongs to user's estate
-        task = await db.dts_tasks.find_one({"id": task_id})
+        task = await db.dts_tasks.find_one({"id": task_id}, {"_id": 0})
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
         
-        estate = await db.estates.find_one({"id": task["estate_id"], "user_id": user["id"]})
+        estate = await db.estates.find_one({"id": task["estate_id"], "user_id": user["id"]}, {"_id": 0})
         if not estate:
             raise HTTPException(status_code=403, detail="Not authorized")
         
@@ -276,7 +276,7 @@ async def get_checkout_status(session_id: str, current_user: dict = Depends(get_
     checkout_status = await stripe_checkout.get_checkout_status(session_id)
     
     # Update transaction
-    txn = await db.payment_transactions.find_one({"session_id": session_id})
+    txn = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
     if txn and txn.get("payment_status") != "paid":
         new_status = checkout_status.payment_status
         update_data = {"payment_status": new_status, "status": checkout_status.status, "updated_at": datetime.now(timezone.utc).isoformat()}
@@ -333,7 +333,7 @@ async def stripe_webhook(request: Any):
         event = await stripe_checkout.handle_webhook(body, sig)
         
         if event.payment_status == "paid" and event.session_id:
-            txn = await db.payment_transactions.find_one({"session_id": event.session_id})
+            txn = await db.payment_transactions.find_one({"session_id": event.session_id}, {"_id": 0})
             if txn and txn.get("payment_status") != "paid":
                 await db.payment_transactions.update_one(
                     {"session_id": event.session_id},
@@ -418,7 +418,7 @@ async def update_admin_user_subscription(
     if current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
-    user = await db.users.find_one({"id": user_id})
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     

@@ -60,12 +60,12 @@ async def create_family_plan(data: FamilyPlanCreate, current_user: dict = Depend
     if not await is_family_plan_enabled():
         raise HTTPException(status_code=400, detail="Family plans are not currently available")
 
-    existing = await db.family_plans.find_one({"fpo_user_id": current_user["id"], "status": "active"})
+    existing = await db.family_plans.find_one({"fpo_user_id": current_user["id"], "status": "active"}, {"_id": 0})
     if existing:
         raise HTTPException(status_code=400, detail="You already have an active family plan")
 
     # Check if already a member of another plan
-    existing_member = await db.family_plans.find_one({"members.user_id": current_user["id"], "status": "active"})
+    existing_member = await db.family_plans.find_one({"members.user_id": current_user["id"], "status": "active"}, {"_id": 0})
     if existing_member:
         raise HTTPException(status_code=400, detail="You are already a member of a family plan")
 
@@ -175,7 +175,7 @@ async def add_family_member(plan_id: str, data: FamilyPlanInvite, current_user: 
 @router.put("/family-plan/{plan_id}/successor")
 async def set_family_successor(plan_id: str, data: FamilyPlanSuccessor, current_user: dict = Depends(get_current_user)):
     """Designate a successor (FPO only)"""
-    fp = await db.family_plans.find_one({"id": plan_id, "fpo_user_id": current_user["id"], "status": "active"})
+    fp = await db.family_plans.find_one({"id": plan_id, "fpo_user_id": current_user["id"], "status": "active"}, {"_id": 0})
     if not fp:
         raise HTTPException(status_code=403, detail="Only the FPO can designate a successor")
 
@@ -199,7 +199,7 @@ async def set_family_successor(plan_id: str, data: FamilyPlanSuccessor, current_
 @router.delete("/family-plan/{plan_id}/member/{user_id}")
 async def remove_family_member(plan_id: str, user_id: str, current_user: dict = Depends(get_current_user)):
     """Remove a member from the family plan (FPO only)"""
-    fp = await db.family_plans.find_one({"id": plan_id, "fpo_user_id": current_user["id"], "status": "active"})
+    fp = await db.family_plans.find_one({"id": plan_id, "fpo_user_id": current_user["id"], "status": "active"}, {"_id": 0})
     if not fp:
         raise HTTPException(status_code=403, detail="Only the FPO can remove members")
 
@@ -223,7 +223,7 @@ async def remove_family_member(plan_id: str, user_id: str, current_user: dict = 
 @router.delete("/family-plan/{plan_id}")
 async def delete_family_plan(plan_id: str, current_user: dict = Depends(get_current_user)):
     """Delete/dissolve a family plan (FPO only)"""
-    fp = await db.family_plans.find_one({"id": plan_id, "fpo_user_id": current_user["id"]})
+    fp = await db.family_plans.find_one({"id": plan_id, "fpo_user_id": current_user["id"]}, {"_id": 0})
     if not fp:
         raise HTTPException(status_code=403, detail="Only the FPO can delete the family plan")
 
