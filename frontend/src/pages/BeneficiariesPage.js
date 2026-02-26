@@ -164,22 +164,6 @@ const BeneficiariesPage = () => {
     setAvatarColor(ben.avatar_color || avatarColors[0]);
     setShowAddModal(true);
   };
-        ssn_last_four: ssnLastFour || null,
-        notes: notes || null,
-        avatar_color: avatarColor
-      }, getAuthHeaders());
-      
-      toast.success('Beneficiary added successfully');
-      setShowAddModal(false);
-      resetForm();
-      fetchData();
-    } catch (error) {
-      console.error('Add error:', error);
-      toast.error(error.response?.data?.detail || 'Failed to add beneficiary');
-    } finally {
-      setAdding(false);
-    }
-  };
 
   const handleSendInvitation = async (beneficiaryId) => {
     setSendingInvite(beneficiaryId);
