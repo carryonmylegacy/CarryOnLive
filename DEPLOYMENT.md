@@ -105,7 +105,8 @@ Railway is the simplest option — it auto-detects Dockerfiles and handles every
 | `TWILIO_AUTH_TOKEN` | Your Twilio token |
 | `TWILIO_PHONE_NUMBER` | Your Twilio number |
 | `STRIPE_API_KEY` | Your Stripe secret key |
-| `EMERGENT_LLM_KEY` | Your Emergent LLM key |
+| `XAI_API_KEY` | Your xAI Grok API key |
+| `EMERGENT_LLM_KEY` | Your Emergent LLM key (still needed for voice features) |
 | `VAPID_PRIVATE_KEY` | Full PEM content of your VAPID private key |
 | `VAPID_CLAIMS_EMAIL` | `mailto:support@carryon.us` |
 
@@ -271,7 +272,8 @@ curl -X POST https://your-backend-url/api/auth/register \
 | `CORS_ORIGINS` | Yes | Allowed origins (comma-separated) |
 | `RESEND_API_KEY` | Yes | Resend API key for emails |
 | `SENDER_EMAIL` | Yes | From address for emails |
-| `EMERGENT_LLM_KEY` | Yes | API key for Estate Guardian AI |
+| `EMERGENT_LLM_KEY` | Yes | API key for voice features (Whisper STT) |
+| `XAI_API_KEY` | Yes | xAI Grok API key for Estate Guardian AI |
 | `STRIPE_API_KEY` | Yes | Stripe secret key |
 | `VAPID_PRIVATE_KEY` | Yes | VAPID private key (PEM content) |
 | `VAPID_CLAIMS_EMAIL` | Yes | VAPID contact email |
