@@ -145,6 +145,12 @@ const AdminPage = () => {
     }
   }, [tab]);
 
+  // Fetch activity log when activity tab is selected
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (tab === 'activity') fetchActivityLog();
+  }, [tab]);
+
   // Fetch messages when conversation is selected
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
