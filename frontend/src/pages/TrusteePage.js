@@ -834,10 +834,12 @@ const TrusteePage = () => {
                   style={{ background: newTask.beneficiary === ben.name ? 'rgba(224,173,43,0.06)' : 'var(--s)' }}
                 >
                   <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm"
-                    style={{ backgroundColor: ben.avatar_color + '30', color: ben.avatar_color }}
+                    className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm overflow-hidden"
+                    style={{ backgroundColor: ben.photo_url ? 'transparent' : ben.avatar_color + '30', color: ben.avatar_color }}
                   >
-                    {ben.initials || ben.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                    {ben.photo_url ? (
+                      <img src={ben.photo_url} alt={ben.name} className="w-full h-full object-cover" />
+                    ) : ben.initials || ben.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                   </div>
                   <div>
                     <div className="font-bold text-[var(--t)]">{ben.name}</div>
