@@ -1,45 +1,93 @@
-"""
-CarryOn™ Backend - server.py
-Refactored entry point. Shared config, utilities, and helpers are imported from:
-- config.py: DB connection, env vars, external service clients
-- utils.py: encryption, auth, email, SMS, push notifications, activity logging
-
-Routes are organized by section within this file. Future refactoring will
-move each section into /routes/*.py files.
-"""
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, status, Response, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
+from motor.motor_asyncio import AsyncIOMotorClient
+import os
+import logging
+from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime, timezone, timedelta
-import os
+import jwt
+import bcrypt
 import random
 import base64
 import asyncio
+import resend
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from emergentintegrations.llm.chat import LlmChat, UserMessage
+from openai import OpenAI as XAIClient
+import pdfplumber
 import io
 import json as json_module
 import stripe
-import pdfplumber
+from pywebpush import webpush, WebPushException
+from py_vapid import Vapid
 
-# Import shared modules
-from config import db, logger, client, xai_client, XAI_MODEL, SENDER_EMAIL, RESEND_API_KEY
-from utils import (
-    encrypt_data, decrypt_data, generate_backup_code,
-    hash_password, verify_password, create_token, decode_token,
-    get_current_user, generate_otp,
-    send_otp_email, send_otp_sms,
-    log_activity, send_push_notification, send_push_to_all_admins,
-    vapid, vapid_private_key_for_webpush,
-)
-from config import security, VAPID_CLAIMS_EMAIL
+ROOT_DIR = Path(__file__).parent
+load_dotenv(ROOT_DIR / '.env')
+
+# MongoDB connection
+mongo_url = os.environ['MONGO_URL']
+client = AsyncIOMotorClient(mongo_url)
+db = client[os.environ['DB_NAME']]
+
+# JWT Configuration
+JWT_SECRET = os.environ.get('JWT_SECRET', 'carryon-secure-jwt-secret')
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRATION_HOURS = 24
+
+# Encryption Configuration
+ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY', 'carryon-default-encryption-key-32b!')
+ENCRYPTION_SALT = b'carryon_salt_2024'
+
+# Resend Configuration
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY')
+SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
+if RESEND_API_KEY:
+    resend.api_key = RESEND_API_KEY
+
+# Logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+# xAI Grok Configuration (Estate Guardian AI)
+XAI_API_KEY = os.environ.get('XAI_API_KEY')
+XAI_BASE_URL = "https://api.x.ai/v1"
+XAI_MODEL = os.environ.get('XAI_MODEL', 'grok-4')
+xai_client = None
+if XAI_API_KEY:
+    xai_client = XAIClient(api_key=XAI_API_KEY, base_url=XAI_BASE_URL)
+    logger.info(f"xAI Grok configured (model: {XAI_MODEL})")
+else:
+    logger.warning("XAI_API_KEY not set - Estate Guardian AI disabled")
+
+# Twilio Configuration for SMS OTP
+TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID')
+TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN')
+TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER')
+twilio_client = None
+if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
+    try:
+        from twilio.rest import Client as TwilioClient
+        twilio_client = TwilioClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+        logger.info("Twilio SMS configured successfully")
+    except ImportError:
+        logger.warning("Twilio library not installed - SMS OTP disabled")
 
 # Create the main app
 app = FastAPI(title="CarryOn™ API", version="1.0.0")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
+
+# Security
+security = HTTPBearer()
+
 # ===================== MODELS =====================
 
 class UserBase(BaseModel):
@@ -305,6 +353,148 @@ class DocumentUploadRequest(BaseModel):
     category: str
     lock_type: Optional[str] = None
     lock_password: Optional[str] = None  # For password-protected docs
+
+# ===================== ENCRYPTION HELPERS =====================
+
+def get_encryption_key() -> bytes:
+    """Generate a Fernet key from the encryption key"""
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=ENCRYPTION_SALT,
+        iterations=480000,
+    )
+    key = base64.urlsafe_b64encode(kdf.derive(ENCRYPTION_KEY.encode()))
+    return key
+
+def encrypt_data(data: bytes) -> str:
+    """Encrypt data and return base64 encoded string"""
+    f = Fernet(get_encryption_key())
+    encrypted = f.encrypt(data)
+    return base64.b64encode(encrypted).decode()
+
+def decrypt_data(encrypted_data: str) -> bytes:
+    """Decrypt base64 encoded encrypted data"""
+    f = Fernet(get_encryption_key())
+    encrypted_bytes = base64.b64decode(encrypted_data.encode())
+    return f.decrypt(encrypted_bytes)
+
+def generate_backup_code() -> str:
+    """Generate a random backup code"""
+    return '-'.join([''.join([str(random.randint(0, 9)) for _ in range(4)]) for _ in range(3)])
+
+# ===================== EMAIL HELPERS =====================
+
+async def send_otp_email(email: str, otp: str, name: str = "User"):
+    """Send OTP via Resend email"""
+    if not RESEND_API_KEY:
+        logger.info(f"Email not configured. OTP for {email}: {otp}")
+        return False
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; background-color: #0b1120; color: #f8fafc; padding: 40px; }}
+            .container {{ max-width: 500px; margin: 0 auto; background: #0f1d35; border-radius: 16px; padding: 40px; border: 1px solid rgba(255,255,255,0.1); }}
+            .logo {{ text-align: center; margin-bottom: 24px; }}
+            .logo-text {{ font-size: 24px; font-weight: bold; color: #d4af37; }}
+            h1 {{ color: #f8fafc; font-size: 20px; margin-bottom: 16px; }}
+            .otp-code {{ background: linear-gradient(135deg, #d4af37, #fcd34d); color: #0b1120; font-size: 32px; font-weight: bold; letter-spacing: 8px; padding: 20px 40px; border-radius: 12px; text-align: center; margin: 24px 0; }}
+            p {{ color: #94a3b8; line-height: 1.6; }}
+            .footer {{ margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1); text-align: center; color: #64748b; font-size: 12px; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="logo">
+                <span class="logo-text">CarryOn™</span>
+            </div>
+            <h1>Hello {name},</h1>
+            <p>Your verification code for CarryOn™ is:</p>
+            <div class="otp-code">{otp}</div>
+            <p>This code will expire in 10 minutes. If you didn't request this code, please ignore this email.</p>
+            <div class="footer">
+                <p>AES-256 Encrypted · Zero-Knowledge · SOC 2 Compliant</p>
+                <p>© 2024 CarryOn™ - Every American Family. Ready.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    params = {
+        "from": SENDER_EMAIL,
+        "to": [email],
+        "subject": f"Your CarryOn™ Verification Code: {otp[:2]}****",
+        "html": html_content
+    }
+    
+    try:
+        await asyncio.to_thread(resend.Emails.send, params)
+        logger.info(f"OTP email sent to {email}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send OTP email: {e}")
+        logger.info(f"Fallback - OTP for {email}: {otp}")
+        return False
+
+async def send_otp_sms(phone: str, otp: str):
+    """Send OTP via Twilio SMS"""
+    if not twilio_client or not TWILIO_PHONE_NUMBER:
+        logger.info(f"SMS not configured. OTP for {phone}: {otp}")
+        return False
+    
+    try:
+        message = await asyncio.to_thread(
+            twilio_client.messages.create,
+            body=f"Your CarryOn™ verification code is: {otp}. This code expires in 10 minutes.",
+            from_=TWILIO_PHONE_NUMBER,
+            to=phone
+        )
+        logger.info(f"OTP SMS sent to {phone}, SID: {message.sid}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send OTP SMS: {e}")
+        logger.info(f"Fallback - OTP for {phone}: {otp}")
+        return False
+
+# ===================== AUTH HELPERS =====================
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+def verify_password(password: str, hashed: str) -> bool:
+    return bcrypt.checkpw(password.encode(), hashed.encode())
+
+def create_token(user_id: str, email: str, role: str) -> str:
+    payload = {
+        "user_id": user_id,
+        "email": email,
+        "role": role,
+        "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS)
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+def decode_token(token: str) -> dict:
+    try:
+        return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+    token = credentials.credentials
+    payload = decode_token(token)
+    user = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user
+
+def generate_otp() -> str:
+    return ''.join([str(random.randint(0, 9)) for _ in range(6)])
 
 # ===================== ESTATE READINESS SCORE CALCULATION =====================
 
@@ -577,6 +767,21 @@ async def ensure_default_checklist(estate_id: str):
                 order=item["order"]
             )
             await db.checklists.insert_one(checklist_item.model_dump())
+
+# ===================== ACTIVITY LOGGING =====================
+
+async def log_activity(estate_id: str, user_id: str, user_name: str, action: str, description: str, metadata: dict = None):
+    """Log an activity to the estate timeline"""
+    activity = ActivityLog(
+        estate_id=estate_id,
+        user_id=user_id,
+        user_name=user_name,
+        action=action,
+        description=description,
+        metadata=metadata
+    )
+    await db.activity_logs.insert_one(activity.model_dump())
+    return activity
 
 # ===================== SEED DATA =====================
 
@@ -4580,6 +4785,37 @@ async def remove_section_security(
     await db.section_security.delete_one({"user_id": current_user["id"], "section_id": section_id})
     return {"success": True, "message": f"Security removed from {LOCKABLE_SECTIONS[section_id]}"}
 
+# ===================== PUSH NOTIFICATIONS =====================
+
+# Load VAPID keys - supports both file path and inline env var
+VAPID_PRIVATE_KEY_PATH = os.environ.get("VAPID_PRIVATE_KEY_PATH", "/tmp/vapid_private.pem")
+VAPID_PRIVATE_KEY_INLINE = os.environ.get("VAPID_PRIVATE_KEY")  # PEM content as env var
+VAPID_PUBLIC_KEY_PATH = os.environ.get("VAPID_PUBLIC_KEY_PATH", "/tmp/vapid_public.pem")
+VAPID_CLAIMS_EMAIL = os.environ.get("VAPID_CLAIMS_EMAIL", "mailto:support@carryon.us")
+
+# Initialize VAPID
+vapid = None
+vapid_private_key_for_webpush = None
+try:
+    if VAPID_PRIVATE_KEY_INLINE:
+        # Write inline key to temp file for pywebpush compatibility
+        import tempfile
+        tmp_key = tempfile.NamedTemporaryFile(mode='w', suffix='.pem', delete=False)
+        tmp_key.write(VAPID_PRIVATE_KEY_INLINE)
+        tmp_key.close()
+        VAPID_PRIVATE_KEY_PATH = tmp_key.name
+        vapid = Vapid.from_file(VAPID_PRIVATE_KEY_PATH)
+        vapid_private_key_for_webpush = VAPID_PRIVATE_KEY_PATH
+        logger.info("VAPID keys loaded from inline env var")
+    elif os.path.exists(VAPID_PRIVATE_KEY_PATH):
+        vapid = Vapid.from_file(VAPID_PRIVATE_KEY_PATH)
+        vapid_private_key_for_webpush = VAPID_PRIVATE_KEY_PATH
+        logger.info("VAPID keys loaded from file")
+    else:
+        logger.warning(f"VAPID private key not found - push notifications disabled")
+except Exception as e:
+    logger.error(f"Failed to load VAPID keys: {e}")
+
 class PushSubscription(BaseModel):
     endpoint: str
     keys: Dict[str, str]
@@ -4631,12 +4867,6 @@ async def get_vapid_public_key():
             )
             public_key_b64 = base64.urlsafe_b64encode(raw_bytes).decode('utf-8').rstrip('=')
             return {"public_key": public_key_b64}
-        else:
-            raise HTTPException(status_code=500, detail="VAPID not configured")
-    except Exception as e:
-        logger.error(f"Error getting VAPID public key: {e}")
-        raise HTTPException(status_code=500, detail="Failed to get VAPID public key")
-
         else:
             raise HTTPException(status_code=500, detail="VAPID not configured")
     except Exception as e:
@@ -4696,22 +4926,6 @@ async def send_push_to_all_admins(title: str, body: str, url: str = "/admin", ta
     admins = await db.users.find({"role": "admin"}, {"_id": 0, "id": 1}).to_list(100)
     for admin in admins:
         await send_push_notification(admin["id"], title, body, url, tag, "admin")
-
-# ===================== HEALTH CHECK =====================
-
-@api_router.get("/health")
-async def health_check():
-    """Health check endpoint for deployment platforms"""
-    try:
-        await db.command("ping")
-        db_status = "connected"
-    except Exception:
-        db_status = "disconnected"
-    return {
-        "status": "healthy",
-        "database": db_status,
-        "version": "1.0.0"
-    }
 
 # ===================== HEALTH CHECK =====================
 
