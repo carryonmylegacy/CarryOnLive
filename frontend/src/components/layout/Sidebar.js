@@ -17,7 +17,8 @@ import {
   Sun,
   FileKey,
   Home,
-  Headphones
+  Headphones,
+  ShieldCheck
 } from 'lucide-react';
 import { Switch } from '../ui/switch';
 
