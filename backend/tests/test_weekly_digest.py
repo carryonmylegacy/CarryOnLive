@@ -25,7 +25,7 @@ class TestDigestPreferences:
         """Get admin auth token via dev-login"""
         resp = requests.post(f"{BASE_URL}/api/auth/dev-login", json=ADMIN_CREDENTIALS)
         if resp.status_code == 200:
-            return resp.json().get("token")
+            return resp.json().get("access_token")
         pytest.skip(f"Admin login failed: {resp.status_code} - {resp.text}")
     
     @pytest.fixture(scope="class")
@@ -33,7 +33,7 @@ class TestDigestPreferences:
         """Get benefactor auth token via dev-login"""
         resp = requests.post(f"{BASE_URL}/api/auth/dev-login", json=BENEFACTOR_CREDENTIALS)
         if resp.status_code == 200:
-            return resp.json().get("token")
+            return resp.json().get("access_token")
         # Try creating the benefactor user if not exists
         pytest.skip(f"Benefactor login failed: {resp.status_code} - {resp.text}")
     
