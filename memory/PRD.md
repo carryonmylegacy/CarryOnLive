@@ -3,63 +3,62 @@
 ## Architecture (Refactored Feb 2026)
 ```
 /app/backend/
-├── server.py          84 lines  — App init, router composition, middleware
-├── config.py          73 lines  — DB, env vars, external service clients
-├── utils.py          164 lines  — Encryption, auth, email, SMS, push, logging
-├── voice_biometrics.py 310 lines — Enhanced voice biometric engine
-├── models.py         685 lines  — Pydantic models, readiness calc, seed data
+├── server.py          — App init, router composition, middleware
+├── config.py          — DB, env vars, external service clients
+├── utils.py           — Encryption, auth, email, SMS, push, logging
+├── voice_biometrics.py — Enhanced voice biometric engine
+├── models.py          — Pydantic models, readiness calc, seed data
 └── routes/
-    ├── auth.py       172 lines  — Login, register, OTP, dev-login
-    ├── admin.py      146 lines  — User mgmt, stats, dev switcher
-    ├── estates.py    237 lines  — Estate CRUD, readiness routes
-    ├── beneficiaries.py 433 lines — Beneficiary CRUD, invitations
-    ├── documents.py  439 lines  — Vault CRUD, voice verification
-    ├── messages.py   162 lines  — Milestone messages
-    ├── checklist.py   65 lines  — IAC
-    ├── transition.py 155 lines  — Death cert, transition flow
-    ├── dts.py        290 lines  — Trustee services, Stripe setup
-    ├── guardian.py   395 lines  — AI chat (Grok), estate analysis
-    ├── subscriptions.py 478 lines — Plans, checkout, admin pricing
-    ├── support.py    174 lines  — Customer support chat
-    ├── family_plan.py 267 lines — Family plan system
-    ├── digital_wallet.py 183 lines — Digital wallet vault
-    ├── pdf_export.py 241 lines  — PDF estate plan export
-    ├── security.py   402 lines  — Triple lock section security
-    └── push.py        78 lines  — Push notification routes
+    ├── auth.py        — Login, register, OTP, dev-login
+    ├── admin.py       — User mgmt, role management, activity log, stats, dev switcher
+    ├── estates.py     — Estate CRUD, readiness routes
+    ├── beneficiaries.py — Beneficiary CRUD, invitations, photos
+    ├── documents.py   — Vault CRUD, voice verification
+    ├── messages.py    — Milestone messages
+    ├── checklist.py   — IAC CRUD
+    ├── transition.py  — Death cert, transition flow
+    ├── dts.py         — Trustee services, Stripe setup
+    ├── guardian.py    — AI chat (Grok), estate analysis, generate_checklist from vault
+    ├── subscriptions.py — Plans, checkout, admin pricing
+    ├── support.py     — Customer support chat
+    ├── family_plan.py — Family plan system
+    ├── digital_wallet.py — Digital wallet vault
+    ├── pdf_export.py  — PDF estate plan export
+    ├── security.py    — Triple lock section security
+    └── push.py        — Push notification routes (subscribe/unsubscribe/VAPID)
 ```
 
 ## Implemented Features
-- Auth (OTP 2FA), Admin/Benefactor/Beneficiary portals
-- SDV, MM, BM, IAC, DTS, EGA (Grok), Digital Wallet Vault
-- Triple Lock Security, PDF Export, Push Notifications
-- Stripe Subscriptions with admin controls (beta toggle, pricing, per-user overrides)
-- Family Plan (admin-toggled, FPO + Successor + pricing model)
-- Deployment ready (Dockerfiles, render.yaml, DEPLOY_GUIDE.md)
+- Auth (OTP 2FA via email/SMS), Admin/Benefactor/Beneficiary portals
+- SDV, MM, BM, IAC (full CRUD + AI suggestions), DTS, EGA (Grok), Digital Wallet Vault
+- Triple Lock Security, PDF Export
+- Stripe Subscriptions with admin controls
+- Family Plan (admin-toggled)
 - Legal Pages: Privacy Policy (/privacy) and Terms of Service (/terms)
 - SMS Consent Checkbox on signup (Twilio A2P 10DLC compliance)
-- Footer legal links on Login and Signup pages
+- **P0: AI Suggest from Vault** — EGA auto-generates IAC items from vault documents via Grok
+- **P1: Admin Panel enhancements** — user role management (dropdown), activity log tab
+- **P2: Web Push Notifications** — VAPID keys, service worker, NotificationSettings component
+- Deployment ready (Dockerfiles, render.yaml, DEPLOY_GUIDE.md)
 
 ## API Keys Active
-- xAI Grok, Stripe (test), Emergent LLM (Whisper)
+- xAI Grok, Stripe (test), Resend, Twilio, Emergent LLM (Whisper), VAPID keys
 
-## Recently Completed
-1. Enhanced voice biometric engine (voice_biometrics.py)
-2. Production deployment readiness (Dockerfiles, render.yaml, build-prod.sh, deploy guides)
-3. Beneficiary photo uploads (end-to-end)
-4. IAC overhaul (benefactor CRUD + beneficiary checklist view)
-5. Safari pulsating fix, Outlook OTP email fix
-6. Legal Pages & SMS Consent for Twilio A2P 10DLC (Feb 2026)
-7. **Full codebase audit & cleanup (Feb 2026)**:
-   - Fixed 16 React Hook useEffect dependency warnings across 16 files
-   - Fixed 31 Python lint errors in test files (f-strings, unused vars, == True comparisons)
-   - Frontend: webpack compiled successfully (0 warnings)
-   - Backend: All Python lint checks passed (0 errors)
+## Key API Endpoints
+- `PUT /api/admin/users/{user_id}/role` — Change user role (admin only)
+- `GET /api/admin/activity` — Platform activity log (admin only)
+- `GET /api/push/vapid-public-key` — VAPID public key (public)
+- `POST /api/push/subscribe` — Subscribe to push notifications
+- `POST /api/chat/guardian` with `action: generate_checklist` — AI suggests IAC items from vault
 
-## Upcoming
-1. P0: Estate Guardian AI - "AI Suggest from Vault" (xAI/Grok reads SDV docs to suggest IAC items)
-2. P1: Admin Panel buildout (user management, analytics)
-3. P2: Web Push Notifications (VAPID keys, service worker)
+## Recently Completed (Feb 2026)
+1. Legal Pages & SMS Consent for Twilio A2P 10DLC
+2. Full codebase audit: 0 Python lint errors, 0 JS warnings
+3. P0: AI Suggest from Vault (Grok reads SDV docs, auto-creates IAC items)
+4. P1: Admin Panel (role management dropdown, activity log tab, enhanced stats)
+5. P2: Web Push Notifications (VAPID keys generated, service worker, settings UI)
 
-## Parked
+## Upcoming / Backlog
+- P1: Admin Panel further buildout (analytics dashboard, charts)
 - Multi-estate support
-- Picovoice Eagle (pricing: $6K/yr — deferred; using enhanced librosa engine instead)
+- Picovoice Eagle voice biometrics (parked — $6K/yr)
