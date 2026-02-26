@@ -184,7 +184,7 @@ async def export_estate_pdf(estate_id: str, current_user: dict = Depends(get_cur
     pdf.set_font("Helvetica", "B", 16)
     pdf.set_fill_color(15, 22, 41)
     pdf.set_text_color(255, 255, 255)
-    pdf.cell(0, 10, "  ESTATE STATUS — Current Snapshot", new_x="LMARGIN", new_y="NEXT", fill=True)
+    pdf.cell(0, 10, _safe("  ESTATE STATUS - Current Snapshot"), new_x="LMARGIN", new_y="NEXT", fill=True)
     pdf.set_text_color(0, 0, 0)
     pdf.ln(3)
 
