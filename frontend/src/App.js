@@ -20,6 +20,7 @@ import TrusteePage from './pages/TrusteePage';
 import TransitionPage from './pages/TransitionPage';
 import SettingsPage from './pages/SettingsPage';
 import AdminPage from './pages/AdminPage';
+import SupportChatPage from './pages/SupportChatPage';
 
 // Beneficiary Pages
 import BeneficiaryHubPage from './pages/beneficiary/BeneficiaryHubPage';
