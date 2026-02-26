@@ -1,91 +1,71 @@
 <analysis>**original_problem_statement:**
-Build a full-stack web app called CarryOn™ — a secure estate planning and legacy management platform. There is NO separate role selector page; users start as the benefactor (estate owner) and prepare everything from one portal. After death, designated beneficiaries gain full access via a transition triggered by uploading a death certificate.
+Build a full-stack web app called CarryOn™ — a secure estate planning and legacy management platform. The application should feature three distinct portals: one for the benefactor (estate owner), one for beneficiaries, and an admin portal for platform management.
 
 **PRODUCT REQUIREMENTS:**
--   **Authentication:** Secure login with email, password, and 6-digit OTP 2FA. User creation flow.
--   **Benefactor Portal:**
-    -   Dashboard with readiness gauge and checklists.
-    -   Secure Document Vault with categorized uploads, locking (password/voice/backup key), and encryption (AES-256).
-    -   Milestone Messages (text/video) with triggers.
-    -   Beneficiary Manager to add/edit family members.
-    -   Estate Guardian AI chat for planning advice.
-    -   Checklists for immediate actions.
-    -   Mock Trustee Services section.
-    -   Settings with theme toggle and profile.
--   **Transition Mechanism:** Secure section to upload a death certificate, which, after a mock approval, transitions the estate status and unlocks the beneficiary view.
--   **Beneficiary View:**
-    -   Limited pre-transition view.
-    -   Full access post-transition to view documents, messages, and report milestones.
+-   **Authentication:** Secure login with email, password, and 6-digit OTP 2FA (now includes both email and SMS).
+-   **Benefactor Portal:** A comprehensive dashboard for managing all aspects of an estate, including a Secure Document Vault, Milestone Messages, Beneficiary Management (now with extended demographics and an invitation flow), an Estate Guardian AI, an Immediate Action Checklist, and Designated Trustee Services.
+-   **Beneficiary Portal:** A separate portal for beneficiaries with a limited pre-transition view and full read-only access post-transition. Now features a generational orbiting balls visualization of their legacy network.
+-   **Admin Portals:** A multi-faceted admin area for User Management, a Transition Verification Team (TVT) portal, and a Designated Trustee Services (DTS) Team portal. Now also includes a settings tab to configure the Dev Switcher.
 -   **Technical Stack:** React frontend (with Tailwind/shadcn), FastAPI backend, and MongoDB database.
--   **User Request (In Progress):** Implement a detailed algorithm to calculate the Estate Readiness Score based on specific criteria for documents, milestone messages, and a checklist.
-    -   **Documents (100%):** Requires 1 will, 1 trust, Financial Power of Attorney, Medical Power of Attorney, and a Healthcare Directive/Living Will. Names must match user-provided info.
-    -   **Milestone Messages (100%):** Requires one immediate message post-death, plus messages for major life milestones for each beneficiary based on age and demographics (e.g., graduations, marriage, first child for a young person; retirement for a spouse).
-    -   **Checklist (100%):** Requires no less than 25 items spanning from immediate actions to tasks within a month after death.
+-   **Developer Experience:** A dev-mode portal switcher that is now configurable from the admin dashboard, allowing one-click access to specified user roles.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack application with a heavily customized frontend that matches a user-provided prototype. The UI work includes a complete redesign of the internal pages (Dashboard, etc.) with a dark/light theme, a complex speedometer-style gauge, and responsive layouts for desktop and mobile/PWA. The backend is functional, with all core CRUD operations. The agent was in the process of replacing the mock Estate Readiness Score with a complex, user-defined algorithm. The Pydantic models in the backend have been updated to support this, but the core calculation logic has not yet been fully implemented.
+The application is a mature, full-stack platform with functional Benefactor, Beneficiary, and Admin portals. The database has been wiped clean and re-initialized with a single admin account () at the user's request. Core features from the original spec are implemented. Recent work includes a complete data reset, a new post-signup onboarding flow for benefactors, a configurable Dev Switcher, SMS OTP integration via Twilio (pending user's A2P 10DLC registration), and an enhanced beneficiary management system with more demographic fields and an email invitation flow. The UI has seen several adjustments to the mobile navigation and color themes.
 
 **Last working item**:
--   **Last item agent was working:** Implementing the new, detailed algorithm for the Estate Readiness Score on the backend. The agent had analyzed the existing code, updated the  model in  to include  and , and added placeholder functions for the new calculation logic. The next step is to implement the logic for these functions and integrate them into the endpoint that calculates the score.
+-   **Last item agent was working:** Implementing universal  functionality. The user requested the ability to edit any information they have entered. The agent confirmed this exists for Milestone Messages and began adding it for Beneficiaries and Documents in the Vault.
 -   **Status:** IN PROGRESS
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** backend testing agent
+-   **Which testing method agent to use?** both. The changes require creating new PUT endpoints on the backend and building edit modal/form logic on the frontend. A full-stack test is necessary.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1 (P0): Implement Estate Readiness Score Algorithm**
-    -   **Description:** The current readiness score is a mock value. The user has provided a detailed algorithm for calculating the score based on three categories: Documents, Milestone Messages, and an Immediate Action Checklist.
-    -   **Attempted fixes:** The agent has modified the  Pydantic model in  to include  and  and added placeholder functions (, , ) and a default checklist.
-    -   **Next debug checklist:**
-        1.  Flesh out the logic within the three new calculation functions in .
-        2.  Update the  function to call these new helper functions.
-        3.  Ensure the  endpoint correctly recalculates and saves the new score and its components (docs, messages, checklist percentages).
-        4.  Verify the frontend  correctly fetches and displays the three individual percentages and the new overall score on the gauge.
-    -   **Why fix this issue and what will be achieved with the fix?** This will replace the mock data with a core, dynamic feature of the application, providing real value to the user by tracking their estate planning progress.
-    -   **Status:** IN PROGRESS
-    -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?** both
-    -   **Blocked on other issue:** None
+-   **Issue 1 (P0):** Remove the pulsating feature from the Estate Readiness Score on the benefactor dashboard. The agent was unable to locate the source of the animation and restored the component after accidentally deleting it.
+-   **Issue 2 (P2):** The  API key is configured for a different domain, which will cause production email delivery (for OTPs and invitations) to fail.
+-   **Issue 3 (P2):** The frontend codebase has several  lint warnings that should be resolved to improve code quality.
 
 **In progress Task List**:
--   **Task 1 (P0): Complete Backend Logic for Readiness Score**
-    -   **Where to resume:** In , fill in the Python logic for the functions , , and  based on the user's detailed requirements.
-    -   **What will be achieved with this?** A functional backend that can dynamically calculate a user's estate readiness based on their inputs.
+-   **Task 1 (P0):** Complete the implementation of  functionality.
+    -   **Where to resume:** The backend PUT endpoints for  and  have been created. The next step is to update the frontend. The agent was just about to modify  to add an Edit button and modal form. After that, the same functionality needs to be added to  for documents.
+    -   **What will be achieved with this?** The user will be able to modify beneficiary details and document metadata after they have been created, fulfilling a key usability request.
     -   **Status:** IN PROGRESS
     -   **Should Test frontend/backend/both after fix?** both
-    -   **Blocked on something:** None
+    -   **Blocked on something:** No.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks (P1):**
-    -   **Voice Verification:** Integrate a real voice recognition API to replace the current mock implementation.
-    -   **Push Notifications:** Implement PWA features for push notifications.
-    -   **Multi-estate Support for Benefactors:** Allow benefactors to create and manage multiple distinct estates.
-
--   **Future Tasks (P2 & P3):**
-    -   **Payment Gateway:** Integrate Stripe for paid Trustee Services.
-    -   **Digital Asset Management:** Add features for digital assets like crypto wallets and social media accounts.
-    -   **Beneficiary Onboarding:** Implement an email invitation flow for beneficiaries.
-    -   **PDF Export:** Allow users to export an estate summary as a PDF.
+    -   **Push Notifications:** Implement PWA features for push notifications to alert users of important events.
+    -   **Multi-estate Support for Benefactors:** Allow benefactors to create and manage multiple distinct estates from a single account.
+-   **Future Tasks (P2):**
+    -   **Payment Gateway:** Integrate Stripe to handle payments for subscriptions and Designated Trustee Services.
+    -   **Digital Asset Management:** Add features for managing digital assets like cryptocurrency wallets and social media accounts.
+    -   **PDF Export:** Allow users to export a summary of their estate plan as a PDF document.
 
 **Completed work in this session**
--   **Full UI Redesign:** Completely overhauled the internal application pages (Dashboard, Sidebar, Mobile Nav) to match the user's HTML prototype, including a speedometer gauge, bento-grid layout, and custom color schemes.
--   **Dark/Light Mode Implementation:** Added a fully functional theme toggle that correctly applies light and dark themes across the application, including special considerations for a persistent dark sidebar.
--   **Mobile/PWA View Refinement:** Created a distinct mobile layout with a 5-item bottom navigation bar (including a centered, elevated home button) and responsive card layouts.
--   **Advanced Gauge Needle Design:** Iteratively designed a complex SVG-based needle for the readiness gauge, incorporating a tapered shape, metallic gradients, a chrome hub, and a counterweight to match the user's Swiss chronometer aesthetic.
--   **Iterative UI Fixes:** Addressed over a dozen specific, granular user requests for UI adjustments, including font sizes, boldness, element spacing, color changes, and text justification.
--   **Logo Update:** Replaced the logo on all internal platform screens with a new user-provided asset.
+-   **Platform Data Reset:** Wiped all user, estate, and related data from the database and re-initialized the platform with a single admin account.
+-   **SMS OTP Integration (Twilio):** Implemented backend logic and frontend UI for SMS-based 2FA. Guided user through the required Twilio A2P 10DLC registration process.
+-   **Admin-Configurable Dev Switcher:** Replaced the hardcoded Dev Switcher with a dynamic version configured via a new Dev Switcher tab in the admin portal.
+-   **Beneficiary Management Overhaul:**
+    -   Added extensive demographic fields (full name, address, DOB, etc.) to the beneficiary creation form.
+    -   Implemented a complete invitation flow, allowing beneficiaries to receive an invite, create their own account, and be linked to the benefactor's estate.
+-   **New User Onboarding:** Created a post-signup onboarding page that prompts new benefactors to add their first beneficiary before proceeding to the dashboard.
+-   **Generational Orbit Visualization:** Redesigned the beneficiary hub's orbiting balls animation to display family members in concentric rings based on generational distance.
+-   **UI/UX Enhancements:**
+    -   Created a custom mobile bottom navigation bar for the Admin portal.
+    -   Iteratively adjusted mobile nav bar styling (dividers, font size, colors) based on user feedback.
+    -   Moved the DEV button to prevent overlap with the Emergent badge.
 
 **Earlier issues found/mentioned but not fixed**
 -   **Issue 1: Resend Domain Mismatch**
-    -   **Debug checklist:** The Resend API key is for , but the branding suggests . A new key is needed if the domain changes.
-    -   **Why to solve this issue and what will be achieved with this?** Aligns email sender domain with user branding.
+    -   **Debug checklist:** The Resend API key is for a different domain than the app's branding. A new key or configuration may be needed for production email delivery.
+    -   **Why to solve this issue and what will be achieved with this?** Ensures OTP and beneficiary invitation emails are delivered correctly in a production environment.
     -   **Should Test frontend/backend/both after fix:** backend
     -   **Is recurring issue?** Y
 -   **Issue 2: Frontend Lint Warnings**
     -   **Debug checklist:** Review components for  warnings.
-    -   **Why to solve this issue and what will be achieved with this?** Improves code quality and prevents bugs.
+    -   **Why to solve this issue and what will be achieved with this?** Improves code quality and prevents potential bugs related to React hooks.
     -   **Should Test frontend/backend/both after fix:** frontend
     -   **Is recurring issue?** Y
 
@@ -96,79 +76,89 @@ A full-stack application with a heavily customized frontend that matches a user-
 
 
 **Key Technical Concepts**
--   **Backend:** FastAPI, Pydantic, MongoDB (via ), JWT.
--   **Frontend:** React, Tailwind CSS, shadcn/ui, Axios, React Router.
--   **Advanced UI:** Heavy use of custom CSS and inline SVG for animations, gradients (linear, conic, radial), blur filters, and complex component styling (e.g., the speedometer gauge and needle).
--   **Theming:** Dynamic dark/light mode implemented using CSS variables and a React Context provider that sets a  attribute on the root element.
+-   **Backend:** FastAPI, Pydantic, MongoDB (via ), JWT, OpenAI Whisper, Twilio.
+-   **Frontend:** React, Tailwind CSS, shadcn/ui, Axios, React Router, Framer Motion.
+-   **Architecture:** A three-portal system managed by client-side routing.
+-   **Dev Tooling:** A custom-built, admin-configurable dev-mode component for instant role switching.
 
 **key DB schema**
--   **Beneficiary (in server.py):** The  Pydantic model was updated to include:
-    -   
-    -   
+-   **Beneficiary:** Model has been significantly expanded to include , , , , , , , , , , , , and  upon registration.
+-   **DevSwitcherConfig:** A new schema to store configuration from the admin panel, likely .
 
 **changes in tech stack**
--   None.
+-   **Added:**  Python library for SMS functionality.
 
 **All files of reference**
--   : **Crucial file.** Contains all backend logic. The  model was just updated, and new readiness score calculation functions were added and need to be implemented.
--   : **Crucial file.** Contains the entire dashboard UI, including the complex SVG gauge. It will need to consume the new, detailed readiness scores from the backend.
--   : Contains all the global styles and CSS variables for both light and dark themes.
--   : The desktop sidebar.
--   : The mobile navigation components (bottom bar and flyout menu).
--   : Manages the light/dark theme state.
--   : The estate switcher component, which was fixed for light mode.
+-   : Heavily modified. Contains logic for SMS OTP, Dev Switcher config, data wipe, and new PUT endpoints for editing.
+-   : Significantly updated with new form fields and the start of edit functionality.
+-   : Updated to include the Dev Switcher configuration tab and its associated logic.
+-   : Updated to include Email/SMS toggle and remove test account hints.
+-   : Completely rewritten to support generational orbits.
+-   : Updated to use the new  endpoint.
+-   : Modified to add an admin-specific nav bar and adjust styling.
+-   : New file for the beneficiary registration flow.
+-   : New file for the post-signup benefactor flow.
+-   : Updated with recent changes.
 
 **Areas that need refactoring**:
--   : Remains a very large monolithic component.
--   : Has grown even larger and should be split into a more organized structure (e.g., , , ).
+-   : The need to refactor this monolithic file is now critical. It has grown to over 3000 lines and contains logic for all features, making it difficult to maintain and debug. Breaking it into a structured package with routers, models, and services is a high-priority technical debt item.
+-    and  have also become very large and could be broken down into smaller, more focused components.
 
 **key api endpoints**
--   : This is the endpoint that triggers the readiness score calculation. Its underlying logic is the focus of the current task.
+-    (Modified to support  and )
+-   
+-    & 
+-   
+-    & 
+-    (New)
+-    (New)
 
 **Critical Info for New Agent**
--   **Priority Shift:** The user's focus has shifted from minute UI details to implementing a core backend feature: the readiness score algorithm. You must complete this backend work first.
--   **User is Detail-Oriented:** The user has a very specific vision for the UI. After implementing the backend logic, be prepared to make precise frontend adjustments to display the new data correctly.
--   **Readiness Score Logic:** The user's requirements for the score calculation are specific and complex. Refer to the  section for the full algorithm details for documents, messages, and the checklist.
--   **OTP Fallback:** All generated OTPs are printed to the backend logs: .
+-   **Database is Wiped:** All previous user data is gone. The primary user is now  (admin). The user created their own benefactor account .
+-   **Twilio is NOT Fully Functional:** The user's A2P 10DLC registration is In review. Do NOT attempt to debug SMS issues. Assume it's blocked by the carrier and that the user will inform you when their registration is approved. The platform defaults to email OTP.
+-   **Dev Switcher is Admin-Configured:** The switcher is no longer hardcoded. To use it, the admin must first configure the desired benefactor/beneficiary accounts and their passwords in the Admin portal.
+-   **Unresolved Pulsating Animation:** The user wants to remove a pulsating animation from the Estate Readiness Score gauge. The previous agent failed to find it. This is a pending UI task that requires investigation. Do not remove the entire component.
 
 **documents and test reports created in this job**
 -   
--    (new logo)
+-    (Updated)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Defined the full algorithm for the Estate Readiness Score. (IN PROGRESS)
-2.  **User:** Requested the entire needle be proportionally enlarged. (Completed)
-3.  **User:** Requested all platform font be made bold and a '%' sign added to the score. (Completed)
-4.  **User:** Requested the needle's center hub be smaller with more depth. (Completed)
-5.  **User:** Requested the removal of the needle's center black dot and a redesign of the tail. (Completed)
-6.  **User:** Requested refinement of the needle's design (remove white dot, reduce black dot, extend tail). (Completed)
-7.  **User:** Requested a more designer needle, like a car speedometer or Swiss chronometer. (Completed)
-8.  **User:** Reported that the Harris Family Estate font is invisible in light mode. (Completed)
-9.  **User:** Requested the score be moved down to be centered vertically between the gauge and the text below it. (Completed)
-10. **User:** Requested larger fonts for stat cards (two lines) and centering the mobile Beneficiaries card. (Completed)
+1.  **User:** Remove the pulsating Estate Readiness Score feature.
+2.  **Agent:** Mistakenly removed the entire component.
+3.  **User:** No! Put it back! Just remove the pulsating feature.
+4.  **Agent:** Restored the component but couldn't find the animation and asked for clarification.
+5.  **User:** Switched tasks: I need the ability to edit anything I input (beneficiaries, documents, messages).
+6.  **Agent:** Agreed and began implementing edit functionality for Beneficiaries and Documents.
+7.  **User:** Asked if they should keep using the preview or deploy, and if the Made with Emergent badge could be moved as it was blocking buttons.
+8.  **Agent:** Advised to stay in preview, explained deployment, and stated the badge can't be moved but offered a workaround by moving the DEV button.
+9.  **User:** Clarified the badge was blocking the PWA menu bar, not the DEV button, and accepted moving the DEV button higher.
+10. **User:** Stated the Admin dashboard PWA menu buttons don't make sense and asked for more practical ones.
 
 **Project Health Check:**
--   **Broken:** None
+-   **Broken:**
+    -   Twilio SMS functionality is non-operational pending the user's external A2P 10DLC registration approval.
 -   **Mocked:**
-    -   Estate Readiness Score (logic is currently being implemented).
-    -   Voice verification (always returns success).
-    -   Estate Transition / Death certificate verification (is a stub).
-    -   Trustee Services (UI only).
+    -   **Payment Integration:** UI for subscriptions exists, but no backend payment processing.
+    -   **Voice/Video Message Recording:** UI to play messages exists, but no recording/uploading functionality.
 
 **3rd Party Integrations**
--   **OpenAI GPT-4o:** Used for the Estate Guardian feature. Uses the Emergent LLM Key.
--   **Resend:** Used for sending OTP emails. Requires a User API Key.
+-   **OpenAI GPT-4o:** Powers the Estate Guardian AI. (Uses Emergent LLM Key)
+-   **OpenAI Whisper:** Used for voice passphrase verification. (Uses Emergent LLM Key)
+-   **Resend:** Intended for sending OTP/invitation emails. (Requires User API Key; has domain mismatch issue).
+-   **Twilio:** Integrated for SMS OTP. (Requires User API Key; pending A2P 10DLC registration).
 
 **Testing status**
--   **Testing agent used after significant changes:** YES (after the initial major redesign).
+-   **Testing agent used after significant changes:** YES (for the beneficiary invitation flow).
 -   **Troubleshoot agent used after agent stuck in loop:** NO
 -   **Test files created:** None
 -   **Known regressions:** None
 
 **Credentials to test flow:**
--   **Existing User:**  / 
--   **New User:** Use the signup page.
--   **OTP:** Check the backend logs: 
+-   **Admin:**  / 
+-   **User's Benefactor Account:**  / 
+-   **Dev Switcher:** Must be configured from the Admin portal first. It is NOT active by default.
 
 **What agent forgot to execute**
--   Nothing. The agent was actively implementing the user's latest and most critical feature request when the session ended.</analysis>
+-   The agent did not resolve the user's request to remove the pulsating animation on the Estate Readiness Score, instead asking the user for more information after a failed investigation.
+-   The two long-standing low-priority issues (Resend domain mismatch, frontend lint warnings) were not addressed.</analysis>
