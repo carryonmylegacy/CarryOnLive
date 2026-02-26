@@ -1028,12 +1028,19 @@ const TrusteePage = () => {
           const cf = confConfig[t.confidential];
           const TypeIcon = typeConfig[t.type]?.icon || Shield;
           return (
-            <Card key={t.id} className="glass-card cursor-pointer hover:border-[var(--b2)] transition-all" onClick={() => { setSelectedId(t.id); setView('detail'); }} data-testid={`dts-task-${t.id}`}>
+            <Card key={t.id} className="glass-card group hover:border-[var(--b2)] transition-all" data-testid={`dts-task-${t.id}`}>
               <CardContent className="p-4 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(139,92,246,0.08)' }}>
+                <div 
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 cursor-pointer" 
+                  style={{ background: 'rgba(139,92,246,0.08)' }}
+                  onClick={() => { setSelectedId(t.id); setView('detail'); }}
+                >
                   <TypeIcon className="w-5 h-5" style={{ color: typeConfig[t.type]?.color }} />
                 </div>
-                <div className="flex-1 min-w-0">
+                <div 
+                  className="flex-1 min-w-0 cursor-pointer"
+                  onClick={() => { setSelectedId(t.id); setView('detail'); }}
+                >
                   <div className="font-bold text-[var(--t)] mb-1.5 truncate">{t.title}</div>
                   <div className="flex flex-wrap gap-1.5">
                     <span className="text-xs px-2 py-0.5 rounded-md font-bold" style={{ background: st.bg, color: st.color }}>{st.label}</span>
@@ -1041,12 +1048,215 @@ const TrusteePage = () => {
                     {t.lineItems.length > 0 && <span className="text-xs font-bold text-[var(--gold2)]">${totalCost(t.lineItems).toLocaleString()}</span>}
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-[var(--t5)] flex-shrink-0" />
+                
+                {/* Edit & Delete buttons on card */}
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-[var(--bl3)] hover:bg-[var(--blbg)] h-8 w-8 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedId(t.id);
+                      openEditModal(t);
+                    }}
+                    title="Edit"
+                    data-testid={`edit-task-card-${t.id}`}
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-[var(--rd)] hover:bg-[var(--rdbg)] h-8 w-8 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedId(t.id);
+                      setShowDeleteDialog(true);
+                    }}
+                    title="Delete"
+                    data-testid={`delete-task-card-${t.id}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+                
+                <ChevronRight 
+                  className="w-5 h-5 text-[var(--t5)] flex-shrink-0 cursor-pointer" 
+                  onClick={() => { setSelectedId(t.id); setView('detail'); }}
+                />
               </CardContent>
             </Card>
           );
         })}
       </div>
+      
+      {/* Edit Task Modal - for list view */}
+      <Dialog open={showEditModal && view === 'list'} onOpenChange={(open) => {
+        setShowEditModal(open);
+        if (!open) setEditTask(null);
+      }}>
+        <DialogContent className="glass-card border-white/10 sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-[var(--t)] text-xl flex items-center gap-2">
+              <Edit2 className="w-5 h-5 text-[var(--bl3)]" />
+              Edit DTS Request
+            </DialogTitle>
+            <DialogDescription className="text-[var(--t4)]">
+              Editing will reset the task to "Submitted" status and clear any existing quote. The DTS team will provide a new quote.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editTask && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label className="text-[var(--t4)]">Task Title</Label>
+                <Input
+                  className="input-field"
+                  value={editTask.title}
+                  onChange={(e) => setEditTask(p => ({ ...p, title: e.target.value }))}
+                  placeholder="Task title"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-[var(--t4)]">Task Type</Label>
+                <select
+                  className="input-field w-full rounded-lg p-3 bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm"
+                  value={editTask.type}
+                  onChange={(e) => setEditTask(p => ({ ...p, type: e.target.value }))}
+                >
+                  {Object.entries(typeConfig).map(([key, cfg]) => (
+                    <option key={key} value={key}>{cfg.label}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-[var(--t4)]">Instructions</Label>
+                <textarea
+                  className="input-field w-full rounded-lg p-3 min-h-[120px] bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm"
+                  value={editTask.desc}
+                  onChange={(e) => setEditTask(p => ({ ...p, desc: e.target.value }))}
+                  placeholder="Detailed instructions for the DTS team"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-[var(--t4)]">Confidentiality Level</Label>
+                <select
+                  className="input-field w-full rounded-lg p-3 bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm"
+                  value={editTask.confidential}
+                  onChange={(e) => setEditTask(p => ({ ...p, confidential: e.target.value }))}
+                >
+                  {Object.entries(confConfig).map(([key, cfg]) => (
+                    <option key={key} value={key}>{cfg.label}</option>
+                  ))}
+                </select>
+              </div>
+              
+              {(editTask.confidential === 'partial' || editTask.confidential === 'timed') && (
+                <div className="space-y-2">
+                  <Label className="text-[var(--t4)]">Disclose To</Label>
+                  <Input
+                    className="input-field"
+                    value={editTask.discloseTo}
+                    onChange={(e) => setEditTask(p => ({ ...p, discloseTo: e.target.value }))}
+                    placeholder="Names, separated by commas"
+                  />
+                </div>
+              )}
+              
+              {editTask.confidential === 'timed' && (
+                <div className="space-y-2">
+                  <Label className="text-[var(--t4)]">Release Timing</Label>
+                  <select
+                    className="input-field w-full rounded-lg p-3 bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm"
+                    value={editTask.timedRelease}
+                    onChange={(e) => setEditTask(p => ({ ...p, timedRelease: e.target.value }))}
+                  >
+                    <option value="">Select timing...</option>
+                    {['6 months post-transition', '1 year post-transition', '2 years post-transition', '5 years post-transition', '10 years post-transition'].map(o => (
+                      <option key={o} value={o}>{o}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              
+              <div className="rounded-xl p-3 bg-[var(--ywbg)] border border-[var(--yw)]/20">
+                <p className="text-sm text-[var(--yw)]">
+                  <AlertTriangle className="w-4 h-4 inline mr-1" />
+                  <strong>Note:</strong> Saving will clear any existing quote and payment method. The DTS team will need to provide a new quote.
+                </p>
+              </div>
+            </div>
+          )}
+          
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowEditModal(false)}
+              className="border-[var(--b)] text-[var(--t3)]"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleEditTask}
+              disabled={saving || !editTask?.title || !editTask?.desc}
+              className="bg-[var(--bl3)] text-white hover:bg-[var(--bl3)]/90"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Edit2 className="w-4 h-4 mr-2" />
+                  Save & Request New Quote
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Confirmation Dialog - for list view */}
+      <AlertDialog open={showDeleteDialog && view === 'list'} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent className="glass-card border-white/10">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-[var(--t)] flex items-center gap-2">
+              <Trash2 className="w-5 h-5 text-[var(--rd)]" />
+              Delete DTS Request
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[var(--t3)]">
+              Are you sure you want to permanently delete this Designated Trustee Service request? This action cannot be undone. Any saved payment method will also be removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-[var(--b)] text-[var(--t3)]">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => handleDeleteTask(selectedId)}
+              disabled={deleting}
+              className="bg-[var(--rd)] text-white hover:bg-[var(--rd)]/90"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Permanently
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
