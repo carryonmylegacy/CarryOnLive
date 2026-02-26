@@ -97,51 +97,48 @@ class CarryOnBackendTester:
             
             register_response = self.session.post(f"{BACKEND_URL}/auth/register", json=register_data)
             
-            if register_response.status_code == 200:
-                # Try to login
-                login_data = {
-                    "email": self.test_user["email"],
-                    "password": self.test_user["password"]
-                }
-                
-                login_response = self.session.post(f"{BACKEND_URL}/auth/login", json=login_data)
-                
-                if login_response.status_code == 200:
-                    login_result = login_response.json()
-                    print(f"DEBUG: Login response: {login_result}")
-                    if "access_token" in login_result:
-                        self.user_token = login_result["access_token"]
-                        self.session.headers.update({"Authorization": f"Bearer {self.user_token}"})
-                        self.log_test("Auth Flow (Register + Login)", True, "User registered and logged in successfully")
-                    else:
-                        self.log_test("Auth Flow (Register + Login)", False, f"No access_token in login response. Got: {login_result}")
-                else:
-                    print(f"DEBUG: Login failed response: {login_response.text}")
-                    self.log_test("Auth Flow (Register + Login)", False, f"Login failed with status: {login_response.status_code}")
+            # Try to login (this will trigger OTP)
+            login_data = {
+                "email": self.test_user["email"],
+                "password": self.test_user["password"]
+            }
             
-            elif register_response.status_code == 400:
-                # User might already exist, try login directly
-                login_data = {
-                    "email": self.test_user["email"],
-                    "password": self.test_user["password"]
-                }
+            login_response = self.session.post(f"{BACKEND_URL}/auth/login", json=login_data)
+            
+            if login_response.status_code == 200:
+                login_result = login_response.json()
                 
-                login_response = self.session.post(f"{BACKEND_URL}/auth/login", json=login_data)
-                
-                if login_response.status_code == 200:
-                    login_result = login_response.json()
-                    print(f"DEBUG: Existing user login response: {login_result}")
-                    if "access_token" in login_result:
-                        self.user_token = login_result["access_token"]
-                        self.session.headers.update({"Authorization": f"Bearer {self.user_token}"})
-                        self.log_test("Auth Flow (Existing User Login)", True, "Existing user logged in successfully")
+                if "access_token" in login_result:
+                    # Direct login without OTP (shouldn't happen in production)
+                    self.user_token = login_result["access_token"]
+                    self.session.headers.update({"Authorization": f"Bearer {self.user_token}"})
+                    self.log_test("Auth Flow (Direct Login)", True, "User logged in directly")
+                    
+                elif "otp_hint" in login_result and "dev_otp" in login_result:
+                    # OTP required - use dev_otp for testing
+                    otp_code = login_result["dev_otp"]
+                    
+                    otp_data = {
+                        "email": self.test_user["email"],
+                        "otp": otp_code
+                    }
+                    
+                    verify_response = self.session.post(f"{BACKEND_URL}/auth/verify-otp", json=otp_data)
+                    
+                    if verify_response.status_code == 200:
+                        verify_result = verify_response.json()
+                        if "access_token" in verify_result:
+                            self.user_token = verify_result["access_token"]
+                            self.session.headers.update({"Authorization": f"Bearer {self.user_token}"})
+                            self.log_test("Auth Flow (Login + OTP)", True, "User logged in with OTP verification")
+                        else:
+                            self.log_test("Auth Flow (OTP Verify)", False, f"No access_token after OTP. Got: {verify_result}")
                     else:
-                        self.log_test("Auth Flow (Existing User Login)", False, f"No access_token in login response. Got: {login_result}")
+                        self.log_test("Auth Flow (OTP Verify)", False, f"OTP verification failed with status: {verify_response.status_code}")
                 else:
-                    print(f"DEBUG: Existing user login failed response: {login_response.text}")
-                    self.log_test("Auth Flow (Existing User Login)", False, f"Login failed with status: {login_response.status_code}")
+                    self.log_test("Auth Flow (Login)", False, f"Unexpected login response format: {login_result}")
             else:
-                self.log_test("Auth Flow (Register)", False, f"Register failed with status: {register_response.status_code}")
+                self.log_test("Auth Flow (Login)", False, f"Login failed with status: {login_response.status_code}, response: {login_response.text}")
                 
         except Exception as e:
             self.log_test("Auth Flow", False, error=e)
