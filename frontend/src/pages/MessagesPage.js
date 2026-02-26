@@ -158,8 +158,7 @@ const MessagesPage = () => {
         });
       }
       
-      await axios.post(`${API_URL}/messages`, {
-        estate_id: estate.id,
+      const payload = {
         title,
         content,
         message_type: messageType,
@@ -167,16 +166,27 @@ const MessagesPage = () => {
         recipients: selectedRecipients,
         trigger_type: triggerType,
         trigger_value: triggerValue || null,
-        trigger_age: triggerAge ? parseInt(triggerAge) : null
-      }, getAuthHeaders());
+        trigger_age: triggerAge ? parseInt(triggerAge) : null,
+        trigger_date: triggerDate || null
+      };
+
+      if (editingMessage) {
+        // Edit existing
+        await axios.put(`${API_URL}/messages/${editingMessage.id}`, payload, getAuthHeaders());
+        toast.success('Message updated');
+      } else {
+        // Create new
+        await axios.post(`${API_URL}/messages`, { ...payload, estate_id: estate.id }, getAuthHeaders());
+        toast.success('Message created');
+      }
       
-      toast.success('Message created successfully');
       setShowCreateModal(false);
+      setEditingMessage(null);
       resetForm();
       fetchData();
     } catch (error) {
-      console.error('Create error:', error);
-      toast.error('Failed to create message');
+      console.error('Save error:', error);
+      toast.error(editingMessage ? 'Failed to update message' : 'Failed to create message');
     } finally {
       setCreating(false);
     }
