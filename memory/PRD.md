@@ -37,11 +37,22 @@
 
 ## API Keys Active
 - xAI Grok, Stripe (test), Emergent LLM (Whisper)
-- Picovoice Eagle: pending trial approval
+
+## Recently Completed
+1. Enhanced voice biometric engine (voice_biometrics.py)
+   - ~130-dimension voiceprint (MFCCs + spectral + pitch + energy + temporal)
+   - Audio quality assessment (SNR, clipping, duration, energy)
+   - Outlier rejection during enrollment
+   - Multi-metric verification (cosine + Euclidean + Pearson correlation)
+   - Adaptive thresholds based on enrollment quality
+   - Sequence-based passphrase matching (difflib)
+   - Backward compatible with legacy 60-dim voiceprints
+2. Production deployment readiness (Dockerfiles, render.yaml, build-prod.sh, deploy guides)
+3. Full code cleanup: 0 Python lint errors, 0 JS lint errors
 
 ## Upcoming
-1. Picovoice Eagle voice biometric upgrade
-2. Production deployment to Render
+1. Production deployment to Render
 
 ## Parked
 - Multi-estate support
+- Picovoice Eagle (pricing: $6K/yr — deferred; using enhanced librosa engine instead)
