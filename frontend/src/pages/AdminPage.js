@@ -13,6 +13,8 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
 import { Skeleton } from '../components/ui/skeleton';
+import { Switch } from '../components/ui/switch';
+import { Separator } from '../components/ui/separator';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -847,9 +849,6 @@ const DevSwitcherConfig = ({ users, getAuthHeaders }) => {
 export default AdminPage;
 
 // ===================== SUBSCRIPTIONS ADMIN =====================
-import { Switch } from '../components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Separator } from '../components/ui/separator';
 
 const SubscriptionsAdmin = ({ getAuthHeaders, users }) => {
   const [settings, setSettings] = useState(null);
