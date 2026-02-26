@@ -6,7 +6,6 @@ Tests for: Admin dashboard endpoints, beneficiary login flow, admin user managem
 import pytest
 import requests
 import os
-import time
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 if not BASE_URL:
