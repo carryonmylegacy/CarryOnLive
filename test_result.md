@@ -283,6 +283,19 @@ backend:
         agent: "testing"
         comment: "TESTED: Checklist flow works perfectly. GET /api/checklists/{estate_id} returns checklist items. PATCH /api/checklists/{item_id}/toggle updates items correctly. Full checklist functionality verified."
 
+  - task: "Enhanced voice biometric engine"
+    implemented: true
+    working: "NA"
+    file: "voice_biometrics.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created voice_biometrics.py with enhanced extraction (~130 dims), audio quality checks, outlier rejection, multi-metric verification (cosine+euclidean+pearson), adaptive thresholds, and sequence-based passphrase matching. Updated security.py to use new module with backward compatibility for v1 voiceprints."
+
+
 agent_communication:
   - agent: "main"
     message: "Made app production-ready for Render deployment. Fixed build-prod.sh, updated render.yaml, Dockerfiles. All key changes verified: production build passes, health endpoint works, Emergent scripts stripped from build output, no .bak artifacts."
