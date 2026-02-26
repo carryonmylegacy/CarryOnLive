@@ -669,7 +669,7 @@ class TestP1Security:
         )
         assert r.status_code == 200
         d = r.json()
-        assert isinstance(d, list)
+        assert isinstance(d, dict)
         print(f"  Security settings: {len(d)} sections")
 
     def test_02_get_questions(self):
