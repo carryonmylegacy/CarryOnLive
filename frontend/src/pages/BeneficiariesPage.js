@@ -100,6 +100,41 @@ const BeneficiariesPage = () => {
     }
   };
 
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Photo must be under 10MB');
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setPhotoPreview(ev.target.result);
+    reader.readAsDataURL(file);
+  };
+
+  const uploadPhoto = async (beneficiaryId) => {
+    if (!photoFile) return;
+    setUploadingPhoto(beneficiaryId);
+    try {
+      const formData = new FormData();
+      formData.append('file', photoFile);
+      await axios.post(`${API_URL}/beneficiaries/${beneficiaryId}/photo`, formData, {
+        ...getAuthHeaders(),
+        headers: { ...getAuthHeaders().headers, 'Content-Type': 'multipart/form-data' }
+      });
+    } catch (err) {
+      console.error('Photo upload error:', err);
+      toast.error('Photo saved but face upload failed — you can retry from edit');
+    } finally {
+      setUploadingPhoto(null);
+    }
+  };
+
   const handleAddOrEdit = async () => {
     if (!firstName || !lastName || !email || !relation) {
       toast.error('Please fill all required fields (First Name, Last Name, Email, Relationship)');
