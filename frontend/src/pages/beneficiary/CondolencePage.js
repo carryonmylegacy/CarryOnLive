@@ -70,7 +70,7 @@ const CondolencePage = () => {
   const isComplete = status === 'approved';
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-5" style={{ background: 'linear-gradient(145deg, #0B1120, #0F1629 40%, #0A1628)' }} data-testid="condolence-page">
+    <div className="min-h-screen flex items-center justify-center p-5" style={{ background: 'linear-gradient(145deg, #121A2E, #151D32 40%, #101830)' }} data-testid="condolence-page">
       <div className="w-full max-w-lg text-center">
         {/* Condolence Message */}
         {showCondolence ? (

@@ -856,7 +856,7 @@ const VaultPage = () => {
                   )}
                   
                   {spokenText && (
-                    <div className="mt-3 p-2 bg-[#0F1629] rounded-lg">
+                    <div className="mt-3 p-2 bg-[#151D32] rounded-lg">
                       <p className="text-[#94a3b8] text-xs">Heard:</p>
                       <p className="text-white">{spokenText}</p>
                     </div>
@@ -976,7 +976,7 @@ const VaultPage = () => {
           </DialogHeader>
           
           <div className="py-4">
-            <div className="bg-[#0F1629]/50 rounded-xl p-4 text-center mb-4">
+            <div className="bg-[#151D32]/50 rounded-xl p-4 text-center mb-4">
               <p className="text-2xl font-mono text-[#d4af37] tracking-wider">{backupCode}</p>
             </div>
             
