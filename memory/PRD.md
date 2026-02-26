@@ -12,6 +12,7 @@
 - User Management (view, delete users)
 - Transition Verification Team (TVT) - review death certificates
 - Designated Trustee Services (DTS) Management
+- **Customer Support Team** - Real-time messaging portal to respond to user inquiries
 - **Dev Switcher Configuration** - Admin can specify which benefactor/beneficiary accounts appear in the DEV quick-switch panel
 
 ### Benefactor Portal
@@ -24,6 +25,26 @@
 - Two-Level Section Security (Password + Voice Passphrase)
 - Estate Readiness Score
 - **Edit Functionality** - Edit beneficiary details and document metadata (name, category, notes)
+- **Customer Support Chat** - Text messaging portal to contact CarryOn support
+- **Push Notifications** - PWA push notifications for important alerts
+
+### Push Notifications (NEW)
+Implemented as PWA feature with service worker:
+- **User notifications for:**
+  - Support message replies from CarryOn team
+  - DTS quote updates (when quote is ready)
+  - Invitation acceptance notifications
+- **Admin notifications for:**
+  - New support messages from users
+- Settings toggle in Settings page to enable/disable
+- VAPID keys for secure web push
+
+### Customer Support Messaging (NEW)
+- Users can send messages to CarryOn support team
+- Real-time chat interface with auto-refresh
+- Admin "Customer Support Team" tab to view all conversations
+- Unread message indicators
+- Message history with timestamps
 
 ### DTS Payment Flow (NEW)
 1. User submits DTS task request
