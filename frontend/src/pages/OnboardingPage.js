@@ -217,10 +217,12 @@ const OnboardingPage = () => {
                 {beneficiaries.map((ben) => (
                   <div key={ben.id} className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
                     <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold"
-                      style={{ backgroundColor: ben.avatar_color + '30', color: ben.avatar_color }}
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold overflow-hidden"
+                      style={{ backgroundColor: ben.photo_url ? 'transparent' : ben.avatar_color + '30', color: ben.avatar_color }}
                     >
-                      {ben.initials || (ben.first_name?.[0] + ben.last_name?.[0]).toUpperCase()}
+                      {ben.photo_url ? (
+                        <img src={ben.photo_url} alt={ben.name} className="w-full h-full object-cover" />
+                      ) : ben.initials || (ben.first_name?.[0] + ben.last_name?.[0]).toUpperCase()}
                     </div>
                     <div className="flex-1">
                       <p className="text-white font-medium">{ben.name}</p>
