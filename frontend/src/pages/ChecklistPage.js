@@ -84,6 +84,7 @@ const ChecklistPage = () => {
   const [showTemplates, setShowTemplates] = useState(false);
   const [suggestingAI, setSuggestingAI] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
