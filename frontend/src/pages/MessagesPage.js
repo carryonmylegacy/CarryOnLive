@@ -213,8 +213,25 @@ const MessagesPage = () => {
     setTriggerType('immediate');
     setTriggerValue('');
     setTriggerAge('');
+    setTriggerDate('');
     setVideoBlob(null);
     setVideoUrl(null);
+    setEditingMessage(null);
+  };
+
+  const openEdit = (msg) => {
+    setEditingMessage(msg);
+    setTitle(msg.title);
+    setContent(msg.content);
+    setMessageType(msg.message_type || 'text');
+    setSelectedRecipients(msg.recipients || []);
+    setTriggerType(msg.trigger_type || 'immediate');
+    setTriggerValue(msg.trigger_value || '');
+    setTriggerAge(msg.trigger_age ? String(msg.trigger_age) : '');
+    setTriggerDate(msg.trigger_date || '');
+    setVideoBlob(null);
+    setVideoUrl(null);
+    setShowCreateModal(true);
   };
 
   const toggleRecipient = (beneficiaryId) => {
