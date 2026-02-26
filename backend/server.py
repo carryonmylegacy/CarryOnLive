@@ -1816,6 +1816,20 @@ async def get_pending_certificates(current_user: dict = Depends(get_current_user
     certificates = await db.death_certificates.find({"status": "pending"}, {"_id": 0, "file_data": 0}).to_list(100)
     return certificates
 
+@api_router.post("/transition/begin-review/{certificate_id}")
+async def begin_review(certificate_id: str, current_user: dict = Depends(get_current_user)):
+    """TVT member opens and begins reviewing a certificate"""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Only TVT members can review certificates")
+    cert = await db.death_certificates.find_one({"id": certificate_id}, {"_id": 0})
+    if not cert:
+        raise HTTPException(status_code=404, detail="Certificate not found")
+    await db.death_certificates.update_one(
+        {"id": certificate_id},
+        {"$set": {"status": "reviewing", "reviewed_by": current_user["id"], "review_started_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"message": "Review started"}
+
 @api_router.post("/transition/approve/{certificate_id}")
 async def approve_death_certificate(certificate_id: str, current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "admin":
