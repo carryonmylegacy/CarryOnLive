@@ -51,6 +51,7 @@ const MobileNav = () => {
 
   const accountItems = [
     { to: user?.role === 'beneficiary' ? '/beneficiary/settings' : '/settings', icon: Settings, label: 'Settings' },
+    { to: '/support', icon: Headphones, label: 'Customer Support' },
   ];
 
   // Bottom nav for benefactor - 5 items with Home in center
