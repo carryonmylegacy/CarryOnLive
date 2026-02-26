@@ -1,6 +1,7 @@
 """CarryOn™ Backend — Document & Voice Routes"""
 
 import os
+from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile
@@ -310,7 +311,7 @@ async def transcribe_voice(
             )
 
         # Clean up
-        os.unlink(tmp_path)
+        Path(tmp_path).unlink()
 
         transcription = response.text.strip()
         logger.info(
@@ -354,7 +355,7 @@ async def verify_voice_passphrase(
                 language="en",
             )
 
-        os.unlink(tmp_path)
+        Path(tmp_path).unlink()
 
         transcription = response.text.strip().lower()
         expected = expected_passphrase.strip().lower()
