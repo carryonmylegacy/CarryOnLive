@@ -2679,6 +2679,58 @@ async def update_dts_status(task_id: str, status: str, current_user: dict = Depe
     await db.dts_tasks.update_one({"id": task_id}, {"$set": {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}})
     return {"message": f"Status updated to {status}"}
 
+class DTSTaskUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    task_type: Optional[str] = None
+    confidential: Optional[str] = None
+    disclose_to: Optional[List[str]] = None
+    timed_release: Optional[str] = None
+    beneficiary: Optional[str] = None
+
+@api_router.put("/dts/tasks/{task_id}")
+async def update_dts_task(task_id: str, data: DTSTaskUpdate, current_user: dict = Depends(get_current_user)):
+    """Edit a DTS task - resets status to 'submitted' for re-quoting"""
+    task = await db.dts_tasks.find_one({"id": task_id})
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    # Verify ownership
+    estate = await db.estates.find_one({"id": task["estate_id"], "user_id": current_user["id"]})
+    if not estate and current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to edit this task")
+    
+    # Build update dict from provided fields
+    update_fields = {k: v for k, v in data.model_dump().items() if v is not None}
+    update_fields["status"] = "submitted"  # Reset to submitted for re-quoting
+    update_fields["line_items"] = []  # Clear previous quote
+    update_fields["payment_method"] = None  # Clear payment method
+    update_fields["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.dts_tasks.update_one({"id": task_id}, {"$set": update_fields})
+    
+    await log_activity(task["estate_id"], current_user["id"], current_user.get("name", ""), "dts_task_edited", f"DTS task edited and sent for re-quoting: {data.title or task['title']}")
+    
+    return {"success": True, "message": "Task updated and sent back for re-quoting"}
+
+@api_router.delete("/dts/tasks/{task_id}")
+async def delete_dts_task(task_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a DTS task completely"""
+    task = await db.dts_tasks.find_one({"id": task_id})
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    # Verify ownership
+    estate = await db.estates.find_one({"id": task["estate_id"], "user_id": current_user["id"]})
+    if not estate and current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to delete this task")
+    
+    await db.dts_tasks.delete_one({"id": task_id})
+    
+    await log_activity(task["estate_id"], current_user["id"], current_user.get("name", ""), "dts_task_deleted", f"DTS task deleted: {task['title']}")
+    
+    return {"success": True, "message": "Task deleted successfully"}
+
 # ===================== ENHANCED TRANSITION VERIFICATION =====================
 
 @api_router.get("/transition/certificates/all")
