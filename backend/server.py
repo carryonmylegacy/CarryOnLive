@@ -945,6 +945,24 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         created_at=current_user["created_at"]
     )
 
+@api_router.post("/auth/dev-login")
+async def dev_login(data: UserLogin):
+    """DEV ONLY: Skip OTP, instant login for development testing"""
+    user = await db.users.find_one({"email": data.email}, {"_id": 0})
+    if not user or not verify_password(data.password, user["password"]):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    token = create_token(user["id"], user["email"], user["role"])
+    return TokenResponse(
+        access_token=token,
+        user=UserResponse(
+            id=user["id"],
+            email=user["email"],
+            name=user["name"],
+            role=user["role"],
+            created_at=user["created_at"]
+        )
+    )
+
 # ===================== ADMIN ROUTES =====================
 
 @api_router.get("/admin/users")
