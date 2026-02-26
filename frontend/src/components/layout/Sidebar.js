@@ -16,7 +16,8 @@ import {
   Moon,
   Sun,
   FileKey,
-  Home
+  Home,
+  Headphones
 } from 'lucide-react';
 import { Switch } from '../ui/switch';
 
