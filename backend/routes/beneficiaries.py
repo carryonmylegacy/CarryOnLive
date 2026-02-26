@@ -3,19 +3,17 @@ from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timezone
-from config import db, logger
+from config import db, logger, RESEND_API_KEY, SENDER_EMAIL
 from utils import get_current_user, hash_password, create_token, log_activity, send_push_notification, update_estate_readiness
+from models import Beneficiary, BeneficiaryCreate
 import uuid
 import os
 import asyncio
 import base64
-
-from models import Beneficiary, BeneficiaryCreate
+import resend
 
 router = APIRouter()
 
-import resend
-from config import RESEND_API_KEY, SENDER_EMAIL
 # ===================== BENEFICIARY ROUTES =====================
 
 @router.get("/beneficiaries/{estate_id}")
