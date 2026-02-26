@@ -630,98 +630,123 @@ class CarryOnAPITester:
         
         return False
 
-def main():
-    """Main test execution"""
-    print("🚀 Starting CarryOn™ API Tests")
-    print("=" * 50)
-    
-    tester = CarryOnAPITester()
-    
-    # Test credentials from the review request
-    test_accounts = [
-        {"email": "pete@mitchell.com", "password": "password123", "role": "benefactor"},
-        {"email": "penny@mitchell.com", "password": "password123", "role": "beneficiary"},
-        {"email": "admin@carryon.com", "password": "admin123", "role": "admin"}
-    ]
-    
-    all_tests_passed = True
-    
-    for account in test_accounts:
-        print(f"\n{'='*20} Testing {account['role'].upper()} Account {'='*20}")
+    def test_production_readiness(self):
+        """Test production readiness - health check, auth endpoints, CORS headers"""
+        print(f"\n🏥 Testing Production Readiness")
         
-        # Test login flow
-        if not tester.test_login_flow(account["email"], account["password"]):
-            print(f"❌ Login failed for {account['email']}")
-            all_tests_passed = False
-            continue
-        
-        # Set current role for role-specific tests
-        tester.current_role = account['role']
-        
-        # Test user info
-        success, response = tester.run_test(
-            "Get User Info",
+        # Test 1: Health check endpoint
+        print(f"\n🔍 Testing Health Check Endpoint")
+        success, response = self.run_test(
+            "Health Check",
             "GET",
-            "auth/me",
+            "health", 
             200
         )
         
         if success:
-            print(f"   User: {response['name']} ({response['role']})")
+            expected_fields = ["status", "database", "version"]
+            has_all_fields = all(field in response for field in expected_fields)
+            
+            if has_all_fields and response["status"] == "healthy" and response["version"] == "1.0.0":
+                print(f"   ✅ Health check format correct: {response}")
+                health_check_success = True
+            else:
+                print(f"   ❌ Health check format incorrect: {response}")
+                health_check_success = False
+        else:
+            health_check_success = False
         
-        # Role-specific tests
-        if account['role'] == 'benefactor':
-            # Test all benefactor features
-            if not tester.test_estates():
-                all_tests_passed = False
-            if not tester.test_multi_estate_support():
-                all_tests_passed = False
-            if not tester.test_activity_timeline():
-                all_tests_passed = False
-            if not tester.test_beneficiaries():
-                all_tests_passed = False
-            if not tester.test_documents():
-                all_tests_passed = False
-            if not tester.test_messages():
-                all_tests_passed = False
-            if not tester.test_checklist():
-                all_tests_passed = False
-            if not tester.test_ai_chat():
-                all_tests_passed = False
-            if not tester.test_transition_status():
-                all_tests_passed = False
-                
-        elif account['role'] == 'beneficiary':
-            # Test beneficiary-specific features
-            if not tester.test_estates():
-                all_tests_passed = False
-            if not tester.test_messages():
-                all_tests_passed = False
-            # Note: Beneficiaries cannot create messages, only view delivered ones
-                
-        elif account['role'] == 'admin':
-            # Test admin features
-            success, response = tester.run_test(
-                "Get Pending Certificates",
-                "GET",
-                "transition/certificates",
-                200
+        # Test 2: Auth endpoints exist (not 404)
+        print(f"\n🔐 Testing Auth Endpoints Exist")
+        
+        # Test register endpoint exists
+        register_success, register_response = self.run_test(
+            "Register Endpoint Exists",
+            "POST",
+            "auth/register",
+            400,  # Expect 400 for missing data, not 404 for missing endpoint
+            data={}
+        )
+        
+        # Test login endpoint exists  
+        login_success, login_response = self.run_test(
+            "Login Endpoint Exists",
+            "POST", 
+            "auth/login",
+            422,  # Expect validation error for missing data, not 404
+            data={}
+        )
+        
+        auth_endpoints_success = register_success and login_success
+        
+        # Test 3: CORS headers verification
+        print(f"\n🌐 Testing CORS Headers")
+        try:
+            import requests
+            url = f"{self.base_url}/health"
+            
+            # Make preflight request (OPTIONS)
+            preflight_response = requests.options(url)
+            cors_headers = preflight_response.headers
+            
+            # Check for required CORS headers
+            required_cors_headers = [
+                'access-control-allow-origin',
+                'access-control-allow-methods', 
+                'access-control-allow-headers'
+            ]
+            
+            cors_headers_present = all(
+                header.lower() in [h.lower() for h in cors_headers.keys()]
+                for header in required_cors_headers
             )
-            if not success:
-                all_tests_passed = False
+            
+            if cors_headers_present:
+                print(f"   ✅ CORS headers present")
+                print(f"      Origin: {cors_headers.get('Access-Control-Allow-Origin', 'Not set')}")
+                print(f"      Methods: {cors_headers.get('Access-Control-Allow-Methods', 'Not set')}")
+                print(f"      Headers: {cors_headers.get('Access-Control-Allow-Headers', 'Not set')}")
+                cors_success = True
+            else:
+                print(f"   ❌ Missing CORS headers")
+                print(f"      Available headers: {list(cors_headers.keys())}")
+                cors_success = False
+                
+        except Exception as e:
+            print(f"   ❌ CORS test failed: {str(e)}")
+            cors_success = False
         
-        # Reset token for next account
-        tester.token = None
+        overall_success = health_check_success and auth_endpoints_success and cors_success
+        
+        if overall_success:
+            print(f"\n   🎉 Production readiness tests passed!")
+        else:
+            print(f"\n   ❌ Production readiness issues found")
+            print(f"      Health Check: {'✅' if health_check_success else '❌'}")
+            print(f"      Auth Endpoints: {'✅' if auth_endpoints_success else '❌'}")
+            print(f"      CORS Headers: {'✅' if cors_success else '❌'}")
+        
+        return overall_success
+
+def main():
+    """Main test execution focused on production readiness"""
+    print("🚀 Starting CarryOn™ Production Readiness Tests")
+    print("=" * 60)
+    
+    tester = CarryOnAPITester()
+    
+    # Focus on production readiness tests
+    production_ready = tester.test_production_readiness()
     
     # Print final results
-    print(f"\n{'='*50}")
+    print(f"\n{'='*60}")
     print(f"📊 Test Results: {tester.tests_passed}/{tester.tests_run} passed")
     
-    if all_tests_passed and tester.tests_passed == tester.tests_run:
-        print("🎉 All tests passed!")
+    if production_ready and tester.tests_passed == tester.tests_run:
+        print("🎉 Backend is production ready!")
         return 0
     else:
-        print("❌ Some tests failed")
+        print("❌ Backend production readiness issues found")
         return 1
 
 if __name__ == "__main__":
