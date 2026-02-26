@@ -339,10 +339,10 @@ class ComprehensiveCarryOnTester:
         try:
             beneficiary_data = {
                 "estate_id": self.estate_id,
-                "name": "John Test Beneficiary",
+                "first_name": "John",
+                "last_name": "TestBeneficiary",
                 "email": "john.beneficiary@test.com",
-                "relationship": "Child",
-                "percentage": 50.0
+                "relation": "child"
             }
             
             response = self.session.post(f"{BACKEND_URL}/beneficiaries", json=beneficiary_data)
