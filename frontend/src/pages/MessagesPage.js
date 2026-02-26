@@ -412,10 +412,10 @@ const MessagesPage = () => {
         <DialogContent className="glass-card border-white/10 sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              Create Milestone Message
+              {editingMessage ? 'Edit Message' : 'Create Milestone Message'}
             </DialogTitle>
             <DialogDescription className="text-[#94a3b8]">
-              Leave a heartfelt message for your loved ones
+              {editingMessage ? 'Update your message content and delivery settings' : 'Leave a heartfelt message for your loved ones'}
             </DialogDescription>
           </DialogHeader>
           
