@@ -35,8 +35,8 @@
 - Stripe Subscriptions with admin controls (beta toggle, pricing, per-user overrides)
 - Family Plan (admin-toggled, FPO + Successor + pricing model)
 - Deployment ready (Dockerfiles, render.yaml, DEPLOY_GUIDE.md)
-- **Legal Pages**: Privacy Policy (/privacy) and Terms of Service (/terms) — public pages with SMS/A2P 10DLC compliant content
-- **SMS Consent Checkbox**: Mandatory opt-in on signup form for Twilio A2P 10DLC compliance
+- Legal Pages: Privacy Policy (/privacy) and Terms of Service (/terms)
+- SMS Consent Checkbox on signup (Twilio A2P 10DLC compliance)
 - Footer legal links on Login and Signup pages
 
 ## API Keys Active
@@ -45,15 +45,15 @@
 ## Recently Completed
 1. Enhanced voice biometric engine (voice_biometrics.py)
 2. Production deployment readiness (Dockerfiles, render.yaml, build-prod.sh, deploy guides)
-3. Full code cleanup: 0 Python lint errors, 0 JS lint errors
-4. Beneficiary photo uploads (end-to-end)
-5. IAC overhaul (benefactor CRUD + beneficiary checklist view)
-6. Safari pulsating fix, Outlook OTP email fix
-7. **Legal Pages & SMS Consent for Twilio A2P 10DLC** (Feb 2026)
-   - Privacy Policy page with dedicated SMS/Text Messaging section
-   - Terms of Service page with SMS Communications Consent section
-   - SMS consent checkbox on registration form (mandatory)
-   - Footer links to legal pages on Login and Signup pages
+3. Beneficiary photo uploads (end-to-end)
+4. IAC overhaul (benefactor CRUD + beneficiary checklist view)
+5. Safari pulsating fix, Outlook OTP email fix
+6. Legal Pages & SMS Consent for Twilio A2P 10DLC (Feb 2026)
+7. **Full codebase audit & cleanup (Feb 2026)**:
+   - Fixed 16 React Hook useEffect dependency warnings across 16 files
+   - Fixed 31 Python lint errors in test files (f-strings, unused vars, == True comparisons)
+   - Frontend: webpack compiled successfully (0 warnings)
+   - Backend: All Python lint checks passed (0 errors)
 
 ## Upcoming
 1. P0: Estate Guardian AI - "AI Suggest from Vault" (xAI/Grok reads SDV docs to suggest IAC items)
