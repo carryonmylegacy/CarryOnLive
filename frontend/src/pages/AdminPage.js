@@ -1054,3 +1054,5 @@ const SubscriptionsAdmin = ({ getAuthHeaders, users }) => {
     </div>
   );
 };
+
+export default AdminPage;
