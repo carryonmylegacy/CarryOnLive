@@ -878,6 +878,175 @@ const TrusteePage = () => {
           );
         })}
       </div>
+      
+      {/* Edit Task Modal */}
+      <Dialog open={showEditModal} onOpenChange={(open) => {
+        setShowEditModal(open);
+        if (!open) setEditTask(null);
+      }}>
+        <DialogContent className="glass-card border-white/10 sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-[var(--t)] text-xl flex items-center gap-2">
+              <Edit2 className="w-5 h-5 text-[var(--bl3)]" />
+              Edit DTS Request
+            </DialogTitle>
+            <DialogDescription className="text-[var(--t4)]">
+              Editing will reset the task to "Submitted" status and clear any existing quote. The DTS team will provide a new quote.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editTask && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label className="text-[var(--t4)]">Task Title</Label>
+                <Input
+                  className="input-field"
+                  value={editTask.title}
+                  onChange={(e) => setEditTask(p => ({ ...p, title: e.target.value }))}
+                  placeholder="Task title"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-[var(--t4)]">Task Type</Label>
+                <select
+                  className="input-field w-full rounded-lg p-3 bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm"
+                  value={editTask.type}
+                  onChange={(e) => setEditTask(p => ({ ...p, type: e.target.value }))}
+                >
+                  {Object.entries(typeConfig).map(([key, cfg]) => (
+                    <option key={key} value={key}>{cfg.label}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-[var(--t4)]">Instructions</Label>
+                <textarea
+                  className="input-field w-full rounded-lg p-3 min-h-[120px] bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm"
+                  value={editTask.desc}
+                  onChange={(e) => setEditTask(p => ({ ...p, desc: e.target.value }))}
+                  placeholder="Detailed instructions for the DTS team"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-[var(--t4)]">Confidentiality Level</Label>
+                <select
+                  className="input-field w-full rounded-lg p-3 bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm"
+                  value={editTask.confidential}
+                  onChange={(e) => setEditTask(p => ({ ...p, confidential: e.target.value }))}
+                >
+                  {Object.entries(confConfig).map(([key, cfg]) => (
+                    <option key={key} value={key}>{cfg.label}</option>
+                  ))}
+                </select>
+              </div>
+              
+              {(editTask.confidential === 'partial' || editTask.confidential === 'timed') && (
+                <div className="space-y-2">
+                  <Label className="text-[var(--t4)]">Disclose To</Label>
+                  <Input
+                    className="input-field"
+                    value={editTask.discloseTo}
+                    onChange={(e) => setEditTask(p => ({ ...p, discloseTo: e.target.value }))}
+                    placeholder="Names, separated by commas"
+                  />
+                </div>
+              )}
+              
+              {editTask.confidential === 'timed' && (
+                <div className="space-y-2">
+                  <Label className="text-[var(--t4)]">Release Timing</Label>
+                  <select
+                    className="input-field w-full rounded-lg p-3 bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm"
+                    value={editTask.timedRelease}
+                    onChange={(e) => setEditTask(p => ({ ...p, timedRelease: e.target.value }))}
+                  >
+                    <option value="">Select timing...</option>
+                    {['6 months post-transition', '1 year post-transition', '2 years post-transition', '5 years post-transition', '10 years post-transition'].map(o => (
+                      <option key={o} value={o}>{o}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              
+              <div className="rounded-xl p-3 bg-[var(--ywbg)] border border-[var(--yw)]/20">
+                <p className="text-sm text-[var(--yw)]">
+                  <AlertTriangle className="w-4 h-4 inline mr-1" />
+                  <strong>Note:</strong> Saving will clear any existing quote and payment method. The DTS team will need to provide a new quote.
+                </p>
+              </div>
+            </div>
+          )}
+          
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowEditModal(false)}
+              className="border-[var(--b)] text-[var(--t3)]"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleEditTask}
+              disabled={saving || !editTask?.title || !editTask?.desc}
+              className="bg-[var(--bl3)] text-white hover:bg-[var(--bl3)]/90"
+              data-testid="save-edit-dts-button"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Edit2 className="w-4 h-4 mr-2" />
+                  Save & Request New Quote
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent className="glass-card border-white/10">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-[var(--t)] flex items-center gap-2">
+              <Trash2 className="w-5 h-5 text-[var(--rd)]" />
+              Delete DTS Request
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[var(--t3)]">
+              Are you sure you want to permanently delete this Designated Trustee Service request? This action cannot be undone. Any saved payment method will also be removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-[var(--b)] text-[var(--t3)]">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => handleDeleteTask(selectedId)}
+              disabled={deleting}
+              className="bg-[var(--rd)] text-white hover:bg-[var(--rd)]/90"
+              data-testid="confirm-delete-dts-button"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Permanently
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
