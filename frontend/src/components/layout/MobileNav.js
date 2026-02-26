@@ -68,7 +68,16 @@ const MobileNav = () => {
     { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Checklist' },
   ];
 
+  const adminBottomNav = [
+    { to: '/admin', icon: Users, label: 'Users' },
+    { to: '/admin/transition', icon: FileKey, label: 'TVT' },
+    { to: '/admin', icon: Home, label: 'Home', isCenter: true },
+    { to: '/admin/dts', icon: Shield, label: 'DTS' },
+    { to: '/admin/dev-switcher', icon: Settings, label: 'Dev' },
+  ];
+
   const getBottomNav = () => {
+    if (user?.role === 'admin') return adminBottomNav;
     if (user?.role === 'beneficiary') return beneficiaryBottomNav;
     return benefactorBottomNav;
   };
