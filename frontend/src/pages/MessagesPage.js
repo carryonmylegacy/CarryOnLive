@@ -534,10 +534,12 @@ const MessagesPage = () => {
                         onCheckedChange={() => toggleRecipient(ben.user_id || ben.id)}
                       />
                       <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold"
-                        style={{ backgroundColor: ben.avatar_color + '30', color: ben.avatar_color }}
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold overflow-hidden"
+                        style={{ backgroundColor: ben.photo_url ? 'transparent' : ben.avatar_color + '30', color: ben.avatar_color }}
                       >
-                        {ben.initials}
+                        {ben.photo_url ? (
+                          <img src={ben.photo_url} alt={ben.name} className="w-full h-full object-cover" />
+                        ) : ben.initials}
                       </div>
                       <div>
                         <p className="text-white text-sm">{ben.name}</p>
