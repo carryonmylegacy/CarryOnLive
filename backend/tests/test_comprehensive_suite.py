@@ -872,11 +872,20 @@ class TestP2DTS:
         print(f"  DTS tasks: {len(d)}")
 
     def test_02_list_all_tasks(self):
-        r = requests.get(
-            f"{BASE_URL}/api/dts/tasks/all", headers=auth_header()
-        )
-        assert r.status_code == 200
-        print("  All DTS tasks retrieved")
+        # Admin-only endpoint
+        if S.admin_token:
+            r = requests.get(
+                f"{BASE_URL}/api/dts/tasks/all",
+                headers=auth_header(S.admin_token),
+            )
+            assert r.status_code == 200
+            print("  All DTS tasks retrieved (admin)")
+        else:
+            r = requests.get(
+                f"{BASE_URL}/api/dts/tasks/all", headers=auth_header()
+            )
+            assert r.status_code == 403
+            print("  DTS all tasks: admin-only (403)")
 
 
 # =====================================================================
@@ -886,13 +895,22 @@ class TestP2Transition:
     """P2: Transition management."""
 
     def test_01_certificates(self):
-        r = requests.get(
-            f"{BASE_URL}/api/transition/certificates", headers=auth_header()
-        )
-        assert r.status_code == 200
-        d = r.json()
-        assert isinstance(d, list)
-        print(f"  Certificates: {len(d)}")
+        # Admin-only endpoint
+        if S.admin_token:
+            r = requests.get(
+                f"{BASE_URL}/api/transition/certificates",
+                headers=auth_header(S.admin_token),
+            )
+            assert r.status_code == 200
+            d = r.json()
+            assert isinstance(d, list)
+            print(f"  Certificates: {len(d)} (admin)")
+        else:
+            r = requests.get(
+                f"{BASE_URL}/api/transition/certificates", headers=auth_header()
+            )
+            assert r.status_code == 403
+            print("  Certificates: admin-only (403)")
 
     def test_02_status(self):
         r = requests.get(
