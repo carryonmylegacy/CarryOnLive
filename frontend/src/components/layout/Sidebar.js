@@ -18,7 +18,8 @@ import {
   FileKey,
   Home,
   Headphones,
-  ShieldCheck
+  ShieldCheck,
+  KeyRound
 } from 'lucide-react';
 import { Switch } from '../ui/switch';
 
@@ -73,6 +74,7 @@ const Sidebar = () => {
         { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
         { to: '/trustee', icon: Shield, label: 'Designated Trustee Services' },
         { to: '/guardian', icon: Sparkles, label: 'Estate Guardian' },
+        { to: '/digital-wallet', icon: KeyRound, label: 'Digital Wallet Vault' },
       ]
     },
     {
