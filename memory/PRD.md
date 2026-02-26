@@ -16,12 +16,13 @@ Build a full-stack web app called CarryOn™ — a secure estate planning and le
 - Dev Switcher Configuration
 
 ### Benefactor Portal
-- Document Vault (AES-256 encrypted), Milestone Messages
-- Beneficiary Management with demographics
-- Estate Guardian AI (now powered by Grok/xAI)
-- Immediate Action Checklist, DTS with Stripe
-- Two-Level Section Security (Password + Voice Passphrase)
-- Estate Readiness Score, Edit/Delete functionality
+- Secure Document Vault (SDV) — AES-256 encrypted
+- Milestone Messages (MM) — text/video with editable triggers
+- Beneficiary Management (BM) — enhanced demographics
+- Estate Guardian AI (EGA) — now powered by Grok/xAI
+- Immediate Action Checklist (IAC)
+- Designated Trustee Services (DTS) — with Stripe
+- Estate Readiness Score
 - Customer Support Chat, Push Notifications (PWA)
 
 ### Beneficiary Portal
@@ -29,27 +30,32 @@ Build a full-stack web app called CarryOn™ — a secure estate planning and le
 - Pre/Post-Transition views, Death Certificate Upload
 - Sealed Vault, Messages, Checklist access
 
+### Triple Lock Section Security (NEW - Feb 2026)
+Three independently toggleable security layers per section, configurable from Settings:
+- **Layer 1: Password** — section-specific password
+- **Layer 2: Voice Biometric** — MFCC-based voiceprint verification (both words + voice identity)
+- **Layer 3: Security Question** — preset list OR custom question
+Three lock behavior modes per section:
+- Auto-lock on page leave
+- Auto-lock on logout
+- Manual lock only (on command)
+Protected sections: SDV, MM, BM, IAC, DTS, EGA
+Backend: MongoDB-backed security settings, voice enrollment with ffmpeg/librosa, bcrypt-hashed credentials
+Frontend: SecuritySettings component in Settings page, SectionLockBanner on all protected pages, UnlockModal with multi-step verification
+
 ### Deployment Ready (Feb 2026)
-- Backend + Frontend Dockerfiles
-- docker-compose.yml, render.yaml (one-click Render deploy)
-- nginx.conf for production frontend serving
-- Production build script (strips Emergent-specific scripts)
-- Health check endpoint (/api/health)
-- VAPID key inline env var support
-- **DEPLOY_GUIDE.md** — Plain English guide for non-developers
-- **DEPLOYMENT.md** — Technical deployment reference
+- Backend + Frontend Dockerfiles, docker-compose.yml, render.yaml
+- DEPLOY_GUIDE.md (plain English for non-developers)
+- Health check endpoint, VAPID inline env var support, production build script
 
 ### AI Migration (Feb 2026)
-- Switched Estate Guardian AI from OpenAI GPT-5.2 (via Emergent) to **xAI Grok**
-- Uses OpenAI-compatible SDK with xAI base URL
+- Estate Guardian AI switched from OpenAI GPT-5.2 to xAI Grok
 - Voice passphrase (Whisper) still uses Emergent LLM Key
 
 ## 3rd Party Integrations
 - **xAI Grok** (Estate Guardian AI) — requires XAI_API_KEY
-- **OpenAI Whisper** (voice passphrase) — via Emergent LLM Key
-- **Resend** (email OTP/invitations)
-- **Twilio** (SMS OTP)
-- **Stripe** (Setup Intents for DTS payments)
+- **OpenAI Whisper** (voice STT) — via Emergent LLM Key
+- **Resend** (email), **Twilio** (SMS), **Stripe** (payments)
 
 ## Test Accounts
 - **Admin**: `founder@carryon.us` / `CarryOntheWisdom!`
@@ -64,9 +70,3 @@ Build a full-stack web app called CarryOn™ — a secure estate planning and le
 3. PDF Export
 4. Frontend component decomposition
 5. Frontend lint warnings cleanup
-
-## Known Configuration Notes
-- **Resend Email**: API key domain must match SENDER_EMAIL domain
-- **SMS OTP**: Requires Twilio A2P 10DLC registration
-- **ENCRYPTION_KEY**: Must be set in production
-- **XAI_API_KEY**: Required for Estate Guardian AI
