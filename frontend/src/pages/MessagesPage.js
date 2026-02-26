@@ -494,7 +494,7 @@ const MessagesPage = () => {
                     <div className="space-y-4">
                       <video
                         ref={videoRef}
-                        className="w-full rounded-lg max-h-[200px] bg-[#151D32]"
+                        className="w-full rounded-lg max-h-[200px] bg-[#0F1629]"
                         muted
                       />
                       <div className="flex justify-center gap-3">

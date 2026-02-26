@@ -147,7 +147,7 @@ const OnboardingPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" 
-        style={{ background: 'linear-gradient(145deg, #151D32, #1A2440 40%, #151D32)' }}>
+        style={{ background: 'linear-gradient(145deg, #0F1629, #141C33 40%, #0F1629)' }}>
         <Loader2 className="w-8 h-8 text-[#d4af37] animate-spin" />
       </div>
     );
@@ -155,7 +155,7 @@ const OnboardingPage = () => {
 
   return (
     <div className="min-h-screen p-4 py-8"
-      style={{ background: 'linear-gradient(145deg, #151D32, #1A2440 40%, #151D32)' }}>
+      style={{ background: 'linear-gradient(145deg, #0F1629, #141C33 40%, #0F1629)' }}>
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
@@ -323,7 +323,7 @@ const OnboardingPage = () => {
                 <SelectTrigger className="input-field">
                   <SelectValue placeholder="Select relationship" />
                 </SelectTrigger>
-                <SelectContent className="bg-[#1A2440] border-white/10">
+                <SelectContent className="bg-[#141C33] border-white/10">
                   {relations.map((rel) => (
                     <SelectItem key={rel} value={rel}>{rel}</SelectItem>
                   ))}
@@ -366,7 +366,7 @@ const OnboardingPage = () => {
                       <SelectTrigger className="input-field">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#1A2440] border-white/10">
+                      <SelectContent className="bg-[#141C33] border-white/10">
                         <SelectItem value="male">Male</SelectItem>
                         <SelectItem value="female">Female</SelectItem>
                         <SelectItem value="other">Other</SelectItem>
@@ -386,7 +386,7 @@ const OnboardingPage = () => {
                     <SelectTrigger className="input-field">
                       <SelectValue placeholder="State" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#1A2440] border-white/10 max-h-48">
+                    <SelectContent className="bg-[#141C33] border-white/10 max-h-48">
                       {usStates.map((st) => (
                         <SelectItem key={st} value={st}>{st}</SelectItem>
                       ))}

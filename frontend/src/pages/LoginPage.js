@@ -87,7 +87,7 @@ const LoginPage = () => {
     <div 
       className="min-h-screen flex items-center justify-center p-4"
       style={{
-        background: 'linear-gradient(145deg, #151D32, #1A2440 40%, #151D32)'
+        background: 'linear-gradient(145deg, #0F1629, #141C33 40%, #0F1629)'
       }}
     >
       {/* Background glow */}

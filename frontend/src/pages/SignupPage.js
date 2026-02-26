@@ -132,7 +132,7 @@ const SignupPage = () => {
     <div 
       className="min-h-screen flex items-center justify-center p-4 py-12"
       style={{
-        background: 'linear-gradient(145deg, #151D32, #1A2440 40%, #151D32)'
+        background: 'linear-gradient(145deg, #0F1629, #141C33 40%, #0F1629)'
       }}
     >
       <div 
@@ -229,7 +229,7 @@ const SignupPage = () => {
                   <SelectTrigger className="input-field" data-testid="signup-suffix-select">
                     <SelectValue placeholder="None" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#1A2440] border-white/[0.07]">
+                  <SelectContent className="bg-[#141C33] border-white/[0.07]">
                     {suffixOptions.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                     ))}
@@ -245,7 +245,7 @@ const SignupPage = () => {
                 <SelectTrigger className="input-field" data-testid="signup-gender-select">
                   <SelectValue placeholder="Select..." />
                 </SelectTrigger>
-                <SelectContent className="bg-[#1A2440] border-white/[0.07]">
+                <SelectContent className="bg-[#141C33] border-white/[0.07]">
                   {genderOptions.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                   ))}
@@ -322,7 +322,7 @@ const SignupPage = () => {
                 <SelectTrigger className="input-field" data-testid="signup-role-select">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-[#1A2440] border-white/[0.07]">
+                <SelectContent className="bg-[#141C33] border-white/[0.07]">
                   <SelectItem value="benefactor">Benefactor (Estate Owner)</SelectItem>
                   <SelectItem value="beneficiary">Beneficiary (Family Member)</SelectItem>
                 </SelectContent>
