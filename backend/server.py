@@ -1235,19 +1235,43 @@ async def create_beneficiary(data: BeneficiaryCreate, current_user: dict = Depen
     if current_user["role"] != "benefactor":
         raise HTTPException(status_code=403, detail="Only benefactors can add beneficiaries")
     
+    # Build full name from parts
+    name_parts = [data.first_name]
+    if data.middle_name:
+        name_parts.append(data.middle_name)
+    name_parts.append(data.last_name)
+    if data.suffix:
+        name_parts.append(data.suffix)
+    full_name = " ".join(name_parts)
+    
     # Generate initials
-    initials = ''.join([n[0].upper() for n in data.name.split()[:2]])
+    initials = (data.first_name[0] + data.last_name[0]).upper()
+    
+    # Generate invitation token
+    invitation_token = str(uuid.uuid4())
     
     beneficiary = Beneficiary(
         estate_id=data.estate_id,
-        name=data.name,
+        first_name=data.first_name,
+        middle_name=data.middle_name,
+        last_name=data.last_name,
+        suffix=data.suffix,
+        name=full_name,
         relation=data.relation,
         email=data.email,
         phone=data.phone,
         date_of_birth=data.date_of_birth,
         gender=data.gender,
+        address_street=data.address_street,
+        address_city=data.address_city,
+        address_state=data.address_state,
+        address_zip=data.address_zip,
+        ssn_last_four=data.ssn_last_four,
+        notes=data.notes,
         avatar_color=data.avatar_color,
-        initials=initials
+        initials=initials,
+        invitation_token=invitation_token,
+        invitation_status="pending"
     )
     await db.beneficiaries.insert_one(beneficiary.model_dump())
     
@@ -1258,6 +1282,13 @@ async def create_beneficiary(data: BeneficiaryCreate, current_user: dict = Depen
             {"id": data.estate_id},
             {"$addToSet": {"beneficiaries": existing_user["id"]}}
         )
+        # Mark as accepted if they already have an account
+        await db.beneficiaries.update_one(
+            {"id": beneficiary.id},
+            {"$set": {"user_id": existing_user["id"], "invitation_status": "accepted"}}
+        )
+        beneficiary.user_id = existing_user["id"]
+        beneficiary.invitation_status = "accepted"
     
     # Log activity
     await log_activity(
@@ -1265,8 +1296,8 @@ async def create_beneficiary(data: BeneficiaryCreate, current_user: dict = Depen
         user_id=current_user["id"],
         user_name=current_user["name"],
         action="beneficiary_added",
-        description=f"Added beneficiary: {data.name} ({data.relation})",
-        metadata={"beneficiary_name": data.name, "relation": data.relation}
+        description=f"Added beneficiary: {full_name} ({data.relation})",
+        metadata={"beneficiary_name": full_name, "relation": data.relation}
     )
     
     # Recalculate estate readiness (beneficiaries affect message score)
