@@ -8,11 +8,12 @@ Replaces the basic MFCC-only approach with a ~130-dimension voiceprint
 combining spectral, temporal, pitch, and energy features.
 """
 
+import difflib
 import io
 import logging
-import difflib
-import numpy as np
+
 import librosa
+import numpy as np
 from scipy.spatial.distance import cosine as cosine_distance
 from scipy.stats import pearsonr
 

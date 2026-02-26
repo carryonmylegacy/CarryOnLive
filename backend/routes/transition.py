@@ -1,12 +1,13 @@
 """CarryOn™ Backend — Estate Transition Routes"""
 
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
-from datetime import datetime, timezone
-from config import db
-from utils import get_current_user
 import base64
+from datetime import datetime, timezone
 
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+
+from config import db
 from models import DeathCertificate, MilestoneReport, MilestoneReportCreate
+from utils import get_current_user
 
 router = APIRouter()
 

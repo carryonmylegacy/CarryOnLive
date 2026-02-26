@@ -5,10 +5,11 @@ Test P0/P1/P2 Features:
 - P2: Web Push Notifications (VAPID keys)
 """
 
-import pytest
-import requests
 import os
 import uuid
+
+import pytest
+import requests
 
 # Use the public URL from environment
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")

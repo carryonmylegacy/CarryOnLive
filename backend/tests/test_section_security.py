@@ -9,9 +9,10 @@ Tests the security settings, verification, and management endpoints for sections
 - EGA (Estate Guardian AI)
 """
 
+import os
+
 import pytest
 import requests
-import os
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 

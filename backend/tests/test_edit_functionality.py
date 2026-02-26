@@ -3,10 +3,11 @@ Test Edit Functionality for Beneficiaries and Documents
 Tests PUT /api/beneficiaries/{id} and PUT /api/documents/{id} endpoints
 """
 
-import pytest
-import requests
 import os
 import time
+
+import pytest
+import requests
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 

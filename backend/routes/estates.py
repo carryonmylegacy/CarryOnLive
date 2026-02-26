@@ -1,11 +1,11 @@
 """CarryOn™ Backend — Estate Routes"""
 
-from fastapi import APIRouter, HTTPException, Depends
-from config import db
-from utils import get_current_user, log_activity
+from fastapi import APIRouter, Depends, HTTPException
 
+from config import db
 from models import Estate, EstateCreate, EstateUpdate
 from services.readiness import calculate_estate_readiness, ensure_default_checklist
+from utils import get_current_user, log_activity
 
 router = APIRouter()
 

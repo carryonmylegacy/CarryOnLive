@@ -1,12 +1,13 @@
 """CarryOn™ Backend — Admin Routes"""
 
-from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
 from datetime import datetime, timezone
-from config import db
-from utils import get_current_user
 from uuid import uuid4
 
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+
+from config import db
+from utils import get_current_user
 
 router = APIRouter()
 

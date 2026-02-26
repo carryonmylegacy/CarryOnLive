@@ -1,38 +1,38 @@
 """CarryOn™ Backend Utilities — encryption, auth, email, SMS helpers"""
 
+import asyncio
 import base64
 import json as json_module
 import os
 import random
-import asyncio
+from datetime import datetime, timedelta, timezone
 
 import bcrypt
 import jwt
 import resend
-from fastapi import HTTPException, Depends
-from fastapi.security import HTTPAuthorizationCredentials
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from datetime import datetime, timezone, timedelta
-from pywebpush import webpush, WebPushException
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials
 from py_vapid import Vapid
+from pywebpush import WebPushException, webpush
 
 from config import (
-    db,
-    logger,
-    security,
-    JWT_SECRET,
-    JWT_ALGORITHM,
-    JWT_EXPIRATION_HOURS,
     ENCRYPTION_KEY,
     ENCRYPTION_SALT,
+    JWT_ALGORITHM,
+    JWT_EXPIRATION_HOURS,
+    JWT_SECRET,
     RESEND_API_KEY,
     SENDER_EMAIL,
     TWILIO_PHONE_NUMBER,
-    VAPID_PRIVATE_KEY_PATH,
-    VAPID_PRIVATE_KEY_INLINE,
     VAPID_CLAIMS_EMAIL,
+    VAPID_PRIVATE_KEY_INLINE,
+    VAPID_PRIVATE_KEY_PATH,
+    db,
+    logger,
+    security,
 )
 
 # ===================== ENCRYPTION =====================

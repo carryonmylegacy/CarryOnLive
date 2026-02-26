@@ -1,14 +1,15 @@
 """CarryOn™ Backend Configuration — shared state, DB, external services"""
 
-from dotenv import load_dotenv
-from motor.motor_asyncio import AsyncIOMotorClient
-from fastapi.security import HTTPBearer
-from openai import OpenAI as XAIClient
-from pathlib import Path
-import os
 import logging
+import os
+from pathlib import Path
+
 import resend
 import stripe
+from dotenv import load_dotenv
+from fastapi.security import HTTPBearer
+from motor.motor_asyncio import AsyncIOMotorClient
+from openai import OpenAI as XAIClient
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")

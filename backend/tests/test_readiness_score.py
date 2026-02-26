@@ -11,10 +11,11 @@ Features tested:
 - New estates get 30 default checklist items via ensure_default_checklist
 """
 
-import pytest
-import requests
 import os
 import uuid
+
+import pytest
+import requests
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 

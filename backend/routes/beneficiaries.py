@@ -1,24 +1,26 @@
 """CarryOn™ Backend — Beneficiary Routes"""
 
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
-from pydantic import BaseModel
-from typing import Optional
+import asyncio
+import base64
+import os
+import uuid
 from datetime import datetime, timezone
-from config import db, logger, RESEND_API_KEY, SENDER_EMAIL
+from typing import Optional
+
+import resend
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from pydantic import BaseModel
+
+from config import RESEND_API_KEY, SENDER_EMAIL, db, logger
+from models import Beneficiary, BeneficiaryCreate
 from utils import (
+    create_token,
     get_current_user,
     hash_password,
-    create_token,
     log_activity,
     send_push_notification,
     update_estate_readiness,
 )
-from models import Beneficiary, BeneficiaryCreate
-import uuid
-import os
-import asyncio
-import base64
-import resend
 
 router = APIRouter()
 
@@ -213,8 +215,9 @@ async def upload_beneficiary_photo(
         raise HTTPException(status_code=400, detail="File must be an image")
 
     try:
-        from PIL import Image
         import io
+
+        from PIL import Image
 
         img = Image.open(io.BytesIO(content))
 

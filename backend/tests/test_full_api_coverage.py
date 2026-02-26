@@ -3,10 +3,11 @@ CarryOn™ Full API Coverage Tests
 Tests all major backend endpoints including auth, estates, beneficiaries, 
 checklist, documents, messages, admin, digest, push, guardian, subscriptions
 """
-import pytest
-import requests
 import os
 import uuid
+
+import pytest
+import requests
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 

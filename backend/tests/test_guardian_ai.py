@@ -9,10 +9,11 @@ Tests the AI Guardian capabilities:
 - Estate state field updates
 """
 
-import pytest
-import requests
 import os
 import time
+
+import pytest
+import requests
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 

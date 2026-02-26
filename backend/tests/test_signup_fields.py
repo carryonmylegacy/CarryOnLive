@@ -3,10 +3,11 @@ Test suite for CarryOn™ Signup Form - New Name Fields Feature
 Tests: First Name, Middle Name, Last Name, Suffix, Gender fields
 """
 
-import pytest
-import requests
 import os
 import time
+
+import pytest
+import requests
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 
