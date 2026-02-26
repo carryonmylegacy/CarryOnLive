@@ -95,7 +95,7 @@ const DevSwitcher = () => {
   const hasConfiguredAccounts = config?.benefactor?.email || config?.beneficiary?.email;
 
   return (
-    <div style={{ position: 'fixed', bottom: 16, right: 180, zIndex: 99999 }} data-testid="dev-switcher">
+    <div style={{ position: 'fixed', bottom: 70, right: 16, zIndex: 99999 }} data-testid="dev-switcher">
       {/* Toggle button */}
       <div
         onClick={() => setOpen(!open)}
