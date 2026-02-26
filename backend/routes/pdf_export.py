@@ -18,7 +18,6 @@ router = APIRouter()
 from fpdf import FPDF
 # ===================== PDF ESTATE PLAN EXPORT =====================
 
-from fpdf import FPDF
 
 @router.get("/estate/{estate_id}/export-pdf")
 async def export_estate_pdf(estate_id: str, current_user: dict = Depends(get_current_user)):
@@ -225,7 +224,7 @@ async def export_estate_pdf(estate_id: str, current_user: dict = Depends(get_cur
     pdf.set_text_color(120, 120, 120)
     pdf.cell(0, 5, "This document is for informational purposes only and does not constitute legal advice.", new_x="LMARGIN", new_y="NEXT", align="C")
     pdf.cell(0, 5, "Consult with a qualified attorney for personalized estate planning guidance.", new_x="LMARGIN", new_y="NEXT", align="C")
-    pdf.cell(0, 5, f"CarryOn - Every American Family. Ready. - carryon.us", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.cell(0, 5, "CarryOn - Every American Family. Ready. - carryon.us", new_x="LMARGIN", new_y="NEXT", align="C")
 
     # Return PDF
     pdf_bytes = pdf.output()

@@ -116,7 +116,8 @@ async def log_activity(estate_id: str, user_id: str, user_name: str, action: str
 from pywebpush import webpush, WebPushException
 from py_vapid import Vapid
 from config import VAPID_PRIVATE_KEY_PATH, VAPID_PRIVATE_KEY_INLINE, VAPID_CLAIMS_EMAIL
-import os, json as json_module
+import os
+import json as json_module
 
 vapid = None
 vapid_private_key_for_webpush = None

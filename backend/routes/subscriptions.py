@@ -112,7 +112,6 @@ async def save_dts_payment_method(
 
 # ===================== STRIPE SUBSCRIPTIONS =====================
 
-from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
 
 DEFAULT_PLANS = [
     {"id": "premium", "name": "Premium", "price": 8.99, "launch_price": 8.99, "final_price": 9.99, "ben_price": 2.99, "adjustable": True},

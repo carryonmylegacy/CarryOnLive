@@ -71,7 +71,7 @@ async def send_support_message(data: SupportMessageCreate, current_user: dict = 
     else:
         # User sent message -> notify admins
         asyncio.create_task(send_push_to_all_admins(
-            f"New Support Message",
+            "New Support Message",
             f"{current_user.get('name', 'User')}: {data.content[:80]}...",
             "/admin/support",
             "admin-support"
