@@ -1403,7 +1403,7 @@ async def send_beneficiary_invitation(beneficiary_id: str, current_user: dict = 
             </div>
             """
             
-            resend.emails.send({
+            resend.Emails.send({
                 "from": SENDER_EMAIL,
                 "to": beneficiary["email"],
                 "subject": f"{benefactor['name']} has added you to their CarryOn™ Estate",
