@@ -7,6 +7,7 @@ from datetime import datetime, timezone, timedelta
 from config import db, logger
 from utils import get_current_user, encrypt_data, decrypt_data, hash_password, verify_password, create_token, generate_otp, generate_backup_code, send_otp_email, send_otp_sms, log_activity, send_push_notification, send_push_to_all_admins
 import uuid
+from uuid import uuid4
 import os
 import asyncio
 import base64
