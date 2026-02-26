@@ -1,22 +1,16 @@
 """CarryOn™ Backend — Stripe Subscriptions"""
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status, Response, Form
-from fastapi.security import HTTPAuthorizationCredentials
-from pydantic import BaseModel, Field, EmailStr
+from fastapi import APIRouter, HTTPException, Depends, Form
+from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone, timedelta
 from config import db, logger
 from utils import get_current_user
-import uuid
 import os
-import asyncio
-import base64
-import json as json_module
-import random
 
 router = APIRouter()
 
 import stripe
-from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
+from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest
 # ===================== STRIPE PAYMENT METHOD =====================
 
 # Initialize Stripe
@@ -327,7 +321,6 @@ async def get_checkout_status(session_id: str, current_user: dict = Depends(get_
 @router.post("/webhook/stripe")
 async def stripe_webhook(request: Any):
     """Handle Stripe webhooks"""
-    from starlette.requests import Request
     body = await request.body()
     sig = request.headers.get("Stripe-Signature", "")
     

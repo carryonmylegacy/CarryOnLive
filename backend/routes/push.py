@@ -1,22 +1,15 @@
 """CarryOn™ Backend — Push Notifications"""
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status, Response, Form
-from fastapi.security import HTTPAuthorizationCredentials
-from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional, Dict, Any
-from datetime import datetime, timezone, timedelta
+from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
+from typing import Optional, Dict
+from datetime import datetime, timezone
 from config import db, logger
 from utils import get_current_user
-import uuid
-import os
-import asyncio
 import base64
-import json as json_module
-import random
 
 router = APIRouter()
 
 from utils import vapid
-from config import VAPID_CLAIMS_EMAIL
 
 class PushSubscription(BaseModel):
     endpoint: str

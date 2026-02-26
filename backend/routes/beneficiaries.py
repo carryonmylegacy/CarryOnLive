@@ -1,17 +1,14 @@
 """CarryOn™ Backend — Beneficiary Routes"""
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status, Response, Form
-from fastapi.security import HTTPAuthorizationCredentials
-from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional, Dict, Any
-from datetime import datetime, timezone, timedelta
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
+from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime, timezone
 from config import db, logger
 from utils import get_current_user, hash_password, create_token, log_activity, send_push_notification, update_estate_readiness
 import uuid
 import os
 import asyncio
 import base64
-import json as json_module
-import random
 
 from models import Beneficiary, BeneficiaryCreate
 

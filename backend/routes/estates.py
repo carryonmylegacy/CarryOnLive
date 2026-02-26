@@ -1,19 +1,9 @@
 """CarryOn™ Backend — Estate Routes"""
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status, Response, Form
-from fastapi.security import HTTPAuthorizationCredentials
-from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional, Dict, Any
-from datetime import datetime, timezone, timedelta
-from config import db, logger
+from fastapi import APIRouter, HTTPException, Depends
+from config import db
 from utils import get_current_user, log_activity
-import uuid
-import os
-import asyncio
-import base64
-import json as json_module
-import random
 
-from models import Estate, EstateCreate, EstateUpdate, ActivityLog
+from models import Estate, EstateCreate, EstateUpdate
 from services.readiness import calculate_estate_readiness, ensure_default_checklist
 
 router = APIRouter()
