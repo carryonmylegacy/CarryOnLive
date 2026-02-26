@@ -54,6 +54,7 @@ const AdminPage = () => {
   const [newMessage, setNewMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchAll(); }, []);
 
   // Tab is computed directly from pathname via pathTab
@@ -108,6 +109,7 @@ const AdminPage = () => {
   };
 
   // Fetch conversations when support tab is selected
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (tab === 'support') {
       fetchConversations();
@@ -117,6 +119,7 @@ const AdminPage = () => {
   }, [tab]);
 
   // Fetch messages when conversation is selected
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (selectedConv) {
       fetchConversationMessages(selectedConv.conversation_id);
