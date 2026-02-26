@@ -45,7 +45,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0F1629] flex items-center justify-center">
+      <div className="min-h-screen bg-[#151D32] flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-[#d4af37] border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -74,7 +74,7 @@ const PublicRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0F1629] flex items-center justify-center">
+      <div className="min-h-screen bg-[#151D32] flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-[#d4af37] border-t-transparent rounded-full animate-spin" />
       </div>
     );
