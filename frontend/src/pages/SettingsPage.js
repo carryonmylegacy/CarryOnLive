@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import axios from 'axios';
 import {
   Moon,
   Sun,
@@ -12,7 +13,9 @@ import {
   ChevronRight,
   Shield,
   CreditCard,
-  Check
+  Check,
+  Mail,
+  Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
