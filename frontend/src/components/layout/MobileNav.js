@@ -16,7 +16,8 @@ import {
   LogOut,
   Home,
   Moon,
-  Sun
+  Sun,
+  FileKey
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 
