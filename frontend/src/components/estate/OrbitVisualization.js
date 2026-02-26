@@ -52,7 +52,7 @@ const OrbitVisualization = ({ estates, userInitials, onEstateClick, benefactors 
   const velRef = useRef(0.25);
   const dragRef = useRef(false);
   const lastARef = useRef(0);
-  const lastTRef.current = useRef(0);
+  const lastTRef = useRef(0);
   const clickGuard = useRef(false);
   const [rot, setRot] = useState(0);
 
