@@ -1026,7 +1026,7 @@ const SubscriptionsAdmin = ({ getAuthHeaders, users }) => {
             </div>
           </div>
           {/* Stats */}
-          <div className="flex gap-4 mt-4 text-sm">
+          <div className="flex gap-3 mt-4 text-sm flex-wrap">
             <div className="px-3 py-1.5 rounded-lg bg-[var(--s)]">
               <span className="text-[var(--t4)]">Active Subs: </span>
               <span className="font-bold text-[var(--t)]">{settings?.stats?.active_subscriptions || 0}</span>
@@ -1152,7 +1152,7 @@ const SubscriptionsAdmin = ({ getAuthHeaders, users }) => {
                     </div>
                   </div>
                   {editingUser === u.id ? (
-                    <div className="mt-3 flex items-center gap-4 pt-3" style={{ borderTop: '1px solid var(--b)' }}>
+                    <div className="mt-3 flex items-center gap-3 pt-3 flex-wrap" style={{ borderTop: '1px solid var(--b)' }}>
                       <div className="flex items-center gap-2">
                         <Label className="text-xs text-[var(--t4)]">Free Access</Label>
                         <Switch
