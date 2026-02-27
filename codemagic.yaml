@@ -1,4 +1,35 @@
 workflows:
+  # Live update — pushes web changes instantly to all users' phones
+  live-update:
+    name: CarryOn Live Update
+    max_build_duration: 15
+    instance_type: linux_x2
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+    environment:
+      vars:
+        REACT_APP_BACKEND_URL: https://carryon.us
+        CAPGO_TOKEN: $CAPGO_TOKEN
+      node: 20
+    scripts:
+      - name: Install dependencies
+        script: |
+          cd frontend
+          yarn install --frozen-lockfile
+      - name: Build web app
+        script: |
+          cd frontend
+          yarn build
+      - name: Deploy live update via Capgo
+        script: |
+          cd frontend
+          npx @capgo/cli bundle upload --channel production
+
+  # Full native build — only needed for native feature changes
   ios-build:
     name: CarryOn iOS Build
     max_build_duration: 30
