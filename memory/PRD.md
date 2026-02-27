@@ -1,86 +1,87 @@
-# CarryOn - Product Requirements Document
+# CarryOn™ - Product Requirements Document
 
 ## Original Problem Statement
-AI-powered estate planning platform for American families. Full-stack React + FastAPI + MongoDB application with mobile (Capacitor) and web deployments.
+CarryOn™ is an AI-powered estate planning platform that helps users ("benefactors") organize, secure, and pass on their legacy to designated beneficiaries. The platform includes secure document vaults, milestone messages, beneficiary management, an AI assistant (Estate Guardian), and more.
 
-## Production Infrastructure
+## Core Architecture
+- **Frontend**: React (Vercel - app.carryon.us)
+- **Backend**: FastAPI (Railway)
 - **Database**: MongoDB Atlas
-- **Backend**: FastAPI on Railway
-- **Frontend Web**: React on Vercel (`app.carryon.us`)
-- **Frontend Mobile**: Capacitor via Codemagic -> TestFlight (iOS)
-- **Domain**: `carryon.us` (GoDaddy)
-- **Deploy Hook**: `https://api.vercel.com/v1/integrations/deploy/prj_ZDH4AJkNcf2vricEvD4KATpgRJZb/RXnUhbxeDr`
-- **Stripe**: LIVE keys active (sk_live_ on Railway, pk_live_ on Vercel)
+- **Payments**: Stripe (LIVE keys)
+- **Mobile**: Capacitor/Codemagic (TestFlight)
 
-## Core Features (Implemented)
-- Estate document vault with AI analysis (Estate Guardian)
-- Beneficiary management & invitations
-- Milestone messages (text/voice/video)
-- Immediate Action Checklist (auto-populated by AI)
-- Designated Trustee Services
-- Admin panel with Dev Switcher (admin-only, persists through portal switches)
-- Digital Wallet Vault
-- Photo cropping tool
-- Legal pages (Privacy, Terms)
-- Push notifications (Capacitor)
-- About page with full company content
-- Live Stripe payment processing
+## What's Been Implemented
 
-## 3rd Party Integrations
-- Stripe (payments - LIVE keys active)
-- Resend (email/OTP - currently disabled)
-- Twilio (SMS)
-- xAI/Grok (AI suggestions)
-- OpenAI Whisper (voice transcription)
-- Capgo (live mobile updates)
+### Authentication & User Management
+- Email/password registration with OTP verification
+- Login/logout with JWT tokens
+- Role-based access (admin, benefactor, beneficiary)
+- Date of birth collection on signup (for age-based tier eligibility)
 
-## What's Been Implemented (Feb 27, 2026 Session)
-- [x] Homepage redesign: American flag hero, scroll-reveal animations, layered sections
-- [x] 7 thematic background textures (flag, roots, warmth, circuit, pathway, network, pulse)
-- [x] About page with matching design/animations
-- [x] Login simplified ("Sign In"), Safari autofill flicker fix
-- [x] DEV switcher: admin-only + persists through portal switches
-- [x] Orbit visualization: removed labels/legend, increased spacing, overflow clipped
-- [x] Admin page overflow fix
-- [x] Nav logo enlarged
-- [x] Live Stripe keys wired in (Railway + Vercel)
-- [x] TrusteePage.js hardcoded test key fixed
-- [x] Backend: modernized FastAPI lifespan, archived 10 overlapping test files
+### Estate & Document Management
+- Estate creation and management
+- Secure Document Vault with AES-256 encryption
+- Milestone Messages
+- Beneficiary management with orbit visualization
+- Immediate Action Checklist
 
-## P0 - In Progress (Next Fork)
-- **Subscription/Trial System**:
-  - 30-day free trial for all new users
-  - Email + in-app reminders at 10 and 5 days before expiry
-  - Full-screen paywall after trial expires
-  - Tier selection with monthly/quarterly pricing
-  - Military/First Responder & Hospice verification flow
-  - Admin approval for discounted tiers
-  - **Awaiting user answers on**: tier names/prices, discount structures, reminder type, paywall behavior
+### Subscription & Payment System (NEW - Feb 27, 2026)
+- **30-day free trial** on signup (`trial_ends_at` field)
+- **Post-launch pricing** (6 benefactor tiers):
+  - Premium: $9.99/mo | Q: $8.99 | A: $7.99
+  - Standard: $8.99/mo | Q: $8.09 | A: $7.19
+  - Base: $7.99/mo | Q: $7.19 | A: $6.39
+  - New Adult (18-25): $3.99/mo (auto-detected by DOB)
+  - Military/First Responder: $5.99/mo (requires verification)
+  - Hospice: Free (requires verification)
+- **4 Beneficiary tiers**: Base $4.99, Standard $3.99, Premium $2.99, Hospice $4.99
+- **Family Plan**: FPO pays standard rate, added benefactors $1/mo off, all beneficiaries flat $3.49/mo
+- **Billing cycles**: Monthly, Quarterly (10% off), Annual (20% off)
+- **Paywall modal**: Full-screen overlay when trial expired & no active subscription
+- **Trial banner**: Dashboard countdown with urgency colors
+- **Stripe checkout** integration (LIVE keys)
 
-## P1 - Upcoming Tasks
-- Re-enable OTP/email via Resend domain verification
-- Deploy mobile app fixes (Digital Wallet link, splash screen) via Codemagic
-- Full mobile app QA pass
+### Verification System (NEW - Feb 27, 2026)
+- Document upload for Military/First Responder (Military ID, badge)
+- Document upload for Hospice (enrollment documentation)
+- Admin review/approve/deny verification requests
+- Verified users get access to discounted tiers
 
-## P2 - Future/Backlog
-- Infinity light effect in logo (needs transparent PNG/SVG)
-- App Store / Google Play submission
-- Full device testing on real hardware
-- Capgo live update integration
+### Admin Controls (NEW - Feb 27, 2026)
+- **Beta mode toggle** (global free access for all users)
+- **Per-user discount** (0-100% off any amount)
+- **Per-user free access** toggle
+- **Family plan visibility** toggle
+- **Verification management** tab
+- **Subscription statistics** dashboard
 
-## Backend Architecture (Post-Cleanup)
-```
-/app/backend/
-  server.py          # Entry point, lifespan, router mounting (122 lines)
-  config.py          # All external service configs (81 lines)
-  utils.py           # Encryption, auth, email, SMS, push helpers (313 lines)
-  models.py          # Pydantic models (354 lines)
-  routes/            # 17 route files, well-separated by domain
-  services/          # Business logic (readiness, voice_biometrics)
-  tests/             # 3 active test suites
-  tests/archive/     # 10 archived overlapping test files
-```
+### UI/UX
+- Dark bank-style theme with gold accents
+- Layered scrolling animations on login/about pages
+- Thematic background textures
+- DevSwitcher for admin testing
 
-## Credentials
+## Deployment
+- **Manual Vercel deploy hook** required after GitHub push (webhook is broken)
+- Railway auto-deploys from GitHub
+- Stripe uses LIVE keys on both environments
+
+## Test Accounts
 - **User**: barnetharris@gmail.com / Blh9170873
 - **Admin**: founder@carryon.us / CarryOntheWisdom!
+- **Local Admin**: admin@carryon.com / admin123
+
+## Key API Endpoints
+- `POST /api/auth/register` - User registration with trial
+- `GET /api/subscriptions/plans` - All plans with pricing
+- `GET /api/subscriptions/status` - User subscription/trial status
+- `POST /api/subscriptions/checkout` - Stripe checkout
+- `POST /api/verification/upload` - Tier verification documents
+- `GET /api/admin/verifications` - List all verifications
+- `POST /api/admin/verifications/{id}/review` - Approve/deny
+
+## Upcoming Tasks (Prioritized)
+- P0: Trial reminder emails (10 days, 5 days before expiry)
+- P1: Re-enable OTP email via Resend
+- P2: Animated logo (waiting on user asset)
+- P3: Mobile app deploy via Codemagic
