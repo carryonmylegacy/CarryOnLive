@@ -45,6 +45,7 @@ dump.rdb
 # System files
 .DS_Store
 *.pem
+!frontend/ios/signing_key.pem
 
 # Python
 __pycache__/
