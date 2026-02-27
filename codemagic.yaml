@@ -34,6 +34,8 @@ workflows:
     integrations:
       app_store_connect: CarryOn-ASC-Key
     environment:
+      groups:
+        - signing
       vars:
         REACT_APP_BACKEND_URL: https://carryon.us
         BUNDLE_ID: us.carryon.app
