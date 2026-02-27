@@ -53,7 +53,6 @@ async def login(data: UserLogin):
         return {
             "message": "OTP sent via SMS",
             "email": data.email,
-            "otp_hint": otp[:2] + "****",
             "otp_method": "sms",
             "phone_hint": data.phone[-4:] if data.phone else None,
         }
@@ -63,7 +62,6 @@ async def login(data: UserLogin):
         return {
             "message": "OTP sent via email",
             "email": data.email,
-            "otp_hint": otp[:2] + "****",
             "otp_method": "email",
         }
 
