@@ -60,10 +60,14 @@ async def weekly_digest_scheduler():
 # Lifespan (replaces deprecated on_event)
 @asynccontextmanager
 async def lifespan(app):
+    from routes.trial_reminders import trial_reminder_scheduler
+
     logger.info("CarryOn™ API started - ready for real accounts")
-    task = asyncio.create_task(weekly_digest_scheduler())
+    digest_task = asyncio.create_task(weekly_digest_scheduler())
+    reminder_task = asyncio.create_task(trial_reminder_scheduler())
     yield
-    task.cancel()
+    digest_task.cancel()
+    reminder_task.cancel()
     client.close()
     logger.info("CarryOn™ API shutting down")
 
