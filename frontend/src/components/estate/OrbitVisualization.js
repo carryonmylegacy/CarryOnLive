@@ -250,15 +250,6 @@ const OrbitVisualization = ({ estates, userInitials, onEstateClick, benefactors 
             animation: 'pulse 3s ease-in-out infinite',
           }} />
           {userInitials}
-          <div style={{
-            position: 'absolute',
-            bottom: -18,
-            fontSize: 10,
-            color: 'var(--t4)',
-            whiteSpace: 'nowrap',
-          }}>
-            You
-          </div>
         </div>
       </div>
 
