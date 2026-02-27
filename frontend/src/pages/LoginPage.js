@@ -85,12 +85,8 @@ const LoginPage = () => {
             <div className="lg:pr-10">
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 lg:gap-8">
                 {/* Logo */}
-                <div className="logo-glow-wrap relative w-[180px] h-[180px] lg:w-[220px] lg:h-[220px] flex-shrink-0">
-                  <div className="absolute inset-0"><div className="logo-tracer" /></div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <img src="/carryon-logo.jpg" alt="CarryOn" className="w-[120px] lg:w-[150px] h-auto relative z-10" />
-                  </div>
-                  <div className="absolute inset-0 rounded-full" style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.06) 0%, transparent 65%)' }} />
+                <div className="flex-shrink-0">
+                  <img src="/carryon-logo.jpg" alt="CarryOn" className="w-[200px] lg:w-[260px] h-auto" />
                 </div>
                 {/* Text beside logo */}
                 <div className="text-center sm:text-left flex-1 sm:pt-2">
