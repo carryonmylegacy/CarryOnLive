@@ -17,6 +17,9 @@ const config: CapacitorConfig = {
     Camera: {
       // No special config needed
     },
+    CapacitorUpdater: {
+      autoUpdate: true,
+    },
   },
   ios: {
     contentInset: 'automatic',
