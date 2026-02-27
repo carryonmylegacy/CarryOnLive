@@ -165,9 +165,13 @@ async def dev_login(data: UserLogin, request: Request):
         if not auth_header.startswith("Bearer "):
             raise HTTPException(status_code=403, detail="Admin authorization required for impersonation")
         try:
-            caller = await get_current_user(auth_header.split(" ")[1])
-            if caller.get("role") != "admin":
+            token_str = auth_header.split(" ")[1]
+            payload = decode_token(token_str)
+            caller = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
+            if not caller or caller.get("role") != "admin":
                 raise HTTPException(status_code=403, detail="Only admins can impersonate users")
+        except HTTPException:
+            raise
         except Exception:
             raise HTTPException(status_code=403, detail="Invalid admin token for impersonation")
 
