@@ -1,4 +1,4 @@
-package us.carryon.app;
+package com.carryon.app;
 
 import com.getcapacitor.BridgeActivity;
 
