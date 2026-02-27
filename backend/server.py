@@ -31,6 +31,7 @@ from routes.security import router as security_router
 from routes.subscriptions import router as subscriptions_router
 from routes.support import router as support_router
 from routes.transition import router as transition_router
+from routes.admin_digest import router as admin_digest_router
 
 # Background scheduler
 async def weekly_digest_scheduler():
