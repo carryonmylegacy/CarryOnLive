@@ -126,6 +126,63 @@ async def health_check():
 app.include_router(api_router)
 
 
+# ===================== SECURITY MIDDLEWARE =====================
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Add security headers to all responses."""
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(self), geolocation=()"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return response
+
+
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    """Rate limiting for auth endpoints to prevent brute force attacks."""
+
+    def __init__(self, app, max_requests: int = 20, window_seconds: int = 60):
+        super().__init__(app)
+        self.max_requests = max_requests
+        self.window = window_seconds
+        self.requests = defaultdict(list)
+
+    async def dispatch(self, request: Request, call_next):
+        # Only rate-limit auth endpoints
+        path = request.url.path
+        rate_limited_paths = ["/api/auth/login", "/api/auth/register", "/api/auth/dev-login", "/api/auth/verify-otp"]
+
+        if path in rate_limited_paths:
+            client_ip = request.client.host if request.client else "unknown"
+            now = time.time()
+
+            # Clean old entries
+            self.requests[client_ip] = [
+                t for t in self.requests[client_ip] if now - t < self.window
+            ]
+
+            if len(self.requests[client_ip]) >= self.max_requests:
+                return Response(
+                    content='{"detail":"Too many requests. Please wait before trying again."}',
+                    status_code=429,
+                    media_type="application/json",
+                )
+
+            self.requests[client_ip].append(now)
+
+        return await call_next(request)
+
+
+# Apply middleware (order matters: last added = first executed)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitMiddleware, max_requests=20, window_seconds=60)
+
+
 # CORS Middleware
 app.add_middleware(
     CORSMiddleware,
