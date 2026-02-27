@@ -37,6 +37,7 @@ from routes.admin_digest import router as admin_digest_router
 async def weekly_digest_scheduler():
     """Background task: sends weekly digest every Monday at 8 AM EST."""
     from routes.digest import run_weekly_digest
+    from routes.admin_digest import send_admin_analytics_digest
 
     while True:
         now = datetime.now(timezone.utc)
@@ -56,6 +57,11 @@ async def weekly_digest_scheduler():
             logger.info(f"Weekly digest sent: {result}")
         except Exception as e:
             logger.error(f"Weekly digest failed: {e}")
+        try:
+            admin_result = await send_admin_analytics_digest()
+            logger.info(f"Admin analytics digest sent: {admin_result}")
+        except Exception as e:
+            logger.error(f"Admin analytics digest failed: {e}")
 
 
 # Lifespan (replaces deprecated on_event)
