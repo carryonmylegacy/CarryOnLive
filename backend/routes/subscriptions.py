@@ -887,18 +887,116 @@ async def get_subscription_stats(current_user: dict = Depends(get_current_user))
     if current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
 
+    now = datetime.now(timezone.utc)
+    now_iso = now.isoformat()
+
     total_users = await db.users.count_documents({})
+    non_admin_users = await db.users.count_documents({"role": {"$ne": "admin"}})
     active_trials = await db.users.count_documents({
-        "trial_ends_at": {"$gt": datetime.now(timezone.utc).isoformat()}
+        "trial_ends_at": {"$gt": now_iso}
+    })
+    expired_trials = await db.users.count_documents({
+        "trial_ends_at": {"$lte": now_iso},
+        "role": {"$ne": "admin"},
     })
     active_subs = await db.user_subscriptions.count_documents({"status": "active"})
+    cancelled_subs = await db.user_subscriptions.count_documents({"status": "cancelled"})
     pending_verifications = await db.tier_verifications.count_documents({"status": "pending"})
+    free_overrides = await db.subscription_overrides.count_documents({"free_access": True})
+
+    # --- MRR ---
+    mrr = 0.0
+    active_sub_docs = await db.user_subscriptions.find(
+        {"status": "active"}, {"_id": 0}
+    ).to_list(5000)
+    plan_lookup = {p["id"]: p for p in DEFAULT_PLANS}
+    tier_counts = {}
+    for sub in active_sub_docs:
+        plan_id = sub.get("plan_id", "")
+        cycle = sub.get("billing_cycle", "monthly")
+        plan = plan_lookup.get(plan_id)
+        if plan:
+            monthly = get_price_for_cycle(plan, "monthly")
+            mrr += monthly
+        tier_counts[plan_id] = tier_counts.get(plan_id, 0) + 1
+
+    # --- Trial conversion % ---
+    users_who_left_trial = expired_trials + active_subs + cancelled_subs
+    trial_conversion = (
+        round((active_subs / users_who_left_trial) * 100, 1)
+        if users_who_left_trial > 0
+        else 0
+    )
+
+    # --- Churn rate ---
+    total_ever_subscribed = active_subs + cancelled_subs
+    churn_rate = (
+        round((cancelled_subs / total_ever_subscribed) * 100, 1)
+        if total_ever_subscribed > 0
+        else 0
+    )
+
+    # --- Tier distribution ---
+    tier_distribution = []
+    for plan in DEFAULT_PLANS:
+        count = tier_counts.get(plan["id"], 0)
+        tier_distribution.append({
+            "tier": plan["name"],
+            "id": plan["id"],
+            "count": count,
+            "price": plan["price"],
+        })
+
+    # --- Signup trend (last 30 days) ---
+    signup_trend = []
+    for i in range(30):
+        day = now - timedelta(days=29 - i)
+        day_start = day.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+        day_end = day.replace(hour=23, minute=59, second=59, microsecond=999999).isoformat()
+        count = await db.users.count_documents({
+            "created_at": {"$gte": day_start, "$lte": day_end}
+        })
+        signup_trend.append({
+            "date": day.strftime("%m/%d"),
+            "signups": count,
+        })
+
+    # --- Trial status breakdown ---
+    trial_breakdown = {
+        "active": active_trials,
+        "expired_no_sub": max(0, expired_trials - active_subs - cancelled_subs),
+        "converted": active_subs,
+        "churned": cancelled_subs,
+    }
+
+    # --- Revenue by tier ---
+    revenue_by_tier = []
+    for plan in DEFAULT_PLANS:
+        count = tier_counts.get(plan["id"], 0)
+        revenue_by_tier.append({
+            "tier": plan["name"],
+            "id": plan["id"],
+            "revenue": round(count * plan["price"], 2),
+            "subscribers": count,
+        })
 
     return {
         "total_users": total_users,
+        "non_admin_users": non_admin_users,
         "active_trials": active_trials,
+        "expired_trials": expired_trials,
         "active_subscriptions": active_subs,
+        "cancelled_subscriptions": cancelled_subs,
         "pending_verifications": pending_verifications,
+        "free_overrides": free_overrides,
+        "mrr": round(mrr, 2),
+        "arr": round(mrr * 12, 2),
+        "trial_conversion_pct": trial_conversion,
+        "churn_rate_pct": churn_rate,
+        "tier_distribution": tier_distribution,
+        "signup_trend": signup_trend,
+        "trial_breakdown": trial_breakdown,
+        "revenue_by_tier": revenue_by_tier,
     }
 
 
