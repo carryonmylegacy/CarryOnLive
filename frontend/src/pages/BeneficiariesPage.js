@@ -507,45 +507,18 @@ const BeneficiariesPage = () => {
           </DialogHeader>
           
           <div className="space-y-6 py-4">
-            {/* Avatar Preview — click to upload photo */}
+            {/* Avatar Preview — click to pick/crop photo */}
             <div className="flex justify-center">
-              <label className="relative cursor-pointer group/avatar">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handlePhotoSelect}
-                />
-                <div
-                  className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold transition-colors overflow-hidden"
-                  style={{
-                    backgroundColor: photoPreview ? 'transparent' : avatarColor + '30',
-                    color: avatarColor
-                  }}
-                >
-                  {photoPreview ? (
-                    <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" />
-                  ) : firstName && lastName ? (
-                    (firstName[0] + lastName[0]).toUpperCase()
-                  ) : (
-                    <UserCircle className="w-10 h-10" />
-                  )}
-                </div>
-                <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
-                  <Camera className="w-6 h-6 text-white" />
-                </div>
-                {photoPreview && (
-                  <button
-                    type="button"
-                    className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 flex items-center justify-center text-white text-xs hover:bg-red-600"
-                    onClick={(e) => { e.preventDefault(); setPhotoFile(null); setPhotoPreview(null); }}
-                  >
-                    ×
-                  </button>
-                )}
-              </label>
+              <PhotoPicker
+                currentPhoto={photoPreview}
+                onPhotoSelected={(file, previewUrl) => {
+                  setPhotoFile(file);
+                  setPhotoPreview(previewUrl);
+                }}
+                onRemove={() => { setPhotoFile(null); setPhotoPreview(null); }}
+              />
             </div>
-            <p className="text-center text-xs text-[#64748b]">Click to upload a face photo</p>
+            <p className="text-center text-xs text-[#64748b]">Tap to take or choose a photo</p>
             
             {/* Color Picker */}
             <div className="flex justify-center gap-2">
