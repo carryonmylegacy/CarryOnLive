@@ -75,6 +75,8 @@
 - **P3 Edge Cases**: Invalid JSON, empty body, 404s, cross-user access, SQL injection, XSS, oversized payloads, MongoDB _id leak verification
 
 ## Upcoming / Backlog
+- Set up Codemagic cloud builds (connect GitHub repo)
+- App Store & Google Play submission
 - Admin analytics dashboard with charts
 - Multi-estate support
 - Picovoice Eagle voice biometrics (parked — $6K/yr)
