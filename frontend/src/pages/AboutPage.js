@@ -147,8 +147,10 @@ const AboutPage = () => {
 
       {/* OUR VALUES — layered with staggered cards */}
       <section className="relative z-30 -mt-1">
-        <div className="rounded-t-[2rem] py-16 lg:py-24" style={{ background: 'linear-gradient(180deg, #0a1628, #080e1a)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
-          <div className="max-w-[1000px] mx-auto px-6">
+        <div className="rounded-t-[2rem] py-16 lg:py-24 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0a1628, #080e1a)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+          <div className="absolute inset-0 opacity-[0.12]" style={{ backgroundImage: 'url(/texture-family.png)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(10,22,40,0.7) 0%, rgba(8,14,26,0.95) 100%)' }} />
+          <div className="max-w-[1000px] mx-auto px-6 relative z-10">
             <RevealSection>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white text-center mb-12" style={{ fontFamily: 'Outfit, sans-serif' }}>
                 Our Values
@@ -250,7 +252,9 @@ const AboutPage = () => {
 
       {/* CTA — layered */}
       <section className="relative z-50 -mt-1">
-        <div className="rounded-t-[2rem] py-20 lg:py-28" style={{ background: 'linear-gradient(180deg, #0a1628, #080e1a)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+        <div className="rounded-t-[2rem] py-20 lg:py-28 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0a1628, #080e1a)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+          <div className="absolute inset-0 opacity-[0.1]" style={{ backgroundImage: 'url(/texture-shield.png)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
+          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 50% 50% at 50% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
           <RevealSection className="max-w-[600px] mx-auto px-6 text-center">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white italic mb-8" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Your Family Deserves to Be Ready.
