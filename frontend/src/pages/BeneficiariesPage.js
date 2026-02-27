@@ -60,6 +60,7 @@ const BeneficiariesPage = () => {
   const [sendingInvite, setSendingInvite] = useState(null);
   const [expandedCard, setExpandedCard] = useState(null);
   const [editingBeneficiary, setEditingBeneficiary] = useState(null);
+  const [copiedLink, setCopiedLink] = useState(null);
   
   // Form state - enhanced demographics
   const [firstName, setFirstName] = useState('');
