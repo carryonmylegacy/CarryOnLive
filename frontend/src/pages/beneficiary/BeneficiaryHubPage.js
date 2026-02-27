@@ -108,11 +108,16 @@ const BeneficiaryHubPage = () => {
           return (
             <Card
               key={estate.id}
-              className={`cursor-pointer transition-all hover:-translate-y-1 ${
+              className={`cursor-pointer transition-all duration-300 hover:-translate-y-2 ${
                 isTransitioned
                   ? 'border-2 border-[var(--gold)]/30 bg-[var(--gold)]/5'
                   : 'glass-card border-dashed border-[var(--b2)]'
               }`}
+              style={{
+                boxShadow: isTransitioned 
+                  ? '0 12px 48px -8px rgba(109,40,217,0.4), 0 4px 16px rgba(0,0,0,0.25), 0 1px 0 rgba(255,255,255,0.08) inset'
+                  : '0 8px 32px -6px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.2)'
+              }}
               onClick={() => {
                 localStorage.setItem('beneficiary_estate_id', estate.id);
                 if (isTransitioned) {
