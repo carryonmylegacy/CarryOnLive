@@ -42,7 +42,7 @@ workflows:
         XCODE_WORKSPACE: frontend/ios/App/App.xcworkspace
         XCODE_SCHEME: App
       node: 20
-      xcode: latest
+      xcode: 16.2
       cocoapods: default
     scripts:
       - name: Install dependencies
