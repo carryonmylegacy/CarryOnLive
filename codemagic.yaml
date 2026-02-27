@@ -1,0 +1,88 @@
+workflows:
+  ios-build:
+    name: CarryOn iOS Build
+    max_build_duration: 30
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: CarryOn-ASC-Key
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: us.carryon.app
+      vars:
+        REACT_APP_BACKEND_URL: https://carryon.us
+      node: 20
+    scripts:
+      - name: Install dependencies
+        script: |
+          cd frontend
+          yarn install --frozen-lockfile
+      - name: Build web app
+        script: |
+          cd frontend
+          yarn build
+      - name: Sync Capacitor
+        script: |
+          cd frontend
+          npx cap sync ios
+      - name: Set up code signing
+        script: |
+          xcode-project use-profiles
+      - name: Build iOS app
+        script: |
+          cd frontend/ios/App
+          xcodebuild -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -archivePath build/App.xcarchive \
+            archive
+      - name: Export IPA
+        script: |
+          xcode-project build-ipa \
+            --workspace frontend/ios/App/App.xcworkspace \
+            --scheme App
+    artifacts:
+      - frontend/ios/App/build/**/*.ipa
+      - frontend/ios/App/build/**/*.xcarchive
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+
+  android-build:
+    name: CarryOn Android Build
+    max_build_duration: 30
+    instance_type: linux_x2
+    environment:
+      android_signing:
+        - carryon_keystore
+      vars:
+        REACT_APP_BACKEND_URL: https://carryon.us
+      node: 20
+      java: 17
+    scripts:
+      - name: Install dependencies
+        script: |
+          cd frontend
+          yarn install --frozen-lockfile
+      - name: Build web app
+        script: |
+          cd frontend
+          yarn build
+      - name: Sync Capacitor
+        script: |
+          cd frontend
+          npx cap sync android
+      - name: Build Android APK & AAB
+        script: |
+          cd frontend/android
+          chmod +x gradlew
+          ./gradlew assembleRelease
+          ./gradlew bundleRelease
+    artifacts:
+      - frontend/android/app/build/outputs/**/*.apk
+      - frontend/android/app/build/outputs/**/*.aab
+    publishing:
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal
