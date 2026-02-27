@@ -310,8 +310,10 @@ const LoginPage = () => {
 
       {/* ═══════════════════ THREE STEPS — slides over ═══════════════════ */}
       <section id="steps" className="relative z-40 -mt-1">
-        <div className="rounded-t-[2rem] py-24 lg:py-32" style={{ background: 'linear-gradient(180deg, #0a1628, #080e1a)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
-          <div className="max-w-[800px] mx-auto px-6 text-center">
+        <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0a1628, #080e1a)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+          <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'url(/texture-family.png)', backgroundSize: 'cover', backgroundPosition: 'bottom center' }} />
+          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 30%, rgba(212,175,55,0.03) 0%, transparent 70%)' }} />
+          <div className="max-w-[800px] mx-auto px-6 text-center relative z-10">
             <RevealSection>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-14" style={{ fontFamily: 'Outfit, sans-serif' }}>
                 Readiness in Three Steps.
@@ -344,8 +346,10 @@ const LoginPage = () => {
 
       {/* ═══════════════════ SECURITY — slides over ═══════════════════ */}
       <section id="security" className="relative z-50 -mt-1">
-        <div className="rounded-t-[2rem] py-24 lg:py-32" style={{ background: '#080e1a', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
-          <div className="max-w-[1100px] mx-auto px-6 text-center">
+        <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: '#080e1a', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+          <div className="absolute inset-0 opacity-[0.15]" style={{ backgroundImage: 'url(/texture-shield.png)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(8,14,26,0.6) 0%, rgba(8,14,26,0.9) 100%)' }} />
+          <div className="max-w-[1100px] mx-auto px-6 text-center relative z-10">
             <RevealSection>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
                 Security That Doesn&apos;t Compromise. Ever.
