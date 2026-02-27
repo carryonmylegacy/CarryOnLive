@@ -80,8 +80,7 @@ workflows:
       - name: Set build number
         script: |
           cd frontend/ios/App
-          LATEST=$(app-store-connect get-latest-testflight-build-number "$(app-store-connect get-latest-app-store-version-info --bundle-id "$BUNDLE_ID" | jq -r '.appStoreVersions[0].app.id // empty')" 2>/dev/null || echo "0")
-          agvtool new-version -all $(( ${LATEST:-0} + 1 ))
+          agvtool new-version -all $(($(app-store-connect get-latest-testflight-build-number "$BUNDLE_ID" 2>/dev/null || echo 0) + 1))
       - name: Build iOS app
         script: |
           xcode-project build-ipa \
