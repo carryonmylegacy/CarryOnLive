@@ -41,13 +41,20 @@ const LoginPage = () => {
     
     try {
       const result = await login(email, password, otpMethod, phone);
-      setOtpHint(result.otp_hint);
-      if (result.dev_otp) setOtp(result.dev_otp);
-      setShowOtpModal(true);
-      setShowPhoneInput(false);
-      toast.success(otpMethod === 'sms' 
-        ? `OTP sent to ***${phone.slice(-4)}` 
-        : 'OTP sent to your email');
+      if (result.direct) {
+        // Direct login — no OTP needed
+        toast.success(`Welcome back, ${result.user.name}!`);
+        if (result.user.role === 'admin') navigate('/admin');
+        else if (result.user.role === 'beneficiary') navigate('/beneficiary');
+        else navigate('/dashboard');
+      } else {
+        // OTP flow fallback
+        setShowOtpModal(true);
+        setShowPhoneInput(false);
+        toast.success(otpMethod === 'sms' 
+          ? `OTP sent to ***${phone.slice(-4)}` 
+          : 'OTP sent to your email');
+      }
     } catch (error) {
       console.error('Login error:', error);
       toast.error(error.response?.data?.detail || 'Invalid credentials');
