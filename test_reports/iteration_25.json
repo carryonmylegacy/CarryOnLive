@@ -1,0 +1,113 @@
+{
+  "summary": "Security hardening tests completed. Backend: 13/13 tests PASSED. Frontend: All features verified - Login works, Admin dashboard tabs (Subscriptions, Verifications, Analytics) all functional, Settings page loads with 6 subscription tiers.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Admin Dashboard",
+        "issues": ["Console warnings about recharts chart dimensions (-1 width/height) - cosmetic issue, charts render correctly", "React key warning: 'Encountered two children with the same key /admin' - cosmetic issue"]
+      }
+    ]
+  },
+  "passed_tests": [
+    "Security Headers: X-Content-Type-Options: nosniff present",
+    "Security Headers: X-Frame-Options: DENY present",
+    "Security Headers: X-XSS-Protection: 1; mode=block present",
+    "Security Headers: Referrer-Policy: strict-origin-when-cross-origin present",
+    "Security Headers: Permissions-Policy: camera=(), microphone=(self), geolocation=() present",
+    "Security Headers: Strict-Transport-Security (HSTS) max-age=31536000 present",
+    "Security Headers present on login endpoint responses",
+    "Security Headers present on error responses",
+    "Dev-login works for admin user (admin@carryon.com)",
+    "Dev-login returns 403 Forbidden for non-admin user (founder@carryon.us)",
+    "Dev-login returns 401 for invalid credentials",
+    "Regular login works for admin user",
+    "Regular login works for non-admin user (founder@carryon.us)",
+    "Rate limiting: endpoint configured for 20 requests/60s (may be overridden by K8s ingress in preview)",
+    "Subscription status endpoint works after security changes",
+    "Plans endpoint returns 6 main tiers + 4 beneficiary tiers",
+    "Analytics digest preview endpoint works for admin",
+    "Admin verifications endpoint accessible",
+    "Frontend login flow works end-to-end (no CORS issues)",
+    "Admin dashboard loads with all tabs: All Users, Transition Verification, DTS Management, Customer Support, Subscriptions, Verifications, Analytics, Activity Log, Dev Switcher",
+    "Subscriptions tab shows Beta Mode toggle, Family Plan toggle, Plan Pricing, User Subscription Overrides",
+    "Verifications tab shows Tier Verification Requests",
+    "Analytics tab shows MRR ($0.00), Trial Conversion (0%), Churn Rate (0%), Active Trials (19), Active Subs (0), Pending Reviews (1), Signups chart, Trial Funnel, Tier Distribution, Monthly Revenue by Tier",
+    "Settings page loads with 6 subscription plans: Premium ($9.99), Standard ($8.99), Base ($7.99), New Adult ($3.99), Military/First Responder ($5.99), Hospice (Free)"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_security_hardening.py",
+    "/app/test_reports/pytest/security_hardening_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "SecurityHeadersMiddleware correctly adds all 6 security headers to every response",
+    "RateLimitMiddleware configured for 20 requests/60s on auth endpoints (/api/auth/login, /api/auth/register, /api/auth/dev-login, /api/auth/verify-otp)",
+    "Dev-login properly restricted to admin role only with 403 response for non-admin users",
+    "CORS origins properly configured with production URLs (app.carryon.us, carryon.us, www.carryon.us) plus localhost for development",
+    "FRONTEND_URL from env var automatically added to CORS origins for preview environments",
+    "Rate limiting uses in-memory tracking (defaultdict) - appropriate for single-instance deployment"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_security_hardening.py"
+  ],
+  "success_rate": {
+    "backend": "100% (13/13 tests passed)",
+    "frontend": "100% (all UI features verified)"
+  },
+  "test_credentials": {
+    "admin": {"email": "admin@carryon.com", "password": "admin123"},
+    "non_admin": {"email": "founder@carryon.us", "password": "CarryOntheWisdom!"}
+  },
+  "seed_data_creation": "None - used existing test data",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Security hardening iteration 25 complete. All 6 security headers (X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy, HSTS) verified. Dev-login restricted to admin role (403 for non-admin). Rate limiting configured (20 req/60s on auth endpoints). CORS tightened. App URL: https://free-trial-gate.preview.emergentagent.com. Beta mode is ON.",
+  "features_verified": {
+    "security_headers": {
+      "status": "WORKING",
+      "headers": [
+        "X-Content-Type-Options: nosniff",
+        "X-Frame-Options: DENY",
+        "X-XSS-Protection: 1; mode=block",
+        "Referrer-Policy: strict-origin-when-cross-origin",
+        "Permissions-Policy: camera=(), microphone=(self), geolocation=()",
+        "Strict-Transport-Security: max-age=31536000; includeSubDomains"
+      ]
+    },
+    "rate_limiting": {
+      "status": "CONFIGURED",
+      "endpoints": ["/api/auth/login", "/api/auth/register", "/api/auth/dev-login", "/api/auth/verify-otp"],
+      "limit": "20 requests per 60 seconds",
+      "note": "May be overridden by K8s ingress in preview environment"
+    },
+    "dev_login_restriction": {
+      "status": "WORKING",
+      "admin_user": "200 OK - access granted",
+      "non_admin_user": "403 Forbidden - restricted to admin accounts"
+    },
+    "cors": {
+      "status": "CONFIGURED",
+      "origins": ["https://app.carryon.us", "https://carryon.us", "https://www.carryon.us", "http://localhost:3000", "http://localhost:3001", "FRONTEND_URL env var"]
+    },
+    "regular_login": {
+      "status": "WORKING",
+      "admin_user": "200 OK",
+      "non_admin_user": "200 OK"
+    },
+    "subscription_plans": {
+      "status": "WORKING",
+      "main_tiers": 6,
+      "beneficiary_tiers": 4
+    },
+    "admin_dashboard_tabs": {
+      "status": "WORKING",
+      "tabs": ["All Users", "Transition Verification", "DTS Management", "Customer Support", "Subscriptions", "Verifications", "Analytics", "Activity Log", "Dev Switcher"]
+    }
+  }
+}
