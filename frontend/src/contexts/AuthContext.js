@@ -10,6 +10,18 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('carryon_token'));
   const [loading, setLoading] = useState(true);
   const [pendingEmail, setPendingEmail] = useState(null);
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+
+  const fetchSubscriptionStatus = async (authToken) => {
+    try {
+      const res = await axios.get(`${API_URL}/subscriptions/status`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      setSubscriptionStatus(res.data);
+    } catch (err) {
+      console.error('Subscription status fetch error:', err);
+    }
+  };
 
   useEffect(() => {
     const initAuth = async () => {
@@ -19,6 +31,7 @@ export const AuthProvider = ({ children }) => {
             headers: { Authorization: `Bearer ${token}` }
           });
           setUser(response.data);
+          await fetchSubscriptionStatus(token);
         } catch (error) {
           console.error('Auth init error:', error);
           logout();
@@ -27,7 +40,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     };
     initAuth();
-  }, [token]);
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const login = async (email, password, otpMethod = 'email', phone = null) => {
     // Clear dev switcher session on normal login
