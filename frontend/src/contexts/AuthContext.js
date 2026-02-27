@@ -97,17 +97,23 @@ export const AuthProvider = ({ children }) => {
     headers: { Authorization: `Bearer ${token}` }
   });
 
+  const refreshSubscription = async () => {
+    if (token) await fetchSubscriptionStatus(token);
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
       token,
       loading,
       pendingEmail,
+      subscriptionStatus,
       login,
       verifyOtp,
       devLogin,
       logout,
       getAuthHeaders,
+      refreshSubscription,
       isAuthenticated: !!user
     }}>
       {children}
