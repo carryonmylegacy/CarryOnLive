@@ -1,5 +1,4 @@
 workflows:
-  # Live update — pushes web changes instantly to all users' phones
   live-update:
     name: CarryOn Live Update
     max_build_duration: 15
@@ -13,7 +12,6 @@ workflows:
     environment:
       vars:
         REACT_APP_BACKEND_URL: https://carryon.us
-        CAPGO_TOKEN: $CAPGO_TOKEN
       node: 20
     scripts:
       - name: Install dependencies
@@ -29,7 +27,6 @@ workflows:
           cd frontend
           npx @capgo/cli bundle upload --channel production
 
-  # Full native build — only needed for native feature changes
   ios-build:
     name: CarryOn iOS Build
     max_build_duration: 30
@@ -39,10 +36,15 @@ workflows:
     environment:
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: us.carryon.app
+        bundle_identifier: com.carryon.app
       vars:
         REACT_APP_BACKEND_URL: https://carryon.us
+        XCODE_SCHEME: App
+        XCODE_WORKSPACE: frontend/ios/App/App.xcworkspace
+        APPLE_TEAM_ID: 2KL2Z3CXB2
       node: 20
+      xcode: latest
+      cocoapods: default
     scripts:
       - name: Install dependencies
         script: |
@@ -52,6 +54,10 @@ workflows:
         script: |
           cd frontend
           yarn build
+      - name: Install CocoaPods
+        script: |
+          cd frontend/ios/App
+          pod install
       - name: Sync Capacitor
         script: |
           cd frontend
@@ -59,26 +65,24 @@ workflows:
       - name: Set up code signing
         script: |
           xcode-project use-profiles
-      - name: Build iOS app
+      - name: Set build number
         script: |
           cd frontend/ios/App
-          xcodebuild -workspace App.xcworkspace \
-            -scheme App \
-            -configuration Release \
-            -archivePath build/App.xcarchive \
-            archive
-      - name: Export IPA
+          agvtool new-version -all $(($(app-store-connect get-latest-testflight-build-number "$APP_STORE_CONNECT_APP_ID" || echo 0) + 1))
+      - name: Build iOS app
         script: |
           xcode-project build-ipa \
-            --workspace frontend/ios/App/App.xcworkspace \
-            --scheme App
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
     artifacts:
-      - frontend/ios/App/build/**/*.ipa
-      - frontend/ios/App/build/**/*.xcarchive
+      - frontend/ios/App/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
         auth: integration
         submit_to_testflight: true
+        beta_groups:
+          - CarryOn Testers
 
   android-build:
     name: CarryOn Android Build
