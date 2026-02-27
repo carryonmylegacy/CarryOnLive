@@ -11,6 +11,26 @@ import OrbitVisualization from '../../components/estate/OrbitVisualization';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
+const getOrbitLevel = (relation) => {
+  const r = (relation || '').toLowerCase();
+  if (['spouse', 'wife', 'husband', 'partner'].includes(r)) return 0;
+  if (['parent', 'mother', 'father', 'mom', 'dad'].includes(r)) return 0;
+  if (['son', 'daughter', 'child', 'children'].includes(r)) return 1;
+  if (['sibling', 'brother', 'sister'].includes(r)) return 1;
+  if (['grandchild', 'grandson', 'granddaughter'].includes(r)) return 2;
+  if (['grandparent', 'grandmother', 'grandfather', 'grandma', 'grandpa'].includes(r)) return 0;
+  if (r.includes('great-grandchild') || r.includes('great grandchild')) return 3;
+  if (r.includes('great-grandparent') || r.includes('great grandparent') || r.includes('great-grand') || r.includes('great grand')) return 0;
+  return 1;
+};
+
+const orbitColors = [
+  ['linear-gradient(135deg, #D4AF37, #F5D76E)', 'rgba(212,175,55,0.3)'],
+  ['linear-gradient(135deg, #6D28D9, #A855F7)', 'rgba(139,92,246,0.3)'],
+  ['linear-gradient(135deg, #0D9488, #14B8A6)', 'rgba(20,184,166,0.3)'],
+  ['linear-gradient(135deg, #1E40AF, #3B82F6)', 'rgba(59,130,246,0.3)'],
+];
+
 const BeneficiaryHubPage = () => {
   const { user, getAuthHeaders } = useAuth();
   const navigate = useNavigate();
