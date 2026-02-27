@@ -10,6 +10,7 @@ AI-powered estate planning platform for American families. Full-stack React + Fa
 - **Frontend Mobile**: Capacitor via Codemagic -> TestFlight (iOS)
 - **Domain**: `carryon.us` (GoDaddy)
 - **Deploy Hook**: `https://api.vercel.com/v1/integrations/deploy/prj_ZDH4AJkNcf2vricEvD4KATpgRJZb/RXnUhbxeDr`
+- **Stripe**: LIVE keys active (sk_live_ on Railway, pk_live_ on Vercel)
 
 ## Core Features (Implemented)
 - Estate document vault with AI analysis (Estate Guardian)
@@ -23,37 +24,49 @@ AI-powered estate planning platform for American families. Full-stack React + Fa
 - Legal pages (Privacy, Terms)
 - Push notifications (Capacitor)
 - About page with full company content
+- Live Stripe payment processing
 
 ## 3rd Party Integrations
-- Stripe (payments)
+- Stripe (payments - LIVE keys active)
 - Resend (email/OTP - currently disabled)
 - Twilio (SMS)
 - xAI/Grok (AI suggestions)
 - OpenAI Whisper (voice transcription)
 - Capgo (live mobile updates)
 
-## What's Been Implemented (Latest Session - Feb 27, 2026)
-- [x] Landing page redesign with marketing content + login form
-- [x] Hero layout: logo + tagline side by side
-- [x] American flag background with scroll-fade effect
-- [x] Scroll-reveal animations on all sections
-- [x] Layered sections with rounded overlapping edges + shadows
-- [x] Background textures (constellation, shield) for visual depth
-- [x] Staggered card entrance animations
-- [x] Hover effects on buttons, cards, step numbers
-- [x] Simplified login label ("Sign In" instead of "Benefactor Sign In")
-- [x] Safari autofill flicker fix
-- [x] DEV switcher: admin-only, persists through portal switches via localStorage
-- [x] About page with full company content, matching design/animations
-- [x] Orbit visualization: removed name labels, removed legend
-- [x] Family member tiles list on beneficiary hub page
-- [x] Orbit spacing increased for breathing room
-- [x] Admin page overflow fix (max-width + overflow-x-hidden)
-- [x] Vercel deploy hook set up as permanent deployment solution
-- [x] Backend housekeeping:
-  - Modernized FastAPI lifespan (replaced deprecated on_event)
-  - Archived 10 overlapping test files, kept 3 active suites
-  - All lint passes clean
+## What's Been Implemented (Feb 27, 2026 Session)
+- [x] Homepage redesign: American flag hero, scroll-reveal animations, layered sections
+- [x] 7 thematic background textures (flag, roots, warmth, circuit, pathway, network, pulse)
+- [x] About page with matching design/animations
+- [x] Login simplified ("Sign In"), Safari autofill flicker fix
+- [x] DEV switcher: admin-only + persists through portal switches
+- [x] Orbit visualization: removed labels/legend, increased spacing, overflow clipped
+- [x] Admin page overflow fix
+- [x] Nav logo enlarged
+- [x] Live Stripe keys wired in (Railway + Vercel)
+- [x] TrusteePage.js hardcoded test key fixed
+- [x] Backend: modernized FastAPI lifespan, archived 10 overlapping test files
+
+## P0 - In Progress (Next Fork)
+- **Subscription/Trial System**:
+  - 30-day free trial for all new users
+  - Email + in-app reminders at 10 and 5 days before expiry
+  - Full-screen paywall after trial expires
+  - Tier selection with monthly/quarterly pricing
+  - Military/First Responder & Hospice verification flow
+  - Admin approval for discounted tiers
+  - **Awaiting user answers on**: tier names/prices, discount structures, reminder type, paywall behavior
+
+## P1 - Upcoming Tasks
+- Re-enable OTP/email via Resend domain verification
+- Deploy mobile app fixes (Digital Wallet link, splash screen) via Codemagic
+- Full mobile app QA pass
+
+## P2 - Future/Backlog
+- Infinity light effect in logo (needs transparent PNG/SVG)
+- App Store / Google Play submission
+- Full device testing on real hardware
+- Capgo live update integration
 
 ## Backend Architecture (Post-Cleanup)
 ```
@@ -67,17 +80,6 @@ AI-powered estate planning platform for American families. Full-stack React + Fa
   tests/             # 3 active test suites
   tests/archive/     # 10 archived overlapping test files
 ```
-
-## P1 - Upcoming Tasks
-- Deploy mobile app fixes (Digital Wallet link, splash screen) via Codemagic
-- Investigate Resend email/OTP delivery and re-enable OTP login
-- Full mobile app QA pass after next TestFlight build
-
-## P2 - Future/Backlog
-- Infinity light effect in logo (needs transparent PNG/SVG)
-- App Store / Google Play submission
-- Full device testing on real hardware
-- Capgo live update integration
 
 ## Credentials
 - **User**: barnetharris@gmail.com / Blh9170873
