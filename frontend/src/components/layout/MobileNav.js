@@ -19,7 +19,8 @@ import {
   Sun,
   FileKey,
   Headphones,
-  ShieldCheck
+  ShieldCheck,
+  KeyRound
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 
@@ -48,6 +49,7 @@ const MobileNav = () => {
     { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
     { to: '/trustee', icon: Shield, label: 'Designated Trustee Services' },
     { to: '/guardian', icon: Sparkles, label: 'Estate Guardian' },
+    { to: '/digital-wallet', icon: KeyRound, label: 'Digital Wallet Vault' },
   ];
 
   const accountItems = [
