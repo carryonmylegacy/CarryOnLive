@@ -77,6 +77,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('carryon_token');
     localStorage.removeItem('dev_switcher_admin_session');
+    localStorage.removeItem('dev_switcher_admin_token');
     setToken(null);
     setUser(null);
     setPendingEmail(null);
