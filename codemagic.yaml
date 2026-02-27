@@ -36,7 +36,7 @@ workflows:
     environment:
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.carryon.app
+        bundle_identifier: us.carryon.app
       vars:
         REACT_APP_BACKEND_URL: https://carryon.us
         XCODE_SCHEME: App

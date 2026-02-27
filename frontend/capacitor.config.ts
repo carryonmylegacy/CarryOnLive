@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.carryon.app',
+  appId: 'us.carryon.app',
   appName: 'CarryOn',
   webDir: 'build',
   server: {
