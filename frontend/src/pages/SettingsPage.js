@@ -97,19 +97,20 @@ const SettingsPage = () => {
     navigate('/login');
   };
 
-  const getBillingPrice = (price) => {
-    if (price === 'Free') return 'Free';
-    const num = parseFloat(price.replace('$', ''));
-    if (billing === 'annual') return '$' + (num * 10).toFixed(2);
-    if (billing === 'quarterly') return '$' + (num * 2.7).toFixed(2);
-    return price;
+  const getBillingPrice = (plan) => {
+    if (plan.price === 0) return 'Free';
+    if (billing === 'quarterly') return '$' + (plan.quarterly_price || (plan.price * 0.9)).toFixed(2);
+    if (billing === 'annual') return '$' + (plan.annual_price || (plan.price * 0.8)).toFixed(2);
+    return '$' + plan.price.toFixed(2);
   };
 
   const getBillingLabel = () => {
-    if (billing === 'annual') return '/year';
-    if (billing === 'quarterly') return '/quarter';
+    if (billing === 'annual') return '/mo (annual)';
+    if (billing === 'quarterly') return '/mo (quarterly)';
     return '/month';
   };
+
+  const PLAN_ICONS = { premium: Crown, standard: Star, base: Shield, new_adult: Award, military: Shield, hospice: Heart };
 
   return (
     <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in max-w-4xl mx-auto" data-testid="settings-page">
