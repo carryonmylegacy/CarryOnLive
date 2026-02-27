@@ -77,6 +77,9 @@ const AboutPage = () => {
           <div className="absolute inset-0 opacity-[0.14]" style={{ backgroundImage: 'url(/texture-warmth.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(10,22,40,0.6) 0%, rgba(8,14,26,0.95) 100%)' }} />
           <div className="max-w-[800px] mx-auto px-6 relative z-10">
+            <RevealSection>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white text-center mb-8" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                Built for Every Family. Period.
               </h2>
             </RevealSection>
             <RevealSection delay={0.1}>
