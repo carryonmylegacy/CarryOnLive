@@ -392,7 +392,7 @@ const DashboardPage = () => {
 
         {/* Milestone Messages Preview - Purple */}
         <div 
-          className={`glass-card p-4 lg:p-6 border-l-4 border-l-[#8b5cf6] transition-all duration-300 cursor-pointer ${hoveredSection === 'messages' ? 'shadow-lg shadow-[#8b5cf6]/20 scale-[1.02] border-l-[6px]' : ''}`}
+          className={`glass-card p-4 lg:p-6 border-l-4 border-l-[#8b5cf6] transition-all duration-300 cursor-pointer ${hoveredSection === 'messages' ? 'shadow-[0_12px_36px_-6px_rgba(139,92,246,0.3)] scale-[1.02] border-l-[6px]' : ''}`}
           data-testid="preview-messages"
           onMouseEnter={() => setHoveredSection('messages')}
           onMouseLeave={() => setHoveredSection(null)}
