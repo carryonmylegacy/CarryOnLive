@@ -355,34 +355,6 @@ const OrbitVisualization = ({ estates, userInitials, onEstateClick, benefactors 
         );
       })}
 
-      {/* Legend */}
-      <div style={{
-        position: 'absolute',
-        bottom: -10,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        display: 'flex',
-        gap: 12,
-        fontSize: 9,
-        color: 'var(--t5)',
-      }}>
-        {[0, 1, 2, 3].map(level => {
-          const hasMembers = orbitGroups[level]?.length > 0;
-          if (!hasMembers && level > maxOrbitLevel) return null;
-          const [gradient] = orbitColors[level];
-          return (
-            <div key={level} style={{ display: 'flex', alignItems: 'center', gap: 4, opacity: hasMembers ? 1 : 0.4 }}>
-              <div style={{ 
-                width: 8, 
-                height: 8, 
-                borderRadius: '50%', 
-                background: gradient,
-              }} />
-              <span>{orbitLabels[level]}</span>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 };
