@@ -75,8 +75,15 @@
 - **P3 Edge Cases**: Invalid JSON, empty body, 404s, cross-user access, SQL injection, XSS, oversized payloads, MongoDB _id leak verification
 
 ## Upcoming / Backlog
-- Set up Codemagic cloud builds (connect GitHub repo)
-- App Store & Google Play submission
-- Admin analytics dashboard with charts
-- Multi-estate support
-- Picovoice Eagle voice biometrics (parked — $6K/yr)
+- P1: Finalize Mobile App Deployment Readiness (Capacitor/TestFlight testing)
+- P2: Set up Codemagic cloud builds (connect GitHub repo)
+- P2: App Store & Google Play submission
+- P2: Performance & Security Hardening (load testing, OWASP ZAP)
+- P3: Admin analytics dashboard with charts
+- P3: Multi-estate support
+- P3: Picovoice Eagle voice biometrics (parked — $6K/yr)
+
+## Recent Fixes (Feb 27, 2026)
+- **P0 FIXED**: Beneficiary invitation 404 error — root cause was `FRONTEND_URL` env var concatenated with `VAPID_CLAIMS_EMAIL` line without newline in `.env`. Fixed by adding proper line break.
+- **P1 FIXED**: Estate Guardian chat window too small — large disclaimer reduced to single compact line, header made more compact.
+- **P1 IMPLEMENTED**: Photo crop/zoom tool (`PhotoPicker` component with `react-easy-crop`) — camera access, file upload, crop, zoom, rotation. Integrated into BeneficiariesPage add/edit modal.
