@@ -29,7 +29,7 @@ const TIER_COLORS = {
 };
 
 export default function SubscriptionPaywall({ onDismiss }) {
-  const { token } = useAuth();
+  const { token, refreshSubscription } = useAuth();
   const [plans, setPlans] = useState([]);
   const [billing, setBilling] = useState('monthly');
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -42,8 +42,48 @@ export default function SubscriptionPaywall({ onDismiss }) {
   const [verificationDocType, setVerificationDocType] = useState('');
   const [uploadingVerification, setUploadingVerification] = useState(false);
   const [showFamilyInfo, setShowFamilyInfo] = useState(false);
+  const [confirmingPayment, setConfirmingPayment] = useState(false);
 
   const headers = { Authorization: `Bearer ${token}` };
+
+  // Handle post-payment redirect — check session_id in URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session_id');
+    if (sessionId && token) {
+      setConfirmingPayment(true);
+      axios.get(`${API_URL}/subscriptions/checkout-status/${sessionId}`, { headers })
+        .then(async (res) => {
+          if (res.data?.payment_status === 'paid' || res.data?.payment_status === 'complete') {
+            toast.success('Payment confirmed! Activating your subscription...');
+            // Clean up URL
+            window.history.replaceState({}, '', window.location.pathname);
+            // Refresh subscription status to dismiss paywall
+            if (refreshSubscription) await refreshSubscription();
+          } else {
+            toast.info('Payment is being processed. Please wait a moment...');
+            // Retry after a few seconds
+            setTimeout(async () => {
+              try {
+                const retry = await axios.get(`${API_URL}/subscriptions/checkout-status/${sessionId}`, { headers });
+                if (retry.data?.payment_status === 'paid' || retry.data?.payment_status === 'complete') {
+                  toast.success('Subscription activated!');
+                  window.history.replaceState({}, '', window.location.pathname);
+                  if (refreshSubscription) await refreshSubscription();
+                }
+              } catch (e) { /* ignore retry errors */ }
+              setConfirmingPayment(false);
+            }, 5000);
+            return;
+          }
+          setConfirmingPayment(false);
+        })
+        .catch(() => {
+          toast.error('Could not confirm payment. Please contact support.');
+          setConfirmingPayment(false);
+        });
+    }
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = useCallback(async () => {
     try {
