@@ -262,15 +262,53 @@ class AdminUserSubscriptionOverride(BaseModel):
     custom_discount: Optional[float] = None  # 0-100 percentage
 
 
+class VerificationReviewRequest(BaseModel):
+    action: str  # "approve" or "deny"
+    notes: Optional[str] = None
+
+
 async def get_subscription_settings():
     """Get platform-wide subscription settings"""
     settings = await db.subscription_settings.find_one({"_id": "global"}, {"_id": 0})
     if not settings:
-        settings = {"beta_mode": True, "plans": DEFAULT_PLANS}
+        settings = {"beta_mode": True, "plans": DEFAULT_PLANS, "family_plan_enabled": True}
         await db.subscription_settings.update_one(
             {"_id": "global"}, {"$set": settings}, upsert=True
         )
     return settings
+
+
+def calculate_trial_status(user_doc):
+    """Calculate trial status for a user"""
+    trial_ends_at = user_doc.get("trial_ends_at")
+    if not trial_ends_at:
+        return {"trial_active": False, "trial_expired": False, "days_remaining": 0}
+
+    if isinstance(trial_ends_at, str):
+        trial_end = datetime.fromisoformat(trial_ends_at.replace("Z", "+00:00"))
+    else:
+        trial_end = trial_ends_at
+
+    now = datetime.now(timezone.utc)
+    if trial_end.tzinfo is None:
+        trial_end = trial_end.replace(tzinfo=timezone.utc)
+
+    days_remaining = max(0, (trial_end - now).days)
+    return {
+        "trial_active": now < trial_end,
+        "trial_expired": now >= trial_end,
+        "days_remaining": days_remaining,
+        "trial_ends_at": trial_end.isoformat(),
+    }
+
+
+def get_price_for_cycle(plan, billing_cycle):
+    """Get the correct price based on billing cycle"""
+    if billing_cycle == "quarterly":
+        return plan.get("quarterly_price", round(plan["price"] * 0.9, 2))
+    elif billing_cycle == "annual":
+        return plan.get("annual_price", round(plan["price"] * 0.8, 2))
+    return plan["price"]
 
 
 @router.get("/subscriptions/plans")
@@ -279,13 +317,16 @@ async def get_subscription_plans():
     settings = await get_subscription_settings()
     return {
         "plans": settings.get("plans", DEFAULT_PLANS),
+        "beneficiary_plans": BENEFICIARY_PLANS,
         "beta_mode": settings.get("beta_mode", True),
+        "family_plan_enabled": settings.get("family_plan_enabled", True),
     }
 
 
 @router.get("/subscriptions/status")
 async def get_subscription_status(current_user: dict = Depends(get_current_user)):
-    """Get current user's subscription status"""
+    """Get current user's subscription status including trial info"""
+    user_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
     sub = await db.user_subscriptions.find_one(
         {"user_id": current_user["id"]}, {"_id": 0}
     )
@@ -296,16 +337,48 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
         {"user_id": current_user["id"]}, {"_id": 0}
     )
 
-    is_free = settings.get("beta_mode", True) or (
-        override and override.get("free_access", False)
+    # Calculate trial status
+    trial = calculate_trial_status(user_doc) if user_doc else {
+        "trial_active": False, "trial_expired": False, "days_remaining": 0
+    }
+
+    # Check verification status
+    verification = await db.tier_verifications.find_one(
+        {"user_id": current_user["id"]}, {"_id": 0}
     )
+
+    is_beta = settings.get("beta_mode", True)
+    has_free_access = override and override.get("free_access", False)
+    has_active_sub = sub and sub.get("status") == "active"
+
+    # User has access if: beta mode OR free override OR active subscription OR trial active
+    has_access = is_beta or has_free_access or has_active_sub or trial.get("trial_active", False)
+
+    # Determine eligible special tiers based on DOB
+    eligible_tiers = []
+    if user_doc and user_doc.get("date_of_birth"):
+        try:
+            dob = datetime.fromisoformat(user_doc["date_of_birth"])
+            age = (datetime.now(timezone.utc) - dob.replace(tzinfo=timezone.utc)).days // 365
+            if 18 <= age <= 25:
+                eligible_tiers.append("new_adult")
+        except (ValueError, TypeError):
+            pass
 
     return {
         "subscription": sub,
-        "beta_mode": settings.get("beta_mode", True),
-        "free_access": is_free,
+        "trial": trial,
+        "beta_mode": is_beta,
+        "free_access": is_beta or has_free_access,
         "custom_discount": override.get("custom_discount", 0) if override else 0,
-        "has_active_subscription": is_free or (sub and sub.get("status") == "active"),
+        "has_active_subscription": has_access,
+        "needs_subscription": not has_access,
+        "verification": {
+            "status": verification.get("status", "none") if verification else "none",
+            "tier_requested": verification.get("tier_requested") if verification else None,
+        } if verification else None,
+        "eligible_tiers": eligible_tiers,
+        "user_role": current_user.get("role", "benefactor"),
     }
 
 
