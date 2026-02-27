@@ -255,7 +255,7 @@ const AboutPage = () => {
         <div className="rounded-t-[2rem] py-20 lg:py-28 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0a1628, #080e1a)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
           <div className="absolute inset-0 opacity-[0.1]" style={{ backgroundImage: 'url(/texture-shield.png)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
           <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 50% 50% at 50% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
-          <RevealSection className="max-w-[600px] mx-auto px-6 text-center">
+          <RevealSection className="max-w-[600px] mx-auto px-6 text-center relative z-10">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white italic mb-8" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Your Family Deserves to Be Ready.
             </h2>
