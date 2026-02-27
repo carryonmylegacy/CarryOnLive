@@ -9,6 +9,7 @@ from config import db, logger
 from models import OTPVerify, TokenResponse, UserCreate, UserLogin, UserResponse
 from utils import (
     create_token,
+    decode_token,
     generate_otp,
     get_current_user,
     hash_password,
