@@ -729,3 +729,174 @@ async def update_plan_price(
     )
 
     return {"success": True, "message": f"Price updated to ${price:.2f}"}
+
+
+# ===================== TIER VERIFICATION =====================
+
+
+@router.post("/verification/upload")
+async def upload_verification_document(
+    tier_requested: str = Form(...),
+    doc_type: str = Form(...),
+    file_data: str = Form(...),
+    file_name: str = Form(...),
+    current_user: dict = Depends(get_current_user),
+):
+    """Upload a verification document for a special tier (Military/Hospice)"""
+    valid_tiers = ["military", "hospice"]
+    if tier_requested not in valid_tiers:
+        raise HTTPException(status_code=400, detail=f"Invalid tier. Must be one of: {valid_tiers}")
+
+    # Check for existing pending verification
+    existing = await db.tier_verifications.find_one(
+        {"user_id": current_user["id"], "status": "pending"}, {"_id": 0}
+    )
+    if existing:
+        raise HTTPException(status_code=400, detail="You already have a pending verification request")
+
+    import uuid
+    verification = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"],
+        "user_name": current_user.get("name", ""),
+        "user_email": current_user.get("email", ""),
+        "tier_requested": tier_requested,
+        "doc_type": doc_type,
+        "file_name": file_name,
+        "file_data": file_data,
+        "status": "pending",
+        "submitted_at": datetime.now(timezone.utc).isoformat(),
+        "reviewed_at": None,
+        "reviewed_by": None,
+        "review_notes": None,
+    }
+
+    await db.tier_verifications.insert_one(verification)
+
+    return {
+        "success": True,
+        "verification_id": verification["id"],
+        "message": f"Verification document submitted for {tier_requested} tier. We'll review it within 24-48 hours.",
+    }
+
+
+@router.get("/verification/status")
+async def get_verification_status(current_user: dict = Depends(get_current_user)):
+    """Get current user's verification status"""
+    verification = await db.tier_verifications.find_one(
+        {"user_id": current_user["id"]},
+        {"_id": 0, "file_data": 0},
+        sort=[("submitted_at", -1)],
+    )
+    return verification or {"status": "none"}
+
+
+# ===================== ADMIN VERIFICATION MANAGEMENT =====================
+
+
+@router.get("/admin/verifications")
+async def get_all_verifications(current_user: dict = Depends(get_current_user)):
+    """Get all verification requests (admin only)"""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    verifications = await db.tier_verifications.find(
+        {}, {"_id": 0, "file_data": 0}
+    ).sort("submitted_at", -1).to_list(200)
+
+    return verifications
+
+
+@router.get("/admin/verifications/{verification_id}/document")
+async def get_verification_document(
+    verification_id: str, current_user: dict = Depends(get_current_user)
+):
+    """Download a verification document (admin only)"""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    verification = await db.tier_verifications.find_one(
+        {"id": verification_id}, {"_id": 0}
+    )
+    if not verification:
+        raise HTTPException(status_code=404, detail="Verification not found")
+
+    return {
+        "file_data": verification.get("file_data", ""),
+        "file_name": verification.get("file_name", "document"),
+        "doc_type": verification.get("doc_type", ""),
+    }
+
+
+@router.post("/admin/verifications/{verification_id}/review")
+async def review_verification(
+    verification_id: str,
+    data: VerificationReviewRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Approve or deny a verification request (admin only)"""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    if data.action not in ["approve", "deny"]:
+        raise HTTPException(status_code=400, detail="Action must be 'approve' or 'deny'")
+
+    verification = await db.tier_verifications.find_one(
+        {"id": verification_id}, {"_id": 0}
+    )
+    if not verification:
+        raise HTTPException(status_code=404, detail="Verification not found")
+
+    new_status = "approved" if data.action == "approve" else "denied"
+
+    await db.tier_verifications.update_one(
+        {"id": verification_id},
+        {
+            "$set": {
+                "status": new_status,
+                "reviewed_at": datetime.now(timezone.utc).isoformat(),
+                "reviewed_by": current_user["id"],
+                "review_notes": data.notes,
+            }
+        },
+    )
+
+    # If approved, update user's verified tier
+    if data.action == "approve":
+        await db.users.update_one(
+            {"id": verification["user_id"]},
+            {
+                "$set": {
+                    "verified_tier": verification["tier_requested"],
+                    "verification_status": "approved",
+                    "verified_at": datetime.now(timezone.utc).isoformat(),
+                }
+            },
+        )
+
+    action_label = "approved" if data.action == "approve" else "denied"
+    return {
+        "success": True,
+        "message": f"Verification {action_label} for {verification.get('user_name', '')}",
+    }
+
+
+@router.get("/admin/subscription-stats")
+async def get_subscription_stats(current_user: dict = Depends(get_current_user)):
+    """Get detailed subscription statistics (admin only)"""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    total_users = await db.users.count_documents({})
+    active_trials = await db.users.count_documents({
+        "trial_ends_at": {"$gt": datetime.now(timezone.utc).isoformat()}
+    })
+    active_subs = await db.user_subscriptions.count_documents({"status": "active"})
+    pending_verifications = await db.tier_verifications.count_documents({"status": "pending"})
+
+    return {
+        "total_users": total_users,
+        "active_trials": active_trials,
+        "active_subscriptions": active_subs,
+        "pending_verifications": pending_verifications,
+    }
