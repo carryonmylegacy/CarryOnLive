@@ -228,7 +228,7 @@ const GuardianPage = () => {
       </div>
 
       {/* Action Buttons */}
-      <div className="flex flex-wrap gap-2 mb-3">
+      <div className="flex flex-wrap gap-2 mb-2">
         {actionButtons.map(({ key, label, icon: Icon, color }) => (
           <Button
             key={key}
