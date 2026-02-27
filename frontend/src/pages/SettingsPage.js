@@ -160,13 +160,35 @@ const SettingsPage = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Subscription Status */}
+          {subscriptionStatus && (
+            <div className="mb-4 p-3 rounded-xl" style={{
+              background: subscriptionStatus.trial?.trial_active ? 'rgba(212,175,55,0.06)' : 
+                subscriptionStatus.subscription?.status === 'active' ? 'rgba(34,201,147,0.06)' : 'rgba(239,68,68,0.06)',
+              border: `1px solid ${subscriptionStatus.trial?.trial_active ? 'rgba(212,175,55,0.15)' : 
+                subscriptionStatus.subscription?.status === 'active' ? 'rgba(34,201,147,0.15)' : 'rgba(239,68,68,0.15)'}`
+            }}>
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-[var(--gold)]" />
+                <span className="text-sm font-medium text-[var(--t)]">
+                  {subscriptionStatus.beta_mode ? 'Beta Mode — All features free' :
+                   subscriptionStatus.subscription?.status === 'active' 
+                    ? `Active: ${subscriptionStatus.subscription.plan_name} plan`
+                    : subscriptionStatus.trial?.trial_active 
+                      ? `Free Trial — ${subscriptionStatus.trial.days_remaining} days remaining`
+                      : 'No active subscription'}
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Billing Toggle */}
           <div className="flex justify-center gap-2 mb-6">
             {['monthly', 'quarterly', 'annual'].map((b) => (
               <button
                 key={b}
                 onClick={() => setBilling(b)}
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all capitalize ${
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all capitalize relative ${
                   billing === b
                     ? 'bg-[var(--gold)] text-[#0F1629]'
                     : 'bg-[var(--s)] text-[var(--t4)] hover:text-[var(--t)]'
@@ -174,48 +196,61 @@ const SettingsPage = () => {
                 data-testid={`billing-${b}`}
               >
                 {b}
+                {b === 'quarterly' && billing === b && <span className="absolute -top-2 -right-2 text-[9px] bg-[#22C993] text-white px-1 py-0.5 rounded-full">10% off</span>}
+                {b === 'annual' && billing === b && <span className="absolute -top-2 -right-2 text-[9px] bg-[#22C993] text-white px-1 py-0.5 rounded-full">20% off</span>}
               </button>
             ))}
           </div>
 
           {/* Plan Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="plan-grid">
-            {plans.map((p) => (
-              <div
-                key={p.name}
-                onClick={() => setActivePlan(p.name)}
-                className={`rounded-2xl p-5 text-center cursor-pointer transition-all hover:-translate-y-1 ${
-                  activePlan === p.name
-                    ? 'border-2 border-[var(--gold)] bg-[var(--gold)]/5 shadow-lg'
-                    : 'border border-[var(--b)] bg-[var(--s)] hover:border-[var(--gold)]/30'
-                }`}
-                data-testid={`plan-${p.name.toLowerCase().replace(/\s+/g, '-')}`}
-              >
-                <div className="text-[var(--t)] font-bold text-lg mb-2">{p.name}</div>
-                <div className="text-[var(--gold)] text-3xl font-bold" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
-                  {getBillingPrice(p.price)}
-                </div>
-                <div className="text-[var(--t4)] text-sm mb-1">{p.price !== 'Free' ? getBillingLabel() : ''}</div>
-                <div className="text-[var(--t4)] text-xs mb-4">Beneficiary: {p.benPrice}/mo</div>
-                
-                <div className="space-y-2 text-left mb-4">
-                  {p.features.map((f, i) => (
-                    <div key={i} className="flex items-start gap-2 text-sm text-[var(--t3)]">
-                      <Check className="w-4 h-4 text-[var(--gold)] flex-shrink-0 mt-0.5" />
-                      <span>{f}</span>
-                    </div>
-                  ))}
-                </div>
+            {plans.map((p) => {
+              const PlanIcon = PLAN_ICONS[p.id] || Shield;
+              return (
+                <div
+                  key={p.id}
+                  onClick={() => setActivePlan(p.name)}
+                  className={`rounded-2xl p-5 text-center cursor-pointer transition-all hover:-translate-y-1 ${
+                    activePlan === p.name
+                      ? 'border-2 border-[var(--gold)] bg-[var(--gold)]/5 shadow-lg'
+                      : 'border border-[var(--b)] bg-[var(--s)] hover:border-[var(--gold)]/30'
+                  }`}
+                  data-testid={`plan-${p.id}`}
+                >
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <PlanIcon className="w-4 h-4 text-[var(--gold)]" />
+                    <span className="text-[var(--t)] font-bold text-lg">{p.name}</span>
+                  </div>
+                  <div className="text-[var(--gold)] text-3xl font-bold" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+                    {getBillingPrice(p)}
+                  </div>
+                  <div className="text-[var(--t4)] text-sm mb-1">{p.price > 0 ? getBillingLabel() : ''}</div>
+                  <div className="text-[var(--t4)] text-xs mb-4">Beneficiary: ${p.ben_price?.toFixed(2)}/mo</div>
+                  
+                  <div className="space-y-2 text-left mb-4">
+                    {(p.features || []).map((f, i) => (
+                      <div key={i} className="flex items-start gap-2 text-sm text-[var(--t3)]">
+                        <Check className="w-4 h-4 text-[var(--gold)] flex-shrink-0 mt-0.5" />
+                        <span>{f}</span>
+                      </div>
+                    ))}
+                  </div>
 
-                {p.note && (
-                  <div className="text-xs text-[var(--t4)] italic mb-2">{p.note}</div>
-                )}
-                {p.extra && (
-                  <div className="text-xs text-[var(--gold)] mt-2">{p.extra}</div>
-                )}
-              </div>
-            ))}
+                  {p.note && (
+                    <div className="text-xs text-[var(--t4)] italic mb-2">{p.note}</div>
+                  )}
+                </div>
+              );
+            })}
           </div>
+
+          {!subscriptionStatus?.beta_mode && !subscriptionStatus?.subscription?.status && (
+            <div className="mt-4 text-center">
+              <Button onClick={() => setShowPaywall(true)} className="gold-button" data-testid="settings-subscribe-btn">
+                Subscribe Now <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
