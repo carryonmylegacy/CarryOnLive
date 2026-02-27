@@ -422,6 +422,29 @@
     overflow-x: hidden;
     background: var(--content-bg);
     transition: background 0.3s ease;
+    position: relative;
+  }
+  
+  /* Subtle vignette overlay for depth */
+  .main-content::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: var(--sidebar-width);
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 50% 0%, transparent 50%, rgba(0,0,0,0.15) 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  .main-content > * {
+    position: relative;
+    z-index: 1;
+  }
+  
+  [data-theme="light"] .main-content::before {
+    background: radial-gradient(ellipse at 50% 0%, transparent 50%, rgba(30,64,130,0.04) 100%);
   }
   
   /* Page Container */
