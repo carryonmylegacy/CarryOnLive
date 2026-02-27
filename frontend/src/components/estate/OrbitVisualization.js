@@ -238,7 +238,7 @@ const OrbitVisualization = ({ estates, userInitials, onEstateClick, benefactors 
           fontWeight: 700,
           color: 'white',
           border: '3px solid rgba(212,175,55,0.5)',
-          boxShadow: '0 0 30px rgba(124,58,237,0.4), 0 0 60px rgba(212,175,55,0.15)',
+          boxShadow: '0 0 40px rgba(124,58,237,0.5), 0 0 80px rgba(212,175,55,0.2), 0 8px 32px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.2)',
           position: 'relative',
         }}>
           {/* Pulse animation */}
