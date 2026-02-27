@@ -36,7 +36,7 @@ const DashboardLayout = () => {
       <MobileNav />
       
       {/* Main Content */}
-      <main className="main-content">
+      <main id="main-content" className="main-content" role="main" aria-label="Main content">
         <Outlet />
       </main>
     </div>
