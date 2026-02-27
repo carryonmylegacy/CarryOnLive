@@ -280,6 +280,7 @@ const AdminPage = () => {
           { key: 'support', label: 'Customer Support', icon: Headphones, path: '/admin/support' },
           { key: 'subscriptions', label: 'Subscriptions', icon: CreditCard, path: '/admin/subscriptions' },
           { key: 'verifications', label: 'Verifications', icon: FileKey, path: '/admin/verifications' },
+          { key: 'analytics', label: 'Analytics', icon: Activity, path: '/admin/analytics' },
           { key: 'activity', label: 'Activity Log', icon: Activity, path: '/admin/activity' },
           { key: 'dev-switcher', label: 'Dev Switcher', icon: Settings, path: '/admin/dev-switcher' },
         ].map(t => (
