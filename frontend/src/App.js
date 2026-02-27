@@ -51,7 +51,8 @@ import DevSwitcher from './components/dev/DevSwitcher';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { user, loading, isAuthenticated, subscriptionStatus } = useAuth();
+  const [showPaywall, setShowPaywall] = useState(false);
 
   if (loading) {
     return (
@@ -75,6 +76,16 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
       return <Navigate to="/beneficiary" replace />;
     }
     return <Navigate to="/dashboard" replace />;
+  }
+
+  // Check subscription status - show paywall if trial expired and no active sub
+  // Skip paywall for admins and during beta mode
+  const needsSubscription = subscriptionStatus?.needs_subscription === true
+    && user?.role !== 'admin'
+    && !subscriptionStatus?.beta_mode;
+
+  if (needsSubscription && !showPaywall) {
+    return <SubscriptionPaywall onDismiss={null} />;
   }
 
   return children;
