@@ -170,58 +170,6 @@ const LoginPage = () => {
               </div>
             </div>
 
-            {/* OTP Method Toggle */}
-            <div className="space-y-3">
-              <Label className="text-[#7B879E] text-sm">Verification Method</Label>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => { setOtpMethod('email'); setShowPhoneInput(false); }}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg border transition-all ${
-                    otpMethod === 'email' 
-                      ? 'border-[#d4af37] bg-[#d4af37]/10 text-[#d4af37]' 
-                      : 'border-white/10 text-[#7B879E] hover:border-white/20'
-                  }`}
-                >
-                  <Mail className="w-4 h-4" />
-                  <span className="text-sm font-medium">Email</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setOtpMethod('sms')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg border transition-all ${
-                    otpMethod === 'sms' 
-                      ? 'border-[#d4af37] bg-[#d4af37]/10 text-[#d4af37]' 
-                      : 'border-white/10 text-[#7B879E] hover:border-white/20'
-                  }`}
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  <span className="text-sm font-medium">SMS</span>
-                </button>
-              </div>
-              
-              {/* Phone input for SMS */}
-              {showPhoneInput && otpMethod === 'sms' && (
-                <div className="space-y-2 animate-fade-in">
-                  <Label className="text-[#7B879E] text-sm">Phone Number</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#525C72]" />
-                    <Input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+1 (555) 123-4567"
-                      className="input-field pl-10"
-                      data-testid="phone-input"
-                    />
-                  </div>
-                  <p className="text-xs text-[#525C72]">
-                    Enter your phone number to receive verification code via SMS
-                  </p>
-                </div>
-              )}
-            </div>
-
             <Button
               type="submit"
               disabled={loading}
