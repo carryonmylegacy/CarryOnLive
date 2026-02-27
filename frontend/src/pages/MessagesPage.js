@@ -386,6 +386,7 @@ const MessagesPage = () => {
                               className="text-[#60A5FA]"
                               onClick={() => openEdit(msg)}
                               data-testid={`edit-message-${msg.id}`}
+                              aria-label="Edit message"
                             >
                               <Pencil className="w-4 h-4" />
                             </Button>
@@ -394,6 +395,7 @@ const MessagesPage = () => {
                               size="sm"
                               className="text-[#ef4444]"
                               onClick={() => handleDelete(msg.id)}
+                              aria-label="Delete message"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
