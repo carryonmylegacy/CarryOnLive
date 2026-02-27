@@ -913,7 +913,6 @@ async def get_subscription_stats(current_user: dict = Depends(get_current_user))
     tier_counts = {}
     for sub in active_sub_docs:
         plan_id = sub.get("plan_id", "")
-        cycle = sub.get("billing_cycle", "monthly")
         plan = plan_lookup.get(plan_id)
         if plan:
             monthly = get_price_for_cycle(plan, "monthly")
