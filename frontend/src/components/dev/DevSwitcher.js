@@ -66,6 +66,9 @@ const DevSwitcher = () => {
   const handleSwitch = async (account) => {
     setSwitching(account.email);
     try {
+      // Save admin token before clearing — needed to authorize impersonation
+      const adminToken = localStorage.getItem('carryon_token');
+      
       localStorage.removeItem('carryon_token');
       localStorage.removeItem('selected_estate_id');
       localStorage.removeItem('beneficiary_estate_id');
@@ -73,9 +76,13 @@ const DevSwitcher = () => {
       // Mark that this session was initiated by an admin via DEV switcher
       localStorage.setItem('dev_switcher_admin_session', 'true');
       
+      const headers = { 'Content-Type': 'application/json' };
+      // Send admin token for impersonation authorization
+      if (adminToken) headers['Authorization'] = `Bearer ${adminToken}`;
+      
       const response = await fetch(`${API_URL}/api/auth/dev-login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ email: account.email, password: account.password }),
       });
       const data = await response.json();
