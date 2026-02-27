@@ -69,6 +69,9 @@ async def register(data: UserCreate):
 
     # Create user
     user_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc)
+    trial_ends_at = (now + timedelta(days=TRIAL_DURATION_DAYS)).isoformat()
+
     user = {
         "id": user_id,
         "email": data.email,
@@ -79,10 +82,13 @@ async def register(data: UserCreate):
         "last_name": data.last_name,
         "suffix": data.suffix,
         "gender": data.gender,
+        "date_of_birth": data.date_of_birth,
         "role": data.role
         if data.role in ["benefactor", "beneficiary"]
         else "benefactor",
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "trial_ends_at": trial_ends_at,
+        "subscription_status": "trialing",
+        "created_at": now.isoformat(),
     }
     await db.users.insert_one(user)
 
