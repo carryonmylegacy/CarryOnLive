@@ -92,6 +92,7 @@ const SignupPage = () => {
         last_name: lastName,
         suffix: suffix === 'none' ? null : suffix,
         gender: gender === 'not_selected' ? null : gender,
+        date_of_birth: dateOfBirth || null,
         email,
         password,
         role
