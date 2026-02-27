@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Mail, Lock, Eye, EyeOff, Loader2, Shield, FileText, Users, Brain, ChevronRight } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, Shield, FileText, Users, Brain, ChevronRight, ChevronDown, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Trash2, ClipboardCheck, MessageSquare } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { toast } from 'sonner';
@@ -53,275 +53,344 @@ const LoginPage = () => {
     }
   };
 
-  const features = [
-    { icon: Shield, label: 'Vault Storage', desc: 'Encrypted document vault for wills, trusts & policies' },
-    { icon: Users, label: 'Beneficiary Hub', desc: 'Manage & notify loved ones seamlessly' },
-    { icon: Brain, label: 'AI Guardian', desc: 'Estate law AI covering all 50 states' },
-    { icon: FileText, label: 'Legal Readiness', desc: 'Checklists, compliance & transition planning' },
-  ];
-
   return (
-    <div className="min-h-screen" style={{ background: '#0a1220' }}>
-      {/* ── NAV BAR ── */}
-      <nav className="border-b" style={{ borderColor: 'rgba(212,175,55,0.12)', background: 'rgba(10,18,32,0.95)', backdropFilter: 'blur(12px)' }}>
-        <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <img src="/carryon-logo.jpg" alt="CarryOn" className="h-10" />
-            <div className="hidden md:flex items-center gap-6">
-              {['Estate Planning', 'AI Guardian', 'Pricing', 'About'].map(item => (
-                <span key={item} className="text-[#8896ab] text-sm font-medium hover:text-[#d4af37] transition-colors cursor-pointer">{item}</span>
-              ))}
-            </div>
+    <div className="min-h-screen" style={{ background: '#080e1a' }}>
+
+      {/* ═══════════ NAV BAR ═══════════ */}
+      <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(212,175,55,0.08)', background: 'rgba(8,14,26,0.92)', backdropFilter: 'blur(16px)' }}>
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
+          <img src="/carryon-logo.jpg" alt="CarryOn" className="h-9" />
+          <div className="hidden md:flex items-center gap-8">
+            {[
+              { label: 'Features', href: '#features' },
+              { label: 'Security', href: '#security' },
+              { label: 'How It Works', href: '#steps' },
+              { label: 'About', href: '#about' },
+            ].map(item => (
+              <a key={item.label} href={item.href} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">{item.label}</a>
+            ))}
           </div>
-          <div className="flex items-center gap-4">
-            <span className="hidden sm:inline text-[#8896ab] text-sm">Need help?</span>
-            <a href="/signup" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors">
-              Open an Account <ChevronRight className="w-3 h-3 inline" />
-            </a>
-          </div>
+          <a href="/signup" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
+            Open Account <ChevronRight className="w-3.5 h-3.5" />
+          </a>
         </div>
       </nav>
 
-      {/* ── HERO SECTION ── */}
-      <div className="max-w-[1400px] mx-auto px-6">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center min-h-[calc(100vh-10rem)] py-12">
+      {/* ═══════════ HERO — LOGO LEFT, LOGIN RIGHT ═══════════ */}
+      <section className="min-h-screen flex items-center pt-16" style={{ background: 'radial-gradient(ellipse 80% 60% at 30% 50%, rgba(212,175,55,0.03) 0%, transparent 70%)' }}>
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-10 w-full">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-0 items-center">
 
-          {/* LEFT — Branding & Animation */}
-          <div className="order-2 lg:order-1">
-            {/* Animated Logo Container */}
-            <div className="relative mb-10">
-              <div className="logo-glow-container relative w-[280px] h-[280px] mx-auto lg:mx-0">
-                {/* Orbiting light */}
-                <div className="absolute inset-0">
-                  <div className="logo-orbit" />
-                </div>
-                {/* Logo */}
+            {/* LEFT — Logo + Tagline */}
+            <div className="text-center lg:text-left lg:pr-16">
+              <div className="logo-glow-wrap relative w-[240px] h-[240px] lg:w-[300px] lg:h-[300px] mx-auto lg:mx-0 mb-8">
+                <div className="absolute inset-0"><div className="logo-tracer" /></div>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <img src="/carryon-logo.jpg" alt="CarryOn" className="w-[200px] h-auto relative z-10" />
+                  <img src="/carryon-logo.jpg" alt="CarryOn" className="w-[160px] lg:w-[210px] h-auto relative z-10" />
                 </div>
-                {/* Ambient glow */}
-                <div className="absolute inset-0 rounded-full" style={{
-                  background: 'radial-gradient(circle, rgba(212,175,55,0.08) 0%, transparent 70%)',
-                }} />
+                <div className="absolute inset-0 rounded-full" style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.06) 0%, transparent 65%)' }} />
               </div>
-            </div>
-
-            <div className="text-center lg:text-left">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.1] mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.08] mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
                 Every American Family.
-                <span className="block text-[#d4af37]">Ready.</span>
+                <span className="block text-[#d4af37] mt-1">Ready.</span>
               </h1>
-              <p className="text-[#8896ab] text-lg lg:text-xl max-w-lg mb-6 leading-relaxed">
-                Secure your legacy with AI-powered estate planning. 
-                Protect what matters, guide who you love.
+              <p className="text-[#7b879e] text-base lg:text-lg max-w-md mx-auto lg:mx-0 leading-relaxed mb-8">
+                Secure your legacy with AI-powered estate planning. Protect what matters, guide who you love.
               </p>
-              <div className="flex items-center gap-6 justify-center lg:justify-start">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[#10b981]" />
-                  <span className="text-[#6b7a90] text-xs">AES-256 Encrypted</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[#10b981]" />
-                  <span className="text-[#6b7a90] text-xs">Zero-Knowledge</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[#10b981]" />
-                  <span className="text-[#6b7a90] text-xs">SOC 2</span>
-                </div>
+              <div className="flex items-center gap-5 justify-center lg:justify-start mb-6">
+                {['AES-256 Encrypted', 'Zero-Knowledge', 'SOC 2'].map(badge => (
+                  <div key={badge} className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
+                    <span className="text-[#525c72] text-xs">{badge}</span>
+                  </div>
+                ))}
               </div>
+              <a href="#about" className="inline-flex items-center gap-2 text-[#525c72] text-sm hover:text-[#d4af37] transition-colors">
+                Scroll to explore <ChevronDown className="w-4 h-4 animate-bounce" />
+              </a>
             </div>
-          </div>
 
-          {/* RIGHT — Login Card */}
-          <div className="order-1 lg:order-2 flex justify-center lg:justify-end">
-            <div className="w-full max-w-[400px] rounded-2xl p-8 relative" style={{
-              background: 'linear-gradient(145deg, rgba(20,30,52,0.95), rgba(15,22,41,0.98))',
-              border: '1px solid rgba(212,175,55,0.15)',
-              boxShadow: '0 4px 60px rgba(0,0,0,0.4), 0 0 40px rgba(212,175,55,0.03)',
-            }}>
-              {/* Card accent line */}
-              <div className="absolute top-0 left-8 right-8 h-[2px]" style={{
-                background: 'linear-gradient(90deg, transparent, #d4af37, transparent)',
-              }} />
-
-              <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                Benefactor Sign In
-              </h2>
-              <p className="text-[#6b7a90] text-sm mb-6">Access your estate planning portal</p>
-
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <label className="text-[#8896ab] text-xs font-medium mb-1.5 block">Email</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#4a5568]" />
-                    <Input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@email.com"
-                      className="h-11 pl-10 bg-[#0d1526] border-[#1e2d45] text-white placeholder:text-[#3a4a63] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-lg"
-                      data-testid="login-email-input"
-                      required
-                    />
+            {/* RIGHT — Login Card */}
+            <div className="flex justify-center lg:justify-end">
+              <div className="w-full max-w-[420px] rounded-2xl p-8 relative" style={{
+                background: 'linear-gradient(160deg, rgba(18,28,48,0.97), rgba(12,20,38,0.99))',
+                border: '1px solid rgba(212,175,55,0.12)',
+                boxShadow: '0 8px 80px rgba(0,0,0,0.5), 0 0 50px rgba(212,175,55,0.02)',
+              }}>
+                <div className="absolute top-0 left-8 right-8 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
+                <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Benefactor Sign In</h2>
+                <p className="text-[#525c72] text-sm mb-6">Access your estate planning portal</p>
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div>
+                    <label className="text-[#7b879e] text-xs font-medium mb-1.5 block">Email</label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63]" />
+                      <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" required
+                        className="h-11 pl-10 bg-[#0b1322] border-[#1a2a42] text-white placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-lg" data-testid="login-email-input" />
+                    </div>
                   </div>
-                </div>
-
-                <div>
-                  <label className="text-[#8896ab] text-xs font-medium mb-1.5 block">Password</label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#4a5568]" />
-                    <Input
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter password"
-                      className="h-11 pl-10 pr-10 bg-[#0d1526] border-[#1e2d45] text-white placeholder:text-[#3a4a63] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-lg"
-                      data-testid="login-password-input"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4a5568] hover:text-[#8896ab] transition-colors"
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
+                  <div>
+                    <label className="text-[#7b879e] text-xs font-medium mb-1.5 block">Password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63]" />
+                      <Input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" required
+                        className="h-11 pl-10 pr-10 bg-[#0b1322] border-[#1a2a42] text-white placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-lg" data-testid="login-password-input" />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3a4a63] hover:text-[#7b879e] transition-colors">
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </div>
+                  <Button type="submit" disabled={loading} className="w-full h-11 rounded-lg font-semibold text-sm" data-testid="login-submit-button"
+                    style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}>
+                    {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Signing In...</> : 'Sign In'}
+                  </Button>
+                </form>
+                <div className="mt-5 flex items-center justify-between">
+                  <a href="/signup" className="text-[#d4af37] text-sm font-medium hover:text-[#fcd34d] transition-colors">Create Account</a>
+                  <span className="text-[#3a4a63] text-xs cursor-pointer hover:text-[#7b879e] transition-colors">Forgot Password?</span>
                 </div>
-
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full h-11 rounded-lg font-semibold text-sm"
-                  data-testid="login-submit-button"
-                  style={{
-                    background: 'linear-gradient(135deg, #d4af37, #b8962e)',
-                    color: '#0a1220',
-                  }}
-                >
-                  {loading ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Signing In...</>
-                  ) : 'Sign In'}
-                </Button>
-              </form>
-
-              <div className="mt-5 flex items-center justify-between">
-                <a href="/signup" className="text-[#d4af37] text-sm font-medium hover:text-[#fcd34d] transition-colors">
-                  Create Account
-                </a>
-                <span className="text-[#4a5568] text-xs">Forgot Password?</span>
-              </div>
-
-              <div className="mt-6 pt-5 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-                <div className="flex items-center justify-center gap-2">
-                  <Shield className="w-3.5 h-3.5 text-[#10b981]" />
-                  <span className="text-[#6b7a90] text-xs">Bank-grade security · 256-bit SSL</span>
+                <div className="mt-6 pt-5 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                  <div className="flex items-center justify-center gap-2">
+                    <Shield className="w-3.5 h-3.5 text-[#10b981]" />
+                    <span className="text-[#525c72] text-xs">Bank-grade security &middot; 256-bit SSL</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* ── FEATURES BAR ── */}
-      <div style={{ background: 'rgba(15,22,38,0.6)', borderTop: '1px solid rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-        <div className="max-w-[1400px] mx-auto px-6 py-12">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map(({ icon: Icon, label, desc }) => (
-              <div key={label} className="text-center group cursor-pointer">
-                <div className="w-14 h-14 rounded-xl mx-auto mb-3 flex items-center justify-center transition-all group-hover:scale-105"
-                  style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.12)' }}>
-                  <Icon className="w-6 h-6 text-[#d4af37]" />
+      {/* ═══════════ ABOUT — "Your Family. Ready for Anything." ═══════════ */}
+      <section id="about" className="py-24 lg:py-32">
+        <div className="max-w-[800px] mx-auto px-6 text-center">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            Your Family.<br />Ready for Anything.
+          </h2>
+          <p className="text-[#7b879e] text-base lg:text-lg leading-relaxed mb-8">
+            CarryOn&#8482; is the first platform designed to ensure family readiness for all American families &mdash; an affordable, secure digital infrastructure that organizes your estate documents, automates critical checklists, delivers milestone messages, and provides AI-powered document intelligence so your family is prepared, not searching.
+          </p>
+          <a href="/signup" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-semibold text-sm transition-all hover:brightness-110"
+            style={{ background: '#d4af37', color: '#080e1a' }}>
+            Get Started <ChevronRight className="w-4 h-4" />
+          </a>
+          <p className="mt-10 text-[#d4af37] text-sm lg:text-base italic font-medium">
+            76% of American families have no estate plan. CarryOn ensures yours isn&apos;t one of them.
+          </p>
+        </div>
+      </section>
+
+      {/* ═══════════ REFRAME ═══════════ */}
+      <section className="py-20 lg:py-28" style={{ background: 'rgba(12,20,35,0.5)' }}>
+        <div className="max-w-[800px] mx-auto px-6 text-center">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6 leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            Family Readiness Isn&apos;t Planning for Death.<br />
+            <span className="text-[#d4af37]">It&apos;s Planning for Your Family.</span>
+          </h2>
+          <p className="text-[#7b879e] text-base leading-relaxed mb-8">
+            Every family faces transitions &mdash; some expected, some sudden. Family readiness means your documents are organized, your wishes are clear, your checklists are built, and your loved ones know exactly what to do and where to look. CarryOn&#8482; is the secure digital infrastructure that makes all of this possible &mdash; in one place, on one platform, protected by zero-knowledge encryption.
+          </p>
+          <p className="text-white text-base lg:text-lg font-semibold italic leading-relaxed">
+            You don&apos;t buy life insurance because you plan to die. You buy it because you plan to take care of your family. CarryOn works the same way.
+          </p>
+        </div>
+      </section>
+
+      {/* ═══════════ FOUR FEATURES ═══════════ */}
+      <section id="features" className="py-24 lg:py-32">
+        <div className="max-w-[1100px] mx-auto px-6">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white text-center mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            Four Features.
+          </h2>
+          <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#d4af37] text-center mb-14" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            Total Family Readiness.
+          </h3>
+          <div className="grid md:grid-cols-2 gap-6">
+            {[
+              {
+                icon: Sparkles, title: 'Estate Guardian\u2122 AI',
+                bold: 'An air-gapped AI analyst that lives inside your Secure Document Vault \u2014 with zero internet access.',
+                desc: 'Estate Guardian is a fully air-gapped AI powered by U.S. estate law across all 50 states and territories. It lives inside your Secure Document Vault \u2014 encrypted with AES-256 zero-knowledge encryption. Its only input is your documents. Its only output is briefing you on what it finds \u2014 contradictions, gaps, outdated provisions, and missing pieces in your estate plan. It also auto-populates your Immediate Action Checklist with critical details like claim phone numbers, executor contacts, and filing deadlines. No internet. No data leaves the vault. Ever.',
+              },
+              {
+                icon: ClipboardCheck, title: 'Immediate Action Checklist',
+                bold: 'A step-by-step guide your family can follow on the hardest day of their lives.',
+                desc: 'Partially auto-populated by Estate Guardian and fully customizable by you. When the time comes, your family opens the checklist and knows exactly what to do, who to call, where to find every document, and what deadlines matter. No guessing. No searching. No overwhelm. Just clarity.',
+              },
+              {
+                icon: MessageSquare, title: 'Milestone Messages',
+                bold: 'Your voice at their wedding. Your words at their graduation. Your love \u2014 delivered exactly when it matters.',
+                desc: 'Record written, voice, or video messages for the milestones you want to be part of \u2014 even if you can\'t be there. Weddings, births, graduations, birthdays, first homes, or any moment you choose. Messages are securely stored and automatically delivered when your beneficiary reports the milestone. No team reads them. No human touches them. Just your words, arriving exactly when and where you intended.',
+              },
+              {
+                icon: UserCheck, title: 'Designated Trustee Services',
+                bold: 'Some things shouldn\'t follow you. Let a trusted team handle what you can\'t.',
+                desc: 'Accounts to close. Subscriptions to cancel. Sensitive content to destroy. Financial transfers to execute. Things you\'d rather handle yourself \u2014 if you could. CarryOn\'s Designated Trustee Services lets you authorize specific, line-item tasks to be carried out confidentially after your verified transition. Each task is quoted, approved by you, and executed by our Trustee Services Team. Every record \u2014 instructions, credentials, payment logs \u2014 is permanently destroyed after completion.',
+              },
+            ].map(({ icon: Icon, title, bold, desc }) => (
+              <div key={title} className="rounded-xl p-6 lg:p-8 transition-all hover:border-[#d4af37]/30"
+                style={{ background: 'rgba(15,24,42,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.15)' }}>
+                  <Icon className="w-5 h-5 text-[#d4af37]" />
                 </div>
-                <h3 className="text-white text-sm font-semibold mb-1">{label}</h3>
-                <p className="text-[#6b7a90] text-xs leading-relaxed">{desc}</p>
+                <h4 className="text-white text-lg font-semibold mb-2">{title}</h4>
+                <p className="text-[#d4af37] text-sm font-medium mb-3 leading-relaxed">{bold}</p>
+                <p className="text-[#6b7a90] text-sm leading-relaxed">{desc}</p>
               </div>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* ── FOOTER ── */}
-      <footer className="max-w-[1400px] mx-auto px-6 py-8">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-6">
-            <a href="/privacy" className="text-[#4a5568] text-xs hover:text-[#8896ab] transition-colors" data-testid="login-footer-privacy-link">Privacy Policy</a>
-            <a href="/terms" className="text-[#4a5568] text-xs hover:text-[#8896ab] transition-colors" data-testid="login-footer-terms-link">Terms of Service</a>
-            <span className="text-[#4a5568] text-xs">Accessibility</span>
+      {/* ═══════════ THREE STEPS ═══════════ */}
+      <section id="steps" className="py-24 lg:py-32" style={{ background: 'rgba(12,20,35,0.5)' }}>
+        <div className="max-w-[800px] mx-auto px-6 text-center">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-14" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            Readiness in Three Steps.
+          </h2>
+          <div className="space-y-8 text-left">
+            {[
+              { step: '1', title: 'Build Your Vault', desc: 'Upload your estate documents and let Estate Guardian\u2122 analyze your plan for gaps, contradictions, and missing information. Your checklist begins auto-populating immediately.' },
+              { step: '2', title: 'Prepare Your Family', desc: 'Invite your beneficiaries, record milestone messages, customize your checklist, and set permissions for who can access what \u2014 and when.' },
+              { step: '3', title: 'Live Your Life', desc: 'Your family\'s readiness infrastructure is built. Update it whenever you want. When the time comes \u2014 whether that\'s decades from now or tomorrow \u2014 your family will never be left searching.' },
+            ].map(({ step, title, desc }) => (
+              <div key={step} className="flex gap-5">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.25)' }}>
+                  {step}
+                </div>
+                <div>
+                  <p className="text-white text-base leading-relaxed">
+                    <span className="font-bold">Step {step} &mdash; {title}.</span>{' '}
+                    <span className="text-[#7b879e]">{desc}</span>
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
-          <p className="text-[#3a4a63] text-xs">
-            &copy; {new Date().getFullYear()} CarryOn Technologies. All rights reserved.
+        </div>
+      </section>
+
+      {/* ═══════════ SECURITY ═══════════ */}
+      <section id="security" className="py-24 lg:py-32">
+        <div className="max-w-[1100px] mx-auto px-6 text-center">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            Security That Doesn&apos;t Compromise. Ever.
+          </h2>
+          <p className="text-[#7b879e] text-base max-w-[700px] mx-auto mb-14 leading-relaxed">
+            CarryOn&#8482; is not &ldquo;death tech.&rdquo; We&apos;re a family readiness platform &mdash; built for the living, used by the living, valued by the living. Our security architecture reflects that: your data is yours alone.
           </p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[
+              { icon: LockIcon, text: 'AES-256 zero-knowledge encryption \u2014 CarryOn cannot access your data' },
+              { icon: Sparkles, text: 'Air-gapped Estate Guardian\u2122 AI \u2014 zero internet connectivity, ever' },
+              { icon: FileText, text: 'PDF-only document uploads \u2014 optimized for AI analysis' },
+              { icon: Users, text: 'Transition verification by human team \u2014 not algorithms, not AI' },
+              { icon: Trash2, text: 'Post-execution record destruction \u2014 DTS records are permanently eliminated' },
+              { icon: FileCheck, text: 'Compliance roadmap: SOC2, HIPAA, GDPR' },
+            ].map(({ icon: Icon, text }, i) => (
+              <div key={i} className="rounded-xl p-6 text-center transition-all hover:border-[#d4af37]/20"
+                style={{ background: 'rgba(15,24,42,0.5)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <Icon className="w-6 h-6 text-[#7b879e] mx-auto mb-4" />
+                <p className="text-[#94a3b8] text-sm leading-relaxed">{text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════ HOSPICE ═══════════ */}
+      <section className="py-20 lg:py-24">
+        <div className="max-w-[800px] mx-auto px-6">
+          <div className="rounded-2xl p-8 lg:p-12 text-center" style={{ border: '1px solid rgba(212,175,55,0.25)', background: 'rgba(212,175,55,0.03)' }}>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#d4af37] mb-5" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              Free for Every American in Hospice Care.
+            </h2>
+            <p className="text-[#7b879e] text-base leading-relaxed mb-6">
+              At any given time, over 300,000 Americans are in hospice &mdash; and the vast majority have no estate plan. CarryOn&#8482; is offered at no cost to all U.S. citizens and resident aliens enrolled in certified hospice care. Full platform access. No exceptions.
+            </p>
+            <p className="text-white text-base font-semibold italic leading-relaxed">
+              No one approaching the end of life should be denied the ability to organize their affairs and prepare their family &mdash; simply because they can&apos;t afford to.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════ FINAL CTA ═══════════ */}
+      <section className="py-24 lg:py-32" style={{ background: 'rgba(12,20,35,0.5)' }}>
+        <div className="max-w-[600px] mx-auto px-6 text-center">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-5" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            Readiness Starts Today.
+          </h2>
+          <p className="text-[#7b879e] text-base mb-8">
+            Join CarryOn and be among the first families to achieve total readiness.
+          </p>
+          <a href="/signup" className="inline-flex items-center gap-2 px-10 py-4 rounded-lg font-semibold text-base transition-all hover:brightness-110"
+            style={{ background: '#d4af37', color: '#080e1a' }}>
+            Get Started &mdash; It&apos;s Free <ChevronRight className="w-4 h-4" />
+          </a>
+        </div>
+      </section>
+
+      {/* ═══════════ FOOTER ═══════════ */}
+      <footer className="py-10" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+            <img src="/carryon-logo.jpg" alt="CarryOn" className="h-8 opacity-60" />
+            <div className="flex items-center gap-6">
+              <a href="/privacy" className="text-[#3a4a63] text-xs hover:text-[#7b879e] transition-colors" data-testid="login-footer-privacy-link">Privacy Policy</a>
+              <a href="/terms" className="text-[#3a4a63] text-xs hover:text-[#7b879e] transition-colors" data-testid="login-footer-terms-link">Terms of Service</a>
+              <span className="text-[#3a4a63] text-xs">Accessibility</span>
+            </div>
+            <div className="text-right text-[#3a4a63] text-xs leading-relaxed">
+              <p>1550 Wilson Boulevard 7th Floor</p>
+              <p>Arlington, VA 22209 U.S.A.</p>
+              <p>(703) 884-1527</p>
+            </div>
+          </div>
+          <p className="text-center text-[#2d3d55] text-xs mt-6">&copy; {new Date().getFullYear()} CarryOn Technologies. All rights reserved.</p>
         </div>
       </footer>
 
-      {/* ── OTP MODAL ── */}
+      {/* ═══════════ OTP MODAL ═══════════ */}
       {showOtpModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-md rounded-2xl p-8" style={{
-            background: 'linear-gradient(145deg, rgba(20,30,52,0.98), rgba(15,22,41,1))',
-            border: '1px solid rgba(212,175,55,0.15)',
-          }}>
-            <h3 className="text-white text-xl font-semibold mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              Two-Factor Authentication
-            </h3>
+          <div className="w-full max-w-md rounded-2xl p-8" style={{ background: 'linear-gradient(145deg, rgba(20,30,52,0.98), rgba(15,22,41,1))', border: '1px solid rgba(212,175,55,0.15)' }}>
+            <h3 className="text-white text-xl font-semibold mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Two-Factor Authentication</h3>
             <p className="text-[#6b7a90] text-sm mb-6">Enter the 6-digit code sent to your email</p>
-            <Input
-              type="text"
-              inputMode="numeric"
-              maxLength={6}
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="000000"
-              className="h-14 text-center text-2xl tracking-[0.4em] font-mono bg-[#0d1526] border-[#1e2d45] text-white focus:border-[#d4af37] rounded-lg mb-4"
-              data-testid="otp-input"
-              autoFocus
-            />
-            <Button
-              onClick={handleVerifyOtp}
-              disabled={loading || otp.length !== 6}
-              className="w-full h-11 rounded-lg font-semibold"
-              data-testid="otp-verify-button"
-              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#0a1220' }}
-            >
+            <Input type="text" inputMode="numeric" maxLength={6} value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="000000" className="h-14 text-center text-2xl tracking-[0.4em] font-mono bg-[#0d1526] border-[#1e2d45] text-white focus:border-[#d4af37] rounded-lg mb-4" data-testid="otp-input" autoFocus />
+            <Button onClick={handleVerifyOtp} disabled={loading || otp.length !== 6} className="w-full h-11 rounded-lg font-semibold" data-testid="otp-verify-button"
+              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify & Sign In'}
             </Button>
-            <button onClick={() => setShowOtpModal(false)} className="w-full mt-3 text-[#6b7a90] text-sm hover:text-white transition-colors">
-              Cancel
-            </button>
+            <button onClick={() => setShowOtpModal(false)} className="w-full mt-3 text-[#6b7a90] text-sm hover:text-white transition-colors">Cancel</button>
           </div>
         </div>
       )}
 
-      {/* ── CSS ANIMATIONS ── */}
+      {/* ═══════════ CSS ═══════════ */}
       <style>{`
-        .logo-glow-container {
-          position: relative;
-        }
-        .logo-orbit {
+        .logo-glow-wrap { position: relative; }
+        .logo-tracer {
           position: absolute;
-          width: 12px;
-          height: 12px;
+          width: 10px; height: 10px;
           background: #d4af37;
           border-radius: 50%;
-          box-shadow: 0 0 20px 8px rgba(212,175,55,0.4), 0 0 60px 20px rgba(212,175,55,0.15);
-          animation: orbit 4s linear infinite;
-          offset-path: path('M140,20 C220,20 260,80 260,140 C260,200 220,260 140,260 C60,260 20,200 20,140 C20,80 60,20 140,20');
+          box-shadow: 0 0 16px 6px rgba(212,175,55,0.45), 0 0 50px 16px rgba(212,175,55,0.12);
+          animation: trace 5s ease-in-out infinite;
+          offset-path: path('M150,10 C230,10 280,60 280,150 C280,240 230,290 150,290 C70,290 20,240 20,150 C20,60 70,10 150,10');
           offset-distance: 0%;
         }
-        @keyframes orbit {
-          0% { offset-distance: 0%; opacity: 0.9; }
+        @keyframes trace {
+          0% { offset-distance: 0%; opacity: 0.8; }
           50% { opacity: 1; }
-          100% { offset-distance: 100%; opacity: 0.9; }
+          100% { offset-distance: 100%; opacity: 0.8; }
         }
         @supports not (offset-path: path('M0,0')) {
-          .logo-orbit {
-            animation: orbit-fallback 4s linear infinite;
-          }
-          @keyframes orbit-fallback {
-            0% { transform: rotate(0deg) translateX(120px) rotate(0deg); }
-            100% { transform: rotate(360deg) translateX(120px) rotate(-360deg); }
+          .logo-tracer { animation: trace-fb 5s linear infinite; }
+          @keyframes trace-fb {
+            0% { transform: rotate(0deg) translateX(130px) rotate(0deg); }
+            100% { transform: rotate(360deg) translateX(130px) rotate(-360deg); }
           }
         }
       `}</style>
