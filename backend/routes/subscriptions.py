@@ -900,3 +900,14 @@ async def get_subscription_stats(current_user: dict = Depends(get_current_user))
         "active_subscriptions": active_subs,
         "pending_verifications": pending_verifications,
     }
+
+
+@router.post("/admin/trial-reminders/send")
+async def trigger_trial_reminders(current_user: dict = Depends(get_current_user)):
+    """Manually trigger trial reminder emails (admin only)"""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    from routes.trial_reminders import send_trial_reminders
+    count = await send_trial_reminders()
+    return {"success": True, "reminders_sent": count}
