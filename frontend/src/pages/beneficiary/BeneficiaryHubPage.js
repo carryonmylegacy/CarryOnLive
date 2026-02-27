@@ -80,7 +80,7 @@ const BeneficiaryHubPage = () => {
       )}
 
       {/* Estate Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto mb-6">
         {estates.map(estate => {
           const isTransitioned = estate.status === 'transitioned';
           const ownerInitials = estate.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -127,6 +127,63 @@ const BeneficiaryHubPage = () => {
           );
         })}
       </div>
+
+      {/* Family Members List */}
+      {(familyConnections.length > 0 || estates.length > 0) && (
+        <div className="max-w-4xl mx-auto mb-8" data-testid="family-members-list">
+          <div className="space-y-2">
+            {/* Beneficiary (You) at top */}
+            <div className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.15)' }}>
+              <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                style={{ background: 'linear-gradient(135deg, #7C3AED, #A855F7)', border: '2px solid rgba(212,175,55,0.4)' }}>
+                {user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-[var(--t)] truncate">{user?.name || 'You'}</p>
+                <p className="text-xs text-[var(--t4)]">You</p>
+              </div>
+            </div>
+
+            {/* Family members */}
+            {(familyConnections.length > 0 ? familyConnections : estates).map((member, i) => {
+              const name = member.name || `${member.first_name || ''} ${member.last_name || ''}`.trim();
+              const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??';
+              const relation = member.relation || 'Benefactor';
+              const level = typeof member.relation === 'string' ? getOrbitLevel(member.relation) : 1;
+              const [gradient] = orbitColors[level] || orbitColors[0];
+              const isTransitioned = member.status === 'transitioned';
+
+              return (
+                <div
+                  key={member.id || `member-${i}`}
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 cursor-pointer transition-all hover:brightness-110"
+                  style={{ background: 'rgba(15,24,42,0.5)', border: '1px solid rgba(255,255,255,0.06)' }}
+                  onClick={() => {
+                    const estateId = member.estate_id || member.id;
+                    localStorage.setItem('beneficiary_estate_id', estateId);
+                    navigate(isTransitioned ? '/beneficiary/dashboard' : '/beneficiary/pre');
+                  }}
+                  data-testid={`family-member-${i}`}
+                >
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    style={{
+                      background: gradient,
+                      color: level === 0 ? '#1a1a2e' : 'white',
+                      border: isTransitioned ? '2px solid rgba(212,175,55,0.5)' : '2px solid rgba(255,255,255,0.15)',
+                    }}>
+                    {initials}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-[var(--t)] truncate">{name}</p>
+                    <p className="text-xs text-[var(--t4)] capitalize">{relation}</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-[var(--t5)] flex-shrink-0" />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Info Box */}
       <div className="max-w-4xl mx-auto">

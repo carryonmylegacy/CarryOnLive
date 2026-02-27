@@ -347,20 +347,6 @@ const OrbitVisualization = ({ estates, userInitials, onEstateClick, benefactors 
                     >
                       {initials}
                     </div>
-                    {/* Name label on hover - visible always for clarity */}
-                    <div style={{
-                      position: 'absolute',
-                      top: ballSize + 4,
-                      fontSize: 9,
-                      color: 'var(--t4)',
-                      whiteSpace: 'nowrap',
-                      textAlign: 'center',
-                      maxWidth: 60,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}>
-                      {(member.name || `${member.first_name} ${member.last_name}`).split(' ')[0]}
-                    </div>
                   </div>
                 </div>
               );
