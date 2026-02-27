@@ -49,7 +49,7 @@ import {
 } from '../components/ui/alert-dialog';
 
 // Initialize Stripe with test key
-const stripePromise = loadStripe('pk_test_emergent');
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
 
 const typeConfig = {
   delivery: { icon: Package, label: 'Delivery / Mailing', desc: 'Send packages, letters, cash, or items to a recipient', color: '#8b5cf6' },
