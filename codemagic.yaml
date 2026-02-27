@@ -11,7 +11,7 @@ workflows:
           include: true
     environment:
       vars:
-        REACT_APP_BACKEND_URL: https://carryon.us
+        REACT_APP_BACKEND_URL: https://estate-guardian-bugs.preview.emergentagent.com
       node: 20
     scripts:
       - name: Install dependencies
@@ -37,7 +37,7 @@ workflows:
       groups:
         - signing
       vars:
-        REACT_APP_BACKEND_URL: https://carryon.us
+        REACT_APP_BACKEND_URL: https://estate-guardian-bugs.preview.emergentagent.com
         BUNDLE_ID: us.carryon.app
         XCODE_WORKSPACE: frontend/ios/App/App.xcworkspace
         XCODE_SCHEME: App
@@ -103,7 +103,7 @@ workflows:
       android_signing:
         - carryon_keystore
       vars:
-        REACT_APP_BACKEND_URL: https://carryon.us
+        REACT_APP_BACKEND_URL: https://estate-guardian-bugs.preview.emergentagent.com
       node: 20
       java: 17
     scripts:
