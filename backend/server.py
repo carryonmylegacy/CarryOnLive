@@ -111,45 +111,6 @@ async def health_check():
 app.include_router(api_router)
 
 
-# Startup/Shutdown
-async def weekly_digest_scheduler():
-    """Background task: sends weekly digest every Monday at 8 AM EST."""
-    from routes.digest import run_weekly_digest
-
-    while True:
-        now = datetime.now(timezone.utc)
-        # Next Monday 8 AM EST (13:00 UTC)
-        days_ahead = (7 - now.weekday()) % 7  # 0 = Monday
-        if days_ahead == 0 and now.hour >= 13:
-            days_ahead = 7
-        next_monday = (now + timedelta(days=days_ahead)).replace(
-            hour=13, minute=0, second=0, microsecond=0
-        )
-        wait_seconds = (next_monday - now).total_seconds()
-        logger.info(
-            f"Weekly digest scheduled for {next_monday.isoformat()} ({wait_seconds / 3600:.1f}h away)"
-        )
-        await asyncio.sleep(wait_seconds)
-        try:
-            result = await run_weekly_digest("https://carryon.us/dashboard")
-            logger.info(f"Weekly digest sent: {result}")
-        except Exception as e:
-            logger.error(f"Weekly digest failed: {e}")
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize background tasks on startup."""
-    logger.info("CarryOn™ API started - ready for real accounts")
-    asyncio.create_task(weekly_digest_scheduler())
-
-
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    """Close database connection on shutdown."""
-    client.close()
-
-
 # CORS Middleware
 app.add_middleware(
     CORSMiddleware,
