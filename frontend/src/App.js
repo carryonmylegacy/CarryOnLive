@@ -194,6 +194,13 @@ function AppRoutes() {
 }
 
 function App() {
+  // Initialize Capgo live updates on native platforms
+  useEffect(() => {
+    if (isNative) {
+      CapacitorUpdater.notifyAppReady();
+    }
+  }, []);
+
   return (
     <ThemeProvider>
       <AuthProvider>
