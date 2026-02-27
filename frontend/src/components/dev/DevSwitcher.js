@@ -88,9 +88,9 @@ const DevSwitcher = () => {
     }
   };
 
-  // Don't show if disabled or still loading
+  // Only show for admin users
   if (loading) return null;
-  if (!config?.enabled && user?.role !== 'admin') return null;
+  if (!user || user.role !== 'admin') return null;
 
   const hasConfiguredAccounts = config?.benefactor?.email || config?.beneficiary?.email;
 
