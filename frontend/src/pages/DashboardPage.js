@@ -249,6 +249,11 @@ const DashboardPage = () => {
 
   return (
     <div className="p-4 lg:p-8 pt-20 lg:pt-8 pb-24 lg:pb-8 animate-fade-in" data-testid="benefactor-dashboard">
+      {/* Trial Banner */}
+      <div className="mb-4">
+        <TrialBanner onUpgrade={() => setShowPaywall(true)} />
+      </div>
+
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl lg:text-4xl font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
