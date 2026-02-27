@@ -25,6 +25,7 @@ class UserCreate(BaseModel):
     last_name: str
     suffix: Optional[str] = None
     gender: Optional[str] = None
+    date_of_birth: Optional[str] = None
     role: str = "benefactor"
 
 
