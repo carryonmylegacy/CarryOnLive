@@ -17,7 +17,6 @@ import {
   ChevronDown,
   ChevronUp,
   Edit2,
-  Camera
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -29,6 +28,7 @@ import { Textarea } from '../components/ui/textarea';
 import { toast } from 'sonner';
 import { SectionLockBanner } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
+import { PhotoPicker } from '../components/PhotoPicker';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
