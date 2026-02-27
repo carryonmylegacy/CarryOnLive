@@ -1,0 +1,82 @@
+name: CarryOn CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: pip install -r requirements.txt
+
+      - name: Lint backend (ruff)
+        working-directory: backend
+        run: |
+          pip install ruff
+          ruff check .
+          ruff format --check .
+
+      - name: Start backend server
+        working-directory: backend
+        env:
+          MONGO_URL: mongodb://localhost:27017
+          DB_NAME: test_database
+          JWT_SECRET: ci-test-secret-key-not-for-production
+          ENCRYPTION_KEY: ci-test-encryption-key-32chars!!
+          ENCRYPTION_SALT: ci-test-salt
+          CORS_ORIGINS: "*"
+        run: |
+          uvicorn server:app --host 0.0.0.0 --port 8001 &
+          sleep 5
+          curl -f http://localhost:8001/api/health || exit 1
+
+      - name: Run test suite
+        working-directory: backend
+        env:
+          REACT_APP_BACKEND_URL: http://localhost:8001
+        run: pytest tests/test_comprehensive_suite.py -v --tb=short
+
+  frontend-build:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "yarn"
+          cache-dependency-path: frontend/yarn.lock
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: yarn install --frozen-lockfile
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          REACT_APP_BACKEND_URL: https://carryon.us
+        run: yarn build
