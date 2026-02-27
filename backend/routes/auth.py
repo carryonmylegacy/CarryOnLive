@@ -150,19 +150,25 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 
 
 @router.post("/auth/dev-login")
-async def dev_login(data: UserLogin):
-    """DEV/ADMIN ONLY: Skip OTP for development testing.
-    Only available to admin-role users for impersonation."""
+async def dev_login(data: UserLogin, request: Request):
+    """Admin impersonation: allows admin to login as any user via DevSwitcher.
+    Requires either: (1) target is an admin account, or (2) a valid admin Bearer token."""
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
     if not user or not verify_password(data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    # Only admin users can use dev-login to prevent OTP bypass abuse
+    # If the target user is admin, allow directly
     if user.get("role") != "admin":
-        raise HTTPException(
-            status_code=403,
-            detail="Dev login restricted to admin accounts"
-        )
+        # Non-admin target: require a valid admin token in Authorization header
+        auth_header = request.headers.get("authorization", "")
+        if not auth_header.startswith("Bearer "):
+            raise HTTPException(status_code=403, detail="Admin authorization required for impersonation")
+        try:
+            caller = await get_current_user(auth_header.split(" ")[1])
+            if caller.get("role") != "admin":
+                raise HTTPException(status_code=403, detail="Only admins can impersonate users")
+        except Exception:
+            raise HTTPException(status_code=403, detail="Invalid admin token for impersonation")
 
     token = create_token(user["id"], user["email"], user["role"])
     return TokenResponse(
