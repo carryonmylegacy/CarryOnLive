@@ -108,7 +108,7 @@ const DashboardPage = () => {
     const angle = (score / 100) * 180 - 90;
     
     return (
-      <div className="relative w-72 h-48 mx-auto" style={{ transform: 'translateZ(0)' }}>
+      <div className="relative w-48 h-32 lg:w-72 lg:h-48 mx-auto" style={{ transform: 'translateZ(0)' }}>
         <svg viewBox="0 0 200 110" className="w-full h-full overflow-visible" style={{ transform: 'translateZ(0)' }}>
           <defs>
             {/* Main rainbow gradient */}
