@@ -104,7 +104,7 @@ const MobileNav = () => {
 
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <button className="p-2 text-[var(--t)]" data-testid="mobile-menu-button">
+            <button className="p-2 text-[var(--t)]" data-testid="mobile-menu-button" aria-label="Open navigation menu">
               <Menu className="w-6 h-6" />
             </button>
           </SheetTrigger>
