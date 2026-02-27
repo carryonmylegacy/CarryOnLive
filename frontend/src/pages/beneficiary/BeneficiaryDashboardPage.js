@@ -112,7 +112,7 @@ const BeneficiaryDashboardPage = () => {
         </div>
         <div
           className="rounded-2xl p-4 lg:p-6 cursor-pointer transition-all hover:scale-[1.02] flex flex-col items-center justify-center text-white"
-          style={{ background: 'linear-gradient(135deg, #1E3A8A, #1D4ED8, #2563EB)', boxShadow: '0 8px 36px rgba(37,99,235,0.35), 0 1px 0 0 rgba(255,255,255,0.15) inset, 0 -2px 8px rgba(0,0,0,0.2) inset' }}
+          style={{ background: 'linear-gradient(135deg, #1E3A8A, #1D4ED8, #2563EB)', boxShadow: '0 12px 48px -4px rgba(37,99,235,0.5), 0 2px 0 0 rgba(147,197,253,0.25) inset, 0 -6px 16px rgba(0,0,0,0.3) inset', border: '1px solid rgba(96,165,250,0.2)' }}
           onClick={() => navigate('/beneficiary/vault')}
           data-testid="stat-vault"
         >
