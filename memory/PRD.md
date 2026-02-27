@@ -88,3 +88,4 @@
 - **P1 FIXED**: Estate Guardian chat window too small — large disclaimer reduced to single compact line, header made more compact.
 - **P1 IMPLEMENTED**: Photo crop/zoom tool (`PhotoPicker` component with `react-easy-crop`) — camera access, file upload, crop, zoom, rotation. Integrated into BeneficiariesPage add/edit modal.
 - **ENHANCEMENT**: Added "Copy Invitation Link" button on Beneficiaries page — allows sharing invite links via text/WhatsApp/messenger instead of only email.
+- **CONFIG**: Updated bundle ID from `us.carryon.app` to `com.carryon.app` across all platforms (Capacitor, iOS, Android). Updated codemagic.yaml with Apple Team ID (2KL2Z3CXB2), proper code signing, CocoaPods, and auto-incrementing build numbers.
