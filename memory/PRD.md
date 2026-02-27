@@ -45,7 +45,7 @@ CarryOn™ is an AI-powered estate planning platform that helps users ("benefact
 - Background scheduler runs every 6 hours
 - Sends HTML email reminders via Resend at 10 days and 5 days before trial expiration
 - Deduplication via `trial_reminder_10d_sent` / `trial_reminder_5d_sent` flags
-- Admin manual trigger endpoint: `POST /api/admin/trial-reminders/send`
+- Admin manual trigger: `POST /api/admin/trial-reminders/send`
 
 ### Verification System (Feb 27, 2026)
 - Document upload for Military/First Responder (Military ID, badge)
@@ -55,19 +55,22 @@ CarryOn™ is an AI-powered estate planning platform that helps users ("benefact
 
 ### Subscription Analytics Dashboard (Feb 27, 2026)
 - **6 KPI cards**: MRR, Trial Conversion %, Churn Rate %, Active Trials, Active Subs, Pending Reviews
-- **Signups — Last 30 Days**: Line chart with daily signup counts
-- **Trial Funnel**: Donut chart (Active Trial / Converted / Expired / Churned)
-- **Tier Distribution**: Bar chart showing subscribers per tier
-- **Monthly Revenue by Tier**: Bar chart showing revenue contribution per tier
-- Refresh button for on-demand data refresh
+- **4 charts**: Signups (30-day line), Trial Funnel (donut), Tier Distribution (bar), Revenue by Tier (bar)
+- Refresh, Preview Digest, and Send Digest Now buttons
 
-### Admin Controls (Feb 27, 2026)
+### Weekly Admin Analytics Digest (Feb 27, 2026)
+- Auto-sent every Monday alongside the weekly estate readiness digest
+- HTML email with: MRR/ARR KPIs, Conversion & Churn rates, New Signups with sparkline, User Funnel breakdown, Tier Breakdown table, pending verification alerts
+- Admin can preview and manually send from the Analytics tab
+- Endpoints: `GET /api/admin/analytics-digest/preview`, `POST /api/admin/analytics-digest/send`
+
+### Admin Controls
 - **Beta mode toggle** (global free access for all users)
 - **Per-user discount** (0-100% off any amount)
 - **Per-user free access** toggle
 - **Family plan visibility** toggle
 - **Verification management** tab
-- **Analytics dashboard** tab
+- **Analytics dashboard** tab with digest controls
 - **Manual trial reminder trigger**
 
 ### UI/UX
@@ -96,6 +99,8 @@ CarryOn™ is an AI-powered estate planning platform that helps users ("benefact
 - `POST /api/admin/verifications/{id}/review` - Approve/deny
 - `GET /api/admin/subscription-stats` - Full analytics data
 - `POST /api/admin/trial-reminders/send` - Manual reminder trigger
+- `GET /api/admin/analytics-digest/preview` - Preview digest HTML
+- `POST /api/admin/analytics-digest/send` - Send digest to admins
 
 ## Upcoming Tasks (Prioritized)
 - P1: Re-enable OTP email via Resend (domain verification for carryontechnologies.com)
