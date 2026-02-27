@@ -87,3 +87,4 @@
 - **P0 FIXED**: Beneficiary invitation 404 error — root cause was `FRONTEND_URL` env var concatenated with `VAPID_CLAIMS_EMAIL` line without newline in `.env`. Fixed by adding proper line break.
 - **P1 FIXED**: Estate Guardian chat window too small — large disclaimer reduced to single compact line, header made more compact.
 - **P1 IMPLEMENTED**: Photo crop/zoom tool (`PhotoPicker` component with `react-easy-crop`) — camera access, file upload, crop, zoom, rotation. Integrated into BeneficiariesPage add/edit modal.
+- **ENHANCEMENT**: Added "Copy Invitation Link" button on Beneficiaries page — allows sharing invite links via text/WhatsApp/messenger instead of only email.
