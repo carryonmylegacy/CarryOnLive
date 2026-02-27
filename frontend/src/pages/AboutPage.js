@@ -73,11 +73,10 @@ const AboutPage = () => {
 
       {/* BUILT FOR EVERY FAMILY — layered */}
       <section className="relative z-10 -mt-2">
-        <div className="rounded-t-[2.5rem] py-16 lg:py-24" style={{ background: 'linear-gradient(180deg, #0a1628, #080e1a)', boxShadow: '0 -20px 60px rgba(0,0,0,0.5)' }}>
-          <div className="max-w-[800px] mx-auto px-6">
-            <RevealSection>
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white text-center mb-8" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                Built for Every Family. Period.
+        <div className="rounded-t-[2.5rem] py-16 lg:py-24 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0a1628, #080e1a)', boxShadow: '0 -20px 60px rgba(0,0,0,0.5)' }}>
+          <div className="absolute inset-0 opacity-[0.14]" style={{ backgroundImage: 'url(/texture-warmth.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(10,22,40,0.6) 0%, rgba(8,14,26,0.95) 100%)' }} />
+          <div className="max-w-[800px] mx-auto px-6 relative z-10">
               </h2>
             </RevealSection>
             <RevealSection delay={0.1}>
