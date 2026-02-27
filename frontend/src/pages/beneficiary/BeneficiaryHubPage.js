@@ -137,7 +137,7 @@ const BeneficiaryHubPage = () => {
                       : 'linear-gradient(135deg, #1E40AF, #3B82F6)',
                     opacity: isTransitioned ? 1 : 0.6,
                     border: isTransitioned ? '2px solid rgba(224,173,43,0.3)' : '2px dashed var(--b2)',
-                    boxShadow: isTransitioned ? '0 4px 20px rgba(0,0,0,0.3)' : 'none'
+                    boxShadow: isTransitioned ? '0 6px 24px rgba(109,40,217,0.4), 0 1px 0 rgba(255,255,255,0.2) inset' : '0 4px 16px rgba(0,0,0,0.3)'
                   }}
                 >
                   {ownerInitials}
