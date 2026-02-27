@@ -237,7 +237,7 @@ class TestAnalyticsDigestSend:
         
         # Check response structure
         assert "success" in data, "Response should contain 'success' field"
-        assert data["success"] == True, "success should be True"
+        assert data["success"], "success should be True"
         
         print("PASS: Send endpoint works for admin")
 

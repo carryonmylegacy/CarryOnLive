@@ -273,7 +273,7 @@ class TestVerificationUpload:
         
         if response.status_code in [200, 201]:
             data = response.json()
-            assert data.get("success") == True, "Expected success=True"
+            assert data.get("success"), "Expected success=True"
             print("PASS: Military verification upload accepted")
         else:
             print("PASS: Military verification rejected (already has pending) - expected behavior")
