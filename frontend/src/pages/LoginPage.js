@@ -45,11 +45,15 @@ const LoginPage = () => {
   const [otp, setOtp] = useState('');
   const [flagOpacity, setFlagOpacity] = useState(1);
 
-  /* flag fade on scroll */
+  /* flag fade on scroll + dismiss Safari autofill */
   useEffect(() => {
     const handleScroll = () => {
       const fade = Math.max(0, 1 - window.scrollY / 600);
       setFlagOpacity(fade);
+      // Blur focused inputs to dismiss Safari autofill dropdown
+      if (document.activeElement && (document.activeElement.tagName === 'INPUT')) {
+        document.activeElement.blur();
+      }
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
