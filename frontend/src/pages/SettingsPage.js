@@ -15,7 +15,12 @@ import {
   CreditCard,
   Check,
   Mail,
-  Loader2
+  Loader2,
+  Clock,
+  Crown,
+  Star,
+  Award,
+  Heart
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -23,15 +28,7 @@ import { Switch } from '../components/ui/switch';
 import { Separator } from '../components/ui/separator';
 import NotificationSettings from '../components/NotificationSettings';
 import FamilyPlanSettings from '../components/FamilyPlanSettings';
-
-const plans = [
-  { name: 'Premium', price: '$8.99', benPrice: '$2.99', features: ['Full platform access', 'Estate Guardian AI', 'Unlimited vault storage', 'Unlimited milestone messages', 'Immediate Action Checklist', 'Beneficiary management', 'Priority support'], extra: 'Priority access to Eternal Echo AI Digital Corpus when available' },
-  { name: 'Standard', price: '$7.99', benPrice: '$3.99', features: ['Full platform access', 'Estate Guardian AI', 'Unlimited vault storage', 'Unlimited milestone messages', 'Immediate Action Checklist', 'Beneficiary management', 'Standard support'] },
-  { name: 'Base', price: '$6.99', benPrice: '$4.99', features: ['Full platform access', 'Estate Guardian AI', 'Unlimited vault storage', 'Unlimited milestone messages', 'Immediate Action Checklist', 'Beneficiary management', 'Standard support'] },
-  { name: 'New Adult', price: '$3.99', benPrice: '$1.99', features: ['Full platform access', 'Estate Guardian AI', 'Unlimited vault storage', 'Unlimited milestone messages', 'Immediate Action Checklist', 'Beneficiary management', 'Life Milestone onboarding', 'Standard support'], note: 'Ages 18-25 · Auto-nudge to Base at 25', extra: 'Start your journey here — your plan grows with you' },
-  { name: 'Military / First Responder', price: '$5.99', benPrice: '$1.99', features: ['Full platform access', 'Estate Guardian AI', 'Unlimited vault storage', 'Unlimited milestone messages', 'Immediate Action Checklist', 'Beneficiary management', 'Priority support'], note: 'Flat rate — no launch delta' },
-  { name: 'Hospice', price: 'Free', benPrice: '$4.99', features: ['Full platform access', 'Estate Guardian AI', 'Unlimited vault storage', 'Unlimited milestone messages', 'Immediate Action Checklist', 'Beneficiary management', 'Compassionate support'], note: 'Requires hospice verification' },
-];
+import SubscriptionPaywall from '../components/SubscriptionPaywall';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
