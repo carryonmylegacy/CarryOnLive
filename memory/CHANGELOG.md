@@ -12,6 +12,27 @@
 - **Added `tests/__init__.py`** for proper Python package structure
 - Result: `ruff check .` → **All checks passed**, `ruff format --check .` → **38 files already formatted**
 
+## Feb 26, 2026 — App Store Compliance & Accessibility
+
+### Accessibility (Apple WCAG compliance)
+- Skip-to-content link in `index.html` for keyboard navigation
+- `role="navigation"` + `aria-label` on sidebar and mobile nav
+- `role="main"` + `id="main-content"` on main content area
+- `aria-label` on all icon-only buttons: Vault (preview/download/edit/delete), Beneficiaries (edit/delete), Messages (edit/delete)
+- `aria-label` on password toggle buttons (Login + Signup)
+- Mobile hamburger menu button has `aria-label="Open navigation menu"`
+- All form inputs have associated `<Label>` elements
+
+### App Icons & Splash Screen
+- Generated 1024x1024 app icon (deep navy + gold shield) in all required iOS sizes (20-1024px, all scales)
+- Generated Android icons for all density buckets (mdpi through xxxhdpi)
+- PWA icons (192x192, 512x512) for web install
+- Splash screen generated for iOS and Android
+
+### Testing
+- E2E UI testing: 100% pass rate — all accessibility features verified by Playwright
+- Backend API testing: 91/91 tests passing
+
 ## Feb 26, 2026 — Capgo Live Updates
 
 ### Added
