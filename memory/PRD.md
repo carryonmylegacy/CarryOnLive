@@ -25,7 +25,7 @@ CarryOn™ is an AI-powered estate planning platform that helps users ("benefact
 - Beneficiary management with orbit visualization
 - Immediate Action Checklist
 
-### Subscription & Payment System (NEW - Feb 27, 2026)
+### Subscription & Payment System (Feb 27, 2026)
 - **30-day free trial** on signup (`trial_ends_at` field)
 - **Post-launch pricing** (6 benefactor tiers):
   - Premium: $9.99/mo | Q: $8.99 | A: $7.99
@@ -37,23 +37,30 @@ CarryOn™ is an AI-powered estate planning platform that helps users ("benefact
 - **4 Beneficiary tiers**: Base $4.99, Standard $3.99, Premium $2.99, Hospice $4.99
 - **Family Plan**: FPO pays standard rate, added benefactors $1/mo off, all beneficiaries flat $3.49/mo
 - **Billing cycles**: Monthly, Quarterly (10% off), Annual (20% off)
-- **Paywall modal**: Full-screen overlay when trial expired & no active subscription
+- **Paywall modal**: 3x2 tile grid (6 tiles including Family Plan) when trial expired
 - **Trial banner**: Dashboard countdown with urgency colors
 - **Stripe checkout** integration (LIVE keys)
 
-### Verification System (NEW - Feb 27, 2026)
+### Trial Reminder System (Feb 27, 2026)
+- Background scheduler runs every 6 hours
+- Sends HTML email reminders via Resend at 10 days and 5 days before trial expiration
+- Deduplication via `trial_reminder_10d_sent` / `trial_reminder_5d_sent` flags
+- Admin manual trigger endpoint: `POST /api/admin/trial-reminders/send`
+
+### Verification System (Feb 27, 2026)
 - Document upload for Military/First Responder (Military ID, badge)
 - Document upload for Hospice (enrollment documentation)
 - Admin review/approve/deny verification requests
 - Verified users get access to discounted tiers
 
-### Admin Controls (NEW - Feb 27, 2026)
+### Admin Controls (Feb 27, 2026)
 - **Beta mode toggle** (global free access for all users)
 - **Per-user discount** (0-100% off any amount)
 - **Per-user free access** toggle
 - **Family plan visibility** toggle
 - **Verification management** tab
 - **Subscription statistics** dashboard
+- **Manual trial reminder trigger**
 
 ### UI/UX
 - Dark bank-style theme with gold accents
@@ -79,9 +86,10 @@ CarryOn™ is an AI-powered estate planning platform that helps users ("benefact
 - `POST /api/verification/upload` - Tier verification documents
 - `GET /api/admin/verifications` - List all verifications
 - `POST /api/admin/verifications/{id}/review` - Approve/deny
+- `POST /api/admin/trial-reminders/send` - Manual reminder trigger
 
 ## Upcoming Tasks (Prioritized)
-- P0: Trial reminder emails (10 days, 5 days before expiry)
-- P1: Re-enable OTP email via Resend
-- P2: Animated logo (waiting on user asset)
+- P1: Re-enable OTP email via Resend (domain verification for carryontechnologies.com)
+- P2: Animated logo (waiting on user transparent PNG/SVG asset)
 - P3: Mobile app deploy via Codemagic
+- Refactor: Extract shared ThemedSection component from LoginPage/AboutPage
