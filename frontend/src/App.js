@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -6,6 +6,7 @@ import { SectionLockProvider } from './components/security/SectionLock';
 import { Toaster } from './components/ui/sonner';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { isNative } from './services/native';
+import SubscriptionPaywall from './components/SubscriptionPaywall';
 
 // Pages
 import LoginPage from './pages/LoginPage';
