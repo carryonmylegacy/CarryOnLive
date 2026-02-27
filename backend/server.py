@@ -1,15 +1,18 @@
 """
 CarryOn™ Backend — Main Entry Point
-Refactored: shared code in config.py, utils.py, models.py
+Security-hardened with rate limiting, security headers, and CORS.
 Routes organized in /routes/*.py
 """
 
 import asyncio
 import os
+import time
+from collections import defaultdict
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, Request, Response
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
 
 from config import client, db, logger
