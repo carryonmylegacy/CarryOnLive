@@ -276,23 +276,23 @@ const AdminPage = () => {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-2 overflow-x-auto">
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         {[
-          { key: 'users', label: 'All Users', icon: Users, path: '/admin' },
-          { key: 'transition', label: 'Transition Verification', icon: FileKey, path: '/admin/transition' },
-          { key: 'dts', label: 'DTS Management', icon: Shield, path: '/admin/dts' },
-          { key: 'support', label: 'Customer Support', icon: Headphones, path: '/admin/support' },
-          { key: 'subscriptions', label: 'Subscriptions', icon: CreditCard, path: '/admin/subscriptions' },
-          { key: 'verifications', label: 'Verifications', icon: FileKey, path: '/admin/verifications' },
+          { key: 'users', label: 'Users', icon: Users, path: '/admin' },
+          { key: 'transition', label: 'TVT', icon: FileKey, path: '/admin/transition' },
+          { key: 'dts', label: 'DTS', icon: Shield, path: '/admin/dts' },
+          { key: 'support', label: 'Support', icon: Headphones, path: '/admin/support' },
+          { key: 'subscriptions', label: 'Subs', icon: CreditCard, path: '/admin/subscriptions' },
+          { key: 'verifications', label: 'Verify', icon: FileKey, path: '/admin/verifications' },
           { key: 'analytics', label: 'Analytics', icon: Activity, path: '/admin/analytics' },
-          { key: 'activity', label: 'Activity Log', icon: Activity, path: '/admin/activity' },
-          { key: 'dev-switcher', label: 'Dev Switcher', icon: Settings, path: '/admin/dev-switcher' },
+          { key: 'activity', label: 'Activity', icon: Activity, path: '/admin/activity' },
+          { key: 'dev-switcher', label: 'Dev', icon: Settings, path: '/admin/dev-switcher' },
         ].map(t => (
           <button key={t.key} onClick={() => navigate(t.path)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
               tab === t.key ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'
             }`} data-testid={`admin-tab-${t.key}`}>
-            <t.icon className="w-4 h-4" /> {t.label}
+            <t.icon className="w-3.5 h-3.5" /> {t.label}
           </button>
         ))}
       </div>
