@@ -260,6 +260,21 @@ const SignupPage = () => {
               </Select>
             </div>
 
+            {/* Date of Birth */}
+            <div className="space-y-2">
+              <Label htmlFor="dateOfBirth" className="text-[#A0AABF] text-sm">Date of Birth</Label>
+              <Input
+                id="dateOfBirth"
+                type="date"
+                value={dateOfBirth}
+                onChange={(e) => setDateOfBirth(e.target.value)}
+                className="input-field"
+                data-testid="signup-dob-input"
+                max={new Date().toISOString().split('T')[0]}
+              />
+              <p className="text-[#525C72] text-xs">Used to determine age-based plan eligibility (e.g., New Adult tier for ages 18-25)</p>
+            </div>
+
             {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-[#A0AABF] text-sm">Email *</Label>
