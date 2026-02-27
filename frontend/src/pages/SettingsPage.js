@@ -385,6 +385,11 @@ const SettingsPage = () => {
           CarryOn™ v1.0.0 · © 2024 CarryOn Inc.
         </p>
       </div>
+
+      {/* Paywall Modal */}
+      {showPaywall && (
+        <SubscriptionPaywall onDismiss={() => setShowPaywall(false)} />
+      )}
     </div>
   );
 };
