@@ -81,33 +81,39 @@ const LoginPage = () => {
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 w-full">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-0 items-center">
 
-            {/* LEFT — Logo + Tagline */}
-            <div className="text-center lg:text-left lg:pr-16">
-              <div className="logo-glow-wrap relative w-[240px] h-[240px] lg:w-[300px] lg:h-[300px] mx-auto lg:mx-0 mb-8">
-                <div className="absolute inset-0"><div className="logo-tracer" /></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <img src="/carryon-logo.jpg" alt="CarryOn" className="w-[160px] lg:w-[210px] h-auto relative z-10" />
-                </div>
-                <div className="absolute inset-0 rounded-full" style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.06) 0%, transparent 65%)' }} />
-              </div>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.08] mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                Every American Family.
-                <span className="block text-[#d4af37] mt-1">Ready.</span>
-              </h1>
-              <p className="text-[#7b879e] text-base lg:text-lg max-w-md mx-auto lg:mx-0 leading-relaxed mb-8">
-                Secure your legacy with AI-powered estate planning. Protect what matters, guide who you love.
-              </p>
-              <div className="flex items-center gap-5 justify-center lg:justify-start mb-6">
-                {['AES-256 Encrypted', 'Zero-Knowledge', 'SOC 2'].map(badge => (
-                  <div key={badge} className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
-                    <span className="text-[#525c72] text-xs">{badge}</span>
+            {/* LEFT — Logo + Tagline side by side */}
+            <div className="lg:pr-10">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 lg:gap-8">
+                {/* Logo */}
+                <div className="logo-glow-wrap relative w-[180px] h-[180px] lg:w-[220px] lg:h-[220px] flex-shrink-0">
+                  <div className="absolute inset-0"><div className="logo-tracer" /></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <img src="/carryon-logo.jpg" alt="CarryOn" className="w-[120px] lg:w-[150px] h-auto relative z-10" />
                   </div>
-                ))}
+                  <div className="absolute inset-0 rounded-full" style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.06) 0%, transparent 65%)' }} />
+                </div>
+                {/* Text beside logo */}
+                <div className="text-center sm:text-left flex-1 sm:pt-2">
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-[1.08] mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                    Every American Family.
+                    <span className="block text-[#d4af37] mt-1">Ready.</span>
+                  </h1>
+                  <p className="text-[#7b879e] text-sm lg:text-base max-w-sm leading-relaxed mb-5">
+                    Secure your legacy with AI-powered estate planning. Protect what matters, guide who you love.
+                  </p>
+                  <div className="flex items-center gap-4 justify-center sm:justify-start mb-4">
+                    {['AES-256 Encrypted', 'Zero-Knowledge', 'SOC 2'].map(badge => (
+                      <div key={badge} className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
+                        <span className="text-[#525c72] text-xs">{badge}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <a href="#about" className="inline-flex items-center gap-2 text-[#525c72] text-sm hover:text-[#d4af37] transition-colors">
+                    Scroll to explore <ChevronDown className="w-4 h-4 animate-bounce" />
+                  </a>
+                </div>
               </div>
-              <a href="#about" className="inline-flex items-center gap-2 text-[#525c72] text-sm hover:text-[#d4af37] transition-colors">
-                Scroll to explore <ChevronDown className="w-4 h-4 animate-bounce" />
-              </a>
             </div>
 
             {/* RIGHT — Login Card */}
@@ -118,8 +124,8 @@ const LoginPage = () => {
                 boxShadow: '0 8px 80px rgba(0,0,0,0.5), 0 0 50px rgba(212,175,55,0.02)',
               }}>
                 <div className="absolute top-0 left-8 right-8 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
-                <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Benefactor Sign In</h2>
-                <p className="text-[#525c72] text-sm mb-6">Access your estate planning portal</p>
+                <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Sign In</h2>
+                <p className="text-[#525c72] text-sm mb-6">Access your CarryOn account</p>
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div>
                     <label className="text-[#7b879e] text-xs font-medium mb-1.5 block">Email</label>
@@ -373,25 +379,23 @@ const LoginPage = () => {
         .logo-glow-wrap { position: relative; }
         .logo-tracer {
           position: absolute;
-          width: 10px; height: 10px;
+          width: 8px; height: 8px;
           background: #d4af37;
           border-radius: 50%;
-          box-shadow: 0 0 16px 6px rgba(212,175,55,0.45), 0 0 50px 16px rgba(212,175,55,0.12);
-          animation: trace 5s ease-in-out infinite;
-          offset-path: path('M150,10 C230,10 280,60 280,150 C280,240 230,290 150,290 C70,290 20,240 20,150 C20,60 70,10 150,10');
+          box-shadow: 0 0 14px 5px rgba(212,175,55,0.5), 0 0 40px 14px rgba(212,175,55,0.15);
+          animation: trace-inf 6s ease-in-out infinite;
+          offset-path: path('M110,110 C110,80 80,65 60,65 C35,65 15,80 15,110 C15,140 35,155 60,155 C80,155 110,140 110,110 C110,80 140,65 160,65 C185,65 205,80 205,110 C205,140 185,155 160,155 C140,155 110,140 110,110');
           offset-distance: 0%;
         }
-        @keyframes trace {
-          0% { offset-distance: 0%; opacity: 0.8; }
-          50% { opacity: 1; }
-          100% { offset-distance: 100%; opacity: 0.8; }
+        @keyframes trace-inf {
+          0% { offset-distance: 0%; opacity: 0.7; }
+          25% { opacity: 1; }
+          50% { offset-distance: 50%; opacity: 0.7; }
+          75% { opacity: 1; }
+          100% { offset-distance: 100%; opacity: 0.7; }
         }
         @supports not (offset-path: path('M0,0')) {
-          .logo-tracer { animation: trace-fb 5s linear infinite; }
-          @keyframes trace-fb {
-            0% { transform: rotate(0deg) translateX(130px) rotate(0deg); }
-            100% { transform: rotate(360deg) translateX(130px) rotate(-360deg); }
-          }
+          .logo-tracer { display: none; }
         }
       `}</style>
     </div>
