@@ -160,7 +160,6 @@ const BeneficiaryHubPage = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-[var(--t)] truncate">{user?.name || 'You'}</p>
-                <p className="text-xs text-[var(--t4)]">You</p>
               </div>
             </div>
 
