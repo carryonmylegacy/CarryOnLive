@@ -404,9 +404,9 @@ async def create_subscription_checkout(
     # Calculate price based on billing cycle
     monthly_price = float(plan["price"])
     if data.billing_cycle == "annual":
-        amount = round(monthly_price * 10.0, 2)  # 10 months for annual
+        amount = round(float(plan.get("annual_price", monthly_price * 0.8)) * 12, 2)
     elif data.billing_cycle == "quarterly":
-        amount = round(monthly_price * 2.7, 2)  # 2.7 months for quarterly
+        amount = round(float(plan.get("quarterly_price", monthly_price * 0.9)) * 3, 2)
     else:
         amount = monthly_price
 
