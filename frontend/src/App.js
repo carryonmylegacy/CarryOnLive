@@ -41,6 +41,8 @@ import UploadCertificatePage from './pages/beneficiary/UploadCertificatePage';
 import CondolencePage from './pages/beneficiary/CondolencePage';
 import BeneficiarySettingsPage from './pages/beneficiary/BeneficiarySettingsPage';
 
+import AboutPage from './pages/AboutPage';
+
 // Layout
 import DashboardLayout from './components/layout/DashboardLayout';
 
@@ -119,6 +121,7 @@ function AppRoutes() {
       {/* Legal Pages - Public */}
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
       <Route path="/terms" element={<TermsPage />} />
+      <Route path="/about" element={<AboutPage />} />
 
       {/* Invitation Accept Route - Public */}
       <Route path="/accept-invitation/:token" element={<AcceptInvitationPage />} />
