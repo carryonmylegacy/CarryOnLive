@@ -32,8 +32,44 @@ from routes.subscriptions import router as subscriptions_router
 from routes.support import router as support_router
 from routes.transition import router as transition_router
 
+# Background scheduler
+async def weekly_digest_scheduler():
+    """Background task: sends weekly digest every Monday at 8 AM EST."""
+    from routes.digest import run_weekly_digest
+
+    while True:
+        now = datetime.now(timezone.utc)
+        days_ahead = (7 - now.weekday()) % 7
+        if days_ahead == 0 and now.hour >= 13:
+            days_ahead = 7
+        next_monday = (now + timedelta(days=days_ahead)).replace(
+            hour=13, minute=0, second=0, microsecond=0
+        )
+        wait_seconds = (next_monday - now).total_seconds()
+        logger.info(
+            f"Weekly digest scheduled for {next_monday.isoformat()} ({wait_seconds / 3600:.1f}h away)"
+        )
+        await asyncio.sleep(wait_seconds)
+        try:
+            result = await run_weekly_digest("https://carryon.us/dashboard")
+            logger.info(f"Weekly digest sent: {result}")
+        except Exception as e:
+            logger.error(f"Weekly digest failed: {e}")
+
+
+# Lifespan (replaces deprecated on_event)
+@asynccontextmanager
+async def lifespan(app):
+    logger.info("CarryOn™ API started - ready for real accounts")
+    task = asyncio.create_task(weekly_digest_scheduler())
+    yield
+    task.cancel()
+    client.close()
+    logger.info("CarryOn™ API shutting down")
+
+
 # Create the main app
-app = FastAPI(title="CarryOn™ API", version="1.0.0")
+app = FastAPI(title="CarryOn™ API", version="1.0.0", lifespan=lifespan)
 
 # Create the /api prefix router
 api_router = APIRouter(prefix="/api")
