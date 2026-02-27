@@ -35,9 +35,9 @@ CarryOn™ is an AI-powered estate planning platform that helps users ("benefact
   - Military/First Responder: $5.99/mo (requires verification)
   - Hospice: Free (requires verification)
 - **4 Beneficiary tiers**: Base $4.99, Standard $3.99, Premium $2.99, Hospice $4.99
-- **Family Plan**: FPO pays standard rate, added benefactors $1/mo off, all beneficiaries flat $3.49/mo
+- **Family Plan**: FPO pays standard rate, added benefactors $1/mo off, all beneficiaries flat $3.49/mo (6th tile in paywall grid)
 - **Billing cycles**: Monthly, Quarterly (10% off), Annual (20% off)
-- **Paywall modal**: 3x2 tile grid (6 tiles including Family Plan) when trial expired
+- **Paywall modal**: 3x2 tile grid (6 tiles) when trial expired
 - **Trial banner**: Dashboard countdown with urgency colors
 - **Stripe checkout** integration (LIVE keys)
 
@@ -53,13 +53,21 @@ CarryOn™ is an AI-powered estate planning platform that helps users ("benefact
 - Admin review/approve/deny verification requests
 - Verified users get access to discounted tiers
 
+### Subscription Analytics Dashboard (Feb 27, 2026)
+- **6 KPI cards**: MRR, Trial Conversion %, Churn Rate %, Active Trials, Active Subs, Pending Reviews
+- **Signups — Last 30 Days**: Line chart with daily signup counts
+- **Trial Funnel**: Donut chart (Active Trial / Converted / Expired / Churned)
+- **Tier Distribution**: Bar chart showing subscribers per tier
+- **Monthly Revenue by Tier**: Bar chart showing revenue contribution per tier
+- Refresh button for on-demand data refresh
+
 ### Admin Controls (Feb 27, 2026)
 - **Beta mode toggle** (global free access for all users)
 - **Per-user discount** (0-100% off any amount)
 - **Per-user free access** toggle
 - **Family plan visibility** toggle
 - **Verification management** tab
-- **Subscription statistics** dashboard
+- **Analytics dashboard** tab
 - **Manual trial reminder trigger**
 
 ### UI/UX
@@ -86,6 +94,7 @@ CarryOn™ is an AI-powered estate planning platform that helps users ("benefact
 - `POST /api/verification/upload` - Tier verification documents
 - `GET /api/admin/verifications` - List all verifications
 - `POST /api/admin/verifications/{id}/review` - Approve/deny
+- `GET /api/admin/subscription-stats` - Full analytics data
 - `POST /api/admin/trial-reminders/send` - Manual reminder trigger
 
 ## Upcoming Tasks (Prioritized)
