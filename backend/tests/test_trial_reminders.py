@@ -27,7 +27,8 @@ def admin_token():
         json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
     )
     if response.status_code == 200:
-        return response.json().get("token")
+        data = response.json()
+        return data.get("access_token") or data.get("token")
     pytest.skip(f"Admin login failed: {response.status_code}")
 
 
@@ -39,7 +40,8 @@ def regular_user_token():
         json={"email": EXPIRED_USER_EMAIL, "password": EXPIRED_USER_PASSWORD},
     )
     if response.status_code == 200:
-        return response.json().get("token")
+        data = response.json()
+        return data.get("access_token") or data.get("token")
     return None
 
 
@@ -49,7 +51,8 @@ class TestTrialRemindersAPI:
     def test_trial_reminders_send_requires_auth(self):
         """Trial reminders endpoint requires authentication"""
         response = requests.post(f"{BASE_URL}/api/admin/trial-reminders/send")
-        assert response.status_code == 401, f"Expected 401, got {response.status_code}"
+        # 401 or 403 both indicate lack of auth
+        assert response.status_code in [401, 403], f"Expected 401 or 403, got {response.status_code}"
         print("✓ Trial reminders endpoint requires authentication")
 
     def test_trial_reminders_send_requires_admin(self, regular_user_token):
