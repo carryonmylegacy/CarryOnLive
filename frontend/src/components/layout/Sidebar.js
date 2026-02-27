@@ -172,7 +172,7 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="sb hidden lg:flex" data-testid="sidebar">
+    <aside className="sb hidden lg:flex" data-testid="sidebar" role="navigation" aria-label="Main navigation">
       {/* Logo Section */}
       <div className="sb-logo">
         <img 
