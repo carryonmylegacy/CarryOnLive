@@ -193,10 +193,11 @@ export default function SubscriptionPaywall({ onDismiss }) {
 
   const trial = subStatus?.trial || {};
 
-  if (loading) {
+  if (loading || confirmingPayment) {
     return (
-      <div className="fixed inset-0 z-[9999] bg-[#0a0e1a]/95 flex items-center justify-center" data-testid="paywall-loading">
+      <div className="fixed inset-0 z-[9999] bg-[#0a0e1a]/95 flex items-center justify-center flex-col gap-4" data-testid="paywall-loading">
         <Loader2 className="w-10 h-10 text-[#d4af37] animate-spin" />
+        {confirmingPayment && <p className="text-[#A0AABF] text-sm">Confirming your payment...</p>}
       </div>
     );
   }
