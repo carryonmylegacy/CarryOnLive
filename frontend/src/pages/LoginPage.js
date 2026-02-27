@@ -65,7 +65,7 @@ const LoginPage = () => {
               { label: 'Features', href: '#features' },
               { label: 'Security', href: '#security' },
               { label: 'How It Works', href: '#steps' },
-              { label: 'About', href: '#about' },
+              { label: 'About', href: '/about' },
             ].map(item => (
               <a key={item.label} href={item.href} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">{item.label}</a>
             ))}
@@ -79,10 +79,10 @@ const LoginPage = () => {
       {/* ═══════════ HERO — LOGO LEFT, LOGIN RIGHT ═══════════ */}
       <section className="min-h-screen flex items-center pt-16" style={{ background: 'radial-gradient(ellipse 80% 60% at 30% 50%, rgba(212,175,55,0.03) 0%, transparent 70%)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 w-full">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-0 items-center">
+          <div className="grid lg:grid-cols-[1fr_420px] gap-10 lg:gap-14 items-center">
 
             {/* LEFT — Logo + Tagline side by side */}
-            <div className="lg:pr-10">
+            <div>
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 lg:gap-8">
                 {/* Logo */}
                 <div className="flex-shrink-0">
@@ -114,7 +114,7 @@ const LoginPage = () => {
 
             {/* RIGHT — Login Card */}
             <div className="flex justify-center lg:justify-end">
-              <div className="w-full max-w-[420px] rounded-2xl p-8 relative" style={{
+              <div className="w-full rounded-2xl p-8 relative" style={{
                 background: 'linear-gradient(160deg, rgba(18,28,48,0.97), rgba(12,20,38,0.99))',
                 border: '1px solid rgba(212,175,55,0.12)',
                 boxShadow: '0 8px 80px rgba(0,0,0,0.5), 0 0 50px rgba(212,175,55,0.02)',
