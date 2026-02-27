@@ -184,10 +184,23 @@ app.add_middleware(RateLimitMiddleware, max_requests=20, window_seconds=60)
 
 
 # CORS Middleware
+ALLOWED_ORIGINS = os.environ.get(
+    "CORS_ORIGINS",
+    "https://app.carryon.us,https://carryon.us,https://www.carryon.us"
+).split(",")
+
+# In preview/dev, also allow the preview URL
+frontend_url = os.environ.get("FRONTEND_URL", "")
+if frontend_url and frontend_url not in ALLOWED_ORIGINS:
+    ALLOWED_ORIGINS.append(frontend_url)
+
+# Allow localhost for development
+ALLOWED_ORIGINS.extend(["http://localhost:3000", "http://localhost:3001"])
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
 )
