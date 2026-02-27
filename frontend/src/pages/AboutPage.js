@@ -40,7 +40,7 @@ const AboutPage = () => {
       <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(212,175,55,0.08)', background: 'rgba(8,14,26,0.85)', backdropFilter: 'blur(20px)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           <a href="/login" className="flex items-center">
-            <img src="/carryon-logo.jpg" alt="CarryOn" className="h-9" />
+            <img src="/carryon-logo.jpg" alt="CarryOn" className="h-12" />
           </a>
           <div className="hidden md:flex items-center gap-8">
             <a href="/login#features" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">Features</a>
