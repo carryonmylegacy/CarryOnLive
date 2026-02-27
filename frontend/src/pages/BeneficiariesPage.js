@@ -225,6 +225,22 @@ const BeneficiariesPage = () => {
     }
   };
 
+  const handleCopyLink = async (ben) => {
+    if (!ben.invitation_token) {
+      toast.error('No invitation link available — send an invite first');
+      return;
+    }
+    const link = `${window.location.origin}/accept-invitation/${ben.invitation_token}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopiedLink(ben.id);
+      toast.success('Invitation link copied — share via text, WhatsApp, or any messenger');
+      setTimeout(() => setCopiedLink(null), 2000);
+    } catch {
+      toast.error('Failed to copy link');
+    }
+  };
+
   const handleDelete = async (beneficiaryId) => {
     if (!confirm('Are you sure you want to remove this beneficiary?')) return;
     
