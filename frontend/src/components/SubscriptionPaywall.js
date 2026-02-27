@@ -1,0 +1,470 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
+import {
+  Crown, Shield, Check, Star, ChevronRight, Loader2,
+  Upload, Clock, AlertTriangle, Users, X, Heart, Award
+} from 'lucide-react';
+import { Button } from './ui/button';
+import { toast } from 'sonner';
+
+const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+const TIER_ICONS = {
+  premium: Crown,
+  standard: Star,
+  base: Shield,
+  new_adult: Award,
+  military: Shield,
+  hospice: Heart,
+};
+
+const TIER_COLORS = {
+  premium: { border: '#d4af37', bg: 'rgba(212,175,55,0.08)', accent: '#d4af37' },
+  standard: { border: '#60A5FA', bg: 'rgba(96,165,250,0.08)', accent: '#60A5FA' },
+  base: { border: '#22C993', bg: 'rgba(34,201,147,0.08)', accent: '#22C993' },
+  new_adult: { border: '#B794F6', bg: 'rgba(183,148,246,0.08)', accent: '#B794F6' },
+  military: { border: '#F59E0B', bg: 'rgba(245,158,11,0.08)', accent: '#F59E0B' },
+  hospice: { border: '#ec4899', bg: 'rgba(236,72,153,0.08)', accent: '#ec4899' },
+};
+
+export default function SubscriptionPaywall({ onDismiss }) {
+  const { token } = useAuth();
+  const [plans, setPlans] = useState([]);
+  const [billing, setBilling] = useState('monthly');
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [subStatus, setSubStatus] = useState(null);
+  const [showVerification, setShowVerification] = useState(false);
+  const [verificationTier, setVerificationTier] = useState('');
+  const [verificationFile, setVerificationFile] = useState(null);
+  const [verificationDocType, setVerificationDocType] = useState('');
+  const [uploadingVerification, setUploadingVerification] = useState(false);
+  const [showFamilyInfo, setShowFamilyInfo] = useState(false);
+
+  const headers = { Authorization: `Bearer ${token}` };
+
+  const fetchData = useCallback(async () => {
+    try {
+      const [plansRes, statusRes] = await Promise.all([
+        axios.get(`${API_URL}/subscriptions/plans`),
+        axios.get(`${API_URL}/subscriptions/status`, { headers }),
+      ]);
+      setPlans(plansRes.data.plans || []);
+      setSubStatus(statusRes.data);
+    } catch (err) {
+      console.error('Failed to load subscription data:', err);
+    }
+    setLoading(false);
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const getPrice = (plan) => {
+    if (plan.price === 0) return 'Free';
+    if (billing === 'quarterly') return `$${plan.quarterly_price?.toFixed(2) || (plan.price * 0.9).toFixed(2)}`;
+    if (billing === 'annual') return `$${plan.annual_price?.toFixed(2) || (plan.price * 0.8).toFixed(2)}`;
+    return `$${plan.price.toFixed(2)}`;
+  };
+
+  const getBillingLabel = () => {
+    if (billing === 'quarterly') return '/mo (billed quarterly)';
+    if (billing === 'annual') return '/mo (billed annually)';
+    return '/month';
+  };
+
+  const getSavingsLabel = () => {
+    if (billing === 'quarterly') return 'Save 10%';
+    if (billing === 'annual') return 'Save 20%';
+    return null;
+  };
+
+  const handleCheckout = async (plan) => {
+    if (plan.requires_verification && plan.id !== 'new_adult') {
+      setVerificationTier(plan.id);
+      setShowVerification(true);
+      return;
+    }
+
+    setCheckoutLoading(true);
+    try {
+      const res = await axios.post(`${API_URL}/subscriptions/checkout`, {
+        plan_id: plan.id,
+        billing_cycle: billing,
+        origin_url: window.location.origin,
+      }, { headers });
+
+      if (res.data.free) {
+        toast.success(res.data.message);
+        fetchData();
+      } else if (res.data.url) {
+        window.location.href = res.data.url;
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to start checkout');
+    }
+    setCheckoutLoading(false);
+  };
+
+  const handleVerificationUpload = async () => {
+    if (!verificationFile || !verificationDocType) {
+      toast.error('Please select a document type and file');
+      return;
+    }
+
+    setUploadingVerification(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64 = e.target.result.split(',')[1];
+        const formData = new FormData();
+        formData.append('tier_requested', verificationTier);
+        formData.append('doc_type', verificationDocType);
+        formData.append('file_data', base64);
+        formData.append('file_name', verificationFile.name);
+
+        try {
+          const res = await axios.post(`${API_URL}/verification/upload`, formData, { headers });
+          toast.success(res.data.message);
+          setShowVerification(false);
+          setVerificationFile(null);
+          setVerificationDocType('');
+          fetchData();
+        } catch (err) {
+          toast.error(err.response?.data?.detail || 'Upload failed');
+        }
+        setUploadingVerification(false);
+      };
+      reader.readAsDataURL(verificationFile);
+    } catch (err) {
+      toast.error('Failed to process file');
+      setUploadingVerification(false);
+    }
+  };
+
+  // Filter plans based on eligibility
+  const visiblePlans = plans.filter(p => {
+    if (p.id === 'new_adult') {
+      return subStatus?.eligible_tiers?.includes('new_adult');
+    }
+    return true;
+  });
+
+  const trial = subStatus?.trial || {};
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-[9999] bg-[#0a0e1a]/95 flex items-center justify-center" data-testid="paywall-loading">
+        <Loader2 className="w-10 h-10 text-[#d4af37] animate-spin" />
+      </div>
+    );
+  }
+
+  // Verification Upload Modal
+  if (showVerification) {
+    const docOptions = verificationTier === 'military'
+      ? ['Military ID', 'First Responder Badge']
+      : ['Hospice enrollment documentation'];
+
+    return (
+      <div className="fixed inset-0 z-[9999] bg-[#0a0e1a]/95 flex items-center justify-center p-4" data-testid="verification-modal">
+        <div className="w-full max-w-md glass-card p-6 space-y-5 animate-fade-in">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-[#F1F3F8]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              {verificationTier === 'military' ? 'Military / First Responder' : 'Hospice'} Verification
+            </h2>
+            <button onClick={() => setShowVerification(false)} className="text-[#7B879E] hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <p className="text-sm text-[#A0AABF]">
+            Please upload one of the following documents to verify your eligibility:
+          </p>
+
+          <div className="space-y-3">
+            <label className="text-sm text-[#A0AABF]">Document Type</label>
+            <div className="flex flex-col gap-2">
+              {docOptions.map(doc => (
+                <button
+                  key={doc}
+                  onClick={() => setVerificationDocType(doc)}
+                  className={`p-3 rounded-xl text-sm text-left transition-all ${
+                    verificationDocType === doc
+                      ? 'bg-[#d4af37]/10 border border-[#d4af37] text-[#d4af37]'
+                      : 'bg-[var(--s)] border border-[var(--b)] text-[var(--t3)] hover:border-[var(--t5)]'
+                  }`}
+                  data-testid={`doc-type-${doc.toLowerCase().replace(/\s+/g, '-')}`}
+                >
+                  {doc}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm text-[#A0AABF]">Upload Document</label>
+            <label className="flex items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed border-[var(--b)] hover:border-[#d4af37]/50 cursor-pointer transition-colors" data-testid="verification-file-input">
+              <input
+                type="file"
+                accept="image/*,.pdf"
+                className="hidden"
+                onChange={(e) => setVerificationFile(e.target.files[0])}
+              />
+              <Upload className="w-5 h-5 text-[var(--t5)]" />
+              <span className="text-sm text-[var(--t4)]">
+                {verificationFile ? verificationFile.name : 'Click to select file'}
+              </span>
+            </label>
+          </div>
+
+          <Button
+            onClick={handleVerificationUpload}
+            disabled={uploadingVerification || !verificationFile || !verificationDocType}
+            className="gold-button w-full"
+            data-testid="submit-verification-btn"
+          >
+            {uploadingVerification ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Upload className="w-5 h-5 mr-2" />}
+            Submit for Review
+          </Button>
+
+          <p className="text-xs text-[var(--t5)] text-center">
+            Documents are reviewed within 24-48 hours. You'll be notified once approved.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-[9999] bg-[#0a0e1a]/95 overflow-y-auto" data-testid="subscription-paywall">
+      <div className="min-h-screen flex flex-col items-center justify-start py-8 px-4">
+        {/* Header */}
+        <div className="text-center mb-8 max-w-lg animate-fade-in">
+          <img src="/carryon-logo.jpg" alt="CarryOn" className="w-[120px] h-auto mx-auto mb-4" />
+
+          {trial.trial_expired ? (
+            <>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#F1F3F8] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                Your Free Trial Has Ended
+              </h1>
+              <p className="text-[#A0AABF] text-sm">
+                Choose a plan to continue protecting your family's legacy with CarryOn.
+              </p>
+            </>
+          ) : trial.trial_active ? (
+            <>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#F1F3F8] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                Choose Your Plan
+              </h1>
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Clock className="w-4 h-4 text-[#d4af37]" />
+                <span className="text-[#d4af37] text-sm font-medium">
+                  {trial.days_remaining} days left in your free trial
+                </span>
+              </div>
+              <p className="text-[#A0AABF] text-sm">
+                Select a plan now to ensure uninterrupted access when your trial ends.
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#F1F3F8] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                Choose Your Plan
+              </h1>
+              <p className="text-[#A0AABF] text-sm">
+                Subscribe to access the full CarryOn platform.
+              </p>
+            </>
+          )}
+
+          {/* Verification pending notice */}
+          {subStatus?.verification?.status === 'pending' && (
+            <div className="mt-4 p-3 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/20">
+              <div className="flex items-center gap-2 text-[#F59E0B] text-sm">
+                <Clock className="w-4 h-4" />
+                Your {subStatus.verification.tier_requested} verification is under review
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Billing Cycle Toggle */}
+        <div className="flex items-center gap-2 mb-6 animate-fade-in" data-testid="billing-toggle">
+          {['monthly', 'quarterly', 'annual'].map((b) => (
+            <button
+              key={b}
+              onClick={() => setBilling(b)}
+              className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all capitalize relative ${
+                billing === b
+                  ? 'bg-[#d4af37] text-[#0F1629]'
+                  : 'bg-[#1a2035] text-[#7B879E] hover:text-white border border-white/[0.07]'
+              }`}
+              data-testid={`paywall-billing-${b}`}
+            >
+              {b}
+              {b !== 'monthly' && billing === b && (
+                <span className="absolute -top-2 -right-2 text-[10px] bg-[#22C993] text-white px-1.5 py-0.5 rounded-full font-bold">
+                  {getSavingsLabel()}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Plan Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl w-full mb-8 animate-fade-in">
+          {visiblePlans.filter(p => !['hospice'].includes(p.id) || p.price === 0).map((plan) => {
+            const Icon = TIER_ICONS[plan.id] || Shield;
+            const colors = TIER_COLORS[plan.id] || TIER_COLORS.base;
+            const isSelected = selectedPlan === plan.id;
+            const isPremium = plan.id === 'premium';
+
+            return (
+              <div
+                key={plan.id}
+                onClick={() => setSelectedPlan(plan.id)}
+                className={`relative rounded-2xl p-5 cursor-pointer transition-all hover:-translate-y-1 ${
+                  isSelected
+                    ? 'shadow-lg shadow-[${colors.accent}]/20'
+                    : 'hover:shadow-md'
+                }`}
+                style={{
+                  background: isSelected ? colors.bg : '#141C33',
+                  border: `2px solid ${isSelected ? colors.border : 'rgba(255,255,255,0.07)'}`,
+                }}
+                data-testid={`paywall-plan-${plan.id}`}
+              >
+                {isPremium && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#d4af37] text-[#0F1629] text-xs font-bold px-3 py-1 rounded-full">
+                    Most Popular
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 mb-3 mt-1">
+                  <Icon className="w-5 h-5" style={{ color: colors.accent }} />
+                  <h3 className="font-bold text-[#F1F3F8]">{plan.name}</h3>
+                </div>
+
+                <div className="mb-1">
+                  <span className="text-3xl font-bold" style={{ color: colors.accent, fontFamily: 'Cormorant Garamond, serif' }}>
+                    {getPrice(plan)}
+                  </span>
+                  {plan.price > 0 && (
+                    <span className="text-xs text-[#7B879E] ml-1">{getBillingLabel()}</span>
+                  )}
+                </div>
+
+                {plan.ben_price !== undefined && (
+                  <p className="text-xs text-[#7B879E] mb-3">
+                    Beneficiary: ${plan.ben_price.toFixed(2)}/mo
+                  </p>
+                )}
+
+                <div className="space-y-2 mb-4">
+                  {(plan.features || []).map((f, i) => (
+                    <div key={i} className="flex items-start gap-2 text-sm text-[#A0AABF]">
+                      <Check className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: colors.accent }} />
+                      <span>{f}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {plan.note && (
+                  <p className="text-xs text-[#7B879E] italic mb-3">{plan.note}</p>
+                )}
+
+                <Button
+                  onClick={(e) => { e.stopPropagation(); handleCheckout(plan); }}
+                  disabled={checkoutLoading}
+                  className={`w-full text-sm font-bold ${
+                    isPremium || isSelected
+                      ? 'gold-button'
+                      : 'bg-[#1a2035] text-[#A0AABF] border border-white/[0.1] hover:border-[#d4af37]/50 hover:text-[#d4af37]'
+                  }`}
+                  data-testid={`paywall-select-${plan.id}`}
+                >
+                  {checkoutLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  {plan.requires_verification && plan.id !== 'new_adult' ? 'Verify & Subscribe' : 'Subscribe'}
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Family Plan Card */}
+        <div className="max-w-5xl w-full mb-8 animate-fade-in">
+          <div
+            className="rounded-2xl p-5 cursor-pointer transition-all hover:-translate-y-0.5"
+            style={{
+              background: 'linear-gradient(135deg, rgba(212,175,55,0.04), rgba(96,165,250,0.04))',
+              border: '2px solid rgba(212,175,55,0.15)',
+            }}
+            onClick={() => setShowFamilyInfo(!showFamilyInfo)}
+            data-testid="paywall-family-plan"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#d4af37]/10 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-[#d4af37]" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-[#F1F3F8] text-lg">Family Plan</h3>
+                  <p className="text-sm text-[#A0AABF]">
+                    Bundle your household — $1/mo off for added benefactors, flat $3.49/mo for all beneficiaries
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className={`w-5 h-5 text-[#7B879E] transition-transform ${showFamilyInfo ? 'rotate-90' : ''}`} />
+            </div>
+
+            {showFamilyInfo && (
+              <div className="mt-4 pt-4 space-y-3" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                  <div className="p-3 rounded-xl bg-[#1a2035]">
+                    <p className="text-[#d4af37] font-bold">Plan Owner</p>
+                    <p className="text-[#A0AABF]">Pays standard tier rate</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-[#1a2035]">
+                    <p className="text-[#60A5FA] font-bold">Added Benefactors</p>
+                    <p className="text-[#A0AABF]">$1/mo discount off their tier</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-[#1a2035]">
+                    <p className="text-[#22C993] font-bold">All Beneficiaries</p>
+                    <p className="text-[#A0AABF]">Flat $3.49/mo regardless of tier</p>
+                  </div>
+                </div>
+                <p className="text-xs text-[#7B879E]">
+                  Subscribe to any individual plan first, then set up your Family Plan from Settings. Designate a successor who inherits ownership upon transition.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Dismiss button (if trial is still active) */}
+        {trial.trial_active && onDismiss && (
+          <button
+            onClick={onDismiss}
+            className="text-[#7B879E] text-sm hover:text-white transition-colors mb-4"
+            data-testid="paywall-dismiss"
+          >
+            Continue with free trial ({trial.days_remaining} days remaining)
+          </button>
+        )}
+
+        {/* Footer */}
+        <div className="text-center mb-4 animate-fade-in">
+          <p className="text-[#525C72] text-xs">
+            AES-256 Encrypted · Zero-Knowledge Architecture · All plans include full security
+          </p>
+          <p className="text-[#525C72] text-xs mt-1">
+            Cancel anytime · No long-term commitment
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
