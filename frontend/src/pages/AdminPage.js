@@ -6,7 +6,7 @@ import {
   Shield, Users, FileKey, Clock, CheckCircle2, XCircle, Trash2, Loader2,
   FolderLock, Search, UserCircle, Eye, Package, Lock, DollarSign, Mail, Flame,
   ChevronRight, AlertTriangle, Settings, Headphones, Send, MessageCircle, CreditCard, ToggleLeft,
-  Activity, FileUp, UserPlus, ChevronDown, X
+  Activity, FileUp, UserPlus, ChevronDown, X, TrendingUp, BarChart3, PieChart as PieIcon, ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -16,6 +16,10 @@ import { toast } from 'sonner';
 import { Skeleton } from '../components/ui/skeleton';
 import { Switch } from '../components/ui/switch';
 import { Separator } from '../components/ui/separator';
+import {
+  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend
+} from 'recharts';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
