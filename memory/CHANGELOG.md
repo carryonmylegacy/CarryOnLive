@@ -12,6 +12,14 @@
 - **Added `tests/__init__.py`** for proper Python package structure
 - Result: `ruff check .` → **All checks passed**, `ruff format --check .` → **38 files already formatted**
 
+## Feb 26, 2026 — Capgo Live Updates
+
+### Added
+- `@capgo/capacitor-updater` plugin — enables over-the-air updates to mobile users without App Store review
+- `CapacitorUpdater.notifyAppReady()` called on native app startup (`App.js`)
+- New `live-update` workflow in `codemagic.yaml` — auto-triggers on push to `main`, builds web assets, deploys via Capgo
+- Result: Code changes → push to GitHub → instant update on all phones (no store review needed)
+
 ## Feb 26, 2026 — Capacitor Native App Setup
 
 ### Added
