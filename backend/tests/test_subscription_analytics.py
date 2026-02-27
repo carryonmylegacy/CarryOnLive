@@ -87,7 +87,7 @@ class TestSubscriptionAnalyticsAPI:
         # ARR should be ~12x MRR
         if data["mrr"] > 0:
             expected_arr = data["mrr"] * 12
-            assert abs(data["arr"] - expected_arr) < 0.01, f"ARR should be 12x MRR"
+            assert abs(data["arr"] - expected_arr) < 0.01, "ARR should be 12x MRR"
         print(f"PASS: ARR returned: ${data['arr']:.2f}")
 
     def test_subscription_stats_returns_trial_conversion_pct(self):

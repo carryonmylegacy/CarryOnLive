@@ -12,7 +12,6 @@ import os
 import pytest
 import requests
 import base64
-from datetime import datetime
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 if not BASE_URL:
@@ -431,7 +430,7 @@ class TestAdminSubscriptionStats:
         for field in expected_fields:
             assert field in data, f"Missing field: {field}"
         
-        print(f"PASS: Subscription stats returned:")
+        print("PASS: Subscription stats returned:")
         print(f"  - Total users: {data.get('total_users')}")
         print(f"  - Active trials: {data.get('active_trials')}")
         print(f"  - Active subscriptions: {data.get('active_subscriptions')}")
@@ -470,7 +469,7 @@ class TestAdminSubscriptionSettings:
         assert "plans" in data, "Missing plans"
         assert "stats" in data, "Missing stats"
         
-        print(f"PASS: Admin can access subscription settings")
+        print("PASS: Admin can access subscription settings")
         print(f"  - Beta mode: {data.get('beta_mode')}")
         print(f"  - Plans count: {len(data.get('plans', []))}")
 
@@ -505,7 +504,7 @@ class TestExpiredTrialUser:
                 trial = data.get("trial", {})
                 
                 if trial.get("trial_expired"):
-                    print(f"PASS: Expired user correctly shows trial_expired=True")
+                    print("PASS: Expired user correctly shows trial_expired=True")
                     print(f"  - needs_subscription: {data.get('needs_subscription')}")
                     print(f"  - beta_mode: {data.get('beta_mode')}")
                 else:
