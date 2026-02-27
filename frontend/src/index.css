@@ -736,3 +736,12 @@
     padding-bottom: calc(8px + env(safe-area-inset-bottom));
   }
 }
+
+/* Hide scrollbar utility */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
