@@ -151,10 +151,19 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 
 @router.post("/auth/dev-login")
 async def dev_login(data: UserLogin):
-    """DEV ONLY: Skip OTP, instant login for development testing"""
+    """DEV/ADMIN ONLY: Skip OTP for development testing.
+    Only available to admin-role users for impersonation."""
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
     if not user or not verify_password(data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    # Only admin users can use dev-login to prevent OTP bypass abuse
+    if user.get("role") != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Dev login restricted to admin accounts"
+        )
+
     token = create_token(user["id"], user["email"], user["role"])
     return TokenResponse(
         access_token=token,
