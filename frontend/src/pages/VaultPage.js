@@ -631,6 +631,7 @@ const VaultPage = () => {
                             className="text-[#3b82f6] hover:text-[#60a5fa]"
                             onClick={() => doc.is_locked ? (setSelectedDoc(doc), setShowLockModal(true)) : handlePreview(doc)}
                             title="Preview"
+                            aria-label="Preview document"
                           >
                             <Eye className="w-4 h-4" />
                           </Button>
@@ -642,6 +643,7 @@ const VaultPage = () => {
                           onClick={() => doc.is_locked ? (setSelectedDoc(doc), setShowLockModal(true)) : handleDownload(doc)}
                           disabled={downloading === doc.id}
                           title="Download"
+                          aria-label="Download document"
                         >
                           {downloading === doc.id ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -657,6 +659,7 @@ const VaultPage = () => {
                               className="text-[#d4af37] hover:text-[#f5d050]"
                               onClick={() => openEditModal(doc)}
                               title="Edit"
+                              aria-label="Edit document"
                               data-testid={`edit-document-${doc.id}`}
                             >
                               <Edit2 className="w-4 h-4" />
@@ -667,6 +670,7 @@ const VaultPage = () => {
                               className="text-[#ef4444] hover:text-[#ef4444]"
                               onClick={() => handleDelete(doc.id)}
                               title="Delete"
+                              aria-label="Delete document"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
