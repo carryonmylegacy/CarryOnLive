@@ -1354,6 +1354,8 @@ const VerificationsAdmin = ({ getAuthHeaders }) => {
 const SubscriptionAnalytics = ({ getAuthHeaders }) => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [sendingDigest, setSendingDigest] = useState(false);
+  const [digestPreview, setDigestPreview] = useState(null);
 
   const headers = getAuthHeaders()?.headers || {};
 
