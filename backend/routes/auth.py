@@ -24,46 +24,22 @@ router = APIRouter()
 
 @router.post("/auth/login")
 async def login(data: UserLogin):
-    """Initiate login and send OTP to user."""
+    """Login — returns token directly (OTP temporarily disabled)."""
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
     if not user or not verify_password(data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    # Generate and store OTP
-    otp = generate_otp()
-    otp_method = data.otp_method or "email"
-
-    await db.otps.update_one(
-        {"email": data.email},
-        {
-            "$set": {
-                "otp": otp,
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "method": otp_method,
-                "phone": data.phone if otp_method == "sms" else None,
-            }
-        },
-        upsert=True,
+    token = create_token(user["id"], user["email"], user["role"])
+    return TokenResponse(
+        access_token=token,
+        user=UserResponse(
+            id=user["id"],
+            email=user["email"],
+            name=user["name"],
+            role=user["role"],
+            created_at=user["created_at"],
+        ),
     )
-
-    # Send OTP via selected method
-    if otp_method == "sms" and data.phone:
-        await send_otp_sms(data.phone, otp)
-        logger.info(f"SMS OTP sent for {data.email} to {data.phone}")
-        return {
-            "message": "OTP sent via SMS",
-            "email": data.email,
-            "otp_method": "sms",
-            "phone_hint": data.phone[-4:] if data.phone else None,
-        }
-    else:
-        await send_otp_email(data.email, otp, user.get("name", "User"))
-        logger.info(f"Email OTP sent for {data.email}")
-        return {
-            "message": "OTP sent via email",
-            "email": data.email,
-            "otp_method": "email",
-        }
 
 
 @router.post("/auth/register")
