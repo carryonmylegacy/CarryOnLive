@@ -6,7 +6,7 @@ import {
   Shield, Users, FileKey, Clock, CheckCircle2, XCircle, Trash2, Loader2,
   FolderLock, Search, UserCircle, Eye, Package, Lock, DollarSign, Mail, Flame,
   ChevronRight, AlertTriangle, Settings, Headphones, Send, MessageCircle, CreditCard, ToggleLeft,
-  Activity, FileUp, UserPlus, ChevronDown
+  Activity, FileUp, UserPlus, ChevronDown, X
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
