@@ -80,6 +80,7 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setUser(null);
     setPendingEmail(null);
+    setSubscriptionStatus(null);
   };
 
   const devLogin = async (email, password) => {
