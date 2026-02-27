@@ -66,9 +66,10 @@ workflows:
           keychain initialize
       - name: Fetch signing files
         script: |
+          openssl genrsa 2048 > /tmp/cert_key.pem 2>/dev/null
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
-            --certificate-key=@file:frontend/ios/certificate_key.pem \
+            --certificate-key=@file:/tmp/cert_key.pem \
             --create
       - name: Add certificates to keychain
         script: |
