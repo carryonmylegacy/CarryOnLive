@@ -313,7 +313,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
           ))}
         </div>
 
-        {/* Plan Cards */}
+        {/* Plan Cards — 6 tiles (3x2) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl w-full mb-8 animate-fade-in">
           {visiblePlans.filter(p => !['hospice'].includes(p.id) || p.price === 0).map((plan) => {
             const Icon = TIER_ICONS[plan.id] || Shield;
@@ -392,57 +392,96 @@ export default function SubscriptionPaywall({ onDismiss }) {
               </div>
             );
           })}
-        </div>
 
-        {/* Family Plan Card */}
-        <div className="max-w-5xl w-full mb-8 animate-fade-in">
+          {/* Family Plan — 6th tile */}
           <div
-            className="rounded-2xl p-5 cursor-pointer transition-all hover:-translate-y-0.5"
+            className="relative rounded-2xl p-5 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-md flex flex-col"
             style={{
-              background: 'linear-gradient(135deg, rgba(212,175,55,0.04), rgba(96,165,250,0.04))',
-              border: '2px solid rgba(212,175,55,0.15)',
+              background: selectedPlan === 'family' ? 'rgba(212,175,55,0.06)' : '#141C33',
+              border: `2px solid ${selectedPlan === 'family' ? '#d4af37' : 'rgba(255,255,255,0.07)'}`,
             }}
-            onClick={() => setShowFamilyInfo(!showFamilyInfo)}
-            data-testid="paywall-family-plan"
+            onClick={() => setSelectedPlan('family')}
+            data-testid="paywall-plan-family"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#d4af37]/10 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-[#d4af37]" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-[#F1F3F8] text-lg">Family Plan</h3>
-                  <p className="text-sm text-[#A0AABF]">
-                    Bundle your household — $1/mo off for added benefactors, flat $3.49/mo for all beneficiaries
-                  </p>
-                </div>
-              </div>
-              <ChevronRight className={`w-5 h-5 text-[#7B879E] transition-transform ${showFamilyInfo ? 'rotate-90' : ''}`} />
+            <div className="flex items-center gap-2 mb-3 mt-1">
+              <Users className="w-5 h-5 text-[#d4af37]" />
+              <h3 className="font-bold text-[#F1F3F8]">Family Plan</h3>
             </div>
 
-            {showFamilyInfo && (
-              <div className="mt-4 pt-4 space-y-3" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-                  <div className="p-3 rounded-xl bg-[#1a2035]">
-                    <p className="text-[#d4af37] font-bold">Plan Owner</p>
-                    <p className="text-[#A0AABF]">Pays standard tier rate</p>
-                  </div>
-                  <div className="p-3 rounded-xl bg-[#1a2035]">
-                    <p className="text-[#60A5FA] font-bold">Added Benefactors</p>
-                    <p className="text-[#A0AABF]">$1/mo discount off their tier</p>
-                  </div>
-                  <div className="p-3 rounded-xl bg-[#1a2035]">
-                    <p className="text-[#22C993] font-bold">All Beneficiaries</p>
-                    <p className="text-[#A0AABF]">Flat $3.49/mo regardless of tier</p>
-                  </div>
-                </div>
-                <p className="text-xs text-[#7B879E]">
-                  Subscribe to any individual plan first, then set up your Family Plan from Settings. Designate a successor who inherits ownership upon transition.
-                </p>
+            <div className="mb-1">
+              <span className="text-lg font-bold text-[#d4af37]" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+                Bundle & Save
+              </span>
+            </div>
+            <p className="text-xs text-[#7B879E] mb-3">All beneficiaries: flat $3.49/mo</p>
+
+            <div className="space-y-2 mb-4 flex-1">
+              <div className="flex items-start gap-2 text-sm text-[#A0AABF]">
+                <Check className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#d4af37]" />
+                <span>Owner pays standard tier rate</span>
               </div>
-            )}
+              <div className="flex items-start gap-2 text-sm text-[#A0AABF]">
+                <Check className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#d4af37]" />
+                <span>Added benefactors save $1/mo</span>
+              </div>
+              <div className="flex items-start gap-2 text-sm text-[#A0AABF]">
+                <Check className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#d4af37]" />
+                <span>Successor inherits ownership</span>
+              </div>
+              <div className="flex items-start gap-2 text-sm text-[#A0AABF]">
+                <Check className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#d4af37]" />
+                <span>Floor tiers exempt from discount</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-[#7B879E] italic mb-3">Subscribe individually, then add family members from Settings</p>
+
+            <Button
+              onClick={(e) => { e.stopPropagation(); setShowFamilyInfo(!showFamilyInfo); }}
+              className="w-full text-sm font-bold bg-[#1a2035] text-[#A0AABF] border border-white/[0.1] hover:border-[#d4af37]/50 hover:text-[#d4af37]"
+              data-testid="paywall-select-family"
+            >
+              Learn More <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
           </div>
         </div>
+
+        {/* Family Plan Details (expanded) */}
+        {showFamilyInfo && (
+          <div className="max-w-5xl w-full mb-8 animate-fade-in">
+            <div className="rounded-2xl p-5" style={{
+              background: 'rgba(212,175,55,0.04)',
+              border: '2px solid rgba(212,175,55,0.15)',
+            }}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-[#F1F3F8] text-lg flex items-center gap-2">
+                  <Users className="w-5 h-5 text-[#d4af37]" />
+                  Family Plan Details
+                </h3>
+                <button onClick={() => setShowFamilyInfo(false)} className="text-[#7B879E] hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                <div className="p-3 rounded-xl bg-[#1a2035]">
+                  <p className="text-[#d4af37] font-bold">Plan Owner</p>
+                  <p className="text-[#A0AABF]">Pays standard tier rate. Sets the plan anchor.</p>
+                </div>
+                <div className="p-3 rounded-xl bg-[#1a2035]">
+                  <p className="text-[#60A5FA] font-bold">Added Benefactors</p>
+                  <p className="text-[#A0AABF]">$1/mo discount off their individual tier rate</p>
+                </div>
+                <div className="p-3 rounded-xl bg-[#1a2035]">
+                  <p className="text-[#22C993] font-bold">All Beneficiaries</p>
+                  <p className="text-[#A0AABF]">Flat $3.49/mo regardless of tier</p>
+                </div>
+              </div>
+              <p className="text-xs text-[#7B879E] mt-3">
+                Subscribe to any individual plan first, then set up your Family Plan from Settings. Designate a successor who inherits ownership upon transition.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Dismiss button (if trial is still active) */}
         {trial.trial_active && onDismiss && (
