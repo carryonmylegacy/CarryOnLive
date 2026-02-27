@@ -418,6 +418,8 @@
     flex: 1;
     margin-left: var(--sidebar-width);
     min-height: 100vh;
+    max-width: calc(100vw - var(--sidebar-width));
+    overflow-x: hidden;
     background: var(--content-bg);
     transition: background 0.3s ease;
   }
