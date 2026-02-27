@@ -247,13 +247,13 @@ const AdminPage = () => {
   return (
     <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in max-w-full overflow-x-hidden" data-testid="admin-dashboard">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-[var(--gold)]/20 flex items-center justify-center">
+      <div className="flex items-start gap-3">
+        <div className="w-10 h-10 rounded-xl bg-[var(--gold)]/20 flex items-center justify-center flex-shrink-0">
           <Shield className="w-5 h-5 text-[var(--gold)]" />
         </div>
-        <div>
-          <h1 className="text-xl lg:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Admin Dashboard</h1>
-          <p className="text-xs text-[var(--t5)]">Platform administration · Transition verification · DTS management</p>
+        <div className="min-w-0">
+          <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-[var(--t)] whitespace-nowrap" style={{ fontFamily: 'Outfit, sans-serif' }}>Admin Dashboard</h1>
+          <p className="text-[10px] sm:text-xs text-[var(--t5)] truncate">Platform admin · Transition · DTS</p>
         </div>
       </div>
 
