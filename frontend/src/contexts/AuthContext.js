@@ -30,6 +30,8 @@ export const AuthProvider = ({ children }) => {
   }, [token]);
 
   const login = async (email, password, otpMethod = 'email', phone = null) => {
+    // Clear dev switcher session on normal login
+    localStorage.removeItem('dev_switcher_admin_session');
     const payload = { email, password, otp_method: otpMethod };
     if (otpMethod === 'sms' && phone) {
       payload.phone = phone;
@@ -61,6 +63,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('carryon_token');
+    localStorage.removeItem('dev_switcher_admin_session');
     setToken(null);
     setUser(null);
     setPendingEmail(null);
