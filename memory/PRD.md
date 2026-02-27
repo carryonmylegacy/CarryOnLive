@@ -1,91 +1,60 @@
-# CarryOn - Estate Planning & Legacy Management Platform
+# CarryOn - Product Requirements Document
 
-## Architecture (Refactored Feb 2026)
-```
-/app/backend/
-├── server.py          110 lines — App init, router composition, digest scheduler
-├── config.py           73 lines — DB, env vars, external service clients
-├── utils.py           202 lines — Auth helpers (token, password, OTP, email, SMS, push)
-├── models.py          305 lines — Pydantic models and schemas ONLY
-├── services/
-│   ├── readiness.py   362 lines — Estate readiness scoring, milestones, seed data
-│   └── voice_biometrics.py 473 lines — Voice biometric engine (librosa + scipy)
-├── routes/
-│   ├── auth.py        170 lines — Login, register, OTP, dev-login
-│   ├── admin.py       233 lines — User mgmt, role management, activity log, stats
-│   ├── estates.py     238 lines — Estate CRUD, readiness routes
-│   ├── beneficiaries.py 512 lines — Beneficiary CRUD, invitations, photos
-│   ├── documents.py   439 lines — Vault CRUD, voice verification
-│   ├── messages.py    162 lines — Milestone messages
-│   ├── checklist.py   120 lines — IAC CRUD
-│   ├── transition.py  155 lines — Death cert, transition flow
-│   ├── dts.py         290 lines — Trustee services, Stripe setup
-│   ├── guardian.py    376 lines — AI chat (Grok), estate analysis, checklist gen
-│   ├── subscriptions.py 477 lines — Plans, checkout, admin pricing
-│   ├── support.py     174 lines — Customer support chat
-│   ├── family_plan.py 267 lines — Family plan system
-│   ├── digital_wallet.py 183 lines — Digital wallet vault
-│   ├── pdf_export.py  266 lines — PDF estate plan export
-│   ├── security.py    386 lines — Triple lock section security
-│   ├── push.py         84 lines — Push notification routes
-│   └── digest.py      306 lines — Weekly readiness digest (email, scheduler, prefs)
-└── tests/             10 test files
-```
+## Original Problem Statement
+AI-powered estate planning platform for American families. Full-stack React + FastAPI + MongoDB application with mobile (Capacitor) and web deployments.
 
-## Implemented Features
-- Auth (OTP 2FA via email/SMS), Admin/Benefactor/Beneficiary portals
-- SDV, MM, BM, IAC (full CRUD + AI suggestions), DTS, EGA (Grok), Digital Wallet Vault
-- Triple Lock Security, PDF Export
-- Stripe Subscriptions with admin controls
-- Family Plan (admin-toggled)
-- Legal Pages: Privacy Policy (/privacy) and Terms of Service (/terms)
-- SMS Consent Checkbox (Twilio A2P 10DLC compliance)
-- AI Suggest from Vault — EGA auto-generates IAC items from vault documents
-- Admin Panel — user role management, activity log tab
-- Web Push Notifications — VAPID keys, service worker, settings toggle
-- Weekly Estate Readiness Digest — Monday 8AM EST email with score trend + top 3 actions
+## Production Infrastructure
+- **Database**: MongoDB Atlas
+- **Backend**: FastAPI on Railway
+- **Frontend Web**: React on Vercel (`app.carryon.us`)
+- **Frontend Mobile**: Capacitor via Codemagic → TestFlight (iOS)
+- **Domain**: `carryon.us` (GoDaddy)
 
-## Key API Endpoints
-- Auth: `/api/auth/login`, `/api/auth/verify-otp`, `/api/auth/dev-login`
-- Admin: `/api/admin/stats`, `/api/admin/users/{id}/role`, `/api/admin/activity`
-- Estates: `/api/estates`, `/api/estates/{id}/readiness`
-- Digest: `/api/digest/preferences`, `/api/digest/send-weekly`, `/api/digest/preview`
-- Push: `/api/push/vapid-public-key`, `/api/push/subscribe`
+## Core Features (Implemented)
+- Estate document vault with AI analysis (Estate Guardian)
+- Beneficiary management & invitations
+- Milestone messages (text/voice/video)
+- Immediate Action Checklist (auto-populated by AI)
+- Designated Trustee Services
+- Admin panel with Dev Switcher (admin-only)
+- Digital Wallet Vault
+- Photo cropping tool
+- Legal pages (Privacy, Terms)
+- Push notifications (Capacitor)
 
-## DB Collections
-- `users`, `estates`, `beneficiaries`, `documents`, `messages`, `checklists`
-- `readiness_history` — Weekly score snapshots
-- `user_preferences` — Digest opt-in/out
-- `activity_log` — Admin action audit trail
+## 3rd Party Integrations
+- Stripe (payments)
+- Resend (email/OTP - currently disabled)
+- Twilio (SMS)
+- xAI/Grok (AI suggestions)
+- OpenAI Whisper (voice transcription)
+- Capgo (live mobile updates)
 
-## API Keys Active
-- xAI Grok, Stripe (test), Resend, Twilio, Emergent LLM (Whisper), VAPID keys
+## What's Been Implemented (Latest Session - Feb 2026)
+- [x] Landing page redesign with marketing content + login form
+- [x] Hero layout: logo + tagline side by side (fills void)
+- [x] Infinity symbol light tracer on logo
+- [x] Simplified login label ("Sign In" instead of "Benefactor Sign In")
+- [x] DEV switcher restricted to admin-only (fixes beneficiary visibility bug)
+- [x] Vercel deployment unblocked via manual GitHub commits
 
-## Code Quality Status (Feb 2026)
-- Backend: `ruff check .` → All checks passed (0 errors)
-- Backend: `ruff format .` → All files formatted
-- Frontend: `yarn build` → Compiled successfully (0 warnings)
-- Testing: 91/91 comprehensive pytest tests passing (P0-P3 coverage)
-  - `tests/test_comprehensive_suite.py`: 91 tests covering auth, estates, beneficiaries, checklist, documents, messages, digital wallet, support, security, admin, digest, push, subscriptions, family plan, DTS, transition, PDF export, Guardian AI, edge cases, _id leak checks, and cleanup
+## P1 - Upcoming Tasks
+- Deploy mobile app fixes (Digital Wallet link in sidebar, splash screen logo) via Codemagic
+- Investigate Resend email/OTP delivery and re-enable OTP login
+- Full mobile app QA pass after next TestFlight build
 
-## Test Coverage
-- **P0 Auth**: Registration, duplicate rejection, OTP flow (send/wrong/correct), dev-login, bad tokens, nonexistent users
-- **P1 CRUD**: Full create/read/update/delete for estates, beneficiaries, checklist, documents, messages, digital wallet, support
-- **P2 Admin/Services**: Stats, users, activity, role-based rejection, digest prefs, VAPID, subscriptions, family plan, DTS, transition, PDF export
-- **P3 Edge Cases**: Invalid JSON, empty body, 404s, cross-user access, SQL injection, XSS, oversized payloads, MongoDB _id leak verification
+## P2 - Future/Backlog
+- App Store / Google Play submission
+- Full device testing on real hardware
+- Capgo live update integration (currently using full rebuilds)
 
-## Upcoming / Backlog
-- P1: Finalize Mobile App Deployment Readiness (Capacitor/TestFlight testing)
-- P2: Set up Codemagic cloud builds (connect GitHub repo)
-- P2: App Store & Google Play submission
-- P2: Performance & Security Hardening (load testing, OWASP ZAP)
-- P3: Admin analytics dashboard with charts
-- P3: Multi-estate support
-- P3: Picovoice Eagle voice biometrics (parked — $6K/yr)
+## Credentials
+- **User**: barnetharris@gmail.com / Blh9170873
+- **Admin**: founder@carryon.us / CarryOntheWisdom!
 
-## Recent Fixes (Feb 27, 2026)
-- **P0 FIXED**: Beneficiary invitation 404 error — root cause was `FRONTEND_URL` env var concatenated with `VAPID_CLAIMS_EMAIL` line without newline in `.env`. Fixed by adding proper line break.
-- **P1 FIXED**: Estate Guardian chat window too small — large disclaimer reduced to single compact line, header made more compact.
-- **P1 IMPLEMENTED**: Photo crop/zoom tool (`PhotoPicker` component with `react-easy-crop`) — camera access, file upload, crop, zoom, rotation. Integrated into BeneficiariesPage add/edit modal.
-- **ENHANCEMENT**: Added "Copy Invitation Link" button on Beneficiaries page — allows sharing invite links via text/WhatsApp/messenger instead of only email.
-- **CONFIG**: Updated bundle ID from `us.carryon.app` to `com.carryon.app` across all platforms (Capacitor, iOS, Android). Updated codemagic.yaml with Apple Team ID (2KL2Z3CXB2), proper code signing, CocoaPods, and auto-incrementing build numbers.
+## Key Files
+- `frontend/src/pages/LoginPage.js` - Landing page + login
+- `frontend/src/components/dev/DevSwitcher.js` - Admin dev switcher
+- `frontend/src/components/Sidebar.js` - Navigation sidebar
+- `backend/app/routes/auth.py` - Auth routes (OTP disabled)
+- `codemagic.yaml` - Mobile CI/CD pipeline
