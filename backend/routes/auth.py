@@ -1,7 +1,7 @@
 """CarryOn™ Backend — Authentication Routes"""
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -18,6 +18,8 @@ from utils import (
 )
 
 router = APIRouter()
+
+TRIAL_DURATION_DAYS = 30
 
 # ===================== AUTH ROUTES =====================
 
