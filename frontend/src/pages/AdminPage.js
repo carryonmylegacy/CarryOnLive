@@ -32,6 +32,7 @@ const AdminPage = () => {
     : location.pathname === '/admin/dev-switcher' ? 'dev-switcher'
     : location.pathname === '/admin/support' ? 'support'
     : location.pathname === '/admin/subscriptions' ? 'subscriptions'
+    : location.pathname === '/admin/verifications' ? 'verifications'
     : location.pathname === '/admin/activity' ? 'activity'
     : 'users';
   const tab = pathTab;
