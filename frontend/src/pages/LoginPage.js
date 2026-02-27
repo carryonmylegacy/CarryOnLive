@@ -217,11 +217,6 @@ const LoginPage = () => {
             </DialogTitle>
             <DialogDescription className="text-[#94a3b8]">
               Enter the 6-digit code sent to your email
-              {otpHint && (
-                <span className="block mt-1 text-[#d4af37]">
-                  (Hint: starts with {otpHint})
-                </span>
-              )}
             </DialogDescription>
           </DialogHeader>
           
