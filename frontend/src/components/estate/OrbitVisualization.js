@@ -183,7 +183,7 @@ const OrbitVisualization = ({ estates, userInitials, onEstateClick, benefactors 
         cursor: 'grab', 
         userSelect: 'none', 
         touchAction: 'none', 
-        overflow: 'visible' 
+        overflow: 'hidden' 
       }}
       onMouseDown={onDown}
       onTouchStart={onDown}
