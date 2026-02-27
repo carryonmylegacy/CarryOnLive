@@ -1,0 +1,113 @@
+{
+  "summary": "Tested Weekly Admin Analytics Digest feature. Backend: 19/19 tests PASSED. Frontend: All features verified - Preview Digest button opens modal with correct content, Send Digest Now button works and shows success toast, all 3 action buttons visible. Non-admin users correctly blocked with Access Denied.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Admin Analytics Dashboard",
+        "issues": ["Console warnings about recharts chart dimensions (-1 width/height) - cosmetic issue, charts render correctly"]
+      }
+    ]
+  },
+  "passed_tests": [
+    "GET /api/admin/analytics-digest/preview requires authentication (401/403)",
+    "GET /api/admin/analytics-digest/preview requires admin role (403 for non-admin)",
+    "GET /api/admin/analytics-digest/preview returns HTML and data object for admin",
+    "Preview HTML contains MRR section",
+    "Preview HTML contains Conversion section",
+    "Preview HTML contains Churn section",
+    "Preview HTML contains New Signups section with sparkline",
+    "Preview HTML contains User Funnel section",
+    "Preview HTML contains Tier Breakdown section",
+    "Preview data contains all required fields (new_signups, total_users, active_trials, etc.)",
+    "Preview data MRR is numeric and non-negative",
+    "Preview data ARR equals 12x MRR",
+    "Preview data daily_signups has 7 days with day/count fields",
+    "POST /api/admin/analytics-digest/send requires authentication (401/403)",
+    "POST /api/admin/analytics-digest/send requires admin role (403 for non-admin)",
+    "POST /api/admin/analytics-digest/send works for admin (returns success: true)",
+    "Send endpoint returns sent count (integer)",
+    "Send endpoint returns data_summary with mrr, new_signups, conversion_rate, churn_rate",
+    "Preview and send use consistent analytics data",
+    "Analytics tab visible in admin panel (data-testid='admin-tab-analytics')",
+    "subscription-analytics container present (data-testid='subscription-analytics')",
+    "Refresh Analytics button visible and working (data-testid='refresh-analytics')",
+    "Preview Digest button visible (data-testid='preview-digest')",
+    "Send Digest Now button visible (data-testid='send-digest')",
+    "Preview modal opens with Weekly Analytics Digest Preview title",
+    "Preview modal shows MRR, Conversion, Churn KPIs",
+    "Preview modal shows New Signups with sparkline",
+    "Preview modal shows User Funnel (Active Trials, Active Subscribers, Expired, Churned)",
+    "Preview modal shows Tier Breakdown table",
+    "Send Digest Now shows success toast 'Digest sent to 1 admin(s)'",
+    "Non-admin user sees Access Denied when accessing /admin/analytics",
+    "6 KPI cards present: MRR, Trial Conversion, Churn Rate, Active Trials, Active Subs, Pending Reviews"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_admin_analytics_digest.py",
+    "/app/test_reports/pytest/admin_analytics_digest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Admin analytics digest correctly integrated in weekly_digest_scheduler to auto-fire on Mondays",
+    "Preview endpoint returns {html, data} as expected - HTML contains all required sections",
+    "Send endpoint returns {success, sent, data_summary} as expected",
+    "Both endpoints properly enforce admin role with 403 for non-admin users",
+    "Digest HTML is well-formatted with CarryOn branding, sparkline, tier breakdown table",
+    "data-testid attributes properly added for preview-digest, send-digest, refresh-analytics buttons"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_admin_analytics_digest.py"
+  ],
+  "success_rate": {
+    "backend": "100% (19/19 tests passed)",
+    "frontend": "100% (all UI features verified)"
+  },
+  "test_credentials": {
+    "admin": {"email": "admin@carryon.com", "password": "admin123"},
+    "regular_user": {"email": "founder@carryon.us", "password": "CarryOntheWisdom!"}
+  },
+  "seed_data_creation": "None - used existing test data",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Admin Analytics Digest feature fully functional. Preview shows MRR ($0.00), Conversion (0%), Churn (0%), New Signups (20), User Funnel, and Tier Breakdown. Send Digest sends to 1 admin. Auto-scheduled to send alongside weekly digest on Mondays. All endpoints require admin role. App URL: https://free-trial-gate.preview.emergentagent.com, Analytics tab: /admin/analytics",
+  "features_verified": {
+    "analytics_digest_preview_api": {
+      "status": "WORKING",
+      "endpoint": "GET /api/admin/analytics-digest/preview",
+      "response": "{html, data}",
+      "admin_required": true
+    },
+    "analytics_digest_send_api": {
+      "status": "WORKING",
+      "endpoint": "POST /api/admin/analytics-digest/send",
+      "response": "{success, sent, data_summary}",
+      "admin_required": true
+    },
+    "digest_html_sections": [
+      "MRR with ARR",
+      "Conversion rate with new conversions",
+      "Churn rate with cancellations",
+      "New Signups with sparkline (7 days)",
+      "User Funnel (Active Trials, Active Subscribers, Expired, Churned)",
+      "Tier Breakdown table (Tier, Subs, Revenue)",
+      "Pending verifications alert (if any)",
+      "CTA to admin/analytics"
+    ],
+    "ui_buttons": {
+      "refresh_analytics": "Working",
+      "preview_digest": "Working - opens modal",
+      "send_digest": "Working - shows success toast"
+    },
+    "auto_scheduler": {
+      "status": "INTEGRATED",
+      "location": "server.py weekly_digest_scheduler",
+      "schedule": "Mondays alongside weekly digest"
+    }
+  }
+}
