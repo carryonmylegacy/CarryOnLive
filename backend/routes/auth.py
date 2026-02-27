@@ -123,7 +123,6 @@ async def register(data: UserCreate):
     return {
         "message": "Account created. Please verify with OTP.",
         "email": data.email,
-        "otp_hint": otp[:2] + "****",
     }
 
 
