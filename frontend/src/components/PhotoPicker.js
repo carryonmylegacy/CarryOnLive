@@ -171,7 +171,7 @@ export function PhotoPicker({ onPhotoSelected, currentPhoto, onRemove }) {
 
       {/* Source Picker Dialog */}
       <Dialog open={showSourcePicker} onOpenChange={setShowSourcePicker}>
-        <DialogContent className="sm:max-w-xs bg-[#0f1d35] border-[#1e3a5f] text-white">
+        <DialogContent className="sm:max-w-xs bg-[#0f1d35] border-[#1e3a5f] text-white" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Add Photo</DialogTitle>
           </DialogHeader>
