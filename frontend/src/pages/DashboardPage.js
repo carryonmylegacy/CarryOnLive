@@ -175,11 +175,11 @@ const DashboardPage = () => {
         </svg>
         
         {/* Score display - moved down for enlarged needle */}
-        <div className="absolute -bottom-24 left-1/2 transform -translate-x-1/2 text-center">
-          <div className="text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+        <div className="absolute -bottom-16 lg:-bottom-24 left-1/2 transform -translate-x-1/2 text-center">
+          <div className="text-3xl lg:text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
             {score}%
           </div>
-          <div className="text-2xl font-bold" style={{ color: scoreInfo.color }}>
+          <div className="text-base lg:text-2xl font-bold" style={{ color: scoreInfo.color }}>
             {scoreInfo.label}
           </div>
         </div>
