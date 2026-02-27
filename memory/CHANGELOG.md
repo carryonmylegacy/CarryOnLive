@@ -12,6 +12,22 @@
 - **Added `tests/__init__.py`** for proper Python package structure
 - Result: `ruff check .` → **All checks passed**, `ruff format --check .` → **38 files already formatted**
 
+## Feb 26, 2026 — Capacitor Native App Setup
+
+### Added
+- Capacitor 6 configured for both iOS and Android (`us.carryon.app`)
+- Native plugins installed: Push Notifications, Camera, Biometric Auth (Face ID / Fingerprint)
+- `src/services/native.js`: Unified API for biometrics, camera, and push — auto-detects native vs web and falls back gracefully
+- iOS `Info.plist`: Added Face ID, Camera, and Photo Library usage descriptions
+- Android `AndroidManifest.xml`: Added biometric, camera, and storage permissions
+- `codemagic.yaml`: Cloud CI/CD config for building iOS (.ipa) and Android (.apk/.aab) from GitHub pushes
+- `capacitor.config.ts`: App config with proper scheme, colors, and plugin settings
+
+## Feb 26, 2026 — CI/CD Pipeline
+
+### Added
+- `.github/workflows/ci.yml`: GitHub Actions workflow for automated backend tests + frontend builds on push
+
 ## Feb 26, 2026 — Comprehensive Test Suite (P0-P3)
 
 ### Created
