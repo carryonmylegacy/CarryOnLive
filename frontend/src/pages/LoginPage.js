@@ -240,6 +240,8 @@ const LoginPage = () => {
           <div className="absolute inset-0 opacity-[0.12]" style={{ backgroundImage: 'url(/texture-family.png)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(10,22,40,0.7) 0%, rgba(8,14,26,0.95) 100%)' }} />
           <RevealSection className="max-w-[800px] mx-auto px-6 text-center relative z-10">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6 leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              Family Readiness Isn&apos;t Planning for Death.<br />
               <span className="text-[#d4af37]">It&apos;s Planning for Your Family.</span>
             </h2>
             <p className="text-[#7b879e] text-base leading-relaxed mb-8">
