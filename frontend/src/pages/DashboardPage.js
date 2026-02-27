@@ -27,6 +27,7 @@ const DashboardPage = () => {
   const [readiness, setReadiness] = useState({ documents: { score: 0 }, messages: { score: 0 }, checklist: { score: 0 } });
   const [loading, setLoading] = useState(true);
   const [hoveredSection, setHoveredSection] = useState(null);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   // Sync hovered section to root element for sidebar CSS targeting
   useEffect(() => {
