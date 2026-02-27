@@ -13,7 +13,6 @@ from utils import (
     get_current_user,
     hash_password,
     send_otp_email,
-    send_otp_sms,
     verify_password,
 )
 
