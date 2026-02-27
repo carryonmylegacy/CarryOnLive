@@ -370,30 +370,7 @@ const LoginPage = () => {
         </div>
       )}
 
-      {/* ═══════════ CSS ═══════════ */}
-      <style>{`
-        .logo-glow-wrap { position: relative; }
-        .logo-tracer {
-          position: absolute;
-          width: 8px; height: 8px;
-          background: #d4af37;
-          border-radius: 50%;
-          box-shadow: 0 0 14px 5px rgba(212,175,55,0.5), 0 0 40px 14px rgba(212,175,55,0.15);
-          animation: trace-inf 6s ease-in-out infinite;
-          offset-path: path('M110,110 C110,80 80,65 60,65 C35,65 15,80 15,110 C15,140 35,155 60,155 C80,155 110,140 110,110 C110,80 140,65 160,65 C185,65 205,80 205,110 C205,140 185,155 160,155 C140,155 110,140 110,110');
-          offset-distance: 0%;
-        }
-        @keyframes trace-inf {
-          0% { offset-distance: 0%; opacity: 0.7; }
-          25% { opacity: 1; }
-          50% { offset-distance: 50%; opacity: 0.7; }
-          75% { opacity: 1; }
-          100% { offset-distance: 100%; opacity: 0.7; }
-        }
-        @supports not (offset-path: path('M0,0')) {
-          .logo-tracer { display: none; }
-        }
-      `}</style>
+      {/* end */}
     </div>
   );
 };
