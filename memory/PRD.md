@@ -17,6 +17,7 @@ CarryOn™ is an AI-powered estate planning platform that helps users ("benefact
 - Login/logout with JWT tokens
 - Role-based access (admin, benefactor, beneficiary)
 - Date of birth collection on signup (for age-based tier eligibility)
+- Dev-login restricted to admin accounts only
 
 ### Estate & Document Management
 - Estate creation and management
@@ -26,63 +27,50 @@ CarryOn™ is an AI-powered estate planning platform that helps users ("benefact
 - Immediate Action Checklist
 
 ### Subscription & Payment System (Feb 27, 2026)
-- **30-day free trial** on signup (`trial_ends_at` field)
-- **Post-launch pricing** (6 benefactor tiers):
-  - Premium: $9.99/mo | Q: $8.99 | A: $7.99
-  - Standard: $8.99/mo | Q: $8.09 | A: $7.19
-  - Base: $7.99/mo | Q: $7.19 | A: $6.39
-  - New Adult (18-25): $3.99/mo (auto-detected by DOB)
-  - Military/First Responder: $5.99/mo (requires verification)
-  - Hospice: Free (requires verification)
+- **30-day free trial** on signup
+- **Post-launch pricing** (6 benefactor tiers): Premium $9.99, Standard $8.99, Base $7.99, New Adult $3.99, Military $5.99, Hospice Free
 - **4 Beneficiary tiers**: Base $4.99, Standard $3.99, Premium $2.99, Hospice $4.99
-- **Family Plan**: FPO pays standard rate, added benefactors $1/mo off, all beneficiaries flat $3.49/mo (6th tile in paywall grid)
+- **Family Plan**: 6th tile in paywall grid, $1/mo off for added benefactors, flat $3.49/mo for beneficiaries
 - **Billing cycles**: Monthly, Quarterly (10% off), Annual (20% off)
-- **Paywall modal**: 3x2 tile grid (6 tiles) when trial expired
+- **Paywall modal**: 3x2 tile grid when trial expired
 - **Trial banner**: Dashboard countdown with urgency colors
 - **Stripe checkout** integration (LIVE keys)
 
-### Trial Reminder System (Feb 27, 2026)
-- Background scheduler runs every 6 hours
-- Sends HTML email reminders via Resend at 10 days and 5 days before trial expiration
-- Deduplication via `trial_reminder_10d_sent` / `trial_reminder_5d_sent` flags
-- Admin manual trigger: `POST /api/admin/trial-reminders/send`
+### Trial Reminder System
+- Background scheduler every 6 hours, emails at 10 days and 5 days before trial expiry
+- Deduplication flags prevent re-sends
+- Admin manual trigger endpoint
 
-### Verification System (Feb 27, 2026)
-- Document upload for Military/First Responder (Military ID, badge)
-- Document upload for Hospice (enrollment documentation)
-- Admin review/approve/deny verification requests
-- Verified users get access to discounted tiers
+### Verification System
+- Document upload for Military/First Responder and Hospice
+- Admin review/approve/deny workflow
+- Verified users access discounted tiers
 
-### Subscription Analytics Dashboard (Feb 27, 2026)
-- **6 KPI cards**: MRR, Trial Conversion %, Churn Rate %, Active Trials, Active Subs, Pending Reviews
-- **4 charts**: Signups (30-day line), Trial Funnel (donut), Tier Distribution (bar), Revenue by Tier (bar)
-- Refresh, Preview Digest, and Send Digest Now buttons
+### Subscription Analytics Dashboard
+- 6 KPI cards: MRR, Trial Conversion %, Churn Rate %, Active Trials, Active Subs, Pending Reviews
+- 4 charts: Signups (30-day line), Trial Funnel (donut), Tier Distribution (bar), Revenue by Tier (bar)
 
-### Weekly Admin Analytics Digest (Feb 27, 2026)
-- Auto-sent every Monday alongside the weekly estate readiness digest
-- HTML email with: MRR/ARR KPIs, Conversion & Churn rates, New Signups with sparkline, User Funnel breakdown, Tier Breakdown table, pending verification alerts
-- Admin can preview and manually send from the Analytics tab
-- Endpoints: `GET /api/admin/analytics-digest/preview`, `POST /api/admin/analytics-digest/send`
+### Weekly Admin Analytics Digest
+- Auto-sent every Monday with MRR, signups, conversions, churn, tier breakdown
+- Preview modal and manual send from Analytics tab
+
+### Security Hardening (Feb 27, 2026)
+- **SecurityHeadersMiddleware**: X-Content-Type-Options (nosniff), X-Frame-Options (DENY), X-XSS-Protection, Referrer-Policy (strict-origin-when-cross-origin), Permissions-Policy, HSTS (1 year)
+- **RateLimitMiddleware**: 20 requests/60s on auth endpoints (login, register, dev-login, verify-otp)
+- **CORS tightened**: Specific origins (app.carryon.us, carryon.us, localhost) instead of wildcard
+- **Dev-login restricted**: Only admin-role users can bypass OTP
+- **All lint warnings fixed**: Python (ruff) and JavaScript (ESLint) clean
+- **MongoDB _id exclusion**: 100% coverage across all route queries
+- **No hardcoded secrets**: All credentials via .env
 
 ### Admin Controls
-- **Beta mode toggle** (global free access for all users)
-- **Per-user discount** (0-100% off any amount)
-- **Per-user free access** toggle
-- **Family plan visibility** toggle
-- **Verification management** tab
-- **Analytics dashboard** tab with digest controls
-- **Manual trial reminder trigger**
-
-### UI/UX
-- Dark bank-style theme with gold accents
-- Layered scrolling animations on login/about pages
-- Thematic background textures
-- DevSwitcher for admin testing
+- Beta mode toggle, per-user discount/free access, family plan toggle
+- Verification management, analytics dashboard, trial reminder trigger
 
 ## Deployment
-- **Manual Vercel deploy hook** required after GitHub push (webhook is broken)
-- Railway auto-deploys from GitHub
-- Stripe uses LIVE keys on both environments
+- Manual Vercel deploy hook after GitHub push
+- Railway auto-deploys
+- Stripe LIVE keys on both environments
 
 ## Test Accounts
 - **User**: barnetharris@gmail.com / Blh9170873
@@ -90,19 +78,13 @@ CarryOn™ is an AI-powered estate planning platform that helps users ("benefact
 - **Local Admin**: admin@carryon.com / admin123
 
 ## Key API Endpoints
-- `POST /api/auth/register` - User registration with trial
-- `GET /api/subscriptions/plans` - All plans with pricing
-- `GET /api/subscriptions/status` - User subscription/trial status
-- `POST /api/subscriptions/checkout` - Stripe checkout
-- `POST /api/verification/upload` - Tier verification documents
-- `GET /api/admin/verifications` - List all verifications
-- `POST /api/admin/verifications/{id}/review` - Approve/deny
-- `GET /api/admin/subscription-stats` - Full analytics data
-- `POST /api/admin/trial-reminders/send` - Manual reminder trigger
-- `GET /api/admin/analytics-digest/preview` - Preview digest HTML
-- `POST /api/admin/analytics-digest/send` - Send digest to admins
+- Auth: register, login, dev-login (admin only), verify-otp
+- Subscriptions: plans, status, checkout
+- Verification: upload, status, admin review
+- Admin: subscription-stats, trial-reminders/send, analytics-digest/preview, analytics-digest/send
+- All admin endpoints require admin role (403 otherwise)
 
-## Upcoming Tasks (Prioritized)
+## Upcoming Tasks
 - P1: Re-enable OTP email via Resend (domain verification for carryontechnologies.com)
 - P2: Animated logo (waiting on user transparent PNG/SVG asset)
 - P3: Mobile app deploy via Codemagic
