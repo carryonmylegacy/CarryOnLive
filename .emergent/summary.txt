@@ -1,86 +1,87 @@
 <analysis>**original_problem_statement:**
 The user's initial project involved creating legal pages, refactoring code, and adding features like an AI assistant and admin panel. This evolved into deploying the app for web (Vercel/Railway) and mobile (Capacitor/Codemagic).
 
-Most recently, the focus has been on a complete redesign of the web app's landing and about pages, including advanced animations, layered scrolling, and thematic backgrounds. The agent also resolved a critical, recurring deployment issue by establishing a manual deployment workflow. Stripe integration was transitioned from test to live mode, enabling real payments.
+The most recent and significant task was to design and implement a new subscription model based on a detailed pricing document. This system includes a 30-day free trial, a paywall modal after the trial, multiple subscription tiers (including special tiers for Military/Hospice requiring document verification), and a Family Plan. The user also requested an admin analytics dashboard to track subscription metrics, an automated weekly email digest for admins, and a full security audit and hardening of the application.
 
-The current and most pressing task, requested just before the fork, is to design and implement a new subscription model: a 30-day full-featured free trial, followed by a mandatory subscription selection. This system must also support a document upload and manual verification flow for special discount tiers (Military, Hospice).
+Throughout the session, the user actively provided feedback on the live site, leading to several iterative bug fixes, most notably for a Dev Switcher feature used by the admin to impersonate other users. The deployment workflow remains a manual two-step process initiated by the agent.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The project is a full-stack application with a React frontend and FastAPI backend, using a production-ready infrastructure:
-*   **Database**: MongoDB Atlas (live).
-*   **Backend**: FastAPI on Railway (live).
-*   **Frontend (Web)**: React on Vercel, accessible via  (live).
-*   **Deployment Workflow**: The automated GitHub-to-Vercel webhook is broken. The established workaround is for the user to push to GitHub, and the agent then manually triggers a Vercel deploy hook URL. This process is reliable.
-*   **Payments**: Stripe is integrated with the user's **LIVE** keys on both Vercel and Railway, enabling real transactions.
-*   **UI/UX**: The landing page and about page have been completely redesigned with a dark, bank-style theme, layered scrolling animations, and thematic background textures.
+The project is a full-stack application with a React frontend and FastAPI backend, using a production-ready infrastructure and a live Stripe integration for real payments.
+*   **Core Features**: A comprehensive subscription system is now live, controlled by an admin beta mode toggle. It includes a 30-day free trial, a post-trial paywall, multiple pricing tiers fetched from the backend, and a document upload flow for special tier verification.
+*   **Admin Panel**: The admin panel is significantly enhanced with a subscription management tab, a user verification queue, and a detailed analytics dashboard showing MRR, churn, conversion rates, and user trends with charts.
+*   **Backend**: The backend now includes scheduled background tasks for sending trial expiry reminders and weekly analytics email digests. It has also undergone significant security hardening, with rate limiting on auth routes, stricter CORS policies, and security headers middleware.
+*   **Deployment**: The manual deployment workflow (user pushes to GitHub, agent triggers Vercel deploy hook) is the established and working process.
 
 **Last working item**:
--   Last item agent was working: The agent was about to start the planning and architecture phase for a comprehensive new subscription and payment system, as requested by the user. This includes a 30-day free trial, a paywall modal after the trial, and a verification flow for special tiers.
--   Status: NOT STARTED
--   Agent Testing Done: N/A
--   Which testing method agent to use? This is a large feature. The agent should plan for backend testing (pytest) for the new subscription logic and frontend testing (testing agent) for the paywall modal and user flow.
--   User Testing Done: N/A
+-   Last item agent was working: Removing the You label from under the central sphere on the beneficiary estate visualization page (). The agent implemented the change, and a deployment was triggered.
+-   Status: USER VERIFICATION PENDING
+-   Agent Testing Done: Y
+-   Which testing method agent to use? screenshot tool
+-   User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  Issue 1: (P1) Several UI/UX fixes are deployed but await user confirmation.
+  Issue 1: (P0) DevSwitcher any-to-any navigation may still be broken.
+  Issue 2: (P1) Several UI/UX fixes from a previous session are still awaiting user confirmation.
   
   Issues Detail:
   - Issue 1: 
-     - **Description**: A batch of fixes and tweaks were deployed in the last session. The user has not yet confirmed if they resolve the reported issues.
-       - Safari password autofill flicker.
-       - Admin page horizontal scroll on smaller screens.
-       - Beneficiary orbit spheres overlapping the page title.
-       - Increased navbar logo size.
-       - Increased visibility of background textures.
-     - **Attempted fixes**: Code changes for all items were implemented and deployed.
-     - **Next debug checklist**: The next agent should ask the user to verify these fixes on the live site in an incognito window.
-     - **Why fix this issue and what will be achieved with the fix?**: Resolves lingering UI polish issues and closes out previous user requests.
+     - **Description**: The user reported a Body is disturbed or locked error when switching between Benefactor and Beneficiary roles using the admin DevSwitcher. This happens because the admin token, required for impersonation, was not being persisted after the first switch.
+     - **Attempted fixes**: The agent implemented a fix to store the original admin token in  upon the first switch and use it for all subsequent switches. The logout function was also updated to clear this token. A deployment for this fix was triggered.
+     - **Next debug checklist**: 
+       - Ask the user to test the DevSwitcher flow again on the live site () after the latest deployment has finished.
+       - The relevant files are  (where the token is stored/retrieved) and  (the  endpoint).
+     - **Why fix this issue and what will be achieved with the fix?**: This is a critical tool for the admin to test the application from different user perspectives. A fix will restore full admin functionality.
+     - **Status**:  USER VERIFICATION PENDING
+     - **Is recurring issue?** Y
+     - **Should Test frontend/backend/both after fix?** Frontend (manual browser testing by user).
+     - **Blocked on other issue**: None
+
+  - Issue 2: 
+     - **Description**: A batch of UI fixes deployed in a previous session have not been verified by the user. These include a Safari password autofill flicker, horizontal scroll on the admin page, beneficiary orbit sphere overlap, navbar logo size, and background texture visibility.
+     - **Attempted fixes**: Code changes were implemented and deployed.
+     - **Next debug checklist**: Ask the user to verify these fixes on the live site, preferably in an incognito window.
+     - **Why fix this issue and what will be achieved with the fix?**: Resolves lingering UI polish issues and closes out old user requests.
      - **Status**:  USER VERIFICATION PENDING
      - **Is recurring issue?** N
      - **Should Test frontend/backend/both after fix?** Frontend
      - **Blocked on other issue**: None
 
 **In progress Task List**:
-- None. The previous tasks were completed, and the agent is about to start a new, large task.
+- None.
 
 **Upcoming and Future Tasks**
-*   **P0: Design and Implement Subscription & Trial System**:
-    *   **Phase 1: Backend Logic**:
-        *   Modify the User model in  to include , , , and .
-        *   On user signup (), set  to 30 days in the future.
-        *   Create new backend endpoints for:
-            *   Checking subscription status (for the paywall).
-            *   Handling Stripe subscription creation.
-            *   Uploading verification documents for special tiers.
-            *   An admin endpoint to approve/deny verification documents.
-    *   **Phase 2: Frontend Paywall**:
-        *   Create a full-screen modal that appears after login if the trial is over and no subscription is active. This modal should block all other app interaction.
-        *   The modal should display subscription tiers, pricing (monthly/quarterly), and a Stripe payment element.
-        *   It should also include the file upload component for users selecting a special tier.
-    *   **Phase 3: Trial Reminders**:
-        *   Implement logic (potentially a scheduled task in the backend) to send email reminders 10 days and 5 days before trial expiration.
 *   **P1: Re-enable OTP Email System**: Investigate the Resend integration and  domain verification to re-enable production email delivery for OTP.
 *   **P2: Implement Animated Logo**: Once the user provides a transparent PNG or SVG of the logo's infinity symbol, implement the animated tracer effect.
 *   **P3: Deploy Mobile App Fixes**: Trigger a new build in Codemagic to deploy the Digital Wallet Vault link and updated splash screen logo to the TestFlight app.
 
 **Completed work in this session**
-- **Critical Deployment Fix**: Resolved the P0 Vercel deployment blocker by establishing a reliable manual workflow using a deploy hook URL.
-- **Live Payments**: Successfully integrated the user's live Stripe API keys into the production Vercel and Railway environments, enabling real payment processing.
-- **Major UI/UX Overhaul**:
-    - Completely redesigned the  and created a new  from scratch based on user screenshots.
-    - Implemented advanced frontend effects: layered scrolling, scroll-reveal animations, and staggered card entrances.
-    - Iteratively added and refined thematic background textures for all sections of the landing and about pages to enhance visual depth.
-- **Backend Housekeeping**:
-    - Modernized the FastAPI application by replacing deprecated  with the  context manager.
-    - Cleaned up  and consolidated numerous old test files.
-- **Bug Fixes & Tweaks**:
-    - Fixed an issue where the  was visible to non-admin users and made it persist correctly during admin-initiated sessions.
-    - Adjusted beneficiary orbit visualization spacing to prevent elements from feeling cramped.
-    - Fixed horizontal overflow on the admin page (pending verification).
-    - Fixed a flickering password autofill prompt in Safari (pending verification).
-    - Increased the size of the navbar logo.
+- **Subscription & Trial System**:
+    - Implemented a 30-day free trial for new users, with trial dates stored in the DB.
+    - Created a full-screen  modal that gates the app for users with expired trials.
+    - Built a dynamic  endpoint to serve pricing tiers (Base, Standard, Premium, New Adult, Military, Hospice, Family Plan) to the frontend.
+    - Integrated the paywall, trial status checks, and a  into the main application flow using  and .
+- **Admin Features & Dashboards**:
+    - Created an extensive  endpoint to calculate MRR, churn, conversion rates, and data for trend charts.
+    - Built a new Analytics tab in  using Recharts to visualize all key subscription metrics.
+    - Implemented a verification system for Military/Hospice tiers, including a document upload component, backend storage, and a Verifications tab for admin approval/denial.
+    - Added admin toggles for Beta Mode (making the app free for all) and Family Plan visibility.
+- **Automated Email Digests**:
+    - Created a background scheduler () in  to run weekly.
+    - Implemented logic to generate an HTML analytics digest email and send it via Resend.
+    - Added a manual trigger and preview modal for the digest in the admin analytics dashboard.
+- **Security Hardening & Bug Fixes**:
+    - Conducted a full platform audit.
+    - Implemented  for rate limiting on auth routes.
+    - Added a security headers middleware and tightened CORS .
+    - Restricted the  endpoint to prevent misuse, which caused a regression.
+    - **Fixed DevSwitcher Regression**: Iteratively debugged and fixed a critical bug preventing admins from switching between user roles. The final fix involves persisting the admin token in  across switches.
+- **UI/UX Polish**:
+    - Restructured the paywall grid to a symmetrical 3x2 layout, moving the Family Plan into the main grid.
+    - Added a Date of Birth () field to the signup form for New Adult tier logic.
+    - Removed a redundant You label from the beneficiary hub visualization.
+- **Deployment Management**: Successfully managed multiple production deployments to Vercel using the manual deploy hook workflow, including for urgent bug fixes.
 
 **Earlier issues found/mentioned but not fixed**
 -   **Issue 1**: The root cause of the broken Save to GitHub -> Vercel webhook is unknown.
@@ -90,9 +91,9 @@ The project is a full-stack application with a React frontend and FastAPI backen
     - **Is recurring issue?** Y
 
 **Known issue recurrence from previous fork**
-  - **Issue recurrence in previous fork**: Vercel deployment stuck on old commit.
-  - **Recurrence count**: High (occurred multiple times).
-  - **Status**: RESOLVED (via a stable manual workaround).
+- **Issue recurrence in previous fork**: Vercel deployment stuck on old commit.
+- **Recurrence count**: High.
+- **Status**: RESOLVED (via a stable manual workaround).
 
 **Code Architecture**
 
@@ -101,77 +102,111 @@ The project is a full-stack application with a React frontend and FastAPI backen
 - **Production Stack**: Vercel (Frontend), Railway (Backend), MongoDB Atlas (Database).
 - **Deployment Workflow**: Manual Vercel deploy hook trigger is **required** after every push to GitHub.
 - **Payments**: Stripe Elements (Embedded) with **LIVE** keys.
-- **Frontend Animations**: Scroll-triggered animations, layered sections, CSS  for logo effects, dynamic background textures.
+- **Subscription Logic**: Backend-driven trial periods, subscription status, and dynamic pricing tiers.
+- **Admin Analytics**: Backend aggregation () and frontend visualization ().
+- **Background Tasks**:  for sending emails (trial reminders, analytics digests) on a schedule.
+- **Security**: Backend middleware for security headers,  for rate limiting, and tightened CORS policies.
 
 **key DB schema**
--   **users**: Existing schema. Will require new fields for the subscription model: , ,  (e.g., 'trialing', 'active', 'lapsed'),  (e.g., 'none', 'pending', 'approved').
+- **users**:
+    - 
+    -  (e.g., 'premium', 'base', 'military')
+    -  (e.g., 'trialing', 'active', 'lapsed', 'expired')
+    -  (e.g., 'none', 'pending', 'approved', 'rejected')
+    - 
+    -  (Date of Birth)
+    -  (Admin override)
+    -  (Admin override)
+    -  (Global admin setting, stored on admin user doc)
 
 **changes in tech stack**
-- No changes.
+- **Backend**:
+    - : Added for running scheduled background jobs (email reminders/digests).
+    - : Added for rate-limiting API endpoints.
+    -  & : Used for token decoding in  fix.
+- **Frontend**:
+    - : Used for rendering charts on the admin analytics dashboard.
 
 **All files of reference**
--   **Created/Rewritten**:
-    -   : New page built from user-provided screenshots with full animations.
-    -   : Multiple new texture and background images for the UI redesign.
--   **Heavily Updated**:
-    -   : Complete overhaul with new layout, animations, layered scrolling, and thematic backgrounds.
-    -   : Refactored to use modern FastAPI  manager.
-    -   , : Updated to handle persistent dev navigation.
-    -   : UI tweaks for orbit visualization.
-    -    files in both  and : Updated with LIVE Stripe keys.
+- **Created**:
+    - 
+    - 
+    - 
+    - 
+    - 
+- **Heavily Updated**:
+    -  (added scheduler, security middleware)
+    -  (added trial logic, secured )
+    -  (added all new user fields)
+    -  (massive additions for new tabs and components)
+    -  (added subscription state, fixed  logic)
+    -  (added paywall routing logic)
+    -  (refactored to use API for plans)
 
 **Areas that need refactoring**:
-- The  and  files are very large and share significant structural and stylistic similarities (e.g., the Section component pattern). These repeated sections could be extracted into a reusable  component to reduce code duplication.
+-  has become a monolith containing the logic and rendering for multiple complex tabs (Subscriptions, Verifications, Analytics). The components , , and  should be extracted into their own files inside  to improve readability and maintainability.
+- The  and  files still have repeated structural code that could be extracted into a reusable  component.
 
 **key api endpoints**
--   : Now uses LIVE Stripe keys.
--   **New endpoints required for subscription feature**: , , , .
+- : Checks the current user's trial/subscription state.
+- : Returns all available subscription plans and pricing.
+- : Handles file upload for special tier verification.
+- , : Admin endpoints to manage verification requests.
+- : Provides all data for the analytics dashboard.
+- : Manually triggers the trial reminder email job.
+- : Manually triggers the weekly analytics digest email.
+- : Endpoint used by admin to impersonate users, now secured.
 
 **Critical Info for New Agent**
--   **Deployment is a manual 2-step process**: The user will Save to GitHub, then you **MUST** trigger the deploy hook URL ({"error":{"code":"not_found","message":"The requested API endpoint was not found."}}). The GitHub webhook is broken and will not trigger a deploy automatically.
--   **Stripe is LIVE**. All transactions will process real money using the user's account. Be cautious with any changes to payment-related code.
--   Your immediate task is to plan the new subscription feature. The user is waiting for a detailed plan. Propose a phased approach (Backend -> Frontend Paywall -> Reminders) and get user approval before writing code.
--   Check with the user if the last batch of UI fixes (Safari flicker, admin overflow, orbit overlap) are resolved before starting new work.
+-   **Deployment is a manual 2-step process**: The user will Save to GitHub, then you **MUST** trigger the deploy hook URL ({"error":{"code":"not_found","message":"The requested API endpoint was not found."}}). This is the only way to deploy changes.
+-   **Stripe is LIVE**. All transactions process real money. Be extremely cautious with any changes to payment-related code.
+-   **DevSwitcher is fragile**: The admin Dev Switcher for impersonating users has been a recurring source of bugs. The latest fix involves persisting the admin token in . Be mindful of this logic if making any changes to . The user is actively testing it on production.
+-   **User is highly engaged**: The user actively tests on the live site and provides immediate feedback. Be prepared for rapid bug-fix and deployment cycles. Prioritize user-reported issues.
 
 **documents and test reports created in this job**
-  - /app/memory/PRD.md was updated with recent changes.
+- Multiple test reports from  were generated and are located in . The last one is .
+-  was updated with the new features.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: Asks if Stripe functionality is live and will deposit into their bank account.
-2.  **Agent**: Confirms it is not live (using test keys) and outlines steps for the user to get and provide live keys.
-3.  **User**: Provides live Stripe keys.
-4.  **Agent**: Implements live keys in the development environment and provides instructions for the user to update them on Vercel and Railway.
-5.  **User**: Confirms keys are updated and code is pushed.
-6.  **Agent**: Triggers the deploy hook.
-7.  **User**: Reports the new thematic backgrounds are not visible on the live site.
-8.  **Agent**: Investigates, finds the latest code wasn't deployed, and triggers a new deploy hook.
-9.  **User**: Confirms backgrounds are now visible and requests tweaks to their opacity and the Hospice section's background.
-10. **User**: Provides detailed requirements for a new 30-day free trial and subscription paywall system just before the fork. This is the main pending request.
+1.  **User**: Reports Switch failed: Body is disturbed or locked error when using the DevSwitcher.
+2.  **Agent**: Identifies the cause as a security change and implements a fix to send the admin token during impersonation. Triggers a deploy.
+3.  **User**: Pushes the fix to GitHub.
+4.  **Agent**: Triggers the Vercel deploy.
+5.  **User**: Reports the same error still occurs when switching between non-admin roles (e.g., Benefactor to Beneficiary). Clarifies the desired flow is any-to-any switching.
+6.  **Agent**: Diagnoses that the admin token is lost after the first switch. Implements a more robust fix to persist the admin token in . Triggers a deploy.
+7.  **User**: Pushes the new fix to GitHub.
+8.  **Agent**: Triggers the Vercel deploy for the any-to-any fix.
+9.  **User**: Requests a minor UI change: remove the You label from the beneficiary page.
+10. **Agent**: Implements the UI change.
+11. **User**: Pushes the UI change to GitHub.
+12. **Agent**: Triggers the final Vercel deploy.
 
 **Project Health Check:**
--   **Running**: Yes. The full stack is live on production infrastructure.
--   **Broken**: No. The critical deployment blocker has a stable and documented manual workaround.
--   **Mocked**: The CI/CD pipeline is effectively mocked via the manual deploy hook trigger.
+- **Running**: Yes. The full stack is live on production infrastructure.
+- **Broken**: The primary GitHub-to-Vercel CI/CD webhook is broken.
+- **Mocked**: The CI/CD pipeline is effectively mocked via the agent's manual deploy hook trigger, which is a stable workaround.
 
 **3rd Party Integrations**
--   **Stripe**: Configured with **LIVE** API keys for real payment processing.
--   **MongoDB Atlas**: Production Database
--   **Railway**: Production Backend Hosting
--   **Vercel**: Production Frontend Hosting
--   **Codemagic**: Mobile CI/CD
--   **Resend**: Email (OTP delivery is currently disabled).
--   **Twilio**: SMS
--   **xAI (Grok)**, **OpenAI (Whisper)**: Other integrated services.
+- **Stripe**: Configured with **LIVE** API keys for real payment processing.
+- **MongoDB Atlas**: Production Database.
+- **Railway**: Production Backend Hosting.
+- **Vercel**: Production Frontend Hosting.
+- **Codemagic**: Mobile CI/CD.
+- **Resend**: Email (used for new analytics digest).
+- **Twilio**: SMS.
+- **xAI (Grok)**, **OpenAI (Whisper)**: Other integrated services.
+- **Recharts**: Charting library for the frontend.
+- **APScheduler, slowapi**: Backend libraries for scheduling and rate-limiting.
 
 **Testing status**
-  - Testing agent used after significant changes: NO (Recent changes were large UI overhauls tested manually by the agent and user).
-  - Troubleshoot agent used after agent stuck in loop: NO
-  - Test files created: None in this session (backend test suite was consolidated).
-  - Known regressions: None.
+- Testing agent used after significant changes: YES. The testing agent was used successfully after every major feature implementation (subscriptions, analytics, security hardening) and for regression testing after bug fixes.
+- Troubleshoot agent used after agent stuck in loop: NO.
+- Test files created: None.
+- Known regressions: A regression in the  was introduced by a security change and has been the subject of the most recent fixes. Its resolution is pending user verification.
 
 **Credentials to test flow:**
--   **Production Web/Mobile App**:  / 
--   **Admin Portal ()**:  / 
+- **Production Web/Mobile App**:  / 
+- **Admin Portal ()**:  / 
 
 **What agent forgot to execute**
-The agent was forked just as they were about to begin planning the new subscription model requested by the user. The next immediate action is to create and present a detailed plan for this feature.</analysis>
+All user requests in this session, including new features and bug reports, were addressed. The agent successfully balanced large feature development with rapid, iterative fixes based on live user feedback.</analysis>
