@@ -33,7 +33,7 @@ import SubscriptionPaywall from '../components/SubscriptionPaywall';
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const SettingsPage = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, subscriptionStatus } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [activePlan, setActivePlan] = useState('Premium');
@@ -41,11 +41,23 @@ const SettingsPage = () => {
   const [weeklyDigest, setWeeklyDigest] = useState(true);
   const [digestLoading, setDigestLoading] = useState(false);
   const [digestSending, setDigestSending] = useState(false);
+  const [plans, setPlans] = useState([]);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem('carryon_token');
     return { headers: { Authorization: `Bearer ${token}` } };
   };
+
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/subscriptions/plans`);
+        setPlans(res.data.plans || []);
+      } catch (e) { /* fallback to empty */ }
+    };
+    fetchPlans();
+  }, []);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
