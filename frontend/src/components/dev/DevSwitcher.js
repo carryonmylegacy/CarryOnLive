@@ -66,8 +66,17 @@ const DevSwitcher = () => {
   const handleSwitch = async (account) => {
     setSwitching(account.email);
     try {
-      // Save admin token before clearing — needed to authorize impersonation
-      const adminToken = localStorage.getItem('carryon_token');
+      // Persist admin token across all switches so any-to-any works
+      const currentToken = localStorage.getItem('carryon_token');
+      const savedAdminToken = localStorage.getItem('dev_switcher_admin_token');
+      
+      // If current user is admin, save their token for future switches
+      if (user?.role === 'admin' && currentToken) {
+        localStorage.setItem('dev_switcher_admin_token', currentToken);
+      }
+      
+      // Use the persisted admin token (or current if we just saved it)
+      const adminToken = localStorage.getItem('dev_switcher_admin_token') || currentToken;
       
       localStorage.removeItem('carryon_token');
       localStorage.removeItem('selected_estate_id');
@@ -77,7 +86,6 @@ const DevSwitcher = () => {
       localStorage.setItem('dev_switcher_admin_session', 'true');
       
       const headers = { 'Content-Type': 'application/json' };
-      // Send admin token for impersonation authorization
       if (adminToken) headers['Authorization'] = `Bearer ${adminToken}`;
       
       const response = await fetch(`${API_URL}/api/auth/dev-login`, {
@@ -85,7 +93,10 @@ const DevSwitcher = () => {
         headers,
         body: JSON.stringify({ email: account.email, password: account.password }),
       });
-      const data = await response.json();
+      
+      const text = await response.text();
+      let data;
+      try { data = JSON.parse(text); } catch { data = { detail: text }; }
       
       if (!response.ok) throw new Error(data.detail || 'Login failed');
       
