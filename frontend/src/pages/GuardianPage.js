@@ -252,12 +252,12 @@ const GuardianPage = () => {
         ))}
       </div>
 
-      {/* Legal Disclaimer */}
-      <div className="rounded-xl p-3 mb-1" style={{ background: 'rgba(245,166,35,0.06)', border: '1px solid rgba(245,166,35,0.15)' }}>
-        <div className="text-xs font-bold text-[#F5A623] mb-1">Legal Disclaimer</div>
-        <div className="text-xs text-[var(--t4)] leading-relaxed">
-          By using Estate Guardian, you acknowledge that CarryOn™ maintains a strict policy against the Unauthorized Practice of Law (UPL). Estate Guardian does not provide legal advice. All analysis, recommendations, and action items are intended as informational starting points only. You are solely responsible for consulting with licensed attorneys, financial advisors, or other qualified professionals before acting on any information provided here.
-        </div>
+      {/* Legal Disclaimer — compact, single line */}
+      <div className="rounded-lg px-3 py-1.5 mb-1 flex items-center gap-2" style={{ background: 'rgba(245,166,35,0.06)', border: '1px solid rgba(245,166,35,0.15)' }}>
+        <span className="text-[10px] font-bold text-[#F5A623] whitespace-nowrap">Disclaimer:</span>
+        <span className="text-[10px] text-[var(--t4)] leading-tight truncate">
+          Estate Guardian does not provide legal advice. Consult licensed attorneys before acting on any information.
+        </span>
       </div>
 
       {/* Chat Container */}
