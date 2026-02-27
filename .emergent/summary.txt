@@ -1,380 +1,177 @@
 <analysis>**original_problem_statement:**
-The user initially wanted to add legal pages (Privacy Policy, Terms & Conditions) and an SMS consent checkbox on the registration page to complete their Twilio A2P 10DLC registration.
+The user's initial project involved creating legal pages, refactoring code, and adding features like an AI assistant and admin panel. This evolved into deploying the app for web (Vercel/Railway) and mobile (Capacitor/Codemagic).
 
-After this was completed, the user's focus shifted to improving the overall quality and robustness of the application. This led to a series of requests to comb over the entire platform for errors, bugs, and warnings, and to perform deep backend refactoring for better organization and maintainability.
+Most recently, the focus has been on a complete redesign of the web app's landing and about pages, including advanced animations, layered scrolling, and thematic backgrounds. The agent also resolved a critical, recurring deployment issue by establishing a manual deployment workflow. Stripe integration was transitioned from test to live mode, enabling real payments.
 
-The user also requested several new features:
-1.  **Estate Guardian AI (EGA) Suggestions**: Implement the AI Suggest from Vault feature to analyze documents and suggest checklist items.
-2.  **Admin Panel Enhancements**: Build out user management and an activity log.
-3.  **Web Push Notifications**: Complete the setup for push notifications.
-4.  **Weekly Email Digest**: Create and schedule a weekly Estate Readiness Summary email for benefactors.
+The current and most pressing task, requested just before the fork, is to design and implement a new subscription model: a 30-day full-featured free trial, followed by a mandatory subscription selection. This system must also support a document upload and manual verification flow for special discount tiers (Military, Hospice).
 
 **User's preferred language**: English
 
 **what currently exists?**
-The project is a full-stack Estate Planning web application (React frontend, FastAPI backend, MongoDB) deployed on Render. The application's health and code quality have been significantly improved through multiple rounds of comprehensive audits and refactoring.
-
-Key implemented features include:
--   User authentication (Email & SMS OTP) with legal pages and SMS consent for Twilio compliance.
--   Role-based access (Benefactor, Beneficiary, Admin).
--   Benefactor Dashboard with a readiness score.
--   Full CRUD for Beneficiaries (including photo uploads) and the Immediate Action Checklist (IAC).
--   **Admin Panel**: Features user role management, site statistics, and an activity log.
--   **AI Integration**: AI Suggest from Vault is functional, using xAI/Grok to generate checklist items from documents.
--   **Weekly Digest**: A scheduled Monday morning email summarizes the benefactor's readiness score and provides actionable steps for improvement. Users can manage this preference in their settings.
--   **Push Notifications**: The backend infrastructure with VAPID keys is in place and functional.
--   **3rd Party Integrations**: Stripe, Resend, Twilio, xAI/Grok, OpenAI Whisper.
+The project is a full-stack application with a React frontend and FastAPI backend, using a production-ready infrastructure:
+*   **Database**: MongoDB Atlas (live).
+*   **Backend**: FastAPI on Railway (live).
+*   **Frontend (Web)**: React on Vercel, accessible via  (live).
+*   **Deployment Workflow**: The automated GitHub-to-Vercel webhook is broken. The established workaround is for the user to push to GitHub, and the agent then manually triggers a Vercel deploy hook URL. This process is reliable.
+*   **Payments**: Stripe is integrated with the user's **LIVE** keys on both Vercel and Railway, enabling real transactions.
+*   **UI/UX**: The landing page and about page have been completely redesigned with a dark, bank-style theme, layered scrolling animations, and thematic background textures.
 
 **Last working item**:
--   Last item agent was working: The agent was in the middle of a fourth, user-requested, comprehensive refactoring pass on the backend. Specifically, it was fixing 30  (module-level import not at top of file) linting errors reported by  across various route files. The agent was systematically going through each file to move the imports to the top.
--   Status: IN PROGRESS
--   Agent Testing Done: N
--   Which testing method agent to use? After completing the refactoring, run backend API tests using  for all endpoints to ensure no regressions were introduced. A full backend linting (F821 Undefined name `Optional`
-  --> backend/routes/push.py:18:14
-   |
-17 | class PushNotificationRequest(BaseModel):
-18 |     user_id: Optional[str] = None
-   |              ^^^^^^^^
-19 |     title: str
-20 |     body: str
-   |
-
-F821 Undefined name `Optional`
-  --> backend/routes/push.py:21:10
-   |
-19 |     title: str
-20 |     body: str
-21 |     url: Optional[str] = "/"
-   |          ^^^^^^^^
-22 |     tag: Optional[str] = "carryon-notification"
-23 |     type: Optional[str] = "general"
-   |
-
-F821 Undefined name `Optional`
-  --> backend/routes/push.py:22:10
-   |
-20 |     body: str
-21 |     url: Optional[str] = "/"
-22 |     tag: Optional[str] = "carryon-notification"
-   |          ^^^^^^^^
-23 |     type: Optional[str] = "general"
-   |
-
-F821 Undefined name `Optional`
-  --> backend/routes/push.py:23:11
-   |
-21 |     url: Optional[str] = "/"
-22 |     tag: Optional[str] = "carryon-notification"
-23 |     type: Optional[str] = "general"
-   |           ^^^^^^^^
-24 |
-25 | @router.post("/push/subscribe")
-   |
-
-E402 Module level import not at top of file
-   --> backend/utils.py:134:1
-    |
-132 | # ===================== PUSH NOTIFICATIONS =====================
-133 |
-134 | from pywebpush import webpush, WebPushException
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-135 | from py_vapid import Vapid
-136 | from config import VAPID_PRIVATE_KEY_PATH, VAPID_PRIVATE_KEY_INLINE, VAPID_CLAIMS_EMAIL
-    |
-
-E402 Module level import not at top of file
-   --> backend/utils.py:135:1
-    |
-134 | from pywebpush import webpush, WebPushException
-135 | from py_vapid import Vapid
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^
-136 | from config import VAPID_PRIVATE_KEY_PATH, VAPID_PRIVATE_KEY_INLINE, VAPID_CLAIMS_EMAIL
-137 | import os
-    |
-
-E402 Module level import not at top of file
-   --> backend/utils.py:136:1
-    |
-134 | from pywebpush import webpush, WebPushException
-135 | from py_vapid import Vapid
-136 | from config import VAPID_PRIVATE_KEY_PATH, VAPID_PRIVATE_KEY_INLINE, VAPID_CLAIMS_EMAIL
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-137 | import os
-138 | import json as json_module
-    |
-
-E402 Module level import not at top of file
-   --> backend/utils.py:137:1
-    |
-135 | from py_vapid import Vapid
-136 | from config import VAPID_PRIVATE_KEY_PATH, VAPID_PRIVATE_KEY_INLINE, VAPID_CLAIMS_EMAIL
-137 | import os
-    | ^^^^^^^^^
-138 | import json as json_module
-    |
-
-E402 Module level import not at top of file
-   --> backend/utils.py:138:1
-    |
-136 | from config import VAPID_PRIVATE_KEY_PATH, VAPID_PRIVATE_KEY_INLINE, VAPID_CLAIMS_EMAIL
-137 | import os
-138 | import json as json_module
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^
-139 |
-140 | vapid = None
-    |
-
-Found 9 errors.) should also be performed.
--   User Testing Done: N
+-   Last item agent was working: The agent was about to start the planning and architecture phase for a comprehensive new subscription and payment system, as requested by the user. This includes a 30-day free trial, a paywall modal after the trial, and a verification flow for special tiers.
+-   Status: NOT STARTED
+-   Agent Testing Done: N/A
+-   Which testing method agent to use? This is a large feature. The agent should plan for backend testing (pytest) for the new subscription logic and frontend testing (testing agent) for the paywall modal and user flow.
+-   User Testing Done: N/A
 
 **All Pending/In progress Issue list**:
-  Issue 1:  (P0) Complete the backend refactoring pass.
+  Issue 1: (P1) Several UI/UX fixes are deployed but await user confirmation.
   
   Issues Detail:
   - Issue 1: 
-     - **Description**: The user requested multiple rounds of perfecting the code. The last active task was fixing ~30  linting errors in the backend code, where imports were not at the top of the file. The agent was part-way through fixing these manually.
-     - **Attempted fixes**: The agent had started fixing the files one by one (e.g., , , , etc.) by moving the misplaced import statements.
-     - **Next debug checklist**:
-       1. Review the files listed in the last  scan ( Chat Message 476 and onwards) to identify the remaining files with  errors.
-       2. Use  to move the import statements to the top of each remaining affected file.
-       3. Run F821 Undefined name `Optional`
-  --> backend/routes/push.py:18:14
-   |
-17 | class PushNotificationRequest(BaseModel):
-18 |     user_id: Optional[str] = None
-   |              ^^^^^^^^
-19 |     title: str
-20 |     body: str
-   |
-
-F821 Undefined name `Optional`
-  --> backend/routes/push.py:21:10
-   |
-19 |     title: str
-20 |     body: str
-21 |     url: Optional[str] = "/"
-   |          ^^^^^^^^
-22 |     tag: Optional[str] = "carryon-notification"
-23 |     type: Optional[str] = "general"
-   |
-
-F821 Undefined name `Optional`
-  --> backend/routes/push.py:22:10
-   |
-20 |     body: str
-21 |     url: Optional[str] = "/"
-22 |     tag: Optional[str] = "carryon-notification"
-   |          ^^^^^^^^
-23 |     type: Optional[str] = "general"
-   |
-
-F821 Undefined name `Optional`
-  --> backend/routes/push.py:23:11
-   |
-21 |     url: Optional[str] = "/"
-22 |     tag: Optional[str] = "carryon-notification"
-23 |     type: Optional[str] = "general"
-   |           ^^^^^^^^
-24 |
-25 | @router.post("/push/subscribe")
-   |
-
-E402 Module level import not at top of file
-   --> backend/utils.py:134:1
-    |
-132 | # ===================== PUSH NOTIFICATIONS =====================
-133 |
-134 | from pywebpush import webpush, WebPushException
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-135 | from py_vapid import Vapid
-136 | from config import VAPID_PRIVATE_KEY_PATH, VAPID_PRIVATE_KEY_INLINE, VAPID_CLAIMS_EMAIL
-    |
-
-E402 Module level import not at top of file
-   --> backend/utils.py:135:1
-    |
-134 | from pywebpush import webpush, WebPushException
-135 | from py_vapid import Vapid
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^
-136 | from config import VAPID_PRIVATE_KEY_PATH, VAPID_PRIVATE_KEY_INLINE, VAPID_CLAIMS_EMAIL
-137 | import os
-    |
-
-E402 Module level import not at top of file
-   --> backend/utils.py:136:1
-    |
-134 | from pywebpush import webpush, WebPushException
-135 | from py_vapid import Vapid
-136 | from config import VAPID_PRIVATE_KEY_PATH, VAPID_PRIVATE_KEY_INLINE, VAPID_CLAIMS_EMAIL
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-137 | import os
-138 | import json as json_module
-    |
-
-E402 Module level import not at top of file
-   --> backend/utils.py:137:1
-    |
-135 | from py_vapid import Vapid
-136 | from config import VAPID_PRIVATE_KEY_PATH, VAPID_PRIVATE_KEY_INLINE, VAPID_CLAIMS_EMAIL
-137 | import os
-    | ^^^^^^^^^
-138 | import json as json_module
-    |
-
-E402 Module level import not at top of file
-   --> backend/utils.py:138:1
-    |
-136 | from config import VAPID_PRIVATE_KEY_PATH, VAPID_PRIVATE_KEY_INLINE, VAPID_CLAIMS_EMAIL
-137 | import os
-138 | import json as json_module
-    | ^^^^^^^^^^^^^^^^^^^^^^^^^^
-139 |
-140 | vapid = None
-    |
-
-Found 9 errors. again to confirm all  errors are resolved.
-       4. Restart the backend service and run a quick API test () to ensure the application still functions correctly.
-     - **Why fix this issue and what will be achieved with the fix?**: This will satisfy the user's explicit request for a perfect and clean codebase, ensuring it adheres to Python best practices and passes all lint checks.
-     - **Status**:  IN PROGRESS
-     - **Is recurring issue?** Y (User has repeatedly asked for cleanups)
-     - **Should Test frontend/backend/both after fix?** Backend
+     - **Description**: A batch of fixes and tweaks were deployed in the last session. The user has not yet confirmed if they resolve the reported issues.
+       - Safari password autofill flicker.
+       - Admin page horizontal scroll on smaller screens.
+       - Beneficiary orbit spheres overlapping the page title.
+       - Increased navbar logo size.
+       - Increased visibility of background textures.
+     - **Attempted fixes**: Code changes for all items were implemented and deployed.
+     - **Next debug checklist**: The next agent should ask the user to verify these fixes on the live site in an incognito window.
+     - **Why fix this issue and what will be achieved with the fix?**: Resolves lingering UI polish issues and closes out previous user requests.
+     - **Status**:  USER VERIFICATION PENDING
+     - **Is recurring issue?** N
+     - **Should Test frontend/backend/both after fix?** Frontend
      - **Blocked on other issue**: None
 
 **In progress Task List**:
-  - Task 1: Complete the ongoing backend refactoring by fixing all remaining  linting errors.
-     - **Where to resume**: The agent was fixing E402 errors in  and . The process should be continued for any remaining files flagged by .
-     - **What will be achieved with this?**: A 100% clean  linting report for the backend, fulfilling the user's request for code perfection.
-     - **Status**: IN PROGRESS
-     - **Should Test frontend/backend/both after fix?** Backend
-     - **Blocked on something**: None
+- None. The previous tasks were completed, and the agent is about to start a new, large task.
 
 **Upcoming and Future Tasks**
-There are no outstanding upcoming or future tasks. All features from the initial handoff and subsequent user requests have been implemented and tested. The user's current focus is on code quality and refactoring.
+*   **P0: Design and Implement Subscription & Trial System**:
+    *   **Phase 1: Backend Logic**:
+        *   Modify the User model in  to include , , , and .
+        *   On user signup (), set  to 30 days in the future.
+        *   Create new backend endpoints for:
+            *   Checking subscription status (for the paywall).
+            *   Handling Stripe subscription creation.
+            *   Uploading verification documents for special tiers.
+            *   An admin endpoint to approve/deny verification documents.
+    *   **Phase 2: Frontend Paywall**:
+        *   Create a full-screen modal that appears after login if the trial is over and no subscription is active. This modal should block all other app interaction.
+        *   The modal should display subscription tiers, pricing (monthly/quarterly), and a Stripe payment element.
+        *   It should also include the file upload component for users selecting a special tier.
+    *   **Phase 3: Trial Reminders**:
+        *   Implement logic (potentially a scheduled task in the backend) to send email reminders 10 days and 5 days before trial expiration.
+*   **P1: Re-enable OTP Email System**: Investigate the Resend integration and  domain verification to re-enable production email delivery for OTP.
+*   **P2: Implement Animated Logo**: Once the user provides a transparent PNG or SVG of the logo's infinity symbol, implement the animated tracer effect.
+*   **P3: Deploy Mobile App Fixes**: Trigger a new build in Codemagic to deploy the Digital Wallet Vault link and updated splash screen logo to the TestFlight app.
 
 **Completed work in this session**
--   **Feature: Legal & Compliance**:
-    -   Created  and  pages ().
-    -   Added a mandatory SMS consent checkbox and links to legal pages on the registration form ().
--   **Feature: Admin Panel (P1)**:
-    -   Added backend endpoints for user role management and fetching an activity log ().
-    -   Enhanced  with UI for changing user roles and a new Activity Log tab.
--   **Feature: Push Notifications (P2)**:
-    -   Generated and configured VAPID keys for the backend and frontend.
-    -   Ensured the push notification service worker and frontend helpers were correctly set up.
--   **Feature: AI Checklist Suggestions (P0)**:
-    -   Updated the backend logic to include document content from the vault when suggesting checklist items ().
-    -   Linked the AI Suggest from Vault button to the correct backend action ().
--   **Feature: Weekly Email Digest**:
-    -   Created a new backend service and API for managing user preferences for a weekly email digest (, ).
-    -   Implemented a scheduled job using  to send the email every Monday morning ().
-    -   Added a toggle switch in the user's settings page to enable/disable the digest ().
--   **Comprehensive Code Health Audits & Refactoring**:
-    -   **Frontend**: Fixed ~20 React Hook dependency warnings and a React duplicate key warning by refactoring routes in . Ensured the project compiles with zero warnings.
-    -   **Backend**:
-        -   Performed multiple deep refactoring passes.
-        -   Split the monolithic  into  (schemas) and  (business logic).
-        -   Organized files into a clearer  directory structure.
-        -   Eliminated over 280 unused imports using .
-        -   Systematically fixed all potential MongoDB  leaks in API responses.
-        -   Added docstrings to all 29 API endpoint functions.
-        -   Fixed all Python test file lint errors.
-        -   Added rate-limiting to the digest email service to prevent API throttling.
-        -   Began fixing  import order errors.
+- **Critical Deployment Fix**: Resolved the P0 Vercel deployment blocker by establishing a reliable manual workflow using a deploy hook URL.
+- **Live Payments**: Successfully integrated the user's live Stripe API keys into the production Vercel and Railway environments, enabling real payment processing.
+- **Major UI/UX Overhaul**:
+    - Completely redesigned the  and created a new  from scratch based on user screenshots.
+    - Implemented advanced frontend effects: layered scrolling, scroll-reveal animations, and staggered card entrances.
+    - Iteratively added and refined thematic background textures for all sections of the landing and about pages to enhance visual depth.
+- **Backend Housekeeping**:
+    - Modernized the FastAPI application by replacing deprecated  with the  context manager.
+    - Cleaned up  and consolidated numerous old test files.
+- **Bug Fixes & Tweaks**:
+    - Fixed an issue where the  was visible to non-admin users and made it persist correctly during admin-initiated sessions.
+    - Adjusted beneficiary orbit visualization spacing to prevent elements from feeling cramped.
+    - Fixed horizontal overflow on the admin page (pending verification).
+    - Fixed a flickering password autofill prompt in Safari (pending verification).
+    - Increased the size of the navbar logo.
 
 **Earlier issues found/mentioned but not fixed**
-   - None. The agent was extremely thorough in identifying and resolving all discovered issues, including proactive audits beyond the user's direct requests.
+-   **Issue 1**: The root cause of the broken Save to GitHub -> Vercel webhook is unknown.
+    - **Debug checklist**: This appears to be a platform-level issue. The current workaround (manual deploy hook) is stable and effective. No further debugging is required unless the workaround fails.
+    - **Why to solve this issue and what will be achieved with this?**: A true fix would restore the expected automated CI/CD flow. However, the current workaround has unblocked development.
+    - **Should Test frontend/backend/both after fix**: N/A
+    - **Is recurring issue?** Y
 
 **Known issue recurrence from previous fork**
-  - None.
+  - **Issue recurrence in previous fork**: Vercel deployment stuck on old commit.
+  - **Recurrence count**: High (occurred multiple times).
+  - **Status**: RESOLVED (via a stable manual workaround).
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Frontend**: React, Tailwind CSS, React Router, Axios
--   **Backend**: FastAPI, Pydantic, Motor (async MongoDB driver)
--   **Database**: MongoDB (hosted on Atlas)
--   **Task Scheduling**: ,  for the weekly email digest.
--   **Deployment**: Docker, Render
--   **Code Quality**:  for Python linting/formatting,  for JavaScript.
+- **Production Stack**: Vercel (Frontend), Railway (Backend), MongoDB Atlas (Database).
+- **Deployment Workflow**: Manual Vercel deploy hook trigger is **required** after every push to GitHub.
+- **Payments**: Stripe Elements (Embedded) with **LIVE** keys.
+- **Frontend Animations**: Scroll-triggered animations, layered sections, CSS  for logo effects, dynamic background textures.
 
 **key DB schema**
-  - : { , , , , : {  } }
-  - : { , , ,  }
-  - : { , , ,  }
-  - : { , , ,  }
+-   **users**: Existing schema. Will require new fields for the subscription model: , ,  (e.g., 'trialing', 'active', 'lapsed'),  (e.g., 'none', 'pending', 'approved').
 
 **changes in tech stack**
-  - ****: Added to the backend for scheduling the weekly email.
-  - ****: Added as a dependency for  to handle timezones correctly.
+- No changes.
 
 **All files of reference**
--   : Modified to include the  for the weekly digest.
--   : New file created by refactoring business logic out of .
--   : New file containing the logic for generating and sending the weekly digest email.
--   : New file for the API to manage user settings like the weekly digest.
--   : Heavily modified to add user management and activity log endpoints.
--   : Significantly trimmed down by moving business logic to .
--   : New directory with  and .
--   : Updated with new routes for legal pages and a wildcard route for admin pages to fix a React key warning.
--   : Modified to include the SMS consent checkbox and footer links.
--   : Overhauled with new tabs, stats, and functionality for role management and activity logs.
--   : Updated to include the UI toggle for the weekly digest.
+-   **Created/Rewritten**:
+    -   : New page built from user-provided screenshots with full animations.
+    -   : Multiple new texture and background images for the UI redesign.
+-   **Heavily Updated**:
+    -   : Complete overhaul with new layout, animations, layered scrolling, and thematic backgrounds.
+    -   : Refactored to use modern FastAPI  manager.
+    -   , : Updated to handle persistent dev navigation.
+    -   : UI tweaks for orbit visualization.
+    -    files in both  and : Updated with LIVE Stripe keys.
 
 **Areas that need refactoring**:
-The agent is in the middle of a refactoring task. The next agent must complete the process of fixing  (import not at top of file) errors across the backend codebase.
+- The  and  files are very large and share significant structural and stylistic similarities (e.g., the Section component pattern). These repeated sections could be extracted into a reusable  component to reduce code duplication.
 
 **key api endpoints**
--   : Get user's weekly digest preference.
--   : Update user's weekly digest preference.
--   : Change a user's role.
--   : Get the site-wide activity log.
--   : Get aggregated site statistics.
+-   : Now uses LIVE Stripe keys.
+-   **New endpoints required for subscription feature**: , , , .
 
 **Critical Info for New Agent**
--   The user places an extremely high value on code quality and perfection. They have requested multiple, successive rounds of refactoring. Be prepared to perform deep code audits and justify the cleanliness of the codebase.
--   The codebase is in a much healthier state than at the beginning of the session. Most warnings, bugs, and organizational issues have been addressed.
--   The last task was fixing  linting errors and was not completed. This should be the immediate first step.
--   After any refactoring, a full API regression test is critical to ensure no functionality was broken.
+-   **Deployment is a manual 2-step process**: The user will Save to GitHub, then you **MUST** trigger the deploy hook URL ({"error":{"code":"not_found","message":"The requested API endpoint was not found."}}). The GitHub webhook is broken and will not trigger a deploy automatically.
+-   **Stripe is LIVE**. All transactions will process real money using the user's account. Be cautious with any changes to payment-related code.
+-   Your immediate task is to plan the new subscription feature. The user is waiting for a detailed plan. Propose a phased approach (Backend -> Frontend Paywall -> Reminders) and get user approval before writing code.
+-   Check with the user if the last batch of UI fixes (Safari flicker, admin overflow, orbit overlap) are resolved before starting new work.
 
 **documents and test reports created in this job**
-  -  through : Multiple test reports from the testing agent, verifying new features and bug fixes.
-  - : Updated to reflect the completion of various features.
+  - /app/memory/PRD.md was updated with recent changes.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **Request**: do it again and make it all perfect - The third request for a comprehensive code audit.
-2.  **Confirmation**: The agent confirmed the final checks.
-3.  **Request**: Do this again to make sure everything is perfect. - The second request for a comprehensive code audit.
-4.  **Confirmation**: The agent confirmed the refactoring summary.
-5.  **Request**: Yes please - User approves the agent's plan to refactor the backend.
-6.  **Question**: What do you call it when you clean up the files and organize them on the back end?
-7.  **Request**: Comb over entire platform again for errors, warnings, and bugs. Fix all. - The first request for a full audit after feature implementation.
-8.  **Confirmation**: The agent finished the weekly digest feature.
-9.  **Clarification**: Yes, send on Monday morning... Think busy professional, 5 second scan, biggest takeaways - User providing clear requirements for the weekly digest.
-10. **Request**: Yes, add the weekly estate readiness summary sent to the benefactor. - User initiating the new feature request for an email digest.
+1.  **User**: Asks if Stripe functionality is live and will deposit into their bank account.
+2.  **Agent**: Confirms it is not live (using test keys) and outlines steps for the user to get and provide live keys.
+3.  **User**: Provides live Stripe keys.
+4.  **Agent**: Implements live keys in the development environment and provides instructions for the user to update them on Vercel and Railway.
+5.  **User**: Confirms keys are updated and code is pushed.
+6.  **Agent**: Triggers the deploy hook.
+7.  **User**: Reports the new thematic backgrounds are not visible on the live site.
+8.  **Agent**: Investigates, finds the latest code wasn't deployed, and triggers a new deploy hook.
+9.  **User**: Confirms backgrounds are now visible and requests tweaks to their opacity and the Hospice section's background.
+10. **User**: Provides detailed requirements for a new 30-day free trial and subscription paywall system just before the fork. This is the main pending request.
 
 **Project Health Check:**
--   **Running**: Yes, application is deployed and healthy on Render.
--   **Broken**: No known broken functionality.
--   **Mocked**: None.
+-   **Running**: Yes. The full stack is live on production infrastructure.
+-   **Broken**: No. The critical deployment blocker has a stable and documented manual workaround.
+-   **Mocked**: The CI/CD pipeline is effectively mocked via the manual deploy hook trigger.
 
 **3rd Party Integrations**
--   **MongoDB Atlas**: Database.
--   **Stripe**: Payments.
--   **Resend**: Email.
--   **Twilio**: SMS.
--   **xAI (Grok)**: AI for checklist suggestions.
--   **OpenAI (Whisper)**: Voice Transcription (uses Emergent LLM Key).
--   **apscheduler**: Backend library for scheduling tasks.
+-   **Stripe**: Configured with **LIVE** API keys for real payment processing.
+-   **MongoDB Atlas**: Production Database
+-   **Railway**: Production Backend Hosting
+-   **Vercel**: Production Frontend Hosting
+-   **Codemagic**: Mobile CI/CD
+-   **Resend**: Email (OTP delivery is currently disabled).
+-   **Twilio**: SMS
+-   **xAI (Grok)**, **OpenAI (Whisper)**: Other integrated services.
 
 **Testing status**
-  - Testing agent used after significant changes: YES. The agent ran the testing agent multiple times after implementing legal pages, admin features, and the weekly digest, with all tests passing.
+  - Testing agent used after significant changes: NO (Recent changes were large UI overhauls tested manually by the agent and user).
   - Troubleshoot agent used after agent stuck in loop: NO
-  - Test files created:  was created.
+  - Test files created: None in this session (backend test suite was consolidated).
   - Known regressions: None.
 
 **Credentials to test flow:**
-Use the  logic in  for local testing, which returns the OTP in the API response, simplifying the login process without needing live SMS/email.
+-   **Production Web/Mobile App**:  / 
+-   **Admin Portal ()**:  / 
 
 **What agent forgot to execute**
-The agent did not forget to execute any tasks but was interrupted while in the middle of a user-requested refactoring task (fixing E402 lint errors). This task needs to be completed.</analysis>
+The agent was forked just as they were about to begin planning the new subscription model requested by the user. The next immediate action is to create and present a detailed plan for this feature.</analysis>
