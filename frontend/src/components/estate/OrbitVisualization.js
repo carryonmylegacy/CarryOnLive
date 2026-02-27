@@ -63,8 +63,8 @@ const OrbitVisualization = ({ estates, userInitials, onEstateClick, benefactors 
   
   // Center and base sizing
   const cx = 150, cy = 150;
-  const baseOrbitR = 55; // Innermost orbit radius
-  const orbitSpacing = 40; // Space between orbits
+  const baseOrbitR = 65; // Innermost orbit radius
+  const orbitSpacing = 48; // Space between orbits
   const centerSize = 70;
   const ballSize = 32;
   
