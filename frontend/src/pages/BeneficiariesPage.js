@@ -387,6 +387,7 @@ const BeneficiariesPage = () => {
                       className="text-[#3b82f6] opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={() => openEditModal(ben)}
                       data-testid={`edit-beneficiary-${ben.id}`}
+                      aria-label={`Edit ${ben.first_name} ${ben.last_name}`}
                     >
                       <Edit2 className="w-4 h-4" />
                     </Button>
@@ -396,6 +397,7 @@ const BeneficiariesPage = () => {
                       className="text-[#ef4444] opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={() => handleDelete(ben.id)}
                       data-testid={`delete-beneficiary-${ben.id}`}
+                      aria-label={`Delete ${ben.first_name} ${ben.last_name}`}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
