@@ -70,6 +70,9 @@ const DevSwitcher = () => {
       localStorage.removeItem('selected_estate_id');
       localStorage.removeItem('beneficiary_estate_id');
       
+      // Mark that this session was initiated by an admin via DEV switcher
+      localStorage.setItem('dev_switcher_admin_session', 'true');
+      
       const response = await fetch(`${API_URL}/api/auth/dev-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -88,9 +91,11 @@ const DevSwitcher = () => {
     }
   };
 
-  // Only show for admin users
+  // Only show for admin users OR when navigated here via admin's DEV switcher
   if (loading) return null;
-  if (!user || user.role !== 'admin') return null;
+  const isAdminSession = localStorage.getItem('dev_switcher_admin_session') === 'true';
+  if (!user) return null;
+  if (user.role !== 'admin' && !isAdminSession) return null;
 
   const hasConfiguredAccounts = config?.benefactor?.email || config?.beneficiary?.email;
 
