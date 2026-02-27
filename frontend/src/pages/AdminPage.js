@@ -33,6 +33,7 @@ const AdminPage = () => {
     : location.pathname === '/admin/support' ? 'support'
     : location.pathname === '/admin/subscriptions' ? 'subscriptions'
     : location.pathname === '/admin/verifications' ? 'verifications'
+    : location.pathname === '/admin/analytics' ? 'analytics'
     : location.pathname === '/admin/activity' ? 'activity'
     : 'users';
   const tab = pathTab;
