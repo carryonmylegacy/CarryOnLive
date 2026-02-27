@@ -698,6 +698,11 @@ const AdminPage = () => {
         <VerificationsAdmin getAuthHeaders={getAuthHeaders} />
       )}
 
+      {/* ============ ANALYTICS TAB ============ */}
+      {tab === 'analytics' && (
+        <SubscriptionAnalytics getAuthHeaders={getAuthHeaders} />
+      )}
+
       {/* ============ ACTIVITY LOG TAB ============ */}
       {tab === 'activity' && (
         <div className="space-y-4" data-testid="admin-activity-log">
