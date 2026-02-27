@@ -35,8 +35,18 @@ export const AuthProvider = ({ children }) => {
       payload.phone = phone;
     }
     const response = await axios.post(`${API_URL}/auth/login`, payload);
+    const data = response.data;
+    // Direct login (OTP disabled) — token returned immediately
+    if (data.access_token) {
+      localStorage.setItem('carryon_token', data.access_token);
+      setToken(data.access_token);
+      setUser(data.user);
+      setPendingEmail(null);
+      return { direct: true, user: data.user };
+    }
+    // OTP flow fallback
     setPendingEmail(email);
-    return response.data;
+    return data;
   };
 
   const verifyOtp = async (email, otp) => {
