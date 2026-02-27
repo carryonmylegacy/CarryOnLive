@@ -482,23 +482,39 @@ const BeneficiariesPage = () => {
                   {getInvitationStatusBadge(ben)}
                   
                   {ben.invitation_status !== 'accepted' && !ben.user_id && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37]/10"
-                      onClick={() => handleSendInvitation(ben.id)}
-                      disabled={sendingInvite === ben.id}
-                      data-testid={`send-invite-${ben.id}`}
-                    >
-                      {sendingInvite === ben.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <>
-                          <Send className="w-3 h-3 mr-1" />
-                          {ben.invitation_status === 'sent' ? 'Resend' : 'Send Invite'}
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-white/10 text-[var(--t3)] hover:bg-white/5"
+                        onClick={() => handleCopyLink(ben)}
+                        data-testid={`copy-invite-link-${ben.id}`}
+                      >
+                        {copiedLink === ben.id ? (
+                          <Check className="w-3 h-3 mr-1 text-[#10b981]" />
+                        ) : (
+                          <Copy className="w-3 h-3 mr-1" />
+                        )}
+                        {copiedLink === ben.id ? 'Copied!' : 'Copy Link'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37]/10"
+                        onClick={() => handleSendInvitation(ben.id)}
+                        disabled={sendingInvite === ben.id}
+                        data-testid={`send-invite-${ben.id}`}
+                      >
+                        {sendingInvite === ben.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Send className="w-3 h-3 mr-1" />
+                            {ben.invitation_status === 'sent' ? 'Resend' : 'Send Invite'}
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   )}
                 </div>
               </CardContent>
