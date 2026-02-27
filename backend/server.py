@@ -98,6 +98,7 @@ api_router.include_router(pdf_export_router)
 api_router.include_router(security_router)
 api_router.include_router(push_router)
 api_router.include_router(digest_router)
+api_router.include_router(admin_digest_router)
 
 
 # Health check
