@@ -1531,12 +1531,56 @@ const SubscriptionAnalytics = ({ getAuthHeaders }) => {
         </Card>
       </div>
 
-      {/* Refresh */}
-      <div className="text-center">
+      {/* Actions Row */}
+      <div className="flex items-center justify-center gap-3 flex-wrap">
         <Button variant="outline" size="sm" onClick={fetchStats} className="text-xs border-[var(--b)] text-[var(--t4)]" data-testid="refresh-analytics">
           <Activity className="w-3 h-3 mr-1" /> Refresh Analytics
         </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-xs border-[var(--b)] text-[var(--t4)]"
+          data-testid="preview-digest"
+          onClick={async () => {
+            try {
+              const res = await axios.get(`${API_URL}/admin/analytics-digest/preview`, { headers });
+              setDigestPreview(res.data.html);
+            } catch (err) { toast.error('Failed to load preview'); }
+          }}
+        >
+          <Eye className="w-3 h-3 mr-1" /> Preview Digest
+        </Button>
+        <Button
+          size="sm"
+          className="text-xs gold-button"
+          disabled={sendingDigest}
+          data-testid="send-digest"
+          onClick={async () => {
+            setSendingDigest(true);
+            try {
+              const res = await axios.post(`${API_URL}/admin/analytics-digest/send`, {}, { headers });
+              toast.success(`Digest sent to ${res.data.sent} admin(s)`);
+            } catch (err) { toast.error(err.response?.data?.detail || 'Failed to send digest'); }
+            setSendingDigest(false);
+          }}
+        >
+          {sendingDigest ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Mail className="w-3 h-3 mr-1" />}
+          Send Digest Now
+        </Button>
       </div>
+
+      {/* Digest Preview Modal */}
+      {digestPreview && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setDigestPreview(null)}>
+          <div className="bg-[#1a2035] rounded-xl max-w-2xl w-full max-h-[85vh] overflow-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-white/[0.07]">
+              <h3 className="font-bold text-[var(--t)] text-sm">Weekly Analytics Digest Preview</h3>
+              <button onClick={() => setDigestPreview(null)} className="text-[var(--t5)] hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-4" dangerouslySetInnerHTML={{ __html: digestPreview }} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
