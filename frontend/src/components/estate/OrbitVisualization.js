@@ -316,8 +316,8 @@ const OrbitVisualization = ({ estates, userInitials, onEstateClick, benefactors 
                         fontWeight: 700,
                         color: level === 0 ? '#1a1a2e' : 'white',
                         boxShadow: isTransitioned 
-                          ? '0 0 15px rgba(212,175,55,0.4)' 
-                          : '0 2px 8px rgba(0,0,0,0.3)',
+                          ? '0 0 20px rgba(212,175,55,0.5), 0 4px 16px rgba(0,0,0,0.35), inset 0 1px 2px rgba(255,255,255,0.2)' 
+                          : '0 4px 16px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.15)',
                         border: isTransitioned 
                           ? '2px solid rgba(212,175,55,0.6)' 
                           : '2px solid rgba(255,255,255,0.2)',
