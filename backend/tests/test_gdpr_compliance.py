@@ -51,7 +51,7 @@ class TestGDPRCompliance:
         assert "essential_services" in data, "Missing essential_services field"
         
         # Essential services should always be True
-        assert data["essential_services"] == True, "essential_services should always be True"
+        assert data["essential_services"] is True, "essential_services should always be True"
         
         # Verify types
         assert isinstance(data["marketing_emails"], bool)
