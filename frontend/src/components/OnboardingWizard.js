@@ -88,13 +88,13 @@ const OnboardingWizard = () => {
                 onClick={() => handleStepClick(step)}
                 className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
                   step.completed
-                    ? 'bg-white/3 opacity-60'
-                    : 'bg-[var(--s)] hover:bg-white/10 cursor-pointer'
+                    ? 'bg-[var(--s)] opacity-60'
+                    : 'bg-[var(--s)] hover:bg-[var(--s)] cursor-pointer'
                 }`}
                 data-testid={`onboarding-step-${step.key}`}
               >
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  step.completed ? 'bg-[#10b981]/20' : 'bg-white/10'
+                  step.completed ? 'bg-[#10b981]/20' : 'bg-[var(--s)]'
                 }`}>
                   {step.completed ? (
                     <Check className="w-4 h-4 text-[#10b981]" />

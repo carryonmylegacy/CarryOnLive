@@ -185,7 +185,7 @@ const AcceptInvitationPage = () => {
                   { icon: Users, label: 'A clear action checklist — so nothing falls through the cracks', color: '#f59e0b' },
                   { icon: Shield, label: 'Bank-grade security — AES-256 encrypted, zero-knowledge', color: '#10b981' },
                 ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg bg-white/3">
+                  <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg bg-[var(--s)]">
                     <item.icon className="w-4 h-4 flex-shrink-0" style={{ color: item.color }} />
                     <span className="text-sm text-[#94a3b8]">{item.label}</span>
                   </div>

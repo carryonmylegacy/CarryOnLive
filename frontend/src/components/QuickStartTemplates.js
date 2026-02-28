@@ -88,7 +88,7 @@ const QuickStartTemplates = ({ estateId, onApplied }) => {
                 key={t.id}
                 onClick={() => applyTemplate(t.id)}
                 disabled={applying === t.id}
-                className="flex items-start gap-3 p-3 rounded-lg bg-[var(--s)] hover:bg-white/10 transition-all text-left group"
+                className="flex items-start gap-3 p-3 rounded-lg bg-[var(--s)] hover:bg-[var(--s)] transition-all text-left group"
                 data-testid={`template-${t.id}`}
               >
                 <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color}20` }}>

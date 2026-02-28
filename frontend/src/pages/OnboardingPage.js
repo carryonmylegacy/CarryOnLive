@@ -345,7 +345,7 @@ const OnboardingPage = () => {
 
             {/* Advanced Fields */}
             {showAdvanced && (
-              <div className="space-y-4 pt-2 border-t border-white/5">
+              <div className="space-y-4 pt-2 border-t border-[var(--b)]">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label className="text-[#94a3b8] text-sm">Middle Name</Label>
