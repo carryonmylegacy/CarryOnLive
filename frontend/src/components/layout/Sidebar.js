@@ -19,7 +19,8 @@ import {
   Home,
   Headphones,
   ShieldCheck,
-  KeyRound
+  KeyRound,
+  Clock
 } from 'lucide-react';
 import { Switch } from '../ui/switch';
 
