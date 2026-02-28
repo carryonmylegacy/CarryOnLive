@@ -56,17 +56,17 @@ export const PlanCard = ({
         isEligible && isPremium ? 'sm:scale-[1.03] hover:-translate-y-2' : isEligible ? 'hover:-translate-y-1' : ''
       }`}
       style={{
-        background: !isEligible ? 'rgba(20,28,51,0.6)' : tc.bg,
+        background: !isEligible ? 'var(--s)' : tc.bg,
         border: isCurrent
           ? `2px solid ${tc.accent}`
           : isPremium && isEligible
             ? `2px solid ${tc.accent}60`
-            : `1px solid rgba(255,255,255,0.07)`,
+            : `1px solid var(--b)`,
         boxShadow: !isEligible ? 'none' : isCurrent
-          ? `0 0 0 1px ${tc.accent}30, 0 12px 40px -8px ${tc.glow}, inset 0 1px 0 rgba(255,255,255,0.1)`
+          ? `0 0 0 1px ${tc.accent}30, 0 12px 40px -8px ${tc.glow}`
           : isPremium
-            ? `0 12px 40px -8px ${tc.glow}, inset 0 1px 0 rgba(255,255,255,0.08)`
-            : '0 4px 16px -4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)',
+            ? `0 12px 40px -8px ${tc.glow}`
+            : '0 4px 16px -4px rgba(0,0,0,0.1)',
         animationDelay: `${index * 80}ms`,
       }}
       data-testid={`plan-${plan.id}`}
