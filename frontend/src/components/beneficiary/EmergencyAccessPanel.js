@@ -172,8 +172,15 @@ const EmergencyAccessPanel = ({ estates }) => {
               <Label className="text-xs text-[#94a3b8]">Contact Phone</Label>
               <Input
                 value={form.contact_phone}
-                onChange={e => setForm(f => ({ ...f, contact_phone: e.target.value }))}
-                placeholder="+1-555-0123"
+                onChange={e => {
+                  const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  let f = digits;
+                  if (digits.length > 6) f = `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+                  else if (digits.length > 3) f = `(${digits.slice(0,3)}) ${digits.slice(3)}`;
+                  else if (digits.length > 0) f = `(${digits}`;
+                  setForm(prev => ({ ...prev, contact_phone: f }));
+                }}
+                placeholder="(123) 456-7890"
                 className="bg-white/5 border-white/10 text-white text-sm"
               />
             </div>
