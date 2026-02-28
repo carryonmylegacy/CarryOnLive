@@ -783,37 +783,122 @@ async def change_billing_cycle(
     data: ChangeBillingRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    """Change billing cycle for current subscription"""
+    """Change billing cycle — creates a Stripe checkout for the new cycle amount."""
     sub = await db.user_subscriptions.find_one(
         {"user_id": current_user["id"]}, {"_id": 0}
     )
     if not sub or sub.get("status") != "active":
         raise HTTPException(status_code=400, detail="No active subscription")
 
-    now = datetime.now(timezone.utc)
     cycle = data.billing_cycle
-    if cycle == "annual":
-        period_end = now + timedelta(days=365)
-    elif cycle == "quarterly":
-        period_end = now + timedelta(days=90)
-    else:
-        period_end = now + timedelta(days=30)
+    current_cycle = sub.get("billing_cycle", "monthly")
+    if cycle == current_cycle:
+        return {"success": True, "message": f"Already on {cycle} billing"}
 
-    await db.user_subscriptions.update_one(
-        {"user_id": current_user["id"]},
-        {
-            "$set": {
-                "billing_cycle": cycle,
-                "current_period_end": period_end.isoformat(),
-                "updated_at": now.isoformat(),
-            }
+    # Get plan pricing
+    settings = await get_subscription_settings()
+    plans = {p["id"]: p for p in settings.get("plans", DEFAULT_PLANS)}
+    plan = plans.get(sub.get("plan_id"))
+    if not plan:
+        raise HTTPException(status_code=400, detail="Current plan not found")
+
+    # Calculate full-period amount for new cycle
+    monthly_price = float(plan["price"])
+    if cycle == "annual":
+        amount = round(float(plan.get("annual_price", monthly_price * 0.8)) * 12, 2)
+    elif cycle == "quarterly":
+        amount = round(
+            float(plan.get("quarterly_price", monthly_price * 0.9)) * 3, 2
+        )
+    else:
+        amount = monthly_price
+
+    # Apply per-user discount
+    override = await db.subscription_overrides.find_one(
+        {"user_id": current_user["id"]}, {"_id": 0}
+    )
+    discount = override.get("custom_discount", 0) if override else 0
+    if discount > 0:
+        amount = round(amount * (1 - discount / 100), 2)
+
+    if amount <= 0:
+        # Free — just update cycle
+        now = datetime.now(timezone.utc)
+        if cycle == "annual":
+            period_end = now + timedelta(days=365)
+        elif cycle == "quarterly":
+            period_end = now + timedelta(days=90)
+        else:
+            period_end = now + timedelta(days=30)
+        await db.user_subscriptions.update_one(
+            {"user_id": current_user["id"]},
+            {
+                "$set": {
+                    "billing_cycle": cycle,
+                    "current_period_end": period_end.isoformat(),
+                    "updated_at": now.isoformat(),
+                }
+            },
+        )
+        return {
+            "success": True,
+            "message": f"Billing changed to {cycle}",
+        }
+
+    # Create Stripe checkout for the full period
+    api_key = os.environ.get("STRIPE_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="Payment service not configured")
+
+    origin = data.origin_url.rstrip("/") if data.origin_url else ""
+    if origin:
+        origin = validate_origin_url(origin)
+    success_url = f"{origin}/settings?session_id={{CHECKOUT_SESSION_ID}}&billing_change=true"
+    cancel_url = f"{origin}/settings"
+    backend_url = os.environ.get(
+        "RAILWAY_PUBLIC_URL", os.environ.get("BACKEND_URL", "")
+    )
+    webhook_url = (
+        f"{backend_url}/api/webhook/stripe"
+        if backend_url
+        else f"{origin}/api/webhook/stripe"
+    )
+
+    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
+    checkout_request = CheckoutSessionRequest(
+        amount=amount,
+        currency="usd",
+        success_url=success_url,
+        cancel_url=cancel_url,
+        metadata={
+            "user_id": current_user["id"],
+            "user_email": current_user["email"],
+            "plan_id": sub.get("plan_id", ""),
+            "plan_name": sub.get("plan_name", ""),
+            "billing_cycle": cycle,
+            "billing_change": "true",
         },
     )
-    return {
-        "success": True,
-        "message": f"Billing changed to {cycle}",
-        "new_period_end": period_end.isoformat(),
-    }
+    session = await stripe_checkout.create_checkout_session(checkout_request)
+
+    await db.payment_transactions.insert_one(
+        {
+            "session_id": session.session_id,
+            "user_id": current_user["id"],
+            "user_email": current_user["email"],
+            "plan_id": sub.get("plan_id", ""),
+            "plan_name": sub.get("plan_name", ""),
+            "billing_cycle": cycle,
+            "amount": amount,
+            "currency": "usd",
+            "type": "billing_change",
+            "previous_cycle": current_cycle,
+            "payment_status": "pending",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
+
+    return {"url": session.url, "session_id": session.session_id}
 
 
 @router.post("/subscriptions/cancel")
