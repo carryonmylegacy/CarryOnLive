@@ -75,7 +75,7 @@
   "seed_data_creation": "None - used existing test data",
   "retest_needed": false,
   "should_main_agent_self_test": false,
-  "context_for_next_testing_agent": "Admin Analytics Digest feature fully functional. Preview shows MRR ($0.00), Conversion (0%), Churn (0%), New Signups (20), User Funnel, and Tier Breakdown. Send Digest sends to 1 admin. Auto-scheduled to send alongside weekly digest on Mondays. All endpoints require admin role. App URL: https://settings-refactor-v2.preview.emergentagent.com, Analytics tab: /admin/analytics",
+  "context_for_next_testing_agent": "Admin Analytics Digest feature fully functional. Preview shows MRR ($0.00), Conversion (0%), Churn (0%), New Signups (20), User Funnel, and Tier Breakdown. Send Digest sends to 1 admin. Auto-scheduled to send alongside weekly digest on Mondays. All endpoints require admin role. App URL: https://secure-vault-preview-1.preview.emergentagent.com, Analytics tab: /admin/analytics",
   "features_verified": {
     "analytics_digest_preview_api": {
       "status": "WORKING",
