@@ -95,7 +95,7 @@ const SignupPage = () => {
     if (step === 0) return firstName.trim() && lastName.trim();
     if (step === 1) return true; // optional fields
     if (step === 2) return !!role;
-    if (step === 3) return email.trim() && password.length >= 6 && password === confirmPassword && smsConsent;
+    if (step === 3) return email.trim() && password.length >= 8 && password === confirmPassword && smsConsent;
     return false;
   };
 
@@ -105,7 +105,7 @@ const SignupPage = () => {
       if (step === 2) toast.error('Please select your role');
       if (step === 3) {
         if (!email.trim()) toast.error('Please enter your email');
-        else if (password.length < 6) toast.error('Password must be at least 6 characters');
+        else if (password.length < 8) toast.error('Password must be at least 8 characters');
         else if (password !== confirmPassword) toast.error('Passwords do not match');
         else if (!smsConsent) toast.error('Please agree to the terms to continue');
       }
