@@ -210,7 +210,7 @@ const LoginPage = () => {
                     </Button>
                   </form>
                   <div className="mt-5 flex items-center justify-between">
-                    <a href="/signup" className="text-[#d4af37] text-sm font-medium hover:text-[#fcd34d] transition-colors">Create Account</a>
+                    <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-medium hover:text-[#fcd34d] transition-colors">Create Account</button>
                     <span className="text-[#3a4a63] text-xs cursor-pointer hover:text-[#7b879e] transition-colors">Forgot Password?</span>
                   </div>
                   <div className="mt-6 pt-5 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
