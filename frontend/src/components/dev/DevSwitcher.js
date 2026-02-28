@@ -56,15 +56,13 @@ const DevSwitcher = () => {
   // Always include admin option - admin can configure it
   accounts.push({
     label: 'Admin Portal',
-    email: 'founder@carryon.us',
-    password: 'CarryOntheWisdom!',
     role: 'admin',
     color: '#E0AD2B',
     redirect: '/admin'
   });
 
   const handleSwitch = async (account) => {
-    setSwitching(account.email);
+    setSwitching(account.role);
     try {
       // Persist admin token across all switches so any-to-any works
       const currentToken = localStorage.getItem('carryon_token');
@@ -84,26 +82,26 @@ const DevSwitcher = () => {
       
       // Mark that this session was initiated by an admin via DEV switcher
       localStorage.setItem('dev_switcher_admin_session', 'true');
-      
+
+      if (account.role === 'admin') {
+        // Restore the saved admin token — no credentials needed
+        if (adminToken) {
+          localStorage.setItem('carryon_token', adminToken);
+          window.location.href = account.redirect;
+          return;
+        }
+        throw new Error('No admin session found. Please log in as admin first.');
+      }
+
+      // Benefactor/Beneficiary use dev-switch (server looks up stored password)
       const headers = { 'Content-Type': 'application/json' };
       if (adminToken) headers['Authorization'] = `Bearer ${adminToken}`;
 
-      let response;
-      if (account.role === 'admin') {
-        // Admin login uses the original dev-login with hardcoded creds
-        response = await fetch(`${API_URL}/api/auth/dev-login`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ email: account.email, password: account.password }),
-        });
-      } else {
-        // Benefactor/Beneficiary use dev-switch (server looks up stored password)
-        response = await fetch(`${API_URL}/api/auth/dev-switch`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ email: account.email }),
-        });
-      }
+      const response = await fetch(`${API_URL}/api/auth/dev-switch`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ email: account.email }),
+      });
       
       const text = await response.text();
       let data;
