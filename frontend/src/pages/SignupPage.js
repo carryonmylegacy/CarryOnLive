@@ -230,7 +230,7 @@ const SignupPage = () => {
               transition: 'opacity 0.6s ease 0.1s',
             }}>
               <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                Join CarryOn. <span className="text-[#d4af37]">Protect Your Legacy.</span>
+                Join CarryOn.<br /><span className="text-[#d4af37]">Protect Your Legacy.</span>
               </h1>
               <p className="text-[#6b7a90] text-sm">Create your account in seconds</p>
             </div>
