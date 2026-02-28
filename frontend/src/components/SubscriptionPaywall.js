@@ -484,9 +484,9 @@ export default function SubscriptionPaywall({ onDismiss }) {
             className="relative rounded-2xl cursor-pointer transition-all duration-300 hover:-translate-y-1 flex flex-col overflow-hidden group"
             style={{
               background: selectedPlan === 'family' 
-                ? 'linear-gradient(168deg, rgba(212,175,55,0.12) 0%, rgba(20,28,51,0.95) 100%)' 
-                : 'linear-gradient(168deg, rgba(26,36,64,0.8) 0%, rgba(20,28,51,0.95) 100%)',
-              border: `${selectedPlan === 'family' ? '2px' : '1px'} solid ${selectedPlan === 'family' ? 'rgba(212,175,55,0.4)' : 'rgba(255,255,255,0.07)'}`,
+                ? `linear-gradient(168deg, rgba(212,175,55,0.12) 0%, var(--card-bg) 100%)` 
+                : 'var(--card-bg)',
+              border: `${selectedPlan === 'family' ? '2px' : '1px'} solid ${selectedPlan === 'family' ? 'rgba(212,175,55,0.4)' : 'var(--card-border)'}`,
               boxShadow: selectedPlan === 'family' 
                 ? '0 8px 32px -6px rgba(212,175,55,0.2), inset 0 1px 0 rgba(255,255,255,0.06)' 
                 : '0 4px 16px -4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)',
