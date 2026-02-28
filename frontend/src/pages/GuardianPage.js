@@ -478,6 +478,7 @@ const GuardianPage = () => {
             </div>
           </div>
         </div>
+        </SectionLockedOverlay>
       </div>
     );
   }
@@ -489,6 +490,7 @@ const GuardianPage = () => {
     <div className="flex flex-col h-[calc(100vh-4rem)] lg:h-screen pt-16 lg:pt-0" data-testid="estate-guardian">
       <SectionLockBanner sectionId="guardian" />
 
+      <SectionLockedOverlay sectionId="guardian">
       {/* Chat Header */}
       <div className="flex items-center justify-between px-4 py-2 flex-shrink-0" style={{
         borderBottom: '1px solid var(--b)',
