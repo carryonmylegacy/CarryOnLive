@@ -40,6 +40,8 @@ def validate_origin_url(origin_url: str) -> str:
     except Exception:
         pass
     raise HTTPException(status_code=400, detail="Invalid origin URL")
+
+
 from utils import get_current_user
 
 router = APIRouter()
@@ -95,7 +97,9 @@ async def create_setup_intent(user: dict = Depends(get_current_user)):
         )
     except Exception as e:
         logger.error(f"Error creating setup intent: {e}")
-        raise HTTPException(status_code=500, detail="Payment service error. Please try again.")
+        raise HTTPException(
+            status_code=500, detail="Payment service error. Please try again."
+        )
 
 
 @router.post("/dts/tasks/{task_id}/payment-method")
@@ -136,7 +140,9 @@ async def save_dts_payment_method(
         raise
     except Exception as e:
         logger.error(f"Error saving payment method: {e}")
-        raise HTTPException(status_code=500, detail="Payment service error. Please try again.")
+        raise HTTPException(
+            status_code=500, detail="Payment service error. Please try again."
+        )
 
 
 # ===================== STRIPE SUBSCRIPTIONS =====================
