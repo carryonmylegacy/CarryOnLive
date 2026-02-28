@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from config import db, logger
-from models import OTPVerify, TokenResponse, UserCreate, UserLogin, UserResponse
+from models import TokenResponse, UserCreate, UserLogin, UserResponse
 from utils import (
     create_token,
     decode_token,
