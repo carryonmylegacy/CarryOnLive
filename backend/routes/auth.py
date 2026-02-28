@@ -27,7 +27,7 @@ TRIAL_DURATION_DAYS = 30
 
 @router.post("/auth/login")
 async def login(data: UserLogin, request: Request):
-    """Login — returns token directly (OTP temporarily disabled)."""
+    """Login — verifies credentials, then sends OTP unless user has a daily trust token."""
     client_ip = request.client.host if request.client else "unknown"
 
     # Check for account lockout (5 failed attempts in 15 minutes)
@@ -59,17 +59,46 @@ async def login(data: UserLogin, request: Request):
     # Clear failed attempts on successful login
     await db.failed_logins.delete_many({"email": data.email})
 
-    token = create_token(user["id"], user["email"], user["role"])
-    return TokenResponse(
-        access_token=token,
-        user=UserResponse(
-            id=user["id"],
-            email=user["email"],
-            name=user["name"],
-            role=user["role"],
-            created_at=user["created_at"],
-        ),
+    # Check if user has a valid daily OTP trust (skip OTP for today)
+    trust = await db.otp_trust.find_one(
+        {"user_id": user["id"], "ip_address": client_ip}, {"_id": 0}
     )
+    if trust:
+        try:
+            expires = datetime.fromisoformat(trust["expires_at"])
+            if datetime.now(timezone.utc) < expires:
+                # Trusted — skip OTP, return token directly
+                token = create_token(user["id"], user["email"], user["role"])
+                return TokenResponse(
+                    access_token=token,
+                    user=UserResponse(
+                        id=user["id"],
+                        email=user["email"],
+                        name=user["name"],
+                        role=user["role"],
+                        created_at=user["created_at"],
+                    ),
+                )
+        except (ValueError, TypeError):
+            pass
+        # Expired trust — clean up
+        await db.otp_trust.delete_one({"user_id": user["id"], "ip_address": client_ip})
+
+    # Send OTP for verification
+    otp_code = generate_otp()
+    await db.otps.update_one(
+        {"email": data.email},
+        {"$set": {"otp": otp_code, "created_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True,
+    )
+
+    # Send OTP via email
+    try:
+        await send_otp_email(data.email, otp_code, user["name"].split()[0])
+    except Exception:
+        logger.warning(f"OTP email send failed for {data.email} — OTP still stored")
+
+    return {"message": "OTP sent to your email", "otp_required": True}
 
 
 @router.post("/auth/register")
