@@ -1389,3 +1389,384 @@ async def trigger_trial_reminders(current_user: dict = Depends(get_current_user)
 
     count = await send_trial_reminders()
     return {"success": True, "reminders_sent": count}
+
+
+# ===================== BENEFICIARY PAYMENT LIFECYCLE =====================
+
+
+class FamilyPlanRequest(BaseModel):
+    benefactor_email: str
+
+
+@router.post("/subscriptions/family-plan-request")
+async def request_family_plan_add(
+    data: FamilyPlanRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Beneficiary requests a benefactor to add them to their family plan."""
+    benefactor = await db.users.find_one(
+        {"email": data.benefactor_email, "role": "benefactor"}, {"_id": 0}
+    )
+    if not benefactor:
+        raise HTTPException(
+            status_code=404,
+            detail="No benefactor account found with that email. Please check the address.",
+        )
+
+    # Prevent duplicate requests
+    existing = await db.family_plan_requests.find_one(
+        {
+            "beneficiary_id": current_user["id"],
+            "benefactor_id": benefactor["id"],
+            "status": "pending",
+        },
+        {"_id": 0},
+    )
+    if existing:
+        raise HTTPException(status_code=400, detail="Request already pending")
+
+    import uuid
+
+    request_doc = {
+        "id": str(uuid.uuid4()),
+        "beneficiary_id": current_user["id"],
+        "beneficiary_name": current_user.get("name", ""),
+        "beneficiary_email": current_user.get("email", ""),
+        "benefactor_id": benefactor["id"],
+        "benefactor_email": benefactor["email"],
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.family_plan_requests.insert_one(request_doc)
+
+    # Send email notification to the benefactor
+    try:
+        from services.email import send_email
+
+        await send_email(
+            to=benefactor["email"],
+            subject="Family Plan Request — CarryOn",
+            html=f"""
+            <p>Hi {benefactor.get('name', '').split()[0] if benefactor.get('name') else 'there'},</p>
+            <p><strong>{current_user.get('name', current_user['email'])}</strong> has requested to join your CarryOn Family Plan.</p>
+            <p>Log in to your CarryOn account and go to <strong>Settings → Family Plan</strong> to review and approve this request.</p>
+            <p>— The CarryOn Team</p>
+            """,
+        )
+    except Exception as e:
+        logger.warning(f"Failed to send family plan request email: {e}")
+
+    return {"success": True, "message": "Request sent to the benefactor"}
+
+
+@router.get("/subscriptions/beneficiary/lifecycle-status")
+async def get_beneficiary_lifecycle(current_user: dict = Depends(get_current_user)):
+    """Check the beneficiary's lifecycle status — age events, grace periods, etc."""
+    user_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    now = datetime.now(timezone.utc)
+    dob_str = user_doc.get("date_of_birth")
+    age = None
+    age_events = []
+
+    if dob_str:
+        try:
+            dob = datetime.fromisoformat(dob_str.replace("Z", "+00:00"))
+            if dob.tzinfo is None:
+                dob = dob.replace(tzinfo=timezone.utc)
+            age = (now - dob).days // 365
+
+            # Check if turning 18 soon or just turned 18
+            eighteenth = dob.replace(year=dob.year + 18)
+            if eighteenth.tzinfo is None:
+                eighteenth = eighteenth.replace(tzinfo=timezone.utc)
+            days_to_18 = (eighteenth - now).days
+            if -30 <= days_to_18 <= 90:
+                age_events.append(
+                    {
+                        "event": "turning_18",
+                        "age": 18,
+                        "date": eighteenth.isoformat(),
+                        "days_away": days_to_18,
+                        "message": "You are approaching 18 — subscription will be required to maintain access."
+                        if days_to_18 > 0
+                        else "You have turned 18 — please subscribe to continue using CarryOn.",
+                    }
+                )
+
+            # Check if aging out of New Adult tier at 26
+            twentysixth = dob.replace(year=dob.year + 26)
+            if twentysixth.tzinfo is None:
+                twentysixth = twentysixth.replace(tzinfo=timezone.utc)
+            days_to_26 = (twentysixth - now).days
+            if -30 <= days_to_26 <= 90:
+                age_events.append(
+                    {
+                        "event": "turning_26",
+                        "age": 26,
+                        "date": twentysixth.isoformat(),
+                        "days_away": days_to_26,
+                        "message": "You are aging out of the New Adult tier — your plan will transition to standard pricing."
+                        if days_to_26 > 0
+                        else "You have turned 26 — your plan has transitioned to standard pricing.",
+                    }
+                )
+        except (ValueError, TypeError):
+            pass
+
+    # Check grace period (e.g., benefactor transition)
+    grace = await db.beneficiary_grace_periods.find_one(
+        {"beneficiary_id": current_user["id"]}, {"_id": 0}
+    )
+    grace_info = None
+    if grace:
+        grace_end = datetime.fromisoformat(grace["grace_ends_at"].replace("Z", "+00:00"))
+        if grace_end.tzinfo is None:
+            grace_end = grace_end.replace(tzinfo=timezone.utc)
+        days_left = max(0, (grace_end - now).days)
+        grace_info = {
+            "reason": grace.get("reason", "benefactor_transition"),
+            "grace_ends_at": grace["grace_ends_at"],
+            "days_remaining": days_left,
+            "expired": now >= grace_end,
+        }
+
+    # Check family plan membership
+    family_plan = await db.family_plan_members.find_one(
+        {"member_id": current_user["id"], "status": "active"}, {"_id": 0}
+    )
+
+    # Check pending family plan requests
+    pending_requests = (
+        await db.family_plan_requests.find(
+            {"beneficiary_id": current_user["id"], "status": "pending"},
+            {"_id": 0},
+        ).to_list(10)
+    )
+
+    return {
+        "age": age,
+        "age_events": age_events,
+        "grace_period": grace_info,
+        "in_family_plan": family_plan is not None,
+        "family_plan": family_plan,
+        "pending_family_requests": len(pending_requests),
+        "needs_subscription": not (
+            family_plan
+            or (grace_info and not grace_info["expired"])
+            or (
+                await db.user_subscriptions.find_one(
+                    {"user_id": current_user["id"], "status": "active"}, {"_id": 0}
+                )
+            )
+        ),
+    }
+
+
+@router.post("/admin/beneficiary/trigger-transition")
+async def trigger_benefactor_transition(
+    benefactor_id: str = Form(...),
+    current_user: dict = Depends(get_current_user),
+):
+    """Admin triggers a benefactor transition — starts 30-day grace for their beneficiaries."""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    benefactor = await db.users.find_one({"id": benefactor_id}, {"_id": 0})
+    if not benefactor:
+        raise HTTPException(status_code=404, detail="Benefactor not found")
+
+    # Find all estates owned by this benefactor
+    estates = await db.estates.find(
+        {"owner_id": benefactor_id}, {"_id": 0}
+    ).to_list(50)
+
+    # Collect all beneficiary IDs
+    beneficiary_ids = set()
+    for estate in estates:
+        for ben_id in estate.get("beneficiaries", []):
+            beneficiary_ids.add(ben_id)
+
+    import uuid
+
+    now = datetime.now(timezone.utc)
+    grace_end = now + timedelta(days=GRACE_PERIOD_DAYS)
+    created = 0
+
+    for ben_id in beneficiary_ids:
+        # Check if beneficiary already has a subscription or grace period
+        existing_sub = await db.user_subscriptions.find_one(
+            {"user_id": ben_id, "status": "active"}, {"_id": 0}
+        )
+        if existing_sub:
+            continue  # Already has a plan
+
+        existing_grace = await db.beneficiary_grace_periods.find_one(
+            {"beneficiary_id": ben_id}, {"_id": 0}
+        )
+        if existing_grace:
+            continue  # Already has grace period
+
+        # Check if part of a family plan
+        family_member = await db.family_plan_members.find_one(
+            {"member_id": ben_id, "status": "active"}, {"_id": 0}
+        )
+        if family_member:
+            continue  # Covered by family plan
+
+        await db.beneficiary_grace_periods.insert_one(
+            {
+                "id": str(uuid.uuid4()),
+                "beneficiary_id": ben_id,
+                "benefactor_id": benefactor_id,
+                "reason": "benefactor_transition",
+                "grace_starts_at": now.isoformat(),
+                "grace_ends_at": grace_end.isoformat(),
+                "created_at": now.isoformat(),
+            }
+        )
+        created += 1
+
+        # Notify beneficiary via email
+        ben_user = await db.users.find_one({"id": ben_id}, {"_id": 0})
+        if ben_user and ben_user.get("email"):
+            try:
+                from services.email import send_email
+
+                await send_email(
+                    to=ben_user["email"],
+                    subject="Important: Your CarryOn Access — Grace Period",
+                    html=f"""
+                    <p>Dear {ben_user.get('name', '').split()[0] if ben_user.get('name') else 'there'},</p>
+                    <p>We are reaching out during a difficult time. Your CarryOn access has been placed on a <strong>30-day grace period</strong>.</p>
+                    <p>After this period ends on <strong>{grace_end.strftime('%B %d, %Y')}</strong>, you will need to subscribe to continue accessing your estate documents and messages.</p>
+                    <p>Log in to your CarryOn account to choose a plan or join a family plan.</p>
+                    <p>With care,<br/>The CarryOn Team</p>
+                    """,
+                )
+            except Exception as e:
+                logger.warning(f"Failed to send grace period email to {ben_id}: {e}")
+
+    return {
+        "success": True,
+        "beneficiaries_notified": created,
+        "message": f"Transition triggered for {len(beneficiary_ids)} beneficiaries ({created} grace periods created)",
+    }
+
+
+async def check_dob_subscription_events():
+    """Background task: check all beneficiaries for DOB-based subscription events.
+    Called periodically (e.g., daily) to auto-detect turning 18, turning 26, etc."""
+    now = datetime.now(timezone.utc)
+    users = await db.users.find(
+        {"role": "beneficiary", "date_of_birth": {"$exists": True}},
+        {"_id": 0, "id": 1, "email": 1, "name": 1, "date_of_birth": 1},
+    ).to_list(5000)
+
+    events_triggered = 0
+    for user_doc in users:
+        try:
+            dob = datetime.fromisoformat(
+                user_doc["date_of_birth"].replace("Z", "+00:00")
+            )
+            if dob.tzinfo is None:
+                dob = dob.replace(tzinfo=timezone.utc)
+            age = (now - dob).days // 365
+
+            # Turning 18 — needs subscription
+            if age == 18:
+                eighteenth = dob.replace(year=dob.year + 18)
+                if eighteenth.tzinfo is None:
+                    eighteenth = eighteenth.replace(tzinfo=timezone.utc)
+                days_since = (now - eighteenth).days
+                if 0 <= days_since <= 7:
+                    # Check not already notified
+                    already = await db.lifecycle_events.find_one(
+                        {"user_id": user_doc["id"], "event": "turned_18"}
+                    )
+                    if not already:
+                        await db.lifecycle_events.insert_one(
+                            {
+                                "user_id": user_doc["id"],
+                                "event": "turned_18",
+                                "triggered_at": now.isoformat(),
+                            }
+                        )
+                        events_triggered += 1
+                        try:
+                            from services.email import send_email
+
+                            await send_email(
+                                to=user_doc["email"],
+                                subject="Happy 18th! Time to set up your CarryOn plan",
+                                html=f"""
+                                <p>Happy Birthday, {user_doc.get('name', '').split()[0] if user_doc.get('name') else 'there'}!</p>
+                                <p>Now that you're 18, you can manage your own CarryOn account. Choose a plan to keep your estate documents safe.</p>
+                                <p>Log in to get started.</p>
+                                <p>— The CarryOn Team</p>
+                                """,
+                            )
+                        except Exception:
+                            pass
+
+            # Turning 26 — ages out of New Adult tier
+            if age == 26:
+                twentysixth = dob.replace(year=dob.year + 26)
+                if twentysixth.tzinfo is None:
+                    twentysixth = twentysixth.replace(tzinfo=timezone.utc)
+                days_since = (now - twentysixth).days
+                if 0 <= days_since <= 7:
+                    already = await db.lifecycle_events.find_one(
+                        {"user_id": user_doc["id"], "event": "turned_26"}
+                    )
+                    if not already:
+                        # Auto-migrate from new_adult to standard pricing
+                        sub = await db.user_subscriptions.find_one(
+                            {
+                                "user_id": user_doc["id"],
+                                "plan_id": "new_adult",
+                                "status": "active",
+                            }
+                        )
+                        if sub:
+                            await db.user_subscriptions.update_one(
+                                {"user_id": user_doc["id"]},
+                                {
+                                    "$set": {
+                                        "plan_id": "ben_standard",
+                                        "plan_name": "Standard",
+                                        "updated_at": now.isoformat(),
+                                        "migration_reason": "aged_out_new_adult",
+                                    }
+                                },
+                            )
+
+                        await db.lifecycle_events.insert_one(
+                            {
+                                "user_id": user_doc["id"],
+                                "event": "turned_26",
+                                "triggered_at": now.isoformat(),
+                            }
+                        )
+                        events_triggered += 1
+                        try:
+                            from services.email import send_email
+
+                            await send_email(
+                                to=user_doc["email"],
+                                subject="Your CarryOn plan has been updated",
+                                html=f"""
+                                <p>Hi {user_doc.get('name', '').split()[0] if user_doc.get('name') else 'there'},</p>
+                                <p>As you've turned 26, your New Adult tier has transitioned to Standard pricing. No action needed — your access continues uninterrupted.</p>
+                                <p>— The CarryOn Team</p>
+                                """,
+                            )
+                        except Exception:
+                            pass
+
+        except (ValueError, TypeError, KeyError):
+            continue
+
+    return events_triggered
