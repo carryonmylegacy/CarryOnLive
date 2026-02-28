@@ -1,7 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Mail, Lock, Eye, EyeOff, Loader2, ArrowLeft, AlertCircle, CheckSquare, Shield, ChevronRight } from 'lucide-react';
+import {
+  Mail, Lock, Eye, EyeOff, Loader2, ArrowLeft, ArrowRight,
+  AlertCircle, CheckSquare, Shield, ChevronRight, User, Calendar,
+  Users, Check
+} from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -33,56 +37,84 @@ const genderOptions = [
   { value: 'prefer_not_to_say', label: 'Prefer not to say' },
 ];
 
-/* ─── reveal animation hook ─── */
-const useReveal = (threshold = 0.1) => {
-  const ref = useRef(null);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const timer = setTimeout(() => setVisible(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
-  return [ref, visible];
-};
+const STEPS = [
+  { id: 'name', label: 'Your Name', icon: User, desc: 'As it appears on legal documents' },
+  { id: 'personal', label: 'About You', icon: Calendar, desc: 'Gender and date of birth' },
+  { id: 'role', label: 'Your Role', icon: Users, desc: 'How will you use CarryOn?' },
+  { id: 'credentials', label: 'Secure Login', icon: Lock, desc: 'Email and password' },
+];
 
-const inputStyles = "h-12 bg-[#0b1322] border-[#1a2a42] text-white text-base placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-lg";
-const selectTriggerStyles = "h-12 bg-[#0b1322] border-[#1a2a42] text-white text-base rounded-lg [&>span]:text-white";
+const inputClass = "h-14 bg-[#0b1322] border-[#1a2a42] text-white text-base placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-xl";
+const selectClass = "h-14 bg-[#0b1322] border-[#1a2a42] text-white text-base rounded-xl [&>span]:text-white";
 
 const SignupPage = () => {
   const navigate = useNavigate();
   const { verifyOtp } = useAuth();
-  
+
+  const [step, setStep] = useState(0);
+  const [direction, setDirection] = useState('right');
+  const [animating, setAnimating] = useState(false);
+  const [entered, setEntered] = useState(false);
+
+  // Form state
   const [firstName, setFirstName] = useState('');
   const [middleName, setMiddleName] = useState('');
   const [lastName, setLastName] = useState('');
   const [suffix, setSuffix] = useState('none');
   const [gender, setGender] = useState('not_selected');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [role, setRole] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('benefactor');
-  const [dateOfBirth, setDateOfBirth] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [smsConsent, setSmsConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otp, setOtp] = useState('');
   const [otpHint, setOtpHint] = useState('');
   const [registeredEmail, setRegisteredEmail] = useState('');
-  const [smsConsent, setSmsConsent] = useState(false);
 
-  const [formRef, formVisible] = useReveal();
+  useEffect(() => {
+    const t = setTimeout(() => setEntered(true), 150);
+    return () => clearTimeout(t);
+  }, []);
 
-  const handleSignup = async (e) => {
-    e.preventDefault();
-    
-    if (!firstName.trim()) { toast.error('Please enter your first name'); return; }
-    if (!lastName.trim()) { toast.error('Please enter your last name'); return; }
-    if (!email.trim()) { toast.error('Please enter your email'); return; }
-    if (password.length < 6) { toast.error('Password must be at least 6 characters'); return; }
-    if (password !== confirmPassword) { toast.error('Passwords do not match'); return; }
-    if (!smsConsent) { toast.error('Please agree to the SMS and terms consent to continue'); return; }
-    
+  const goTo = (nextStep) => {
+    if (animating || nextStep === step) return;
+    setDirection(nextStep > step ? 'right' : 'left');
+    setAnimating(true);
+    setTimeout(() => {
+      setStep(nextStep);
+      setTimeout(() => setAnimating(false), 50);
+    }, 280);
+  };
+
+  const canAdvance = () => {
+    if (step === 0) return firstName.trim() && lastName.trim();
+    if (step === 1) return true; // optional fields
+    if (step === 2) return !!role;
+    if (step === 3) return email.trim() && password.length >= 6 && password === confirmPassword && smsConsent;
+    return false;
+  };
+
+  const handleNext = () => {
+    if (!canAdvance()) {
+      if (step === 0) toast.error('Please enter your first and last name');
+      if (step === 2) toast.error('Please select your role');
+      if (step === 3) {
+        if (!email.trim()) toast.error('Please enter your email');
+        else if (password.length < 6) toast.error('Password must be at least 6 characters');
+        else if (password !== confirmPassword) toast.error('Passwords do not match');
+        else if (!smsConsent) toast.error('Please agree to the terms to continue');
+      }
+      return;
+    }
+    if (step < 3) goTo(step + 1);
+    else handleSignup();
+  };
+
+  const handleSignup = async () => {
     setLoading(true);
     try {
       const response = await axios.post(`${API_URL}/auth/register`, {
@@ -92,9 +124,7 @@ const SignupPage = () => {
         suffix: suffix === 'none' ? null : suffix,
         gender: gender === 'not_selected' ? null : gender,
         date_of_birth: dateOfBirth || null,
-        email,
-        password,
-        role
+        email, password, role
       });
       setRegisteredEmail(email);
       setOtpHint(response.data.otp_hint);
@@ -113,8 +143,7 @@ const SignupPage = () => {
     try {
       const user = await verifyOtp(registeredEmail, otp);
       toast.success(`Welcome to CarryOn, ${user.name}!`);
-      if (user.role === 'beneficiary') navigate('/beneficiary');
-      else navigate('/onboarding');
+      navigate(user.role === 'beneficiary' ? '/beneficiary' : '/onboarding');
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Invalid OTP');
     } finally {
@@ -122,272 +151,342 @@ const SignupPage = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen" style={{ background: '#080e1a' }}>
+  const slideStyle = {
+    transform: animating
+      ? `translateX(${direction === 'right' ? '-40px' : '40px'})`
+      : 'translateX(0)',
+    opacity: animating ? 0 : 1,
+    transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease',
+  };
 
-      {/* NAV BAR — matches home page */}
+  return (
+    <div className="min-h-screen relative overflow-hidden" style={{ background: '#080e1a' }}>
+
+      {/* NAV */}
       <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(212,175,55,0.08)', background: 'rgba(8,14,26,0.85)', backdropFilter: 'blur(20px)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
-          <Link to="/login">
-            <img src="/carryon-logo.jpg" alt="CarryOn" className="h-12" />
-          </Link>
-          <div className="hidden md:flex items-center gap-8">
-            <Link to="/login" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">Home</Link>
-            <Link to="/about" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">About</Link>
-          </div>
+          <Link to="/login"><img src="/carryon-logo.jpg" alt="CarryOn" className="h-12" /></Link>
           <Link to="/login" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
             Sign In <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         </div>
       </nav>
 
-      {/* Background effects */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div style={{ position: 'absolute', top: '10%', left: '10%', width: 500, height: 500, background: 'radial-gradient(circle, rgba(212,175,55,0.04) 0%, transparent 70%)', borderRadius: '50%' }} />
-        <div style={{ position: 'absolute', bottom: '10%', right: '10%', width: 400, height: 400, background: 'radial-gradient(circle, rgba(37,99,180,0.05) 0%, transparent 70%)', borderRadius: '50%' }} />
+      {/* Flag background */}
+      <div className="absolute inset-0 z-0" style={{ opacity: 0.35 }}>
+        <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" />
       </div>
+      <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(135deg, rgba(8,14,26,0.55) 0%, rgba(8,14,26,0.88) 50%, #080e1a 100%)' }} />
+      <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 60% 50% at 30% 50%, rgba(212,175,55,0.04) 0%, transparent 60%)' }} />
 
-      {/* MAIN CONTENT */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-24">
-        <div
-          ref={formRef}
-          className="w-full max-w-xl"
-          style={{
-            opacity: formVisible ? 1 : 0,
-            transform: formVisible ? 'translateY(0)' : 'translateY(30px)',
-            transition: 'opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1)',
-          }}
-        >
-          {/* Back link */}
-          <Link to="/login" className="inline-flex items-center gap-2 text-[#6b7a90] hover:text-[#d4af37] mb-8 transition-colors text-sm font-medium">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Home
-          </Link>
+      {/* MAIN LAYOUT — split like homepage */}
+      <div className="relative z-10 min-h-screen flex items-center pt-16">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-10 w-full">
+          <div className="grid lg:grid-cols-[1fr_520px] gap-10 lg:gap-16 items-center">
 
-          {/* Logo & Header */}
-          <div className="text-center mb-8">
-            <img src="/carryon-logo.jpg" alt="CarryOn" className="w-[180px] h-auto mx-auto mb-5" />
-            <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              Create Your Account
-            </h1>
-            <p className="text-[#7b879e] text-base">
-              Start securing your family's legacy today
-            </p>
-          </div>
-
-          {/* Form Card */}
-          <div className="rounded-2xl p-7 sm:p-9 relative" style={{
-            background: 'linear-gradient(160deg, rgba(18,28,48,0.97), rgba(12,20,38,0.99))',
-            border: '1px solid rgba(212,175,55,0.12)',
-            boxShadow: '0 8px 80px rgba(0,0,0,0.5), 0 0 50px rgba(212,175,55,0.02)',
-          }}>
-            {/* Gold accent line */}
-            <div className="absolute top-0 left-8 right-8 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
-
-            {/* Legal notice */}
-            <div className="mb-7 p-4 rounded-xl" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}>
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-[#d4af37] flex-shrink-0 mt-0.5" />
-                <p className="text-[#d4af37] text-sm leading-relaxed">
-                  <strong>Important:</strong> Please enter your name exactly as it appears on your legal documents. 
-                  This ensures CarryOn can fully support your estate planning needs.
-                </p>
-              </div>
-            </div>
-
-            <form onSubmit={handleSignup} className="space-y-5">
-              {/* Name Fields */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[#7b879e] text-sm font-medium">First Name *</Label>
-                  <Input
-                    type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="John" className={inputStyles} data-testid="signup-firstname-input" required
-                  />
+            {/* LEFT — Branding */}
+            <div style={{
+              opacity: entered ? 1 : 0,
+              transform: entered ? 'translateX(0)' : 'translateX(-40px)',
+              transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.1s',
+            }}>
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 lg:gap-8">
+                <div className="flex-shrink-0 hidden lg:block">
+                  <img src="/carryon-logo.jpg" alt="CarryOn" className="w-[220px] h-auto" />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-[#7b879e] text-sm font-medium">Middle Name</Label>
-                  <Input
-                    type="text" value={middleName} onChange={(e) => setMiddleName(e.target.value)}
-                    placeholder="William" className={inputStyles} data-testid="signup-middlename-input"
-                  />
-                </div>
-              </div>
+                <div className="text-center sm:text-left flex-1 sm:pt-2">
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-[1.08] mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                    Join CarryOn.
+                    <span className="block text-[#d4af37] mt-1">Protect Your Legacy.</span>
+                  </h1>
+                  <p className="text-[#7b879e] text-sm lg:text-base max-w-sm leading-relaxed mb-6">
+                    Create your account in seconds. Your family's readiness starts here.
+                  </p>
 
-              {/* Last Name & Suffix */}
-              <div className="grid grid-cols-3 gap-4">
-                <div className="col-span-2 space-y-2">
-                  <Label className="text-[#7b879e] text-sm font-medium">Last Name *</Label>
-                  <Input
-                    type="text" value={lastName} onChange={(e) => setLastName(e.target.value)}
-                    placeholder="Mitchell" className={inputStyles} data-testid="signup-lastname-input" required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[#7b879e] text-sm font-medium">Suffix</Label>
-                  <Select value={suffix} onValueChange={setSuffix}>
-                    <SelectTrigger className={selectTriggerStyles} data-testid="signup-suffix-select">
-                      <SelectValue placeholder="None" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#141C33] border-[#1a2a42]">
-                      {suffixOptions.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Gender & DOB */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[#7b879e] text-sm font-medium">Gender</Label>
-                  <Select value={gender} onValueChange={setGender}>
-                    <SelectTrigger className={selectTriggerStyles} data-testid="signup-gender-select">
-                      <SelectValue placeholder="Select..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#141C33] border-[#1a2a42]">
-                      {genderOptions.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[#7b879e] text-sm font-medium">Date of Birth</Label>
-                  <Input
-                    type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)}
-                    className={inputStyles} data-testid="signup-dob-input"
-                    max={new Date().toISOString().split('T')[0]}
-                  />
-                </div>
-              </div>
-              <p className="text-[#3a4a63] text-xs -mt-2">Date of birth determines age-based plan eligibility (e.g., New Adult tier for ages 18-25)</p>
-
-              {/* Divider */}
-              <div className="h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.15), transparent)' }} />
-
-              {/* Email */}
-              <div className="space-y-2">
-                <Label className="text-[#7b879e] text-sm font-medium">Email *</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a4a63]" />
-                  <Input
-                    type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                    placeholder="john@example.com" className={`${inputStyles} pl-11`}
-                    data-testid="signup-email-input" required
-                  />
-                </div>
-              </div>
-
-              {/* Passwords */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[#7b879e] text-sm font-medium">Password *</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a4a63]" />
-                    <Input
-                      type={showPassword ? 'text' : 'password'} value={password}
-                      onChange={(e) => setPassword(e.target.value)} placeholder="Min 6 characters"
-                      className={`${inputStyles} pl-11 pr-11`}
-                      data-testid="signup-password-input" required minLength={6}
-                    />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3a4a63] hover:text-[#7b879e] transition-colors">
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
+                  {/* Legal notice */}
+                  <div className="p-4 rounded-xl mb-6 max-w-sm" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}>
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="w-4 h-4 text-[#d4af37] flex-shrink-0 mt-0.5" />
+                      <p className="text-[#d4af37] text-xs leading-relaxed">
+                        Please enter your name exactly as it appears on your legal documents for estate planning verification.
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[#7b879e] text-sm font-medium">Confirm *</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a4a63]" />
-                    <Input
-                      type={showPassword ? 'text' : 'password'} value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter password"
-                      className={`${inputStyles} pl-11`}
-                      data-testid="signup-confirm-password-input" required
-                    />
+
+                  <div className="flex items-center gap-4 justify-center sm:justify-start">
+                    {['AES-256 Encrypted', 'Zero-Knowledge', 'SOC 2'].map(badge => (
+                      <div key={badge} className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
+                        <span className="text-[#525c72] text-xs">{badge}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
-
-              {/* Role */}
-              <div className="space-y-2">
-                <Label className="text-[#7b879e] text-sm font-medium">I am a...</Label>
-                <Select value={role} onValueChange={setRole}>
-                  <SelectTrigger className={selectTriggerStyles} data-testid="signup-role-select">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#141C33] border-[#1a2a42]">
-                    <SelectItem value="benefactor">Benefactor (Estate Owner)</SelectItem>
-                    <SelectItem value="beneficiary">Beneficiary (Family Member)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* SMS & Terms */}
-              <div className="flex items-start gap-3 pt-1">
-                <button
-                  type="button" onClick={() => setSmsConsent(!smsConsent)}
-                  className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded border-2 transition-all flex items-center justify-center ${
-                    smsConsent ? 'bg-[#d4af37] border-[#d4af37]' : 'border-[#3a4a63] hover:border-[#7b879e]'
-                  }`}
-                  data-testid="sms-consent-checkbox"
-                >
-                  {smsConsent && <CheckSquare className="w-4 h-4 text-[#080e1a]" />}
-                </button>
-                <label onClick={() => setSmsConsent(!smsConsent)}
-                  className="text-[#7b879e] text-sm leading-relaxed cursor-pointer select-none"
-                  data-testid="sms-consent-label"
-                >
-                  I agree to receive text messages from CarryOn&trade; for account verification and security purposes. Message and data rates may apply. Reply STOP to opt out. By creating an account, I also agree to the{' '}
-                  <Link to="/terms" className="text-[#d4af37] hover:text-[#fcd34d] underline underline-offset-2" data-testid="signup-terms-link">Terms of Service</Link>{' '}and{' '}
-                  <Link to="/privacy" className="text-[#d4af37] hover:text-[#fcd34d] underline underline-offset-2" data-testid="signup-privacy-link">Privacy Policy</Link>.
-                </label>
-              </div>
-
-              {/* Submit */}
-              <Button type="submit" disabled={loading}
-                className="w-full h-12 rounded-lg font-semibold text-base mt-2"
-                style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', boxShadow: '0 4px 24px rgba(212,175,55,0.3)' }}
-                data-testid="signup-submit-button"
-              >
-                {loading ? (
-                  <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Creating Account...</>
-                ) : (
-                  <>Create Account <ChevronRight className="w-4 h-4 ml-1" /></>
-                )}
-              </Button>
-            </form>
-
-            {/* Login link */}
-            <div className="mt-6 pt-5 text-center" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-              <span className="text-[#525c72] text-sm">Already have an account? </span>
-              <Link to="/login" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors">
-                Sign In
-              </Link>
             </div>
-          </div>
 
-          {/* Security footer */}
-          <div className="mt-6 text-center">
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <Shield className="w-3.5 h-3.5 text-[#10b981]" />
-              <span className="text-[#525c72] text-xs">Bank-grade security · 256-bit SSL</span>
-            </div>
-            <div className="flex items-center justify-center gap-4 mb-3">
-              {['AES-256 Encrypted', 'Zero-Knowledge', 'SOC 2'].map(badge => (
-                <div key={badge} className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
-                  <span className="text-[#3a4a63] text-xs">{badge}</span>
+            {/* RIGHT — Wizard Card */}
+            <div className="flex justify-center lg:justify-end" style={{
+              opacity: entered ? 1 : 0,
+              transform: entered ? 'translateX(0)' : 'translateX(40px)',
+              transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.3s',
+            }}>
+              <div className="w-full rounded-2xl relative" style={{
+                background: 'linear-gradient(160deg, rgba(18,28,48,0.97), rgba(12,20,38,0.99))',
+                border: '1px solid rgba(212,175,55,0.12)',
+                boxShadow: '0 8px 80px rgba(0,0,0,0.5), 0 0 50px rgba(212,175,55,0.02)',
+              }}>
+                {/* Gold top accent */}
+                <div className="absolute top-0 left-8 right-8 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
+
+                {/* Progress Bar */}
+                <div className="px-7 pt-7 pb-2">
+                  <div className="flex items-center gap-1 mb-4">
+                    {STEPS.map((s, i) => (
+                      <div key={s.id} className="flex items-center flex-1">
+                        <button
+                          onClick={() => { if (i < step) goTo(i); }}
+                          className="flex items-center gap-2 group"
+                          style={{ cursor: i < step ? 'pointer' : 'default' }}
+                        >
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 flex-shrink-0" style={{
+                            background: i <= step ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'rgba(255,255,255,0.05)',
+                            color: i <= step ? '#080e1a' : '#3a4a63',
+                            boxShadow: i === step ? '0 0 16px rgba(212,175,55,0.4)' : 'none',
+                          }}>
+                            {i < step ? <Check className="w-4 h-4" /> : i + 1}
+                          </div>
+                          <span className="hidden sm:block text-xs font-medium transition-colors" style={{ color: i <= step ? '#d4af37' : '#3a4a63' }}>
+                            {s.label}
+                          </span>
+                        </button>
+                        {i < STEPS.length - 1 && (
+                          <div className="flex-1 h-[2px] mx-2 rounded-full transition-all duration-700" style={{
+                            background: i < step ? '#d4af37' : 'rgba(255,255,255,0.06)',
+                          }} />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {/* Step description */}
+                  <p className="text-[#525c72] text-xs mb-1">Step {step + 1} of {STEPS.length}</p>
                 </div>
-              ))}
-            </div>
-            <div className="flex items-center justify-center gap-3">
-              <Link to="/privacy" className="text-[#3a4a63] text-xs hover:text-[#7b879e] transition-colors" data-testid="signup-footer-privacy-link">Privacy Policy</Link>
-              <span className="text-[#2d3d55] text-xs">&middot;</span>
-              <Link to="/terms" className="text-[#3a4a63] text-xs hover:text-[#7b879e] transition-colors" data-testid="signup-footer-terms-link">Terms of Service</Link>
+
+                {/* Step Content */}
+                <div className="px-7 pb-7 overflow-hidden" style={{ minHeight: 340 }}>
+                  <div style={slideStyle}>
+                    {/* STEP 0: Name */}
+                    {step === 0 && (
+                      <div className="space-y-5">
+                        <div>
+                          <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>What's your full legal name?</h2>
+                          <p className="text-[#6b7a90] text-sm">This must match your legal documents exactly.</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-[#7b879e] text-sm font-medium">First Name *</Label>
+                            <Input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)}
+                              placeholder="John" className={inputClass} data-testid="signup-firstname-input" autoFocus />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-[#7b879e] text-sm font-medium">Middle Name</Label>
+                            <Input type="text" value={middleName} onChange={(e) => setMiddleName(e.target.value)}
+                              placeholder="William" className={inputClass} data-testid="signup-middlename-input" />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="col-span-2 space-y-2">
+                            <Label className="text-[#7b879e] text-sm font-medium">Last Name *</Label>
+                            <Input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)}
+                              placeholder="Mitchell" className={inputClass} data-testid="signup-lastname-input" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-[#7b879e] text-sm font-medium">Suffix</Label>
+                            <Select value={suffix} onValueChange={setSuffix}>
+                              <SelectTrigger className={selectClass} data-testid="signup-suffix-select"><SelectValue placeholder="None" /></SelectTrigger>
+                              <SelectContent className="bg-[#141C33] border-[#1a2a42]">
+                                {suffixOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* STEP 1: Personal */}
+                    {step === 1 && (
+                      <div className="space-y-5">
+                        <div>
+                          <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Tell us a little about yourself</h2>
+                          <p className="text-[#6b7a90] text-sm">Both fields are optional but help personalize your experience.</p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[#7b879e] text-sm font-medium">Gender</Label>
+                          <Select value={gender} onValueChange={setGender}>
+                            <SelectTrigger className={selectClass} data-testid="signup-gender-select"><SelectValue placeholder="Select..." /></SelectTrigger>
+                            <SelectContent className="bg-[#141C33] border-[#1a2a42]">
+                              {genderOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[#7b879e] text-sm font-medium">Date of Birth</Label>
+                          <Input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)}
+                            className={inputClass} data-testid="signup-dob-input"
+                            max={new Date().toISOString().split('T')[0]} />
+                          <p className="text-[#3a4a63] text-xs mt-1">Used for age-based plan eligibility (e.g., New Adult tier for ages 18-25)</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* STEP 2: Role */}
+                    {step === 2 && (
+                      <div className="space-y-5">
+                        <div>
+                          <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>How will you use CarryOn?</h2>
+                          <p className="text-[#6b7a90] text-sm">Select the role that best describes you.</p>
+                        </div>
+                        <div className="space-y-4">
+                          {[
+                            { value: 'benefactor', title: 'Benefactor', subtitle: 'Estate Owner', desc: 'I want to organize my estate, protect my documents, and prepare my family.', color: '#d4af37' },
+                            { value: 'beneficiary', title: 'Beneficiary', subtitle: 'Family Member', desc: 'I was invited by a loved one to be part of their estate plan.', color: '#60A5FA' },
+                          ].map(r => (
+                            <button key={r.value} type="button" onClick={() => setRole(r.value)}
+                              className="w-full text-left p-5 rounded-xl transition-all duration-300"
+                              style={{
+                                background: role === r.value ? `linear-gradient(135deg, ${r.color}12, ${r.color}05)` : 'rgba(255,255,255,0.02)',
+                                border: role === r.value ? `2px solid ${r.color}50` : '1px solid rgba(255,255,255,0.06)',
+                                boxShadow: role === r.value ? `0 4px 24px ${r.color}15` : 'none',
+                                transform: role === r.value ? 'scale(1.01)' : 'scale(1)',
+                              }}
+                              data-testid={`signup-role-${r.value}`}
+                            >
+                              <div className="flex items-center gap-3 mb-2">
+                                <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                                  style={{ background: `${r.color}15`, border: `1px solid ${r.color}25` }}>
+                                  {r.value === 'benefactor'
+                                    ? <Shield className="w-5 h-5" style={{ color: r.color }} />
+                                    : <Users className="w-5 h-5" style={{ color: r.color }} />}
+                                </div>
+                                <div>
+                                  <h3 className="text-white font-semibold text-base">{r.title}</h3>
+                                  <p className="text-xs" style={{ color: r.color }}>{r.subtitle}</p>
+                                </div>
+                                {role === r.value && (
+                                  <div className="ml-auto w-6 h-6 rounded-full flex items-center justify-center"
+                                    style={{ background: r.color }}>
+                                    <Check className="w-3.5 h-3.5 text-[#080e1a]" />
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-[#7b879e] text-sm leading-relaxed pl-[52px]">{r.desc}</p>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* STEP 3: Credentials */}
+                    {step === 3 && (
+                      <div className="space-y-5">
+                        <div>
+                          <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Secure your account</h2>
+                          <p className="text-[#6b7a90] text-sm">Choose a strong password to protect your legacy.</p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[#7b879e] text-sm font-medium">Email *</Label>
+                          <div className="relative">
+                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a4a63]" />
+                            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                              placeholder="john@example.com" className={`${inputClass} pl-12`}
+                              data-testid="signup-email-input" autoFocus />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-[#7b879e] text-sm font-medium">Password *</Label>
+                            <div className="relative">
+                              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a4a63]" />
+                              <Input type={showPassword ? 'text' : 'password'} value={password}
+                                onChange={(e) => setPassword(e.target.value)} placeholder="Min 6 characters"
+                                className={`${inputClass} pl-12 pr-12`} data-testid="signup-password-input" />
+                              <button type="button" onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#3a4a63] hover:text-[#7b879e] transition-colors">
+                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </button>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-[#7b879e] text-sm font-medium">Confirm *</Label>
+                            <div className="relative">
+                              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a4a63]" />
+                              <Input type={showPassword ? 'text' : 'password'} value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter"
+                                className={`${inputClass} pl-12`} data-testid="signup-confirm-password-input" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Consent */}
+                        <div className="flex items-start gap-3">
+                          <button type="button" onClick={() => setSmsConsent(!smsConsent)}
+                            className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded border-2 transition-all flex items-center justify-center ${
+                              smsConsent ? 'bg-[#d4af37] border-[#d4af37]' : 'border-[#3a4a63] hover:border-[#7b879e]'
+                            }`} data-testid="sms-consent-checkbox">
+                            {smsConsent && <CheckSquare className="w-4 h-4 text-[#080e1a]" />}
+                          </button>
+                          <label onClick={() => setSmsConsent(!smsConsent)}
+                            className="text-[#7b879e] text-xs leading-relaxed cursor-pointer select-none" data-testid="sms-consent-label">
+                            I agree to receive text messages from CarryOn&trade; for account verification. Message and data rates may apply. I also agree to the{' '}
+                            <Link to="/terms" className="text-[#d4af37] hover:text-[#fcd34d] underline underline-offset-2" data-testid="signup-terms-link">Terms</Link> and{' '}
+                            <Link to="/privacy" className="text-[#d4af37] hover:text-[#fcd34d] underline underline-offset-2" data-testid="signup-privacy-link">Privacy Policy</Link>.
+                          </label>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Navigation Buttons */}
+                  <div className="flex items-center justify-between mt-6 pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                    {step > 0 ? (
+                      <button onClick={() => goTo(step - 1)}
+                        className="flex items-center gap-2 text-[#6b7a90] text-sm font-medium hover:text-white transition-colors"
+                        data-testid="signup-back-btn">
+                        <ArrowLeft className="w-4 h-4" /> Back
+                      </button>
+                    ) : (
+                      <Link to="/login" className="flex items-center gap-2 text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">
+                        <ArrowLeft className="w-4 h-4" /> Sign In
+                      </Link>
+                    )}
+
+                    <Button onClick={handleNext} disabled={loading}
+                      className="h-12 px-8 rounded-xl font-semibold text-sm"
+                      style={{
+                        background: canAdvance() ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'rgba(212,175,55,0.15)',
+                        color: canAdvance() ? '#080e1a' : '#d4af3780',
+                        boxShadow: canAdvance() ? '0 4px 24px rgba(212,175,55,0.3)' : 'none',
+                        transition: 'all 0.3s',
+                      }}
+                      data-testid="signup-next-btn"
+                    >
+                      {loading ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating...</>
+                      ) : step === 3 ? (
+                        <>Create Account <ChevronRight className="w-4 h-4 ml-1" /></>
+                      ) : (
+                        <>Continue <ArrowRight className="w-4 h-4 ml-1" /></>
+                      )}
+                    </Button>
+                  </div>
+
+                  {/* Security footer inside card */}
+                  <div className="mt-5 flex items-center justify-center gap-2">
+                    <Shield className="w-3.5 h-3.5 text-[#10b981]" />
+                    <span className="text-[#3a4a63] text-xs">Bank-grade security &middot; 256-bit SSL</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -407,29 +506,20 @@ const SignupPage = () => {
               </DialogTitle>
               <DialogDescription className="text-[#7b879e] text-base mt-1">
                 Enter the 6-digit code sent to {registeredEmail}
-                {otpHint && (
-                  <span className="block mt-1 text-[#d4af37] text-sm">
-                    (Hint: starts with {otpHint})
-                  </span>
-                )}
+                {otpHint && <span className="block mt-1 text-[#d4af37] text-sm">(Hint: starts with {otpHint})</span>}
               </DialogDescription>
             </DialogHeader>
-            
             <div className="flex flex-col items-center py-6">
-              <Input
-                type="text" inputMode="numeric" maxLength={6} value={otp}
+              <Input type="text" inputMode="numeric" maxLength={6} value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 placeholder="000000"
-                className="h-14 text-center text-2xl tracking-[0.4em] font-mono bg-[#0b1322] border-[#1a2a42] text-white focus:border-[#d4af37] rounded-lg w-full"
-                data-testid="signup-otp-input" autoFocus
-              />
+                className="h-14 text-center text-2xl tracking-[0.4em] font-mono bg-[#0b1322] border-[#1a2a42] text-white focus:border-[#d4af37] rounded-xl w-full"
+                data-testid="signup-otp-input" autoFocus />
               <p className="text-[#3a4a63] text-sm mt-2">{otp.length}/6 digits entered</p>
-
               <Button onClick={handleVerifyOtp} disabled={loading || otp.length !== 6}
-                className="mt-6 w-full h-12 rounded-lg font-semibold"
+                className="mt-6 w-full h-12 rounded-xl font-semibold"
                 style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
-                data-testid="signup-otp-verify-button"
-              >
+                data-testid="signup-otp-verify-button">
                 {loading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Verifying...</> : 'Verify & Continue'}
               </Button>
             </div>
