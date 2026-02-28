@@ -25,7 +25,10 @@ const OnboardingWizard = () => {
   const navigate = useNavigate();
   const [progress, setProgress] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(() => {
+    // Check localStorage immediately to prevent layout shift
+    return localStorage.getItem('carryon_onboarding_dismissed') === 'true';
+  });
 
   useEffect(() => {
     if (user?.role === 'benefactor') fetchProgress();
