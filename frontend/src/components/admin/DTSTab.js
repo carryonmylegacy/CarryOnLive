@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Shield, Clock, CheckCircle2, XCircle, Loader2, Package, Lock,
-  DollarSign, Mail, Flame, ChevronRight
+  DollarSign, Mail, Flame, ChevronRight, Search
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -21,6 +21,7 @@ export const DTSTab = ({ getAuthHeaders }) => {
   const [selectedDts, setSelectedDts] = useState(null);
   const [quoteItems, setQuoteItems] = useState([{ description: '', cost: '' }]);
   const [actionLoading, setActionLoading] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchTasks();
@@ -142,6 +143,16 @@ export const DTSTab = ({ getAuthHeaders }) => {
   }
 
   // DTS List View
+  const filteredTasks = dtsTasks.filter(task => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (task.title || '').toLowerCase().includes(q) ||
+      (task.description || '').toLowerCase().includes(q) ||
+      (task.task_type || '').replace(/_/g, ' ').toLowerCase().includes(q) ||
+      (task.status || '').toLowerCase().includes(q) ||
+      (task.beneficiary || '').toLowerCase().includes(q);
+  });
+
   return (
     <div className="space-y-4" data-testid="admin-dts-tab">
       <div className="rounded-xl p-4" style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.12)' }}>
@@ -151,14 +162,21 @@ export const DTSTab = ({ getAuthHeaders }) => {
         </p>
       </div>
 
-      {dtsTasks.length === 0 ? (
+      {dtsTasks.length > 0 && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+          <Search className="w-4 h-4 text-[var(--t5)]" />
+          <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by title, type, status, beneficiary..." className="flex-1 bg-transparent border-none text-[var(--t)] text-sm outline-none placeholder:text-[var(--t5)]" data-testid="dts-search" />
+        </div>
+      )}
+
+      {filteredTasks.length === 0 ? (
         <Card className="glass-card"><CardContent className="p-12 text-center">
           <Shield className="w-12 h-12 mx-auto text-[var(--t5)] mb-4" />
           <h3 className="font-bold text-[var(--t)] mb-2">No DTS Requests</h3>
           <p className="text-sm text-[var(--t4)]">No pending trustee service requests.</p>
         </CardContent></Card>
       ) : (
-        dtsTasks.map(task => {
+        filteredTasks.map(task => {
           const TypeIcon = typeIcons[task.task_type] || Shield;
           return (
             <Card key={task.id} className="glass-card cursor-pointer hover:border-[var(--b2)]" onClick={() => { setSelectedDts(task); setQuoteItems([{ description: '', cost: '' }]); }} data-testid={`dts-admin-${task.id}`}>
