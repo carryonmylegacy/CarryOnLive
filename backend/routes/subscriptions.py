@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException
 from pydantic import BaseModel
 
 from config import db, logger
+from utils import get_current_user
 
 # Allowed domains for Stripe redirect URLs (prevents open redirect)
 ALLOWED_REDIRECT_DOMAINS = {
@@ -41,8 +42,6 @@ def validate_origin_url(origin_url: str) -> str:
         pass
     raise HTTPException(status_code=400, detail="Invalid origin URL")
 
-
-from utils import get_current_user
 
 router = APIRouter()
 
