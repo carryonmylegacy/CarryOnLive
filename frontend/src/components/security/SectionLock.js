@@ -218,6 +218,7 @@ const UnlockModal = ({ sectionId, settings: s, onClose, onUnlocked }) => {
   const [voiceStatus, setVoiceStatus] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [step, setStep] = useState(0);
+  const mediaRecorderRef = React.useRef(null);
 
   // Determine which steps are needed
   const steps = [];
@@ -230,22 +231,24 @@ const UnlockModal = ({ sectionId, settings: s, onClose, onUnlocked }) => {
   const handleVoiceRecord = () => {
     if (recording) return;
     setRecording(true);
-    setVoiceStatus('Recording...');
+    setVoiceStatus('Listening... speak your passphrase');
+    setVoiceBlob(null);
 
     navigator.mediaDevices.getUserMedia({ audio: true })
       .then(stream => {
         const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
         const chunks = [];
+        mediaRecorderRef.current = mediaRecorder;
         mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
         mediaRecorder.onstop = () => {
           stream.getTracks().forEach(t => t.stop());
+          mediaRecorderRef.current = null;
           const blob = new Blob(chunks, { type: 'audio/webm' });
           setVoiceBlob(blob);
-          setVoiceStatus('Voice recorded. Ready to verify.');
           setRecording(false);
+          setVoiceStatus('Processing...');
         };
         mediaRecorder.start();
-        setTimeout(() => mediaRecorder.stop(), 4000);
       })
       .catch(() => {
         toast.error('Microphone access denied');
@@ -254,8 +257,28 @@ const UnlockModal = ({ sectionId, settings: s, onClose, onUnlocked }) => {
       });
   };
 
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+    }
+  };
+
+  // Auto-verify when voice is recorded and it's the last (or only) step
+  React.useEffect(() => {
+    if (voiceBlob && currentStep === 'voice') {
+      // If voice is the last step, auto-submit
+      if (step >= steps.length - 1) {
+        handleVerify();
+      } else {
+        // Move to next step automatically
+        setStep(prev => prev + 1);
+      }
+    }
+  }, [voiceBlob]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleVerify = async () => {
     setVerifying(true);
+    setVoiceStatus('Verifying...');
     try {
       const token = localStorage.getItem('carryon_token');
       const formData = new FormData();
@@ -269,6 +292,9 @@ const UnlockModal = ({ sectionId, settings: s, onClose, onUnlocked }) => {
       onUnlocked();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Verification failed');
+      // Reset voice for retry
+      setVoiceBlob(null);
+      setVoiceStatus('');
     }
     setVerifying(false);
   };
@@ -290,15 +316,13 @@ const UnlockModal = ({ sectionId, settings: s, onClose, onUnlocked }) => {
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="glass-card border-[var(--b2)] sm:max-w-md p-0 gap-0 !top-[5vh] !translate-y-0 max-h-[90vh] overflow-y-scroll" data-testid="unlock-modal">
-        <div className="p-5 pb-3" style={{ background: 'linear-gradient(135deg, rgba(224,173,43,0.08), rgba(139,92,246,0.05))', borderBottom: '1px solid var(--b)' }}>
-          <DialogHeader>
-            <DialogTitle className="text-[var(--t)]">Unlock {sec?.name}</DialogTitle>
-            <DialogDescription className="text-[var(--t4)]">
-              Step {step + 1} of {steps.length}: {currentStep === 'password' ? 'Enter section password' : currentStep === 'voice' ? 'Voice verification' : 'Security question'}
-            </DialogDescription>
-          </DialogHeader>
-        </div>
+      <DialogContent className="glass-card border-[var(--b2)] sm:max-w-md overflow-hidden !top-[5vh] !translate-y-0 max-h-[90vh] overflow-y-auto" data-testid="unlock-modal">
+        <DialogHeader className="px-5 pt-5 pb-3" style={{ background: 'linear-gradient(135deg, rgba(224,173,43,0.08), rgba(139,92,246,0.05))' }}>
+          <DialogTitle className="text-[var(--t)]">Unlock {sec?.name}</DialogTitle>
+          <DialogDescription className="text-[var(--t4)]">
+            Step {step + 1} of {steps.length}: {currentStep === 'password' ? 'Enter section password' : currentStep === 'voice' ? 'Voice verification' : 'Security question'}
+          </DialogDescription>
+        </DialogHeader>
 
         {/* Progress dots */}
         {steps.length > 1 && (
@@ -344,26 +368,40 @@ const UnlockModal = ({ sectionId, settings: s, onClose, onUnlocked }) => {
                 </div>
               )}
               <div className="text-center p-6 rounded-xl" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
-                {voiceBlob ? (
+                {verifying ? (
                   <>
-                    <CheckCircle2 className="w-12 h-12 mx-auto text-[var(--gn2)] mb-3" />
-                    <div className="text-sm font-bold text-[var(--gn2)]">Voice Recorded</div>
-                    <button onClick={() => { setVoiceBlob(null); setVoiceStatus(''); }} className="text-xs text-[var(--bl3)] mt-2 font-bold">Re-Record</button>
+                    <Loader2 className="w-12 h-12 mx-auto text-[var(--gold)] mb-3 animate-spin" />
+                    <div className="text-sm font-bold text-[var(--t4)]">Verifying voice...</div>
                   </>
                 ) : (
                   <>
                     <div
-                      onClick={handleVoiceRecord}
-                      className="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center cursor-pointer transition-all"
-                      style={{ background: recording ? 'rgba(240,82,82,0.2)' : 'rgba(59,123,247,0.12)', border: `3px solid ${recording ? 'var(--rd2)' : 'var(--bl3)'}` }}
+                      onClick={recording ? handleStopRecording : handleVoiceRecord}
+                      className="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center cursor-pointer transition-all hover:scale-105"
+                      style={{
+                        background: recording ? 'rgba(240,82,82,0.2)' : 'rgba(59,123,247,0.12)',
+                        border: `3px solid ${recording ? 'var(--rd2)' : 'var(--bl3)'}`,
+                      }}
                       data-testid="voice-record-btn"
                     >
-                      {recording ? <Loader2 className="w-7 h-7 text-[var(--rd2)] animate-spin" /> : <Mic className="w-7 h-7 text-[var(--bl3)]" />}
+                      {recording ? (
+                        <Square className="w-6 h-6 text-[var(--rd2)]" style={{ fill: 'currentColor' }} />
+                      ) : (
+                        <Mic className="w-7 h-7 text-[var(--bl3)]" />
+                      )}
                     </div>
-                    <div className="text-sm font-bold text-[var(--t)]">{recording ? 'Recording... Speak Now' : 'Tap to Record'}</div>
+                    <div className="text-sm font-bold text-[var(--t)]">
+                      {recording ? 'Recording... Tap to Stop' : 'Tap to Record'}
+                    </div>
+                    {recording && (
+                      <div className="flex items-center justify-center gap-1 mt-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--rd2)] animate-pulse" />
+                        <span className="text-xs text-[var(--rd2)]">Listening</span>
+                      </div>
+                    )}
                   </>
                 )}
-                {voiceStatus && !voiceBlob && <p className="text-xs text-[var(--t4)] mt-2">{voiceStatus}</p>}
+                {voiceStatus && !recording && !verifying && <p className="text-xs text-[var(--t4)] mt-2">{voiceStatus}</p>}
               </div>
             </div>
           )}
@@ -392,15 +430,18 @@ const UnlockModal = ({ sectionId, settings: s, onClose, onUnlocked }) => {
             </div>
           )}
 
-          <Button
-            className="w-full mt-4 gold-button"
-            disabled={!canProceed() || verifying}
-            onClick={handleNext}
-            data-testid="unlock-verify-btn"
-          >
-            {verifying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-            {step < steps.length - 1 ? 'Continue' : 'Verify & Unlock'}
-          </Button>
+          {/* Only show button for non-voice steps, or when voice isn't the current step */}
+          {currentStep !== 'voice' && (
+            <Button
+              className="w-full mt-4 gold-button"
+              disabled={!canProceed() || verifying}
+              onClick={handleNext}
+              data-testid="unlock-verify-btn"
+            >
+              {verifying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              {step < steps.length - 1 ? 'Continue' : 'Verify & Unlock'}
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
