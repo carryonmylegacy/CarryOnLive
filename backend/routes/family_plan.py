@@ -65,6 +65,7 @@ async def get_family_plan_status(current_user: dict = Depends(get_current_user))
             "enabled": True,
             "role": member.get("role", "member") if member else "member",
             "family_plan": fp,
+            "current_plan_id": fp.get("plan_id"),
         }
 
     # Check user's current subscription plan
