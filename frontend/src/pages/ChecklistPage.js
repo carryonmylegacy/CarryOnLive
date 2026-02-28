@@ -293,6 +293,7 @@ const ChecklistPage = () => {
               </div>
             );
           })}
+          </div>
         </div>
       )}
 
