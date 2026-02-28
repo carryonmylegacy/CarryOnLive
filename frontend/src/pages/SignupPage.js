@@ -286,9 +286,9 @@ const SignupPage = () => {
                   <div style={slideStyle}>
                     {/* STEP 0: Name */}
                     {step === 0 && (
-                      <div className="space-y-5">
+                      <div className="space-y-4 sm:space-y-5">
                         <div>
-                          <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>What's your full legal name?</h2>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>What's your full legal name?</h2>
                           <p className="text-[#6b7a90] text-sm">This must match your legal documents exactly.</p>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
