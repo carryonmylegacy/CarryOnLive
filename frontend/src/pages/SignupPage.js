@@ -250,35 +250,34 @@ const SignupPage = () => {
                 <div className="absolute top-0 left-8 right-8 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
 
                 {/* Progress Bar */}
-                <div className="px-7 pt-7 pb-2">
-                  <div className="flex items-center gap-1 mb-4">
+                <div className="px-5 sm:px-7 pt-5 sm:pt-7 pb-2">
+                  <div className="flex items-center gap-1 mb-3">
                     {STEPS.map((s, i) => (
                       <div key={s.id} className="flex items-center flex-1">
                         <button
                           onClick={() => { if (i < step) goTo(i); }}
-                          className="flex items-center gap-2 group"
+                          className="flex items-center gap-1.5 sm:gap-2 group"
                           style={{ cursor: i < step ? 'pointer' : 'default' }}
                         >
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 flex-shrink-0" style={{
+                          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 flex-shrink-0" style={{
                             background: i <= step ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'rgba(255,255,255,0.05)',
                             color: i <= step ? '#080e1a' : '#3a4a63',
                             boxShadow: i === step ? '0 0 16px rgba(212,175,55,0.4)' : 'none',
                           }}>
-                            {i < step ? <Check className="w-4 h-4" /> : i + 1}
+                            {i < step ? <Check className="w-3.5 h-3.5" /> : i + 1}
                           </div>
                           <span className="hidden sm:block text-xs font-medium transition-colors" style={{ color: i <= step ? '#d4af37' : '#3a4a63' }}>
                             {s.label}
                           </span>
                         </button>
                         {i < STEPS.length - 1 && (
-                          <div className="flex-1 h-[2px] mx-2 rounded-full transition-all duration-700" style={{
+                          <div className="flex-1 h-[2px] mx-1.5 sm:mx-2 rounded-full transition-all duration-700" style={{
                             background: i < step ? '#d4af37' : 'rgba(255,255,255,0.06)',
                           }} />
                         )}
                       </div>
                     ))}
                   </div>
-                  {/* Step description */}
                   <p className="text-[#525c72] text-xs mb-1">Step {step + 1} of {STEPS.length}</p>
                 </div>
 
