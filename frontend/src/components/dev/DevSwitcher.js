@@ -185,11 +185,11 @@ const DevSwitcher = () => {
           {/* Account buttons */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {accounts.map(acc => {
-              const isActive = user?.email === acc.email;
+              const isActive = acc.role === 'admin' ? user?.role === 'admin' : user?.email === acc.email;
               
               return (
                 <div
-                  key={acc.email}
+                  key={acc.role}
                   onClick={() => !isActive && !switching && handleSwitch(acc)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
@@ -212,10 +212,10 @@ const DevSwitcher = () => {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: isActive ? '#F0C95C' : '#E2E8F0' }}>{acc.label}</div>
-                    <div style={{ fontSize: 10, color: '#64748B' }}>{acc.email || 'Not configured'}</div>
+                    <div style={{ fontSize: 10, color: '#64748B' }}>{acc.email || (acc.role === 'admin' ? 'Restore admin session' : 'Not configured')}</div>
                   </div>
                   {isActive && <span style={{ fontSize: 10, color: '#F0C95C' }}>Active</span>}
-                  {switching === acc.email && <div className="w-4 h-4 border-2 border-[#F0C95C] border-t-transparent rounded-full animate-spin" />}
+                  {switching === acc.role && <div className="w-4 h-4 border-2 border-[#F0C95C] border-t-transparent rounded-full animate-spin" />}
                 </div>
               );
             })}
