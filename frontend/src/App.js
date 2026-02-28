@@ -26,6 +26,7 @@ import AdminPage from './pages/AdminPage';
 import SupportChatPage from './pages/SupportChatPage';
 import SecuritySettingsPage from './pages/SecuritySettingsPage';
 import DigitalWalletPage from './pages/DigitalWalletPage';
+import LegacyTimelinePage from './pages/LegacyTimelinePage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsPage from './pages/TermsPage';
 
