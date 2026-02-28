@@ -79,6 +79,7 @@ def create_token(user_id: str, email: str, role: str) -> str:
         "user_id": user_id,
         "email": email,
         "role": role,
+        "iat": datetime.now(timezone.utc).isoformat(),
         "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS),
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
@@ -96,7 +97,20 @@ def decode_token(token: str) -> dict:
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> dict:
-    payload = decode_token(credentials.credentials)
+    token_str = credentials.credentials
+    payload = decode_token(token_str)
+
+    # Check token blacklist (individual token revocation)
+    from services.token_blacklist import is_token_blacklisted, is_user_tokens_revoked
+
+    if await is_token_blacklisted(token_str):
+        raise HTTPException(status_code=401, detail="Token has been revoked")
+
+    # Check bulk user token revocation (e.g., password change)
+    iat = payload.get("iat", "")
+    if iat and await is_user_tokens_revoked(payload["user_id"], iat):
+        raise HTTPException(status_code=401, detail="Session expired — please log in again")
+
     user = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
