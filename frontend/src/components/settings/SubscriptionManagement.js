@@ -528,7 +528,7 @@ export const SubscriptionManagement = ({
                         >
                           {changingBilling ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> :
                            isDowngrade(currentPlanId, billing) ? <Mail className="w-3 h-3 mr-1" /> : <ArrowRight className="w-3 h-3 mr-1" />}
-                          {isDowngrade(currentPlanId, billing) ? `Request ${billing} (via Support)` : `Switch to ${billing}`}
+                          {isDowngrade(currentPlanId, billing) ? `Contact Support` : `Switch to ${billing}`}
                         </Button>
                       )}
                     </div>
