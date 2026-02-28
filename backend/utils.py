@@ -160,7 +160,7 @@ async def send_otp_email(email: str, otp: str, name: str = "User"):
         return True
     except Exception as e:
         logger.error(f"Failed to send OTP email: {e}")
-        logger.info(f"Fallback - OTP for {email}: {otp}")
+        logger.info(f"OTP delivery failed for {email} — user must retry")
         return False
 
 
