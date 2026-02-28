@@ -275,9 +275,6 @@ const DashboardPage = () => {
         />
       </div>
 
-      {/* Onboarding Wizard */}
-      <OnboardingWizard />
-
       {/* Estate Readiness Score Card */}
       <div className="glass-card p-4 lg:p-6 mb-4" data-testid="readiness-card">
         <h2 className="text-center text-base lg:text-2xl font-bold text-[var(--t4)] uppercase tracking-wider mb-2 lg:mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
