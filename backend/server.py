@@ -245,8 +245,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             "/api/auth/dev-switch",
             "/api/auth/verify-otp",
             "/api/auth/resend-otp",
+            "/api/compliance/deletion-request",
         ]
-        moderate_paths = ["/api/auth/register"]
+        moderate_paths = [
+            "/api/auth/register",
+            "/api/compliance/data-export",
+        ]
 
         limit = None
         if path in strict_paths:
