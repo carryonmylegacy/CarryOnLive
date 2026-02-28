@@ -403,8 +403,15 @@ const SettingsPage = () => {
 
                     {p.note && <div className="text-xs text-[var(--t5)] italic mb-3">{p.note}</div>}
 
+                    {/* Ineligible notice */}
+                    {!eligible && (
+                      <div className="w-full text-center text-xs font-medium py-3 rounded-xl text-[var(--t5)]" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        Ages 18–25 only
+                      </div>
+                    )}
+
                     {/* CTA Button — context-aware */}
-                    {currentSub?.status === 'active' ? (
+                    {eligible && (currentSub?.status === 'active' ? (
                       isCurrent ? (
                         <div className="w-full text-center text-xs font-bold py-3 rounded-xl" style={{ background: `${tc.accent}10`, color: tc.accent, border: `1px solid ${tc.accent}30` }}>
                           <Check className="w-3.5 h-3.5 inline mr-1" /> Your Plan
@@ -435,7 +442,7 @@ const SettingsPage = () => {
                       >
                         Subscribe <ChevronRight className="w-4 h-4 ml-1" />
                       </Button>
-                    )}
+                    ))}
                   </div>
                 </div>
               );
