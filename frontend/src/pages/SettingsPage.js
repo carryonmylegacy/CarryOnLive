@@ -255,16 +255,20 @@ const SettingsPage = () => {
       {/* Push Notifications */}
       <NotificationSettings getAuthHeaders={() => getAuthHeaders()} />
 
-      {/* Subscription Plans */}
-      <SubscriptionManagement
-        subscriptionStatus={subscriptionStatus}
-        refreshSubscription={refreshSubscription}
-        getAuthHeaders={() => getAuthHeaders()}
-        onShowPaywall={() => setShowPaywall(true)}
-      />
+      {/* Subscription Plans — hidden for admin */}
+      {!isAdmin && (
+        <SubscriptionManagement
+          subscriptionStatus={subscriptionStatus}
+          refreshSubscription={refreshSubscription}
+          getAuthHeaders={() => getAuthHeaders()}
+          onShowPaywall={() => setShowPaywall(true)}
+        />
+      )}
 
-      {/* Family Plan */}
-      <FamilyPlanSettings getAuthHeaders={() => getAuthHeaders()} />
+      {/* Family Plan — hidden for admin */}
+      {!isAdmin && (
+        <FamilyPlanSettings getAuthHeaders={() => getAuthHeaders()} />
+      )}
 
       {/* Appearance */}
       <Card className="glass-card">
