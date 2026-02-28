@@ -43,6 +43,19 @@ const SettingsPage = () => {
   const [showPaywall, setShowPaywall] = useState(false);
   const [confirmingPayment, setConfirmingPayment] = useState(false);
 
+  // GDPR state
+  const [consent, setConsent] = useState(null);
+  const [consentLoading, setConsentLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [retentionPolicy, setRetentionPolicy] = useState(null);
+  const [showRetention, setShowRetention] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteEmail, setDeleteEmail] = useState('');
+  const [deleteReason, setDeleteReason] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const isAdmin = user?.role === 'admin';
+
   const getAuthHeaders = () => {
     const token = localStorage.getItem('carryon_token');
     return { headers: { Authorization: `Bearer ${token}` } };
