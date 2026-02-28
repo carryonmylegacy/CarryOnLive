@@ -1150,7 +1150,7 @@ const VaultPage = () => {
           setEditNotes('');
         }
       }}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md">
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md !top-[5vh] !translate-y-0 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-white text-xl flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
               <Edit2 className="w-5 h-5 text-[#d4af37]" />
