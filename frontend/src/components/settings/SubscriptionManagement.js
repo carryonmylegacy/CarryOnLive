@@ -109,6 +109,7 @@ export const SubscriptionManagement = ({
   const [verificationDocType, setVerificationDocType] = useState('');
   const [uploadingVerification, setUploadingVerification] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState(null);
+  const [changingBilling, setChangingBilling] = useState(false);
 
   const isBeneficiary = user?.role === 'beneficiary';
   const currentSub = subscriptionStatus?.subscription;
