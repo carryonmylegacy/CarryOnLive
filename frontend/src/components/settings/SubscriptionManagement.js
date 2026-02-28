@@ -141,9 +141,15 @@ export const SubscriptionManagement = ({
     try {
       const res = await axios.post(`${API_URL}/subscriptions/change-billing`, {
         billing_cycle: newCycle,
+        origin_url: window.location.origin,
       }, getAuthHeaders());
-      toast.success(res.data.message);
-      if (refreshSubscription) await refreshSubscription();
+      if (res.data.url) {
+        // Stripe checkout redirect for paid billing changes
+        window.location.href = res.data.url;
+      } else if (res.data.success) {
+        toast.success(res.data.message);
+        if (refreshSubscription) await refreshSubscription();
+      }
     } catch (e) {
       toast.error(e.response?.data?.detail || 'Failed to change billing');
     }
