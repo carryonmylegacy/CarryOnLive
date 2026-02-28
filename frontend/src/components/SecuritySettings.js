@@ -231,14 +231,10 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
     setSaving(false);
   };
 
-  const handleRemove = async () => {
-    try {
-      await axios.delete(`${API_URL}/security/settings/${section.id}`, { headers });
-      toast.success(`Security removed from ${section.name}`);
-      onUpdate();
-    } catch (err) {
-      toast.error('Failed to remove security');
-    }
+  const handleRemove = () => {
+    setPendingToggle({ field: 'remove' });
+    setShowAccountPwModal(true);
+    setAccountPw('');
   };
 
   const handleVoiceEnroll = () => {
