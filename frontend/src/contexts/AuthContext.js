@@ -64,8 +64,8 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  const verifyOtp = async (email, otp) => {
-    const response = await axios.post(`${API_URL}/auth/verify-otp`, { email, otp });
+  const verifyOtp = async (email, otp, trustToday = false) => {
+    const response = await axios.post(`${API_URL}/auth/verify-otp`, { email, otp, trust_today: trustToday });
     const { access_token, user: userData } = response.data;
     localStorage.setItem('carryon_token', access_token);
     setToken(access_token);
