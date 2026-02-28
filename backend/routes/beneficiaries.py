@@ -187,6 +187,27 @@ async def update_beneficiary(
 
     await db.beneficiaries.update_one({"id": beneficiary_id}, {"$set": update_data})
 
+    # Detect which fields actually changed and log to edit_history
+    changed_fields = [
+        k for k in update_data
+        if k not in ("initials",) and update_data[k] != beneficiary.get(k)
+    ]
+    if changed_fields:
+        await db.edit_history.insert_one(
+            {
+                "id": str(uuid.uuid4()),
+                "item_type": "beneficiary",
+                "item_id": beneficiary_id,
+                "estate_id": beneficiary.get("estate_id", ""),
+                "user_id": current_user["id"],
+                "user_name": current_user.get("name", ""),
+                "action": "edited",
+                "changed_fields": changed_fields,
+                "title": full_name,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
+
     # Get updated beneficiary
     updated = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0})
     return updated
