@@ -210,6 +210,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         strict_paths = [
             "/api/auth/login",
             "/api/auth/dev-login",
+            "/api/auth/dev-switch",
             "/api/auth/verify-otp",
         ]
         moderate_paths = ["/api/auth/register"]
