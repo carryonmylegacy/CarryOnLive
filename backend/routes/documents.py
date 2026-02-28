@@ -162,7 +162,36 @@ async def upload_document(
             status_code=403, detail="Access denied — you do not own this estate"
         )
 
+    # File upload security: validate content type and size
+    ALLOWED_CONTENT_TYPES = {
+        "application/pdf",
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/heic",
+        "image/heif",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/octet-stream",
+    }
+    MAX_FILE_SIZE = 25 * 1024 * 1024  # 25MB per file
+
     content = await file.read()
+
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=413, detail="File too large. Maximum size is 25MB."
+        )
+
+    file_ct = (file.content_type or "application/octet-stream").split(";")[0].strip()
+    if file_ct not in ALLOWED_CONTENT_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File type '{file_ct}' is not allowed. Please upload PDF, image, or document files.",
+        )
+
     estate_salt = await get_estate_salt(estate_id)
 
     # Encrypt with AES-256-GCM
