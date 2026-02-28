@@ -40,6 +40,7 @@ import { toast } from 'sonner';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
 import PDFViewerModal from '../components/PDFViewerModal';
+import DocThumbnail from '../components/DocThumbnail';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
