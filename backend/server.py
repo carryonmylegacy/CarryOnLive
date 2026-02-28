@@ -122,9 +122,11 @@ async def lifespan(app):
 
     digest_task = asyncio.create_task(weekly_digest_scheduler())
     reminder_task = asyncio.create_task(trial_reminder_scheduler())
+    dob_task = asyncio.create_task(daily_dob_check_scheduler())
     yield
     digest_task.cancel()
     reminder_task.cancel()
+    dob_task.cancel()
     client.close()
     logger.info("CarryOn™ API shutting down")
 
