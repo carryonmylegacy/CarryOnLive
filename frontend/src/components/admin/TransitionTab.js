@@ -165,7 +165,7 @@ export const TransitionTab = ({ getAuthHeaders }) => {
                 <div className="mt-4 rounded-xl p-3" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.12)' }}>
                   <p className="text-xs text-[var(--yw)] leading-relaxed">
                     <AlertTriangle className="w-3 h-3 inline mr-1" />
-                    Upon approval: Benefactor account immutably sealed · All immediate messages delivered · Beneficiary access granted to vault, checklist, messages, and Estate Guardian. The beneficiary sees each step happen in real time.
+                    Upon approval: Benefactor account immutably sealed · All immediate messages delivered · Beneficiary access granted to vault, IAC, MM, and EGA. The beneficiary sees each step happen in real time.
                   </p>
                 </div>
               )}
