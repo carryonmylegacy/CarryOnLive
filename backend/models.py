@@ -197,6 +197,8 @@ class MessageUpdate(BaseModel):
     message_type: Optional[str] = None
     video_data: Optional[str] = None
     voice_data: Optional[str] = None
+    recipients: Optional[List[str]] = None
+    trigger_type: Optional[str] = None
     trigger_value: Optional[str] = None
     trigger_age: Optional[int] = None
     trigger_date: Optional[str] = None
