@@ -142,7 +142,7 @@ const PreTransitionPage = () => {
           </CardContent>
         </Card>
 
-        <Card className="glass-card cursor-pointer hover:border-[var(--bl2)]/30 transition-all" data-testid="chat-team-btn">
+        <Card className="glass-card cursor-pointer hover:border-[var(--bl2)]/30 transition-all" onClick={() => navigate('/support')} data-testid="chat-team-btn">
           <CardContent className="p-5 text-center">
             <div className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center" style={{ background: 'rgba(37,99,235,0.1)' }}>
               <MessageCircle className="w-6 h-6 text-[var(--bl2)]" />
