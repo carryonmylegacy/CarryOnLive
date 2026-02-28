@@ -1075,7 +1075,7 @@ const VaultPage = () => {
 
       {/* Preview Modal */}
       <Dialog open={showPreviewModal} onOpenChange={closePreview}>
-        <DialogContent className="glass-card border-white/10 sm:max-w-4xl max-h-[90vh]">
+        <DialogContent className="glass-card border-white/10 sm:max-w-4xl max-h-[90vh] !top-[5vh] !translate-y-0 overflow-y-scroll">
           <DialogHeader>
             <DialogTitle className="text-white text-xl flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
               <Eye className="w-5 h-5 text-[#d4af37]" />
