@@ -16,8 +16,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
 
 from config import client, db, logger
-from routes.admin import router as admin_router
 from routes.admin_digest import router as admin_digest_router
+from routes.admin import router as admin_router
 from routes.auth import router as auth_router
 from routes.beneficiaries import router as beneficiaries_router
 from routes.checklist import router as checklist_router
