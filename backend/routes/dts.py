@@ -10,6 +10,8 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel, Field
 
 from config import db
+from services.audit import audit_log
+from services.encryption import decrypt_aes256, get_estate_salt
 from utils import get_current_user, log_activity, send_push_notification
 
 router = APIRouter()
