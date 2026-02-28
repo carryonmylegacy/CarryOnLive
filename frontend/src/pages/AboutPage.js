@@ -241,7 +241,7 @@ const AboutPage = () => {
                 },
                 {
                   title: 'Trustee Services Team (TST)',
-                  desc: 'Confidential execution of Designated Trustee Services tasks',
+                  desc: 'Confidential execution of Designated Trustee Services (DTS) tasks',
                 },
               ].map(({ title, desc }, i) => (
                 <RevealSection key={title} delay={0.2 + i * 0.1}>
