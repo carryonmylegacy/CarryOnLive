@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FileKey, CheckCircle2, Eye, XCircle, Loader2, AlertTriangle, Search } from 'lucide-react';
+import { FileKey, CheckCircle2, Eye, XCircle, Loader2, AlertTriangle, Search, X } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { toast } from 'sonner';
@@ -12,6 +12,8 @@ export const TransitionTab = ({ getAuthHeaders }) => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewingDoc, setViewingDoc] = useState(null);
+  const [docLoading, setDocLoading] = useState(false);
 
   useEffect(() => {
     fetchCertificates();
@@ -27,6 +29,29 @@ export const TransitionTab = ({ getAuthHeaders }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const viewDocument = async (cert) => {
+    setDocLoading(true);
+    try {
+      const res = await axios.get(`${API_URL}/transition/certificate/${cert.id}/document`, {
+        ...getAuthHeaders(),
+        responseType: 'blob',
+      });
+      const blob = new Blob([res.data], { type: res.headers['content-type'] || 'image/png' });
+      const url = URL.createObjectURL(blob);
+      setViewingDoc({ url, name: cert.file_name, type: res.headers['content-type'] });
+    } catch (err) {
+      console.error('Failed to load document:', err);
+      toast.error('Failed to load certificate document');
+    } finally {
+      setDocLoading(false);
+    }
+  };
+
+  const closeDocViewer = () => {
+    if (viewingDoc?.url) URL.revokeObjectURL(viewingDoc.url);
+    setViewingDoc(null);
   };
 
   const handleBeginReview = async (certId) => {
@@ -62,6 +87,15 @@ export const TransitionTab = ({ getAuthHeaders }) => {
 
   if (loading) return <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-[var(--gold)]" /></div>;
 
+  const filtered = certificates.filter(cert => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (cert.estate_name || '').toLowerCase().includes(q) ||
+      (cert.uploader_name || cert.uploaded_by || '').toLowerCase().includes(q) ||
+      (cert.file_name || '').toLowerCase().includes(q) ||
+      (cert.status || '').toLowerCase().includes(q);
+  });
+
   return (
     <div className="space-y-4" data-testid="admin-transition-tab">
       <div className="rounded-xl p-4" style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.12)' }}>
@@ -78,28 +112,14 @@ export const TransitionTab = ({ getAuthHeaders }) => {
         </div>
       )}
 
-      {certificates.filter(cert => {
-        if (!searchQuery) return true;
-        const q = searchQuery.toLowerCase();
-        return (cert.estate_name || '').toLowerCase().includes(q) ||
-          (cert.uploader_name || cert.uploaded_by || '').toLowerCase().includes(q) ||
-          (cert.file_name || '').toLowerCase().includes(q) ||
-          (cert.status || '').toLowerCase().includes(q);
-      }).length === 0 ? (
+      {filtered.length === 0 ? (
         <Card className="glass-card"><CardContent className="p-12 text-center">
           <CheckCircle2 className="w-12 h-12 mx-auto text-[var(--gn2)] mb-4" />
           <h3 className="font-bold text-[var(--t)] mb-2">No Certificates to Review</h3>
           <p className="text-sm text-[var(--t4)]">All transition certificates have been processed.</p>
         </CardContent></Card>
       ) : (
-        certificates.filter(cert => {
-          if (!searchQuery) return true;
-          const q = searchQuery.toLowerCase();
-          return (cert.estate_name || '').toLowerCase().includes(q) ||
-            (cert.uploader_name || cert.uploaded_by || '').toLowerCase().includes(q) ||
-            (cert.file_name || '').toLowerCase().includes(q) ||
-            (cert.status || '').toLowerCase().includes(q);
-        }).map(cert => (
+        filtered.map(cert => (
           <Card key={cert.id} className="glass-card" data-testid={`cert-${cert.id}`}>
             <CardContent className="p-5">
               <div className="flex items-start gap-4">
@@ -130,10 +150,10 @@ export const TransitionTab = ({ getAuthHeaders }) => {
                       onClick={() => handleBeginReview(cert.id)} disabled={actionLoading === cert.id}>
                       {actionLoading === cert.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4 mr-1" />} Begin Review
                     </Button>
-                    <a href={`${API_URL}/transition/certificate/${cert.id}/document`} target="_blank" rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-xs font-bold text-[var(--bl3)] hover:underline justify-center">
-                      <Eye className="w-3 h-3" /> View Document
-                    </a>
+                    <Button size="sm" variant="outline" className="text-xs border-[var(--b)] text-[var(--bl3)]"
+                      onClick={() => viewDocument(cert)} disabled={docLoading} data-testid={`view-cert-${cert.id}`}>
+                      {docLoading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Eye className="w-3 h-3 mr-1" />} View Document
+                    </Button>
                   </div>
                 )}
                 {cert.status === 'reviewing' && (
@@ -146,10 +166,10 @@ export const TransitionTab = ({ getAuthHeaders }) => {
                       onClick={() => handleRejectCert(cert.id)} disabled={actionLoading === cert.id}>
                       <XCircle className="w-4 h-4 mr-1" /> Reject
                     </Button>
-                    <a href={`${API_URL}/transition/certificate/${cert.id}/document`} target="_blank" rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-xs font-bold text-[var(--bl3)] hover:underline justify-center">
-                      <Eye className="w-3 h-3" /> View Document
-                    </a>
+                    <Button size="sm" variant="outline" className="text-xs border-[var(--b)] text-[var(--bl3)]"
+                      onClick={() => viewDocument(cert)} disabled={docLoading} data-testid={`view-cert-${cert.id}`}>
+                      {docLoading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Eye className="w-3 h-3 mr-1" />} View Document
+                    </Button>
                   </div>
                 )}
               </div>
@@ -172,6 +192,31 @@ export const TransitionTab = ({ getAuthHeaders }) => {
             </CardContent>
           </Card>
         ))
+      )}
+
+      {/* Document Viewer Modal */}
+      {viewingDoc && (
+        <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4" onClick={closeDocViewer}>
+          <div className="bg-[#1A2440] rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-auto" onClick={e => e.stopPropagation()}
+            style={{ border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}>
+            <div className="flex items-center justify-between p-4 border-b border-[var(--b)]">
+              <div>
+                <h3 className="font-bold text-[var(--t)] text-sm" style={{ fontFamily: 'Outfit, sans-serif' }}>Death Certificate</h3>
+                <p className="text-xs text-[var(--t5)]">{viewingDoc.name}</p>
+              </div>
+              <button onClick={closeDocViewer} className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--t5)] hover:text-white hover:bg-white/10 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-4">
+              {viewingDoc.type?.includes('pdf') ? (
+                <iframe src={viewingDoc.url} className="w-full h-[70vh] rounded-lg" title="Certificate" />
+              ) : (
+                <img src={viewingDoc.url} alt="Death Certificate" className="w-full rounded-lg" />
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
