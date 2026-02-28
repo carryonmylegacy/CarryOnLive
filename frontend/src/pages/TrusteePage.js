@@ -748,7 +748,7 @@ const TrusteePage = () => {
                 Delete DTS Request
               </AlertDialogTitle>
               <AlertDialogDescription className="text-[var(--t3)]">
-                Are you sure you want to permanently delete this Designated Trustee Service request? This action cannot be undone. Any saved payment method will also be removed.
+                Are you sure you want to permanently delete this DTS request? This action cannot be undone. Any saved payment method will also be removed.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
