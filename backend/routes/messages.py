@@ -155,9 +155,7 @@ async def get_message_voice(
             ) or not message.get("is_delivered"):
                 raise HTTPException(status_code=403, detail="Access denied")
         elif current_user["role"] == "benefactor":
-            estate = await db.estates.find_one(
-                {"id": message["estate_id"]}, {"_id": 0}
-            )
+            estate = await db.estates.find_one({"id": message["estate_id"]}, {"_id": 0})
             if not estate or estate["owner_id"] != current_user["id"]:
                 raise HTTPException(status_code=403, detail="Access denied")
 
