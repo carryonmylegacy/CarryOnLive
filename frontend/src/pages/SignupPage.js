@@ -581,6 +581,11 @@ const SignupPage = () => {
                 data-testid="signup-otp-verify-button">
                 {loading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Verifying...</> : 'Verify & Continue'}
               </Button>
+              <button onClick={handleResendOtp} disabled={resendCooldown > 0}
+                className={`mt-3 text-sm transition-colors ${resendCooldown > 0 ? 'text-[#3a4a63] cursor-not-allowed' : 'text-[#d4af37] hover:text-[#e8c54a]'}`}
+                data-testid="signup-otp-resend-button">
+                {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
+              </button>
             </div>
           </div>
         </DialogContent>
