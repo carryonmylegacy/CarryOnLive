@@ -292,7 +292,7 @@ const SettingsPage = () => {
       <div className="text-center py-4">
         <div className="flex items-center justify-center gap-2 text-[var(--t5)] text-sm mb-2">
           <Shield className="w-4 h-4" />
-          <span>AES-256 Encrypted · Zero-Knowledge · SOC 2 Compliance Pending</span>
+          <span>AES-256 Encrypted · Zero-Knowledge · 2FA Protected</span>
         </div>
         <p className="text-[var(--t5)] text-xs">
           CarryOn™ v1.0.0 · © 2024 CarryOn Inc.
