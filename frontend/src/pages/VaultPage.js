@@ -1077,72 +1077,18 @@ const VaultPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Preview Modal */}
-      <Dialog open={showPreviewModal} onOpenChange={closePreview}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-4xl max-h-[90vh] !top-[5vh] !translate-y-0 overflow-y-scroll">
-          <DialogHeader>
-            <DialogTitle className="text-white text-xl flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              <Eye className="w-5 h-5 text-[#d4af37]" />
-              Document Preview
-            </DialogTitle>
-            <DialogDescription className="text-[#94a3b8]">
-              {selectedDoc?.name}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4">
-            {previewLoading ? (
-              <div className="flex items-center justify-center h-96">
-                <Loader2 className="w-8 h-8 animate-spin text-[#d4af37]" />
-              </div>
-            ) : previewUrl ? (
-              <div className="max-h-[60vh] overflow-auto rounded-xl bg-white">
-                {selectedDoc?.file_type?.includes('pdf') ? (
-                  <iframe
-                    src={previewUrl}
-                    className="w-full h-[60vh]"
-                    title="Document Preview"
-                  />
-                ) : selectedDoc?.file_type?.includes('image') ? (
-                  <img
-                    src={previewUrl}
-                    alt={selectedDoc?.name}
-                    className="w-full h-auto max-h-[60vh] object-contain"
-                  />
-                ) : (
-                  <div className="p-8 text-center text-gray-500">
-                    Preview not available for this file type
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-96 text-[#94a3b8]">
-                No preview available
-              </div>
-            )}
-          </div>
-          
-          <div className="flex justify-end gap-3">
-            <Button
-              variant="outline"
-              onClick={closePreview}
-              className="border-[var(--b)] text-white"
-            >
-              Close
-            </Button>
-            <Button
-              onClick={() => {
-                closePreview();
-                handleDownload(selectedDoc);
-              }}
-              className="gold-button"
-            >
-              <Download className="w-5 h-5 mr-2" />
-              Download
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* PDF/Image Viewer Floating Tile */}
+      <PDFViewerModal
+        open={showPreviewModal}
+        onClose={closePreview}
+        doc={selectedDoc}
+        blobUrl={previewUrl}
+        loading={previewLoading}
+        onDownload={(d) => {
+          closePreview();
+          handleDownload(d);
+        }}
+      />
 
       {/* Edit Document Modal */}
       <Dialog open={showEditModal} onOpenChange={(open) => {
