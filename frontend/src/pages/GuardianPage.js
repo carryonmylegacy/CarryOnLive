@@ -188,7 +188,7 @@ const GuardianPage = () => {
     setSessionId(newId);
     setMessages([{
       role: 'assistant',
-      content: `Hey ${user?.name?.split(' ')[0] || 'there'}! I'm the Estate Guardian — your AI estate planning specialist living inside your encrypted vault.\n\nI've got eyes on your documents, your beneficiary setup, and your overall readiness. I can **analyze your Vault**, **generate a personalized Action Checklist**, or **break down your Readiness Score**.\n\nWhat's on your mind?`
+      content: `Hey ${user?.name?.split(' ')[0] || 'there'}! I'm EGA — your AI estate planning specialist working inside your encrypted vault.\n\nI've got eyes on your documents, your beneficiary setup, and your overall readiness. I can **analyze your Vault**, **generate a personalized IAC**, or **break down your Readiness Score**.\n\nWhat's on your mind?`
     }]);
     setView('chat');
     setLandingInput('');
@@ -357,7 +357,7 @@ const GuardianPage = () => {
                 </div>
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid="guardian-hero-title">
-                Estate Guardian
+                Estate Guardian (EGA)
               </h1>
               <p className="text-sm text-[var(--t4)] max-w-md mx-auto mb-4">
                 Your AI estate planning specialist — living inside your encrypted vault, trained in the estate law of all 50 U.S. states.
@@ -472,7 +472,7 @@ const GuardianPage = () => {
             {/* Legal Disclaimer */}
             <div className="mt-8 p-3 rounded-xl text-center" style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.1)' }}>
               <p className="text-[10px] text-[var(--t5)] leading-relaxed">
-                <strong className="text-[var(--gold)]">Not Legal Advice</strong> — Estate Guardian is an AI assistant, not a licensed attorney. For legally binding decisions, always consult a bar-certified attorney licensed in your jurisdiction. Your documents are analyzed within the encrypted vault and are never shared externally.
+                <strong className="text-[var(--gold)]">Not Legal Advice</strong> — EGA is an AI assistant, not a licensed attorney. For legally binding decisions, always consult a bar-certified attorney licensed in your jurisdiction. Your documents are analyzed within the encrypted vault and are never shared externally.
               </p>
             </div>
           </div>
@@ -506,7 +506,7 @@ const GuardianPage = () => {
             </div>
           </div>
           <div>
-            <h1 className="text-sm font-bold text-[var(--t)] leading-none" style={{ fontFamily: 'Outfit, sans-serif' }}>Estate Guardian</h1>
+            <h1 className="text-sm font-bold text-[var(--t)] leading-none" style={{ fontFamily: 'Outfit, sans-serif' }}>EGA</h1>
             <span className="text-[var(--t5)] text-[10px] flex items-center gap-1">
               <Shield className="w-2 h-2 text-[#22C993]" /> AES-256 encrypted session
             </span>
