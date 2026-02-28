@@ -56,8 +56,10 @@ def decrypt_data(encrypted_data: str) -> bytes:
 
 
 def generate_backup_code() -> str:
+    """Generate a cryptographically secure backup code."""
+    import secrets
     return "-".join(
-        ["".join([str(random.randint(0, 9)) for _ in range(4)]) for _ in range(3)]
+        ["".join([str(secrets.randbelow(10)) for _ in range(4)]) for _ in range(3)]
     )
 
 
