@@ -228,7 +228,25 @@ async def update_digital_wallet_entry(
             update["assigned_beneficiary_name"] = None
 
     if update:
+        update["updated_at"] = datetime.now(timezone.utc).isoformat()
         await db.digital_wallet.update_one({"id": entry_id}, {"$set": update})
+
+        # Log edit for timeline
+        changed_fields = [k for k in update if k not in ("updated_at", "assigned_beneficiary_name")]
+        await db.edit_history.insert_one(
+            {
+                "id": str(uuid.uuid4()),
+                "item_type": "digital_wallet",
+                "item_id": entry_id,
+                "estate_id": entry["estate_id"],
+                "user_id": current_user["id"],
+                "user_name": current_user.get("name", ""),
+                "action": "edited",
+                "changed_fields": changed_fields,
+                "title": data.account_name or entry.get("account_name", ""),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
 
     return {"success": True, "message": "Entry updated"}
 
