@@ -1,22 +1,89 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
-  CreditCard,
-  Loader2,
-  Clock,
-  ChevronRight,
-  Zap,
-  Upload,
-  Shield,
-  X
+  CreditCard, Loader2, Clock, ChevronRight, Zap, Shield, X, Check,
+  Crown, Star, Heart, Award, ArrowRight, Users, Mail, Sparkles
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 import { toast } from 'sonner';
-import { PlanCard } from './PlanCard';
-import { BillingToggle } from './BillingToggle';
+import { useAuth } from '../../contexts/AuthContext';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+const TIER_STYLES = {
+  ben_premium: { accent: '#d4af37', icon: Crown, label: 'Best Value' },
+  ben_standard: { accent: '#60A5FA', icon: Star, label: null },
+  ben_base: { accent: '#22C993', icon: Shield, label: null },
+  ben_hospice: { accent: '#ec4899', icon: Heart, label: 'Post-Transition' },
+  premium: { accent: '#d4af37', icon: Crown, label: 'Most Popular' },
+  standard: { accent: '#60A5FA', icon: Star, label: null },
+  base: { accent: '#22C993', icon: Shield, label: null },
+  new_adult: { accent: '#B794F6', icon: Award, label: 'Ages 18-25' },
+  military: { accent: '#F59E0B', icon: Shield, label: 'Verified' },
+  hospice: { accent: '#ec4899', icon: Heart, label: 'Free' },
+};
+
+const BeneficiaryBillingToggle = ({ billing, onChange }) => {
+  const cycles = [
+    { id: 'monthly', label: 'Monthly', save: null },
+    { id: 'quarterly', label: 'Quarterly', save: '10%' },
+    { id: 'annual', label: 'Annual', save: '20%' },
+  ];
+
+  return (
+    <div className="flex justify-center mb-8" data-testid="billing-toggle">
+      <div className="inline-flex p-1 rounded-2xl" style={{
+        background: 'var(--s)',
+        border: '1px solid var(--b)',
+        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)',
+      }}>
+        {cycles.map((c) => (
+          <button
+            key={c.id}
+            onClick={() => onChange(c.id)}
+            className="relative px-6 py-2.5 rounded-xl text-xs font-bold transition-all duration-300"
+            style={{
+              background: billing === c.id ? 'linear-gradient(135deg, #d4af37, #c9a033)' : 'transparent',
+              color: billing === c.id ? '#0F1629' : 'var(--t5)',
+              boxShadow: billing === c.id ? '0 4px 16px rgba(212,175,55,0.35)' : 'none',
+            }}
+            data-testid={`billing-${c.id}`}
+          >
+            {c.label}
+            {c.save && (
+              <span className="absolute -top-2 -right-1 text-[8px] font-bold px-1.5 py-0.5 rounded-full"
+                style={{ background: '#22C993', color: '#fff', boxShadow: '0 2px 8px rgba(34,201,147,0.4)' }}>
+                -{c.save}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const PriceDisplay = ({ plan, billing }) => {
+  const basePrice = plan.price || 0;
+  if (basePrice === 0) return <span className="text-3xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>Free</span>;
+
+  let displayPrice = basePrice;
+  if (billing === 'quarterly') displayPrice = plan.quarterly_price || basePrice * 0.9;
+  else if (billing === 'annual') displayPrice = plan.annual_price || basePrice * 0.8;
+
+  const periodLabel = billing === 'annual' ? '/mo billed annually' : billing === 'quarterly' ? '/mo billed quarterly' : '/month';
+
+  return (
+    <div className="flex items-baseline gap-1">
+      <span className="text-3xl font-bold tracking-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
+        ${displayPrice.toFixed(2)}
+      </span>
+      <span className="text-[10px] text-[var(--t5)]">{periodLabel}</span>
+    </div>
+  );
+};
 
 export const SubscriptionManagement = ({
   subscriptionStatus,
@@ -24,63 +91,65 @@ export const SubscriptionManagement = ({
   getAuthHeaders,
   onShowPaywall,
 }) => {
+  const { user } = useAuth();
   const [plans, setPlans] = useState([]);
+  const [beneficiaryPlans, setBeneficiaryPlans] = useState([]);
   const [billing, setBilling] = useState('monthly');
-  const [activePlan, setActivePlan] = useState('Premium');
-  const [changingPlan, setChangingPlan] = useState(false);
+  const [subscribing, setSubscribing] = useState(null);
   const [cancellingPlan, setCancellingPlan] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [showVerification, setShowVerification] = useState(false);
-  const [verificationTier, setVerificationTier] = useState('');
-  const [verificationFile, setVerificationFile] = useState(null);
-  const [verificationDocType, setVerificationDocType] = useState('');
-  const [uploadingVerification, setUploadingVerification] = useState(false);
+  const [showFamilyRequest, setShowFamilyRequest] = useState(false);
+  const [familyEmail, setFamilyEmail] = useState('');
+  const [sendingRequest, setSendingRequest] = useState(false);
 
+  const isBeneficiary = user?.role === 'beneficiary';
   const currentSub = subscriptionStatus?.subscription;
   const currentPlanId = currentSub?.plan_id;
   const currentBilling = currentSub?.billing_cycle || 'monthly';
-  const eligibleTiers = subscriptionStatus?.eligible_tiers || [];
-
-  const isEligibleForPlan = (planId) => {
-    if (planId === 'new_adult') return eligibleTiers.includes('new_adult');
-    return true;
-  };
+  const isBeta = subscriptionStatus?.beta_mode;
 
   useEffect(() => {
     const fetchPlans = async () => {
       try {
         const res = await axios.get(`${API_URL}/subscriptions/plans`);
         setPlans(res.data.plans || []);
-      } catch (e) { /* fallback to empty */ }
+        setBeneficiaryPlans(res.data.beneficiary_plans || []);
+      } catch (e) { /* fallback empty */ }
     };
     fetchPlans();
     if (currentBilling) setBilling(currentBilling);
   }, [currentBilling]);
 
-  const getBillingPrice = (plan) => {
-    if (plan.price === 0) return 'Free';
-    if (billing === 'quarterly') return '$' + (plan.quarterly_price || (plan.price * 0.9)).toFixed(2);
-    if (billing === 'annual') return '$' + (plan.annual_price || (plan.price * 0.8)).toFixed(2);
-    return '$' + plan.price.toFixed(2);
-  };
+  const displayPlans = isBeneficiary ? beneficiaryPlans : plans;
 
-  const getBillingLabel = () => {
-    if (billing === 'annual') return '/mo (annual)';
-    if (billing === 'quarterly') return '/mo (quarterly)';
-    return '/month';
+  const handleSubscribe = async (planId) => {
+    setSubscribing(planId);
+    try {
+      const res = await axios.post(`${API_URL}/subscriptions/checkout`, {
+        plan_id: planId,
+        billing_cycle: billing,
+        origin_url: window.location.origin,
+      }, getAuthHeaders());
+      if (res.data.url) {
+        window.location.href = res.data.url;
+      } else if (res.data.free) {
+        toast.success(res.data.message);
+        if (refreshSubscription) await refreshSubscription();
+      }
+    } catch (e) {
+      const detail = e.response?.data?.detail || 'Failed to start checkout';
+      if (detail.includes('beta')) {
+        toast.info('All features are free during beta!');
+      } else {
+        toast.error(detail);
+      }
+    }
+    setSubscribing(null);
   };
 
   const handleChangePlan = async (planId) => {
     if (planId === currentPlanId) return;
-
-    // Gate verification-required plans (military, hospice)
-    if (['military', 'hospice'].includes(planId)) {
-      setVerificationTier(planId);
-      setShowVerification(true);
-      return;
-    }
-
-    setChangingPlan(true);
+    setSubscribing(planId);
     try {
       const res = await axios.post(`${API_URL}/subscriptions/change-plan`, {
         plan_id: planId,
@@ -96,63 +165,7 @@ export const SubscriptionManagement = ({
     } catch (e) {
       toast.error(e.response?.data?.detail || 'Failed to change plan');
     }
-    setChangingPlan(false);
-  };
-
-  const handleVerificationUpload = async () => {
-    if (!verificationFile || !verificationDocType) {
-      toast.error('Please select a document type and upload a file');
-      return;
-    }
-    setUploadingVerification(true);
-    try {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const base64 = e.target.result.split(',')[1];
-        const formData = new FormData();
-        formData.append('tier_requested', verificationTier);
-        formData.append('doc_type', verificationDocType);
-        formData.append('file_data', base64);
-        formData.append('file_name', verificationFile.name);
-        try {
-          const res = await axios.post(`${API_URL}/verification/upload`, formData, getAuthHeaders());
-          toast.success(res.data.message || 'Verification submitted! You will be notified once approved.');
-          setShowVerification(false);
-          setVerificationFile(null);
-          setVerificationDocType('');
-        } catch (err) {
-          toast.error(err.response?.data?.detail || 'Verification upload failed');
-        }
-        setUploadingVerification(false);
-      };
-      reader.readAsDataURL(verificationFile);
-    } catch (err) {
-      toast.error('Failed to process file');
-      setUploadingVerification(false);
-    }
-  };
-
-  const handleChangeBilling = async (newCycle) => {
-    if (!currentSub || newCycle === currentBilling) {
-      setBilling(newCycle);
-      return;
-    }
-    setBilling(newCycle);
-    try {
-      const res = await axios.post(`${API_URL}/subscriptions/change-billing`, {
-        billing_cycle: newCycle,
-        origin_url: window.location.origin,
-      }, getAuthHeaders());
-      if (res.data.url) {
-        // Stripe checkout redirect for paid billing changes
-        window.location.href = res.data.url;
-      } else if (res.data.success) {
-        toast.success(res.data.message);
-        if (refreshSubscription) await refreshSubscription();
-      }
-    } catch (e) {
-      toast.error(e.response?.data?.detail || 'Failed to change billing');
-    }
+    setSubscribing(null);
   };
 
   const handleCancelSubscription = async () => {
@@ -168,178 +181,258 @@ export const SubscriptionManagement = ({
     setCancellingPlan(false);
   };
 
-  const getPlanRank = (id) => ({ base: 1, new_adult: 2, military: 3, standard: 4, premium: 5 }[id] || 0);
-  const isUpgrade = (planId) => getPlanRank(planId) > getPlanRank(currentPlanId);
-  const isDowngrade = (planId) => getPlanRank(planId) < getPlanRank(currentPlanId);
-  const requiresVerification = (planId) => ['military', 'hospice'].includes(planId);
+  const handleFamilyPlanRequest = async () => {
+    if (!familyEmail.trim()) {
+      toast.error('Please enter the benefactor\'s email');
+      return;
+    }
+    setSendingRequest(true);
+    try {
+      await axios.post(`${API_URL}/subscriptions/family-plan-request`, {
+        benefactor_email: familyEmail.trim(),
+      }, getAuthHeaders());
+      toast.success('Request sent! The benefactor will be notified.');
+      setShowFamilyRequest(false);
+      setFamilyEmail('');
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Failed to send request');
+    }
+    setSendingRequest(false);
+  };
 
   return (
-    <Card className="glass-card overflow-hidden">
-      <CardHeader>
-        <CardTitle className="text-[var(--t)] flex items-center gap-2">
-          <CreditCard className="w-5 h-5 text-[var(--gold)]" />
-          Subscription Plan
-        </CardTitle>
+    <Card className="glass-card overflow-hidden" data-testid="subscription-management">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-[var(--t)] flex items-center gap-2.5" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05))', border: '1px solid rgba(212,175,55,0.2)' }}>
+              <CreditCard className="w-4.5 h-4.5 text-[var(--gold)]" />
+            </div>
+            {isBeneficiary ? 'Your Plan' : 'Subscription'}
+          </CardTitle>
+          {currentSub?.status === 'active' && (
+            <button onClick={() => setShowCancelConfirm(true)} className="text-[10px] text-[var(--t5)] hover:text-red-400 transition-colors px-3 py-1 rounded-lg hover:bg-red-500/5" data-testid="cancel-sub-btn">
+              Cancel Plan
+            </button>
+          )}
+        </div>
       </CardHeader>
-      <CardContent>
-        {/* Status Bar */}
+      <CardContent className="pt-2">
+        {/* Status Banner */}
         {subscriptionStatus && (
-          <div className="mb-5 p-4 rounded-xl relative overflow-hidden" style={{
-            background: currentSub?.status === 'active'
-              ? 'linear-gradient(135deg, rgba(34,201,147,0.08) 0%, rgba(34,201,147,0.02) 100%)'
-              : subscriptionStatus.trial?.trial_active
-                ? 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0.02) 100%)'
-                : 'linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(239,68,68,0.02) 100%)',
-            border: `1px solid ${currentSub?.status === 'active' ? 'rgba(34,201,147,0.2)' : subscriptionStatus.trial?.trial_active ? 'rgba(212,175,55,0.2)' : 'rgba(239,68,68,0.2)'}`,
+          <div className="mb-6 p-4 rounded-xl relative overflow-hidden" style={{
+            background: isBeta
+              ? 'linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.05))'
+              : currentSub?.status === 'active'
+                ? 'linear-gradient(135deg, rgba(34,201,147,0.08), rgba(34,201,147,0.02))'
+                : 'linear-gradient(135deg, rgba(212,175,55,0.08), rgba(212,175,55,0.02))',
+            border: `1px solid ${isBeta ? 'rgba(139,92,246,0.15)' : currentSub?.status === 'active' ? 'rgba(34,201,147,0.15)' : 'rgba(212,175,55,0.15)'}`,
           }}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {currentSub?.status === 'active' ? (
-                  <Zap className="w-4 h-4 text-[#22C993]" />
-                ) : (
-                  <Clock className="w-4 h-4 text-[var(--gold)]" />
-                )}
-                <span className="text-sm font-semibold text-[var(--t)]">
-                  {subscriptionStatus.beta_mode ? 'Beta Mode — All features free' :
-                   currentSub?.status === 'active'
-                    ? `${currentSub.plan_name} Plan · ${currentSub.billing_cycle || 'monthly'}`
-                    : subscriptionStatus.trial?.trial_active
-                      ? `Free Trial — ${subscriptionStatus.trial.days_remaining} days remaining`
-                      : 'No active subscription'}
-                </span>
-              </div>
-              {currentSub?.status === 'active' && (
-                <button onClick={() => setShowCancelConfirm(true)} className="text-xs text-[var(--t5)] hover:text-red-400 transition-colors" data-testid="cancel-sub-btn">Cancel</button>
+            <div className="flex items-center gap-2.5">
+              {isBeta ? (
+                <Sparkles className="w-4 h-4 text-purple-400" />
+              ) : currentSub?.status === 'active' ? (
+                <Zap className="w-4 h-4 text-[#22C993]" />
+              ) : (
+                <Clock className="w-4 h-4 text-[var(--gold)]" />
               )}
+              <div>
+                <span className="text-sm font-semibold text-[var(--t)]">
+                  {isBeta ? 'Beta Access — All features unlocked' :
+                   currentSub?.status === 'active'
+                    ? `${currentSub.plan_name} · ${currentSub.billing_cycle}`
+                    : subscriptionStatus.trial?.trial_active
+                      ? `Free Trial · ${subscriptionStatus.trial.days_remaining} days left`
+                      : 'Choose a plan to get started'}
+                </span>
+                {isBeta && (
+                  <p className="text-[10px] text-[var(--t5)] mt-0.5">No payment required during beta period</p>
+                )}
+              </div>
             </div>
           </div>
         )}
 
         {/* Cancel Confirm */}
         {showCancelConfirm && (
-          <div className="mb-5 p-4 rounded-xl border border-red-500/20 bg-red-500/5">
-            <p className="text-sm text-[var(--t3)] mb-3">Are you sure you want to cancel? You'll keep access until the end of your billing period.</p>
+          <div className="mb-5 p-4 rounded-xl" style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)' }}>
+            <p className="text-sm text-[var(--t3)] mb-3">Cancel your subscription? Access continues until the end of your billing period.</p>
             <div className="flex gap-2">
-              <Button onClick={handleCancelSubscription} disabled={cancellingPlan} className="bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 text-xs px-4 py-2" data-testid="confirm-cancel-btn">
+              <Button onClick={handleCancelSubscription} disabled={cancellingPlan}
+                className="text-xs px-4 py-2" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}
+                data-testid="confirm-cancel-btn">
                 {cancellingPlan ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} Yes, Cancel
               </Button>
-              <Button onClick={() => setShowCancelConfirm(false)} className="bg-[var(--s)] text-[var(--t4)] border border-[var(--b)] text-xs px-4 py-2">Keep Plan</Button>
+              <Button onClick={() => setShowCancelConfirm(false)} className="text-xs px-4 py-2 bg-[var(--s)] text-[var(--t4)] border border-[var(--b)]">Keep Plan</Button>
             </div>
           </div>
         )}
 
         {/* Billing Toggle */}
-        <BillingToggle billing={billing} onChangeBilling={handleChangeBilling} />
+        <BeneficiaryBillingToggle billing={billing} onChange={setBilling} />
 
-        {/* Plan Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="plan-grid">
-          {plans.map((p, idx) => (
-            <PlanCard
-              key={p.id}
-              plan={p}
-              index={idx}
-              currentPlanId={currentPlanId}
-              activePlan={activePlan}
-              setActivePlan={setActivePlan}
-              isEligible={isEligibleForPlan(p.id)}
-              isUpgrade={isUpgrade}
-              isDowngrade={isDowngrade}
-              requiresVerification={requiresVerification}
-              billingPrice={getBillingPrice(p)}
-              billingLabel={getBillingLabel()}
-              onChangePlan={handleChangePlan}
-              onShowPaywall={onShowPaywall}
-              changingPlan={changingPlan}
-              hasActiveSub={currentSub?.status === 'active'}
-            />
-          ))}
+        {/* Plan Cards */}
+        <div className={`grid gap-4 ${displayPlans.length <= 3 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`} data-testid="plan-grid">
+          {displayPlans.map((plan) => {
+            const style = TIER_STYLES[plan.id] || TIER_STYLES.base;
+            const Icon = style.icon;
+            const isCurrent = currentPlanId === plan.id;
+            const isRecommended = plan.id === 'ben_premium' || plan.id === 'premium';
+
+            return (
+              <div key={plan.id} className="relative rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 group" style={{
+                background: isCurrent
+                  ? `linear-gradient(168deg, ${style.accent}12, ${style.accent}04)`
+                  : 'var(--s)',
+                border: isCurrent
+                  ? `2px solid ${style.accent}`
+                  : isRecommended
+                    ? `2px solid ${style.accent}50`
+                    : '1px solid var(--b)',
+                boxShadow: isCurrent
+                  ? `0 8px 32px ${style.accent}20`
+                  : isRecommended
+                    ? `0 8px 32px ${style.accent}15`
+                    : '0 2px 8px rgba(0,0,0,0.05)',
+              }} data-testid={`plan-${plan.id}`}>
+                {/* Label badges */}
+                {(style.label || isCurrent) && (
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 text-[9px] font-bold px-3 py-0.5 rounded-b-lg z-10"
+                    style={{ background: style.accent, color: '#0F1629' }}>
+                    {isCurrent ? 'Current Plan' : style.label}
+                  </div>
+                )}
+
+                <div className="p-5 pt-7 flex flex-col h-full">
+                  {/* Plan header */}
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
+                      style={{ background: `${style.accent}12`, border: `1px solid ${style.accent}25` }}>
+                      <Icon className="w-4 h-4" style={{ color: style.accent }} />
+                    </div>
+                    <h3 className="font-bold text-base text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>{plan.name}</h3>
+                  </div>
+
+                  {/* Price — animates on billing change */}
+                  <div className="mb-4" style={{ color: style.accent }}>
+                    <PriceDisplay plan={plan} billing={billing} />
+                  </div>
+
+                  {/* Divider */}
+                  <div className="h-px mb-4" style={{ background: `linear-gradient(90deg, transparent, ${style.accent}20, transparent)` }} />
+
+                  {/* Features */}
+                  <div className="space-y-2 mb-5 flex-1">
+                    {(plan.features || []).map((f, i) => (
+                      <div key={i} className="flex items-start gap-2 text-xs text-[var(--t3)]">
+                        <div className="w-3.5 h-3.5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                          style={{ background: `${style.accent}12` }}>
+                          <Check className="w-2 h-2" style={{ color: style.accent }} />
+                        </div>
+                        <span>{f}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {plan.note && <p className="text-[10px] text-[var(--t5)] italic mb-3">{plan.note}</p>}
+
+                  {/* CTA Button */}
+                  {isCurrent ? (
+                    <div className="w-full text-center text-xs font-bold py-3 rounded-xl"
+                      style={{ background: `${style.accent}10`, color: style.accent, border: `1px solid ${style.accent}25` }}>
+                      <Check className="w-3 h-3 inline mr-1" /> Active
+                    </div>
+                  ) : currentSub?.status === 'active' ? (
+                    <Button
+                      onClick={() => handleChangePlan(plan.id)}
+                      disabled={subscribing === plan.id}
+                      className="w-full text-xs font-bold py-4 transition-all duration-300"
+                      style={{
+                        background: `linear-gradient(135deg, ${style.accent}, ${style.accent}cc)`,
+                        color: '#0F1629',
+                        boxShadow: `0 4px 16px ${style.accent}30`,
+                      }}
+                      data-testid={`change-plan-${plan.id}`}
+                    >
+                      {subscribing === plan.id ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <ArrowRight className="w-3.5 h-3.5 mr-1" />}
+                      Switch Plan
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => handleSubscribe(plan.id)}
+                      disabled={subscribing === plan.id}
+                      className="w-full text-xs font-bold py-4 transition-all duration-300"
+                      style={{
+                        background: isRecommended
+                          ? `linear-gradient(135deg, ${style.accent}, ${style.accent}cc)`
+                          : 'transparent',
+                        color: isRecommended ? '#0F1629' : style.accent,
+                        border: isRecommended ? 'none' : `2px solid ${style.accent}35`,
+                        boxShadow: isRecommended ? `0 4px 20px ${style.accent}30` : 'none',
+                      }}
+                      data-testid={`subscribe-${plan.id}`}
+                    >
+                      {subscribing === plan.id ? (
+                        <><Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> Processing...</>
+                      ) : (
+                        <>Subscribe <ChevronRight className="w-3.5 h-3.5 ml-1" /></>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        {!subscriptionStatus?.beta_mode && !currentSub?.status && (
-          <div className="mt-6 text-center">
-            <Button onClick={onShowPaywall} className="gold-button shadow-[0_4px_20px_rgba(212,175,55,0.3)] px-8 py-5" data-testid="settings-subscribe-btn">
-              <Zap className="w-4 h-4 mr-2" /> Subscribe Now <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
+        {/* Beneficiary: Family Plan Request */}
+        {isBeneficiary && (
+          <div className="mt-6 p-4 rounded-xl" style={{ background: 'rgba(96,165,250,0.05)', border: '1px solid rgba(96,165,250,0.12)' }}>
+            <div className="flex items-start gap-3">
+              <Users className="w-5 h-5 text-[#60A5FA] mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <h4 className="text-sm font-semibold text-[var(--t)] mb-1">Part of a Family Plan?</h4>
+                <p className="text-xs text-[var(--t5)] mb-3">
+                  If a benefactor has a CarryOn Family Plan, ask them to add you — no separate subscription needed.
+                </p>
+                {showFamilyRequest ? (
+                  <div className="flex gap-2">
+                    <Input
+                      value={familyEmail}
+                      onChange={(e) => setFamilyEmail(e.target.value)}
+                      placeholder="Benefactor's CarryOn email"
+                      className="input-field text-xs h-9"
+                      data-testid="family-request-email"
+                    />
+                    <Button
+                      onClick={handleFamilyPlanRequest}
+                      disabled={sendingRequest || !familyEmail.trim()}
+                      className="h-9 px-4 text-xs font-bold shrink-0"
+                      style={{ background: 'linear-gradient(135deg, #60A5FA, #3b82f6)', color: '#fff' }}
+                      data-testid="send-family-request"
+                    >
+                      {sendingRequest ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3 mr-1" />}
+                      Send
+                    </Button>
+                    <Button onClick={() => setShowFamilyRequest(false)} variant="ghost" className="h-9 px-2 text-[var(--t5)]">
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={() => setShowFamilyRequest(true)}
+                    className="text-xs h-8 px-4 font-semibold"
+                    style={{ background: 'rgba(96,165,250,0.1)', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.2)' }}
+                    data-testid="request-family-plan"
+                  >
+                    <Users className="w-3 h-3 mr-1.5" /> Request Family Plan
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </CardContent>
-
-      {/* Verification Modal */}
-      {showVerification && (
-        <div className="fixed inset-0 z-[9999] bg-[#0a0e1a]/90 flex items-center justify-center p-4" data-testid="verification-modal">
-          <div className="w-full max-w-md rounded-2xl p-6 space-y-5" style={{
-            background: 'linear-gradient(168deg, rgba(26,36,64,0.98) 0%, rgba(15,22,41,0.99) 100%)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
-          }}>
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                {verificationTier === 'military' ? 'Military / First Responder' : 'Hospice'} Verification
-              </h2>
-              <button onClick={() => { setShowVerification(false); setVerificationFile(null); setVerificationDocType(''); }} className="text-[var(--t5)] hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <p className="text-sm text-[var(--t4)]">
-              Please upload one of the following documents to verify your eligibility for the {verificationTier === 'military' ? 'Military / First Responder' : 'Hospice'} plan:
-            </p>
-
-            <div className="space-y-3">
-              <label className="text-sm text-[var(--t5)]">Document Type</label>
-              <div className="flex flex-col gap-2">
-                {(verificationTier === 'military'
-                  ? ['Military ID', 'First Responder Badge']
-                  : ['Hospice enrollment documentation']
-                ).map(doc => (
-                  <button
-                    key={doc}
-                    onClick={() => setVerificationDocType(doc)}
-                    className={`p-3 rounded-xl text-sm text-left transition-all ${
-                      verificationDocType === doc
-                        ? 'bg-[var(--gold)]/10 border border-[var(--gold)] text-[var(--gold)]'
-                        : 'bg-[var(--s)] border border-[var(--b)] text-[var(--t3)] hover:border-[var(--t5)]'
-                    }`}
-                    data-testid={`verify-doc-type-${doc.toLowerCase().replace(/\s+/g, '-')}`}
-                  >
-                    {doc}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm text-[var(--t5)]">Upload Document</label>
-              <label className="flex items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed border-[var(--b)] hover:border-[var(--gold)]/50 cursor-pointer transition-colors" data-testid="verification-file-upload">
-                <input
-                  type="file"
-                  accept="image/*,.pdf"
-                  className="hidden"
-                  onChange={(e) => setVerificationFile(e.target.files[0])}
-                />
-                <Upload className="w-5 h-5 text-[var(--t5)]" />
-                <span className="text-sm text-[var(--t4)]">
-                  {verificationFile ? verificationFile.name : 'Click to select file'}
-                </span>
-              </label>
-            </div>
-
-            <Button
-              onClick={handleVerificationUpload}
-              disabled={uploadingVerification || !verificationFile || !verificationDocType}
-              className="gold-button w-full"
-              data-testid="submit-verification-btn"
-            >
-              {uploadingVerification ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Shield className="w-5 h-5 mr-2" />}
-              Submit for Review
-            </Button>
-
-            <p className="text-xs text-[var(--t5)] text-center">
-              Documents are reviewed within 24-48 hours. You'll be notified once approved.
-            </p>
-          </div>
-        </div>
-      )}
     </Card>
   );
 };
