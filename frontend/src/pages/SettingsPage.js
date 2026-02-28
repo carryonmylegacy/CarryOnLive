@@ -137,6 +137,61 @@ const SettingsPage = () => {
 
   const PLAN_ICONS = { premium: Crown, standard: Star, base: Shield, new_adult: Award, military: Shield, hospice: Heart };
 
+  const handleChangePlan = async (planId) => {
+    if (planId === currentPlanId) return;
+    setChangingPlan(true);
+    try {
+      const res = await axios.post(`${API_URL}/subscriptions/change-plan`, {
+        plan_id: planId,
+        billing_cycle: billing,
+        origin_url: window.location.origin,
+      }, getAuthHeaders());
+      if (res.data.url) {
+        window.location.href = res.data.url;
+      } else if (res.data.success) {
+        toast.success(res.data.message);
+        if (refreshSubscription) await refreshSubscription();
+      }
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Failed to change plan');
+    }
+    setChangingPlan(false);
+  };
+
+  const handleChangeBilling = async (newCycle) => {
+    if (!currentSub || newCycle === currentBilling) {
+      setBilling(newCycle);
+      return;
+    }
+    setBilling(newCycle);
+    try {
+      const res = await axios.post(`${API_URL}/subscriptions/change-billing`, {
+        billing_cycle: newCycle,
+      }, getAuthHeaders());
+      toast.success(res.data.message);
+      if (refreshSubscription) await refreshSubscription();
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Failed to change billing');
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    setCancellingPlan(true);
+    try {
+      await axios.post(`${API_URL}/subscriptions/cancel`, {}, getAuthHeaders());
+      toast.success('Subscription cancelled');
+      setShowCancelConfirm(false);
+      if (refreshSubscription) await refreshSubscription();
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Failed to cancel');
+    }
+    setCancellingPlan(false);
+  };
+
+  const getPlanRank = (id) => ({ base: 1, new_adult: 2, military: 3, standard: 4, premium: 5 }[id] || 0);
+  const isUpgrade = (planId) => getPlanRank(planId) > getPlanRank(currentPlanId);
+  const isDowngrade = (planId) => getPlanRank(planId) < getPlanRank(currentPlanId);
+
   return (
     <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in max-w-4xl mx-auto" data-testid="settings-page">
       {/* Header */}
