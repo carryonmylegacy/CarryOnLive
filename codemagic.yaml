@@ -64,8 +64,7 @@ workflows:
       - name: Install CocoaPods
         script: |
           cd frontend/ios/App
-          pod install --repo-update
-        timeout: 300
+          timeout 300 pod install --repo-update || pod install
       - name: Sync Capacitor
         script: |
           cd frontend
@@ -102,7 +101,6 @@ workflows:
             --scheme "$XCODE_SCHEME" \
             --config Release \
             --archive-flags="-destination 'generic/platform=iOS' COMPILER_INDEX_STORE_ENABLE=NO"
-        timeout: 1200
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
