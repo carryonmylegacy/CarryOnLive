@@ -96,23 +96,23 @@ const MobileNav = () => {
       {/* Top Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 w-full mobile-header z-50">
         <div className="h-14 flex items-center justify-between px-4">
-        <div className="flex items-center gap-3">
-          <img 
-            src="/carryon-app-icon.jpg" 
-            alt="CarryOn" 
-            className="w-10 h-10 rounded-xl object-cover"
-          />
-          <span className="text-[#E0AD2B] font-bold text-lg" style={{ fontFamily: 'Outfit, sans-serif' }}>
-            CarryOn™
-          </span>
-        </div>
+          <div className="flex items-center gap-3">
+            <img 
+              src="/carryon-app-icon.jpg" 
+              alt="CarryOn" 
+              className="w-10 h-10 rounded-xl object-cover"
+            />
+            <span className="text-[#E0AD2B] font-bold text-lg" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              CarryOn™
+            </span>
+          </div>
 
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <button className="p-2 text-[var(--t)]" data-testid="mobile-menu-button" aria-label="Open navigation menu">
-              <Menu className="w-6 h-6" />
-            </button>
-          </SheetTrigger>
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <button className="p-2 text-[var(--t)]" data-testid="mobile-menu-button" aria-label="Open navigation menu">
+                <Menu className="w-6 h-6" />
+              </button>
+            </SheetTrigger>
           <SheetContent 
             side="right" 
             className="w-72 p-0 border-l"
