@@ -110,7 +110,7 @@ def generate_otp() -> str:
 
 async def send_otp_email(email: str, otp: str, name: str = "User"):
     if not RESEND_API_KEY:
-        logger.info(f"Email not configured. OTP for {email}: {otp}")
+        logger.info(f"Email not configured — OTP generated for {email} (check admin console)")
         return False
     html_content = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
 <body style="margin:0;padding:0;background-color:#0b1120;font-family:Arial,Helvetica,sans-serif;">
