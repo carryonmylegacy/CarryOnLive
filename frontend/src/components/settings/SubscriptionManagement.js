@@ -568,6 +568,14 @@ export const SubscriptionManagement = ({
                       {isDowngrade(plan.id, billing) ? 'Contact Support' : 'Upgrade'}
                     </Button>
                   ) : (
+                    !benCanSubscribe ? (
+                      <div className="w-full text-center text-xs font-bold py-3 rounded-xl opacity-50 cursor-not-allowed"
+                        style={{ background: 'var(--s)', color: 'var(--t5)', border: '1px solid var(--b)' }}
+                        data-testid={`subscribe-${plan.id}-disabled`}
+                      >
+                        Available after transition
+                      </div>
+                    ) : (
                     <Button
                       onClick={() => handleSubscribe(plan.id)}
                       disabled={subscribing === plan.id}
@@ -588,6 +596,7 @@ export const SubscriptionManagement = ({
                         <>Subscribe <ChevronRight className="w-3.5 h-3.5 ml-1" /></>
                       )}
                     </Button>
+                    )
                   )}
                 </div>
               </div>
