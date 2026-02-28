@@ -73,6 +73,28 @@ async def lifespan(app):
     from routes.trial_reminders import trial_reminder_scheduler
 
     logger.info("CarryOn™ API started - ready for real accounts")
+
+    # Create security-critical database indexes
+    try:
+        await db.users.create_index("email", unique=True)
+        await db.users.create_index("id", unique=True)
+        await db.estates.create_index("id", unique=True)
+        await db.estates.create_index("owner_id")
+        await db.documents.create_index("id", unique=True)
+        await db.documents.create_index("estate_id")
+        await db.messages.create_index("estate_id")
+        await db.beneficiaries.create_index("estate_id")
+        await db.security_audit_log.create_index("timestamp")
+        await db.security_audit_log.create_index("user_id")
+        await db.security_audit_log.create_index("estate_id")
+        # TTL index: auto-delete failed login records after 1 hour
+        await db.failed_logins.create_index("timestamp", expireAfterSeconds=3600)
+        # TTL index: auto-delete expired OTPs after 15 minutes
+        await db.otps.create_index("created_at", expireAfterSeconds=900)
+        logger.info("Database indexes created/verified")
+    except Exception as e:
+        logger.warning(f"Index creation warning (may already exist): {e}")
+
     digest_task = asyncio.create_task(weekly_digest_scheduler())
     reminder_task = asyncio.create_task(trial_reminder_scheduler())
     yield
