@@ -151,6 +151,32 @@ CarryOn™ is an AI-powered estate planning platform that helps users ("benefact
   - AnalyticsTab.js (249 lines), ActivityTab.js (80 lines), DevSwitcherTab.js (207 lines)
 - All 9 tabs verified working with 100% pass rate
 
+## AES-256-GCM Encryption Architecture (Implemented Feb 28, 2026)
+
+### What Changed
+- **Encryption**: Upgraded from Fernet (AES-128-CBC) to **AES-256-GCM** with authenticated encryption
+- **Key Management**: Per-estate derived keys via PBKDF2-SHA256 (600,000 iterations)
+- **Storage**: Documents moved from MongoDB blobs to **cloud object storage** (LocalStorage dev / S3 prod)
+- **Messages**: Title and content now **encrypted at rest** with AES-256-GCM
+- **Digital Wallet**: Passwords encrypted with per-estate keys (not global key)
+- **Audit Trail**: SOC 2-compliant `security_audit_log` collection tracks all decrypt/access events
+- **Backward Compat**: Legacy Fernet data auto-decrypted and lazily migrated on access
+
+### New Files
+- `backend/services/encryption.py` — AES-256-GCM encrypt/decrypt, per-estate key derivation
+- `backend/services/storage.py` — Cloud storage abstraction (LocalStorage, S3Storage)
+- `backend/services/audit.py` — SOC 2 security audit trail
+
+### New API Endpoints
+- `GET /api/vault/security-info/{estate_id}` — Returns encryption metadata and vault stats
+
+### Architecture
+```
+User uploads document → AES-256-GCM encrypt (per-estate key) → Store encrypted blob in S3
+User downloads document → Fetch from S3 → AES-256-GCM decrypt → Return plaintext
+Legacy document access → Detect Fernet → Decrypt with legacy key → Re-encrypt as AES-256-GCM → Migrate to S3
+```
+
 ## Upcoming Tasks (Prioritized)
 - P1: Re-enable OTP email via Resend (domain verification)
 - P2: Animated logo (waiting on user asset)
