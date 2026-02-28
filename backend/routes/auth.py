@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel
 
 from config import db, logger
 from models import OTPVerify, TokenResponse, UserCreate, UserLogin, UserResponse
