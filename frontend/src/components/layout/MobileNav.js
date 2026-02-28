@@ -235,7 +235,8 @@ const MobileNav = () => {
               </div>
             </div>
           </SheetContent>
-        </Sheet>
+          </Sheet>
+        </div>
       </header>
 
       {/* Bottom Navigation */}
