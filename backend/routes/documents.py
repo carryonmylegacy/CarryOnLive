@@ -443,13 +443,23 @@ async def download_document(
                 {"security_question_enabled": True},
             ],
         },
-        {"_id": 0, "password_enabled": 1, "voice_enabled": 1, "security_question_enabled": 1},
+        {"_id": 0},
     )
     if section_lock:
-        raise HTTPException(
-            status_code=403,
-            detail="Section is locked. Unlock the Secure Document Vault first.",
+        # Check if user has a valid session unlock
+        unlock_session = await db.section_unlock_sessions.find_one(
+            {
+                "user_id": current_user["id"],
+                "section_id": "sdv",
+                "expires_at": {"$gt": datetime.now(timezone.utc).isoformat()},
+            },
+            {"_id": 0},
         )
+        if not unlock_session:
+            raise HTTPException(
+                status_code=403,
+                detail="Section is locked. Unlock the Secure Document Vault first.",
+            )
 
     # Check individual document lock
     if document.get("is_locked"):
