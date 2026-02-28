@@ -130,3 +130,25 @@ def encrypt_field(value: str, estate_salt: bytes) -> str:
 def decrypt_field(encrypted_b64: str, estate_salt: bytes) -> str:
     """Decrypt a short string field."""
     return decrypt_aes256(encrypted_b64, estate_salt).decode("utf-8")
+
+
+async def get_estate_salt(estate_id: str) -> bytes:
+    """Get the encryption salt for an estate. Lazily generates one for legacy estates."""
+    from config import db
+
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "encryption_salt": 1})
+    if not estate:
+        raise ValueError(f"Estate not found: {estate_id}")
+
+    salt_hex = estate.get("encryption_salt")
+    if salt_hex:
+        return bytes.fromhex(salt_hex)
+
+    # Legacy estate: generate and persist a salt
+    new_salt = generate_estate_salt()
+    await db.estates.update_one(
+        {"id": estate_id},
+        {"$set": {"encryption_salt": new_salt.hex()}},
+    )
+    logger.info(f"Generated encryption salt for legacy estate {estate_id}")
+    return new_salt
