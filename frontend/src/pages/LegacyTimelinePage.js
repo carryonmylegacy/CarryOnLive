@@ -262,6 +262,7 @@ const LegacyTimelinePage = () => {
                   event={event}
                   index={i}
                   isLast={gi === dateGroups.length - 1 && i === groupEvents.length - 1}
+                  onNavigate={(path) => navigate(path)}
                 />
               ))}
             </div>
