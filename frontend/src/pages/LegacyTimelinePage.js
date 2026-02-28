@@ -83,10 +83,10 @@ const TimelineEvent = ({ event, index, isLast, onNavigate }) => {
       <div className="flex-1 pb-6">
         <div
           onClick={() => hasLink && onNavigate(event.link)}
-          className={`rounded-xl p-4 transition-all duration-300 ${hasLink ? 'cursor-pointer hover:border-[var(--gold)]/30 hover:bg-white/[0.03]' : ''}`}
+          className={`rounded-xl p-4 transition-all duration-300 ${hasLink ? 'cursor-pointer hover:border-[var(--gold)]/30 hover:bg-[var(--s)]' : ''}`}
           style={{
-            background: 'rgba(255,255,255,0.02)',
-            border: '1px solid rgba(255,255,255,0.05)',
+            background: 'var(--s)',
+            border: '1px solid var(--b)',
           }}
           data-testid={`timeline-event-${event.type}`}
         >
