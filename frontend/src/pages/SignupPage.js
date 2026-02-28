@@ -456,7 +456,7 @@ const SignupPage = () => {
                   </div>
 
                   {/* Navigation Buttons */}
-                  <div className="flex items-center justify-between mt-6 pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div className="flex items-center justify-between mt-5 sm:mt-6 pt-4 sm:pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                     {step > 0 ? (
                       <button onClick={() => goTo(step - 1)}
                         className="flex items-center gap-2 text-[#6b7a90] text-sm font-medium hover:text-white transition-colors"
@@ -470,7 +470,7 @@ const SignupPage = () => {
                     )}
 
                     <Button onClick={handleNext} disabled={loading}
-                      className="h-12 px-8 rounded-xl font-semibold text-sm"
+                      className="h-11 sm:h-12 px-6 sm:px-8 rounded-xl font-semibold text-sm"
                       style={{
                         background: canAdvance() ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'rgba(212,175,55,0.15)',
                         color: canAdvance() ? '#080e1a' : '#d4af3780',
