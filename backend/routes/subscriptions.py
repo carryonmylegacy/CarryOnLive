@@ -494,7 +494,7 @@ async def create_subscription_checkout(
     if not api_key:
         raise HTTPException(status_code=500, detail="Payment service not configured")
 
-    origin = data.origin_url.rstrip("/")
+    origin = validate_origin_url(data.origin_url)
     success_url = f"{origin}/settings?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{origin}/settings"
 
