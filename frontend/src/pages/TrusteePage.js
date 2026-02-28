@@ -305,6 +305,9 @@ const TrusteePage = () => {
       } catch (e) { console.error('Fetch error:', e); }
     };
     fetchData();
+    // Poll for updates every 30 seconds (for admin quote responses)
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const totalCost = (items) => items.reduce((s, i) => s + (i.approved !== false ? i.cost : 0), 0);
