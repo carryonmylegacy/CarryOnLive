@@ -520,11 +520,15 @@ export const SubscriptionManagement = ({
                           onClick={() => handleChangeBilling()}
                           disabled={changingBilling}
                           className="w-full text-xs font-bold py-3 transition-all duration-300"
-                          style={{ background: `linear-gradient(135deg, ${style.accent}, ${style.accent}cc)`, color: '#0F1629', boxShadow: `0 4px 16px ${style.accent}30` }}
+                          style={isDowngrade(currentPlanId, billing)
+                            ? { background: 'transparent', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.3)' }
+                            : { background: `linear-gradient(135deg, ${style.accent}, ${style.accent}cc)`, color: '#0F1629', boxShadow: `0 4px 16px ${style.accent}30` }
+                          }
                           data-testid="change-billing-btn"
                         >
-                          {changingBilling ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <ArrowRight className="w-3 h-3 mr-1" />}
-                          Switch to {billing}
+                          {changingBilling ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> :
+                           isDowngrade(currentPlanId, billing) ? <Mail className="w-3 h-3 mr-1" /> : <ArrowRight className="w-3 h-3 mr-1" />}
+                          {isDowngrade(currentPlanId, billing) ? `Request ${billing} (via Support)` : `Switch to ${billing}`}
                         </Button>
                       )}
                     </div>
