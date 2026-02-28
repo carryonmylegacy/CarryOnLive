@@ -431,7 +431,18 @@ async def download_document(
         accessed_by=current_user["id"],
     )
 
-    # Check lock
+    # Check section-level lock (triple lock) — block downloads when SDV is locked
+    section_lock = await db.section_security.find_one(
+        {"user_id": current_user["id"], "section_id": "sdv", "is_active": True},
+        {"_id": 0, "is_active": 1},
+    )
+    if section_lock:
+        raise HTTPException(
+            status_code=403,
+            detail="Section is locked. Unlock the Secure Document Vault first.",
+        )
+
+    # Check individual document lock
     if document.get("is_locked"):
         lock_type = document.get("lock_type")
         if lock_type == "password" and document.get("lock_password_hash"):
