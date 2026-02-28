@@ -196,6 +196,7 @@ const SettingsPage = () => {
   const getPlanRank = (id) => ({ base: 1, new_adult: 2, military: 3, standard: 4, premium: 5 }[id] || 0);
   const isUpgrade = (planId) => getPlanRank(planId) > getPlanRank(currentPlanId);
   const isDowngrade = (planId) => getPlanRank(planId) < getPlanRank(currentPlanId);
+  const requiresVerification = (planId) => ['military', 'hospice'].includes(planId);
 
   return (
     <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in max-w-4xl mx-auto" data-testid="settings-page">
