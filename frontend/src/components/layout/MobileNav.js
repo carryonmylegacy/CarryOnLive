@@ -50,7 +50,7 @@ const MobileNav = () => {
     { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
     { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
     { to: '/guardian', icon: Sparkles, label: 'Estate Guardian (EGA)' },
-    { to: '/digital-wallet', icon: KeyRound, label: 'Digital Wallet Vault' },
+    { to: '/digital-wallet', icon: KeyRound, label: 'Digital Access Vault (DAV)' },
     { to: '/timeline', icon: Clock, label: 'Legacy Timeline' },
   ];
 

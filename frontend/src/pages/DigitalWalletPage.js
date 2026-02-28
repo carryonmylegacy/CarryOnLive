@@ -88,7 +88,7 @@ const DigitalWalletPage = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
-            Digital Wallet Vault
+            Digital Access Vault (DAV)
           </h1>
           <p className="text-[var(--t4)] mt-1 text-sm">
             Store digital account credentials to pass down to your beneficiaries
