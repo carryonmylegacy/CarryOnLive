@@ -88,7 +88,12 @@ async def login(data: UserLogin, request: Request):
     otp_code = generate_otp()
     await db.otps.update_one(
         {"email": data.email},
-        {"$set": {"otp": otp_code, "created_at": datetime.now(timezone.utc).isoformat()}},
+        {
+            "$set": {
+                "otp": otp_code,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
         upsert=True,
     )
 
