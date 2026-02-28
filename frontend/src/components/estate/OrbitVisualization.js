@@ -97,7 +97,7 @@ const OrbitVisualization = ({ estates, userInitials, onEstateClick, benefactors 
     if (!containerRef.current) return 0;
     const r = containerRef.current.getBoundingClientRect();
     return Math.atan2(py - (r.top + cy), px - (r.left + cx)) * 180 / Math.PI;
-  }, []);
+  }, [cx, cy]);
 
   // Animation loop — continuous orbit, never stops
   useEffect(() => {
