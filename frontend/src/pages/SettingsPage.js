@@ -14,6 +14,12 @@ import {
   Shield,
   Mail,
   Loader2,
+  Download,
+  Trash2,
+  FileText,
+  AlertTriangle,
+  CheckCircle2,
+  Info,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
