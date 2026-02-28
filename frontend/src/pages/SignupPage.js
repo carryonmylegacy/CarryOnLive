@@ -181,29 +181,28 @@ const SignupPage = () => {
 
       {/* MAIN LAYOUT — split like homepage */}
       <div className="relative z-10 min-h-screen flex items-center pt-16">
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-10 w-full">
-          <div className="grid lg:grid-cols-[1fr_520px] gap-10 lg:gap-16 items-center">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 w-full py-6 lg:py-0">
+          <div className="grid lg:grid-cols-[1fr_520px] gap-6 lg:gap-16 items-center">
 
-            {/* LEFT — Branding */}
-            <div style={{
+            {/* LEFT — Branding (hidden on mobile, shown on desktop) */}
+            <div className="hidden lg:block" style={{
               opacity: entered ? 1 : 0,
               transform: entered ? 'translateX(0)' : 'translateX(-40px)',
               transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.1s',
             }}>
-              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 lg:gap-8">
-                <div className="flex-shrink-0 hidden lg:block">
+              <div className="flex items-start gap-8">
+                <div className="flex-shrink-0">
                   <img src="/carryon-logo.jpg" alt="CarryOn" className="w-[220px] h-auto" />
                 </div>
-                <div className="text-center sm:text-left flex-1 sm:pt-2">
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-[1.08] mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                <div className="flex-1 pt-2">
+                  <h1 className="text-5xl font-bold text-white leading-[1.08] mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>
                     Join CarryOn.
                     <span className="block text-[#d4af37] mt-1">Protect Your Legacy.</span>
                   </h1>
-                  <p className="text-[#7b879e] text-sm lg:text-base max-w-sm leading-relaxed mb-6">
+                  <p className="text-[#7b879e] text-base max-w-sm leading-relaxed mb-6">
                     Create your account in seconds. Your family's readiness starts here.
                   </p>
 
-                  {/* Legal notice */}
                   <div className="p-4 rounded-xl mb-6 max-w-sm" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}>
                     <div className="flex items-start gap-3">
                       <AlertCircle className="w-4 h-4 text-[#d4af37] flex-shrink-0 mt-0.5" />
@@ -213,7 +212,7 @@ const SignupPage = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 justify-center sm:justify-start">
+                  <div className="flex items-center gap-4">
                     {['AES-256 Encrypted', 'Zero-Knowledge', 'SOC 2'].map(badge => (
                       <div key={badge} className="flex items-center gap-1.5">
                         <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
@@ -223,6 +222,17 @@ const SignupPage = () => {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* MOBILE-ONLY — Compact header */}
+            <div className="lg:hidden text-center" style={{
+              opacity: entered ? 1 : 0,
+              transition: 'opacity 0.6s ease 0.1s',
+            }}>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                Join CarryOn. <span className="text-[#d4af37]">Protect Your Legacy.</span>
+              </h1>
+              <p className="text-[#6b7a90] text-sm">Create your account in seconds</p>
             </div>
 
             {/* RIGHT — Wizard Card */}
