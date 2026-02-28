@@ -480,11 +480,11 @@ const VaultPage = () => {
   if (loading) {
     return (
       <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6">
-        <Skeleton className="h-12 w-64 bg-white/5" />
-        <Skeleton className="h-12 w-full bg-white/5" />
+        <Skeleton className="h-12 w-64 bg-[var(--s)]" />
+        <Skeleton className="h-12 w-full bg-[var(--s)]" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map(i => (
-            <Skeleton key={i} className="h-40 bg-white/5 rounded-2xl" />
+            <Skeleton key={i} className="h-40 bg-[var(--s)] rounded-2xl" />
           ))}
         </div>
       </div>
@@ -537,7 +537,7 @@ const VaultPage = () => {
       {/* Category Tabs */}
       <Tabs value={activeCategory} onValueChange={setActiveCategory}>
         <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-          <TabsList className="bg-white/5 p-1 w-max sm:w-auto">
+          <TabsList className="bg-[var(--s)] p-1 w-max sm:w-auto">
           {categories.map((cat) => (
             <TabsTrigger
               key={cat.id}
@@ -893,7 +893,7 @@ const VaultPage = () => {
             
             {selectedDoc?.lock_type === 'voice' && (
               <div className="space-y-4">
-                <div className="p-4 bg-white/5 rounded-xl text-center">
+                <div className="p-4 bg-[var(--s)] rounded-xl text-center">
                   <div className="flex justify-center mb-3">
                     <button
                       onClick={isListening ? stopVoiceRecognition : startVoiceRecognition}
@@ -1200,7 +1200,7 @@ const VaultPage = () => {
             </div>
             
             {editingDoc && (
-              <div className="p-3 bg-white/5 rounded-xl">
+              <div className="p-3 bg-[var(--s)] rounded-xl">
                 <p className="text-xs text-[#64748b]">File info</p>
                 <p className="text-sm text-white">{editingDoc.file_type} · {editingDoc.file_size ? `${(editingDoc.file_size / 1024).toFixed(1)} KB` : 'Unknown size'}</p>
               </div>

@@ -307,10 +307,10 @@ const BeneficiariesPage = () => {
   if (loading) {
     return (
       <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6">
-        <Skeleton className="h-12 w-64 bg-white/5" />
+        <Skeleton className="h-12 w-64 bg-[var(--s)]" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map(i => (
-            <Skeleton key={i} className="h-48 bg-white/5 rounded-2xl" />
+            <Skeleton key={i} className="h-48 bg-[var(--s)] rounded-2xl" />
           ))}
         </div>
       </div>
@@ -486,7 +486,7 @@ const BeneficiariesPage = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="border-[var(--b)] text-[var(--t3)] hover:bg-white/5"
+                        className="border-[var(--b)] text-[var(--t3)] hover:bg-[var(--s)]"
                         onClick={() => handleCopyLink(ben)}
                         data-testid={`copy-invite-link-${ben.id}`}
                       >

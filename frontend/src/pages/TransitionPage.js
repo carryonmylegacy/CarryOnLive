@@ -105,8 +105,8 @@ const TransitionPage = () => {
   if (loading) {
     return (
       <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6">
-        <Skeleton className="h-12 w-64 bg-white/5" />
-        <Skeleton className="h-64 w-full bg-white/5 rounded-2xl" />
+        <Skeleton className="h-12 w-64 bg-[var(--s)]" />
+        <Skeleton className="h-64 w-full bg-[var(--s)] rounded-2xl" />
       </div>
     );
   }
@@ -159,7 +159,7 @@ const TransitionPage = () => {
           </div>
 
           {estate?.status !== 'transitioned' && (
-            <div className="p-4 bg-white/5 rounded-xl border border-[var(--b)]">
+            <div className="p-4 bg-[var(--s)] rounded-xl border border-[var(--b)]">
               <h4 className="text-white font-medium mb-2">Important Information</h4>
               <p className="text-[#94a3b8] text-sm">
                 When the time comes, an executor or family member can upload a death certificate to initiate the estate transition. 
@@ -181,7 +181,7 @@ const TransitionPage = () => {
         <CardContent>
           {transitionStatus?.certificate ? (
             <div className="space-y-4">
-              <div className="flex items-center gap-4 p-4 bg-white/5 rounded-xl">
+              <div className="flex items-center gap-4 p-4 bg-[var(--s)] rounded-xl">
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                   transitionStatus.certificate.status === 'approved' ? 'bg-[#10b981]/20' :
                   transitionStatus.certificate.status === 'pending' ? 'bg-[#f59e0b]/20' : 'bg-[#ef4444]/20'

@@ -193,7 +193,7 @@ const AcceptInvitationPage = () => {
               </div>
 
               {/* Your Information */}
-              <div className="p-4 rounded-xl bg-white/5">
+              <div className="p-4 rounded-xl bg-[var(--s)]">
                 <p className="text-xs text-[#64748b] uppercase mb-2">Your Information</p>
                 <p className="text-white font-medium">
                   {invitationData?.beneficiary?.first_name} {invitationData?.beneficiary?.last_name}
@@ -261,7 +261,7 @@ const AcceptInvitationPage = () => {
                         { test: /[a-z]/.test(password), label: 'Lowercase' },
                         { test: /[0-9]/.test(password), label: 'Number' },
                       ].map((req, i) => (
-                        <span key={i} className={`text-[10px] px-1.5 py-0.5 rounded ${req.test ? 'bg-[#10b981]/20 text-[#10b981]' : 'bg-white/5 text-[#64748b]'}`}>
+                        <span key={i} className={`text-[10px] px-1.5 py-0.5 rounded ${req.test ? 'bg-[#10b981]/20 text-[#10b981]' : 'bg-[var(--s)] text-[#64748b]'}`}>
                           {req.test ? '\u2713' : ''} {req.label}
                         </span>
                       ))}

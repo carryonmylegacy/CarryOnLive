@@ -76,7 +76,7 @@ const OnboardingWizard = () => {
           </button>
         </div>
 
-        <Progress value={progress.progress_pct} className="h-1.5 mb-4 bg-white/5" />
+        <Progress value={progress.progress_pct} className="h-1.5 mb-4 bg-[var(--s)]" />
 
         <div className="space-y-2">
           {progress.steps.map((step) => {
@@ -89,7 +89,7 @@ const OnboardingWizard = () => {
                 className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
                   step.completed
                     ? 'bg-white/3 opacity-60'
-                    : 'bg-white/5 hover:bg-white/10 cursor-pointer'
+                    : 'bg-[var(--s)] hover:bg-white/10 cursor-pointer'
                 }`}
                 data-testid={`onboarding-step-${step.key}`}
               >

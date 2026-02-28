@@ -105,7 +105,7 @@ const EmergencyAccessPanel = ({ estates }) => {
               const config = STATUS_CONFIG[r.status] || STATUS_CONFIG.pending;
               const Icon = config.icon;
               return (
-                <div key={r.id} className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
+                <div key={r.id} className="flex items-center gap-3 p-3 rounded-lg bg-[var(--s)]">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: config.bg }}>
                     <Icon className="w-4 h-4" style={{ color: config.color }} />
                   </div>
@@ -121,7 +121,7 @@ const EmergencyAccessPanel = ({ estates }) => {
 
         {/* Request form */}
         {showForm ? (
-          <div className="space-y-3 p-4 rounded-lg bg-white/5 border border-[var(--b)]">
+          <div className="space-y-3 p-4 rounded-lg bg-[var(--s)] border border-[var(--b)]">
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle className="w-4 h-4 text-[#f59e0b]" />
               <p className="text-sm font-medium text-white">Request Emergency Access</p>
@@ -135,7 +135,7 @@ const EmergencyAccessPanel = ({ estates }) => {
               <select
                 value={form.estate_id}
                 onChange={e => setForm(f => ({ ...f, estate_id: e.target.value }))}
-                className="w-full bg-white/5 border border-[var(--b)] rounded-lg px-3 py-2 text-sm text-white"
+                className="w-full bg-[var(--s)] border border-[var(--b)] rounded-lg px-3 py-2 text-sm text-white"
                 data-testid="emergency-estate-select"
               >
                 <option value="">Select estate...</option>
@@ -151,7 +151,7 @@ const EmergencyAccessPanel = ({ estates }) => {
                 value={form.relationship_to_benefactor}
                 onChange={e => setForm(f => ({ ...f, relationship_to_benefactor: e.target.value }))}
                 placeholder="e.g., Daughter, Spouse, Sibling"
-                className="bg-white/5 border-[var(--b)] text-white text-sm"
+                className="bg-[var(--s)] border-[var(--b)] text-white text-sm"
                 data-testid="emergency-relationship-input"
               />
             </div>
@@ -163,7 +163,7 @@ const EmergencyAccessPanel = ({ estates }) => {
                 onChange={e => setForm(f => ({ ...f, reason: e.target.value }))}
                 placeholder="Please explain why you need emergency access..."
                 rows={3}
-                className="w-full bg-white/5 border border-[var(--b)] rounded-lg px-3 py-2 text-sm text-white placeholder-[#64748b] resize-none"
+                className="w-full bg-[var(--s)] border border-[var(--b)] rounded-lg px-3 py-2 text-sm text-white placeholder-[#64748b] resize-none"
                 data-testid="emergency-reason-input"
               />
             </div>
@@ -181,7 +181,7 @@ const EmergencyAccessPanel = ({ estates }) => {
                   setForm(prev => ({ ...prev, contact_phone: f }));
                 }}
                 placeholder="(123) 456-7890"
-                className="bg-white/5 border-[var(--b)] text-white text-sm"
+                className="bg-[var(--s)] border-[var(--b)] text-white text-sm"
               />
             </div>
 
