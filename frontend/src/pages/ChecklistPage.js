@@ -12,6 +12,7 @@ import { Progress } from '../components/ui/progress';
 import { toast } from 'sonner';
 import { SectionLockBanner } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
+import QuickStartTemplates from '../components/QuickStartTemplates';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
