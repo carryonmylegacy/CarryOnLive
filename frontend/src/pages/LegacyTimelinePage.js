@@ -46,11 +46,13 @@ const groupByDate = (events) => {
   return Object.entries(groups);
 };
 
-const TimelineEvent = ({ event, index, isLast }) => {
+const TimelineEvent = ({ event, index, isLast, onNavigate }) => {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
   const config = CATEGORY_CONFIG[event.category] || CATEGORY_CONFIG.activity;
   const Icon = config.icon;
+  const isEdited = event.type?.includes('edited');
+  const hasLink = !!event.link;
 
   useEffect(() => {
     const el = ref.current;
@@ -70,7 +72,7 @@ const TimelineEvent = ({ event, index, isLast }) => {
       <div className="flex flex-col items-center flex-shrink-0">
         <div className="w-10 h-10 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
           style={{ background: config.bg, border: `2px solid ${config.color}40`, boxShadow: `0 0 12px ${config.color}15` }}>
-          <Icon className="w-4 h-4" style={{ color: config.color }} />
+          {isEdited ? <Pencil className="w-4 h-4" style={{ color: config.color }} /> : <Icon className="w-4 h-4" style={{ color: config.color }} />}
         </div>
         {!isLast && (
           <div className="w-[2px] flex-1 my-1" style={{ background: `linear-gradient(180deg, ${config.color}30, transparent)` }} />
@@ -79,17 +81,24 @@ const TimelineEvent = ({ event, index, isLast }) => {
 
       {/* Content */}
       <div className="flex-1 pb-6">
-        <div className="rounded-xl p-4 transition-all duration-300 group-hover:border-opacity-100"
+        <div
+          onClick={() => hasLink && onNavigate(event.link)}
+          className={`rounded-xl p-4 transition-all duration-300 ${hasLink ? 'cursor-pointer hover:border-[var(--gold)]/30 hover:bg-white/[0.03]' : ''}`}
           style={{
             background: 'rgba(255,255,255,0.02)',
-            border: `1px solid rgba(255,255,255,0.05)`,
-          }}>
+            border: '1px solid rgba(255,255,255,0.05)',
+          }}
+          data-testid={`timeline-event-${event.type}`}
+        >
           <div className="flex items-start justify-between gap-3">
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <h4 className="text-[var(--t)] font-semibold text-sm">{event.title}</h4>
-              <p className="text-[var(--t4)] text-sm mt-0.5">{event.description}</p>
+              <p className="text-[var(--t4)] text-sm mt-0.5 truncate">{event.description}</p>
               {event.metadata?.recipient && (
                 <p className="text-[var(--t5)] text-xs mt-1">For: {event.metadata.recipient}</p>
+              )}
+              {event.metadata?.edited_by && (
+                <p className="text-[var(--t5)] text-xs mt-1">By: {event.metadata.edited_by}</p>
               )}
               {event.metadata?.category && (
                 <span className="inline-block mt-1.5 px-2 py-0.5 rounded-full text-xs"
@@ -98,7 +107,10 @@ const TimelineEvent = ({ event, index, isLast }) => {
                 </span>
               )}
             </div>
-            <span className="text-[var(--t5)] text-xs whitespace-nowrap flex-shrink-0">{formatTime(event.date)}</span>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className="text-[var(--t5)] text-xs whitespace-nowrap">{formatTime(event.date)}</span>
+              {hasLink && <ChevronRight className="w-4 h-4 text-[var(--t5)] opacity-0 group-hover:opacity-100 transition-opacity" />}
+            </div>
           </div>
         </div>
       </div>
