@@ -414,6 +414,24 @@ export const SubscriptionManagement = ({
                       style={{ background: `${style.accent}10`, color: style.accent, border: `1px solid ${style.accent}25` }}>
                       <Check className="w-3 h-3 inline mr-1" /> Active
                     </div>
+                  ) : requiresVerification(plan.id) && !isVerifiedFor(plan.id) ? (
+                    // Verification required — show status or verify button
+                    verificationStatus?.status === 'pending' && verificationStatus?.tier_requested === plan.id ? (
+                      <div className="w-full text-center text-xs font-bold py-3 rounded-xl"
+                        style={{ background: `${style.accent}08`, color: style.accent, border: `1px dashed ${style.accent}40` }}>
+                        <Clock className="w-3 h-3 inline mr-1" /> Verification Pending
+                      </div>
+                    ) : (
+                      <Button
+                        onClick={() => handleSubscribe(plan.id)}
+                        disabled={subscribing === plan.id}
+                        className="w-full text-xs font-bold py-4 transition-all duration-300"
+                        style={{ background: 'transparent', color: style.accent, border: `2px solid ${style.accent}35` }}
+                        data-testid={`subscribe-${plan.id}`}
+                      >
+                        <Shield className="w-3.5 h-3.5 mr-1" /> Verify & Subscribe
+                      </Button>
+                    )
                   ) : currentSub?.status === 'active' ? (
                     <Button
                       onClick={() => handleChangePlan(plan.id)}
