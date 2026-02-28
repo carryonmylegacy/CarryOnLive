@@ -197,12 +197,22 @@ const MessagesPage = () => {
           reader.readAsDataURL(videoBlob);
         });
       }
+
+      let voiceData = null;
+      if (audioBlob) {
+        const reader = new FileReader();
+        voiceData = await new Promise((resolve) => {
+          reader.onloadend = () => resolve(reader.result.split(',')[1]);
+          reader.readAsDataURL(audioBlob);
+        });
+      }
       
       const payload = {
         title,
         content,
         message_type: messageType,
         video_data: videoData,
+        voice_data: voiceData,
         recipients: selectedRecipients,
         trigger_type: triggerType,
         trigger_value: triggerValue || null,
