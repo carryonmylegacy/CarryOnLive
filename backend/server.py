@@ -164,6 +164,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             limit = 10
         elif path in moderate_paths:
             limit = self.max_requests
+        if limit:
             client_ip = request.client.host if request.client else "unknown"
             now = time.time()
 
@@ -172,7 +173,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 t for t in self.requests[client_ip] if now - t < self.window
             ]
 
-            if len(self.requests[client_ip]) >= self.max_requests:
+            if len(self.requests[client_ip]) >= limit:
                 return Response(
                     content='{"detail":"Too many requests. Please wait before trying again."}',
                     status_code=429,
