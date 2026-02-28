@@ -8,7 +8,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from config import db
-from utils import decrypt_data, encrypt_data, get_current_user
+from services.encryption import decrypt_field, encrypt_field, get_estate_salt
+from services.audit import audit_log
+from utils import get_current_user
 
 router = APIRouter()
 
@@ -70,21 +72,19 @@ async def get_digital_wallet(
         {"estate_id": estate_id}, {"_id": 0}
     ).to_list(200)
 
+    estate_salt = await get_estate_salt(estate_id)
+
     if is_owner:
         # Owner sees all entries with decrypted passwords
         for entry in entries:
             if entry.get("encrypted_password"):
                 try:
-                    entry["password"] = decrypt_data(
-                        entry["encrypted_password"]
-                    ).decode()
+                    entry["password"] = decrypt_field(entry["encrypted_password"], estate_salt)
                 except Exception:
                     entry["password"] = ""
             if entry.get("encrypted_additional"):
                 try:
-                    entry["additional_access"] = decrypt_data(
-                        entry["encrypted_additional"]
-                    ).decode()
+                    entry["additional_access"] = decrypt_field(entry["encrypted_additional"], estate_salt)
                 except Exception:
                     entry["additional_access"] = ""
         return entries
@@ -96,16 +96,12 @@ async def get_digital_wallet(
         for entry in my_entries:
             if entry.get("encrypted_password"):
                 try:
-                    entry["password"] = decrypt_data(
-                        entry["encrypted_password"]
-                    ).decode()
+                    entry["password"] = decrypt_field(entry["encrypted_password"], estate_salt)
                 except Exception:
                     entry["password"] = ""
             if entry.get("encrypted_additional"):
                 try:
-                    entry["additional_access"] = decrypt_data(
-                        entry["encrypted_additional"]
-                    ).decode()
+                    entry["additional_access"] = decrypt_field(entry["encrypted_additional"], estate_salt)
                 except Exception:
                     entry["additional_access"] = ""
         return my_entries
@@ -130,6 +126,7 @@ async def create_digital_wallet_entry(
         raise HTTPException(status_code=404, detail="No estate found")
 
     estate_id = estates[0]["id"]
+    estate_salt = await get_estate_salt(estate_id)
 
     # Get beneficiary name if assigned
     ben_name = None
@@ -145,7 +142,7 @@ async def create_digital_wallet_entry(
         estate_id=estate_id,
         account_name=data.account_name,
         login_username=data.login_username,
-        encrypted_password=encrypt_data(data.password.encode())
+        encrypted_password=encrypt_field(data.password, estate_salt)
         if data.password
         else None,
         additional_access=data.additional_access,
@@ -158,10 +155,20 @@ async def create_digital_wallet_entry(
     doc = entry.model_dump()
     # Encrypt additional_access too
     if data.additional_access:
-        doc["encrypted_additional"] = encrypt_data(data.additional_access.encode())
+        doc["encrypted_additional"] = encrypt_field(data.additional_access, estate_salt)
         doc["additional_access"] = None
 
     await db.digital_wallet.insert_one(doc)
+
+    await audit_log(
+        action="wallet.create",
+        user_id=current_user["id"],
+        resource_type="digital_wallet",
+        resource_id=entry.id,
+        estate_id=estate_id,
+        details={"account": data.account_name, "encrypted": True},
+    )
+
     return {"id": entry.id, "message": "Digital wallet entry added"}
 
 
@@ -186,9 +193,11 @@ async def update_digital_wallet_entry(
     if data.login_username is not None:
         update["login_username"] = data.login_username
     if data.password is not None:
-        update["encrypted_password"] = encrypt_data(data.password.encode())
+        estate_salt = await get_estate_salt(entry["estate_id"])
+        update["encrypted_password"] = encrypt_field(data.password, estate_salt)
     if data.additional_access is not None:
-        update["encrypted_additional"] = encrypt_data(data.additional_access.encode())
+        estate_salt = await get_estate_salt(entry["estate_id"])
+        update["encrypted_additional"] = encrypt_field(data.additional_access, estate_salt)
     if data.notes is not None:
         update["notes"] = data.notes
     if data.category is not None:
