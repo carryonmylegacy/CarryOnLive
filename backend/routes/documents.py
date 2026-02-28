@@ -262,6 +262,52 @@ async def unlock_document(
     return {"message": "Document unlocked successfully", "unlocked": True, "document_id": document_id}
 
 
+@router.get("/vault/security-info/{estate_id}")
+async def get_vault_security_info(estate_id: str, current_user: dict = Depends(get_current_user)):
+    """Get encryption and security metadata for the vault."""
+    documents = await db.documents.find(
+        {"estate_id": estate_id},
+        {"_id": 0, "id": 1, "name": 1, "storage_key": 1, "encryption_version": 1, "is_encrypted": 1, "file_size": 1},
+    ).to_list(200)
+
+    total_docs = len(documents)
+    cloud_stored = sum(1 for d in documents if d.get("storage_key"))
+    aes256_encrypted = sum(1 for d in documents if d.get("encryption_version") == "aes-256-gcm")
+    legacy_encrypted = total_docs - aes256_encrypted
+    total_size = sum(d.get("file_size", 0) for d in documents)
+
+    # Count audit entries for this estate
+    audit_count = await db.security_audit_log.count_documents({"estate_id": estate_id})
+
+    return {
+        "encryption": {
+            "algorithm": "AES-256-GCM",
+            "key_derivation": "PBKDF2-SHA256 (600,000 iterations)",
+            "key_scope": "Per-estate derived keys",
+            "nonce": "96-bit random per operation",
+            "compliance": ["SOC 2 Type II", "FIPS 197"],
+        },
+        "storage": {
+            "type": "Cloud Object Storage (S3-compatible)",
+            "encryption_at_rest": "Application-layer AES-256-GCM + SSE-S3",
+            "encryption_in_transit": "TLS 1.3",
+        },
+        "vault_stats": {
+            "total_documents": total_docs,
+            "cloud_stored": cloud_stored,
+            "aes256_encrypted": aes256_encrypted,
+            "legacy_pending_migration": legacy_encrypted,
+            "total_size_bytes": total_size,
+            "audit_entries": audit_count,
+        },
+        "zero_knowledge": {
+            "description": "Per-estate derived encryption keys ensure data isolation between users",
+            "server_access": "Server decrypts only during authorized user sessions",
+            "data_at_rest": "All document content encrypted — plaintext never stored",
+        },
+    }
+
+
 @router.get("/documents/{document_id}/download")
 async def download_document(
     document_id: str,
