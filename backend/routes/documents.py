@@ -419,6 +419,17 @@ async def download_document(
     if not (is_owner or is_beneficiary or is_admin):
         raise HTTPException(status_code=403, detail="Access denied")
 
+    # HIPAA: Log PHI access
+    from routes.compliance import log_phi_access
+
+    await log_phi_access(
+        user_id=estate.get("owner_id", ""),
+        action="document_download",
+        resource=f"document:{document_id}",
+        details=f"Document '{document.get('name', '')}' accessed",
+        accessed_by=current_user["id"],
+    )
+
     # Check lock
     if document.get("is_locked"):
         lock_type = document.get("lock_type")
