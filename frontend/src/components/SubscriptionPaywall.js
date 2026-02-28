@@ -279,8 +279,8 @@ export default function SubscriptionPaywall({ onDismiss }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-[#0a0e1a]/95 overflow-y-auto" data-testid="subscription-paywall">
-      <div className="min-h-screen flex flex-col items-center justify-start py-8 px-4">
+    <div className="fixed inset-0 z-[9999] bg-[var(--bg)]/98 overflow-y-auto" data-testid="subscription-paywall">
+      <div className="min-h-screen flex flex-col items-center justify-center py-8 px-4">
         {/* Header */}
         <div className="text-center mb-8 max-w-lg animate-fade-in">
           <img src="/carryon-logo.jpg" alt="CarryOn" className="w-[120px] h-auto mx-auto mb-4" />
