@@ -238,10 +238,10 @@ const LoginPage = () => {
             <p className="text-[#7b879e] text-base lg:text-lg leading-relaxed mb-8">
               CarryOn&#8482; is the first platform designed to ensure family readiness for all American families &mdash; an affordable, secure digital infrastructure that organizes your estate documents, automates critical checklists, delivers milestone messages, and provides AI-powered document intelligence so your family is prepared, not searching.
             </p>
-            <a href="/signup" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-semibold text-sm transition-all hover:brightness-110 hover:scale-105 active:scale-95"
+            <button onClick={() => navigateWithFade('/signup')} className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-semibold text-sm transition-all hover:brightness-110 hover:scale-105 active:scale-95"
               style={{ background: '#d4af37', color: '#080e1a', transition: 'all 0.3s' }}>
               Get Started <ChevronRight className="w-4 h-4" />
-            </a>
+            </button>
             <RevealSection delay={0.2}>
               <p className="mt-10 text-[#d4af37] text-sm lg:text-base italic font-medium">
                 76% of American families have no estate plan. CarryOn ensures yours isn&apos;t one of them.
