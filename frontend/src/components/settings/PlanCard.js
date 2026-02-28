@@ -14,12 +14,12 @@ import {
 import { Button } from '../ui/button';
 
 const TIER_COLORS = {
-  premium: { accent: '#d4af37', glow: 'rgba(212,175,55,0.4)', bg: 'linear-gradient(135deg, rgba(212,175,55,0.18) 0%, rgba(20,28,51,0.95) 100%)' },
-  standard: { accent: '#60A5FA', glow: 'rgba(96,165,250,0.35)', bg: 'linear-gradient(135deg, rgba(96,165,250,0.12) 0%, rgba(20,28,51,0.95) 100%)' },
-  base: { accent: '#22C993', glow: 'rgba(34,201,147,0.35)', bg: 'linear-gradient(135deg, rgba(34,201,147,0.12) 0%, rgba(20,28,51,0.95) 100%)' },
-  new_adult: { accent: '#B794F6', glow: 'rgba(183,148,246,0.35)', bg: 'linear-gradient(135deg, rgba(183,148,246,0.12) 0%, rgba(20,28,51,0.95) 100%)' },
-  military: { accent: '#F59E0B', glow: 'rgba(245,158,11,0.35)', bg: 'linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(20,28,51,0.95) 100%)' },
-  hospice: { accent: '#ec4899', glow: 'rgba(236,72,153,0.35)', bg: 'linear-gradient(135deg, rgba(236,72,153,0.12) 0%, rgba(20,28,51,0.95) 100%)' },
+  premium: { accent: '#d4af37', glow: 'rgba(212,175,55,0.4)', bg: 'rgba(212,175,55,0.08)' },
+  standard: { accent: '#60A5FA', glow: 'rgba(96,165,250,0.35)', bg: 'rgba(96,165,250,0.08)' },
+  base: { accent: '#22C993', glow: 'rgba(34,201,147,0.35)', bg: 'rgba(34,201,147,0.08)' },
+  new_adult: { accent: '#B794F6', glow: 'rgba(183,148,246,0.35)', bg: 'rgba(183,148,246,0.08)' },
+  military: { accent: '#F59E0B', glow: 'rgba(245,158,11,0.35)', bg: 'rgba(245,158,11,0.08)' },
+  hospice: { accent: '#ec4899', glow: 'rgba(236,72,153,0.35)', bg: 'rgba(236,72,153,0.08)' },
 };
 
 const PLAN_ICONS = { premium: Crown, standard: Star, base: Shield, new_adult: Award, military: Shield, hospice: Heart };
