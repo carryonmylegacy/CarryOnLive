@@ -443,7 +443,7 @@ const SignupPage = () => {
                             <div className="relative">
                               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a4a63]" />
                               <Input type={showPassword ? 'text' : 'password'} value={password}
-                                onChange={(e) => setPassword(e.target.value)} placeholder="Min 6 characters"
+                                onChange={(e) => setPassword(e.target.value)} placeholder="Min 8 characters"
                                 className={`${inputClass} pl-12 pr-12`} data-testid="signup-password-input" />
                               <button type="button" onClick={() => setShowPassword(!showPassword)}
                                 className="absolute right-4 top-1/2 -translate-y-1/2 text-[#3a4a63] hover:text-[#7b879e] transition-colors">
