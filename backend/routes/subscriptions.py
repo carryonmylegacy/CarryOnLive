@@ -251,6 +251,7 @@ BENEFICIARY_PLANS = [
         "price": 2.99,
         "quarterly_price": 2.69,
         "annual_price": 2.39,
+        "allows_billing_toggle": True,
         "features": [
             "Everything in Standard",
             "Priority human support",
@@ -263,6 +264,7 @@ BENEFICIARY_PLANS = [
         "price": 3.99,
         "quarterly_price": 3.59,
         "annual_price": 3.19,
+        "allows_billing_toggle": True,
         "features": [
             "Everything in Base",
             "Expanded vault access",
@@ -275,10 +277,25 @@ BENEFICIARY_PLANS = [
         "price": 4.99,
         "quarterly_price": 4.49,
         "annual_price": 3.99,
+        "allows_billing_toggle": True,
         "features": [
             "Immediate Action Checklist",
             "Basic vault access",
             "Milestone Messages",
+        ],
+    },
+    {
+        "id": "ben_military",
+        "name": "Military / First Responder",
+        "price": 1.99,
+        "quarterly_price": 1.99,
+        "annual_price": 1.99,
+        "allows_billing_toggle": False,
+        "note": "Flat rate — no discounts (at cost)",
+        "features": [
+            "Full platform access",
+            "Priority support",
+            "Flat rate pricing",
         ],
     },
     {
@@ -287,6 +304,7 @@ BENEFICIARY_PLANS = [
         "price": 4.99,
         "quarterly_price": 4.49,
         "annual_price": 3.99,
+        "allows_billing_toggle": True,
         "note": "After benefactor's transition · 30-day grace period",
         "features": [
             "All Base features",
