@@ -531,7 +531,7 @@ const BeneficiariesPage = () => {
           resetForm();
         }
       }}>
-        <DialogContent className="glass-card border-white/10 sm:max-w-2xl max-h-[90vh] overflow-y-scroll" style={{ position: 'fixed', top: '5vh', transform: 'translateX(-50%)', left: '50%' }}>
+        <DialogContent className="glass-card border-white/10 sm:max-w-2xl max-h-[90vh] overflow-y-scroll !top-[5vh] !translate-y-0">
           <DialogHeader>
             <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
               {editingBeneficiary ? 'Edit Beneficiary' : 'Add Beneficiary'}
