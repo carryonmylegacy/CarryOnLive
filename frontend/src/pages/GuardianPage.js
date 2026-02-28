@@ -232,6 +232,24 @@ const GuardianPage = () => {
     fetchSessions();
   };
 
+  const handleChecklistExport = async () => {
+    setChecklistExporting(true);
+    try {
+      const headers = getAuthHeaders()?.headers;
+      const res = await axios.post(`${API_URL}/guardian/export-checklist`, {}, { headers, responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `CarryOn_Checklist_${new Date().toISOString().split('T')[0]}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success('Checklist PDF downloaded');
+    } catch (err) {
+      toast.error(err.response?.status === 404 ? 'No checklist items found — generate one first' : 'Failed to export checklist');
+    }
+    setChecklistExporting(false);
+  };
+
   const handleExport = async () => {
     setExporting(true);
     try {
