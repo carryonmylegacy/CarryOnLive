@@ -193,13 +193,13 @@ const VaultPage = () => {
         getAuthHeaders()
       );
       
-      toast.success('Document unlocked! You can now download it.');
+      toast.success('Document unlocked! You can now view or download it.');
       setShowLockModal(false);
       setUnlockPassword('');
       setUnlockBackupCode('');
       
-      // Trigger download after unlock
-      handleDownload(selectedDoc, unlockPassword, unlockBackupCode);
+      // Refresh documents list to show updated lock status
+      fetchData();
     } catch (error) {
       console.error('Unlock error:', error);
       toast.error(error.response?.data?.detail || 'Failed to unlock document');
