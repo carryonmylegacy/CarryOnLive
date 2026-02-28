@@ -279,26 +279,26 @@ const DashboardPage = () => {
       <OnboardingWizard />
 
       {/* Estate Readiness Score Card */}
-      <div className="glass-card p-4 lg:p-8 mb-4" data-testid="readiness-card">
-        <h2 className="text-center text-base lg:text-4xl font-bold text-[var(--t4)] uppercase tracking-wider mb-2 lg:mb-6" style={{ fontFamily: 'Outfit, sans-serif' }}>
+      <div className="glass-card p-4 lg:p-6 mb-4" data-testid="readiness-card">
+        <h2 className="text-center text-base lg:text-2xl font-bold text-[var(--t4)] uppercase tracking-wider mb-2 lg:mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
           Estate Readiness Score
         </h2>
         
         <SpeedometerGauge score={readinessScore} />
         
         {/* Percentage breakdown - oval dots with matching card colors */}
-        <div className="flex justify-center gap-3 lg:gap-8 mt-20 lg:mt-40">
+        <div className="flex justify-center gap-3 lg:gap-8 mt-16 lg:mt-28">
           <div className="flex items-center gap-1.5 lg:gap-2">
-            <span className="w-3 h-1.5 lg:w-5 lg:h-2.5 rounded-full bg-[#2563eb]" />
-            <span className="text-[var(--t3)] text-xs lg:text-lg">{docsPercent}% Docs</span>
+            <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#2563eb]" />
+            <span className="text-[var(--t3)] text-xs lg:text-sm">{docsPercent}% Docs</span>
           </div>
           <div className="flex items-center gap-1.5 lg:gap-2">
-            <span className="w-3 h-1.5 lg:w-5 lg:h-2.5 rounded-full bg-[#8b5cf6]" />
-            <span className="text-[var(--t3)] text-xs lg:text-lg">{msgsPercent}% Messages</span>
+            <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#8b5cf6]" />
+            <span className="text-[var(--t3)] text-xs lg:text-sm">{msgsPercent}% Messages</span>
           </div>
           <div className="flex items-center gap-1.5 lg:gap-2">
-            <span className="w-3 h-1.5 lg:w-5 lg:h-2.5 rounded-full bg-[#f97316]" />
-            <span className="text-[var(--t3)] text-xs lg:text-lg">{checklistPercent}% Checklist</span>
+            <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#f97316]" />
+            <span className="text-[var(--t3)] text-xs lg:text-sm">{checklistPercent}% Checklist</span>
           </div>
         </div>
       </div>
