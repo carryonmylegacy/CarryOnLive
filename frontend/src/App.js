@@ -79,9 +79,10 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   // Check subscription status - show paywall if trial expired and no active sub
-  // Skip paywall for admins and during beta mode
+  // Skip paywall for admins, beneficiaries (they don't pay), and during beta mode
   const needsSubscription = subscriptionStatus?.needs_subscription === true
     && user?.role !== 'admin'
+    && user?.role !== 'beneficiary'
     && !subscriptionStatus?.beta_mode;
 
   if (needsSubscription && !showPaywall) {
