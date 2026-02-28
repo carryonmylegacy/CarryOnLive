@@ -192,6 +192,10 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     )
 
 
+class DevSwitchRequest(BaseModel):
+    email: str
+
+
 @router.post("/auth/dev-login")
 async def dev_login(data: UserLogin, request: Request):
     """Admin impersonation: allows admin to login as any user via DevSwitcher.
@@ -216,6 +220,57 @@ async def dev_login(data: UserLogin, request: Request):
             raise
         except Exception:
             raise HTTPException(status_code=403, detail="Invalid admin token for impersonation")
+
+    token = create_token(user["id"], user["email"], user["role"])
+    return TokenResponse(
+        access_token=token,
+        user=UserResponse(
+            id=user["id"],
+            email=user["email"],
+            name=user["name"],
+            role=user["role"],
+            created_at=user["created_at"],
+        ),
+    )
+
+
+@router.post("/auth/dev-switch")
+async def dev_switch(data: DevSwitchRequest, request: Request):
+    """Admin-only impersonation using stored dev_config credentials.
+    The admin token is required. Password is looked up from dev_config on the server."""
+    # Require a valid admin token
+    auth_header = request.headers.get("authorization", "")
+    if not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=403, detail="Admin authorization required")
+    try:
+        token_str = auth_header.split(" ")[1]
+        payload = decode_token(token_str)
+        caller = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
+        if not caller or caller.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Only admins can use dev-switch")
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=403, detail="Invalid admin token")
+
+    # Look up stored password from dev_config
+    config = await db.dev_config.find_one({"id": "dev_switcher"}, {"_id": 0})
+    if not config:
+        raise HTTPException(status_code=404, detail="Dev switcher not configured")
+
+    stored_password = None
+    if config.get("benefactor_email") == data.email:
+        stored_password = config.get("benefactor_password")
+    elif config.get("beneficiary_email") == data.email:
+        stored_password = config.get("beneficiary_password")
+
+    if not stored_password:
+        raise HTTPException(status_code=400, detail="Email not configured in dev switcher")
+
+    # Verify the stored password against the user
+    user = await db.users.find_one({"email": data.email}, {"_id": 0})
+    if not user or not verify_password(stored_password, user["password"]):
+        raise HTTPException(status_code=401, detail="Stored password is incorrect. Update it in Admin → Dev Switcher.")
 
     token = create_token(user["id"], user["email"], user["role"])
     return TokenResponse(
