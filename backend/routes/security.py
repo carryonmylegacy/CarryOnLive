@@ -453,6 +453,20 @@ async def verify_section_security(
     return {"verified": True, "results": results}
 
 
+@router.get("/security/unlock-status/{section_id}")
+async def check_unlock_status(
+    section_id: str, current_user: dict = Depends(get_current_user)
+):
+    """Check if a section has been unlocked in the current session."""
+    session = await db.section_unlock_sessions.find_one(
+        {"user_id": current_user["id"], "section_id": section_id},
+        {"_id": 0, "expires_at": 1},
+    )
+    if session:
+        return {"unlocked": True}
+    return {"unlocked": False}
+
+
 @router.delete("/security/settings/{section_id}")
 async def remove_section_security(
     section_id: str, current_user: dict = Depends(get_current_user)
