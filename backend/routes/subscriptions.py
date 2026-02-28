@@ -1247,6 +1247,92 @@ async def review_verification(
     }
 
 
+
+@router.post("/admin/verifications/{verification_id}/notify")
+async def notify_benefactor_verified(
+    verification_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Send a notification to the benefactor that their verification is approved.
+    Creates a message in their customer service portal and sends a push notification."""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    verification = await db.tier_verifications.find_one(
+        {"id": verification_id}, {"_id": 0}
+    )
+    if not verification:
+        raise HTTPException(status_code=404, detail="Verification not found")
+    if verification.get("status") != "approved":
+        raise HTTPException(
+            status_code=400, detail="Can only notify for approved verifications"
+        )
+
+    import uuid
+
+    tier_label = (
+        "Military / First Responder"
+        if verification["tier_requested"] == "military"
+        else "Hospice"
+    )
+
+    # Create a customer service message in the benefactor's support portal
+    message = {
+        "id": str(uuid.uuid4()),
+        "conversation_id": verification["user_id"],
+        "sender_id": current_user["id"],
+        "sender_name": "CarryOn Support",
+        "sender_role": "admin",
+        "content": (
+            f"Great news! Your {tier_label} verification has been approved. "
+            f"You can now subscribe to the {tier_label} plan. "
+            f"Go to Settings → Subscription and click Subscribe under the {tier_label} plan — "
+            f"it will go through without any further verification needed. "
+            f"Thank you for your service!"
+            if verification["tier_requested"] == "military"
+            else f"Your {tier_label} verification has been approved. "
+            f"You can now subscribe to the {tier_label} plan at no cost. "
+            f"Go to Settings → Subscription and click Subscribe under the {tier_label} plan. "
+            f"We're here for you."
+        ),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "read": False,
+    }
+
+    await db.support_messages.insert_one(message)
+
+    # Mark verification as notified
+    await db.tier_verifications.update_one(
+        {"id": verification_id},
+        {"$set": {"notified": True, "notified_at": datetime.now(timezone.utc).isoformat()}},
+    )
+
+    # Send push notification
+    try:
+        from services.notifications import send_push_notification
+
+        import asyncio
+
+        asyncio.create_task(
+            send_push_notification(
+                verification["user_id"],
+                "Verification Approved!",
+                f"Your {tier_label} verification is approved. Go to Settings to subscribe.",
+                "/settings",
+                "verification-approved",
+                "support",
+            )
+        )
+    except Exception as e:
+        logger.warning(f"Push notification failed: {e}")
+
+    return {
+        "success": True,
+        "message": f"Notification sent to {verification.get('user_name', verification.get('user_email', ''))}",
+    }
+
+
+
 @router.get("/admin/subscription-stats")
 async def get_subscription_stats(current_user: dict = Depends(get_current_user)):
     """Get detailed subscription statistics (admin only)"""
