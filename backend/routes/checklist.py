@@ -128,6 +128,25 @@ async def toggle_checklist_item(
     }
     await db.checklists.update_one({"id": item_id}, {"$set": update_data})
     await update_estate_readiness(item["estate_id"])
+
+    # Log to edit_history for timeline
+    import uuid as _uuid
+
+    await db.edit_history.insert_one(
+        {
+            "id": str(_uuid.uuid4()),
+            "item_type": "checklist",
+            "item_id": item_id,
+            "estate_id": item["estate_id"],
+            "user_id": current_user["id"],
+            "user_name": current_user.get("name", ""),
+            "action": "completed" if new_status else "uncompleted",
+            "changed_fields": ["is_completed"],
+            "title": item.get("title", ""),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
+
     return {"is_completed": new_status}
 
 
