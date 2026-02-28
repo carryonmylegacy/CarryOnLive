@@ -1,0 +1,46 @@
+{
+  "summary": "Iteration 42: Verified 2 mobile layout fixes - (1) OnboardingWizard moved higher on dashboard and now visible at y=204px without scrolling on mobile viewport (390x844), (2) Header background changed to fully opaque solid color - dark mode: rgb(15,22,41) = #0F1629, light mode: rgb(219,234,254) = #DBEAFE. Both header and bottom navigation have no transparency. Backdrop-filter: none.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A (frontend only testing)",
+    "frontend": "100% - All 6 features verified"
+  },
+  "test_credentials": {
+    "token": "JWT token injected via localStorage",
+    "user": "fulltest@test.com (benefactor role)",
+    "localStorage_keys": ["carryon_token", "carryon_user"],
+    "note": "Removed carryon_onboarding_dismissed to ensure wizard shows"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Mobile layout fixes verified. OnboardingWizard now appears right after welcome header (before Estate Selector). Header and bottom nav use CSS variable --mobile-nav-bg which is #0F1629 (dark) and #DBEAFE (light) - both fully opaque RGB values with no alpha channel.",
+  "tested_features": {
+    "mobile_onboarding_wizard_visibility": "PASS - Visible at y=204px on 390x844 viewport without scrolling",
+    "mobile_header_opacity_dark": "PASS - Background: rgb(15,22,41) fully opaque, no backdrop-filter",
+    "mobile_header_opacity_light": "PASS - Background: rgb(219,234,254) fully opaque, no backdrop-filter",
+    "mobile_header_safe_area_padding": "PASS - CSS includes padding-top: env(safe-area-inset-top, 0px)",
+    "mobile_bottom_nav_opacity": "PASS - Background: rgb(15,22,41) fully opaque in dark mode",
+    "hamburger_menu_opens_sheet": "PASS - Side sheet opens correctly when clicking menu button",
+    "desktop_dashboard_renders": "PASS - Dashboard renders correctly on 1920x800 with OnboardingWizard in new position"
+  },
+  "css_verification": {
+    "mobile_nav_bg_dark": "#0F1629 (fully opaque)",
+    "mobile_nav_bg_light": "#DBEAFE (fully opaque)",
+    "backdrop_filter": "none (removed blur)",
+    "safe_area_padding": "env(safe-area-inset-top, 0px)"
+  },
+  "mocked_api_note": "None - frontend-only visual verification"
+}
