@@ -103,6 +103,9 @@ async def lifespan(app):
         await db.token_revocations.create_index("user_id", unique=True)
         # Edit history index for timeline queries
         await db.edit_history.create_index("estate_id")
+        # OTP trust: auto-cleanup after 24 hours
+        await db.otp_trust.create_index("expires_at", expireAfterSeconds=0)
+        await db.otp_trust.create_index([("user_id", 1), ("ip_address", 1)])
         logger.info("Database indexes created/verified")
     except Exception as e:
         logger.warning(f"Index creation warning (may already exist): {e}")
