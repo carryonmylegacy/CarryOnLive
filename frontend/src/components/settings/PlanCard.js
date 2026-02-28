@@ -103,7 +103,7 @@ export const PlanCard = ({
           </span>
           {plan.price > 0 && <span className="text-[10px] text-[var(--t5)] ml-1.5">{billingLabel}</span>}
         </div>
-        <div className="text-[10px] text-[var(--t5)] mb-4">Beneficiary: ${plan.ben_price?.toFixed(2)}/mo</div>
+        <div className="text-sm font-bold text-[var(--t3)] mb-4">Beneficiary: ${plan.ben_price?.toFixed(2)}/mo</div>
 
         <div className="h-px mb-4" style={{ background: `linear-gradient(90deg, transparent, ${tc.accent}30, transparent)` }} />
 
