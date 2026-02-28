@@ -193,7 +193,7 @@ class TestGuardianSessions:
         data = delete_response.json()
         
         assert "success" in data, "Response should have 'success' field"
-        assert data["success"] == True, "success should be True"
+        assert data["success"] is True, "success should be True"
         assert "deleted" in data, "Response should have 'deleted' count"
         assert data["deleted"] >= 1, "Should have deleted at least 1 message"
         
