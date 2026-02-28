@@ -466,6 +466,9 @@ async def verify_section_security(
     )
 
     return {"verified": True, "results": results}
+
+
+@router.get("/security/unlock-status/{section_id}")
 async def check_unlock_status(
     section_id: str, current_user: dict = Depends(get_current_user)
 ):
