@@ -26,66 +26,86 @@ CarryOn™ is an AI-powered estate planning platform that helps users ("benefact
 - Beneficiary management with orbit visualization
 - Immediate Action Checklist
 
-### Subscription & Payment System (Feb 27, 2026)
-- **30-day free trial** on signup
-- **Post-launch pricing** (6 benefactor tiers): Premium $9.99, Standard $8.99, Base $7.99, New Adult $3.99, Military $5.99, Hospice Free
-- **4 Beneficiary tiers**: Base $4.99, Standard $3.99, Premium $2.99, Hospice $4.99
-- **Family Plan**: 6th tile in paywall grid, $1/mo off for added benefactors, flat $3.49/mo for beneficiaries
-- **Billing cycles**: Monthly, Quarterly (10% off), Annual (20% off)
-- **Paywall modal**: 3x2 tile grid when trial expired
-- **Trial banner**: Dashboard countdown with urgency colors
-- **Stripe checkout** integration (LIVE keys)
+### Subscription & Payment System
+- 30-day free trial on signup
+- 6 benefactor tiers: Premium $9.99, Standard $8.99, Base $7.99, New Adult $3.99, Military $5.99, Hospice Free
+- 4 Beneficiary tiers: Base $4.99, Standard $3.99, Premium $2.99, Hospice $4.99
+- Family Plan: $1/mo off for added benefactors, flat $3.49/mo for beneficiaries
+- Billing cycles: Monthly, Quarterly (10% off), Annual (20% off)
+- Paywall modal, trial banner, Stripe checkout integration (LIVE keys)
+- Subscription management: upgrade/downgrade, billing cycle switch, cancel
+- Family Plan savings visualization with recursive backend calculation
 
-### Trial Reminder System
-- Background scheduler every 6 hours, emails at 10 days and 5 days before trial expiry
-- Deduplication flags prevent re-sends
-- Admin manual trigger endpoint
-
-### Verification System
-- Document upload for Military/First Responder and Hospice
-- Admin review/approve/deny workflow
-- Verified users access discounted tiers
-
-### Subscription Analytics Dashboard
-- 6 KPI cards: MRR, Trial Conversion %, Churn Rate %, Active Trials, Active Subs, Pending Reviews
-- 4 charts: Signups (30-day line), Trial Funnel (donut), Tier Distribution (bar), Revenue by Tier (bar)
-
-### Weekly Admin Analytics Digest
-- Auto-sent every Monday with MRR, signups, conversions, churn, tier breakdown
-- Preview modal and manual send from Analytics tab
-
-### Security Hardening (Feb 27, 2026)
-- **SecurityHeadersMiddleware**: X-Content-Type-Options (nosniff), X-Frame-Options (DENY), X-XSS-Protection, Referrer-Policy (strict-origin-when-cross-origin), Permissions-Policy, HSTS (1 year)
-- **RateLimitMiddleware**: 20 requests/60s on auth endpoints (login, register, dev-login, verify-otp)
-- **CORS tightened**: Specific origins (app.carryon.us, carryon.us, localhost) instead of wildcard
-- **Dev-login restricted**: Only admin-role users can bypass OTP
-- **All lint warnings fixed**: Python (ruff) and JavaScript (ESLint) clean
-- **MongoDB _id exclusion**: 100% coverage across all route queries
-- **No hardcoded secrets**: All credentials via .env
+### Estate Guardian AI Chat (Feb 28, 2026 - Redesigned)
+- Full-screen immersive chat experience with maximized message area
+- Compact header with bot icon, title, New Chat button, Export PDF button
+- Inline welcome actions: Analyze Vault, Generate Checklist, Readiness Score
+- Suggested question chips on welcome state
+- Popover-based actions/questions toggle after conversation starts
+- Markdown rendering for AI responses
+- Readiness score visualization with category breakdown
+- Multi-turn conversation with session persistence
 
 ### Admin Controls
 - Beta mode toggle, per-user discount/free access, family plan toggle
 - Verification management, analytics dashboard, trial reminder trigger
+- Support chat system, activity log, subscription management
+
+### Security Hardening
+- SecurityHeadersMiddleware, RateLimitMiddleware
+- CORS tightened, dev-login restricted
+- MongoDB _id exclusion 100% coverage
+- No hardcoded secrets
+
+## Code Architecture (Updated Feb 28, 2026)
+
+```
+/app
+├── backend/
+│   ├── routes/
+│   │   ├── guardian.py              # AI chat with xAI Grok
+│   │   ├── subscription.py         # Stripe webhooks, checkout
+│   │   ├── subscription_management.py # Upgrade/downgrade/cancel
+│   │   └── family_plan.py          # Family tree savings
+│   └── .env
+├── frontend/
+│   ├── src/
+│   │   ├── pages/
+│   │   │   ├── SettingsPage.js      # REFACTORED (Feb 28)
+│   │   │   ├── GuardianPage.js      # REDESIGNED (Feb 28)
+│   │   │   └── AdminPage.js         # Needs refactoring (1588 lines)
+│   │   ├── components/
+│   │   │   ├── settings/            # NEW (Feb 28)
+│   │   │   │   ├── PlanCard.js
+│   │   │   │   ├── BillingToggle.js
+│   │   │   │   └── SubscriptionManagement.js
+│   │   │   ├── SubscriptionPaywall.js
+│   │   │   └── visualization/
+│   │   │       └── OrbitVisualization.js
+│   │   └── contexts/
+│   │       └── AuthContext.js
+│   └── .env
+├── codemagic.yaml                   # UPDATED (Feb 28)
+└── memory/
+    ├── PRD.md
+    └── DEPLOY.md
+```
 
 ## Deployment
-- Manual Vercel deploy hook after GitHub push
-- Railway auto-deploys
+- Manual Vercel deploy hook after GitHub push (hook URL in /app/memory/DEPLOY.md)
+- Railway auto-deploys on push
 - Stripe LIVE keys on both environments
+- Codemagic for mobile builds (iOS/Android)
 
 ## Test Accounts
 - **User**: barnetharris@gmail.com / Blh9170873
 - **Admin**: founder@carryon.us / CarryOntheWisdom!
 - **Local Admin**: admin@carryon.com / admin123
 
-## Key API Endpoints
-- Auth: register, login, dev-login (admin only), verify-otp
-- Subscriptions: plans, status, checkout
-- Verification: upload, status, admin review
-- Admin: subscription-stats, trial-reminders/send, analytics-digest/preview, analytics-digest/send
-- All admin endpoints require admin role (403 otherwise)
-
-## Upcoming Tasks
+## Upcoming Tasks (Prioritized)
 - P1: Re-enable OTP email via Resend (domain verification for carryontechnologies.com)
+- P1: AdminPage.js refactoring (extract 9 tabs into separate components)
 - P2: Animated logo (waiting on user transparent PNG/SVG asset)
+- P2: Codemagic build verification after xcode optimization
 - P3: Mobile app deploy via Codemagic
-- Refactor: Extract shared ThemedSection component from LoginPage/AboutPage
+- P3: "You" label user verification on live site
