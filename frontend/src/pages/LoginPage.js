@@ -302,8 +302,8 @@ const LoginPage = () => {
                 },
                 {
                   icon: MessageSquare, title: 'Milestone Messages',
-                  bold: 'Your voice at their wedding. Your words at their graduation. Your love \u2014 delivered exactly when it matters.',
-                  desc: 'Record written messages for the milestones you want to be part of \u2014 even if you can\'t be there. Weddings, births, graduations, birthdays, first homes, or any moment you choose. Messages are securely stored and delivered when your beneficiary reports the milestone. No team reads them. No human touches them. Just your words, arriving exactly when and where you intended.',
+                  bold: 'Your words at their wedding. Your message at their graduation. Your love \u2014 delivered exactly when it matters.',
+                  desc: 'Record written or video messages for the milestones you want to be part of \u2014 even if you can\'t be there. Weddings, births, graduations, birthdays, first homes, or any moment you choose. Messages are securely stored and delivered when your beneficiary reports the milestone. No team reads them. No human touches them. Just your words, arriving exactly when and where you intended.',
                 },
                 {
                   icon: UserCheck, title: 'Designated Trustee Services',
