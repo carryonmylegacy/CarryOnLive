@@ -64,7 +64,7 @@ const BeneficiaryDashboardPage = () => {
   return (
     <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 animate-fade-in" data-testid="beneficiary-dashboard">
       {/* Sealed Banner */}
-      <div className="glass-card p-4 mb-5 flex items-start gap-3" style={{ borderLeft: '3px solid var(--gold)', boxShadow: '0 8px 32px -4px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.06) inset, -4px 0 20px -4px rgba(217,119,6,0.15)' }}>
+      <div className="glass-card p-4 mb-5 flex items-start gap-3" style={{ borderLeft: '3px solid var(--gold)', boxShadow: '0 8px 32px -4px rgba(0,0,0,0.5), 0 1px 0 var(--b) inset, -4px 0 20px -4px rgba(217,119,6,0.15)' }}>
         <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--seal-bg, rgba(217,119,6,0.12))' }}>
           <Lock className="w-5 h-5 text-[var(--gold)]" />
         </div>

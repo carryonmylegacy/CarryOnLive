@@ -377,7 +377,7 @@ const ChecklistPage = () => {
           </div>
 
           {/* Contact Info Section */}
-          <div className="rounded-lg p-3" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.1)' }}>
+          <div className="rounded-lg p-3" style={{ background: 'var(--s)', border: '1px dashed rgba(255,255,255,0.1)' }}>
             <p className="text-xs font-bold text-[var(--t4)] mb-2">Contact Information (optional — shown to beneficiaries)</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex items-center gap-2">

@@ -101,7 +101,7 @@ export const AnalyticsTab = ({ getAuthHeaders }) => {
             <div style={{ width: '100%', height: 220 }}>
               <ResponsiveContainer>
                 <LineChart data={stats.signup_trend}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--b)" />
                   <XAxis dataKey="date" tick={{ fill: '#525C72', fontSize: 10 }} interval="preserveStartEnd" />
                   <YAxis tick={{ fill: '#525C72', fontSize: 10 }} allowDecimals={false} />
                   <Tooltip content={<CustomTooltip />} />
@@ -153,7 +153,7 @@ export const AnalyticsTab = ({ getAuthHeaders }) => {
             <div style={{ width: '100%', height: 220 }}>
               <ResponsiveContainer>
                 <BarChart data={tierBarData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--b)" />
                   <XAxis dataKey="tier" tick={{ fill: '#525C72', fontSize: 10 }} />
                   <YAxis tick={{ fill: '#525C72', fontSize: 10 }} allowDecimals={false} />
                   <Tooltip content={<CustomTooltip />} />
@@ -178,7 +178,7 @@ export const AnalyticsTab = ({ getAuthHeaders }) => {
             <div style={{ width: '100%', height: 220 }}>
               <ResponsiveContainer>
                 <BarChart data={stats.revenue_by_tier.filter(r => r.revenue > 0 || r.subscribers > 0)}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--b)" />
                   <XAxis dataKey="tier" tick={{ fill: '#525C72', fontSize: 10 }} />
                   <YAxis tick={{ fill: '#525C72', fontSize: 10 }} tickFormatter={(v) => `$${v}`} />
                   <Tooltip content={<CustomTooltip />} />
