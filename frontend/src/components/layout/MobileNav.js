@@ -94,7 +94,8 @@ const MobileNav = () => {
   return (
     <>
       {/* Top Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 w-full h-14 mobile-header z-50 flex items-center justify-between px-4">
+      <header className="lg:hidden fixed top-0 left-0 w-full mobile-header z-50">
+        <div className="h-14 flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
           <img 
             src="/carryon-app-icon.jpg" 
