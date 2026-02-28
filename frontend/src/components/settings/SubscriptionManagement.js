@@ -161,6 +161,20 @@ export const SubscriptionManagement = ({
     hospice: ['Hospice Enrollment Documentation'],
   };
 
+  // Detect if a plan/billing change is a downgrade (would require refund)
+  const PLAN_RANK = { base: 1, new_adult: 2, military: 3, standard: 4, premium: 5, hospice: 0 };
+  const CYCLE_RANK = { monthly: 1, quarterly: 2, annual: 3 };
+
+  const isDowngrade = (newPlanId, newCycle) => {
+    if (!currentSub) return false;
+    const oldPlanRank = PLAN_RANK[currentPlanId] || 0;
+    const newPlanRank = PLAN_RANK[newPlanId] || 0;
+    const oldCycleRank = CYCLE_RANK[currentBilling] || 1;
+    const newCycleRank = CYCLE_RANK[newCycle] || 1;
+    // Downgrade if moving to a lower tier, OR same tier but shorter billing cycle
+    return newPlanRank < oldPlanRank || (newPlanRank === oldPlanRank && newCycleRank < oldCycleRank);
+  };
+
   const handleVerificationUpload = async () => {
     if (!verificationFile || !verificationDocType) {
       toast.error('Please select a document type and upload a file');
