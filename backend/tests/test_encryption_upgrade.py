@@ -21,44 +21,10 @@ import requests
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 
 
-class TestAuthSetup:
-    """Authentication setup and token management"""
-
-    @pytest.fixture(scope="session")
-    def admin_token(self):
-        """Get admin auth token"""
-        time.sleep(1)  # Rate limit buffer
-        resp = requests.post(
-            f"{BASE_URL}/api/auth/dev-login",
-            json={"email": "admin@carryon.com", "password": "admin123"},
-        )
-        assert resp.status_code == 200, f"Admin login failed: {resp.text}"
-        return resp.json()["access_token"]
-
-    @pytest.fixture(scope="session")
-    def benefactor_token(self, admin_token):
-        """Get benefactor token via admin impersonation"""
-        time.sleep(0.5)  # Rate limit buffer
-        resp = requests.post(
-            f"{BASE_URL}/api/auth/dev-login",
-            headers={"Authorization": f"Bearer {admin_token}"},
-            json={"email": "vault.test@carryon.com", "password": "VaultTest123!"},
-        )
-        assert resp.status_code == 200, f"Benefactor impersonation failed: {resp.text}"
-        data = resp.json()
-        print(f"✅ Benefactor token obtained for: {data['user']['name']} ({data['user']['email']})")
-        return data["access_token"]
-
-    @pytest.fixture(scope="session")
-    def test_estate_id(self):
-        """Test estate ID provided in requirements"""
-        return "2fd7502b-8eca-421d-a380-2bebb0d0ad7b"
-
-
 # ============= DOCUMENT ENCRYPTION TESTS =============
 
 
-class TestDocumentUpload(TestAuthSetup):
+class TestDocumentUpload:
     """Document upload with AES-256-GCM encryption and cloud storage"""
 
     def test_upload_document_creates_encrypted_file(self, benefactor_token, test_estate_id):
@@ -85,10 +51,6 @@ class TestDocumentUpload(TestAuthSetup):
         print(f"✅ Document uploaded with ID: {data['id']}")
         print(f"   Message: {data.get('message', '')}")
 
-        # Store for other tests
-        self.__class__.uploaded_doc_id = data["id"]
-        self.__class__.uploaded_doc_content = test_content
-
     def test_list_documents_shows_encryption_info(self, benefactor_token, test_estate_id):
         """GET /api/documents/{estate_id} - Show encryption_version and storage_type"""
         resp = requests.get(
@@ -100,10 +62,10 @@ class TestDocumentUpload(TestAuthSetup):
 
         assert isinstance(docs, list), "Should return list of documents"
         
-        # Find our test document
+        # Find any recent test document
         test_doc = None
         for doc in docs:
-            if doc.get("name", "").startswith("TEST_aes256_doc_"):
+            if doc.get("name", "").startswith("TEST_"):
                 test_doc = doc
                 break
         
@@ -119,12 +81,11 @@ class TestDocumentUpload(TestAuthSetup):
                 assert "storage_type" in docs[0], "Documents should have storage_type field"
 
 
-class TestDocumentDownload(TestAuthSetup):
+class TestDocumentDownload:
     """Document download and decryption"""
 
     def test_download_document_decrypts_aes256(self, benefactor_token, test_estate_id):
         """GET /api/documents/{doc_id}/download - Decrypt AES-256-GCM and return plaintext"""
-        # First upload a test document
         test_content = f"DOWNLOAD_TEST_CONTENT_{uuid.uuid4().hex[:8]}"
         doc_name = f"TEST_download_test_{uuid.uuid4().hex[:8]}.txt"
 
@@ -149,12 +110,8 @@ class TestDocumentDownload(TestAuthSetup):
         print(f"✅ Document downloaded and decrypted correctly")
         print(f"   Content verified: {downloaded_content[:50]}...")
 
-        # Store for cleanup
-        self.__class__.download_test_doc_id = doc_id
-
     def test_preview_document_decrypts_inline(self, benefactor_token, test_estate_id):
         """GET /api/documents/{doc_id}/preview - Decrypt and return inline"""
-        # Upload a test document
         test_content = f"PREVIEW_TEST_CONTENT_{uuid.uuid4().hex[:8]}"
         doc_name = f"TEST_preview_test_{uuid.uuid4().hex[:8]}.txt"
 
@@ -182,15 +139,12 @@ class TestDocumentDownload(TestAuthSetup):
         assert preview_content == test_content, "Preview content mismatch"
         print(f"✅ Document preview decrypted with inline disposition")
 
-        self.__class__.preview_test_doc_id = doc_id
 
-
-class TestDocumentDelete(TestAuthSetup):
+class TestDocumentDelete:
     """Document deletion from MongoDB and cloud storage"""
 
     def test_delete_document_removes_from_storage(self, benefactor_token, test_estate_id):
         """DELETE /api/documents/{doc_id} - Remove from MongoDB AND cloud storage"""
-        # Upload a test document
         doc_name = f"TEST_delete_test_{uuid.uuid4().hex[:8]}.txt"
         upload_resp = requests.post(
             f"{BASE_URL}/api/documents/upload",
@@ -221,7 +175,7 @@ class TestDocumentDelete(TestAuthSetup):
 # ============= MESSAGE ENCRYPTION TESTS =============
 
 
-class TestMessageEncryption(TestAuthSetup):
+class TestMessageEncryption:
     """Milestone message encryption tests"""
 
     def test_create_message_encrypts_title_content(self, benefactor_token, test_estate_id):
@@ -247,10 +201,6 @@ class TestMessageEncryption(TestAuthSetup):
         assert "id" in data, "Missing message ID"
         assert data.get("title") == message_data["title"], "Title should match"
         print(f"✅ Message created with ID: {data['id']}")
-        
-        self.__class__.test_message_id = data["id"]
-        self.__class__.test_message_title = message_data["title"]
-        self.__class__.test_message_content = message_data["content"]
 
     def test_list_messages_decrypts_content(self, benefactor_token, test_estate_id):
         """GET /api/messages/{estate_id} - Decrypt and return plaintext title/content"""
@@ -283,7 +233,7 @@ class TestMessageEncryption(TestAuthSetup):
 # ============= DIGITAL WALLET ENCRYPTION TESTS =============
 
 
-class TestDigitalWalletEncryption(TestAuthSetup):
+class TestDigitalWalletEncryption:
     """Digital wallet encryption tests"""
 
     def test_create_wallet_entry_encrypts_password(self, benefactor_token):
@@ -308,10 +258,6 @@ class TestDigitalWalletEncryption(TestAuthSetup):
 
         assert "id" in data, "Missing entry ID"
         print(f"✅ Wallet entry created with ID: {data['id']}")
-        
-        self.__class__.wallet_entry_id = data["id"]
-        self.__class__.wallet_password = wallet_data["password"]
-        self.__class__.wallet_account_name = wallet_data["account_name"]
 
     def test_list_wallet_decrypts_passwords(self, benefactor_token, test_estate_id):
         """GET /api/digital-wallet/{estate_id} - Decrypt passwords for owner"""
@@ -343,7 +289,7 @@ class TestDigitalWalletEncryption(TestAuthSetup):
 # ============= VAULT SECURITY INFO TESTS =============
 
 
-class TestVaultSecurityInfo(TestAuthSetup):
+class TestVaultSecurityInfo:
     """Vault security and encryption metadata endpoint tests"""
 
     def test_vault_security_info_returns_metadata(self, benefactor_token, test_estate_id):
@@ -390,7 +336,7 @@ class TestVaultSecurityInfo(TestAuthSetup):
 # ============= AUDIT TRAIL TESTS =============
 
 
-class TestAuditTrail(TestAuthSetup):
+class TestAuditTrail:
     """SOC 2 audit trail tests"""
 
     def test_upload_creates_audit_entry(self, benefactor_token, test_estate_id):
@@ -414,7 +360,6 @@ class TestAuditTrail(TestAuthSetup):
             files={"file": ("audit.txt", b"AUDIT_TEST", "text/plain")},
         )
         assert upload_resp.status_code == 200
-        doc_id = upload_resp.json()["id"]
 
         # Wait a moment for audit to be written
         time.sleep(0.5)
@@ -428,9 +373,6 @@ class TestAuditTrail(TestAuthSetup):
 
         assert new_audit_count > initial_audit_count, f"Audit count should increase. Initial: {initial_audit_count}, New: {new_audit_count}"
         print(f"✅ Audit entry created for upload (count: {initial_audit_count} -> {new_audit_count})")
-
-        # Store for cleanup
-        self.__class__.audit_test_doc_id = doc_id
 
     def test_download_creates_audit_entry(self, benefactor_token, test_estate_id):
         """Document download should create audit entry"""
@@ -478,7 +420,7 @@ class TestAuditTrail(TestAuthSetup):
 # ============= ESTATE ENCRYPTION SALT TESTS =============
 
 
-class TestEstateEncryptionSalt(TestAuthSetup):
+class TestEstateEncryptionSalt:
     """Per-estate encryption salt tests"""
 
     def test_new_estate_has_encryption_salt(self, benefactor_token):
@@ -510,9 +452,6 @@ class TestEstateEncryptionSalt(TestAuthSetup):
         assert len(salt) == 64, f"Salt should be 32 bytes hex-encoded (64 chars), got {len(salt)}"
         print(f"✅ Estate has encryption_salt: {salt[:16]}...")
 
-        # Store for cleanup
-        self.__class__.test_estate_id_to_delete = estate_id
-
     def test_existing_estate_has_encryption_salt(self, benefactor_token, test_estate_id):
         """Existing estate should have encryption_salt (lazily generated)"""
         resp = requests.get(
@@ -531,7 +470,7 @@ class TestEstateEncryptionSalt(TestAuthSetup):
 # ============= PER-ESTATE KEY ISOLATION TESTS =============
 
 
-class TestPerEstateKeyIsolation(TestAuthSetup):
+class TestPerEstateKeyIsolation:
     """Verify documents from different estates use different encryption keys"""
 
     def test_different_estates_different_keys(self, benefactor_token):
@@ -569,19 +508,15 @@ class TestPerEstateKeyIsolation(TestAuthSetup):
         print(f"   Estate 2 salt: {salt2[:16]}...")
         print(f"   Salts are different: ✓")
 
-        # Store for cleanup
-        self.__class__.isolation_estate_ids = [estate1_id, estate2_id]
-
 
 # ============= CLEANUP =============
 
 
-class TestCleanup(TestAuthSetup):
+class TestCleanup:
     """Cleanup test data"""
 
     def test_cleanup_test_documents(self, benefactor_token, test_estate_id):
         """Clean up test documents"""
-        # List all documents
         resp = requests.get(
             f"{BASE_URL}/api/documents/{test_estate_id}",
             headers={"Authorization": f"Bearer {benefactor_token}"},
