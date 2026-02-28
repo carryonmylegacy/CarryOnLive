@@ -79,12 +79,16 @@ async def get_digital_wallet(
         for entry in entries:
             if entry.get("encrypted_password"):
                 try:
-                    entry["password"] = decrypt_field(entry["encrypted_password"], estate_salt)
+                    entry["password"] = decrypt_field(
+                        entry["encrypted_password"], estate_salt
+                    )
                 except Exception:
                     entry["password"] = ""
             if entry.get("encrypted_additional"):
                 try:
-                    entry["additional_access"] = decrypt_field(entry["encrypted_additional"], estate_salt)
+                    entry["additional_access"] = decrypt_field(
+                        entry["encrypted_additional"], estate_salt
+                    )
                 except Exception:
                     entry["additional_access"] = ""
         return entries
@@ -96,12 +100,16 @@ async def get_digital_wallet(
         for entry in my_entries:
             if entry.get("encrypted_password"):
                 try:
-                    entry["password"] = decrypt_field(entry["encrypted_password"], estate_salt)
+                    entry["password"] = decrypt_field(
+                        entry["encrypted_password"], estate_salt
+                    )
                 except Exception:
                     entry["password"] = ""
             if entry.get("encrypted_additional"):
                 try:
-                    entry["additional_access"] = decrypt_field(entry["encrypted_additional"], estate_salt)
+                    entry["additional_access"] = decrypt_field(
+                        entry["encrypted_additional"], estate_salt
+                    )
                 except Exception:
                     entry["additional_access"] = ""
         return my_entries
@@ -197,7 +205,9 @@ async def update_digital_wallet_entry(
         update["encrypted_password"] = encrypt_field(data.password, estate_salt)
     if data.additional_access is not None:
         estate_salt = await get_estate_salt(entry["estate_id"])
-        update["encrypted_additional"] = encrypt_field(data.additional_access, estate_salt)
+        update["encrypted_additional"] = encrypt_field(
+            data.additional_access, estate_salt
+        )
     if data.notes is not None:
         update["notes"] = data.notes
     if data.category is not None:

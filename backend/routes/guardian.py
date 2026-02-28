@@ -87,6 +87,7 @@ async def extract_document_text(document: dict) -> str:
         # New architecture: blob in cloud storage
         if document.get("storage_key"):
             from services.storage import storage
+
             encrypted_blob = await storage.download(document["storage_key"])
             decrypted_data = decrypt_aes256(encrypted_blob.decode("ascii"), estate_salt)
         elif document.get("file_data"):
@@ -113,7 +114,9 @@ async def extract_document_text(document: dict) -> str:
                 return f"[PDF document - {document['file_size']} bytes - text extraction failed]"
 
         # Text-based files
-        elif any(t in file_type for t in ["text", "plain", "csv", "json", "xml", "html"]):
+        elif any(
+            t in file_type for t in ["text", "plain", "csv", "json", "xml", "html"]
+        ):
             text = decrypted_data.decode("utf-8", errors="replace")
             return text[:8000]
 
@@ -362,32 +365,30 @@ Provide a clear, organized analysis with specific findings and recommendations."
 
         # Cross-chat knowledge: include key points from recent sessions
         if session_id.startswith("chat_"):
-            recent_sessions = (
-                await db.chat_history.aggregate(
-                    [
-                        {
-                            "$match": {
-                                "user_id": current_user["id"],
-                                "session_id": {"$ne": session_id},
-                            }
-                        },
-                        {"$sort": {"created_at": -1}},
-                        {"$limit": 40},
-                        {
-                            "$group": {
-                                "_id": "$session_id",
-                                "messages": {
-                                    "$push": {
-                                        "role": "$role",
-                                        "content": "$content",
-                                    }
-                                },
-                            }
-                        },
-                        {"$limit": 5},
-                    ]
-                ).to_list(5)
-            )
+            recent_sessions = await db.chat_history.aggregate(
+                [
+                    {
+                        "$match": {
+                            "user_id": current_user["id"],
+                            "session_id": {"$ne": session_id},
+                        }
+                    },
+                    {"$sort": {"created_at": -1}},
+                    {"$limit": 40},
+                    {
+                        "$group": {
+                            "_id": "$session_id",
+                            "messages": {
+                                "$push": {
+                                    "role": "$role",
+                                    "content": "$content",
+                                }
+                            },
+                        }
+                    },
+                    {"$limit": 5},
+                ]
+            ).to_list(5)
             if recent_sessions:
                 cross_context_parts = []
                 for sess in recent_sessions:
@@ -553,9 +554,7 @@ async def get_chat_sessions(current_user: dict = Depends(get_current_user)):
                 "first_role": {"$first": "$role"},
                 "last_message_at": {"$last": "$created_at"},
                 "message_count": {"$sum": 1},
-                "messages": {
-                    "$push": {"role": "$role", "content": "$content"}
-                },
+                "messages": {"$push": {"role": "$role", "content": "$content"}},
             }
         },
         {"$sort": {"last_message_at": -1}},
@@ -603,21 +602,21 @@ def sanitize_for_pdf(text: str) -> str:
         return ""
     # Common Unicode replacements
     replacements = {
-        '\u2014': '-',  # em-dash
-        '\u2013': '-',  # en-dash
-        '\u2018': "'",  # left single quote
-        '\u2019': "'",  # right single quote
-        '\u201c': '"',  # left double quote
-        '\u201d': '"',  # right double quote
-        '\u2026': '...',  # ellipsis
-        '\u2022': '*',  # bullet
-        '\u00a0': ' ',  # non-breaking space
-        '\u200b': '',   # zero-width space
+        "\u2014": "-",  # em-dash
+        "\u2013": "-",  # en-dash
+        "\u2018": "'",  # left single quote
+        "\u2019": "'",  # right single quote
+        "\u201c": '"',  # left double quote
+        "\u201d": '"',  # right double quote
+        "\u2026": "...",  # ellipsis
+        "\u2022": "*",  # bullet
+        "\u00a0": " ",  # non-breaking space
+        "\u200b": "",  # zero-width space
     }
     for unicode_char, ascii_char in replacements.items():
         text = text.replace(unicode_char, ascii_char)
     # Remove any remaining non-ASCII characters
-    return text.encode('ascii', 'replace').decode('ascii')
+    return text.encode("ascii", "replace").decode("ascii")
 
 
 @router.post("/guardian/export-checklist")
@@ -628,7 +627,9 @@ async def export_checklist_pdf(
     from fpdf import FPDF
 
     # Get user's estate
-    estates = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0}).to_list(1)
+    estates = await db.estates.find(
+        {"owner_id": current_user["id"]}, {"_id": 0}
+    ).to_list(1)
     if not estates:
         raise HTTPException(status_code=404, detail="No estate found")
 
@@ -636,15 +637,18 @@ async def export_checklist_pdf(
     estate_id = estate["id"]
 
     # Get checklist items
-    items = await db.checklists.find(
-        {"estate_id": estate_id}, {"_id": 0}
-    ).sort("order", 1).to_list(200)
+    items = (
+        await db.checklists.find({"estate_id": estate_id}, {"_id": 0})
+        .sort("order", 1)
+        .to_list(200)
+    )
 
     if not items:
         raise HTTPException(status_code=404, detail="No checklist items found")
 
     # Get readiness data
     from services.readiness import calculate_estate_readiness
+
     readiness = await calculate_estate_readiness(estate_id)
 
     # Build PDF
@@ -659,8 +663,22 @@ async def export_checklist_pdf(
     pdf.set_font("Helvetica", "", 10)
     pdf.set_text_color(100, 100, 100)
     pdf.cell(0, 6, "Immediate Action Checklist", new_x="LMARGIN", new_y="NEXT")
-    pdf.cell(0, 5, sanitize_for_pdf(f"Estate: {estate['name']}  |  State: {estate.get('state', 'Not specified')}  |  Readiness: {readiness['overall_score']}%"), new_x="LMARGIN", new_y="NEXT")
-    pdf.cell(0, 5, f"Generated: {datetime.now(timezone.utc).strftime('%B %d, %Y at %I:%M %p UTC')}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(
+        0,
+        5,
+        sanitize_for_pdf(
+            f"Estate: {estate['name']}  |  State: {estate.get('state', 'Not specified')}  |  Readiness: {readiness['overall_score']}%"
+        ),
+        new_x="LMARGIN",
+        new_y="NEXT",
+    )
+    pdf.cell(
+        0,
+        5,
+        f"Generated: {datetime.now(timezone.utc).strftime('%B %d, %Y at %I:%M %p UTC')}",
+        new_x="LMARGIN",
+        new_y="NEXT",
+    )
     pdf.ln(4)
 
     # Legal disclaimer box
@@ -703,7 +721,13 @@ async def export_checklist_pdf(
         # Category header
         pdf.set_font("Helvetica", "B", 12)
         pdf.set_text_color(30, 40, 70)
-        pdf.cell(0, 8, category_labels.get(cat, cat.replace("_", " ").title()), new_x="LMARGIN", new_y="NEXT")
+        pdf.cell(
+            0,
+            8,
+            category_labels.get(cat, cat.replace("_", " ").title()),
+            new_x="LMARGIN",
+            new_y="NEXT",
+        )
         pdf.set_draw_color(212, 175, 55)
         pdf.line(pdf.get_x(), pdf.get_y(), pdf.get_x() + 170, pdf.get_y())
         pdf.ln(3)
@@ -714,7 +738,13 @@ async def export_checklist_pdf(
             pdf.set_font("Helvetica", "B", 9)
             pdf.set_text_color(40, 40, 40)
             pdf.cell(8, 5, check)
-            pdf.cell(0, 5, sanitize_for_pdf(item["title"][:80]), new_x="LMARGIN", new_y="NEXT")
+            pdf.cell(
+                0,
+                5,
+                sanitize_for_pdf(item["title"][:80]),
+                new_x="LMARGIN",
+                new_y="NEXT",
+            )
 
             # Description
             if item.get("description"):
@@ -743,11 +773,29 @@ async def export_checklist_pdf(
     pdf.ln(4)
     pdf.set_font("Helvetica", "B", 10)
     pdf.set_text_color(30, 40, 70)
-    pdf.cell(0, 6, f"Progress: {completed}/{len(items)} items completed ({int(completed/len(items)*100) if items else 0}%)", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(
+        0,
+        6,
+        f"Progress: {completed}/{len(items)} items completed ({int(completed / len(items) * 100) if items else 0}%)",
+        new_x="LMARGIN",
+        new_y="NEXT",
+    )
     pdf.set_font("Helvetica", "", 8)
     pdf.set_text_color(100, 100, 100)
-    pdf.cell(0, 5, "AES-256-GCM Encrypted  |  Zero-Knowledge Architecture  |  SOC 2 Compliant", new_x="LMARGIN", new_y="NEXT")
-    pdf.cell(0, 5, f"CarryOn Technologies  |  carryon.us  |  {datetime.now(timezone.utc).year}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(
+        0,
+        5,
+        "AES-256-GCM Encrypted  |  Zero-Knowledge Architecture  |  SOC 2 Compliant",
+        new_x="LMARGIN",
+        new_y="NEXT",
+    )
+    pdf.cell(
+        0,
+        5,
+        f"CarryOn Technologies  |  carryon.us  |  {datetime.now(timezone.utc).year}",
+        new_x="LMARGIN",
+        new_y="NEXT",
+    )
 
     # Return PDF
     pdf_bytes = pdf.output()
@@ -762,5 +810,7 @@ async def export_checklist_pdf(
     return Response(
         content=bytes(pdf_bytes),
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="CarryOn_Checklist_{datetime.now(timezone.utc).strftime("%Y%m%d")}.pdf"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="CarryOn_Checklist_{datetime.now(timezone.utc).strftime("%Y%m%d")}.pdf"'
+        },
     )

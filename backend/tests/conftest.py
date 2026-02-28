@@ -1,4 +1,5 @@
 """Pytest configuration and shared fixtures for encryption upgrade tests"""
+
 import os
 import time
 import pytest
@@ -30,7 +31,9 @@ def benefactor_token(admin_token):
     )
     assert resp.status_code == 200, f"Benefactor impersonation failed: {resp.text}"
     data = resp.json()
-    print(f"\n✅ Benefactor token obtained for: {data['user']['name']} ({data['user']['email']})")
+    print(
+        f"\n✅ Benefactor token obtained for: {data['user']['name']} ({data['user']['email']})"
+    )
     return data["access_token"]
 
 

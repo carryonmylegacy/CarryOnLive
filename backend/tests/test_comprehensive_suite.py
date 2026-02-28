@@ -229,9 +229,7 @@ class TestP1Estates:
         print(f"  Listed {len(d)} estates")
 
     def test_03_get_estate(self):
-        r = requests.get(
-            f"{BASE_URL}/api/estates/{S.estate_id}", headers=auth_header()
-        )
+        r = requests.get(f"{BASE_URL}/api/estates/{S.estate_id}", headers=auth_header())
         assert r.status_code == 200
         d = r.json()
         assert d["id"] == S.estate_id
@@ -614,9 +612,7 @@ class TestP1Support:
         print("  Support message sent")
 
     def test_02_get_messages(self):
-        r = requests.get(
-            f"{BASE_URL}/api/support/messages", headers=auth_header()
-        )
+        r = requests.get(f"{BASE_URL}/api/support/messages", headers=auth_header())
         assert r.status_code == 200
         d = r.json()
         assert isinstance(d, list)
@@ -648,9 +644,7 @@ class TestP1Support:
             print("  Conversations: admin-only (403 for regular user)")
 
     def test_04_unread_count(self):
-        r = requests.get(
-            f"{BASE_URL}/api/support/unread-count", headers=auth_header()
-        )
+        r = requests.get(f"{BASE_URL}/api/support/unread-count", headers=auth_header())
         assert r.status_code == 200
         d = r.json()
         assert "unread_count" in d
@@ -664,18 +658,14 @@ class TestP1Security:
     """P1: Section security endpoints."""
 
     def test_01_get_settings(self):
-        r = requests.get(
-            f"{BASE_URL}/api/security/settings", headers=auth_header()
-        )
+        r = requests.get(f"{BASE_URL}/api/security/settings", headers=auth_header())
         assert r.status_code == 200
         d = r.json()
         assert isinstance(d, dict)
         print(f"  Security settings: {len(d)} sections")
 
     def test_02_get_questions(self):
-        r = requests.get(
-            f"{BASE_URL}/api/security/questions", headers=auth_header()
-        )
+        r = requests.get(f"{BASE_URL}/api/security/questions", headers=auth_header())
         assert r.status_code == 200
         d = r.json()
         assert "questions" in d
@@ -733,16 +723,12 @@ class TestP2Admin:
         print(f"  Activity: {len(d)} events")
 
     def test_05_stats_rejects_non_admin(self):
-        r = requests.get(
-            f"{BASE_URL}/api/admin/stats", headers=auth_header(S.token)
-        )
+        r = requests.get(f"{BASE_URL}/api/admin/stats", headers=auth_header(S.token))
         assert r.status_code == 403
         print("  Non-admin rejected from /admin/stats")
 
     def test_06_users_rejects_non_admin(self):
-        r = requests.get(
-            f"{BASE_URL}/api/admin/users", headers=auth_header(S.token)
-        )
+        r = requests.get(f"{BASE_URL}/api/admin/users", headers=auth_header(S.token))
         assert r.status_code == 403
         print("  Non-admin rejected from /admin/users")
 
@@ -764,9 +750,7 @@ class TestP2Services:
     """P2: Digest preferences and push notifications."""
 
     def test_01_get_digest_prefs(self):
-        r = requests.get(
-            f"{BASE_URL}/api/digest/preferences", headers=auth_header()
-        )
+        r = requests.get(f"{BASE_URL}/api/digest/preferences", headers=auth_header())
         assert r.status_code == 200
         d = r.json()
         assert "weekly_digest" in d
@@ -795,9 +779,7 @@ class TestP2Services:
         print("  Digest disabled")
 
     def test_04_digest_preview(self):
-        r = requests.post(
-            f"{BASE_URL}/api/digest/preview", headers=auth_header()
-        )
+        r = requests.post(f"{BASE_URL}/api/digest/preview", headers=auth_header())
         # May return 200 or 500 depending on email service config
         assert r.status_code in [200, 500]
         print(f"  Digest preview: status={r.status_code}")
@@ -823,9 +805,7 @@ class TestP2Subscriptions:
         print(f"  Plans: {len(d['plans'])}, beta={d.get('beta_mode')}")
 
     def test_02_status(self):
-        r = requests.get(
-            f"{BASE_URL}/api/subscriptions/status", headers=auth_header()
-        )
+        r = requests.get(f"{BASE_URL}/api/subscriptions/status", headers=auth_header())
         assert r.status_code == 200
         d = r.json()
         assert "plan" in d or "subscription" in d or "status" in d
@@ -849,9 +829,7 @@ class TestP2FamilyPlan:
     """P2: Family plan endpoints."""
 
     def test_01_status(self):
-        r = requests.get(
-            f"{BASE_URL}/api/family-plan/status", headers=auth_header()
-        )
+        r = requests.get(f"{BASE_URL}/api/family-plan/status", headers=auth_header())
         assert r.status_code == 200
         print("  Family plan status retrieved")
 
@@ -881,9 +859,7 @@ class TestP2DTS:
             assert r.status_code == 200
             print("  All DTS tasks retrieved (admin)")
         else:
-            r = requests.get(
-                f"{BASE_URL}/api/dts/tasks/all", headers=auth_header()
-            )
+            r = requests.get(f"{BASE_URL}/api/dts/tasks/all", headers=auth_header())
             assert r.status_code == 403
             print("  DTS all tasks: admin-only (403)")
 
@@ -935,7 +911,10 @@ class TestP2PDFExport:
         # 200 = PDF generated, or may error if no data
         assert r.status_code in [200, 500]
         if r.status_code == 200:
-            assert "pdf" in r.headers.get("content-type", "").lower() or len(r.content) > 100
+            assert (
+                "pdf" in r.headers.get("content-type", "").lower()
+                or len(r.content) > 100
+            )
         print(f"  PDF export: status={r.status_code}")
 
 
@@ -1063,9 +1042,7 @@ class TestP3EdgeCases:
         d = r.json()
         # Clean up
         if "id" in d:
-            requests.delete(
-                f"{BASE_URL}/api/messages/{d['id']}", headers=auth_header()
-            )
+            requests.delete(f"{BASE_URL}/api/messages/{d['id']}", headers=auth_header())
         print("  XSS content stored safely")
 
     def test_07_oversized_payload(self):
@@ -1093,9 +1070,7 @@ class TestP3EdgeCases:
 
     def test_08_no_id_leak_in_responses(self):
         """Verify MongoDB _id is not exposed in API responses."""
-        r = requests.get(
-            f"{BASE_URL}/api/estates/{S.estate_id}", headers=auth_header()
-        )
+        r = requests.get(f"{BASE_URL}/api/estates/{S.estate_id}", headers=auth_header())
         if r.status_code == 200:
             d = r.json()
             assert "_id" not in d, "MongoDB _id leaked in estate response!"

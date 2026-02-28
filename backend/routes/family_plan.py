@@ -50,7 +50,12 @@ async def get_family_plan_status(current_user: dict = Depends(get_current_user))
         {"fpo_user_id": current_user["id"], "status": "active"}, {"_id": 0}
     )
     if fp:
-        return {"enabled": True, "role": "fpo", "family_plan": fp, "current_plan_id": fp.get("plan_id")}
+        return {
+            "enabled": True,
+            "role": "fpo",
+            "family_plan": fp,
+            "current_plan_id": fp.get("plan_id"),
+        }
 
     # Check if user is a member
     fp = await db.family_plans.find_one(
@@ -74,7 +79,12 @@ async def get_family_plan_status(current_user: dict = Depends(get_current_user))
     )
     current_plan_id = user_sub.get("plan_id") if user_sub else None
 
-    return {"enabled": True, "role": None, "family_plan": None, "current_plan_id": current_plan_id}
+    return {
+        "enabled": True,
+        "role": None,
+        "family_plan": None,
+        "current_plan_id": current_plan_id,
+    }
 
 
 @router.get("/family-plan/preview-savings")
@@ -108,15 +118,17 @@ async def preview_family_savings(current_user: dict = Depends(get_current_user))
 
     # FPO (the current user)
     fpo_discount = 1.0  # benefactors save $1/mo
-    family_tree.append({
-        "name": current_user.get("name", "You"),
-        "email": current_user.get("email", ""),
-        "role": "benefactor",
-        "relation": "You (FPO)",
-        "current_price": float(current_plan["price"]),
-        "family_price": float(current_plan["price"]) - fpo_discount,
-        "savings": fpo_discount,
-    })
+    family_tree.append(
+        {
+            "name": current_user.get("name", "You"),
+            "email": current_user.get("email", ""),
+            "role": "benefactor",
+            "relation": "You (FPO)",
+            "current_price": float(current_plan["price"]),
+            "family_price": float(current_plan["price"]) - fpo_discount,
+            "savings": fpo_discount,
+        }
+    )
     total_family_cost -= fpo_discount
 
     # Each beneficiary
@@ -127,7 +139,11 @@ async def preview_family_savings(current_user: dict = Depends(get_current_user))
 
         # Check if this beneficiary is also a benefactor (has their own estates)
         is_also_benefactor = False
-        ben_user = await db.users.find_one({"email": ben_email}, {"_id": 0}) if ben_email else None
+        ben_user = (
+            await db.users.find_one({"email": ben_email}, {"_id": 0})
+            if ben_email
+            else None
+        )
         if ben_user and ben_user.get("role") == "benefactor":
             is_also_benefactor = True
 
@@ -139,36 +155,47 @@ async def preview_family_savings(current_user: dict = Depends(get_current_user))
             )
 
         if ben_sub:
-            ben_current_price = float(ben_sub.get("amount", current_plan.get("ben_price", 4.49)))
+            ben_current_price = float(
+                ben_sub.get("amount", current_plan.get("ben_price", 4.49))
+            )
         else:
             ben_current_price = float(current_plan.get("ben_price", 4.49))
 
         if is_also_benefactor:
             # Benefactors in family plan save $1/mo
-            ben_plan = plans.get(ben_sub.get("plan_id", current_plan_id) if ben_sub else current_plan_id)
-            ben_current_as_benefactor = float(ben_plan["price"]) if ben_plan else float(current_plan["price"])
+            ben_plan = plans.get(
+                ben_sub.get("plan_id", current_plan_id) if ben_sub else current_plan_id
+            )
+            ben_current_as_benefactor = (
+                float(ben_plan["price"]) if ben_plan else float(current_plan["price"])
+            )
             ben_family_price = ben_current_as_benefactor - 1.0
-            family_tree.append({
-                "name": ben_name,
-                "email": ben_email,
-                "role": "benefactor",
-                "relation": ben.get("relation", "Beneficiary") + " (also Benefactor)",
-                "current_price": ben_current_as_benefactor,
-                "family_price": ben_family_price,
-                "savings": ben_current_as_benefactor - ben_family_price,
-            })
+            family_tree.append(
+                {
+                    "name": ben_name,
+                    "email": ben_email,
+                    "role": "benefactor",
+                    "relation": ben.get("relation", "Beneficiary")
+                    + " (also Benefactor)",
+                    "current_price": ben_current_as_benefactor,
+                    "family_price": ben_family_price,
+                    "savings": ben_current_as_benefactor - ben_family_price,
+                }
+            )
             total_current_cost += ben_current_as_benefactor
             total_family_cost += ben_family_price
         else:
-            family_tree.append({
-                "name": ben_name,
-                "email": ben_email,
-                "role": "beneficiary",
-                "relation": ben.get("relation", "Beneficiary"),
-                "current_price": ben_current_price,
-                "family_price": ben_flat_price,
-                "savings": max(0, ben_current_price - ben_flat_price),
-            })
+            family_tree.append(
+                {
+                    "name": ben_name,
+                    "email": ben_email,
+                    "role": "beneficiary",
+                    "relation": ben.get("relation", "Beneficiary"),
+                    "current_price": ben_current_price,
+                    "family_price": ben_flat_price,
+                    "savings": max(0, ben_current_price - ben_flat_price),
+                }
+            )
             total_current_cost += ben_current_price
             total_family_cost += ben_flat_price
 

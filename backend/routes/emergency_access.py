@@ -80,7 +80,9 @@ async def request_emergency_access(
         "requester_id": current_user["id"],
         "requester_name": current_user.get("name", ""),
         "requester_email": current_user.get("email", ""),
-        "benefactor_name": benefactor.get("name", "Unknown") if benefactor else "Unknown",
+        "benefactor_name": benefactor.get("name", "Unknown")
+        if benefactor
+        else "Unknown",
         "benefactor_email": benefactor.get("email", "") if benefactor else "",
         "reason": data.reason,
         "relationship": data.relationship_to_benefactor,
@@ -134,9 +136,7 @@ async def request_emergency_access(
 async def get_my_emergency_requests(current_user: dict = Depends(get_current_user)):
     """Get all emergency access requests for the current user."""
     requests = (
-        await db.emergency_access.find(
-            {"requester_id": current_user["id"]}, {"_id": 0}
-        )
+        await db.emergency_access.find({"requester_id": current_user["id"]}, {"_id": 0})
         .sort("created_at", -1)
         .to_list(50)
     )
@@ -248,7 +248,9 @@ async def review_emergency_access(
         details={
             "action": data.action,
             "access_level": data.access_level if data.action == "approve" else None,
-            "duration_hours": data.access_duration_hours if data.action == "approve" else None,
+            "duration_hours": data.access_duration_hours
+            if data.action == "approve"
+            else None,
         },
     )
 

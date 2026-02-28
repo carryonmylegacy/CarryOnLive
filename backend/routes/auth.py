@@ -32,10 +32,12 @@ async def login(data: UserLogin, request: Request):
 
     # Check for account lockout (5 failed attempts in 15 minutes)
     lockout_window = (datetime.now(timezone.utc) - timedelta(minutes=15)).isoformat()
-    recent_failures = await db.failed_logins.count_documents({
-        "email": data.email,
-        "timestamp": {"$gte": lockout_window},
-    })
+    recent_failures = await db.failed_logins.count_documents(
+        {
+            "email": data.email,
+            "timestamp": {"$gte": lockout_window},
+        }
+    )
     if recent_failures >= 5:
         raise HTTPException(
             status_code=429,
@@ -45,11 +47,13 @@ async def login(data: UserLogin, request: Request):
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
     if not user or not verify_password(data.password, user["password"]):
         # Record failed attempt
-        await db.failed_logins.insert_one({
-            "email": data.email,
-            "ip_address": client_ip,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        })
+        await db.failed_logins.insert_one(
+            {
+                "email": data.email,
+                "ip_address": client_ip,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+        )
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     # Clear failed attempts on successful login
@@ -156,7 +160,9 @@ async def verify_otp(data: OTPVerify):
             created_time = datetime.fromisoformat(otp_created.replace("Z", "+00:00"))
             if datetime.now(timezone.utc) - created_time > timedelta(minutes=10):
                 await db.otps.delete_one({"email": data.email})
-                raise HTTPException(status_code=401, detail="OTP expired. Please request a new one.")
+                raise HTTPException(
+                    status_code=401, detail="OTP expired. Please request a new one."
+                )
         except (ValueError, TypeError):
             pass
 
@@ -210,17 +216,23 @@ async def dev_login(data: UserLogin, request: Request):
         # Non-admin target: require a valid admin token in Authorization header
         auth_header = request.headers.get("authorization", "")
         if not auth_header.startswith("Bearer "):
-            raise HTTPException(status_code=403, detail="Admin authorization required for impersonation")
+            raise HTTPException(
+                status_code=403, detail="Admin authorization required for impersonation"
+            )
         try:
             token_str = auth_header.split(" ")[1]
             payload = decode_token(token_str)
             caller = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
             if not caller or caller.get("role") != "admin":
-                raise HTTPException(status_code=403, detail="Only admins can impersonate users")
+                raise HTTPException(
+                    status_code=403, detail="Only admins can impersonate users"
+                )
         except HTTPException:
             raise
         except Exception:
-            raise HTTPException(status_code=403, detail="Invalid admin token for impersonation")
+            raise HTTPException(
+                status_code=403, detail="Invalid admin token for impersonation"
+            )
 
     token = create_token(user["id"], user["email"], user["role"])
     return TokenResponse(
@@ -248,7 +260,9 @@ async def dev_switch(data: DevSwitchRequest, request: Request):
         payload = decode_token(token_str)
         caller = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
         if not caller or caller.get("role") != "admin":
-            raise HTTPException(status_code=403, detail="Only admins can use dev-switch")
+            raise HTTPException(
+                status_code=403, detail="Only admins can use dev-switch"
+            )
     except HTTPException:
         raise
     except Exception:
@@ -266,12 +280,17 @@ async def dev_switch(data: DevSwitchRequest, request: Request):
         stored_password = config.get("beneficiary_password")
 
     if not stored_password:
-        raise HTTPException(status_code=400, detail="Email not configured in dev switcher")
+        raise HTTPException(
+            status_code=400, detail="Email not configured in dev switcher"
+        )
 
     # Verify the stored password against the user
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
     if not user or not verify_password(stored_password, user["password"]):
-        raise HTTPException(status_code=401, detail="Stored password is incorrect. Update it in Admin → Dev Switcher.")
+        raise HTTPException(
+            status_code=401,
+            detail="Stored password is incorrect. Update it in Admin → Dev Switcher.",
+        )
 
     token = create_token(user["id"], user["email"], user["role"])
     return TokenResponse(

@@ -218,21 +218,33 @@ BENEFICIARY_PLANS = [
         "name": "Base Beneficiary",
         "price": 4.99,
         "note": "Flat rate",
-        "features": ["Immediate Action Checklist", "Basic vault access", "Milestone Messages"],
+        "features": [
+            "Immediate Action Checklist",
+            "Basic vault access",
+            "Milestone Messages",
+        ],
     },
     {
         "id": "ben_standard",
         "name": "Standard Beneficiary",
         "price": 3.99,
         "note": "Flat rate",
-        "features": ["Everything in Base", "Expanded vault access", "Estate Guardian analysis"],
+        "features": [
+            "Everything in Base",
+            "Expanded vault access",
+            "Estate Guardian analysis",
+        ],
     },
     {
         "id": "ben_premium",
         "name": "Premium Beneficiary",
         "price": 2.99,
         "note": "Flat rate",
-        "features": ["Everything in Standard", "Priority human support", "Future: Will/Trust Wizard & Eternal Echo"],
+        "features": [
+            "Everything in Standard",
+            "Priority human support",
+            "Future: Will/Trust Wizard & Eternal Echo",
+        ],
     },
     {
         "id": "ben_hospice",
@@ -271,7 +283,11 @@ async def get_subscription_settings():
     """Get platform-wide subscription settings"""
     settings = await db.subscription_settings.find_one({"_id": "global"}, {"_id": 0})
     if not settings:
-        settings = {"beta_mode": True, "plans": DEFAULT_PLANS, "family_plan_enabled": True}
+        settings = {
+            "beta_mode": True,
+            "plans": DEFAULT_PLANS,
+            "family_plan_enabled": True,
+        }
         await db.subscription_settings.update_one(
             {"_id": "global"}, {"$set": settings}, upsert=True
         )
@@ -338,9 +354,11 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
     )
 
     # Calculate trial status
-    trial = calculate_trial_status(user_doc) if user_doc else {
-        "trial_active": False, "trial_expired": False, "days_remaining": 0
-    }
+    trial = (
+        calculate_trial_status(user_doc)
+        if user_doc
+        else {"trial_active": False, "trial_expired": False, "days_remaining": 0}
+    )
 
     # Check verification status
     verification = await db.tier_verifications.find_one(
@@ -352,14 +370,18 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
     has_active_sub = sub and sub.get("status") == "active"
 
     # User has access if: beta mode OR free override OR active subscription OR trial active
-    has_access = is_beta or has_free_access or has_active_sub or trial.get("trial_active", False)
+    has_access = (
+        is_beta or has_free_access or has_active_sub or trial.get("trial_active", False)
+    )
 
     # Determine eligible special tiers based on DOB
     eligible_tiers = []
     if user_doc and user_doc.get("date_of_birth"):
         try:
             dob = datetime.fromisoformat(user_doc["date_of_birth"])
-            age = (datetime.now(timezone.utc) - dob.replace(tzinfo=timezone.utc)).days // 365
+            age = (
+                datetime.now(timezone.utc) - dob.replace(tzinfo=timezone.utc)
+            ).days // 365
             if 18 <= age <= 25:
                 eligible_tiers.append("new_adult")
         except (ValueError, TypeError):
@@ -375,8 +397,12 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
         "needs_subscription": not has_access,
         "verification": {
             "status": verification.get("status", "none") if verification else "none",
-            "tier_requested": verification.get("tier_requested") if verification else None,
-        } if verification else None,
+            "tier_requested": verification.get("tier_requested")
+            if verification
+            else None,
+        }
+        if verification
+        else None,
         "eligible_tiers": eligible_tiers,
         "user_role": current_user.get("role", "benefactor"),
     }
@@ -445,10 +471,16 @@ async def create_subscription_checkout(
     origin = data.origin_url.rstrip("/")
     success_url = f"{origin}/settings?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{origin}/settings"
-    
+
     # Use backend's own URL for webhook, not frontend origin
-    backend_url = os.environ.get("RAILWAY_PUBLIC_URL", os.environ.get("BACKEND_URL", ""))
-    webhook_url = f"{backend_url}/api/webhook/stripe" if backend_url else f"{origin}/api/webhook/stripe"
+    backend_url = os.environ.get(
+        "RAILWAY_PUBLIC_URL", os.environ.get("BACKEND_URL", "")
+    )
+    webhook_url = (
+        f"{backend_url}/api/webhook/stripe"
+        if backend_url
+        else f"{origin}/api/webhook/stripe"
+    )
 
     stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
 
@@ -590,13 +622,16 @@ async def stripe_webhook(request: Any):
 
 # --- User Subscription Management ---
 
+
 class ChangeSubscriptionRequest(BaseModel):
     plan_id: str
     billing_cycle: str = "monthly"
     origin_url: str = ""
 
+
 class ChangeBillingRequest(BaseModel):
     billing_cycle: str  # monthly, quarterly, annual
+
 
 @router.post("/subscriptions/change-plan")
 async def change_subscription_plan(
@@ -604,7 +639,9 @@ async def change_subscription_plan(
     current_user: dict = Depends(get_current_user),
 ):
     """Upgrade or downgrade subscription plan"""
-    sub = await db.user_subscriptions.find_one({"user_id": current_user["id"]}, {"_id": 0})
+    sub = await db.user_subscriptions.find_one(
+        {"user_id": current_user["id"]}, {"_id": 0}
+    )
     if not sub or sub.get("status") != "active":
         raise HTTPException(status_code=400, detail="No active subscription to modify")
 
@@ -622,7 +659,9 @@ async def change_subscription_plan(
         amount = new_plan["price"]
 
     # Apply discount
-    override = await db.subscription_overrides.find_one({"user_id": current_user["id"]}, {"_id": 0})
+    override = await db.subscription_overrides.find_one(
+        {"user_id": current_user["id"]}, {"_id": 0}
+    )
     discount = override.get("custom_discount", 0) if override else 0
     if discount > 0:
         amount = amount * (1 - discount / 100)
@@ -639,14 +678,16 @@ async def change_subscription_plan(
         now = datetime.now(timezone.utc)
         await db.user_subscriptions.update_one(
             {"user_id": current_user["id"]},
-            {"$set": {
-                "plan_id": data.plan_id,
-                "plan_name": new_plan["name"],
-                "billing_cycle": cycle,
-                "amount": 0.0,
-                "free_plan": True,
-                "updated_at": now.isoformat(),
-            }}
+            {
+                "$set": {
+                    "plan_id": data.plan_id,
+                    "plan_name": new_plan["name"],
+                    "billing_cycle": cycle,
+                    "amount": 0.0,
+                    "free_plan": True,
+                    "updated_at": now.isoformat(),
+                }
+            },
         )
         return {"success": True, "message": f"Switched to {new_plan['name']} plan"}
 
@@ -658,8 +699,14 @@ async def change_subscription_plan(
     origin = data.origin_url.rstrip("/") if data.origin_url else ""
     success_url = f"{origin}/settings?session_id={{CHECKOUT_SESSION_ID}}&change=true"
     cancel_url = f"{origin}/settings"
-    backend_url = os.environ.get("RAILWAY_PUBLIC_URL", os.environ.get("BACKEND_URL", ""))
-    webhook_url = f"{backend_url}/api/webhook/stripe" if backend_url else f"{origin}/api/webhook/stripe"
+    backend_url = os.environ.get(
+        "RAILWAY_PUBLIC_URL", os.environ.get("BACKEND_URL", "")
+    )
+    webhook_url = (
+        f"{backend_url}/api/webhook/stripe"
+        if backend_url
+        else f"{origin}/api/webhook/stripe"
+    )
 
     stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
     checkout_request = CheckoutSessionRequest(
@@ -679,20 +726,22 @@ async def change_subscription_plan(
     )
     session = await stripe_checkout.create_checkout_session(checkout_request)
 
-    await db.payment_transactions.insert_one({
-        "session_id": session.session_id,
-        "user_id": current_user["id"],
-        "user_email": current_user["email"],
-        "plan_id": data.plan_id,
-        "plan_name": new_plan["name"],
-        "billing_cycle": cycle,
-        "amount": amount,
-        "currency": "usd",
-        "type": "plan_change",
-        "previous_plan": sub.get("plan_id", ""),
-        "payment_status": "pending",
-        "created_at": datetime.now(timezone.utc).isoformat(),
-    })
+    await db.payment_transactions.insert_one(
+        {
+            "session_id": session.session_id,
+            "user_id": current_user["id"],
+            "user_email": current_user["email"],
+            "plan_id": data.plan_id,
+            "plan_name": new_plan["name"],
+            "billing_cycle": cycle,
+            "amount": amount,
+            "currency": "usd",
+            "type": "plan_change",
+            "previous_plan": sub.get("plan_id", ""),
+            "payment_status": "pending",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
 
     return {"url": session.url, "session_id": session.session_id}
 
@@ -703,7 +752,9 @@ async def change_billing_cycle(
     current_user: dict = Depends(get_current_user),
 ):
     """Change billing cycle for current subscription"""
-    sub = await db.user_subscriptions.find_one({"user_id": current_user["id"]}, {"_id": 0})
+    sub = await db.user_subscriptions.find_one(
+        {"user_id": current_user["id"]}, {"_id": 0}
+    )
     if not sub or sub.get("status") != "active":
         raise HTTPException(status_code=400, detail="No active subscription")
 
@@ -718,32 +769,45 @@ async def change_billing_cycle(
 
     await db.user_subscriptions.update_one(
         {"user_id": current_user["id"]},
-        {"$set": {
-            "billing_cycle": cycle,
-            "current_period_end": period_end.isoformat(),
-            "updated_at": now.isoformat(),
-        }}
+        {
+            "$set": {
+                "billing_cycle": cycle,
+                "current_period_end": period_end.isoformat(),
+                "updated_at": now.isoformat(),
+            }
+        },
     )
-    return {"success": True, "message": f"Billing changed to {cycle}", "new_period_end": period_end.isoformat()}
+    return {
+        "success": True,
+        "message": f"Billing changed to {cycle}",
+        "new_period_end": period_end.isoformat(),
+    }
 
 
 @router.post("/subscriptions/cancel")
 async def cancel_subscription(current_user: dict = Depends(get_current_user)):
     """Cancel current subscription"""
-    sub = await db.user_subscriptions.find_one({"user_id": current_user["id"]}, {"_id": 0})
+    sub = await db.user_subscriptions.find_one(
+        {"user_id": current_user["id"]}, {"_id": 0}
+    )
     if not sub or sub.get("status") != "active":
         raise HTTPException(status_code=400, detail="No active subscription")
 
     now = datetime.now(timezone.utc)
     await db.user_subscriptions.update_one(
         {"user_id": current_user["id"]},
-        {"$set": {
-            "status": "cancelled",
-            "cancelled_at": now.isoformat(),
-            "updated_at": now.isoformat(),
-        }}
+        {
+            "$set": {
+                "status": "cancelled",
+                "cancelled_at": now.isoformat(),
+                "updated_at": now.isoformat(),
+            }
+        },
     )
-    return {"success": True, "message": "Subscription cancelled. Access continues until end of current period."}
+    return {
+        "success": True,
+        "message": "Subscription cancelled. Access continues until end of current period.",
+    }
 
 
 # --- Admin Subscription Management ---
@@ -906,16 +970,21 @@ async def upload_verification_document(
     """Upload a verification document for a special tier (Military/Hospice)"""
     valid_tiers = ["military", "hospice"]
     if tier_requested not in valid_tiers:
-        raise HTTPException(status_code=400, detail=f"Invalid tier. Must be one of: {valid_tiers}")
+        raise HTTPException(
+            status_code=400, detail=f"Invalid tier. Must be one of: {valid_tiers}"
+        )
 
     # Check for existing pending verification
     existing = await db.tier_verifications.find_one(
         {"user_id": current_user["id"], "status": "pending"}, {"_id": 0}
     )
     if existing:
-        raise HTTPException(status_code=400, detail="You already have a pending verification request")
+        raise HTTPException(
+            status_code=400, detail="You already have a pending verification request"
+        )
 
     import uuid
+
     verification = {
         "id": str(uuid.uuid4()),
         "user_id": current_user["id"],
@@ -961,9 +1030,11 @@ async def get_all_verifications(current_user: dict = Depends(get_current_user)):
     if current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
 
-    verifications = await db.tier_verifications.find(
-        {}, {"_id": 0, "file_data": 0}
-    ).sort("submitted_at", -1).to_list(200)
+    verifications = (
+        await db.tier_verifications.find({}, {"_id": 0, "file_data": 0})
+        .sort("submitted_at", -1)
+        .to_list(200)
+    )
 
     return verifications
 
@@ -1000,7 +1071,9 @@ async def review_verification(
         raise HTTPException(status_code=403, detail="Admin access required")
 
     if data.action not in ["approve", "deny"]:
-        raise HTTPException(status_code=400, detail="Action must be 'approve' or 'deny'")
+        raise HTTPException(
+            status_code=400, detail="Action must be 'approve' or 'deny'"
+        )
 
     verification = await db.tier_verifications.find_one(
         {"id": verification_id}, {"_id": 0}
@@ -1053,17 +1126,23 @@ async def get_subscription_stats(current_user: dict = Depends(get_current_user))
 
     total_users = await db.users.count_documents({})
     non_admin_users = await db.users.count_documents({"role": {"$ne": "admin"}})
-    active_trials = await db.users.count_documents({
-        "trial_ends_at": {"$gt": now_iso}
-    })
-    expired_trials = await db.users.count_documents({
-        "trial_ends_at": {"$lte": now_iso},
-        "role": {"$ne": "admin"},
-    })
+    active_trials = await db.users.count_documents({"trial_ends_at": {"$gt": now_iso}})
+    expired_trials = await db.users.count_documents(
+        {
+            "trial_ends_at": {"$lte": now_iso},
+            "role": {"$ne": "admin"},
+        }
+    )
     active_subs = await db.user_subscriptions.count_documents({"status": "active"})
-    cancelled_subs = await db.user_subscriptions.count_documents({"status": "cancelled"})
-    pending_verifications = await db.tier_verifications.count_documents({"status": "pending"})
-    free_overrides = await db.subscription_overrides.count_documents({"free_access": True})
+    cancelled_subs = await db.user_subscriptions.count_documents(
+        {"status": "cancelled"}
+    )
+    pending_verifications = await db.tier_verifications.count_documents(
+        {"status": "pending"}
+    )
+    free_overrides = await db.subscription_overrides.count_documents(
+        {"free_access": True}
+    )
 
     # --- MRR ---
     mrr = 0.0
@@ -1100,26 +1179,32 @@ async def get_subscription_stats(current_user: dict = Depends(get_current_user))
     tier_distribution = []
     for plan in DEFAULT_PLANS:
         count = tier_counts.get(plan["id"], 0)
-        tier_distribution.append({
-            "tier": plan["name"],
-            "id": plan["id"],
-            "count": count,
-            "price": plan["price"],
-        })
+        tier_distribution.append(
+            {
+                "tier": plan["name"],
+                "id": plan["id"],
+                "count": count,
+                "price": plan["price"],
+            }
+        )
 
     # --- Signup trend (last 30 days) ---
     signup_trend = []
     for i in range(30):
         day = now - timedelta(days=29 - i)
         day_start = day.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
-        day_end = day.replace(hour=23, minute=59, second=59, microsecond=999999).isoformat()
-        count = await db.users.count_documents({
-            "created_at": {"$gte": day_start, "$lte": day_end}
-        })
-        signup_trend.append({
-            "date": day.strftime("%m/%d"),
-            "signups": count,
-        })
+        day_end = day.replace(
+            hour=23, minute=59, second=59, microsecond=999999
+        ).isoformat()
+        count = await db.users.count_documents(
+            {"created_at": {"$gte": day_start, "$lte": day_end}}
+        )
+        signup_trend.append(
+            {
+                "date": day.strftime("%m/%d"),
+                "signups": count,
+            }
+        )
 
     # --- Trial status breakdown ---
     trial_breakdown = {
@@ -1133,12 +1218,14 @@ async def get_subscription_stats(current_user: dict = Depends(get_current_user))
     revenue_by_tier = []
     for plan in DEFAULT_PLANS:
         count = tier_counts.get(plan["id"], 0)
-        revenue_by_tier.append({
-            "tier": plan["name"],
-            "id": plan["id"],
-            "revenue": round(count * plan["price"], 2),
-            "subscribers": count,
-        })
+        revenue_by_tier.append(
+            {
+                "tier": plan["name"],
+                "id": plan["id"],
+                "revenue": round(count * plan["price"], 2),
+                "subscribers": count,
+            }
+        )
 
     return {
         "total_users": total_users,
@@ -1167,5 +1254,6 @@ async def trigger_trial_reminders(current_user: dict = Depends(get_current_user)
         raise HTTPException(status_code=403, detail="Admin access required")
 
     from routes.trial_reminders import send_trial_reminders
+
     count = await send_trial_reminders()
     return {"success": True, "reminders_sent": count}
