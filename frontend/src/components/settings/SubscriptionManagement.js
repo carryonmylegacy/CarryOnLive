@@ -114,6 +114,7 @@ export const SubscriptionManagement = ({
   const currentPlanId = currentSub?.plan_id;
   const currentBilling = currentSub?.billing_cycle || 'monthly';
   const isBeta = subscriptionStatus?.beta_mode;
+  const lockedTier = subscriptionStatus?.beneficiary_locked_tier;
 
   useEffect(() => {
     const fetchPlans = async () => {
@@ -134,7 +135,17 @@ export const SubscriptionManagement = ({
     if (currentBilling) setBilling(currentBilling);
   }, [currentBilling]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const displayPlans = isBeneficiary ? beneficiaryPlans : plans;
+  // For beneficiaries: show only their locked-in tier (determined by benefactor's majority plan)
+  // If no locked tier yet, show all beneficiary plans
+  const displayPlans = isBeneficiary
+    ? (lockedTier
+        ? beneficiaryPlans.filter(p => p.id === lockedTier)
+        : beneficiaryPlans)
+    : plans;
+
+  // Check if beneficiary's locked plan allows billing toggle (military does not)
+  const lockedPlan = lockedTier ? beneficiaryPlans.find(p => p.id === lockedTier) : null;
+  const showBillingToggle = !isBeneficiary || !lockedPlan || lockedPlan.allows_billing_toggle !== false;
 
   const requiresVerification = (planId) => ['military', 'hospice'].includes(planId);
 
