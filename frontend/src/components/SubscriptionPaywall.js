@@ -451,23 +451,29 @@ export default function SubscriptionPaywall({ onDismiss }) {
                   )}
 
                   {/* CTA Button */}
-                  <Button
-                    onClick={(e) => { e.stopPropagation(); handleCheckout(plan); }}
-                    disabled={checkoutLoading}
-                    className={`w-full text-sm font-bold py-5 transition-all duration-300 ${
-                      isPremium
-                        ? 'gold-button shadow-[0_4px_20px_rgba(212,175,55,0.3)]'
-                        : isSelected
-                          ? 'gold-button'
-                          : 'bg-transparent border-2 hover:bg-white/[0.04]'
-                    }`}
-                    style={!isPremium && !isSelected ? { borderColor: `${colors.accent}40`, color: colors.accent } : {}}
-                    data-testid={`paywall-select-${plan.id}`}
-                  >
-                    {checkoutLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                    {plan.requires_verification && plan.id !== 'new_adult' ? 'Verify & Subscribe' : 'Subscribe'}
-                    <ChevronRight className="w-4 h-4 ml-1" />
-                  </Button>
+                  {!eligible ? (
+                    <div className="w-full text-center text-xs font-medium py-3 rounded-xl text-[#525C72]" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      Ages 18–25 only
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={(e) => { e.stopPropagation(); handleCheckout(plan); }}
+                      disabled={checkoutLoading}
+                      className={`w-full text-sm font-bold py-5 transition-all duration-300 ${
+                        isPremium
+                          ? 'gold-button shadow-[0_4px_20px_rgba(212,175,55,0.3)]'
+                          : isSelected
+                            ? 'gold-button'
+                            : 'bg-transparent border-2 hover:bg-white/[0.04]'
+                      }`}
+                      style={!isPremium && !isSelected ? { borderColor: `${colors.accent}40`, color: colors.accent } : {}}
+                      data-testid={`paywall-select-${plan.id}`}
+                    >
+                      {checkoutLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                      {plan.requires_verification && plan.id !== 'new_adult' ? 'Verify & Subscribe' : 'Subscribe'}
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  )}
                 </div>
               </div>
             );
