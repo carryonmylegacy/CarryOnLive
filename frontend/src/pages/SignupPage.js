@@ -282,7 +282,7 @@ const SignupPage = () => {
                 </div>
 
                 {/* Step Content */}
-                <div className="px-7 pb-7 overflow-hidden" style={{ minHeight: 340 }}>
+                <div className="px-5 sm:px-7 pb-5 sm:pb-7 overflow-hidden" style={{ minHeight: 300 }}>
                   <div style={slideStyle}>
                     {/* STEP 0: Name */}
                     {step === 0 && (
