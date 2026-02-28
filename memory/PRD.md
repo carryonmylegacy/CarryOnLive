@@ -94,7 +94,7 @@ CarryOn™ is an AI-powered estate planning platform that helps users ("benefact
 │   │   ├── pages/
 │   │   │   ├── GuardianPage.js     # Landing + chat view with session management
 │   │   │   ├── SettingsPage.js     # Refactored with extracted components
-│   │   │   ├── AdminPage.js        # Admin dashboard (needs refactoring)
+│   │   │   ├── AdminPage.js        # Admin dashboard (REFACTORED: 142-line shell)
 │   │   │   ├── DashboardPage.js    # Main dashboard
 │   │   │   ├── VaultPage.js        # Document vault
 │   │   │   └── ...                 # Other pages
@@ -143,9 +143,16 @@ CarryOn™ is an AI-powered estate planning platform that helps users ("benefact
 - **Admin**: founder@carryon.us / CarryOntheWisdom!
 - **Local Admin**: admin@carryon.com / admin123
 
+## AdminPage.js Refactoring (Completed Feb 28, 2026)
+- Reduced from 1588 lines → 142 lines (main shell)
+- Extracted 9 tab components into `/frontend/src/components/admin/`:
+  - UsersTab.js (109 lines), TransitionTab.js (156 lines), DTSTab.js (185 lines)
+  - SupportTab.js (189 lines), SubscriptionsTab.js (253 lines), VerificationsTab.js (151 lines)
+  - AnalyticsTab.js (249 lines), ActivityTab.js (80 lines), DevSwitcherTab.js (207 lines)
+- All 9 tabs verified working with 100% pass rate
+
 ## Upcoming Tasks (Prioritized)
 - P1: Re-enable OTP email via Resend (domain verification)
-- P1: AdminPage.js refactoring (1588 lines → extract tab components)
 - P2: Animated logo (waiting on user asset)
 - P2: Codemagic build verification
 - P3: Mobile app deploy via Codemagic
