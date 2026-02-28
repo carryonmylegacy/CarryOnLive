@@ -962,7 +962,7 @@ const TrusteePage = () => {
             <Shield className="w-5 h-5 text-[#B794F6]" />
           </div>
           <div>
-            <h1 className="text-xl lg:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Designated Trustee Services</h1>
+            <h1 className="text-xl lg:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Designated Trustee Services (DTS)</h1>
             <p className="text-xs text-[var(--t5)]">Confidential tasks executed by CarryOn™ after transition</p>
           </div>
         </div>
@@ -995,7 +995,7 @@ const TrusteePage = () => {
           <AlertTriangle className="w-4 h-4 text-[var(--rd2)]" />
           <span className="text-sm font-bold text-[var(--rd2)]">Trustee Services Legal Disclaimers</span>
         </div>
-        <p className="text-sm text-[var(--t3)] leading-relaxed mb-3">By submitting a Designated Trustee Services request, you acknowledge and agree to the following:</p>
+        <p className="text-sm text-[var(--t3)] leading-relaxed mb-3">By submitting a DTS request, you acknowledge and agree to the following:</p>
         <div className="space-y-2">
           {[
             'Approved DTS task fees are charged in full upon transition, regardless of whether the task can be successfully executed. Fees are non-refundable.',
