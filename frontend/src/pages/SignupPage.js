@@ -152,12 +152,28 @@ const SignupPage = () => {
     }
   };
 
-  const slideStyle = {
-    transform: animating
-      ? `translateX(${direction === 'right' ? '-40px' : '40px'})`
-      : 'translateX(0)',
-    opacity: animating ? 0 : 1,
-    transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease',
+  // Two-phase slide: exit (current slides out) → enter (new slides in)
+  const getSlideStyle = () => {
+    const goingForward = direction === 'right';
+    if (slidePhase === 'exit') {
+      return {
+        transform: `translateX(${goingForward ? '-100px' : '100px'})`,
+        opacity: 0,
+        transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.2s ease',
+      };
+    }
+    if (slidePhase === 'enter') {
+      return {
+        transform: `translateX(${goingForward ? '60px' : '-60px'})`,
+        opacity: 0,
+        transition: 'none',
+      };
+    }
+    return {
+      transform: 'translateX(0)',
+      opacity: 1,
+      transition: 'transform 0.35s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease',
+    };
   };
 
   return (
