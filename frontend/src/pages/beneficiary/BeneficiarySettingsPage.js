@@ -161,7 +161,7 @@ const BeneficiarySettingsPage = () => {
       <div className="text-center py-3">
         <div className="flex items-center justify-center gap-2 text-[var(--t5)] text-xs mb-1">
           <Shield className="w-3 h-3" />
-          <span>AES-256 Encrypted · Zero-Knowledge · SOC 2</span>
+          <span>AES-256 Encrypted · Zero-Knowledge · SOC 2 Compliance Pending</span>
         </div>
         <p className="text-[var(--t5)] text-[10px]">CarryOn™ v1.0.0 · © 2024 CarryOn Inc.</p>
       </div>

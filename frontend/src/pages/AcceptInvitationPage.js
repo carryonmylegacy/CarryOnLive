@@ -312,7 +312,7 @@ const AcceptInvitationPage = () => {
               <div className="flex items-center gap-2 justify-center">
                 <Shield className="w-3 h-3 text-[#10b981]" />
                 <p className="text-[10px] text-[#64748b]">
-                  AES-256 encrypted | Zero-knowledge | SOC 2 compliant
+                  AES-256 encrypted | Zero-knowledge | SOC 2 Compliance Pending
                 </p>
               </div>
             </div>
