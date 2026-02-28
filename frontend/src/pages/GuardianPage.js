@@ -147,6 +147,7 @@ const GuardianPage = () => {
   const [showQuestions, setShowQuestions] = useState(false);
   const [showActions, setShowActions] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [checklistExporting, setChecklistExporting] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const landingInputRef = useRef(null);
