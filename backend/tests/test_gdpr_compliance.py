@@ -30,8 +30,8 @@ class TestGDPRCompliance:
         })
         assert response.status_code == 200, f"Login failed: {response.text}"
         data = response.json()
-        self.token = data.get("token")
-        assert self.token, "No token returned from login"
+        self.token = data.get("access_token") or data.get("token")
+        assert self.token, f"No token returned from login. Response: {data}"
         self.headers = {"Authorization": f"Bearer {self.token}"}
         print(f"✓ Logged in as {ADMIN_EMAIL}")
     
