@@ -292,8 +292,8 @@ const LoginPage = () => {
               {[
                 {
                   icon: Sparkles, title: 'Estate Guardian\u2122 AI',
-                  bold: 'An air-gapped AI analyst that lives inside your Secure Document Vault \u2014 with zero internet access.',
-                  desc: 'Estate Guardian is a fully air-gapped AI powered by U.S. estate law across all 50 states and territories. It lives inside your Secure Document Vault \u2014 encrypted with AES-256 zero-knowledge encryption. Its only input is your documents. Its only output is briefing you on what it finds \u2014 contradictions, gaps, outdated provisions, and missing pieces in your estate plan. It also auto-populates your Immediate Action Checklist with critical details like claim phone numbers, executor contacts, and filing deadlines. No internet. No data leaves the vault. Ever.',
+                  bold: 'An AI analyst powered by U.S. estate law across all 50 states \u2014 working inside your encrypted vault.',
+                  desc: 'Estate Guardian analyzes your estate documents for contradictions, gaps, outdated provisions, and missing pieces. Your documents are encrypted with AES-256 zero-knowledge encryption at rest. The AI reviews your documents within the platform and auto-populates your Immediate Action Checklist with critical details like claim phone numbers, executor contacts, and filing deadlines. No team reads them. No human touches them.',
                 },
                 {
                   icon: ClipboardCheck, title: 'Immediate Action Checklist',
@@ -303,7 +303,7 @@ const LoginPage = () => {
                 {
                   icon: MessageSquare, title: 'Milestone Messages',
                   bold: 'Your voice at their wedding. Your words at their graduation. Your love \u2014 delivered exactly when it matters.',
-                  desc: 'Record written, voice, or video messages for the milestones you want to be part of \u2014 even if you can\'t be there. Weddings, births, graduations, birthdays, first homes, or any moment you choose. Messages are securely stored and automatically delivered when your beneficiary reports the milestone. No team reads them. No human touches them. Just your words, arriving exactly when and where you intended.',
+                  desc: 'Record written messages for the milestones you want to be part of \u2014 even if you can\'t be there. Weddings, births, graduations, birthdays, first homes, or any moment you choose. Messages are securely stored and delivered when your beneficiary reports the milestone. No team reads them. No human touches them. Just your words, arriving exactly when and where you intended.',
                 },
                 {
                   icon: UserCheck, title: 'Designated Trustee Services',
