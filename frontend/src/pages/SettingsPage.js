@@ -47,8 +47,6 @@ const TIER_COLORS = {
   hospice: { accent: '#ec4899', glow: 'rgba(236,72,153,0.35)', bg: 'linear-gradient(135deg, rgba(236,72,153,0.12) 0%, rgba(20,28,51,0.95) 100%)' },
 };
 
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
-
 const SettingsPage = () => {
   const { user, logout, subscriptionStatus, refreshSubscription } = useAuth();
   const { theme, toggleTheme } = useTheme();
