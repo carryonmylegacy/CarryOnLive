@@ -510,7 +510,14 @@ const LoginPage = () => {
               style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify & Sign In'}
             </Button>
-            <button onClick={() => setShowOtpModal(false)} className="w-full mt-3 text-[#6b7a90] text-sm hover:text-white transition-colors">Cancel</button>
+            <div className="flex items-center justify-between mt-3">
+              <button onClick={() => setShowOtpModal(false)} className="text-[#6b7a90] text-sm hover:text-white transition-colors" data-testid="otp-cancel-button">Cancel</button>
+              <button onClick={handleResendOtp} disabled={resendCooldown > 0}
+                className={`text-sm transition-colors ${resendCooldown > 0 ? 'text-[#3a4a63] cursor-not-allowed' : 'text-[#d4af37] hover:text-[#e8c54a]'}`}
+                data-testid="otp-resend-button">
+                {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
+              </button>
+            </div>
           </div>
         </div>
       )}
