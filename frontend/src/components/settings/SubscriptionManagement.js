@@ -351,8 +351,18 @@ export const SubscriptionManagement = ({
           </div>
         )}
 
-        {/* Billing Toggle */}
-        <BeneficiaryBillingToggle billing={billing} onChange={setBilling} />
+        {/* Billing Toggle — hidden for military beneficiaries (flat rate) */}
+        {showBillingToggle && <BeneficiaryBillingToggle billing={billing} onChange={setBilling} />}
+
+        {/* Locked tier info for beneficiaries */}
+        {isBeneficiary && lockedPlan && (
+          <div className="mb-5 p-4 rounded-xl" style={{ background: 'rgba(37,99,235,0.04)', border: '1px solid rgba(37,99,235,0.1)' }}>
+            <p className="text-xs text-[var(--t4)] leading-relaxed">
+              Your tier was set by your benefactor based on the plan they held for the majority of their subscription period.
+              {!lockedPlan.allows_billing_toggle && ' This plan has flat-rate pricing with no quarterly or annual discounts.'}
+            </p>
+          </div>
+        )}
 
         {/* Plan Cards */}
         <div className={`grid gap-4 ${displayPlans.length <= 3 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`} data-testid="plan-grid">
