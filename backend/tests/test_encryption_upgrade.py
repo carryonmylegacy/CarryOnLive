@@ -62,13 +62,14 @@ class TestDocumentUpload(TestAuthSetup):
     def test_upload_document_creates_encrypted_file(self, benefactor_token, test_estate_id):
         """POST /api/documents/upload - Encrypt with AES-256-GCM and store in cloud"""
         test_content = f"TEST_ENCRYPTED_DOCUMENT_{uuid.uuid4().hex[:8]}"
+        doc_name = f"TEST_aes256_doc_{uuid.uuid4().hex[:8]}.txt"
 
         resp = requests.post(
             f"{BASE_URL}/api/documents/upload",
             headers={"Authorization": f"Bearer {benefactor_token}"},
-            data={
+            params={
                 "estate_id": test_estate_id,
-                "name": f"TEST_aes256_doc_{uuid.uuid4().hex[:8]}.txt",
+                "name": doc_name,
                 "category": "other",
             },
             files={"file": ("test.txt", test_content.encode(), "text/plain")},
@@ -128,7 +129,7 @@ class TestDocumentDownload(TestAuthSetup):
         upload_resp = requests.post(
             f"{BASE_URL}/api/documents/upload",
             headers={"Authorization": f"Bearer {benefactor_token}"},
-            data={"estate_id": test_estate_id, "name": doc_name, "category": "other"},
+            params={"estate_id": test_estate_id, "name": doc_name, "category": "other"},
             files={"file": ("test.txt", test_content.encode(), "text/plain")},
         )
         assert upload_resp.status_code == 200, f"Upload failed: {upload_resp.text}"
@@ -158,7 +159,7 @@ class TestDocumentDownload(TestAuthSetup):
         upload_resp = requests.post(
             f"{BASE_URL}/api/documents/upload",
             headers={"Authorization": f"Bearer {benefactor_token}"},
-            data={"estate_id": test_estate_id, "name": doc_name, "category": "other"},
+            params={"estate_id": test_estate_id, "name": doc_name, "category": "other"},
             files={"file": ("test.txt", test_content.encode(), "text/plain")},
         )
         assert upload_resp.status_code == 200
@@ -192,7 +193,7 @@ class TestDocumentDelete(TestAuthSetup):
         upload_resp = requests.post(
             f"{BASE_URL}/api/documents/upload",
             headers={"Authorization": f"Bearer {benefactor_token}"},
-            data={"estate_id": test_estate_id, "name": doc_name, "category": "other"},
+            params={"estate_id": test_estate_id, "name": doc_name, "category": "other"},
             files={"file": ("delete_me.txt", b"DELETE_ME", "text/plain")},
         )
         assert upload_resp.status_code == 200
