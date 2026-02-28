@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="5" skipped="1" tests="10" time="2.792" timestamp="2026-02-28T18:22:41.795561+00:00" hostname="agent-env-1f47bf55-ca59-4071-930f-7279c1d605d2"><testcase classname="tests.test_section_lock_bugs.TestSectionLockBackend" name="test_security_settings_endpoint" time="0.475" /><testcase classname="tests.test_section_lock_bugs.TestSectionLockBackend" name="test_section_lock_status_for_all_sections" time="0.126" /><testcase classname="tests.test_section_lock_bugs.TestSectionLockBackend" name="test_sdv_lock_blocks_download_when_active" time="0.677" /><testcase classname="tests.test_section_lock_bugs.TestSectionLockBackend" name="test_create_sdv_lock_and_verify_download_blocked" time="0.114"><skipped type="pytest.skip" message="Could not create SDV lock for testing">/app/backend/tests/test_section_lock_bugs.py:153: Could not create SDV lock for testing</skipped></testcase><testcase classname="tests.test_section_lock_bugs.TestSectionLockVerification" name="test_verify_endpoint_exists" time="0.480" /><testcase classname="tests.test_section_lock_bugs.TestAPIEndpoints" name="test_estates_endpoint" time="0.446"><failure message="assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend/tests/test_section_lock_bugs.py:224: in test_estates_endpoint
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="tests.test_section_lock_bugs.TestAPIEndpoints" name="test_beneficiaries_endpoint" time="0.119"><failure message="KeyError: 0">backend/tests/test_section_lock_bugs.py:236: in test_beneficiaries_endpoint
+    estate_id = estates_response.json()[0]["id"]
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 0</failure></testcase><testcase classname="tests.test_section_lock_bugs.TestAPIEndpoints" name="test_messages_endpoint" time="0.098"><failure message="KeyError: 0">backend/tests/test_section_lock_bugs.py:252: in test_messages_endpoint
+    estate_id = estates_response.json()[0]["id"]
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 0</failure></testcase><testcase classname="tests.test_section_lock_bugs.TestAPIEndpoints" name="test_checklists_endpoint" time="0.098"><failure message="KeyError: 0">backend/tests/test_section_lock_bugs.py:268: in test_checklists_endpoint
+    estate_id = estates_response.json()[0]["id"]
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 0</failure></testcase><testcase classname="tests.test_section_lock_bugs.TestAPIEndpoints" name="test_documents_endpoint" time="0.102"><failure message="KeyError: 0">backend/tests/test_section_lock_bugs.py:284: in test_documents_endpoint
+    estate_id = estates_response.json()[0]["id"]
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 0</failure></testcase></testsuite></testsuites>
