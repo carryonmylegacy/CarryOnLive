@@ -50,7 +50,7 @@ const TIER_COLORS = {
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const SettingsPage = () => {
-  const { user, logout, subscriptionStatus } = useAuth();
+  const { user, logout, subscriptionStatus, refreshSubscription } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [activePlan, setActivePlan] = useState('Premium');
@@ -60,6 +60,13 @@ const SettingsPage = () => {
   const [digestSending, setDigestSending] = useState(false);
   const [plans, setPlans] = useState([]);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [changingPlan, setChangingPlan] = useState(false);
+  const [cancellingPlan, setCancellingPlan] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
+  const currentSub = subscriptionStatus?.subscription;
+  const currentPlanId = currentSub?.plan_id;
+  const currentBilling = currentSub?.billing_cycle || 'monthly';
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem('carryon_token');
@@ -74,7 +81,8 @@ const SettingsPage = () => {
       } catch (e) { /* fallback to empty */ }
     };
     fetchPlans();
-  }, []);
+    if (currentBilling) setBilling(currentBilling);
+  }, [currentBilling]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
