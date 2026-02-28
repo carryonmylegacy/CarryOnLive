@@ -481,17 +481,28 @@ const MessagesPage = () => {
                 variant={messageType === 'text' ? 'default' : 'outline'}
                 onClick={() => setMessageType('text')}
                 className={messageType === 'text' ? 'gold-button' : 'border-white/10 text-white'}
+                data-testid="msg-type-text"
               >
                 <MessageSquare className="w-4 h-4 mr-2" />
-                Text Message
+                Written
+              </Button>
+              <Button
+                variant={messageType === 'voice' ? 'default' : 'outline'}
+                onClick={() => setMessageType('voice')}
+                className={messageType === 'voice' ? 'gold-button' : 'border-white/10 text-white'}
+                data-testid="msg-type-voice"
+              >
+                <Mic className="w-4 h-4 mr-2" />
+                Voice
               </Button>
               <Button
                 variant={messageType === 'video' ? 'default' : 'outline'}
                 onClick={() => setMessageType('video')}
                 className={messageType === 'video' ? 'gold-button' : 'border-white/10 text-white'}
+                data-testid="msg-type-video"
               >
                 <Video className="w-4 h-4 mr-2" />
-                Video Message
+                Video
               </Button>
             </div>
             
