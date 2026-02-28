@@ -450,11 +450,12 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
     # Determine beneficiary locked tier from benefactor's majority plan
     beneficiary_locked_tier = None
     if current_user.get("role") == "beneficiary":
-        # Beneficiaries are in the `beneficiaries` collection with user_id + estate_id
+        benefactor_id = None
+
+        # Method 1: Check `beneficiaries` collection (user_id or email match)
         ben_link = await db.beneficiaries.find_one(
             {"user_id": current_user["id"]}, {"_id": 0, "estate_id": 1}
         )
-        # Also try matching by email if user_id isn't set yet
         if not ben_link:
             ben_link = await db.beneficiaries.find_one(
                 {"email": current_user.get("email")}, {"_id": 0, "estate_id": 1}
@@ -464,30 +465,37 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
                 {"id": ben_link["estate_id"]}, {"_id": 0, "owner_id": 1}
             )
             benefactor_id = estate.get("owner_id") if estate else None
-            if benefactor_id:
-                # Get benefactor's subscription to determine locked tier
-                ben_sub = await db.user_subscriptions.find_one(
-                    {"user_id": benefactor_id}, {"_id": 0}
+
+        # Method 2: Check estate.beneficiaries array (fallback)
+        if not benefactor_id:
+            estate = await db.estates.find_one(
+                {"beneficiaries": current_user["id"]}, {"_id": 0, "owner_id": 1}
+            )
+            if estate:
+                benefactor_id = estate.get("owner_id")
+
+        if benefactor_id:
+            ben_sub = await db.user_subscriptions.find_one(
+                {"user_id": benefactor_id}, {"_id": 0}
+            )
+            benefactor_user = await db.users.find_one(
+                {"id": benefactor_id}, {"_id": 0, "verified_tier": 1}
+            )
+            plan_map = {
+                "premium": "ben_premium",
+                "standard": "ben_standard",
+                "base": "ben_base",
+                "military": "ben_military",
+                "hospice": "ben_hospice",
+            }
+            if ben_sub and ben_sub.get("plan_id"):
+                beneficiary_locked_tier = plan_map.get(
+                    ben_sub["plan_id"], "ben_base"
                 )
-                benefactor_user = await db.users.find_one(
-                    {"id": benefactor_id}, {"_id": 0, "verified_tier": 1}
+            elif benefactor_user and benefactor_user.get("verified_tier"):
+                beneficiary_locked_tier = plan_map.get(
+                    benefactor_user["verified_tier"], "ben_base"
                 )
-                # Map benefactor plan to beneficiary plan
-                plan_map = {
-                    "premium": "ben_premium",
-                    "standard": "ben_standard",
-                    "base": "ben_base",
-                    "military": "ben_military",
-                    "hospice": "ben_hospice",
-                }
-                if ben_sub and ben_sub.get("plan_id"):
-                    beneficiary_locked_tier = plan_map.get(
-                        ben_sub["plan_id"], "ben_base"
-                    )
-                elif benefactor_user and benefactor_user.get("verified_tier"):
-                    beneficiary_locked_tier = plan_map.get(
-                        benefactor_user["verified_tier"], "ben_base"
-                    )
 
     return {
         "subscription": sub,
