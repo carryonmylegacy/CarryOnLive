@@ -102,7 +102,9 @@ async def get_current_user(
 
 
 def generate_otp() -> str:
-    return "".join([str(random.randint(0, 9)) for _ in range(6)])
+    """Generate a cryptographically secure 6-digit OTP."""
+    import secrets
+    return "".join([str(secrets.randbelow(10)) for _ in range(6)])
 
 
 # ===================== EMAIL =====================
