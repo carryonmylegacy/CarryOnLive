@@ -74,6 +74,15 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders }) => 
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-[var(--t)] text-sm truncate">{u.name || 'No name'}</div>
                 <div className="text-xs text-[var(--t4)] truncate">{u.email}</div>
+                {u.subscription?.plan_id && (
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded font-bold capitalize" style={{ background: 'rgba(212,175,55,0.1)', color: '#d4af37' }}>
+                      {u.subscription.plan_name || u.subscription.plan_id}
+                    </span>
+                    <span className="text-[10px] text-[var(--t5)] capitalize">{u.subscription.billing_cycle || 'monthly'}</span>
+                    {u.subscription.beta_plan && <span className="text-[10px] text-purple-400">(beta)</span>}
+                  </div>
+                )}
               </div>
               <div className="relative">
                 <select
