@@ -199,6 +199,21 @@ async def get_legacy_timeline(
                     "metadata": {"edited_by": edit.get("user_name", "")},
                 }
             )
+        elif item_type == "beneficiary":
+            changed = edit.get("changed_fields", [])
+            changed_str = ", ".join(changed[:3]) if changed else "details"
+            events.append(
+                {
+                    "type": "beneficiary_edited",
+                    "category": "family",
+                    "title": "Beneficiary Updated",
+                    "description": f'Updated {changed_str} for {edit.get("title", "beneficiary")}',
+                    "date": edit.get("created_at", ""),
+                    "icon": "users",
+                    "link": "/beneficiaries",
+                    "metadata": {"edited_by": edit.get("user_name", "")},
+                }
+            )
 
     # 7. Activity log entries (catch-all)
     activities = (
