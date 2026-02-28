@@ -40,7 +40,7 @@ class TestLoginEndpoint:
         else:
             # OTP required
             print(f"OTP flow triggered - response: {data}")
-            assert data.get("otp_required") == True
+            assert data.get("otp_required") is True
             assert "email_sent" in data
             assert "message" in data
     
@@ -200,7 +200,7 @@ class TestOTPWorkflow:
             print("Direct login - skipping OTP workflow test (trusted IP)")
             pytest.skip("OTP bypassed due to trusted IP")
         
-        assert login_data.get("otp_required") == True
+        assert login_data.get("otp_required") is True
         print(f"Step 1 - Login triggered OTP: {login_data}")
         
         # Wait a bit to avoid rate limiting
