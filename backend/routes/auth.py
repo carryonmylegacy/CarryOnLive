@@ -234,7 +234,7 @@ async def verify_otp(data: OTPVerifyWithTrust, request: Request):
         ) + timedelta(days=1)
         expires_utc = midnight_et.astimezone(timezone.utc)
 
-        client_ip = request.client.host if request.client else "unknown"
+        client_ip = get_client_ip(request)
         await db.otp_trust.update_one(
             {"user_id": user["id"], "ip_address": client_ip},
             {
