@@ -3,10 +3,12 @@
 import base64
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
 
 from config import db
 from models import DeathCertificate, MilestoneReport, MilestoneReportCreate
+from services.audit import audit_log
+from services.encryption import encrypt_aes256, decrypt_aes256, get_estate_salt
 from utils import get_current_user
 
 router = APIRouter()
@@ -20,22 +22,34 @@ async def upload_death_certificate(
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user),
 ):
-    """Upload a death certificate for verification."""
+    """Upload a death certificate for verification — encrypted with AES-256-GCM."""
     content = await file.read()
-    file_data = base64.b64encode(content).decode()
+
+    # Encrypt the death certificate with the estate's encryption key
+    estate_salt = await get_estate_salt(estate_id)
+    encrypted_data = encrypt_aes256(content, estate_salt)
 
     certificate = DeathCertificate(
         estate_id=estate_id,
         uploaded_by=current_user["id"],
-        file_data=file_data,
+        file_data=encrypted_data,
         file_name=file.filename or "death_certificate.pdf",
     )
     await db.death_certificates.insert_one(certificate.model_dump())
 
+    await audit_log(
+        action="transition.certificate_upload",
+        user_id=current_user["id"],
+        resource_type="death_certificate",
+        resource_id=certificate.id,
+        estate_id=estate_id,
+        details={"file_name": file.filename, "encrypted": True},
+    )
+
     return {
         "id": certificate.id,
         "status": "pending",
-        "message": "Death certificate uploaded for review",
+        "message": "Death certificate uploaded and encrypted for review",
     }
 
 
