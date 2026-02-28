@@ -633,7 +633,7 @@ const VaultPage = () => {
                           variant="ghost" 
                           size="sm" 
                           className="text-[#3b82f6] hover:text-[#60a5fa]"
-                          onClick={() => doc.is_locked ? (setSelectedDoc(doc), setShowLockModal(true)) : (isPreviewable(doc.file_type) ? handlePreview(doc) : handleDownload(doc))}
+                          onClick={() => doc.is_locked ? (setSelectedDoc(doc), setShowLockModal(true)) : handlePreview(doc)}
                           title="View"
                           aria-label="View document"
                           data-testid={`view-document-${doc.id}`}
