@@ -59,6 +59,7 @@ const OnboardingWizard = () => {
   if (loading || dismissed || !progress || progress.all_complete) return null;
 
   return (
+    <div style={{ minHeight: 0 }}>
     <Card className="border border-[#d4af37]/30 bg-gradient-to-r from-[#d4af37]/5 to-transparent mb-6" data-testid="onboarding-wizard">
       <CardContent className="p-5">
         <div className="flex items-center justify-between mb-4">
@@ -115,6 +116,7 @@ const OnboardingWizard = () => {
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 };
 
