@@ -190,18 +190,18 @@ export const SectionLockedOverlay = ({ sectionId, children }) => {
 
   if (!isLocked(sectionId)) return children;
 
+  // When locked, do NOT render children at all — content is completely hidden
   return (
-    <div className="relative" data-testid={`locked-overlay-${sectionId}`}>
-      <div className="filter blur-sm pointer-events-none select-none opacity-30">{children}</div>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="glass-card p-8 text-center max-w-sm">
-          <Lock className="w-12 h-12 mx-auto text-[var(--gold)] mb-4" />
-          <h3 className="text-lg font-bold text-[var(--t)] mb-2">{sec?.name} is Locked</h3>
-          <p className="text-sm text-[var(--t4)] mb-4">Verify your identity to access this content.</p>
-          <Button className="gold-button" onClick={() => requestUnlock(sectionId)}>
-            <KeyRound className="w-4 h-4 mr-2" /> Unlock Section
-          </Button>
+    <div className="flex items-center justify-center py-24" data-testid={`locked-overlay-${sectionId}`}>
+      <div className="glass-card p-10 text-center max-w-md">
+        <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.1)', border: '2px solid rgba(212,175,55,0.2)' }}>
+          <Lock className="w-10 h-10 text-[var(--gold)]" />
         </div>
+        <h3 className="text-xl font-bold text-[var(--t)] mb-2">{sec?.name} is Locked</h3>
+        <p className="text-sm text-[var(--t4)] mb-6">This section is protected. Verify your identity to view its contents.</p>
+        <Button className="gold-button px-8" onClick={() => requestUnlock(sectionId)} data-testid={`unlock-overlay-${sectionId}`}>
+          <KeyRound className="w-4 h-4 mr-2" /> Unlock Section
+        </Button>
       </div>
     </div>
   );
