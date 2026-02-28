@@ -1237,6 +1237,7 @@ const VaultPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+      </SectionLockedOverlay>
     </div>
   );
 };
