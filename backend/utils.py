@@ -75,12 +75,13 @@ def verify_password(password: str, hashed: str) -> bool:
 
 
 def create_token(user_id: str, email: str, role: str) -> str:
+    now = datetime.now(timezone.utc)
     payload = {
         "user_id": user_id,
         "email": email,
         "role": role,
-        "iat": datetime.now(timezone.utc).isoformat(),
-        "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS),
+        "issued_at": now.isoformat(),
+        "exp": now + timedelta(hours=JWT_EXPIRATION_HOURS),
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
