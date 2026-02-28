@@ -200,8 +200,10 @@ async def enroll_voiceprint_endpoint(
         with open(wav_path, "rb") as f:
             wav_bytes = f.read()
 
-        # Enhanced extraction
-        extraction = extract_voiceprint(wav_bytes)
+        # Enhanced extraction (run in thread pool to avoid blocking event loop)
+        import asyncio
+
+        extraction = await asyncio.to_thread(extract_voiceprint, wav_bytes)
         if extraction is None:
             raise HTTPException(
                 status_code=400,
