@@ -445,7 +445,10 @@ async def create_subscription_checkout(
     origin = data.origin_url.rstrip("/")
     success_url = f"{origin}/settings?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{origin}/settings"
-    webhook_url = f"{origin}/api/webhook/stripe"
+    
+    # Use backend's own URL for webhook, not frontend origin
+    backend_url = os.environ.get("RAILWAY_PUBLIC_URL", os.environ.get("BACKEND_URL", ""))
+    webhook_url = f"{backend_url}/api/webhook/stripe" if backend_url else f"{origin}/api/webhook/stripe"
 
     stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
 
