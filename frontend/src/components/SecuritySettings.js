@@ -198,10 +198,12 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
     navigator.mediaDevices.getUserMedia({ audio: true })
       .then(stream => {
         const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        mediaRecorderRef.current = mediaRecorder;
         const chunks = [];
         mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
         mediaRecorder.onstop = async () => {
           stream.getTracks().forEach(t => t.stop());
+          mediaRecorderRef.current = null;
           setRecording(false);
           setEnrolling(true);
           const blob = new Blob(chunks, { type: 'audio/webm' });
@@ -220,9 +222,14 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
           setEnrolling(false);
         };
         mediaRecorder.start();
-        setTimeout(() => mediaRecorder.stop(), 4000);
       })
       .catch(() => { toast.error('Microphone access denied'); setRecording(false); });
+  };
+
+  const handleVoiceStop = () => {
+    if (mediaRecorderRef.current && recording) {
+      mediaRecorderRef.current.stop();
+    }
   };
 
   return (
