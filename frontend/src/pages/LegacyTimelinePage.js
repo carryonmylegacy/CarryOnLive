@@ -116,7 +116,20 @@ const LegacyTimelinePage = () => {
   useEffect(() => {
     const fetchTimeline = async () => {
       try {
-        const estateId = localStorage.getItem('selected_estate_id');
+        let estateId = localStorage.getItem('selected_estate_id');
+        
+        // If no estate selected, fetch estates and pick the first one
+        if (!estateId) {
+          const estatesRes = await axios.get(`${API_URL}/estates`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const estates = estatesRes.data || [];
+          if (estates.length > 0) {
+            estateId = estates[0].id;
+            localStorage.setItem('selected_estate_id', estateId);
+          }
+        }
+        
         if (!estateId) { setLoading(false); return; }
         const res = await axios.get(`${API_URL}/timeline/${estateId}`, {
           headers: { Authorization: `Bearer ${token}` },
