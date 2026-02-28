@@ -114,6 +114,8 @@ async def lifespan(app):
         await db.deletion_requests.create_index("user_id")
         await db.security_incidents.create_index("created_at")
         await db.user_consent.create_index("user_id", unique=True)
+        await db.section_unlock_sessions.create_index("expires_at", expireAfterSeconds=0)
+        await db.section_unlock_sessions.create_index([("user_id", 1), ("section_id", 1)])
         logger.info("Database indexes created/verified")
     except Exception as e:
         logger.warning(f"Index creation warning (may already exist): {e}")
