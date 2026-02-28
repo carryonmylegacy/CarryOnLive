@@ -155,9 +155,15 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         # Only rate-limit auth endpoints
         path = request.url.path
-        rate_limited_paths = ["/api/auth/login", "/api/auth/register", "/api/auth/dev-login", "/api/auth/verify-otp"]
+        # Stricter limits for login/auth (10/min), moderate for other sensitive endpoints
+        strict_paths = ["/api/auth/login", "/api/auth/dev-login", "/api/auth/verify-otp"]
+        moderate_paths = ["/api/auth/register"]
 
-        if path in rate_limited_paths:
+        limit = None
+        if path in strict_paths:
+            limit = 10
+        elif path in moderate_paths:
+            limit = self.max_requests
             client_ip = request.client.host if request.client else "unknown"
             now = time.time()
 
