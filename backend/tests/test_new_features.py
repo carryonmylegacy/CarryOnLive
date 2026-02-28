@@ -89,7 +89,7 @@ class TestOnboardingWizard:
         # Founder should have estate created
         estate_step = next((s for s in data["steps"] if s["key"] == "create_estate"), None)
         assert estate_step is not None, "create_estate step should exist"
-        assert estate_step["completed"] == True, "Founder should have create_estate completed"
+        assert estate_step["completed"], "Founder should have create_estate completed"
         
         # According to test context, founder should have 2/5 complete (create_estate + add_beneficiary)
         assert data["completed_count"] >= 1, f"Expected at least 1 completed step, got {data['completed_count']}"
@@ -120,7 +120,7 @@ class TestOnboardingWizard:
         assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         
         data = response.json()
-        assert data.get("success") == True, "Response should indicate success"
+        assert data.get("success"), "Response should indicate success"
         assert data.get("step") == "review_readiness", "Response should echo the step key"
         print("✓ Complete step 'review_readiness' succeeded")
 
@@ -140,12 +140,12 @@ class TestOnboardingWizard:
         assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         
         data = response.json()
-        assert data.get("success") == True, "Response should indicate success"
+        assert data.get("success"), "Response should indicate success"
         
         # Verify dismissed state
         progress_response = requests.get(f"{BASE_URL}/api/onboarding/progress", headers=auth_headers)
         assert progress_response.status_code == 200
-        assert progress_response.json().get("dismissed") == True, "Dismissed should be True after dismiss"
+        assert progress_response.json().get("dismissed"), "Dismissed should be True after dismiss"
         print("✓ Onboarding wizard dismissed successfully")
 
 
@@ -235,7 +235,7 @@ class TestQuickStartTemplates:
         assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         
         data = response.json()
-        assert data.get("success") == True, "Response should indicate success"
+        assert data.get("success"), "Response should indicate success"
         assert "items_added" in data, "Response should contain 'items_added'"
         assert data.get("template") == "Hospice Care", "Response should identify template name"
         
@@ -253,7 +253,7 @@ class TestQuickStartTemplates:
         assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         
         data = response.json()
-        assert data.get("success") == True
+        assert data.get("success")
         print(f"✓ Applied Military Deployment template: {data.get('items_added', 0)} items added")
 
 
