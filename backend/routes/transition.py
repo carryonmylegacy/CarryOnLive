@@ -153,8 +153,44 @@ async def approve_death_certificate(
         },
     )
 
+    # Create 30-day grace periods for all beneficiaries of this estate
+    beneficiary_links = await db.beneficiaries.find(
+        {"estate_id": certificate["estate_id"]}, {"_id": 0, "user_id": 1}
+    ).to_list(100)
+
+    # Also check estate.beneficiaries array
+    estate_doc = await db.estates.find_one(
+        {"id": certificate["estate_id"]}, {"_id": 0, "beneficiaries": 1, "owner_id": 1}
+    )
+    all_ben_ids = set()
+    for bl in beneficiary_links:
+        if bl.get("user_id"):
+            all_ben_ids.add(bl["user_id"])
+    if estate_doc:
+        for bid in estate_doc.get("beneficiaries", []):
+            all_ben_ids.add(bid)
+
+    grace_end = datetime.now(timezone.utc) + timedelta(days=30)
+    for ben_id in all_ben_ids:
+        existing = await db.beneficiary_grace_periods.find_one(
+            {"beneficiary_id": ben_id}, {"_id": 0}
+        )
+        if not existing:
+            await db.beneficiary_grace_periods.insert_one(
+                {
+                    "id": str(uuid.uuid4()),
+                    "beneficiary_id": ben_id,
+                    "benefactor_id": estate_doc.get("owner_id") if estate_doc else "",
+                    "reason": "benefactor_transition",
+                    "grace_starts_at": datetime.now(timezone.utc).isoformat(),
+                    "grace_ends_at": grace_end.isoformat(),
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
+
     return {
-        "message": "Certificate approved, benefactor sealed, beneficiary access granted"
+        "message": "Certificate approved, benefactor sealed, beneficiary access granted",
+        "beneficiaries_with_grace": len(all_ben_ids),
     }
 
 
