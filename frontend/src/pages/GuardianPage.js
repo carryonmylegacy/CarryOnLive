@@ -344,7 +344,7 @@ const GuardianPage = () => {
                 <div className="absolute inset-0 rounded-2xl" style={{
                   background: 'linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%)',
                   border: '2px solid rgba(212,175,55,0.3)',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 var(--b)',
                 }} />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <Bot className="w-7 h-7 text-[var(--gold)]" />
@@ -379,7 +379,7 @@ const GuardianPage = () => {
             {/* Ask Anything Input */}
             <form onSubmit={handleLandingSubmit} className="mb-8">
               <div className="flex items-center gap-2 p-2 rounded-2xl" style={{
-                background: 'rgba(255,255,255,0.04)',
+                background: 'var(--s)',
                 border: '1px solid rgba(255,255,255,0.1)',
                 boxShadow: '0 4px 24px -4px rgba(0,0,0,0.3)',
               }}>
@@ -440,7 +440,7 @@ const GuardianPage = () => {
                       role="button"
                       tabIndex={0}
                       className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all hover:bg-white/[0.04] group cursor-pointer"
-                      style={{ border: '1px solid rgba(255,255,255,0.05)' }}
+                      style={{ border: '1px solid var(--b)' }}
                       data-testid={`session-${s.session_id}`}
                     >
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -490,7 +490,7 @@ const GuardianPage = () => {
 
       {/* Chat Header */}
       <div className="flex items-center justify-between px-4 py-2 flex-shrink-0" style={{
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        borderBottom: '1px solid var(--b)',
       }}>
         <div className="flex items-center gap-2">
           <button onClick={goBackToLanding}
@@ -550,7 +550,7 @@ const GuardianPage = () => {
               </div>
               <div className={`max-w-[82%] rounded-2xl px-4 py-3 ${
                 msg.role === 'user' ? 'bg-[var(--gold)] text-[#0b1120] rounded-tr-md' : 'text-[var(--t2)] rounded-tl-md'
-              }`} style={msg.role === 'assistant' ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' } : {}}>
+              }`} style={msg.role === 'assistant' ? { background: 'var(--s)', border: '1px solid var(--b)' } : {}}>
                 {msg.role === 'assistant' ? <MarkdownText content={msg.content} /> : <p className="text-sm whitespace-pre-wrap">{msg.content}</p>}
                 {msg.actionBadge && (
                   <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-[#22c993]">
@@ -592,7 +592,7 @@ const GuardianPage = () => {
                 {suggestedQuestions.slice(0, 3).map((q, i) => (
                   <button key={i} onClick={() => sendMessage(q)}
                     className="px-3 py-2 rounded-xl text-xs text-[var(--t4)] transition-all hover:text-[var(--gold)] hover:bg-[var(--gold)]/5"
-                    style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+                    style={{ border: '1px solid var(--b)' }}
                     data-testid={`suggested-question-${i}`}>
                     {q}
                   </button>
@@ -607,7 +607,7 @@ const GuardianPage = () => {
                 style={{ background: 'linear-gradient(135deg, #d4af37 0%, #fcd34d 100%)', color: '#0b1120' }}>
                 <Bot className="w-3.5 h-3.5" />
               </div>
-              <div className="rounded-2xl rounded-tl-md px-4 py-3" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="rounded-2xl rounded-tl-md px-4 py-3" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
                 <div className="flex items-center gap-2 text-[var(--t4)]">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span className="text-sm">
@@ -626,7 +626,7 @@ const GuardianPage = () => {
 
       {/* Input Area */}
       <div className="flex-shrink-0 px-3 pb-3 pt-2 relative" style={{
-        borderTop: '1px solid rgba(255,255,255,0.04)',
+        borderTop: '1px solid var(--s)',
         background: 'linear-gradient(180deg, transparent 0%, rgba(15,22,41,0.5) 100%)',
       }}>
         {showQuestions && (
@@ -634,7 +634,7 @@ const GuardianPage = () => {
             background: 'rgba(20,28,51,0.98)', border: '1px solid rgba(255,255,255,0.1)',
             boxShadow: '0 -8px 32px rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)',
           }} data-testid="questions-popover">
-            <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid var(--b)' }}>
               <span className="text-xs font-bold text-[var(--t3)]">Helpful Questions</span>
               <button onClick={() => setShowQuestions(false)} className="text-[var(--t5)] hover:text-[var(--t)]"><X className="w-3.5 h-3.5" /></button>
             </div>
@@ -655,7 +655,7 @@ const GuardianPage = () => {
             background: 'rgba(20,28,51,0.98)', border: '1px solid rgba(255,255,255,0.1)',
             boxShadow: '0 -8px 32px rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)',
           }} data-testid="actions-popover">
-            <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid var(--b)' }}>
               <span className="text-xs font-bold text-[var(--t3)]">Guardian Actions</span>
               <button onClick={() => setShowActions(false)} className="text-[var(--t5)] hover:text-[var(--t)]"><X className="w-3.5 h-3.5" /></button>
             </div>
@@ -689,14 +689,14 @@ const GuardianPage = () => {
               </button>
               <button type="button" onClick={() => { setShowQuestions(!showQuestions); setShowActions(false); }}
                 className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all hover:scale-105"
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
                 data-testid="questions-toggle">
                 <HelpCircle className="w-4 h-4 text-[var(--t4)]" />
               </button>
             </>
           )}
           <div className="flex-1 flex items-center rounded-xl px-3 py-2.5" style={{
-            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+            background: 'var(--s)', border: '1px solid var(--b)',
           }}>
             <input
               ref={inputRef}
