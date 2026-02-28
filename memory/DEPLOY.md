@@ -1,7 +1,7 @@
 # Deployment Info
 
 ## Vercel Deploy Hook
-URL: https://api.vercel.com/v1/integrations/deploy/prj_ZDH4AJkNcf2vricEvD4KATpgRJZb/RXnUhbxeDr
+URL: https://api.vercel.com/v1/integrations/deploy/prj_ZDH4AJkNcf2vricEvD4KATpgRJZb/WYXSGK1XL9
 Method: POST
 Branch: main
 
