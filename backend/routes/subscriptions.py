@@ -663,6 +663,7 @@ class ChangeSubscriptionRequest(BaseModel):
 
 class ChangeBillingRequest(BaseModel):
     billing_cycle: str  # monthly, quarterly, annual
+    origin_url: str = ""
 
 
 @router.post("/subscriptions/change-plan")
