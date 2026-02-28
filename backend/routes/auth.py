@@ -194,6 +194,47 @@ async def register(data: UserCreate):
     }
 
 
+class ResendOTPRequest(BaseModel):
+    email: str
+
+
+@router.post("/auth/resend-otp")
+async def resend_otp(data: ResendOTPRequest):
+    """Resend OTP code to the user's email. Rate-limited to prevent abuse."""
+    user = await db.users.find_one({"email": data.email}, {"_id": 0, "name": 1})
+    if not user:
+        # Don't reveal whether the email exists
+        return {"message": "If an account exists, a new code has been sent."}
+
+    otp_code = generate_otp()
+    await db.otps.update_one(
+        {"email": data.email},
+        {
+            "$set": {
+                "otp": otp_code,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
+        upsert=True,
+    )
+
+    email_sent = False
+    try:
+        email_sent = await send_otp_email(
+            data.email, otp_code, user["name"].split()[0]
+        )
+    except Exception:
+        logger.warning(f"Resend OTP email failed for {data.email}")
+
+    return {
+        "message": "A new verification code has been sent to your email."
+        if email_sent
+        else "Failed to send code — please try again.",
+        "email_sent": email_sent,
+    }
+
+
+
 class OTPVerifyWithTrust(BaseModel):
     email: str
     otp: str
