@@ -206,39 +206,83 @@ const SettingsPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="plan-grid">
             {plans.map((p) => {
               const PlanIcon = PLAN_ICONS[p.id] || Shield;
+              const isPremium = p.id === 'premium';
+              const tierColors = {
+                premium: { accent: '#d4af37', bg: 'rgba(212,175,55,0.12)' },
+                standard: { accent: '#60A5FA', bg: 'rgba(96,165,250,0.08)' },
+                base: { accent: '#22C993', bg: 'rgba(34,201,147,0.08)' },
+                new_adult: { accent: '#B794F6', bg: 'rgba(183,148,246,0.08)' },
+                military: { accent: '#F59E0B', bg: 'rgba(245,158,11,0.08)' },
+                hospice: { accent: '#ec4899', bg: 'rgba(236,72,153,0.08)' },
+              };
+              const tc = tierColors[p.id] || tierColors.base;
+              const isActive = activePlan === p.name;
               return (
                 <div
                   key={p.id}
                   onClick={() => setActivePlan(p.name)}
-                  className={`rounded-2xl p-5 text-center cursor-pointer transition-all hover:-translate-y-1 ${
-                    activePlan === p.name
-                      ? 'border-2 border-[var(--gold)] bg-[var(--gold)]/5 shadow-lg'
-                      : 'border border-[var(--b)] bg-[var(--s)] hover:border-[var(--gold)]/30'
+                  className={`relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-1 ${
+                    isPremium ? 'sm:scale-[1.02]' : ''
                   }`}
+                  style={{
+                    background: isPremium
+                      ? 'linear-gradient(168deg, rgba(212,175,55,0.1) 0%, rgba(26,32,53,0.95) 40%, var(--s) 100%)'
+                      : isActive 
+                        ? `linear-gradient(168deg, ${tc.bg} 0%, var(--s) 100%)` 
+                        : 'var(--s)',
+                    border: isPremium 
+                      ? '2px solid rgba(212,175,55,0.35)' 
+                      : isActive 
+                        ? `2px solid ${tc.accent}50` 
+                        : '1px solid var(--b)',
+                    boxShadow: isPremium 
+                      ? '0 8px 32px -6px rgba(212,175,55,0.25), inset 0 1px 0 rgba(255,255,255,0.08)' 
+                      : isActive 
+                        ? `0 6px 24px -4px ${tc.accent}33, inset 0 1px 0 rgba(255,255,255,0.04)` 
+                        : '0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.03)',
+                  }}
                   data-testid={`plan-${p.id}`}
                 >
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <PlanIcon className="w-4 h-4 text-[var(--gold)]" />
-                    <span className="text-[var(--t)] font-bold text-lg">{p.name}</span>
-                  </div>
-                  <div className="text-[var(--gold)] text-3xl font-bold" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
-                    {getBillingPrice(p)}
-                  </div>
-                  <div className="text-[var(--t4)] text-sm mb-1">{p.price > 0 ? getBillingLabel() : ''}</div>
-                  <div className="text-[var(--t4)] text-xs mb-4">Beneficiary: ${p.ben_price?.toFixed(2)}/mo</div>
-                  
-                  <div className="space-y-2 text-left mb-4">
-                    {(p.features || []).map((f, i) => (
-                      <div key={i} className="flex items-start gap-2 text-sm text-[var(--t3)]">
-                        <Check className="w-4 h-4 text-[var(--gold)] flex-shrink-0 mt-0.5" />
-                        <span>{f}</span>
+                  {isPremium && (
+                    <>
+                      <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.5), transparent)' }} />
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 text-[10px] font-bold px-3 py-1 rounded-b-lg"
+                        style={{ background: 'linear-gradient(180deg, #d4af37, #b8962e)', color: '#0F1629' }}>
+                        Most Popular
                       </div>
-                    ))}
-                  </div>
-
-                  {p.note && (
-                    <div className="text-xs text-[var(--t4)] italic mb-2">{p.note}</div>
+                    </>
                   )}
+
+                  <div className="p-5 pt-6 text-center">
+                    <div className="flex items-center justify-center gap-2 mb-3">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${tc.accent}15`, border: `1px solid ${tc.accent}25` }}>
+                        <PlanIcon className="w-4 h-4" style={{ color: tc.accent }} />
+                      </div>
+                      <span className="text-[var(--t)] font-bold text-lg" style={{ fontFamily: 'Outfit, sans-serif' }}>{p.name}</span>
+                    </div>
+                    <div className="text-4xl font-bold mb-0.5" style={{ color: tc.accent, fontFamily: 'Outfit, sans-serif' }}>
+                      {getBillingPrice(p)}
+                    </div>
+                    <div className="text-[var(--t5)] text-xs mb-0.5">{p.price > 0 ? getBillingLabel() : ''}</div>
+                    <div className="text-[var(--t5)] text-xs mb-4">Beneficiary: ${p.ben_price?.toFixed(2)}/mo</div>
+                    
+                    <div className="h-px mb-4" style={{ background: `linear-gradient(90deg, transparent, ${tc.accent}25, transparent)` }} />
+
+                    <div className="space-y-2 text-left mb-4">
+                      {(p.features || []).map((f, i) => (
+                        <div key={i} className="flex items-start gap-2 text-sm text-[var(--t3)]">
+                          <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: `${tc.accent}12` }}>
+                            <Check className="w-2.5 h-2.5" style={{ color: tc.accent }} />
+                          </div>
+                          <span>{f}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {p.note && (
+                      <div className="text-xs text-[var(--t5)] italic mb-2">{p.note}</div>
+                    )}
+                  </div>
                 </div>
               );
             })}
