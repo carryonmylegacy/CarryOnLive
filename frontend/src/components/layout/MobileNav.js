@@ -20,7 +20,8 @@ import {
   FileKey,
   Headphones,
   ShieldCheck,
-  KeyRound
+  KeyRound,
+  Clock
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 
@@ -50,6 +51,7 @@ const MobileNav = () => {
     { to: '/trustee', icon: Shield, label: 'Designated Trustee Services' },
     { to: '/guardian', icon: Sparkles, label: 'Estate Guardian' },
     { to: '/digital-wallet', icon: KeyRound, label: 'Digital Wallet Vault' },
+    { to: '/timeline', icon: Clock, label: 'Legacy Timeline' },
   ];
 
   const accountItems = [
