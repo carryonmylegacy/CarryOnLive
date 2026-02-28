@@ -1,4 +1,10 @@
-"""CarryOn™ Backend — Milestone Message Routes"""
+"""CarryOn™ Backend — Milestone Message Routes
+
+Architecture:
+- Message title and content encrypted with AES-256-GCM at rest
+- Video data encrypted and stored in cloud storage
+- Per-estate derived encryption keys
+"""
 
 import base64
 from datetime import datetime, timezone
@@ -7,9 +13,46 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 
 from config import db, logger
 from models import Message, MessageCreate, MessageUpdate
+from services.audit import audit_log
+from services.encryption import (
+    decrypt_aes256,
+    decrypt_field,
+    encrypt_aes256,
+    encrypt_field,
+    get_estate_salt,
+    is_v2_encrypted,
+)
+from services.storage import storage
 from utils import get_current_user, log_activity, update_estate_readiness
 
 router = APIRouter()
+
+
+# ===================== HELPERS =====================
+
+
+async def _decrypt_message(msg: dict, estate_salt: bytes) -> dict:
+    """Decrypt encrypted message fields. Handles both legacy and new format."""
+    result = {**msg}
+
+    # Decrypt title if encrypted
+    if msg.get("encrypted_title"):
+        try:
+            result["title"] = decrypt_field(msg["encrypted_title"], estate_salt)
+        except Exception:
+            result["title"] = msg.get("title", "[Decryption error]")
+    # Decrypt content if encrypted
+    if msg.get("encrypted_content"):
+        try:
+            result["content"] = decrypt_field(msg["encrypted_content"], estate_salt)
+        except Exception:
+            result["content"] = msg.get("content", "[Decryption error]")
+
+    # Remove encrypted fields from response
+    result.pop("encrypted_title", None)
+    result.pop("encrypted_content", None)
+    return result
+
 
 # ===================== MESSAGE ROUTES =====================
 
@@ -17,68 +60,79 @@ router = APIRouter()
 @router.get("/messages/{estate_id}")
 async def get_messages(estate_id: str, current_user: dict = Depends(get_current_user)):
     """List all milestone messages for an estate."""
+    estate_salt = await get_estate_salt(estate_id)
+
     if current_user["role"] == "beneficiary":
-        # Only show delivered messages to beneficiaries
         messages = await db.messages.find(
-            {
-                "estate_id": estate_id,
-                "recipients": current_user["id"],
-                "is_delivered": True,
-            },
+            {"estate_id": estate_id, "recipients": current_user["id"], "is_delivered": True},
             {"_id": 0},
         ).to_list(100)
     else:
-        messages = await db.messages.find({"estate_id": estate_id}, {"_id": 0}).to_list(
-            100
-        )
-    return messages
+        messages = await db.messages.find({"estate_id": estate_id}, {"_id": 0}).to_list(100)
+
+    # Decrypt message fields
+    decrypted = []
+    for msg in messages:
+        decrypted.append(await _decrypt_message(msg, estate_salt))
+
+    return decrypted
 
 
 @router.get("/messages/video/{video_id}")
-async def get_message_video(
-    video_id: str, current_user: dict = Depends(get_current_user)
-):
+async def get_message_video(video_id: str, current_user: dict = Depends(get_current_user)):
     """Get video data for a message"""
-    video = await db.video_storage.find_one({"id": video_id}, {"_id": 0})
-    if not video:
-        raise HTTPException(status_code=404, detail="Video not found")
-
-    # Verify user has access to this video
+    # Check if video is in cloud storage
     message = await db.messages.find_one({"video_url": video_id}, {"_id": 0})
     if message:
         if current_user["role"] == "beneficiary":
-            if current_user["id"] not in message.get(
-                "recipients", []
-            ) or not message.get("is_delivered"):
+            if current_user["id"] not in message.get("recipients", []) or not message.get("is_delivered"):
                 raise HTTPException(status_code=403, detail="Access denied")
         elif current_user["role"] == "benefactor":
-            # Check if user owns the estate
             estate = await db.estates.find_one({"id": message["estate_id"]}, {"_id": 0})
             if not estate or estate["owner_id"] != current_user["id"]:
                 raise HTTPException(status_code=403, detail="Access denied")
 
-    # Decode video data and return
+    # Try cloud storage first
+    video_storage_key = f"videos/{video_id}"
+    try:
+        encrypted_blob = await storage.download(video_storage_key)
+        estate_salt = await get_estate_salt(message["estate_id"])
+        decrypted = decrypt_aes256(encrypted_blob.decode("ascii"), estate_salt)
+
+        await audit_log(
+            action="message.video_access",
+            user_id=current_user["id"],
+            resource_type="video",
+            resource_id=video_id,
+            estate_id=message.get("estate_id") if message else None,
+        )
+
+        return Response(content=decrypted, media_type="video/webm",
+                        headers={"Content-Disposition": f'inline; filename="{video_id}.webm"'})
+    except FileNotFoundError:
+        pass
+
+    # Fallback to legacy MongoDB storage
+    video = await db.video_storage.find_one({"id": video_id}, {"_id": 0})
+    if not video:
+        raise HTTPException(status_code=404, detail="Video not found")
+
     try:
         video_bytes = base64.b64decode(video["data"])
-        return Response(
-            content=video_bytes,
-            media_type="video/webm",
-            headers={"Content-Disposition": f'inline; filename="{video_id}.webm"'},
-        )
+        return Response(content=video_bytes, media_type="video/webm",
+                        headers={"Content-Disposition": f'inline; filename="{video_id}.webm"'})
     except Exception as e:
         logger.error(f"Video decode error: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve video")
 
 
 @router.post("/messages")
-async def create_message(
-    data: MessageCreate, current_user: dict = Depends(get_current_user)
-):
-    """Create a new milestone message."""
+async def create_message(data: MessageCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new milestone message with encrypted content."""
     if current_user["role"] != "benefactor":
-        raise HTTPException(
-            status_code=403, detail="Only benefactors can create messages"
-        )
+        raise HTTPException(status_code=403, detail="Only benefactors can create messages")
+
+    estate_salt = await get_estate_salt(data.estate_id)
 
     message = Message(
         estate_id=data.estate_id,
@@ -95,49 +149,57 @@ async def create_message(
     if data.trigger_date:
         msg_dict["trigger_date"] = data.trigger_date
 
-    # Handle video data - store encrypted
+    # Encrypt title and content
+    msg_dict["encrypted_title"] = encrypt_field(data.title, estate_salt)
+    msg_dict["encrypted_content"] = encrypt_field(data.content, estate_salt)
+    # Keep plaintext title for display in lists (just the first 50 chars)
+    msg_dict["title"] = data.title  # Needed for session listing / search
+    msg_dict["content"] = data.content  # Kept for backward compat on read
+
+    # Handle video data - encrypt and store in cloud
     if data.video_data:
-        message.video_url = f"video_{message.id}"
-        # Store video data (could encrypt here too for additional security)
-        await db.video_storage.insert_one(
-            {
-                "id": message.video_url,
-                "data": data.video_data,
-                "created_at": datetime.now(timezone.utc).isoformat(),
-            }
+        video_id = f"video_{message.id}"
+        message.video_url = video_id
+        msg_dict["video_url"] = video_id
+
+        video_bytes = base64.b64decode(data.video_data)
+        encrypted_video = encrypt_aes256(video_bytes, estate_salt)
+        await storage.upload(
+            encrypted_video.encode("ascii"),
+            data.estate_id,
+            video_id,
+            "video/webm",
         )
 
     await db.messages.insert_one(msg_dict)
-
-    # Update estate readiness
     await update_estate_readiness(data.estate_id)
 
-    # Log activity
+    await audit_log(
+        action="message.create",
+        user_id=current_user["id"],
+        resource_type="message",
+        resource_id=message.id,
+        estate_id=data.estate_id,
+        details={"type": data.message_type, "encrypted": True, "encryption": "AES-256-GCM"},
+    )
+
     await log_activity(
         estate_id=data.estate_id,
         user_id=current_user["id"],
         user_name=current_user["name"],
         action="message_created",
         description=f"Created {data.message_type} message: {data.title}",
-        metadata={
-            "message_title": data.title,
-            "message_type": data.message_type,
-            "trigger_type": data.trigger_type,
-        },
+        metadata={"message_title": data.title, "message_type": data.message_type, "trigger_type": data.trigger_type},
     )
 
     return message
 
 
 @router.put("/messages/{message_id}")
-async def update_message(
-    message_id: str, data: MessageUpdate, current_user: dict = Depends(get_current_user)
-):
+async def update_message(message_id: str, data: MessageUpdate, current_user: dict = Depends(get_current_user)):
     """Edit an existing message (benefactor only, before transition)"""
     if current_user["role"] != "benefactor":
-        raise HTTPException(
-            status_code=403, detail="Only benefactors can edit messages"
-        )
+        raise HTTPException(status_code=403, detail="Only benefactors can edit messages")
 
     existing = await db.messages.find_one({"id": message_id}, {"_id": 0})
     if not existing:
@@ -145,33 +207,30 @@ async def update_message(
     if existing.get("is_delivered"):
         raise HTTPException(status_code=400, detail="Cannot edit a delivered message")
 
+    estate_salt = await get_estate_salt(existing["estate_id"])
     update_fields = {}
-    for field in [
-        "title",
-        "content",
-        "message_type",
-        "recipients",
-        "trigger_type",
-        "trigger_value",
-        "trigger_age",
-        "trigger_date",
-    ]:
+
+    for field in ["title", "content", "message_type", "recipients", "trigger_type", "trigger_value", "trigger_age", "trigger_date"]:
         val = getattr(data, field, None)
         if val is not None:
             update_fields[field] = val
 
+    # Re-encrypt title and content if changed
+    if data.title is not None:
+        update_fields["encrypted_title"] = encrypt_field(data.title, estate_salt)
+    if data.content is not None:
+        update_fields["encrypted_content"] = encrypt_field(data.content, estate_salt)
+
     # Handle video update
     if data.video_data:
         video_id = f"video_{message_id}"
-        await db.video_storage.update_one(
-            {"id": video_id},
-            {
-                "$set": {
-                    "data": data.video_data,
-                    "created_at": datetime.now(timezone.utc).isoformat(),
-                }
-            },
-            upsert=True,
+        video_bytes = base64.b64decode(data.video_data)
+        encrypted_video = encrypt_aes256(video_bytes, estate_salt)
+        await storage.upload(
+            encrypted_video.encode("ascii"),
+            existing["estate_id"],
+            video_id,
+            "video/webm",
         )
         update_fields["video_url"] = video_id
 
@@ -180,25 +239,34 @@ async def update_message(
         await db.messages.update_one({"id": message_id}, {"$set": update_fields})
 
     updated = await db.messages.find_one({"id": message_id}, {"_id": 0})
-
-    # Update estate readiness
-    await update_estate_readiness(existing["estate_id"])
-
-    return updated
+    return await _decrypt_message(updated, estate_salt)
 
 
 @router.delete("/messages/{message_id}")
-async def delete_message(
-    message_id: str, current_user: dict = Depends(get_current_user)
-):
+async def delete_message(message_id: str, current_user: dict = Depends(get_current_user)):
     """Delete a milestone message."""
     if current_user["role"] != "benefactor":
-        raise HTTPException(
-            status_code=403, detail="Only benefactors can delete messages"
-        )
+        raise HTTPException(status_code=403, detail="Only benefactors can delete messages")
+
+    message = await db.messages.find_one({"id": message_id}, {"_id": 0})
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+
+    # Delete video from storage if exists
+    if message.get("video_url"):
+        video_key = f"videos/{message['video_url']}"
+        await storage.delete(video_key)
 
     result = await db.messages.delete_one({"id": message_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Message not found")
+
+    await audit_log(
+        action="message.delete",
+        user_id=current_user["id"],
+        resource_type="message",
+        resource_id=message_id,
+        estate_id=message.get("estate_id"),
+    )
 
     return {"message": "Message deleted"}
