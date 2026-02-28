@@ -350,9 +350,9 @@ const SignupPage = () => {
 
                     {/* STEP 2: Role */}
                     {step === 2 && (
-                      <div className="space-y-5">
+                      <div className="space-y-4 sm:space-y-5">
                         <div>
-                          <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>How will you use CarryOn?</h2>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>How will you use CarryOn?</h2>
                           <p className="text-[#6b7a90] text-sm">Select the role that best describes you.</p>
                         </div>
                         <div className="space-y-4">
