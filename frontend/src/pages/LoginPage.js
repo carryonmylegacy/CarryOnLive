@@ -44,6 +44,12 @@ const LoginPage = () => {
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otp, setOtp] = useState('');
   const [flagOpacity, setFlagOpacity] = useState(1);
+  const [exiting, setExiting] = useState(false);
+
+  const navigateWithFade = (path) => {
+    setExiting(true);
+    setTimeout(() => navigate(path), 500);
+  };
 
   /* flag fade on scroll + dismiss Safari autofill */
   useEffect(() => {
