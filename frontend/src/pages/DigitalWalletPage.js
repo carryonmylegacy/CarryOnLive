@@ -38,19 +38,20 @@ const DigitalWalletPage = () => {
   const fetchData = async () => {
     try {
       const headers = getAuthHeaders()?.headers;
+      if (!headers) { setLoading(false); return; }
       const estatesRes = await axios.get(`${API_URL}/estates`, { headers });
       if (estatesRes.data.length > 0) {
         const eid = estatesRes.data[0].id;
         setEstateId(eid);
         const [walletRes, benRes] = await Promise.all([
-          axios.get(`${API_URL}/digital-wallet/${eid}`, { headers }),
-          axios.get(`${API_URL}/beneficiaries/${eid}`, { headers }),
+          axios.get(`${API_URL}/digital-wallet/${eid}`, { headers }).catch(() => ({ data: [] })),
+          axios.get(`${API_URL}/beneficiaries/${eid}`, { headers }).catch(() => ({ data: [] })),
         ]);
-        setEntries(walletRes.data);
-        setBeneficiaries(benRes.data);
+        setEntries(Array.isArray(walletRes.data) ? walletRes.data : []);
+        setBeneficiaries(Array.isArray(benRes.data) ? benRes.data : []);
       }
     } catch (err) {
-      // No estate yet
+      console.error('Digital wallet fetch error:', err);
     }
     setLoading(false);
   };
