@@ -563,7 +563,7 @@ export const SubscriptionManagement = ({
                     >
                       {subscribing === plan.id ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> :
                        isDowngrade(plan.id, billing) ? <Mail className="w-3.5 h-3.5 mr-1" /> : <ArrowRight className="w-3.5 h-3.5 mr-1" />}
-                      {isDowngrade(plan.id, billing) ? 'Downgrade (via Support)' : 'Upgrade'}
+                      {isDowngrade(plan.id, billing) ? 'Contact Support' : 'Upgrade'}
                     </Button>
                   ) : (
                     <Button
