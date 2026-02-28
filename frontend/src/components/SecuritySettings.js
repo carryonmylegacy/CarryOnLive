@@ -336,7 +336,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
             <Mic className="w-4 h-4 text-[var(--bl3)]" />
             <span className="text-sm font-bold text-[var(--t)]">Layer 2: Voice Biometric</span>
           </div>
-          <Switch checked={voiceEnabled} onCheckedChange={setVoiceEnabled} data-testid={`voice-toggle-${section.id}`} />
+          <Switch checked={voiceEnabled} onCheckedChange={(v) => handleToggle('voice', v)} data-testid={`voice-toggle-${section.id}`} />
         </div>
         {voiceEnabled && (
           <div className="ml-6 space-y-3">
