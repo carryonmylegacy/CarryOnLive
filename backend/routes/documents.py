@@ -432,9 +432,18 @@ async def download_document(
     )
 
     # Check section-level lock (triple lock) — block downloads when SDV is locked
+    # Note: is_active is computed from password_enabled OR voice_enabled OR security_question_enabled
     section_lock = await db.section_security.find_one(
-        {"user_id": current_user["id"], "section_id": "sdv", "is_active": True},
-        {"_id": 0, "is_active": 1},
+        {
+            "user_id": current_user["id"],
+            "section_id": "sdv",
+            "$or": [
+                {"password_enabled": True},
+                {"voice_enabled": True},
+                {"security_question_enabled": True},
+            ],
+        },
+        {"_id": 0, "password_enabled": 1, "voice_enabled": 1, "security_question_enabled": 1},
     )
     if section_lock:
         raise HTTPException(
