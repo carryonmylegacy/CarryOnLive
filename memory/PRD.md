@@ -12,7 +12,7 @@ CarryOn is a secure estate planning platform for American families. It helps use
 - **Storage**: AWS S3 (production) / local filesystem (preview)
 - **AI**: xAI Grok (Estate Guardian AI / EGA)
 - **Payments**: Stripe (setup intents for future charges)
-- **Email**: Resend (pending domain verification)
+- **Email**: Resend (OTP delivery, domain: carryontechnologies.com)
 - **SMS**: Twilio (OTP delivery)
 - **Hosting**: Vercel (frontend), Railway (backend)
 - **Mobile**: Capacitor (iOS/Android PWA)
@@ -33,7 +33,7 @@ CarryOn is a secure estate planning platform for American families. It helps use
 - Account lockout (5 failures / 15 min window)
 - JWT 8-hour expiry, server-side token blacklist on logout
 - Bulk session revocation capability
-- Rate limiting: 10/min strict (auth), 20/min moderate (register)
+- Rate limiting: 10/min strict (auth + resend-otp), 20/min moderate (register)
 - 10 security headers (HSTS preload, CSP with form-action, COOP, CORP, etc.)
 - Request body 50MB limit, file upload 25MB + content type whitelist
 - Open redirect prevention on Stripe URLs
@@ -48,7 +48,26 @@ CarryOn is a secure estate planning platform for American families. It helps use
 
 ## What's Been Implemented
 
-### Session: Feb 28, 2026
+### Session: Feb 28, 2026 (Continued)
+
+**OTP Email System (Resend) — Fully Operational:**
+- Resend API key validated and sending emails successfully
+- POST /api/auth/resend-otp — new endpoint for resending OTP codes
+- "Resend Code" button added to login OTP modal with 30s cooldown timer
+- "Resend Code" button added to signup OTP modal with 30s cooldown timer
+- Rate limiting applied to resend-otp endpoint (10/min strict)
+- Login endpoint now returns email_sent status for better error feedback
+- Anti-enumeration: resend-otp returns generic message for non-existent emails
+
+**Codemagic CI/CD Optimization:**
+- Added caching for node_modules, CocoaPods, and Gradle across all workflows
+- Increased iOS build max duration to 45 min (was 30)
+- Added explicit timeouts to pod install (300s) and Xcode build (1200s) steps
+- Added GENERATE_SOURCEMAP=false for faster builds
+- Added fallback yarn install (without --frozen-lockfile) for resilience
+- Added set -e to Xcode build for explicit error handling
+
+### Session: Feb 28, 2026 (Earlier)
 
 **Bug Fixes:**
 - Dev Switcher profile selection (server-side credential lookup)
@@ -61,7 +80,7 @@ CarryOn is a secure estate planning platform for American families. It helps use
 - Backend CI lint fully green
 
 **Signup Page Redesign:**
-- 4-step sliding wizard (Name → About You → Role → Credentials)
+- 4-step sliding wizard (Name > About You > Role > Credentials)
 - Split layout with American flag hero
 - Smooth fade/slide transitions, fixed card height, PWA responsive
 
@@ -96,7 +115,7 @@ CarryOn is a secure estate planning platform for American families. It helps use
 
 **Subscription Billing Fix:**
 - Billing cycle changes now go through Stripe checkout (full period upfront)
-- Plan changes charge full period (quarterly ×3, annual ×12)
+- Plan changes charge full period (quarterly x3, annual x12)
 
 **UI/UX:**
 - All 10+ modals anchored (no jumping)
@@ -129,9 +148,10 @@ CarryOn is a secure estate planning platform for American families. It helps use
 - All security tiles reflect actual capabilities
 
 ## Pending / Backlog
-- P1: Re-enable OTP email delivery (Resend + domain verification)
-- P1: Codemagic Mobile CI/CD Pipeline fix
-- P2: Animated logo (awaiting asset)
+- P1: Codemagic Mobile CI/CD Pipeline — config optimized, needs build verification on Codemagic
+- P1: Beneficiary Hub "You" Label — code fix in place, awaiting user visual verification
+- P1: Beneficiary Gentle Intro — code complete, needs e2e test with live invitation token
+- P2: Animated logo (awaiting asset from user)
 - P2: Frontend compliance settings page (GDPR consent UI for end users)
 - P3: Mobile app deployment
 - P3: Redis-backed rate limiting for multi-worker deployments
