@@ -682,6 +682,7 @@ const VaultPage = () => {
                           </>
                         )}
                       </div>
+                      </div>
                     </CardContent>
                   </Card>
                 );
