@@ -44,7 +44,7 @@ const MobileNav = () => {
   // Navigation structure matching prototype - with sections
   const myLegacyItems = [
     { to: '/dashboard', icon: Home, label: 'Dashboard' },
-    { to: '/vault', icon: FolderLock, label: 'Secure Document Vault' },
+    { to: '/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
     { to: '/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
     { to: '/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
     { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
