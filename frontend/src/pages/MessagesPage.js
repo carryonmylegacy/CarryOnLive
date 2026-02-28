@@ -394,10 +394,12 @@ const MessagesPage = () => {
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-3">
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                            msg.message_type === 'video' ? 'bg-[#8b5cf6]/20' : 'bg-[#d4af37]/20'
+                            msg.message_type === 'video' ? 'bg-[#8b5cf6]/20' : msg.message_type === 'voice' ? 'bg-[#22c993]/20' : 'bg-[#d4af37]/20'
                           }`}>
                             {msg.message_type === 'video' ? (
                               <Video className="w-5 h-5 text-[#8b5cf6]" />
+                            ) : msg.message_type === 'voice' ? (
+                              <Mic className="w-5 h-5 text-[#22c993]" />
                             ) : (
                               <MessageSquare className="w-5 h-5 text-[#d4af37]" />
                             )}
