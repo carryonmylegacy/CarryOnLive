@@ -28,18 +28,58 @@ import { SubscriptionManagement } from '../components/settings/SubscriptionManag
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const SettingsPage = () => {
-  const { user, logout, subscriptionStatus, refreshSubscription } = useAuth();
+  const { user, logout, subscriptionStatus, refreshSubscription, token } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [weeklyDigest, setWeeklyDigest] = useState(true);
   const [digestLoading, setDigestLoading] = useState(false);
   const [digestSending, setDigestSending] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [confirmingPayment, setConfirmingPayment] = useState(false);
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem('carryon_token');
     return { headers: { Authorization: `Bearer ${token}` } };
   };
+
+  // Handle post-checkout redirect — detect session_id in URL after Stripe redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session_id');
+    if (!sessionId || !token) return;
+
+    setConfirmingPayment(true);
+    const headers = { Authorization: `Bearer ${token}` };
+
+    axios.get(`${API_URL}/subscriptions/checkout-status/${sessionId}`, { headers })
+      .then(async (res) => {
+        if (res.data?.payment_status === 'paid' || res.data?.payment_status === 'complete') {
+          toast.success('Payment confirmed! Your plan has been updated.');
+          window.history.replaceState({}, '', window.location.pathname);
+          if (refreshSubscription) await refreshSubscription();
+        } else {
+          toast.info('Payment is being processed. Checking again shortly...');
+          // Retry after a few seconds for async payment processing
+          setTimeout(async () => {
+            try {
+              const retry = await axios.get(`${API_URL}/subscriptions/checkout-status/${sessionId}`, { headers });
+              if (retry.data?.payment_status === 'paid' || retry.data?.payment_status === 'complete') {
+                toast.success('Subscription updated!');
+                window.history.replaceState({}, '', window.location.pathname);
+                if (refreshSubscription) await refreshSubscription();
+              }
+            } catch (e) { /* ignore retry errors */ }
+            setConfirmingPayment(false);
+          }, 5000);
+          return;
+        }
+        setConfirmingPayment(false);
+      })
+      .catch(() => {
+        toast.error('Could not confirm payment. Please refresh or contact support.');
+        setConfirmingPayment(false);
+      });
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const fetchDigestPref = async () => {
