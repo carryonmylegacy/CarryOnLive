@@ -188,20 +188,19 @@ const DevSwitcher = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {accounts.map(acc => {
               const isActive = user?.email === acc.email;
-              const isDisabled = !acc.password && acc.role !== 'admin';
               
               return (
                 <div
                   key={acc.email}
-                  onClick={() => !isActive && !isDisabled && handleSwitch(acc)}
+                  onClick={() => !isActive && !switching && handleSwitch(acc)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
                     background: isActive ? 'rgba(224,173,43,0.1)' : 'rgba(255,255,255,0.03)',
                     border: `1px solid ${isActive ? 'rgba(224,173,43,0.3)' : 'rgba(255,255,255,0.06)'}`,
                     borderRadius: 10, 
-                    cursor: isActive || isDisabled ? 'default' : 'pointer',
+                    cursor: isActive || switching ? 'default' : 'pointer',
                     transition: 'all .15s', 
-                    opacity: switching || isDisabled ? 0.5 : 1,
+                    opacity: switching ? 0.5 : 1,
                   }}
                   data-testid={`dev-switch-${acc.role}`}
                 >
