@@ -188,7 +188,7 @@ const GuardianPage = () => {
     setSessionId(newId);
     setMessages([{
       role: 'assistant',
-      content: `Hello ${user?.name?.split(' ')[0] || 'there'}! I'm the Estate Guardian — your AI estate planning specialist.\n\nI can **analyze your Document Vault**, **generate a personalized Action Checklist**, and **evaluate your Estate Readiness Score**.\n\nHow can I help you today?`
+      content: `Hey ${user?.name?.split(' ')[0] || 'there'}! I'm the Estate Guardian — your AI estate planning specialist living inside your encrypted vault.\n\nI've got eyes on your documents, your beneficiary setup, and your overall readiness. I can **analyze your Vault**, **generate a personalized Action Checklist**, or **break down your Readiness Score**.\n\nWhat's on your mind?`
     }]);
     setView('chat');
     setLandingInput('');
