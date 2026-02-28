@@ -364,6 +364,20 @@ export const SubscriptionManagement = ({
           </div>
         )}
 
+        {/* Beneficiary: no tier determined yet */}
+        {beneficiaryNoTierYet && (
+          <div className="p-6 rounded-2xl text-center" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+            <CreditCard className="w-10 h-10 mx-auto text-[var(--gold)] mb-3 opacity-50" />
+            <h4 className="text-sm font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Your Plan Is Determined by Your Benefactor</h4>
+            <p className="text-xs text-[var(--t4)] leading-relaxed max-w-md mx-auto mb-4">
+              Your beneficiary tier is automatically set based on the plan your benefactor held for the majority of their subscription period with CarryOn. You do not need to select a plan — it will appear here once determined.
+            </p>
+            <p className="text-[10px] text-[var(--t5)]">
+              Beneficiary pricing does not begin until a verified transition event occurs. Minor beneficiaries (under 18) are free.
+            </p>
+          </div>
+        )}
+
         {/* Plan Cards */}
         <div className={`grid gap-4 ${displayPlans.length <= 3 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`} data-testid="plan-grid">
           {displayPlans.map((plan) => {
