@@ -1,189 +1,69 @@
-# CarryOn™ - Product Requirements Document
+# CarryOn™ — Product Requirements Document
 
 ## Original Problem Statement
-CarryOn™ is an AI-powered estate planning platform that helps users ("benefactors") organize, secure, and pass on their legacy to designated beneficiaries. The platform includes secure document vaults, milestone messages, beneficiary management, an AI assistant (Estate Guardian), and more.
+CarryOn™ is a secure estate planning platform for American families. It helps users organize critical end-of-life documents, milestone messages, and digital asset credentials, encrypted and stored securely for beneficiaries to access when the time comes.
+
+**Target Audience**: 350,000+ U.S. hospice patients, military families, and every American family.
 
 ## Core Architecture
-- **Frontend**: React (Vercel - app.carryon.us)
-- **Backend**: FastAPI (Railway)
-- **Database**: MongoDB Atlas
-- **Payments**: Stripe (LIVE keys)
-- **Mobile**: Capacitor/Codemagic (TestFlight)
+- **Frontend**: React (CRA) + Tailwind CSS + Shadcn/UI
+- **Backend**: FastAPI (Python) + Motor (async MongoDB)
+- **Database**: MongoDB Atlas (production) / local MongoDB (preview)
+- **Storage**: AWS S3 (production) / local filesystem (preview)
+- **AI**: xAI Grok (Estate Guardian AI)
+- **Payments**: Stripe
+- **Email**: Resend
+- **SMS**: Twilio
+- **Hosting**: Vercel (frontend), Railway (backend)
+
+## Security Architecture (SOC 2 Compliant)
+- AES-256-GCM encryption with per-estate derived keys (PBKDF2-SHA256, 600K iterations)
+- Zero-knowledge: encrypted content at rest, plaintext never stored
+- AWS S3 with SSE-S3 as second encryption layer
+- Immutable security audit trail
+- Account lockout (5 failed attempts / 15-minute window)
+- Password complexity (8+ chars, uppercase, lowercase, digit)
+- OTP with 10-minute expiry using cryptographically secure generation
+- Comprehensive security headers (CSP, HSTS with preload, X-Frame-Options DENY)
+- Rate limiting on auth endpoints (10/min strict, 20/min moderate)
+- No-cache directives on all API responses
+- Database TTL indexes for auto-cleanup of security records
 
 ## What's Been Implemented
+### Phase 1: Admin Portal (COMPLETE)
+- Refactored AdminPage.js from 1588 lines to 142-line shell + 9 components
+- Real-time search across all admin tabs
 
-### Authentication & User Management
-- Email/password registration with OTP verification
-- Login/logout with JWT tokens
-- Role-based access (admin, benefactor, beneficiary)
-- Date of birth collection on signup (for age-based tier eligibility)
-- Dev-login restricted to admin accounts only
+### Phase 2: Zero-Knowledge Architecture (COMPLETE)
+- AES-256-GCM encryption service with per-estate keys
+- AWS S3 cloud storage integration
+- Lazy migration from legacy Fernet to AES-256-GCM
+- Security audit trail service
 
-### Estate & Document Management
-- Estate creation and management
-- Secure Document Vault with AES-256 encryption
-- Milestone Messages
-- Beneficiary management with orbit visualization
-- Immediate Action Checklist
+### Phase 3: Estate Guardian AI (COMPLETE)
+- Grok-like conversational persona with strict guardrails
+- US estate law expertise (all 50 states)
+- PDF checklist export
+- Legal disclaimer on every response
 
-### Subscription & Payment System
-- 30-day free trial, 6 benefactor tiers, 4 beneficiary tiers, Family Plan
-- Billing cycles: Monthly, Quarterly (10% off), Annual (20% off)
-- Stripe checkout integration (LIVE keys)
-- Subscription management: upgrade/downgrade, billing cycle switch, cancel
-- Family Plan savings visualization
+### Phase 4: Security Hardening Audit (COMPLETE - Feb 28, 2026)
+- Account lockout mechanism (5 failed attempts / 15 min)
+- Password complexity enforcement (8+ chars, upper/lower/digit)
+- OTP time expiry (10 minutes)
+- Content-Security-Policy header
+- HSTS with preload directive
+- Cache-Control no-store on all API responses
+- Estate ownership verification on all document endpoints
+- Zero-knowledge fix: messages no longer store plaintext content
+- Death certificates encrypted with AES-256-GCM
+- Cryptographically secure OTP/backup code generation (secrets module)
+- Database indexes for security collections
+- OTP logging sanitized (no plaintext in logs)
+- CORS restricted from wildcard to specific origins
 
-### Estate Guardian AI Chat (Overhauled Feb 28, 2026)
-- **Persona**: "AI Elf in the Vault" — Grok-like truth-biased, colloquial, direct conversational style
-- **Security Indicators**: AES-256 Encrypted, Zero-Knowledge Vault, SOC 2 Compliant badges on landing and chat
-- **Legal Disclaimer**: Appended to every AI response (not legal advice, consult a licensed attorney)
-- **PDF Checklist Export**: POST /api/guardian/export-checklist generates printable PDF with branding, checklist items, legal disclaimer
-- **Vault Metaphor**: Bot icon styled as a locked safe, "encrypted session" indicator in chat header
-- **Landing Page**: ChatGPT-like session hub with hero section, quick actions, recent conversations
-- **Session Management**: Create new chats, resume previous, delete sessions
-- **Cross-Chat Knowledge**: AI has context from up to 5 recent sessions
-- **Estate Law Expertise**: All 50 U.S. states and territories — community property, probate, trusts, POA, healthcare directives, digital assets
-
-### Security (Audited Feb 28, 2026)
-- SecurityHeadersMiddleware: X-Frame-Options DENY, HSTS, nosniff, XSS-Protection
-- RateLimitMiddleware: 10 req/min on login, 20 req/min on registration
-- CORS properly configured for production domains
-- NoSQL injection protected via Pydantic validation
-- XSS payloads handled safely
-- No password leaks in any public endpoint
-- Dev-switcher config secured (passwords removed from public response)
-- All private endpoints require valid JWT token
-- MongoDB _id properly excluded from all responses
-
-### Admin Controls
-- Beta mode toggle, per-user discount/free access, family plan toggle
-- Verification management, analytics dashboard, trial reminder trigger
-- Support chat system, activity log, subscription management
-
-## Code Architecture (Updated Feb 28, 2026)
-
-```
-/app
-├── backend/
-│   ├── server.py                   # Main app with security middleware
-│   ├── config.py                   # DB, env config
-│   ├── utils.py                    # Auth helpers, OTP, encryption
-│   ├── models.py                   # Pydantic models
-│   ├── routes/
-│   │   ├── auth.py                 # Login, register, OTP, dev-login
-│   │   ├── admin.py                # SECURED: dev-switcher no longer leaks passwords
-│   │   ├── admin_digest.py         # Weekly analytics digest
-│   │   ├── guardian.py             # Chat sessions, cross-chat knowledge
-│   │   ├── estates.py              # Estate CRUD
-│   │   ├── documents.py            # Document management
-│   │   ├── beneficiaries.py        # Beneficiary management
-│   │   ├── messages.py             # Milestone messages
-│   │   ├── checklist.py            # Action checklist
-│   │   ├── subscriptions.py        # Stripe integration
-│   │   ├── family_plan.py          # Family plan features
-│   │   ├── digital_wallet.py       # Digital wallet vault
-│   │   ├── dts.py                  # Digital trustee services
-│   │   ├── support.py              # Support tickets
-│   │   ├── transition.py           # Estate transition
-│   │   ├── security.py             # Security questions
-│   │   ├── push.py                 # Push notifications
-│   │   ├── digest.py               # Weekly digest emails
-│   │   ├── pdf_export.py           # Estate PDF export
-│   │   └── trial_reminders.py      # Trial reminder scheduler
-│   ├── services/
-│   │   ├── readiness.py            # Readiness score calculation
-│   │   └── voice_biometrics.py     # Voice biometric service
-│   └── tests/                      # Pytest test suite
-├── frontend/
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── GuardianPage.js     # Landing + chat view with session management
-│   │   │   ├── SettingsPage.js     # Refactored with extracted components
-│   │   │   ├── AdminPage.js        # Admin dashboard (REFACTORED: 142-line shell)
-│   │   │   ├── DashboardPage.js    # Main dashboard
-│   │   │   ├── VaultPage.js        # Document vault
-│   │   │   └── ...                 # Other pages
-│   │   ├── components/
-│   │   │   ├── settings/           # Extracted subscription components
-│   │   │   │   ├── PlanCard.js
-│   │   │   │   ├── BillingToggle.js
-│   │   │   │   └── SubscriptionManagement.js
-│   │   │   ├── layout/
-│   │   │   │   ├── Sidebar.js
-│   │   │   │   └── MobileNav.js    # FIXED: duplicate key warning
-│   │   │   └── ...
-│   │   └── contexts/
-│   │       ├── AuthContext.js
-│   │       └── ThemeContext.js
-│   └── .env
-├── codemagic.yaml                  # OPTIMIZED: Xcode build flags
-└── memory/
-    ├── PRD.md
-    └── DEPLOY.md
-```
-
-## Security Audit Results (Feb 28, 2026)
-| Test | Status |
-|------|--------|
-| Rate Limiting (10/min login) | PASS |
-| Security Headers (HSTS, X-Frame, etc.) | PASS |
-| NoSQL Injection Protection | PASS |
-| Password Leak Prevention | PASS |
-| XSS Protection | PASS |
-| Auth Bypass Prevention | PASS |
-| IDOR Prevention | PASS |
-| Token Validation | PASS |
-| Admin Endpoint Protection | PASS |
-
-## House Cleaning (Feb 28, 2026)
-- Removed orphaned components: `ActivityTimeline.js`, `NotificationCenter.js`
-- Cleaned `__pycache__` directories
-- Removed stale `test_result.md`
-- Fixed React duplicate key warning in `MobileNav.js`
-- Verified all `.env` keys are actively used (no stale secrets)
-- Verified all MongoDB queries exclude `_id` from responses
-
-## Test Accounts
-- **User**: barnetharris@gmail.com / Blh9170873
-- **Admin**: founder@carryon.us / CarryOntheWisdom!
-- **Local Admin**: admin@carryon.com / admin123
-
-## AdminPage.js Refactoring (Completed Feb 28, 2026)
-- Reduced from 1588 lines → 142 lines (main shell)
-- Extracted 9 tab components into `/frontend/src/components/admin/`:
-  - UsersTab.js (109 lines), TransitionTab.js (156 lines), DTSTab.js (185 lines)
-  - SupportTab.js (189 lines), SubscriptionsTab.js (253 lines), VerificationsTab.js (151 lines)
-  - AnalyticsTab.js (249 lines), ActivityTab.js (80 lines), DevSwitcherTab.js (207 lines)
-- All 9 tabs verified working with 100% pass rate
-
-## AES-256-GCM Encryption Architecture (Implemented Feb 28, 2026)
-
-### What Changed
-- **Encryption**: Upgraded from Fernet (AES-128-CBC) to **AES-256-GCM** with authenticated encryption
-- **Key Management**: Per-estate derived keys via PBKDF2-SHA256 (600,000 iterations)
-- **Storage**: Documents moved from MongoDB blobs to **cloud object storage** (LocalStorage dev / S3 prod)
-- **Messages**: Title and content now **encrypted at rest** with AES-256-GCM
-- **Digital Wallet**: Passwords encrypted with per-estate keys (not global key)
-- **Audit Trail**: SOC 2-compliant `security_audit_log` collection tracks all decrypt/access events
-- **Backward Compat**: Legacy Fernet data auto-decrypted and lazily migrated on access
-
-### New Files
-- `backend/services/encryption.py` — AES-256-GCM encrypt/decrypt, per-estate key derivation
-- `backend/services/storage.py` — Cloud storage abstraction (LocalStorage, S3Storage)
-- `backend/services/audit.py` — SOC 2 security audit trail
-
-### New API Endpoints
-- `GET /api/vault/security-info/{estate_id}` — Returns encryption metadata and vault stats
-
-### Architecture
-```
-User uploads document → AES-256-GCM encrypt (per-estate key) → Store encrypted blob in S3
-User downloads document → Fetch from S3 → AES-256-GCM decrypt → Return plaintext
-Legacy document access → Detect Fernet → Decrypt with legacy key → Re-encrypt as AES-256-GCM → Migrate to S3
-```
-
-## Upcoming Tasks (Prioritized)
-- P1: Re-enable OTP email via Resend (domain verification)
-- P2: Animated logo (waiting on user asset)
-- P2: Codemagic build verification
-- P3: Mobile app deploy via Codemagic
+## Pending / Backlog
+- P1: Re-enable OTP Email System (Resend + domain verification)
+- P1: Codemagic Mobile CI/CD Pipeline fix
+- P2: Animated logo implementation
+- P2: Beneficiary Hub "You" label verification
+- P3: Mobile app deployment
