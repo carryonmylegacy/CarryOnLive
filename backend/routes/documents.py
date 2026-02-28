@@ -528,6 +528,25 @@ async def preview_document(
     if not (is_owner or is_beneficiary or is_admin):
         raise HTTPException(status_code=403, detail="Access denied")
 
+    # Check section-level lock (triple lock) — block preview when SDV is locked
+    section_lock = await db.section_security.find_one(
+        {
+            "user_id": current_user["id"],
+            "section_id": "sdv",
+            "$or": [
+                {"password_enabled": True},
+                {"voice_enabled": True},
+                {"security_question_enabled": True},
+            ],
+        },
+        {"_id": 0},
+    )
+    if section_lock:
+        raise HTTPException(
+            status_code=403,
+            detail="Section is locked. Unlock the Secure Document Vault first.",
+        )
+
     if document.get("is_locked"):
         lock_type = document.get("lock_type")
         if lock_type == "password" and document.get("lock_password_hash"):
