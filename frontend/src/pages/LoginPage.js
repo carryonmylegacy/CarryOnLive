@@ -381,11 +381,11 @@ const LoginPage = () => {
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {[
                 { icon: LockIcon, text: 'AES-256 zero-knowledge encryption \u2014 CarryOn cannot access your data' },
-                { icon: Sparkles, text: 'Air-gapped Estate Guardian\u2122 AI \u2014 zero internet connectivity, ever' },
-                { icon: FileText, text: 'PDF-only document uploads \u2014 optimized for AI analysis' },
+                { icon: Sparkles, text: 'Estate Guardian\u2122 AI \u2014 analyzes documents within your encrypted vault' },
+                { icon: Shield, text: 'Two-factor authentication on every login \u2014 with daily trust option' },
                 { icon: Users, text: 'Transition verification by human team \u2014 not algorithms, not AI' },
                 { icon: Trash2, text: 'Post-execution record destruction \u2014 DTS records are permanently eliminated' },
-                { icon: FileCheck, text: 'Compliance roadmap: SOC 2, HIPAA, GDPR' },
+                { icon: FileCheck, text: 'SOC 2 certification pending \u2014 HIPAA & GDPR on compliance roadmap' },
               ].map(({ icon: Icon, text }, i) => (
                 <RevealSection key={i} delay={i * 0.08}>
                   <div className="rounded-xl p-6 text-center h-full transition-all duration-500 hover:border-[#d4af37]/20 hover:-translate-y-1"
