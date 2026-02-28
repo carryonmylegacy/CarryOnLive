@@ -99,13 +99,19 @@ const OrbitVisualization = ({ estates, userInitials, onEstateClick, benefactors 
     return Math.atan2(py - (r.top + cy), px - (r.left + cx)) * 180 / Math.PI;
   }, []);
 
-  // Animation loop
+  // Animation loop — continuous orbit, never stops
   useEffect(() => {
+    const baseSpeed = 0.2; // Constant orbit speed
     let raf;
     const tick = () => {
       if (!dragRef.current) {
-        velRef.current *= 0.997;
-        if (Math.abs(velRef.current) < 0.003) velRef.current = 0;
+        // After drag release, decay back toward base speed
+        if (Math.abs(velRef.current) > baseSpeed) {
+          velRef.current *= 0.995;
+        } else {
+          // Maintain constant base speed
+          velRef.current = velRef.current >= 0 ? baseSpeed : -baseSpeed;
+        }
       }
       angleRef.current += velRef.current;
       setRot(angleRef.current);
