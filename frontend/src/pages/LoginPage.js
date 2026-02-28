@@ -91,7 +91,7 @@ const LoginPage = () => {
     if (otp.length !== 6) { toast.error('Enter a valid 6-digit OTP'); return; }
     setLoading(true);
     try {
-      const user = await verifyOtp(email, otp);
+      const user = await verifyOtp(email, otp, trustToday);
       toast.success(`Welcome back, ${user.name}!`);
       if (user.role === 'admin') navigate('/admin');
       else if (user.role === 'beneficiary') navigate('/beneficiary');
