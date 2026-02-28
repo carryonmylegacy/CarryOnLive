@@ -18,6 +18,8 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
   const [inviteRole, setInviteRole] = useState('benefactor');
   const [inviting, setInviting] = useState(false);
   const [plans, setPlans] = useState([]);
+  const [savingsPreview, setSavingsPreview] = useState(null);
+  const [loadingSavings, setLoadingSavings] = useState(false);
 
   const headers = getAuthHeaders()?.headers || {};
 
@@ -32,8 +34,21 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
       ]);
       setStatus(statusRes.data);
       setPlans(plansRes.data.plans || []);
+      // Auto-load savings preview if no family plan yet
+      if (!statusRes.data.family_plan) {
+        fetchSavingsPreview();
+      }
     } catch (err) { /* silent */ }
     setLoading(false);
+  };
+
+  const fetchSavingsPreview = async () => {
+    setLoadingSavings(true);
+    try {
+      const res = await axios.get(`${API_URL}/family-plan/preview-savings`, { headers });
+      setSavingsPreview(res.data);
+    } catch (err) { /* silent */ }
+    setLoadingSavings(false);
   };
 
   if (loading) return null;
