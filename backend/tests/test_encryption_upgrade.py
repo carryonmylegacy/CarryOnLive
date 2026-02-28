@@ -14,7 +14,6 @@ Tests for the major backend encryption architecture change:
 import os
 import time
 import uuid
-import base64
 import pytest
 import requests
 

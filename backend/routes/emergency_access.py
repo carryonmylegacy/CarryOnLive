@@ -11,7 +11,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from config import db, logger
+from config import db
 from services.audit import audit_log
 from utils import get_current_user, send_push_notification, send_push_to_all_admins
 

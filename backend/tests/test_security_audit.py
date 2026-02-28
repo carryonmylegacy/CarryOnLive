@@ -7,9 +7,7 @@ Tests: Account lockout, password validation, security headers, CORS,
 import pytest
 import requests
 import os
-import time
 import uuid
-from datetime import datetime, timedelta
 
 BASE_URL = os.environ.get(
     "REACT_APP_BACKEND_URL", "https://five-features-live.preview.emergentagent.com"
