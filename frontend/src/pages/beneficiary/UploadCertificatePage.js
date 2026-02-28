@@ -87,7 +87,7 @@ const UploadCertificatePage = () => {
 
             <div className="rounded-xl p-4 mb-6" style={{ background: 'rgba(139,92,246,0.05)', border: '1px solid rgba(139,92,246,0.12)' }}>
               <p className="text-sm text-[var(--pr2)] leading-relaxed">
-                Your upload is encrypted end-to-end and will only be reviewed by our certified Transition Verification Team. It is never stored on public servers or shared with third parties.
+                Your upload is encrypted end-to-end with AES-256 and stored securely. It will only be reviewed by our Transition Verification Team and is never shared with third parties.
               </p>
             </div>
 
