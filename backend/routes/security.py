@@ -450,10 +450,22 @@ async def verify_section_security(
             raise HTTPException(status_code=401, detail="Incorrect security answer")
         results["security_question"] = True
 
+    # Store a session unlock record (TTL 8 hours to match JWT)
+    await db.section_unlock_sessions.update_one(
+        {"user_id": current_user["id"], "section_id": section_id},
+        {
+            "$set": {
+                "user_id": current_user["id"],
+                "section_id": section_id,
+                "unlocked_at": datetime.now(timezone.utc).isoformat(),
+                "expires_at": datetime.now(timezone.utc)
+                + timedelta(hours=8),
+            }
+        },
+        upsert=True,
+    )
+
     return {"verified": True, "results": results}
-
-
-@router.get("/security/unlock-status/{section_id}")
 async def check_unlock_status(
     section_id: str, current_user: dict = Depends(get_current_user)
 ):
