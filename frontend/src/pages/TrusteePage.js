@@ -228,13 +228,25 @@ const PaymentForm = ({ task, onPaymentSaved, getAuthHeaders }) => {
       </div>
       
       <div className="space-y-2">
-        <Label className="text-[var(--t4)]">Card Details</Label>
-        <div className="p-4 rounded-xl bg-[var(--s)] border border-[var(--b)]">
+        <Label className="text-[var(--t4)]">Card Number, Expiry & CVC</Label>
+        <div className="p-4 rounded-xl bg-[var(--s)] border border-[var(--b)]" style={{ minHeight: 48 }}>
           <CardElement 
             options={cardElementOptions} 
             onChange={(e) => setCardComplete(e.complete)}
           />
         </div>
+        <p className="text-xs text-[var(--t5)]">Enter your full card number, expiration date (MM/YY), and security code (CVC)</p>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-[var(--t4)]">Billing ZIP Code</Label>
+        <Input
+          className="input-field"
+          placeholder="e.g., 92101"
+          value={billingZip}
+          onChange={(e) => setBillingZip(e.target.value.replace(/\D/g, '').slice(0, 10))}
+          data-testid="billing-zip-input"
+        />
       </div>
 
       <div className="rounded-xl p-3 bg-[var(--blbg)] border border-[var(--bl3)]/20">
