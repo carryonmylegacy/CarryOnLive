@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FileKey, CheckCircle2, Eye, XCircle, Loader2, AlertTriangle } from 'lucide-react';
+import { FileKey, CheckCircle2, Eye, XCircle, Loader2, AlertTriangle, Search } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { toast } from 'sonner';
@@ -11,6 +11,7 @@ export const TransitionTab = ({ getAuthHeaders }) => {
   const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchCertificates();
@@ -70,14 +71,35 @@ export const TransitionTab = ({ getAuthHeaders }) => {
         </p>
       </div>
 
-      {certificates.length === 0 ? (
+      {certificates.length > 0 && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+          <Search className="w-4 h-4 text-[var(--t5)]" />
+          <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by estate, uploader, file, status..." className="flex-1 bg-transparent border-none text-[var(--t)] text-sm outline-none placeholder:text-[var(--t5)]" data-testid="transition-search" />
+        </div>
+      )}
+
+      {certificates.filter(cert => {
+        if (!searchQuery) return true;
+        const q = searchQuery.toLowerCase();
+        return (cert.estate_name || '').toLowerCase().includes(q) ||
+          (cert.uploader_name || cert.uploaded_by || '').toLowerCase().includes(q) ||
+          (cert.file_name || '').toLowerCase().includes(q) ||
+          (cert.status || '').toLowerCase().includes(q);
+      }).length === 0 ? (
         <Card className="glass-card"><CardContent className="p-12 text-center">
           <CheckCircle2 className="w-12 h-12 mx-auto text-[var(--gn2)] mb-4" />
           <h3 className="font-bold text-[var(--t)] mb-2">No Certificates to Review</h3>
           <p className="text-sm text-[var(--t4)]">All transition certificates have been processed.</p>
         </CardContent></Card>
       ) : (
-        certificates.map(cert => (
+        certificates.filter(cert => {
+          if (!searchQuery) return true;
+          const q = searchQuery.toLowerCase();
+          return (cert.estate_name || '').toLowerCase().includes(q) ||
+            (cert.uploader_name || cert.uploaded_by || '').toLowerCase().includes(q) ||
+            (cert.file_name || '').toLowerCase().includes(q) ||
+            (cert.status || '').toLowerCase().includes(q);
+        }).map(cert => (
           <Card key={cert.id} className="glass-card" data-testid={`cert-${cert.id}`}>
             <CardContent className="p-5">
               <div className="flex items-start gap-4">
