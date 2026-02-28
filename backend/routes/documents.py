@@ -345,7 +345,7 @@ async def get_vault_security_info(
             "key_derivation": "PBKDF2-SHA256 (600,000 iterations)",
             "key_scope": "Per-estate derived keys",
             "nonce": "96-bit random per operation",
-            "compliance": ["SOC 2 Type II", "FIPS 197"],
+            "compliance": ["SOC 2 Type II (Pending)", "FIPS 197"],
         },
         "storage": {
             "type": "Cloud Object Storage (S3-compatible)",
