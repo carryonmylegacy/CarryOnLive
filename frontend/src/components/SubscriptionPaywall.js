@@ -387,8 +387,8 @@ export default function SubscriptionPaywall({ onDismiss }) {
                   boxShadow: isPremium 
                     ? '0 12px 48px -8px rgba(212,175,55,0.3), 0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
                     : isSelected
-                      ? `0 8px 32px -6px ${colors.accent}44, 0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06)`
-                      : '0 4px 16px -4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)',
+                      ? `0 8px 32px -6px ${colors.accent}44, 0 2px 8px rgba(0,0,0,0.25)`
+                      : '0 4px 16px -4px rgba(0,0,0,0.3)',
                 }}
                 data-testid={`paywall-plan-${plan.id}`}
               >
@@ -488,8 +488,8 @@ export default function SubscriptionPaywall({ onDismiss }) {
                 : 'var(--s)',
               border: `${selectedPlan === 'family' ? '2px' : '1px'} solid ${selectedPlan === 'family' ? 'rgba(212,175,55,0.4)' : 'var(--b)'}`,
               boxShadow: selectedPlan === 'family' 
-                ? '0 8px 32px -6px rgba(212,175,55,0.2), inset 0 1px 0 rgba(255,255,255,0.06)' 
-                : '0 4px 16px -4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)',
+                ? '0 8px 32px -6px rgba(212,175,55,0.2)' 
+                : '0 4px 16px -4px rgba(0,0,0,0.3)',
             }}
             onClick={() => setSelectedPlan('family')}
             data-testid="paywall-plan-family"
