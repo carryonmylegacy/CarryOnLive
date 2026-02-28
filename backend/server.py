@@ -276,8 +276,10 @@ frontend_url = os.environ.get("FRONTEND_URL", "")
 if frontend_url and frontend_url not in ALLOWED_ORIGINS:
     ALLOWED_ORIGINS.append(frontend_url)
 
-# Allow localhost for development
-ALLOWED_ORIGINS.extend(["http://localhost:3000", "http://localhost:3001"])
+# Allow localhost only for local development (non-production)
+backend_env = os.environ.get("RAILWAY_ENVIRONMENT", os.environ.get("NODE_ENV", ""))
+if not backend_env or backend_env in ("development", "preview"):
+    ALLOWED_ORIGINS.extend(["http://localhost:3000", "http://localhost:3001"])
 
 app.add_middleware(
     CORSMiddleware,
