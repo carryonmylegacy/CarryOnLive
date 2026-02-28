@@ -107,7 +107,14 @@ const SettingsPage = () => {
         setWeeklyDigest(res.data.weekly_digest);
       } catch (e) { /* default to true */ }
     };
+    const fetchConsent = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/compliance/consent`, getAuthHeaders());
+        setConsent(res.data);
+      } catch (e) { /* default */ }
+    };
     fetchDigestPref();
+    fetchConsent();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleDigest = async (val) => {
