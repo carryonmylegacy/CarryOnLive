@@ -124,6 +124,7 @@ export const AuthProvider = ({ children }) => {
       subscriptionStatus,
       login,
       verifyOtp,
+      resendOtp,
       devLogin,
       logout,
       getAuthHeaders,
