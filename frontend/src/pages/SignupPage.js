@@ -308,8 +308,8 @@ const SignupPage = () => {
                 </div>
 
                 {/* Step Content */}
-                <div className="px-5 sm:px-7 pb-5 sm:pb-7 overflow-hidden" style={{ height: 440 }}>
-                  <div style={getSlideStyle()}>
+                <div className="px-5 sm:px-7 pb-5 sm:pb-7 flex flex-col" style={{ height: 440 }}>
+                  <div className="flex-1 overflow-hidden" style={getSlideStyle()}>
                     {/* STEP 0: Name */}
                     {step === 0 && (
                       <div className="space-y-4 sm:space-y-5">
