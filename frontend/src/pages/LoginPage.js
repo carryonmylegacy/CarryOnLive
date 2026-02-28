@@ -38,7 +38,7 @@ const RevealSection = ({ children, className = '', delay = 0, direction = 'up', 
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { login, verifyOtp } = useAuth();
+  const { login, verifyOtp, resendOtp } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -48,6 +48,7 @@ const LoginPage = () => {
   const [trustToday, setTrustToday] = useState(false);
   const [flagOpacity, setFlagOpacity] = useState(1);
   const [exiting, setExiting] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   const navigateWithFade = (path) => {
     setExiting(true);
