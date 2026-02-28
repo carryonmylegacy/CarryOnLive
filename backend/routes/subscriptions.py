@@ -722,7 +722,7 @@ async def change_subscription_plan(
     if not api_key:
         raise HTTPException(status_code=500, detail="Payment service not configured")
 
-    origin = data.origin_url.rstrip("/") if data.origin_url else ""
+    origin = validate_origin_url(data.origin_url) if data.origin_url else ""
     success_url = f"{origin}/settings?session_id={{CHECKOUT_SESSION_ID}}&change=true"
     cancel_url = f"{origin}/settings"
     backend_url = os.environ.get(
