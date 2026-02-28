@@ -207,7 +207,7 @@ async def get_legacy_timeline(
                     "type": "beneficiary_edited",
                     "category": "family",
                     "title": "Beneficiary Updated",
-                    "description": f'Updated {changed_str} for {edit.get("title", "beneficiary")}',
+                    "description": f"Updated {changed_str} for {edit.get('title', 'beneficiary')}",
                     "date": edit.get("created_at", ""),
                     "icon": "users",
                     "link": "/beneficiaries",
