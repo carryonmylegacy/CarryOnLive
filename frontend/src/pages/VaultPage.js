@@ -522,6 +522,7 @@ const VaultPage = () => {
       {/* Section Lock */}
       <SectionLockBanner sectionId="vault" />
 
+      <SectionLockedOverlay sectionId="vault">
       {/* Search bar */}
       <div className="flex items-center gap-2 pb-2" style={{ borderBottom: '1px solid var(--b)' }}>
         <Search className="w-4 h-4 text-[var(--t5)]" />
