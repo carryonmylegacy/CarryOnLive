@@ -142,6 +142,73 @@ const SettingsPage = () => {
     navigate('/login');
   };
 
+  const updateConsent = async (field, value) => {
+    setConsentLoading(true);
+    const updated = { ...consent, [field]: value };
+    try {
+      await axios.put(`${API_URL}/compliance/consent`, {
+        marketing_emails: updated.marketing_emails,
+        analytics_tracking: updated.analytics_tracking,
+        third_party_sharing: updated.third_party_sharing,
+      }, getAuthHeaders());
+      setConsent(updated);
+      toast.success('Privacy preference updated');
+    } catch (e) {
+      toast.error('Failed to update preference');
+    }
+    setConsentLoading(false);
+  };
+
+  const handleDataExport = async () => {
+    setExportLoading(true);
+    try {
+      const res = await axios.get(`${API_URL}/compliance/data-export`, getAuthHeaders());
+      const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `carryon-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      toast.success('Your data export has been downloaded');
+    } catch (e) {
+      toast.error('Failed to export data');
+    }
+    setExportLoading(false);
+  };
+
+  const handleDeleteRequest = async () => {
+    if (deleteEmail !== user?.email) {
+      toast.error('Email does not match your account');
+      return;
+    }
+    setDeleteLoading(true);
+    try {
+      const res = await axios.post(`${API_URL}/compliance/deletion-request`, {
+        confirm_email: deleteEmail,
+        reason: deleteReason,
+      }, getAuthHeaders());
+      toast.success(res.data.message);
+      setShowDeleteConfirm(false);
+      setDeleteEmail('');
+      setDeleteReason('');
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Failed to submit deletion request');
+    }
+    setDeleteLoading(false);
+  };
+
+  const fetchRetentionPolicy = async () => {
+    if (retentionPolicy) { setShowRetention(true); return; }
+    try {
+      const res = await axios.get(`${API_URL}/compliance/retention-policy`, getAuthHeaders());
+      setRetentionPolicy(res.data);
+      setShowRetention(true);
+    } catch (e) {
+      toast.error('Could not load retention policy');
+    }
+  };
+
   return (
     <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in max-w-4xl mx-auto" data-testid="settings-page">
       {/* Post-checkout payment confirmation */}
