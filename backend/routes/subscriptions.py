@@ -813,7 +813,6 @@ async def change_subscription_plan(
         raise HTTPException(status_code=404, detail="Plan not found")
 
     # --- Calculate current subscription's remaining value ---
-    old_plan = plans.get(sub.get("plan_id"))
     old_cycle = sub.get("billing_cycle", "monthly")
     old_total_paid = float(sub.get("amount", 0))
 
