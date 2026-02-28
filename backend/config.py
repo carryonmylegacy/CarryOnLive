@@ -28,9 +28,8 @@ db = client[os.environ["DB_NAME"]]
 # JWT — NO FALLBACK: missing secret MUST fail fast
 JWT_SECRET = os.environ.get("JWT_SECRET")
 if not JWT_SECRET:
-    JWT_SECRET = "carryon-secure-jwt-secret-key-2024"
-    logger.warning(
-        "JWT_SECRET not explicitly set — using .env value. Ensure this is set in production."
+    raise RuntimeError(
+        "FATAL: JWT_SECRET environment variable is not set. Server cannot start without it."
     )
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 8
