@@ -243,7 +243,7 @@ const MobileNav = () => {
             const showDivider = index < getBottomNav().length - 1;
             
             return (
-              <React.Fragment key={item.to}>
+              <React.Fragment key={item.id || item.to}>
                 <NavLink
                   to={item.to}
                   className={({ isActive }) =>
