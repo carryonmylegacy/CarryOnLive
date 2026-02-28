@@ -450,10 +450,11 @@ const GuardianPage = () => {
               )}
             </div>
 
-            {/* Disclaimer */}
-            <div className="flex items-center gap-1 justify-center mt-8">
-              <Info className="w-2.5 h-2.5 text-[var(--t5)]" />
-              <span className="text-[9px] text-[var(--t5)]">Not legal advice. Consult a licensed attorney.</span>
+            {/* Legal Disclaimer */}
+            <div className="mt-8 p-3 rounded-xl text-center" style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.1)' }}>
+              <p className="text-[10px] text-[var(--t5)] leading-relaxed">
+                <strong className="text-[var(--gold)]">Not Legal Advice</strong> — Estate Guardian is an AI assistant, not a licensed attorney. For legally binding decisions, always consult a bar-certified attorney licensed in your jurisdiction. Your documents are analyzed within the encrypted vault and are never shared externally.
+              </p>
             </div>
           </div>
         </div>
