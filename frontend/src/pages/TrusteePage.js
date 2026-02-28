@@ -154,6 +154,7 @@ const PaymentForm = ({ task, onPaymentSaved, getAuthHeaders }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [cardholderName, setCardholderName] = useState('');
+  const [billingZip, setBillingZip] = useState('');
   const [processing, setProcessing] = useState(false);
   const [cardComplete, setCardComplete] = useState(false);
 
@@ -171,7 +172,10 @@ const PaymentForm = ({ task, onPaymentSaved, getAuthHeaders }) => {
       const { setupIntent, error } = await stripe.confirmCardSetup(client_secret, {
         payment_method: {
           card: elements.getElement(CardElement),
-          billing_details: { name: cardholderName },
+          billing_details: {
+            name: cardholderName,
+            address: { postal_code: billingZip || undefined },
+          },
         },
       });
 
