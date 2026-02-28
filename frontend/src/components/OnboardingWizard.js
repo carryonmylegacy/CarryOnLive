@@ -63,14 +63,10 @@ const OnboardingWizard = () => {
     navigate(config.route);
   };
 
-  if (dismissed || (progress && progress.all_complete)) return null;
+  if (dismissed) return null;
 
-  // Show skeleton placeholder while loading to prevent layout shift
-  if (loading || !progress) {
-    return (
-      <div className="h-0 overflow-hidden" aria-hidden="true" />
-    );
-  }
+  // While loading, return nothing - no layout shift since dismissed state is cached
+  if (loading || !progress) return null;
 
   return (
     <div>
