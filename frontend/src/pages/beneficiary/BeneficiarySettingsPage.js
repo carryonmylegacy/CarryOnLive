@@ -35,7 +35,7 @@ const BeneficiarySettingsPage = () => {
   const handleLogout = () => { logout(); navigate('/login'); };
   const benefactorFirst = estate?.name?.split(' ')[0] || 'Your benefactor';
   const billingOptions = ['Monthly $2.99/mo', 'Quarterly $8.07/qtr', 'Annual $28.70/yr'];
-  const features = ['Full vault access', 'Estate Guardian AI', 'Immediate Action Checklist', 'Milestone message delivery', 'Life Milestone declarations', 'Priority support'];
+  const features = ['Full vault access', 'Estate Guardian AI (EGA)', 'Immediate Action Checklist (IAC)', 'Milestone Messages (MM)', 'Life Milestone declarations', 'Priority support'];
 
   return (
     <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in max-w-2xl mx-auto" data-testid="beneficiary-settings">
