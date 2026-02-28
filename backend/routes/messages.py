@@ -293,6 +293,19 @@ async def update_message(
         )
         update_fields["video_url"] = video_id
 
+    # Handle voice update
+    if data.voice_data:
+        voice_id = f"voice_{message_id}"
+        voice_bytes = base64.b64decode(data.voice_data)
+        encrypted_voice = encrypt_aes256(voice_bytes, estate_salt)
+        await storage.upload(
+            encrypted_voice.encode("ascii"),
+            existing["estate_id"],
+            voice_id,
+            "audio/webm",
+        )
+        update_fields["voice_url"] = voice_id
+
     if update_fields:
         update_fields["updated_at"] = datetime.now(timezone.utc).isoformat()
         await db.messages.update_one({"id": message_id}, {"$set": update_fields})
