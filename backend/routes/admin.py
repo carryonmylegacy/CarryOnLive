@@ -126,10 +126,16 @@ async def get_public_dev_switcher_config():
 
 @router.get("/admin/users")
 async def get_all_users(current_user: dict = Depends(get_current_user)):
-    """Get all users — admin only"""
+    """Get all users with subscription info — admin only"""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
+    # Attach subscription info to each user
+    for u in users:
+        sub = await db.user_subscriptions.find_one(
+            {"user_id": u["id"]}, {"_id": 0, "plan_id": 1, "plan_name": 1, "billing_cycle": 1, "status": 1, "beta_plan": 1}
+        )
+        u["subscription"] = sub
     return users
 
 
