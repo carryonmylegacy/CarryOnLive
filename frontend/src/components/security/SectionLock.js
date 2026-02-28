@@ -171,6 +171,12 @@ export const SectionLockBanner = ({ sectionId }) => {
         <CheckCircle2 className="w-4 h-4 text-[var(--gn2)]" />
         <span className="text-xs font-bold text-[var(--gn2)]">Unlocked this session</span>
       </div>
+      <Button size="sm" variant="outline" onClick={() => {
+        const { lockAll } = ctx;
+        if (lockAll) lockAll();
+      }} className="text-xs border-[var(--b)] text-[var(--t4)] hover:text-[var(--rd2)] hover:border-[var(--rd2)]" data-testid={`relock-${sectionId}`}>
+        <Lock className="w-3 h-3 mr-1" /> Re-Lock
+      </Button>
     </div>
   );
 };
