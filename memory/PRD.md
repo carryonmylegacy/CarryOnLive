@@ -27,76 +27,116 @@ CarryOn™ is an AI-powered estate planning platform that helps users ("benefact
 - Immediate Action Checklist
 
 ### Subscription & Payment System
-- 30-day free trial on signup
-- 6 benefactor tiers + 4 beneficiary tiers + Family Plan
+- 30-day free trial, 6 benefactor tiers, 4 beneficiary tiers, Family Plan
 - Billing cycles: Monthly, Quarterly (10% off), Annual (20% off)
 - Stripe checkout integration (LIVE keys)
 - Subscription management: upgrade/downgrade, billing cycle switch, cancel
 - Family Plan savings visualization
 
-### Estate Guardian AI Chat (Feb 28, 2026 - Major Upgrade)
+### Estate Guardian AI Chat (Feb 28, 2026)
 - **Landing Page**: ChatGPT-like session hub with hero section, "Ask anything" input, quick action buttons, and last 20 recent conversations
 - **Session Management**: Create new chats, resume previous conversations, delete sessions
-- **Cross-Chat Knowledge**: AI has context from up to 5 recent sessions, enabling seamless references across conversations
+- **Cross-Chat Knowledge**: AI has context from up to 5 recent sessions
 - **Chat View**: Full-screen immersive chat with back arrow to return to landing
-- **Actions**: Analyze Vault, Generate Checklist, Readiness Score
-- **Features**: Markdown rendering, readiness score visualization, session persistence, Export PDF
+
+### Security (Audited Feb 28, 2026)
+- SecurityHeadersMiddleware: X-Frame-Options DENY, HSTS, nosniff, XSS-Protection
+- RateLimitMiddleware: 10 req/min on login, 20 req/min on registration
+- CORS properly configured for production domains
+- NoSQL injection protected via Pydantic validation
+- XSS payloads handled safely
+- No password leaks in any public endpoint
+- Dev-switcher config secured (passwords removed from public response)
+- All private endpoints require valid JWT token
+- MongoDB _id properly excluded from all responses
 
 ### Admin Controls
 - Beta mode toggle, per-user discount/free access, family plan toggle
 - Verification management, analytics dashboard, trial reminder trigger
 - Support chat system, activity log, subscription management
 
-### Security Hardening
-- SecurityHeadersMiddleware, RateLimitMiddleware
-- CORS tightened, dev-login restricted
-- MongoDB _id exclusion 100% coverage
-
 ## Code Architecture (Updated Feb 28, 2026)
 
 ```
 /app
 ├── backend/
+│   ├── server.py                   # Main app with security middleware
+│   ├── config.py                   # DB, env config
+│   ├── utils.py                    # Auth helpers, OTP, encryption
+│   ├── models.py                   # Pydantic models
 │   ├── routes/
-│   │   ├── guardian.py              # AI chat: sessions list, cross-chat knowledge, delete
-│   │   ├── subscription.py         # Stripe webhooks, checkout
-│   │   ├── subscription_management.py # Upgrade/downgrade/cancel
-│   │   └── family_plan.py          # Family tree savings
-│   └── .env
+│   │   ├── auth.py                 # Login, register, OTP, dev-login
+│   │   ├── admin.py                # SECURED: dev-switcher no longer leaks passwords
+│   │   ├── admin_digest.py         # Weekly analytics digest
+│   │   ├── guardian.py             # Chat sessions, cross-chat knowledge
+│   │   ├── estates.py              # Estate CRUD
+│   │   ├── documents.py            # Document management
+│   │   ├── beneficiaries.py        # Beneficiary management
+│   │   ├── messages.py             # Milestone messages
+│   │   ├── checklist.py            # Action checklist
+│   │   ├── subscriptions.py        # Stripe integration
+│   │   ├── family_plan.py          # Family plan features
+│   │   ├── digital_wallet.py       # Digital wallet vault
+│   │   ├── dts.py                  # Digital trustee services
+│   │   ├── support.py              # Support tickets
+│   │   ├── transition.py           # Estate transition
+│   │   ├── security.py             # Security questions
+│   │   ├── push.py                 # Push notifications
+│   │   ├── digest.py               # Weekly digest emails
+│   │   ├── pdf_export.py           # Estate PDF export
+│   │   └── trial_reminders.py      # Trial reminder scheduler
+│   ├── services/
+│   │   ├── readiness.py            # Readiness score calculation
+│   │   └── voice_biometrics.py     # Voice biometric service
+│   └── tests/                      # Pytest test suite
 ├── frontend/
 │   ├── src/
 │   │   ├── pages/
-│   │   │   ├── SettingsPage.js      # Refactored with extracted components
-│   │   │   ├── GuardianPage.js      # Landing page + chat view with session management
-│   │   │   └── AdminPage.js         # Needs refactoring (1588 lines)
+│   │   │   ├── GuardianPage.js     # Landing + chat view with session management
+│   │   │   ├── SettingsPage.js     # Refactored with extracted components
+│   │   │   ├── AdminPage.js        # Admin dashboard (needs refactoring)
+│   │   │   ├── DashboardPage.js    # Main dashboard
+│   │   │   ├── VaultPage.js        # Document vault
+│   │   │   └── ...                 # Other pages
 │   │   ├── components/
-│   │   │   ├── settings/
+│   │   │   ├── settings/           # Extracted subscription components
 │   │   │   │   ├── PlanCard.js
 │   │   │   │   ├── BillingToggle.js
 │   │   │   │   └── SubscriptionManagement.js
-│   │   │   ├── SubscriptionPaywall.js
-│   │   │   └── visualization/
-│   │   │       └── OrbitVisualization.js
+│   │   │   ├── layout/
+│   │   │   │   ├── Sidebar.js
+│   │   │   │   └── MobileNav.js    # FIXED: duplicate key warning
+│   │   │   └── ...
 │   │   └── contexts/
-│   │       └── AuthContext.js
+│   │       ├── AuthContext.js
+│   │       └── ThemeContext.js
 │   └── .env
-├── codemagic.yaml
+├── codemagic.yaml                  # OPTIMIZED: Xcode build flags
 └── memory/
     ├── PRD.md
     └── DEPLOY.md
 ```
 
-## Key API Endpoints
-- `GET /api/chat/sessions` — List user's last 20 chat sessions with titles/timestamps
-- `DELETE /api/chat/sessions/{session_id}` — Delete a chat session
-- `GET /api/chat/history/{session_id}` — Get messages for a specific session
-- `POST /api/chat/guardian` — Send message with cross-chat knowledge context
-- Auth, Subscriptions, Verification, Admin endpoints (unchanged)
+## Security Audit Results (Feb 28, 2026)
+| Test | Status |
+|------|--------|
+| Rate Limiting (10/min login) | PASS |
+| Security Headers (HSTS, X-Frame, etc.) | PASS |
+| NoSQL Injection Protection | PASS |
+| Password Leak Prevention | PASS |
+| XSS Protection | PASS |
+| Auth Bypass Prevention | PASS |
+| IDOR Prevention | PASS |
+| Token Validation | PASS |
+| Admin Endpoint Protection | PASS |
 
-## Deployment
-- Manual Vercel deploy hook after GitHub push (hook URL in /app/memory/DEPLOY.md)
-- Railway auto-deploys on push
-- Stripe LIVE keys on both environments
+## House Cleaning (Feb 28, 2026)
+- Removed orphaned components: `ActivityTimeline.js`, `NotificationCenter.js`
+- Cleaned `__pycache__` directories
+- Removed stale `test_result.md`
+- Fixed React duplicate key warning in `MobileNav.js`
+- Verified all `.env` keys are actively used (no stale secrets)
+- Verified all MongoDB queries exclude `_id` from responses
 
 ## Test Accounts
 - **User**: barnetharris@gmail.com / Blh9170873
@@ -104,8 +144,8 @@ CarryOn™ is an AI-powered estate planning platform that helps users ("benefact
 - **Local Admin**: admin@carryon.com / admin123
 
 ## Upcoming Tasks (Prioritized)
-- P1: Re-enable OTP email via Resend (domain verification for carryontechnologies.com)
-- P1: AdminPage.js refactoring (extract 9 tabs into separate components)
-- P2: Animated logo (waiting on user transparent PNG/SVG asset)
+- P1: Re-enable OTP email via Resend (domain verification)
+- P1: AdminPage.js refactoring (1588 lines → extract tab components)
+- P2: Animated logo (waiting on user asset)
 - P2: Codemagic build verification
 - P3: Mobile app deploy via Codemagic
