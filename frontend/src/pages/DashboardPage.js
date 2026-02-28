@@ -353,6 +353,9 @@ const DashboardPage = () => {
         </div>
       </div>
 
+      {/* Onboarding Wizard */}
+      <OnboardingWizard />
+
       {/* Bottom Section - Vault, Messages & Checklist Previews */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Secure Document Vault Preview - Blue */}
