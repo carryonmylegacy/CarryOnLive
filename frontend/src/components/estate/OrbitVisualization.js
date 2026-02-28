@@ -180,21 +180,17 @@ const OrbitVisualization = ({ estates, userInitials, onEstateClick, benefactors 
   // Orbit labels
   const orbitLabels = ['Spouse & Children', 'Parents & Siblings', 'Grandparents', 'Great-Grandparents'];
 
-  // Calculate container size based on orbits needed
-  const containerSize = (maxOrbitLevel + 1) * orbitSpacing * 2 + baseOrbitR * 2 + 60;
-
   return (
     <div
       ref={containerRef}
       style={{ 
         position: 'relative', 
-        width: Math.max(300, containerSize), 
-        height: Math.max(300, containerSize), 
+        width: containerSize, 
+        height: containerSize, 
         margin: '0 auto 20px', 
         cursor: 'grab', 
         userSelect: 'none', 
-        touchAction: 'none', 
-        overflow: 'hidden' 
+        touchAction: 'none',
       }}
       onMouseDown={onDown}
       onTouchStart={onDown}
