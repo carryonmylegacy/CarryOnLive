@@ -282,6 +282,21 @@ export const SubscriptionManagement = ({
   };
 
   const handleChangeBilling = async () => {
+    // Downgrading billing cycle (e.g., annual → quarterly) → customer service
+    if (isDowngrade(currentPlanId, billing)) {
+      try {
+        await axios.post(`${API_URL}/support/messages`, {
+          content: `I'd like to change my billing cycle from ${currentBilling} to ${billing} on my ${currentSub?.plan_name || currentPlanId} plan. Since this is a downgrade, please process the refund for the unused portion and update my billing. Thank you.`,
+        }, getAuthHeaders());
+        toast.success('Your billing change request has been sent to Customer Service. We\'ll process your refund shortly — check your messages for updates.');
+      } catch (e) {
+        toast.error('Failed to send request. Please go to Customer Service directly.');
+      }
+      setChangingBilling(false);
+      return;
+    }
+
+    // Upgrade billing cycle → proceed normally
     setChangingBilling(true);
     try {
       const res = await axios.post(`${API_URL}/subscriptions/change-billing`, {
