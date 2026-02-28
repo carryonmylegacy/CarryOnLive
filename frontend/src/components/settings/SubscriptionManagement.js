@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   CreditCard, Loader2, Clock, ChevronRight, Zap, Shield, X, Check,
-  Crown, Star, Heart, Award, ArrowRight, Users, Mail, Sparkles
+  Crown, Star, Heart, Award, ArrowRight, Users, Mail, Sparkles, Upload
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
