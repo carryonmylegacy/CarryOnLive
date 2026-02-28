@@ -162,8 +162,9 @@ class Message(BaseModel):
     estate_id: str
     title: str
     content: str
-    message_type: str = "text"  # text, video
+    message_type: str = "text"  # text, voice, video
     video_url: Optional[str] = None
+    voice_url: Optional[str] = None
     recipients: List[str] = []
     trigger_type: str = "immediate"  # immediate, age_milestone, event
     trigger_value: Optional[str] = None
