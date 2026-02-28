@@ -6,7 +6,6 @@ Provides endpoints for:
 - SOC 2: Incident logging, data retention policy enforcement
 """
 
-import json
 import uuid
 from datetime import datetime, timezone
 
@@ -28,19 +27,21 @@ async def export_user_data(current_user: dict = Depends(get_current_user)):
     user_id = current_user["id"]
 
     # Collect all user data across collections
-    user_profile = await db.users.find_one(
-        {"id": user_id}, {"_id": 0, "password": 0}
-    )
+    user_profile = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
 
-    estates = await db.estates.find(
-        {"owner_id": user_id}, {"_id": 0}
-    ).to_list(100)
+    estates = await db.estates.find({"owner_id": user_id}, {"_id": 0}).to_list(100)
 
     estate_ids = [e["id"] for e in estates]
 
     documents_meta = await db.documents.find(
         {"estate_id": {"$in": estate_ids}},
-        {"_id": 0, "file_data": 0, "storage_key": 0, "lock_password_hash": 0, "backup_code": 0},
+        {
+            "_id": 0,
+            "file_data": 0,
+            "storage_key": 0,
+            "lock_password_hash": 0,
+            "backup_code": 0,
+        },
     ).to_list(1000)
 
     messages = await db.messages.find(
@@ -248,9 +249,7 @@ async def log_phi_access(
 async def get_phi_access_log(current_user: dict = Depends(get_current_user)):
     """HIPAA: View PHI access log for the current user (accounting of disclosures)."""
     logs = (
-        await db.phi_access_log.find(
-            {"user_id": current_user["id"]}, {"_id": 0}
-        )
+        await db.phi_access_log.find({"user_id": current_user["id"]}, {"_id": 0})
         .sort("timestamp", -1)
         .to_list(500)
     )
