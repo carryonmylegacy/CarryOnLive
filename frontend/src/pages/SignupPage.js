@@ -153,6 +153,27 @@ const SignupPage = () => {
     }
   };
 
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0) return;
+    try {
+      const result = await resendOtp(registeredEmail);
+      if (result.email_sent === false) {
+        toast.error('Failed to send code — please try again');
+      } else {
+        toast.success('New verification code sent');
+      }
+      setResendCooldown(30);
+      const interval = setInterval(() => {
+        setResendCooldown(prev => {
+          if (prev <= 1) { clearInterval(interval); return 0; }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch {
+      toast.error('Failed to resend code');
+    }
+  };
+
   // Two-phase slide: exit (current slides out) → enter (new slides in)
   const getSlideStyle = () => {
     const goingForward = direction === 'right';
