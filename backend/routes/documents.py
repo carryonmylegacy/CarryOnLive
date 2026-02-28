@@ -569,6 +569,17 @@ async def preview_document(
         estate_id=document.get("estate_id"),
     )
 
+    # HIPAA: Log PHI access for document preview
+    from routes.compliance import log_phi_access
+
+    await log_phi_access(
+        user_id=estate.get("owner_id", ""),
+        action="document_preview",
+        resource=f"document:{document_id}",
+        details=f"Document '{document.get('name', '')}' previewed",
+        accessed_by=current_user["id"],
+    )
+
     return Response(
         content=decrypted_data,
         media_type=document.get("file_type", "application/octet-stream"),
