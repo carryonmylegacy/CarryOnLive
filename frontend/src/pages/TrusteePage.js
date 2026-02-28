@@ -689,14 +689,18 @@ const TrusteePage = () => {
                     <Label className="text-[var(--t4)]">Release Timing</Label>
                     <select
                       className="input-field w-full rounded-lg p-3 bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm"
-                      value={editTask.timedRelease}
-                      onChange={(e) => setEditTask(p => ({ ...p, timedRelease: e.target.value }))}
+                      value={['6 months post-transition','1 year post-transition','2 years post-transition','5 years post-transition','10 years post-transition'].includes(editTask.timedRelease) ? editTask.timedRelease : editTask.timedRelease ? 'custom' : ''}
+                      onChange={(e) => { if (e.target.value === 'custom') setEditTask(p => ({ ...p, timedRelease: '' })); else setEditTask(p => ({ ...p, timedRelease: e.target.value })); }}
                     >
                       <option value="">Select timing...</option>
                       {['6 months post-transition', '1 year post-transition', '2 years post-transition', '5 years post-transition', '10 years post-transition'].map(o => (
                         <option key={o} value={o}>{o}</option>
                       ))}
+                      <option value="custom">Custom timing...</option>
                     </select>
+                    {!['','6 months post-transition','1 year post-transition','2 years post-transition','5 years post-transition','10 years post-transition'].includes(editTask.timedRelease) && (
+                      <Input className="input-field mt-2" value={editTask.timedRelease} onChange={e => setEditTask(p => ({ ...p, timedRelease: e.target.value }))} placeholder="e.g., 3 months after probate closes" />
+                    )}
                   </div>
                 )}
                 
