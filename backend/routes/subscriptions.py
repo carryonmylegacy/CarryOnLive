@@ -890,6 +890,15 @@ async def change_billing_cycle(
     if cycle == current_cycle:
         return {"success": True, "message": f"Already on {cycle} billing"}
 
+    # During beta, just update the billing preference
+    settings = await get_subscription_settings()
+    if settings.get("beta_mode", True):
+        await db.user_subscriptions.update_one(
+            {"user_id": current_user["id"]},
+            {"$set": {"billing_cycle": cycle, "updated_at": datetime.now(timezone.utc).isoformat()}},
+        )
+        return {"success": True, "message": f"Billing switched to {cycle}"}
+
     # Get plan pricing
     settings = await get_subscription_settings()
     plans = {p["id"]: p for p in settings.get("plans", DEFAULT_PLANS)}
