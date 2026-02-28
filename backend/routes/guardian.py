@@ -10,8 +10,10 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from config import XAI_MODEL, db, logger, xai_client
 from models import ChatRequest, ChatResponse, ChecklistItem
+from services.audit import audit_log
+from services.encryption import decrypt_aes256, get_estate_salt
 from services.readiness import calculate_estate_readiness
-from utils import decrypt_data, get_current_user, log_activity, update_estate_readiness
+from utils import get_current_user, log_activity, update_estate_readiness
 
 router = APIRouter()
 
