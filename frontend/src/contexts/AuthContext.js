@@ -74,7 +74,15 @@ export const AuthProvider = ({ children }) => {
     return userData;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    // Server-side token blacklisting
+    try {
+      if (token) {
+        await axios.post(`${API_URL}/auth/logout`, {}, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+    } catch (e) { /* proceed with client-side logout even if server call fails */ }
     localStorage.removeItem('carryon_token');
     localStorage.removeItem('dev_switcher_admin_session');
     localStorage.removeItem('dev_switcher_admin_token');
