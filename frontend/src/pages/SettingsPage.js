@@ -321,22 +321,25 @@ const SettingsPage = () => {
               const isActive = activePlan === p.name;
               const upgrading = isUpgrade(p.id);
               const downgrading = isDowngrade(p.id);
+              const eligible = isEligibleForPlan(p.id);
 
               return (
                 <div
                   key={p.id}
-                  onClick={() => setActivePlan(p.name)}
-                  className={`relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-500 group ${
-                    isPremium ? 'sm:scale-[1.03] hover:-translate-y-2' : 'hover:-translate-y-1'
+                  onClick={() => eligible && setActivePlan(p.name)}
+                  className={`relative rounded-2xl overflow-hidden transition-all duration-500 group ${
+                    !eligible ? 'opacity-50 cursor-default' : 'cursor-pointer'
+                  } ${
+                    eligible && isPremium ? 'sm:scale-[1.03] hover:-translate-y-2' : eligible ? 'hover:-translate-y-1' : ''
                   }`}
                   style={{
-                    background: tc.bg,
+                    background: !eligible ? 'rgba(20,28,51,0.6)' : tc.bg,
                     border: isCurrent
                       ? `2px solid ${tc.accent}`
-                      : isPremium
+                      : isPremium && eligible
                         ? `2px solid ${tc.accent}60`
                         : `1px solid rgba(255,255,255,0.07)`,
-                    boxShadow: isCurrent
+                    boxShadow: !eligible ? 'none' : isCurrent
                       ? `0 0 0 1px ${tc.accent}30, 0 12px 40px -8px ${tc.glow}, inset 0 1px 0 rgba(255,255,255,0.1)`
                       : isPremium
                         ? `0 12px 40px -8px ${tc.glow}, inset 0 1px 0 rgba(255,255,255,0.08)`
