@@ -19,7 +19,9 @@ import {
   MessageSquare,
   Plus,
   Trash2,
-  Clock
+  Clock,
+  Shield,
+  Lock
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
