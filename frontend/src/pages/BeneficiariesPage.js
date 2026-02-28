@@ -486,7 +486,7 @@ const BeneficiariesPage = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="border-white/10 text-[var(--t3)] hover:bg-white/5"
+                        className="border-[var(--b)] text-[var(--t3)] hover:bg-white/5"
                         onClick={() => handleCopyLink(ben)}
                         data-testid={`copy-invite-link-${ben.id}`}
                       >
@@ -531,7 +531,7 @@ const BeneficiariesPage = () => {
           resetForm();
         }
       }}>
-        <DialogContent className="glass-card border-white/10 sm:max-w-2xl max-h-[90vh] overflow-y-scroll !top-[5vh] !translate-y-0">
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-2xl max-h-[90vh] overflow-y-scroll !top-[5vh] !translate-y-0">
           <DialogHeader>
             <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
               {editingBeneficiary ? 'Edit Beneficiary' : 'Add Beneficiary'}
@@ -612,7 +612,7 @@ const BeneficiariesPage = () => {
                     <SelectTrigger className="input-field">
                       <SelectValue placeholder="None" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#1A2440] border-white/10">
+                    <SelectContent className="bg-[#1A2440] border-[var(--b)]">
                       <SelectItem value="none">None</SelectItem>
                       <SelectItem value="Jr.">Jr.</SelectItem>
                       <SelectItem value="Sr.">Sr.</SelectItem>
@@ -631,7 +631,7 @@ const BeneficiariesPage = () => {
                     <SelectTrigger className="input-field" data-testid="beneficiary-relation-select">
                       <SelectValue placeholder="Select relationship" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#1A2440] border-white/10">
+                    <SelectContent className="bg-[#1A2440] border-[var(--b)]">
                       {relations.map((rel) => (
                         <SelectItem key={rel} value={rel}>{rel}</SelectItem>
                       ))}
@@ -644,7 +644,7 @@ const BeneficiariesPage = () => {
                     <SelectTrigger className="input-field" data-testid="beneficiary-gender-select">
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#1A2440] border-white/10">
+                    <SelectContent className="bg-[#1A2440] border-[var(--b)]">
                       <SelectItem value="male">Male</SelectItem>
                       <SelectItem value="female">Female</SelectItem>
                       <SelectItem value="other">Other</SelectItem>
@@ -730,7 +730,7 @@ const BeneficiariesPage = () => {
                     <SelectTrigger className="input-field">
                       <SelectValue placeholder="State" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#1A2440] border-white/10 max-h-48">
+                    <SelectContent className="bg-[#1A2440] border-[var(--b)] max-h-48">
                       {usStates.map((st) => (
                         <SelectItem key={st} value={st}>{st}</SelectItem>
                       ))}
@@ -792,7 +792,7 @@ const BeneficiariesPage = () => {
                 setEditingBeneficiary(null);
                 resetForm();
               }}
-              className="border-white/10 text-white"
+              className="border-[var(--b)] text-white"
             >
               Cancel
             </Button>

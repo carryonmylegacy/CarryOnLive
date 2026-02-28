@@ -65,7 +65,7 @@ const QuickStartTemplates = ({ estateId, onApplied }) => {
   if (!templates.length) return null;
 
   return (
-    <Card className="border-white/10 bg-[#0F1629]/80 mb-6" data-testid="quick-start-templates">
+    <Card className="border-[var(--b)] bg-[#0F1629]/80 mb-6" data-testid="quick-start-templates">
       <CardContent className="p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
