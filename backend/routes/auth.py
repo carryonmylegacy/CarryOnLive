@@ -22,6 +22,15 @@ router = APIRouter()
 
 TRIAL_DURATION_DAYS = 30
 
+
+def get_client_ip(request: Request) -> str:
+    """Get real client IP, accounting for reverse proxies."""
+    forwarded = request.headers.get("x-forwarded-for", "")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
 # ===================== AUTH ROUTES =====================
 
 
