@@ -106,61 +106,106 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
     } catch (err) { toast.error('Failed to dissolve'); }
   };
 
-  // No family plan yet — show creation UI
+  // No family plan yet — show creation UI with savings preview
   if (!fp) {
     const currentTierPlan = plans.find(p => p.id === status.current_plan_id);
-    const availablePlans = currentTierPlan 
-      ? [currentTierPlan]  // Already subscribed — use their current tier
-      : plans.filter(p => !['new_adult', 'military', 'hospice'].includes(p.id));
+    const sp = savingsPreview;
 
     return (
-      <Card className="glass-card" data-testid="family-plan-card">
+      <Card className="glass-card overflow-hidden" data-testid="family-plan-card">
         <CardHeader>
           <CardTitle className="text-[var(--t)] flex items-center gap-2">
             <Users className="w-5 h-5 text-[var(--gold)]" />
             Family Plan
           </CardTitle>
           <p className="text-xs text-[var(--t4)] mt-1">
-            Bundle your household for savings. Added benefactors save $1/mo, all beneficiaries pay a flat $3.49/mo.
+            Bundle your household for savings. Benefactors save $1/mo, all beneficiaries pay a flat $3.49/mo.
           </p>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {currentTierPlan ? (
-              <>
-                <p className="text-sm text-[var(--t3)]">Add your family to your <span className="font-bold text-[var(--gold)]">{currentTierPlan.name}</span> plan. You become the Family Plan Owner (FPO).</p>
-                <button
-                  onClick={() => handleCreate(currentTierPlan.id)}
-                  disabled={creating}
-                  className="w-full p-4 rounded-xl text-center transition-all hover:-translate-y-0.5 border border-[var(--gold)]/30 hover:border-[var(--gold)]"
-                  style={{ background: 'rgba(212,175,55,0.06)' }}
-                >
-                  <div className="font-bold text-[var(--t)]">Activate Family Plan</div>
-                  <div className="text-[var(--gold)] font-bold text-xl mt-1">
-                    ${currentTierPlan.price?.toFixed(2)}<span className="text-xs text-[var(--t4)]">/mo for you</span>
-                  </div>
-                  <div className="text-xs text-[var(--t4)] mt-1">Benefactors: -$1/mo · Beneficiaries: $3.49/mo flat</div>
-                </button>
-              </>
-            ) : (
-              <>
-                <p className="text-sm text-[var(--t3)]">Select your plan tier to start a family plan. You become the Family Plan Owner (FPO).</p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {availablePlans.map(p => (
-                    <button
-                      key={p.id}
-                      onClick={() => handleCreate(p.id)}
-                      disabled={creating}
-                      className="p-4 rounded-xl text-center transition-all hover:-translate-y-0.5 border border-[var(--b)] hover:border-[var(--gold)]"
-                      style={{ background: 'var(--s)' }}
-                    >
-                      <div className="font-bold text-[var(--t)]">{p.name}</div>
-                      <div className="text-[var(--gold)] font-bold text-xl mt-1">${p.price?.toFixed(2)}<span className="text-xs text-[var(--t4)]">/mo</span></div>
-                    </button>
+          <div className="space-y-4">
+            {/* Your price with discount */}
+            {currentTierPlan && (
+              <div className="p-4 rounded-xl" style={{ background: 'rgba(212,175,55,0.05)', border: '1px solid rgba(212,175,55,0.15)' }}>
+                <p className="text-xs text-[var(--t4)] mb-1">Your cost as Family Plan Owner</p>
+                <div className="flex items-center gap-3">
+                  <span className="text-lg line-through text-[var(--t5)]">${currentTierPlan.price?.toFixed(2)}/mo</span>
+                  <ArrowRight className="w-4 h-4 text-[var(--gold)]" />
+                  <span className="text-2xl font-bold text-[var(--gold)]" style={{ fontFamily: 'Outfit, sans-serif' }}>${(currentTierPlan.price - 1).toFixed(2)}/mo</span>
+                  <span className="text-xs font-bold px-2 py-1 rounded-full bg-[#22C993]/15 text-[#22C993]">Save $1/mo</span>
+                </div>
+              </div>
+            )}
+
+            {/* Family Tree Preview */}
+            {loadingSavings ? (
+              <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-[var(--gold)]" /></div>
+            ) : sp && sp.family_tree.length > 1 ? (
+              <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--b)' }}>
+                <div className="px-4 py-3 flex items-center justify-between" style={{ background: 'var(--s)' }}>
+                  <span className="text-sm font-bold text-[var(--t)]">Your Family ({sp.member_count} members)</span>
+                  {sp.total_monthly_savings > 0 && (
+                    <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ background: 'rgba(34,201,147,0.12)', color: '#22C993' }}>
+                      Save ${sp.total_monthly_savings.toFixed(2)}/mo total
+                    </span>
+                  )}
+                </div>
+                <div className="divide-y divide-[var(--b)]">
+                  {sp.family_tree.map((m, i) => (
+                    <div key={i} className="px-4 py-3 flex items-center justify-between">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                          m.role === 'benefactor' ? 'bg-[var(--gold)]/15 text-[var(--gold)]' : 'bg-[#60A5FA]/15 text-[#60A5FA]'
+                        }`}>
+                          {m.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?'}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-[var(--t)] truncate">{m.name}</div>
+                          <div className="text-[10px] text-[var(--t5)]">{m.relation}</div>
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0 ml-3">
+                        <div className="flex items-center gap-2 justify-end">
+                          <span className="text-xs line-through text-[var(--t5)]">${m.current_price.toFixed(2)}</span>
+                          <span className="text-sm font-bold text-[var(--t)]">${m.family_price.toFixed(2)}</span>
+                        </div>
+                        {m.savings > 0 && (
+                          <div className="text-[10px] text-[#22C993] font-medium">-${m.savings.toFixed(2)}/mo</div>
+                        )}
+                      </div>
+                    </div>
                   ))}
                 </div>
-              </>
-            )}
+                {/* Total row */}
+                <div className="px-4 py-3 flex items-center justify-between" style={{ background: 'rgba(212,175,55,0.04)' }}>
+                  <span className="text-sm font-bold text-[var(--t)]">Monthly Total</span>
+                  <div className="text-right">
+                    <div className="flex items-center gap-2 justify-end">
+                      <span className="text-sm line-through text-[var(--t5)]">${sp.total_current_cost.toFixed(2)}</span>
+                      <span className="text-lg font-bold text-[var(--gold)]">${sp.total_family_cost.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : sp && sp.family_tree.length <= 1 ? (
+              <p className="text-sm text-[var(--t4)] text-center py-2">Add beneficiaries to your estates to see family plan savings.</p>
+            ) : null}
+
+            {/* CTA */}
+            <button
+              onClick={() => handleCreate(currentTierPlan?.id || 'standard')}
+              disabled={creating}
+              className="w-full p-4 rounded-xl text-center transition-all hover:-translate-y-0.5 font-bold"
+              style={{ 
+                background: 'linear-gradient(135deg, #d4af37, #b8962e)', 
+                color: '#0F1629',
+                boxShadow: '0 4px 20px rgba(212,175,55,0.3)',
+              }}
+              data-testid="activate-family-plan"
+            >
+              {creating ? <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> : null}
+              Activate Family Plan {sp?.total_monthly_savings > 0 ? `· Save $${sp.total_monthly_savings.toFixed(2)}/mo` : ''}
+            </button>
           </div>
         </CardContent>
       </Card>
