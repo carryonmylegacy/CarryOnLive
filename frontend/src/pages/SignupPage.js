@@ -239,7 +239,7 @@ const SignupPage = () => {
                   </div>
 
                   <div className="flex items-center gap-4">
-                    {['AES-256 Encrypted', 'Zero-Knowledge', 'SOC 2 Compliance Pending'].map(badge => (
+                    {['AES-256 Encrypted', 'Zero-Knowledge', '2FA Protected'].map(badge => (
                       <div key={badge} className="flex items-center gap-1.5">
                         <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
                         <span className="text-[#525c72] text-xs">{badge}</span>
