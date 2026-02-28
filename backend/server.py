@@ -72,6 +72,24 @@ async def weekly_digest_scheduler():
             logger.error(f"Admin analytics digest failed: {e}")
 
 
+async def daily_dob_check_scheduler():
+    """Run DOB-based subscription event checks once daily."""
+    import asyncio
+
+    await asyncio.sleep(300)  # Wait 5 min after startup
+    while True:
+        try:
+            from routes.subscriptions import check_dob_subscription_events
+
+            count = await check_dob_subscription_events()
+            if count > 0:
+                logger.info(f"DOB lifecycle check: {count} events triggered")
+        except Exception as e:
+            logger.error(f"DOB lifecycle check failed: {e}")
+        await asyncio.sleep(86400)  # Run daily
+
+
+
 # Lifespan (replaces deprecated on_event)
 @asynccontextmanager
 async def lifespan(app):
