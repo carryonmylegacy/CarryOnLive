@@ -522,6 +522,7 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
         "eligible_tiers": eligible_tiers,
         "user_role": current_user.get("role", "benefactor"),
         "beneficiary_locked_tier": beneficiary_locked_tier,
+        "estate_transitioned": estate_transitioned,
     }
 
 
