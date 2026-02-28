@@ -384,18 +384,38 @@ async def get_all_certificates(current_user: dict = Depends(get_current_user)):
 async def get_certificate_document(
     cert_id: str, current_user: dict = Depends(get_current_user)
 ):
-    """Download/view the actual death certificate document"""
+    """Download/view the actual death certificate document — decrypts AES-256-GCM"""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     cert = await db.death_certificates.find_one({"id": cert_id}, {"_id": 0})
     if not cert or not cert.get("file_data"):
         raise HTTPException(status_code=404, detail="Certificate not found")
-    file_bytes = base64.b64decode(cert["file_data"])
+
+    # Decrypt the certificate (handles both encrypted and legacy base64)
+    try:
+        estate_salt = await get_estate_salt(cert["estate_id"])
+        file_bytes = decrypt_aes256(cert["file_data"], estate_salt)
+    except Exception:
+        # Fallback: try as legacy unencrypted base64
+        try:
+            file_bytes = base64.b64decode(cert["file_data"])
+        except Exception:
+            raise HTTPException(status_code=500, detail="Failed to process certificate")
+
     content_type = "application/pdf"
     if cert.get("file_name", "").lower().endswith((".jpg", ".jpeg")):
         content_type = "image/jpeg"
     elif cert.get("file_name", "").lower().endswith(".png"):
         content_type = "image/png"
+
+    await audit_log(
+        action="transition.certificate_view",
+        user_id=current_user["id"],
+        resource_type="death_certificate",
+        resource_id=cert_id,
+        estate_id=cert.get("estate_id"),
+    )
+
     return Response(
         content=file_bytes,
         media_type=content_type,
