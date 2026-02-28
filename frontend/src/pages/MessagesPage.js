@@ -580,6 +580,52 @@ const MessagesPage = () => {
               </div>
             )}
             
+            {/* Voice Recording */}
+            {messageType === 'voice' && (
+              <div className="space-y-3">
+                <Label className="text-[#94a3b8]">Voice Recording</Label>
+                <div className="border border-white/10 rounded-xl p-4 bg-black/20">
+                  {audioUrl ? (
+                    <div className="space-y-3">
+                      <audio src={audioUrl} controls className="w-full" data-testid="voice-playback" />
+                      <Button
+                        variant="outline"
+                        onClick={() => { setAudioBlob(null); setAudioUrl(null); }}
+                        className="border-white/10 text-white w-full"
+                        data-testid="remove-voice-btn"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Remove Recording
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-4 py-4">
+                      {isRecording && (
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+                          <span className="text-red-400 text-sm font-medium">Recording...</span>
+                        </div>
+                      )}
+                      <div className="flex justify-center gap-3">
+                        {!isRecording ? (
+                          <Button onClick={startVoiceRecording} className="gold-button" data-testid="start-voice-btn">
+                            <Mic className="w-5 h-5 mr-2" />
+                            Start Recording
+                          </Button>
+                        ) : (
+                          <Button onClick={stopVoiceRecording} className="bg-[#ef4444] hover:bg-[#dc2626] text-white" data-testid="stop-voice-btn">
+                            <StopCircle className="w-5 h-5 mr-2" />
+                            Stop Recording
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-[#525c72] text-xs text-center">Record a voice message for your loved ones</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Recipients */}
             <div className="space-y-3">
               <Label className="text-[#94a3b8]">Recipients</Label>
