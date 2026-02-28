@@ -149,6 +149,38 @@ const MessagesPage = () => {
     }
   };
 
+  const startVoiceRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioRecorderRef.current = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+
+      audioRecorderRef.current.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      audioRecorderRef.current.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        setAudioBlob(blob);
+        setAudioUrl(URL.createObjectURL(blob));
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      audioRecorderRef.current.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error('Voice recording error:', error);
+      toast.error('Failed to start recording. Please check microphone permissions.');
+    }
+  };
+
+  const stopVoiceRecording = () => {
+    if (audioRecorderRef.current && isRecording) {
+      audioRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
   const handleCreate = async () => {
     if (!title || !content) {
       toast.error('Please fill in title and message');
