@@ -340,7 +340,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
               className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all capitalize relative ${
                 billing === b
                   ? 'bg-[#d4af37] text-[#0F1629]'
-                  : 'bg-[#1a2035] text-[var(--t5)] hover:text-white border border-white/[0.07]'
+                  : 'bg-[var(--s)] text-[var(--t5)] hover:text-[var(--t)] border border-[var(--b)]'
               }`}
               data-testid={`paywall-billing-${b}`}
             >
