@@ -130,7 +130,7 @@ app.include_router(api_router)
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """Add security headers to all responses."""
+    """Add security headers to all responses — SOC 2 compliant."""
 
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
@@ -139,7 +139,23 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(self), geolocation=()"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "img-src 'self' data: blob: https:; "
+            "connect-src 'self' https://*.carryon.us https://*.stripe.com https://*.emergentagent.com wss:; "
+            "frame-src 'self' https://js.stripe.com https://hooks.stripe.com; "
+            "object-src 'none'; "
+            "base-uri 'self'"
+        )
+        # Prevent caching of sensitive API responses
+        path = request.url.path
+        if path.startswith("/api/") and path not in ("/api/health",):
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+            response.headers["Pragma"] = "no-cache"
         return response
 
 
