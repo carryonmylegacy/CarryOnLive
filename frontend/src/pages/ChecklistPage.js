@@ -266,8 +266,13 @@ const ChecklistPage = () => {
 
       {/* Quick Templates Dropdown */}
       {showTemplates && (
-        <div className="glass-card p-3 space-y-1 max-h-72 overflow-y-auto">
-          <p className="text-xs font-bold text-[var(--t4)] mb-2">Click a template to start with it pre-filled:</p>
+        <div className="space-y-4">
+          {/* Scenario-Based Templates (from backend) */}
+          <QuickStartTemplates estateId={estate?.id} onApplied={fetchData} />
+
+          {/* Individual Quick Templates */}
+          <div className="glass-card p-3 space-y-1 max-h-72 overflow-y-auto">
+            <p className="text-xs font-bold text-[var(--t4)] mb-2">Or click an individual template to start with it pre-filled:</p>
           {QUICK_TEMPLATES.map((tmpl, i) => {
             const catInfo = getCatInfo(tmpl.cat);
             const CatIcon = catInfo.icon;
