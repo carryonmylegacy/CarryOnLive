@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -15,7 +15,11 @@ import {
   X,
   FileDown,
   Info,
-  RotateCcw
+  ArrowLeft,
+  MessageSquare,
+  Plus,
+  Trash2,
+  Clock
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
@@ -31,6 +35,7 @@ const suggestedQuestions = [
   "What is the difference between a will and a trust?",
 ];
 
+// ─── Markdown Renderer ───
 const MarkdownText = ({ content }) => {
   const lines = content.split('\n');
   const elements = [];
@@ -97,8 +102,40 @@ const MarkdownText = ({ content }) => {
   return <div>{elements}</div>;
 };
 
+// ─── Time Ago Helper ───
+const timeAgo = (dateStr) => {
+  const now = new Date();
+  const d = new Date(dateStr);
+  const diff = Math.floor((now - d) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+// ─── Action Buttons Config ───
+const actionButtons = [
+  { key: 'analyze_vault', label: 'Analyze Vault', icon: FileSearch, color: '#3B7BF7' },
+  { key: 'generate_checklist', label: 'Generate Checklist', icon: ListChecks, color: '#22C993' },
+  { key: 'analyze_readiness', label: 'Readiness Score', icon: Gauge, color: '#F5A623' },
+];
+
+// ═══════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════
 const GuardianPage = () => {
   const { user, getAuthHeaders } = useAuth();
+
+  // View state: 'landing' or 'chat'
+  const [view, setView] = useState('landing');
+
+  // Landing state
+  const [sessions, setSessions] = useState([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [landingInput, setLandingInput] = useState('');
+
+  // Chat state
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -110,20 +147,19 @@ const GuardianPage = () => {
   const [exporting, setExporting] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const landingInputRef = useRef(null);
 
-  useEffect(() => {
-    fetchEstate();
-    setMessages([{
-      role: 'assistant',
-      content: `Hello ${user?.name?.split(' ')[0] || 'there'}! I'm the Estate Guardian — your AI estate planning specialist.\n\nI can **analyze your Document Vault**, **generate a personalized Action Checklist**, and **evaluate your Estate Readiness Score**.\n\nHow can I help you today?`
-    }]);
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  // ─── Data Fetching ───
+  const fetchSessions = useCallback(async () => {
+    setSessionsLoading(true);
+    try {
+      const res = await axios.get(`${API_URL}/chat/sessions`, getAuthHeaders());
+      setSessions(res.data);
+    } catch (err) { /* silent */ }
+    finally { setSessionsLoading(false); }
+  }, [getAuthHeaders]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
-
-  const fetchEstate = async () => {
+  const fetchEstate = useCallback(async () => {
     try {
       const res = await axios.get(`${API_URL}/estates`, getAuthHeaders());
       if (res.data.length > 0) {
@@ -132,6 +168,65 @@ const GuardianPage = () => {
         setEstateId(estate.id);
       }
     } catch (err) { /* silent */ }
+  }, [getAuthHeaders]);
+
+  useEffect(() => {
+    fetchSessions();
+    fetchEstate();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, loading]);
+
+  // ─── Chat Actions ───
+  const startNewChat = (initialMessage = null) => {
+    const newId = `chat_${user?.id || 'anon'}_${Date.now().toString(36)}`;
+    setSessionId(newId);
+    setMessages([{
+      role: 'assistant',
+      content: `Hello ${user?.name?.split(' ')[0] || 'there'}! I'm the Estate Guardian — your AI estate planning specialist.\n\nI can **analyze your Document Vault**, **generate a personalized Action Checklist**, and **evaluate your Estate Readiness Score**.\n\nHow can I help you today?`
+    }]);
+    setView('chat');
+    setLandingInput('');
+    if (initialMessage) {
+      setTimeout(() => sendMessage(initialMessage, null, newId), 100);
+    }
+  };
+
+  const resumeSession = async (sid) => {
+    setSessionId(sid);
+    setView('chat');
+    setLoading(true);
+    try {
+      const res = await axios.get(`${API_URL}/chat/history/${sid}`, getAuthHeaders());
+      const history = res.data.map(m => ({ role: m.role, content: m.content }));
+      setMessages(history.length > 0 ? history : [{
+        role: 'assistant',
+        content: `Hello ${user?.name?.split(' ')[0] || 'there'}! Resuming our conversation...`
+      }]);
+    } catch (err) {
+      setMessages([{ role: 'assistant', content: 'Could not load conversation history.' }]);
+    }
+    finally { setLoading(false); }
+  };
+
+  const deleteSession = async (e, sid) => {
+    e.stopPropagation();
+    try {
+      await axios.delete(`${API_URL}/chat/sessions/${sid}`, getAuthHeaders());
+      setSessions(prev => prev.filter(s => s.session_id !== sid));
+      toast.success('Conversation deleted');
+    } catch (err) { toast.error('Failed to delete'); }
+  };
+
+  const goBackToLanding = () => {
+    setView('landing');
+    setSessionId(null);
+    setMessages([]);
+    setShowQuestions(false);
+    setShowActions(false);
+    fetchSessions();
   };
 
   const handleExport = async () => {
@@ -153,10 +248,12 @@ const GuardianPage = () => {
     setExporting(false);
   };
 
-  const sendMessage = async (messageText, action = null) => {
-    if (!messageText.trim() && !action) return;
+  const sendMessage = async (messageText, action = null, overrideSessionId = null) => {
+    if (!messageText?.trim() && !action) return;
     setShowQuestions(false);
     setShowActions(false);
+
+    const activeSessionId = overrideSessionId || sessionId;
 
     const displayText = action
       ? { analyze_vault: 'Analyze my Document Vault', generate_checklist: 'Generate my Action Checklist', analyze_readiness: 'Analyze my Estate Readiness Score' }[action] || messageText
@@ -170,12 +267,12 @@ const GuardianPage = () => {
     try {
       const response = await axios.post(`${API_URL}/chat/guardian`, {
         message: messageText || displayText,
-        session_id: sessionId,
+        session_id: activeSessionId,
         estate_id: estateId,
         action
       }, { ...getAuthHeaders(), timeout: 120000 });
 
-      setSessionId(response.data.session_id);
+      if (!overrideSessionId) setSessionId(response.data.session_id);
       const assistantMsg = { role: 'assistant', content: response.data.response };
 
       if (response.data.action_result) {
@@ -197,36 +294,162 @@ const GuardianPage = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleChatSubmit = (e) => {
     e.preventDefault();
     sendMessage(input);
   };
 
-  const handleNewChat = () => {
-    setSessionId(null);
-    setMessages([{
-      role: 'assistant',
-      content: `Hello ${user?.name?.split(' ')[0] || 'there'}! I'm the Estate Guardian — your AI estate planning specialist.\n\nI can **analyze your Document Vault**, **generate a personalized Action Checklist**, and **evaluate your Estate Readiness Score**.\n\nHow can I help you today?`
-    }]);
+  const handleLandingSubmit = (e) => {
+    e.preventDefault();
+    if (!landingInput.trim()) return;
+    startNewChat(landingInput.trim());
   };
-
-  const actionButtons = [
-    { key: 'analyze_vault', label: 'Analyze Vault', icon: FileSearch, color: '#3B7BF7' },
-    { key: 'generate_checklist', label: 'Generate Checklist', icon: ListChecks, color: '#22C993' },
-    { key: 'analyze_readiness', label: 'Readiness Score', icon: Gauge, color: '#F5A623' },
-  ];
 
   const hasConversation = messages.length > 1;
 
+  // ═══════════════════════════════════════════════
+  // LANDING VIEW
+  // ═══════════════════════════════════════════════
+  if (view === 'landing') {
+    return (
+      <div className="flex flex-col h-[calc(100vh-4rem)] lg:h-screen pt-16 lg:pt-0" data-testid="estate-guardian">
+        <SectionLockBanner sectionId="guardian" />
+
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-2xl mx-auto px-4 pt-8 pb-24 lg:pb-8">
+            {/* Hero Section */}
+            <div className="text-center mb-8">
+              <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, #d4af37 0%, #fcd34d 100%)', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}>
+                <Bot className="w-7 h-7 text-[#0b1120]" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid="guardian-hero-title">
+                Estate Guardian
+              </h1>
+              <p className="text-sm text-[var(--t4)] max-w-md mx-auto">
+                Your AI estate planning specialist. Ask anything about your documents, beneficiaries, or estate law.
+              </p>
+            </div>
+
+            {/* Ask Anything Input */}
+            <form onSubmit={handleLandingSubmit} className="mb-8">
+              <div className="flex items-center gap-2 p-2 rounded-2xl" style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                boxShadow: '0 4px 24px -4px rgba(0,0,0,0.3)',
+              }}>
+                <input
+                  ref={landingInputRef}
+                  value={landingInput}
+                  onChange={(e) => setLandingInput(e.target.value)}
+                  placeholder="Ask anything about your estate plan..."
+                  className="flex-1 bg-transparent text-sm text-[var(--t)] placeholder:text-[var(--t5)] outline-none px-3 py-2.5"
+                  data-testid="landing-input"
+                />
+                <Button type="submit" disabled={!landingInput.trim()}
+                  className="gold-button h-10 w-10 p-0 rounded-xl flex-shrink-0"
+                  data-testid="landing-send-button">
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+            </form>
+
+            {/* Quick Actions */}
+            <div className="flex flex-wrap gap-2 justify-center mb-8">
+              {actionButtons.map(({ key, label, icon: Icon, color }) => (
+                <button key={key} onClick={() => { startNewChat(); setTimeout(() => sendMessage('', key, `chat_${user?.id || 'anon'}_${Date.now().toString(36)}`), 200); }}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  style={{ background: `${color}12`, border: `1px solid ${color}25`, color }}
+                  data-testid={`landing-action-${key}`}>
+                  <Icon className="w-3.5 h-3.5" />
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Recent Sessions */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-xs font-bold text-[var(--t4)] uppercase tracking-wider">Recent Conversations</h2>
+                <button onClick={() => startNewChat()} className="flex items-center gap-1.5 text-xs font-bold text-[var(--gold)] hover:text-[var(--gold2)] transition-colors" data-testid="new-chat-btn">
+                  <Plus className="w-3.5 h-3.5" /> New Chat
+                </button>
+              </div>
+
+              {sessionsLoading ? (
+                <div className="flex items-center justify-center py-8 text-[var(--t5)]">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                </div>
+              ) : sessions.length === 0 ? (
+                <div className="text-center py-10">
+                  <MessageSquare className="w-10 h-10 mx-auto mb-3 text-[var(--t5)] opacity-40" />
+                  <p className="text-sm text-[var(--t5)]">No conversations yet</p>
+                  <p className="text-xs text-[var(--t5)] mt-1">Start a new chat above to get started</p>
+                </div>
+              ) : (
+                <div className="space-y-1.5" data-testid="session-list">
+                  {sessions.map((s) => (
+                    <button
+                      key={s.session_id}
+                      onClick={() => resumeSession(s.session_id)}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all hover:bg-white/[0.04] group"
+                      style={{ border: '1px solid rgba(255,255,255,0.05)' }}
+                      data-testid={`session-${s.session_id}`}
+                    >
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.12)' }}>
+                        <MessageSquare className="w-3.5 h-3.5 text-[var(--gold)]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-[var(--t2)] truncate">{s.title}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] text-[var(--t5)] flex items-center gap-1">
+                            <Clock className="w-2.5 h-2.5" /> {timeAgo(s.last_message_at)}
+                          </span>
+                          <span className="text-[10px] text-[var(--t5)]">{s.message_count} msgs</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={(e) => deleteSession(e, s.session_id)}
+                        className="opacity-0 group-hover:opacity-100 w-7 h-7 rounded-lg flex items-center justify-center text-[var(--t5)] hover:text-red-400 hover:bg-red-400/10 transition-all flex-shrink-0"
+                        data-testid={`delete-session-${s.session_id}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Disclaimer */}
+            <div className="flex items-center gap-1 justify-center mt-8">
+              <Info className="w-2.5 h-2.5 text-[var(--t5)]" />
+              <span className="text-[9px] text-[var(--t5)]">Not legal advice. Consult a licensed attorney.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════════
+  // CHAT VIEW
+  // ═══════════════════════════════════════════════
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] lg:h-screen pt-16 lg:pt-0" data-testid="estate-guardian">
       <SectionLockBanner sectionId="guardian" />
 
-      {/* Compact Header Bar */}
+      {/* Chat Header */}
       <div className="flex items-center justify-between px-4 py-2 flex-shrink-0" style={{
         borderBottom: '1px solid rgba(255,255,255,0.06)',
       }}>
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
+          <button onClick={goBackToLanding}
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-white/[0.06]"
+            data-testid="back-to-landing-btn">
+            <ArrowLeft className="w-4 h-4 text-[var(--t3)]" />
+          </button>
           <div className="w-8 h-8 rounded-lg flex items-center justify-center"
             style={{ background: 'linear-gradient(135deg, #d4af37 0%, #fcd34d 100%)', boxShadow: '0 2px 8px rgba(212,175,55,0.3)' }}>
             <Bot className="w-4 h-4 text-[#0b1120]" />
@@ -237,10 +460,10 @@ const GuardianPage = () => {
           </div>
         </div>
         <div className="flex items-center gap-1.5">
-          <button onClick={handleNewChat} title="New Chat"
+          <button onClick={() => startNewChat()} title="New Chat"
             className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-white/[0.06]"
-            data-testid="new-chat-btn">
-            <RotateCcw className="w-3.5 h-3.5 text-[var(--t4)]" />
+            data-testid="chat-new-btn">
+            <Plus className="w-3.5 h-3.5 text-[var(--t4)]" />
           </button>
           <button onClick={handleExport} disabled={exporting} title="Export PDF"
             className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-white/[0.06]"
@@ -251,42 +474,25 @@ const GuardianPage = () => {
         </div>
       </div>
 
-      {/* Messages Area — fills all available space */}
+      {/* Messages */}
       <div className="flex-1 overflow-y-auto min-h-0" data-testid="chat-messages-area">
         <div className="max-w-3xl mx-auto px-4 py-4 space-y-4">
           {messages.map((msg, index) => (
             <div
               key={index}
               className={`flex gap-2.5 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
-              style={{ animation: 'fadeIn 0.3s ease-out forwards', animationDelay: `${index * 40}ms` }}
+              style={{ animation: 'fadeIn 0.3s ease-out forwards', animationDelay: `${Math.min(index, 3) * 40}ms` }}
               data-testid={`chat-message-${index}`}
             >
-              {/* Avatar */}
               <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                msg.role === 'user'
-                  ? 'bg-[var(--gold)]/20 text-[var(--gold)]'
-                  : ''
-              }`} style={msg.role === 'assistant' ? {
-                background: 'linear-gradient(135deg, #d4af37 0%, #fcd34d 100%)',
-                color: '#0b1120'
-              } : {}}>
+                msg.role === 'user' ? 'bg-[var(--gold)]/20 text-[var(--gold)]' : ''
+              }`} style={msg.role === 'assistant' ? { background: 'linear-gradient(135deg, #d4af37 0%, #fcd34d 100%)', color: '#0b1120' } : {}}>
                 {msg.role === 'user' ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
               </div>
-
-              {/* Bubble */}
               <div className={`max-w-[82%] rounded-2xl px-4 py-3 ${
-                msg.role === 'user'
-                  ? 'bg-[var(--gold)] text-[#0b1120] rounded-tr-md'
-                  : 'text-[var(--t2)] rounded-tl-md'
-              }`} style={msg.role === 'assistant' ? {
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.06)',
-              } : {}}>
-                {msg.role === 'assistant' ? (
-                  <MarkdownText content={msg.content} />
-                ) : (
-                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                )}
+                msg.role === 'user' ? 'bg-[var(--gold)] text-[#0b1120] rounded-tr-md' : 'text-[var(--t2)] rounded-tl-md'
+              }`} style={msg.role === 'assistant' ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' } : {}}>
+                {msg.role === 'assistant' ? <MarkdownText content={msg.content} /> : <p className="text-sm whitespace-pre-wrap">{msg.content}</p>}
                 {msg.actionBadge && (
                   <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-[#22c993]">
                     <CheckCircle2 className="w-3.5 h-3.5" /> {msg.actionBadge}
@@ -310,26 +516,19 @@ const GuardianPage = () => {
             </div>
           ))}
 
-          {/* Welcome Actions — only shown when no conversation yet */}
+          {/* Welcome chips — only before first user message */}
           {!hasConversation && !loading && (
             <div className="pt-2 space-y-3" data-testid="welcome-actions">
-              {/* Quick Action Chips */}
               <div className="flex flex-wrap gap-2 justify-center">
                 {actionButtons.map(({ key, label, icon: Icon, color }) => (
                   <button key={key} onClick={() => sendMessage('', key)}
                     className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
-                    style={{
-                      background: `${color}12`,
-                      border: `1px solid ${color}25`,
-                      color: color,
-                    }}
+                    style={{ background: `${color}12`, border: `1px solid ${color}25`, color }}
                     data-testid={`guardian-action-${key}`}>
-                    <Icon className="w-3.5 h-3.5" />
-                    {label}
+                    <Icon className="w-3.5 h-3.5" /> {label}
                   </button>
                 ))}
               </div>
-              {/* Suggested Questions */}
               <div className="flex flex-wrap gap-2 justify-center">
                 {suggestedQuestions.slice(0, 3).map((q, i) => (
                   <button key={i} onClick={() => sendMessage(q)}
@@ -343,7 +542,6 @@ const GuardianPage = () => {
             </div>
           )}
 
-          {/* Loading indicator */}
           {loading && (
             <div className="flex gap-2.5">
               <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
@@ -367,18 +565,15 @@ const GuardianPage = () => {
         </div>
       </div>
 
-      {/* Input Area — pinned to bottom */}
+      {/* Input Area */}
       <div className="flex-shrink-0 px-3 pb-3 pt-2 relative" style={{
         borderTop: '1px solid rgba(255,255,255,0.04)',
         background: 'linear-gradient(180deg, transparent 0%, rgba(15,22,41,0.5) 100%)',
       }}>
-        {/* Popovers */}
         {showQuestions && (
           <div className="absolute bottom-full left-3 right-3 mb-2 rounded-xl overflow-hidden z-10" style={{
-            background: 'rgba(20,28,51,0.98)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            boxShadow: '0 -8px 32px rgba(0,0,0,0.4)',
-            backdropFilter: 'blur(12px)',
+            background: 'rgba(20,28,51,0.98)', border: '1px solid rgba(255,255,255,0.1)',
+            boxShadow: '0 -8px 32px rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)',
           }} data-testid="questions-popover">
             <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               <span className="text-xs font-bold text-[var(--t3)]">Helpful Questions</span>
@@ -398,10 +593,8 @@ const GuardianPage = () => {
 
         {showActions && (
           <div className="absolute bottom-full left-3 right-3 mb-2 rounded-xl overflow-hidden z-10" style={{
-            background: 'rgba(20,28,51,0.98)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            boxShadow: '0 -8px 32px rgba(0,0,0,0.4)',
-            backdropFilter: 'blur(12px)',
+            background: 'rgba(20,28,51,0.98)', border: '1px solid rgba(255,255,255,0.1)',
+            boxShadow: '0 -8px 32px rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)',
           }} data-testid="actions-popover">
             <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               <span className="text-xs font-bold text-[var(--t3)]">Guardian Actions</span>
@@ -421,36 +614,30 @@ const GuardianPage = () => {
           </div>
         )}
 
-        {/* Disclaimer */}
         <div className="flex items-center gap-1 justify-center mb-1.5">
           <Info className="w-2.5 h-2.5 text-[var(--t5)]" />
           <span className="text-[9px] text-[var(--t5)]">Not legal advice. Consult a licensed attorney.</span>
         </div>
 
-        {/* Input Row */}
-        <form onSubmit={handleSubmit} className="flex items-center gap-2 max-w-3xl mx-auto">
+        <form onSubmit={handleChatSubmit} className="flex items-center gap-2 max-w-3xl mx-auto">
           {hasConversation && (
             <>
               <button type="button" onClick={() => { setShowActions(!showActions); setShowQuestions(false); }}
                 className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all hover:scale-105"
                 style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.15)' }}
-                title="Guardian Actions"
                 data-testid="actions-toggle">
                 <Sparkles className="w-4 h-4 text-[#d4af37]" />
               </button>
               <button type="button" onClick={() => { setShowQuestions(!showQuestions); setShowActions(false); }}
                 className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all hover:scale-105"
                 style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-                title="Helpful Questions"
                 data-testid="questions-toggle">
                 <HelpCircle className="w-4 h-4 text-[var(--t4)]" />
               </button>
             </>
           )}
-
           <div className="flex-1 flex items-center rounded-xl px-3 py-2.5" style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
           }}>
             <input
               ref={inputRef}
@@ -462,7 +649,6 @@ const GuardianPage = () => {
               data-testid="guardian-input"
             />
           </div>
-
           <Button type="submit" disabled={loading || !input.trim()}
             className="gold-button w-9 h-9 p-0 rounded-xl flex-shrink-0"
             data-testid="guardian-send-button">
@@ -471,7 +657,6 @@ const GuardianPage = () => {
         </form>
       </div>
 
-      {/* Inline animation keyframe */}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(8px); }
