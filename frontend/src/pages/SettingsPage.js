@@ -232,7 +232,7 @@ const SettingsPage = () => {
       <NotificationSettings getAuthHeaders={() => getAuthHeaders()} />
 
       {/* Subscription Plans */}
-      <Card className="glass-card">
+      <Card className="glass-card overflow-hidden">
         <CardHeader>
           <CardTitle className="text-[var(--t)] flex items-center gap-2">
             <CreditCard className="w-5 h-5 text-[var(--gold)]" />
@@ -242,116 +242,150 @@ const SettingsPage = () => {
         <CardContent>
           {/* Subscription Status */}
           {subscriptionStatus && (
-            <div className="mb-4 p-3 rounded-xl" style={{
-              background: subscriptionStatus.trial?.trial_active ? 'rgba(212,175,55,0.06)' : 
-                subscriptionStatus.subscription?.status === 'active' ? 'rgba(34,201,147,0.06)' : 'rgba(239,68,68,0.06)',
-              border: `1px solid ${subscriptionStatus.trial?.trial_active ? 'rgba(212,175,55,0.15)' : 
-                subscriptionStatus.subscription?.status === 'active' ? 'rgba(34,201,147,0.15)' : 'rgba(239,68,68,0.15)'}`
+            <div className="mb-5 p-4 rounded-xl relative overflow-hidden" style={{
+              background: currentSub?.status === 'active'
+                ? 'linear-gradient(135deg, rgba(34,201,147,0.08) 0%, rgba(34,201,147,0.02) 100%)'
+                : subscriptionStatus.trial?.trial_active
+                  ? 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0.02) 100%)'
+                  : 'linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(239,68,68,0.02) 100%)',
+              border: `1px solid ${currentSub?.status === 'active' ? 'rgba(34,201,147,0.2)' : subscriptionStatus.trial?.trial_active ? 'rgba(212,175,55,0.2)' : 'rgba(239,68,68,0.2)'}`,
             }}>
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-[var(--gold)]" />
-                <span className="text-sm font-medium text-[var(--t)]">
-                  {subscriptionStatus.beta_mode ? 'Beta Mode — All features free' :
-                   subscriptionStatus.subscription?.status === 'active' 
-                    ? `Active: ${subscriptionStatus.subscription.plan_name} plan`
-                    : subscriptionStatus.trial?.trial_active 
-                      ? `Free Trial — ${subscriptionStatus.trial.days_remaining} days remaining`
-                      : 'No active subscription'}
-                </span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {currentSub?.status === 'active' ? (
+                    <Zap className="w-4 h-4 text-[#22C993]" />
+                  ) : (
+                    <Clock className="w-4 h-4 text-[var(--gold)]" />
+                  )}
+                  <span className="text-sm font-semibold text-[var(--t)]">
+                    {subscriptionStatus.beta_mode ? 'Beta Mode — All features free' :
+                     currentSub?.status === 'active'
+                      ? `${currentSub.plan_name} Plan · ${currentSub.billing_cycle || 'monthly'}`
+                      : subscriptionStatus.trial?.trial_active
+                        ? `Free Trial — ${subscriptionStatus.trial.days_remaining} days remaining`
+                        : 'No active subscription'}
+                  </span>
+                </div>
+                {currentSub?.status === 'active' && (
+                  <button onClick={() => setShowCancelConfirm(true)} className="text-xs text-[var(--t5)] hover:text-red-400 transition-colors" data-testid="cancel-sub-btn">Cancel</button>
+                )}
               </div>
             </div>
           )}
 
-          {/* Billing Toggle */}
-          <div className="flex justify-center gap-2 mb-6">
+          {/* Cancel Confirmation Modal */}
+          {showCancelConfirm && (
+            <div className="mb-5 p-4 rounded-xl border border-red-500/20 bg-red-500/5">
+              <p className="text-sm text-[var(--t3)] mb-3">Are you sure you want to cancel? You'll keep access until the end of your billing period.</p>
+              <div className="flex gap-2">
+                <Button onClick={handleCancelSubscription} disabled={cancellingPlan} className="bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 text-xs px-4 py-2" data-testid="confirm-cancel-btn">
+                  {cancellingPlan ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} Yes, Cancel
+                </Button>
+                <Button onClick={() => setShowCancelConfirm(false)} className="bg-[var(--s)] text-[var(--t4)] border border-[var(--b)] text-xs px-4 py-2">Keep Plan</Button>
+              </div>
+            </div>
+          )}
+
+          {/* Billing Cycle Toggle */}
+          <div className="flex justify-center gap-1 mb-6 p-1 rounded-xl bg-[var(--s)] border border-[var(--b)] w-fit mx-auto" data-testid="billing-toggle">
             {['monthly', 'quarterly', 'annual'].map((b) => (
               <button
                 key={b}
-                onClick={() => setBilling(b)}
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all capitalize relative ${
+                onClick={() => handleChangeBilling(b)}
+                className={`px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-300 capitalize relative ${
                   billing === b
-                    ? 'bg-[var(--gold)] text-[#0F1629]'
-                    : 'bg-[var(--s)] text-[var(--t4)] hover:text-[var(--t)]'
+                    ? 'bg-[var(--gold)] text-[#0F1629] shadow-[0_2px_12px_rgba(212,175,55,0.3)]'
+                    : 'text-[var(--t5)] hover:text-[var(--t3)]'
                 }`}
                 data-testid={`billing-${b}`}
               >
                 {b}
-                {b === 'quarterly' && billing === b && <span className="absolute -top-2 -right-2 text-[9px] bg-[#22C993] text-white px-1 py-0.5 rounded-full">10% off</span>}
-                {b === 'annual' && billing === b && <span className="absolute -top-2 -right-2 text-[9px] bg-[#22C993] text-white px-1 py-0.5 rounded-full">20% off</span>}
+                {b === 'quarterly' && <span className="absolute -top-2.5 -right-1 text-[9px] bg-[#22C993] text-white px-1.5 py-0.5 rounded-full font-bold shadow-[0_2px_8px_rgba(34,201,147,0.4)]">-10%</span>}
+                {b === 'annual' && <span className="absolute -top-2.5 -right-1 text-[9px] bg-[#22C993] text-white px-1.5 py-0.5 rounded-full font-bold shadow-[0_2px_8px_rgba(34,201,147,0.4)]">-20%</span>}
               </button>
             ))}
           </div>
 
-          {/* Plan Grid */}
+          {/* Plan Grid — Dramatic Tiles */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="plan-grid">
-            {plans.map((p) => {
+            {plans.map((p, idx) => {
               const PlanIcon = PLAN_ICONS[p.id] || Shield;
               const isPremium = p.id === 'premium';
-              const tierColors = {
-                premium: { accent: '#d4af37', bg: 'rgba(212,175,55,0.12)' },
-                standard: { accent: '#60A5FA', bg: 'rgba(96,165,250,0.08)' },
-                base: { accent: '#22C993', bg: 'rgba(34,201,147,0.08)' },
-                new_adult: { accent: '#B794F6', bg: 'rgba(183,148,246,0.08)' },
-                military: { accent: '#F59E0B', bg: 'rgba(245,158,11,0.08)' },
-                hospice: { accent: '#ec4899', bg: 'rgba(236,72,153,0.08)' },
-              };
-              const tc = tierColors[p.id] || tierColors.base;
+              const tc = TIER_COLORS[p.id] || TIER_COLORS.base;
+              const isCurrent = currentPlanId === p.id;
               const isActive = activePlan === p.name;
+              const upgrading = isUpgrade(p.id);
+              const downgrading = isDowngrade(p.id);
+
               return (
                 <div
                   key={p.id}
                   onClick={() => setActivePlan(p.name)}
-                  className={`relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-1 ${
-                    isPremium ? 'sm:scale-[1.02]' : ''
+                  className={`relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-500 group ${
+                    isPremium ? 'sm:scale-[1.03] hover:-translate-y-2' : 'hover:-translate-y-1'
                   }`}
                   style={{
-                    background: isPremium
-                      ? 'linear-gradient(168deg, rgba(212,175,55,0.1) 0%, rgba(26,32,53,0.95) 40%, var(--s) 100%)'
-                      : isActive 
-                        ? `linear-gradient(168deg, ${tc.bg} 0%, var(--s) 100%)` 
-                        : 'var(--s)',
-                    border: isPremium 
-                      ? '2px solid rgba(212,175,55,0.35)' 
-                      : isActive 
-                        ? `2px solid ${tc.accent}50` 
-                        : '1px solid var(--b)',
-                    boxShadow: isPremium 
-                      ? '0 8px 32px -6px rgba(212,175,55,0.25), inset 0 1px 0 rgba(255,255,255,0.08)' 
-                      : isActive 
-                        ? `0 6px 24px -4px ${tc.accent}33, inset 0 1px 0 rgba(255,255,255,0.04)` 
-                        : '0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.03)',
+                    background: tc.bg,
+                    border: isCurrent
+                      ? `2px solid ${tc.accent}`
+                      : isPremium
+                        ? `2px solid ${tc.accent}60`
+                        : `1px solid rgba(255,255,255,0.07)`,
+                    boxShadow: isCurrent
+                      ? `0 0 0 1px ${tc.accent}30, 0 12px 40px -8px ${tc.glow}, inset 0 1px 0 rgba(255,255,255,0.1)`
+                      : isPremium
+                        ? `0 12px 40px -8px ${tc.glow}, inset 0 1px 0 rgba(255,255,255,0.08)`
+                        : '0 4px 16px -4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)',
+                    animationDelay: `${idx * 80}ms`,
                   }}
                   data-testid={`plan-${p.id}`}
                 >
-                  {isPremium && (
-                    <>
-                      <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.5), transparent)' }} />
-                      <div className="absolute top-0 left-1/2 -translate-x-1/2 text-[10px] font-bold px-3 py-1 rounded-b-lg"
-                        style={{ background: 'linear-gradient(180deg, #d4af37, #b8962e)', color: '#0F1629' }}>
-                        Most Popular
-                      </div>
-                    </>
+                  {/* Top shimmer line */}
+                  {(isPremium || isCurrent) && (
+                    <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, transparent, ${tc.accent}80, transparent)` }} />
                   )}
 
-                  <div className="p-5 pt-6 text-center">
-                    <div className="flex items-center justify-center gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${tc.accent}15`, border: `1px solid ${tc.accent}25` }}>
-                        <PlanIcon className="w-4 h-4" style={{ color: tc.accent }} />
-                      </div>
-                      <span className="text-[var(--t)] font-bold text-lg" style={{ fontFamily: 'Outfit, sans-serif' }}>{p.name}</span>
+                  {/* Badges */}
+                  {isPremium && !isCurrent && (
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 text-[10px] font-bold px-4 py-1 rounded-b-lg z-10"
+                      style={{ background: `linear-gradient(180deg, ${tc.accent}, ${tc.accent}cc)`, color: '#0F1629', boxShadow: `0 4px 16px ${tc.glow}` }}>
+                      Most Popular
                     </div>
-                    <div className="text-4xl font-bold mb-0.5" style={{ color: tc.accent, fontFamily: 'Outfit, sans-serif' }}>
-                      {getBillingPrice(p)}
+                  )}
+                  {isCurrent && (
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 text-[10px] font-bold px-4 py-1 rounded-b-lg z-10"
+                      style={{ background: `linear-gradient(180deg, ${tc.accent}, ${tc.accent}cc)`, color: '#0F1629', boxShadow: `0 4px 16px ${tc.glow}` }}>
+                      Current Plan
                     </div>
-                    <div className="text-[var(--t5)] text-xs mb-0.5">{p.price > 0 ? getBillingLabel() : ''}</div>
-                    <div className="text-[var(--t5)] text-xs mb-4">Beneficiary: ${p.ben_price?.toFixed(2)}/mo</div>
-                    
-                    <div className="h-px mb-4" style={{ background: `linear-gradient(90deg, transparent, ${tc.accent}25, transparent)` }} />
+                  )}
 
-                    <div className="space-y-2 text-left mb-4">
+                  <div className="p-5 pt-7">
+                    {/* Icon + Name */}
+                    <div className="flex items-center gap-2.5 mb-4">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
+                        style={{ background: `${tc.accent}15`, border: `1px solid ${tc.accent}30`, boxShadow: `0 4px 12px ${tc.accent}15` }}>
+                        <PlanIcon className="w-5 h-5" style={{ color: tc.accent }} />
+                      </div>
+                      <h3 className="font-bold text-lg text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>{p.name}</h3>
+                    </div>
+
+                    {/* Price */}
+                    <div className="mb-1">
+                      <span className="text-4xl font-bold tracking-tight" style={{ color: tc.accent, fontFamily: 'Outfit, sans-serif' }}>
+                        {getBillingPrice(p)}
+                      </span>
+                      {p.price > 0 && <span className="text-[10px] text-[var(--t5)] ml-1.5">{getBillingLabel()}</span>}
+                    </div>
+                    <div className="text-[10px] text-[var(--t5)] mb-4">Beneficiary: ${p.ben_price?.toFixed(2)}/mo</div>
+
+                    {/* Divider */}
+                    <div className="h-px mb-4" style={{ background: `linear-gradient(90deg, transparent, ${tc.accent}30, transparent)` }} />
+
+                    {/* Features */}
+                    <div className="space-y-2 text-left mb-5">
                       {(p.features || []).map((f, i) => (
                         <div key={i} className="flex items-start gap-2 text-sm text-[var(--t3)]">
-                          <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: `${tc.accent}12` }}>
+                          <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: `${tc.accent}15` }}>
                             <Check className="w-2.5 h-2.5" style={{ color: tc.accent }} />
                           </div>
                           <span>{f}</span>
@@ -359,8 +393,40 @@ const SettingsPage = () => {
                       ))}
                     </div>
 
-                    {p.note && (
-                      <div className="text-xs text-[var(--t5)] italic mb-2">{p.note}</div>
+                    {p.note && <div className="text-xs text-[var(--t5)] italic mb-3">{p.note}</div>}
+
+                    {/* CTA Button — context-aware */}
+                    {currentSub?.status === 'active' ? (
+                      isCurrent ? (
+                        <div className="w-full text-center text-xs font-bold py-3 rounded-xl" style={{ background: `${tc.accent}10`, color: tc.accent, border: `1px solid ${tc.accent}30` }}>
+                          <Check className="w-3.5 h-3.5 inline mr-1" /> Your Plan
+                        </div>
+                      ) : (
+                        <Button
+                          onClick={(e) => { e.stopPropagation(); handleChangePlan(p.id); }}
+                          disabled={changingPlan}
+                          className="w-full text-sm font-bold py-5 transition-all duration-300"
+                          style={{
+                            background: upgrading ? `linear-gradient(135deg, ${tc.accent}, ${tc.accent}cc)` : 'transparent',
+                            color: upgrading ? '#0F1629' : tc.accent,
+                            border: upgrading ? 'none' : `2px solid ${tc.accent}40`,
+                            boxShadow: upgrading ? `0 4px 20px ${tc.glow}` : 'none',
+                          }}
+                          data-testid={`change-plan-${p.id}`}
+                        >
+                          {changingPlan ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : upgrading ? <ArrowUpRight className="w-4 h-4 mr-1" /> : <ArrowDownRight className="w-4 h-4 mr-1" />}
+                          {upgrading ? 'Upgrade' : 'Downgrade'}
+                        </Button>
+                      )
+                    ) : (
+                      <Button
+                        onClick={(e) => { e.stopPropagation(); setShowPaywall(true); }}
+                        className={`w-full text-sm font-bold py-5 transition-all duration-300 ${isPremium ? 'gold-button' : ''}`}
+                        style={!isPremium ? { background: 'transparent', border: `2px solid ${tc.accent}40`, color: tc.accent } : { boxShadow: `0 4px 20px ${tc.glow}` }}
+                        data-testid={`plan-subscribe-${p.id}`}
+                      >
+                        Subscribe <ChevronRight className="w-4 h-4 ml-1" />
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -368,10 +434,10 @@ const SettingsPage = () => {
             })}
           </div>
 
-          {!subscriptionStatus?.beta_mode && !subscriptionStatus?.subscription?.status && (
-            <div className="mt-4 text-center">
-              <Button onClick={() => setShowPaywall(true)} className="gold-button" data-testid="settings-subscribe-btn">
-                Subscribe Now <ChevronRight className="w-4 h-4 ml-1" />
+          {!subscriptionStatus?.beta_mode && !currentSub?.status && (
+            <div className="mt-6 text-center">
+              <Button onClick={() => setShowPaywall(true)} className="gold-button shadow-[0_4px_20px_rgba(212,175,55,0.3)] px-8 py-5" data-testid="settings-subscribe-btn">
+                <Zap className="w-4 h-4 mr-2" /> Subscribe Now <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
           )}
