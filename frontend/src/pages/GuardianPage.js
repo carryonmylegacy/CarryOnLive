@@ -479,13 +479,18 @@ const GuardianPage = () => {
             data-testid="back-to-landing-btn">
             <ArrowLeft className="w-4 h-4 text-[var(--t3)]" />
           </button>
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, #d4af37 0%, #fcd34d 100%)', boxShadow: '0 2px 8px rgba(212,175,55,0.3)' }}>
-            <Bot className="w-4 h-4 text-[#0b1120]" />
+          <div className="relative w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%)', border: '1px solid rgba(212,175,55,0.3)' }}>
+            <Bot className="w-4 h-4 text-[var(--gold)]" />
+            <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full flex items-center justify-center" style={{ background: '#22C993' }}>
+              <Lock className="w-1.5 h-1.5 text-white" />
+            </div>
           </div>
           <div>
             <h1 className="text-sm font-bold text-[var(--t)] leading-none" style={{ fontFamily: 'Outfit, sans-serif' }}>Estate Guardian</h1>
-            <span className="text-[var(--t5)] text-[10px]">AI estate specialist</span>
+            <span className="text-[var(--t5)] text-[10px] flex items-center gap-1">
+              <Shield className="w-2 h-2 text-[#22C993]" /> AES-256 encrypted session
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
@@ -494,7 +499,13 @@ const GuardianPage = () => {
             data-testid="chat-new-btn">
             <Plus className="w-3.5 h-3.5 text-[var(--t4)]" />
           </button>
-          <button onClick={handleExport} disabled={exporting} title="Export PDF"
+          <button onClick={handleChecklistExport} disabled={checklistExporting} title="Export Checklist PDF"
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-white/[0.06]"
+            style={{ color: '#22C993' }}
+            data-testid="export-checklist-pdf-btn">
+            {checklistExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ListChecks className="w-3.5 h-3.5" />}
+          </button>
+          <button onClick={handleExport} disabled={exporting} title="Export Estate PDF"
             className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-white/[0.06]"
             style={{ color: '#d4af37' }}
             data-testid="export-pdf-btn">
