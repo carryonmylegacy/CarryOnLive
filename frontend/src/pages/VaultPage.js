@@ -317,31 +317,31 @@ const VaultPage = () => {
     setUploadFile(null);
   };
 
-  // Preview functions
-  const handlePreview = async (doc, password = null, backupCode = null) => {
-    // Check if file type is previewable
-    const previewableTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/gif', 'image/webp'];
-    if (!previewableTypes.some(type => doc.file_type?.includes(type.split('/')[1]))) {
-      toast.error('This file type cannot be previewed. Please download instead.');
+  // Preview functions — always opens the floating PDF/image viewer
+  const handlePreview = async (doc) => {
+    const previewable = doc.file_type && (
+      doc.file_type.toLowerCase().includes('pdf') ||
+      doc.file_type.toLowerCase().includes('image')
+    );
+
+    if (!previewable) {
+      toast.info('This file type cannot be previewed inline. Downloading instead.');
+      handleDownload(doc);
       return;
     }
-    
+
     setSelectedDoc(doc);
     setPreviewLoading(true);
     setShowPreviewModal(true);
-    
+    setPreviewUrl(null);
+
     try {
-      let url = `${API_URL}/documents/${doc.id}/preview`;
-      const params = [];
-      if (password) params.push(`password=${encodeURIComponent(password)}`);
-      if (backupCode) params.push(`backup_code=${encodeURIComponent(backupCode)}`);
-      if (params.length > 0) url += `?${params.join('&')}`;
-      
+      const url = `${API_URL}/documents/${doc.id}/preview`;
       const response = await axios.get(url, {
         ...getAuthHeaders(),
         responseType: 'blob'
       });
-      
+
       const blob = new Blob([response.data], { type: doc.file_type });
       const objectUrl = URL.createObjectURL(blob);
       setPreviewUrl(objectUrl);
@@ -349,10 +349,14 @@ const VaultPage = () => {
       console.error('Preview error:', error);
       if (error.response?.status === 401) {
         setShowPreviewModal(false);
+        setSelectedDoc(doc);
         setShowLockModal(true);
-      } else {
-        toast.error('Failed to preview document');
+      } else if (error.response?.status === 403) {
+        toast.error('Vault is locked. Please unlock the Secure Document Vault first.');
         setShowPreviewModal(false);
+      } else {
+        toast.error('Failed to load document preview');
+        // Keep modal open — shows fallback "Download Instead" button
       }
     } finally {
       setPreviewLoading(false);
