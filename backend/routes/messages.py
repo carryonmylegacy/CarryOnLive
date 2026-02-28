@@ -142,6 +142,48 @@ async def get_message_video(
         raise HTTPException(status_code=500, detail="Failed to retrieve video")
 
 
+@router.get("/messages/voice/{voice_id}")
+async def get_message_voice(
+    voice_id: str, current_user: dict = Depends(get_current_user)
+):
+    """Get voice recording data for a message"""
+    message = await db.messages.find_one({"voice_url": voice_id}, {"_id": 0})
+    if message:
+        if current_user["role"] == "beneficiary":
+            if current_user["id"] not in message.get(
+                "recipients", []
+            ) or not message.get("is_delivered"):
+                raise HTTPException(status_code=403, detail="Access denied")
+        elif current_user["role"] == "benefactor":
+            estate = await db.estates.find_one(
+                {"id": message["estate_id"]}, {"_id": 0}
+            )
+            if not estate or estate["owner_id"] != current_user["id"]:
+                raise HTTPException(status_code=403, detail="Access denied")
+
+    voice_storage_key = f"voices/{voice_id}"
+    try:
+        encrypted_blob = await storage.download(voice_storage_key)
+        estate_salt = await get_estate_salt(message["estate_id"])
+        decrypted = decrypt_aes256(encrypted_blob.decode("ascii"), estate_salt)
+
+        await audit_log(
+            action="message.voice_access",
+            user_id=current_user["id"],
+            resource_type="voice",
+            resource_id=voice_id,
+            estate_id=message.get("estate_id") if message else None,
+        )
+
+        return Response(
+            content=decrypted,
+            media_type="audio/webm",
+            headers={"Content-Disposition": f'inline; filename="{voice_id}.webm"'},
+        )
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Voice recording not found")
+
+
 @router.post("/messages")
 async def create_message(
     data: MessageCreate, current_user: dict = Depends(get_current_user)
