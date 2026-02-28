@@ -397,9 +397,9 @@ const SignupPage = () => {
 
                     {/* STEP 3: Credentials */}
                     {step === 3 && (
-                      <div className="space-y-5">
+                      <div className="space-y-4 sm:space-y-5">
                         <div>
-                          <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Secure your account</h2>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Secure your account</h2>
                           <p className="text-[#6b7a90] text-sm">Choose a strong password to protect your legacy.</p>
                         </div>
                         <div className="space-y-2">
