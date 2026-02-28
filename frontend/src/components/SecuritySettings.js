@@ -33,6 +33,7 @@ const SecuritySettings = ({ getAuthHeaders }) => {
   const [questions, setQuestions] = useState([]);
   const [expandedSection, setExpandedSection] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { fetchSettings: refreshGlobalLock } = useSectionLock();
 
   const headers = getAuthHeaders()?.headers || {};
 
@@ -54,6 +55,8 @@ const SecuritySettings = ({ getAuthHeaders }) => {
       // silent
     }
     setLoading(false);
+    // Also refresh the global SectionLock context so lock banners update immediately
+    refreshGlobalLock();
   };
 
   if (loading) {
