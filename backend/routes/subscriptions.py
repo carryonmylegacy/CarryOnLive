@@ -699,12 +699,16 @@ async def change_subscription_plan(
     if discount > 0:
         amount = amount * (1 - discount / 100)
 
-    # Apply billing cycle discount
+    # Apply billing cycle discount and calculate full period amount
     cycle = data.billing_cycle
     if cycle == "quarterly":
-        amount = round(amount * 0.9, 2)
+        per_month = round(amount * 0.9, 2)
+        amount = round(per_month * 3, 2)
     elif cycle == "annual":
-        amount = round(amount * 0.8, 2)
+        per_month = round(amount * 0.8, 2)
+        amount = round(per_month * 12, 2)
+    else:
+        amount = round(amount, 2)
 
     # For free plans, update directly
     if amount == 0 or new_plan.get("price", 0) == 0:
