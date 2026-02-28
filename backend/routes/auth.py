@@ -37,7 +37,7 @@ def get_client_ip(request: Request) -> str:
 @router.post("/auth/login")
 async def login(data: UserLogin, request: Request):
     """Login — verifies credentials, then sends OTP unless user has a daily trust token."""
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = get_client_ip(request)
 
     # Check for account lockout (5 failed attempts in 15 minutes)
     lockout_window = (datetime.now(timezone.utc) - timedelta(minutes=15)).isoformat()
