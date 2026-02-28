@@ -136,8 +136,8 @@ class TestSecurityHeaders:
         
         # HSTS with preload
         hsts = headers.get("strict-transport-security", "")
-        assert "max-age=" in hsts, f"HSTS missing max-age"
-        assert "preload" in hsts, f"HSTS should include 'preload' directive"
+        assert "max-age=" in hsts, "HSTS missing max-age"
+        assert "preload" in hsts, "HSTS should include 'preload' directive"
         print(f"✓ HSTS: {hsts}")
         
         # X-Content-Type-Options
