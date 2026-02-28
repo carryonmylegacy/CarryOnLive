@@ -104,12 +104,11 @@ const VaultPage = () => {
       const estatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders());
       if (estatesRes.data.length > 0) {
         setEstate(estatesRes.data[0]);
-        const docsRes = await axios.get(`${API_URL}/documents/${estatesRes.data[0].id}`, getAuthHeaders());
-        setDocuments(docsRes.data);
+        const docsRes = await axios.get(`${API_URL}/documents/${estatesRes.data[0].id}`, getAuthHeaders()).catch(() => ({ data: [] }));
+        setDocuments(Array.isArray(docsRes.data) ? docsRes.data : []);
       }
     } catch (error) {
       console.error('Fetch error:', error);
-      toast.error('Failed to load documents');
     } finally {
       setLoading(false);
     }
