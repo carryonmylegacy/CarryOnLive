@@ -104,7 +104,7 @@ async def update_dev_switcher_config(
 
 @router.get("/dev-switcher/config")
 async def get_public_dev_switcher_config():
-    """Get dev switcher config for frontend (public, returns credentials for dev login)"""
+    """Get dev switcher config for frontend — only returns enabled status and emails (never passwords)"""
     config = await db.dev_config.find_one({"id": "dev_switcher"}, {"_id": 0})
     if not config or not config.get("enabled", True):
         return {"enabled": False}
@@ -113,13 +113,11 @@ async def get_public_dev_switcher_config():
         "enabled": config.get("enabled", True),
         "benefactor": {
             "email": config.get("benefactor_email", ""),
-            "password": config.get("benefactor_password", ""),
         }
         if config.get("benefactor_email")
         else None,
         "beneficiary": {
             "email": config.get("beneficiary_email", ""),
-            "password": config.get("beneficiary_password", ""),
         }
         if config.get("beneficiary_email")
         else None,
