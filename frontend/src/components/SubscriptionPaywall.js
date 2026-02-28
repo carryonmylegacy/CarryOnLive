@@ -355,7 +355,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
         </div>
 
         {/* Plan Cards — 6 tiles (3x2) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl w-full mb-8 animate-fade-in">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl w-full mb-8 animate-fade-in">
           {visiblePlans.filter(p => !['hospice'].includes(p.id) || p.price === 0).map((plan) => {
             const Icon = TIER_ICONS[plan.id] || Shield;
             const colors = TIER_COLORS[plan.id] || TIER_COLORS.base;
@@ -366,124 +366,164 @@ export default function SubscriptionPaywall({ onDismiss }) {
               <div
                 key={plan.id}
                 onClick={() => setSelectedPlan(plan.id)}
-                className={`relative rounded-2xl p-5 cursor-pointer transition-all hover:-translate-y-1 ${
-                  isSelected
-                    ? 'shadow-lg shadow-[${colors.accent}]/20'
-                    : 'hover:shadow-md'
+                className={`relative rounded-2xl cursor-pointer transition-all duration-300 overflow-hidden group ${
+                  isPremium ? 'hover:-translate-y-2 sm:scale-[1.03]' : 'hover:-translate-y-1'
                 }`}
                 style={{
-                  background: isSelected ? colors.bg : '#141C33',
-                  border: `2px solid ${isSelected ? colors.border : 'rgba(255,255,255,0.07)'}`,
+                  background: isPremium 
+                    ? 'linear-gradient(168deg, rgba(212,175,55,0.15) 0%, rgba(26,32,53,0.95) 40%, rgba(20,28,51,0.98) 100%)'
+                    : isSelected 
+                      ? `linear-gradient(168deg, ${colors.bg} 0%, rgba(20,28,51,0.95) 100%)`
+                      : 'linear-gradient(168deg, rgba(26,36,64,0.8) 0%, rgba(20,28,51,0.95) 100%)',
+                  border: isPremium 
+                    ? '2px solid rgba(212,175,55,0.4)'
+                    : isSelected 
+                      ? `2px solid ${colors.border}` 
+                      : '1px solid rgba(255,255,255,0.07)',
+                  boxShadow: isPremium 
+                    ? '0 12px 48px -8px rgba(212,175,55,0.3), 0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
+                    : isSelected
+                      ? `0 8px 32px -6px ${colors.accent}44, 0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06)`
+                      : '0 4px 16px -4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)',
                 }}
                 data-testid={`paywall-plan-${plan.id}`}
               >
+                {/* Premium shimmer line */}
                 {isPremium && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#d4af37] text-[#0F1629] text-xs font-bold px-3 py-1 rounded-full">
+                  <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.6), transparent)' }} />
+                )}
+
+                {isPremium && (
+                  <div className="absolute -top-0 left-1/2 -translate-x-1/2 text-xs font-bold px-4 py-1.5 rounded-b-xl"
+                    style={{ background: 'linear-gradient(180deg, #d4af37, #b8962e)', color: '#0F1629', boxShadow: '0 4px 16px rgba(212,175,55,0.4)' }}>
                     Most Popular
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 mb-3 mt-1">
-                  <Icon className="w-5 h-5" style={{ color: colors.accent }} />
-                  <h3 className="font-bold text-[#F1F3F8]">{plan.name}</h3>
-                </div>
-
-                <div className="mb-1">
-                  <span className="text-3xl font-bold" style={{ color: colors.accent, fontFamily: 'Cormorant Garamond, serif' }}>
-                    {getPrice(plan)}
-                  </span>
-                  {plan.price > 0 && (
-                    <span className="text-xs text-[#7B879E] ml-1">{getBillingLabel()}</span>
-                  )}
-                </div>
-
-                {plan.ben_price !== undefined && (
-                  <p className="text-xs text-[#7B879E] mb-3">
-                    Beneficiary: ${plan.ben_price.toFixed(2)}/mo
-                  </p>
-                )}
-
-                <div className="space-y-2 mb-4">
-                  {(plan.features || []).map((f, i) => (
-                    <div key={i} className="flex items-start gap-2 text-sm text-[#A0AABF]">
-                      <Check className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: colors.accent }} />
-                      <span>{f}</span>
+                <div className="p-5 pt-6">
+                  {/* Tier icon + name */}
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" 
+                      style={{ background: `${colors.accent}18`, border: `1px solid ${colors.accent}30` }}>
+                      <Icon className="w-5 h-5" style={{ color: colors.accent }} />
                     </div>
-                  ))}
+                    <h3 className="font-bold text-lg text-[#F1F3F8]" style={{ fontFamily: 'Outfit, sans-serif' }}>{plan.name}</h3>
+                  </div>
+
+                  {/* Price — hero element */}
+                  <div className="mb-1">
+                    <span className="text-4xl font-bold tracking-tight" style={{ color: isPremium ? '#d4af37' : colors.accent, fontFamily: 'Outfit, sans-serif' }}>
+                      {getPrice(plan)}
+                    </span>
+                    {plan.price > 0 && (
+                      <span className="text-xs text-[#525C72] ml-1.5">{getBillingLabel()}</span>
+                    )}
+                  </div>
+
+                  {plan.ben_price !== undefined && (
+                    <p className="text-xs text-[#525C72] mb-4">
+                      Beneficiary: <span className="text-[#7B879E]">${plan.ben_price.toFixed(2)}/mo</span>
+                    </p>
+                  )}
+
+                  {/* Divider */}
+                  <div className="h-px mb-4" style={{ background: `linear-gradient(90deg, transparent, ${colors.accent}30, transparent)` }} />
+
+                  {/* Features */}
+                  <div className="space-y-2.5 mb-5">
+                    {(plan.features || []).map((f, i) => (
+                      <div key={i} className="flex items-start gap-2.5 text-sm">
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" 
+                          style={{ background: `${colors.accent}15` }}>
+                          <Check className="w-3 h-3" style={{ color: colors.accent }} />
+                        </div>
+                        <span className="text-[#A0AABF]">{f}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {plan.note && (
+                    <p className="text-xs text-[#525C72] italic mb-4">{plan.note}</p>
+                  )}
+
+                  {/* CTA Button */}
+                  <Button
+                    onClick={(e) => { e.stopPropagation(); handleCheckout(plan); }}
+                    disabled={checkoutLoading}
+                    className={`w-full text-sm font-bold py-5 transition-all duration-300 ${
+                      isPremium
+                        ? 'gold-button shadow-[0_4px_20px_rgba(212,175,55,0.3)]'
+                        : isSelected
+                          ? 'gold-button'
+                          : 'bg-transparent border-2 hover:bg-white/[0.04]'
+                    }`}
+                    style={!isPremium && !isSelected ? { borderColor: `${colors.accent}40`, color: colors.accent } : {}}
+                    data-testid={`paywall-select-${plan.id}`}
+                  >
+                    {checkoutLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    {plan.requires_verification && plan.id !== 'new_adult' ? 'Verify & Subscribe' : 'Subscribe'}
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
                 </div>
-
-                {plan.note && (
-                  <p className="text-xs text-[#7B879E] italic mb-3">{plan.note}</p>
-                )}
-
-                <Button
-                  onClick={(e) => { e.stopPropagation(); handleCheckout(plan); }}
-                  disabled={checkoutLoading}
-                  className={`w-full text-sm font-bold ${
-                    isPremium || isSelected
-                      ? 'gold-button'
-                      : 'bg-[#1a2035] text-[#A0AABF] border border-white/[0.1] hover:border-[#d4af37]/50 hover:text-[#d4af37]'
-                  }`}
-                  data-testid={`paywall-select-${plan.id}`}
-                >
-                  {checkoutLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  {plan.requires_verification && plan.id !== 'new_adult' ? 'Verify & Subscribe' : 'Subscribe'}
-                  <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
               </div>
             );
           })}
 
-          {/* Family Plan — 6th tile */}
+          {/* Family Plan — special tile */}
           <div
-            className="relative rounded-2xl p-5 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-md flex flex-col"
+            className="relative rounded-2xl cursor-pointer transition-all duration-300 hover:-translate-y-1 flex flex-col overflow-hidden group"
             style={{
-              background: selectedPlan === 'family' ? 'rgba(212,175,55,0.06)' : '#141C33',
-              border: `2px solid ${selectedPlan === 'family' ? '#d4af37' : 'rgba(255,255,255,0.07)'}`,
+              background: selectedPlan === 'family' 
+                ? 'linear-gradient(168deg, rgba(212,175,55,0.12) 0%, rgba(20,28,51,0.95) 100%)' 
+                : 'linear-gradient(168deg, rgba(26,36,64,0.8) 0%, rgba(20,28,51,0.95) 100%)',
+              border: `${selectedPlan === 'family' ? '2px' : '1px'} solid ${selectedPlan === 'family' ? 'rgba(212,175,55,0.4)' : 'rgba(255,255,255,0.07)'}`,
+              boxShadow: selectedPlan === 'family' 
+                ? '0 8px 32px -6px rgba(212,175,55,0.2), inset 0 1px 0 rgba(255,255,255,0.06)' 
+                : '0 4px 16px -4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)',
             }}
             onClick={() => setSelectedPlan('family')}
             data-testid="paywall-plan-family"
           >
-            <div className="flex items-center gap-2 mb-3 mt-1">
-              <Users className="w-5 h-5 text-[#d4af37]" />
-              <h3 className="font-bold text-[#F1F3F8]">Family Plan</h3>
+            <div className="p-5 flex-1 flex flex-col">
+              <div className="flex items-center gap-2.5 mb-4">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" 
+                  style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.25)' }}>
+                  <Users className="w-5 h-5 text-[#d4af37]" />
+                </div>
+                <h3 className="font-bold text-lg text-[#F1F3F8]" style={{ fontFamily: 'Outfit, sans-serif' }}>Family Plan</h3>
+              </div>
+
+              <div className="mb-1">
+                <span className="text-2xl font-bold text-[#d4af37]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                  Bundle & Save
+                </span>
+              </div>
+              <p className="text-xs text-[#525C72] mb-4">All beneficiaries: <span className="text-[#7B879E]">flat $3.49/mo</span></p>
+
+              <div className="h-px mb-4" style={{ background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.2), transparent)' }} />
+
+              <div className="space-y-2.5 mb-5 flex-1">
+                {['Owner pays standard tier rate', 'Added benefactors save $1/mo', 'Successor inherits ownership', 'Floor tiers exempt from discount'].map((f, i) => (
+                  <div key={i} className="flex items-start gap-2.5 text-sm">
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'rgba(212,175,55,0.12)' }}>
+                      <Check className="w-3 h-3 text-[#d4af37]" />
+                    </div>
+                    <span className="text-[#A0AABF]">{f}</span>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-xs text-[#525C72] italic mb-4">Subscribe individually, then add family from Settings</p>
+
+              <Button
+                onClick={(e) => { e.stopPropagation(); setShowFamilyInfo(!showFamilyInfo); }}
+                className="w-full text-sm font-bold py-5 bg-transparent border-2 hover:bg-white/[0.04]"
+                style={{ borderColor: 'rgba(212,175,55,0.35)', color: '#d4af37' }}
+                data-testid="paywall-select-family"
+              >
+                Learn More <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
             </div>
-
-            <div className="mb-1">
-              <span className="text-lg font-bold text-[#d4af37]" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
-                Bundle & Save
-              </span>
-            </div>
-            <p className="text-xs text-[#7B879E] mb-3">All beneficiaries: flat $3.49/mo</p>
-
-            <div className="space-y-2 mb-4 flex-1">
-              <div className="flex items-start gap-2 text-sm text-[#A0AABF]">
-                <Check className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#d4af37]" />
-                <span>Owner pays standard tier rate</span>
-              </div>
-              <div className="flex items-start gap-2 text-sm text-[#A0AABF]">
-                <Check className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#d4af37]" />
-                <span>Added benefactors save $1/mo</span>
-              </div>
-              <div className="flex items-start gap-2 text-sm text-[#A0AABF]">
-                <Check className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#d4af37]" />
-                <span>Successor inherits ownership</span>
-              </div>
-              <div className="flex items-start gap-2 text-sm text-[#A0AABF]">
-                <Check className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#d4af37]" />
-                <span>Floor tiers exempt from discount</span>
-              </div>
-            </div>
-
-            <p className="text-xs text-[#7B879E] italic mb-3">Subscribe individually, then add family members from Settings</p>
-
-            <Button
-              onClick={(e) => { e.stopPropagation(); setShowFamilyInfo(!showFamilyInfo); }}
-              className="w-full text-sm font-bold bg-[#1a2035] text-[#A0AABF] border border-white/[0.1] hover:border-[#d4af37]/50 hover:text-[#d4af37]"
-              data-testid="paywall-select-family"
-            >
-              Learn More <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
           </div>
         </div>
 
