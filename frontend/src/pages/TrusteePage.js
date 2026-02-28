@@ -908,10 +908,14 @@ const TrusteePage = () => {
             )}
             {newTask.confidential === 'timed' && (
               <div className="mb-4"><Label className="text-[var(--t4)]">Release Timing</Label>
-                <select className="input-field mt-1 w-full rounded-lg p-3 bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm" value={newTask.timedRelease} onChange={e => setNewTask(p => ({ ...p, timedRelease: e.target.value }))}>
+                <select className="input-field mt-1 w-full rounded-lg p-3 bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm" value={['6 months post-transition','1 year post-transition','2 years post-transition','5 years post-transition','10 years post-transition'].includes(newTask.timedRelease) ? newTask.timedRelease : newTask.timedRelease ? 'custom' : ''} onChange={e => { if (e.target.value === 'custom') setNewTask(p => ({ ...p, timedRelease: '' })); else setNewTask(p => ({ ...p, timedRelease: e.target.value })); }}>
                   <option value="">Select timing...</option>
                   {['6 months post-transition', '1 year post-transition', '2 years post-transition', '5 years post-transition', '10 years post-transition'].map(o => <option key={o} value={o}>{o}</option>)}
+                  <option value="custom">Custom timing...</option>
                 </select>
+                {!['','6 months post-transition','1 year post-transition','2 years post-transition','5 years post-transition','10 years post-transition'].includes(newTask.timedRelease) && (
+                  <Input className="input-field mt-2" value={newTask.timedRelease} onChange={e => setNewTask(p => ({ ...p, timedRelease: e.target.value }))} placeholder="e.g., 3 months after probate closes" />
+                )}
               </div>
             )}
             <div className="flex gap-3 mt-5">
