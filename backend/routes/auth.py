@@ -148,6 +148,17 @@ async def verify_otp(data: OTPVerify):
     if not stored_otp or stored_otp["otp"] != data.otp:
         raise HTTPException(status_code=401, detail="Invalid OTP")
 
+    # Check OTP expiry (10 minutes)
+    otp_created = stored_otp.get("created_at", "")
+    if otp_created:
+        try:
+            created_time = datetime.fromisoformat(otp_created.replace("Z", "+00:00"))
+            if datetime.now(timezone.utc) - created_time > timedelta(minutes=10):
+                await db.otps.delete_one({"email": data.email})
+                raise HTTPException(status_code=401, detail="OTP expired. Please request a new one.")
+        except (ValueError, TypeError):
+            pass
+
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
