@@ -306,17 +306,26 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
             <div className="rounded-xl p-4 text-center" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
               {enrolling ? (
                 <Loader2 className="w-8 h-8 mx-auto text-[var(--bl3)] animate-spin mb-2" />
+              ) : recording ? (
+                <div
+                  onClick={handleVoiceStop}
+                  className="w-14 h-14 rounded-full mx-auto mb-2 flex items-center justify-center cursor-pointer transition-all animate-pulse"
+                  style={{ background: 'rgba(240,82,82,0.2)', border: '3px solid var(--rd2)' }}
+                  data-testid={`voice-stop-${section.id}`}
+                >
+                  <StopCircle className="w-6 h-6 text-[var(--rd2)]" />
+                </div>
               ) : (
                 <div
                   onClick={handleVoiceEnroll}
                   className="w-14 h-14 rounded-full mx-auto mb-2 flex items-center justify-center cursor-pointer transition-all"
-                  style={{ background: recording ? 'rgba(240,82,82,0.2)' : 'rgba(59,123,247,0.12)', border: `3px solid ${recording ? 'var(--rd2)' : 'var(--bl3)'}` }}
+                  style={{ background: 'rgba(59,123,247,0.12)', border: '3px solid var(--bl3)' }}
                   data-testid={`voice-enroll-${section.id}`}
                 >
-                  {recording ? <Loader2 className="w-6 h-6 text-[var(--rd2)] animate-spin" /> : <Mic className="w-6 h-6 text-[var(--bl3)]" />}
+                  <Mic className="w-6 h-6 text-[var(--bl3)]" />
                 </div>
               )}
-              <div className="text-xs font-bold text-[var(--t)]">{recording ? 'Recording...' : enrolling ? 'Processing...' : 'Tap to Record Sample'}</div>
+              <div className="text-xs font-bold text-[var(--t)]">{recording ? 'Recording — Tap to Stop' : enrolling ? 'Processing...' : 'Tap to Record Sample'}</div>
               {(enrollCount > 0 || s.has_voiceprint) && (
                 <p className="text-[10px] text-[var(--gn2)] mt-1 flex items-center justify-center gap-1">
                   <CheckCircle2 className="w-3 h-3" />
