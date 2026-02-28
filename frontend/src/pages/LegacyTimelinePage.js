@@ -120,6 +120,7 @@ const TimelineEvent = ({ event, index, isLast, onNavigate }) => {
 
 const LegacyTimelinePage = () => {
   const { token } = useAuth();
+  const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
