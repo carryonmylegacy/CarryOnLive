@@ -466,7 +466,7 @@ const MessagesPage = () => {
 
       {/* Create Message Modal */}
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="glass-card border-white/10 sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="glass-card border-white/10 sm:max-w-2xl max-h-[90vh] overflow-y-scroll !top-[5vh] !translate-y-0">
           <DialogHeader>
             <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
               {editingMessage ? 'Edit Message' : 'Create Milestone Message'}
