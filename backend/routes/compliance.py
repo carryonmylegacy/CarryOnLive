@@ -65,6 +65,23 @@ async def export_user_data(current_user: dict = Depends(get_current_user)):
         {"user_id": user_id}, {"_id": 0}
     )
 
+    digital_wallet = await db.digital_wallet.find(
+        {"estate_id": {"$in": estate_ids}},
+        {"_id": 0, "encrypted_value": 0},
+    ).to_list(500)
+
+    dts_tasks = await db.dts_tasks.find(
+        {"estate_id": {"$in": estate_ids}}, {"_id": 0}
+    ).to_list(500)
+
+    consent_history = await db.consent_audit_log.find(
+        {"user_id": user_id}, {"_id": 0}
+    ).to_list(500)
+
+    user_consent = await db.user_consent.find_one(
+        {"user_id": user_id}, {"_id": 0}
+    )
+
     # Log this data access for HIPAA audit trail
     await log_phi_access(
         user_id=user_id,
@@ -81,8 +98,12 @@ async def export_user_data(current_user: dict = Depends(get_current_user)):
         "messages_metadata": messages,
         "beneficiaries": beneficiaries,
         "checklists": checklists,
+        "digital_wallet_entries": digital_wallet,
+        "trustee_service_tasks": dts_tasks,
         "activity_logs": activity_logs,
         "subscription": subscriptions,
+        "consent_preferences": user_consent,
+        "consent_history": consent_history,
         "note": "Encrypted document content and message bodies are excluded from this export. They can be accessed through the Secure Document Vault.",
     }
 
