@@ -450,12 +450,20 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
     # Determine beneficiary locked tier from benefactor's majority plan
     beneficiary_locked_tier = None
     if current_user.get("role") == "beneficiary":
-        # Find the estate(s) this beneficiary belongs to
-        estates = await db.estates.find(
-            {"beneficiaries": current_user["id"]}, {"_id": 0, "owner_id": 1}
-        ).to_list(10)
-        if estates:
-            benefactor_id = estates[0].get("owner_id")
+        # Beneficiaries are in the `beneficiaries` collection with user_id + estate_id
+        ben_link = await db.beneficiaries.find_one(
+            {"user_id": current_user["id"]}, {"_id": 0, "estate_id": 1}
+        )
+        # Also try matching by email if user_id isn't set yet
+        if not ben_link:
+            ben_link = await db.beneficiaries.find_one(
+                {"email": current_user.get("email")}, {"_id": 0, "estate_id": 1}
+            )
+        if ben_link and ben_link.get("estate_id"):
+            estate = await db.estates.find_one(
+                {"id": ben_link["estate_id"]}, {"_id": 0, "owner_id": 1}
+            )
+            benefactor_id = estate.get("owner_id") if estate else None
             if benefactor_id:
                 # Get benefactor's subscription to determine locked tier
                 ben_sub = await db.user_subscriptions.find_one(
