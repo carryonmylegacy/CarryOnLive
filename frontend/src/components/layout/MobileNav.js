@@ -214,7 +214,7 @@ const MobileNav = () => {
                   onClick={toggleTheme}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all"
                   style={{
-                    backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                    backgroundColor: theme === 'dark' ? 'var(--b)' : 'rgba(0,0,0,0.05)',
                     border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
                     color: theme === 'dark' ? '#A0AABF' : '#475569'
                   }}

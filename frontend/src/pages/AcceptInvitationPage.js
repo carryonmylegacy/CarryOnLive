@@ -163,7 +163,7 @@ const AcceptInvitationPage = () => {
               </div>
 
               {/* What This Means */}
-              <div className="rounded-xl p-5 space-y-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="rounded-xl p-5 space-y-4" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
                 <p className="text-sm text-white font-medium">What does this mean?</p>
                 <p className="text-sm text-[#94a3b8] leading-relaxed">
                   Estate planning is one of the most thoughtful things someone can do for the people they love. 

@@ -116,7 +116,7 @@ const BeneficiaryHubPage = () => {
               }`}
               style={{
                 boxShadow: isTransitioned 
-                  ? '0 12px 48px -8px rgba(109,40,217,0.4), 0 4px 16px rgba(0,0,0,0.25), 0 1px 0 rgba(255,255,255,0.08) inset'
+                  ? '0 12px 48px -8px rgba(109,40,217,0.4), 0 4px 16px rgba(0,0,0,0.25), 0 1px 0 var(--b) inset'
                   : '0 8px 32px -6px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.2)'
               }}
               onClick={() => {
@@ -182,7 +182,7 @@ const BeneficiaryHubPage = () => {
                 <div
                   key={member.id || `member-${i}`}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 cursor-pointer transition-all hover:brightness-110"
-                  style={{ background: 'rgba(15,24,42,0.5)', border: '1px solid rgba(255,255,255,0.06)' }}
+                  style={{ background: 'rgba(15,24,42,0.5)', border: '1px solid var(--b)' }}
                   onClick={() => {
                     const estateId = member.estate_id || member.id;
                     localStorage.setItem('beneficiary_estate_id', estateId);
