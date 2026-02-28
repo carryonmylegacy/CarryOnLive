@@ -215,7 +215,7 @@ const OnboardingPage = () => {
             {beneficiaries.length > 0 && (
               <div className="space-y-3 mb-6">
                 {beneficiaries.map((ben) => (
-                  <div key={ben.id} className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
+                  <div key={ben.id} className="flex items-center gap-3 p-3 rounded-lg bg-[var(--s)]">
                     <div
                       className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold overflow-hidden"
                       style={{ backgroundColor: ben.photo_url ? 'transparent' : ben.avatar_color + '30', color: ben.avatar_color }}

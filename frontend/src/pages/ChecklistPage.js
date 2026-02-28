@@ -202,9 +202,9 @@ const ChecklistPage = () => {
   if (loading) {
     return (
       <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6">
-        <Skeleton className="h-12 w-64 bg-white/5" />
-        <Skeleton className="h-24 w-full bg-white/5 rounded-2xl" />
-        {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 bg-white/5 rounded-xl" />)}
+        <Skeleton className="h-12 w-64 bg-[var(--s)]" />
+        <Skeleton className="h-24 w-full bg-[var(--s)] rounded-2xl" />
+        {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 bg-[var(--s)] rounded-xl" />)}
       </div>
     );
   }

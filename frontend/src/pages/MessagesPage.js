@@ -301,10 +301,10 @@ const MessagesPage = () => {
   if (loading) {
     return (
       <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6">
-        <Skeleton className="h-12 w-64 bg-white/5" />
+        <Skeleton className="h-12 w-64 bg-[var(--s)]" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map(i => (
-            <Skeleton key={i} className="h-48 bg-white/5 rounded-2xl" />
+            <Skeleton key={i} className="h-48 bg-[var(--s)] rounded-2xl" />
           ))}
         </div>
       </div>
@@ -351,7 +351,7 @@ const MessagesPage = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-white/5 p-1">
+        <TabsList className="bg-[var(--s)] p-1">
           <TabsTrigger value="all" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-[#0b1120]">
             All Messages
           </TabsTrigger>
@@ -638,7 +638,7 @@ const MessagesPage = () => {
                   beneficiaries.map((ben) => (
                     <div
                       key={ben.id}
-                      className="flex items-center gap-3 p-3 rounded-xl bg-white/5 cursor-pointer"
+                      className="flex items-center gap-3 p-3 rounded-xl bg-[var(--s)] cursor-pointer"
                       onClick={() => toggleRecipient(ben.user_id || ben.id)}
                     >
                       <Checkbox
