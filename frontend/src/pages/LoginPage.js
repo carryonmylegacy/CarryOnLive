@@ -430,10 +430,10 @@ const LoginPage = () => {
             <p className="text-[#7b879e] text-base mb-8">
               Join CarryOn and be among the first families to achieve total readiness.
             </p>
-            <a href="/signup" className="inline-flex items-center gap-2 px-10 py-4 rounded-lg font-semibold text-base transition-all hover:brightness-110 hover:scale-105 active:scale-95"
+            <button onClick={() => navigateWithFade('/signup')} className="inline-flex items-center gap-2 px-10 py-4 rounded-lg font-semibold text-base transition-all hover:brightness-110 hover:scale-105 active:scale-95"
               style={{ background: '#d4af37', color: '#080e1a', transition: 'all 0.3s' }}>
               Get Started &mdash; It&apos;s Free <ChevronRight className="w-4 h-4" />
-            </a>
+            </button>
           </RevealSection>
         </div>
       </section>
