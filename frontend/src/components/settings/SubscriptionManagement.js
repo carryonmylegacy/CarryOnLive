@@ -252,6 +252,26 @@ export const SubscriptionManagement = ({
     setSubscribing(null);
   };
 
+  const handleChangeBilling = async () => {
+    setChangingBilling(true);
+    try {
+      const res = await axios.post(`${API_URL}/subscriptions/change-billing`, {
+        billing_cycle: billing,
+        origin_url: window.location.origin,
+      }, getAuthHeaders());
+      if (res.data.url) {
+        window.location.href = res.data.url;
+      } else if (res.data.success) {
+        toast.success(res.data.message);
+        if (refreshSubscription) await refreshSubscription();
+      }
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Failed to change billing cycle');
+    }
+    setChangingBilling(false);
+  };
+
+
   const handleCancelSubscription = async () => {
     setCancellingPlan(true);
     try {
