@@ -172,6 +172,33 @@ async def get_legacy_timeline(
                     "metadata": {"edited_by": edit.get("user_name", "")},
                 }
             )
+        elif item_type == "checklist":
+            action = edit.get("action", "edited")
+            events.append(
+                {
+                    "type": f"checklist_{action}",
+                    "category": "checklist",
+                    "title": f'IAC Item {"Completed" if action == "completed" else "Uncompleted" if action == "uncompleted" else "Updated"}',
+                    "description": edit.get("title", "checklist item"),
+                    "date": edit.get("created_at", ""),
+                    "icon": "check",
+                    "link": "/checklist",
+                    "metadata": {"edited_by": edit.get("user_name", "")},
+                }
+            )
+        elif item_type == "digital_wallet":
+            events.append(
+                {
+                    "type": "wallet_edited",
+                    "category": "activity",
+                    "title": "Digital Wallet Updated",
+                    "description": f'Updated "{edit.get("title", "account")}"',
+                    "date": edit.get("created_at", ""),
+                    "icon": "activity",
+                    "link": "/digital-wallet",
+                    "metadata": {"edited_by": edit.get("user_name", "")},
+                }
+            )
 
     # 7. Activity log entries (catch-all)
     activities = (
