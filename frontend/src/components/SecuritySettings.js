@@ -151,6 +151,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
   const [recording, setRecording] = useState(false);
   const [enrollCount, setEnrollCount] = useState(0);
   const [enrolling, setEnrolling] = useState(false);
+  const mediaRecorderRef = React.useRef(null);
 
   const isCustomQuestion = question === '__custom__' || (question && !questions.includes(question));
 
