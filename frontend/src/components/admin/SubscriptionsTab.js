@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { ToggleLeft, Users, DollarSign, Loader2 } from 'lucide-react';
+import { ToggleLeft, Users, DollarSign, Loader2, Search } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -18,6 +18,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
   const [newPrice, setNewPrice] = useState('');
   const [editingUser, setEditingUser] = useState(null);
   const [discountInput, setDiscountInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const headers = getAuthHeaders()?.headers || {};
 
@@ -194,8 +195,19 @@ export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
             <Users className="w-5 h-5 text-[var(--gold)]" />
             User Subscription Overrides
           </h3>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg mb-4" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+            <Search className="w-4 h-4 text-[var(--t5)]" />
+            <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by name, email, role, plan..." className="flex-1 bg-transparent border-none text-[var(--t)] text-sm outline-none placeholder:text-[var(--t5)]" data-testid="subscriptions-user-search" />
+          </div>
           <div className="space-y-2">
-            {userSubs.filter(u => u.role !== 'admin').map(u => {
+            {userSubs.filter(u => u.role !== 'admin').filter(u => {
+              if (!searchQuery) return true;
+              const q = searchQuery.toLowerCase();
+              return (u.name || '').toLowerCase().includes(q) ||
+                (u.email || '').toLowerCase().includes(q) ||
+                (u.role || '').toLowerCase().includes(q) ||
+                (u.subscription?.plan_name || '').toLowerCase().includes(q);
+            }).map(u => {
               const override = u.override || {};
               const sub = u.subscription;
               return (

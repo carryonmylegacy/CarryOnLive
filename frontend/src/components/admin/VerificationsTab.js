@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FileKey, Activity, Loader2, X } from 'lucide-react';
+import { FileKey, Activity, Loader2, X, Search } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -13,6 +13,7 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
   const [loading, setLoading] = useState(true);
   const [reviewNotes, setReviewNotes] = useState('');
   const [viewingDoc, setViewingDoc] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const headers = getAuthHeaders()?.headers || {};
 
@@ -50,6 +51,16 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
 
   if (loading) return <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-[var(--gold)]" /></div>;
 
+  const filteredVerifications = verifications.filter(v => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (v.user_name || '').toLowerCase().includes(q) ||
+      (v.user_email || '').toLowerCase().includes(q) ||
+      (v.tier_requested || '').toLowerCase().includes(q) ||
+      (v.status || '').toLowerCase().includes(q) ||
+      (v.doc_type || '').toLowerCase().includes(q);
+  });
+
   return (
     <div className="space-y-4" data-testid="verifications-admin">
       <div className="flex items-center justify-between">
@@ -59,7 +70,14 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
         </Button>
       </div>
 
-      {verifications.length === 0 ? (
+      {verifications.length > 0 && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+          <Search className="w-4 h-4 text-[var(--t5)]" />
+          <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by name, email, tier, status..." className="flex-1 bg-transparent border-none text-[var(--t)] text-sm outline-none placeholder:text-[var(--t5)]" data-testid="verifications-search" />
+        </div>
+      )}
+
+      {filteredVerifications.length === 0 ? (
         <Card className="glass-card"><CardContent className="p-12 text-center">
           <FileKey className="w-12 h-12 mx-auto text-[var(--t5)] mb-4" />
           <h3 className="font-bold text-[var(--t)] mb-2">No Verification Requests</h3>
@@ -67,7 +85,7 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
         </CardContent></Card>
       ) : (
         <div className="space-y-3">
-          {verifications.map(v => (
+          {filteredVerifications.map(v => (
             <Card key={v.id} className="glass-card" data-testid={`verification-${v.id}`}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
