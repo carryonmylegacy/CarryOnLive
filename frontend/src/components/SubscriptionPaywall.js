@@ -287,10 +287,10 @@ export default function SubscriptionPaywall({ onDismiss }) {
 
           {trial.trial_expired ? (
             <>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[#F1F3F8] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
                 Your Free Trial Has Ended
               </h1>
-              <p className="text-[#A0AABF] text-sm">
+              <p className="text-[var(--t4)] text-sm">
                 Choose a plan to continue protecting your family's legacy with CarryOn.
               </p>
             </>
