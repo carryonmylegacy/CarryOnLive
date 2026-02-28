@@ -400,7 +400,7 @@ export const SubscriptionManagement = ({
         )}
 
         {/* Plan Cards */}
-        <div className={`grid gap-4 ${displayPlans.length <= 3 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`} data-testid="plan-grid">
+        <div className={`grid gap-4 ${displayPlans.length === 1 ? 'grid-cols-1 max-w-sm mx-auto' : displayPlans.length <= 3 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`} data-testid="plan-grid">
           {displayPlans.map((plan) => {
             const style = TIER_STYLES[plan.id] || TIER_STYLES.base;
             const Icon = style.icon;
