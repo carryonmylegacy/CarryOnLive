@@ -152,9 +152,10 @@ async def create_message(data: MessageCreate, current_user: dict = Depends(get_c
     # Encrypt title and content
     msg_dict["encrypted_title"] = encrypt_field(data.title, estate_salt)
     msg_dict["encrypted_content"] = encrypt_field(data.content, estate_salt)
-    # Keep plaintext title for display in lists (just the first 50 chars)
-    msg_dict["title"] = data.title  # Needed for session listing / search
-    msg_dict["content"] = data.content  # Kept for backward compat on read
+    # Zero-knowledge: do NOT store plaintext content in database
+    # Only keep a truncated, non-sensitive display title for session listing
+    msg_dict["title"] = data.title[:50] if data.title else ""  # Short display label only
+    msg_dict.pop("content", None)  # Remove plaintext content — zero-knowledge compliant
 
     # Handle video data - encrypt and store in cloud
     if data.video_data:
