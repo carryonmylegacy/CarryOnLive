@@ -445,9 +445,23 @@ export const SubscriptionManagement = ({
 
                   {/* CTA Button */}
                   {isCurrent ? (
-                    <div className="w-full text-center text-xs font-bold py-3 rounded-xl"
-                      style={{ background: `${style.accent}10`, color: style.accent, border: `1px solid ${style.accent}25` }}>
-                      <Check className="w-3 h-3 inline mr-1" /> Active
+                    <div className="space-y-2">
+                      <div className="w-full text-center text-xs font-bold py-3 rounded-xl"
+                        style={{ background: `${style.accent}10`, color: style.accent, border: `1px solid ${style.accent}25` }}>
+                        <Check className="w-3 h-3 inline mr-1" /> Active · {currentBilling}
+                      </div>
+                      {billing !== currentBilling && (
+                        <Button
+                          onClick={() => handleChangeBilling()}
+                          disabled={changingBilling}
+                          className="w-full text-xs font-bold py-3 transition-all duration-300"
+                          style={{ background: `linear-gradient(135deg, ${style.accent}, ${style.accent}cc)`, color: '#0F1629', boxShadow: `0 4px 16px ${style.accent}30` }}
+                          data-testid="change-billing-btn"
+                        >
+                          {changingBilling ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <ArrowRight className="w-3 h-3 mr-1" />}
+                          Switch to {billing}
+                        </Button>
+                      )}
                     </div>
                   ) : requiresVerification(plan.id) && !isVerifiedFor(plan.id) ? (
                     // Verification required — show status or verify button
