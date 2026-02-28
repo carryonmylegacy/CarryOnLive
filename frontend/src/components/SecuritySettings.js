@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Lock, Unlock, Mic, KeyRound, HelpCircle, Eye, EyeOff, CheckCircle2, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Shield, Lock, Unlock, Mic, KeyRound, HelpCircle, Eye, EyeOff, CheckCircle2, Loader2, ChevronDown, ChevronUp, StopCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
