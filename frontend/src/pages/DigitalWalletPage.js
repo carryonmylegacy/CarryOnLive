@@ -285,10 +285,10 @@ const WalletEntryModal = ({ entry, beneficiaries, onClose, onSaved, getAuthHeade
           </div>
           <div>
             <Label className="text-[var(--t4)] text-xs">Assign to Beneficiary (who receives this upon transition)</Label>
-            <Select value={beneficiaryId} onValueChange={setBeneficiaryId}>
+            <Select value={beneficiaryId || 'none'} onValueChange={(val) => setBeneficiaryId(val === 'none' ? '' : val)}>
               <SelectTrigger className="input-field mt-1"><SelectValue placeholder="Select beneficiary..." /></SelectTrigger>
               <SelectContent className="bg-[#141C33] border-[var(--b)]" style={{ zIndex: 99999 }}>
-                <SelectItem value="" className="text-[var(--t4)]">No one (keep private)</SelectItem>
+                <SelectItem value="none" className="text-[var(--t4)]">No one (keep private)</SelectItem>
                 {beneficiaries.map(b => (
                   <SelectItem key={b.id} value={b.id} className="text-[var(--t2)]">
                     {b.first_name} {b.last_name}
