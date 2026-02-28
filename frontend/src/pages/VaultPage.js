@@ -687,7 +687,7 @@ const VaultPage = () => {
 
       {/* Upload Modal */}
       <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
-        <DialogContent className="glass-card border-white/10 sm:max-w-md !top-[5vh] !translate-y-0 max-h-[90vh] overflow-y-scroll">
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md !top-[5vh] !translate-y-0 max-h-[90vh] overflow-y-scroll">
           <DialogHeader>
             <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Upload Document
@@ -715,7 +715,7 @@ const VaultPage = () => {
                 <SelectTrigger className="input-field" data-testid="upload-category-select">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-[#1A2440] border-white/10">
+                <SelectContent className="bg-[#1A2440] border-[var(--b)]">
                   <SelectItem value="legal">Legal</SelectItem>
                   <SelectItem value="financial">Financial</SelectItem>
                   <SelectItem value="personal">Personal</SelectItem>
@@ -730,7 +730,7 @@ const VaultPage = () => {
                 <SelectTrigger className="input-field" data-testid="upload-lock-select">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-[#1A2440] border-white/10">
+                <SelectContent className="bg-[#1A2440] border-[var(--b)]">
                   <SelectItem value="none">No Lock</SelectItem>
                   <SelectItem value="password">Password Protected</SelectItem>
                   <SelectItem value="voice">Voice Verification</SelectItem>
@@ -775,7 +775,7 @@ const VaultPage = () => {
             
             <div className="space-y-2">
               <Label className="text-[#94a3b8]">File</Label>
-              <div className="border-2 border-dashed border-white/10 rounded-xl p-6 text-center hover:border-[#d4af37]/50 transition-colors">
+              <div className="border-2 border-dashed border-[var(--b)] rounded-xl p-6 text-center hover:border-[#d4af37]/50 transition-colors">
                 <input
                   type="file"
                   id="file-upload"
@@ -817,7 +817,7 @@ const VaultPage = () => {
                 setShowUploadModal(false);
                 resetUploadForm();
               }}
-              className="border-white/10 text-white"
+              className="border-[var(--b)] text-white"
             >
               Cancel
             </Button>
@@ -856,7 +856,7 @@ const VaultPage = () => {
           }
         }
       }}>
-        <DialogContent className="glass-card border-white/10 sm:max-w-md !top-[5vh] !translate-y-0 max-h-[90vh] overflow-y-scroll">
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md !top-[5vh] !translate-y-0 max-h-[90vh] overflow-y-scroll">
           <DialogHeader>
             <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Unlock Document
@@ -951,7 +951,7 @@ const VaultPage = () => {
                 
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-white/10"></div>
+                    <div className="w-full border-t border-[var(--b)]"></div>
                   </div>
                   <div className="relative flex justify-center text-xs">
                     <span className="bg-[#1A2440] px-2 text-[#64748b]">Or use backup code</span>
@@ -980,7 +980,7 @@ const VaultPage = () => {
             <Button
               variant="outline"
               onClick={() => setShowLockModal(false)}
-              className="border-white/10 text-white"
+              className="border-[var(--b)] text-white"
             >
               Cancel
             </Button>
@@ -1030,7 +1030,7 @@ const VaultPage = () => {
 
       {/* Backup Code Modal */}
       <Dialog open={showBackupCodeModal} onOpenChange={setShowBackupCodeModal}>
-        <DialogContent className="glass-card border-white/10 sm:max-w-md !top-[5vh] !translate-y-0">
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md !top-[5vh] !translate-y-0">
           <DialogHeader>
             <DialogTitle className="text-white text-xl flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
               <Key className="w-5 h-5 text-[#d4af37]" />
@@ -1049,7 +1049,7 @@ const VaultPage = () => {
             <Button
               onClick={copyBackupCode}
               variant="outline"
-              className="w-full border-white/10 text-white mb-4"
+              className="w-full border-[var(--b)] text-white mb-4"
             >
               <Copy className="w-4 h-4 mr-2" />
               Copy to Clipboard
@@ -1074,7 +1074,7 @@ const VaultPage = () => {
 
       {/* Preview Modal */}
       <Dialog open={showPreviewModal} onOpenChange={closePreview}>
-        <DialogContent className="glass-card border-white/10 sm:max-w-4xl max-h-[90vh] !top-[5vh] !translate-y-0 overflow-y-scroll">
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-4xl max-h-[90vh] !top-[5vh] !translate-y-0 overflow-y-scroll">
           <DialogHeader>
             <DialogTitle className="text-white text-xl flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
               <Eye className="w-5 h-5 text-[#d4af37]" />
@@ -1121,7 +1121,7 @@ const VaultPage = () => {
             <Button
               variant="outline"
               onClick={closePreview}
-              className="border-white/10 text-white"
+              className="border-[var(--b)] text-white"
             >
               Close
             </Button>
@@ -1149,7 +1149,7 @@ const VaultPage = () => {
           setEditNotes('');
         }
       }}>
-        <DialogContent className="glass-card border-white/10 sm:max-w-md">
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-white text-xl flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
               <Edit2 className="w-5 h-5 text-[#d4af37]" />
@@ -1178,7 +1178,7 @@ const VaultPage = () => {
                 <SelectTrigger className="input-field" data-testid="edit-document-category-select">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-[#1A2440] border-white/10">
+                <SelectContent className="bg-[#1A2440] border-[var(--b)]">
                   <SelectItem value="legal">Legal</SelectItem>
                   <SelectItem value="financial">Financial</SelectItem>
                   <SelectItem value="personal">Personal</SelectItem>
@@ -1211,7 +1211,7 @@ const VaultPage = () => {
             <Button
               variant="outline"
               onClick={() => setShowEditModal(false)}
-              className="border-white/10 text-white"
+              className="border-[var(--b)] text-white"
             >
               Cancel
             </Button>

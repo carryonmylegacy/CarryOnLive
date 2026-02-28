@@ -466,7 +466,7 @@ const MessagesPage = () => {
 
       {/* Create Message Modal */}
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="glass-card border-white/10 sm:max-w-2xl max-h-[90vh] overflow-y-scroll !top-[5vh] !translate-y-0">
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-2xl max-h-[90vh] overflow-y-scroll !top-[5vh] !translate-y-0">
           <DialogHeader>
             <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
               {editingMessage ? 'Edit Message' : 'Create Milestone Message'}
@@ -482,7 +482,7 @@ const MessagesPage = () => {
               <Button
                 variant={messageType === 'text' ? 'default' : 'outline'}
                 onClick={() => setMessageType('text')}
-                className={messageType === 'text' ? 'gold-button' : 'border-white/10 text-white'}
+                className={messageType === 'text' ? 'gold-button' : 'border-[var(--b)] text-white'}
                 data-testid="msg-type-text"
               >
                 <MessageSquare className="w-4 h-4 mr-2" />
@@ -491,7 +491,7 @@ const MessagesPage = () => {
               <Button
                 variant={messageType === 'voice' ? 'default' : 'outline'}
                 onClick={() => setMessageType('voice')}
-                className={messageType === 'voice' ? 'gold-button' : 'border-white/10 text-white'}
+                className={messageType === 'voice' ? 'gold-button' : 'border-[var(--b)] text-white'}
                 data-testid="msg-type-voice"
               >
                 <Mic className="w-4 h-4 mr-2" />
@@ -500,7 +500,7 @@ const MessagesPage = () => {
               <Button
                 variant={messageType === 'video' ? 'default' : 'outline'}
                 onClick={() => setMessageType('video')}
-                className={messageType === 'video' ? 'gold-button' : 'border-white/10 text-white'}
+                className={messageType === 'video' ? 'gold-button' : 'border-[var(--b)] text-white'}
                 data-testid="msg-type-video"
               >
                 <Video className="w-4 h-4 mr-2" />
@@ -536,7 +536,7 @@ const MessagesPage = () => {
             {messageType === 'video' && (
               <div className="space-y-3">
                 <Label className="text-[#94a3b8]">Video Recording</Label>
-                <div className="border border-white/10 rounded-xl p-4 bg-black/20">
+                <div className="border border-[var(--b)] rounded-xl p-4 bg-black/20">
                   {videoUrl ? (
                     <div className="space-y-3">
                       <video
@@ -550,7 +550,7 @@ const MessagesPage = () => {
                           setVideoBlob(null);
                           setVideoUrl(null);
                         }}
-                        className="border-white/10 text-white w-full"
+                        className="border-[var(--b)] text-white w-full"
                       >
                         <X className="w-4 h-4 mr-2" />
                         Remove Video
@@ -586,14 +586,14 @@ const MessagesPage = () => {
             {messageType === 'voice' && (
               <div className="space-y-3">
                 <Label className="text-[#94a3b8]">Voice Recording</Label>
-                <div className="border border-white/10 rounded-xl p-4 bg-black/20">
+                <div className="border border-[var(--b)] rounded-xl p-4 bg-black/20">
                   {audioUrl ? (
                     <div className="space-y-3">
                       <audio src={audioUrl} controls className="w-full" data-testid="voice-playback" />
                       <Button
                         variant="outline"
                         onClick={() => { setAudioBlob(null); setAudioUrl(null); }}
-                        className="border-white/10 text-white w-full"
+                        className="border-[var(--b)] text-white w-full"
                         data-testid="remove-voice-btn"
                       >
                         <X className="w-4 h-4 mr-2" />
@@ -670,7 +670,7 @@ const MessagesPage = () => {
                 <SelectTrigger className="input-field">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-[#1A2440] border-white/10">
+                <SelectContent className="bg-[#1A2440] border-[var(--b)]">
                   <SelectItem value="immediate">
                     <div className="flex items-center gap-2">
                       <Send className="w-4 h-4" />
@@ -722,7 +722,7 @@ const MessagesPage = () => {
                   <SelectTrigger className="input-field">
                     <SelectValue placeholder="Select event type" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#1A2440] border-white/10">
+                  <SelectContent className="bg-[#1A2440] border-[var(--b)]">
                     {eventTypes.map((event) => (
                       <SelectItem key={event.value} value={event.value}>
                         <div className="flex items-center gap-2">
@@ -759,7 +759,7 @@ const MessagesPage = () => {
                 setEditingMessage(null);
                 resetForm();
               }}
-              className="border-white/10 text-white"
+              className="border-[var(--b)] text-white"
             >
               Cancel
             </Button>

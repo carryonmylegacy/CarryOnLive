@@ -74,7 +74,7 @@ const EmergencyAccessPanel = ({ estates }) => {
   const hasPending = requests.some(r => r.status === 'pending');
 
   return (
-    <Card className="border-white/10 bg-[#0F1629]/80" data-testid="emergency-access-panel">
+    <Card className="border-[var(--b)] bg-[#0F1629]/80" data-testid="emergency-access-panel">
       <CardHeader className="pb-3">
         <CardTitle className="text-white text-base flex items-center gap-2">
           <Shield className="w-5 h-5 text-[#ef4444]" />
@@ -121,7 +121,7 @@ const EmergencyAccessPanel = ({ estates }) => {
 
         {/* Request form */}
         {showForm ? (
-          <div className="space-y-3 p-4 rounded-lg bg-white/5 border border-white/10">
+          <div className="space-y-3 p-4 rounded-lg bg-white/5 border border-[var(--b)]">
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle className="w-4 h-4 text-[#f59e0b]" />
               <p className="text-sm font-medium text-white">Request Emergency Access</p>
@@ -135,7 +135,7 @@ const EmergencyAccessPanel = ({ estates }) => {
               <select
                 value={form.estate_id}
                 onChange={e => setForm(f => ({ ...f, estate_id: e.target.value }))}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+                className="w-full bg-white/5 border border-[var(--b)] rounded-lg px-3 py-2 text-sm text-white"
                 data-testid="emergency-estate-select"
               >
                 <option value="">Select estate...</option>
@@ -151,7 +151,7 @@ const EmergencyAccessPanel = ({ estates }) => {
                 value={form.relationship_to_benefactor}
                 onChange={e => setForm(f => ({ ...f, relationship_to_benefactor: e.target.value }))}
                 placeholder="e.g., Daughter, Spouse, Sibling"
-                className="bg-white/5 border-white/10 text-white text-sm"
+                className="bg-white/5 border-[var(--b)] text-white text-sm"
                 data-testid="emergency-relationship-input"
               />
             </div>
@@ -163,7 +163,7 @@ const EmergencyAccessPanel = ({ estates }) => {
                 onChange={e => setForm(f => ({ ...f, reason: e.target.value }))}
                 placeholder="Please explain why you need emergency access..."
                 rows={3}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-[#64748b] resize-none"
+                className="w-full bg-white/5 border border-[var(--b)] rounded-lg px-3 py-2 text-sm text-white placeholder-[#64748b] resize-none"
                 data-testid="emergency-reason-input"
               />
             </div>
@@ -181,7 +181,7 @@ const EmergencyAccessPanel = ({ estates }) => {
                   setForm(prev => ({ ...prev, contact_phone: f }));
                 }}
                 placeholder="(123) 456-7890"
-                className="bg-white/5 border-white/10 text-white text-sm"
+                className="bg-white/5 border-[var(--b)] text-white text-sm"
               />
             </div>
 
@@ -190,7 +190,7 @@ const EmergencyAccessPanel = ({ estates }) => {
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
                 Submit Request
               </Button>
-              <Button onClick={() => setShowForm(false)} variant="outline" className="border-white/10 text-[#94a3b8] text-sm">
+              <Button onClick={() => setShowForm(false)} variant="outline" className="border-[var(--b)] text-[#94a3b8] text-sm">
                 Cancel
               </Button>
             </div>

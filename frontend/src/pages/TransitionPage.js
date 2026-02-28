@@ -159,7 +159,7 @@ const TransitionPage = () => {
           </div>
 
           {estate?.status !== 'transitioned' && (
-            <div className="p-4 bg-white/5 rounded-xl border border-white/10">
+            <div className="p-4 bg-white/5 rounded-xl border border-[var(--b)]">
               <h4 className="text-white font-medium mb-2">Important Information</h4>
               <p className="text-[#94a3b8] text-sm">
                 When the time comes, an executor or family member can upload a death certificate to initiate the estate transition. 
@@ -243,7 +243,7 @@ const TransitionPage = () => {
 
       {/* Upload Modal */}
       <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
-        <DialogContent className="glass-card border-white/10 sm:max-w-md !top-[5vh] !translate-y-0">
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md !top-[5vh] !translate-y-0">
           <DialogHeader>
             <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Upload Death Certificate
@@ -254,7 +254,7 @@ const TransitionPage = () => {
           </DialogHeader>
           
           <div className="py-6">
-            <div className="border-2 border-dashed border-white/10 rounded-xl p-8 text-center hover:border-[#d4af37]/50 transition-colors">
+            <div className="border-2 border-dashed border-[var(--b)] rounded-xl p-8 text-center hover:border-[#d4af37]/50 transition-colors">
               <input
                 type="file"
                 id="certificate-upload"
@@ -294,7 +294,7 @@ const TransitionPage = () => {
                 setShowUploadModal(false);
                 setSelectedFile(null);
               }}
-              className="border-white/10 text-white"
+              className="border-[var(--b)] text-white"
             >
               Cancel
             </Button>

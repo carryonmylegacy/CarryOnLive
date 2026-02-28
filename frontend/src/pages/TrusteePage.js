@@ -632,7 +632,7 @@ const TrusteePage = () => {
           setShowEditModal(open);
           if (!open) setEditTask(null);
         }}>
-          <DialogContent className="glass-card border-white/10 sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogContent className="glass-card border-[var(--b)] sm:max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-[var(--t)] text-xl flex items-center gap-2">
                 <Edit2 className="w-5 h-5 text-[var(--bl3)]" />
@@ -764,7 +764,7 @@ const TrusteePage = () => {
         
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <AlertDialogContent className="glass-card border-white/10">
+          <AlertDialogContent className="glass-card border-[var(--b)]">
             <AlertDialogHeader>
               <AlertDialogTitle className="text-[var(--t)] flex items-center gap-2">
                 <Trash2 className="w-5 h-5 text-[var(--rd)]" />
@@ -1125,7 +1125,7 @@ const TrusteePage = () => {
         setShowEditModal(open);
         if (!open) setEditTask(null);
       }}>
-        <DialogContent className="glass-card border-white/10 sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-[var(--t)] text-xl flex items-center gap-2">
               <Edit2 className="w-5 h-5 text-[var(--bl3)]" />
@@ -1256,7 +1256,7 @@ const TrusteePage = () => {
       
       {/* Delete Confirmation Dialog - for list view */}
       <AlertDialog open={showDeleteDialog && view === 'list'} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent className="glass-card border-white/10">
+        <AlertDialogContent className="glass-card border-[var(--b)]">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-[var(--t)] flex items-center gap-2">
               <Trash2 className="w-5 h-5 text-[var(--rd)]" />

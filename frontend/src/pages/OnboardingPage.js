@@ -249,7 +249,7 @@ const OnboardingPage = () => {
         <div className="flex gap-3">
           <Button
             variant="outline"
-            className="flex-1 border-white/10 text-[#94a3b8] hover:text-white"
+            className="flex-1 border-[var(--b)] text-[#94a3b8] hover:text-white"
             onClick={() => navigate('/dashboard')}
           >
             Skip for Now
@@ -270,7 +270,7 @@ const OnboardingPage = () => {
 
       {/* Add Beneficiary Modal */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-        <DialogContent className="glass-card border-white/10 sm:max-w-lg max-h-[85vh] overflow-y-scroll !top-[5vh] !translate-y-0">
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-lg max-h-[85vh] overflow-y-scroll !top-[5vh] !translate-y-0">
           <DialogHeader>
             <DialogTitle className="text-white text-xl flex items-center gap-2">
               <UserPlus className="w-5 h-5 text-[#d4af37]" />
@@ -325,7 +325,7 @@ const OnboardingPage = () => {
                 <SelectTrigger className="input-field">
                   <SelectValue placeholder="Select relationship" />
                 </SelectTrigger>
-                <SelectContent className="bg-[#141C33] border-white/10">
+                <SelectContent className="bg-[#141C33] border-[var(--b)]">
                   {relations.map((rel) => (
                     <SelectItem key={rel} value={rel}>{rel}</SelectItem>
                   ))}
@@ -375,7 +375,7 @@ const OnboardingPage = () => {
                       <SelectTrigger className="input-field">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#141C33] border-white/10">
+                      <SelectContent className="bg-[#141C33] border-[var(--b)]">
                         <SelectItem value="male">Male</SelectItem>
                         <SelectItem value="female">Female</SelectItem>
                         <SelectItem value="other">Other</SelectItem>
@@ -395,7 +395,7 @@ const OnboardingPage = () => {
                     <SelectTrigger className="input-field">
                       <SelectValue placeholder="State" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#141C33] border-white/10 max-h-48">
+                    <SelectContent className="bg-[#141C33] border-[var(--b)] max-h-48">
                       {usStates.map((st) => (
                         <SelectItem key={st} value={st}>{st}</SelectItem>
                       ))}
@@ -413,7 +413,7 @@ const OnboardingPage = () => {
           </div>
           
           <div className="flex gap-3 pt-2">
-            <Button variant="outline" onClick={() => setShowAddModal(false)} className="flex-1 border-white/10 text-white">
+            <Button variant="outline" onClick={() => setShowAddModal(false)} className="flex-1 border-[var(--b)] text-white">
               Cancel
             </Button>
             <Button onClick={handleAdd} disabled={adding || !firstName || !lastName || !email || !relation} className="flex-1 gold-button">
