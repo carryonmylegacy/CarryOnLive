@@ -117,6 +117,8 @@ export const SubscriptionManagement = ({
   const currentBilling = currentSub?.billing_cycle || 'monthly';
   const isBeta = subscriptionStatus?.beta_mode;
   const lockedTier = subscriptionStatus?.beneficiary_locked_tier;
+  const estateTransitioned = subscriptionStatus?.estate_transitioned || false;
+  const benCanSubscribe = !isBeneficiary || estateTransitioned;
 
   useEffect(() => {
     const fetchPlans = async () => {
