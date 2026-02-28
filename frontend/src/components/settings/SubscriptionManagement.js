@@ -16,6 +16,7 @@ const TIER_STYLES = {
   ben_premium: { accent: '#d4af37', icon: Crown, label: 'Best Value' },
   ben_standard: { accent: '#60A5FA', icon: Star, label: null },
   ben_base: { accent: '#22C993', icon: Shield, label: null },
+  ben_military: { accent: '#F59E0B', icon: Shield, label: 'Flat Rate' },
   ben_hospice: { accent: '#ec4899', icon: Heart, label: 'Post-Transition' },
   premium: { accent: '#d4af37', icon: Crown, label: 'Most Popular' },
   standard: { accent: '#60A5FA', icon: Star, label: null },
