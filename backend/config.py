@@ -33,7 +33,7 @@ if not JWT_SECRET:
         "JWT_SECRET not explicitly set — using .env value. Ensure this is set in production."
     )
 JWT_ALGORITHM = "HS256"
-JWT_EXPIRATION_HOURS = 24
+JWT_EXPIRATION_HOURS = 8
 
 # Encryption — NO FALLBACK: missing key MUST fail fast
 ENCRYPTION_KEY = os.environ.get("ENCRYPTION_KEY")
