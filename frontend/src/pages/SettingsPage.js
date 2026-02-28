@@ -423,15 +423,15 @@ const SettingsPage = () => {
                           disabled={changingPlan}
                           className="w-full text-sm font-bold py-5 transition-all duration-300"
                           style={{
-                            background: upgrading ? `linear-gradient(135deg, ${tc.accent}, ${tc.accent}cc)` : 'transparent',
-                            color: upgrading ? '#0F1629' : tc.accent,
-                            border: upgrading ? 'none' : `2px solid ${tc.accent}40`,
-                            boxShadow: upgrading ? `0 4px 20px ${tc.glow}` : 'none',
+                            background: requiresVerification(p.id) ? 'transparent' : upgrading ? `linear-gradient(135deg, ${tc.accent}, ${tc.accent}cc)` : 'transparent',
+                            color: requiresVerification(p.id) ? tc.accent : upgrading ? '#0F1629' : tc.accent,
+                            border: requiresVerification(p.id) || !upgrading ? `2px solid ${tc.accent}40` : 'none',
+                            boxShadow: !requiresVerification(p.id) && upgrading ? `0 4px 20px ${tc.glow}` : 'none',
                           }}
                           data-testid={`change-plan-${p.id}`}
                         >
-                          {changingPlan ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : upgrading ? <ArrowUpRight className="w-4 h-4 mr-1" /> : <ArrowDownRight className="w-4 h-4 mr-1" />}
-                          {upgrading ? 'Upgrade' : 'Downgrade'}
+                          {changingPlan ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : requiresVerification(p.id) ? <Shield className="w-4 h-4 mr-1" /> : upgrading ? <ArrowUpRight className="w-4 h-4 mr-1" /> : <ArrowDownRight className="w-4 h-4 mr-1" />}
+                          {requiresVerification(p.id) ? 'Verify & Apply' : upgrading ? 'Upgrade' : 'Downgrade'}
                         </Button>
                       )
                     ) : (
