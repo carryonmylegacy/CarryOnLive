@@ -91,7 +91,7 @@ const DigitalWalletPage = () => {
             Digital Access Vault (DAV)
           </h1>
           <p className="text-[var(--t4)] mt-1 text-sm">
-            Store digital account credentials to pass down to your beneficiaries
+            Securely store logins, passwords, and access credentials for your beneficiaries
           </p>
         </div>
         <Button className="gold-button" onClick={() => setShowAdd(true)} data-testid="add-wallet-entry">
@@ -104,7 +104,7 @@ const DigitalWalletPage = () => {
           <CardContent className="p-8 text-center">
             <KeyRound className="w-12 h-12 mx-auto text-[var(--gold)] mb-4 opacity-50" />
             <h3 className="text-lg font-bold text-[var(--t)] mb-2">No Digital Accounts Yet</h3>
-            <p className="text-sm text-[var(--t4)] mb-4">Add your cryptocurrency wallets, email accounts, social media, and other digital accounts here. Each can be assigned to a specific beneficiary.</p>
+            <p className="text-sm text-[var(--t4)] mb-4">Store your email, banking, social media, subscription, and other account credentials here. Each can be assigned to a specific beneficiary.</p>
             <Button className="gold-button" onClick={() => setShowAdd(true)}>
               <Plus className="w-4 h-4 mr-2" /> Add Your First Account
             </Button>
