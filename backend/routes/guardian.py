@@ -54,11 +54,19 @@ ESTATE_GUARDIAN_SYSTEM_PROMPT = """You are the Estate Guardian, a highly special
 
 async def extract_document_text(document: dict) -> str:
     """Extract text content from a document for AI analysis"""
-    if not document.get("file_data"):
-        return ""
-
     try:
-        decrypted_data = decrypt_data(document["file_data"])
+        estate_salt = await get_estate_salt(document["estate_id"])
+
+        # New architecture: blob in cloud storage
+        if document.get("storage_key"):
+            from services.storage import storage
+            encrypted_blob = await storage.download(document["storage_key"])
+            decrypted_data = decrypt_aes256(encrypted_blob.decode("ascii"), estate_salt)
+        elif document.get("file_data"):
+            decrypted_data = decrypt_aes256(document["file_data"], estate_salt)
+        else:
+            return ""
+
         file_type = document.get("file_type", "").lower()
 
         # PDF extraction
@@ -66,21 +74,19 @@ async def extract_document_text(document: dict) -> str:
             try:
                 pdf = pdfplumber.open(io.BytesIO(decrypted_data))
                 text_parts = []
-                for page in pdf.pages[:20]:  # Limit to first 20 pages
+                for page in pdf.pages[:20]:
                     page_text = page.extract_text()
                     if page_text:
                         text_parts.append(page_text)
                 pdf.close()
                 text = "\n".join(text_parts)
-                return text[:8000]  # Limit to ~8000 chars per document
+                return text[:8000]
             except Exception as e:
                 logger.warning(f"PDF extraction failed for {document['name']}: {e}")
                 return f"[PDF document - {document['file_size']} bytes - text extraction failed]"
 
         # Text-based files
-        elif any(
-            t in file_type for t in ["text", "plain", "csv", "json", "xml", "html"]
-        ):
+        elif any(t in file_type for t in ["text", "plain", "csv", "json", "xml", "html"]):
             text = decrypted_data.decode("utf-8", errors="replace")
             return text[:8000]
 
