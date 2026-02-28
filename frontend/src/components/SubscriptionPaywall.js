@@ -452,7 +452,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
 
                   {/* CTA Button */}
                   {!eligible ? (
-                    <div className="w-full text-center text-xs font-medium py-3 rounded-xl text-[var(--t5)]" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div className="w-full text-center text-xs font-medium py-3 rounded-xl text-[var(--t5)]" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
                       Ages 18–25 only
                     </div>
                   ) : (
