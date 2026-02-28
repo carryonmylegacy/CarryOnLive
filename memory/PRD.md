@@ -16,7 +16,14 @@ CarryOn is a secure estate planning platform for American families. It helps use
 
 ## What's Been Implemented
 
-### Session: Feb 28, 2026 (Current Fork)
+### Session: Feb 28, 2026
+
+**In-App PDF Viewer (NEW)**:
+- Integrated `react-pdf` v10.4.1 for native PDF rendering inside a floating tile modal
+- New `PDFViewerModal` component with zoom controls, page navigation, and download button
+- Eye icon on document tiles now opens the viewer for PDFs and images
+- Non-previewable file types gracefully fallback to download with toast notification
+- Replaces broken iframe-based preview that was triggering downloads instead
 
 **OTP Email System**: Fully operational with Resend. Resend-otp endpoint added with 30s cooldown.
 
@@ -34,8 +41,6 @@ CarryOn is a secure estate planning platform for American families. It helps use
 
 **Dashboard Layout**: OnboardingWizard moved below Estate Readiness Score to prevent flash/bump
 
-**SDV Document View**: Eye button opens in-app preview for PDFs/images, downloads for other types. Edit modal anchored with !top-[5vh].
-
 **Voice Biometrics**: Replaced pyin with yin (5x speedup). Runs in thread pool (asyncio.to_thread).
 
 **Codemagic CI/CD**: Optimized config with caching and timeouts.
@@ -47,9 +52,11 @@ CarryOn is a secure estate planning platform for American families. It helps use
 **Audit Fixes**: HIPAA PHI logging on preview, App Store audio data type, marketing claims corrected.
 
 ## Pending / Backlog
-- P1: Codemagic build verification on Codemagic
-- P1: Beneficiary Gentle Intro e2e test with live invitation
-- P2: Animated logo (awaiting asset)
-- P2: SMS OTP (awaiting Twilio A2P)
+- P1: Codemagic build verification on Codemagic (USER VERIFICATION)
+- P1: Beneficiary Hub Orbit Visualization (USER VERIFICATION)
+- P1: Beneficiary Hub "You" Label (USER VERIFICATION)
+- P1: Beneficiary Gentle Intro e2e test with live invitation (USER VERIFICATION)
+- P2: Animated logo (awaiting asset from user)
+- P2: SMS OTP via Twilio (awaiting A2P 10DLC approval)
 - P3: Mobile deployment
 - P3: Redis-backed rate limiting
