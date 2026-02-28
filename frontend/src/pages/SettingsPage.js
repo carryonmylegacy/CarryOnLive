@@ -20,15 +20,32 @@ import {
   Crown,
   Star,
   Award,
-  Heart
+  Heart,
+  Users,
+  ArrowUpRight,
+  ArrowDownRight,
+  X,
+  Zap
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Switch } from '../components/ui/switch';
 import { Separator } from '../components/ui/separator';
+import { toast } from 'sonner';
 import NotificationSettings from '../components/NotificationSettings';
 import FamilyPlanSettings from '../components/FamilyPlanSettings';
 import SubscriptionPaywall from '../components/SubscriptionPaywall';
+
+const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+const TIER_COLORS = {
+  premium: { accent: '#d4af37', glow: 'rgba(212,175,55,0.4)', bg: 'linear-gradient(135deg, rgba(212,175,55,0.18) 0%, rgba(20,28,51,0.95) 100%)' },
+  standard: { accent: '#60A5FA', glow: 'rgba(96,165,250,0.35)', bg: 'linear-gradient(135deg, rgba(96,165,250,0.12) 0%, rgba(20,28,51,0.95) 100%)' },
+  base: { accent: '#22C993', glow: 'rgba(34,201,147,0.35)', bg: 'linear-gradient(135deg, rgba(34,201,147,0.12) 0%, rgba(20,28,51,0.95) 100%)' },
+  new_adult: { accent: '#B794F6', glow: 'rgba(183,148,246,0.35)', bg: 'linear-gradient(135deg, rgba(183,148,246,0.12) 0%, rgba(20,28,51,0.95) 100%)' },
+  military: { accent: '#F59E0B', glow: 'rgba(245,158,11,0.35)', bg: 'linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(20,28,51,0.95) 100%)' },
+  hospice: { accent: '#ec4899', glow: 'rgba(236,72,153,0.35)', bg: 'linear-gradient(135deg, rgba(236,72,153,0.12) 0%, rgba(20,28,51,0.95) 100%)' },
+};
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
