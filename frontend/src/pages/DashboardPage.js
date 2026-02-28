@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import EstateSelector from '../components/estate/EstateSelector';
 import TrialBanner from '../components/TrialBanner';
+import OnboardingWizard from '../components/OnboardingWizard';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
