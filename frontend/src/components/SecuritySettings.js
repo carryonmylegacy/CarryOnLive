@@ -305,7 +305,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
             <KeyRound className="w-4 h-4 text-[var(--gold)]" />
             <span className="text-sm font-bold text-[var(--t)]">Layer 1: Password</span>
           </div>
-          <Switch checked={pwEnabled} onCheckedChange={setPwEnabled} data-testid={`pw-toggle-${section.id}`} />
+          <Switch checked={pwEnabled} onCheckedChange={(v) => handleToggle('password', v)} data-testid={`pw-toggle-${section.id}`} />
         </div>
         {pwEnabled && (
           <div className="ml-6 space-y-2">
