@@ -266,6 +266,8 @@ const MessagesPage = () => {
     setTriggerDate('');
     setVideoBlob(null);
     setVideoUrl(null);
+    setAudioBlob(null);
+    setAudioUrl(null);
     setEditingMessage(null);
   };
 
