@@ -108,8 +108,8 @@ async def get_current_user(
         raise HTTPException(status_code=401, detail="Token has been revoked")
 
     # Check bulk user token revocation (e.g., password change)
-    iat = payload.get("iat", "")
-    if iat and await is_user_tokens_revoked(payload["user_id"], iat):
+    issued_at = payload.get("issued_at", "")
+    if issued_at and await is_user_tokens_revoked(payload["user_id"], issued_at):
         raise HTTPException(
             status_code=401, detail="Session expired — please log in again"
         )
