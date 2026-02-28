@@ -281,6 +281,21 @@ async def update_message(
         update_fields["updated_at"] = datetime.now(timezone.utc).isoformat()
         await db.messages.update_one({"id": message_id}, {"$set": update_fields})
 
+        # Log edit to edit_history for timeline tracking
+        changed_fields = [k for k in update_fields if k not in ("updated_at", "encrypted_title", "encrypted_content")]
+        await db.edit_history.insert_one({
+            "id": str(uuid.uuid4()),
+            "item_type": "message",
+            "item_id": message_id,
+            "estate_id": existing["estate_id"],
+            "user_id": current_user["id"],
+            "user_name": current_user.get("name", ""),
+            "action": "edited",
+            "changed_fields": changed_fields,
+            "title": data.title or existing.get("title", ""),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+
     updated = await db.messages.find_one({"id": message_id}, {"_id": 0})
     return await _decrypt_message(updated, estate_salt)
 
