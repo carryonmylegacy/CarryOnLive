@@ -462,6 +462,7 @@ Provide a clear, organized analysis with specific findings and recommendations."
                     response = (
                         clean_response
                         + f"\n\n**{items_added} new checklist items have been added to your Immediate Action Checklist.**"
+                        + LEGAL_DISCLAIMER
                     )
 
                 # Log activity
