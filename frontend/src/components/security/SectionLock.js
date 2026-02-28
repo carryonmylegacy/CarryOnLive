@@ -1,5 +1,5 @@
 import React, { useState, createContext, useContext, useEffect, useCallback } from 'react';
-import { Lock, Unlock, Shield, Eye, EyeOff, Mic, MicOff, KeyRound, CheckCircle2, AlertTriangle, Loader2, HelpCircle } from 'lucide-react';
+import { Lock, Unlock, Shield, Eye, EyeOff, Mic, MicOff, KeyRound, CheckCircle2, AlertTriangle, Loader2, HelpCircle, Square } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
