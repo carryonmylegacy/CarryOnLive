@@ -325,6 +325,52 @@ Provide a clear, organized analysis with specific findings and recommendations."
         # Build conversation history from DB for multi-turn context
         history_messages = [{"role": "system", "content": system_message}]
 
+        # Cross-chat knowledge: include key points from recent sessions
+        if session_id.startswith("chat_"):
+            recent_sessions = (
+                await db.chat_history.aggregate(
+                    [
+                        {
+                            "$match": {
+                                "user_id": current_user["id"],
+                                "session_id": {"$ne": session_id},
+                            }
+                        },
+                        {"$sort": {"created_at": -1}},
+                        {"$limit": 40},
+                        {
+                            "$group": {
+                                "_id": "$session_id",
+                                "messages": {
+                                    "$push": {
+                                        "role": "$role",
+                                        "content": "$content",
+                                    }
+                                },
+                            }
+                        },
+                        {"$limit": 5},
+                    ]
+                ).to_list(5)
+            )
+            if recent_sessions:
+                cross_context_parts = []
+                for sess in recent_sessions:
+                    # Take last 2 exchanges from each session (up to 4 messages)
+                    msgs = sess["messages"][-4:]
+                    summary = " | ".join(
+                        f"{'User' if m['role'] == 'user' else 'Guardian'}: {m['content'][:150]}"
+                        for m in msgs
+                    )
+                    cross_context_parts.append(summary)
+                cross_context = "\n---\n".join(cross_context_parts)
+                history_messages.append(
+                    {
+                        "role": "system",
+                        "content": f"PREVIOUS CONVERSATION CONTEXT (the user may reference these):\n{cross_context}",
+                    }
+                )
+
         # Load previous messages from this session
         prev_messages = (
             await db.chat_history.find(
