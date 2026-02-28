@@ -69,7 +69,7 @@ const Sidebar = () => {
       title: 'MY LEGACY',
       items: [
         { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-        { to: '/vault', icon: FolderLock, label: 'Secure Document Vault' },
+        { to: '/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
         { to: '/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
         { to: '/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
         { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
@@ -94,7 +94,7 @@ const Sidebar = () => {
       title: 'LEGACY ACCESS',
       items: [
         { to: '/beneficiary/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-        { to: '/beneficiary/vault', icon: FolderLock, label: 'Secure Document Vault' },
+        { to: '/beneficiary/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
         { to: '/beneficiary/guardian', icon: Sparkles, label: 'Estate Guardian (EGA)' },
         { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
         { to: '/beneficiary/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
