@@ -5,7 +5,10 @@ import {
   Loader2,
   Clock,
   ChevronRight,
-  Zap
+  Zap,
+  Upload,
+  Shield,
+  X
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -27,6 +30,11 @@ export const SubscriptionManagement = ({
   const [changingPlan, setChangingPlan] = useState(false);
   const [cancellingPlan, setCancellingPlan] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showVerification, setShowVerification] = useState(false);
+  const [verificationTier, setVerificationTier] = useState('');
+  const [verificationFile, setVerificationFile] = useState(null);
+  const [verificationDocType, setVerificationDocType] = useState('');
+  const [uploadingVerification, setUploadingVerification] = useState(false);
 
   const currentSub = subscriptionStatus?.subscription;
   const currentPlanId = currentSub?.plan_id;
