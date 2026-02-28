@@ -157,7 +157,54 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
   const [enrolling, setEnrolling] = useState(false);
   const mediaRecorderRef = React.useRef(null);
 
+  // Account password verification for disabling security
+  const [showAccountPwModal, setShowAccountPwModal] = useState(false);
+  const [accountPw, setAccountPw] = useState('');
+  const [accountPwVerifying, setAccountPwVerifying] = useState(false);
+  const [pendingToggle, setPendingToggle] = useState(null); // { field, value }
+
   const isCustomQuestion = question === '__custom__' || (question && !questions.includes(question));
+
+  // Wrap toggle-off actions to require account password
+  const handleToggle = (field, value) => {
+    if (!value && s.is_active) {
+      // Turning OFF an active security feature — require password
+      setPendingToggle({ field, value });
+      setShowAccountPwModal(true);
+      setAccountPw('');
+    } else {
+      // Turning ON is always allowed
+      if (field === 'password') setPwEnabled(value);
+      else if (field === 'voice') setVoiceEnabled(value);
+      else if (field === 'question') setQEnabled(value);
+    }
+  };
+
+  const verifyAccountPassword = async () => {
+    setAccountPwVerifying(true);
+    try {
+      const { email } = JSON.parse(atob(localStorage.getItem('carryon_token').split('.')[1]));
+      await axios.post(`${API_URL}/auth/verify-password`, { email, password: accountPw }, { headers });
+      // Password verified — apply the toggle
+      if (pendingToggle) {
+        if (pendingToggle.field === 'password') setPwEnabled(pendingToggle.value);
+        else if (pendingToggle.field === 'voice') setVoiceEnabled(pendingToggle.value);
+        else if (pendingToggle.field === 'question') setQEnabled(pendingToggle.value);
+        else if (pendingToggle.field === 'remove') {
+          // Full removal
+          await axios.delete(`${API_URL}/security/settings/${section.id}`, { headers });
+          toast.success(`Security removed from ${section.name}`);
+          onUpdate();
+        }
+      }
+      setShowAccountPwModal(false);
+      setPendingToggle(null);
+      setAccountPw('');
+    } catch (err) {
+      toast.error('Incorrect account password');
+    }
+    setAccountPwVerifying(false);
+  };
 
   const handleSave = async () => {
     setSaving(true);
