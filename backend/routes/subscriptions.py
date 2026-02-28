@@ -246,32 +246,11 @@ DEFAULT_PLANS = [
 
 BENEFICIARY_PLANS = [
     {
-        "id": "ben_base",
-        "name": "Base Beneficiary",
-        "price": 4.99,
-        "note": "Flat rate",
-        "features": [
-            "Immediate Action Checklist",
-            "Basic vault access",
-            "Milestone Messages",
-        ],
-    },
-    {
-        "id": "ben_standard",
-        "name": "Standard Beneficiary",
-        "price": 3.99,
-        "note": "Flat rate",
-        "features": [
-            "Everything in Base",
-            "Expanded vault access",
-            "Estate Guardian analysis",
-        ],
-    },
-    {
         "id": "ben_premium",
-        "name": "Premium Beneficiary",
+        "name": "Premium",
         "price": 2.99,
-        "note": "Flat rate",
+        "quarterly_price": 2.69,
+        "annual_price": 2.39,
         "features": [
             "Everything in Standard",
             "Priority human support",
@@ -279,13 +258,44 @@ BENEFICIARY_PLANS = [
         ],
     },
     {
-        "id": "ben_hospice",
-        "name": "Hospice Beneficiary",
+        "id": "ben_standard",
+        "name": "Standard",
+        "price": 3.99,
+        "quarterly_price": 3.59,
+        "annual_price": 3.19,
+        "features": [
+            "Everything in Base",
+            "Expanded vault access",
+            "Estate Guardian analysis",
+        ],
+    },
+    {
+        "id": "ben_base",
+        "name": "Base",
         "price": 4.99,
-        "note": "Post-transition · Flat rate",
-        "features": ["All Base features", "Applies when no prior paid tier"],
+        "quarterly_price": 4.49,
+        "annual_price": 3.99,
+        "features": [
+            "Immediate Action Checklist",
+            "Basic vault access",
+            "Milestone Messages",
+        ],
+    },
+    {
+        "id": "ben_hospice",
+        "name": "Hospice Transition",
+        "price": 4.99,
+        "quarterly_price": 4.49,
+        "annual_price": 3.99,
+        "note": "After benefactor's transition · 30-day grace period",
+        "features": [
+            "All Base features",
+            "Applies post-transition when no paid tier exists",
+        ],
     },
 ]
+
+GRACE_PERIOD_DAYS = 30
 
 TRIAL_DURATION_DAYS = 30
 
