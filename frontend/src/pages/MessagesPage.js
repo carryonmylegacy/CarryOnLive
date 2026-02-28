@@ -13,6 +13,7 @@ import {
   Calendar,
   Send,
   X,
+  Mic,
   Loader2,
   Camera,
   StopCircle,
