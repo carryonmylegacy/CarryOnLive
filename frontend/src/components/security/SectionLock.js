@@ -124,7 +124,8 @@ export const useSectionLock = () => {
 
 // === LOCK BANNER ===
 export const SectionLockBanner = ({ sectionId }) => {
-  const { settings, isLocked, requestUnlock, resolveId } = useSectionLock();
+  const ctx = useSectionLock();
+  const { settings, isLocked, requestUnlock, resolveId } = ctx;
   const sid = resolveId(sectionId);
   const sec = LOCKABLE_SECTIONS[sid];
   const s = settings[sid];
