@@ -1,0 +1,91 @@
+{
+  "summary": "Settings page refactoring and Guardian page regression testing complete. All 27 tests passed. The subscription management components (SubscriptionManagement.js, PlanCard.js, BillingToggle.js) are properly extracted and integrated into SettingsPage.js. Guardian page continues to work correctly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Global",
+        "issues": ["React key warning: 'Encountered two children with the same key /admin' - cosmetic issue from sidebar navigation, does not affect functionality"]
+      }
+    ]
+  },
+  "passed_tests": [
+    "Settings page container (data-testid='settings-page') loads correctly",
+    "Profile section displays user info (Test Admin, admin@carryon.com, Admin badge)",
+    "Push Notifications section renders with blocked notification message",
+    "Subscription Plan section renders with CreditCard icon",
+    "Beta Mode status bar shows 'Beta Mode — All features free'",
+    "Billing toggle (data-testid='billing-toggle') renders with 3 options",
+    "Monthly billing button (data-testid='billing-monthly') clickable",
+    "Quarterly billing button (data-testid='billing-quarterly') with -10% badge clickable",
+    "Annual billing button (data-testid='billing-annual') with -20% badge clickable",
+    "Plan grid (data-testid='plan-grid') renders with plan cards",
+    "Premium plan card (data-testid='plan-premium') with 'Most Popular' badge",
+    "Standard plan card (data-testid='plan-standard') with blue styling",
+    "Base plan card (data-testid='plan-base') with green styling",
+    "Appearance section with Dark mode toggle (data-testid='settings-theme-toggle')",
+    "Notifications section with Weekly Estate Digest toggle",
+    "Security section with Change Password and Two-Factor Authentication buttons",
+    "Sign Out button (data-testid='settings-logout-button') visible and styled",
+    "Guardian page container (data-testid='estate-guardian') loads",
+    "Guardian header with 'Estate Guardian' title and 'AI estate specialist' subtitle",
+    "Welcome actions container (data-testid='welcome-actions') with 3 action buttons",
+    "Analyze Vault button (data-testid='guardian-action-analyze_vault') clickable",
+    "Generate Checklist button (data-testid='guardian-action-generate_checklist') visible",
+    "Readiness Score button (data-testid='guardian-action-analyze_readiness') visible",
+    "Chat input field (data-testid='guardian-input') functional",
+    "Send button (data-testid='guardian-send-button') visible",
+    "Suggested questions visible below welcome message",
+    "Legal disclaimer 'Not legal advice. Consult a licensed attorney.' visible"
+  ],
+  "test_report_links": [
+    "/app/test_reports/iteration_27.json"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "SubscriptionManagement.js properly uses PlanCard and BillingToggle components",
+    "All data-testid attributes preserved correctly after refactoring",
+    "Plan cards display correct tier colors (gold/Premium, blue/Standard, green/Base)",
+    "Billing toggle interaction working - prices update on toggle",
+    "Guardian page maintains 100% functionality after Settings refactoring"
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A (frontend only test)",
+    "frontend": "100% (27/27 tests passed)"
+  },
+  "test_credentials": {
+    "admin": {"email": "admin@carryon.com", "password": "admin123"}
+  },
+  "seed_data_creation": "None - used existing test data",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Settings page refactoring verified. Subscription components properly extracted to /app/frontend/src/components/settings/ (SubscriptionManagement.js, PlanCard.js, BillingToggle.js). All plan cards, billing toggles, and status bars render correctly. Guardian page working 100%. App URL: https://ai-chat-upgrade-6.preview.emergentagent.com. Login: admin@carryon.com / admin123.",
+  "features_verified": {
+    "settings_page_structure": {
+      "status": "WORKING",
+      "sections": ["Profile", "Push Notifications", "Subscription Plan", "Family Plan", "Appearance", "Notifications", "Security", "Sign Out"]
+    },
+    "subscription_management_component": {
+      "status": "WORKING",
+      "elements": ["Status bar (Beta Mode)", "Billing toggle (Monthly/Quarterly/Annual)", "Plan grid (Premium/Standard/Base + 3 more)", "Subscribe buttons"]
+    },
+    "plan_card_component": {
+      "status": "WORKING",
+      "features": ["Tier colors (gold, blue, green, purple, orange, pink)", "Most Popular badge on Premium", "Pricing with beneficiary rates", "Feature lists", "Subscribe buttons"]
+    },
+    "billing_toggle_component": {
+      "status": "WORKING",
+      "features": ["Monthly/Quarterly/Annual options", "Discount badges (-10%, -20%)", "Active state styling", "Click interaction working"]
+    },
+    "guardian_page_regression": {
+      "status": "WORKING",
+      "features": ["Welcome message", "Action buttons", "Chat interface", "Loading states", "Suggested questions"]
+    }
+  }
+}
