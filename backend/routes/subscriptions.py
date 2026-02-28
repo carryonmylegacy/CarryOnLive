@@ -588,6 +588,164 @@ async def stripe_webhook(request: Any):
         return {"received": True}
 
 
+# --- User Subscription Management ---
+
+class ChangeSubscriptionRequest(BaseModel):
+    plan_id: str
+    billing_cycle: str = "monthly"
+    origin_url: str = ""
+
+class ChangeBillingRequest(BaseModel):
+    billing_cycle: str  # monthly, quarterly, annual
+
+@router.post("/subscriptions/change-plan")
+async def change_subscription_plan(
+    data: ChangeSubscriptionRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Upgrade or downgrade subscription plan"""
+    sub = await db.user_subscriptions.find_one({"user_id": current_user["id"]}, {"_id": 0})
+    if not sub or sub.get("status") != "active":
+        raise HTTPException(status_code=400, detail="No active subscription to modify")
+
+    settings = await get_subscription_settings()
+    plans = {p["id"]: p for p in settings.get("plans", DEFAULT_PLANS)}
+    new_plan = plans.get(data.plan_id)
+    if not new_plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+
+    # Calculate new amount
+    role = current_user.get("role", "benefactor")
+    if role == "beneficiary":
+        amount = new_plan.get("ben_price", new_plan["price"])
+    else:
+        amount = new_plan["price"]
+
+    # Apply discount
+    override = await db.subscription_overrides.find_one({"user_id": current_user["id"]}, {"_id": 0})
+    discount = override.get("custom_discount", 0) if override else 0
+    if discount > 0:
+        amount = amount * (1 - discount / 100)
+
+    # Apply billing cycle discount
+    cycle = data.billing_cycle
+    if cycle == "quarterly":
+        amount = round(amount * 0.9, 2)
+    elif cycle == "annual":
+        amount = round(amount * 0.8, 2)
+
+    # For free plans, update directly
+    if amount == 0 or new_plan.get("price", 0) == 0:
+        now = datetime.now(timezone.utc)
+        await db.user_subscriptions.update_one(
+            {"user_id": current_user["id"]},
+            {"$set": {
+                "plan_id": data.plan_id,
+                "plan_name": new_plan["name"],
+                "billing_cycle": cycle,
+                "amount": 0.0,
+                "free_plan": True,
+                "updated_at": now.isoformat(),
+            }}
+        )
+        return {"success": True, "message": f"Switched to {new_plan['name']} plan"}
+
+    # For paid plans, create new checkout session
+    api_key = os.environ.get("STRIPE_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="Payment service not configured")
+
+    origin = data.origin_url.rstrip("/") if data.origin_url else ""
+    success_url = f"{origin}/settings?session_id={{CHECKOUT_SESSION_ID}}&change=true"
+    cancel_url = f"{origin}/settings"
+    backend_url = os.environ.get("RAILWAY_PUBLIC_URL", os.environ.get("BACKEND_URL", ""))
+    webhook_url = f"{backend_url}/api/webhook/stripe" if backend_url else f"{origin}/api/webhook/stripe"
+
+    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
+    checkout_request = CheckoutSessionRequest(
+        amount=amount,
+        currency="usd",
+        success_url=success_url,
+        cancel_url=cancel_url,
+        metadata={
+            "user_id": current_user["id"],
+            "user_email": current_user["email"],
+            "plan_id": data.plan_id,
+            "plan_name": new_plan["name"],
+            "billing_cycle": cycle,
+            "change_plan": "true",
+            "previous_plan": sub.get("plan_id", ""),
+        },
+    )
+    session = await stripe_checkout.create_checkout_session(checkout_request)
+
+    await db.payment_transactions.insert_one({
+        "session_id": session.session_id,
+        "user_id": current_user["id"],
+        "user_email": current_user["email"],
+        "plan_id": data.plan_id,
+        "plan_name": new_plan["name"],
+        "billing_cycle": cycle,
+        "amount": amount,
+        "currency": "usd",
+        "type": "plan_change",
+        "previous_plan": sub.get("plan_id", ""),
+        "payment_status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+
+    return {"url": session.url, "session_id": session.session_id}
+
+
+@router.post("/subscriptions/change-billing")
+async def change_billing_cycle(
+    data: ChangeBillingRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Change billing cycle for current subscription"""
+    sub = await db.user_subscriptions.find_one({"user_id": current_user["id"]}, {"_id": 0})
+    if not sub or sub.get("status") != "active":
+        raise HTTPException(status_code=400, detail="No active subscription")
+
+    now = datetime.now(timezone.utc)
+    cycle = data.billing_cycle
+    if cycle == "annual":
+        period_end = now + timedelta(days=365)
+    elif cycle == "quarterly":
+        period_end = now + timedelta(days=90)
+    else:
+        period_end = now + timedelta(days=30)
+
+    await db.user_subscriptions.update_one(
+        {"user_id": current_user["id"]},
+        {"$set": {
+            "billing_cycle": cycle,
+            "current_period_end": period_end.isoformat(),
+            "updated_at": now.isoformat(),
+        }}
+    )
+    return {"success": True, "message": f"Billing changed to {cycle}", "new_period_end": period_end.isoformat()}
+
+
+@router.post("/subscriptions/cancel")
+async def cancel_subscription(current_user: dict = Depends(get_current_user)):
+    """Cancel current subscription"""
+    sub = await db.user_subscriptions.find_one({"user_id": current_user["id"]}, {"_id": 0})
+    if not sub or sub.get("status") != "active":
+        raise HTTPException(status_code=400, detail="No active subscription")
+
+    now = datetime.now(timezone.utc)
+    await db.user_subscriptions.update_one(
+        {"user_id": current_user["id"]},
+        {"$set": {
+            "status": "cancelled",
+            "cancelled_at": now.isoformat(),
+            "updated_at": now.isoformat(),
+        }}
+    )
+    return {"success": True, "message": "Subscription cancelled. Access continues until end of current period."}
+
+
 # --- Admin Subscription Management ---
 
 
