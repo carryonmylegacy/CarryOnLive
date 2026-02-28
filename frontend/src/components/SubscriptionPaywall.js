@@ -375,15 +375,15 @@ export default function SubscriptionPaywall({ onDismiss }) {
                 }`}
                 style={{
                   background: isPremium 
-                    ? 'linear-gradient(168deg, rgba(212,175,55,0.15) 0%, rgba(26,32,53,0.95) 40%, rgba(20,28,51,0.98) 100%)'
+                    ? `linear-gradient(168deg, rgba(212,175,55,0.15) 0%, var(--card-bg) 40%)`
                     : isSelected 
-                      ? `linear-gradient(168deg, ${colors.bg} 0%, rgba(20,28,51,0.95) 100%)`
-                      : 'linear-gradient(168deg, rgba(26,36,64,0.8) 0%, rgba(20,28,51,0.95) 100%)',
+                      ? `linear-gradient(168deg, ${colors.bg} 0%, var(--card-bg) 100%)`
+                      : 'var(--card-bg)',
                   border: isPremium 
                     ? '2px solid rgba(212,175,55,0.4)'
                     : isSelected 
                       ? `2px solid ${colors.border}` 
-                      : '1px solid rgba(255,255,255,0.07)',
+                      : '1px solid var(--card-border)',
                   boxShadow: isPremium 
                     ? '0 12px 48px -8px rgba(212,175,55,0.3), 0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
                     : isSelected
