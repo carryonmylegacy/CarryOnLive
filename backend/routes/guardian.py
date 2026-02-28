@@ -415,6 +415,9 @@ Provide a clear, organized analysis with specific findings and recommendations."
         )
         response = completion.choices[0].message.content
 
+        # Append legal disclaimer to every response
+        response += LEGAL_DISCLAIMER
+
         # Handle checklist generation action
         if data.action == "generate_checklist" and "checklist_json" in response:
             try:
