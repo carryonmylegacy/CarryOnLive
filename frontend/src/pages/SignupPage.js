@@ -355,13 +355,13 @@ const SignupPage = () => {
                           <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>How will you use CarryOn?</h2>
                           <p className="text-[#6b7a90] text-sm">Select the role that best describes you.</p>
                         </div>
-                        <div className="space-y-4">
+                        <div className="space-y-3 sm:space-y-4">
                           {[
                             { value: 'benefactor', title: 'Benefactor', subtitle: 'Estate Owner', desc: 'I want to organize my estate, protect my documents, and prepare my family.', color: '#d4af37' },
                             { value: 'beneficiary', title: 'Beneficiary', subtitle: 'Family Member', desc: 'I was invited by a loved one to be part of their estate plan.', color: '#60A5FA' },
                           ].map(r => (
                             <button key={r.value} type="button" onClick={() => setRole(r.value)}
-                              className="w-full text-left p-5 rounded-xl transition-all duration-300"
+                              className="w-full text-left p-4 sm:p-5 rounded-xl transition-all duration-300"
                               style={{
                                 background: role === r.value ? `linear-gradient(135deg, ${r.color}12, ${r.color}05)` : 'rgba(255,255,255,0.02)',
                                 border: role === r.value ? `2px solid ${r.color}50` : '1px solid rgba(255,255,255,0.06)',
