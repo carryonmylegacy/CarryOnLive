@@ -447,6 +447,40 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
         except (ValueError, TypeError):
             pass
 
+    # Determine beneficiary locked tier from benefactor's majority plan
+    beneficiary_locked_tier = None
+    if current_user.get("role") == "beneficiary":
+        # Find the estate(s) this beneficiary belongs to
+        estates = await db.estates.find(
+            {"beneficiaries": current_user["id"]}, {"_id": 0, "owner_id": 1}
+        ).to_list(10)
+        if estates:
+            benefactor_id = estates[0].get("owner_id")
+            if benefactor_id:
+                # Get benefactor's subscription to determine locked tier
+                ben_sub = await db.user_subscriptions.find_one(
+                    {"user_id": benefactor_id}, {"_id": 0}
+                )
+                benefactor_user = await db.users.find_one(
+                    {"id": benefactor_id}, {"_id": 0, "verified_tier": 1}
+                )
+                # Map benefactor plan to beneficiary plan
+                plan_map = {
+                    "premium": "ben_premium",
+                    "standard": "ben_standard",
+                    "base": "ben_base",
+                    "military": "ben_military",
+                    "hospice": "ben_hospice",
+                }
+                if ben_sub and ben_sub.get("plan_id"):
+                    beneficiary_locked_tier = plan_map.get(
+                        ben_sub["plan_id"], "ben_base"
+                    )
+                elif benefactor_user and benefactor_user.get("verified_tier"):
+                    beneficiary_locked_tier = plan_map.get(
+                        benefactor_user["verified_tier"], "ben_base"
+                    )
+
     return {
         "subscription": sub,
         "trial": trial,
@@ -465,6 +499,7 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
         else None,
         "eligible_tiers": eligible_tiers,
         "user_role": current_user.get("role", "benefactor"),
+        "beneficiary_locked_tier": beneficiary_locked_tier,
     }
 
 
