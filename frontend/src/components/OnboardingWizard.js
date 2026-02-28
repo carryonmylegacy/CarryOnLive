@@ -39,7 +39,10 @@ const OnboardingWizard = () => {
     try {
       const res = await axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
       setProgress(res.data);
-      setDismissed(res.data.dismissed);
+      if (res.data.dismissed || res.data.all_complete) {
+        setDismissed(true);
+        localStorage.setItem('carryon_onboarding_dismissed', 'true');
+      }
     } catch (err) { console.error('Onboarding fetch error:', err); }
     finally { setLoading(false); }
   };
