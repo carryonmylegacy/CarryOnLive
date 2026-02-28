@@ -76,7 +76,7 @@ const BeneficiaryChecklistPage = () => {
           <CheckSquare className="w-5 h-5 text-[#F59E0B]" />
         </div>
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Immediate Action Checklist</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Immediate Action Checklist (IAC)</h1>
           <p className="text-xs text-[var(--t5)]">{total} items · Check off as you complete them</p>
         </div>
       </div>
