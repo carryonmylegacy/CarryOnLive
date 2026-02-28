@@ -341,8 +341,8 @@ const LoginPage = () => {
             </RevealSection>
             <div className="space-y-8 text-left">
               {[
-                { step: '1', title: 'Build Your Vault', desc: 'Upload your estate documents and let Estate Guardian\u2122 analyze your plan for gaps, contradictions, and missing information. Your checklist begins auto-populating immediately.' },
-                { step: '2', title: 'Prepare Your Family', desc: 'Invite your beneficiaries, record milestone messages, customize your checklist, and set permissions for who can access what \u2014 and when.' },
+                { step: '1', title: 'Build Your Vault', desc: 'Upload your estate documents and let Estate Guardian\u2122 (EGA) analyze your plan for gaps, contradictions, and missing information. Your IAC begins auto-populating immediately.' },
+                { step: '2', title: 'Prepare Your Family', desc: 'Invite your beneficiaries, record Milestone Messages (MM), customize your IAC, and set permissions for who can access what \u2014 and when.' },
                 { step: '3', title: 'Live Your Life', desc: 'Your family\'s readiness infrastructure is built. Update it whenever you want. When the time comes \u2014 whether that\'s decades from now or tomorrow \u2014 your family will never be left searching.' },
               ].map(({ step, title, desc }, i) => (
                 <RevealSection key={step} delay={i * 0.15}>
