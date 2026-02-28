@@ -33,11 +33,16 @@ CarryOn™ is an AI-powered estate planning platform that helps users ("benefact
 - Subscription management: upgrade/downgrade, billing cycle switch, cancel
 - Family Plan savings visualization
 
-### Estate Guardian AI Chat (Feb 28, 2026)
-- **Landing Page**: ChatGPT-like session hub with hero section, "Ask anything" input, quick action buttons, and last 20 recent conversations
-- **Session Management**: Create new chats, resume previous conversations, delete sessions
+### Estate Guardian AI Chat (Overhauled Feb 28, 2026)
+- **Persona**: "AI Elf in the Vault" — Grok-like truth-biased, colloquial, direct conversational style
+- **Security Indicators**: AES-256 Encrypted, Zero-Knowledge Vault, SOC 2 Compliant badges on landing and chat
+- **Legal Disclaimer**: Appended to every AI response (not legal advice, consult a licensed attorney)
+- **PDF Checklist Export**: POST /api/guardian/export-checklist generates printable PDF with branding, checklist items, legal disclaimer
+- **Vault Metaphor**: Bot icon styled as a locked safe, "encrypted session" indicator in chat header
+- **Landing Page**: ChatGPT-like session hub with hero section, quick actions, recent conversations
+- **Session Management**: Create new chats, resume previous, delete sessions
 - **Cross-Chat Knowledge**: AI has context from up to 5 recent sessions
-- **Chat View**: Full-screen immersive chat with back arrow to return to landing
+- **Estate Law Expertise**: All 50 U.S. states and territories — community property, probate, trusts, POA, healthcare directives, digital assets
 
 ### Security (Audited Feb 28, 2026)
 - SecurityHeadersMiddleware: X-Frame-Options DENY, HSTS, nosniff, XSS-Protection
