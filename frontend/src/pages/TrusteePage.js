@@ -1001,6 +1001,7 @@ const TrusteePage = () => {
       {/* Section Lock */}
       <SectionLockBanner sectionId="dts" />
 
+      <SectionLockedOverlay sectionId="dts">
       {/* How It Works */}
       <div className="rounded-2xl p-5" style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.12)' }}>
         <div className="flex items-start gap-3">
@@ -1290,6 +1291,7 @@ const TrusteePage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </SectionLockedOverlay>
     </div>
   );
 };
