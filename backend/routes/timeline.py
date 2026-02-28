@@ -11,7 +11,9 @@ router = APIRouter()
 
 
 @router.get("/timeline/{estate_id}")
-async def get_legacy_timeline(estate_id: str, current_user: dict = Depends(get_current_user)):
+async def get_legacy_timeline(
+    estate_id: str, current_user: dict = Depends(get_current_user)
+):
     """Build a chronological timeline of all estate events."""
     # Verify access
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
@@ -61,7 +63,9 @@ async def get_legacy_timeline(estate_id: str, current_user: dict = Depends(get_c
         )
 
     # 3. Beneficiaries added
-    bens = await db.beneficiaries.find({"estate_id": estate_id}, {"_id": 0}).to_list(100)
+    bens = await db.beneficiaries.find({"estate_id": estate_id}, {"_id": 0}).to_list(
+        100
+    )
     for ben in bens:
         ben_user = await db.users.find_one(
             {"id": ben.get("user_id")}, {"_id": 0, "name": 1}
@@ -94,7 +98,7 @@ async def get_legacy_timeline(estate_id: str, current_user: dict = Depends(get_c
             {
                 "type": "message_created",
                 "category": "message",
-                "title": f'{msg.get("type", "").replace("_", " ").title()} Message Created',
+                "title": f"{msg.get('type', '').replace('_', ' ').title()} Message Created",
                 "description": msg.get("title", "Untitled message"),
                 "date": msg.get("created_at", ""),
                 "icon": "message",
@@ -177,7 +181,7 @@ async def get_legacy_timeline(estate_id: str, current_user: dict = Depends(get_c
     )
     seen_actions = set()
     for act in activities:
-        key = f'{act.get("action")}_{act.get("description", "")}'
+        key = f"{act.get('action')}_{act.get('description', '')}"
         if key in seen_actions:
             continue
         seen_actions.add(key)
