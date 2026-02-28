@@ -48,9 +48,7 @@ async def revoke_all_user_tokens(user_id: str, reason: str = "password_change"):
 
 async def is_user_tokens_revoked(user_id: str, token_issued_at: str) -> bool:
     """Check if user's tokens issued before a certain time are revoked."""
-    revocation = await db.token_revocations.find_one(
-        {"user_id": user_id}, {"_id": 0}
-    )
+    revocation = await db.token_revocations.find_one({"user_id": user_id}, {"_id": 0})
     if not revocation:
         return False
     try:

@@ -97,7 +97,9 @@ async def lifespan(app):
         # TTL index: auto-delete expired OTPs after 15 minutes
         await db.otps.create_index("created_at", expireAfterSeconds=900)
         # TTL index: auto-delete blacklisted tokens after 9 hours (slightly > JWT expiry)
-        await db.token_blacklist.create_index("blacklisted_at", expireAfterSeconds=32400)
+        await db.token_blacklist.create_index(
+            "blacklisted_at", expireAfterSeconds=32400
+        )
         await db.token_blacklist.create_index("token")
         await db.token_revocations.create_index("user_id", unique=True)
         # Edit history index for timeline queries
