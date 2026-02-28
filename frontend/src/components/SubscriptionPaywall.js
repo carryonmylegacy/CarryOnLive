@@ -361,13 +361,17 @@ export default function SubscriptionPaywall({ onDismiss }) {
             const colors = TIER_COLORS[plan.id] || TIER_COLORS.base;
             const isSelected = selectedPlan === plan.id;
             const isPremium = plan.id === 'premium';
+            const eligibleTiers = subStatus?.eligible_tiers || [];
+            const eligible = plan.id !== 'new_adult' || eligibleTiers.includes('new_adult');
 
             return (
               <div
                 key={plan.id}
-                onClick={() => setSelectedPlan(plan.id)}
-                className={`relative rounded-2xl cursor-pointer transition-all duration-300 overflow-hidden group ${
-                  isPremium ? 'hover:-translate-y-2 sm:scale-[1.03]' : 'hover:-translate-y-1'
+                onClick={() => eligible && setSelectedPlan(plan.id)}
+                className={`relative rounded-2xl overflow-hidden transition-all duration-300 group ${
+                  !eligible ? 'opacity-45 cursor-default' : 'cursor-pointer'
+                } ${
+                  eligible && isPremium ? 'hover:-translate-y-2 sm:scale-[1.03]' : eligible ? 'hover:-translate-y-1' : ''
                 }`}
                 style={{
                   background: isPremium 
