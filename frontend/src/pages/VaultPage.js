@@ -1031,7 +1031,7 @@ const VaultPage = () => {
 
       {/* Backup Code Modal */}
       <Dialog open={showBackupCodeModal} onOpenChange={setShowBackupCodeModal}>
-        <DialogContent className="glass-card border-white/10 sm:max-w-md">
+        <DialogContent className="glass-card border-white/10 sm:max-w-md !top-[5vh] !translate-y-0">
           <DialogHeader>
             <DialogTitle className="text-white text-xl flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
               <Key className="w-5 h-5 text-[#d4af37]" />
