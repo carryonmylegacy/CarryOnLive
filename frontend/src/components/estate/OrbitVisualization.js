@@ -241,7 +241,7 @@ const OrbitVisualization = ({ estates, userInitials, onEstateClick, benefactors 
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: 22,
+          fontSize: 26,
           fontWeight: 700,
           color: 'white',
           border: '3px solid rgba(212,175,55,0.5)',
