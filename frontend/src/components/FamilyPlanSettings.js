@@ -93,6 +93,11 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
 
   // No family plan yet — show creation UI
   if (!fp) {
+    const currentTierPlan = plans.find(p => p.id === status.current_plan_id);
+    const availablePlans = currentTierPlan 
+      ? [currentTierPlan]  // Already subscribed — use their current tier
+      : plans.filter(p => !['new_adult', 'military', 'hospice'].includes(p.id));
+
     return (
       <Card className="glass-card" data-testid="family-plan-card">
         <CardHeader>
@@ -106,21 +111,41 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            <p className="text-sm text-[var(--t3)]">Select your plan tier to start a family plan. You become the Family Plan Owner (FPO).</p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {plans.filter(p => !['new_adult', 'military', 'hospice'].includes(p.id)).map(p => (
+            {currentTierPlan ? (
+              <>
+                <p className="text-sm text-[var(--t3)]">Add your family to your <span className="font-bold text-[var(--gold)]">{currentTierPlan.name}</span> plan. You become the Family Plan Owner (FPO).</p>
                 <button
-                  key={p.id}
-                  onClick={() => handleCreate(p.id)}
+                  onClick={() => handleCreate(currentTierPlan.id)}
                   disabled={creating}
-                  className="p-4 rounded-xl text-center transition-all hover:-translate-y-0.5 border border-[var(--b)] hover:border-[var(--gold)]"
-                  style={{ background: 'var(--s)' }}
+                  className="w-full p-4 rounded-xl text-center transition-all hover:-translate-y-0.5 border border-[var(--gold)]/30 hover:border-[var(--gold)]"
+                  style={{ background: 'rgba(212,175,55,0.06)' }}
                 >
-                  <div className="font-bold text-[var(--t)]">{p.name}</div>
-                  <div className="text-[var(--gold)] font-bold text-xl mt-1">${p.price?.toFixed(2)}<span className="text-xs text-[var(--t4)]">/mo</span></div>
+                  <div className="font-bold text-[var(--t)]">Activate Family Plan</div>
+                  <div className="text-[var(--gold)] font-bold text-xl mt-1">
+                    ${currentTierPlan.price?.toFixed(2)}<span className="text-xs text-[var(--t4)]">/mo for you</span>
+                  </div>
+                  <div className="text-xs text-[var(--t4)] mt-1">Benefactors: -$1/mo · Beneficiaries: $3.49/mo flat</div>
                 </button>
-              ))}
-            </div>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-[var(--t3)]">Select your plan tier to start a family plan. You become the Family Plan Owner (FPO).</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {availablePlans.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => handleCreate(p.id)}
+                      disabled={creating}
+                      className="p-4 rounded-xl text-center transition-all hover:-translate-y-0.5 border border-[var(--b)] hover:border-[var(--gold)]"
+                      style={{ background: 'var(--s)' }}
+                    >
+                      <div className="font-bold text-[var(--t)]">{p.name}</div>
+                      <div className="text-[var(--gold)] font-bold text-xl mt-1">${p.price?.toFixed(2)}<span className="text-xs text-[var(--t4)]">/mo</span></div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
