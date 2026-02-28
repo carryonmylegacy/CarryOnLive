@@ -76,11 +76,11 @@ const MobileNav = () => {
   ];
 
   const adminBottomNav = [
-    { to: '/admin', icon: Users, label: 'Users' },
-    { to: '/admin/transition', icon: FileKey, label: 'TVT' },
-    { to: '/admin', icon: Home, label: 'Home', isCenter: true },
-    { to: '/admin/dts', icon: Shield, label: 'DTS' },
-    { to: '/admin/dev-switcher', icon: Settings, label: 'Dev' },
+    { id: 'admin-users', to: '/admin', icon: Users, label: 'Users' },
+    { id: 'admin-tvt', to: '/admin/transition', icon: FileKey, label: 'TVT' },
+    { id: 'admin-home', to: '/admin', icon: Home, label: 'Home', isCenter: true },
+    { id: 'admin-dts', to: '/admin/dts', icon: Shield, label: 'DTS' },
+    { id: 'admin-dev', to: '/admin/dev-switcher', icon: Settings, label: 'Dev' },
   ];
 
   const getBottomNav = () => {
