@@ -232,6 +232,7 @@ const ChecklistPage = () => {
 
       <SectionLockBanner sectionId="checklist" />
 
+      <SectionLockedOverlay sectionId="checklist">
       {/* Info + Actions */}
       <div className="rounded-xl p-4" style={{ background: 'rgba(37,99,235,0.05)', border: '1px solid rgba(37,99,235,0.1)' }}>
         <p className="text-sm text-[var(--t4)] leading-relaxed">
@@ -541,6 +542,7 @@ const ChecklistPage = () => {
           })}
         </div>
       )}
+      </SectionLockedOverlay>
     </div>
   );
 };
