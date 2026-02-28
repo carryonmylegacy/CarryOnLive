@@ -397,6 +397,16 @@ async def preview_document(
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
+    # Verify estate access
+    estate = await db.estates.find_one({"id": document["estate_id"]}, {"_id": 0})
+    if not estate:
+        raise HTTPException(status_code=404, detail="Estate not found")
+    is_owner = estate.get("owner_id") == current_user["id"]
+    is_beneficiary = current_user["id"] in estate.get("beneficiaries", [])
+    is_admin = current_user["role"] == "admin"
+    if not (is_owner or is_beneficiary or is_admin):
+        raise HTTPException(status_code=403, detail="Access denied")
+
     if document.get("is_locked"):
         lock_type = document.get("lock_type")
         if lock_type == "password" and document.get("lock_password_hash"):
