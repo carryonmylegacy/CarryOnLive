@@ -101,6 +101,13 @@ export const SubscriptionManagement = ({
   const [showFamilyRequest, setShowFamilyRequest] = useState(false);
   const [familyEmail, setFamilyEmail] = useState('');
   const [sendingRequest, setSendingRequest] = useState(false);
+  // Verification state
+  const [showVerification, setShowVerification] = useState(false);
+  const [verificationTier, setVerificationTier] = useState('');
+  const [verificationFile, setVerificationFile] = useState(null);
+  const [verificationDocType, setVerificationDocType] = useState('');
+  const [uploadingVerification, setUploadingVerification] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState(null);
 
   const isBeneficiary = user?.role === 'beneficiary';
   const currentSub = subscriptionStatus?.subscription;
