@@ -70,11 +70,11 @@ const Sidebar = () => {
       items: [
         { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
         { to: '/vault', icon: FolderLock, label: 'Secure Document Vault' },
-        { to: '/messages', icon: MessageSquare, label: 'Milestone Messages' },
-        { to: '/checklist', icon: CheckSquare, label: 'Immediate Action Checklist' },
+        { to: '/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
+        { to: '/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
         { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
-        { to: '/trustee', icon: Shield, label: 'Designated Trustee Services' },
-        { to: '/guardian', icon: Sparkles, label: 'Estate Guardian' },
+        { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
+        { to: '/guardian', icon: Sparkles, label: 'Estate Guardian (EGA)' },
         { to: '/digital-wallet', icon: KeyRound, label: 'Digital Wallet Vault' },
         { to: '/timeline', icon: Clock, label: 'Legacy Timeline' },
       ]
