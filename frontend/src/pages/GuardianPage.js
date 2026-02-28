@@ -321,16 +321,40 @@ const GuardianPage = () => {
           <div className="max-w-2xl mx-auto px-4 pt-8 pb-24 lg:pb-8">
             {/* Hero Section */}
             <div className="text-center mb-8">
-              <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg, #d4af37 0%, #fcd34d 100%)', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}>
-                <Bot className="w-7 h-7 text-[#0b1120]" />
+              <div className="relative w-16 h-16 mx-auto mb-4">
+                <div className="absolute inset-0 rounded-2xl" style={{
+                  background: 'linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%)',
+                  border: '2px solid rgba(212,175,55,0.3)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
+                }} />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Bot className="w-7 h-7 text-[var(--gold)]" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center" style={{
+                  background: 'linear-gradient(135deg, #22C993, #16a34a)',
+                  boxShadow: '0 2px 6px rgba(34,201,147,0.4)',
+                }}>
+                  <Lock className="w-2.5 h-2.5 text-white" />
+                </div>
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid="guardian-hero-title">
                 Estate Guardian
               </h1>
-              <p className="text-sm text-[var(--t4)] max-w-md mx-auto">
-                Your AI estate planning specialist. Ask anything about your documents, beneficiaries, or estate law.
+              <p className="text-sm text-[var(--t4)] max-w-md mx-auto mb-4">
+                Your AI estate planning specialist — living inside your encrypted vault, trained in the estate law of all 50 U.S. states.
               </p>
+              {/* Security Badges */}
+              <div className="flex items-center justify-center gap-3 flex-wrap">
+                <span className="flex items-center gap-1.5 text-[10px] text-[var(--t5)] px-2.5 py-1 rounded-full" style={{ background: 'rgba(34,201,147,0.08)', border: '1px solid rgba(34,201,147,0.15)' }}>
+                  <Shield className="w-2.5 h-2.5 text-[#22C993]" /> AES-256 Encrypted
+                </span>
+                <span className="flex items-center gap-1.5 text-[10px] text-[var(--t5)] px-2.5 py-1 rounded-full" style={{ background: 'rgba(59,123,247,0.08)', border: '1px solid rgba(59,123,247,0.15)' }}>
+                  <Lock className="w-2.5 h-2.5 text-[#3B7BF7]" /> Zero-Knowledge Vault
+                </span>
+                <span className="flex items-center gap-1.5 text-[10px] text-[var(--t5)] px-2.5 py-1 rounded-full" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)' }}>
+                  <Shield className="w-2.5 h-2.5 text-[var(--gold)]" /> SOC 2 Compliant
+                </span>
+              </div>
             </div>
 
             {/* Ask Anything Input */}
