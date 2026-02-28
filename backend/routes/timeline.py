@@ -178,7 +178,7 @@ async def get_legacy_timeline(
                 {
                     "type": f"checklist_{action}",
                     "category": "checklist",
-                    "title": f'IAC Item {"Completed" if action == "completed" else "Uncompleted" if action == "uncompleted" else "Updated"}',
+                    "title": f"IAC Item {'Completed' if action == 'completed' else 'Uncompleted' if action == 'uncompleted' else 'Updated'}",
                     "description": edit.get("title", "checklist item"),
                     "date": edit.get("created_at", ""),
                     "icon": "check",

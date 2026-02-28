@@ -232,7 +232,9 @@ async def update_digital_wallet_entry(
         await db.digital_wallet.update_one({"id": entry_id}, {"$set": update})
 
         # Log edit for timeline
-        changed_fields = [k for k in update if k not in ("updated_at", "assigned_beneficiary_name")]
+        changed_fields = [
+            k for k in update if k not in ("updated_at", "assigned_beneficiary_name")
+        ]
         await db.edit_history.insert_one(
             {
                 "id": str(uuid.uuid4()),
