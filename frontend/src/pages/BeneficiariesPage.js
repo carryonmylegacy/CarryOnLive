@@ -463,7 +463,7 @@ const BeneficiariesPage = () => {
                     </button>
                     
                     {expandedCard === ben.id && (
-                      <div className="mt-2 pt-2 border-t border-white/5 space-y-1 text-xs text-[#94a3b8]">
+                      <div className="mt-2 pt-2 border-t border-[var(--b)] space-y-1 text-xs text-[#94a3b8]">
                         {ben.address_street && (
                           <p><span className="text-[#64748b]">Address:</span> {ben.address_street}, {ben.address_city}, {ben.address_state} {ben.address_zip}</p>
                         )}
@@ -478,7 +478,7 @@ const BeneficiariesPage = () => {
                   </div>
                 )}
                 
-                <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
+                <div className="mt-4 pt-4 border-t border-[var(--b)] flex items-center justify-between">
                   {getInvitationStatusBadge(ben)}
                   
                   {ben.invitation_status !== 'accepted' && !ben.user_id && (
@@ -784,7 +784,7 @@ const BeneficiariesPage = () => {
             </div>
           </div>
           
-          <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
+          <div className="flex justify-end gap-3 pt-4 border-t border-[var(--b)]">
             <Button
               variant="outline"
               onClick={() => {
