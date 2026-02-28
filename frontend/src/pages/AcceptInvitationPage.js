@@ -70,7 +70,7 @@ const AcceptInvitationPage = () => {
       const response = await axios.post(`${API_URL}/invitations/accept`, {
         token,
         password,
-        phone: phone || null
+        phone: phone ? `+1${phone.replace(/\D/g, '')}` : null
       });
       
       setAccepted(true);
