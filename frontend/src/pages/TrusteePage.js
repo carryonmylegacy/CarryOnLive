@@ -29,7 +29,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
-import { SectionLockBanner } from '../components/security/SectionLock';
+import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import {
   Dialog,
   DialogContent,
