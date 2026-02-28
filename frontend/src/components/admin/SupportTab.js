@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { MessageCircle, Headphones, UserCircle, Loader2, Send } from 'lucide-react';
+import { MessageCircle, Headphones, UserCircle, Loader2, Send, Search } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from 'sonner';
@@ -13,6 +13,7 @@ export const SupportTab = ({ getAuthHeaders }) => {
   const [convMessages, setConvMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchConversations = async () => {
     try {
@@ -60,6 +61,15 @@ export const SupportTab = ({ getAuthHeaders }) => {
     }
   }, [selectedConv]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const filteredConversations = conversations.filter(conv => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (conv.user_name || '').toLowerCase().includes(q) ||
+      (conv.user_email || '').toLowerCase().includes(q) ||
+      (conv.latest_message || '').toLowerCase().includes(q) ||
+      (conv.user_role || '').toLowerCase().includes(q);
+  });
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-20rem)]" data-testid="admin-support-tab">
       {/* Conversations List */}
@@ -69,16 +79,22 @@ export const SupportTab = ({ getAuthHeaders }) => {
             <MessageCircle className="w-5 h-5 text-[var(--gn2)]" />
             Conversations
           </h3>
-          <p className="text-xs text-[var(--t5)]">{conversations.length} active</p>
+          <p className="text-xs text-[var(--t5)]">{filteredConversations.length} {searchQuery ? 'matching' : 'active'}</p>
+        </div>
+        <div className="p-3 border-b border-[var(--b)]">
+          <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+            <Search className="w-3.5 h-3.5 text-[var(--t5)]" />
+            <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search conversations..." className="flex-1 bg-transparent border-none text-[var(--t)] text-xs outline-none placeholder:text-[var(--t5)]" data-testid="support-search" />
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto">
-          {conversations.length === 0 ? (
+          {filteredConversations.length === 0 ? (
             <div className="p-6 text-center text-[var(--t5)]">
               <Headphones className="w-8 h-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">No conversations yet</p>
             </div>
           ) : (
-            conversations.map(conv => (
+            filteredConversations.map(conv => (
               <div
                 key={conv.conversation_id}
                 onClick={() => setSelectedConv(conv)}
