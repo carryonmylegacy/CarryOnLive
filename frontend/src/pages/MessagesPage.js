@@ -342,6 +342,7 @@ const MessagesPage = () => {
       {/* Section Lock */}
       <SectionLockBanner sectionId="messages" />
 
+      <SectionLockedOverlay sectionId="messages">
       {/* Delivery info */}
       <div className="rounded-xl p-3" style={{ background: 'rgba(37,99,235,0.04)', border: '1px solid rgba(37,99,235,0.1)' }}>
         <p className="text-xs text-[var(--bl3)] leading-relaxed">
@@ -784,6 +785,7 @@ const MessagesPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+      </SectionLockedOverlay>
     </div>
   );
 };
