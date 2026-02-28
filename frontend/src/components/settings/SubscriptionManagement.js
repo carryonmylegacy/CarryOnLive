@@ -257,6 +257,83 @@ export const SubscriptionManagement = ({
           </div>
         )}
       </CardContent>
+
+      {/* Verification Modal */}
+      {showVerification && (
+        <div className="fixed inset-0 z-[9999] bg-[#0a0e1a]/90 flex items-center justify-center p-4" data-testid="verification-modal">
+          <div className="w-full max-w-md rounded-2xl p-6 space-y-5" style={{
+            background: 'linear-gradient(168deg, rgba(26,36,64,0.98) 0%, rgba(15,22,41,0.99) 100%)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
+          }}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                {verificationTier === 'military' ? 'Military / First Responder' : 'Hospice'} Verification
+              </h2>
+              <button onClick={() => { setShowVerification(false); setVerificationFile(null); setVerificationDocType(''); }} className="text-[var(--t5)] hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-sm text-[var(--t4)]">
+              Please upload one of the following documents to verify your eligibility for the {verificationTier === 'military' ? 'Military / First Responder' : 'Hospice'} plan:
+            </p>
+
+            <div className="space-y-3">
+              <label className="text-sm text-[var(--t5)]">Document Type</label>
+              <div className="flex flex-col gap-2">
+                {(verificationTier === 'military'
+                  ? ['Military ID', 'First Responder Badge']
+                  : ['Hospice enrollment documentation']
+                ).map(doc => (
+                  <button
+                    key={doc}
+                    onClick={() => setVerificationDocType(doc)}
+                    className={`p-3 rounded-xl text-sm text-left transition-all ${
+                      verificationDocType === doc
+                        ? 'bg-[var(--gold)]/10 border border-[var(--gold)] text-[var(--gold)]'
+                        : 'bg-[var(--s)] border border-[var(--b)] text-[var(--t3)] hover:border-[var(--t5)]'
+                    }`}
+                    data-testid={`verify-doc-type-${doc.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    {doc}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm text-[var(--t5)]">Upload Document</label>
+              <label className="flex items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed border-[var(--b)] hover:border-[var(--gold)]/50 cursor-pointer transition-colors" data-testid="verification-file-upload">
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  className="hidden"
+                  onChange={(e) => setVerificationFile(e.target.files[0])}
+                />
+                <Upload className="w-5 h-5 text-[var(--t5)]" />
+                <span className="text-sm text-[var(--t4)]">
+                  {verificationFile ? verificationFile.name : 'Click to select file'}
+                </span>
+              </label>
+            </div>
+
+            <Button
+              onClick={handleVerificationUpload}
+              disabled={uploadingVerification || !verificationFile || !verificationDocType}
+              className="gold-button w-full"
+              data-testid="submit-verification-btn"
+            >
+              {uploadingVerification ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Shield className="w-5 h-5 mr-2" />}
+              Submit for Review
+            </Button>
+
+            <p className="text-xs text-[var(--t5)] text-center">
+              Documents are reviewed within 24-48 hours. You'll be notified once approved.
+            </p>
+          </div>
+        </div>
+      )}
     </Card>
   );
 };
