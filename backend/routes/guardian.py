@@ -647,7 +647,7 @@ async def export_checklist_pdf(
     pdf.set_font("Helvetica", "", 10)
     pdf.set_text_color(100, 100, 100)
     pdf.cell(0, 6, "Immediate Action Checklist", new_x="LMARGIN", new_y="NEXT")
-    pdf.cell(0, 5, f"Estate: {estate['name']}  |  State: {estate.get('state', 'Not specified')}  |  Readiness: {readiness['overall_score']}%", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 5, sanitize_for_pdf(f"Estate: {estate['name']}  |  State: {estate.get('state', 'Not specified')}  |  Readiness: {readiness['overall_score']}%"), new_x="LMARGIN", new_y="NEXT")
     pdf.cell(0, 5, f"Generated: {datetime.now(timezone.utc).strftime('%B %d, %Y at %I:%M %p UTC')}", new_x="LMARGIN", new_y="NEXT")
     pdf.ln(4)
 
