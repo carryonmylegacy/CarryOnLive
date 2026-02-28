@@ -308,7 +308,7 @@ const LoginPage = () => {
                 {
                   icon: UserCheck, title: 'Designated Trustee Services (DTS)',
                   bold: 'Some things shouldn\'t follow you. Let a trusted team handle what you can\'t.',
-                  desc: 'Accounts to close. Subscriptions to cancel. Sensitive content to destroy. Financial transfers to execute. Things you\'d rather handle yourself \u2014 if you could. CarryOn\'s Designated Trustee Services lets you authorize specific, line-item tasks to be carried out confidentially after your verified transition. Each task is quoted, approved by you, and executed by our Trustee Services Team. Every record \u2014 instructions, credentials, payment logs \u2014 is permanently destroyed after completion.',
+                  desc: 'Accounts to close. Subscriptions to cancel. Sensitive content to destroy. Financial transfers to execute. Things you\'d rather handle yourself \u2014 if you could. CarryOn\'s DTS lets you authorize specific, line-item tasks to be carried out confidentially after your verified transition. Each task is quoted, approved by you, and executed by our DTS Team. Every record \u2014 instructions, credentials, payment logs \u2014 is permanently destroyed after completion.',
                 },
               ].map(({ icon: Icon, title, bold, desc }, i) => (
                 <RevealSection key={title} delay={i * 0.12} direction={i % 2 === 0 ? 'left' : 'right'}>
