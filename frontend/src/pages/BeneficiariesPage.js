@@ -153,7 +153,7 @@ const BeneficiariesPage = () => {
         last_name: lastName,
         suffix: suffix || null,
         email,
-        phone: phone || null,
+        phone: phone ? `+1${phone.replace(/\D/g, '')}` : null,
         relation,
         date_of_birth: dateOfBirth || null,
         gender: gender || null,
