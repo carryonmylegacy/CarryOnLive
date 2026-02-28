@@ -606,6 +606,11 @@ async def delete_document(document_id: str, current_user: dict = Depends(get_cur
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
+    # Verify user owns the estate
+    estate = await db.estates.find_one({"id": document["estate_id"], "owner_id": current_user["id"]}, {"_id": 0})
+    if not estate:
+        raise HTTPException(status_code=403, detail="Access denied — you do not own this estate")
+
     # Delete from cloud storage
     if document.get("storage_key"):
         await storage.delete(document["storage_key"])
