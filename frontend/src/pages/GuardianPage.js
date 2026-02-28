@@ -389,10 +389,12 @@ const GuardianPage = () => {
               ) : (
                 <div className="space-y-1.5" data-testid="session-list">
                   {sessions.map((s) => (
-                    <button
+                    <div
                       key={s.session_id}
                       onClick={() => resumeSession(s.session_id)}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all hover:bg-white/[0.04] group"
+                      role="button"
+                      tabIndex={0}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all hover:bg-white/[0.04] group cursor-pointer"
                       style={{ border: '1px solid rgba(255,255,255,0.05)' }}
                       data-testid={`session-${s.session_id}`}
                     >
@@ -416,7 +418,7 @@ const GuardianPage = () => {
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                    </button>
+                    </div>
                   ))}
                 </div>
               )}
