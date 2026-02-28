@@ -189,7 +189,8 @@ async def update_beneficiary(
 
     # Detect which fields actually changed and log to edit_history
     changed_fields = [
-        k for k in update_data
+        k
+        for k in update_data
         if k not in ("initials",) and update_data[k] != beneficiary.get(k)
     ]
     if changed_fields:
