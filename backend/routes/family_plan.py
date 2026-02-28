@@ -77,6 +77,114 @@ async def get_family_plan_status(current_user: dict = Depends(get_current_user))
     return {"enabled": True, "role": None, "family_plan": None, "current_plan_id": current_plan_id}
 
 
+@router.get("/family-plan/preview-savings")
+async def preview_family_savings(current_user: dict = Depends(get_current_user)):
+    """Preview family tree and potential savings if user activates family plan"""
+    settings = await get_subscription_settings()
+    plans = {p["id"]: p for p in settings.get("plans", DEFAULT_PLANS)}
+
+    # Get user's current subscription
+    user_sub = await db.user_subscriptions.find_one(
+        {"user_id": current_user["id"], "status": "active"}, {"_id": 0}
+    )
+    current_plan_id = user_sub.get("plan_id", "standard") if user_sub else "standard"
+    current_plan = plans.get(current_plan_id, plans.get("standard"))
+
+    # Get all estates owned by this user
+    estates = await db.estates.find(
+        {"user_id": current_user["id"]}, {"_id": 0}
+    ).to_list(50)
+    estate_ids = [e["id"] for e in estates]
+
+    # Get all beneficiaries across all estates
+    beneficiaries = await db.beneficiaries.find(
+        {"estate_id": {"$in": estate_ids}}, {"_id": 0}
+    ).to_list(200)
+
+    # Build family tree
+    family_tree = []
+    total_current_cost = float(current_plan["price"])  # FPO's current cost
+    total_family_cost = float(current_plan["price"])  # FPO pays same in family plan
+
+    # FPO (the current user)
+    fpo_discount = 1.0  # benefactors save $1/mo
+    family_tree.append({
+        "name": current_user.get("name", "You"),
+        "email": current_user.get("email", ""),
+        "role": "benefactor",
+        "relation": "You (FPO)",
+        "current_price": float(current_plan["price"]),
+        "family_price": float(current_plan["price"]) - fpo_discount,
+        "savings": fpo_discount,
+    })
+    total_family_cost -= fpo_discount
+
+    # Each beneficiary
+    ben_flat_price = 3.49
+    for ben in beneficiaries:
+        ben_email = ben.get("email", "")
+        ben_name = ben.get("name", ben.get("first_name", "Unknown"))
+
+        # Check if this beneficiary is also a benefactor (has their own estates)
+        is_also_benefactor = False
+        ben_user = await db.users.find_one({"email": ben_email}, {"_id": 0}) if ben_email else None
+        if ben_user and ben_user.get("role") == "benefactor":
+            is_also_benefactor = True
+
+        # Get beneficiary's current subscription cost
+        ben_sub = None
+        if ben_user:
+            ben_sub = await db.user_subscriptions.find_one(
+                {"user_id": ben_user.get("id"), "status": "active"}, {"_id": 0}
+            )
+
+        if ben_sub:
+            ben_current_price = float(ben_sub.get("amount", current_plan.get("ben_price", 4.49)))
+        else:
+            ben_current_price = float(current_plan.get("ben_price", 4.49))
+
+        if is_also_benefactor:
+            # Benefactors in family plan save $1/mo
+            ben_plan = plans.get(ben_sub.get("plan_id", current_plan_id) if ben_sub else current_plan_id)
+            ben_current_as_benefactor = float(ben_plan["price"]) if ben_plan else float(current_plan["price"])
+            ben_family_price = ben_current_as_benefactor - 1.0
+            family_tree.append({
+                "name": ben_name,
+                "email": ben_email,
+                "role": "benefactor",
+                "relation": ben.get("relation", "Beneficiary") + " (also Benefactor)",
+                "current_price": ben_current_as_benefactor,
+                "family_price": ben_family_price,
+                "savings": ben_current_as_benefactor - ben_family_price,
+            })
+            total_current_cost += ben_current_as_benefactor
+            total_family_cost += ben_family_price
+        else:
+            family_tree.append({
+                "name": ben_name,
+                "email": ben_email,
+                "role": "beneficiary",
+                "relation": ben.get("relation", "Beneficiary"),
+                "current_price": ben_current_price,
+                "family_price": ben_flat_price,
+                "savings": max(0, ben_current_price - ben_flat_price),
+            })
+            total_current_cost += ben_current_price
+            total_family_cost += ben_flat_price
+
+    total_savings = total_current_cost - total_family_cost
+
+    return {
+        "family_tree": family_tree,
+        "current_plan": current_plan.get("name", "Standard"),
+        "current_plan_id": current_plan_id,
+        "total_current_cost": round(total_current_cost, 2),
+        "total_family_cost": round(total_family_cost, 2),
+        "total_monthly_savings": round(max(0, total_savings), 2),
+        "member_count": len(family_tree),
+    }
+
+
 @router.post("/family-plan/create")
 async def create_family_plan(
     data: FamilyPlanCreate, current_user: dict = Depends(get_current_user)
