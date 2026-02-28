@@ -184,6 +184,17 @@ export const SubscriptionManagement = ({
   };
 
   const handleSubscribe = async (planId) => {
+    // Gate verification-required plans
+    if (requiresVerification(planId) && !isVerifiedFor(planId)) {
+      if (verificationStatus?.status === 'pending') {
+        toast.info('Your verification is still under review. We\'ll notify you once approved.');
+        return;
+      }
+      setVerificationTier(planId);
+      setShowVerification(true);
+      return;
+    }
+
     setSubscribing(planId);
     try {
       const res = await axios.post(`${API_URL}/subscriptions/checkout`, {
