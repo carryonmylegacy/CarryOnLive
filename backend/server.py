@@ -17,28 +17,28 @@ from starlette.middleware.cors import CORSMiddleware
 
 from config import client, db, logger
 from routes.admin import router as admin_router
+from routes.admin_digest import router as admin_digest_router
 from routes.auth import router as auth_router
 from routes.beneficiaries import router as beneficiaries_router
 from routes.checklist import router as checklist_router
+from routes.compliance import router as compliance_router
 from routes.digest import router as digest_router
 from routes.digital_wallet import router as digital_wallet_router
 from routes.documents import router as documents_router
 from routes.dts import router as dts_router
+from routes.emergency_access import router as emergency_access_router
 from routes.estates import router as estates_router
 from routes.family_plan import router as family_plan_router
 from routes.guardian import router as guardian_router
 from routes.messages import router as messages_router
+from routes.onboarding import router as onboarding_router
 from routes.pdf_export import router as pdf_export_router
 from routes.push import router as push_router
 from routes.security import router as security_router
 from routes.subscriptions import router as subscriptions_router
 from routes.support import router as support_router
-from routes.transition import router as transition_router
-from routes.admin_digest import router as admin_digest_router
-from routes.onboarding import router as onboarding_router
-from routes.emergency_access import router as emergency_access_router
 from routes.timeline import router as timeline_router
-from routes.compliance import router as compliance_router
+from routes.transition import router as transition_router
 
 
 # Background scheduler
