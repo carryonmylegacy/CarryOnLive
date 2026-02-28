@@ -103,7 +103,12 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: '#080e1a' }}>
+    <div className="min-h-screen" style={{
+      background: '#080e1a',
+      opacity: exiting ? 0 : 1,
+      transform: exiting ? 'scale(0.98)' : 'scale(1)',
+      transition: 'opacity 0.45s ease, transform 0.45s ease',
+    }}>
 
       {/* NAV BAR */}
       <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(212,175,55,0.08)', background: 'rgba(8,14,26,0.85)', backdropFilter: 'blur(20px)' }}>
