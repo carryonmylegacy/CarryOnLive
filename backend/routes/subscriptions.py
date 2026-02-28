@@ -3,6 +3,7 @@
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
 
 import stripe
 from emergentintegrations.payments.stripe.checkout import (
@@ -13,6 +14,31 @@ from fastapi import APIRouter, Depends, Form, HTTPException
 from pydantic import BaseModel
 
 from config import db, logger
+
+# Allowed domains for Stripe redirect URLs (prevents open redirect)
+ALLOWED_REDIRECT_DOMAINS = {
+    "app.carryon.us",
+    "carryon.us",
+    "www.carryon.us",
+    "localhost",
+}
+
+
+def validate_origin_url(origin_url: str) -> str:
+    """Validate that the origin URL belongs to an allowed domain."""
+    if not origin_url:
+        return ""
+    try:
+        parsed = urlparse(origin_url)
+        hostname = parsed.hostname or ""
+        # Allow preview domains
+        if hostname.endswith(".emergentagent.com") or hostname.endswith(".vercel.app"):
+            return origin_url.rstrip("/")
+        if hostname in ALLOWED_REDIRECT_DOMAINS:
+            return origin_url.rstrip("/")
+    except Exception:
+        pass
+    raise HTTPException(status_code=400, detail="Invalid origin URL")
 from utils import get_current_user
 
 router = APIRouter()
