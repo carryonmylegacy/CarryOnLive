@@ -769,7 +769,12 @@ async def change_subscription_plan(
     data: ChangeSubscriptionRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    """Upgrade or downgrade subscription plan"""
+    """Upgrade or downgrade subscription plan with proration.
+
+    - Upgrade: charges only the price difference for the remaining period
+    - Downgrade: issues a credit/refund for the unused value difference
+    - Same tier, different cycle: treated as a billing change
+    """
     sub = await db.user_subscriptions.find_one(
         {"user_id": current_user["id"]}, {"_id": 0}
     )
@@ -777,39 +782,13 @@ async def change_subscription_plan(
         raise HTTPException(status_code=400, detail="No active subscription to modify")
 
     settings = await get_subscription_settings()
-    plans = {p["id"]: p for p in settings.get("plans", DEFAULT_PLANS)}
-    new_plan = plans.get(data.plan_id)
-    if not new_plan:
-        raise HTTPException(status_code=404, detail="Plan not found")
 
-    # Calculate new amount
-    role = current_user.get("role", "benefactor")
-    if role == "beneficiary":
-        amount = new_plan.get("ben_price", new_plan["price"])
-    else:
-        amount = new_plan["price"]
-
-    # Apply discount
-    override = await db.subscription_overrides.find_one(
-        {"user_id": current_user["id"]}, {"_id": 0}
-    )
-    discount = override.get("custom_discount", 0) if override else 0
-    if discount > 0:
-        amount = amount * (1 - discount / 100)
-
-    # Apply billing cycle discount and calculate full period amount
-    cycle = data.billing_cycle
-    if cycle == "quarterly":
-        per_month = round(amount * 0.9, 2)
-        amount = round(per_month * 3, 2)
-    elif cycle == "annual":
-        per_month = round(amount * 0.8, 2)
-        amount = round(per_month * 12, 2)
-    else:
-        amount = round(amount, 2)
-
-    # For free plans, update directly
-    if amount == 0 or new_plan.get("price", 0) == 0:
+    # During beta, just switch the plan directly
+    if settings.get("beta_mode", True):
+        all_plans = {p["id"]: p for p in settings.get("plans", DEFAULT_PLANS)}
+        new_plan = all_plans.get(data.plan_id)
+        if not new_plan:
+            raise HTTPException(status_code=404, detail="Plan not found")
         now = datetime.now(timezone.utc)
         await db.user_subscriptions.update_one(
             {"user_id": current_user["id"]},
@@ -817,16 +796,133 @@ async def change_subscription_plan(
                 "$set": {
                     "plan_id": data.plan_id,
                     "plan_name": new_plan["name"],
-                    "billing_cycle": cycle,
-                    "amount": 0.0,
-                    "free_plan": True,
+                    "billing_cycle": data.billing_cycle,
+                    "beta_plan": True,
                     "updated_at": now.isoformat(),
                 }
             },
         )
-        return {"success": True, "message": f"Switched to {new_plan['name']} plan"}
+        return {
+            "success": True,
+            "message": f"Switched to {new_plan['name']} ({data.billing_cycle}). Free during beta!",
+        }
 
-    # For paid plans, create new checkout session
+    plans = {p["id"]: p for p in settings.get("plans", DEFAULT_PLANS)}
+    new_plan = plans.get(data.plan_id)
+    if not new_plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+
+    # --- Calculate current subscription's remaining value ---
+    old_plan = plans.get(sub.get("plan_id"))
+    old_cycle = sub.get("billing_cycle", "monthly")
+    old_total_paid = float(sub.get("amount", 0))
+
+    # Calculate days remaining in current period
+    now = datetime.now(timezone.utc)
+    period_end_str = sub.get("current_period_end")
+    if period_end_str:
+        period_end = datetime.fromisoformat(period_end_str.replace("Z", "+00:00"))
+        if period_end.tzinfo is None:
+            period_end = period_end.replace(tzinfo=timezone.utc)
+        period_start_str = sub.get("current_period_start")
+        period_start = (
+            datetime.fromisoformat(period_start_str.replace("Z", "+00:00"))
+            if period_start_str
+            else period_end - timedelta(days={"annual": 365, "quarterly": 90}.get(old_cycle, 30))
+        )
+        if period_start.tzinfo is None:
+            period_start = period_start.replace(tzinfo=timezone.utc)
+        total_days = max(1, (period_end - period_start).days)
+        days_remaining = max(0, (period_end - now).days)
+        unused_fraction = days_remaining / total_days
+    else:
+        unused_fraction = 0.0
+
+    remaining_credit = round(old_total_paid * unused_fraction, 2)
+
+    # --- Calculate new plan cost ---
+    role = current_user.get("role", "benefactor")
+    base_price = new_plan.get("ben_price", new_plan["price"]) if role == "beneficiary" else new_plan["price"]
+
+    # Apply per-user discount
+    override = await db.subscription_overrides.find_one(
+        {"user_id": current_user["id"]}, {"_id": 0}
+    )
+    discount = override.get("custom_discount", 0) if override else 0
+    if discount > 0:
+        base_price = base_price * (1 - discount / 100)
+
+    cycle = data.billing_cycle
+    if cycle == "quarterly":
+        new_total = round(float(new_plan.get("quarterly_price", base_price * 0.9)) * 3, 2)
+    elif cycle == "annual":
+        new_total = round(float(new_plan.get("annual_price", base_price * 0.8)) * 12, 2)
+    else:
+        new_total = round(base_price, 2)
+
+    # --- Proration ---
+    net_amount = round(new_total - remaining_credit, 2)
+    is_downgrade = net_amount < 0
+    refund_amount = abs(net_amount) if is_downgrade else 0
+    charge_amount = net_amount if net_amount > 0 else 0
+
+    # For free plans or zero/negative net, update directly
+    if new_plan.get("price", 0) == 0 or charge_amount <= 0:
+        if cycle == "annual":
+            new_period_end = now + timedelta(days=365)
+        elif cycle == "quarterly":
+            new_period_end = now + timedelta(days=90)
+        else:
+            new_period_end = now + timedelta(days=30)
+
+        await db.user_subscriptions.update_one(
+            {"user_id": current_user["id"]},
+            {
+                "$set": {
+                    "plan_id": data.plan_id,
+                    "plan_name": new_plan["name"],
+                    "billing_cycle": cycle,
+                    "amount": new_total,
+                    "free_plan": new_plan.get("price", 0) == 0,
+                    "current_period_start": now.isoformat(),
+                    "current_period_end": new_period_end.isoformat(),
+                    "updated_at": now.isoformat(),
+                    "previous_plan": sub.get("plan_id"),
+                    "previous_cycle": old_cycle,
+                }
+            },
+        )
+
+        # Record the refund/credit if applicable
+        if refund_amount > 0:
+            import uuid
+
+            await db.payment_transactions.insert_one(
+                {
+                    "id": str(uuid.uuid4()),
+                    "user_id": current_user["id"],
+                    "user_email": current_user["email"],
+                    "type": "proration_credit",
+                    "plan_id": data.plan_id,
+                    "plan_name": new_plan["name"],
+                    "billing_cycle": cycle,
+                    "amount": -refund_amount,
+                    "remaining_credit": remaining_credit,
+                    "new_plan_cost": new_total,
+                    "currency": "usd",
+                    "payment_status": "credited",
+                    "previous_plan": sub.get("plan_id"),
+                    "previous_cycle": old_cycle,
+                    "created_at": now.isoformat(),
+                }
+            )
+
+        msg = f"Switched to {new_plan['name']} ({cycle})."
+        if refund_amount > 0:
+            msg += f" ${refund_amount:.2f} credit applied from your previous plan."
+        return {"success": True, "message": msg, "refund_amount": refund_amount}
+
+    # For upgrades requiring payment, create Stripe checkout for the prorated amount
     api_key = os.environ.get("STRIPE_API_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="Payment service not configured")
@@ -845,7 +941,7 @@ async def change_subscription_plan(
 
     stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
     checkout_request = CheckoutSessionRequest(
-        amount=amount,
+        amount=charge_amount,
         currency="usd",
         success_url=success_url,
         cancel_url=cancel_url,
@@ -857,28 +953,44 @@ async def change_subscription_plan(
             "billing_cycle": cycle,
             "change_plan": "true",
             "previous_plan": sub.get("plan_id", ""),
+            "proration_credit": str(remaining_credit),
+            "original_new_cost": str(new_total),
         },
     )
     session = await stripe_checkout.create_checkout_session(checkout_request)
 
+    import uuid
+
     await db.payment_transactions.insert_one(
         {
+            "id": str(uuid.uuid4()),
             "session_id": session.session_id,
             "user_id": current_user["id"],
             "user_email": current_user["email"],
             "plan_id": data.plan_id,
             "plan_name": new_plan["name"],
             "billing_cycle": cycle,
-            "amount": amount,
+            "amount": charge_amount,
+            "remaining_credit": remaining_credit,
+            "new_plan_cost": new_total,
             "currency": "usd",
-            "type": "plan_change",
+            "type": "plan_change_prorated",
             "previous_plan": sub.get("plan_id", ""),
+            "previous_cycle": old_cycle,
             "payment_status": "pending",
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": now.isoformat(),
         }
     )
 
-    return {"url": session.url, "session_id": session.session_id}
+    return {
+        "url": session.url,
+        "session_id": session.session_id,
+        "proration": {
+            "previous_credit": remaining_credit,
+            "new_plan_cost": new_total,
+            "charge_amount": charge_amount,
+        },
+    }
 
 
 @router.post("/subscriptions/change-billing")
