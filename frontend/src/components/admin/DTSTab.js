@@ -158,7 +158,7 @@ export const DTSTab = ({ getAuthHeaders }) => {
       <div className="rounded-xl p-4" style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.12)' }}>
         <h3 className="font-bold text-[var(--pr2)] mb-2">DTS Team Portal</h3>
         <p className="text-sm text-[var(--t3)] leading-relaxed">
-          Review incoming Designated Trustee Service requests. Research feasibility and costs, then submit itemized quotes to benefactors.
+          Review incoming DTS requests. Research feasibility and costs, then submit itemized quotes to benefactors.
         </p>
       </div>
 
