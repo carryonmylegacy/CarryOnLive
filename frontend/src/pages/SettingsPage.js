@@ -65,6 +65,13 @@ const SettingsPage = () => {
   const currentSub = subscriptionStatus?.subscription;
   const currentPlanId = currentSub?.plan_id;
   const currentBilling = currentSub?.billing_cycle || 'monthly';
+  const eligibleTiers = subscriptionStatus?.eligible_tiers || [];
+  const isEligibleForPlan = (planId) => {
+    if (planId === 'new_adult') return eligibleTiers.includes('new_adult');
+    if (planId === 'military') return true; // requires verification, not age
+    if (planId === 'hospice') return true;
+    return true;
+  };
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem('carryon_token');
