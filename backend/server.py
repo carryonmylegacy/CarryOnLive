@@ -165,16 +165,25 @@ app.include_router(api_router)
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """Add security headers to all responses — SOC 2 compliant."""
+    """Add security headers to all responses — SOC 2 Compliance Pending."""
 
     async def dispatch(self, request: Request, call_next):
+        # Reject oversized request bodies (50MB max, prevents resource exhaustion)
+        content_length = request.headers.get("content-length")
+        if content_length and int(content_length) > 52_428_800:
+            return Response(
+                content='{"detail":"Request body too large"}',
+                status_code=413,
+                media_type="application/json",
+            )
+
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["X-XSS-Protection"] = "0"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = (
-            "camera=(), microphone=(self), geolocation=()"
+            "camera=(), microphone=(self), geolocation=(), payment=(self)"
         )
         response.headers["Strict-Transport-Security"] = (
             "max-age=31536000; includeSubDomains; preload"
@@ -188,8 +197,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "connect-src 'self' https://*.carryon.us https://*.stripe.com https://*.emergentagent.com wss:; "
             "frame-src 'self' https://js.stripe.com https://hooks.stripe.com; "
             "object-src 'none'; "
-            "base-uri 'self'"
+            "base-uri 'self'; "
+            "form-action 'self'"
         )
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
         # Prevent caching of sensitive API responses
         path = request.url.path
         if path.startswith("/api/") and path not in ("/api/health",):
