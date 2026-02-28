@@ -10,7 +10,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://ai-chat-upgrade-6.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://settings-refactor-v2.preview.emergentagent.com')
 
 # Test credentials - using the founder account
 BENEFACTOR_EMAIL = "founder@carryon.us"
