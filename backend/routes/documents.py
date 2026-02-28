@@ -107,6 +107,16 @@ async def _migrate_doc_to_cloud(doc_id: str, document: dict):
 @router.get("/documents/{estate_id}")
 async def get_documents(estate_id: str, current_user: dict = Depends(get_current_user)):
     """List all documents for an estate."""
+    # Verify estate access
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
+    if not estate:
+        raise HTTPException(status_code=404, detail="Estate not found")
+    is_owner = estate.get("owner_id") == current_user["id"]
+    is_beneficiary = current_user["id"] in estate.get("beneficiaries", [])
+    is_admin = current_user["role"] == "admin"
+    if not (is_owner or is_beneficiary or is_admin):
+        raise HTTPException(status_code=403, detail="Access denied")
+
     documents = await db.documents.find(
         {"estate_id": estate_id},
         {"_id": 0, "file_data": 0, "lock_password_hash": 0, "backup_code": 0},
