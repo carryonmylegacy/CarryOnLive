@@ -324,9 +324,9 @@ const SignupPage = () => {
 
                     {/* STEP 1: Personal */}
                     {step === 1 && (
-                      <div className="space-y-5">
+                      <div className="space-y-4 sm:space-y-5">
                         <div>
-                          <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Tell us a little about yourself</h2>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Tell us a little about yourself</h2>
                           <p className="text-[#6b7a90] text-sm">Both fields are optional but help personalize your experience.</p>
                         </div>
                         <div className="space-y-2">
