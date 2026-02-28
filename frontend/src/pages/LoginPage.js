@@ -159,7 +159,7 @@ const LoginPage = () => {
                     Secure your legacy with AI-powered estate planning. Protect what matters, guide who you love.
                   </p>
                   <div className="flex items-center gap-4 justify-center sm:justify-start mb-4">
-                    {['AES-256 Encrypted', 'Zero-Knowledge', 'SOC 2'].map(badge => (
+                    {['AES-256 Encrypted', 'Zero-Knowledge', 'SOC 2 Compliance Pending'].map(badge => (
                       <div key={badge} className="flex items-center gap-1.5">
                         <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
                         <span className="text-[#525c72] text-xs">{badge}</span>
@@ -384,7 +384,7 @@ const LoginPage = () => {
                 { icon: FileText, text: 'PDF-only document uploads \u2014 optimized for AI analysis' },
                 { icon: Users, text: 'Transition verification by human team \u2014 not algorithms, not AI' },
                 { icon: Trash2, text: 'Post-execution record destruction \u2014 DTS records are permanently eliminated' },
-                { icon: FileCheck, text: 'Compliance roadmap: SOC2, HIPAA, GDPR' },
+                { icon: FileCheck, text: 'Compliance roadmap: SOC 2 Compliance Pending, HIPAA, GDPR' },
               ].map(({ icon: Icon, text }, i) => (
                 <RevealSection key={i} delay={i * 0.08}>
                   <div className="rounded-xl p-6 text-center h-full transition-all duration-500 hover:border-[#d4af37]/20 hover:-translate-y-1"

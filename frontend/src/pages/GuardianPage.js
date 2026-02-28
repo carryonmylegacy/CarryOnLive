@@ -371,7 +371,7 @@ const GuardianPage = () => {
                   <Lock className="w-2.5 h-2.5 text-[#3B7BF7]" /> Zero-Knowledge Vault
                 </span>
                 <span className="flex items-center gap-1.5 text-[10px] text-[var(--t5)] px-2.5 py-1 rounded-full" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)' }}>
-                  <Shield className="w-2.5 h-2.5 text-[var(--gold)]" /> SOC 2 Compliant
+                  <Shield className="w-2.5 h-2.5 text-[var(--gold)]" /> SOC 2 Compliance Pending
                 </span>
               </div>
             </div>
