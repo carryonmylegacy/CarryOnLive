@@ -393,8 +393,15 @@ const ChecklistPage = () => {
                 <Phone className="w-4 h-4 text-[var(--t5)] flex-shrink-0" />
                 <input
                   value={form.contact_phone}
-                  onChange={(e) => setForm({ ...form, contact_phone: e.target.value })}
-                  placeholder="Phone number"
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    let f = digits;
+                    if (digits.length > 6) f = `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+                    else if (digits.length > 3) f = `(${digits.slice(0,3)}) ${digits.slice(3)}`;
+                    else if (digits.length > 0) f = `(${digits}`;
+                    setForm({ ...form, contact_phone: f });
+                  }}
+                  placeholder="(123) 456-7890"
                   className="flex-1 px-3 py-2 rounded-lg bg-[var(--b)] border border-[var(--b2)] text-[var(--t)] text-sm focus:outline-none focus:border-[var(--gold)]"
                 />
               </div>
