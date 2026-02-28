@@ -107,7 +107,7 @@ class TestDocumentDownload:
         
         downloaded_content = download_resp.content.decode("utf-8")
         assert downloaded_content == test_content, f"Content mismatch: expected '{test_content}', got '{downloaded_content}'"
-        print(f"✅ Document downloaded and decrypted correctly")
+        print("✅ Document downloaded and decrypted correctly")
         print(f"   Content verified: {downloaded_content[:50]}...")
 
     def test_preview_document_decrypts_inline(self, benefactor_token, test_estate_id):
@@ -137,7 +137,7 @@ class TestDocumentDownload:
         
         preview_content = preview_resp.content.decode("utf-8")
         assert preview_content == test_content, "Preview content mismatch"
-        print(f"✅ Document preview decrypted with inline disposition")
+        print("✅ Document preview decrypted with inline disposition")
 
 
 class TestDocumentDelete:
@@ -169,7 +169,7 @@ class TestDocumentDelete:
             headers={"Authorization": f"Bearer {benefactor_token}"},
         )
         assert verify_resp.status_code == 404, f"Expected 404, got {verify_resp.status_code}"
-        print(f"✅ Verified document is removed (404 on download)")
+        print("✅ Verified document is removed (404 on download)")
 
 
 # ============= MESSAGE ENCRYPTION TESTS =============
@@ -506,7 +506,7 @@ class TestPerEstateKeyIsolation:
         assert salt1 != salt2, "Different estates should have different encryption salts"
         print(f"✅ Estate 1 salt: {salt1[:16]}...")
         print(f"   Estate 2 salt: {salt2[:16]}...")
-        print(f"   Salts are different: ✓")
+        print("   Salts are different: ✓")
 
 
 # ============= CLEANUP =============

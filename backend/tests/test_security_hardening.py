@@ -99,7 +99,7 @@ class TestDevLoginRestriction:
         data = response.json()
         assert "access_token" in data
         assert data["user"]["role"] == "admin"
-        print(f"✓ Admin user successfully logged in via dev-login")
+        print("✓ Admin user successfully logged in via dev-login")
 
     def test_dev_login_returns_403_for_non_admin(self):
         """Non-admin user gets 403 Forbidden when trying dev-login"""
