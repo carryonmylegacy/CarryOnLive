@@ -812,9 +812,7 @@ async def change_billing_cycle(
     if cycle == "annual":
         amount = round(float(plan.get("annual_price", monthly_price * 0.8)) * 12, 2)
     elif cycle == "quarterly":
-        amount = round(
-            float(plan.get("quarterly_price", monthly_price * 0.9)) * 3, 2
-        )
+        amount = round(float(plan.get("quarterly_price", monthly_price * 0.9)) * 3, 2)
     else:
         amount = monthly_price
 
@@ -858,7 +856,9 @@ async def change_billing_cycle(
     origin = data.origin_url.rstrip("/") if data.origin_url else ""
     if origin:
         origin = validate_origin_url(origin)
-    success_url = f"{origin}/settings?session_id={{CHECKOUT_SESSION_ID}}&billing_change=true"
+    success_url = (
+        f"{origin}/settings?session_id={{CHECKOUT_SESSION_ID}}&billing_change=true"
+    )
     cancel_url = f"{origin}/settings"
     backend_url = os.environ.get(
         "RAILWAY_PUBLIC_URL", os.environ.get("BACKEND_URL", "")
