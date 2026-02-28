@@ -194,6 +194,21 @@ async def create_message(
             "video/webm",
         )
 
+    # Handle voice data - encrypt and store in cloud
+    if data.voice_data:
+        voice_id = f"voice_{message.id}"
+        message.voice_url = voice_id
+        msg_dict["voice_url"] = voice_id
+
+        voice_bytes = base64.b64decode(data.voice_data)
+        encrypted_voice = encrypt_aes256(voice_bytes, estate_salt)
+        await storage.upload(
+            encrypted_voice.encode("ascii"),
+            data.estate_id,
+            voice_id,
+            "audio/webm",
+        )
+
     await db.messages.insert_one(msg_dict)
     await update_estate_readiness(data.estate_id)
 
