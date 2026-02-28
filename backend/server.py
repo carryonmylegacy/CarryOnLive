@@ -37,6 +37,7 @@ from routes.transition import router as transition_router
 from routes.admin_digest import router as admin_digest_router
 from routes.onboarding import router as onboarding_router
 from routes.emergency_access import router as emergency_access_router
+from routes.timeline import router as timeline_router
 
 
 # Background scheduler
@@ -135,6 +136,7 @@ api_router.include_router(digest_router)
 api_router.include_router(admin_digest_router)
 api_router.include_router(onboarding_router)
 api_router.include_router(emergency_access_router)
+api_router.include_router(timeline_router)
 
 
 # Health check
