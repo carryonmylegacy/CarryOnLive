@@ -31,7 +31,7 @@ const BeneficiaryGuardianPage = () => {
     fetchDocs(eid);
     setMessages([{
       role: 'assistant',
-      content: `Hello ${user?.name?.split(' ')[0] || 'there'}. I'm the Estate Guardian — your AI estate law specialist.\n\nI have access to the **sealed vault documents** and can help you understand the estate plan, answer questions about the documents, and provide guidance on the action checklist.\n\n**Note:** The vault is sealed and read-only. I can analyze documents but cannot modify anything.`
+      content: `Hello ${user?.name?.split(' ')[0] || 'there'}. I'm EGA — your AI estate law specialist.\n\nI have access to the **sealed vault documents** and can help you understand the estate plan, answer questions about the documents, and provide guidance on the IAC.\n\n**Note:** The vault is sealed and read-only. I can analyze documents but cannot modify anything.`
     }]);
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -80,7 +80,7 @@ const BeneficiaryGuardianPage = () => {
             <Sparkles className="w-5 h-5 text-[#60A5FA]" />
           </div>
           <div>
-            <h1 className="text-xl lg:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Estate Guardian</h1>
+            <h1 className="text-xl lg:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Estate Guardian (EGA)</h1>
             <p className="text-xs text-[var(--t5)]">50-State Estate Law Brain · Vault-Analyzed · Read-Only</p>
           </div>
         </div>
@@ -93,7 +93,7 @@ const BeneficiaryGuardianPage = () => {
           <span className="text-xs text-[var(--t4)]">Sealed vault · {documents.length} documents accessible</span>
         </div>
         <div className="flex-1 rounded-xl p-2.5" style={{ background: 'rgba(245,166,35,0.06)', border: '1px solid rgba(245,166,35,0.15)' }}>
-          <span className="text-xs text-[var(--yw)]">Estate Guardian does not provide legal advice. Consult licensed professionals.</span>
+          <span className="text-xs text-[var(--yw)]">EGA does not provide legal advice. Consult licensed professionals.</span>
         </div>
       </div>
 
