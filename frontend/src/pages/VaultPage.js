@@ -857,7 +857,7 @@ const VaultPage = () => {
           }
         }
       }}>
-        <DialogContent className="glass-card border-white/10 sm:max-w-md">
+        <DialogContent className="glass-card border-white/10 sm:max-w-md !top-[5vh] !translate-y-0 max-h-[90vh] overflow-y-scroll">
           <DialogHeader>
             <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Unlock Document
