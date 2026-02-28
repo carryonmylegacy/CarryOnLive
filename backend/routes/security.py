@@ -350,8 +350,10 @@ async def verify_section_security(
             is_v2 = settings.get("voiceprint_version") == "v2"
 
             if is_v2:
-                # Enhanced extraction
-                extraction = extract_voiceprint(wav_bytes)
+                # Enhanced extraction (run in thread pool)
+                import asyncio
+
+                extraction = await asyncio.to_thread(extract_voiceprint, wav_bytes)
                 if extraction is None:
                     raise HTTPException(
                         status_code=400,
@@ -371,8 +373,12 @@ async def verify_section_security(
                 similarity = vresult["confidence"]
                 confidence_level = vresult["confidence_level"]
             else:
-                # Legacy 60-dim voiceprint — use backward-compatible verification
-                test_vp = extract_voiceprint_legacy(wav_bytes)
+                # Legacy 60-dim voiceprint (run in thread pool)
+                import asyncio
+
+                test_vp = await asyncio.to_thread(
+                    extract_voiceprint_legacy, wav_bytes
+                )
                 if test_vp is None:
                     raise HTTPException(
                         status_code=400, detail="Could not process voice sample"
