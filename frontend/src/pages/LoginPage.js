@@ -291,22 +291,22 @@ const LoginPage = () => {
             <div className="grid md:grid-cols-2 gap-6">
               {[
                 {
-                  icon: Sparkles, title: 'Estate Guardian\u2122 AI',
+                  icon: Sparkles, title: 'Estate Guardian\u2122 AI (EGA)',
                   bold: 'An AI analyst powered by U.S. estate law across all 50 states \u2014 working inside your encrypted vault.',
-                  desc: 'Estate Guardian analyzes your estate documents for contradictions, gaps, outdated provisions, and missing pieces. Your documents are encrypted with AES-256 zero-knowledge encryption at rest. The AI reviews your documents within the platform and auto-populates your Immediate Action Checklist with critical details like claim phone numbers, executor contacts, and filing deadlines. No team reads them. No human touches them.',
+                  desc: 'EGA analyzes your estate documents for contradictions, gaps, outdated provisions, and missing pieces. Your documents are encrypted with AES-256 zero-knowledge encryption at rest. The AI reviews your documents within the platform and auto-populates your Immediate Action Checklist (IAC) with critical details like claim phone numbers, executor contacts, and filing deadlines. No team reads them. No human touches them.',
                 },
                 {
-                  icon: ClipboardCheck, title: 'Immediate Action Checklist',
+                  icon: ClipboardCheck, title: 'Immediate Action Checklist (IAC)',
                   bold: 'A step-by-step guide your family can follow on the hardest day of their lives.',
-                  desc: 'Partially auto-populated by Estate Guardian and fully customizable by you. When the time comes, your family opens the checklist and knows exactly what to do, who to call, where to find every document, and what deadlines matter. No guessing. No searching. No overwhelm. Just clarity.',
+                  desc: 'Partially auto-populated by EGA and fully customizable by you. When the time comes, your family opens the IAC and knows exactly what to do, who to call, where to find every document, and what deadlines matter. No guessing. No searching. No overwhelm. Just clarity.',
                 },
                 {
-                  icon: MessageSquare, title: 'Milestone Messages',
+                  icon: MessageSquare, title: 'Milestone Messages (MM)',
                   bold: 'Your words at their wedding. Your message at their graduation. Your love \u2014 delivered exactly when it matters.',
                   desc: 'Record written or video messages for the milestones you want to be part of \u2014 even if you can\'t be there. Weddings, births, graduations, birthdays, first homes, or any moment you choose. Messages are securely stored and delivered when your beneficiary reports the milestone. No team reads them. No human touches them. Just your words, arriving exactly when and where you intended.',
                 },
                 {
-                  icon: UserCheck, title: 'Designated Trustee Services',
+                  icon: UserCheck, title: 'Designated Trustee Services (DTS)',
                   bold: 'Some things shouldn\'t follow you. Let a trusted team handle what you can\'t.',
                   desc: 'Accounts to close. Subscriptions to cancel. Sensitive content to destroy. Financial transfers to execute. Things you\'d rather handle yourself \u2014 if you could. CarryOn\'s Designated Trustee Services lets you authorize specific, line-item tasks to be carried out confidentially after your verified transition. Each task is quoted, approved by you, and executed by our Trustee Services Team. Every record \u2014 instructions, credentials, payment logs \u2014 is permanently destroyed after completion.',
                 },
