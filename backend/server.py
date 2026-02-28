@@ -244,7 +244,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         elif path in moderate_paths:
             limit = self.max_requests
         if limit:
-            client_ip = request.client.host if request.client else "unknown"
+            forwarded = request.headers.get("x-forwarded-for", "")
+            client_ip = forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "unknown")
             now = time.time()
 
             # Clean old entries
