@@ -53,7 +53,7 @@ const SignupPage = () => {
 
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState('right');
-  const [animating, setAnimating] = useState(false);
+  const [slidePhase, setSlidePhase] = useState('idle'); // 'idle' | 'exit' | 'enter'
   const [entered, setEntered] = useState(false);
 
   // Form state
