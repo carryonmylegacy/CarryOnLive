@@ -137,16 +137,15 @@ export const SubscriptionManagement = ({
   }, [currentBilling]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // For beneficiaries: show only their locked-in tier (determined by benefactor's majority plan)
-  // If no locked tier yet, show all beneficiary plans
+  // If no locked tier yet, show nothing — they can't choose
   const displayPlans = isBeneficiary
-    ? (lockedTier
-        ? beneficiaryPlans.filter(p => p.id === lockedTier)
-        : beneficiaryPlans)
+    ? (lockedTier ? beneficiaryPlans.filter(p => p.id === lockedTier) : [])
     : plans;
 
   // Check if beneficiary's locked plan allows billing toggle (military does not)
   const lockedPlan = lockedTier ? beneficiaryPlans.find(p => p.id === lockedTier) : null;
-  const showBillingToggle = !isBeneficiary || !lockedPlan || lockedPlan.allows_billing_toggle !== false;
+  const showBillingToggle = !isBeneficiary || (lockedPlan && lockedPlan.allows_billing_toggle !== false);
+  const beneficiaryNoTierYet = isBeneficiary && !lockedTier;
 
   const requiresVerification = (planId) => ['military', 'hospice'].includes(planId);
 
