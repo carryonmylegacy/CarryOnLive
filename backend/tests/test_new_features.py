@@ -204,7 +204,7 @@ class TestQuickStartTemplates:
             actual_count = templates.get(tid, {}).get("item_count", 0)
             assert actual_count == expected_count, f"{tid} should have {expected_count} items, got {actual_count}"
         
-        print(f"✓ Template item counts: hospice=14, military=10, new_parent=9, recently_married=9")
+        print("✓ Template item counts: hospice=14, military=10, new_parent=9, recently_married=9")
 
     def test_apply_template_requires_auth(self):
         """POST /api/templates/apply returns 401 without authentication."""
