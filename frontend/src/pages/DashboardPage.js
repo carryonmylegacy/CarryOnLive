@@ -316,7 +316,7 @@ const DashboardPage = () => {
         <StatCard 
           icon={MessageSquare}
           value={stats.messages}
-          label="Milestone Messages"
+          label="Milestone Messages (MM)"
           cardClass="stat-card-messages"
           onClick={() => navigate('/messages')}
           sectionKey="messages"
@@ -324,7 +324,7 @@ const DashboardPage = () => {
         <StatCard 
           icon={CheckSquare}
           value={totalTasks}
-          label="Immediate Action Checklist"
+          label="Immediate Action Checklist (IAC)"
           cardClass="stat-card-checklist"
           onClick={() => navigate('/checklist')}
           sectionKey="checklist"
@@ -405,7 +405,7 @@ const DashboardPage = () => {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-[#8b5cf6]" />
-              <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">Milestone Messages</h3>
+              <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">Milestone Messages (MM)</h3>
             </div>
             <span className="text-[var(--t4)] text-sm">
               {stats.messages} message{stats.messages !== 1 ? 's' : ''}
