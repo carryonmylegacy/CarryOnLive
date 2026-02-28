@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('dev_switcher_admin_session');
     const payload = { email, password, otp_method: otpMethod };
     if (otpMethod === 'sms' && phone) {
-      payload.phone = phone;
+      payload.phone = phone.startsWith('+') ? phone : `+1${phone.replace(/\D/g, '')}`;
     }
     const response = await axios.post(`${API_URL}/auth/login`, payload);
     const data = response.data;
