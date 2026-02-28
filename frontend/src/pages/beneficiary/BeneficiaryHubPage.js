@@ -211,7 +211,10 @@ const BeneficiaryHubPage = () => {
       )}
 
       {/* Info Box */}
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto space-y-4">
+        {/* Emergency Access Protocol */}
+        <EmergencyAccessPanel estates={estates} />
+
         <div className="rounded-xl p-4" style={{ background: 'rgba(37,99,235,0.05)', border: '1px solid rgba(37,99,235,0.1)' }}>
           <p className="text-sm text-[var(--bl3)] leading-relaxed">
             Your beneficiary cost is determined by each benefactor's subscription tier. You maintain one CarryOn™ account with access to all connected estates. Billing for each estate begins only after a verified transition event.
