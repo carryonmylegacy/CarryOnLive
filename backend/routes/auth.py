@@ -199,6 +199,18 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     )
 
 
+@router.post("/auth/logout")
+async def logout(request: Request, current_user: dict = Depends(get_current_user)):
+    """Logout — blacklists the current token server-side."""
+    from services.token_blacklist import blacklist_token
+
+    auth_header = request.headers.get("authorization", "")
+    if auth_header.startswith("Bearer "):
+        token_str = auth_header.split(" ")[1]
+        await blacklist_token(token_str, current_user["id"], reason="logout")
+    return {"message": "Logged out successfully"}
+
+
 class DevSwitchRequest(BaseModel):
     email: str
 
