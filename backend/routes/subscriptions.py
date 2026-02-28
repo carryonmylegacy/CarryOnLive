@@ -513,9 +513,28 @@ async def create_subscription_checkout(
     settings = await get_subscription_settings()
 
     if settings.get("beta_mode", True):
-        raise HTTPException(
-            status_code=400, detail="Subscriptions are free during beta period"
-        )
+        # During beta, still record the benefactor's chosen plan so beneficiaries can see it
+        plans_lookup = {p["id"]: p for p in settings.get("plans", DEFAULT_PLANS)}
+        plan = plans_lookup.get(data.plan_id)
+        if plan and current_user.get("role") == "benefactor":
+            now = datetime.now(timezone.utc)
+            await db.user_subscriptions.update_one(
+                {"user_id": current_user["id"]},
+                {
+                    "$set": {
+                        "user_id": current_user["id"],
+                        "plan_id": data.plan_id,
+                        "plan_name": plan["name"],
+                        "status": "active",
+                        "billing_cycle": data.billing_cycle,
+                        "amount": 0.0,
+                        "beta_plan": True,
+                        "activated_at": now.isoformat(),
+                    }
+                },
+                upsert=True,
+            )
+        return {"free": True, "message": f"All features are free during beta! Your {plan['name'] if plan else ''} plan preference has been saved."}
 
     plans = {p["id"]: p for p in settings.get("plans", DEFAULT_PLANS)}
     plan = plans.get(data.plan_id)
