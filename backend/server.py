@@ -170,7 +170,7 @@ app.include_router(api_router)
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """Add security headers to all responses — SOC 2 Compliance Pending."""
+    """Add security headers to all responses."""
 
     async def dispatch(self, request: Request, call_next):
         # Reject oversized request bodies (50MB max, prevents resource exhaustion)

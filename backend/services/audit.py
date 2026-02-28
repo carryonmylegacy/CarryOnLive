@@ -1,4 +1,4 @@
-"""CarryOn™ — Security Audit Trail (SOC 2 Compliance Pending)
+"""CarryOn™ — Security Audit Trail
 
 Logs every sensitive operation: document access, decryption, AI analysis,
 admin actions, and authentication events. Immutable audit entries.

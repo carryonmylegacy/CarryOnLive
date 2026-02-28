@@ -785,7 +785,7 @@ async def export_checklist_pdf(
     pdf.cell(
         0,
         5,
-        "AES-256-GCM Encrypted  |  Zero-Knowledge Architecture  |  SOC 2 Compliance Pending",
+        "AES-256-GCM Encrypted  |  Zero-Knowledge Architecture  |  2FA Protected",
         new_x="LMARGIN",
         new_y="NEXT",
     )
