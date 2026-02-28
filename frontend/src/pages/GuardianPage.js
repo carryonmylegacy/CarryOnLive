@@ -673,9 +673,9 @@ const GuardianPage = () => {
           </div>
         )}
 
-        <div className="flex items-center gap-1 justify-center mb-1.5">
-          <Info className="w-2.5 h-2.5 text-[var(--t5)]" />
-          <span className="text-[9px] text-[var(--t5)]">Not legal advice. Consult a licensed attorney.</span>
+        <div className="flex items-center gap-1.5 justify-center mb-1.5">
+          <Shield className="w-2.5 h-2.5 text-[#22C993]" />
+          <span className="text-[9px] text-[var(--t5)]">Encrypted session · Not legal advice · Consult a licensed attorney</span>
         </div>
 
         <form onSubmit={handleChatSubmit} className="flex items-center gap-2 max-w-3xl mx-auto">
