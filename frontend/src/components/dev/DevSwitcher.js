@@ -87,12 +87,23 @@ const DevSwitcher = () => {
       
       const headers = { 'Content-Type': 'application/json' };
       if (adminToken) headers['Authorization'] = `Bearer ${adminToken}`;
-      
-      const response = await fetch(`${API_URL}/api/auth/dev-login`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ email: account.email, password: account.password }),
-      });
+
+      let response;
+      if (account.role === 'admin') {
+        // Admin login uses the original dev-login with hardcoded creds
+        response = await fetch(`${API_URL}/api/auth/dev-login`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ email: account.email, password: account.password }),
+        });
+      } else {
+        // Benefactor/Beneficiary use dev-switch (server looks up stored password)
+        response = await fetch(`${API_URL}/api/auth/dev-switch`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ email: account.email }),
+        });
+      }
       
       const text = await response.text();
       let data;
