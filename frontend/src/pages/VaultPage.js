@@ -624,18 +624,17 @@ const VaultPage = () => {
                       </p>
                       
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {isPreviewable(doc.file_type) && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-[#3b82f6] hover:text-[#60a5fa]"
-                            onClick={() => doc.is_locked ? (setSelectedDoc(doc), setShowLockModal(true)) : handlePreview(doc)}
-                            title="Preview"
-                            aria-label="Preview document"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        )}
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-[#3b82f6] hover:text-[#60a5fa]"
+                          onClick={() => doc.is_locked ? (setSelectedDoc(doc), setShowLockModal(true)) : (isPreviewable(doc.file_type) ? handlePreview(doc) : handleDownload(doc))}
+                          title="View"
+                          aria-label="View document"
+                          data-testid={`view-document-${doc.id}`}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
