@@ -49,7 +49,7 @@ const selectClass = "h-14 bg-[#0b1322] border-[#1a2a42] text-white text-base rou
 
 const SignupPage = () => {
   const navigate = useNavigate();
-  const { verifyOtp } = useAuth();
+  const { verifyOtp, resendOtp } = useAuth();
 
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState('right');
@@ -74,6 +74,7 @@ const SignupPage = () => {
   const [otp, setOtp] = useState('');
   const [otpHint, setOtpHint] = useState('');
   const [registeredEmail, setRegisteredEmail] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   useEffect(() => {
     const t = setTimeout(() => setEntered(true), 150);
