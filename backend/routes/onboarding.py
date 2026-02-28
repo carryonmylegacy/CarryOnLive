@@ -188,7 +188,7 @@ SCENARIO_TEMPLATES = {
             },
             {
                 "title": "Document digital accounts and passwords",
-                "description": "Create a list of all online accounts, passwords, and digital assets. Store securely in your Digital Wallet.",
+                "description": "Create a list of all online accounts, passwords, and digital assets. Store securely in your Digital Access Vault (DAV).",
                 "category": "personal",
                 "priority": "high",
                 "due_timeframe": "first_week",
@@ -286,7 +286,7 @@ SCENARIO_TEMPLATES = {
             },
             {
                 "title": "Provide spouse/family member with account access",
-                "description": "Share bank account access, investment login credentials, and important account information. Use CarryOn Digital Wallet.",
+                "description": "Share bank account access, investment login credentials, and important account information. Use CarryOn Digital Access Vault (DAV).",
                 "category": "financial",
                 "priority": "high",
                 "due_timeframe": "first_week",
@@ -433,7 +433,7 @@ SCENARIO_TEMPLATES = {
             },
             {
                 "title": "Discuss and document financial accounts",
-                "description": "Share all account information with each other. Decide what to keep separate vs. joint. Store details in CarryOn Digital Wallet.",
+                "description": "Share all account information with each other. Decide what to keep separate vs. joint. Store details in CarryOn Digital Access Vault (DAV).",
                 "category": "financial",
                 "priority": "high",
                 "due_timeframe": "two_weeks",
