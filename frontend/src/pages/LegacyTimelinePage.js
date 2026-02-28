@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Clock, FileText, Users, MessageSquare, CheckCircle2,
-  Shield, Activity, Loader2, ChevronDown, Filter
+  Shield, Activity, Loader2, ChevronDown, Filter, ChevronRight, Pencil
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
