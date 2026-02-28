@@ -123,11 +123,65 @@ export const SubscriptionManagement = ({
         setBeneficiaryPlans(res.data.beneficiary_plans || []);
       } catch (e) { /* fallback empty */ }
     };
+    const fetchVerification = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/verification/status`, getAuthHeaders());
+        setVerificationStatus(res.data);
+      } catch (e) { /* ignore */ }
+    };
     fetchPlans();
+    fetchVerification();
     if (currentBilling) setBilling(currentBilling);
-  }, [currentBilling]);
+  }, [currentBilling]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const displayPlans = isBeneficiary ? beneficiaryPlans : plans;
+
+  const requiresVerification = (planId) => ['military', 'hospice'].includes(planId);
+
+  // Check if user is already verified for a tier
+  const isVerifiedFor = (planId) => {
+    return subscriptionStatus?.verification?.status === 'approved' &&
+      subscriptionStatus?.verification?.tier_requested === planId;
+  };
+
+  const VERIFICATION_DOCS = {
+    military: ['Military ID', 'Active Duty Orders', 'First Responder Badge'],
+    hospice: ['Hospice Enrollment Documentation'],
+  };
+
+  const handleVerificationUpload = async () => {
+    if (!verificationFile || !verificationDocType) {
+      toast.error('Please select a document type and upload a file');
+      return;
+    }
+    setUploadingVerification(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64 = e.target.result.split(',')[1];
+        const formData = new FormData();
+        formData.append('tier_requested', verificationTier);
+        formData.append('doc_type', verificationDocType);
+        formData.append('file_data', base64);
+        formData.append('file_name', verificationFile.name);
+        try {
+          const res = await axios.post(`${API_URL}/verification/upload`, formData, getAuthHeaders());
+          toast.success(res.data.message || 'Verification submitted! You\'ll be notified once approved.');
+          setShowVerification(false);
+          setVerificationFile(null);
+          setVerificationDocType('');
+          setVerificationStatus({ status: 'pending', tier_requested: verificationTier });
+        } catch (err) {
+          toast.error(err.response?.data?.detail || 'Verification upload failed');
+        }
+        setUploadingVerification(false);
+      };
+      reader.readAsDataURL(verificationFile);
+    } catch (err) {
+      toast.error('Failed to process file');
+      setUploadingVerification(false);
+    }
+  };
 
   const handleSubscribe = async (planId) => {
     setSubscribing(planId);
