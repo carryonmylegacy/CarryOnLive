@@ -462,6 +462,40 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
           </Button>
         )}
       </div>
+
+      {/* Account Password Verification Modal */}
+      {showAccountPwModal && (
+        <div className="fixed inset-0 z-[99999] bg-black/60 flex items-start justify-center pt-[5vh] px-4" onClick={() => { setShowAccountPwModal(false); setPendingToggle(null); }}>
+          <div className="glass-card p-6 max-w-sm w-full border border-[var(--b2)]" onClick={e => e.stopPropagation()} data-testid="account-pw-modal">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-[var(--gold)]/10 flex items-center justify-center">
+                <Shield className="w-5 h-5 text-[var(--gold)]" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-[var(--t)]">Confirm Identity</h3>
+                <p className="text-xs text-[var(--t4)]">Enter your account password to modify security settings</p>
+              </div>
+            </div>
+            <Input
+              type="password"
+              value={accountPw}
+              onChange={e => setAccountPw(e.target.value)}
+              placeholder="Account password"
+              className="input-field mb-3"
+              onKeyDown={e => e.key === 'Enter' && accountPw && verifyAccountPassword()}
+              autoFocus
+              data-testid="account-pw-input"
+            />
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1 border-[var(--b)] text-[var(--t)]" onClick={() => { setShowAccountPwModal(false); setPendingToggle(null); }}>Cancel</Button>
+              <Button className="flex-1 gold-button" disabled={!accountPw || accountPwVerifying} onClick={verifyAccountPassword} data-testid="account-pw-confirm">
+                {accountPwVerifying ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : null}
+                Confirm
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
