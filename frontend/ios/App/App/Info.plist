@@ -48,7 +48,9 @@
         <key>NSFaceIDUsageDescription</key>
         <string>CarryOn uses Face ID to securely protect your vault and sensitive estate documents.</string>
         <key>NSCameraUsageDescription</key>
-        <string>CarryOn uses your camera to scan and upload estate documents.</string>
+        <string>CarryOn uses your camera to record video Milestone Messages (MM) and scan estate documents.</string>
+        <key>NSMicrophoneUsageDescription</key>
+        <string>CarryOn uses your microphone to record audio for video Milestone Messages (MM).</string>
         <key>NSPhotoLibraryUsageDescription</key>
         <string>CarryOn needs access to your photo library to upload estate documents.</string>
 </dict>
