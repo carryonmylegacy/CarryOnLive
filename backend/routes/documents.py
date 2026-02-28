@@ -814,7 +814,27 @@ async def update_document(
         update_data["notes"] = notes
 
     if update_data:
+        update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
         await db.documents.update_one({"id": document_id}, {"$set": update_data})
+
+        # Log edit to edit_history for timeline tracking
+        import uuid as _uuid
+
+        changed_fields = [k for k in update_data if k != "updated_at"]
+        await db.edit_history.insert_one(
+            {
+                "id": str(_uuid.uuid4()),
+                "item_type": "document",
+                "item_id": document_id,
+                "estate_id": doc["estate_id"],
+                "user_id": current_user["id"],
+                "user_name": current_user.get("name", ""),
+                "action": "edited",
+                "changed_fields": changed_fields,
+                "title": name or doc.get("name", ""),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
 
     updated = await db.documents.find_one(
         {"id": document_id},
