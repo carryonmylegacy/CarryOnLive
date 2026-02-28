@@ -22,12 +22,14 @@ const useReveal = (threshold = 0.15) => {
 
 const RevealSection = ({ children, className = '', delay = 0, direction = 'up', ...props }) => {
   const [ref, visible] = useReveal(0.12);
-  const transforms = { up: 'translateY(60px)', down: 'translateY(-60px)', left: 'translateX(60px)', right: 'translateX(-60px)' };
+  const transforms = { up: 'translate3d(0,60px,0)', down: 'translate3d(0,-60px,0)', left: 'translate3d(60px,0,0)', right: 'translate3d(-60px,0,0)' };
   return (
     <div ref={ref} className={className} style={{
       opacity: visible ? 1 : 0,
-      transform: visible ? 'translate(0)' : transforms[direction],
+      transform: visible ? 'translate3d(0,0,0)' : transforms[direction],
       transition: `opacity 0.8s cubic-bezier(0.16,1,0.3,1) ${delay}s, transform 0.8s cubic-bezier(0.16,1,0.3,1) ${delay}s`,
+      willChange: 'transform, opacity',
+      backfaceVisibility: 'hidden',
     }} {...props}>
       {children}
     </div>
