@@ -95,6 +95,12 @@ async def lifespan(app):
         await db.failed_logins.create_index("timestamp", expireAfterSeconds=3600)
         # TTL index: auto-delete expired OTPs after 15 minutes
         await db.otps.create_index("created_at", expireAfterSeconds=900)
+        # TTL index: auto-delete blacklisted tokens after 9 hours (slightly > JWT expiry)
+        await db.token_blacklist.create_index("blacklisted_at", expireAfterSeconds=32400)
+        await db.token_blacklist.create_index("token")
+        await db.token_revocations.create_index("user_id", unique=True)
+        # Edit history index for timeline queries
+        await db.edit_history.create_index("estate_id")
         logger.info("Database indexes created/verified")
     except Exception as e:
         logger.warning(f"Index creation warning (may already exist): {e}")
