@@ -397,7 +397,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
             <HelpCircle className="w-4 h-4 text-[var(--pr2)]" />
             <span className="text-sm font-bold text-[var(--t)]">Layer 3: Security Question</span>
           </div>
-          <Switch checked={qEnabled} onCheckedChange={setQEnabled} data-testid={`q-toggle-${section.id}`} />
+          <Switch checked={qEnabled} onCheckedChange={(v) => handleToggle('question', v)} data-testid={`q-toggle-${section.id}`} />
         </div>
         {qEnabled && (
           <div className="ml-6 space-y-2">
