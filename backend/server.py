@@ -247,6 +247,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             "/api/auth/dev-switch",
             "/api/auth/verify-otp",
             "/api/auth/resend-otp",
+            "/api/auth/verify-password",
             "/api/compliance/deletion-request",
         ]
         moderate_paths = [
