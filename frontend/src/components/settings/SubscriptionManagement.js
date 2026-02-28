@@ -246,7 +246,22 @@ export const SubscriptionManagement = ({
   };
 
   const handleChangePlan = async (planId) => {
-    if (planId === currentPlanId) return;
+    if (planId === currentPlanId && billing === currentBilling) return;
+
+    // Downgrade → send to customer service
+    if (isDowngrade(planId, billing)) {
+      try {
+        await axios.post(`${API_URL}/support/messages`, {
+          content: `I'd like to change my subscription from ${currentSub?.plan_name || currentPlanId} (${currentBilling}) to ${planId} (${billing}). Since this is a downgrade, please process the refund for the unused portion and switch my plan. Thank you.`,
+        }, getAuthHeaders());
+        toast.success('Your downgrade request has been sent to Customer Service. We\'ll process your refund and plan change shortly — check your messages for updates.');
+      } catch (e) {
+        toast.error('Failed to send request. Please go to Customer Service directly.');
+      }
+      return;
+    }
+
+    // Upgrade → proceed with Stripe
     setSubscribing(planId);
     try {
       const res = await axios.post(`${API_URL}/subscriptions/change-plan`, {
