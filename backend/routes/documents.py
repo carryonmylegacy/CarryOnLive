@@ -26,7 +26,6 @@ from services.encryption import (
 )
 from services.storage import storage
 from utils import (
-    decrypt_data,
     generate_backup_code,
     get_current_user,
     hash_password,
