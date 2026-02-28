@@ -7,7 +7,7 @@ admin actions, and authentication events. Immutable audit entries.
 import uuid
 from datetime import datetime, timezone
 
-from config import db, logger
+from config import db
 
 
 async def audit_log(

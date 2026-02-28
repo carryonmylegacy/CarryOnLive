@@ -1,13 +1,11 @@
 """CarryOn™ Backend — Onboarding & Quick-Start Templates"""
 
-import uuid
 from datetime import datetime, timezone
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from config import db, logger
+from config import db
 from models import ChecklistItem
 from utils import get_current_user, update_estate_readiness
 

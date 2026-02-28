@@ -4,7 +4,6 @@ Tests: Security headers, rate limiting, dev-login restrictions, CORS
 """
 
 import os
-import time
 import pytest
 import requests
 

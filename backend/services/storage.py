@@ -9,7 +9,6 @@ BEFORE being passed to storage. S3 adds SSE-S3 as a second layer.
 """
 
 import os
-import uuid
 from abc import ABC, abstractmethod
 from pathlib import Path
 

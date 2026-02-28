@@ -20,7 +20,6 @@ from services.encryption import (
     encrypt_aes256,
     encrypt_field,
     get_estate_salt,
-    is_v2_encrypted,
 )
 from services.storage import storage
 from utils import get_current_user, log_activity, update_estate_readiness
