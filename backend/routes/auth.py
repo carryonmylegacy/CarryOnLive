@@ -194,6 +194,21 @@ async def register(data: UserCreate):
     }
 
 
+
+class VerifyPasswordRequest(BaseModel):
+    email: str
+    password: str
+
+
+@router.post("/auth/verify-password")
+async def verify_password_endpoint(data: VerifyPasswordRequest):
+    """Verify account password without logging in. Used for sensitive settings changes."""
+    user = await db.users.find_one({"email": data.email}, {"_id": 0, "password": 1})
+    if not user or not verify_password(data.password, user["password"]):
+        raise HTTPException(status_code=401, detail="Invalid password")
+    return {"verified": True}
+
+
 class ResendOTPRequest(BaseModel):
     email: str
 
