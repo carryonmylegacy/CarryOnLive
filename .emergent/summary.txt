@@ -1,175 +1,185 @@
 <analysis>**original_problem_statement:**
-The user initiated a series of major upgrades for the application. The work was divided into three main parts:
-1.  **Admin Portal Enhancement**: Refactor the monolithic  for maintainability and add a real-time search/filter capability to all data-driven tabs within the admin portal.
-2.  **Zero-Knowledge Architecture (Phase 1)**: Implement a resilient, scalable, and secure architecture for storing user documents, milestone messages, and digital wallet data. The requirements were AES-256 encryption, zero-knowledge principles, SOC 2 compliance readiness, and using a scalable cloud storage solution. The user chose AWS S3.
-3.  **Estate Guardian AI Overhaul (Phase 2)**: Re-architect the Estate Guardian AI to be a secure, air-gapped expert. This involved giving it a Grok-like conversational persona, training it on US estate law, ensuring it deflects out-of-scope questions, adding legal disclaimers, and implementing a feature to export AI-generated checklists to PDF.
-4.  **Deployment**: Deploy all frontend and backend changes to the live production environment on Vercel and Railway, respectively.
+The user initiated this session with a critical request:
+1.  **Code Cleanup & Security Audit**: Perform three passes of code linting (clean up the organization) and then conduct a comprehensive, end-to-end security audit of the entire platform to ensure it is 100% airtight and seamless, guaranteeing the AES-256, SOC 2, and Zero-Knowledge claims.
+2.  **Feature Enhancements**: Based on the agent's recommendations post-audit, the user approved the implementation of five specific improvements to enhance user-friendliness and value.
+3.  **Deployment**: After implementing and testing all changes, the user requested the agent to trigger a deployment to the production Vercel environment.
+4.  **Next Feature**: The user expressed interest in a Legacy Timeline feature and asked the agent to build a prototype after handling the deployment.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a full-stack React/FastAPI app with a fully functional production environment.
--   **Admin Portal**: The previously monolithic  has been successfully refactored into a lean container with 9 distinct, manageable components. A real-time search feature is now functional across all relevant admin tabs (Users, Transition, DTS, Support, Subscriptions, etc.).
--   **Secure Storage Architecture**: A new, robust backend architecture is in place. All sensitive user data (documents, messages, wallet) is now encrypted with AES-256-GCM using per-estate keys and stored securely in a dedicated AWS S3 bucket. An audit trail logs all access to sensitive data. A lazy migration automatically upgrades older, Fernet-encrypted data to the new standard on access.
--   **Estate Guardian AI**: The AI has been completely overhauled. It now has a specialized persona, strict conversational guardrails to stay on topic, and appends a legal disclaimer to every response. The UI has been updated with security vault iconography and a new button to export AI-generated checklists as PDFs.
--   **Production Deployment**: All architectural changes, features, and refactoring from this session have been successfully deployed to the production frontend (Vercel) and backend (Railway), including the necessary AWS credentials.
+The application has undergone a massive security hardening phase. Numerous critical vulnerabilities related to authentication, authorization, data exposure, and insecure configurations have been identified and fixed. The codebase is fully linted.
+
+Following the security audit, five new user-facing features were implemented and tested:
+1.  **Onboarding Wizard**: A progress tracker on the dashboard for new users.
+2.  **Quick-Start Templates**: Scenario-based checklist templates (e.g., for hospice care).
+3.  **Emergency Access Protocol**: A mechanism for beneficiaries to request emergency access.
+4.  **Beneficiary Gentle Introduction**: Improved UI/UX for the beneficiary invitation page.
+5.  **Estate Readiness Notifications**: This was found to be an existing feature within the weekly digest email.
+
+All backend and frontend changes have been completed and successfully passed a comprehensive test suite via the testing agent. A deployment to the production Vercel environment has been triggered.
 
 **Last working item**:
--   Last item agent was working: The agent confirmed that both the frontend (Vercel) and backend (Railway) services were live and healthy after the user deployed the new environment variables for AWS S3 to the production backend.
--   Status: USER VERIFICATION PENDING
+-   Last item agent was working: Triggering the production deployment to Vercel using a  command. The agent confirmed the deployment job was created and is pending.
+-   Status: IN PROGRESS
 -   Agent Testing Done: Y
--   Which testing method agent to use? Manual user testing on the live production site.
+-   Which testing method agent to use? Manual user testing on the live production site. The agent should first confirm the deployment status via the Vercel dashboard/API.
 -   User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  Issue 1: (P0) Production Deployment Verification
+  Issue 1: (P0) Production Deployment Confirmation & Verification
   Issue 2: (P1) Codemagic Mobile CI/CD Pipeline Hangs
   Issue 3: (P2) Beneficiary Hub You Label Verification
-  
+  Issue 4: (P3) Beneficiary Gentle Intro Full Test
+
   Issues Detail:
-  - Issue 1: 
-     - **Description**: The user needs to perform end-to-end testing on the live application () to confirm that all the newly deployed features—including the Admin Portal search, the AES-256/S3 encryption pipeline, and the enhanced Estate Guardian AI—are working as expected in the production environment.
-     - **Next debug checklist**: Ask the user to test: 1. Uploading/downloading a document in the vault. 2. Using the search bars in the admin portal. 3. Interacting with the Estate Guardian and exporting a PDF checklist.
-     - **Why fix this issue and what will be achieved with the fix?**: This is the final sign-off for a massive architectural overhaul and deployment.
-     - **Status**:  USER VERIFICATION PENDING
+  - Issue 1:
+     - **Description**: The Vercel deployment has been triggered, but its success needs to be confirmed. Once live, the user needs to verify that all the security fixes and 5 new features are working correctly on the production application ().
+     - **Next debug checklist**: 1. Check the Vercel deployment status to confirm it completed successfully. 2. Notify the user to test the 5 new features and confirm the site is operating as expected.
+     - **Why fix this issue and what will be achieved with the fix?**: This is the final step to ship the critical security overhaul and new features to users.
+     - **Status**:  IN PROGRESS
      - **Is recurring issue?** N
      - **Should Test frontend/backend/both after fix?** N/A
      - **Blocked on other issue**: None
 
-  - Issue 2: 
-     - **Description**: (Carried over from previous fork) Codemagic builds for the iOS app are taking an excessively long time or hanging, preventing mobile app updates.
-     - **Attempted fixes**: Previous agent added optimizations to , but the fix was never verified by running a new build.
-     - **Next debug checklist**: Ask the user to trigger a new build on Codemagic to test if the previous optimizations worked.
-     - **Why fix this issue and what will be achieved with the fix?**: Resolving this will unblock the entire mobile app deployment pipeline.
+  - Issue 2:
+     - **Description**: (Carried over) The Codemagic CI/CD pipeline for the iOS app is reportedly hanging, blocking mobile app updates.
+     - **Next debug checklist**: Ask the user to trigger a new build on Codemagic to test if previous optimizations (from a prior session) worked.
      - **Status**:  NOT STARTED
      - **Is recurring issue?** Y
-     - **Should Test frontend/backend/both after fix?** N/A
      - **Blocked on other issue**: None
 
-  - Issue 3: 
-     - **Description**: (Carried over from previous fork) A fix was implemented to remove a You label from the beneficiary hub visualization. The user has not yet visually confirmed this fix on the live site.
-     - **Next debug checklist**: Ask the user to check the beneficiary hub page on .
-     - **Why fix this issue and what will be achieved with the fix?**: To close out a lingering user-reported UI bug.
+  - Issue 3:
+     - **Description**: (Carried over) A UI fix to remove a You label from the beneficiary hub visualization has not been visually confirmed by the user on the live site.
+     - **Next debug checklist**: Ask the user to check the beneficiary hub page on  after the current deployment is live.
      - **Status**:  USER VERIFICATION PENDING
      - **Is recurring issue?** Y
-     - **Should Test frontend/backend/both after fix?** Frontend
+     - **Blocked on other issue**: None
+
+  - Issue 4:
+     - **Description**: The testing agent noted the Beneficiary Gentle Intro feature was only partially tested because it requires a valid, live invitation token.
+     - **Next debug checklist**: Ask the user to perform an end-to-end test by sending a beneficiary invitation and having the recipient go through the acceptance flow.
+     - **Status**: USER VERIFICATION PENDING
+     - **Is recurring issue?** N
      - **Blocked on other issue**: None
 
 **In progress Task List**:
-- None.
+  - Task 1: Monitor Vercel Deployment
+     - **Where to resume**: Check the status of the Vercel deployment job ID .
+     - **What will be achieved with this?**: Confirming that the latest code is live in production.
+     - **Status**:  IN PROGRESS
+     - **Should Test frontend/backend/both after fix?** Frontend (manual user testing)
+     - **Blocked on something**: Waiting for Vercel to complete the build and deploy process.
 
 **Upcoming and Future Tasks**
-*   **P1: Re-enable OTP Email System**: Investigate the Resend integration and  domain verification to re-enable production email delivery for OTP.
-*   **P2: Implement Animated Logo**: Awaiting a transparent PNG/SVG from the user to implement an animated tracer effect for the logo.
-*   **P3: Deploy Mobile App Fixes**: Once the Codemagic build issue is resolved, trigger a new build to deploy pending mobile updates.
+*   **P0: Build Legacy Timeline Prototype**: The user explicitly requested a working prototype of this visual timeline feature. This should begin immediately after confirming the production deployment is stable.
+*   **P1: Re-enable OTP Email System**: (Carried over) Investigate the Resend integration and  domain to re-enable production email delivery for OTP.
+*   **P2: Implement Animated Logo**: (Carried over) Awaiting a transparent PNG/SVG asset from the user.
+*   **P3: Deploy Mobile App Fixes**: (Carried over) Blocked by the Codemagic build issue.
 
 **Completed work in this session**
-- **Admin Portal Refactoring & Search**:
-  -  was broken down from a 1588-line file into a 142-line shell and 9 new components in .
-  - Real-time search functionality was added to 6 admin tabs.
-- **Phase 1: Zero-Knowledge Secure Architecture**:
-  - Implemented AES-256-GCM encryption () and integrated AWS S3 for production storage ().
-  - Updated , , and  routes to use the new services.
-  - Implemented a lazy migration path for older Fernet-encrypted data.
-  - Created an  for logging sensitive data access.
-- **Phase 2: Estate Guardian AI Overhaul**:
-  - Rewrote the AI's system prompt in  for a new persona and strict guardrails.
-  - Added a new endpoint () for PDF checklist generation.
-  - Revamped the  UI with security indicators and an export button.
+- **Comprehensive Security Overhaul**:
+  - Fixed **critical** vulnerabilities: insecure CORS policy, weak OTP generation, plaintext OTP logging, no login rate-limiting, zero-knowledge violation (plaintext message content), widespread authorization bypass on document access, plaintext storage of death certificates, and missing security headers (CSP, HSTS, etc.).
+  - Implemented cryptographically secure random generation ( module) for all security features.
+  - Added database indexes for security collections, including a TTL index for failed login attempts.
+- **New Feature Implementation**:
+  - **Onboarding Wizard**: Created  and integrated it into  with backend routes in .
+  - **Quick-Start Templates**: Created  and integrated it into .
+  - **Emergency Access Protocol**: Created  for the frontend and  for the backend logic.
+  - **Beneficiary Gentle Intro**: Rewrote copy and improved the UI on .
+- **Code Quality & Testing**:
+  - Completed 3 full linting passes across the entire codebase.
+  - Successfully ran comprehensive tests using the  for all security fixes and new features.
 - **Production Deployment**:
-  - Deployed all frontend changes to Vercel and backend changes (including new AWS env vars) to Railway.
+  - Triggered a new build and deployment to the production Vercel environment.
 
 **Earlier issues found/mentioned but not fixed**
--   **Issue 1**: Codemagic builds hanging. This issue was carried over from the previous fork and was not prioritized in this session.
+-   **Issue 1**: Codemagic builds hanging. This recurring issue was not prioritized by the user in this session.
 
 **Known issue recurrence from previous fork**
 - **Issue recurrence in previous fork**: Vercel deployment stuck on old commit.
 - **Recurrence count**: High.
-- **Status**: RESOLVED (A stable manual  workaround is in place and was used successfully).
+- **Status**: RESOLVED (The manual  workaround was located and used successfully, proving to be a reliable method).
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Hybrid Storage Strategy**: An abstraction layer () enables switching between local file storage for development and AWS S3 for production.
-- **Per-Tenant Encryption**: Unique encryption keys are derived for each estate using a master key and a per-estate salt, ensuring strong data isolation.
-- **Lazy Data Migration**: A backward-compatibility mechanism automatically upgrades older data to the new encryption standard upon access, avoiding a risky, one-off migration script.
-- **AI Persona & Guardrails**: System prompts are used to strictly define the AI's expert scope and behavior, forcing it to politely deflect irrelevant questions.
+- **Comprehensive Security Hardening**: Implementation of key security controls like rate limiting (account lockout), secure headers (CSP, HSTS), cryptographically secure random generation ( module), fixing Insecure Direct Object Reference (IDOR) vulnerabilities, and enforcing strict data encryption policies.
+- **Zero-Knowledge Principle Enforcement**: Corrected a critical implementation flaw where plaintext was stored alongside encrypted data, violating the zero-knowledge promise.
+- **Database Indexing for Security**: Added indexes to query security-related collections efficiently and a TTL index for automatic cleanup of stale failed login attempts.
 
 **key DB schema**
-- **documents**: Removed  field. Added  and  to link to S3 objects.
-- **estates**: Added  field to generate per-estate encryption keys.
-- **audit_log**: New collection to track all sensitive data access events.
+- ****: (New collection) Stores timestamps of failed login attempts per user IP and email. Has a TTL index to automatically delete documents after the lockout period.
+- ****: Schema unchanged, but the  field is now guaranteed to be encrypted, never plaintext.
+- ****: Schema unchanged, but the  field is now always encrypted.
 
 **changes in tech stack**
-- : Added for AWS S3 integration.
-- : Added for PDF generation.
+- No new libraries or dependencies were added. Existing stack was used to implement security best practices.
 
 **All files of reference**
-- **New Services**:
-  - 
-  - 
-  - 
-- **New Components**: The entire  directory containing 9 components.
-- **Heavily Updated**:
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
 
 **Areas that need refactoring**:
-- None. The primary refactoring candidate () was completed in this session.
+- None identified.
 
 **key api endpoints**
-- : **MODIFIED**. Encrypts with AES-256-GCM and stores file in S3.
-- : **MODIFIED**. Retrieves from S3 and decrypts.
-- : **NEW**. Provides encryption status to the frontend.
-- : **MODIFIED**. System prompt overhauled for new persona and guardrails.
-- : **NEW**. Generates a PDF from an AI chat session.
+- : **MODIFIED**. Now has rate limiting to prevent brute-force attacks.
+- : **MODIFIED**. Uses cryptographically secure OTP generation, has a strict 10-minute expiry, and no longer logs the OTP value.
+- All endpoints under : **MODIFIED**. Now include strict estate ownership verification to prevent unauthorized access.
+- : **NEW**.
+- : **NEW**.
 
 **Critical Info for New Agent**
--   **Production is Live**: The new encryption architecture using AWS S3 is live. All subsequent work must be compatible with this production environment. The user's final verification is the immediate next step.
--   **AWS S3 is the Source of Truth**: For production, all document/message/wallet data is stored in S3, not MongoDB. The backend is already configured with the necessary keys.
--   **Mobile CI/CD is Blocked**: The unresolved Codemagic issue prevents any mobile app updates. This is the main technical debt to address after production verification.
+-   **Security is Paramount**: A massive security overhaul was just completed. All future work must maintain this high standard. Refer to  for details on the fixes.
+-   **Confirm Deployment First**: Before starting any new work, you must verify the success of the current production deployment.
+-   **Next Task is Legacy Timeline**: The user has explicitly approved prototyping the Legacy Timeline feature as the next development task.
+-   **Vercel Deploy Method**: The  command to trigger Vercel deployments is the established and working method. Do not try to find an alternative unless it fails.
+-   **Mobile CI/CD is Blocked**: The Codemagic pipeline issue is a known blocker for all mobile app updates and should be highlighted as significant technical debt.
 
 **documents and test reports created in this job**
 - 
-- 
-- 
-- 
 -  (Updated)
+- 
+- 
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: Asks agent to add new env vars to Railway. (COMPLETED)
-2.  **User**: Confirms the env vars have been deployed on Railway. (COMPLETED)
-3.  **User**: Yes, move to Phase 2 now. (COMPLETED)
-4.  **User**: Provides AWS credentials after creating an account. (COMPLETED)
-5.  **User**: Asks Now what? after creating an AWS account. (COMPLETED)
-6.  **User**: Asks What about AWS S3 integration? (COMPLETED)
-7.  **User**: Gives priorities: focus on Phase 1, test it rigorously, then move to Phase 2. (COMPLETED)
-8.  **User**: Provides requirements for the major architectural overhaul (secure storage and Guardian AI). (COMPLETED)
-9.  **User**: Asks for a search function in the admin portal. (COMPLETED)
-10. **User**: Approves plan to refactor  first. (COMPLETED)
+1.  **User**: Asks to trigger the Vercel deployment after pushing to GitHub. (COMPLETED)
+2.  **User**: Expresses interest in the Legacy Timeline feature. (PENDING)
+3.  **User**: Approves implementing all 5 agent-recommended features while maintaining security. (COMPLETED)
+4.  **User**: I am interested in the Legacy Timeline... but first... trigger your Vercel Deployment. (COMPLETED - DEPLOYMENT TRIGGERED)
+5.  **User**: Acknowledges and approves the plan for the security audit and subsequent feature recommendations. (COMPLETED)
+6.  **User**: Provides the high-stakes request for a full code cleanup and a perfect, end-to-end security audit, guaranteeing the platform's advertised security claims. (COMPLETED)
+7.  **User**: Confirms the Railway deployment from the previous session was successful. (HISTORICAL)
+8.  **User**: Asks agent to add new env vars to Railway. (HISTORICAL)
+9.  **User**: Yes, move to Phase 2 now. (HISTORICAL)
+10. **User**: Provides AWS credentials. (HISTORICAL)
 
 **Project Health Check:**
-- **Running**: Yes, the web application is fully deployed and running in its new architectural state in production.
+- **Running**: Yes, web application is running. A new version is currently being deployed to production.
 - **Broken**:
-    - The Codemagic mobile CI/CD pipeline remains unverified and is presumed broken, blocking all mobile app deployments.
+    - The Codemagic mobile CI/CD pipeline is presumed broken, blocking all mobile app deployments.
 
 **3rd Party Integrations**
-- **AWS S3**: **NEW** for production document storage.
+- **AWS S3**: Production document storage.
 - **Stripe**: Live payments.
 - **Railway**: Production backend hosting.
 - **Vercel**: Production frontend hosting.
-- **Codemagic**: Mobile CI/CD (unverified/broken).
+- **Codemagic**: Mobile CI/CD (broken/unverified).
 - **MongoDB Atlas**: Production database.
 
 **Testing status**
--   Testing agent used after significant changes: YES. The testing agent was used to validate the Admin Page refactor, Admin search feature, the new encryption/S3 architecture, and the Guardian AI overhaul. Bugs found by the agent were successfully fixed.
+-   Testing agent used after significant changes: YES (Used twice: for the security audit fixes and for the 5 new features).
 -   Troubleshoot agent used after agent stuck in loop: NO.
--   Test files created: None.
+-   Test files created:
+    - 
+    - 
 -   Known regressions: None.
 
 **Credentials to test flow:**
@@ -177,4 +187,4 @@ The application is a full-stack React/FastAPI app with a fully functional produc
 -   **Admin Portal ()**:  / 
 
 **What agent forgot to execute**
--   The agent correctly prioritized and executed all user requests for this session. The pending issues (Codemagic, UI label verification) were carried over from a previous fork and were not part of the user's explicit requests for this session's work.</analysis>
+-   The agent correctly prioritized and executed all user requests for this session. The pending issues (Codemagic, UI label) were carried over from a previous fork and were not part of the user's explicit requests for this session's work.</analysis>
