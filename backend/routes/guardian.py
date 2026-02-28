@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timezone
 
 import pdfplumber
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 
 from config import XAI_MODEL, db, logger, xai_client
 from models import ChatRequest, ChatResponse, ChecklistItem
