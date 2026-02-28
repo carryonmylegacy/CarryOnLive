@@ -20,7 +20,6 @@ ALLOWED_REDIRECT_DOMAINS = {
     "app.carryon.us",
     "carryon.us",
     "www.carryon.us",
-    "localhost",
 }
 
 
@@ -31,10 +30,12 @@ def validate_origin_url(origin_url: str) -> str:
     try:
         parsed = urlparse(origin_url)
         hostname = parsed.hostname or ""
-        # Allow preview domains
+        # Allow preview/dev domains
         if hostname.endswith(".emergentagent.com") or hostname.endswith(".vercel.app"):
             return origin_url.rstrip("/")
         if hostname in ALLOWED_REDIRECT_DOMAINS:
+            return origin_url.rstrip("/")
+        if hostname in ("localhost", "127.0.0.1"):
             return origin_url.rstrip("/")
     except Exception:
         pass
