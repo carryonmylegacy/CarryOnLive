@@ -82,6 +82,12 @@ const MessagesPage = () => {
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
 
+  // Voice recording state
+  const [audioBlob, setAudioBlob] = useState(null);
+  const [audioUrl, setAudioUrl] = useState(null);
+  const audioRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+
   useEffect(() => {
     fetchData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
