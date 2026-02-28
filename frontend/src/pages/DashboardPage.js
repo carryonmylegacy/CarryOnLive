@@ -265,6 +265,9 @@ const DashboardPage = () => {
         </p>
       </div>
 
+      {/* Onboarding Wizard — shown early so it's visible on mobile */}
+      <OnboardingWizard />
+
       {/* Estate Selector - Mobile shows full width */}
       <div className="mb-6">
         <EstateSelector 
