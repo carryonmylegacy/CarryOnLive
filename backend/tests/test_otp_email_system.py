@@ -34,7 +34,7 @@ class TestLoginEndpoint:
         # So we might get direct token OR otp_required depending on our IP
         if "access_token" in data:
             # Direct login (OTP bypassed due to trust)
-            print(f"Direct login - OTP bypassed (trusted IP)")
+            print("Direct login - OTP bypassed (trusted IP)")
             assert "user" in data
             assert data["user"]["email"] == ADMIN_EMAIL
         else:
