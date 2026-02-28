@@ -107,12 +107,17 @@ async def login(data: UserLogin, request: Request):
     )
 
     # Send OTP via email
+    email_sent = False
     try:
-        await send_otp_email(data.email, otp_code, user["name"].split()[0])
+        email_sent = await send_otp_email(data.email, otp_code, user["name"].split()[0])
     except Exception:
         logger.warning(f"OTP email send failed for {data.email} — OTP still stored")
 
-    return {"message": "OTP sent to your email", "otp_required": True}
+    return {
+        "message": "OTP sent to your email" if email_sent else "Verification required — check your email or resend code",
+        "otp_required": True,
+        "email_sent": email_sent,
+    }
 
 
 @router.post("/auth/register")
