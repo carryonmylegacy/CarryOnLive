@@ -12,7 +12,7 @@ const STEPS = [
   { key: 'reviewing', label: 'Under Review', desc: 'A Transition Verification Team member has opened your submission and is actively reviewing the document.' },
   { key: 'authenticated', label: 'Certificate Authenticated', desc: 'The death certificate has been verified as authentic by the Transition Verification Team.' },
   { key: 'sealing', label: 'Benefactor Account Sealed', desc: "The benefactor's account has been immutably sealed. No further changes can be made to any estate content." },
-  { key: 'approved', label: 'Beneficiary Access Granted', desc: 'Your access to the vault, action checklist, milestone messages, and Estate Guardian has been configured and unlocked.' },
+  { key: 'approved', label: 'Beneficiary Access Granted', desc: 'Your access to the vault, IAC, MM, and EGA has been configured and unlocked.' },
 ];
 
 const CondolencePage = () => {

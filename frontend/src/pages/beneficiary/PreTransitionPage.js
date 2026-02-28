@@ -76,7 +76,7 @@ const PreTransitionPage = () => {
         <div>
           <div className="font-bold text-[var(--gold)] mb-1">Estate Locked — Pre-Transition</div>
           <p className="text-sm text-[var(--t3)] leading-relaxed">
-            Full vault access, action checklist, messages, and Estate Guardian will become available after transition verification.
+            Full vault access, IAC, MM, and EGA will become available after transition verification.
           </p>
         </div>
       </div>
