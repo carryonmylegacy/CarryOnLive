@@ -140,7 +140,7 @@ const BeneficiaryDashboardPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Checklist Preview */}
         <div className="glass-card p-4 lg:p-5" style={{ borderLeft: '3px solid var(--yw)' }}>
-          <h3 className="font-bold text-[var(--yw)] mb-3">Immediate Action Checklist</h3>
+          <h3 className="font-bold text-[var(--yw)] mb-3">Immediate Action Checklist (IAC)</h3>
           <div className="h-2 bg-[var(--b)] rounded-full overflow-hidden mb-3">
             <div className="h-full rounded-full" style={{ width: `${stats.checklists > 0 ? (stats.checklistsDone / stats.checklists) * 100 : 0}%`, background: 'linear-gradient(90deg, #10B981, #34D399)' }} />
           </div>
@@ -176,7 +176,7 @@ const BeneficiaryDashboardPage = () => {
         {/* Messages Preview */}
         <div className="glass-card p-4 lg:p-5 lg:col-span-2" style={{ borderLeft: '3px solid var(--pr2)' }}>
           <div className="flex justify-between mb-3">
-            <h3 className="font-bold text-[var(--pr2)]">Milestone Messages</h3>
+            <h3 className="font-bold text-[var(--pr2)]">Milestone Messages (MM)</h3>
             <span className="text-xs text-[var(--t5)]">{stats.messages} messages</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
