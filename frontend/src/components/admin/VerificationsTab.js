@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FileKey, Activity, Loader2, X, Search } from 'lucide-react';
+import { FileKey, Activity, Loader2, X, Search, ToggleLeft, ToggleRight, Bell, Check } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -11,9 +11,10 @@ const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 export const VerificationsTab = ({ getAuthHeaders }) => {
   const [verifications, setVerifications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [reviewNotes, setReviewNotes] = useState('');
+  const [reviewNotes, setReviewNotes] = useState({});
   const [viewingDoc, setViewingDoc] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [notifying, setNotifying] = useState(null);
 
   const headers = getAuthHeaders()?.headers || {};
 
@@ -27,16 +28,26 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
     setLoading(false);
   };
 
-  const reviewVerification = async (id, action) => {
+  const toggleApproval = async (v) => {
+    const newAction = v.status === 'approved' ? 'deny' : 'approve';
     try {
-      await axios.post(`${API_URL}/admin/verifications/${id}/review`, {
-        action,
-        notes: reviewNotes,
+      await axios.post(`${API_URL}/admin/verifications/${v.id}/review`, {
+        action: newAction,
+        notes: reviewNotes[v.id] || '',
       }, { headers: { ...headers, 'Content-Type': 'application/json' } });
-      toast.success(`Verification ${action}d`);
-      setReviewNotes('');
+      toast.success(`Verification ${newAction}d`);
       fetchVerifications();
     } catch (err) { toast.error(err.response?.data?.detail || 'Review failed'); }
+  };
+
+  const notifyBenefactor = async (v) => {
+    setNotifying(v.id);
+    try {
+      await axios.post(`${API_URL}/admin/verifications/${v.id}/notify`, {}, { headers });
+      toast.success(`Notification sent to ${v.user_name || v.user_email}`);
+      fetchVerifications();
+    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to send notification'); }
+    setNotifying(null);
   };
 
   const viewDocument = async (id) => {
@@ -46,7 +57,6 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
     } catch (err) { toast.error('Failed to load document'); }
   };
 
-  const statusColors = { pending: '#F59E0B', approved: '#22C993', denied: '#ef4444' };
   const tierLabels = { military: 'Military / First Responder', hospice: 'Hospice' };
 
   if (loading) return <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-[var(--gold)]" /></div>;
@@ -57,8 +67,7 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
     return (v.user_name || '').toLowerCase().includes(q) ||
       (v.user_email || '').toLowerCase().includes(q) ||
       (v.tier_requested || '').toLowerCase().includes(q) ||
-      (v.status || '').toLowerCase().includes(q) ||
-      (v.doc_type || '').toLowerCase().includes(q);
+      (v.status || '').toLowerCase().includes(q);
   });
 
   return (
@@ -85,62 +94,99 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
         </CardContent></Card>
       ) : (
         <div className="space-y-3">
-          {filteredVerifications.map(v => (
-            <Card key={v.id} className="glass-card" data-testid={`verification-${v.id}`}>
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-3 flex-wrap">
-                  <div>
-                    <p className="font-bold text-[var(--t)]">{v.user_name || v.user_email}</p>
-                    <p className="text-xs text-[var(--t5)]">{v.user_email}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs px-2 py-0.5 rounded-full font-bold capitalize"
-                        style={{ background: `${statusColors[v.status]}15`, color: statusColors[v.status] }}>
-                        {v.status}
-                      </span>
-                      <span className="text-xs text-[var(--t4)]">{tierLabels[v.tier_requested] || v.tier_requested}</span>
-                      <span className="text-xs text-[var(--t5)]">{v.doc_type}</span>
-                    </div>
-                    <p className="text-[10px] text-[var(--t5)] mt-1">
-                      Submitted: {new Date(v.submitted_at).toLocaleString()}
-                      {v.reviewed_at && ` · Reviewed: ${new Date(v.reviewed_at).toLocaleString()}`}
-                    </p>
-                    {v.review_notes && (
-                      <p className="text-xs text-[var(--t4)] mt-1 italic">Notes: {v.review_notes}</p>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Button size="sm" variant="outline" className="text-xs border-[var(--b)]"
-                      onClick={() => viewDocument(v.id)} data-testid={`view-doc-${v.id}`}>
-                      View Document
-                    </Button>
-                    {v.status === 'pending' && (
-                      <div className="flex gap-1">
-                        <Button size="sm" className="text-xs bg-[#22C993] text-white hover:bg-[#22C993]/80"
-                          onClick={() => reviewVerification(v.id, 'approve')} data-testid={`approve-${v.id}`}>
-                          Approve
-                        </Button>
-                        <Button size="sm" variant="outline" className="text-xs border-red-500/30 text-red-400 hover:bg-red-500/10"
-                          onClick={() => reviewVerification(v.id, 'deny')} data-testid={`deny-${v.id}`}>
-                          Deny
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
+          {filteredVerifications.map(v => {
+            const isApproved = v.status === 'approved';
+            const isPending = v.status === 'pending';
+            const canNotify = isApproved && !v.notified;
 
-                {v.status === 'pending' && (
-                  <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--b)' }}>
-                    <Input
-                      value={reviewNotes}
-                      onChange={(e) => setReviewNotes(e.target.value)}
-                      placeholder="Review notes (optional)..."
-                      className="input-field text-sm"
-                    />
+            return (
+              <Card key={v.id} className="glass-card" data-testid={`verification-${v.id}`}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-[var(--t)]">{v.user_name || v.user_email}</p>
+                      <p className="text-xs text-[var(--t5)]">{v.user_email}</p>
+                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                        <span className="text-xs px-2 py-0.5 rounded-full font-bold capitalize"
+                          style={{
+                            background: isApproved ? 'rgba(34,201,147,0.12)' : isPending ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)',
+                            color: isApproved ? '#22C993' : isPending ? '#F59E0B' : '#ef4444',
+                          }}>
+                          {v.status}
+                        </span>
+                        <span className="text-xs text-[var(--t4)]">{tierLabels[v.tier_requested] || v.tier_requested}</span>
+                        <span className="text-xs text-[var(--t5)]">{v.doc_type}</span>
+                      </div>
+                      <p className="text-[10px] text-[var(--t5)] mt-1">
+                        Submitted: {new Date(v.submitted_at).toLocaleString()}
+                      </p>
+                      {v.review_notes && (
+                        <p className="text-xs text-[var(--t4)] mt-1 italic">Notes: {v.review_notes}</p>
+                      )}
+                      {v.notified && (
+                        <p className="text-[10px] text-[#22C993] mt-1 flex items-center gap-1">
+                          <Check className="w-3 h-3" /> Benefactor notified
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Actions column */}
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                      <Button size="sm" variant="outline" className="text-[10px] border-[var(--b)] h-7 px-2"
+                        onClick={() => viewDocument(v.id)} data-testid={`view-doc-${v.id}`}>
+                        View Doc
+                      </Button>
+
+                      {/* Approve/Deny Toggle */}
+                      <button
+                        onClick={() => toggleApproval(v)}
+                        className="flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all text-xs font-bold"
+                        style={{
+                          background: isApproved ? 'rgba(34,201,147,0.12)' : 'rgba(245,158,11,0.08)',
+                          color: isApproved ? '#22C993' : '#F59E0B',
+                          border: `1px solid ${isApproved ? 'rgba(34,201,147,0.25)' : 'rgba(245,158,11,0.2)'}`,
+                        }}
+                        data-testid={`toggle-approval-${v.id}`}
+                      >
+                        {isApproved ? (
+                          <><ToggleRight className="w-4 h-4" /> Approved</>
+                        ) : (
+                          <><ToggleLeft className="w-4 h-4" /> {isPending ? 'Approve' : 'Re-approve'}</>
+                        )}
+                      </button>
+
+                      {/* Notify Benefactor — only shows after approval */}
+                      {canNotify && (
+                        <Button
+                          size="sm"
+                          onClick={() => notifyBenefactor(v)}
+                          disabled={notifying === v.id}
+                          className="text-[10px] h-7 px-2 font-bold"
+                          style={{ background: 'linear-gradient(135deg, #d4af37, #c9a033)', color: '#0F1629' }}
+                          data-testid={`notify-benefactor-${v.id}`}
+                        >
+                          {notifying === v.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Bell className="w-3 h-3 mr-1" />}
+                          Notify Benefactor
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+
+                  {/* Review notes input for pending */}
+                  {isPending && (
+                    <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--b)' }}>
+                      <Input
+                        value={reviewNotes[v.id] || ''}
+                        onChange={(e) => setReviewNotes(prev => ({ ...prev, [v.id]: e.target.value }))}
+                        placeholder="Review notes (optional)..."
+                        className="input-field text-sm"
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 
