@@ -214,7 +214,8 @@ class TestAPIEndpoints:
             "password": ADMIN_PASSWORD
         })
         assert response.status_code == 200
-        return response.json().get("token")
+        data = response.json()
+        return data.get("access_token") or data.get("token")
     
     def test_estates_endpoint(self, auth_token):
         """Test estates endpoint returns data"""
