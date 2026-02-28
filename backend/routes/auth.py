@@ -25,11 +25,34 @@ TRIAL_DURATION_DAYS = 30
 
 
 @router.post("/auth/login")
-async def login(data: UserLogin):
+async def login(data: UserLogin, request: Request):
     """Login — returns token directly (OTP temporarily disabled)."""
+    client_ip = request.client.host if request.client else "unknown"
+
+    # Check for account lockout (5 failed attempts in 15 minutes)
+    lockout_window = (datetime.now(timezone.utc) - timedelta(minutes=15)).isoformat()
+    recent_failures = await db.failed_logins.count_documents({
+        "email": data.email,
+        "timestamp": {"$gte": lockout_window},
+    })
+    if recent_failures >= 5:
+        raise HTTPException(
+            status_code=429,
+            detail="Account temporarily locked due to too many failed attempts. Please try again in 15 minutes.",
+        )
+
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
     if not user or not verify_password(data.password, user["password"]):
+        # Record failed attempt
+        await db.failed_logins.insert_one({
+            "email": data.email,
+            "ip_address": client_ip,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        })
         raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    # Clear failed attempts on successful login
+    await db.failed_logins.delete_many({"email": data.email})
 
     token = create_token(user["id"], user["email"], user["role"])
     return TokenResponse(
