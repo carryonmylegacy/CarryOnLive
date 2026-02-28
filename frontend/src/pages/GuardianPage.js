@@ -439,7 +439,7 @@ const GuardianPage = () => {
                       onClick={() => resumeSession(s.session_id)}
                       role="button"
                       tabIndex={0}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all hover:bg-white/[0.04] group cursor-pointer"
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all hover:bg-[var(--s)] group cursor-pointer"
                       style={{ border: '1px solid var(--b)' }}
                       data-testid={`session-${s.session_id}`}
                     >
@@ -494,7 +494,7 @@ const GuardianPage = () => {
       }}>
         <div className="flex items-center gap-2">
           <button onClick={goBackToLanding}
-            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-white/[0.06]"
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-[var(--s)]"
             data-testid="back-to-landing-btn">
             <ArrowLeft className="w-4 h-4 text-[var(--t3)]" />
           </button>
@@ -514,18 +514,18 @@ const GuardianPage = () => {
         </div>
         <div className="flex items-center gap-1.5">
           <button onClick={() => startNewChat()} title="New Chat"
-            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-white/[0.06]"
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-[var(--s)]"
             data-testid="chat-new-btn">
             <Plus className="w-3.5 h-3.5 text-[var(--t4)]" />
           </button>
           <button onClick={handleChecklistExport} disabled={checklistExporting} title="Export Checklist PDF"
-            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-white/[0.06]"
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-[var(--s)]"
             style={{ color: '#22C993' }}
             data-testid="export-checklist-pdf-btn">
             {checklistExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ListChecks className="w-3.5 h-3.5" />}
           </button>
           <button onClick={handleExport} disabled={exporting} title="Export Estate PDF"
-            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-white/[0.06]"
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-[var(--s)]"
             style={{ color: '#d4af37' }}
             data-testid="export-pdf-btn">
             {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
@@ -663,7 +663,7 @@ const GuardianPage = () => {
               {actionButtons.map(({ key, label, icon: Icon, color }) => (
                 <button key={key} onClick={() => { sendMessage('', key); setShowActions(false); }}
                   disabled={loading}
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-[var(--t3)] hover:bg-white/[0.04] transition-colors"
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-[var(--t3)] hover:bg-[var(--s)] transition-colors"
                   data-testid={`guardian-action-popover-${key}`}>
                   {actionLoading === key ? <Loader2 className="w-4 h-4 animate-spin" /> : <Icon className="w-4 h-4" style={{ color }} />}
                   {label}
