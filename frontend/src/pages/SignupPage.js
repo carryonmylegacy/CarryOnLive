@@ -81,13 +81,14 @@ const SignupPage = () => {
   }, []);
 
   const goTo = (nextStep) => {
-    if (animating || nextStep === step) return;
+    if (slidePhase !== 'idle' || nextStep === step) return;
     setDirection(nextStep > step ? 'right' : 'left');
-    setAnimating(true);
+    setSlidePhase('exit');
     setTimeout(() => {
       setStep(nextStep);
-      setTimeout(() => setAnimating(false), 50);
-    }, 280);
+      setSlidePhase('enter');
+      setTimeout(() => setSlidePhase('idle'), 350);
+    }, 300);
   };
 
   const canAdvance = () => {
