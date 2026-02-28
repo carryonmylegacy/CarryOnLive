@@ -46,6 +46,7 @@ const OnboardingWizard = () => {
 
   const handleDismiss = async () => {
     setDismissed(true);
+    localStorage.setItem('carryon_onboarding_dismissed', 'true');
     try { await axios.post(`${API_URL}/onboarding/dismiss`, {}, getAuthHeaders()); }
     catch (err) { console.error(err); }
   };
