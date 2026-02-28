@@ -404,7 +404,7 @@ class TestAuditTrail(TestAuthSetup):
         upload_resp = requests.post(
             f"{BASE_URL}/api/documents/upload",
             headers={"Authorization": f"Bearer {benefactor_token}"},
-            data={
+            params={
                 "estate_id": test_estate_id,
                 "name": f"TEST_audit_test_{uuid.uuid4().hex[:8]}.txt",
                 "category": "other",
@@ -436,13 +436,14 @@ class TestAuditTrail(TestAuthSetup):
         upload_resp = requests.post(
             f"{BASE_URL}/api/documents/upload",
             headers={"Authorization": f"Bearer {benefactor_token}"},
-            data={
+            params={
                 "estate_id": test_estate_id,
                 "name": f"TEST_audit_download_{uuid.uuid4().hex[:8]}.txt",
                 "category": "other",
             },
             files={"file": ("audit.txt", b"AUDIT_DOWNLOAD_TEST", "text/plain")},
         )
+        assert upload_resp.status_code == 200, f"Upload failed: {upload_resp.text}"
         doc_id = upload_resp.json()["id"]
 
         # Get audit count before download
