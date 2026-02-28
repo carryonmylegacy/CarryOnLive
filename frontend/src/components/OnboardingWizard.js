@@ -56,10 +56,17 @@ const OnboardingWizard = () => {
     navigate(config.route);
   };
 
-  if (loading || dismissed || !progress || progress.all_complete) return null;
+  if (dismissed || (progress && progress.all_complete)) return null;
+
+  // Show skeleton placeholder while loading to prevent layout shift
+  if (loading || !progress) {
+    return (
+      <div className="h-0 overflow-hidden" aria-hidden="true" />
+    );
+  }
 
   return (
-    <div style={{ minHeight: 0 }}>
+    <div>
     <Card className="border border-[#d4af37]/30 bg-gradient-to-r from-[#d4af37]/5 to-transparent mb-6" data-testid="onboarding-wizard">
       <CardContent className="p-5">
         <div className="flex items-center justify-between mb-4">
