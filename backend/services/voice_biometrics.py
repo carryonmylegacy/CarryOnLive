@@ -213,18 +213,18 @@ def extract_voiceprint(audio_bytes: bytes) -> dict | None:
         feature_names.extend([f"spec_contrast_{i}" for i in range(7)])
 
         # --- 3. Pitch / F0 features (5 dims) ---
-        f0, voiced_flag, _ = librosa.pyin(
-            audio_clean, fmin=60, fmax=500, sr=sr, frame_length=1024, hop_length=160
+        f0 = librosa.yin(
+            audio_clean, fmin=60, fmax=500, sr=sr, frame_length=1024, hop_length=256
         )
-        f0_voiced = f0[voiced_flag] if voiced_flag is not None else f0[~np.isnan(f0)]
-        if len(f0_voiced) > 2:
+        f0_valid = f0[(f0 > 60) & (f0 < 500)]
+        if len(f0_valid) > 2:
             features.extend(
                 [
-                    float(np.mean(f0_voiced)),
-                    float(np.std(f0_voiced)),
-                    float(np.min(f0_voiced)),
-                    float(np.max(f0_voiced)),
-                    float(np.max(f0_voiced) - np.min(f0_voiced)),  # pitch range
+                    float(np.mean(f0_valid)),
+                    float(np.std(f0_valid)),
+                    float(np.min(f0_valid)),
+                    float(np.max(f0_valid)),
+                    float(np.max(f0_valid) - np.min(f0_valid)),  # pitch range
                 ]
             )
         else:
