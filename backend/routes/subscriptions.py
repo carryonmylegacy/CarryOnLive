@@ -449,8 +449,10 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
 
     # Determine beneficiary locked tier from benefactor's majority plan
     beneficiary_locked_tier = None
+    estate_transitioned = False
     if current_user.get("role") == "beneficiary":
         benefactor_id = None
+        ben_estate = None
 
         # Method 1: Check `beneficiaries` collection (user_id or email match)
         ben_link = await db.beneficiaries.find_one(
@@ -461,18 +463,22 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
                 {"email": current_user.get("email")}, {"_id": 0, "estate_id": 1}
             )
         if ben_link and ben_link.get("estate_id"):
-            estate = await db.estates.find_one(
-                {"id": ben_link["estate_id"]}, {"_id": 0, "owner_id": 1}
+            ben_estate = await db.estates.find_one(
+                {"id": ben_link["estate_id"]}, {"_id": 0, "owner_id": 1, "status": 1}
             )
-            benefactor_id = estate.get("owner_id") if estate else None
+            benefactor_id = ben_estate.get("owner_id") if ben_estate else None
 
         # Method 2: Check estate.beneficiaries array (fallback)
         if not benefactor_id:
-            estate = await db.estates.find_one(
-                {"beneficiaries": current_user["id"]}, {"_id": 0, "owner_id": 1}
+            ben_estate = await db.estates.find_one(
+                {"beneficiaries": current_user["id"]}, {"_id": 0, "owner_id": 1, "status": 1}
             )
-            if estate:
-                benefactor_id = estate.get("owner_id")
+            if ben_estate:
+                benefactor_id = ben_estate.get("owner_id")
+
+        # Check if estate has transitioned
+        if ben_estate:
+            estate_transitioned = ben_estate.get("status") == "transitioned"
 
         if benefactor_id:
             ben_sub = await db.user_subscriptions.find_one(
