@@ -554,15 +554,15 @@ export default function SubscriptionPaywall({ onDismiss }) {
                 </button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-                <div className="p-3 rounded-xl bg-[#1a2035]">
+                <div className="p-3 rounded-xl bg-[var(--s)]">
                   <p className="text-[#d4af37] font-bold">Plan Owner</p>
                   <p className="text-[var(--t4)]">Pays standard tier rate. Sets the plan anchor.</p>
                 </div>
-                <div className="p-3 rounded-xl bg-[#1a2035]">
+                <div className="p-3 rounded-xl bg-[var(--s)]">
                   <p className="text-[#60A5FA] font-bold">Added Benefactors</p>
                   <p className="text-[var(--t4)]">$1/mo discount off their individual tier rate</p>
                 </div>
-                <div className="p-3 rounded-xl bg-[#1a2035]">
+                <div className="p-3 rounded-xl bg-[var(--s)]">
                   <p className="text-[#22C993] font-bold">All Beneficiaries</p>
                   <p className="text-[var(--t4)]">Flat $3.49/mo regardless of tier</p>
                 </div>
