@@ -606,26 +606,30 @@ const VaultPage = () => {
                       </div>
                     )}
                     
-                    <CardContent className="p-5">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="w-12 h-12 rounded-xl bg-[#d4af37]/20 flex items-center justify-center">
-                          <FileIcon className="w-6 h-6 text-[#d4af37]" />
-                        </div>
-                        <div className="flex items-center gap-2">
+                    <CardContent className="p-0">
+                      {/* Thumbnail area */}
+                      <div className="h-28 w-full rounded-t-xl overflow-hidden relative">
+                        <DocThumbnail doc={doc} getAuthHeaders={getAuthHeaders} />
+                        <div className="absolute top-2 right-2">
                           {doc.is_locked ? (
-                            <Lock className="w-4 h-4 text-[#f59e0b]" />
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: 'rgba(245,158,11,0.15)', backdropFilter: 'blur(4px)' }}>
+                              <Lock className="w-3 h-3 text-[#f59e0b]" />
+                            </div>
                           ) : (
-                            <Unlock className="w-4 h-4 text-[#10b981]" />
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.15)', backdropFilter: 'blur(4px)' }}>
+                              <Unlock className="w-3 h-3 text-[#10b981]" />
+                            </div>
                           )}
                         </div>
                       </div>
                       
-                      <h3 className="text-white font-medium mb-1 truncate">{doc.name}</h3>
-                      <p className="text-[#64748b] text-sm mb-3">
-                        {formatFileSize(doc.file_size)} · {doc.category}
-                      </p>
-                      
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="p-4 pt-3">
+                        <h3 className="text-white font-medium mb-1 truncate text-sm">{doc.name}</h3>
+                        <p className="text-[#64748b] text-xs mb-3">
+                          {formatFileSize(doc.file_size)} · {doc.category}
+                        </p>
+                        
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button 
                           variant="ghost" 
                           size="sm" 
