@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Activity, UserPlus, FolderLock, FileUp, Shield, Loader2 } from 'lucide-react';
+import { Activity, UserPlus, FolderLock, FileUp, Shield, Loader2, Search } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
@@ -10,6 +10,7 @@ const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 export const ActivityTab = ({ getAuthHeaders }) => {
   const [activityLog, setActivityLog] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchActivityLog = async () => {
     setLoading(true);
@@ -32,6 +33,14 @@ export const ActivityTab = ({ getAuthHeaders }) => {
     role_change: '#F59E0B', admin_action: '#F59E0B',
   };
 
+  const filteredActivity = activityLog.filter(a => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (a.description || '').toLowerCase().includes(q) ||
+      (a.type || '').toLowerCase().includes(q) ||
+      (a.status || '').toLowerCase().includes(q);
+  });
+
   return (
     <div className="space-y-4" data-testid="admin-activity-log">
       <div className="flex items-center justify-between">
@@ -42,6 +51,14 @@ export const ActivityTab = ({ getAuthHeaders }) => {
           Refresh
         </Button>
       </div>
+
+      {activityLog.length > 0 && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+          <Search className="w-4 h-4 text-[var(--t5)]" />
+          <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search activity..." className="flex-1 bg-transparent border-none text-[var(--t)] text-sm outline-none placeholder:text-[var(--t5)]" data-testid="activity-search" />
+        </div>
+      )}
+
       {loading && activityLog.length === 0 ? (
         <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-14 bg-[var(--s)]" />)}</div>
       ) : activityLog.length === 0 ? (
@@ -52,7 +69,7 @@ export const ActivityTab = ({ getAuthHeaders }) => {
         </CardContent></Card>
       ) : (
         <div className="space-y-1">
-          {activityLog.map((a, i) => {
+          {filteredActivity.map((a, i) => {
             const Icon = iconMap[a.icon] || Activity;
             const color = colorMap[a.type] || '#7B879E';
             const timeStr = a.timestamp ? new Date(a.timestamp).toLocaleString() : '';
