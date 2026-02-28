@@ -585,6 +585,29 @@ async def delete_chat_session(
     return {"success": True, "deleted": result.deleted_count}
 
 
+def sanitize_for_pdf(text: str) -> str:
+    """Sanitize text for PDF by replacing Unicode characters with ASCII equivalents."""
+    if not text:
+        return ""
+    # Common Unicode replacements
+    replacements = {
+        '\u2014': '-',  # em-dash
+        '\u2013': '-',  # en-dash
+        '\u2018': "'",  # left single quote
+        '\u2019': "'",  # right single quote
+        '\u201c': '"',  # left double quote
+        '\u201d': '"',  # right double quote
+        '\u2026': '...',  # ellipsis
+        '\u2022': '*',  # bullet
+        '\u00a0': ' ',  # non-breaking space
+        '\u200b': '',   # zero-width space
+    }
+    for unicode_char, ascii_char in replacements.items():
+        text = text.replace(unicode_char, ascii_char)
+    # Remove any remaining non-ASCII characters
+    return text.encode('ascii', 'replace').decode('ascii')
+
+
 @router.post("/guardian/export-checklist")
 async def export_checklist_pdf(
     current_user: dict = Depends(get_current_user),
