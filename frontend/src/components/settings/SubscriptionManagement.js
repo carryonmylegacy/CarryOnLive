@@ -72,6 +72,14 @@ export const SubscriptionManagement = ({
 
   const handleChangePlan = async (planId) => {
     if (planId === currentPlanId) return;
+
+    // Gate verification-required plans (military, hospice)
+    if (['military', 'hospice'].includes(planId)) {
+      setVerificationTier(planId);
+      setShowVerification(true);
+      return;
+    }
+
     setChangingPlan(true);
     try {
       const res = await axios.post(`${API_URL}/subscriptions/change-plan`, {
@@ -89,6 +97,39 @@ export const SubscriptionManagement = ({
       toast.error(e.response?.data?.detail || 'Failed to change plan');
     }
     setChangingPlan(false);
+  };
+
+  const handleVerificationUpload = async () => {
+    if (!verificationFile || !verificationDocType) {
+      toast.error('Please select a document type and upload a file');
+      return;
+    }
+    setUploadingVerification(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64 = e.target.result.split(',')[1];
+        const formData = new FormData();
+        formData.append('tier_requested', verificationTier);
+        formData.append('doc_type', verificationDocType);
+        formData.append('file_data', base64);
+        formData.append('file_name', verificationFile.name);
+        try {
+          const res = await axios.post(`${API_URL}/verification/upload`, formData, getAuthHeaders());
+          toast.success(res.data.message || 'Verification submitted! You will be notified once approved.');
+          setShowVerification(false);
+          setVerificationFile(null);
+          setVerificationDocType('');
+        } catch (err) {
+          toast.error(err.response?.data?.detail || 'Verification upload failed');
+        }
+        setUploadingVerification(false);
+      };
+      reader.readAsDataURL(verificationFile);
+    } catch (err) {
+      toast.error('Failed to process file');
+      setUploadingVerification(false);
+    }
   };
 
   const handleChangeBilling = async (newCycle) => {
