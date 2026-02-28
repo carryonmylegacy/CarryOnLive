@@ -464,7 +464,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
                           ? 'gold-button shadow-[0_4px_20px_rgba(212,175,55,0.3)]'
                           : isSelected
                             ? 'gold-button'
-                            : 'bg-transparent border-2 hover:bg-white/[0.04]'
+                            : 'bg-transparent border-2 hover:bg-[var(--s)]'
                       }`}
                       style={!isPremium && !isSelected ? { borderColor: `${colors.accent}40`, color: colors.accent } : {}}
                       data-testid={`paywall-select-${plan.id}`}
@@ -527,7 +527,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
 
               <Button
                 onClick={(e) => { e.stopPropagation(); setShowFamilyInfo(!showFamilyInfo); }}
-                className="w-full text-sm font-bold py-5 bg-transparent border-2 hover:bg-white/[0.04]"
+                className="w-full text-sm font-bold py-5 bg-transparent border-2 hover:bg-[var(--s)]"
                 style={{ borderColor: 'rgba(212,175,55,0.35)', color: '#d4af37' }}
                 data-testid="paywall-select-family"
               >
