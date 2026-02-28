@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="9" failures="0" skipped="0" tests="13" time="3.782" timestamp="2026-02-28T18:27:57.040925+00:00" hostname="agent-env-1f47bf55-ca59-4071-930f-7279c1d605d2"><testcase classname="tests.test_gdpr_compliance.TestGDPRCompliance" name="test_get_consent_preferences" time="0.478"><error message="failed on setup with &quot;AssertionError: No token returned from login&#10;assert None&#10; +  where None = &lt;tests.test_gdpr_compliance.TestGDPRCompliance object at 0xffd5f66f0550&gt;.token&quot;">backend/tests/test_gdpr_compliance.py:34: in setup
+    assert self.token, "No token returned from login"
+E   AssertionError: No token returned from login
+E   assert None
+E    +  where None = &lt;tests.test_gdpr_compliance.TestGDPRCompliance object at 0xffd5f66f0550&gt;.token</error></testcase><testcase classname="tests.test_gdpr_compliance.TestGDPRCompliance" name="test_update_consent_marketing_emails" time="0.338"><error message="failed on setup with &quot;AssertionError: No token returned from login&#10;assert None&#10; +  where None = &lt;tests.test_gdpr_compliance.TestGDPRCompliance object at 0xffd5f66f0610&gt;.token&quot;">backend/tests/test_gdpr_compliance.py:34: in setup
+    assert self.token, "No token returned from login"
+E   AssertionError: No token returned from login
+E   assert None
+E    +  where None = &lt;tests.test_gdpr_compliance.TestGDPRCompliance object at 0xffd5f66f0610&gt;.token</error></testcase><testcase classname="tests.test_gdpr_compliance.TestGDPRCompliance" name="test_update_consent_analytics_tracking" time="0.362"><error message="failed on setup with &quot;AssertionError: No token returned from login&#10;assert None&#10; +  where None = &lt;tests.test_gdpr_compliance.TestGDPRCompliance object at 0xffd5f66f1190&gt;.token&quot;">backend/tests/test_gdpr_compliance.py:34: in setup
+    assert self.token, "No token returned from login"
+E   AssertionError: No token returned from login
+E   assert None
+E    +  where None = &lt;tests.test_gdpr_compliance.TestGDPRCompliance object at 0xffd5f66f1190&gt;.token</error></testcase><testcase classname="tests.test_gdpr_compliance.TestGDPRCompliance" name="test_update_consent_third_party_sharing" time="0.342"><error message="failed on setup with &quot;AssertionError: No token returned from login&#10;assert None&#10; +  where None = &lt;tests.test_gdpr_compliance.TestGDPRCompliance object at 0xffd5f66f1650&gt;.token&quot;">backend/tests/test_gdpr_compliance.py:34: in setup
+    assert self.token, "No token returned from login"
+E   AssertionError: No token returned from login
+E   assert None
+E    +  where None = &lt;tests.test_gdpr_compliance.TestGDPRCompliance object at 0xffd5f66f1650&gt;.token</error></testcase><testcase classname="tests.test_gdpr_compliance.TestGDPRCompliance" name="test_data_export" time="0.333"><error message="failed on setup with &quot;AssertionError: No token returned from login&#10;assert None&#10; +  where None = &lt;tests.test_gdpr_compliance.TestGDPRCompliance object at 0xffd5f66f1a10&gt;.token&quot;">backend/tests/test_gdpr_compliance.py:34: in setup
+    assert self.token, "No token returned from login"
+E   AssertionError: No token returned from login
+E   assert None
+E    +  where None = &lt;tests.test_gdpr_compliance.TestGDPRCompliance object at 0xffd5f66f1a10&gt;.token</error></testcase><testcase classname="tests.test_gdpr_compliance.TestGDPRCompliance" name="test_retention_policy" time="0.337"><error message="failed on setup with &quot;AssertionError: No token returned from login&#10;assert None&#10; +  where None = &lt;tests.test_gdpr_compliance.TestGDPRCompliance object at 0xffd5f66f2290&gt;.token&quot;">backend/tests/test_gdpr_compliance.py:34: in setup
+    assert self.token, "No token returned from login"
+E   AssertionError: No token returned from login
+E   assert None
+E    +  where None = &lt;tests.test_gdpr_compliance.TestGDPRCompliance object at 0xffd5f66f2290&gt;.token</error></testcase><testcase classname="tests.test_gdpr_compliance.TestGDPRCompliance" name="test_deletion_request_wrong_email" time="0.351"><error message="failed on setup with &quot;AssertionError: No token returned from login&#10;assert None&#10; +  where None = &lt;tests.test_gdpr_compliance.TestGDPRCompliance object at 0xffd5f66f2310&gt;.token&quot;">backend/tests/test_gdpr_compliance.py:34: in setup
+    assert self.token, "No token returned from login"
+E   AssertionError: No token returned from login
+E   assert None
+E    +  where None = &lt;tests.test_gdpr_compliance.TestGDPRCompliance object at 0xffd5f66f2310&gt;.token</error></testcase><testcase classname="tests.test_gdpr_compliance.TestGDPRCompliance" name="test_deletion_request_no_auth" time="0.344"><error message="failed on setup with &quot;AssertionError: No token returned from login&#10;assert None&#10; +  where None = &lt;tests.test_gdpr_compliance.TestGDPRCompliance object at 0xffd5f66f2d10&gt;.token&quot;">backend/tests/test_gdpr_compliance.py:34: in setup
+    assert self.token, "No token returned from login"
+E   AssertionError: No token returned from login
+E   assert None
+E    +  where None = &lt;tests.test_gdpr_compliance.TestGDPRCompliance object at 0xffd5f66f2d10&gt;.token</error></testcase><testcase classname="tests.test_gdpr_compliance.TestGDPRCompliance" name="test_consent_updates_are_logged" time="0.351"><error message="failed on setup with &quot;AssertionError: No token returned from login&#10;assert None&#10; +  where None = &lt;tests.test_gdpr_compliance.TestGDPRCompliance object at 0xffd5f66f3410&gt;.token&quot;">backend/tests/test_gdpr_compliance.py:34: in setup
+    assert self.token, "No token returned from login"
+E   AssertionError: No token returned from login
+E   assert None
+E    +  where None = &lt;tests.test_gdpr_compliance.TestGDPRCompliance object at 0xffd5f66f3410&gt;.token</error></testcase><testcase classname="tests.test_gdpr_compliance.TestGDPRRequiresAuth" name="test_consent_get_requires_auth" time="0.132" /><testcase classname="tests.test_gdpr_compliance.TestGDPRRequiresAuth" name="test_consent_put_requires_auth" time="0.103" /><testcase classname="tests.test_gdpr_compliance.TestGDPRRequiresAuth" name="test_data_export_requires_auth" time="0.110" /><testcase classname="tests.test_gdpr_compliance.TestGDPRRequiresAuth" name="test_retention_policy_requires_auth" time="0.110" /></testsuite></testsuites>
