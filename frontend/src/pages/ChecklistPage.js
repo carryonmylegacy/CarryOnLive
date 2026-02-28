@@ -221,7 +221,7 @@ const ChecklistPage = () => {
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              Immediate Action Checklist
+              Immediate Action Checklist (IAC)
             </h1>
             <p className="text-xs text-[var(--t5)]">
               {totalCount} items · Your beneficiaries will follow this after transition
