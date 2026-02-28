@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from config import db
 from models import Estate, EstateCreate, EstateUpdate
+from services.encryption import generate_estate_salt
 from services.readiness import calculate_estate_readiness, ensure_default_checklist
 from utils import get_current_user, log_activity
 
@@ -106,7 +107,10 @@ async def create_estate(
         )
 
     estate = Estate(owner_id=current_user["id"], name=data.name)
-    await db.estates.insert_one(estate.model_dump())
+    estate_dict = estate.model_dump()
+    # Generate per-estate encryption salt for AES-256-GCM
+    estate_dict["encryption_salt"] = generate_estate_salt().hex()
+    await db.estates.insert_one(estate_dict)
 
     # Log activity
     await log_activity(
