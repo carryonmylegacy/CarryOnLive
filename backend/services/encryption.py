@@ -122,6 +122,7 @@ def reencrypt_to_v2(encrypted_b64: str, estate_salt: bytes) -> str:
 
 # --- Simple field encryption for short strings (messages, wallet entries) ---
 
+
 def encrypt_field(value: str, estate_salt: bytes) -> str:
     """Encrypt a short string field (message content, wallet password, etc.)."""
     return encrypt_aes256(value.encode("utf-8"), estate_salt)
@@ -136,7 +137,9 @@ async def get_estate_salt(estate_id: str) -> bytes:
     """Get the encryption salt for an estate. Lazily generates one for legacy estates."""
     from config import db
 
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "encryption_salt": 1})
+    estate = await db.estates.find_one(
+        {"id": estate_id}, {"_id": 0, "id": 1, "encryption_salt": 1}
+    )
     if not estate:
         raise ValueError(f"Estate not found: {estate_id}")
 

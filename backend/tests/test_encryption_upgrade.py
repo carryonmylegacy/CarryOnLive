@@ -27,7 +27,9 @@ BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 class TestDocumentUpload:
     """Document upload with AES-256-GCM encryption and cloud storage"""
 
-    def test_upload_document_creates_encrypted_file(self, benefactor_token, test_estate_id):
+    def test_upload_document_creates_encrypted_file(
+        self, benefactor_token, test_estate_id
+    ):
         """POST /api/documents/upload - Encrypt with AES-256-GCM and store in cloud"""
         test_content = f"TEST_ENCRYPTED_DOCUMENT_{uuid.uuid4().hex[:8]}"
         doc_name = f"TEST_aes256_doc_{uuid.uuid4().hex[:8]}.txt"
@@ -47,11 +49,15 @@ class TestDocumentUpload:
 
         # Verify response
         assert "id" in data, "Missing document ID"
-        assert "AES-256-GCM" in data.get("message", ""), "Should confirm AES-256-GCM encryption"
+        assert "AES-256-GCM" in data.get("message", ""), (
+            "Should confirm AES-256-GCM encryption"
+        )
         print(f"✅ Document uploaded with ID: {data['id']}")
         print(f"   Message: {data.get('message', '')}")
 
-    def test_list_documents_shows_encryption_info(self, benefactor_token, test_estate_id):
+    def test_list_documents_shows_encryption_info(
+        self, benefactor_token, test_estate_id
+    ):
         """GET /api/documents/{estate_id} - Show encryption_version and storage_type"""
         resp = requests.get(
             f"{BASE_URL}/api/documents/{test_estate_id}",
@@ -61,24 +67,36 @@ class TestDocumentUpload:
         docs = resp.json()
 
         assert isinstance(docs, list), "Should return list of documents"
-        
+
         # Find any recent test document
         test_doc = None
         for doc in docs:
             if doc.get("name", "").startswith("TEST_"):
                 test_doc = doc
                 break
-        
+
         if test_doc:
-            assert test_doc.get("encryption_version") == "aes-256-gcm", f"Expected aes-256-gcm, got {test_doc.get('encryption_version')}"
-            assert test_doc.get("storage_type") == "cloud", f"Expected cloud storage, got {test_doc.get('storage_type')}"
-            print(f"✅ Document encryption_version: {test_doc.get('encryption_version')}")
+            assert test_doc.get("encryption_version") == "aes-256-gcm", (
+                f"Expected aes-256-gcm, got {test_doc.get('encryption_version')}"
+            )
+            assert test_doc.get("storage_type") == "cloud", (
+                f"Expected cloud storage, got {test_doc.get('storage_type')}"
+            )
+            print(
+                f"✅ Document encryption_version: {test_doc.get('encryption_version')}"
+            )
             print(f"   storage_type: {test_doc.get('storage_type')}")
         else:
-            print("⚠️ Test document not found in list, checking any doc for encryption fields")
+            print(
+                "⚠️ Test document not found in list, checking any doc for encryption fields"
+            )
             if docs:
-                assert "encryption_version" in docs[0], "Documents should have encryption_version field"
-                assert "storage_type" in docs[0], "Documents should have storage_type field"
+                assert "encryption_version" in docs[0], (
+                    "Documents should have encryption_version field"
+                )
+                assert "storage_type" in docs[0], (
+                    "Documents should have storage_type field"
+                )
 
 
 class TestDocumentDownload:
@@ -103,10 +121,14 @@ class TestDocumentDownload:
             f"{BASE_URL}/api/documents/{doc_id}/download",
             headers={"Authorization": f"Bearer {benefactor_token}"},
         )
-        assert download_resp.status_code == 200, f"Download failed: {download_resp.text}"
-        
+        assert download_resp.status_code == 200, (
+            f"Download failed: {download_resp.text}"
+        )
+
         downloaded_content = download_resp.content.decode("utf-8")
-        assert downloaded_content == test_content, f"Content mismatch: expected '{test_content}', got '{downloaded_content}'"
+        assert downloaded_content == test_content, (
+            f"Content mismatch: expected '{test_content}', got '{downloaded_content}'"
+        )
         print("✅ Document downloaded and decrypted correctly")
         print(f"   Content verified: {downloaded_content[:50]}...")
 
@@ -130,11 +152,13 @@ class TestDocumentDownload:
             headers={"Authorization": f"Bearer {benefactor_token}"},
         )
         assert preview_resp.status_code == 200, f"Preview failed: {preview_resp.text}"
-        
+
         # Check Content-Disposition is inline (not attachment)
         content_disp = preview_resp.headers.get("Content-Disposition", "")
-        assert "inline" in content_disp, f"Expected inline disposition, got: {content_disp}"
-        
+        assert "inline" in content_disp, (
+            f"Expected inline disposition, got: {content_disp}"
+        )
+
         preview_content = preview_resp.content.decode("utf-8")
         assert preview_content == test_content, "Preview content mismatch"
         print("✅ Document preview decrypted with inline disposition")
@@ -143,7 +167,9 @@ class TestDocumentDownload:
 class TestDocumentDelete:
     """Document deletion from MongoDB and cloud storage"""
 
-    def test_delete_document_removes_from_storage(self, benefactor_token, test_estate_id):
+    def test_delete_document_removes_from_storage(
+        self, benefactor_token, test_estate_id
+    ):
         """DELETE /api/documents/{doc_id} - Remove from MongoDB AND cloud storage"""
         doc_name = f"TEST_delete_test_{uuid.uuid4().hex[:8]}.txt"
         upload_resp = requests.post(
@@ -168,7 +194,9 @@ class TestDocumentDelete:
             f"{BASE_URL}/api/documents/{doc_id}/download",
             headers={"Authorization": f"Bearer {benefactor_token}"},
         )
-        assert verify_resp.status_code == 404, f"Expected 404, got {verify_resp.status_code}"
+        assert verify_resp.status_code == 404, (
+            f"Expected 404, got {verify_resp.status_code}"
+        )
         print("✅ Verified document is removed (404 on download)")
 
 
@@ -178,7 +206,9 @@ class TestDocumentDelete:
 class TestMessageEncryption:
     """Milestone message encryption tests"""
 
-    def test_create_message_encrypts_title_content(self, benefactor_token, test_estate_id):
+    def test_create_message_encrypts_title_content(
+        self, benefactor_token, test_estate_id
+    ):
         """POST /api/messages - Encrypt title and content with AES-256-GCM"""
         unique_id = uuid.uuid4().hex[:8]
         message_data = {
@@ -212,7 +242,7 @@ class TestMessageEncryption:
         messages = resp.json()
 
         assert isinstance(messages, list), "Should return list"
-        
+
         # Find our test message
         test_msg = None
         for msg in messages:
@@ -222,8 +252,12 @@ class TestMessageEncryption:
 
         if test_msg:
             # Verify decrypted content
-            assert "TEST_MESSAGE_TITLE_" in test_msg.get("title", ""), "Title should be decrypted"
-            assert "TEST_MESSAGE_CONTENT_" in test_msg.get("content", ""), "Content should be decrypted"
+            assert "TEST_MESSAGE_TITLE_" in test_msg.get("title", ""), (
+                "Title should be decrypted"
+            )
+            assert "TEST_MESSAGE_CONTENT_" in test_msg.get("content", ""), (
+                "Content should be decrypted"
+            )
             print(f"✅ Message title decrypted: {test_msg.get('title')[:50]}...")
             print(f"   Content decrypted: {test_msg.get('content')[:50]}...")
         else:
@@ -269,7 +303,7 @@ class TestDigitalWalletEncryption:
         entries = resp.json()
 
         assert isinstance(entries, list), "Should return list"
-        
+
         # Find our test entry
         test_entry = None
         for entry in entries:
@@ -280,7 +314,9 @@ class TestDigitalWalletEncryption:
         if test_entry:
             # Password should be decrypted for the owner
             assert "password" in test_entry, "Password should be present in response"
-            assert "SuperSecret_" in test_entry.get("password", ""), "Password should be decrypted"
+            assert "SuperSecret_" in test_entry.get("password", ""), (
+                "Password should be decrypted"
+            )
             print(f"✅ Wallet password decrypted: {test_entry.get('password')[:20]}...")
         else:
             print(f"⚠️ Test wallet entry not found in list of {len(entries)} entries")
@@ -292,7 +328,9 @@ class TestDigitalWalletEncryption:
 class TestVaultSecurityInfo:
     """Vault security and encryption metadata endpoint tests"""
 
-    def test_vault_security_info_returns_metadata(self, benefactor_token, test_estate_id):
+    def test_vault_security_info_returns_metadata(
+        self, benefactor_token, test_estate_id
+    ):
         """GET /api/vault/security-info/{estate_id} - Return encryption metadata"""
         resp = requests.get(
             f"{BASE_URL}/api/vault/security-info/{test_estate_id}",
@@ -304,9 +342,15 @@ class TestVaultSecurityInfo:
         # Verify encryption metadata
         assert "encryption" in data, "Missing encryption section"
         encryption = data["encryption"]
-        assert encryption.get("algorithm") == "AES-256-GCM", f"Expected AES-256-GCM, got {encryption.get('algorithm')}"
-        assert "PBKDF2" in encryption.get("key_derivation", ""), "Should mention PBKDF2 key derivation"
-        assert "Per-estate" in encryption.get("key_scope", ""), "Should mention per-estate keys"
+        assert encryption.get("algorithm") == "AES-256-GCM", (
+            f"Expected AES-256-GCM, got {encryption.get('algorithm')}"
+        )
+        assert "PBKDF2" in encryption.get("key_derivation", ""), (
+            "Should mention PBKDF2 key derivation"
+        )
+        assert "Per-estate" in encryption.get("key_scope", ""), (
+            "Should mention per-estate keys"
+        )
         print(f"✅ Encryption algorithm: {encryption.get('algorithm')}")
         print(f"   Key derivation: {encryption.get('key_derivation')}")
         print(f"   Key scope: {encryption.get('key_scope')}")
@@ -314,7 +358,9 @@ class TestVaultSecurityInfo:
         # Verify storage metadata
         assert "storage" in data, "Missing storage section"
         storage = data["storage"]
-        assert "AES-256-GCM" in storage.get("encryption_at_rest", ""), "Should mention AES-256-GCM at rest"
+        assert "AES-256-GCM" in storage.get("encryption_at_rest", ""), (
+            "Should mention AES-256-GCM at rest"
+        )
         print(f"   Encryption at rest: {storage.get('encryption_at_rest')}")
 
         # Verify vault stats
@@ -346,7 +392,9 @@ class TestAuditTrail:
             f"{BASE_URL}/api/vault/security-info/{test_estate_id}",
             headers={"Authorization": f"Bearer {benefactor_token}"},
         )
-        initial_audit_count = info_resp1.json().get("vault_stats", {}).get("audit_entries", 0)
+        initial_audit_count = (
+            info_resp1.json().get("vault_stats", {}).get("audit_entries", 0)
+        )
 
         # Upload a document
         upload_resp = requests.post(
@@ -369,10 +417,16 @@ class TestAuditTrail:
             f"{BASE_URL}/api/vault/security-info/{test_estate_id}",
             headers={"Authorization": f"Bearer {benefactor_token}"},
         )
-        new_audit_count = info_resp2.json().get("vault_stats", {}).get("audit_entries", 0)
+        new_audit_count = (
+            info_resp2.json().get("vault_stats", {}).get("audit_entries", 0)
+        )
 
-        assert new_audit_count > initial_audit_count, f"Audit count should increase. Initial: {initial_audit_count}, New: {new_audit_count}"
-        print(f"✅ Audit entry created for upload (count: {initial_audit_count} -> {new_audit_count})")
+        assert new_audit_count > initial_audit_count, (
+            f"Audit count should increase. Initial: {initial_audit_count}, New: {new_audit_count}"
+        )
+        print(
+            f"✅ Audit entry created for upload (count: {initial_audit_count} -> {new_audit_count})"
+        )
 
     def test_download_creates_audit_entry(self, benefactor_token, test_estate_id):
         """Document download should create audit entry"""
@@ -413,8 +467,12 @@ class TestAuditTrail:
         )
         new_count = info_resp2.json().get("vault_stats", {}).get("audit_entries", 0)
 
-        assert new_count > initial_count, f"Audit count should increase on download. Initial: {initial_count}, New: {new_count}"
-        print(f"✅ Audit entry created for download (count: {initial_count} -> {new_count})")
+        assert new_count > initial_count, (
+            f"Audit count should increase on download. Initial: {initial_count}, New: {new_count}"
+        )
+        print(
+            f"✅ Audit entry created for download (count: {initial_count} -> {new_count})"
+        )
 
 
 # ============= ESTATE ENCRYPTION SALT TESTS =============
@@ -426,7 +484,7 @@ class TestEstateEncryptionSalt:
     def test_new_estate_has_encryption_salt(self, benefactor_token):
         """POST /api/estates - New estates should have encryption_salt field"""
         estate_name = f"TEST_ESTATE_{uuid.uuid4().hex[:8]}"
-        
+
         resp = requests.post(
             f"{BASE_URL}/api/estates",
             headers={"Authorization": f"Bearer {benefactor_token}"},
@@ -449,10 +507,14 @@ class TestEstateEncryptionSalt:
 
         assert "encryption_salt" in estate, "New estate should have encryption_salt"
         salt = estate["encryption_salt"]
-        assert len(salt) == 64, f"Salt should be 32 bytes hex-encoded (64 chars), got {len(salt)}"
+        assert len(salt) == 64, (
+            f"Salt should be 32 bytes hex-encoded (64 chars), got {len(salt)}"
+        )
         print(f"✅ Estate has encryption_salt: {salt[:16]}...")
 
-    def test_existing_estate_has_encryption_salt(self, benefactor_token, test_estate_id):
+    def test_existing_estate_has_encryption_salt(
+        self, benefactor_token, test_estate_id
+    ):
         """Existing estate should have encryption_salt (lazily generated)"""
         resp = requests.get(
             f"{BASE_URL}/api/estates/{test_estate_id}",
@@ -461,9 +523,13 @@ class TestEstateEncryptionSalt:
         assert resp.status_code == 200, f"Get estate failed: {resp.text}"
         estate = resp.json()
 
-        assert "encryption_salt" in estate, "Estate should have encryption_salt (lazily generated)"
+        assert "encryption_salt" in estate, (
+            "Estate should have encryption_salt (lazily generated)"
+        )
         salt = estate["encryption_salt"]
-        assert len(salt) == 64, f"Salt should be 32 bytes hex-encoded (64 chars), got {len(salt)}"
+        assert len(salt) == 64, (
+            f"Salt should be 32 bytes hex-encoded (64 chars), got {len(salt)}"
+        )
         print(f"✅ Existing estate has encryption_salt: {salt[:16]}...")
 
 
@@ -503,7 +569,9 @@ class TestPerEstateKeyIsolation:
         salt1 = estate1.get("encryption_salt", "")
         salt2 = estate2.get("encryption_salt", "")
 
-        assert salt1 != salt2, "Different estates should have different encryption salts"
+        assert salt1 != salt2, (
+            "Different estates should have different encryption salts"
+        )
         print(f"✅ Estate 1 salt: {salt1[:16]}...")
         print(f"   Estate 2 salt: {salt2[:16]}...")
         print("   Salts are different: ✓")

@@ -29,7 +29,9 @@ db = client[os.environ["DB_NAME"]]
 JWT_SECRET = os.environ.get("JWT_SECRET")
 if not JWT_SECRET:
     JWT_SECRET = "carryon-secure-jwt-secret-key-2024"
-    logger.warning("JWT_SECRET not explicitly set — using .env value. Ensure this is set in production.")
+    logger.warning(
+        "JWT_SECRET not explicitly set — using .env value. Ensure this is set in production."
+    )
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24
 
@@ -37,8 +39,12 @@ JWT_EXPIRATION_HOURS = 24
 ENCRYPTION_KEY = os.environ.get("ENCRYPTION_KEY")
 if not ENCRYPTION_KEY:
     ENCRYPTION_KEY = "carryon-default-encryption-key-32b!"
-    logger.warning("ENCRYPTION_KEY not explicitly set — using .env value. Ensure a strong key is set in production.")
-ENCRYPTION_SALT = b"carryon_salt_2024"  # Legacy V1 only; new encryption uses per-estate salts
+    logger.warning(
+        "ENCRYPTION_KEY not explicitly set — using .env value. Ensure a strong key is set in production."
+    )
+ENCRYPTION_SALT = (
+    b"carryon_salt_2024"  # Legacy V1 only; new encryption uses per-estate salts
+)
 
 # Security
 security = HTTPBearer()

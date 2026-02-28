@@ -20,7 +20,13 @@ class StorageBackend(ABC):
     """Abstract storage interface for encrypted document blobs."""
 
     @abstractmethod
-    async def upload(self, blob: bytes, estate_id: str, doc_id: str, content_type: str = "application/octet-stream") -> str:
+    async def upload(
+        self,
+        blob: bytes,
+        estate_id: str,
+        doc_id: str,
+        content_type: str = "application/octet-stream",
+    ) -> str:
         """Upload an encrypted blob. Returns the storage key."""
 
     @abstractmethod
@@ -47,7 +53,13 @@ class LocalStorage(StorageBackend):
         # Storage keys are like: estates/{estate_id}/{doc_id}
         return self.base_path / storage_key
 
-    async def upload(self, blob: bytes, estate_id: str, doc_id: str, content_type: str = "application/octet-stream") -> str:
+    async def upload(
+        self,
+        blob: bytes,
+        estate_id: str,
+        doc_id: str,
+        content_type: str = "application/octet-stream",
+    ) -> str:
         storage_key = f"estates/{estate_id}/{doc_id}"
         file_path = self._key_to_path(storage_key)
         file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -82,6 +94,7 @@ class S3Storage(StorageBackend):
 
     def __init__(self):
         import boto3
+
         self.bucket = os.environ.get("S3_BUCKET_NAME", "carryon-vault")
         self.region = os.environ.get("S3_REGION", "us-east-1")
         self.client = boto3.client(
@@ -92,8 +105,15 @@ class S3Storage(StorageBackend):
         )
         logger.info(f"S3Storage: initialized bucket={self.bucket} region={self.region}")
 
-    async def upload(self, blob: bytes, estate_id: str, doc_id: str, content_type: str = "application/octet-stream") -> str:
+    async def upload(
+        self,
+        blob: bytes,
+        estate_id: str,
+        doc_id: str,
+        content_type: str = "application/octet-stream",
+    ) -> str:
         import asyncio
+
         storage_key = f"estates/{estate_id}/{doc_id}"
         await asyncio.to_thread(
             self.client.put_object,
@@ -103,11 +123,14 @@ class S3Storage(StorageBackend):
             ContentType=content_type,
             ServerSideEncryption="AES256",  # SSE-S3 second layer
         )
-        logger.info(f"S3Storage: uploaded {len(blob)} bytes to s3://{self.bucket}/{storage_key}")
+        logger.info(
+            f"S3Storage: uploaded {len(blob)} bytes to s3://{self.bucket}/{storage_key}"
+        )
         return storage_key
 
     async def download(self, storage_key: str) -> bytes:
         import asyncio
+
         response = await asyncio.to_thread(
             self.client.get_object,
             Bucket=self.bucket,
@@ -117,6 +140,7 @@ class S3Storage(StorageBackend):
 
     async def delete(self, storage_key: str) -> bool:
         import asyncio
+
         try:
             await asyncio.to_thread(
                 self.client.delete_object,
@@ -129,6 +153,7 @@ class S3Storage(StorageBackend):
 
     async def exists(self, storage_key: str) -> bool:
         import asyncio
+
         try:
             await asyncio.to_thread(
                 self.client.head_object,

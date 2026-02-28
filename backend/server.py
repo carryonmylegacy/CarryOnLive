@@ -38,6 +38,7 @@ from routes.admin_digest import router as admin_digest_router
 from routes.onboarding import router as onboarding_router
 from routes.emergency_access import router as emergency_access_router
 
+
 # Background scheduler
 async def weekly_digest_scheduler():
     """Background task: sends weekly digest every Monday at 8 AM EST."""
@@ -164,8 +165,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions-Policy"] = "camera=(), microphone=(self), geolocation=()"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+        response.headers["Permissions-Policy"] = (
+            "camera=(), microphone=(self), geolocation=()"
+        )
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains; preload"
+        )
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com; "
@@ -180,7 +185,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # Prevent caching of sensitive API responses
         path = request.url.path
         if path.startswith("/api/") and path not in ("/api/health",):
-            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+            response.headers["Cache-Control"] = (
+                "no-store, no-cache, must-revalidate, private"
+            )
             response.headers["Pragma"] = "no-cache"
         return response
 
@@ -198,7 +205,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # Only rate-limit auth endpoints
         path = request.url.path
         # Stricter limits for login/auth (10/min), moderate for other sensitive endpoints
-        strict_paths = ["/api/auth/login", "/api/auth/dev-login", "/api/auth/verify-otp"]
+        strict_paths = [
+            "/api/auth/login",
+            "/api/auth/dev-login",
+            "/api/auth/verify-otp",
+        ]
         moderate_paths = ["/api/auth/register"]
 
         limit = None
@@ -234,8 +245,7 @@ app.add_middleware(RateLimitMiddleware, max_requests=20, window_seconds=60)
 
 # CORS Middleware
 ALLOWED_ORIGINS = os.environ.get(
-    "CORS_ORIGINS",
-    "https://app.carryon.us,https://carryon.us,https://www.carryon.us"
+    "CORS_ORIGINS", "https://app.carryon.us,https://carryon.us,https://www.carryon.us"
 ).split(",")
 
 # In preview/dev, also allow the preview URL

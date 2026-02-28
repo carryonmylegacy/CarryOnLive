@@ -52,14 +52,16 @@ class TestTrialRemindersAPI:
         """Trial reminders endpoint requires authentication"""
         response = requests.post(f"{BASE_URL}/api/admin/trial-reminders/send")
         # 401 or 403 both indicate lack of auth
-        assert response.status_code in [401, 403], f"Expected 401 or 403, got {response.status_code}"
+        assert response.status_code in [401, 403], (
+            f"Expected 401 or 403, got {response.status_code}"
+        )
         print("✓ Trial reminders endpoint requires authentication")
 
     def test_trial_reminders_send_requires_admin(self, regular_user_token):
         """Trial reminders endpoint requires admin role"""
         if not regular_user_token:
             pytest.skip("Regular user not available for testing")
-        
+
         response = requests.post(
             f"{BASE_URL}/api/admin/trial-reminders/send",
             headers={"Authorization": f"Bearer {regular_user_token}"},
@@ -74,14 +76,20 @@ class TestTrialRemindersAPI:
             headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-        
+
         data = response.json()
         assert "success" in data, "Response should contain 'success' field"
         assert data["success"] is True, "success should be True"
-        assert "reminders_sent" in data, "Response should contain 'reminders_sent' count"
-        assert isinstance(data["reminders_sent"], int), "reminders_sent should be integer"
-        
-        print(f"✓ Admin successfully triggered trial reminders: {data['reminders_sent']} sent")
+        assert "reminders_sent" in data, (
+            "Response should contain 'reminders_sent' count"
+        )
+        assert isinstance(data["reminders_sent"], int), (
+            "reminders_sent should be integer"
+        )
+
+        print(
+            f"✓ Admin successfully triggered trial reminders: {data['reminders_sent']} sent"
+        )
 
 
 class TestSubscriptionPlansGrid:
@@ -91,21 +99,28 @@ class TestSubscriptionPlansGrid:
         """GET /api/subscriptions/plans returns 6 plans for 3x2 grid"""
         response = requests.get(f"{BASE_URL}/api/subscriptions/plans")
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-        
+
         data = response.json()
         plans = data.get("plans", [])
-        
+
         # Should have 6 plans for 3x2 grid
         assert len(plans) >= 6, f"Expected at least 6 plans, got {len(plans)}"
         print(f"✓ Plans API returns {len(plans)} plans")
-        
+
         # Verify expected plan IDs
         plan_ids = [p["id"] for p in plans]
-        expected_ids = ["premium", "standard", "base", "new_adult", "military", "hospice"]
-        
+        expected_ids = [
+            "premium",
+            "standard",
+            "base",
+            "new_adult",
+            "military",
+            "hospice",
+        ]
+
         for expected_id in expected_ids:
             assert expected_id in plan_ids, f"Missing plan: {expected_id}"
-        
+
         print(f"✓ All 6 expected plan tiers present: {expected_ids}")
 
     def test_plans_have_required_fields(self):
@@ -113,13 +128,13 @@ class TestSubscriptionPlansGrid:
         response = requests.get(f"{BASE_URL}/api/subscriptions/plans")
         data = response.json()
         plans = data.get("plans", [])
-        
+
         required_fields = ["id", "name", "price", "features"]
-        
+
         for plan in plans:
             for field in required_fields:
                 assert field in plan, f"Plan {plan.get('id')} missing field: {field}"
-        
+
         print("✓ All plans have required fields (id, name, price, features)")
 
     def test_plans_have_quarterly_annual_pricing(self):
@@ -127,22 +142,28 @@ class TestSubscriptionPlansGrid:
         response = requests.get(f"{BASE_URL}/api/subscriptions/plans")
         data = response.json()
         plans = data.get("plans", [])
-        
+
         for plan in plans:
             plan_id = plan.get("id")
             # All paid plans should have quarterly and annual prices
             if plan.get("price", 0) > 0:
-                assert "quarterly_price" in plan, f"Plan {plan_id} missing quarterly_price"
+                assert "quarterly_price" in plan, (
+                    f"Plan {plan_id} missing quarterly_price"
+                )
                 assert "annual_price" in plan, f"Plan {plan_id} missing annual_price"
-                
+
                 # Verify discount (quarterly ~10%, annual ~20%)
                 base_price = plan["price"]
                 quarterly = plan["quarterly_price"]
                 annual = plan["annual_price"]
-                
-                assert quarterly < base_price, f"Plan {plan_id}: quarterly should be less than base"
-                assert annual < quarterly, f"Plan {plan_id}: annual should be less than quarterly"
-        
+
+                assert quarterly < base_price, (
+                    f"Plan {plan_id}: quarterly should be less than base"
+                )
+                assert annual < quarterly, (
+                    f"Plan {plan_id}: annual should be less than quarterly"
+                )
+
         print("✓ All paid plans have quarterly/annual pricing with proper discounts")
 
     def test_hospice_plan_is_free(self):
@@ -150,11 +171,13 @@ class TestSubscriptionPlansGrid:
         response = requests.get(f"{BASE_URL}/api/subscriptions/plans")
         data = response.json()
         plans = data.get("plans", [])
-        
+
         hospice = next((p for p in plans if p["id"] == "hospice"), None)
         assert hospice is not None, "Hospice plan not found"
-        assert hospice["price"] == 0, f"Hospice price should be 0, got {hospice['price']}"
-        
+        assert hospice["price"] == 0, (
+            f"Hospice price should be 0, got {hospice['price']}"
+        )
+
         print("✓ Hospice plan correctly priced at $0")
 
     def test_verification_plans_marked(self):
@@ -162,16 +185,20 @@ class TestSubscriptionPlansGrid:
         response = requests.get(f"{BASE_URL}/api/subscriptions/plans")
         data = response.json()
         plans = data.get("plans", [])
-        
+
         military = next((p for p in plans if p["id"] == "military"), None)
         hospice = next((p for p in plans if p["id"] == "hospice"), None)
-        
+
         assert military is not None, "Military plan not found"
         assert hospice is not None, "Hospice plan not found"
-        
-        assert military.get("requires_verification") is True, "Military should require verification"
-        assert hospice.get("requires_verification") is True, "Hospice should require verification"
-        
+
+        assert military.get("requires_verification") is True, (
+            "Military should require verification"
+        )
+        assert hospice.get("requires_verification") is True, (
+            "Hospice should require verification"
+        )
+
         print("✓ Military and Hospice plans marked as requiring verification")
 
 
@@ -182,10 +209,12 @@ class TestBeneficiaryPlans:
         """GET /api/subscriptions/plans returns beneficiary plans"""
         response = requests.get(f"{BASE_URL}/api/subscriptions/plans")
         data = response.json()
-        
+
         ben_plans = data.get("beneficiary_plans", [])
-        assert len(ben_plans) >= 3, f"Expected at least 3 beneficiary plans, got {len(ben_plans)}"
-        
+        assert len(ben_plans) >= 3, (
+            f"Expected at least 3 beneficiary plans, got {len(ben_plans)}"
+        )
+
         print(f"✓ Beneficiary plans API returns {len(ben_plans)} plans")
 
 
@@ -196,10 +225,14 @@ class TestFamilyPlanEnabled:
         """Plans API returns family_plan_enabled flag"""
         response = requests.get(f"{BASE_URL}/api/subscriptions/plans")
         data = response.json()
-        
-        assert "family_plan_enabled" in data, "Response should include family_plan_enabled"
-        assert isinstance(data["family_plan_enabled"], bool), "family_plan_enabled should be boolean"
-        
+
+        assert "family_plan_enabled" in data, (
+            "Response should include family_plan_enabled"
+        )
+        assert isinstance(data["family_plan_enabled"], bool), (
+            "family_plan_enabled should be boolean"
+        )
+
         print(f"✓ Family plan enabled: {data['family_plan_enabled']}")
 
 

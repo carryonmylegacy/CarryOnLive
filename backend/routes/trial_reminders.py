@@ -129,9 +129,7 @@ async def send_trial_reminders():
                 )
 
                 sent_count += 1
-                logger.info(
-                    f"Trial reminder ({days}d) sent to {user['email']}"
-                )
+                logger.info(f"Trial reminder ({days}d) sent to {user['email']}")
             except Exception as e:
                 logger.error(
                     f"Failed to send trial reminder to {user.get('email')}: {e}"

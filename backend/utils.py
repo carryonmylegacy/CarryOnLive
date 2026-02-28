@@ -57,6 +57,7 @@ def decrypt_data(encrypted_data: str) -> bytes:
 def generate_backup_code() -> str:
     """Generate a cryptographically secure backup code."""
     import secrets
+
     return "-".join(
         ["".join([str(secrets.randbelow(10)) for _ in range(4)]) for _ in range(3)]
     )
@@ -105,6 +106,7 @@ async def get_current_user(
 def generate_otp() -> str:
     """Generate a cryptographically secure 6-digit OTP."""
     import secrets
+
     return "".join([str(secrets.randbelow(10)) for _ in range(6)])
 
 
@@ -113,7 +115,9 @@ def generate_otp() -> str:
 
 async def send_otp_email(email: str, otp: str, name: str = "User"):
     if not RESEND_API_KEY:
-        logger.info(f"Email not configured — OTP generated for {email} (check admin console)")
+        logger.info(
+            f"Email not configured — OTP generated for {email} (check admin console)"
+        )
         return False
     html_content = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
 <body style="margin:0;padding:0;background-color:#0b1120;font-family:Arial,Helvetica,sans-serif;">
