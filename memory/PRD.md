@@ -91,7 +91,14 @@ CarryOn is a secure estate planning platform for American families. It helps use
 - Backend: /api/emergency-access/* routes
 - Frontend: EmergencyAccessPanel.js integrated into BeneficiaryHubPage
 
+### Bug Fix: Dev Switcher Profile Selection (COMPLETE - Feb 28, 2026)
+- Root cause: Public `/api/dev-switcher/config` endpoint didn't return passwords (by design), making benefactor/beneficiary accounts permanently disabled in the DEV panel
+- Fix: Created new `/api/auth/dev-switch` endpoint that accepts only email + admin token, looks up stored password from `dev_config` server-side
+- Frontend updated to use new endpoint for non-admin accounts, removed `isDisabled` logic
+- Files: `backend/routes/auth.py`, `frontend/src/components/dev/DevSwitcher.js`
+
 ## Pending / Backlog
+- P0: Build "Legacy Timeline" Prototype
 - P1: Re-enable OTP Email System (Resend + domain verification)
 - P1: Codemagic Mobile CI/CD Pipeline fix
 - P2: Animated logo implementation
