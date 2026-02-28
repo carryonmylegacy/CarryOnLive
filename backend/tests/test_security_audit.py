@@ -11,7 +11,7 @@ import time
 import uuid
 from datetime import datetime, timedelta
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://secure-vault-preview-1.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://five-features-live.preview.emergentagent.com').rstrip('/')
 
 # Test credentials from problem statement
 ADMIN_EMAIL = "founder@carryon.us"
