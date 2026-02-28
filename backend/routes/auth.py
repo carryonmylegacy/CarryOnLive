@@ -175,9 +175,15 @@ async def register(data: UserCreate):
     }
 
 
+class OTPVerifyWithTrust(BaseModel):
+    email: str
+    otp: str
+    trust_today: bool = False
+
+
 @router.post("/auth/verify-otp", response_model=TokenResponse)
-async def verify_otp(data: OTPVerify):
-    """Verify OTP and return access token."""
+async def verify_otp(data: OTPVerifyWithTrust, request: Request):
+    """Verify OTP and return access token. Optionally trust this device for the rest of the day."""
     stored_otp = await db.otps.find_one({"email": data.email}, {"_id": 0})
     if not stored_otp or stored_otp["otp"] != data.otp:
         raise HTTPException(status_code=401, detail="Invalid OTP")
@@ -201,6 +207,32 @@ async def verify_otp(data: OTPVerify):
 
     # Delete used OTP
     await db.otps.delete_one({"email": data.email})
+
+    # If user opts to trust this device for today, store trust entry
+    if data.trust_today:
+        from zoneinfo import ZoneInfo
+
+        et = ZoneInfo("America/New_York")
+        now_et = datetime.now(et)
+        # Midnight tonight Eastern Time
+        midnight_et = now_et.replace(
+            hour=0, minute=0, second=0, microsecond=0
+        ) + timedelta(days=1)
+        expires_utc = midnight_et.astimezone(timezone.utc)
+
+        client_ip = request.client.host if request.client else "unknown"
+        await db.otp_trust.update_one(
+            {"user_id": user["id"], "ip_address": client_ip},
+            {
+                "$set": {
+                    "user_id": user["id"],
+                    "ip_address": client_ip,
+                    "expires_at": expires_utc.isoformat(),
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                }
+            },
+            upsert=True,
+        )
 
     token = create_token(user["id"], user["email"], user["role"])
 
