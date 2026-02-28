@@ -555,15 +555,15 @@ export const SubscriptionManagement = ({
                       onClick={() => handleChangePlan(plan.id)}
                       disabled={subscribing === plan.id}
                       className="w-full text-xs font-bold py-4 transition-all duration-300"
-                      style={{
-                        background: `linear-gradient(135deg, ${style.accent}, ${style.accent}cc)`,
-                        color: '#0F1629',
-                        boxShadow: `0 4px 16px ${style.accent}30`,
-                      }}
+                      style={isDowngrade(plan.id, billing)
+                        ? { background: 'transparent', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.3)' }
+                        : { background: `linear-gradient(135deg, ${style.accent}, ${style.accent}cc)`, color: '#0F1629', boxShadow: `0 4px 16px ${style.accent}30` }
+                      }
                       data-testid={`change-plan-${plan.id}`}
                     >
-                      {subscribing === plan.id ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <ArrowRight className="w-3.5 h-3.5 mr-1" />}
-                      Switch Plan
+                      {subscribing === plan.id ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> :
+                       isDowngrade(plan.id, billing) ? <Mail className="w-3.5 h-3.5 mr-1" /> : <ArrowRight className="w-3.5 h-3.5 mr-1" />}
+                      {isDowngrade(plan.id, billing) ? 'Downgrade (via Support)' : 'Upgrade'}
                     </Button>
                   ) : (
                     <Button
