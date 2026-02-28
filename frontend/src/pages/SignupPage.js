@@ -514,12 +514,13 @@ const SignupPage = () => {
                         <>Continue <ArrowRight className="w-4 h-4 ml-1" /></>
                       )}
                     </Button>
-                  </div>
+                    </div>
 
-                  {/* Security footer inside card */}
-                  <div className="mt-5 flex items-center justify-center gap-2">
-                    <Shield className="w-3.5 h-3.5 text-[#10b981]" />
-                    <span className="text-[#3a4a63] text-xs">Bank-grade security &middot; 256-bit SSL</span>
+                    {/* Security footer inside card */}
+                    <div className="mt-3 flex items-center justify-center gap-2">
+                      <Shield className="w-3.5 h-3.5 text-[#10b981]" />
+                      <span className="text-[#3a4a63] text-xs">Bank-grade security &middot; 256-bit SSL</span>
+                    </div>
                   </div>
                 </div>
               </div>
