@@ -319,7 +319,7 @@ const OrbitVisualization = ({ estates, userInitials, onEstateClick, benefactors 
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: 11,
+                        fontSize: 13,
                         fontWeight: 700,
                         color: level === 0 ? '#1a1a2e' : 'white',
                         boxShadow: isTransitioned 
