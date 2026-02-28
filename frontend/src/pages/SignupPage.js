@@ -481,8 +481,9 @@ const SignupPage = () => {
                     )}
                   </div>
 
-                  {/* Navigation Buttons */}
-                  <div className="flex items-center justify-between mt-5 sm:mt-6 pt-4 sm:pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                  {/* Navigation Buttons — pinned to bottom */}
+                  <div className="flex-shrink-0">
+                    <div className="flex items-center justify-between pt-4 sm:pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                     {step > 0 ? (
                       <button onClick={() => goTo(step - 1)}
                         className="flex items-center gap-2 text-[#6b7a90] text-sm font-medium hover:text-white transition-colors"
