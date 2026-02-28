@@ -138,6 +138,11 @@ async def upload_document(
     if current_user["role"] != "benefactor":
         raise HTTPException(status_code=403, detail="Only benefactors can upload documents")
 
+    # Verify user owns this estate
+    estate = await db.estates.find_one({"id": estate_id, "owner_id": current_user["id"]}, {"_id": 0})
+    if not estate:
+        raise HTTPException(status_code=403, detail="Access denied — you do not own this estate")
+
     content = await file.read()
     estate_salt = await get_estate_salt(estate_id)
 
