@@ -67,7 +67,13 @@ async def get_family_plan_status(current_user: dict = Depends(get_current_user))
             "family_plan": fp,
         }
 
-    return {"enabled": True, "role": None, "family_plan": None}
+    # Check user's current subscription plan
+    user_sub = await db.user_subscriptions.find_one(
+        {"user_id": current_user["id"], "status": "active"}, {"_id": 0}
+    )
+    current_plan_id = user_sub.get("plan_id") if user_sub else None
+
+    return {"enabled": True, "role": None, "family_plan": None, "current_plan_id": current_plan_id}
 
 
 @router.post("/family-plan/create")
