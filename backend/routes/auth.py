@@ -75,10 +75,18 @@ async def register(data: UserCreate):
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    # Validate password
-    if len(data.password) < 6:
+    # Validate password — minimum security for sensitive estate data
+    if len(data.password) < 8:
         raise HTTPException(
-            status_code=400, detail="Password must be at least 6 characters"
+            status_code=400, detail="Password must be at least 8 characters"
+        )
+    has_upper = any(c.isupper() for c in data.password)
+    has_lower = any(c.islower() for c in data.password)
+    has_digit = any(c.isdigit() for c in data.password)
+    if not (has_upper and has_lower and has_digit):
+        raise HTTPException(
+            status_code=400,
+            detail="Password must contain at least one uppercase letter, one lowercase letter, and one number",
         )
 
     # Build full name
