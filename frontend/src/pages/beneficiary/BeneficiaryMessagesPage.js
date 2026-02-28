@@ -139,7 +139,7 @@ const BeneficiaryMessagesPage = () => {
           <Heart className="w-5 h-5 text-[#B794F6]" />
         </div>
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Milestone Messages</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Milestone Messages (MM)</h1>
           <p className="text-xs text-[var(--t5)]">{messages.length} messages from your benefactor</p>
         </div>
       </div>
