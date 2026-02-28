@@ -702,14 +702,14 @@ async def export_checklist_pdf(
             pdf.set_font("Helvetica", "B", 9)
             pdf.set_text_color(40, 40, 40)
             pdf.cell(8, 5, check)
-            pdf.cell(0, 5, item["title"][:80], new_x="LMARGIN", new_y="NEXT")
+            pdf.cell(0, 5, sanitize_for_pdf(item["title"][:80]), new_x="LMARGIN", new_y="NEXT")
 
             # Description
             if item.get("description"):
                 pdf.set_x(pdf.get_x() + 8)
                 pdf.set_font("Helvetica", "", 8)
                 pdf.set_text_color(100, 100, 100)
-                pdf.multi_cell(162, 4, item["description"][:200])
+                pdf.multi_cell(162, 4, sanitize_for_pdf(item["description"][:200]))
 
             # Contact info
             if item.get("contact_name") or item.get("contact_phone"):
@@ -719,7 +719,7 @@ async def export_checklist_pdf(
                 contact = f"Contact: {item.get('contact_name', '')}"
                 if item.get("contact_phone"):
                     contact += f" | {item['contact_phone']}"
-                pdf.cell(0, 4, contact, new_x="LMARGIN", new_y="NEXT")
+                pdf.cell(0, 4, sanitize_for_pdf(contact), new_x="LMARGIN", new_y="NEXT")
 
             pdf.ln(2)
 
