@@ -1,4 +1,4 @@
-"""CarryOn™ — Token Blacklist for Session Revocation (SOC 2 Compliance Pending)
+"""CarryOn™ — Token Blacklist for Session Revocation
 
 Provides token revocation capability so that:
 - Logout actually invalidates the token server-side
