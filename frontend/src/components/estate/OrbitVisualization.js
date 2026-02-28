@@ -61,16 +61,15 @@ const OrbitVisualization = ({ estates, userInitials, onEstateClick, benefactors 
   // Use benefactors if provided (organized by relationship), otherwise fall back to estates
   const members = benefactors || estates || [];
   
-  // Center and base sizing
-  const cx = 150, cy = 150;
-  const baseOrbitR = 65; // Innermost orbit radius
-  const orbitSpacing = 48; // Space between orbits
-  const centerSize = 70;
-  const ballSize = 32;
+  // Center and base sizing — larger for better visibility
+  const baseOrbitR = 80; // Innermost orbit radius
+  const orbitSpacing = 58; // Space between orbits
+  const centerSize = 80;
+  const ballSize = 38;
   
   const containerRef = useRef(null);
   const angleRef = useRef(0);
-  const velRef = useRef(0.25);
+  const velRef = useRef(0.2);
   const dragRef = useRef(false);
   const lastARef = useRef(0);
   const lastTRef = useRef(0);
@@ -87,6 +86,12 @@ const OrbitVisualization = ({ estates, userInitials, onEstateClick, benefactors 
 
   // Get max orbit level that has members
   const maxOrbitLevel = Math.max(...Object.keys(orbitGroups).map(Number), 0);
+
+  // Container size with generous padding so rings never clip
+  const outerOrbitR = baseOrbitR + (maxOrbitLevel * orbitSpacing);
+  const containerSize = (outerOrbitR + ballSize + 24) * 2;
+  const cx = containerSize / 2;
+  const cy = containerSize / 2;
 
   const getAngle = useCallback((px, py) => {
     if (!containerRef.current) return 0;
