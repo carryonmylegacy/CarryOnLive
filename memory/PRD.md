@@ -19,39 +19,34 @@ CarryOn is a secure estate planning platform for American families. It helps use
 ### Session: Feb 28, 2026 (Current Fork)
 
 **In-App PDF Viewer**:
-- Integrated `react-pdf` v10.4.1 for native PDF rendering in a floating tile modal
-- PDFViewerModal component with zoom controls, page navigation, and download button
-- Eye icon on document tiles opens viewer for PDFs and images
-- Non-previewable files gracefully fallback to download
+- Integrated react-pdf v10.4.1 for native PDF rendering in a floating tile modal
+- PDFViewerModal with zoom controls, page navigation, and download button
 
 **Document Card Thumbnails**:
-- New DocThumbnail component renders first-page PDF preview and image previews on vault cards
+- DocThumbnail component renders first-page PDF preview and image previews on vault cards
 - Lazy-loaded with loading state, error fallback to file-type icon
-- Uses react-pdf Page component for PDF thumbnails
 
 **Subscription UI Redesign**:
 - Complete overhaul of SubscriptionManagement component
 - Role-aware: benefactors see DEFAULT_PLANS, beneficiaries see BENEFICIARY_PLANS
 - Billing toggle (Monthly/Quarterly/Annual) dynamically updates all pricing
-- Premium-styled plan cards with proper hierarchy, badges, and CTAs
 - Subscribe buttons connect to Stripe checkout flow
-- Beta Access banner with appropriate messaging
+- Family Plan request for beneficiaries (email notification to benefactor)
 
 **Beneficiary Payment Lifecycle**:
-- Family Plan request: beneficiaries can request to join a benefactor's family plan
-- POST /api/subscriptions/family-plan-request sends email notification to benefactor
-- GET /api/subscriptions/beneficiary/lifecycle-status returns age events and grace period info
 - DOB auto-detection for turning 18 (subscription required) and turning 26 (age out of New Adult)
 - 30-day grace period for hospice patient benefactor transition
-- POST /api/admin/beneficiary/trigger-transition creates grace periods and sends emails
-- Daily background task (check_dob_subscription_events) auto-detects age-based events
+- Admin endpoint to trigger benefactor transitions
+- Daily background task for age-based event detection
 
-**Beneficiary Plans Updated**:
-- Added quarterly_price and annual_price to all BENEFICIARY_PLANS
-- Reordered: Premium ($2.99) → Standard ($3.99) → Base ($4.99) → Hospice Transition ($4.99)
+**Mobile App Refinements**:
+- OnboardingWizard moved above Estate Selector for immediate visibility on mobile
+- Mobile header background changed to fully opaque (#0F1629 dark, #DBEAFE light)
+- Removed backdrop-filter blur from header and bottom nav
+- Added safe-area-inset-top padding so header extends behind device status bar
+- Bottom nav also fully opaque
 
-**`.gitignore` Fix**:
-- Cleaned up from 503 lines (with ~100 duplicate environment blocks) to 87 lines
+**`.gitignore` Fix**: Cleaned from 503 lines (100+ duplicated blocks) to 87 lines
 
 ### Previous Session Work
 - OTP Email System with Resend
