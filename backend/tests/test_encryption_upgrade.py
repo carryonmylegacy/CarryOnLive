@@ -24,9 +24,10 @@ BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 class TestAuthSetup:
     """Authentication setup and token management"""
 
-    @pytest.fixture(scope="class")
+    @pytest.fixture(scope="session")
     def admin_token(self):
         """Get admin auth token"""
+        time.sleep(1)  # Rate limit buffer
         resp = requests.post(
             f"{BASE_URL}/api/auth/dev-login",
             json={"email": "admin@carryon.com", "password": "admin123"},
@@ -34,9 +35,10 @@ class TestAuthSetup:
         assert resp.status_code == 200, f"Admin login failed: {resp.text}"
         return resp.json()["access_token"]
 
-    @pytest.fixture(scope="class")
+    @pytest.fixture(scope="session")
     def benefactor_token(self, admin_token):
         """Get benefactor token via admin impersonation"""
+        time.sleep(0.5)  # Rate limit buffer
         resp = requests.post(
             f"{BASE_URL}/api/auth/dev-login",
             headers={"Authorization": f"Bearer {admin_token}"},
@@ -47,7 +49,7 @@ class TestAuthSetup:
         print(f"✅ Benefactor token obtained for: {data['user']['name']} ({data['user']['email']})")
         return data["access_token"]
 
-    @pytest.fixture(scope="class")
+    @pytest.fixture(scope="session")
     def test_estate_id(self):
         """Test estate ID provided in requirements"""
         return "2fd7502b-8eca-421d-a380-2bebb0d0ad7b"
