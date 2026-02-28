@@ -109,7 +109,9 @@ async def get_current_user(
     # Check bulk user token revocation (e.g., password change)
     iat = payload.get("iat", "")
     if iat and await is_user_tokens_revoked(payload["user_id"], iat):
-        raise HTTPException(status_code=401, detail="Session expired — please log in again")
+        raise HTTPException(
+            status_code=401, detail="Session expired — please log in again"
+        )
 
     user = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
     if not user:
