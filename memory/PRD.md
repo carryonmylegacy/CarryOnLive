@@ -1,7 +1,7 @@
-# CarryOn™ — Product Requirements Document
+# CarryOn — Product Requirements Document
 
 ## Original Problem Statement
-CarryOn™ is a secure estate planning platform for American families. It helps users organize critical end-of-life documents, milestone messages, and digital asset credentials, encrypted and stored securely for beneficiaries to access when the time comes.
+CarryOn is a secure estate planning platform for American families. It helps users organize critical end-of-life documents, milestone messages, and digital asset credentials, encrypted and stored securely for beneficiaries to access when the time comes.
 
 **Target Audience**: 350,000+ U.S. hospice patients, military families, and every American family.
 
@@ -26,40 +26,70 @@ CarryOn™ is a secure estate planning platform for American families. It helps 
 - OTP with 10-minute expiry using cryptographically secure generation
 - Comprehensive security headers (CSP, HSTS with preload, X-Frame-Options DENY)
 - Rate limiting on auth endpoints (10/min strict, 20/min moderate)
-- No-cache directives on all API responses
+- Cache-Control no-store on all API responses
 - Database TTL indexes for auto-cleanup of security records
+- Estate ownership verification on all document endpoints
+- Emergency access with multi-step verification + admin approval
 
 ## What's Been Implemented
-### Phase 1: Admin Portal (COMPLETE)
-- Refactored AdminPage.js from 1588 lines to 142-line shell + 9 components
+
+### Admin Portal Refactoring (COMPLETE)
+- AdminPage.js refactored from 1588 to 142 lines + 9 sub-components
 - Real-time search across all admin tabs
 
-### Phase 2: Zero-Knowledge Architecture (COMPLETE)
-- AES-256-GCM encryption service with per-estate keys
+### Zero-Knowledge Architecture (COMPLETE)
+- AES-256-GCM encryption with per-estate derived keys
 - AWS S3 cloud storage integration
-- Lazy migration from legacy Fernet to AES-256-GCM
-- Security audit trail service
+- Lazy migration from legacy Fernet
+- Security audit trail
+- Death certificates now AES-256 encrypted
 
-### Phase 3: Estate Guardian AI (COMPLETE)
-- Grok-like conversational persona with strict guardrails
+### Estate Guardian AI (COMPLETE)
+- Grok-like persona with strict estate law guardrails
 - US estate law expertise (all 50 states)
 - PDF checklist export
 - Legal disclaimer on every response
 
-### Phase 4: Security Hardening Audit (COMPLETE - Feb 28, 2026)
-- Account lockout mechanism (5 failed attempts / 15 min)
-- Password complexity enforcement (8+ chars, upper/lower/digit)
-- OTP time expiry (10 minutes)
-- Content-Security-Policy header
-- HSTS with preload directive
-- Cache-Control no-store on all API responses
-- Estate ownership verification on all document endpoints
-- Zero-knowledge fix: messages no longer store plaintext content
-- Death certificates encrypted with AES-256-GCM
-- Cryptographically secure OTP/backup code generation (secrets module)
-- Database indexes for security collections
-- OTP logging sanitized (no plaintext in logs)
-- CORS restricted from wildcard to specific origins
+### Security Hardening Audit (COMPLETE - Feb 28, 2026)
+- 16 security fixes implemented and verified
+- See CHANGELOG.md for full list
+
+### Feature 1: Onboarding Wizard (COMPLETE - Feb 28, 2026)
+- 5-step guided setup: Create Estate, Add Beneficiary, Upload Document, Create Message, Review Readiness
+- Auto-detects progress from actual data
+- Dismissible card on dashboard
+- Backend: /api/onboarding/progress, /api/onboarding/complete-step/{key}, /api/onboarding/dismiss
+- Frontend: OnboardingWizard.js component integrated into DashboardPage
+
+### Feature 2: Estate Readiness Notifications (COMPLETE - previously existed)
+- Weekly digest with readiness score progress and "next best action"
+- Already built into weekly_digest_scheduler with build_recommended_actions()
+
+### Feature 3: Beneficiary Gentle Intro (COMPLETE - Feb 28, 2026)
+- Two-step warm onboarding flow for invitation acceptance
+- Step 1: Sensitive explanation of what CarryOn is and what being added means
+- Step 2: Account creation with password strength indicators
+- Privacy-first messaging throughout
+- Frontend: AcceptInvitationPage.js completely rewritten
+
+### Feature 4: Quick-Start Templates (COMPLETE - Feb 28, 2026)
+- 4 scenario-based checklist templates:
+  - Hospice Care (14 items)
+  - Military Deployment (10 items)
+  - New Parent (9 items)
+  - Recently Married (9 items)
+- Duplicate prevention (title matching)
+- Backend: /api/templates/scenarios, /api/templates/apply
+- Frontend: QuickStartTemplates.js integrated into ChecklistPage
+
+### Feature 5: Emergency Access Protocol (COMPLETE - Feb 28, 2026)
+- Beneficiaries can request emergency vault access when benefactor is incapacitated
+- Multi-step form with reason, relationship, urgency, phone
+- Admin review system: approve (with duration/level), deny, request more info
+- Active access tracking with expiration
+- Audit trail for all requests and reviews
+- Backend: /api/emergency-access/* routes
+- Frontend: EmergencyAccessPanel.js integrated into BeneficiaryHubPage
 
 ## Pending / Backlog
 - P1: Re-enable OTP Email System (Resend + domain verification)
@@ -67,3 +97,5 @@ CarryOn™ is a secure estate planning platform for American families. It helps 
 - P2: Animated logo implementation
 - P2: Beneficiary Hub "You" label verification
 - P3: Mobile app deployment
+- P3: Token revocation / blacklist mechanism
+- P3: Redis-backed rate limiting for multi-worker deployments
