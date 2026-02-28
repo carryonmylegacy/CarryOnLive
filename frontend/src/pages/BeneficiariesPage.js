@@ -348,6 +348,7 @@ const BeneficiariesPage = () => {
       {/* Section Lock */}
       <SectionLockBanner sectionId="beneficiaries" />
 
+      <SectionLockedOverlay sectionId="beneficiaries">
       {/* Invitation info */}
       <div className="rounded-xl p-3" style={{ background: 'rgba(37,99,235,0.04)', border: '1px solid rgba(37,99,235,0.1)' }}>
         <p className="text-xs text-[var(--bl3)] leading-relaxed">
@@ -817,6 +818,7 @@ const BeneficiariesPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+      </SectionLockedOverlay>
     </div>
   );
 };
