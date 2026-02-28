@@ -124,9 +124,9 @@ const LoginPage = () => {
               <a key={item.label} href={item.href} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{item.label}</a>
             ))}
           </div>
-          <a href="/signup" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
+          <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
             Open Account <ChevronRight className="w-3.5 h-3.5" />
-          </a>
+          </button>
         </div>
       </nav>
 
