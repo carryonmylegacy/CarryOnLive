@@ -50,7 +50,7 @@ async def get_family_plan_status(current_user: dict = Depends(get_current_user))
         {"fpo_user_id": current_user["id"], "status": "active"}, {"_id": 0}
     )
     if fp:
-        return {"enabled": True, "role": "fpo", "family_plan": fp}
+        return {"enabled": True, "role": "fpo", "family_plan": fp, "current_plan_id": fp.get("plan_id")}
 
     # Check if user is a member
     fp = await db.family_plans.find_one(
