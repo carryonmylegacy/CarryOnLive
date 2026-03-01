@@ -21,7 +21,7 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
-import { toast } from 'sonner';
+import { toast } from '../../utils/toast';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 

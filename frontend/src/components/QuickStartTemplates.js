@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { toast } from 'sonner';
+import { toast } from '../utils/toast';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 

@@ -3,7 +3,7 @@ import axios from 'axios';
 import { MessageCircle, Headphones, UserCircle, Loader2, Send, Search } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { toast } from 'sonner';
+import { toast } from '../../utils/toast';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 

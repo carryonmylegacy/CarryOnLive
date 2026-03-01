@@ -6,7 +6,7 @@ import {
   Upload, Clock, AlertTriangle, Users, X, Heart, Award
 } from 'lucide-react';
 import { Button } from './ui/button';
-import { toast } from 'sonner';
+import { toast } from '../utils/toast';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 

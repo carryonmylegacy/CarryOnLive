@@ -6,7 +6,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
-import { toast } from 'sonner';
+import { toast } from '../../utils/toast';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 

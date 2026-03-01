@@ -11,7 +11,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
-import { toast } from 'sonner';
+import { toast } from '../../utils/toast';
 import axios from 'axios';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;

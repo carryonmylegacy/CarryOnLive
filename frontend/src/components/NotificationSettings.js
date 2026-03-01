@@ -4,7 +4,7 @@ import { Bell, BellOff, Loader2, CheckCircle2, AlertTriangle } from 'lucide-reac
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Switch } from '../components/ui/switch';
-import { toast } from 'sonner';
+import { toast } from '../utils/toast';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 

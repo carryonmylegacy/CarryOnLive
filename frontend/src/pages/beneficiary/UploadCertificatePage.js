@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
 import { FileText, Upload, Shield, ChevronLeft, CheckCircle2, AlertTriangle, Loader2, Lock } from 'lucide-react';
 import { Button } from '../../components/ui/button';
-import { toast } from 'sonner';
+import { toast } from '../../utils/toast';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 

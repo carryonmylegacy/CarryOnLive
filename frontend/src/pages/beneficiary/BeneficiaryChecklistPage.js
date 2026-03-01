@@ -7,7 +7,7 @@ import {
   FileText, Briefcase, Users, Heart, Shield, Building, Stethoscope
 } from 'lucide-react';
 import { Progress } from '../../components/ui/progress';
-import { toast } from 'sonner';
+import { toast } from '../../utils/toast';
 import { Skeleton } from '../../components/ui/skeleton';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
