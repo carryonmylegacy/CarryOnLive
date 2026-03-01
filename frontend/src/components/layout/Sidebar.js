@@ -250,7 +250,7 @@ const Sidebar = () => {
       <nav className="flex-1 overflow-y-auto py-4">
         {getNavSections().map((section, idx) => (
           <div key={idx} className="nav-section">
-            <div className="nav-section-title">{section.title}</div>
+            {section.title && <div className="nav-section-title">{section.title}</div>}
             {section.items.map((item, itemIdx) => (
               <React.Fragment key={item.to}>
                 <NavLink
