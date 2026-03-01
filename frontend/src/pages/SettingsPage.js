@@ -330,6 +330,7 @@ const SettingsPage = () => {
                     if (!available) { toast.error('Biometric authentication is not available on this device'); return; }
                     const token = localStorage.getItem('carryon_token');
                     await registerBiometric(token, user?.email, '');
+                    localStorage.removeItem('carryon_biometric_declined');
                   } catch (err) { toast.error('Failed to enable biometric login'); }
                 } else {
                   const { disableBiometric } = await import('../services/biometric');
