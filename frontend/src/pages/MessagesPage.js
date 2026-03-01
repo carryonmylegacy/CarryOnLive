@@ -115,13 +115,49 @@ const MessagesPage = () => {
     }
   };
 
-  const startRecording = async () => {
+  // Request camera when switching to video mode
+  const initCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      videoRef.current.srcObject = stream;
-      videoRef.current.play();
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+      }
+      setCameraReady(true);
+    } catch (error) {
+      console.error('Camera error:', error);
+      toast.error('Camera access denied. Please allow camera permissions.');
+    }
+  };
+
+  // Clean up camera stream
+  const releaseCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setCameraReady(false);
+  };
+
+  const runCountdown = () => {
+    return new Promise((resolve) => {
+      setCountdown(3);
+      setTimeout(() => { setCountdown(2); }, 1000);
+      setTimeout(() => { setCountdown(1); }, 2000);
+      setTimeout(() => { setCountdown(null); resolve(); }, 3000);
+    });
+  };
+
+  const startRecording = async () => {
+    try {
+      // Camera should already be initialized
+      if (!streamRef.current) await initCamera();
       
-      mediaRecorderRef.current = new MediaRecorder(stream);
+      // 3-2-1 countdown
+      await runCountdown();
+      
+      mediaRecorderRef.current = new MediaRecorder(streamRef.current);
       chunksRef.current = [];
       
       mediaRecorderRef.current.ondataavailable = (e) => {
@@ -134,7 +170,7 @@ const MessagesPage = () => {
         const blob = new Blob(chunksRef.current, { type: 'video/webm' });
         setVideoBlob(blob);
         setVideoUrl(URL.createObjectURL(blob));
-        stream.getTracks().forEach(track => track.stop());
+        releaseCamera();
       };
       
       mediaRecorderRef.current.start();
@@ -168,6 +204,9 @@ const MessagesPage = () => {
         setAudioUrl(URL.createObjectURL(blob));
         stream.getTracks().forEach(track => track.stop());
       };
+
+      // 3-2-1 countdown
+      await runCountdown();
 
       audioRecorderRef.current.start();
       setIsRecording(true);
