@@ -311,6 +311,8 @@ const MessagesPage = () => {
     setAudioBlob(null);
     setAudioUrl(null);
     setEditingMessage(null);
+    setCountdown(null);
+    releaseCamera();
   };
 
   const openEdit = (msg) => {
