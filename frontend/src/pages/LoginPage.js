@@ -91,11 +91,12 @@ const LoginPage = () => {
   }, []);
 
   const completeLogin = async (result) => {
-    // Check if we should offer biometric setup
+    // Offer biometric setup on iOS / supported devices
     try {
-      const { isBiometricAvailable, isBiometricEnabled } = await import('../services/biometric');
-      const { available } = await isBiometricAvailable();
-      if (available && !isBiometricEnabled() && !localStorage.getItem('carryon_biometric_declined')) {
+      const { isBiometricEnabled } = await import('../services/biometric');
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const hasWebAuthn = !!window.PublicKeyCredential;
+      if ((isIOS || hasWebAuthn) && !isBiometricEnabled() && !localStorage.getItem('carryon_biometric_declined')) {
         setPendingLoginResult(result);
         setShowBiometricPrompt(true);
         return;
