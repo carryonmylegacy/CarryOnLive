@@ -66,7 +66,7 @@ const Sidebar = () => {
   // Navigation structure matching prototype
   const benefactorNavSections = [
     {
-      title: 'MY LEGACY',
+      title: '',
       items: [
         { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
         { to: '/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
