@@ -231,9 +231,9 @@ function App() {
             offset="calc(4rem + env(safe-area-inset-top, 0px))"
             toastOptions={{
               style: {
-                background: '#141C33',
-                border: '1px solid rgba(255,255,255,0.1)',
-                color: '#f8fafc',
+                background: 'var(--bg2)',
+                border: '1px solid var(--b)',
+                color: 'var(--t)',
               },
             }}
           />
