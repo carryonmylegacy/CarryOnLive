@@ -542,7 +542,10 @@ const MessagesPage = () => {
               </Button>
               <Button
                 variant={messageType === 'video' ? 'default' : 'outline'}
-                onClick={() => setMessageType('video')}
+                onClick={() => {
+                  setMessageType('video');
+                  if (!cameraReady && !videoBlob) initCamera();
+                }}
                 className={messageType === 'video' ? 'gold-button' : 'border-[var(--b)] text-white'}
                 data-testid="msg-type-video"
               >
