@@ -87,12 +87,23 @@ const registerNativeBiometric = async (email, password) => {
 };
 
 const registerWebAuthn = async (token) => {
+  // Verify WebAuthn is actually available
+  if (!navigator.credentials || typeof navigator.credentials.create !== 'function') {
+    throw new Error('WebAuthn is not supported in this browser. Try using the native app instead.');
+  }
+
   // Get registration options from server
   const optionsRes = await fetch(`${API_URL}/auth/webauthn/register-options`, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: '{}',
   });
+
+  if (!optionsRes.ok) {
+    const err = await optionsRes.json().catch(() => ({}));
+    throw new Error(err.detail || 'Failed to get registration options from server');
+  }
+
   const options = await optionsRes.json();
 
   // Convert base64url strings to ArrayBuffers
@@ -105,7 +116,14 @@ const registerWebAuthn = async (token) => {
   }
 
   // Create credential (triggers Face ID)
-  const credential = await navigator.credentials.create({ publicKey: options });
+  let credential;
+  try {
+    credential = await navigator.credentials.create({ publicKey: options });
+  } catch (e) {
+    throw new Error(e.name === 'NotAllowedError' ? 'Face ID was cancelled or not available' : `Passkey creation failed: ${e.message}`);
+  }
+
+  if (!credential) throw new Error('No credential returned — Face ID may have been cancelled');
 
   // Send to server
   const response = await fetch(`${API_URL}/auth/webauthn/register`, {
@@ -125,7 +143,7 @@ const registerWebAuthn = async (token) => {
   });
 
   const result = await response.json();
-  if (!response.ok) throw new Error(result.detail || 'Registration failed');
+  if (!response.ok) throw new Error(result.detail || 'Server rejected the passkey');
 
   localStorage.setItem('carryon_biometric_enabled', 'true');
   localStorage.setItem('carryon_biometric_method', 'webauthn');
