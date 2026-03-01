@@ -109,10 +109,9 @@ const DashboardPage = () => {
     const angle = (score / 100) * 180 - 90;
     
     return (
-      <div className="relative w-48 h-32 lg:w-72 lg:h-48 mx-auto" style={{ transform: 'translateZ(0)' }}>
-        <svg viewBox="0 0 200 110" className="w-full h-full overflow-visible" style={{ transform: 'translateZ(0)' }}>
+      <div className="relative w-44 h-28 lg:w-56 lg:h-36 mx-auto" style={{ transform: 'translateZ(0)' }}>
+        <svg viewBox="0 0 200 115" className="w-full h-full overflow-visible" style={{ transform: 'translateZ(0)' }}>
           <defs>
-            {/* Main rainbow gradient */}
             <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#ef4444" />
               <stop offset="25%" stopColor="#f97316" />
@@ -120,8 +119,10 @@ const DashboardPage = () => {
               <stop offset="75%" stopColor="#84cc16" />
               <stop offset="100%" stopColor="#22c55e" />
             </linearGradient>
-            
-            {/* Needle gradient - metallic silver effect */}
+            <linearGradient id="gaugeTrack" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="rgba(255,255,255,0.05)" />
+              <stop offset="100%" stopColor="rgba(255,255,255,0.05)" />
+            </linearGradient>
             <linearGradient id="needleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#94a3b8" />
               <stop offset="30%" stopColor="#f1f5f9" />
@@ -129,8 +130,6 @@ const DashboardPage = () => {
               <stop offset="70%" stopColor="#f1f5f9" />
               <stop offset="100%" stopColor="#94a3b8" />
             </linearGradient>
-            
-            {/* Center hub gradient - chrome effect with more depth */}
             <radialGradient id="hubGradient" cx="35%" cy="25%" r="70%">
               <stop offset="0%" stopColor="#ffffff" />
               <stop offset="20%" stopColor="#e2e8f0" />
@@ -138,49 +137,42 @@ const DashboardPage = () => {
               <stop offset="70%" stopColor="#64748b" />
               <stop offset="100%" stopColor="#334155" />
             </radialGradient>
-            
-            {/* Drop shadow for needle */}
-            <filter id="needleShadow" x="-50%" y="-50%" width="200%" height="200%">
-              <feDropShadow dx="2" dy="2" stdDeviation="2" floodColor="#000000" floodOpacity="0.4"/>
+            <filter id="arcGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
           </defs>
           
-          {/* Main solid rainbow arc */}
-          <path
-            d="M 20 100 A 80 80 0 0 1 180 100"
-            fill="none"
-            stroke="url(#gaugeGradient)"
-            strokeWidth="28"
-            strokeLinecap="round"
-          />
+          {/* Track background */}
+          <path d="M 15 100 A 85 85 0 0 1 185 100" fill="none" stroke="url(#gaugeTrack)" strokeWidth="18" strokeLinecap="round" />
           
-          {/* Needle assembly - enlarged */}
+          {/* Tick marks */}
+          {[0, 20, 40, 60, 80, 100].map((tick) => {
+            const a = ((tick / 100) * 180 - 90) * Math.PI / 180;
+            const x1 = 100 + 92 * Math.cos(a);
+            const y1 = 100 + 92 * Math.sin(a);
+            const x2 = 100 + 82 * Math.cos(a);
+            const y2 = 100 + 82 * Math.sin(a);
+            return <line key={tick} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" />;
+          })}
+          
+          {/* Rainbow arc */}
+          <path d="M 15 100 A 85 85 0 0 1 185 100" fill="none" stroke="url(#gaugeGradient)" strokeWidth="18" strokeLinecap="round" filter="url(#arcGlow)" />
+          
+          {/* Needle */}
           <g transform={`rotate(${angle}, 100, 100)`} style={{ transition: 'transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-            {/* Full needle - continuous taper from tip to wide tail */}
-            <polygon 
-              points="100,18 96,88 92,125 100,130 108,125 104,88" 
-              fill="url(#needleGradient)"
-              stroke="#64748b"
-              strokeWidth="0.5"
-            />
-            
-            {/* Needle tip - sharp red point */}
-            <polygon 
-              points="100,18 97,42 100,46 103,42" 
-              fill="#dc2626"
-            />
-            
-            {/* Center hub - smaller chrome ring with enhanced depth */}
-            <circle cx="100" cy="100" r="11" fill="url(#hubGradient)" stroke="#475569" strokeWidth="1.5" />
+            <polygon points="100,22 97,85 94,108 100,112 106,108 103,85" fill="url(#needleGradient)" stroke="#64748b" strokeWidth="0.5" />
+            <polygon points="100,22 97.5,40 100,44 102.5,40" fill="#dc2626" />
+            <circle cx="100" cy="100" r="9" fill="url(#hubGradient)" stroke="#475569" strokeWidth="1.5" />
           </g>
         </svg>
         
-        {/* Score display - moved down for enlarged needle */}
-        <div className="absolute -bottom-16 lg:-bottom-24 left-1/2 transform -translate-x-1/2 text-center">
-          <div className="text-3xl lg:text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+        {/* Score + label below gauge */}
+        <div className="absolute -bottom-10 lg:-bottom-14 left-1/2 transform -translate-x-1/2 text-center">
+          <div className="text-2xl lg:text-4xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
             {score}%
           </div>
-          <div className="text-base lg:text-2xl font-bold" style={{ color: scoreInfo.color }}>
+          <div className="text-sm lg:text-lg font-bold mt-1" style={{ color: scoreInfo.color }}>
             {scoreInfo.label}
           </div>
         </div>
