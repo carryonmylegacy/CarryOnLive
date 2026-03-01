@@ -229,13 +229,16 @@ function App() {
           <Toaster 
             position="top-right"
             offset="calc(4rem + env(safe-area-inset-top, 0px))"
+            duration={Infinity}
             toastOptions={{
               style: {
                 background: 'var(--bg2)',
-                border: '1px solid var(--b)',
+                border: '1px solid rgba(244,63,94,0.3)',
                 color: 'var(--t)',
+                maxWidth: '420px',
               },
             }}
+            closeButton={false}
           />
         </BrowserRouter>
         </SectionLockProvider>
