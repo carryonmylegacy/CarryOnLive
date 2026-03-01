@@ -136,6 +136,17 @@ async def dismiss_onboarding(current_user: dict = Depends(get_current_user)):
     return {"success": True}
 
 
+@router.post("/onboarding/reset")
+async def reset_onboarding(current_user: dict = Depends(get_current_user)):
+    """Re-enable the onboarding wizard (undo dismiss)."""
+    await db.onboarding_progress.update_one(
+        {"user_id": current_user["id"]},
+        {"$set": {"dismissed": False}},
+    )
+    return {"success": True}
+
+
+
 # ===================== QUICK-START TEMPLATES =====================
 
 SCENARIO_TEMPLATES = {
