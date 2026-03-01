@@ -438,7 +438,7 @@ const BeneficiariesPage = () => {
                   {ben.date_of_birth && (
                     <div className="flex items-center gap-2 text-[#94a3b8]">
                       <Calendar className="w-4 h-4" />
-                      <span>{new Date(ben.date_of_birth).toLocaleDateString()}</span>
+                      <span>{ben.date_of_birth.split('T')[0].replace(/(\d{4})-(\d{2})-(\d{2})/, (_, y, m, d) => `${parseInt(m)}/${parseInt(d)}/${y}`)}</span>
                     </div>
                   )}
                   {(ben.address_city || ben.address_state) && (
