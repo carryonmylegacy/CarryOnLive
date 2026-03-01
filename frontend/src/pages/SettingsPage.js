@@ -42,6 +42,7 @@ const SettingsPage = () => {
   const [digestSending, setDigestSending] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [confirmingPayment, setConfirmingPayment] = useState(false);
+  const [onboardingVisible, setOnboardingVisible] = useState(() => localStorage.getItem('carryon_onboarding_dismissed') !== 'true');
 
   // GDPR state
   const [consent, setConsent] = useState(null);
