@@ -61,6 +61,8 @@ const LoginPage = () => {
   /* Biometric auto-login on mount — fails silently */
   useEffect(() => {
     const tryBiometric = async () => {
+      // Brief delay to prevent Safari autofill flash
+      await new Promise(r => setTimeout(r, 300));
       try {
         const { isBiometricEnabled, authenticateWithBiometric } = await import('../services/biometric');
         if (!isBiometricEnabled()) { setBiometricLoading(false); return; }
