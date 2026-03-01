@@ -49,6 +49,9 @@ const LoginPage = () => {
   const [flagOpacity, setFlagOpacity] = useState(1);
   const [exiting, setExiting] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [showBiometricPrompt, setShowBiometricPrompt] = useState(false);
+  const [biometricLoading, setBiometricLoading] = useState(true);
+  const [pendingLoginResult, setPendingLoginResult] = useState(null);
 
   const navigateWithFade = (path) => {
     setExiting(true);
