@@ -255,28 +255,28 @@ const DashboardPage = () => {
         <TrialBanner onUpgrade={() => setShowPaywall(true)} />
       </div>
 
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl lg:text-4xl font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
-          Welcome back, {getUserFirstName()}
-        </h1>
-        <p className="text-[var(--t4)] text-base lg:text-xl">
-          Your legacy is taking shape. Here's your overview.
-        </p>
+      {/* Header + Estate Selector */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
+        <div>
+          <h1 className="text-2xl lg:text-4xl font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            Welcome back, {getUserFirstName()}
+          </h1>
+          <p className="text-[var(--t4)] text-base lg:text-xl">
+            Your legacy is taking shape. Here's your overview.
+          </p>
+        </div>
+        <div className="sm:mt-1">
+          <EstateSelector 
+            currentEstate={estate} 
+            estates={estates} 
+            onEstateChange={handleEstateChange} 
+            onEstatesUpdate={fetchEstates} 
+          />
+        </div>
       </div>
 
       {/* Onboarding Wizard — shown early so it's visible on mobile */}
       <OnboardingWizard />
-
-      {/* Estate Selector - Mobile shows full width */}
-      <div className="mb-6">
-        <EstateSelector 
-          currentEstate={estate} 
-          estates={estates} 
-          onEstateChange={handleEstateChange} 
-          onEstatesUpdate={fetchEstates} 
-        />
-      </div>
 
       {/* Estate Readiness Score Card */}
       <div className="glass-card p-4 lg:p-6 mb-4" data-testid="readiness-card">
