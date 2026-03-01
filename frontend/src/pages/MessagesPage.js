@@ -396,23 +396,25 @@ const MessagesPage = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-[var(--s)] p-1">
-          <TabsTrigger value="all" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-[#0b1120]">
-            All Messages
-          </TabsTrigger>
-          <TabsTrigger value="immediate" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-[#0b1120]">
-            <Send className="w-4 h-4 mr-2" />
-            Immediate
-          </TabsTrigger>
-          <TabsTrigger value="age_milestone" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-[#0b1120]">
-            <Calendar className="w-4 h-4 mr-2" />
-            Age Milestone
-          </TabsTrigger>
-          <TabsTrigger value="event" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-[#0b1120]">
-            <Star className="w-4 h-4 mr-2" />
-            Event Triggered
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-4 px-4 pb-1" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <TabsList className="bg-[var(--s)] p-1 w-max">
+            <TabsTrigger value="all" className="text-sm data-[state=active]:bg-[#d4af37] data-[state=active]:text-[#0b1120]">
+              All
+            </TabsTrigger>
+            <TabsTrigger value="immediate" className="text-sm data-[state=active]:bg-[#d4af37] data-[state=active]:text-[#0b1120]">
+              <Send className="w-3.5 h-3.5 mr-1.5" />
+              Immediate
+            </TabsTrigger>
+            <TabsTrigger value="age_milestone" className="text-sm data-[state=active]:bg-[#d4af37] data-[state=active]:text-[#0b1120]">
+              <Calendar className="w-3.5 h-3.5 mr-1.5" />
+              Age
+            </TabsTrigger>
+            <TabsTrigger value="event" className="text-sm data-[state=active]:bg-[#d4af37] data-[state=active]:text-[#0b1120]">
+              <Star className="w-3.5 h-3.5 mr-1.5" />
+              Event
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value={activeTab} className="mt-6">
           {filteredMessages.length === 0 ? (
