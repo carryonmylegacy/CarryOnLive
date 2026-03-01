@@ -159,6 +159,15 @@ const LoginPage = () => {
     }
   };
 
+  // Show nothing while checking biometric
+  if (biometricLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0B1221' }}>
+        <img src="/carryon-logo.jpg" alt="CarryOn" className="w-32 h-auto opacity-60" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen" style={{
       background: '#0B1221',
