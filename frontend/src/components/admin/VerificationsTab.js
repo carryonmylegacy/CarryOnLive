@@ -4,7 +4,7 @@ import { FileKey, Activity, Loader2, X, Search, ToggleLeft, ToggleRight, Bell, C
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { toast } from 'sonner';
+import { toast } from '../../utils/toast';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 

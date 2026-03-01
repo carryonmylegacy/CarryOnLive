@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Lock, Shield, Users, ChevronRight, Upload, AlertTriangle } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
-import { toast } from 'sonner';
+import { toast } from '../../utils/toast';
 import { Skeleton } from '../../components/ui/skeleton';
 import OrbitVisualization from '../../components/estate/OrbitVisualization';
 import EmergencyAccessPanel from '../../components/beneficiary/EmergencyAccessPanel';

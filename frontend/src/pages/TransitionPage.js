@@ -15,7 +15,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
-import { toast } from 'sonner';
+import { toast } from '../../utils/toast';
 import { Skeleton } from '../components/ui/skeleton';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;

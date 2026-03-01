@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { MessageCircle, Send, Loader2, Headphones } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { toast } from 'sonner';
+import { toast } from '../../utils/toast';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 

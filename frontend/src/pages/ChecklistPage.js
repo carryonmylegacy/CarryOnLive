@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Progress } from '../components/ui/progress';
-import { toast } from 'sonner';
+import { toast } from '../../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
 import QuickStartTemplates from '../components/QuickStartTemplates';

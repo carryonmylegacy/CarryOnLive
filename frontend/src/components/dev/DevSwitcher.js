@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { ChevronUp, ChevronDown, Settings } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '../../utils/toast';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 

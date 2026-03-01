@@ -7,7 +7,7 @@ import { Label } from './ui/label';
 import { Switch } from './ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Separator } from './ui/separator';
-import { toast } from 'sonner';
+import { toast } from '../utils/toast';
 import { useSectionLock } from './security/SectionLock';
 import axios from 'axios';
 
