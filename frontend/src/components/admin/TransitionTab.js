@@ -58,7 +58,7 @@ export const TransitionTab = ({ getAuthHeaders }) => {
     setActionLoading(certId);
     try {
       await axios.post(`${API_URL}/transition/begin-review/${certId}`, {}, getAuthHeaders());
-      toast.success('Review started — beneficiary can now see you are reviewing');
+      // toast removed
       fetchCertificates();
     } catch (err) { toast.error('Failed to begin review'); }
     finally { setActionLoading(null); }
@@ -68,7 +68,7 @@ export const TransitionTab = ({ getAuthHeaders }) => {
     setActionLoading(certId);
     try {
       await axios.post(`${API_URL}/transition/approve/${certId}`, {}, getAuthHeaders());
-      toast.success('Certificate approved — benefactor sealed, beneficiary access granted');
+      // toast removed
       fetchCertificates();
     } catch (err) { toast.error('Failed to approve'); }
     finally { setActionLoading(null); }
@@ -79,7 +79,7 @@ export const TransitionTab = ({ getAuthHeaders }) => {
     setActionLoading(certId);
     try {
       await axios.post(`${API_URL}/transition/reject/${certId}`, {}, getAuthHeaders());
-      toast.success('Certificate rejected');
+      // toast removed
       fetchCertificates();
     } catch (err) { toast.error('Failed to reject'); }
     finally { setActionLoading(null); }

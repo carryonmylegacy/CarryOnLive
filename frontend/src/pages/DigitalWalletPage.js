@@ -60,7 +60,7 @@ const DigitalWalletPage = () => {
     if (!window.confirm('Delete this entry? This cannot be undone.')) return;
     try {
       await axios.delete(`${API_URL}/digital-wallet/${entryId}`, getAuthHeaders());
-      toast.success('Entry deleted');
+      // toast removed
       fetchData();
     } catch (err) {
       toast.error('Failed to delete');
@@ -232,10 +232,10 @@ const WalletEntryModal = ({ entry, beneficiaries, onClose, onSaved, getAuthHeade
       const headers = getAuthHeaders();
       if (entry) {
         await axios.put(`${API_URL}/digital-wallet/${entry.id}`, data, headers);
-        toast.success('Entry updated');
+        // toast removed
       } else {
         await axios.post(`${API_URL}/digital-wallet`, data, headers);
-        toast.success('Entry added');
+        // toast removed
       }
       onSaved();
     } catch (err) {

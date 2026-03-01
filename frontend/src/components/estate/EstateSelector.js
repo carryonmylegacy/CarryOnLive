@@ -45,7 +45,7 @@ const EstateSelector = ({ currentEstate, onEstateChange, estates, onEstatesUpdat
         getAuthHeaders()
       );
       
-      toast.success('Estate created successfully!');
+      // toast removed
       setShowCreateModal(false);
       setNewEstateName('');
       
@@ -73,7 +73,7 @@ const EstateSelector = ({ currentEstate, onEstateChange, estates, onEstatesUpdat
     
     try {
       await axios.delete(`${API_URL}/estates/${estateId}`, getAuthHeaders());
-      toast.success('Estate deleted');
+      // toast removed
       
       if (onEstatesUpdate) {
         onEstatesUpdate();

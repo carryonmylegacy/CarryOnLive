@@ -62,7 +62,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
     setCreating(true);
     try {
       await axios.post(`${API_URL}/family-plan/create`, { plan_id: planId }, { headers: { ...headers, 'Content-Type': 'application/json' } });
-      toast.success('Family plan created! You are the Family Plan Owner.');
+      // toast removed
       fetchStatus();
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed to create'); }
     setCreating(false);
@@ -73,7 +73,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
     setInviting(true);
     try {
       await axios.post(`${API_URL}/family-plan/${fp.id}/add-member`, { email: inviteEmail, role: inviteRole }, { headers: { ...headers, 'Content-Type': 'application/json' } });
-      toast.success('Member added to family plan');
+      // toast removed
       setInviteEmail('');
       fetchStatus();
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed to add member'); }
@@ -83,7 +83,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
   const handleSetSuccessor = async (userId) => {
     try {
       await axios.put(`${API_URL}/family-plan/${fp.id}/successor`, { successor_user_id: userId }, { headers: { ...headers, 'Content-Type': 'application/json' } });
-      toast.success('Successor designated');
+      // toast removed
       fetchStatus();
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed'); }
   };
@@ -92,7 +92,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
     if (!window.confirm('Remove this member from the family plan?')) return;
     try {
       await axios.delete(`${API_URL}/family-plan/${fp.id}/member/${userId}`, { headers });
-      toast.success('Member removed');
+      // toast removed
       fetchStatus();
     } catch (err) { toast.error('Failed to remove member'); }
   };
@@ -101,7 +101,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
     if (!window.confirm('Dissolve your family plan? All members return to individual pricing.')) return;
     try {
       await axios.delete(`${API_URL}/family-plan/${fp.id}`, { headers });
-      toast.success('Family plan dissolved');
+      // toast removed
       fetchStatus();
     } catch (err) { toast.error('Failed to dissolve'); }
   };

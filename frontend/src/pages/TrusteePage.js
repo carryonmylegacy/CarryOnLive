@@ -199,7 +199,7 @@ const PaymentForm = ({ task, onPaymentSaved, getAuthHeaders }) => {
         card_holder_name: cardholderName,
       }, getAuthHeaders());
 
-      toast.success('Payment method saved successfully');
+      // toast removed
       onPaymentSaved({
         last4: card?.last4 || '****',
         exp: `${card?.exp_month}/${String(card?.exp_year).slice(-2)}`,
@@ -347,7 +347,7 @@ const TrusteePage = () => {
         beneficiary: newTask.beneficiary || null,
       }, getAuthHeaders());
       setView('submitted');
-      toast.success('Request submitted to DTS team');
+      // toast removed
     } catch (err) {
       console.error(err);
       toast.error('Failed to submit request');
@@ -384,7 +384,7 @@ const TrusteePage = () => {
         beneficiary: editTask.beneficiary || null,
       }, getAuthHeaders());
       
-      toast.success('Task updated and sent back for re-quoting');
+      // toast removed
       setShowEditModal(false);
       setEditTask(null);
       
@@ -416,7 +416,7 @@ const TrusteePage = () => {
     setDeleting(true);
     try {
       await axios.delete(`${API_URL}/dts/tasks/${taskId}`, getAuthHeaders());
-      toast.success('Task deleted successfully');
+      // toast removed
       setShowDeleteDialog(false);
       setTasks(prev => prev.filter(t => t.id !== taskId));
       setView('list');

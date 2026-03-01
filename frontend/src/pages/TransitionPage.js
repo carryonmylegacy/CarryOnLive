@@ -72,7 +72,7 @@ const TransitionPage = () => {
         }
       );
       
-      toast.success('Death certificate uploaded for review');
+      // toast removed
       setShowUploadModal(false);
       setSelectedFile(null);
       fetchData();

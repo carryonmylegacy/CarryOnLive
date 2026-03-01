@@ -35,7 +35,7 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
         action: newAction,
         notes: reviewNotes[v.id] || '',
       }, { headers: { ...headers, 'Content-Type': 'application/json' } });
-      toast.success(`Verification ${newAction}d`);
+      // toast removed
       fetchVerifications();
     } catch (err) { toast.error(err.response?.data?.detail || 'Review failed'); }
   };
@@ -44,7 +44,7 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
     setNotifying(v.id);
     try {
       await axios.post(`${API_URL}/admin/verifications/${v.id}/notify`, {}, { headers });
-      toast.success(`Notification sent to ${v.user_name || v.user_email}`);
+      // toast removed
       fetchVerifications();
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed to send notification'); }
     setNotifying(null);

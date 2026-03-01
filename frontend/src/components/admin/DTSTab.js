@@ -48,7 +48,7 @@ export const DTSTab = ({ getAuthHeaders }) => {
         task_id: taskId,
         line_items: items.map(i => ({ description: i.description, cost: parseFloat(i.cost) })),
       }, getAuthHeaders());
-      toast.success('Quote submitted to benefactor');
+      // toast removed
       setSelectedDts(null);
       setQuoteItems([{ description: '', cost: '' }]);
       fetchTasks();
@@ -60,7 +60,7 @@ export const DTSTab = ({ getAuthHeaders }) => {
     setActionLoading(taskId);
     try {
       await axios.post(`${API_URL}/dts/tasks/${taskId}/status?status=${status}`, {}, getAuthHeaders());
-      toast.success(`Status updated to ${status}`);
+      // toast removed
       fetchTasks();
     } catch (err) { toast.error('Failed'); }
     finally { setActionLoading(null); }

@@ -26,7 +26,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders }) => 
     setRoleChanging(userId);
     try {
       await axios.put(`${API_URL}/admin/users/${userId}/role`, { role: newRole }, getAuthHeaders());
-      toast.success(`${userName}'s role changed to ${newRole}`);
+      // toast removed
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to change role');
@@ -40,7 +40,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders }) => 
     setActionLoading(userId);
     try {
       await axios.delete(`${API_URL}/admin/users/${userId}`, getAuthHeaders());
-      toast.success(`User "${name}" deleted`);
+      // toast removed
       setUsers(prev => prev.filter(u => u.id !== userId));
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed');

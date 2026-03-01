@@ -81,7 +81,7 @@ const LoginPage = () => {
         else navigate('/dashboard');
       } else {
         setShowOtpModal(true);
-        toast.success('OTP sent to your email');
+        // toast removed
       }
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Invalid credentials');
@@ -113,7 +113,7 @@ const LoginPage = () => {
       if (result.email_sent === false) {
         toast.error('Failed to send code — please try again');
       } else {
-        toast.success('New verification code sent');
+        // toast removed
       }
       setResendCooldown(30);
       const interval = setInterval(() => {

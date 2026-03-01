@@ -74,7 +74,7 @@ const AcceptInvitationPage = () => {
       });
       
       setAccepted(true);
-      toast.success('Welcome to CarryOn!');
+      // toast removed
       
       setTimeout(() => {
         login(response.data.access_token, response.data.user);

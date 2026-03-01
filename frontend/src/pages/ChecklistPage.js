@@ -111,11 +111,11 @@ const ChecklistPage = () => {
       if (editingItem) {
         const res = await axios.put(`${API_URL}/checklists/${editingItem.id}`, form, getAuthHeaders());
         setChecklists(prev => prev.map(c => c.id === editingItem.id ? res.data : c));
-        toast.success('Item updated');
+        // toast removed
       } else {
         const res = await axios.post(`${API_URL}/checklists`, { ...form, estate_id: estate.id }, getAuthHeaders());
         setChecklists(prev => [...prev, res.data]);
-        toast.success('Item added');
+        // toast removed
       }
       closeForm();
     } catch (err) {
@@ -131,7 +131,7 @@ const ChecklistPage = () => {
     try {
       await axios.delete(`${API_URL}/checklists/${itemId}`, getAuthHeaders());
       setChecklists(prev => prev.filter(c => c.id !== itemId));
-      toast.success('Item deleted');
+      // toast removed
     } catch (err) {
       toast.error('Failed to delete');
     } finally {
@@ -183,10 +183,10 @@ const ChecklistPage = () => {
 
       const added = res.data?.action_result?.items_added || 0;
       if (added > 0) {
-        toast.success(`${added} new checklist items generated from your vault documents`);
+        // toast removed
         fetchData();
       } else {
-        toast.info('No new items to add — your checklist is already comprehensive');
+        // toast removed
       }
     } catch (err) {
       toast.error('AI suggestion failed — try again later');

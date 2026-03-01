@@ -169,11 +169,11 @@ const BeneficiariesPage = () => {
       if (editingBeneficiary) {
         await axios.put(`${API_URL}/beneficiaries/${editingBeneficiary.id}`, payload, getAuthHeaders());
         if (photoFile) await uploadPhoto(editingBeneficiary.id);
-        toast.success('Beneficiary updated');
+        // toast removed
       } else {
         const res = await axios.post(`${API_URL}/beneficiaries`, payload, getAuthHeaders());
         if (photoFile && res.data?.id) await uploadPhoto(res.data.id);
-        toast.success('Beneficiary added successfully');
+        // toast removed
       }
       
       setShowAddModal(false);
@@ -215,7 +215,7 @@ const BeneficiariesPage = () => {
     setSendingInvite(beneficiaryId);
     try {
       await axios.post(`${API_URL}/beneficiaries/${beneficiaryId}/invite`, {}, getAuthHeaders());
-      toast.success('Invitation sent successfully');
+      // toast removed
       fetchData();
     } catch (error) {
       console.error('Invite error:', error);
@@ -234,7 +234,7 @@ const BeneficiariesPage = () => {
     try {
       await navigator.clipboard.writeText(link);
       setCopiedLink(ben.id);
-      toast.success('Invitation link copied — share via text, WhatsApp, or any messenger');
+      // toast removed
       setTimeout(() => setCopiedLink(null), 2000);
     } catch {
       toast.error('Failed to copy link');
@@ -246,7 +246,7 @@ const BeneficiariesPage = () => {
     
     try {
       await axios.delete(`${API_URL}/beneficiaries/${beneficiaryId}`, getAuthHeaders());
-      toast.success('Beneficiary removed');
+      // toast removed
       setBeneficiaries(beneficiaries.filter(b => b.id !== beneficiaryId));
     } catch (error) {
       console.error('Delete error:', error);

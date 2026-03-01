@@ -92,7 +92,7 @@ export const SectionLockProvider = ({ children }) => {
   const completeUnlock = (sid) => {
     setSessionUnlocked(prev => ({ ...prev, [sid]: true }));
     setUnlockModal(null);
-    toast.success(`${LOCKABLE_SECTIONS[sid]?.name} unlocked`);
+    // toast removed
   };
 
   // Lock on logout
