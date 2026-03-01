@@ -24,7 +24,7 @@ import {
   Lock
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
-import { toast } from '../../utils/toast';
+import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
