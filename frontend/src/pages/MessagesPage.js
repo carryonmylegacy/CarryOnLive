@@ -604,16 +604,24 @@ const MessagesPage = () => {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <video
-                        ref={videoRef}
-                        className="w-full rounded-lg max-h-[200px] bg-[#0F1629]"
-                        muted
-                      />
+                      <div className="relative">
+                        <video
+                          ref={videoRef}
+                          className="w-full rounded-lg max-h-[200px] bg-[#0F1629]"
+                          muted
+                        />
+                        {/* Countdown overlay */}
+                        {countdown !== null && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-lg">
+                            <span className="text-6xl font-bold text-white animate-pulse" style={{ fontFamily: 'Outfit, sans-serif' }}>{countdown}</span>
+                          </div>
+                        )}
+                      </div>
                       <div className="flex justify-center gap-3">
                         {!isRecording ? (
-                          <Button onClick={startRecording} className="gold-button">
+                          <Button onClick={startRecording} disabled={countdown !== null} className="gold-button">
                             <Camera className="w-5 h-5 mr-2" />
-                            Start Recording
+                            {countdown !== null ? `${countdown}...` : 'Start Recording'}
                           </Button>
                         ) : (
                           <Button onClick={stopRecording} className="bg-[#ef4444] hover:bg-[#dc2626] text-white">
