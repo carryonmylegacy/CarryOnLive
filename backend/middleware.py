@@ -70,8 +70,6 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         path = request.url.path
         strict_paths = [
             "/api/auth/login",
-            "/api/auth/dev-login",
-            "/api/auth/dev-switch",
             "/api/auth/verify-otp",
             "/api/auth/resend-otp",
             "/api/auth/verify-password",
@@ -79,6 +77,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         ]
         moderate_paths = [
             "/api/auth/register",
+            "/api/auth/dev-login",
+            "/api/auth/dev-switch",
             "/api/compliance/data-export",
         ]
 
