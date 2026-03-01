@@ -49,7 +49,6 @@ const OnboardingWizard = () => {
         });
         if (Object.keys(newPops).length > 0) {
           setPopping(prev => ({ ...prev, ...newPops }));
-          // Remove popped steps after animation
           setTimeout(() => {
             setPopping(prev => {
               const next = { ...prev };
@@ -58,15 +57,19 @@ const OnboardingWizard = () => {
             });
           }, 800);
         }
-        // Update ref
         const completed = {};
         res.data.steps.forEach(s => { if (s.completed) completed[s.key] = true; });
         prevCompleted.current = completed;
-      }
 
-      if (res.data.dismissed || res.data.all_complete) {
-        setDismissed(true);
-        localStorage.setItem('carryon_onboarding_dismissed', 'true');
+        // If any steps are incomplete, force show even if previously dismissed
+        const hasIncomplete = res.data.steps.some(s => !s.completed);
+        if (hasIncomplete) {
+          setDismissed(false);
+          localStorage.removeItem('carryon_onboarding_dismissed');
+        } else if (res.data.all_complete) {
+          setDismissed(true);
+          localStorage.setItem('carryon_onboarding_dismissed', 'true');
+        }
       }
     } catch (err) { console.error('Onboarding fetch error:', err); }
     finally { setLoading(false); }
