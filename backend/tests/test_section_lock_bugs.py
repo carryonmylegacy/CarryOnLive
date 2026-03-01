@@ -12,8 +12,6 @@ Admin user_id: ce8c7e35-9fef-479b-948e-52c97ee49936
 import pytest
 import requests
 import os
-from datetime import datetime, timezone
-import uuid
 
 BASE_URL = os.environ.get(
     "REACT_APP_BACKEND_URL", "https://vault-pdf-viewer.preview.emergentagent.com"
