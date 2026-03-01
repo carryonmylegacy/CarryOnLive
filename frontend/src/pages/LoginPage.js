@@ -58,7 +58,7 @@ const LoginPage = () => {
     setTimeout(() => navigate(path), 500);
   };
 
-  /* Biometric auto-login on mount */
+  /* Biometric auto-login on mount — fails silently */
   useEffect(() => {
     const tryBiometric = async () => {
       try {
@@ -66,14 +66,14 @@ const LoginPage = () => {
         if (!isBiometricEnabled()) { setBiometricLoading(false); return; }
 
         const result = await authenticateWithBiometric();
-        if (result.access_token) {
+        if (result?.access_token) {
           localStorage.setItem('carryon_token', result.access_token);
           const dest = result.user?.role === 'admin' ? '/admin' : result.user?.role === 'beneficiary' ? '/beneficiary' : '/dashboard';
           navigate(dest);
           return;
         }
-      } catch (err) {
-        console.error('Biometric login failed, showing manual login:', err);
+      } catch {
+        // Silent fail — just show the normal login form
       }
       setBiometricLoading(false);
     };
