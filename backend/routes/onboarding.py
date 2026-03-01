@@ -92,11 +92,17 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
     done = sum(1 for s in steps_with_status if s["completed"])
     all_complete = done == total
 
-    # Auto-dismiss if all complete
-    if all_complete and not progress.get("dismissed"):
+    # Auto-dismiss if all complete, auto-restore if steps become incomplete again
+    if all_complete:
         await db.onboarding_progress.update_one(
             {"user_id": current_user["id"]},
             {"$set": {"dismissed": True}},
+        )
+    elif progress.get("dismissed") and not all_complete:
+        # Steps went back to incomplete — un-dismiss so the guide reappears
+        await db.onboarding_progress.update_one(
+            {"user_id": current_user["id"]},
+            {"$set": {"dismissed": False}},
         )
 
     return {
@@ -105,7 +111,7 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
         "total_steps": total,
         "progress_pct": int((done / total) * 100) if total else 0,
         "all_complete": all_complete,
-        "dismissed": progress.get("dismissed", False) or all_complete,
+        "dismissed": all_complete,
     }
 
 
