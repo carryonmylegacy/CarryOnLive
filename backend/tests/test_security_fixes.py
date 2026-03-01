@@ -122,7 +122,7 @@ class TestSecuritySettingsToggle:
         assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
         assert "questions" in data, f"Expected 'questions' key: {data}"
-        assert len(data["questions"]) > 0, f"Expected at least one question"
+        assert len(data["questions"]) > 0, "Expected at least one question"
 
 
 class TestEstateAndDashboard:

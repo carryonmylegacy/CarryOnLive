@@ -183,7 +183,7 @@ class TestAdminVerifications:
             headers=benefactor_headers
         )
         assert response.status_code == 403, f"Expected 403 for non-admin, got {response.status_code}"
-        print(f"✓ Admin verifications requires admin role")
+        print("✓ Admin verifications requires admin role")
 
     def test_admin_verifications_list(self, api_client, admin_headers):
         """GET /api/admin/verifications returns list of verifications"""
