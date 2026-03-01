@@ -1,0 +1,23 @@
+{
+  "short_name": "CarryOn",
+  "name": "CarryOn™ — Family Readiness",
+  "description": "Secure estate planning and legacy management for every American family.",
+  "icons": [
+    {
+      "src": "carryon-icon.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "carryon-app-icon.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0B1221",
+  "background_color": "#0B1221",
+  "scope": "/"
+}
