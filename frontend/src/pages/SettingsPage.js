@@ -43,9 +43,6 @@ const SettingsPage = () => {
   const [showPaywall, setShowPaywall] = useState(false);
   const [confirmingPayment, setConfirmingPayment] = useState(false);
   const [onboardingVisible, setOnboardingVisible] = useState(() => localStorage.getItem('carryon_onboarding_dismissed') !== 'true');
-  const [biometricOn, setBiometricOn] = useState(() => localStorage.getItem('carryon_biometric_enabled') === 'true');
-  const [showBioPassword, setShowBioPassword] = useState(false);
-  const [bioPassword, setBioPassword] = useState('');
 
   // GDPR state
   const [consent, setConsent] = useState(null);
