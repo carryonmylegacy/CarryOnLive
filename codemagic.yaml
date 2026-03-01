@@ -61,14 +61,14 @@ workflows:
         script: |
           cd frontend
           GENERATE_SOURCEMAP=false yarn build
-      - name: Install CocoaPods
-        script: |
-          cd frontend/ios/App
-          timeout 300 pod install --repo-update || pod install
       - name: Sync Capacitor
         script: |
           cd frontend
           npx cap sync ios
+      - name: Install CocoaPods
+        script: |
+          cd frontend/ios/App
+          timeout 300 pod install --repo-update || pod install
       - name: Set up keychain
         script: |
           keychain initialize
