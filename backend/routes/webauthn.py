@@ -1,6 +1,5 @@
 """CarryOn™ — WebAuthn/Passkey Routes for Face ID / Biometric Login (PWA)"""
 
-import base64
 import json
 import os
 import uuid
