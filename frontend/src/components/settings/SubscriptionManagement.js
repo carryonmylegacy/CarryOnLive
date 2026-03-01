@@ -81,7 +81,7 @@ const PriceDisplay = ({ plan, billing }) => {
       <span className="text-3xl font-bold tracking-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
         ${displayPrice.toFixed(2)}
       </span>
-      <span className="text-[10px] text-[var(--t5)]">{periodLabel}</span>
+      <span className="text-sm text-[var(--t4)]">{periodLabel}</span>
     </div>
   );
 };
