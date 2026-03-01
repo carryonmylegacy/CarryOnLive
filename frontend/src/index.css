@@ -6,65 +6,69 @@
 
 @layer base {
   :root {
-    /* ===== DARK MODE (Default) ===== */
-    --bg: #0F1629;
-    --bg2: #141C33;
-    --bg3: #1A2440;
-    --content-bg: #0F1629;
+    /* ===== DARK MODE (Default) — 2026 Calming Teal/Navy + Warm Gold ===== */
+    --bg: #0B1221;
+    --bg2: #0F1A2E;
+    --bg3: #152238;
+    --content-bg: #0B1221;
     
-    /* Surface & Border Colors */
-    --s: rgba(255,255,255,0.035);
-    --b: rgba(255,255,255,0.07);
-    --b2: rgba(255,255,255,0.12);
+    /* Surface & Border Colors — subtle glass depth */
+    --s: rgba(255,255,255,0.04);
+    --b: rgba(255,255,255,0.08);
+    --b2: rgba(255,255,255,0.13);
     
-    /* Text Colors */
-    --t: #F1F3F8;
-    --t2: #D8DEE9;
-    --t3: #A0AABF;
-    --t4: #7B879E;
-    --t5: #525C72;
+    /* Text Colors — softer, warmer whites */
+    --t: #EDF2F7;
+    --t2: #CBD5E1;
+    --t3: #94A3B8;
+    --t4: #6B7A90;
+    --t5: #475569;
     
-    /* Accent Colors */
-    --bl: #3B7BF7;
-    --bl2: #5B93FA;
-    --bl3: #7AABFD;
-    --blbg: rgba(59,123,247,0.12);
+    /* Primary — calming teal-blue */
+    --bl: #0EA5E9;
+    --bl2: #38BDF8;
+    --bl3: #7DD3FC;
+    --blbg: rgba(14,165,233,0.10);
     
-    --gn: #22C993;
-    --gn2: #4EDBA8;
-    --gnbg: rgba(34,201,147,0.1);
+    /* Success — warm teal */
+    --gn: #14B8A6;
+    --gn2: #2DD4BF;
+    --gnbg: rgba(20,184,166,0.10);
     
+    /* Purple — softer lavender */
     --pr: #8B5CF6;
-    --pr2: #B794F6;
-    --prbg: rgba(139,92,246,0.1);
+    --pr2: #A78BFA;
+    --prbg: rgba(139,92,246,0.10);
     
-    --yw: #F5A623;
-    --yw2: #FFCB57;
-    --ywbg: rgba(245,166,35,0.1);
+    /* Warm amber */
+    --yw: #F59E0B;
+    --yw2: #FBBF24;
+    --ywbg: rgba(245,158,11,0.10);
     
-    --rd: #F05252;
-    --rd2: #F98080;
-    --rdbg: rgba(240,82,82,0.1);
+    /* Soft coral */
+    --rd: #F43F5E;
+    --rd2: #FB7185;
+    --rdbg: rgba(244,63,94,0.08);
     
-    /* Gold Accent */
-    --gold: #E0AD2B;
-    --gold2: #F0C95C;
-    --seal-bg: rgba(217,119,6,0.12);
+    /* Gold Accent — warm legacy gold */
+    --gold: #D4A537;
+    --gold2: #E8C15D;
+    --seal-bg: rgba(212,165,55,0.12);
     
-    /* Card backgrounds - Dark mode gradients */
-    --card-vault: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);
-    --card-messages: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-    --card-checklist: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-    --card-beneficiaries: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    /* Card backgrounds — richer gradients */
+    --card-vault: linear-gradient(135deg, #0369A1 0%, #0C4A6E 100%);
+    --card-messages: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+    --card-checklist: linear-gradient(135deg, #D97706 0%, #B45309 100%);
+    --card-beneficiaries: linear-gradient(135deg, #0D9488 0%, #0F766E 100%);
     
-    /* Glass card */
-    --glass-bg: rgba(20,28,51,0.65);
-    --glass-border: rgba(255,255,255,0.08);
+    /* Glass card — liquid glass effect */
+    --glass-bg: rgba(11,18,33,0.75);
+    --glass-border: rgba(255,255,255,0.07);
     
     /* Mobile nav */
-    --mobile-nav-bg: #0F1629;
-    --mobile-nav-text: #525C72;
-    --mobile-nav-active: #E0AD2B;
+    --mobile-nav-bg: #0B1221;
+    --mobile-nav-text: #475569;
+    --mobile-nav-active: #D4A537;
     
     /* Typography */
     --serif: 'Cormorant Garamond', Georgia, serif;
@@ -75,25 +79,25 @@
     --r: 14px;
     --sidebar-width: 260px;
     
-    /* Shadcn Variables */
-    --background: 224 42% 11%;
-    --foreground: 220 20% 96%;
-    --card: 224 42% 14%;
-    --card-foreground: 220 20% 96%;
-    --popover: 224 42% 12%;
-    --popover-foreground: 220 20% 96%;
-    --primary: 43 74% 52%;
-    --primary-foreground: 224 42% 11%;
-    --secondary: 224 30% 18%;
-    --secondary-foreground: 220 20% 96%;
-    --muted: 224 30% 20%;
-    --muted-foreground: 220 15% 55%;
+    /* Shadcn Variables — teal primary, warm gold accent */
+    --background: 220 45% 9%;
+    --foreground: 214 32% 95%;
+    --card: 220 42% 12%;
+    --card-foreground: 214 32% 95%;
+    --popover: 220 42% 10%;
+    --popover-foreground: 214 32% 95%;
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 35% 16%;
+    --secondary-foreground: 214 32% 95%;
+    --muted: 220 30% 18%;
+    --muted-foreground: 215 20% 50%;
     --accent: 43 74% 52%;
     --accent-foreground: 220 47% 4%;
-    --destructive: 0 72% 51%;
+    --destructive: 350 89% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 224 25% 19%;
-    --input: 224 25% 19%;
+    --border: 220 28% 17%;
+    --input: 220 28% 17%;
     --ring: 43 74% 52%;
     --radius: 0.75rem;
   }
