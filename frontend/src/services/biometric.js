@@ -174,14 +174,6 @@ function arrayBufferToBase64url(buffer) {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.detail || 'Server rejected the passkey');
-
-  localStorage.setItem('carryon_biometric_enabled', 'true');
-  localStorage.setItem('carryon_biometric_method', 'webauthn');
-  return result;
-};
-
 // ═══ AUTHENTICATION (on app launch) ═══
 
 export const authenticateWithBiometric = async () => {
