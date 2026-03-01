@@ -129,7 +129,7 @@ const AboutPage = () => {
           <div className="max-w-[900px] mx-auto px-6 relative z-10">
             <div className="grid md:grid-cols-2 gap-6">
               <RevealSection delay={0} direction="left">
-                <div className="rounded-xl p-6 lg:p-8 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20" style={{ background: 'rgba(15,26,46,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="rounded-xl p-6 lg:p-8 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20" style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
                   <h3 className="text-[#d4af37] text-lg font-bold mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>Our Mission</h3>
                   <p className="text-[#7b879e] text-sm leading-relaxed">
                     Ensure every American family has the clarity, organization, and readiness they need for life&apos;s most critical transitions &mdash; reducing overwhelm through secure estate infrastructure and intelligent document analysis.
@@ -137,7 +137,7 @@ const AboutPage = () => {
                 </div>
               </RevealSection>
               <RevealSection delay={0.12} direction="right">
-                <div className="rounded-xl p-6 lg:p-8 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20" style={{ background: 'rgba(15,26,46,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="rounded-xl p-6 lg:p-8 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20" style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
                   <h3 className="text-[#d4af37] text-lg font-bold mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>Our Vision</h3>
                   <p className="text-[#7b879e] text-sm leading-relaxed">
                     Define the family readiness category and become the standard for families and institutions that refuse to leave their affairs to chance.
@@ -176,7 +176,7 @@ const AboutPage = () => {
                 },
               ].map(({ title, desc }, i) => (
                 <RevealSection key={title} delay={i * 0.1}>
-                  <div className="rounded-xl p-6 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20 hover:shadow-[0_8px_40px_rgba(212,175,55,0.04)]" style={{ background: 'rgba(15,26,46,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div className="rounded-xl p-6 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20 hover:shadow-[0_8px_40px_rgba(212,175,55,0.04)]" style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
                     <h4 className="text-white text-base font-bold mb-3">{title}</h4>
                     <p className="text-[#7b879e] text-sm leading-relaxed">{desc}</p>
                   </div>
@@ -195,7 +195,7 @@ const AboutPage = () => {
                 },
               ].map(({ title, desc }, i) => (
                 <RevealSection key={title} delay={0.3 + i * 0.12} direction={i === 0 ? 'left' : 'right'}>
-                  <div className="rounded-xl p-6 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20 hover:shadow-[0_8px_40px_rgba(212,175,55,0.04)]" style={{ background: 'rgba(15,26,46,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div className="rounded-xl p-6 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20 hover:shadow-[0_8px_40px_rgba(212,175,55,0.04)]" style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
                     <h4 className="text-white text-base font-bold mb-3">{title}</h4>
                     <p className="text-[#7b879e] text-sm leading-relaxed">{desc}</p>
                   </div>
@@ -245,7 +245,7 @@ const AboutPage = () => {
                 },
               ].map(({ title, desc }, i) => (
                 <RevealSection key={title} delay={0.2 + i * 0.1}>
-                  <div className="rounded-xl p-6 text-center h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20" style={{ background: 'rgba(15,26,46,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div className="rounded-xl p-6 text-center h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20" style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
                     <h4 className="text-[#d4af37] text-sm font-bold mb-2 leading-snug">{title}</h4>
                     <p className="text-[#7b879e] text-xs leading-relaxed">{desc}</p>
                   </div>
