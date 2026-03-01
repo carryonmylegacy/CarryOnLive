@@ -256,7 +256,7 @@ const LoginPage = () => {
                   <div className="absolute top-0 left-8 right-8 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
                   <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Sign In</h2>
                   <p className="text-[#475569] text-sm mb-6">Access your CarryOn account</p>
-                  <form onSubmit={handleLogin} className="space-y-4" autoComplete="off" data-lpignore="true" data-form-type="other">
+                  <form onSubmit={handleLogin} className="space-y-4">
                     <div>
                       <label className="text-[#7b879e] text-xs font-medium mb-1.5 block">Email</label>
                       <div className="relative">
