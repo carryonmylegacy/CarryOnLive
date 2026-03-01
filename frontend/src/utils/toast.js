@@ -51,7 +51,26 @@ const CopyDismissToast = ({ message, toastId }) => {
         transition: 'all 0.2s',
         whiteSpace: 'nowrap',
       }
-    }, copied ? 'Copied!' : 'Copy & Close')
+    }, copied ? 'Copied!' : 'Copy & Close'),
+    React.createElement('button', {
+      onClick: () => sonnerToast.dismiss(toastId),
+      style: {
+        flexShrink: 0,
+        width: '28px',
+        height: '28px',
+        borderRadius: '8px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: 'none',
+        background: 'rgba(255,255,255,0.06)',
+        color: 'var(--t5)',
+        cursor: 'pointer',
+        fontSize: '16px',
+        lineHeight: 1,
+        transition: 'all 0.2s',
+      }
+    }, '\u00D7')
   );
 };
 
