@@ -203,29 +203,19 @@ async def gather_estate_context(
             context_parts.append("\n**DOCUMENT CONTENTS (for analysis):**")
             import asyncio
 
-            async def extract_with_timeout(doc):
+            async def extract_one(doc):
                 try:
                     full_doc = await db.documents.find_one({"id": doc["id"]}, {"_id": 0})
-                    if not full_doc:
-                        return doc["name"], f"[Document not found]"
-                    if full_doc.get("storage_key") or full_doc.get("file_data"):
-                        text = await asyncio.wait_for(
-                            asyncio.to_thread(lambda: asyncio.run(_extract_sync(full_doc))),
-                            timeout=15
-                        )
-                        return doc["name"], text
-                    return doc["name"], f"[No content available]"
+                    if not full_doc or not (full_doc.get("storage_key") or full_doc.get("file_data")):
+                        return doc["name"], "[No content available]"
+                    text = await asyncio.wait_for(extract_document_text(full_doc), timeout=15)
+                    return doc["name"], text
                 except asyncio.TimeoutError:
-                    return doc["name"], f"[Extraction timed out - large file]"
+                    return doc["name"], "[Extraction timed out]"
                 except Exception as e:
-                    return doc["name"], f"[Extraction error: {str(e)[:50]}]"
+                    return doc["name"], f"[Error: {str(e)[:50]}]"
 
-            async def _extract_sync(full_doc):
-                return await extract_document_text(full_doc)
-
-            # Extract documents concurrently with timeout
-            tasks = [extract_with_timeout(doc) for doc in documents[:10]]
-            results = await asyncio.gather(*tasks)
+            results = await asyncio.gather(*[extract_one(doc) for doc in documents[:10]])
             for name, text in results:
                 if text and not text.startswith("["):
                     context_parts.append(f"\n--- {name} ---\n{text[:4000]}\n--- End of {name} ---")
