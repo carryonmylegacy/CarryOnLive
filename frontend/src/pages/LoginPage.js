@@ -436,7 +436,7 @@ const LoginPage = () => {
                 { icon: Shield, text: 'Two-factor authentication on every login \u2014 with daily trust option' },
                 { icon: Users, text: 'Transition verification by human team \u2014 not algorithms, not AI' },
                 { icon: Trash2, text: 'Post-execution record destruction \u2014 DTS records are permanently eliminated' },
-                { icon: FileCheck, text: 'SOC 2 & GDPR compliance' },
+                { icon: FileCheck, text: 'SOC 2 & GDPR compliance pending' },
               ].map(({ icon: Icon, text }, i) => (
                 <RevealSection key={i} delay={i * 0.08}>
                   <div className="rounded-xl p-6 text-center h-full transition-all duration-500 hover:border-[#d4af37]/20 hover:-translate-y-1"
