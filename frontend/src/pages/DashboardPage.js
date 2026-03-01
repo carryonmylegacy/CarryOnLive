@@ -271,72 +271,72 @@ const DashboardPage = () => {
       <OnboardingWizard />
 
       {/* Estate Readiness Score + Stats Combined */}
-      <div className="glass-card p-4 lg:p-6 mb-4" data-testid="readiness-card">
-        <h2 className="text-center text-base lg:text-2xl font-bold text-[var(--t4)] uppercase tracking-wider mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
+      <div className="glass-card p-5 lg:p-8 mb-4 max-w-4xl mx-auto" data-testid="readiness-card">
+        <h2 className="text-center text-xl sm:text-2xl lg:text-3xl font-bold text-[var(--t4)] uppercase tracking-widest mb-5 lg:mb-6" style={{ fontFamily: 'Outfit, sans-serif' }}>
           Estate Readiness Score
         </h2>
 
         {/* Three-column layout */}
-        <div className="grid grid-cols-[1fr_1.4fr_1fr] gap-2 lg:gap-4 items-stretch">
-          {/* Left third: 3 stat tiles stacked */}
-          <div className="flex flex-col gap-2">
-            <div className="stat-card-vault rounded-xl p-3 lg:p-4 cursor-pointer transition-all hover:scale-[1.03] active:scale-[0.98] text-center flex-1 flex flex-col items-center justify-center"
+        <div className="grid grid-cols-[1fr_1.5fr_1fr] gap-3 lg:gap-5 items-center">
+          {/* Left: 3 square stat tiles stacked */}
+          <div className="flex flex-col gap-2 lg:gap-3">
+            <div className="stat-card-vault rounded-xl aspect-square cursor-pointer transition-all hover:scale-[1.03] active:scale-[0.98] flex flex-col items-center justify-center"
               onClick={() => navigate('/vault')} data-testid="stat-card-vault-mini">
               <FolderLock className="stat-icon w-5 h-5 lg:w-6 lg:h-6 opacity-70 mb-1" />
-              <div className="text-2xl lg:text-3xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>{stats.documents}</div>
-              <div className="opacity-80 text-xs font-bold">SDV</div>
+              <div className="text-2xl lg:text-4xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>{stats.documents}</div>
+              <div className="opacity-80 text-[10px] lg:text-xs font-bold leading-tight text-center">Secure<br/>Document Vault</div>
             </div>
-            <div className="stat-card-messages rounded-xl p-3 lg:p-4 cursor-pointer transition-all hover:scale-[1.03] active:scale-[0.98] text-center flex-1 flex flex-col items-center justify-center"
+            <div className="stat-card-messages rounded-xl aspect-square cursor-pointer transition-all hover:scale-[1.03] active:scale-[0.98] flex flex-col items-center justify-center"
               onClick={() => navigate('/messages')} data-testid="stat-card-messages-mini">
               <MessageSquare className="stat-icon w-5 h-5 lg:w-6 lg:h-6 opacity-70 mb-1" />
-              <div className="text-2xl lg:text-3xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>{stats.messages}</div>
-              <div className="opacity-80 text-xs font-bold">MM</div>
+              <div className="text-2xl lg:text-4xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>{stats.messages}</div>
+              <div className="opacity-80 text-[10px] lg:text-xs font-bold leading-tight text-center">Milestone<br/>Messages</div>
             </div>
-            <div className="stat-card-checklist rounded-xl p-3 lg:p-4 cursor-pointer transition-all hover:scale-[1.03] active:scale-[0.98] text-center flex-1 flex flex-col items-center justify-center"
+            <div className="stat-card-checklist rounded-xl aspect-square cursor-pointer transition-all hover:scale-[1.03] active:scale-[0.98] flex flex-col items-center justify-center"
               onClick={() => navigate('/checklist')} data-testid="stat-card-checklist-mini">
               <CheckSquare className="stat-icon w-5 h-5 lg:w-6 lg:h-6 opacity-70 mb-1" />
-              <div className="text-2xl lg:text-3xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>{totalTasks}</div>
-              <div className="opacity-80 text-xs font-bold">IAC</div>
+              <div className="text-2xl lg:text-4xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>{totalTasks}</div>
+              <div className="opacity-80 text-[10px] lg:text-xs font-bold leading-tight text-center">Action<br/>Checklist</div>
             </div>
           </div>
 
-          {/* Center: Speedometer */}
-          <div className="flex items-center justify-center">
+          {/* Center: Speedometer vertically centered */}
+          <div className="flex items-center justify-center py-4 lg:py-6">
             <SpeedometerGauge score={readinessScore} />
           </div>
 
-          {/* Right third: Key box in upper half */}
-          <div className="flex flex-col gap-2">
-            <div className="glass-card rounded-xl p-3 lg:p-4" style={{ border: '1px solid var(--b)' }}>
-              <div className="space-y-2">
+          {/* Right: Key box */}
+          <div className="flex flex-col items-end">
+            <div className="glass-card rounded-xl p-3 lg:p-4 aspect-square flex items-center w-full" style={{ border: '1px solid var(--b)' }}>
+              <div className="space-y-2.5 lg:space-y-3 w-full">
                 <div className="flex items-center gap-2">
-                  <span className="w-3 h-2 rounded-full bg-[#2563eb]" />
-                  <span className="text-[var(--t3)] text-xs lg:text-sm">{docsPercent}% Docs</span>
+                  <span className="w-3 h-3 lg:w-4 lg:h-4 rounded-sm bg-[#2563eb] shrink-0" />
+                  <span className="text-[var(--t3)] text-xs lg:text-sm font-bold">{docsPercent}% Docs</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-3 h-2 rounded-full bg-[#8b5cf6]" />
-                  <span className="text-[var(--t3)] text-xs lg:text-sm">{msgsPercent}% Messages</span>
+                  <span className="w-3 h-3 lg:w-4 lg:h-4 rounded-sm bg-[#8b5cf6] shrink-0" />
+                  <span className="text-[var(--t3)] text-xs lg:text-sm font-bold">{msgsPercent}% Messages</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-3 h-2 rounded-full bg-[#f97316]" />
-                  <span className="text-[var(--t3)] text-xs lg:text-sm">{checklistPercent}% Checklist</span>
+                  <span className="w-3 h-3 lg:w-4 lg:h-4 rounded-sm bg-[#f97316] shrink-0" />
+                  <span className="text-[var(--t3)] text-xs lg:text-sm font-bold">{checklistPercent}% Checklist</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Beneficiaries - full width below */}
-        </div>
-        <div 
-          className="stat-card-beneficiaries rounded-xl p-3 mt-3 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3"
-          onClick={() => navigate('/beneficiaries')}
-          data-testid="stat-card-beneficiaries-inline"
-        >
-          <Users className="stat-icon w-6 h-6 opacity-70" />
-          <span className="text-2xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>{stats.beneficiaries}</span>
-          <span className="opacity-80 text-sm font-bold">Beneficiaries</span>
-        </div>
+      {/* Beneficiaries - outside the readiness card */}
+      <div 
+        className="stat-card-beneficiaries rounded-xl p-4 mb-4 max-w-4xl mx-auto cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-4"
+        onClick={() => navigate('/beneficiaries')}
+        data-testid="stat-card-beneficiaries-inline"
+      >
+        <Users className="stat-icon w-7 h-7 opacity-70" />
+        <span className="text-3xl lg:text-4xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>{stats.beneficiaries}</span>
+        <span className="opacity-80 text-lg lg:text-xl font-bold">Beneficiaries</span>
+      </div>
 
       {/* Bottom Section - Vault, Messages & Checklist Previews */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
