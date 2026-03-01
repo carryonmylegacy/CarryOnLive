@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunkfrontend=self.webpackChunkfrontend||[]).push([[629],{629(s,n,t){t.d(n,{PushNotifications:()=>e});const e=(0,t(5403).F3)("PushNotifications",{})}}]);
+//# sourceMappingURL=629.3c99ad5f.chunk.js.map
