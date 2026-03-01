@@ -209,8 +209,8 @@ const MobileNav = () => {
                 </div>
               </nav>
 
-              {/* Theme Toggle Button - Matching prototype style */}
-              <div className="px-4 pb-6">
+              {/* Theme Toggle Button */}
+              <div className="px-4 pb-3">
                 <button
                   onClick={toggleTheme}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all"
@@ -231,6 +231,23 @@ const MobileNav = () => {
                       <span className="font-medium">Dark Mode</span>
                     </>
                   )}
+                </button>
+              </div>
+
+              {/* Sign Out */}
+              <div className="px-4 pb-6">
+                <button
+                  onClick={() => { setOpen(false); handleLogout(); }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all"
+                  style={{
+                    border: '1px solid rgba(244,63,94,0.25)',
+                    color: '#F43F5E',
+                    backgroundColor: 'rgba(244,63,94,0.06)',
+                  }}
+                  data-testid="mobile-logout-btn"
+                >
+                  <LogOut className="w-5 h-5" />
+                  <span className="font-medium">Sign Out</span>
                 </button>
               </div>
             </div>
