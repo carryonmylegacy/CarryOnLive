@@ -247,6 +247,33 @@ const LoginPage = () => {
                 </div>
               </div>
             </RevealSection>
+
+            {/* Logo + Tagline — mobile only, below login card */}
+            <div className="lg:hidden col-span-full">
+              <RevealSection delay={0.5}>
+                <div className="flex flex-col items-center text-center mt-2">
+                  <img src="/carryon-logo.jpg" alt="CarryOn" className="w-[160px] h-auto mb-4" />
+                  <h2 className="text-2xl font-bold text-white leading-[1.08] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                    Every American Family.
+                    <span className="block text-[#d4af37] mt-1">Ready.</span>
+                  </h2>
+                  <p className="text-[#7b879e] text-sm max-w-xs leading-relaxed mb-4">
+                    Secure your legacy with AI-powered estate planning. Protect what matters, guide who you love.
+                  </p>
+                  <div className="flex items-center gap-3 justify-center mb-3">
+                    {['AES-256 Encrypted', 'Zero-Knowledge', '2FA Protected'].map(badge => (
+                      <div key={badge} className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
+                        <span className="text-[#475569] text-xs">{badge}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <a href="#about" className="inline-flex items-center gap-2 text-[#475569] text-sm hover:text-[#d4af37] transition-colors">
+                    Scroll to explore <ChevronDown className="w-4 h-4 animate-bounce" />
+                  </a>
+                </div>
+              </RevealSection>
+            </div>
           </div>
         </div>
       </section>
