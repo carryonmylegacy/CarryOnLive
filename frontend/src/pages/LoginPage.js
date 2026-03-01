@@ -279,7 +279,7 @@ const LoginPage = () => {
                       style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#0B1221' }}>
                       {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Signing In...</> : 'Sign In'}
                     </Button>
-                    {localStorage.getItem('carryon_biometric_enabled') === 'true' && localStorage.getItem('carryon_biometric_method') === 'webauthn' && (
+                    {localStorage.getItem('carryon_biometric_enabled') === 'true' && (
                       <button type="button" onClick={async () => {
                         try {
                           setLoading(true);
@@ -291,12 +291,12 @@ const LoginPage = () => {
                             navigate(dest);
                           }
                         } catch (err) {
-                          toast.error(err.message || 'Face ID login failed');
+                          toast.error(err.message || 'Quick login failed');
                         } finally { setLoading(false); }
                       }} className="w-full h-11 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all hover:brightness-110"
                         style={{ background: 'rgba(14,165,233,0.1)', color: '#0EA5E9', border: '1px solid rgba(14,165,233,0.2)' }}
                         data-testid="face-id-login-btn">
-                        <Shield className="w-4 h-4" /> Sign in with Face ID
+                        <Shield className="w-4 h-4" /> Quick Sign In
                       </button>
                     )}
                   </form>
