@@ -132,7 +132,7 @@ const MobileNav = () => {
                     className="text-xs font-semibold tracking-wider uppercase mb-3 px-2"
                     style={{ color: theme === 'dark' ? '#525C72' : '#64748B' }}
                   >
-                    MY LEGACY
+                    
                   </h3>
                   <div>
                     {myLegacyItems.map((item, idx) => (
