@@ -87,12 +87,10 @@ const registerNativeBiometric = async (email, password) => {
 };
 
 const registerWebAuthn = async (token) => {
-  // Verify WebAuthn is actually available
   if (!navigator.credentials || typeof navigator.credentials.create !== 'function') {
-    throw new Error('WebAuthn is not supported in this browser. Try using the native app instead.');
+    throw new Error('WebAuthn is not supported in this browser');
   }
 
-  // Get registration options from server
   const optionsRes = await fetch(`${API_URL}/auth/webauthn/register-options`, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -101,52 +99,80 @@ const registerWebAuthn = async (token) => {
 
   if (!optionsRes.ok) {
     const err = await optionsRes.json().catch(() => ({}));
-    throw new Error(err.detail || 'Failed to get registration options from server');
+    throw new Error(err.detail || 'Failed to get registration options');
   }
 
   const options = await optionsRes.json();
 
-  // Convert base64url strings to ArrayBuffers
-  options.challenge = base64urlToBuffer(options.challenge);
-  options.user.id = base64urlToBuffer(options.user.id);
+  // Build the publicKey options with proper ArrayBuffer types
+  const publicKeyOptions = {
+    challenge: base64urlToBuffer(options.challenge),
+    rp: options.rp,
+    user: {
+      ...options.user,
+      id: base64urlToBuffer(options.user.id),
+    },
+    pubKeyCredParams: options.pubKeyCredParams,
+    authenticatorSelection: options.authenticatorSelection,
+    timeout: options.timeout || 60000,
+    attestation: options.attestation || 'none',
+  };
+
   if (options.excludeCredentials) {
-    options.excludeCredentials = options.excludeCredentials.map(c => ({
+    publicKeyOptions.excludeCredentials = options.excludeCredentials.map(c => ({
       ...c, id: base64urlToBuffer(c.id),
     }));
   }
 
   // Create credential (triggers Face ID)
-  let credential;
+  let rawCredential;
   try {
-    credential = await navigator.credentials.create({ publicKey: options });
+    rawCredential = await navigator.credentials.create({ publicKey: publicKeyOptions });
   } catch (e) {
-    throw new Error(e.name === 'NotAllowedError' ? 'Face ID was cancelled or not available' : `Passkey creation failed: ${e.message}`);
+    if (e.name === 'NotAllowedError') throw new Error('Face ID was cancelled');
+    throw new Error('Passkey creation failed: ' + e.message);
   }
 
-  if (!credential) throw new Error('No credential returned — Face ID may have been cancelled');
+  if (!rawCredential) throw new Error('Face ID was cancelled');
 
-  // Extract and serialize credential data (Safari requires explicit ArrayBuffer reads)
-  const credId = credential.id;
-  const rawId = new Uint8Array(credential.rawId);
-  const attestObj = new Uint8Array(credential.response.attestationObject);
-  const clientData = new Uint8Array(credential.response.clientDataJSON);
-
-  const credentialPayload = {
-    id: credId,
-    rawId: bufferToBase64url(rawId.buffer),
-    type: credential.type,
+  // IMMEDIATELY extract all binary data into plain strings
+  // This must happen synchronously before any async operations
+  const credentialData = {
+    id: rawCredential.id,
+    rawId: arrayBufferToBase64url(rawCredential.rawId),
+    type: rawCredential.type,
     response: {
-      attestationObject: bufferToBase64url(attestObj.buffer),
-      clientDataJSON: bufferToBase64url(clientData.buffer),
+      attestationObject: arrayBufferToBase64url(rawCredential.response.attestationObject),
+      clientDataJSON: arrayBufferToBase64url(rawCredential.response.clientDataJSON),
     },
   };
 
-  // Send to server
+  // Now send the plain JSON to server (no ArrayBuffers left)
   const response = await fetch(`${API_URL}/auth/webauthn/register`, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ credential: credentialPayload }),
+    body: JSON.stringify({ credential: credentialData }),
   });
+
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.detail || 'Server rejected the passkey');
+
+  localStorage.setItem('carryon_biometric_enabled', 'true');
+  localStorage.setItem('carryon_biometric_method', 'webauthn');
+  localStorage.setItem('carryon_biometric_email', '');
+  return result;
+};
+
+// Safari-safe ArrayBuffer to base64url — reads bytes synchronously
+function arrayBufferToBase64url(buffer) {
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.length;
+  let binary = '';
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
 
   const result = await response.json();
   if (!response.ok) throw new Error(result.detail || 'Server rejected the passkey');
