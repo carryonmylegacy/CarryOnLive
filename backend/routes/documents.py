@@ -432,7 +432,7 @@ async def download_document(
     if not (is_owner or is_beneficiary or is_admin):
         raise HTTPException(status_code=403, detail="Access denied")
 
-    # HIPAA: Log PHI access
+    # SOC 2: Log sensitive data access
     from routes.compliance import log_phi_access
 
     await log_phi_access(
@@ -619,7 +619,7 @@ async def preview_document(
         estate_id=document.get("estate_id"),
     )
 
-    # HIPAA: Log PHI access for document preview
+    # SOC 2: Log sensitive data access for document preview
     from routes.compliance import log_phi_access
 
     await log_phi_access(
