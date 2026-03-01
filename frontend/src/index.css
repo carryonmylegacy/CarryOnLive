@@ -184,6 +184,20 @@
     overscroll-behavior: none;
   }
   
+  /* iOS PWA/mobile: lock body, only content scrolls */
+  @supports (-webkit-touch-callout: none) {
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      position: fixed;
+      width: 100%;
+    }
+    #root {
+      height: 100%;
+      overflow: hidden;
+    }
+  }
+  
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--sans);
     color: var(--t);
