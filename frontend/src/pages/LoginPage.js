@@ -92,12 +92,16 @@ const LoginPage = () => {
 
   const completeLogin = async (result) => {
     // Check if we should offer biometric setup
-    const { isBiometricAvailable, isBiometricEnabled } = await import('../services/biometric');
-    const { available } = await isBiometricAvailable();
-    if (available && !isBiometricEnabled()) {
-      setPendingLoginResult(result);
-      setShowBiometricPrompt(true);
-      return;
+    try {
+      const { isBiometricAvailable, isBiometricEnabled } = await import('../services/biometric');
+      const { available } = await isBiometricAvailable();
+      if (available && !isBiometricEnabled() && !localStorage.getItem('carryon_biometric_declined')) {
+        setPendingLoginResult(result);
+        setShowBiometricPrompt(true);
+        return;
+      }
+    } catch {
+      // Biometric not supported — continue normally
     }
     navigateToHome(result);
   };
