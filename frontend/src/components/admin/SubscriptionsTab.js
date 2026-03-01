@@ -39,7 +39,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
   const toggleBeta = async () => {
     try {
       await axios.put(`${API_URL}/admin/subscription-settings`, { beta_mode: !settings.beta_mode }, { headers: { ...headers, 'Content-Type': 'application/json' } });
-      toast.success(settings.beta_mode ? 'Beta mode OFF - subscriptions required' : 'Beta mode ON - all features free');
+      // toast removed
       fetchData();
     } catch (err) { toast.error('Failed to update'); }
   };
@@ -49,7 +49,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
       const formData = new FormData();
       formData.append('price', parseFloat(newPrice));
       await axios.put(`${API_URL}/admin/plans/${planId}/price`, formData, { headers });
-      toast.success('Price updated');
+      // toast removed
       setEditingPrice(null);
       fetchData();
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update price'); }
@@ -58,7 +58,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
   const updateUserOverride = async (userId, data) => {
     try {
       await axios.put(`${API_URL}/admin/user-subscription/${userId}`, data, { headers: { ...headers, 'Content-Type': 'application/json' } });
-      toast.success('User override updated');
+      // toast removed
       fetchData();
     } catch (err) { toast.error('Failed to update'); }
   };
@@ -129,7 +129,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
                 onCheckedChange={async () => {
                   try {
                     await axios.put(`${API_URL}/admin/family-plan-settings`, {}, { headers });
-                    toast.success(settings?.family_plan_enabled ? 'Family plans hidden' : 'Family plans visible to users');
+                    // toast removed
                     fetchData();
                   } catch (err) { toast.error('Failed to update'); }
                 }}

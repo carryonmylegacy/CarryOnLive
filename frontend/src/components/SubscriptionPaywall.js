@@ -55,19 +55,19 @@ export default function SubscriptionPaywall({ onDismiss }) {
       axios.get(`${API_URL}/subscriptions/checkout-status/${sessionId}`, { headers })
         .then(async (res) => {
           if (res.data?.payment_status === 'paid' || res.data?.payment_status === 'complete') {
-            toast.success('Payment confirmed! Activating your subscription...');
+            // toast removed
             // Clean up URL
             window.history.replaceState({}, '', window.location.pathname);
             // Refresh subscription status to dismiss paywall
             if (refreshSubscription) await refreshSubscription();
           } else {
-            toast.info('Payment is being processed. Please wait a moment...');
+            // toast removed
             // Retry after a few seconds
             setTimeout(async () => {
               try {
                 const retry = await axios.get(`${API_URL}/subscriptions/checkout-status/${sessionId}`, { headers });
                 if (retry.data?.payment_status === 'paid' || retry.data?.payment_status === 'complete') {
-                  toast.success('Subscription activated!');
+                  // toast removed
                   window.history.replaceState({}, '', window.location.pathname);
                   if (refreshSubscription) await refreshSubscription();
                 }
@@ -136,7 +136,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
       }, { headers });
 
       if (res.data.free) {
-        toast.success(res.data.message);
+        // toast removed
         fetchData();
       } else if (res.data.url) {
         window.location.href = res.data.url;
@@ -166,7 +166,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
 
         try {
           const res = await axios.post(`${API_URL}/verification/upload`, formData, { headers });
-          toast.success(res.data.message);
+          // toast removed
           setShowVerification(false);
           setVerificationFile(null);
           setVerificationDocType('');

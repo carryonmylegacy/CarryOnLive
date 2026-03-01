@@ -162,7 +162,7 @@ const VaultPage = () => {
         );
       }
       
-      toast.success('Document uploaded and encrypted successfully');
+      // toast removed
       
       // Show backup code if provided
       if (response.data.backup_code) {
@@ -195,7 +195,7 @@ const VaultPage = () => {
         getAuthHeaders()
       );
       
-      toast.success('Document unlocked! You can now view or download it.');
+      // toast removed
       setShowLockModal(false);
       setUnlockPassword('');
       setUnlockBackupCode('');
@@ -235,7 +235,7 @@ const VaultPage = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(downloadUrl);
       
-      toast.success('Document downloaded');
+      // toast removed
     } catch (error) {
       console.error('Download error:', error);
       if (error.response?.status === 401) {
@@ -255,7 +255,7 @@ const VaultPage = () => {
     
     try {
       await axios.delete(`${API_URL}/documents/${docId}`, getAuthHeaders());
-      toast.success('Document deleted');
+      // toast removed
       setDocuments(documents.filter(d => d.id !== docId));
     } catch (error) {
       console.error('Delete error:', error);
@@ -292,7 +292,7 @@ const VaultPage = () => {
         }
       });
       
-      toast.success('Document updated successfully');
+      // toast removed
       setShowEditModal(false);
       setEditingDoc(null);
       fetchData();
@@ -306,7 +306,7 @@ const VaultPage = () => {
 
   const copyBackupCode = () => {
     navigator.clipboard.writeText(backupCode);
-    toast.success('Backup code copied to clipboard');
+    // toast removed
   };
 
   const resetUploadForm = () => {
@@ -326,7 +326,7 @@ const VaultPage = () => {
     );
 
     if (!previewable) {
-      toast.info('This file type cannot be previewed inline. Downloading instead.');
+      // toast removed
       handleDownload(doc);
       return;
     }
@@ -448,7 +448,7 @@ const VaultPage = () => {
         getAuthHeaders()
       );
       
-      toast.success('Voice verified! Downloading document...');
+      // toast removed
       setShowLockModal(false);
       setSpokenText('');
       

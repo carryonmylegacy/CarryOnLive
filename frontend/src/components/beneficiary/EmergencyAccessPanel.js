@@ -58,7 +58,7 @@ const EmergencyAccessPanel = ({ estates }) => {
     setSubmitting(true);
     try {
       await axios.post(`${API_URL}/emergency-access/request`, form, getAuthHeaders());
-      toast.success('Emergency access request submitted. Our team will review promptly.');
+      // toast removed
       setShowForm(false);
       setForm({ estate_id: '', reason: '', relationship_to_benefactor: '', urgency: 'high', contact_phone: '', supporting_details: '' });
       fetchData();

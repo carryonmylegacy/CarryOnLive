@@ -74,17 +74,17 @@ const SettingsPage = () => {
     axios.get(`${API_URL}/subscriptions/checkout-status/${sessionId}`, { headers })
       .then(async (res) => {
         if (res.data?.payment_status === 'paid' || res.data?.payment_status === 'complete') {
-          toast.success('Payment confirmed! Your plan has been updated.');
+          // toast removed
           window.history.replaceState({}, '', window.location.pathname);
           if (refreshSubscription) await refreshSubscription();
         } else {
-          toast.info('Payment is being processed. Checking again shortly...');
+          // toast removed
           // Retry after a few seconds for async payment processing
           setTimeout(async () => {
             try {
               const retry = await axios.get(`${API_URL}/subscriptions/checkout-status/${sessionId}`, { headers });
               if (retry.data?.payment_status === 'paid' || retry.data?.payment_status === 'complete') {
-                toast.success('Subscription updated!');
+                // toast removed
                 window.history.replaceState({}, '', window.location.pathname);
                 if (refreshSubscription) await refreshSubscription();
               }
@@ -131,7 +131,7 @@ const SettingsPage = () => {
     setDigestSending(true);
     try {
       await axios.post(`${API_URL}/digest/preview`, {}, getAuthHeaders());
-      toast.success('Preview digest sent to your email!');
+      // toast removed
     } catch (e) {
       toast.error('Could not send preview — do you have an estate?');
     }
@@ -153,7 +153,7 @@ const SettingsPage = () => {
         third_party_sharing: updated.third_party_sharing,
       }, getAuthHeaders());
       setConsent(updated);
-      toast.success('Privacy preference updated');
+      // toast removed
     } catch (e) {
       toast.error('Failed to update preference');
     }
@@ -171,7 +171,7 @@ const SettingsPage = () => {
       link.download = `carryon-data-export-${new Date().toISOString().split('T')[0]}.json`;
       link.click();
       window.URL.revokeObjectURL(url);
-      toast.success('Your data export has been downloaded');
+      // toast removed
     } catch (e) {
       toast.error('Failed to export data');
     }
@@ -189,7 +189,7 @@ const SettingsPage = () => {
         confirm_email: deleteEmail,
         reason: deleteReason,
       }, getAuthHeaders());
-      toast.success(res.data.message);
+      // toast removed
       setShowDeleteConfirm(false);
       setDeleteEmail('');
       setDeleteReason('');
@@ -304,11 +304,11 @@ const SettingsPage = () => {
                   if (checked) {
                     localStorage.removeItem('carryon_onboarding_dismissed');
                     try { await axios.post(`${API_URL}/onboarding/reset`, {}, getAuthHeaders()); } catch (e) { /* ignore */ }
-                    toast.success('Getting Started guide will show on your dashboard');
+                    // toast removed
                   } else {
                     localStorage.setItem('carryon_onboarding_dismissed', 'true');
                     try { await axios.post(`${API_URL}/onboarding/dismiss`, {}, getAuthHeaders()); } catch (e) { /* ignore */ }
-                    toast.success('Getting Started guide hidden');
+                    // toast removed
                   }
                 }}
                 data-testid="settings-onboarding-toggle"

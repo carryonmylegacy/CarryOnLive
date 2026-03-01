@@ -193,7 +193,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
         else if (pendingToggle.field === 'remove') {
           // Full removal
           await axios.delete(`${API_URL}/security/settings/${section.id}`, { headers });
-          toast.success(`Security removed from ${section.name}`);
+          // toast removed
           onUpdate();
         }
       }
@@ -221,7 +221,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
       if (answer) data.security_answer = answer;
 
       await axios.put(`${API_URL}/security/settings/${section.id}`, data, { headers: { ...headers, 'Content-Type': 'application/json' } });
-      toast.success(`${section.name} security saved`);
+      // toast removed
       setPw('');
       setAnswer('');
       onUpdate();
@@ -262,7 +262,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
               headers: { ...headers, 'Content-Type': 'multipart/form-data' }
             });
             setEnrollCount(res.data.samples_recorded);
-            toast.success(res.data.message);
+            // toast removed
           } catch (err) {
             toast.error(err.response?.data?.detail || 'Voice enrollment failed');
           }

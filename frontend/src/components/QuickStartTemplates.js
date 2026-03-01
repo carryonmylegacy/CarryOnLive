@@ -52,7 +52,7 @@ const QuickStartTemplates = ({ estateId, onApplied }) => {
         estate_id: estateId,
         template_id: templateId,
       }, getAuthHeaders());
-      toast.success(res.data.message);
+      // toast removed
       if (onApplied) onApplied();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to apply template');

@@ -34,7 +34,7 @@ const UploadCertificatePage = () => {
         ...getAuthHeaders(),
         headers: { ...getAuthHeaders().headers, 'Content-Type': 'multipart/form-data' },
       });
-      toast.success('Death certificate submitted for review');
+      // toast removed
       navigate('/beneficiary/condolence');
     } catch (err) {
       console.error(err);

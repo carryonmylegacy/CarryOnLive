@@ -219,7 +219,7 @@ const GuardianPage = () => {
     try {
       await axios.delete(`${API_URL}/chat/sessions/${sid}`, getAuthHeaders());
       setSessions(prev => prev.filter(s => s.session_id !== sid));
-      toast.success('Conversation deleted');
+      // toast removed
     } catch (err) { toast.error('Failed to delete'); }
   };
 
@@ -243,7 +243,7 @@ const GuardianPage = () => {
       a.download = `CarryOn_Checklist_${new Date().toISOString().split('T')[0]}.pdf`;
       a.click();
       window.URL.revokeObjectURL(url);
-      toast.success('Checklist PDF downloaded');
+      // toast removed
     } catch (err) {
       toast.error(err.response?.status === 404 ? 'No checklist items found — generate one first' : 'Failed to export checklist');
     }
@@ -264,7 +264,7 @@ const GuardianPage = () => {
       a.download = `CarryOn_Estate_Plan_${new Date().toISOString().split('T')[0]}.pdf`;
       a.click();
       window.URL.revokeObjectURL(url);
-      toast.success('Estate Plan PDF downloaded');
+      // toast removed
     } catch (err) { toast.error('Failed to export PDF'); }
     setExporting(false);
   };
@@ -300,7 +300,7 @@ const GuardianPage = () => {
         const result = response.data.action_result;
         if (result.action === 'checklist_generated') {
           assistantMsg.actionBadge = `${result.items_added} checklist items added`;
-          toast.success(`${result.items_added} checklist items generated!`);
+          // toast removed
         } else if (result.action === 'readiness_analyzed' && result.readiness) {
           assistantMsg.readiness = result.readiness;
         }

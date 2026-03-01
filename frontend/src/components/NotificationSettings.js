@@ -105,7 +105,7 @@ const NotificationSettings = ({ getAuthHeaders }) => {
       }, getAuthHeaders());
 
       setIsSubscribed(true);
-      toast.success('Push notifications enabled!');
+      // toast removed
     } catch (err) {
       console.error('Subscription error:', err);
       toast.error('Failed to enable notifications');
@@ -136,7 +136,7 @@ const NotificationSettings = ({ getAuthHeaders }) => {
         }
       }
       setIsSubscribed(false);
-      toast.success('Push notifications disabled');
+      // toast removed
     } catch (err) {
       console.error('Unsubscribe error:', err);
       toast.error('Failed to disable notifications');

@@ -103,7 +103,7 @@ const OnboardingPage = () => {
       }, getAuthHeaders());
       
       setBeneficiaries([...beneficiaries, newBen.data]);
-      toast.success(`${firstName} added as beneficiary!`);
+      // toast removed
       setShowAddModal(false);
       resetForm();
     } catch (error) {

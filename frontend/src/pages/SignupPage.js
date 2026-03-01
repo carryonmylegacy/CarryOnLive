@@ -131,7 +131,7 @@ const SignupPage = () => {
       setRegisteredEmail(email);
       setOtpHint(response.data.otp_hint);
       setShowOtpModal(true);
-      toast.success('Account created! Please verify with OTP.');
+      // toast removed
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to create account');
     } finally {
@@ -144,7 +144,7 @@ const SignupPage = () => {
     setLoading(true);
     try {
       const user = await verifyOtp(registeredEmail, otp);
-      toast.success(`Welcome to CarryOn, ${user.name}!`);
+      // toast removed
       navigate(user.role === 'beneficiary' ? '/beneficiary' : '/onboarding');
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Invalid OTP');
@@ -160,7 +160,7 @@ const SignupPage = () => {
       if (result.email_sent === false) {
         toast.error('Failed to send code — please try again');
       } else {
-        toast.success('New verification code sent');
+        // toast removed
       }
       setResendCooldown(30);
       const interval = setInterval(() => {

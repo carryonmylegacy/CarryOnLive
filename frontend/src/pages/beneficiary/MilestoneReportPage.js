@@ -57,7 +57,7 @@ const MilestoneReportPage = () => {
       }, getAuthHeaders());
       setDeliveredCount(res.data.messages_delivered || 0);
       setSent(true);
-      toast.success('Milestone reported successfully');
+      // toast removed
     } catch (err) {
       console.error(err);
       toast.error('Failed to submit milestone');

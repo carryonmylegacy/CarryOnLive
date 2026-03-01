@@ -194,7 +194,7 @@ export const SubscriptionManagement = ({
         formData.append('file_name', verificationFile.name);
         try {
           const res = await axios.post(`${API_URL}/verification/upload`, formData, getAuthHeaders());
-          toast.success(res.data.message || 'Verification submitted! You\'ll be notified once approved.');
+          // toast removed
           setShowVerification(false);
           setVerificationFile(null);
           setVerificationDocType('');
@@ -215,7 +215,7 @@ export const SubscriptionManagement = ({
     // Gate verification-required plans
     if (requiresVerification(planId) && !isVerifiedFor(planId)) {
       if (verificationStatus?.status === 'pending') {
-        toast.info('Your verification is still under review. We\'ll notify you once approved.');
+        // toast removed
         return;
       }
       setVerificationTier(planId);
@@ -233,13 +233,13 @@ export const SubscriptionManagement = ({
       if (res.data.url) {
         window.location.href = res.data.url;
       } else if (res.data.free) {
-        toast.success(res.data.message);
+        // toast removed
         if (refreshSubscription) await refreshSubscription();
       }
     } catch (e) {
       const detail = e.response?.data?.detail || 'Failed to start checkout';
       if (detail.includes('beta')) {
-        toast.info('All features are free during beta!');
+        // toast removed
       } else {
         toast.error(detail);
       }
@@ -256,7 +256,7 @@ export const SubscriptionManagement = ({
         await axios.post(`${API_URL}/support/messages`, {
           content: `I'd like to change my subscription from ${currentSub?.plan_name || currentPlanId} (${currentBilling}) to ${planId} (${billing}). Since this is a downgrade, please process the refund for the unused portion and switch my plan. Thank you.`,
         }, getAuthHeaders());
-        toast.success('Your downgrade request has been sent to Customer Service. We\'ll process your refund and plan change shortly — check your messages for updates.');
+        // toast removed
       } catch (e) {
         toast.error('Failed to send request. Please go to Customer Service directly.');
       }
@@ -274,7 +274,7 @@ export const SubscriptionManagement = ({
       if (res.data.url) {
         window.location.href = res.data.url;
       } else if (res.data.success) {
-        toast.success(res.data.message);
+        // toast removed
         if (refreshSubscription) await refreshSubscription();
       }
     } catch (e) {
@@ -290,7 +290,7 @@ export const SubscriptionManagement = ({
         await axios.post(`${API_URL}/support/messages`, {
           content: `I'd like to change my billing cycle from ${currentBilling} to ${billing} on my ${currentSub?.plan_name || currentPlanId} plan. Since this is a downgrade, please process the refund for the unused portion and update my billing. Thank you.`,
         }, getAuthHeaders());
-        toast.success('Your billing change request has been sent to Customer Service. We\'ll process your refund shortly — check your messages for updates.');
+        // toast removed
       } catch (e) {
         toast.error('Failed to send request. Please go to Customer Service directly.');
       }
@@ -308,7 +308,7 @@ export const SubscriptionManagement = ({
       if (res.data.url) {
         window.location.href = res.data.url;
       } else if (res.data.success) {
-        toast.success(res.data.message);
+        // toast removed
         if (refreshSubscription) await refreshSubscription();
       }
     } catch (e) {
@@ -322,7 +322,7 @@ export const SubscriptionManagement = ({
     setCancellingPlan(true);
     try {
       await axios.post(`${API_URL}/subscriptions/cancel`, {}, getAuthHeaders());
-      toast.success('Subscription cancelled');
+      // toast removed
       setShowCancelConfirm(false);
       if (refreshSubscription) await refreshSubscription();
     } catch (e) {
@@ -341,7 +341,7 @@ export const SubscriptionManagement = ({
       await axios.post(`${API_URL}/subscriptions/family-plan-request`, {
         benefactor_email: familyEmail.trim(),
       }, getAuthHeaders());
-      toast.success('Request sent! The benefactor will be notified.');
+      // toast removed
       setShowFamilyRequest(false);
       setFamilyEmail('');
     } catch (e) {

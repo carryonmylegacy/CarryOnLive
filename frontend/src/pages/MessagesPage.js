@@ -265,11 +265,11 @@ const MessagesPage = () => {
       if (editingMessage) {
         // Edit existing
         await axios.put(`${API_URL}/messages/${editingMessage.id}`, payload, getAuthHeaders());
-        toast.success('Message updated');
+        // toast removed
       } else {
         // Create new
         await axios.post(`${API_URL}/messages`, { ...payload, estate_id: estate.id }, getAuthHeaders());
-        toast.success('Message created');
+        // toast removed
       }
       
       setShowCreateModal(false);
@@ -289,7 +289,7 @@ const MessagesPage = () => {
     
     try {
       await axios.delete(`${API_URL}/messages/${messageId}`, getAuthHeaders());
-      toast.success('Message deleted');
+      // toast removed
       setMessages(messages.filter(m => m.id !== messageId));
     } catch (error) {
       console.error('Delete error:', error);
