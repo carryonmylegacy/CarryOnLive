@@ -278,7 +278,7 @@ const SettingsPage = () => {
             Appearance
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h4 className="text-[var(--t)] font-medium">Dark Mode</h4>
@@ -290,6 +290,27 @@ const SettingsPage = () => {
               data-testid="settings-theme-toggle"
             />
           </div>
+          {!isAdmin && (
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-[var(--t)] font-medium">Getting Started Guide</h4>
+                <p className="text-[var(--t5)] text-sm">Show the onboarding wizard on your dashboard</p>
+              </div>
+              <Switch
+                checked={localStorage.getItem('carryon_onboarding_dismissed') !== 'true'}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    localStorage.removeItem('carryon_onboarding_dismissed');
+                    toast.success('Getting Started guide will show on your dashboard');
+                  } else {
+                    localStorage.setItem('carryon_onboarding_dismissed', 'true');
+                    toast.success('Getting Started guide hidden');
+                  }
+                }}
+                data-testid="settings-onboarding-toggle"
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 
