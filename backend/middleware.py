@@ -82,11 +82,15 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             "/api/compliance/data-export",
         ]
 
-        limit = None
+        # Determine rate limit tier
         if path in strict_paths:
-            limit = 10
+            limit = 10  # Strict: 10/min for auth
         elif path in moderate_paths:
-            limit = self.max_requests
+            limit = self.max_requests  # Moderate: 20/min
+        elif path.startswith("/api/") and path != "/api/health":
+            limit = 120  # General: 120/min for all API endpoints
+        else:
+            limit = None  # No limit for non-API paths
         if limit:
             forwarded = request.headers.get("x-forwarded-for", "")
             client_ip = (
