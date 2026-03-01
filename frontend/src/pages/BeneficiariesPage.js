@@ -534,7 +534,7 @@ const BeneficiariesPage = () => {
       }}>
         <DialogContent className="glass-card border-[var(--b)] sm:max-w-2xl max-h-[90vh] overflow-y-scroll !top-[5vh] !translate-y-0">
           <DialogHeader>
-            <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            <DialogTitle className="text-[var(--t)] text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
               {editingBeneficiary ? 'Edit Beneficiary' : 'Add Beneficiary'}
             </DialogTitle>
             <DialogDescription className="text-[#94a3b8]">
