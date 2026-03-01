@@ -611,9 +611,15 @@ const VaultPage = () => {
                         <DocThumbnail doc={doc} getAuthHeaders={getAuthHeaders} />
                         <div className="absolute top-2 right-2">
                           {doc.is_locked ? (
-                            <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: 'rgba(245,158,11,0.15)', backdropFilter: 'blur(4px)' }}>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setSelectedDoc(doc); setShowLockModal(true); }}
+                              className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-110"
+                              style={{ background: 'rgba(245,158,11,0.2)', backdropFilter: 'blur(4px)' }}
+                              title="Unlock document"
+                              data-testid={`lock-badge-${doc.id}`}
+                            >
                               <Lock className="w-3 h-3 text-[#f59e0b]" />
-                            </div>
+                            </button>
                           ) : (
                             <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.15)', backdropFilter: 'blur(4px)' }}>
                               <Unlock className="w-3 h-3 text-[#10b981]" />
