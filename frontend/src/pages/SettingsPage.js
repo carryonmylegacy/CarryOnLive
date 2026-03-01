@@ -325,13 +325,11 @@ const SettingsPage = () => {
               onCheckedChange={async (checked) => {
                 if (checked) {
                   try {
-                    const { registerBiometric, isBiometricAvailable } = await import('../services/biometric');
-                    const { available } = await isBiometricAvailable();
-                    if (!available) { toast.error('Biometric authentication is not available on this device'); return; }
+                    const { registerBiometric } = await import('../services/biometric');
                     const token = localStorage.getItem('carryon_token');
                     await registerBiometric(token, user?.email, '');
                     localStorage.removeItem('carryon_biometric_declined');
-                  } catch (err) { toast.error('Failed to enable biometric login'); }
+                  } catch (err) { toast.error(err.message || 'Failed to enable biometric login'); }
                 } else {
                   const { disableBiometric } = await import('../services/biometric');
                   await disableBiometric();
