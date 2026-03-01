@@ -283,6 +283,26 @@ const LoginPage = () => {
                       style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#0B1221' }}>
                       {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Signing In...</> : 'Sign In'}
                     </Button>
+                    {localStorage.getItem('carryon_biometric_enabled') === 'true' && localStorage.getItem('carryon_biometric_method') === 'webauthn' && (
+                      <button type="button" onClick={async () => {
+                        try {
+                          setLoading(true);
+                          const { authenticateWithBiometric } = await import('../services/biometric');
+                          const result = await authenticateWithBiometric();
+                          if (result?.access_token) {
+                            localStorage.setItem('carryon_token', result.access_token);
+                            const dest = result.user?.role === 'admin' ? '/admin' : result.user?.role === 'beneficiary' ? '/beneficiary' : '/dashboard';
+                            navigate(dest);
+                          }
+                        } catch (err) {
+                          toast.error(err.message || 'Face ID login failed');
+                        } finally { setLoading(false); }
+                      }} className="w-full h-11 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-all hover:brightness-110"
+                        style={{ background: 'rgba(14,165,233,0.1)', color: '#0EA5E9', border: '1px solid rgba(14,165,233,0.2)' }}
+                        data-testid="face-id-login-btn">
+                        <Shield className="w-4 h-4" /> Sign in with Face ID
+                      </button>
+                    )}
                   </form>
                   <div className="mt-5 flex items-center justify-between">
                     <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-medium hover:text-[#fcd34d] transition-colors">Create Account</button>
