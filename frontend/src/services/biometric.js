@@ -11,7 +11,7 @@ const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 let NativeBiometric = null;
 const loadNativeBiometric = async () => {
-  if (!NativeBiometric && isNative()) {
+  if (!NativeBiometric && isNative) {
     try {
       const mod = await import('@capgo/capacitor-native-biometric');
       NativeBiometric = mod.NativeBiometric;
