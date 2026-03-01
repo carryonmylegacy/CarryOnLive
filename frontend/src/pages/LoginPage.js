@@ -95,19 +95,15 @@ const LoginPage = () => {
   }, []);
 
   const completeLogin = async (result) => {
-    // Offer biometric setup on iOS / supported devices
     try {
       const { isBiometricEnabled } = await import('../services/biometric');
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const hasWebAuthn = !!window.PublicKeyCredential;
-      if ((isIOS || hasWebAuthn) && !isBiometricEnabled() && !localStorage.getItem('carryon_biometric_declined')) {
+      const isIOS = /iPad|iPhone|iPod|Mac/.test(navigator.userAgent);
+      if (isIOS && !isBiometricEnabled() && !localStorage.getItem('carryon_biometric_declined') && password) {
         setPendingLoginResult(result);
         setShowBiometricPrompt(true);
         return;
       }
-    } catch {
-      // Biometric not supported — continue normally
-    }
+    } catch { /* continue */ }
     navigateToHome(result);
   };
 
