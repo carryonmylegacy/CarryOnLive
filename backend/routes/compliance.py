@@ -81,7 +81,7 @@ async def export_user_data(current_user: dict = Depends(get_current_user)):
     user_consent = await db.user_consent.find_one({"user_id": user_id}, {"_id": 0})
 
     # Log sensitive data access for SOC 2 audit trail
-    await log_phi_access(
+    await log_sensitive_access(
         user_id=user_id,
         action="data_export",
         resource="full_account",
@@ -153,7 +153,7 @@ async def request_account_deletion(
         }
     )
 
-    await log_phi_access(
+    await log_sensitive_access(
         user_id=current_user["id"],
         action="deletion_request",
         resource="full_account",
@@ -242,7 +242,7 @@ async def update_consent_preferences(
 # ===================== SOC 2: SENSITIVE DATA ACCESS LOGGING =====================
 
 
-async def log_phi_access(
+async def log_sensitive_access(
     user_id: str,
     action: str,
     resource: str,
@@ -251,7 +251,7 @@ async def log_phi_access(
 ):
     """Log every access to sensitive data for SOC 2 compliance audit trail.
     This creates an immutable audit trail of who accessed what, when, and why."""
-    await db.phi_access_log.insert_one(
+    await db.sensitive_access_log.insert_one(
         {
             "id": str(uuid.uuid4()),
             "user_id": user_id,
@@ -265,10 +265,10 @@ async def log_phi_access(
 
 
 @router.get("/compliance/phi-access-log")
-async def get_phi_access_log(current_user: dict = Depends(get_current_user)):
+async def get_sensitive_access_log(current_user: dict = Depends(get_current_user)):
     """SOC 2: View sensitive data access log for the current user."""
     logs = (
-        await db.phi_access_log.find({"user_id": current_user["id"]}, {"_id": 0})
+        await db.sensitive_access_log.find({"user_id": current_user["id"]}, {"_id": 0})
         .sort("timestamp", -1)
         .to_list(500)
     )
