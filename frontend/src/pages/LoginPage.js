@@ -268,8 +268,8 @@ const LoginPage = () => {
                       </div>
                     ))}
                   </div>
-                  <a href="#about" className="inline-flex items-center gap-2 text-[#475569] text-sm hover:text-[#d4af37] transition-colors pb-16">
-                    Scroll to explore <ChevronDown className="w-4 h-4 animate-bounce" />
+                  <a href="#about" className="inline-flex items-center gap-2 text-[#475569] text-lg hover:text-[#d4af37] transition-colors pb-24">
+                    Scroll to explore <ChevronDown className="w-6 h-6 animate-bounce" />
                   </a>
                 </div>
               </RevealSection>
