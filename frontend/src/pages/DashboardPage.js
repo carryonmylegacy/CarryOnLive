@@ -106,71 +106,51 @@ const DashboardPage = () => {
 
   // Speedometer gauge component
   const SpeedometerGauge = ({ score }) => {
-    const clampedScore = Math.min(100, Math.max(0, score));
-    const sweepAngle = (clampedScore / 100) * 180;
-    const needleAngle = sweepAngle - 90;
-    // Progress arc end point
-    const endRad = (sweepAngle - 90) * Math.PI / 180;
-    const endX = 100 + 78 * Math.cos(endRad);
-    const endY = 100 + 78 * Math.sin(endRad);
-    const largeArc = sweepAngle > 180 ? 1 : 0;
+    const angle = (score / 100) * 180 - 90;
     
     return (
-      <div className="relative w-full max-w-[220px] mx-auto">
-        <svg viewBox="0 0 200 120" className="w-full overflow-visible">
+      <div className="relative w-48 h-32 lg:w-72 lg:h-48 mx-auto">
+        <svg viewBox="0 0 200 110" className="w-full h-full overflow-visible">
           <defs>
-            <linearGradient id="gaugeRainbow" x1="0%" y1="50%" x2="100%" y2="50%">
+            <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#ef4444" />
-              <stop offset="20%" stopColor="#f97316" />
-              <stop offset="40%" stopColor="#eab308" />
-              <stop offset="70%" stopColor="#84cc16" />
+              <stop offset="25%" stopColor="#f97316" />
+              <stop offset="50%" stopColor="#eab308" />
+              <stop offset="75%" stopColor="#84cc16" />
               <stop offset="100%" stopColor="#22c55e" />
             </linearGradient>
-            <linearGradient id="needleMetal" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#e2e8f0" />
+            <linearGradient id="needleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#94a3b8" />
+              <stop offset="30%" stopColor="#f1f5f9" />
               <stop offset="50%" stopColor="#ffffff" />
+              <stop offset="70%" stopColor="#f1f5f9" />
               <stop offset="100%" stopColor="#94a3b8" />
             </linearGradient>
-            <radialGradient id="hubChrome" cx="40%" cy="30%" r="60%">
+            <radialGradient id="hubGradient" cx="35%" cy="25%" r="70%">
               <stop offset="0%" stopColor="#ffffff" />
-              <stop offset="40%" stopColor="#cbd5e1" />
-              <stop offset="100%" stopColor="#475569" />
+              <stop offset="20%" stopColor="#e2e8f0" />
+              <stop offset="45%" stopColor="#94a3b8" />
+              <stop offset="70%" stopColor="#64748b" />
+              <stop offset="100%" stopColor="#334155" />
             </radialGradient>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="2" result="b" />
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
           </defs>
-
-          {/* Background track */}
-          <path d="M 18 100 A 82 82 0 0 1 182 100" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="14" strokeLinecap="round" />
-
-          {/* Rainbow arc */}
-          <path d="M 18 100 A 82 82 0 0 1 182 100" fill="none" stroke="url(#gaugeRainbow)" strokeWidth="14" strokeLinecap="round" filter="url(#glow)" />
-
-          {/* Score progress overlay (dark mask over unearned portion) */}
-          {clampedScore < 100 && (
-            <path d={`M ${endX} ${endY} A 82 82 0 ${1 - largeArc} 1 182 100`} fill="none" stroke="rgba(15,22,41,0.7)" strokeWidth="15" strokeLinecap="round" />
-          )}
-
-          {/* Tick marks */}
-          {[0, 25, 50, 75, 100].map((t) => {
-            const a = ((t / 100) * 180 - 90) * Math.PI / 180;
-            return <line key={t} x1={100 + 88 * Math.cos(a)} y1={100 + 88 * Math.sin(a)} x2={100 + 80 * Math.cos(a)} y2={100 + 80 * Math.sin(a)} stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" strokeLinecap="round" />;
-          })}
-
-          {/* Needle */}
-          <g transform={`rotate(${needleAngle}, 100, 100)`} style={{ transition: 'transform 1s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-            <line x1="100" y1="28" x2="100" y2="88" stroke="url(#needleMetal)" strokeWidth="3" strokeLinecap="round" />
-            <circle cx="100" cy="28" r="2" fill="#dc2626" />
-            <circle cx="100" cy="100" r="7" fill="url(#hubChrome)" stroke="#334155" strokeWidth="1" />
+          
+          <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gaugeGradient)" strokeWidth="28" strokeLinecap="round" />
+          
+          <g transform={`rotate(${angle}, 100, 100)`} style={{ transition: 'transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+            <polygon points="100,18 96,88 92,125 100,130 108,125 104,88" fill="url(#needleGradient)" stroke="#64748b" strokeWidth="0.5" />
+            <polygon points="100,18 97,42 100,46 103,42" fill="#dc2626" />
+            <circle cx="100" cy="100" r="11" fill="url(#hubGradient)" stroke="#475569" strokeWidth="1.5" />
           </g>
         </svg>
-
-        {/* Score text */}
-        <div className="text-center -mt-2">
-          <span className="text-3xl lg:text-4xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>{score}%</span>
-          <div className="text-sm font-bold mt-0.5" style={{ color: scoreInfo.color }}>{scoreInfo.label}</div>
+        
+        <div className="absolute -bottom-16 lg:-bottom-24 left-1/2 transform -translate-x-1/2 text-center">
+          <div className="text-3xl lg:text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            {score}%
+          </div>
+          <div className="text-base lg:text-2xl font-bold" style={{ color: scoreInfo.color }}>
+            {scoreInfo.label}
+          </div>
         </div>
       </div>
     );
