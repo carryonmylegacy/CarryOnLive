@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
   FolderLock, Users, FileUp, MessageSquare,
-  ChevronRight, X, Sparkles
+  ChevronRight, X, Sparkles, Check
 } from 'lucide-react';
 import { Progress } from '../components/ui/progress';
 
@@ -23,9 +23,10 @@ const OnboardingWizard = () => {
   const navigate = useNavigate();
   const [progress, setProgress] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [dismissed, setDismissed] = useState(() => {
+  const [manuallyDismissed, setManuallyDismissed] = useState(() => {
     return localStorage.getItem('carryon_onboarding_dismissed') === 'true';
   });
+  const [showAll, setShowAll] = useState(false);
   const [popping, setPopping] = useState({});
   const prevCompleted = useRef({});
 
@@ -61,14 +62,16 @@ const OnboardingWizard = () => {
         res.data.steps.forEach(s => { if (s.completed) completed[s.key] = true; });
         prevCompleted.current = completed;
 
-        // If any steps are incomplete, force show even if previously dismissed
+        // If any steps are now incomplete, auto-show the guide
         const hasIncomplete = res.data.steps.some(s => !s.completed);
-        if (hasIncomplete) {
-          setDismissed(false);
+        if (hasIncomplete && !res.data.all_complete) {
+          setManuallyDismissed(false);
           localStorage.removeItem('carryon_onboarding_dismissed');
-        } else if (res.data.all_complete) {
-          setDismissed(true);
-          localStorage.setItem('carryon_onboarding_dismissed', 'true');
+        }
+
+        // If user toggled it back on from Settings, show all steps
+        if (!hasIncomplete && localStorage.getItem('carryon_onboarding_dismissed') !== 'true') {
+          setShowAll(true);
         }
       }
     } catch (err) { console.error('Onboarding fetch error:', err); }
@@ -76,7 +79,8 @@ const OnboardingWizard = () => {
   };
 
   const handleDismiss = async () => {
-    setDismissed(true);
+    setManuallyDismissed(true);
+    setShowAll(false);
     localStorage.setItem('carryon_onboarding_dismissed', 'true');
     try { await axios.post(`${API_URL}/onboarding/dismiss`, {}, getAuthHeaders()); }
     catch (err) { console.error(err); }
@@ -91,12 +95,15 @@ const OnboardingWizard = () => {
     navigate(config.route);
   };
 
-  if (dismissed) return null;
   if (loading || !progress) return null;
+  if (manuallyDismissed && !showAll) return null;
 
-  const incompleteSteps = progress.steps.filter(s => !s.completed || popping[s.key]);
+  // Determine which steps to show
+  const allSteps = progress.steps || [];
+  const incompleteSteps = allSteps.filter(s => !s.completed || popping[s.key]);
+  const stepsToShow = showAll ? allSteps : incompleteSteps;
 
-  if (incompleteSteps.length === 0) return null;
+  if (stepsToShow.length === 0) return null;
 
   return (
     <div className="mb-6" data-testid="onboarding-wizard">
@@ -120,10 +127,11 @@ const OnboardingWizard = () => {
 
       {/* Step Tiles */}
       <div className="space-y-3">
-        {incompleteSteps.map((step) => {
+        {stepsToShow.map((step) => {
           const config = STEP_CONFIG[step.key];
           const Icon = config.icon;
           const isPop = popping[step.key];
+          const isComplete = step.completed && !isPop;
 
           return (
             <div
@@ -133,7 +141,6 @@ const OnboardingWizard = () => {
                 opacity: isPop ? 0 : 1,
                 transform: isPop ? 'scale(1.15)' : 'scale(1)',
                 maxHeight: isPop ? '0px' : '120px',
-                marginBottom: isPop ? '0px' : undefined,
                 overflow: 'hidden',
               }}
             >
@@ -141,21 +148,33 @@ const OnboardingWizard = () => {
                 onClick={() => handleStepClick(step)}
                 className="w-full rounded-2xl p-5 flex items-center gap-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98] cursor-pointer"
                 style={{
-                  background: config.bg,
-                  border: `1px solid ${config.border}`,
-                  boxShadow: `0 4px 16px -4px ${config.color}20`,
+                  background: isComplete ? 'var(--s)' : config.bg,
+                  border: `1px solid ${isComplete ? 'var(--b)' : config.border}`,
+                  boxShadow: isComplete ? 'none' : `0 4px 16px -4px ${config.color}20`,
+                  opacity: isComplete ? 0.5 : 1,
                 }}
                 data-testid={`onboarding-step-${step.key}`}
               >
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-200"
-                  style={{ background: `${config.color}15`, border: `1px solid ${config.color}30` }}>
-                  <Icon className="w-6 h-6" style={{ color: config.color }} />
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{
+                    background: isComplete ? 'rgba(16,185,129,0.1)' : `${config.color}15`,
+                    border: `1px solid ${isComplete ? 'rgba(16,185,129,0.2)' : `${config.color}30`}`,
+                  }}>
+                  {isComplete ? (
+                    <Check className="w-6 h-6 text-[#22C993]" />
+                  ) : (
+                    <Icon className="w-6 h-6" style={{ color: config.color }} />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-base font-bold text-[var(--t)]">{config.label}</p>
-                  <p className="text-sm text-[var(--t5)]">{config.desc}</p>
+                  <p className={`text-base font-bold ${isComplete ? 'text-[var(--t5)] line-through' : 'text-[var(--t)]'}`}>{config.label}</p>
+                  <p className={`text-sm ${isComplete ? 'text-[var(--t5)]' : 'text-[var(--t5)]'}`}>{config.desc}</p>
                 </div>
-                <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: config.color }} />
+                {isComplete ? (
+                  <span className="text-[10px] text-[#22C993] font-bold flex-shrink-0">Done</span>
+                ) : (
+                  <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: config.color }} />
+                )}
               </button>
             </div>
           );
