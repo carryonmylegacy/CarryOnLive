@@ -110,20 +110,20 @@ const OnboardingWizard = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)' }}>
-            <Sparkles className="w-5 h-5 text-[#d4af37]" />
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)' }}>
+            <Sparkles className="w-6 h-6 text-[#d4af37]" />
           </div>
           <div>
-            <h3 className="text-[var(--t)] font-bold text-lg" style={{ fontFamily: 'Outfit, sans-serif' }}>Get Started with CarryOn</h3>
-            <p className="text-[var(--t5)] text-sm">{progress.completed_count} of {progress.total_steps} complete</p>
+            <h3 className="text-[var(--t)] font-bold text-xl lg:text-2xl" style={{ fontFamily: 'Outfit, sans-serif' }}>Get Started with CarryOn</h3>
+            <p className="text-[var(--t5)] text-base">{progress.completed_count} of {progress.total_steps} complete</p>
           </div>
         </div>
-        <button onClick={handleDismiss} className="text-[var(--t5)] hover:text-[var(--t)] transition-colors p-1" data-testid="onboarding-dismiss">
-          <X className="w-5 h-5" />
+        <button onClick={handleDismiss} className="text-[var(--t5)] hover:text-[var(--t)] transition-colors p-2" data-testid="onboarding-dismiss">
+          <X className="w-6 h-6" />
         </button>
       </div>
 
-      <Progress value={progress.progress_pct} className="h-2 mb-5 bg-[var(--s)]" />
+      <Progress value={progress.progress_pct} className="h-2.5 mb-5 bg-[var(--s)]" />
 
       {/* Step Tiles */}
       <div className="space-y-3">
@@ -140,7 +140,7 @@ const OnboardingWizard = () => {
               style={{
                 opacity: isPop ? 0 : 1,
                 transform: isPop ? 'scale(1.15)' : 'scale(1)',
-                maxHeight: isPop ? '0px' : '120px',
+                maxHeight: isPop ? '0px' : '140px',
                 overflow: 'hidden',
               }}
             >
@@ -155,25 +155,25 @@ const OnboardingWizard = () => {
                 }}
                 data-testid={`onboarding-step-${step.key}`}
               >
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{
                     background: isComplete ? 'rgba(16,185,129,0.1)' : `${config.color}15`,
                     border: `1px solid ${isComplete ? 'rgba(16,185,129,0.2)' : `${config.color}30`}`,
                   }}>
                   {isComplete ? (
-                    <Check className="w-6 h-6 text-[#22C993]" />
+                    <Check className="w-7 h-7 text-[#22C993]" />
                   ) : (
-                    <Icon className="w-6 h-6" style={{ color: config.color }} />
+                    <Icon className="w-7 h-7" style={{ color: config.color }} />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-base font-bold ${isComplete ? 'text-[var(--t5)] line-through' : 'text-[var(--t)]'}`}>{config.label}</p>
-                  <p className={`text-sm ${isComplete ? 'text-[var(--t5)]' : 'text-[var(--t5)]'}`}>{config.desc}</p>
+                  <p className={`text-lg font-bold ${isComplete ? 'text-[var(--t5)] line-through' : 'text-[var(--t)]'}`}>{config.label}</p>
+                  <p className={`text-base ${isComplete ? 'text-[var(--t5)]' : 'text-[var(--t4)]'}`}>{config.desc}</p>
                 </div>
                 {isComplete ? (
-                  <span className="text-[10px] text-[#22C993] font-bold flex-shrink-0">Done</span>
+                  <span className="text-sm text-[#22C993] font-bold flex-shrink-0">Done</span>
                 ) : (
-                  <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: config.color }} />
+                  <ChevronRight className="w-6 h-6 flex-shrink-0" style={{ color: config.color }} />
                 )}
               </button>
             </div>
