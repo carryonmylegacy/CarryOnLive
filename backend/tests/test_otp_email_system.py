@@ -8,7 +8,6 @@ import pytest
 import requests
 import os
 import time
-from datetime import datetime
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 
