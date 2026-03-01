@@ -298,13 +298,16 @@ const SettingsPage = () => {
                 <p className="text-[var(--t5)] text-sm">Show the onboarding wizard on your dashboard</p>
               </div>
               <Switch
-                checked={localStorage.getItem('carryon_onboarding_dismissed') !== 'true'}
-                onCheckedChange={(checked) => {
+                checked={onboardingVisible}
+                onCheckedChange={async (checked) => {
+                  setOnboardingVisible(checked);
                   if (checked) {
                     localStorage.removeItem('carryon_onboarding_dismissed');
+                    try { await axios.post(`${API_URL}/onboarding/reset`, {}, getAuthHeaders()); } catch (e) { /* ignore */ }
                     toast.success('Getting Started guide will show on your dashboard');
                   } else {
                     localStorage.setItem('carryon_onboarding_dismissed', 'true');
+                    try { await axios.post(`${API_URL}/onboarding/dismiss`, {}, getAuthHeaders()); } catch (e) { /* ignore */ }
                     toast.success('Getting Started guide hidden');
                   }
                 }}
