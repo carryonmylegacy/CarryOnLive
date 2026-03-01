@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  FolderLock, Users, FileUp, MessageSquare, BarChart3,
+  FolderLock, Users, FileUp, MessageSquare,
   ChevronRight, X, Sparkles
 } from 'lucide-react';
 import { Progress } from '../components/ui/progress';
