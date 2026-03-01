@@ -61,13 +61,16 @@ export const isBiometricEnabled = () => {
 // ═══ REGISTRATION (after login) ═══
 
 export const registerBiometric = async (token, email, password) => {
-  const { available, method } = await isBiometricAvailable();
-  if (!available) throw new Error('Biometric not available on this device');
-
-  if (method === 'native') {
+  // Try native first (Capacitor app)
+  const bio = await loadNativeBiometric();
+  if (bio) {
     return registerNativeBiometric(email, password);
   }
-  return registerWebAuthn(token);
+  // Fall back to WebAuthn (PWA)
+  if (window.PublicKeyCredential) {
+    return registerWebAuthn(token);
+  }
+  throw new Error('Biometric authentication is not supported on this device');
 };
 
 const registerNativeBiometric = async (email, password) => {
