@@ -505,17 +505,17 @@ export const SubscriptionManagement = ({
                   {/* Features */}
                   <div className="space-y-2 mb-5 flex-1">
                     {(plan.features || []).map((f, i) => (
-                      <div key={i} className="flex items-start gap-2 text-xs text-[var(--t3)]">
-                        <div className="w-3.5 h-3.5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                      <div key={i} className="flex items-start gap-2 text-sm text-[var(--t3)]">
+                        <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
                           style={{ background: `${style.accent}12` }}>
-                          <Check className="w-2 h-2" style={{ color: style.accent }} />
+                          <Check className="w-2.5 h-2.5" style={{ color: style.accent }} />
                         </div>
                         <span>{f}</span>
                       </div>
                     ))}
                   </div>
 
-                  {plan.note && <p className="text-[10px] text-[var(--t5)] italic mb-3">{plan.note}</p>}
+                  {plan.note && <p className="text-sm text-[var(--t4)] italic mb-3">{plan.note}</p>}
 
                   {/* CTA Button */}
                   {isCurrent ? (
