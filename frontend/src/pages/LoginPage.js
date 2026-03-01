@@ -95,10 +95,11 @@ const LoginPage = () => {
   }, []);
 
   const completeLogin = async (result) => {
+    // Biometric prompt only on native Capacitor app
     try {
-      const { isBiometricEnabled } = await import('../services/biometric');
-      const isIOS = /iPad|iPhone|iPod|Mac/.test(navigator.userAgent);
-      if (isIOS && !isBiometricEnabled() && !localStorage.getItem('carryon_biometric_declined') && password) {
+      const { isBiometricAvailable, isBiometricEnabled } = await import('../services/biometric');
+      const { available } = await isBiometricAvailable();
+      if (available && !isBiometricEnabled() && !localStorage.getItem('carryon_biometric_declined') && password) {
         setPendingLoginResult(result);
         setShowBiometricPrompt(true);
         return;
