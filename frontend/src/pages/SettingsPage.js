@@ -25,7 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Switch } from '../components/ui/switch';
 import { Separator } from '../components/ui/separator';
-import { toast } from '../../utils/toast';
+import { toast } from '../utils/toast';
 import NotificationSettings from '../components/NotificationSettings';
 import FamilyPlanSettings from '../components/FamilyPlanSettings';
 import SubscriptionPaywall from '../components/SubscriptionPaywall';

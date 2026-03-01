@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Mail, Lock, Eye, EyeOff, Loader2, Shield, FileText, Users, ChevronRight, ChevronDown, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Trash2, ClipboardCheck, MessageSquare } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { toast } from '../../utils/toast';
+import { toast } from '../utils/toast';
 
 /* ─── scroll-reveal hook ─── */
 const useReveal = (threshold = 0.15) => {

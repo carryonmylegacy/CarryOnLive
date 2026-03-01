@@ -36,7 +36,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Textarea } from '../components/ui/textarea';
-import { toast } from '../../utils/toast';
+import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
 import PDFViewerModal from '../components/PDFViewerModal';
