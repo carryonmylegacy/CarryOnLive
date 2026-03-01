@@ -71,25 +71,25 @@ const OnboardingWizard = () => {
   return (
     <div>
     <Card className="border border-[#d4af37]/30 bg-gradient-to-r from-[#d4af37]/5 to-transparent mb-6" data-testid="onboarding-wizard">
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between mb-4">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-[#d4af37]/20 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-[#d4af37]" />
+            <div className="w-11 h-11 rounded-xl bg-[#d4af37]/20 flex items-center justify-center">
+              <Sparkles className="w-6 h-6 text-[#d4af37]" />
             </div>
             <div>
-              <h3 className="text-white font-semibold text-sm">Get Started with CarryOn</h3>
-              <p className="text-[#94a3b8] text-xs">{progress.completed_count} of {progress.total_steps} steps complete</p>
+              <h3 className="text-[var(--t)] font-bold text-lg" style={{ fontFamily: 'Outfit, sans-serif' }}>Get Started with CarryOn</h3>
+              <p className="text-[#94a3b8] text-sm">{progress.completed_count} of {progress.total_steps} steps complete</p>
             </div>
           </div>
           <button onClick={handleDismiss} className="text-[#64748b] hover:text-white transition-colors" data-testid="onboarding-dismiss">
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <Progress value={progress.progress_pct} className="h-1.5 mb-4 bg-[var(--s)]" />
+        <Progress value={progress.progress_pct} className="h-2 mb-5 bg-[var(--s)]" />
 
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           {progress.steps.map((step) => {
             const config = STEP_CONFIG[step.key];
             const Icon = config.icon;
@@ -97,29 +97,29 @@ const OnboardingWizard = () => {
               <button
                 key={step.key}
                 onClick={() => handleStepClick(step)}
-                className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
+                className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all text-left ${
                   step.completed
                     ? 'bg-[var(--s)] opacity-60'
                     : 'bg-[var(--s)] hover:bg-[var(--s)] cursor-pointer'
                 }`}
                 data-testid={`onboarding-step-${step.key}`}
               >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                   step.completed ? 'bg-[#10b981]/20' : 'bg-[var(--s)]'
                 }`}>
                   {step.completed ? (
-                    <Check className="w-4 h-4 text-[#10b981]" />
+                    <Check className="w-5 h-5 text-[#10b981]" />
                   ) : (
-                    <Icon className="w-4 h-4" style={{ color: config.color }} />
+                    <Icon className="w-5 h-5" style={{ color: config.color }} />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium ${step.completed ? 'text-[#64748b] line-through' : 'text-white'}`}>
+                  <p className={`text-base font-semibold ${step.completed ? 'text-[#64748b] line-through' : 'text-[var(--t)]'}`}>
                     {config.label}
                   </p>
-                  <p className="text-xs text-[#64748b] truncate">{step.description}</p>
+                  <p className="text-sm text-[#64748b]">{step.description}</p>
                 </div>
-                {!step.completed && <ChevronRight className="w-4 h-4 text-[#64748b] flex-shrink-0" />}
+                {!step.completed && <ChevronRight className="w-5 h-5 text-[#64748b] flex-shrink-0" />}
               </button>
             );
           })}
