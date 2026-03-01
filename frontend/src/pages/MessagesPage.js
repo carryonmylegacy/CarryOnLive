@@ -78,9 +78,12 @@ const MessagesPage = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [videoBlob, setVideoBlob] = useState(null);
   const [videoUrl, setVideoUrl] = useState(null);
+  const [cameraReady, setCameraReady] = useState(false);
+  const [countdown, setCountdown] = useState(null);
   const videoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
+  const streamRef = useRef(null);
 
   // Voice recording state
   const [audioBlob, setAudioBlob] = useState(null);
