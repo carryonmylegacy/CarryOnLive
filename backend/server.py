@@ -128,6 +128,7 @@ api_router.include_router(subscriptions_router)
 api_router.include_router(support_router)
 api_router.include_router(timeline_router)
 api_router.include_router(transition_router)
+api_router.include_router(webauthn_router)
 
 
 @api_router.get("/health")
