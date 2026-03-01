@@ -38,6 +38,7 @@ from routes.subscriptions import router as subscriptions_router
 from routes.support import router as support_router
 from routes.timeline import router as timeline_router
 from routes.transition import router as transition_router
+from routes.webauthn import router as webauthn_router
 from schedulers import daily_dob_check_scheduler, weekly_digest_scheduler
 
 
