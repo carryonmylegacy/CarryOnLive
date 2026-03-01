@@ -212,7 +212,7 @@ async def gather_estate_context(
                     return doc["name"], text
                 except asyncio.TimeoutError:
                     return doc["name"], "[Extraction timed out]"
-                except Exception as e:
+                except Exception:
                     return doc["name"], "[Extraction error]"
 
             results = await asyncio.gather(*[extract_one(doc) for doc in documents[:10]])
