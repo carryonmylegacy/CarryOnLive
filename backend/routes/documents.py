@@ -336,7 +336,13 @@ async def unlock_document(
     # Persist the unlock — set is_locked to false
     await db.documents.update_one(
         {"id": document_id},
-        {"$set": {"is_locked": False, "unlocked_at": datetime.now(timezone.utc).isoformat(), "unlocked_by": current_user["id"]}},
+        {
+            "$set": {
+                "is_locked": False,
+                "unlocked_at": datetime.now(timezone.utc).isoformat(),
+                "unlocked_by": current_user["id"],
+            }
+        },
     )
 
     return {

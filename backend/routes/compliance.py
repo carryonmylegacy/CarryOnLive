@@ -78,9 +78,7 @@ async def export_user_data(current_user: dict = Depends(get_current_user)):
         {"user_id": user_id}, {"_id": 0}
     ).to_list(500)
 
-    user_consent = await db.user_consent.find_one(
-        {"user_id": user_id}, {"_id": 0}
-    )
+    user_consent = await db.user_consent.find_one({"user_id": user_id}, {"_id": 0})
 
     # Log this data access for HIPAA audit trail
     await log_phi_access(

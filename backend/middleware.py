@@ -129,9 +129,7 @@ def configure_cors(app):
     if frontend_url and frontend_url not in ALLOWED_ORIGINS:
         ALLOWED_ORIGINS.append(frontend_url)
 
-    backend_env = os.environ.get(
-        "RAILWAY_ENVIRONMENT", os.environ.get("NODE_ENV", "")
-    )
+    backend_env = os.environ.get("RAILWAY_ENVIRONMENT", os.environ.get("NODE_ENV", ""))
     if not backend_env or backend_env in ("development", "preview"):
         ALLOWED_ORIGINS.extend(["http://localhost:3000", "http://localhost:3001"])
 

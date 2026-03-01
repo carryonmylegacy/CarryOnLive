@@ -376,9 +376,7 @@ async def verify_section_security(
                 # Legacy 60-dim voiceprint (run in thread pool)
                 import asyncio
 
-                test_vp = await asyncio.to_thread(
-                    extract_voiceprint_legacy, wav_bytes
-                )
+                test_vp = await asyncio.to_thread(extract_voiceprint_legacy, wav_bytes)
                 if test_vp is None:
                     raise HTTPException(
                         status_code=400, detail="Could not process voice sample"
@@ -458,8 +456,7 @@ async def verify_section_security(
                 "user_id": current_user["id"],
                 "section_id": section_id,
                 "unlocked_at": datetime.now(timezone.utc).isoformat(),
-                "expires_at": datetime.now(timezone.utc)
-                + timedelta(hours=8),
+                "expires_at": datetime.now(timezone.utc) + timedelta(hours=8),
             }
         },
         upsert=True,
