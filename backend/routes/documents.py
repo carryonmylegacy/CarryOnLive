@@ -433,9 +433,9 @@ async def download_document(
         raise HTTPException(status_code=403, detail="Access denied")
 
     # SOC 2: Log sensitive data access
-    from routes.compliance import log_phi_access
+    from routes.compliance import log_sensitive_access
 
-    await log_phi_access(
+    await log_sensitive_access(
         user_id=estate.get("owner_id", ""),
         action="document_download",
         resource=f"document:{document_id}",
@@ -620,9 +620,9 @@ async def preview_document(
     )
 
     # SOC 2: Log sensitive data access for document preview
-    from routes.compliance import log_phi_access
+    from routes.compliance import log_sensitive_access
 
-    await log_phi_access(
+    await log_sensitive_access(
         user_id=estate.get("owner_id", ""),
         action="document_preview",
         resource=f"document:{document_id}",
