@@ -103,9 +103,7 @@ const DevSwitcher = () => {
         body: JSON.stringify({ email: account.email }),
       });
       
-      const text = await response.text();
-      let data;
-      try { data = JSON.parse(text); } catch { data = { detail: text }; }
+      const data = await response.json().catch(() => ({ detail: 'Invalid response' }));
       
       if (!response.ok) throw new Error(data.detail || 'Login failed');
       
