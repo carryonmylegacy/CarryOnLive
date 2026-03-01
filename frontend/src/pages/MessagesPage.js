@@ -656,6 +656,12 @@ const MessagesPage = () => {
                     </div>
                   ) : (
                     <div className="flex flex-col items-center gap-4 py-4">
+                      {/* Countdown overlay for voice */}
+                      {countdown !== null && (
+                        <div className="flex items-center justify-center">
+                          <span className="text-5xl font-bold text-[var(--gold)] animate-pulse" style={{ fontFamily: 'Outfit, sans-serif' }}>{countdown}</span>
+                        </div>
+                      )}
                       {isRecording && (
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
@@ -663,17 +669,17 @@ const MessagesPage = () => {
                         </div>
                       )}
                       <div className="flex justify-center gap-3">
-                        {!isRecording ? (
+                        {!isRecording && countdown === null ? (
                           <Button onClick={startVoiceRecording} className="gold-button" data-testid="start-voice-btn">
                             <Mic className="w-5 h-5 mr-2" />
                             Start Recording
                           </Button>
-                        ) : (
+                        ) : isRecording ? (
                           <Button onClick={stopVoiceRecording} className="bg-[#ef4444] hover:bg-[#dc2626] text-white" data-testid="stop-voice-btn">
                             <StopCircle className="w-5 h-5 mr-2" />
                             Stop Recording
                           </Button>
-                        )}
+                        ) : null}
                       </div>
                       <p className="text-[#525c72] text-xs text-center">Record a voice message for your loved ones</p>
                     </div>
