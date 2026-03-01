@@ -81,7 +81,7 @@ class TestSubscriptionPlans:
         data = response.json()
         military_plan = next((p for p in data["plans"] if p["id"] == "military"), None)
         assert military_plan is not None, "Military plan not found"
-        assert military_plan.get("requires_verification") == True, "Military plan should require verification"
+        assert military_plan.get("requires_verification") is True, "Military plan should require verification"
         print(f"✓ Military plan requires verification: {military_plan.get('requires_verification')}")
 
     def test_hospice_plan_has_verification_requirement(self, api_client):
@@ -92,7 +92,7 @@ class TestSubscriptionPlans:
         data = response.json()
         hospice_plan = next((p for p in data["plans"] if p["id"] == "hospice"), None)
         assert hospice_plan is not None, "Hospice plan not found"
-        assert hospice_plan.get("requires_verification") == True, "Hospice plan should require verification"
+        assert hospice_plan.get("requires_verification") is True, "Hospice plan should require verification"
         assert hospice_plan.get("price") == 0.00, "Hospice plan should be free"
         print(f"✓ Hospice plan: requires_verification={hospice_plan.get('requires_verification')}, price={hospice_plan.get('price')}")
 
@@ -165,7 +165,7 @@ class TestVerificationUpload:
         
         if response.status_code == 200:
             data = response.json()
-            assert data.get("success") == True, "Upload should succeed"
+            assert data.get("success") is True, "Upload should succeed"
             assert "verification_id" in data, "Should return verification_id"
             print(f"✓ Verification uploaded: {data.get('verification_id')}")
         else:
@@ -243,7 +243,7 @@ class TestAdminVerifications:
         )
         assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
-        assert data.get("success") == True, "Approval should succeed"
+        assert data.get("success") is True, "Approval should succeed"
         print(f"✓ Verification approved: {pending_verification['id']}")
 
     def test_admin_verification_notify(self, api_client, admin_headers):
@@ -284,7 +284,7 @@ class TestAdminVerifications:
         )
         assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
-        assert data.get("success") == True, "Notification should succeed"
+        assert data.get("success") is True, "Notification should succeed"
         print(f"✓ Notification sent for verification: {approved_verification['id']}")
 
 
