@@ -264,7 +264,7 @@ async def log_sensitive_access(
     )
 
 
-@router.get("/compliance/phi-access-log")
+@router.get("/compliance/sensitive-access-log")
 async def get_sensitive_access_log(current_user: dict = Depends(get_current_user)):
     """SOC 2: View sensitive data access log for the current user."""
     logs = (
