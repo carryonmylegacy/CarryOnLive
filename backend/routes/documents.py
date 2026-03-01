@@ -163,7 +163,7 @@ async def upload_document(
             status_code=403, detail="Access denied — you do not own this estate"
         )
 
-    # File upload security: validate content type and size
+    # File upload security: validate content type, extension, and size
     ALLOWED_CONTENT_TYPES = {
         "application/pdf",
         "image/jpeg",
@@ -175,9 +175,38 @@ async def upload_document(
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "application/vnd.ms-excel",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "application/octet-stream",
+    }
+    BLOCKED_EXTENSIONS = {
+        ".exe",
+        ".bat",
+        ".cmd",
+        ".sh",
+        ".ps1",
+        ".js",
+        ".vbs",
+        ".msi",
+        ".dll",
+        ".com",
+        ".scr",
+        ".pif",
+        ".jar",
+        ".py",
+        ".rb",
+        ".php",
+        ".html",
+        ".htm",
+        ".svg",
     }
     MAX_FILE_SIZE = 25 * 1024 * 1024  # 25MB per file
+
+    # Check filename extension
+    filename = (file.filename or "").lower()
+    file_ext = "." + filename.rsplit(".", 1)[-1] if "." in filename else ""
+    if file_ext in BLOCKED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File type '{file_ext}' is not allowed for security reasons.",
+        )
 
     content = await file.read()
 
