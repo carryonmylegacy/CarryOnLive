@@ -30,10 +30,20 @@ export const isBiometricAvailable = async () => {
     } catch { return { available: false }; }
   }
 
-  // Check WebAuthn (PWA)
+  // iOS standalone PWA — Face ID is always available
+  const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  if (isStandalone && isIOS) {
+    return { available: true, type: 'face', method: 'webauthn' };
+  }
+
+  // Check WebAuthn
   if (window.PublicKeyCredential) {
     try {
-      const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+      const available = await Promise.race([
+        PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable(),
+        new Promise(resolve => setTimeout(() => resolve(false), 2000)),
+      ]);
       return { available, type: 'face', method: 'webauthn' };
     } catch { return { available: false }; }
   }
