@@ -663,9 +663,8 @@ export const SubscriptionManagement = ({
       {/* Verification Upload Modal */}
       {showVerification && (
         <div className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4" data-testid="verification-modal">
-          <div className="w-full max-w-md rounded-2xl p-6 space-y-5" style={{
-            background: 'linear-gradient(168deg, rgba(26,36,64,0.98), rgba(15,22,41,0.99))',
-            border: '1px solid rgba(255,255,255,0.1)',
+          <div className="w-full max-w-md rounded-2xl p-6 space-y-5 glass-card" style={{
+            border: '1px solid var(--b)',
             boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
           }}>
             <div className="flex items-center justify-between">
