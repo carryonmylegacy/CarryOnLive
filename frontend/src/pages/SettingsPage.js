@@ -327,13 +327,7 @@ const SettingsPage = () => {
               checked={biometricOn}
               onCheckedChange={async (checked) => {
                 if (checked) {
-                  try {
-                    const { registerBiometric } = await import('../services/biometric');
-                    const token = localStorage.getItem('carryon_token');
-                    await registerBiometric(token, user?.email, '');
-                    localStorage.removeItem('carryon_biometric_declined');
-                    setBiometricOn(true);
-                  } catch (err) { toast.error(err.message || 'Failed to enable biometric login'); }
+                  setShowBioPassword(true);
                 } else {
                   const { disableBiometric } = await import('../services/biometric');
                   await disableBiometric();
@@ -343,6 +337,42 @@ const SettingsPage = () => {
               data-testid="settings-biometric-toggle"
             />
           </div>
+
+          {/* Password prompt for biometric setup */}
+          {showBioPassword && (
+            <div className="mt-3 flex gap-2">
+              <Input
+                type="password"
+                value={bioPassword}
+                onChange={(e) => setBioPassword(e.target.value)}
+                placeholder="Enter your password to enable"
+                className="input-field flex-1"
+                data-testid="bio-password-input"
+              />
+              <Button
+                onClick={async () => {
+                  if (!bioPassword) { toast.error('Password required'); return; }
+                  try {
+                    const { registerBiometric } = await import('../services/biometric');
+                    const t = localStorage.getItem('carryon_token');
+                    await registerBiometric(t, user?.email, bioPassword);
+                    localStorage.removeItem('carryon_biometric_declined');
+                    setBiometricOn(true);
+                    setShowBioPassword(false);
+                    setBioPassword('');
+                  } catch (err) { toast.error(err.message || 'Failed to enable'); }
+                }}
+                className="shrink-0"
+                style={{ background: 'linear-gradient(135deg, #0EA5E9, #0369A1)', color: 'white' }}
+                data-testid="bio-confirm-btn"
+              >
+                Confirm
+              </Button>
+              <Button variant="ghost" onClick={() => { setShowBioPassword(false); setBioPassword(''); }} className="shrink-0 text-[var(--t5)]">
+                Cancel
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
