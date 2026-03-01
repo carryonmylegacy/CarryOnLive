@@ -58,6 +58,28 @@ const LoginPage = () => {
     setTimeout(() => navigate(path), 500);
   };
 
+  /* Biometric auto-login on mount */
+  useEffect(() => {
+    const tryBiometric = async () => {
+      try {
+        const { isBiometricEnabled, authenticateWithBiometric } = await import('../services/biometric');
+        if (!isBiometricEnabled()) { setBiometricLoading(false); return; }
+
+        const result = await authenticateWithBiometric();
+        if (result.access_token) {
+          localStorage.setItem('carryon_token', result.access_token);
+          const dest = result.user?.role === 'admin' ? '/admin' : result.user?.role === 'beneficiary' ? '/beneficiary' : '/dashboard';
+          navigate(dest);
+          return;
+        }
+      } catch (err) {
+        console.error('Biometric login failed, showing manual login:', err);
+      }
+      setBiometricLoading(false);
+    };
+    tryBiometric();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   /* flag fade on scroll + dismiss Safari autofill */
   useEffect(() => {
     const handleScroll = () => {
