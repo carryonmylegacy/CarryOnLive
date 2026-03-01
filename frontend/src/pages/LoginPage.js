@@ -58,15 +58,17 @@ const LoginPage = () => {
     setTimeout(() => navigate(path), 500);
   };
 
-  /* Biometric auto-login on mount — fails silently */
+  /* Biometric auto-login on mount — only for NATIVE apps, not web/PWA */
   useEffect(() => {
     const tryBiometric = async () => {
-      // Brief delay to prevent Safari autofill flash
       await new Promise(r => setTimeout(r, 300));
       try {
-        const { isBiometricEnabled, authenticateWithBiometric } = await import('../services/biometric');
-        if (!isBiometricEnabled()) { setBiometricLoading(false); return; }
+        const { isBiometricEnabled } = await import('../services/biometric');
+        const { isNative } = await import('../services/native');
+        // Only auto-trigger on native Capacitor apps (not web — WebAuthn requires user gesture)
+        if (!isNative || !isBiometricEnabled()) { setBiometricLoading(false); return; }
 
+        const { authenticateWithBiometric } = await import('../services/biometric');
         const result = await authenticateWithBiometric();
         if (result?.access_token) {
           localStorage.setItem('carryon_token', result.access_token);
@@ -75,7 +77,7 @@ const LoginPage = () => {
           return;
         }
       } catch {
-        // Silent fail — just show the normal login form
+        // Silent fail
       }
       setBiometricLoading(false);
     };
