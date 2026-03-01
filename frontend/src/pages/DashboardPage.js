@@ -280,54 +280,57 @@ const DashboardPage = () => {
 
       {/* Estate Readiness Score + Stats Combined */}
       <div className="glass-card p-4 lg:p-6 mb-4" data-testid="readiness-card">
-        <div className="flex items-start justify-between mb-2">
-          <h2 className="text-base lg:text-2xl font-bold text-[var(--t4)] uppercase tracking-wider" style={{ fontFamily: 'Outfit, sans-serif' }}>
-            Estate Readiness Score
-          </h2>
-          {/* Percentage key - upper right */}
-          <div className="flex flex-col gap-1 text-right">
-            <div className="flex items-center gap-1.5 justify-end">
-              <span className="w-3 h-1.5 rounded-full bg-[#2563eb]" />
-              <span className="text-[var(--t3)] text-[10px] lg:text-xs">{docsPercent}% Docs</span>
-            </div>
-            <div className="flex items-center gap-1.5 justify-end">
-              <span className="w-3 h-1.5 rounded-full bg-[#8b5cf6]" />
-              <span className="text-[var(--t3)] text-[10px] lg:text-xs">{msgsPercent}% Messages</span>
-            </div>
-            <div className="flex items-center gap-1.5 justify-end">
-              <span className="w-3 h-1.5 rounded-full bg-[#f97316]" />
-              <span className="text-[var(--t3)] text-[10px] lg:text-xs">{checklistPercent}% Checklist</span>
-            </div>
-          </div>
-        </div>
+        <h2 className="text-center text-base lg:text-2xl font-bold text-[var(--t4)] uppercase tracking-wider mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          Estate Readiness Score
+        </h2>
 
-        {/* Gauge + Stat tiles side by side */}
-        <div className="flex items-center gap-3 lg:gap-4">
-          {/* Left: 3 stat tiles stacked */}
-          <div className="flex flex-col gap-2 w-24 lg:w-32 shrink-0">
-            <div className="stat-card-vault rounded-xl p-2.5 lg:p-3 cursor-pointer transition-all hover:scale-[1.05] active:scale-[0.98] text-center"
+        {/* Three-column layout */}
+        <div className="grid grid-cols-[1fr_1.4fr_1fr] gap-2 lg:gap-4 items-stretch">
+          {/* Left third: 3 stat tiles stacked */}
+          <div className="flex flex-col gap-2">
+            <div className="stat-card-vault rounded-xl p-3 lg:p-4 cursor-pointer transition-all hover:scale-[1.03] active:scale-[0.98] text-center flex-1 flex flex-col items-center justify-center"
               onClick={() => navigate('/vault')} data-testid="stat-card-vault-mini">
-              <FolderLock className="stat-icon w-5 h-5 mx-auto opacity-70 mb-1" />
-              <div className="text-xl lg:text-2xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>{stats.documents}</div>
-              <div className="opacity-80 text-[9px] lg:text-[10px] font-bold leading-tight">SDV</div>
+              <FolderLock className="stat-icon w-5 h-5 lg:w-6 lg:h-6 opacity-70 mb-1" />
+              <div className="text-2xl lg:text-3xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>{stats.documents}</div>
+              <div className="opacity-80 text-xs font-bold">SDV</div>
             </div>
-            <div className="stat-card-messages rounded-xl p-2.5 lg:p-3 cursor-pointer transition-all hover:scale-[1.05] active:scale-[0.98] text-center"
+            <div className="stat-card-messages rounded-xl p-3 lg:p-4 cursor-pointer transition-all hover:scale-[1.03] active:scale-[0.98] text-center flex-1 flex flex-col items-center justify-center"
               onClick={() => navigate('/messages')} data-testid="stat-card-messages-mini">
-              <MessageSquare className="stat-icon w-5 h-5 mx-auto opacity-70 mb-1" />
-              <div className="text-xl lg:text-2xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>{stats.messages}</div>
-              <div className="opacity-80 text-[9px] lg:text-[10px] font-bold leading-tight">MM</div>
+              <MessageSquare className="stat-icon w-5 h-5 lg:w-6 lg:h-6 opacity-70 mb-1" />
+              <div className="text-2xl lg:text-3xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>{stats.messages}</div>
+              <div className="opacity-80 text-xs font-bold">MM</div>
             </div>
-            <div className="stat-card-checklist rounded-xl p-2.5 lg:p-3 cursor-pointer transition-all hover:scale-[1.05] active:scale-[0.98] text-center"
+            <div className="stat-card-checklist rounded-xl p-3 lg:p-4 cursor-pointer transition-all hover:scale-[1.03] active:scale-[0.98] text-center flex-1 flex flex-col items-center justify-center"
               onClick={() => navigate('/checklist')} data-testid="stat-card-checklist-mini">
-              <CheckSquare className="stat-icon w-5 h-5 mx-auto opacity-70 mb-1" />
-              <div className="text-xl lg:text-2xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>{totalTasks}</div>
-              <div className="opacity-80 text-[9px] lg:text-[10px] font-bold leading-tight">IAC</div>
+              <CheckSquare className="stat-icon w-5 h-5 lg:w-6 lg:h-6 opacity-70 mb-1" />
+              <div className="text-2xl lg:text-3xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>{totalTasks}</div>
+              <div className="opacity-80 text-xs font-bold">IAC</div>
             </div>
           </div>
 
           {/* Center: Speedometer */}
-          <div className="flex-1">
+          <div className="flex items-center justify-center">
             <SpeedometerGauge score={readinessScore} />
+          </div>
+
+          {/* Right third: Key box in upper half */}
+          <div className="flex flex-col gap-2">
+            <div className="glass-card rounded-xl p-3 lg:p-4" style={{ border: '1px solid var(--b)' }}>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-2 rounded-full bg-[#2563eb]" />
+                  <span className="text-[var(--t3)] text-xs lg:text-sm">{docsPercent}% Docs</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-2 rounded-full bg-[#8b5cf6]" />
+                  <span className="text-[var(--t3)] text-xs lg:text-sm">{msgsPercent}% Messages</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-2 rounded-full bg-[#f97316]" />
+                  <span className="text-[var(--t3)] text-xs lg:text-sm">{checklistPercent}% Checklist</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
