@@ -362,7 +362,7 @@ const BeneficiariesPage = () => {
         <Card className="glass-card">
           <CardContent className="p-12 text-center">
             <Users className="w-16 h-16 mx-auto text-[#64748b] mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">No beneficiaries yet</h3>
+            <h3 className="text-xl font-semibold text-[var(--t)] mb-2">No beneficiaries yet</h3>
             <p className="text-[#94a3b8] mb-6">
               Add family members who will receive access to your estate
             </p>
