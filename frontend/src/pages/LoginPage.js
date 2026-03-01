@@ -156,7 +156,7 @@ const LoginPage = () => {
       </nav>
 
       {/* ═══════════════════ HERO — FLAG BG + LOGO + LOGIN ═══════════════════ */}
-      <section className="min-h-screen flex items-center pt-16 relative overflow-hidden">
+      <section className="min-h-screen flex items-start sm:items-center pt-20 sm:pt-16 relative overflow-hidden">
         {/* Flag background that fades on scroll */}
         <div className="absolute inset-0 z-0" style={{ opacity: flagOpacity * 0.5 }}>
           <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" />
