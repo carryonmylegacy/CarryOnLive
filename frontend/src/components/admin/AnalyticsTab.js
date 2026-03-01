@@ -222,7 +222,7 @@ export const AnalyticsTab = ({ getAuthHeaders }) => {
             setSendingDigest(true);
             try {
               const res = await axios.post(`${API_URL}/admin/analytics-digest/send`, {}, { headers });
-              toast.success(`Digest sent to ${res.data.sent} admin(s)`);
+              // toast removed
             } catch (err) { toast.error(err.response?.data?.detail || 'Failed to send digest'); }
             setSendingDigest(false);
           }}
