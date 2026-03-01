@@ -278,81 +278,68 @@ const DashboardPage = () => {
       {/* Onboarding Wizard — shown early so it's visible on mobile */}
       <OnboardingWizard />
 
-      {/* Estate Readiness Score Card */}
+      {/* Estate Readiness Score + Stats Combined */}
       <div className="glass-card p-4 lg:p-6 mb-4" data-testid="readiness-card">
-        <h2 className="text-center text-base lg:text-2xl font-bold text-[var(--t4)] uppercase tracking-wider mb-2 lg:mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
-          Estate Readiness Score
-        </h2>
-        
-        <SpeedometerGauge score={readinessScore} />
-        
-        {/* Percentage breakdown - oval dots with matching card colors */}
-        <div className="flex justify-center gap-3 lg:gap-8 mt-16 lg:mt-28">
-          <div className="flex items-center gap-1.5 lg:gap-2">
-            <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#2563eb]" />
-            <span className="text-[var(--t3)] text-xs lg:text-sm">{docsPercent}% Docs</span>
-          </div>
-          <div className="flex items-center gap-1.5 lg:gap-2">
-            <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#8b5cf6]" />
-            <span className="text-[var(--t3)] text-xs lg:text-sm">{msgsPercent}% Messages</span>
-          </div>
-          <div className="flex items-center gap-1.5 lg:gap-2">
-            <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#f97316]" />
-            <span className="text-[var(--t3)] text-xs lg:text-sm">{checklistPercent}% Checklist</span>
+        <div className="flex items-start justify-between mb-2">
+          <h2 className="text-base lg:text-2xl font-bold text-[var(--t4)] uppercase tracking-wider" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            Estate Readiness Score
+          </h2>
+          {/* Percentage key - upper right */}
+          <div className="flex flex-col gap-1 text-right">
+            <div className="flex items-center gap-1.5 justify-end">
+              <span className="w-3 h-1.5 rounded-full bg-[#2563eb]" />
+              <span className="text-[var(--t3)] text-[10px] lg:text-xs">{docsPercent}% Docs</span>
+            </div>
+            <div className="flex items-center gap-1.5 justify-end">
+              <span className="w-3 h-1.5 rounded-full bg-[#8b5cf6]" />
+              <span className="text-[var(--t3)] text-[10px] lg:text-xs">{msgsPercent}% Messages</span>
+            </div>
+            <div className="flex items-center gap-1.5 justify-end">
+              <span className="w-3 h-1.5 rounded-full bg-[#f97316]" />
+              <span className="text-[var(--t3)] text-[10px] lg:text-xs">{checklistPercent}% Checklist</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4 mb-4">
-        <StatCard 
-          icon={FolderLock}
-          value={stats.documents}
-          label="Secure Document Vault"
-          cardClass="stat-card-vault"
-          onClick={() => navigate('/vault')}
-          sectionKey="vault"
-        />
-        <StatCard 
-          icon={MessageSquare}
-          value={stats.messages}
-          label="Milestone Messages (MM)"
-          cardClass="stat-card-messages"
-          onClick={() => navigate('/messages')}
-          sectionKey="messages"
-        />
-        <StatCard 
-          icon={CheckSquare}
-          value={totalTasks}
-          label="Immediate Action Checklist (IAC)"
-          cardClass="stat-card-checklist"
-          onClick={() => navigate('/checklist')}
-          sectionKey="checklist"
-        />
-        {/* Desktop only - 4th card in same row */}
-        <StatCard 
-          icon={Users}
-          value={stats.beneficiaries}
-          label="Beneficiaries"
-          cardClass="stat-card-beneficiaries"
-          onClick={() => navigate('/beneficiaries')}
-          className="hidden lg:block"
-          sectionKey="beneficiaries"
-        />
-      </div>
+        {/* Gauge + Stat tiles side by side */}
+        <div className="flex items-center gap-3 lg:gap-4">
+          {/* Left: 3 stat tiles stacked */}
+          <div className="flex flex-col gap-2 w-24 lg:w-32 shrink-0">
+            <div className="stat-card-vault rounded-xl p-2.5 lg:p-3 cursor-pointer transition-all hover:scale-[1.05] active:scale-[0.98] text-center"
+              onClick={() => navigate('/vault')} data-testid="stat-card-vault-mini">
+              <FolderLock className="stat-icon w-5 h-5 mx-auto opacity-70 mb-1" />
+              <div className="text-xl lg:text-2xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>{stats.documents}</div>
+              <div className="opacity-80 text-[9px] lg:text-[10px] font-bold leading-tight">SDV</div>
+            </div>
+            <div className="stat-card-messages rounded-xl p-2.5 lg:p-3 cursor-pointer transition-all hover:scale-[1.05] active:scale-[0.98] text-center"
+              onClick={() => navigate('/messages')} data-testid="stat-card-messages-mini">
+              <MessageSquare className="stat-icon w-5 h-5 mx-auto opacity-70 mb-1" />
+              <div className="text-xl lg:text-2xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>{stats.messages}</div>
+              <div className="opacity-80 text-[9px] lg:text-[10px] font-bold leading-tight">MM</div>
+            </div>
+            <div className="stat-card-checklist rounded-xl p-2.5 lg:p-3 cursor-pointer transition-all hover:scale-[1.05] active:scale-[0.98] text-center"
+              onClick={() => navigate('/checklist')} data-testid="stat-card-checklist-mini">
+              <CheckSquare className="stat-icon w-5 h-5 mx-auto opacity-70 mb-1" />
+              <div className="text-xl lg:text-2xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>{totalTasks}</div>
+              <div className="opacity-80 text-[9px] lg:text-[10px] font-bold leading-tight">IAC</div>
+            </div>
+          </div>
 
-      {/* Mobile only - Beneficiaries full width */}
-      <div className="lg:hidden mb-4">
+          {/* Center: Speedometer */}
+          <div className="flex-1">
+            <SpeedometerGauge score={readinessScore} />
+          </div>
+        </div>
+
+        {/* Beneficiaries - full width below */}
         <div 
-          className="stat-card-beneficiaries rounded-2xl p-4 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] flex flex-col items-center justify-center"
+          className="stat-card-beneficiaries rounded-xl p-3 mt-3 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3"
           onClick={() => navigate('/beneficiaries')}
-          data-testid="stat-card-beneficiaries-mobile"
+          data-testid="stat-card-beneficiaries-inline"
         >
-          <Users className="stat-icon w-8 h-8 opacity-70 mb-2" />
-          <span className="text-3xl font-bold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
-            {stats.beneficiaries}
-          </span>
-          <span className="opacity-80 text-base lg:text-lg font-bold text-center">Beneficiaries</span>
+          <Users className="stat-icon w-6 h-6 opacity-70" />
+          <span className="text-2xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>{stats.beneficiaries}</span>
+          <span className="opacity-80 text-sm font-bold">Beneficiaries</span>
         </div>
       </div>
 
