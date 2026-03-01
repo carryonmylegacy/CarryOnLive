@@ -45,7 +45,7 @@ workflows:
         XCODE_WORKSPACE: frontend/ios/App/App.xcworkspace
         XCODE_SCHEME: App
       node: 20
-      xcode: 16.2
+      xcode: 26.3
       cocoapods: default
     cache:
       cache_paths:
