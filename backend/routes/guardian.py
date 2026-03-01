@@ -201,17 +201,36 @@ async def gather_estate_context(
         # Include document content if requested
         if include_doc_content:
             context_parts.append("\n**DOCUMENT CONTENTS (for analysis):**")
-            for doc in documents:
-                # Fetch full document with file_data for extraction
-                full_doc = await db.documents.find_one({"id": doc["id"]}, {"_id": 0})
-                if full_doc and full_doc.get("file_data"):
-                    text = await extract_document_text(full_doc)
-                    if text and not text.startswith("["):
-                        context_parts.append(
-                            f"\n--- {doc['name']} ---\n{text}\n--- End of {doc['name']} ---"
+            import asyncio
+
+            async def extract_with_timeout(doc):
+                try:
+                    full_doc = await db.documents.find_one({"id": doc["id"]}, {"_id": 0})
+                    if not full_doc:
+                        return doc["name"], f"[Document not found]"
+                    if full_doc.get("storage_key") or full_doc.get("file_data"):
+                        text = await asyncio.wait_for(
+                            asyncio.to_thread(lambda: asyncio.run(_extract_sync(full_doc))),
+                            timeout=15
                         )
-                    else:
-                        context_parts.append(f"\n--- {doc['name']} ---\n{text}\n---")
+                        return doc["name"], text
+                    return doc["name"], f"[No content available]"
+                except asyncio.TimeoutError:
+                    return doc["name"], f"[Extraction timed out - large file]"
+                except Exception as e:
+                    return doc["name"], f"[Extraction error: {str(e)[:50]}]"
+
+            async def _extract_sync(full_doc):
+                return await extract_document_text(full_doc)
+
+            # Extract documents concurrently with timeout
+            tasks = [extract_with_timeout(doc) for doc in documents[:10]]
+            results = await asyncio.gather(*tasks)
+            for name, text in results:
+                if text and not text.startswith("["):
+                    context_parts.append(f"\n--- {name} ---\n{text[:4000]}\n--- End of {name} ---")
+                else:
+                    context_parts.append(f"\n--- {name} ---\n{text}\n---")
     else:
         context_parts.append("- No documents uploaded yet")
 
