@@ -2,6 +2,7 @@
 
 import base64
 import json
+import os
 import uuid
 from datetime import datetime, timezone
 
