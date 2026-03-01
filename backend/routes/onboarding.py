@@ -44,61 +44,68 @@ ONBOARDING_STEPS = [
 
 @router.get("/onboarding/progress")
 async def get_onboarding_progress(current_user: dict = Depends(get_current_user)):
-    """Get the user's onboarding progress."""
+    """Get the user's onboarding progress — always checks real data for completion."""
     progress = await db.onboarding_progress.find_one(
         {"user_id": current_user["id"]}, {"_id": 0}
     )
 
     if not progress:
-        # Calculate from actual data
-        estates = await db.estates.find(
-            {"owner_id": current_user["id"]}, {"_id": 0, "id": 1}
-        ).to_list(1)
-        estate_id = estates[0]["id"] if estates else None
-
-        completed = {}
-        if estate_id:
-            completed["create_estate"] = True
-            ben_count = await db.beneficiaries.count_documents({"estate_id": estate_id})
-            if ben_count > 0:
-                completed["add_beneficiary"] = True
-            doc_count = await db.documents.count_documents({"estate_id": estate_id})
-            if doc_count > 0:
-                completed["upload_document"] = True
-            msg_count = await db.messages.count_documents({"estate_id": estate_id})
-            if msg_count > 0:
-                completed["create_message"] = True
-
         progress = {
             "user_id": current_user["id"],
-            "completed_steps": completed,
+            "completed_steps": {},
             "dismissed": False,
         }
-        await db.onboarding_progress.insert_one(
-            {**progress, "_id": None} if False else progress
-        )
+
+    # Always re-check completion from real data
+    estates = await db.estates.find(
+        {"owner_id": current_user["id"]}, {"_id": 0, "id": 1}
+    ).to_list(1)
+    estate_id = estates[0]["id"] if estates else None
+
+    completed = dict(progress.get("completed_steps", {}))
+    if estate_id:
+        completed["create_estate"] = True
+        if await db.beneficiaries.count_documents({"estate_id": estate_id}) > 0:
+            completed["add_beneficiary"] = True
+        if await db.documents.count_documents({"estate_id": estate_id}) > 0:
+            completed["upload_document"] = True
+        if await db.messages.count_documents({"estate_id": estate_id}) > 0:
+            completed["create_message"] = True
+
+    # Persist updated completion
+    await db.onboarding_progress.update_one(
+        {"user_id": current_user["id"]},
+        {"$set": {"completed_steps": completed, "user_id": current_user["id"]}},
+        upsert=True,
+    )
 
     steps_with_status = []
     for step in ONBOARDING_STEPS:
         steps_with_status.append(
             {
                 **step,
-                "completed": progress.get("completed_steps", {}).get(
-                    step["key"], False
-                ),
+                "completed": completed.get(step["key"], False),
             }
         )
 
     total = len(ONBOARDING_STEPS)
     done = sum(1 for s in steps_with_status if s["completed"])
+    all_complete = done == total
+
+    # Auto-dismiss if all complete
+    if all_complete and not progress.get("dismissed"):
+        await db.onboarding_progress.update_one(
+            {"user_id": current_user["id"]},
+            {"$set": {"dismissed": True}},
+        )
 
     return {
         "steps": steps_with_status,
         "completed_count": done,
         "total_steps": total,
         "progress_pct": int((done / total) * 100) if total else 0,
-        "all_complete": done == total,
-        "dismissed": progress.get("dismissed", False),
+        "all_complete": all_complete,
+        "dismissed": progress.get("dismissed", False) or all_complete,
     }
 
 
