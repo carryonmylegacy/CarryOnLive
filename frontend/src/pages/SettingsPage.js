@@ -315,6 +315,30 @@ const SettingsPage = () => {
               />
             </div>
           )}
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-[var(--t)] font-medium">Face ID / Biometric Login</h4>
+              <p className="text-[var(--t5)] text-sm">Sign in with Face ID or fingerprint</p>
+            </div>
+            <Switch
+              checked={localStorage.getItem('carryon_biometric_enabled') === 'true'}
+              onCheckedChange={async (checked) => {
+                if (checked) {
+                  try {
+                    const { registerBiometric, isBiometricAvailable } = await import('../services/biometric');
+                    const { available } = await isBiometricAvailable();
+                    if (!available) { toast.error('Biometric authentication is not available on this device'); return; }
+                    const token = localStorage.getItem('carryon_token');
+                    await registerBiometric(token, user?.email, '');
+                  } catch (err) { toast.error('Failed to enable biometric login'); }
+                } else {
+                  const { disableBiometric } = await import('../services/biometric');
+                  await disableBiometric();
+                }
+              }}
+              data-testid="settings-biometric-toggle"
+            />
+          </div>
         </CardContent>
       </Card>
 
