@@ -75,7 +75,7 @@ const LoginPage = () => {
     try {
       const result = await login(email, password);
       if (result.direct) {
-        toast.success(`Welcome back, ${result.user.name}!`);
+        
         if (result.user.role === 'admin') navigate('/admin');
         else if (result.user.role === 'beneficiary') navigate('/beneficiary');
         else navigate('/dashboard');
@@ -95,7 +95,7 @@ const LoginPage = () => {
     setLoading(true);
     try {
       const user = await verifyOtp(email, otp, trustToday);
-      toast.success(`Welcome back, ${user.name}!`);
+      
       if (user.role === 'admin') navigate('/admin');
       else if (user.role === 'beneficiary') navigate('/beneficiary');
       else navigate('/dashboard');
