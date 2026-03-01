@@ -134,10 +134,7 @@ const LoginPage = () => {
     setLoading(true);
     try {
       const user = await verifyOtp(email, otp, trustToday);
-      
-      if (user.role === 'admin') navigate('/admin');
-      else if (user.role === 'beneficiary') navigate('/beneficiary');
-      else navigate('/dashboard');
+      await completeLogin({ user, direct: true });
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Invalid OTP');
     } finally {
