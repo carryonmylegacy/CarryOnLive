@@ -122,7 +122,7 @@ async def webauthn_register_complete(
             credential=data.credential,
             expected_challenge=base64url_to_bytes(challenge_doc["challenge"]),
             expected_rp_id=RP_ID,
-            expected_origin=ORIGIN,
+            expected_origin=ALLOWED_ORIGINS,
         )
     except Exception as e:
         logger.error(f"WebAuthn registration verification failed: {e}")
