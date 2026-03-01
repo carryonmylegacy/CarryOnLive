@@ -1,8 +1,8 @@
-"""CarryOn™ — Compliance Routes (SOC 2, HIPAA, GDPR)
+"""CarryOn™ — Compliance Routes (SOC 2, GDPR)
 
 Provides endpoints for:
 - GDPR: Data export (right to access/portability), account deletion (right to erasure), consent management
-- HIPAA: PHI access logging, minimum necessary access audit
+- SOC 2: Sensitive data access logging, audit trail
 - SOC 2: Incident logging, data retention policy enforcement
 """
 
@@ -80,7 +80,7 @@ async def export_user_data(current_user: dict = Depends(get_current_user)):
 
     user_consent = await db.user_consent.find_one({"user_id": user_id}, {"_id": 0})
 
-    # Log this data access for HIPAA audit trail
+    # Log sensitive data access for SOC 2 audit trail
     await log_phi_access(
         user_id=user_id,
         action="data_export",
@@ -239,7 +239,7 @@ async def update_consent_preferences(
     return {"message": "Consent preferences updated", "updated_at": now}
 
 
-# ===================== HIPAA: PHI ACCESS LOGGING =====================
+# ===================== SOC 2: SENSITIVE DATA ACCESS LOGGING =====================
 
 
 async def log_phi_access(
@@ -249,7 +249,7 @@ async def log_phi_access(
     details: str = "",
     accessed_by: str = None,
 ):
-    """Log every access to Protected Health Information (PHI) for HIPAA compliance.
+    """Log every access to sensitive data for SOC 2 compliance audit trail.
     This creates an immutable audit trail of who accessed what, when, and why."""
     await db.phi_access_log.insert_one(
         {
@@ -266,7 +266,7 @@ async def log_phi_access(
 
 @router.get("/compliance/phi-access-log")
 async def get_phi_access_log(current_user: dict = Depends(get_current_user)):
-    """HIPAA: View PHI access log for the current user (accounting of disclosures)."""
+    """SOC 2: View sensitive data access log for the current user."""
     logs = (
         await db.phi_access_log.find({"user_id": current_user["id"]}, {"_id": 0})
         .sort("timestamp", -1)
@@ -369,8 +369,8 @@ async def get_data_retention_policy(current_user: dict = Depends(get_current_use
                 "legal_basis": "Legal obligation, legitimate interest",
             },
             {
-                "data_type": "PHI Access Logs",
-                "retention": "6 years (HIPAA requirement)",
+                "data_type": "Sensitive Data Access Logs",
+                "retention": "7 years (SOC 2 requirement)",
                 "legal_basis": "Legal obligation",
             },
             {
