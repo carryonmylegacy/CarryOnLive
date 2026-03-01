@@ -169,7 +169,7 @@ const LoginPage = () => {
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 w-full relative z-10">
           <div className="grid lg:grid-cols-[1fr_420px] gap-10 lg:gap-14 items-center">
 
-            {/* Logo + Tagline — hidden on mobile, shows on desktop left */}
+            {/* Logo + Tagline — desktop: left side */}
             <RevealSection delay={0.1} className="hidden lg:block">
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 lg:gap-8">
                 <div className="flex-shrink-0">
@@ -198,7 +198,7 @@ const LoginPage = () => {
               </div>
             </RevealSection>
 
-            {/* Login Card — always shows, first on mobile */}
+            {/* Login Card */}
             <RevealSection delay={0.3} direction="right">
               <div className="flex justify-center lg:justify-end">
                 <div className="w-full rounded-2xl p-8 relative login-card-glow" style={{
