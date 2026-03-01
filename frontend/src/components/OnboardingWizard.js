@@ -1,23 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
   FolderLock, Users, FileUp, MessageSquare, BarChart3,
-  Check, ChevronRight, X, Sparkles
+  ChevronRight, X, Sparkles
 } from 'lucide-react';
-import { Card, CardContent } from '../components/ui/card';
-import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const STEP_CONFIG = {
-  create_estate: { icon: FolderLock, color: '#d4af37', route: '/dashboard', label: 'Create Your Estate' },
-  add_beneficiary: { icon: Users, color: '#3b82f6', route: '/beneficiaries', label: 'Add a Beneficiary' },
-  upload_document: { icon: FileUp, color: '#10b981', route: '/vault', label: 'Upload a Document' },
-  create_message: { icon: MessageSquare, color: '#8b5cf6', route: '/messages', label: 'Create a Message' },
-  review_readiness: { icon: BarChart3, color: '#f59e0b', route: '/dashboard', label: 'Review Readiness' },
+  create_estate: { icon: FolderLock, color: '#d4af37', bg: 'rgba(212,175,55,0.08)', border: 'rgba(212,175,55,0.2)', route: '/dashboard', label: 'Create Your Estate', desc: 'Set up your first estate to get started' },
+  add_beneficiary: { icon: Users, color: '#3b82f6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)', route: '/beneficiaries', label: 'Add a Beneficiary', desc: 'Designate who receives your legacy' },
+  upload_document: { icon: FileUp, color: '#10b981', bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.2)', route: '/vault', label: 'Upload a Document', desc: 'Secure your important files in the vault' },
+  create_message: { icon: MessageSquare, color: '#8b5cf6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.2)', route: '/messages', label: 'Create a Message', desc: 'Record a milestone message for loved ones' },
+  review_readiness: { icon: BarChart3, color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', route: '/dashboard', label: 'Review Readiness', desc: 'Check your estate readiness score' },
 };
 
 const OnboardingWizard = () => {
@@ -26,9 +24,10 @@ const OnboardingWizard = () => {
   const [progress, setProgress] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dismissed, setDismissed] = useState(() => {
-    // Check localStorage immediately to prevent layout shift
     return localStorage.getItem('carryon_onboarding_dismissed') === 'true';
   });
+  const [popping, setPopping] = useState({});
+  const prevCompleted = useRef({});
 
   useEffect(() => {
     if (user?.role === 'benefactor') fetchProgress();
@@ -39,6 +38,32 @@ const OnboardingWizard = () => {
     try {
       const res = await axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
       setProgress(res.data);
+
+      // Detect newly completed steps and trigger pop animation
+      if (res.data.steps) {
+        const newPops = {};
+        res.data.steps.forEach(step => {
+          if (step.completed && !prevCompleted.current[step.key]) {
+            newPops[step.key] = true;
+          }
+        });
+        if (Object.keys(newPops).length > 0) {
+          setPopping(prev => ({ ...prev, ...newPops }));
+          // Remove popped steps after animation
+          setTimeout(() => {
+            setPopping(prev => {
+              const next = { ...prev };
+              Object.keys(newPops).forEach(k => delete next[k]);
+              return next;
+            });
+          }, 800);
+        }
+        // Update ref
+        const completed = {};
+        res.data.steps.forEach(s => { if (s.completed) completed[s.key] = true; });
+        prevCompleted.current = completed;
+      }
+
       if (res.data.dismissed || res.data.all_complete) {
         setDismissed(true);
         localStorage.setItem('carryon_onboarding_dismissed', 'true');
@@ -64,68 +89,75 @@ const OnboardingWizard = () => {
   };
 
   if (dismissed) return null;
-
-  // While loading, return nothing - no layout shift since dismissed state is cached
   if (loading || !progress) return null;
 
+  const incompleteSteps = progress.steps.filter(s => !s.completed || popping[s.key]);
+
+  if (incompleteSteps.length === 0) return null;
+
   return (
-    <div>
-    <Card className="border border-[#d4af37]/30 bg-gradient-to-r from-[#d4af37]/5 to-transparent mb-6" data-testid="onboarding-wizard">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-[#d4af37]/20 flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-[#d4af37]" />
-            </div>
-            <div>
-              <h3 className="text-[var(--t)] font-bold text-lg" style={{ fontFamily: 'Outfit, sans-serif' }}>Get Started with CarryOn</h3>
-              <p className="text-[#94a3b8] text-sm">{progress.completed_count} of {progress.total_steps} steps complete</p>
-            </div>
+    <div className="mb-6" data-testid="onboarding-wizard">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)' }}>
+            <Sparkles className="w-5 h-5 text-[#d4af37]" />
           </div>
-          <button onClick={handleDismiss} className="text-[#64748b] hover:text-white transition-colors" data-testid="onboarding-dismiss">
-            <X className="w-5 h-5" />
-          </button>
+          <div>
+            <h3 className="text-[var(--t)] font-bold text-lg" style={{ fontFamily: 'Outfit, sans-serif' }}>Get Started with CarryOn</h3>
+            <p className="text-[var(--t5)] text-sm">{progress.completed_count} of {progress.total_steps} complete</p>
+          </div>
         </div>
+        <button onClick={handleDismiss} className="text-[var(--t5)] hover:text-[var(--t)] transition-colors p-1" data-testid="onboarding-dismiss">
+          <X className="w-5 h-5" />
+        </button>
+      </div>
 
-        <Progress value={progress.progress_pct} className="h-2 mb-5 bg-[var(--s)]" />
+      <Progress value={progress.progress_pct} className="h-2 mb-5 bg-[var(--s)]" />
 
-        <div className="space-y-2.5">
-          {progress.steps.map((step) => {
-            const config = STEP_CONFIG[step.key];
-            const Icon = config.icon;
-            return (
+      {/* Step Tiles */}
+      <div className="space-y-3">
+        {incompleteSteps.map((step) => {
+          const config = STEP_CONFIG[step.key];
+          const Icon = config.icon;
+          const isPop = popping[step.key];
+
+          return (
+            <div
+              key={step.key}
+              className="transition-all duration-500"
+              style={{
+                opacity: isPop ? 0 : 1,
+                transform: isPop ? 'scale(1.15)' : 'scale(1)',
+                maxHeight: isPop ? '0px' : '120px',
+                marginBottom: isPop ? '0px' : undefined,
+                overflow: 'hidden',
+              }}
+            >
               <button
-                key={step.key}
                 onClick={() => handleStepClick(step)}
-                className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all text-left ${
-                  step.completed
-                    ? 'bg-[var(--s)] opacity-60'
-                    : 'bg-[var(--s)] hover:bg-[var(--s)] cursor-pointer'
-                }`}
+                className="w-full rounded-2xl p-5 flex items-center gap-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98] cursor-pointer"
+                style={{
+                  background: config.bg,
+                  border: `1px solid ${config.border}`,
+                  boxShadow: `0 4px 16px -4px ${config.color}20`,
+                }}
                 data-testid={`onboarding-step-${step.key}`}
               >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  step.completed ? 'bg-[#10b981]/20' : 'bg-[var(--s)]'
-                }`}>
-                  {step.completed ? (
-                    <Check className="w-5 h-5 text-[#10b981]" />
-                  ) : (
-                    <Icon className="w-5 h-5" style={{ color: config.color }} />
-                  )}
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-200"
+                  style={{ background: `${config.color}15`, border: `1px solid ${config.color}30` }}>
+                  <Icon className="w-6 h-6" style={{ color: config.color }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-base font-semibold ${step.completed ? 'text-[#64748b] line-through' : 'text-[var(--t)]'}`}>
-                    {config.label}
-                  </p>
-                  <p className="text-sm text-[#64748b]">{step.description}</p>
+                  <p className="text-base font-bold text-[var(--t)]">{config.label}</p>
+                  <p className="text-sm text-[var(--t5)]">{config.desc}</p>
                 </div>
-                {!step.completed && <ChevronRight className="w-5 h-5 text-[#64748b] flex-shrink-0" />}
+                <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: config.color }} />
               </button>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
