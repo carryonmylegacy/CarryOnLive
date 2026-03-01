@@ -584,6 +584,47 @@ const LoginPage = () => {
           </div>
         </div>
       )}
+
+      {/* Biometric Setup Prompt */}
+      {showBiometricPrompt && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="w-full max-w-sm rounded-2xl p-8 text-center" style={{ background: 'linear-gradient(145deg, rgba(17,27,48,0.98), rgba(13,22,40,1))', border: '1px solid rgba(14,165,233,0.15)' }}>
+            <div className="w-20 h-20 mx-auto mb-5 rounded-full flex items-center justify-center" style={{ background: 'rgba(14,165,233,0.1)', border: '2px solid rgba(14,165,233,0.2)' }}>
+              <Shield className="w-10 h-10 text-[#0EA5E9]" />
+            </div>
+            <h3 className="text-white text-xl font-bold mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Enable Face ID?</h3>
+            <p className="text-[#6b7a90] text-sm mb-6 leading-relaxed">
+              Sign in instantly with Face ID next time you open CarryOn. You can change this anytime in Settings.
+            </p>
+            <button
+              onClick={async () => {
+                try {
+                  const { registerBiometric } = await import('../services/biometric');
+                  const token = localStorage.getItem('carryon_token');
+                  await registerBiometric(token, email, password);
+                  localStorage.setItem('carryon_biometric_email', email);
+                } catch (err) {
+                  console.error('Biometric setup error:', err);
+                }
+                setShowBiometricPrompt(false);
+                if (pendingLoginResult) navigateToHome(pendingLoginResult);
+              }}
+              className="w-full py-3 rounded-xl font-bold text-sm mb-3 transition-all"
+              style={{ background: 'linear-gradient(135deg, #0EA5E9, #0369A1)', color: 'white' }}
+              data-testid="enable-biometric-btn"
+            >
+              Enable Face ID
+            </button>
+            <button
+              onClick={() => { setShowBiometricPrompt(false); if (pendingLoginResult) navigateToHome(pendingLoginResult); }}
+              className="text-[#475569] text-sm font-medium hover:text-[#94a3b8] transition-colors"
+              data-testid="skip-biometric-btn"
+            >
+              Not Now
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
