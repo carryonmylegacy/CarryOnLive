@@ -23,10 +23,14 @@ const config: CapacitorConfig = {
   },
   ios: {
     contentInset: 'automatic',
-    backgroundColor: '#0a1628',
+    backgroundColor: '#0F1629',
+    scrollEnabled: false,
+    allowsLinkPreview: false,
+    overscroll: 'never',
   },
   android: {
-    backgroundColor: '#0a1628',
+    backgroundColor: '#0F1629',
+    overScrollMode: 'never',
   },
 };
 
