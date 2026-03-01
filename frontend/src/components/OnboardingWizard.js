@@ -15,7 +15,7 @@ const STEP_CONFIG = {
   add_beneficiary: { icon: Users, color: '#3b82f6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)', route: '/beneficiaries', label: 'Add a Beneficiary', desc: 'Designate who receives your legacy' },
   upload_document: { icon: FileUp, color: '#10b981', bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.2)', route: '/vault', label: 'Upload a Document', desc: 'Secure your important files in the vault' },
   create_message: { icon: MessageSquare, color: '#8b5cf6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.2)', route: '/messages', label: 'Create a Message', desc: 'Record a milestone message for loved ones' },
-  review_readiness: { icon: BarChart3, color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', route: '/guardian', label: 'Consult the Estate Guardian', desc: 'Analyze your vault and populate your checklist' },
+  review_readiness: { icon: Sparkles, color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', route: '/guardian', label: 'Consult the Estate Guardian', desc: 'Analyze your vault and populate your checklist' },
 };
 
 const OnboardingWizard = () => {
