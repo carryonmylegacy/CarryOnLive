@@ -42,7 +42,10 @@ export const isBiometricAvailable = async () => {
 };
 
 export const isBiometricEnabled = () => {
-  return localStorage.getItem('carryon_biometric_enabled') === 'true';
+  const enabled = localStorage.getItem('carryon_biometric_enabled') === 'true';
+  const method = localStorage.getItem('carryon_biometric_method');
+  // Must have both the flag AND a method configured
+  return enabled && !!method;
 };
 
 // ═══ REGISTRATION (after login) ═══
