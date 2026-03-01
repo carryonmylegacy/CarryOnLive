@@ -94,19 +94,33 @@ const LoginPage = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const completeLogin = async (result) => {
+    // Check if we should offer biometric setup
+    const { isBiometricAvailable, isBiometricEnabled } = await import('../services/biometric');
+    const { available } = await isBiometricAvailable();
+    if (available && !isBiometricEnabled()) {
+      setPendingLoginResult(result);
+      setShowBiometricPrompt(true);
+      return;
+    }
+    navigateToHome(result);
+  };
+
+  const navigateToHome = (result) => {
+    if (result.user?.role === 'admin') navigate('/admin');
+    else if (result.user?.role === 'beneficiary') navigate('/beneficiary');
+    else navigate('/dashboard');
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
       const result = await login(email, password);
       if (result.direct) {
-        
-        if (result.user.role === 'admin') navigate('/admin');
-        else if (result.user.role === 'beneficiary') navigate('/beneficiary');
-        else navigate('/dashboard');
+        await completeLogin(result);
       } else {
         setShowOtpModal(true);
-        // toast removed
       }
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Invalid credentials');
