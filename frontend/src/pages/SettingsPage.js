@@ -321,7 +321,7 @@ const SettingsPage = () => {
               <p className="text-[var(--t5)] text-sm">Sign in with Face ID or fingerprint</p>
             </div>
             <Switch
-              checked={localStorage.getItem('carryon_biometric_enabled') === 'true'}
+              checked={biometricOn}
               onCheckedChange={async (checked) => {
                 if (checked) {
                   try {
@@ -329,10 +329,12 @@ const SettingsPage = () => {
                     const token = localStorage.getItem('carryon_token');
                     await registerBiometric(token, user?.email, '');
                     localStorage.removeItem('carryon_biometric_declined');
+                    setBiometricOn(true);
                   } catch (err) { toast.error(err.message || 'Failed to enable biometric login'); }
                 } else {
                   const { disableBiometric } = await import('../services/biometric');
                   await disableBiometric();
+                  setBiometricOn(false);
                 }
               }}
               data-testid="settings-biometric-toggle"
