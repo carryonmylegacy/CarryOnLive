@@ -147,7 +147,7 @@ const DashboardPage = () => {
           <div className="text-3xl lg:text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
             {score}%
           </div>
-          <div className="text-base lg:text-2xl font-bold" style={{ color: scoreInfo.color }}>
+          <div className="text-base lg:text-2xl font-bold whitespace-nowrap" style={{ color: scoreInfo.color }}>
             {scoreInfo.label}
           </div>
         </div>
