@@ -89,11 +89,10 @@ const DashboardPage = () => {
 
   // Get score label and color
   const getScoreLabel = (score) => {
-    if (score >= 80) return { label: 'Excellent', color: '#22c55e' };
-    if (score >= 60) return { label: 'Good', color: '#22c55e' };
-    if (score >= 40) return { label: 'Fair', color: '#eab308' };
-    if (score >= 20) return { label: 'Needs Work', color: '#f97316' };
-    return { label: 'Needs Work', color: '#ef4444' };
+    if (score >= 80) return { label: 'Protected', color: '#14B8A6' };
+    if (score >= 60) return { label: 'Strong', color: '#2DD4BF' };
+    if (score >= 40) return { label: 'Building', color: '#FBBF24' };
+    return { label: 'Getting Started', color: '#F59E0B' };
   };
 
   const scoreInfo = getScoreLabel(readinessScore);
