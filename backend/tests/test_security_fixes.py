@@ -61,7 +61,7 @@ class TestSectionUnlockSession:
         settings_res = authenticated_client.get(f"{BASE_URL}/api/security/settings")
         assert settings_res.status_code == 200, f"Failed to get settings: {settings_res.text}"
         
-        settings = settings_res.json()
+        settings_data = settings_res.json()  # noqa: F841
         # Find a section that doesn't have security configured (easiest to test)
         # When no security is configured, verify returns {verified: True, message: "No security configured"}
         section_id = "mm"  # Using Milestone Messages for test
