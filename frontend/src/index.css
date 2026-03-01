@@ -788,13 +788,6 @@
   padding-top: env(safe-area-inset-top, 0px);
 }
 
-/* Mobile top padding - accounts for header + safe area */
-@supports (padding-top: env(safe-area-inset-top)) {
-  .pt-safe-header {
-    padding-top: calc(5rem + env(safe-area-inset-top, 0px)) !important;
-  }
-}
-
 /* Mobile Bottom Navigation */
 .mobile-bottom-nav {
   background: var(--mobile-nav-bg);
