@@ -125,21 +125,27 @@ const registerWebAuthn = async (token) => {
 
   if (!credential) throw new Error('No credential returned — Face ID may have been cancelled');
 
+  // Extract and serialize credential data (Safari requires explicit ArrayBuffer reads)
+  const credId = credential.id;
+  const rawId = new Uint8Array(credential.rawId);
+  const attestObj = new Uint8Array(credential.response.attestationObject);
+  const clientData = new Uint8Array(credential.response.clientDataJSON);
+
+  const credentialPayload = {
+    id: credId,
+    rawId: bufferToBase64url(rawId.buffer),
+    type: credential.type,
+    response: {
+      attestationObject: bufferToBase64url(attestObj.buffer),
+      clientDataJSON: bufferToBase64url(clientData.buffer),
+    },
+  };
+
   // Send to server
   const response = await fetch(`${API_URL}/auth/webauthn/register`, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      credential: {
-        id: credential.id,
-        rawId: bufferToBase64url(credential.rawId),
-        type: credential.type,
-        response: {
-          attestationObject: bufferToBase64url(credential.response.attestationObject),
-          clientDataJSON: bufferToBase64url(credential.response.clientDataJSON),
-        },
-      },
-    }),
+    body: JSON.stringify({ credential: credentialPayload }),
   });
 
   const result = await response.json();
