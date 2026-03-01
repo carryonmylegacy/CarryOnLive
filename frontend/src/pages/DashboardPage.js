@@ -335,6 +335,7 @@ const DashboardPage = () => {
         </div>
 
         {/* Beneficiaries - full width below */}
+        </div>
         <div 
           className="stat-card-beneficiaries rounded-xl p-3 mt-3 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3"
           onClick={() => navigate('/beneficiaries')}
@@ -344,7 +345,6 @@ const DashboardPage = () => {
           <span className="text-2xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>{stats.beneficiaries}</span>
           <span className="opacity-80 text-sm font-bold">Beneficiaries</span>
         </div>
-      </div>
 
       {/* Bottom Section - Vault, Messages & Checklist Previews */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
