@@ -625,7 +625,7 @@ const LoginPage = () => {
               Enable Face ID
             </button>
             <button
-              onClick={() => { setShowBiometricPrompt(false); if (pendingLoginResult) navigateToHome(pendingLoginResult); }}
+              onClick={() => { localStorage.setItem('carryon_biometric_declined', 'true'); setShowBiometricPrompt(false); if (pendingLoginResult) navigateToHome(pendingLoginResult); }}
               className="text-[#475569] text-sm font-medium hover:text-[#94a3b8] transition-colors"
               data-testid="skip-biometric-btn"
             >
