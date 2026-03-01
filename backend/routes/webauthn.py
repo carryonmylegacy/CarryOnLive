@@ -218,7 +218,7 @@ async def webauthn_login_complete(data: LoginCompleteRequest):
             credential=data.credential,
             expected_challenge=base64url_to_bytes(challenge_doc["challenge"]),
             expected_rp_id=RP_ID,
-            expected_origin=ORIGIN,
+            expected_origin=ALLOWED_ORIGINS,
             credential_public_key=base64url_to_bytes(stored_cred["public_key"]),
             credential_current_sign_count=stored_cred.get("sign_count", 0),
         )
