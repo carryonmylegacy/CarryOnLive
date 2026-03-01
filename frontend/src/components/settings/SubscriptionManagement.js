@@ -492,6 +492,13 @@ export const SubscriptionManagement = ({
                     <PriceDisplay plan={plan} billing={billing} />
                   </div>
 
+                  {/* Beneficiary price — only on benefactor side */}
+                  {!isBeneficiary && plan.ben_price !== undefined && (
+                    <div className="mb-4 -mt-2 text-[var(--t5)] text-xs">
+                      Beneficiary: <span className="font-bold text-[var(--t3)]">${plan.ben_price.toFixed(2)}/mo</span>
+                    </div>
+                  )}
+
                   {/* Divider */}
                   <div className="h-px mb-4" style={{ background: `linear-gradient(90deg, transparent, ${style.accent}20, transparent)` }} />
 
