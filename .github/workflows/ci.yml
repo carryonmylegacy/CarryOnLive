@@ -51,6 +51,8 @@ jobs:
         with:
           python-version: "3.11"
           cache: "pip"
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg libsndfile1
       - name: Install dependencies
         working-directory: backend
         run: |
@@ -59,8 +61,8 @@ jobs:
         working-directory: backend
         run: |
           uvicorn server:app --host 0.0.0.0 --port 8001 &
-          sleep 5
-          curl -f http://localhost:8001/api/health || exit 1
+          sleep 8
+          curl -f http://localhost:8001/api/health || (cat /tmp/server.log 2>/dev/null; exit 1)
       - name: Run tests
         working-directory: backend
         env:
