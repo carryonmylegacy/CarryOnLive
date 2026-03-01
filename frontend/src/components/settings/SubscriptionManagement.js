@@ -494,7 +494,7 @@ export const SubscriptionManagement = ({
 
                   {/* Beneficiary price — only on benefactor side */}
                   {!isBeneficiary && plan.ben_price !== undefined && (
-                    <div className="mb-4 -mt-2 text-[var(--t5)] text-xs">
+                    <div className="mb-4 -mt-2 text-[var(--t4)] text-sm">
                       Beneficiary: <span className="font-bold text-[var(--t3)]">${plan.ben_price.toFixed(2)}/mo</span>
                     </div>
                   )}
