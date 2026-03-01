@@ -129,14 +129,14 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen" style={{
-      background: '#080e1a',
+      background: '#0B1221',
       opacity: exiting ? 0 : 1,
       transform: exiting ? 'scale(0.98)' : 'scale(1)',
       transition: 'opacity 0.45s ease, transform 0.45s ease',
     }}>
 
       {/* NAV BAR */}
-      <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(212,175,55,0.08)', background: 'rgba(8,14,26,0.85)', backdropFilter: 'blur(20px)' }}>
+      <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(14,165,233,0.06)', background: 'rgba(11,18,33,0.85)', backdropFilter: 'blur(20px)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           <img src="/carryon-logo.jpg" alt="CarryOn" className="h-12" />
           <div className="hidden md:flex items-center gap-8">
@@ -162,7 +162,7 @@ const LoginPage = () => {
           <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" />
         </div>
         {/* Dark gradient overlay */}
-        <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(8,14,26,0.4) 0%, rgba(8,14,26,0.85) 70%, #080e1a 100%)' }} />
+        <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.4) 0%, rgba(11,18,33,0.85) 70%, #0B1221 100%)' }} />
         {/* Radial accent */}
         <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 70% 50% at 35% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
 
@@ -187,11 +187,11 @@ const LoginPage = () => {
                     {['AES-256 Encrypted', 'Zero-Knowledge', '2FA Protected'].map(badge => (
                       <div key={badge} className="flex items-center gap-1.5">
                         <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
-                        <span className="text-[#525c72] text-xs">{badge}</span>
+                        <span className="text-[#475569] text-xs">{badge}</span>
                       </div>
                     ))}
                   </div>
-                  <a href="#about" className="inline-flex items-center gap-2 text-[#525c72] text-sm hover:text-[#d4af37] transition-colors">
+                  <a href="#about" className="inline-flex items-center gap-2 text-[#475569] text-sm hover:text-[#d4af37] transition-colors">
                     Scroll to explore <ChevronDown className="w-4 h-4 animate-bounce" />
                   </a>
                 </div>
@@ -202,46 +202,46 @@ const LoginPage = () => {
             <RevealSection delay={0.3} direction="right">
               <div className="flex justify-center lg:justify-end">
                 <div className="w-full rounded-2xl p-8 relative login-card-glow" style={{
-                  background: 'linear-gradient(160deg, rgba(18,28,48,0.97), rgba(12,20,38,0.99))',
+                  background: 'linear-gradient(160deg, rgba(17,27,48,0.97), rgba(13,22,40,0.99))',
                   border: '1px solid rgba(212,175,55,0.12)',
                   boxShadow: '0 8px 80px rgba(0,0,0,0.5), 0 0 50px rgba(212,175,55,0.02)',
                 }}>
                   <div className="absolute top-0 left-8 right-8 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
                   <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Sign In</h2>
-                  <p className="text-[#525c72] text-sm mb-6">Access your CarryOn account</p>
+                  <p className="text-[#475569] text-sm mb-6">Access your CarryOn account</p>
                   <form onSubmit={handleLogin} className="space-y-4" autoComplete="off" data-lpignore="true">
                     <div>
                       <label className="text-[#7b879e] text-xs font-medium mb-1.5 block">Email</label>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63]" />
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#334155]" />
                         <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" required autoComplete="username"
-                          className="h-11 pl-10 bg-[#0b1322] border-[#1a2a42] text-white placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-lg" data-testid="login-email-input" />
+                          className="h-11 pl-10 bg-[#0B1627] border-[#1A2D48] text-white placeholder:text-[#2A3C55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-lg" data-testid="login-email-input" />
                       </div>
                     </div>
                     <div>
                       <label className="text-[#7b879e] text-xs font-medium mb-1.5 block">Password</label>
                       <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63]" />
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#334155]" />
                         <Input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" required autoComplete="current-password"
-                          className="h-11 pl-10 pr-10 bg-[#0b1322] border-[#1a2a42] text-white placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-lg" data-testid="login-password-input" />
-                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3a4a63] hover:text-[#7b879e] transition-colors">
+                          className="h-11 pl-10 pr-10 bg-[#0B1627] border-[#1A2D48] text-white placeholder:text-[#2A3C55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-lg" data-testid="login-password-input" />
+                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#334155] hover:text-[#7b879e] transition-colors">
                           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
                     </div>
                     <Button type="submit" disabled={loading} className="w-full h-11 rounded-lg font-semibold text-sm" data-testid="login-submit-button"
-                      style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}>
+                      style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#0B1221' }}>
                       {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Signing In...</> : 'Sign In'}
                     </Button>
                   </form>
                   <div className="mt-5 flex items-center justify-between">
                     <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-medium hover:text-[#fcd34d] transition-colors">Create Account</button>
-                    <span className="text-[#3a4a63] text-xs cursor-pointer hover:text-[#7b879e] transition-colors">Forgot Password?</span>
+                    <span className="text-[#334155] text-xs cursor-pointer hover:text-[#7b879e] transition-colors">Forgot Password?</span>
                   </div>
                   <div className="mt-6 pt-5 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
                     <div className="flex items-center justify-center gap-2">
                       <Shield className="w-3.5 h-3.5 text-[#10b981]" />
-                      <span className="text-[#525c72] text-xs">Bank-grade security &middot; 256-bit SSL</span>
+                      <span className="text-[#475569] text-xs">Bank-grade security &middot; 256-bit SSL</span>
                     </div>
                   </div>
                 </div>
@@ -253,9 +253,9 @@ const LoginPage = () => {
 
       {/* ═══════════════════ ABOUT — family roots ═══════════════════ */}
       <section id="about" className="relative z-10 -mt-2">
-        <div className="rounded-t-[2.5rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: '#080e1a', boxShadow: '0 -20px 60px rgba(0,0,0,0.5)' }}>
+        <div className="rounded-t-[2.5rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: '#0B1221', boxShadow: '0 -20px 60px rgba(0,0,0,0.5)' }}>
           <div className="absolute inset-0 opacity-[0.2]" style={{ backgroundImage: 'url(/texture-roots.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 40%, rgba(212,175,55,0.03) 0%, transparent 60%), linear-gradient(180deg, rgba(8,14,26,0.5) 0%, rgba(8,14,26,0.95) 100%)' }} />
+          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 40%, rgba(212,175,55,0.03) 0%, transparent 60%), linear-gradient(180deg, rgba(11,18,33,0.5) 0%, rgba(11,18,33,0.95) 100%)' }} />
           <RevealSection className="max-w-[800px] mx-auto px-6 text-center relative z-10">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Your Family.<br />Ready for Anything.
@@ -264,7 +264,7 @@ const LoginPage = () => {
               CarryOn&#8482; is the first platform designed to ensure family readiness for all American families &mdash; an affordable, secure digital infrastructure that organizes your estate documents, automates critical checklists, delivers milestone messages, and provides AI-powered document intelligence so your family is prepared, not searching.
             </p>
             <button onClick={() => navigateWithFade('/signup')} className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-semibold text-sm transition-all hover:brightness-110 hover:scale-105 active:scale-95"
-              style={{ background: '#d4af37', color: '#080e1a', transition: 'all 0.3s' }}>
+              style={{ background: '#d4af37', color: '#0B1221', transition: 'all 0.3s' }}>
               Get Started <ChevronRight className="w-4 h-4" />
             </button>
             <RevealSection delay={0.2}>
@@ -278,9 +278,9 @@ const LoginPage = () => {
 
       {/* ═══════════════════ REFRAME — slides over previous ═══════════════════ */}
       <section className="relative z-20 -mt-1">
-        <div className="rounded-t-[2rem] py-20 lg:py-28 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0a1628, #080e1a)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+        <div className="rounded-t-[2rem] py-20 lg:py-28 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0F1A2E, #0B1221)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
           <div className="absolute inset-0 opacity-[0.25]" style={{ backgroundImage: 'url(/texture-warmth.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(10,22,40,0.6) 0%, rgba(8,14,26,0.95) 100%)' }} />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(10,22,40,0.6) 0%, rgba(11,18,33,0.95) 100%)' }} />
           <RevealSection className="max-w-[800px] mx-auto px-6 text-center relative z-10">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6 leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Family Readiness Isn&apos;t Planning for Death.<br />
@@ -300,9 +300,9 @@ const LoginPage = () => {
 
       {/* ═══════════════════ FOUR FEATURES — staggered cards ═══════════════════ */}
       <section id="features" className="relative z-30 -mt-1">
-        <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: '#080e1a', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+        <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: '#0B1221', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
           <div className="absolute inset-0 opacity-[0.12]" style={{ backgroundImage: 'url(/texture-circuit.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(8,14,26,0.55) 0%, rgba(8,14,26,0.9) 100%)' }} />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.55) 0%, rgba(11,18,33,0.9) 100%)' }} />
           <div className="max-w-[1100px] mx-auto px-6 relative z-10">
             <RevealSection>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white text-center mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
@@ -337,7 +337,7 @@ const LoginPage = () => {
               ].map(({ icon: Icon, title, bold, desc }, i) => (
                 <RevealSection key={title} delay={i * 0.12} direction={i % 2 === 0 ? 'left' : 'right'}>
                   <div className="rounded-xl p-6 lg:p-8 h-full transition-all duration-500 hover:border-[#d4af37]/30 hover:-translate-y-1 hover:shadow-[0_8px_40px_rgba(212,175,55,0.06)] feature-card"
-                    style={{ background: 'rgba(15,24,42,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    style={{ background: 'rgba(15,26,46,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>
                     <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 transition-transform duration-500 hover:scale-110" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.15)' }}>
                       <Icon className="w-5 h-5 text-[#d4af37]" />
                     </div>
@@ -354,7 +354,7 @@ const LoginPage = () => {
 
       {/* ═══════════════════ THREE STEPS — slides over ═══════════════════ */}
       <section id="steps" className="relative z-40 -mt-1">
-        <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0a1628, #080e1a)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+        <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0F1A2E, #0B1221)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
           <div className="absolute inset-0 opacity-[0.2]" style={{ backgroundImage: 'url(/texture-pathway.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
           <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 30%, rgba(212,175,55,0.03) 0%, transparent 70%)' }} />
           <div className="max-w-[800px] mx-auto px-6 text-center relative z-10">
@@ -390,9 +390,9 @@ const LoginPage = () => {
 
       {/* ═══════════════════ SECURITY — slides over ═══════════════════ */}
       <section id="security" className="relative z-50 -mt-1">
-        <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: '#080e1a', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+        <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: '#0B1221', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
           <div className="absolute inset-0 opacity-[0.3]" style={{ backgroundImage: 'url(/texture-family.png)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(8,14,26,0.5) 0%, rgba(8,14,26,0.85) 100%)' }} />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.5) 0%, rgba(11,18,33,0.85) 100%)' }} />
           <div className="max-w-[1100px] mx-auto px-6 text-center relative z-10">
             <RevealSection>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
@@ -413,7 +413,7 @@ const LoginPage = () => {
               ].map(({ icon: Icon, text }, i) => (
                 <RevealSection key={i} delay={i * 0.08}>
                   <div className="rounded-xl p-6 text-center h-full transition-all duration-500 hover:border-[#d4af37]/20 hover:-translate-y-1"
-                    style={{ background: 'rgba(15,24,42,0.5)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    style={{ background: 'rgba(15,26,46,0.5)', border: '1px solid rgba(255,255,255,0.06)' }}>
                     <Icon className="w-6 h-6 text-[#7b879e] mx-auto mb-4 transition-colors duration-300 group-hover:text-[#d4af37]" />
                     <p className="text-[#94a3b8] text-sm leading-relaxed">{text}</p>
                   </div>
@@ -426,9 +426,9 @@ const LoginPage = () => {
 
       {/* ═══════════════════ HOSPICE ═══════════════════ */}
       <section className="relative z-[60] -mt-1">
-        <div className="rounded-t-[2rem] py-20 lg:py-24 relative overflow-hidden" style={{ background: '#0a1628', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+        <div className="rounded-t-[2rem] py-20 lg:py-24 relative overflow-hidden" style={{ background: '#0F1A2E', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
           <div className="absolute inset-0 opacity-[0.25]" style={{ backgroundImage: 'url(/texture-pulse.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(10,22,40,0.7) 0%, rgba(8,14,26,0.8) 100%)' }} />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(10,22,40,0.7) 0%, rgba(11,18,33,0.8) 100%)' }} />
           <RevealSection className="max-w-[800px] mx-auto px-6 relative z-10">
             <div className="rounded-2xl p-8 lg:p-12 text-center transition-all duration-700 hover:border-[#d4af37]/40" style={{ border: '1px solid rgba(212,175,55,0.25)', background: 'rgba(212,175,55,0.03)' }}>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#d4af37] mb-5" style={{ fontFamily: 'Outfit, sans-serif' }}>
@@ -447,7 +447,7 @@ const LoginPage = () => {
 
       {/* ═══════════════════ FINAL CTA ═══════════════════ */}
       <section className="relative z-[70] -mt-1">
-        <div className="rounded-t-[2rem] py-24 lg:py-32" style={{ background: '#080e1a', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+        <div className="rounded-t-[2rem] py-24 lg:py-32" style={{ background: '#0B1221', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
           <RevealSection className="max-w-[600px] mx-auto px-6 text-center">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-5" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Readiness Starts Today.
@@ -456,7 +456,7 @@ const LoginPage = () => {
               Join CarryOn and be among the first families to achieve total readiness.
             </p>
             <button onClick={() => navigateWithFade('/signup')} className="inline-flex items-center gap-2 px-10 py-4 rounded-lg font-semibold text-base transition-all hover:brightness-110 hover:scale-105 active:scale-95"
-              style={{ background: '#d4af37', color: '#080e1a', transition: 'all 0.3s' }}>
+              style={{ background: '#d4af37', color: '#0B1221', transition: 'all 0.3s' }}>
               Get Started &mdash; It&apos;s Free <ChevronRight className="w-4 h-4" />
             </button>
           </RevealSection>
@@ -469,17 +469,17 @@ const LoginPage = () => {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <img src="/carryon-logo.jpg" alt="CarryOn" className="h-8 opacity-60" />
             <div className="flex items-center gap-6">
-              <a href="/privacy" className="text-[#3a4a63] text-xs hover:text-[#7b879e] transition-colors" data-testid="login-footer-privacy-link">Privacy Policy</a>
-              <a href="/terms" className="text-[#3a4a63] text-xs hover:text-[#7b879e] transition-colors" data-testid="login-footer-terms-link">Terms of Service</a>
-              <span className="text-[#3a4a63] text-xs">Accessibility</span>
+              <a href="/privacy" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid="login-footer-privacy-link">Privacy Policy</a>
+              <a href="/terms" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid="login-footer-terms-link">Terms of Service</a>
+              <span className="text-[#334155] text-xs">Accessibility</span>
             </div>
-            <div className="text-right text-[#3a4a63] text-xs leading-relaxed">
+            <div className="text-right text-[#334155] text-xs leading-relaxed">
               <p>1550 Wilson Boulevard 7th Floor</p>
               <p>Arlington, VA 22209 U.S.A.</p>
               <p>(703) 884-1527</p>
             </div>
           </div>
-          <p className="text-center text-[#2d3d55] text-xs mt-6">&copy; {new Date().getFullYear()} CarryOn Technologies. All rights reserved.</p>
+          <p className="text-center text-[#2A3C55] text-xs mt-6">&copy; {new Date().getFullYear()} CarryOn Technologies. All rights reserved.</p>
         </div>
       </footer>
 
@@ -490,30 +490,30 @@ const LoginPage = () => {
             <h3 className="text-white text-xl font-semibold mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Two-Factor Authentication</h3>
             <p className="text-[#6b7a90] text-sm mb-6">Enter the 6-digit code sent to your email</p>
             <Input type="text" inputMode="numeric" maxLength={6} value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="000000" className="h-14 text-center text-2xl tracking-[0.4em] font-mono bg-[#0d1526] border-[#1e2d45] text-white focus:border-[#d4af37] rounded-lg mb-4" data-testid="otp-input" autoFocus />
+              placeholder="000000" className="h-14 text-center text-2xl tracking-[0.4em] font-mono bg-[#0D1829] border-[#1E3048] text-white focus:border-[#d4af37] rounded-lg mb-4" data-testid="otp-input" autoFocus />
             
             {/* Trust today option */}
             <label className="flex items-center gap-3 mb-5 cursor-pointer select-none group" data-testid="trust-today-label">
               <button type="button" onClick={() => setTrustToday(!trustToday)}
                 className={`flex-shrink-0 w-5 h-5 rounded border-2 transition-all flex items-center justify-center ${
-                  trustToday ? 'bg-[#d4af37] border-[#d4af37]' : 'border-[#3a4a63] group-hover:border-[#7b879e]'
+                  trustToday ? 'bg-[#d4af37] border-[#d4af37]' : 'border-[#334155] group-hover:border-[#7b879e]'
                 }`} data-testid="trust-today-checkbox">
-                {trustToday && <svg className="w-3 h-3 text-[#080e1a]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                {trustToday && <svg className="w-3 h-3 text-[#0B1221]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
               </button>
               <span className="text-[#7b879e] text-sm leading-snug">
                 Skip OTP for the rest of today
-                <span className="block text-[#525c72] text-xs mt-0.5">Resets at midnight Eastern Time</span>
+                <span className="block text-[#475569] text-xs mt-0.5">Resets at midnight Eastern Time</span>
               </span>
             </label>
 
             <Button onClick={handleVerifyOtp} disabled={loading || otp.length !== 6} className="w-full h-11 rounded-lg font-semibold" data-testid="otp-verify-button"
-              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}>
+              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#0B1221' }}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify & Sign In'}
             </Button>
             <div className="flex items-center justify-between mt-3">
               <button onClick={() => setShowOtpModal(false)} className="text-[#6b7a90] text-sm hover:text-white transition-colors" data-testid="otp-cancel-button">Cancel</button>
               <button onClick={handleResendOtp} disabled={resendCooldown > 0}
-                className={`text-sm transition-colors ${resendCooldown > 0 ? 'text-[#3a4a63] cursor-not-allowed' : 'text-[#d4af37] hover:text-[#e8c54a]'}`}
+                className={`text-sm transition-colors ${resendCooldown > 0 ? 'text-[#334155] cursor-not-allowed' : 'text-[#d4af37] hover:text-[#e8c54a]'}`}
                 data-testid="otp-resend-button">
                 {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
               </button>

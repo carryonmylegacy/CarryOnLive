@@ -34,10 +34,10 @@ const AboutPage = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen" style={{ background: '#080e1a' }}>
+    <div className="min-h-screen" style={{ background: '#0B1221' }}>
 
       {/* NAV BAR */}
-      <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(212,175,55,0.08)', background: 'rgba(8,14,26,0.85)', backdropFilter: 'blur(20px)' }}>
+      <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(14,165,233,0.06)', background: 'rgba(11,18,33,0.85)', backdropFilter: 'blur(20px)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           <a href="/login" className="flex items-center">
             <img src="/carryon-logo.jpg" alt="CarryOn" className="h-12" />
@@ -59,7 +59,7 @@ const AboutPage = () => {
         <div className="absolute inset-0 z-0" style={{ opacity: 0.3 }}>
           <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" />
         </div>
-        <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(8,14,26,0.5) 0%, rgba(8,14,26,0.9) 70%, #080e1a 100%)' }} />
+        <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.5) 0%, rgba(11,18,33,0.9) 70%, #0B1221 100%)' }} />
         <RevealSection className="max-w-[800px] mx-auto px-6 text-center relative z-10">
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-6" style={{ fontFamily: 'Outfit, sans-serif' }}>
             We Believe Readiness Is the Greatest Gift a Family Can Give Itself.
@@ -73,9 +73,9 @@ const AboutPage = () => {
 
       {/* BUILT FOR EVERY FAMILY — layered */}
       <section className="relative z-10 -mt-2">
-        <div className="rounded-t-[2.5rem] py-16 lg:py-24 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0a1628, #080e1a)', boxShadow: '0 -20px 60px rgba(0,0,0,0.5)' }}>
+        <div className="rounded-t-[2.5rem] py-16 lg:py-24 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0F1A2E, #0B1221)', boxShadow: '0 -20px 60px rgba(0,0,0,0.5)' }}>
           <div className="absolute inset-0 opacity-[0.25]" style={{ backgroundImage: 'url(/texture-warmth.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(10,22,40,0.6) 0%, rgba(8,14,26,0.95) 100%)' }} />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(10,22,40,0.6) 0%, rgba(11,18,33,0.95) 100%)' }} />
           <div className="max-w-[800px] mx-auto px-6 relative z-10">
             <RevealSection>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white text-center mb-8" style={{ fontFamily: 'Outfit, sans-serif' }}>
@@ -123,13 +123,13 @@ const AboutPage = () => {
 
       {/* MISSION & VISION — layered */}
       <section className="relative z-20 -mt-1">
-        <div className="rounded-t-[2rem] py-16 lg:py-24 relative overflow-hidden" style={{ background: '#080e1a', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+        <div className="rounded-t-[2rem] py-16 lg:py-24 relative overflow-hidden" style={{ background: '#0B1221', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
           <div className="absolute inset-0 opacity-[0.18]" style={{ backgroundImage: 'url(/texture-roots.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
           <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 50%, rgba(212,175,55,0.03) 0%, transparent 60%)' }} />
           <div className="max-w-[900px] mx-auto px-6 relative z-10">
             <div className="grid md:grid-cols-2 gap-6">
               <RevealSection delay={0} direction="left">
-                <div className="rounded-xl p-6 lg:p-8 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20" style={{ background: 'rgba(15,24,42,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="rounded-xl p-6 lg:p-8 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20" style={{ background: 'rgba(15,26,46,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>
                   <h3 className="text-[#d4af37] text-lg font-bold mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>Our Mission</h3>
                   <p className="text-[#7b879e] text-sm leading-relaxed">
                     Ensure every American family has the clarity, organization, and readiness they need for life&apos;s most critical transitions &mdash; reducing overwhelm through secure estate infrastructure and intelligent document analysis.
@@ -137,7 +137,7 @@ const AboutPage = () => {
                 </div>
               </RevealSection>
               <RevealSection delay={0.12} direction="right">
-                <div className="rounded-xl p-6 lg:p-8 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20" style={{ background: 'rgba(15,24,42,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="rounded-xl p-6 lg:p-8 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20" style={{ background: 'rgba(15,26,46,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>
                   <h3 className="text-[#d4af37] text-lg font-bold mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>Our Vision</h3>
                   <p className="text-[#7b879e] text-sm leading-relaxed">
                     Define the family readiness category and become the standard for families and institutions that refuse to leave their affairs to chance.
@@ -151,9 +151,9 @@ const AboutPage = () => {
 
       {/* OUR VALUES — layered with staggered cards */}
       <section className="relative z-30 -mt-1">
-        <div className="rounded-t-[2rem] py-16 lg:py-24 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0a1628, #080e1a)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+        <div className="rounded-t-[2rem] py-16 lg:py-24 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0F1A2E, #0B1221)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
           <div className="absolute inset-0 opacity-[0.12]" style={{ backgroundImage: 'url(/texture-circuit.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(10,22,40,0.6) 0%, rgba(8,14,26,0.92) 100%)' }} />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(10,22,40,0.6) 0%, rgba(11,18,33,0.92) 100%)' }} />
           <div className="max-w-[1000px] mx-auto px-6 relative z-10">
             <RevealSection>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white text-center mb-12" style={{ fontFamily: 'Outfit, sans-serif' }}>
@@ -176,7 +176,7 @@ const AboutPage = () => {
                 },
               ].map(({ title, desc }, i) => (
                 <RevealSection key={title} delay={i * 0.1}>
-                  <div className="rounded-xl p-6 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20 hover:shadow-[0_8px_40px_rgba(212,175,55,0.04)]" style={{ background: 'rgba(15,24,42,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div className="rounded-xl p-6 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20 hover:shadow-[0_8px_40px_rgba(212,175,55,0.04)]" style={{ background: 'rgba(15,26,46,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>
                     <h4 className="text-white text-base font-bold mb-3">{title}</h4>
                     <p className="text-[#7b879e] text-sm leading-relaxed">{desc}</p>
                   </div>
@@ -195,7 +195,7 @@ const AboutPage = () => {
                 },
               ].map(({ title, desc }, i) => (
                 <RevealSection key={title} delay={0.3 + i * 0.12} direction={i === 0 ? 'left' : 'right'}>
-                  <div className="rounded-xl p-6 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20 hover:shadow-[0_8px_40px_rgba(212,175,55,0.04)]" style={{ background: 'rgba(15,24,42,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div className="rounded-xl p-6 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20 hover:shadow-[0_8px_40px_rgba(212,175,55,0.04)]" style={{ background: 'rgba(15,26,46,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>
                     <h4 className="text-white text-base font-bold mb-3">{title}</h4>
                     <p className="text-[#7b879e] text-sm leading-relaxed">{desc}</p>
                   </div>
@@ -208,9 +208,9 @@ const AboutPage = () => {
 
       {/* WHO WE ARE — layered */}
       <section className="relative z-40 -mt-1">
-        <div className="rounded-t-[2rem] py-16 lg:py-24 relative overflow-hidden" style={{ background: '#080e1a', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+        <div className="rounded-t-[2rem] py-16 lg:py-24 relative overflow-hidden" style={{ background: '#0B1221', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
           <div className="absolute inset-0 opacity-[0.25]" style={{ backgroundImage: 'url(/texture-family.png)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(8,14,26,0.5) 0%, rgba(8,14,26,0.9) 100%)' }} />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.5) 0%, rgba(11,18,33,0.9) 100%)' }} />
           <div className="max-w-[800px] mx-auto px-6 relative z-10">
             <RevealSection>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white text-center mb-8" style={{ fontFamily: 'Outfit, sans-serif' }}>
@@ -245,7 +245,7 @@ const AboutPage = () => {
                 },
               ].map(({ title, desc }, i) => (
                 <RevealSection key={title} delay={0.2 + i * 0.1}>
-                  <div className="rounded-xl p-6 text-center h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20" style={{ background: 'rgba(15,24,42,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div className="rounded-xl p-6 text-center h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20" style={{ background: 'rgba(15,26,46,0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>
                     <h4 className="text-[#d4af37] text-sm font-bold mb-2 leading-snug">{title}</h4>
                     <p className="text-[#7b879e] text-xs leading-relaxed">{desc}</p>
                   </div>
@@ -258,7 +258,7 @@ const AboutPage = () => {
 
       {/* CTA — layered */}
       <section className="relative z-50 -mt-1">
-        <div className="rounded-t-[2rem] py-20 lg:py-28 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0a1628, #080e1a)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+        <div className="rounded-t-[2rem] py-20 lg:py-28 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0F1A2E, #0B1221)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
           <div className="absolute inset-0 opacity-[0.25]" style={{ backgroundImage: 'url(/texture-pulse.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
           <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 50% 50% at 50% 60%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
           <RevealSection className="max-w-[600px] mx-auto px-6 text-center relative z-10">
@@ -266,7 +266,7 @@ const AboutPage = () => {
               Your Family Deserves to Be Ready.
             </h2>
             <a href="/signup" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-semibold text-sm transition-all hover:brightness-110 hover:scale-105 active:scale-95"
-              style={{ background: '#d4af37', color: '#080e1a', transition: 'all 0.3s' }}>
+              style={{ background: '#d4af37', color: '#0B1221', transition: 'all 0.3s' }}>
               Get Started <ChevronRight className="w-4 h-4" />
             </a>
           </RevealSection>
