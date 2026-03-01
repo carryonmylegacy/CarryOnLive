@@ -471,7 +471,8 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
         # Method 2: Check estate.beneficiaries array (fallback)
         if not benefactor_id:
             ben_estate = await db.estates.find_one(
-                {"beneficiaries": current_user["id"]}, {"_id": 0, "owner_id": 1, "status": 1}
+                {"beneficiaries": current_user["id"]},
+                {"_id": 0, "owner_id": 1, "status": 1},
             )
             if ben_estate:
                 benefactor_id = ben_estate.get("owner_id")
@@ -495,9 +496,7 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
                 "hospice": "ben_hospice",
             }
             if ben_sub and ben_sub.get("plan_id"):
-                beneficiary_locked_tier = plan_map.get(
-                    ben_sub["plan_id"], "ben_base"
-                )
+                beneficiary_locked_tier = plan_map.get(ben_sub["plan_id"], "ben_base")
             elif benefactor_user and benefactor_user.get("verified_tier"):
                 beneficiary_locked_tier = plan_map.get(
                     benefactor_user["verified_tier"], "ben_base"
@@ -557,7 +556,10 @@ async def create_subscription_checkout(
                 },
                 upsert=True,
             )
-        return {"free": True, "message": f"All features are free during beta! Your {plan['name'] if plan else ''} plan preference has been saved."}
+        return {
+            "free": True,
+            "message": f"All features are free during beta! Your {plan['name'] if plan else ''} plan preference has been saved.",
+        }
 
     plans = {p["id"]: p for p in settings.get("plans", DEFAULT_PLANS)}
     plan = plans.get(data.plan_id)
@@ -834,7 +836,8 @@ async def change_subscription_plan(
         period_start = (
             datetime.fromisoformat(period_start_str.replace("Z", "+00:00"))
             if period_start_str
-            else period_end - timedelta(days={"annual": 365, "quarterly": 90}.get(old_cycle, 30))
+            else period_end
+            - timedelta(days={"annual": 365, "quarterly": 90}.get(old_cycle, 30))
         )
         if period_start.tzinfo is None:
             period_start = period_start.replace(tzinfo=timezone.utc)
@@ -848,7 +851,11 @@ async def change_subscription_plan(
 
     # --- Calculate new plan cost ---
     role = current_user.get("role", "benefactor")
-    base_price = new_plan.get("ben_price", new_plan["price"]) if role == "beneficiary" else new_plan["price"]
+    base_price = (
+        new_plan.get("ben_price", new_plan["price"])
+        if role == "beneficiary"
+        else new_plan["price"]
+    )
 
     # Apply per-user discount
     override = await db.subscription_overrides.find_one(
@@ -860,7 +867,9 @@ async def change_subscription_plan(
 
     cycle = data.billing_cycle
     if cycle == "quarterly":
-        new_total = round(float(new_plan.get("quarterly_price", base_price * 0.9)) * 3, 2)
+        new_total = round(
+            float(new_plan.get("quarterly_price", base_price * 0.9)) * 3, 2
+        )
     elif cycle == "annual":
         new_total = round(float(new_plan.get("annual_price", base_price * 0.8)) * 12, 2)
     else:
@@ -1021,7 +1030,12 @@ async def change_billing_cycle(
     if settings.get("beta_mode", True):
         await db.user_subscriptions.update_one(
             {"user_id": current_user["id"]},
-            {"$set": {"billing_cycle": cycle, "updated_at": datetime.now(timezone.utc).isoformat()}},
+            {
+                "$set": {
+                    "billing_cycle": cycle,
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                }
+            },
         )
         return {"success": True, "message": f"Billing switched to {cycle}"}
 
@@ -1462,7 +1476,6 @@ async def review_verification(
     }
 
 
-
 @router.post("/admin/verifications/{verification_id}/notify")
 async def notify_benefactor_verified(
     verification_id: str,
@@ -1519,7 +1532,12 @@ async def notify_benefactor_verified(
     # Mark verification as notified
     await db.tier_verifications.update_one(
         {"id": verification_id},
-        {"$set": {"notified": True, "notified_at": datetime.now(timezone.utc).isoformat()}},
+        {
+            "$set": {
+                "notified": True,
+                "notified_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
     )
 
     # Send push notification
@@ -1545,7 +1563,6 @@ async def notify_benefactor_verified(
         "success": True,
         "message": f"Notification sent to {verification.get('user_name', verification.get('user_email', ''))}",
     }
-
 
 
 @router.get("/admin/subscription-stats")
@@ -1748,8 +1765,8 @@ async def request_family_plan_add(
             to=benefactor["email"],
             subject="Family Plan Request — CarryOn",
             html=f"""
-            <p>Hi {benefactor.get('name', '').split()[0] if benefactor.get('name') else 'there'},</p>
-            <p><strong>{current_user.get('name', current_user['email'])}</strong> has requested to join your CarryOn Family Plan.</p>
+            <p>Hi {benefactor.get("name", "").split()[0] if benefactor.get("name") else "there"},</p>
+            <p><strong>{current_user.get("name", current_user["email"])}</strong> has requested to join your CarryOn Family Plan.</p>
             <p>Log in to your CarryOn account and go to <strong>Settings → Family Plan</strong> to review and approve this request.</p>
             <p>— The CarryOn Team</p>
             """,
@@ -1823,7 +1840,9 @@ async def get_beneficiary_lifecycle(current_user: dict = Depends(get_current_use
     )
     grace_info = None
     if grace:
-        grace_end = datetime.fromisoformat(grace["grace_ends_at"].replace("Z", "+00:00"))
+        grace_end = datetime.fromisoformat(
+            grace["grace_ends_at"].replace("Z", "+00:00")
+        )
         if grace_end.tzinfo is None:
             grace_end = grace_end.replace(tzinfo=timezone.utc)
         days_left = max(0, (grace_end - now).days)
@@ -1840,12 +1859,10 @@ async def get_beneficiary_lifecycle(current_user: dict = Depends(get_current_use
     )
 
     # Check pending family plan requests
-    pending_requests = (
-        await db.family_plan_requests.find(
-            {"beneficiary_id": current_user["id"], "status": "pending"},
-            {"_id": 0},
-        ).to_list(10)
-    )
+    pending_requests = await db.family_plan_requests.find(
+        {"beneficiary_id": current_user["id"], "status": "pending"},
+        {"_id": 0},
+    ).to_list(10)
 
     return {
         "age": age,
@@ -1880,9 +1897,7 @@ async def trigger_benefactor_transition(
         raise HTTPException(status_code=404, detail="Benefactor not found")
 
     # Find all estates owned by this benefactor
-    estates = await db.estates.find(
-        {"owner_id": benefactor_id}, {"_id": 0}
-    ).to_list(50)
+    estates = await db.estates.find({"owner_id": benefactor_id}, {"_id": 0}).to_list(50)
 
     # Collect all beneficiary IDs
     beneficiary_ids = set()
@@ -1940,9 +1955,9 @@ async def trigger_benefactor_transition(
                     to=ben_user["email"],
                     subject="Important: Your CarryOn Access — Grace Period",
                     html=f"""
-                    <p>Dear {ben_user.get('name', '').split()[0] if ben_user.get('name') else 'there'},</p>
+                    <p>Dear {ben_user.get("name", "").split()[0] if ben_user.get("name") else "there"},</p>
                     <p>We are reaching out during a difficult time. Your CarryOn access has been placed on a <strong>30-day grace period</strong>.</p>
-                    <p>After this period ends on <strong>{grace_end.strftime('%B %d, %Y')}</strong>, you will need to subscribe to continue accessing your estate documents and messages.</p>
+                    <p>After this period ends on <strong>{grace_end.strftime("%B %d, %Y")}</strong>, you will need to subscribe to continue accessing your estate documents and messages.</p>
                     <p>Log in to your CarryOn account to choose a plan or join a family plan.</p>
                     <p>With care,<br/>The CarryOn Team</p>
                     """,
@@ -2003,7 +2018,7 @@ async def check_dob_subscription_events():
                                 to=user_doc["email"],
                                 subject="Happy 18th! Time to set up your CarryOn plan",
                                 html=f"""
-                                <p>Happy Birthday, {user_doc.get('name', '').split()[0] if user_doc.get('name') else 'there'}!</p>
+                                <p>Happy Birthday, {user_doc.get("name", "").split()[0] if user_doc.get("name") else "there"}!</p>
                                 <p>Now that you're 18, you can manage your own CarryOn account. Choose a plan to keep your estate documents safe.</p>
                                 <p>Log in to get started.</p>
                                 <p>— The CarryOn Team</p>
@@ -2059,7 +2074,7 @@ async def check_dob_subscription_events():
                                 to=user_doc["email"],
                                 subject="Your CarryOn plan has been updated",
                                 html=f"""
-                                <p>Hi {user_doc.get('name', '').split()[0] if user_doc.get('name') else 'there'},</p>
+                                <p>Hi {user_doc.get("name", "").split()[0] if user_doc.get("name") else "there"},</p>
                                 <p>As you've turned 26, your New Adult tier has transitioned to Standard pricing. No action needed — your access continues uninterrupted.</p>
                                 <p>— The CarryOn Team</p>
                                 """,

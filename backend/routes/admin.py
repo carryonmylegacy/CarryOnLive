@@ -133,7 +133,15 @@ async def get_all_users(current_user: dict = Depends(get_current_user)):
     # Attach subscription info to each user
     for u in users:
         sub = await db.user_subscriptions.find_one(
-            {"user_id": u["id"]}, {"_id": 0, "plan_id": 1, "plan_name": 1, "billing_cycle": 1, "status": 1, "beta_plan": 1}
+            {"user_id": u["id"]},
+            {
+                "_id": 0,
+                "plan_id": 1,
+                "plan_name": 1,
+                "billing_cycle": 1,
+                "status": 1,
+                "beta_plan": 1,
+            },
         )
         u["subscription"] = sub
     return users

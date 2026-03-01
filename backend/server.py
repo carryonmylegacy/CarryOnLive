@@ -60,9 +60,7 @@ async def lifespan(app):
         await db.beneficiaries.create_index("estate_id")
         await db.checklists.create_index("estate_id")
         await db.chat_history.create_index([("user_id", 1), ("session_id", 1)])
-        await db.token_blacklist.create_index(
-            "expires_at", expireAfterSeconds=0
-        )
+        await db.token_blacklist.create_index("expires_at", expireAfterSeconds=0)
         await db.token_blacklist.create_index("jti")
         await db.otps.create_index("email")
         await db.failed_logins.create_index("email")

@@ -65,9 +65,15 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
     completed = {}
     if estate_id:
         completed["create_estate"] = True
-        completed["add_beneficiary"] = await db.beneficiaries.count_documents({"estate_id": estate_id}) > 0
-        completed["upload_document"] = await db.documents.count_documents({"estate_id": estate_id}) > 0
-        completed["create_message"] = await db.messages.count_documents({"estate_id": estate_id}) > 0
+        completed["add_beneficiary"] = (
+            await db.beneficiaries.count_documents({"estate_id": estate_id}) > 0
+        )
+        completed["upload_document"] = (
+            await db.documents.count_documents({"estate_id": estate_id}) > 0
+        )
+        completed["create_message"] = (
+            await db.messages.count_documents({"estate_id": estate_id}) > 0
+        )
     # review_readiness is manual — preserve from stored progress
     if progress.get("completed_steps", {}).get("review_readiness"):
         completed["review_readiness"] = True
@@ -157,7 +163,6 @@ async def reset_onboarding(current_user: dict = Depends(get_current_user)):
         {"$set": {"dismissed": False}},
     )
     return {"success": True}
-
 
 
 # ===================== QUICK-START TEMPLATES =====================

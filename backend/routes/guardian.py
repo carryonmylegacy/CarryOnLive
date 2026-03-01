@@ -205,20 +205,30 @@ async def gather_estate_context(
 
             async def extract_one(doc):
                 try:
-                    full_doc = await db.documents.find_one({"id": doc["id"]}, {"_id": 0})
-                    if not full_doc or not (full_doc.get("storage_key") or full_doc.get("file_data")):
+                    full_doc = await db.documents.find_one(
+                        {"id": doc["id"]}, {"_id": 0}
+                    )
+                    if not full_doc or not (
+                        full_doc.get("storage_key") or full_doc.get("file_data")
+                    ):
                         return doc["name"], "[No content available]"
-                    text = await asyncio.wait_for(extract_document_text(full_doc), timeout=15)
+                    text = await asyncio.wait_for(
+                        extract_document_text(full_doc), timeout=15
+                    )
                     return doc["name"], text
                 except asyncio.TimeoutError:
                     return doc["name"], "[Extraction timed out]"
                 except Exception:
                     return doc["name"], "[Extraction error]"
 
-            results = await asyncio.gather(*[extract_one(doc) for doc in documents[:10]])
+            results = await asyncio.gather(
+                *[extract_one(doc) for doc in documents[:10]]
+            )
             for name, text in results:
                 if text and not text.startswith("["):
-                    context_parts.append(f"\n--- {name} ---\n{text[:4000]}\n--- End of {name} ---")
+                    context_parts.append(
+                        f"\n--- {name} ---\n{text[:4000]}\n--- End of {name} ---"
+                    )
                 else:
                     context_parts.append(f"\n--- {name} ---\n{text}\n---")
     else:

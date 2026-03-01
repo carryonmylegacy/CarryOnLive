@@ -114,7 +114,9 @@ async def login(data: UserLogin, request: Request):
         logger.warning(f"OTP email send failed for {data.email} — OTP still stored")
 
     return {
-        "message": "OTP sent to your email" if email_sent else "Verification required — check your email or resend code",
+        "message": "OTP sent to your email"
+        if email_sent
+        else "Verification required — check your email or resend code",
         "otp_required": True,
         "email_sent": email_sent,
     }
@@ -194,7 +196,6 @@ async def register(data: UserCreate):
     }
 
 
-
 class VerifyPasswordRequest(BaseModel):
     email: str
     password: str
@@ -235,9 +236,7 @@ async def resend_otp(data: ResendOTPRequest):
 
     email_sent = False
     try:
-        email_sent = await send_otp_email(
-            data.email, otp_code, user["name"].split()[0]
-        )
+        email_sent = await send_otp_email(data.email, otp_code, user["name"].split()[0])
     except Exception:
         logger.warning(f"Resend OTP email failed for {data.email}")
 
@@ -247,7 +246,6 @@ async def resend_otp(data: ResendOTPRequest):
         else "Failed to send code — please try again.",
         "email_sent": email_sent,
     }
-
 
 
 class OTPVerifyWithTrust(BaseModel):
