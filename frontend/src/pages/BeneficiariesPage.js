@@ -395,7 +395,7 @@ const BeneficiariesPage = () => {
                       )}
                     </div>
                     <div>
-                      <h3 className="text-white font-semibold text-lg">{ben.name}</h3>
+                      <h3 className="text-[var(--t)] font-semibold text-lg">{ben.name}</h3>
                       <p className="text-[#d4af37] text-sm">{ben.relation}</p>
                     </div>
                   </div>
