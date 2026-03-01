@@ -783,8 +783,14 @@
   background: var(--mobile-nav-bg);
   border-bottom: 1px solid var(--b);
   box-shadow: 0 4px 24px -4px rgba(0,0,0,0.45);
-  /* Extend behind status bar */
   padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Mobile top padding - accounts for header + safe area */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .pt-safe-header {
+    padding-top: calc(5rem + env(safe-area-inset-top, 0px)) !important;
+  }
 }
 
 /* Mobile Bottom Navigation */
