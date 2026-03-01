@@ -24,7 +24,19 @@ router = APIRouter()
 
 RP_ID = "carryon.us"
 RP_NAME = "CarryOn™"
-ORIGIN = "https://carryon.us"
+ALLOWED_ORIGINS = [
+    "https://carryon.us",
+    "https://app.carryon.us",
+    "https://www.carryon.us",
+]
+
+# Add preview/dev origins
+_frontend = os.environ.get("FRONTEND_URL", "")
+if _frontend and _frontend not in ALLOWED_ORIGINS:
+    ALLOWED_ORIGINS.append(_frontend)
+_env = os.environ.get("RAILWAY_ENVIRONMENT", os.environ.get("NODE_ENV", ""))
+if not _env or _env in ("development", "preview"):
+    ALLOWED_ORIGINS.extend(["http://localhost:3000", "http://localhost:3001"])
 
 
 class RegisterOptionsRequest(BaseModel):
