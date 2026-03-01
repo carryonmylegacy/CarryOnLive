@@ -246,62 +246,80 @@ const DashboardPage = () => {
       {/* Onboarding Wizard — shown early so it's visible on mobile */}
       <OnboardingWizard />
 
-      {/* Estate Readiness Score */}
-      <div className="rounded-2xl p-5 lg:p-6 mb-4" style={{ background: 'linear-gradient(168deg, rgba(26,36,64,0.7), rgba(15,22,41,0.9))', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 32px rgba(0,0,0,0.3)' }} data-testid="readiness-card">
-        {/* Title */}
-        <h2 className="text-center text-lg lg:text-2xl font-bold text-[var(--t)] uppercase tracking-[0.15em] mb-5" style={{ fontFamily: 'Outfit, sans-serif' }}>
+      {/* Estate Readiness Score Card */}
+      <div className="glass-card p-4 lg:p-6 mb-4" data-testid="readiness-card">
+        <h2 className="text-center text-base lg:text-2xl font-bold text-[var(--t4)] uppercase tracking-wider mb-2 lg:mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
           Estate Readiness Score
         </h2>
-
-        {/* Gauge centered */}
+        
         <SpeedometerGauge score={readinessScore} />
-
-        {/* Three mini stat pills + key — horizontal row */}
-        <div className="flex items-center justify-between gap-2 mt-6 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="flex gap-2 flex-1">
-            <div className="stat-card-vault rounded-xl px-3 py-2.5 cursor-pointer transition-all hover:scale-[1.05] active:scale-[0.98] flex items-center gap-2 flex-1"
-              onClick={() => navigate('/vault')} data-testid="stat-card-vault-mini">
-              <FolderLock className="stat-icon w-4 h-4 opacity-70 shrink-0" />
-              <div>
-                <div className="text-lg font-bold leading-none" style={{ fontFamily: 'Outfit, sans-serif' }}>{stats.documents}</div>
-                <div className="opacity-70 text-[9px] font-bold mt-0.5">Documents</div>
-              </div>
-            </div>
-            <div className="stat-card-messages rounded-xl px-3 py-2.5 cursor-pointer transition-all hover:scale-[1.05] active:scale-[0.98] flex items-center gap-2 flex-1"
-              onClick={() => navigate('/messages')} data-testid="stat-card-messages-mini">
-              <MessageSquare className="stat-icon w-4 h-4 opacity-70 shrink-0" />
-              <div>
-                <div className="text-lg font-bold leading-none" style={{ fontFamily: 'Outfit, sans-serif' }}>{stats.messages}</div>
-                <div className="opacity-70 text-[9px] font-bold mt-0.5">Messages</div>
-              </div>
-            </div>
-            <div className="stat-card-checklist rounded-xl px-3 py-2.5 cursor-pointer transition-all hover:scale-[1.05] active:scale-[0.98] flex items-center gap-2 flex-1"
-              onClick={() => navigate('/checklist')} data-testid="stat-card-checklist-mini">
-              <CheckSquare className="stat-icon w-4 h-4 opacity-70 shrink-0" />
-              <div>
-                <div className="text-lg font-bold leading-none" style={{ fontFamily: 'Outfit, sans-serif' }}>{totalTasks}</div>
-                <div className="opacity-70 text-[9px] font-bold mt-0.5">Checklist</div>
-              </div>
-            </div>
+        
+        <div className="flex justify-center gap-3 lg:gap-8 mt-16 lg:mt-28">
+          <div className="flex items-center gap-1.5 lg:gap-2">
+            <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#2563eb]" />
+            <span className="text-[var(--t3)] text-xs lg:text-sm">{docsPercent}% Docs</span>
           </div>
-          {/* Key */}
-          <div className="flex flex-col gap-1 pl-3 shrink-0" style={{ borderLeft: '1px solid rgba(255,255,255,0.06)' }}>
-            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#2563eb]" /><span className="text-[var(--t4)] text-[10px]">{docsPercent}%</span></div>
-            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#8b5cf6]" /><span className="text-[var(--t4)] text-[10px]">{msgsPercent}%</span></div>
-            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#f97316]" /><span className="text-[var(--t4)] text-[10px]">{checklistPercent}%</span></div>
+          <div className="flex items-center gap-1.5 lg:gap-2">
+            <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#8b5cf6]" />
+            <span className="text-[var(--t3)] text-xs lg:text-sm">{msgsPercent}% Messages</span>
+          </div>
+          <div className="flex items-center gap-1.5 lg:gap-2">
+            <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#f97316]" />
+            <span className="text-[var(--t3)] text-xs lg:text-sm">{checklistPercent}% Checklist</span>
           </div>
         </div>
       </div>
 
-      {/* Beneficiaries bar */}
-      <div 
-        className="stat-card-beneficiaries rounded-xl p-3.5 mb-4 cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-3"
-        onClick={() => navigate('/beneficiaries')}
-        data-testid="stat-card-beneficiaries-inline"
-      >
-        <Users className="stat-icon w-6 h-6 opacity-80" />
-        <span className="text-2xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>{stats.beneficiaries}</span>
-        <span className="opacity-90 text-base font-bold">Beneficiaries</span>
+      {/* Stat Cards */}
+      <div className="grid grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4 mb-4">
+        <StatCard 
+          icon={FolderLock}
+          value={stats.documents}
+          label="Secure Document Vault"
+          cardClass="stat-card-vault"
+          onClick={() => navigate('/vault')}
+          sectionKey="vault"
+        />
+        <StatCard 
+          icon={MessageSquare}
+          value={stats.messages}
+          label="Milestone Messages (MM)"
+          cardClass="stat-card-messages"
+          onClick={() => navigate('/messages')}
+          sectionKey="messages"
+        />
+        <StatCard 
+          icon={CheckSquare}
+          value={totalTasks}
+          label="Immediate Action Checklist (IAC)"
+          cardClass="stat-card-checklist"
+          onClick={() => navigate('/checklist')}
+          sectionKey="checklist"
+        />
+        <StatCard 
+          icon={Users}
+          value={stats.beneficiaries}
+          label="Beneficiaries"
+          cardClass="stat-card-beneficiaries"
+          onClick={() => navigate('/beneficiaries')}
+          className="hidden lg:block"
+          sectionKey="beneficiaries"
+        />
+      </div>
+
+      {/* Mobile only - Beneficiaries full width */}
+      <div className="lg:hidden mb-4">
+        <div 
+          className="stat-card-beneficiaries rounded-2xl p-4 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] flex flex-col items-center justify-center"
+          onClick={() => navigate('/beneficiaries')}
+          data-testid="stat-card-beneficiaries-mobile"
+        >
+          <Users className="stat-icon w-8 h-8 opacity-70 mb-2" />
+          <span className="text-3xl font-bold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            {stats.beneficiaries}
+          </span>
+          <span className="opacity-80 text-base lg:text-lg font-bold text-center">Beneficiaries</span>
+        </div>
       </div>
 
       {/* Bottom Section - Vault, Messages & Checklist Previews */}
