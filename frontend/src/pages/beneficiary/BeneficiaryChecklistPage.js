@@ -50,7 +50,6 @@ const BeneficiaryChecklistPage = () => {
     try {
       const res = await axios.patch(`${API_URL}/checklists/${itemId}/toggle`, {}, getAuthHeaders());
       setChecklists(prev => prev.map(c => c.id === itemId ? { ...c, is_completed: res.data.is_completed } : c));
-      if (res.data.is_completed) // toast removed
     } catch (err) { toast.error('Failed to update'); }
     finally { setToggling(null); }
   };
