@@ -82,6 +82,13 @@ const SignupPage = () => {
   const [suffix, setSuffix] = useState('none');
   const [gender, setGender] = useState('not_selected');
   const [dateOfBirth, setDateOfBirth] = useState('');
+  const [maritalStatus, setMaritalStatus] = useState('not_selected');
+  const [dependentsOver18, setDependentsOver18] = useState(0);
+  const [dependentsUnder18, setDependentsUnder18] = useState(0);
+  const [addressStreet, setAddressStreet] = useState('');
+  const [addressCity, setAddressCity] = useState('');
+  const [addressState, setAddressState] = useState('');
+  const [addressZip, setAddressZip] = useState('');
   const [role, setRole] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
