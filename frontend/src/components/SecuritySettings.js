@@ -35,6 +35,12 @@ const SecuritySettings = ({ getAuthHeaders }) => {
   const [loading, setLoading] = useState(true);
   const { fetchSettings: refreshGlobalLock } = useSectionLock();
 
+  // Master key state
+  const [hasMasterKey, setHasMasterKey] = useState(false);
+  const [masterKeyInput, setMasterKeyInput] = useState('');
+  const [savingMasterKey, setSavingMasterKey] = useState(false);
+  const [showMasterKeyInput, setShowMasterKeyInput] = useState(false);
+
   const headers = getAuthHeaders()?.headers || {};
 
   /* eslint-disable react-hooks/exhaustive-deps */
@@ -45,18 +51,31 @@ const SecuritySettings = ({ getAuthHeaders }) => {
 
   const fetchAll = async () => {
     try {
-      const [settingsRes, questionsRes] = await Promise.all([
+      const [settingsRes, questionsRes, masterKeyRes] = await Promise.all([
         axios.get(`${API_URL}/security/settings`, { headers }),
         axios.get(`${API_URL}/security/questions`, { headers }),
+        axios.get(`${API_URL}/security/master-key-status`, { headers }),
       ]);
       setSettings(settingsRes.data);
       setQuestions(questionsRes.data.questions);
+      setHasMasterKey(masterKeyRes.data.has_master_key);
     } catch (err) {
       // silent
     }
     setLoading(false);
-    // Also refresh the global SectionLock context so lock banners update immediately
     refreshGlobalLock();
+  };
+
+  const handleSaveMasterKey = async () => {
+    if (masterKeyInput.trim().length < 4) { toast.error('Master key must be at least 4 characters'); return; }
+    setSavingMasterKey(true);
+    try {
+      await axios.post(`${API_URL}/security/master-key`, { master_key: masterKeyInput }, { headers: { ...headers, 'Content-Type': 'application/json' } });
+      setHasMasterKey(true);
+      setMasterKeyInput('');
+      setShowMasterKeyInput(false);
+    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to save'); }
+    finally { setSavingMasterKey(false); }
   };
 
   if (loading) {
@@ -70,6 +89,55 @@ const SecuritySettings = ({ getAuthHeaders }) => {
   }
 
   return (
+    <>
+    {/* Vault Master Key */}
+    <Card className="glass-card mb-5" data-testid="master-key-card">
+      <CardContent className="p-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: hasMasterKey ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)' }}>
+              <KeyRound className="w-5 h-5" style={{ color: hasMasterKey ? '#10b981' : '#ef4444' }} />
+            </div>
+            <div>
+              <h3 className="font-bold text-[var(--t)] text-sm">Vault Master Key</h3>
+              <p className="text-xs text-[var(--t4)]">
+                {hasMasterKey
+                  ? 'Set. This key can be spoken to customer service to unlock all documents if you forget individual passwords.'
+                  : 'Required before you can lock individual documents. Spoken to customer service for emergency unlock.'}
+              </p>
+            </div>
+          </div>
+          <Button size="sm" variant="outline" className="text-xs border-[var(--b)] text-[var(--t3)] flex-shrink-0"
+            onClick={() => setShowMasterKeyInput(!showMasterKeyInput)}>
+            {hasMasterKey ? 'Update' : 'Set Key'}
+          </Button>
+        </div>
+        {showMasterKeyInput && (
+          <div className="mt-4 pt-4 space-y-3" style={{ borderTop: '1px solid var(--b)' }}>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-[var(--t4)]">{hasMasterKey ? 'New Master Key' : 'Master Key'}</Label>
+              <Input
+                type="password"
+                value={masterKeyInput}
+                onChange={(e) => setMasterKeyInput(e.target.value)}
+                placeholder="A memorable word or phrase (min 4 chars)"
+                className="input-field"
+                data-testid="master-key-input"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" className="gold-button text-xs" onClick={handleSaveMasterKey} disabled={savingMasterKey || masterKeyInput.trim().length < 4} data-testid="save-master-key">
+                {savingMasterKey ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <KeyRound className="w-3 h-3 mr-1" />}
+                {hasMasterKey ? 'Update Key' : 'Save Key'}
+              </Button>
+              <Button size="sm" variant="outline" className="text-xs border-[var(--b)]" onClick={() => { setShowMasterKeyInput(false); setMasterKeyInput(''); }}>Cancel</Button>
+            </div>
+            <p className="text-[10px] text-[var(--t5)]">This key is hashed and stored securely. Customer service cannot see it — they can only verify what you tell them over the phone.</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+
     <Card className="glass-card" data-testid="security-settings-card">
       <CardHeader>
         <CardTitle className="text-[var(--t)] flex items-center gap-2">
@@ -95,6 +163,7 @@ const SecuritySettings = ({ getAuthHeaders }) => {
         ))}
       </CardContent>
     </Card>
+    </>
   );
 };
 

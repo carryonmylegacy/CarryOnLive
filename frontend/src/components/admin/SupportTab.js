@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { MessageCircle, Headphones, UserCircle, Loader2, Send, Search, Trash2 } from 'lucide-react';
+import { MessageCircle, Headphones, UserCircle, Loader2, Send, Search, Trash2, KeyRound, Unlock } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 import { toast } from '../../utils/toast';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -14,6 +15,9 @@ export const SupportTab = ({ getAuthHeaders }) => {
   const [newMessage, setNewMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showUnlockPanel, setShowUnlockPanel] = useState(false);
+  const [masterKeyInput, setMasterKeyInput] = useState('');
+  const [unlockingDocs, setUnlockingDocs] = useState(false);
 
   const fetchConversations = async () => {
     try {
@@ -151,15 +155,56 @@ export const SupportTab = ({ getAuthHeaders }) => {
           <>
             {/* Chat Header */}
             <div className="p-4 border-b border-[var(--b)]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[var(--s)] flex items-center justify-center">
-                  <UserCircle className="w-6 h-6 text-[var(--bl3)]" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[var(--s)] flex items-center justify-center">
+                    <UserCircle className="w-6 h-6 text-[var(--bl3)]" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-[var(--t)]">{selectedConv.user_name}</h3>
+                    <p className="text-xs text-[var(--t5)]">{selectedConv.user_email} · {selectedConv.user_role}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-[var(--t)]">{selectedConv.user_name}</h3>
-                  <p className="text-xs text-[var(--t5)]">{selectedConv.user_email} · {selectedConv.user_role}</p>
-                </div>
+                {selectedConv.user_role === 'benefactor' && (
+                  <Button size="sm" variant="outline" className="text-xs border-[var(--b)] text-[var(--t4)]"
+                    onClick={() => setShowUnlockPanel(!showUnlockPanel)}>
+                    <KeyRound className="w-3 h-3 mr-1" /> Vault Unlock
+                  </Button>
+                )}
               </div>
+              {showUnlockPanel && (
+                <div className="mt-3 p-3 rounded-xl" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
+                  <p className="text-xs text-[var(--t4)] mb-2">Ask the benefactor to speak their Vault Master Key over the phone, then enter it below to unlock all their documents.</p>
+                  <div className="flex gap-2">
+                    <Input
+                      value={masterKeyInput}
+                      onChange={(e) => setMasterKeyInput(e.target.value)}
+                      placeholder="Enter master key spoken by user"
+                      className="input-field text-sm flex-1"
+                      data-testid="admin-master-key-input"
+                    />
+                    <Button size="sm" disabled={unlockingDocs || !masterKeyInput.trim()}
+                      onClick={async () => {
+                        setUnlockingDocs(true);
+                        try {
+                          const res = await axios.post(`${API_URL}/admin/user/${selectedConv.conversation_id}/unlock-all-documents`,
+                            { master_key: masterKeyInput }, { headers: { ...getAuthHeaders()?.headers, 'Content-Type': 'application/json' } });
+                          toast.error(`Unlocked ${res.data.unlocked_count} document(s). User must re-lock individually.`);
+                          setMasterKeyInput('');
+                          setShowUnlockPanel(false);
+                        } catch (err) {
+                          toast.error(err.response?.data?.detail || 'Failed — key may not match');
+                        } finally { setUnlockingDocs(false); }
+                      }}
+                      style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: 'white' }}
+                      data-testid="admin-unlock-all-btn"
+                    >
+                      {unlockingDocs ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Unlock className="w-3 h-3 mr-1" />}
+                      Unlock All
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Messages */}
