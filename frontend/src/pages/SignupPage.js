@@ -493,10 +493,16 @@ const SignupPage = () => {
                         </div>
                         <div className="space-y-1.5">
                           <Label className="text-[#7b879e] text-sm font-medium">Street Address</Label>
-                          <Input
+                          <AddressAutocomplete
                             value={addressStreet}
                             onChange={(e) => setAddressStreet(e.target.value)}
-                            placeholder="123 Main Street, Apt 4B"
+                            onSelect={({ street, city, state, zip }) => {
+                              setAddressStreet(street);
+                              setAddressCity(city);
+                              setAddressState(state);
+                              setAddressZip(zip);
+                            }}
+                            placeholder="Start typing your address..."
                             className={inputClass}
                             data-testid="signup-address-street"
                           />
