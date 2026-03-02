@@ -1378,8 +1378,8 @@ async def upload_verification_document(
     file_name: str = Form(...),
     current_user: dict = Depends(get_current_user),
 ):
-    """Upload a verification document for a special tier (Military/Hospice)"""
-    valid_tiers = ["military", "hospice"]
+    """Upload a verification document for a special tier (Military/Hospice/Veteran)"""
+    valid_tiers = ["military", "hospice", "veteran"]
     if tier_requested not in valid_tiers:
         raise HTTPException(
             status_code=400, detail=f"Invalid tier. Must be one of: {valid_tiers}"
