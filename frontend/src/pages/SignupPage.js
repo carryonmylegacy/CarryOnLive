@@ -38,9 +38,27 @@ const genderOptions = [
   { value: 'prefer_not_to_say', label: 'Prefer not to say' },
 ];
 
+const maritalOptions = [
+  { value: 'not_selected', label: 'Select...' },
+  { value: 'single', label: 'Single' },
+  { value: 'married', label: 'Married' },
+  { value: 'domestic_partnership', label: 'Domestic Partnership' },
+  { value: 'divorced', label: 'Divorced' },
+  { value: 'widowed', label: 'Widowed' },
+  { value: 'separated', label: 'Separated' },
+];
+
+const usStates = [
+  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA',
+  'KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
+  'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT',
+  'VA','WA','WV','WI','WY','DC',
+];
+
 const STEPS = [
   { id: 'name', label: 'Your Name', icon: User, desc: 'As it appears on legal documents' },
-  { id: 'personal', label: 'About You', icon: Calendar, desc: 'Gender and date of birth' },
+  { id: 'personal', label: 'About You', icon: Heart, desc: 'Personal details for your estate plan' },
+  { id: 'address', label: 'Address', icon: MapPin, desc: 'Your residential address' },
   { id: 'role', label: 'Your Role', icon: Users, desc: 'How will you use CarryOn?' },
   { id: 'credentials', label: 'Secure Login', icon: Lock, desc: 'Email and password' },
 ];
