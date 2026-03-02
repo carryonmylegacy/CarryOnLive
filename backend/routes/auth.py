@@ -159,6 +159,23 @@ async def register(data: UserCreate):
     now = datetime.now(timezone.utc)
     trial_ends_at = (now + timedelta(days=TRIAL_DURATION_DAYS)).isoformat()
 
+    # Determine eligible tier from age and special status
+    eligible_tier = None
+    special_statuses = data.special_status or []
+    if data.date_of_birth and data.role == "benefactor":
+        try:
+            dob = datetime.fromisoformat(data.date_of_birth)
+            age = (now - dob.replace(tzinfo=timezone.utc)).days // 365
+            if 18 <= age <= 25:
+                eligible_tier = "new_adult"
+        except (ValueError, TypeError):
+            pass
+    # Special status overrides age-based tier
+    if any(s in special_statuses for s in ["military", "first_responder", "federal_agent"]):
+        eligible_tier = "military"
+    elif "hospice" in special_statuses:
+        eligible_tier = "hospice"
+
     user = {
         "id": user_id,
         "email": data.email,
@@ -177,6 +194,8 @@ async def register(data: UserCreate):
         "address_city": data.address_city,
         "address_state": data.address_state,
         "address_zip": data.address_zip,
+        "special_status": special_statuses,
+        "eligible_tier": eligible_tier,
         "role": data.role
         if data.role in ["benefactor", "beneficiary"]
         else "benefactor",
