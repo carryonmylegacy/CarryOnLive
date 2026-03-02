@@ -469,28 +469,36 @@ export const SubscriptionManagement = ({
             const Icon = style.icon;
             const isCurrent = currentPlanId === plan.id;
             const isRecommended = plan.id === 'ben_premium' || plan.id === 'premium';
+            const locked = isPlanLocked(plan.id);
+            const isAutoSelected = autoTier === plan.id;
 
             return (
-              <div key={plan.id} className="relative rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 group" style={{
-                background: isCurrent
+              <div key={plan.id} className={`relative rounded-2xl overflow-hidden transition-all duration-300 group ${locked ? 'opacity-40 pointer-events-none' : 'hover:-translate-y-1'}`} style={{
+                background: isAutoSelected
+                  ? `linear-gradient(168deg, ${style.accent}15, ${style.accent}06)`
+                  : isCurrent
                   ? `linear-gradient(168deg, ${style.accent}12, ${style.accent}04)`
                   : 'var(--s)',
-                border: isCurrent
+                border: isAutoSelected
+                  ? `2px solid ${style.accent}`
+                  : isCurrent
                   ? `2px solid ${style.accent}`
                   : isRecommended
                     ? `2px solid ${style.accent}50`
                     : '1px solid var(--b)',
-                boxShadow: isCurrent
+                boxShadow: isAutoSelected
+                  ? `0 8px 32px ${style.accent}25`
+                  : isCurrent
                   ? `0 8px 32px ${style.accent}20`
                   : isRecommended
                     ? `0 8px 32px ${style.accent}15`
                     : '0 2px 8px rgba(0,0,0,0.05)',
               }} data-testid={`plan-${plan.id}`}>
                 {/* Label badges */}
-                {(style.label || isCurrent) && (
+                {(style.label || isCurrent || isAutoSelected) && (
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 text-[9px] font-bold px-3 py-0.5 rounded-b-lg z-10"
                     style={{ background: style.accent, color: '#0F1629' }}>
-                    {isCurrent ? 'Current Plan' : style.label}
+                    {isCurrent ? 'Current Plan' : isAutoSelected ? 'Your Tier' : style.label}
                   </div>
                 )}
 
