@@ -242,6 +242,23 @@ DEFAULT_PLANS = [
             "Compassionate support",
         ],
     },
+    {
+        "id": "veteran",
+        "name": "Veteran",
+        "price": 5.99,
+        "quarterly_price": 5.39,
+        "annual_price": 4.79,
+        "ben_price": 1.99,
+        "adjustable": False,
+        "note": "Requires verification",
+        "requires_verification": True,
+        "verification_docs": ["DD214", "Veterans Administration Benefits Letter"],
+        "features": [
+            "Full platform access",
+            "Priority support",
+            "Honoring those who served",
+        ],
+    },
 ]
 
 BENEFICIARY_PLANS = [
