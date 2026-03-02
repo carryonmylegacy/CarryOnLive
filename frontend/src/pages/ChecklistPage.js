@@ -13,6 +13,7 @@ import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
 import QuickStartTemplates from '../components/QuickStartTemplates';
+import AddressAutocomplete from '../components/AddressAutocomplete';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
