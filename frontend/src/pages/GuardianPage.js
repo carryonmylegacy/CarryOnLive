@@ -732,13 +732,13 @@ const GuardianPage = () => {
           {hasConversation && (
             <>
               <button type="button" onClick={() => { setShowActions(!showActions); setShowQuestions(false); }}
-                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all hover:scale-105"
+                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-150 active:scale-90"
                 style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.15)' }}
                 data-testid="actions-toggle">
                 <Sparkles className="w-4 h-4 text-[#d4af37]" />
               </button>
               <button type="button" onClick={() => { setShowQuestions(!showQuestions); setShowActions(false); }}
-                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all hover:scale-105"
+                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-150 active:scale-90"
                 style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
                 data-testid="questions-toggle">
                 <HelpCircle className="w-4 h-4 text-[var(--t4)]" />
