@@ -539,17 +539,18 @@ const VaultPage = () => {
 
       {/* Category Tabs */}
       <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-          <TabsList className="bg-[var(--s)] p-1 w-max sm:w-auto">
+        <div className="-mx-4 px-4 sm:mx-0 sm:px-0">
+          <TabsList className="bg-[var(--s)] p-1 flex flex-wrap gap-1 h-auto w-full">
           {categories.map((cat) => (
             <TabsTrigger
               key={cat.id}
               value={cat.id}
-              className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-[#0b1120]"
+              className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-[#0b1120] text-xs sm:text-sm px-2 sm:px-3 py-1.5 flex-shrink-0"
               data-testid={`category-${cat.id}`}
             >
-              <cat.icon className="w-4 h-4 mr-2" />
-              {cat.label}
+              <cat.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="sm:hidden">{cat.id === 'all' ? 'All' : cat.label}</span>
+              <span className="hidden sm:inline">{cat.label}</span>
             </TabsTrigger>
           ))}
         </TabsList>
