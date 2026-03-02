@@ -319,6 +319,42 @@ async def register(data: UserCreate):
                     {"$set": {"benefactor_email": data.benefactor_email}},
                 )
 
+    # --- Validate B2B code at signup if provided ---
+    if data.b2b_code and "enterprise" in special_statuses:
+        code_str = data.b2b_code.strip().upper()
+        code_doc = await db.b2b_codes.find_one({"code": code_str, "active": True}, {"_id": 0})
+        if code_doc:
+            discount = code_doc.get("discount_percent", 100)
+            if code_doc.get("max_uses", 0) == 0 or code_doc["times_used"] < code_doc["max_uses"]:
+                await db.users.update_one(
+                    {"id": user_id},
+                    {"$set": {
+                        "b2b_code": code_str,
+                        "b2b_partner": code_doc.get("partner_name", ""),
+                        "b2b_discount_percent": discount,
+                        "verified_tier": "enterprise",
+                    }},
+                )
+                await db.b2b_codes.update_one({"code": code_str}, {"$inc": {"times_used": 1}})
+                # Auto-approve verification
+                await db.tier_verifications.insert_one({
+                    "id": str(uuid.uuid4()),
+                    "user_id": user_id,
+                    "user_email": data.email,
+                    "tier_requested": "enterprise",
+                    "status": "approved",
+                    "doc_type": "B2B Partner Code",
+                    "notes": f"Code: {code_str} | Partner: {code_doc.get('partner_name', '')} | Discount: {discount}%",
+                    "created_at": now.isoformat(),
+                    "reviewed_at": now.isoformat(),
+                })
+                if discount >= 100:
+                    await db.subscription_overrides.update_one(
+                        {"user_id": user_id},
+                        {"$set": {"user_id": user_id, "free_access": True}},
+                        upsert=True,
+                    )
+
     # Generate OTP for verification
     otp = generate_otp()
     await db.otps.update_one(
