@@ -83,6 +83,9 @@ const BeneficiarySettingsPage = () => {
         </CardContent>
       </Card>
 
+      {/* Push Notifications */}
+      <NotificationSettings getAuthHeaders={() => getAuthHeaders()} />
+
       {/* Subscription — uses the shared SubscriptionManagement component */}
       <SubscriptionManagement
         subscriptionStatus={subscriptionStatus}
