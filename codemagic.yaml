@@ -12,6 +12,7 @@ workflows:
     environment:
       vars:
         REACT_APP_BACKEND_URL: https://carryon-api-production.up.railway.app
+        REACT_APP_GOOGLE_PLACES_API_KEY: AIzaSyDHf5S59xv3uTH9YE3I97EDkEeCJFTZ1U4
       node: 20
     cache:
       cache_paths:
