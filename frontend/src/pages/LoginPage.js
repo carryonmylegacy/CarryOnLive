@@ -183,7 +183,7 @@ const LoginPage = () => {
     }}>
 
       {/* NAV BAR */}
-      <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(14,165,233,0.06)', background: 'rgba(11,18,33,0.85)', backdropFilter: 'blur(20px)' }}>
+      <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(14,165,233,0.06)', background: 'rgba(11,18,33,0.85)', backdropFilter: 'blur(20px)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           <img src="/carryon-logo.jpg" alt="CarryOn" className="h-12" />
           <div className="hidden md:flex items-center gap-8">
