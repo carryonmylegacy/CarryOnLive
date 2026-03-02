@@ -410,7 +410,7 @@ const LoginPage = () => {
                 },
               ].map(({ icon: Icon, title, bold, desc }, i) => (
                 <RevealSection key={title} delay={i * 0.12} direction={i % 2 === 0 ? 'left' : 'right'}>
-                  <div className="rounded-xl p-6 lg:p-8 h-full transition-all duration-500 hover:border-[#d4af37]/30 hover:-translate-y-1 hover:shadow-[0_8px_40px_rgba(212,175,55,0.06)] feature-card"
+                  <div className="rounded-xl p-6 lg:p-8 h-full transition-transform duration-150 active:scale-[0.98] feature-card"
                     style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
                     <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 transition-transform duration-500 hover:scale-110" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.15)' }}>
                       <Icon className="w-5 h-5 text-[#d4af37]" />
