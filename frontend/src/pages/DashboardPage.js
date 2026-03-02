@@ -158,10 +158,8 @@ const DashboardPage = () => {
   // Stat card component - uses CSS class for theme-adaptive colors
   const StatCard = ({ icon: Icon, value, label, cardClass, onClick, className = '', sectionKey }) => (
     <div 
-      className={`${cardClass} rounded-2xl p-4 lg:p-6 cursor-pointer transition-all duration-300 hover:scale-[1.05] hover:shadow-xl active:scale-[0.98] flex flex-col items-center justify-center ${hoveredSection === sectionKey ? 'scale-[1.05] shadow-xl' : ''} ${className}`}
+      className={`${cardClass} rounded-2xl p-4 lg:p-6 cursor-pointer transition-transform duration-150 active:scale-[0.96] lg:hover:scale-[1.03] lg:hover:shadow-xl flex flex-col items-center justify-center ${className}`}
       onClick={onClick}
-      onMouseEnter={() => setHoveredSection(sectionKey)}
-      onMouseLeave={() => setHoveredSection(null)}
       data-testid={`stat-card-${label.toLowerCase().replace(/\s+/g, '-')}`}
     >
       <Icon className="stat-icon w-6 h-6 lg:w-8 lg:h-8 opacity-70 mb-2 lg:mb-4" />
