@@ -121,25 +121,32 @@ const MessagesPage = () => {
   // Request camera when switching to video mode
   const initCamera = async (facing) => {
     try {
-      // Release any existing stream first
+      // Show overlay first so videoRef mounts
+      setShowRecordingOverlay(true);
+
+      // Release any existing stream
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
       const mode = facing || facingMode;
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: mode },
+        video: { facingMode: { ideal: mode } },
         audio: true
       });
       streamRef.current = stream;
+
+      // Wait a tick for the overlay DOM to mount
+      await new Promise(r => setTimeout(r, 100));
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        await videoRef.current.play();
       }
       setCameraReady(true);
-      setShowRecordingOverlay(true);
     } catch (error) {
       console.error('Camera error:', error);
       toast.error('Camera access denied. Please allow camera permissions.');
+      setShowRecordingOverlay(false);
     }
   };
 
