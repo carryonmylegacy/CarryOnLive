@@ -2273,8 +2273,16 @@ async def verify_b2b_code(
     """Verify a B2B partner code and apply enterprise tier."""
     data = await request.json()
     code_str = (data.get("code") or "").strip().upper()
-    if not code_str:
-        raise HTTPException(status_code=400, detail="Code is required")
+    if not code_str or len(code_str) > 50:
+        raise HTTPException(status_code=400, detail="Invalid code format")
+
+    # Check if user already has an enterprise verification
+    existing = await db.tier_verifications.find_one(
+        {"user_id": current_user["id"], "tier_requested": "enterprise", "status": "approved"},
+        {"_id": 0},
+    )
+    if existing:
+        raise HTTPException(status_code=400, detail="You already have an active enterprise subscription")
 
     code_doc = await db.b2b_codes.find_one(
         {"code": code_str, "active": True}, {"_id": 0}
