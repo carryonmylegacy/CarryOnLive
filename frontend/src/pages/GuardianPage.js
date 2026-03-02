@@ -151,6 +151,7 @@ const GuardianPage = () => {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const landingInputRef = useRef(null);
+  const abortControllerRef = useRef(null);
 
   // ─── Data Fetching ───
   const fetchSessions = useCallback(async () => {
