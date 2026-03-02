@@ -668,32 +668,7 @@ const GuardianPage = () => {
             </div>
           )}
 
-          {loading && (
-            <div className="flex gap-2.5">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ background: 'linear-gradient(135deg, #d4af37 0%, #fcd34d 100%)', color: '#0b1120' }}>
-                <Bot className="w-3.5 h-3.5" />
-              </div>
-              <div className="rounded-2xl rounded-tl-md px-4 py-3" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
-                <div className="flex items-center gap-2 text-[var(--t4)]">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-sm">
-                    {actionLoading === 'analyze_vault' ? 'Analyzing vault...' :
-                     actionLoading === 'generate_checklist' ? 'Generating checklist...' :
-                     actionLoading === 'analyze_readiness' ? 'Analyzing readiness...' : 'Thinking...'}
-                  </span>
-                  <button
-                    onClick={stopAnalysis}
-                    className="ml-2 px-2.5 py-1 rounded-lg text-xs font-bold text-[var(--rd)] transition-all hover:bg-[var(--rd)]/10"
-                    style={{ border: '1px solid rgba(239,68,68,0.3)' }}
-                    data-testid="stop-analysis-btn"
-                  >
-                    <X className="w-3 h-3 inline mr-0.5" /> Stop
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          {loading && <ThinkingIndicator actionLoading={actionLoading} onStop={stopAnalysis} />}
 
           <div ref={messagesEndRef} />
         </div>
