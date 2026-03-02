@@ -156,8 +156,24 @@ export const SubscriptionManagement = ({
   const hasSpecialStatus = specialStatus.length > 0;
   const isNewAdult = eligibleTiers.includes('new_adult') && !hasSpecialStatus;
   const autoTier = hasSpecialStatus
-    ? (specialStatus.includes('hospice') ? 'hospice' : specialStatus.includes('veteran') ? 'veteran' : 'military')
+    ? (specialStatus.includes('hospice') ? 'hospice' : specialStatus.includes('veteran') ? 'veteran' : specialStatus.includes('enterprise') ? 'enterprise' : 'military')
     : (isNewAdult ? 'new_adult' : null);
+
+  const handleVerifyB2bCode = async () => {
+    if (!b2bCode.trim()) { toast.error('Please enter your partner code'); return; }
+    setVerifyingCode(true);
+    try {
+      const res = await axios.post(`${API_URL}/subscriptions/verify-b2b-code`, { code: b2bCode }, getAuthHeaders());
+      if (res.data.verified) {
+        refreshSubscription?.();
+        setB2bCode('');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Invalid code');
+    } finally {
+      setVerifyingCode(false);
+    }
+  };
 
   // Should a plan be greyed out (not selectable)?
   const isPlanLocked = (planId) => {
