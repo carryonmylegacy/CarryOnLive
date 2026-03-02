@@ -2281,7 +2281,8 @@ async def verify_b2b_code(
     existing = await db.tier_verifications.find_one(
         {"user_id": current_user["id"], "tier_requested": "enterprise", "status": "approved"},
         {"_id": 0},
-    )    if existing:
+    )
+    if existing:
         raise HTTPException(status_code=400, detail="You already have an active enterprise subscription")
 
     code_doc = await db.b2b_codes.find_one(
