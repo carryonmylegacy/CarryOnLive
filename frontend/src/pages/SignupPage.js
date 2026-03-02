@@ -406,32 +406,112 @@ const SignupPage = () => {
 
                     {/* STEP 1: Personal */}
                     {step === 1 && (
-                      <div className="space-y-4 sm:space-y-5">
+                      <div className="space-y-3 sm:space-y-4">
                         <div>
-                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Tell us a little about yourself</h2>
-                          <p className="text-[#6b7a90] text-sm">Both fields are optional but help personalize your experience.</p>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Tell us about yourself</h2>
+                          <p className="text-[#6b7a90] text-sm">Helps EGA analyze your estate under the right state laws.</p>
                         </div>
-                        <div className="space-y-2">
-                          <Label className="text-[#7b879e] text-sm font-medium">Gender</Label>
-                          <Select value={gender} onValueChange={setGender}>
-                            <SelectTrigger className={selectClass} data-testid="signup-gender-select"><SelectValue placeholder="Select..." /></SelectTrigger>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <Label className="text-[#7b879e] text-sm font-medium">Gender</Label>
+                            <Select value={gender} onValueChange={setGender}>
+                              <SelectTrigger className={selectClass} data-testid="signup-gender-select"><SelectValue placeholder="Select..." /></SelectTrigger>
+                              <SelectContent className="bg-[#141C33] border-[#1a2a42]">
+                                {genderOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-[#7b879e] text-sm font-medium">Date of Birth</Label>
+                            <Input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)}
+                              className={inputClass} data-testid="signup-dob-input"
+                              max={new Date().toISOString().split('T')[0]} />
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-[#7b879e] text-sm font-medium">Marital Status</Label>
+                          <Select value={maritalStatus} onValueChange={setMaritalStatus}>
+                            <SelectTrigger className={selectClass} data-testid="signup-marital-select"><SelectValue placeholder="Select..." /></SelectTrigger>
                             <SelectContent className="bg-[#141C33] border-[#1a2a42]">
-                              {genderOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                              {maritalOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                             </SelectContent>
                           </Select>
                         </div>
-                        <div className="space-y-2">
-                          <Label className="text-[#7b879e] text-sm font-medium">Date of Birth</Label>
-                          <Input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)}
-                            className={inputClass} data-testid="signup-dob-input"
-                            max={new Date().toISOString().split('T')[0]} />
-                          <p className="text-[#3a4a63] text-xs mt-1">Used for age-based plan eligibility (e.g., New Adult tier for ages 18-25)</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <Label className="text-[#7b879e] text-sm font-medium">Dependents (18+)</Label>
+                            <Input type="number" min={0} max={20} value={dependentsOver18}
+                              onChange={(e) => setDependentsOver18(Math.max(0, parseInt(e.target.value) || 0))}
+                              className={inputClass} data-testid="signup-dependents-over" />
+                            <p className="text-[#3a4a63] text-[10px]">Adult children, etc.</p>
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-[#7b879e] text-sm font-medium">Dependents (Under 18)</Label>
+                            <Input type="number" min={0} max={20} value={dependentsUnder18}
+                              onChange={(e) => setDependentsUnder18(Math.max(0, parseInt(e.target.value) || 0))}
+                              className={inputClass} data-testid="signup-dependents-under" />
+                            <p className="text-[#3a4a63] text-[10px]">Minor children</p>
+                          </div>
+                        </div>
+                        <p className="text-[#3a4a63] text-xs">All fields optional — helps pre-populate your beneficiary list.</p>
+                      </div>
+                    )}
+
+                    {/* STEP 2: Address */}
+                    {step === 2 && (
+                      <div className="space-y-4 sm:space-y-5">
+                        <div>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Your residential address</h2>
+                          <p className="text-[#6b7a90] text-sm">Used by EGA to analyze estate law specific to your state.</p>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-[#7b879e] text-sm font-medium">Street Address</Label>
+                          <AddressAutocomplete
+                            value={addressStreet}
+                            onChange={(e) => setAddressStreet(e.target.value)}
+                            onSelect={({ street, city, state, zip }) => {
+                              setAddressStreet(street);
+                              setAddressCity(city);
+                              setAddressState(state);
+                              setAddressZip(zip);
+                            }}
+                            placeholder="Start typing your address..."
+                            className={inputClass}
+                            data-testid="signup-address-street"
+                          />
+                        </div>
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="space-y-1.5">
+                            <Label className="text-[#7b879e] text-sm font-medium">City</Label>
+                            <Input value={addressCity} onChange={(e) => setAddressCity(e.target.value)}
+                              placeholder="City" className={inputClass} data-testid="signup-address-city" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-[#7b879e] text-sm font-medium">State</Label>
+                            <Select value={addressState} onValueChange={setAddressState}>
+                              <SelectTrigger className={selectClass} data-testid="signup-address-state"><SelectValue placeholder="State" /></SelectTrigger>
+                              <SelectContent className="bg-[#141C33] border-[#1a2a42] max-h-48">
+                                {usStates.map(st => <SelectItem key={st} value={st}>{st}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-[#7b879e] text-sm font-medium">ZIP Code</Label>
+                            <Input value={addressZip} onChange={(e) => setAddressZip(e.target.value)}
+                              placeholder="ZIP" className={inputClass} maxLength={10} data-testid="signup-address-zip" />
+                          </div>
+                        </div>
+                        <div className="p-3 rounded-xl" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.12)' }}>
+                          <p className="text-[#d4af37] text-xs leading-relaxed flex items-start gap-2">
+                            <Shield className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                            Your address is encrypted and stored securely. It's only used for estate law analysis and is never shared.
+                          </p>
                         </div>
                       </div>
                     )}
 
-                    {/* STEP 2: Role */}
-                    {step === 2 && (
+                    {/* STEP 3: Role */}
+                    {step === 3 && (
                       <div className="space-y-4 sm:space-y-5">
                         <div>
                           <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>How will you use CarryOn?</h2>
