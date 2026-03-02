@@ -208,6 +208,8 @@ async def create_message(
     msg_dict = message.model_dump()
     if data.trigger_date:
         msg_dict["trigger_date"] = data.trigger_date
+    if data.custom_event_label:
+        msg_dict["custom_event_label"] = data.custom_event_label
 
     # Encrypt title and content
     msg_dict["encrypted_title"] = encrypt_field(data.title, estate_salt)
@@ -312,6 +314,7 @@ async def update_message(
         "trigger_value",
         "trigger_age",
         "trigger_date",
+        "custom_event_label",
     ]:
         val = getattr(data, field, None)
         if val is not None:
