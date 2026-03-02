@@ -447,6 +447,12 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
         except (ValueError, TypeError):
             pass
 
+    # Include eligible_tier and special_status from user profile
+    if user_doc and user_doc.get("eligible_tier"):
+        if user_doc["eligible_tier"] not in eligible_tiers:
+            eligible_tiers.append(user_doc["eligible_tier"])
+    special_status = (user_doc or {}).get("special_status", [])
+
     # Determine beneficiary locked tier from benefactor's majority plan
     beneficiary_locked_tier = None
     estate_transitioned = False
