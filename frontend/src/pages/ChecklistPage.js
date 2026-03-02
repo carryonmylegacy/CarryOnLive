@@ -418,9 +418,12 @@ const ChecklistPage = () => {
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-[var(--t5)] flex-shrink-0" />
-                <input
+                <AddressAutocomplete
                   value={form.contact_address}
                   onChange={(e) => setForm({ ...form, contact_address: e.target.value })}
+                  onSelect={({ street, city, state, zip }) => {
+                    setForm({ ...form, contact_address: [street, city, state, zip].filter(Boolean).join(', ') });
+                  }}
                   placeholder="Address or location"
                   className="flex-1 px-3 py-2 rounded-lg bg-[var(--b)] border border-[var(--b2)] text-[var(--t)] text-sm focus:outline-none focus:border-[var(--gold)]"
                 />
