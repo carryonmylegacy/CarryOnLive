@@ -1,14 +1,14 @@
 import React, { useRef, useEffect, useCallback } from 'react';
-import { Input } from './ui/input';
 
 /**
  * Google Places-powered address autocomplete input.
  * On selection, calls onSelect with { street, city, state, zip }.
- * Falls back to a regular input if Google Maps isn't loaded.
+ * Uses a raw <input> to avoid React controlled-component conflicts with Google Places.
  */
 const AddressAutocomplete = ({ value, onChange, onSelect, placeholder, className, ...props }) => {
   const inputRef = useRef(null);
   const autocompleteRef = useRef(null);
+  const skipNextChange = useRef(false);
 
   const handlePlaceSelect = useCallback(() => {
     const place = autocompleteRef.current?.getPlace();
@@ -32,51 +32,59 @@ const AddressAutocomplete = ({ value, onChange, onSelect, placeholder, className
 
     const street = [street_number, route].filter(Boolean).join(' ');
 
+    // Update the input value directly to avoid React re-render fighting Google
+    skipNextChange.current = true;
+    if (inputRef.current) inputRef.current.value = street;
+
     if (onSelect) {
       onSelect({ street, city, state, zip });
     }
   }, [onSelect]);
 
-  useEffect(() => {
-    if (!inputRef.current || !window.google?.maps?.places) return;
-    if (autocompleteRef.current) return; // already initialized
+  const initAutocomplete = useCallback(() => {
+    if (autocompleteRef.current || !inputRef.current || !window.google?.maps?.places) return false;
 
     autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
       types: ['address'],
       componentRestrictions: { country: 'us' },
       fields: ['address_components'],
     });
-
     autocompleteRef.current.addListener('place_changed', handlePlaceSelect);
+    return true;
   }, [handlePlaceSelect]);
 
-  // Retry init if Google Maps loads after mount
   useEffect(() => {
-    if (autocompleteRef.current) return;
+    if (initAutocomplete()) return;
+    // Retry until Google Maps loads
     const interval = setInterval(() => {
-      if (window.google?.maps?.places && inputRef.current) {
-        autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
-          types: ['address'],
-          componentRestrictions: { country: 'us' },
-          fields: ['address_components'],
-        });
-        autocompleteRef.current.addListener('place_changed', handlePlaceSelect);
-        clearInterval(interval);
-      }
+      if (initAutocomplete()) clearInterval(interval);
     }, 500);
     return () => clearInterval(interval);
-  }, [handlePlaceSelect]);
+  }, [initAutocomplete]);
+
+  // Sync React value to input
+  useEffect(() => {
+    if (inputRef.current && value !== undefined && !skipNextChange.current) {
+      inputRef.current.value = value;
+    }
+    skipNextChange.current = false;
+  }, [value]);
+
+  // Remove unsupported props for raw input
+  const { 'data-testid': testId, ...rest } = props;
 
   return (
-    <Input
+    <input
       ref={inputRef}
-      value={value}
-      onChange={onChange}
+      defaultValue={value}
+      onChange={(e) => {
+        if (!skipNextChange.current && onChange) onChange(e);
+      }}
       placeholder={placeholder || 'Start typing an address...'}
       className={className}
       autoComplete="off"
-      data-testid="address-autocomplete"
-      {...props}
+      data-testid={testId || 'address-autocomplete'}
+      {...rest}
     />
   );
 };
