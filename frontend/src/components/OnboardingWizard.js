@@ -29,6 +29,7 @@ const OnboardingWizard = () => {
   const [showAll, setShowAll] = useState(false);
   const [popping, setPopping] = useState({});
   const prevCompleted = useRef({});
+  const initialLoadDone = useRef(false);
 
   useEffect(() => {
     if (user?.role === 'benefactor') fetchProgress();
@@ -38,12 +39,24 @@ const OnboardingWizard = () => {
   const fetchProgress = async () => {
     try {
       const res = await axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
-      setProgress(res.data);
 
-      // Detect newly completed steps and trigger pop animation
-      if (res.data.steps) {
+      // Process everything before setting state (single render)
+      const steps = res.data.steps || [];
+      const hasIncomplete = steps.some(s => !s.completed);
+
+      if (hasIncomplete && !res.data.all_complete) {
+        localStorage.removeItem('carryon_onboarding_dismissed');
+        setManuallyDismissed(false);
+      }
+
+      if (!hasIncomplete && localStorage.getItem('carryon_onboarding_dismissed') !== 'true') {
+        setShowAll(true);
+      }
+
+      // Pop animation only on return visits (not initial load)
+      if (initialLoadDone.current) {
         const newPops = {};
-        res.data.steps.forEach(step => {
+        steps.forEach(step => {
           if (step.completed && !prevCompleted.current[step.key]) {
             newPops[step.key] = true;
           }
@@ -58,22 +71,14 @@ const OnboardingWizard = () => {
             });
           }, 800);
         }
-        const completed = {};
-        res.data.steps.forEach(s => { if (s.completed) completed[s.key] = true; });
-        prevCompleted.current = completed;
-
-        // If any steps are now incomplete, auto-show the guide
-        const hasIncomplete = res.data.steps.some(s => !s.completed);
-        if (hasIncomplete && !res.data.all_complete) {
-          setManuallyDismissed(false);
-          localStorage.removeItem('carryon_onboarding_dismissed');
-        }
-
-        // If user toggled it back on from Settings, show all steps
-        if (!hasIncomplete && localStorage.getItem('carryon_onboarding_dismissed') !== 'true') {
-          setShowAll(true);
-        }
       }
+
+      const completed = {};
+      steps.forEach(s => { if (s.completed) completed[s.key] = true; });
+      prevCompleted.current = completed;
+      initialLoadDone.current = true;
+
+      setProgress(res.data);
     } catch (err) { console.error('Onboarding fetch error:', err); }
     finally { setLoading(false); }
   };
