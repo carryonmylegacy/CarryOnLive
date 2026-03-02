@@ -56,18 +56,6 @@
         </script>
     </head>
     <body>
-        <script>
-            (function() {
-                var k = '%REACT_APP_GOOGLE_PLACES_API_KEY%';
-                if (k && !k.startsWith('%')) {
-                    var s = document.createElement('script');
-                    s.src = 'https://maps.googleapis.com/maps/api/js?key=' + k + '&libraries=places';
-                    s.async = true;
-                    s.defer = true;
-                    document.head.appendChild(s);
-                }
-            })();
-        </script>
         <noscript>You need to enable JavaScript to run this app.</noscript>
         <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:text-black focus:px-4 focus:py-2 focus:rounded">Skip to main content</a>
         <div id="root"></div>
