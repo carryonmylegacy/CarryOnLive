@@ -66,7 +66,7 @@ export default function TrialBanner({ onUpgrade }) {
         )}
         <button
           onClick={() => setDismissed(true)}
-          className="text-[#7B879E] hover:text-white transition-colors"
+          className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform"
           data-testid="trial-dismiss-btn"
         >
           <X className="w-4 h-4" />

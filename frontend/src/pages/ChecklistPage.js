@@ -306,7 +306,7 @@ const ChecklistPage = () => {
             <h3 className="text-lg font-bold text-[var(--t)]">
               {editingItem ? 'Edit Checklist Item' : 'New Checklist Item'}
             </h3>
-            <button onClick={closeForm} className="text-[var(--t5)] hover:text-[var(--t)]"><X className="w-5 h-5" /></button>
+            <button onClick={closeForm} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform"><X className="w-4 h-4" /></button>
           </div>
 
           {/* Title */}

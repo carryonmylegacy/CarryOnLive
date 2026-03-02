@@ -204,7 +204,7 @@ export const TransitionTab = ({ getAuthHeaders }) => {
                 <h3 className="font-bold text-[var(--t)] text-sm" style={{ fontFamily: 'Outfit, sans-serif' }}>Death Certificate</h3>
                 <p className="text-xs text-[var(--t5)]">{viewingDoc.name}</p>
               </div>
-              <button onClick={closeDocViewer} className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--t5)] hover:text-white hover:bg-white/10 transition-colors">
+              <button onClick={closeDocViewer} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform">
                 <X className="w-4 h-4" />
               </button>
             </div>

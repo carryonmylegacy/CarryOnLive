@@ -135,8 +135,8 @@ const OnboardingWizard = () => {
             <p className="text-[var(--t5)] text-base">{progress.completed_count} of {progress.total_steps} complete</p>
           </div>
         </div>
-        <button onClick={handleDismiss} className="text-[var(--t5)] hover:text-[var(--t)] transition-colors p-2" data-testid="onboarding-dismiss">
-          <X className="w-6 h-6" />
+        <button onClick={handleDismiss} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform" data-testid="onboarding-dismiss">
+          <X className="w-4 h-4" />
         </button>
       </div>
 

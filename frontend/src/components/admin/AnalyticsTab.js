@@ -238,7 +238,7 @@ export const AnalyticsTab = ({ getAuthHeaders }) => {
           <div className="bg-[#1a2035] rounded-xl max-w-2xl w-full max-h-[85vh] overflow-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-[var(--b)]">
               <h3 className="font-bold text-[var(--t)] text-sm">Weekly Analytics Digest Preview</h3>
-              <button onClick={() => setDigestPreview(null)} className="text-[var(--t5)] hover:text-white"><X className="w-5 h-5" /></button>
+              <button onClick={() => setDigestPreview(null)} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform"><X className="w-4 h-4" /></button>
             </div>
             <div className="p-4" dangerouslySetInnerHTML={{ __html: digestPreview }} />
           </div>
