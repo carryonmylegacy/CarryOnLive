@@ -177,6 +177,8 @@ async def register(data: UserCreate):
         eligible_tier = "veteran"
     elif "hospice" in special_statuses:
         eligible_tier = "hospice"
+    elif "enterprise" in special_statuses:
+        eligible_tier = "enterprise"
 
     user = {
         "id": user_id,
