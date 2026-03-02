@@ -84,6 +84,16 @@ const EstateSelector = ({ currentEstate, onEstateChange, estates, onEstatesUpdat
     }
   };
 
+  // If only one estate, show name without dropdown
+  if (estates.length <= 1) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'var(--s)', border: '1px solid var(--b)' }} data-testid="estate-selector">
+        <Home className="w-4 h-4 text-[var(--gold)]" />
+        <span className="max-w-[180px] truncate text-[var(--t)] text-sm font-bold">{currentEstate?.name || 'My Estate'}</span>
+      </div>
+    );
+  }
+
   return (
     <>
       <DropdownMenu>
