@@ -708,10 +708,16 @@ const BeneficiariesPage = () => {
               
               <div className="space-y-2">
                 <Label className="text-[#94a3b8]">Street Address</Label>
-                <Input
+                <AddressAutocomplete
                   value={addressStreet}
                   onChange={(e) => setAddressStreet(e.target.value)}
-                  placeholder="123 Main Street, Apt 4B"
+                  onSelect={({ street, city, state, zip }) => {
+                    setAddressStreet(street);
+                    setAddressCity(city);
+                    setAddressState(state);
+                    setAddressZip(zip);
+                  }}
+                  placeholder="Start typing an address..."
                   className="input-field"
                 />
               </div>
