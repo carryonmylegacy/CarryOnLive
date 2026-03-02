@@ -636,12 +636,12 @@ const VaultPage = () => {
                           {formatFileSize(doc.file_size)} · {doc.category}
                         </p>
                         
-                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <Button 
                           variant="ghost" 
                           size="sm" 
                           className="text-[#3b82f6] hover:text-[#60a5fa]"
-                          onClick={() => doc.is_locked ? (setSelectedDoc(doc), setShowLockModal(true)) : handlePreview(doc)}
+                          onClick={(e) => { e.stopPropagation(); doc.is_locked ? (setSelectedDoc(doc), setShowLockModal(true)) : handlePreview(doc); }}
                           title="View"
                           aria-label="View document"
                           data-testid={`view-document-${doc.id}`}
@@ -652,7 +652,7 @@ const VaultPage = () => {
                           variant="ghost" 
                           size="sm" 
                           className="text-[#94a3b8] hover:text-white"
-                          onClick={() => doc.is_locked ? (setSelectedDoc(doc), setShowLockModal(true)) : handleDownload(doc)}
+                          onClick={(e) => { e.stopPropagation(); doc.is_locked ? (setSelectedDoc(doc), setShowLockModal(true)) : handleDownload(doc); }}
                           disabled={downloading === doc.id}
                           title="Download"
                           aria-label="Download document"
