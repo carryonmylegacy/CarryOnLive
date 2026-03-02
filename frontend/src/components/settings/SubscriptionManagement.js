@@ -155,7 +155,7 @@ export const SubscriptionManagement = ({
   const hasSpecialStatus = specialStatus.length > 0;
   const isNewAdult = eligibleTiers.includes('new_adult') && !hasSpecialStatus;
   const autoTier = hasSpecialStatus
-    ? (specialStatus.includes('hospice') ? 'hospice' : 'military')
+    ? (specialStatus.includes('hospice') ? 'hospice' : specialStatus.includes('veteran') ? 'veteran' : 'military')
     : (isNewAdult ? 'new_adult' : null);
 
   // Should a plan be greyed out (not selectable)?
