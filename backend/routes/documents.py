@@ -402,6 +402,16 @@ async def lock_document(
             status_code=403, detail="Only the estate owner can lock documents"
         )
 
+    # Require vault master key to be set before allowing individual locks
+    user_doc = await db.users.find_one(
+        {"id": current_user["id"]}, {"_id": 0, "vault_master_key_hash": 1}
+    )
+    if not user_doc or not user_doc.get("vault_master_key_hash"):
+        raise HTTPException(
+            status_code=400,
+            detail="Set a Vault Master Key in Security Settings before locking individual documents.",
+        )
+
     if len(data.password) < 4:
         raise HTTPException(
             status_code=400, detail="Password must be at least 4 characters"

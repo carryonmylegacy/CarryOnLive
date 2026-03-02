@@ -493,3 +493,127 @@ async def remove_section_security(
         "success": True,
         "message": f"Security removed from {LOCKABLE_SECTIONS[section_id]}",
     }
+
+
+# ===================== VAULT MASTER KEY =====================
+
+
+class MasterKeyRequest(BaseModel):
+    master_key: str
+
+
+@router.get("/security/master-key-status")
+async def get_master_key_status(current_user: dict = Depends(get_current_user)):
+    """Check if the user has a vault master key set."""
+    user = await db.users.find_one(
+        {"id": current_user["id"]}, {"_id": 0, "vault_master_key_hash": 1}
+    )
+    return {"has_master_key": bool(user and user.get("vault_master_key_hash"))}
+
+
+@router.post("/security/master-key")
+async def set_master_key(
+    data: MasterKeyRequest, current_user: dict = Depends(get_current_user)
+):
+    """Set or update the vault master key (benefactor only)."""
+    if current_user.get("role") not in ("benefactor", "admin"):
+        raise HTTPException(
+            status_code=403, detail="Only benefactors can set a master key"
+        )
+    if len(data.master_key.strip()) < 4:
+        raise HTTPException(
+            status_code=400, detail="Master key must be at least 4 characters"
+        )
+
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {
+            "$set": {
+                "vault_master_key_hash": hash_password(data.master_key.strip()),
+                "vault_master_key_set_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
+    )
+    return {"success": True, "message": "Vault master key saved."}
+
+
+@router.get("/admin/user/{user_id}/master-key-hint")
+async def get_user_master_key_for_admin(
+    user_id: str, current_user: dict = Depends(get_current_user)
+):
+    """Admin: get the master key hash for phone verification. Admin sees the hash, not plaintext."""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    user = await db.users.find_one(
+        {"id": user_id}, {"_id": 0, "vault_master_key_hash": 1, "name": 1}
+    )
+    if not user or not user.get("vault_master_key_hash"):
+        raise HTTPException(status_code=404, detail="No master key set for this user")
+    return {"has_master_key": True, "user_name": user.get("name", "")}
+
+
+@router.post("/admin/user/{user_id}/verify-master-key")
+async def admin_verify_master_key(
+    user_id: str,
+    data: MasterKeyRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Admin: verify a spoken master key against the stored hash."""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    user = await db.users.find_one(
+        {"id": user_id}, {"_id": 0, "vault_master_key_hash": 1}
+    )
+    if not user or not user.get("vault_master_key_hash"):
+        raise HTTPException(status_code=404, detail="No master key set")
+    if not verify_password(data.master_key.strip(), user["vault_master_key_hash"]):
+        raise HTTPException(status_code=401, detail="Master key does not match")
+    return {"verified": True}
+
+
+@router.post("/admin/user/{user_id}/unlock-all-documents")
+async def admin_unlock_all_documents(
+    user_id: str,
+    data: MasterKeyRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Admin: verify master key and unlock ALL locked documents in user's estates."""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    user = await db.users.find_one(
+        {"id": user_id}, {"_id": 0, "vault_master_key_hash": 1}
+    )
+    if not user or not user.get("vault_master_key_hash"):
+        raise HTTPException(status_code=404, detail="No master key set")
+    if not verify_password(data.master_key.strip(), user["vault_master_key_hash"]):
+        raise HTTPException(status_code=401, detail="Master key does not match")
+
+    # Find all estates owned by this user
+    estates = await db.estates.find({"owner_id": user_id}, {"_id": 0, "id": 1}).to_list(
+        100
+    )
+    estate_ids = [e["id"] for e in estates]
+
+    # Unlock all locked documents
+    result = await db.documents.update_many(
+        {"estate_id": {"$in": estate_ids}, "is_locked": True},
+        {
+            "$set": {
+                "is_locked": False,
+                "unlocked_at": datetime.now(timezone.utc).isoformat(),
+                "unlocked_by": f"admin:{current_user['id']}",
+                "admin_force_unlock": True,
+            },
+            "$unset": {
+                "lock_type": "",
+                "lock_password_hash": "",
+                "backup_code": "",
+            },
+        },
+    )
+
+    return {
+        "unlocked_count": result.modified_count,
+        "message": f"Unlocked {result.modified_count} document(s). User will need to re-lock individually.",
+    }
