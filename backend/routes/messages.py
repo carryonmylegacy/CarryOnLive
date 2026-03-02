@@ -225,6 +225,9 @@ async def create_message(
         message.video_url = video_id
         msg_dict["video_url"] = video_id
 
+        if data.video_thumbnail:
+            msg_dict["video_thumbnail"] = data.video_thumbnail
+
         video_bytes = base64.b64decode(data.video_data)
         encrypted_video = encrypt_aes256(video_bytes, estate_salt)
         await storage.upload(
@@ -332,6 +335,8 @@ async def update_message(
             "video/webm",
         )
         update_fields["video_url"] = video_id
+        if data.video_thumbnail:
+            update_fields["video_thumbnail"] = data.video_thumbnail
 
     # Handle voice update
     if data.voice_data:

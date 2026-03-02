@@ -193,6 +193,7 @@ class MessageCreate(BaseModel):
     content: str
     message_type: str = "text"
     video_data: Optional[str] = None  # Base64 encoded video
+    video_thumbnail: Optional[str] = None  # Base64 encoded JPEG thumbnail
     voice_data: Optional[str] = None  # Base64 encoded voice
     recipients: List[str] = []
     trigger_type: str = "immediate"  # immediate, age_milestone, event, specific_date
@@ -206,6 +207,7 @@ class MessageUpdate(BaseModel):
     content: Optional[str] = None
     message_type: Optional[str] = None
     video_data: Optional[str] = None
+    video_thumbnail: Optional[str] = None
     voice_data: Optional[str] = None
     recipients: Optional[List[str]] = None
     trigger_type: Optional[str] = None
