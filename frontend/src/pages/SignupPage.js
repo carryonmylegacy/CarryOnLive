@@ -124,7 +124,11 @@ const SignupPage = () => {
     if (step === 0) return firstName.trim() && lastName.trim();
     if (step === 1) return true; // optional fields
     if (step === 2) return true; // address is optional
-    if (step === 3) return !!role;
+    if (step === 3) {
+      if (!role) return false;
+      if (role === 'beneficiary' && !benefactorEmail.trim()) return false;
+      return true;
+    }
     if (step === 4) return email.trim() && password.length >= 8 && password === confirmPassword && smsConsent;
     return false;
   };
@@ -132,7 +136,10 @@ const SignupPage = () => {
   const handleNext = () => {
     if (!canAdvance()) {
       if (step === 0) toast.error('Please enter your first and last name');
-      if (step === 3) toast.error('Please select your role');
+      if (step === 3) {
+        if (!role) toast.error('Please select your role');
+        else if (role === 'beneficiary' && !benefactorEmail.trim()) toast.error('Please enter your benefactor\'s email address');
+      }
       if (step === 4) {
         if (!email.trim()) toast.error('Please enter your email');
         else if (password.length < 8) toast.error('Password must be at least 8 characters');
