@@ -337,7 +337,7 @@ const LoginPage = () => {
             <p className="text-[#7b879e] text-base lg:text-lg leading-relaxed mb-8">
               CarryOn&#8482; is the first platform designed to ensure family readiness for all American families &mdash; an affordable, secure digital infrastructure that organizes your estate documents, automates critical checklists, delivers milestone messages, and provides AI-powered document intelligence so your family is prepared, not searching.
             </p>
-            <button onClick={() => navigateWithFade('/signup')} className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-semibold text-sm transition-all hover:brightness-110 hover:scale-105 active:scale-95"
+            <button onClick={() => navigateWithFade('/signup')} className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-semibold text-sm transition-transform duration-150 active:scale-95"
               style={{ background: '#d4af37', color: '#0B1221', transition: 'all 0.3s' }}>
               Get Started <ChevronRight className="w-4 h-4" />
             </button>
