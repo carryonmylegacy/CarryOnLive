@@ -147,6 +147,7 @@ const SignupPage = () => {
         if (!role) toast.error('Please select your role');
         else if (role === 'beneficiary' && !benefactorEmail.trim()) toast.error('Please enter your benefactor\'s email address');
       }
+      if (step === 4 && specialStatus.includes('enterprise') && !b2bCodeSignup.trim()) toast.error('Please enter your partner access code');
       if (step === 5) {
         if (!email.trim()) toast.error('Please enter your email');
         else if (password.length < 8) toast.error('Password must be at least 8 characters');
