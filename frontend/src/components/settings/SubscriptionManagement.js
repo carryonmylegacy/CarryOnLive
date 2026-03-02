@@ -18,12 +18,14 @@ const TIER_STYLES = {
   ben_base: { accent: '#22C993', icon: Shield, label: null },
   ben_military: { accent: '#F59E0B', icon: Shield, label: 'Flat Rate' },
   ben_hospice: { accent: '#ec4899', icon: Heart, label: 'Post-Transition' },
+  ben_veteran: { accent: '#059669', icon: Award, label: 'Flat Rate' },
   premium: { accent: '#d4af37', icon: Crown, label: 'Most Popular' },
   standard: { accent: '#60A5FA', icon: Star, label: null },
   base: { accent: '#22C993', icon: Shield, label: null },
   new_adult: { accent: '#B794F6', icon: Award, label: 'Ages 18-25' },
   military: { accent: '#F59E0B', icon: Shield, label: 'Verified' },
   hospice: { accent: '#ec4899', icon: Heart, label: 'Free' },
+  veteran: { accent: '#059669', icon: Award, label: 'Verified' },
 };
 
 const BeneficiaryBillingToggle = ({ billing, onChange }) => {
