@@ -64,7 +64,7 @@ const STEPS = [
   { id: 'credentials', label: 'Login', icon: Lock, desc: 'Email and password' },
 ];
 
-const inputClass = "h-14 bg-[#0b1322] border-[#1a2a42] text-white text-base placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-xl";
+const inputClass = "h-14 px-4 bg-[#0b1322] border border-[#1a2a42] text-white text-base placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 focus:outline-none rounded-xl w-full";
 const selectClass = "h-14 bg-[#0b1322] border-[#1a2a42] text-white text-base rounded-xl [&>span]:text-white";
 
 const SignupPage = () => {
