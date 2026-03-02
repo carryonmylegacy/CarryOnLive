@@ -731,7 +731,7 @@ const SignupPage = () => {
                     >
                       {loading ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating...</>
-                      ) : step === 4 ? (
+                      ) : step === 5 ? (
                         <>Create Account <ChevronRight className="w-4 h-4 ml-1" /></>
                       ) : (
                         <>Continue <ArrowRight className="w-4 h-4 ml-1" /></>
