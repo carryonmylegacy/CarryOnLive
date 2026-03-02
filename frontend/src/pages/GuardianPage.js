@@ -523,7 +523,7 @@ const GuardianPage = () => {
                       </div>
                       <button
                         onClick={(e) => deleteSession(e, s.session_id)}
-                        className="opacity-0 group-hover:opacity-100 w-7 h-7 rounded-lg flex items-center justify-center text-[var(--t5)] hover:text-red-400 hover:bg-red-400/10 transition-all flex-shrink-0"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--t5)] active:text-red-400 active:bg-red-400/10 transition-colors flex-shrink-0"
                         data-testid={`delete-session-${s.session_id}`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
