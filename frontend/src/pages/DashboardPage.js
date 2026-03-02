@@ -27,18 +27,7 @@ const DashboardPage = () => {
   const [stats, setStats] = useState({ documents: 0, messages: 0, beneficiaries: 0 });
   const [readiness, setReadiness] = useState({ documents: { score: 0 }, messages: { score: 0 }, checklist: { score: 0 } });
   const [loading, setLoading] = useState(true);
-  const [hoveredSection, setHoveredSection] = useState(null);
   const [showPaywall, setShowPaywall] = useState(false);
-
-  // Sync hovered section to root element for sidebar CSS targeting
-  useEffect(() => {
-    if (hoveredSection) {
-      document.documentElement.dataset.hoverSection = hoveredSection;
-    } else {
-      delete document.documentElement.dataset.hoverSection;
-    }
-    return () => { delete document.documentElement.dataset.hoverSection; };
-  }, [hoveredSection]);
 
   useEffect(() => { fetchEstates(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (estate) fetchEstateData(estate.id); }, [estate]); // eslint-disable-line react-hooks/exhaustive-deps
