@@ -606,6 +606,7 @@ const SignupPage = () => {
                             { id: 'first_responder', label: 'First Responder', icon: Shield, color: '#EF4444' },
                             { id: 'veteran', label: 'Veteran', icon: Award, color: '#059669' },
                             { id: 'hospice', label: 'Hospice Patient', icon: Heart, color: '#ec4899' },
+                            { id: 'enterprise', label: 'Employer / B2B Partner', icon: Users, color: '#8B5CF6' },
                           ].map(s => {
                             const active = specialStatus.includes(s.id);
                             const SIcon = s.icon;
