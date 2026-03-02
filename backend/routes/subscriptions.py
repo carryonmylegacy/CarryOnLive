@@ -359,6 +359,19 @@ BENEFICIARY_PLANS = [
             "Flat rate pricing",
         ],
     },
+    {
+        "id": "ben_enterprise",
+        "name": "Enterprise / B2B",
+        "price": 0.00,
+        "quarterly_price": 0.00,
+        "annual_price": 0.00,
+        "allows_billing_toggle": False,
+        "note": "Covered by partner agreement",
+        "features": [
+            "Full platform access",
+            "Covered by employer or partner",
+        ],
+    },
 ]
 
 GRACE_PERIOD_DAYS = 30
