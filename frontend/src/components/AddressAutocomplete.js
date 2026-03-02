@@ -2,13 +2,12 @@ import React, { useRef, useEffect, useCallback } from 'react';
 
 /**
  * Google Places-powered address autocomplete input.
- * Uncontrolled input — Google Places requires direct DOM access.
- * Reports changes via onChange and address selection via onSelect.
+ * Fully uncontrolled — never re-renders on typing.
+ * Syncs value to parent only on blur or Google Places selection.
  */
-const AddressAutocomplete = ({ value, onChange, onSelect, placeholder, className, ...props }) => {
+const AddressAutocomplete = ({ defaultValue, onBlur, onSelect, placeholder, className, ...props }) => {
   const inputRef = useRef(null);
   const autocompleteRef = useRef(null);
-  const isSelecting = useRef(false);
 
   const handlePlaceSelect = useCallback(() => {
     const place = autocompleteRef.current?.getPlace();
@@ -31,15 +30,8 @@ const AddressAutocomplete = ({ value, onChange, onSelect, placeholder, className
     }
 
     const street = [street_number, route].filter(Boolean).join(' ');
-    isSelecting.current = true;
-
+    if (inputRef.current) inputRef.current.value = street;
     if (onSelect) onSelect({ street, city, state, zip });
-
-    // After React state updates, sync the input display
-    requestAnimationFrame(() => {
-      if (inputRef.current) inputRef.current.value = street;
-      isSelecting.current = false;
-    });
   }, [onSelect]);
 
   const initAutocomplete = useCallback(() => {
@@ -61,8 +53,9 @@ const AddressAutocomplete = ({ value, onChange, onSelect, placeholder, className
     return () => clearInterval(interval);
   }, [initAutocomplete]);
 
-  const handleChange = (e) => {
-    if (!isSelecting.current && onChange) onChange(e);
+  const handleBlur = () => {
+    const val = inputRef.current?.value || '';
+    if (onBlur) onBlur(val);
   };
 
   const { 'data-testid': testId, ...rest } = props;
@@ -70,8 +63,8 @@ const AddressAutocomplete = ({ value, onChange, onSelect, placeholder, className
   return (
     <input
       ref={inputRef}
-      defaultValue={value || ''}
-      onChange={handleChange}
+      defaultValue={defaultValue || ''}
+      onBlur={handleBlur}
       placeholder={placeholder || 'Start typing an address...'}
       className={className}
       autoComplete="off"
