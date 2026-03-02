@@ -1,118 +1,111 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+
+const API_KEY = process.env.REACT_APP_GOOGLE_PLACES_API_KEY;
 
 /**
- * Google Places address autocomplete using AutocompleteService API.
- * Does NOT attach to the input DOM — keeps it a normal React input.
- * Fetches suggestions programmatically and renders a custom dropdown.
+ * Google Places address autocomplete using the Places API (New) REST endpoint.
+ * No JavaScript SDK needed — works via direct HTTP calls.
+ * Input stays a normal React controlled input.
  */
 const AddressAutocomplete = ({ value, onChange, onSelect, placeholder, className, ...props }) => {
   const [suggestions, setSuggestions] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
-  const serviceRef = useRef(null);
-  const sessionTokenRef = useRef(null);
-  const geocoderRef = useRef(null);
   const debounceRef = useRef(null);
   const wrapperRef = useRef(null);
 
-  // Initialize Google services
-  const initServices = useCallback(() => {
-    if (!window.google?.maps?.places) return false;
-    if (!serviceRef.current) {
-      serviceRef.current = new window.google.maps.places.AutocompleteService();
-      geocoderRef.current = new window.google.maps.Geocoder();
-      sessionTokenRef.current = new window.google.maps.places.AutocompleteSessionToken();
-    }
-    return true;
-  }, []);
-
+  // Close dropdown on outside click/tap
   useEffect(() => {
-    if (initServices()) return;
-    const interval = setInterval(() => {
-      if (initServices()) clearInterval(interval);
-    }, 500);
-    return () => clearInterval(interval);
-  }, [initServices]);
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handleClick = (e) => {
+    const handleOutside = (e) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
         setShowDropdown(false);
       }
     };
-    document.addEventListener('mousedown', handleClick);
-    document.addEventListener('touchstart', handleClick);
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('touchstart', handleOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClick);
-      document.removeEventListener('touchstart', handleClick);
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('touchstart', handleOutside);
     };
   }, []);
 
-  const fetchSuggestions = useCallback((input) => {
-    if (!serviceRef.current || !input || input.length < 3) {
+  const fetchSuggestions = async (input) => {
+    if (!API_KEY || !input || input.length < 3) {
       setSuggestions([]);
       setShowDropdown(false);
       return;
     }
-    serviceRef.current.getPlacePredictions(
-      {
-        input,
-        componentRestrictions: { country: 'us' },
-        types: ['address'],
-        sessionToken: sessionTokenRef.current,
-      },
-      (predictions, status) => {
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
-          setSuggestions(predictions.slice(0, 5));
-          setShowDropdown(true);
-        } else {
-          setSuggestions([]);
-          setShowDropdown(false);
-        }
-      }
-    );
-  }, []);
 
-  const handleInputChange = (e) => {
-    const val = e.target.value;
-    if (onChange) onChange(e);
+    try {
+      const res = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': API_KEY,
+        },
+        body: JSON.stringify({
+          input,
+          includedRegionCodes: ['us'],
+          includedPrimaryTypes: ['street_address', 'premise', 'subpremise', 'route'],
+          languageCode: 'en',
+        }),
+      });
 
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => fetchSuggestions(val), 300);
+      if (!res.ok) return;
+      const data = await res.json();
+      const places = (data.suggestions || [])
+        .filter(s => s.placePrediction)
+        .map(s => s.placePrediction)
+        .slice(0, 5);
+
+      setSuggestions(places);
+      setShowDropdown(places.length > 0);
+    } catch {
+      // Silent fail — input still works as manual entry
+    }
   };
 
-  const handleSelectSuggestion = (prediction) => {
+  const handleInputChange = (e) => {
+    if (onChange) onChange(e);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => fetchSuggestions(e.target.value), 300);
+  };
+
+  const handleSelectSuggestion = async (prediction) => {
     setShowDropdown(false);
     setSuggestions([]);
 
-    // Get detailed address components via Geocoder
-    if (geocoderRef.current) {
-      geocoderRef.current.geocode({ placeId: prediction.place_id }, (results, status) => {
-        if (status === 'OK' && results[0]) {
-          let street_number = '';
-          let route = '';
-          let city = '';
-          let state = '';
-          let zip = '';
+    // Get full address details
+    const placeId = prediction.placeId;
+    if (!placeId || !API_KEY) return;
 
-          for (const component of results[0].address_components) {
-            const types = component.types;
-            if (types.includes('street_number')) street_number = component.long_name;
-            else if (types.includes('route')) route = component.long_name;
-            else if (types.includes('locality')) city = component.long_name;
-            else if (types.includes('sublocality_level_1') && !city) city = component.long_name;
-            else if (types.includes('administrative_area_level_1')) state = component.short_name;
-            else if (types.includes('postal_code')) zip = component.long_name;
-          }
+    try {
+      const res = await fetch(
+        `https://places.googleapis.com/v1/places/${placeId}?fields=addressComponents&key=${API_KEY}`
+      );
+      if (!res.ok) return;
+      const data = await res.json();
 
-          const street = [street_number, route].filter(Boolean).join(' ');
-          if (onSelect) onSelect({ street, city, state, zip });
-        }
-      });
+      let street_number = '';
+      let route = '';
+      let city = '';
+      let state = '';
+      let zip = '';
+
+      for (const component of data.addressComponents || []) {
+        const types = component.types || [];
+        if (types.includes('street_number')) street_number = component.longText;
+        else if (types.includes('route')) route = component.longText;
+        else if (types.includes('locality')) city = component.longText;
+        else if (types.includes('sublocality_level_1') && !city) city = component.longText;
+        else if (types.includes('administrative_area_level_1')) state = component.shortText;
+        else if (types.includes('postal_code')) zip = component.longText;
+      }
+
+      const street = [street_number, route].filter(Boolean).join(' ');
+      if (onSelect) onSelect({ street, city, state, zip });
+    } catch {
+      // Silent fail
     }
-
-    // Reset session token for next search
-    sessionTokenRef.current = new window.google.maps.places.AutocompleteSessionToken();
   };
 
   const { 'data-testid': testId, ...rest } = props;
@@ -137,17 +130,21 @@ const AddressAutocomplete = ({ value, onChange, onSelect, placeholder, className
             boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
             zIndex: 100000,
           }}>
-          {suggestions.map((s) => (
+          {suggestions.map((s, i) => (
             <button
-              key={s.place_id}
+              key={s.placeId || i}
               type="button"
               onClick={() => handleSelectSuggestion(s)}
               className="w-full text-left px-4 py-3 text-sm text-[#e2e8f0] hover:bg-[rgba(212,175,55,0.1)] transition-colors"
               style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
             >
-              <span className="font-bold text-white">{s.structured_formatting?.main_text}</span>
-              {s.structured_formatting?.secondary_text && (
-                <span className="text-[#94a3b8] ml-1 text-xs">{s.structured_formatting.secondary_text}</span>
+              <span className="font-bold text-white">
+                {s.structuredFormat?.mainText?.text || s.text?.text}
+              </span>
+              {s.structuredFormat?.secondaryText?.text && (
+                <span className="text-[#94a3b8] ml-1.5 text-xs">
+                  {s.structuredFormat.secondaryText.text}
+                </span>
               )}
             </button>
           ))}
