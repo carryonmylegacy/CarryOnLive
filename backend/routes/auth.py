@@ -17,6 +17,7 @@ from utils import (
     send_otp_email,
     verify_password,
 )
+from services.encryption import generate_estate_salt
 
 router = APIRouter()
 
