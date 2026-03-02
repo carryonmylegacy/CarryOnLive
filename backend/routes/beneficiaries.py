@@ -183,6 +183,7 @@ async def update_beneficiary(
         "notes": data.notes,
         "avatar_color": data.avatar_color,
         "initials": initials,
+        "is_stub": False,
     }
 
     await db.beneficiaries.update_one({"id": beneficiary_id}, {"$set": update_data})
