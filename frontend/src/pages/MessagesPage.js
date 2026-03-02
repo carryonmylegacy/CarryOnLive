@@ -902,21 +902,25 @@ const MessagesPage = () => {
             {triggerType === 'event' && (
               <div className="space-y-2">
                 <Label className="text-[#94a3b8]">Event Type</Label>
-                <Select value={triggerValue} onValueChange={setTriggerValue}>
-                  <SelectTrigger className="input-field">
-                    <SelectValue placeholder="Select event type" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#1A2440] border-[var(--b)]">
-                    {eventTypes.map((event) => (
-                      <SelectItem key={event.value} value={event.value}>
-                        <div className="flex items-center gap-2">
-                          <event.icon className="w-4 h-4" />
-                          {event.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="grid grid-cols-2 gap-2">
+                  {eventTypes.map((event) => {
+                    const active = triggerValue === event.value;
+                    return (
+                      <button key={event.value} type="button" onClick={() => setTriggerValue(event.value)}
+                        className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-transform duration-150 active:scale-[0.96]"
+                        style={{
+                          background: active ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.03)',
+                          border: active ? '2px solid rgba(212,175,55,0.5)' : '1px solid rgba(255,255,255,0.08)',
+                          color: active ? '#d4af37' : '#94a3b8',
+                        }}
+                        data-testid={`event-type-${event.value}`}
+                      >
+                        <event.icon className="w-4 h-4" />
+                        {event.label}
+                      </button>
+                    );
+                  })}
+                </div>
                 {triggerValue === 'custom' && (
                   <div className="mt-3 space-y-1.5">
                     <Label className="text-[#94a3b8]">Custom Event Description</Label>
