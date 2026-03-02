@@ -93,6 +93,7 @@ const SignupPage = () => {
   const [role, setRole] = useState('');
   const [specialStatus, setSpecialStatus] = useState([]);
   const [benefactorEmail, setBenefactorEmail] = useState('');
+  const [b2bCodeSignup, setB2bCodeSignup] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
