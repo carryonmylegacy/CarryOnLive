@@ -260,12 +260,29 @@ const MessagesPage = () => {
     setCreating(true);
     try {
       let videoData = null;
+      let videoThumbnail = null;
       if (videoBlob) {
         const reader = new FileReader();
         videoData = await new Promise((resolve) => {
           reader.onloadend = () => resolve(reader.result.split(',')[1]);
           reader.readAsDataURL(videoBlob);
         });
+        // Generate thumbnail from video
+        try {
+          const video = document.createElement('video');
+          video.muted = true;
+          video.src = URL.createObjectURL(videoBlob);
+          await new Promise((res, rej) => { video.onloadeddata = res; video.onerror = rej; });
+          video.currentTime = 0.5;
+          await new Promise((res) => { video.onseeked = res; });
+          const canvas = document.createElement('canvas');
+          canvas.width = 320;
+          canvas.height = 180;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          videoThumbnail = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+          URL.revokeObjectURL(video.src);
+        } catch { /* thumbnail generation failed — non-critical */ }
       }
 
       let voiceData = null;
@@ -282,6 +299,7 @@ const MessagesPage = () => {
         content,
         message_type: messageType,
         video_data: videoData,
+        video_thumbnail: videoThumbnail,
         voice_data: voiceData,
         recipients: selectedRecipients,
         trigger_type: triggerType,
@@ -499,6 +517,18 @@ const MessagesPage = () => {
                       </div>
                       
                       <p className="text-[#94a3b8] text-sm line-clamp-3 mb-4">{msg.content}</p>
+                      
+                      {msg.message_type === 'video' && msg.video_thumbnail && (
+                        <div className="mb-4 rounded-xl overflow-hidden relative" style={{ aspectRatio: '16/9' }}>
+                          <img src={`data:image/jpeg;base64,${msg.video_thumbnail}`} alt="Video thumbnail"
+                            className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
+                              <Play className="w-6 h-6 text-white ml-0.5" />
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1 text-[#64748b] text-xs">
