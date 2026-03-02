@@ -107,22 +107,24 @@ async def export_user_data(current_user: dict = Depends(get_current_user)):
             except (TypeError, ValueError):
                 return str(obj)
 
-    export_data = make_serializable({
-        "export_date": datetime.now(timezone.utc).isoformat(),
-        "data_subject": user_profile,
-        "estates": estates,
-        "documents_metadata": documents_meta,
-        "messages_metadata": messages,
-        "beneficiaries": beneficiaries,
-        "checklists": checklists,
-        "digital_wallet_entries": digital_wallet,
-        "trustee_service_tasks": dts_tasks,
-        "activity_logs": activity_logs,
-        "subscription": subscriptions,
-        "consent_preferences": user_consent,
-        "consent_history": consent_history,
-        "note": "Encrypted document content and message bodies are excluded from this export. They can be accessed through the Secure Document Vault.",
-    })
+    export_data = make_serializable(
+        {
+            "export_date": datetime.now(timezone.utc).isoformat(),
+            "data_subject": user_profile,
+            "estates": estates,
+            "documents_metadata": documents_meta,
+            "messages_metadata": messages,
+            "beneficiaries": beneficiaries,
+            "checklists": checklists,
+            "digital_wallet_entries": digital_wallet,
+            "trustee_service_tasks": dts_tasks,
+            "activity_logs": activity_logs,
+            "subscription": subscriptions,
+            "consent_preferences": user_consent,
+            "consent_history": consent_history,
+            "note": "Encrypted document content and message bodies are excluded from this export. They can be accessed through the Secure Document Vault.",
+        }
+    )
 
     return export_data
 
