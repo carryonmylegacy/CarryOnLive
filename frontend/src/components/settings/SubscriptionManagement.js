@@ -482,7 +482,7 @@ export const SubscriptionManagement = ({
             <p className="text-xs text-[var(--yw)] leading-relaxed">
               {isNewAdult
                 ? 'Based on your age (18-25), you qualify for the New Adult tier. No verification required.'
-                : `Based on your special eligibility, you qualify for the ${autoTier === 'military' ? 'Military / First Responder' : 'Hospice'} tier. Verification is required after subscribing.`}
+                : `Based on your special eligibility, you qualify for the ${autoTier === 'military' ? 'Military / First Responder' : autoTier === 'veteran' ? 'Veteran' : 'Hospice'} tier. Verification is required after subscribing.`}
             </p>
           </div>
         )}
