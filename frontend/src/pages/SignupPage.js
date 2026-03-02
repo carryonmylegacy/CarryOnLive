@@ -131,7 +131,10 @@ const SignupPage = () => {
       if (role === 'beneficiary' && !benefactorEmail.trim()) return false;
       return true;
     }
-    if (step === 4) return true; // eligibility is optional
+    if (step === 4) {
+      if (specialStatus.includes('enterprise') && !b2bCodeSignup.trim()) return false;
+      return true;
+    }
     if (step === 5) return email.trim() && password.length >= 8 && password === confirmPassword && smsConsent;
     return false;
   };
