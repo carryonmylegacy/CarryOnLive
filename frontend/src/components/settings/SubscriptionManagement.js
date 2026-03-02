@@ -504,6 +504,8 @@ export const SubscriptionManagement = ({
             <p className="text-xs text-[var(--yw)] leading-relaxed">
               {isNewAdult
                 ? 'Based on your age (18-25), you qualify for the New Adult tier. No verification required.'
+                : autoTier === 'enterprise'
+                ? 'You selected Enterprise / B2B Partner. Enter your partner code below to activate your access.'
                 : `Based on your special eligibility, you qualify for the ${autoTier === 'military' ? 'Military / First Responder' : autoTier === 'veteran' ? 'Veteran' : 'Hospice'} tier. Verification is required after subscribing.`}
             </p>
           </div>
