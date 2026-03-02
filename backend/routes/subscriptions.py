@@ -1593,6 +1593,7 @@ async def notify_benefactor_verified(
         "military": "Military / First Responder",
         "veteran": "Veteran",
         "hospice": "Hospice",
+        "enterprise": "Enterprise / B2B Partner",
     }.get(verification["tier_requested"], verification["tier_requested"])
 
     # Create a customer service message in the benefactor's support portal
