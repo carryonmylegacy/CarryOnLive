@@ -172,6 +172,7 @@
   html {
     scroll-behavior: smooth;
     overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
   }
   
   body {
@@ -182,6 +183,8 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overscroll-behavior: none;
+    touch-action: pan-x pan-y;
+    -webkit-touch-callout: none;
   }
   
   h1, h2, h3, h4, h5, h6 {
