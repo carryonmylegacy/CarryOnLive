@@ -293,7 +293,7 @@ const SignupPage = () => {
 
       {/* MAIN LAYOUT — split like homepage */}
       <div className="relative z-10 min-h-screen flex items-start lg:items-center pt-16">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 w-full py-6 lg:py-0">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 w-full py-2 lg:py-0">
           <div className="grid lg:grid-cols-[1fr_520px] gap-6 lg:gap-16 items-center">
 
             {/* LEFT — Branding (hidden on mobile, shown on desktop) */}
