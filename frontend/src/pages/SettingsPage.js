@@ -173,7 +173,7 @@ const SettingsPage = () => {
       window.URL.revokeObjectURL(url);
       // toast removed
     } catch (e) {
-      toast.error('Failed to export data');
+      toast.error(e.response?.data?.detail || e.message || 'Failed to export data');
     }
     setExportLoading(false);
   };
