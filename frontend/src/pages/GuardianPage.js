@@ -468,7 +468,7 @@ const GuardianPage = () => {
             <div className="flex flex-wrap gap-2 justify-center mb-8">
               {actionButtons.map(({ key, label, icon: Icon, color }) => (
                 <button key={key} onClick={() => { startNewChat(); setTimeout(() => sendMessage('', key, `chat_${user?.id || 'anon'}_${Date.now().toString(36)}`), 200); }}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-transform duration-150 active:scale-[0.96]"
                   style={{ background: `${color}12`, border: `1px solid ${color}25`, color }}
                   data-testid={`landing-action-${key}`}>
                   <Icon className="w-3.5 h-3.5" />
