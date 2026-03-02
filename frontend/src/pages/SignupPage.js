@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   Mail, Lock, Eye, EyeOff, Loader2, ArrowLeft, ArrowRight,
   AlertCircle, CheckSquare, Shield, ChevronRight, User, Calendar,
-  Users, Check, MapPin, Heart
+  Users, Check, MapPin, Heart, Award
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
