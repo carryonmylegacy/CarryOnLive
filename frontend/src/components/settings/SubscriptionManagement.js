@@ -449,7 +449,7 @@ export const SubscriptionManagement = ({
         )}
 
         {/* Beneficiary: no tier determined yet */}
-        {beneficiaryNoTierYet && (
+        {beneficiaryNoTierYet && !isMinorBeneficiary && (
           <div className="p-6 rounded-2xl text-center" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
             <CreditCard className="w-10 h-10 mx-auto text-[var(--gold)] mb-3 opacity-50" />
             <h4 className="text-sm font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Your Plan Is Determined by Your Benefactor</h4>
