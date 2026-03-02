@@ -543,35 +543,34 @@ const SignupPage = () => {
 
                     {/* STEP 3: Role */}
                     {step === 3 && (
-                      <div className="space-y-3">
+                      <div className="space-y-2.5">
                         <div>
                           <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>How will you use CarryOn?</h2>
-                          <p className="text-[#6b7a90] text-sm">Select your role{role === 'beneficiary' ? ' and link to your benefactor' : ''}.</p>
+                          <p className="text-[#6b7a90] text-sm">Select your role.</p>
                         </div>
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                           {[
-                            { value: 'benefactor', title: 'Benefactor', subtitle: 'Estate Owner', desc: 'I want to organize my estate, protect my documents, and prepare my family.', color: '#d4af37' },
-                            { value: 'beneficiary', title: 'Beneficiary', subtitle: 'Family Member', desc: 'I was invited by a loved one to be part of their estate plan.', color: '#60A5FA' },
+                            { value: 'benefactor', title: 'Benefactor', subtitle: 'Estate Owner', desc: 'Organize and protect your estate for your family.', color: '#d4af37' },
+                            { value: 'beneficiary', title: 'Beneficiary', subtitle: 'Family Member', desc: 'Access an estate plan a loved one set up for you.', color: '#60A5FA' },
                           ].map(r => (
                             <button key={r.value} type="button" onClick={() => { setRole(r.value); if (r.value === 'benefactor') setBenefactorEmail(''); }}
-                              className="w-full text-left p-4 sm:p-5 rounded-xl transition-all duration-300"
+                              className="w-full text-left p-3 rounded-xl transition-all duration-300"
                               style={{
                                 background: role === r.value ? `linear-gradient(135deg, ${r.color}12, ${r.color}05)` : 'rgba(255,255,255,0.02)',
                                 border: role === r.value ? `2px solid ${r.color}50` : '1px solid rgba(255,255,255,0.06)',
-                                boxShadow: role === r.value ? `0 4px 24px ${r.color}15` : 'none',
                               }}
                               data-testid={`signup-role-${r.value}`}
                             >
-                              <div className="flex items-center gap-3 mb-2">
-                                <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                                   style={{ background: `${r.color}15`, border: `1px solid ${r.color}25` }}>
                                   {r.value === 'benefactor'
                                     ? <Shield className="w-5 h-5" style={{ color: r.color }} />
                                     : <Users className="w-5 h-5" style={{ color: r.color }} />}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <h3 className="text-white font-bold text-base">{r.title}</h3>
-                                  <p className="text-sm font-semibold" style={{ color: r.color }}>{r.subtitle}</p>
+                                  <h3 className="text-white font-bold text-base">{r.title} <span className="text-sm font-semibold" style={{ color: r.color }}>· {r.subtitle}</span></h3>
+                                  <p className="text-[#94a3b8] text-xs">{r.desc}</p>
                                 </div>
                                 {role === r.value && (
                                   <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
@@ -580,14 +579,13 @@ const SignupPage = () => {
                                   </div>
                                 )}
                               </div>
-                              <p className="text-[#94a3b8] text-sm leading-relaxed pl-14">{r.desc}</p>
                             </button>
                           ))}
                         </div>
 
                         {/* Beneficiary: Benefactor email (required) */}
                         {role === 'beneficiary' && (
-                          <div className="space-y-2 pt-1">
+                          <div className="space-y-1.5">
                             <Label className="text-[#7b879e] text-sm font-medium">Benefactor's Email *</Label>
                             <div className="relative">
                               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63]" />
@@ -600,7 +598,7 @@ const SignupPage = () => {
                                 data-testid="signup-benefactor-email"
                               />
                             </div>
-                            <p className="text-[#3a4a63] text-xs">This links your account to your benefactor's estate plan.</p>
+                            <p className="text-[#525c72] text-[10px]">Links your account to their estate plan.</p>
                           </div>
                         )}
                       </div>
