@@ -494,8 +494,8 @@ const SignupPage = () => {
                         <div className="space-y-1.5">
                           <Label className="text-[#7b879e] text-sm font-medium">Street Address</Label>
                           <AddressAutocomplete
-                            value={addressStreet}
-                            onChange={(e) => setAddressStreet(e.target.value)}
+                            defaultValue={addressStreet}
+                            onBlur={(val) => setAddressStreet(val)}
                             onSelect={({ street, city, state, zip }) => {
                               setAddressStreet(street);
                               setAddressCity(city);
