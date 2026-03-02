@@ -708,7 +708,11 @@ const SignupPage = () => {
                   <div className="flex-shrink-0">
                     <div className="flex items-center justify-between pt-4 sm:pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                     {step > 0 ? (
-                      <button onClick={() => goTo(step - 1)}
+                      <button onClick={() => {
+                        // Beneficiaries skip eligibility step (4), go from credentials (5) back to role (3)
+                        if (step === 5 && role === 'beneficiary') goTo(3);
+                        else goTo(step - 1);
+                      }}
                         className="flex items-center gap-2 text-[#6b7a90] text-sm font-medium hover:text-white transition-colors"
                         data-testid="signup-back-btn">
                         <ArrowLeft className="w-4 h-4" /> Back
