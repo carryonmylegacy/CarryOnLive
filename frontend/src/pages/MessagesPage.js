@@ -687,11 +687,11 @@ const MessagesPage = () => {
                     {!isRecording && (
                       <button
                         onClick={flipCamera}
-                        className="w-10 h-10 rounded-full flex items-center justify-center"
+                        className="w-14 h-14 rounded-full flex items-center justify-center"
                         style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)' }}
                         data-testid="camera-flip-btn"
                       >
-                        <SwitchCamera className="w-5 h-5 text-white" />
+                        <SwitchCamera className="w-7 h-7 text-white" />
                       </button>
                     )}
                   </div>
