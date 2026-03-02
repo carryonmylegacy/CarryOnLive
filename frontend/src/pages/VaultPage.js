@@ -69,6 +69,7 @@ const VaultPage = () => {
   const [showSetLockModal, setShowSetLockModal] = useState(false);
   const [showRemoveLockConfirm, setShowRemoveLockConfirm] = useState(false);
   const [newLockPassword, setNewLockPassword] = useState('');
+  const [confirmLockPassword, setConfirmLockPassword] = useState('');
   const [lockingDoc, setLockingDoc] = useState(false);
   const [showPwEye, setShowPwEye] = useState(false);
   const [showUnlockPwEye, setShowUnlockPwEye] = useState(false);
@@ -222,12 +223,17 @@ const VaultPage = () => {
       toast.error('Password must be at least 4 characters');
       return;
     }
+    if (newLockPassword !== confirmLockPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
     setLockingDoc(true);
     try {
       const res = await axios.post(`${API_URL}/documents/${selectedDoc.id}/lock`, { password: newLockPassword }, getAuthHeaders());
       setBackupCode(res.data.backup_code);
       setShowSetLockModal(false);
       setNewLockPassword('');
+      setConfirmLockPassword('');
       setShowBackupCodeModal(true);
       fetchData();
     } catch (err) {
@@ -1249,7 +1255,7 @@ const VaultPage = () => {
       </Dialog>
 
       {/* Set Lock Modal */}
-      <Dialog open={showSetLockModal} onOpenChange={(open) => { setShowSetLockModal(open); if (!open) { setNewLockPassword(''); setShowPwEye(false); } }}>
+      <Dialog open={showSetLockModal} onOpenChange={(open) => { setShowSetLockModal(open); if (!open) { setNewLockPassword(''); setConfirmLockPassword(''); setShowPwEye(false); } }}>
         <DialogContent className="glass-card border-[var(--b)] sm:max-w-sm !top-[10vh] !translate-y-0">
           <DialogHeader>
             <DialogTitle className="text-white text-lg flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
@@ -1260,9 +1266,9 @@ const VaultPage = () => {
               Set a password for "{selectedDoc?.name}".
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label className="text-[#94a3b8]">Password (min 4 characters)</Label>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label className="text-[#94a3b8] text-sm">Password (min 4 characters)</Label>
               <div className="relative">
                 <Input
                   type={showPwEye ? 'text' : 'password'}
@@ -1278,9 +1284,29 @@ const VaultPage = () => {
                 </button>
               </div>
             </div>
+            <div className="space-y-1.5">
+              <Label className="text-[#94a3b8] text-sm">Confirm Password</Label>
+              <div className="relative">
+                <Input
+                  type={showPwEye ? 'text' : 'password'}
+                  value={confirmLockPassword}
+                  onChange={(e) => setConfirmLockPassword(e.target.value)}
+                  placeholder="Re-enter password"
+                  className="input-field pr-10"
+                  data-testid="confirm-lock-password"
+                />
+                <button type="button" onClick={() => setShowPwEye(!showPwEye)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
+                  {showPwEye ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            {newLockPassword && confirmLockPassword && newLockPassword !== confirmLockPassword && (
+              <p className="text-xs text-[#ef4444]">Passwords do not match</p>
+            )}
             <Button
               onClick={handleSetLock}
-              disabled={lockingDoc || newLockPassword.length < 4}
+              disabled={lockingDoc || newLockPassword.length < 4 || newLockPassword !== confirmLockPassword}
               className="w-full"
               style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: 'white' }}
               data-testid="confirm-set-lock"
