@@ -180,6 +180,7 @@ const SignupPage = () => {
         email, password, role,
         special_status: specialStatus.length > 0 ? specialStatus : null,
         benefactor_email: role === 'beneficiary' ? benefactorEmail : null,
+        b2b_code: specialStatus.includes('enterprise') ? b2bCodeSignup : null,
       });
       setRegisteredEmail(email);
       setOtpHint(response.data.otp_hint);
