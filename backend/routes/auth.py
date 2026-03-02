@@ -171,7 +171,9 @@ async def register(data: UserCreate):
         except (ValueError, TypeError):
             pass
     # Special status overrides age-based tier
-    if any(s in special_statuses for s in ["military", "first_responder", "federal_agent"]):
+    if any(
+        s in special_statuses for s in ["military", "first_responder", "federal_agent"]
+    ):
         eligible_tier = "military"
     elif "veteran" in special_statuses:
         eligible_tier = "veteran"
@@ -224,64 +226,76 @@ async def register(data: UserCreate):
         await db.estates.insert_one(estate)
 
         avatar_colors = [
-            "#d4af37", "#3b82f6", "#10b981", "#8b5cf6",
-            "#ef4444", "#f59e0b", "#ec4899", "#06b6d4",
+            "#d4af37",
+            "#3b82f6",
+            "#10b981",
+            "#8b5cf6",
+            "#ef4444",
+            "#f59e0b",
+            "#ec4899",
+            "#06b6d4",
         ]
         color_idx = 0
         stubs = []
 
         # Spouse stub if married
         if data.marital_status in ("married", "domestic_partnership"):
-            stubs.append({
-                "id": str(uuid.uuid4()),
-                "estate_id": estate_id,
-                "first_name": "",
-                "last_name": data.last_name,
-                "name": f"Spouse ({data.last_name})",
-                "relation": "Spouse",
-                "email": "",
-                "initials": "SP",
-                "avatar_color": avatar_colors[color_idx % len(avatar_colors)],
-                "invitation_status": "draft",
-                "is_stub": True,
-                "created_at": now.isoformat(),
-            })
+            stubs.append(
+                {
+                    "id": str(uuid.uuid4()),
+                    "estate_id": estate_id,
+                    "first_name": "",
+                    "last_name": data.last_name,
+                    "name": f"Spouse ({data.last_name})",
+                    "relation": "Spouse",
+                    "email": "",
+                    "initials": "SP",
+                    "avatar_color": avatar_colors[color_idx % len(avatar_colors)],
+                    "invitation_status": "draft",
+                    "is_stub": True,
+                    "created_at": now.isoformat(),
+                }
+            )
             color_idx += 1
 
         # Adult dependent stubs
         for i in range(data.dependents_over_18 or 0):
-            stubs.append({
-                "id": str(uuid.uuid4()),
-                "estate_id": estate_id,
-                "first_name": "",
-                "last_name": data.last_name,
-                "name": f"Adult Dependent {i + 1}",
-                "relation": "Son",
-                "email": "",
-                "initials": f"A{i + 1}",
-                "avatar_color": avatar_colors[color_idx % len(avatar_colors)],
-                "invitation_status": "draft",
-                "is_stub": True,
-                "created_at": now.isoformat(),
-            })
+            stubs.append(
+                {
+                    "id": str(uuid.uuid4()),
+                    "estate_id": estate_id,
+                    "first_name": "",
+                    "last_name": data.last_name,
+                    "name": f"Adult Dependent {i + 1}",
+                    "relation": "Son",
+                    "email": "",
+                    "initials": f"A{i + 1}",
+                    "avatar_color": avatar_colors[color_idx % len(avatar_colors)],
+                    "invitation_status": "draft",
+                    "is_stub": True,
+                    "created_at": now.isoformat(),
+                }
+            )
             color_idx += 1
 
         # Minor dependent stubs
         for i in range(data.dependents_under_18 or 0):
-            stubs.append({
-                "id": str(uuid.uuid4()),
-                "estate_id": estate_id,
-                "first_name": "",
-                "last_name": data.last_name,
-                "name": f"Minor Dependent {i + 1}",
-                "relation": "Son",
-                "email": "",
-                "initials": f"M{i + 1}",
-                "avatar_color": avatar_colors[color_idx % len(avatar_colors)],
-                "invitation_status": "draft",
-                "is_stub": True,
-                "created_at": now.isoformat(),
-            })
+            stubs.append(
+                {
+                    "id": str(uuid.uuid4()),
+                    "estate_id": estate_id,
+                    "first_name": "",
+                    "last_name": data.last_name,
+                    "name": f"Minor Dependent {i + 1}",
+                    "relation": "Son",
+                    "email": "",
+                    "initials": f"M{i + 1}",
+                    "avatar_color": avatar_colors[color_idx % len(avatar_colors)],
+                    "invitation_status": "draft",
+                    "is_stub": True,
+                    "created_at": now.isoformat(),
+                }
+            )
             color_idx += 1
 
         if stubs:
@@ -309,31 +323,37 @@ async def register(data: UserCreate):
                 if existing_ben:
                     await db.beneficiaries.update_one(
                         {"id": existing_ben["id"]},
-                        {"$set": {
-                            "user_id": user_id,
-                            "invitation_status": "accepted",
-                            "name": full_name,
-                            "first_name": data.first_name,
-                            "last_name": data.last_name,
-                            "is_stub": False,
-                        }},
+                        {
+                            "$set": {
+                                "user_id": user_id,
+                                "invitation_status": "accepted",
+                                "name": full_name,
+                                "first_name": data.first_name,
+                                "last_name": data.last_name,
+                                "is_stub": False,
+                            }
+                        },
                     )
                 else:
-                    await db.beneficiaries.insert_one({
-                        "id": str(uuid.uuid4()),
-                        "estate_id": estate["id"],
-                        "user_id": user_id,
-                        "first_name": data.first_name,
-                        "last_name": data.last_name,
-                        "name": full_name,
-                        "email": data.email,
-                        "relation": "",
-                        "initials": (data.first_name[0] + data.last_name[0]).upper(),
-                        "avatar_color": "#60A5FA",
-                        "invitation_status": "accepted",
-                        "is_stub": False,
-                        "created_at": now.isoformat(),
-                    })
+                    await db.beneficiaries.insert_one(
+                        {
+                            "id": str(uuid.uuid4()),
+                            "estate_id": estate["id"],
+                            "user_id": user_id,
+                            "first_name": data.first_name,
+                            "last_name": data.last_name,
+                            "name": full_name,
+                            "email": data.email,
+                            "relation": "",
+                            "initials": (
+                                data.first_name[0] + data.last_name[0]
+                            ).upper(),
+                            "avatar_color": "#60A5FA",
+                            "invitation_status": "accepted",
+                            "is_stub": False,
+                            "created_at": now.isoformat(),
+                        }
+                    )
                 # Store the link on the user for quick lookup
                 await db.users.update_one(
                     {"id": user_id},
@@ -343,32 +363,43 @@ async def register(data: UserCreate):
     # --- Validate B2B code at signup if provided ---
     if data.b2b_code and "enterprise" in special_statuses:
         code_str = data.b2b_code.strip().upper()
-        code_doc = await db.b2b_codes.find_one({"code": code_str, "active": True}, {"_id": 0})
+        code_doc = await db.b2b_codes.find_one(
+            {"code": code_str, "active": True}, {"_id": 0}
+        )
         if code_doc:
             discount = code_doc.get("discount_percent", 100)
-            if code_doc.get("max_uses", 0) == 0 or code_doc["times_used"] < code_doc["max_uses"]:
+            if (
+                code_doc.get("max_uses", 0) == 0
+                or code_doc["times_used"] < code_doc["max_uses"]
+            ):
                 await db.users.update_one(
                     {"id": user_id},
-                    {"$set": {
-                        "b2b_code": code_str,
-                        "b2b_partner": code_doc.get("partner_name", ""),
-                        "b2b_discount_percent": discount,
-                        "verified_tier": "enterprise",
-                    }},
+                    {
+                        "$set": {
+                            "b2b_code": code_str,
+                            "b2b_partner": code_doc.get("partner_name", ""),
+                            "b2b_discount_percent": discount,
+                            "verified_tier": "enterprise",
+                        }
+                    },
                 )
-                await db.b2b_codes.update_one({"code": code_str}, {"$inc": {"times_used": 1}})
+                await db.b2b_codes.update_one(
+                    {"code": code_str}, {"$inc": {"times_used": 1}}
+                )
                 # Auto-approve verification
-                await db.tier_verifications.insert_one({
-                    "id": str(uuid.uuid4()),
-                    "user_id": user_id,
-                    "user_email": data.email,
-                    "tier_requested": "enterprise",
-                    "status": "approved",
-                    "doc_type": "B2B Partner Code",
-                    "notes": f"Code: {code_str} | Partner: {code_doc.get('partner_name', '')} | Discount: {discount}%",
-                    "created_at": now.isoformat(),
-                    "reviewed_at": now.isoformat(),
-                })
+                await db.tier_verifications.insert_one(
+                    {
+                        "id": str(uuid.uuid4()),
+                        "user_id": user_id,
+                        "user_email": data.email,
+                        "tier_requested": "enterprise",
+                        "status": "approved",
+                        "doc_type": "B2B Partner Code",
+                        "notes": f"Code: {code_str} | Partner: {code_doc.get('partner_name', '')} | Discount: {discount}%",
+                        "created_at": now.isoformat(),
+                        "reviewed_at": now.isoformat(),
+                    }
+                )
                 if discount >= 100:
                     await db.subscription_overrides.update_one(
                         {"user_id": user_id},

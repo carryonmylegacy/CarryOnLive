@@ -223,7 +223,9 @@ async def notify_benefactor_verified(
             f"You can now subscribe to the {tier_label} plan at no cost. "
             f"Go to Settings → Subscription and click Subscribe under the {tier_label} plan. "
             f"We're here for you."
-        ) if is_free_tier else (
+        )
+        if is_free_tier
+        else (
             f"Great news! Your {tier_label} verification has been approved. "
             f"You can now subscribe to the {tier_label} plan. "
             f"Go to Settings → Subscription and click Subscribe under the {tier_label} plan — "
@@ -821,8 +823,11 @@ async def create_b2b_code(
     if not raw_code or len(raw_code) < 3 or len(raw_code) > 50:
         raise HTTPException(status_code=400, detail="Code must be 3-50 characters")
     # Sanitize: alphanumeric + hyphens/underscores only
-    if not re.match(r'^[A-Z0-9_-]+$', raw_code):
-        raise HTTPException(status_code=400, detail="Code may only contain letters, numbers, hyphens, and underscores")
+    if not re.match(r"^[A-Z0-9_-]+$", raw_code):
+        raise HTTPException(
+            status_code=400,
+            detail="Code may only contain letters, numbers, hyphens, and underscores",
+        )
     partner_name = (data.get("partner_name") or "")[:100].strip()
     discount = max(0, min(100, int(data.get("discount_percent", 100))))
     max_uses = max(0, int(data.get("max_uses", 0)))
@@ -869,9 +874,7 @@ async def update_b2b_code(
 
 
 @router.delete("/admin/b2b-codes/{code_id}")
-async def delete_b2b_code(
-    code_id: str, current_user: dict = Depends(get_current_user)
-):
+async def delete_b2b_code(code_id: str, current_user: dict = Depends(get_current_user)):
     """Delete a B2B partner code."""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
@@ -891,11 +894,17 @@ async def verify_b2b_code(
 
     # Check if user already has an enterprise verification
     existing = await db.tier_verifications.find_one(
-        {"user_id": current_user["id"], "tier_requested": "enterprise", "status": "approved"},
+        {
+            "user_id": current_user["id"],
+            "tier_requested": "enterprise",
+            "status": "approved",
+        },
         {"_id": 0},
     )
     if existing:
-        raise HTTPException(status_code=400, detail="You already have an active enterprise subscription")
+        raise HTTPException(
+            status_code=400, detail="You already have an active enterprise subscription"
+        )
 
     code_doc = await db.b2b_codes.find_one(
         {"code": code_str, "active": True}, {"_id": 0}
@@ -904,8 +913,13 @@ async def verify_b2b_code(
         raise HTTPException(status_code=404, detail="Invalid or inactive code")
 
     # Check max uses
-    if code_doc.get("max_uses", 0) > 0 and code_doc["times_used"] >= code_doc["max_uses"]:
-        raise HTTPException(status_code=400, detail="This code has reached its usage limit")
+    if (
+        code_doc.get("max_uses", 0) > 0
+        and code_doc["times_used"] >= code_doc["max_uses"]
+    ):
+        raise HTTPException(
+            status_code=400, detail="This code has reached its usage limit"
+        )
 
     # Apply enterprise tier to user
     discount = code_doc.get("discount_percent", 100)
@@ -945,13 +959,25 @@ async def verify_b2b_code(
     if discount >= 100:
         await db.subscription_overrides.update_one(
             {"user_id": current_user["id"]},
-            {"$set": {"user_id": current_user["id"], "free_access": True, "b2b_partner": code_doc.get("partner_name", "")}},
+            {
+                "$set": {
+                    "user_id": current_user["id"],
+                    "free_access": True,
+                    "b2b_partner": code_doc.get("partner_name", ""),
+                }
+            },
             upsert=True,
         )
     elif discount > 0:
         await db.subscription_overrides.update_one(
             {"user_id": current_user["id"]},
-            {"$set": {"user_id": current_user["id"], "custom_discount": discount, "b2b_partner": code_doc.get("partner_name", "")}},
+            {
+                "$set": {
+                    "user_id": current_user["id"],
+                    "custom_discount": discount,
+                    "b2b_partner": code_doc.get("partner_name", ""),
+                }
+            },
             upsert=True,
         )
 

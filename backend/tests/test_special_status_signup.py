@@ -11,7 +11,9 @@ import time
 import pytest
 import requests
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://vault-secure-56.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get(
+    "REACT_APP_BACKEND_URL", "https://vault-secure-56.preview.emergentagent.com"
+).rstrip("/")
 
 
 class TestSpecialStatusRegistration:
@@ -27,12 +29,14 @@ class TestSpecialStatusRegistration:
             "last_name": "Tester",
             "role": "benefactor",
             "date_of_birth": "1990-01-15",
-            "special_status": ["military"]
+            "special_status": ["military"],
         }
-        
+
         response = requests.post(f"{BASE_URL}/api/auth/register", json=payload)
-        print(f"Military registration response: {response.status_code} - {response.text}")
-        
+        print(
+            f"Military registration response: {response.status_code} - {response.text}"
+        )
+
         assert response.status_code == 200
         data = response.json()
         assert "Account created" in data.get("message", "")
@@ -48,12 +52,12 @@ class TestSpecialStatusRegistration:
             "last_name": "Agent",
             "role": "benefactor",
             "date_of_birth": "1985-06-20",
-            "special_status": ["federal_agent"]
+            "special_status": ["federal_agent"],
         }
-        
+
         response = requests.post(f"{BASE_URL}/api/auth/register", json=payload)
         print(f"Federal agent registration: {response.status_code}")
-        
+
         assert response.status_code == 200
 
     def test_register_benefactor_with_first_responder_status(self):
@@ -66,12 +70,12 @@ class TestSpecialStatusRegistration:
             "last_name": "Responder",
             "role": "benefactor",
             "date_of_birth": "1988-03-10",
-            "special_status": ["first_responder"]
+            "special_status": ["first_responder"],
         }
-        
+
         response = requests.post(f"{BASE_URL}/api/auth/register", json=payload)
         print(f"First responder registration: {response.status_code}")
-        
+
         assert response.status_code == 200
 
     def test_register_benefactor_with_hospice_status(self):
@@ -84,12 +88,12 @@ class TestSpecialStatusRegistration:
             "last_name": "Patient",
             "role": "benefactor",
             "date_of_birth": "1950-12-05",
-            "special_status": ["hospice"]
+            "special_status": ["hospice"],
         }
-        
+
         response = requests.post(f"{BASE_URL}/api/auth/register", json=payload)
         print(f"Hospice registration: {response.status_code}")
-        
+
         assert response.status_code == 200
 
     def test_register_benefactor_with_multiple_special_statuses(self):
@@ -102,12 +106,12 @@ class TestSpecialStatusRegistration:
             "last_name": "Status",
             "role": "benefactor",
             "date_of_birth": "1992-07-22",
-            "special_status": ["military", "first_responder"]
+            "special_status": ["military", "first_responder"],
         }
-        
+
         response = requests.post(f"{BASE_URL}/api/auth/register", json=payload)
         print(f"Multi-status registration: {response.status_code}")
-        
+
         assert response.status_code == 200
 
     def test_register_young_adult_benefactor_gets_new_adult_tier(self):
@@ -115,20 +119,21 @@ class TestSpecialStatusRegistration:
         timestamp = int(time.time())
         # Set DOB to make user 21 years old
         from datetime import datetime, timedelta
-        dob = (datetime.now() - timedelta(days=21*365)).strftime("%Y-%m-%d")
-        
+
+        dob = (datetime.now() - timedelta(days=21 * 365)).strftime("%Y-%m-%d")
+
         payload = {
             "email": f"test_young_{timestamp}@test.com",
             "password": "TestPassword123",
             "first_name": "Young",
             "last_name": "Adult",
             "role": "benefactor",
-            "date_of_birth": dob
+            "date_of_birth": dob,
         }
-        
+
         response = requests.post(f"{BASE_URL}/api/auth/register", json=payload)
         print(f"Young adult registration: {response.status_code}")
-        
+
         assert response.status_code == 200
 
 
@@ -138,7 +143,7 @@ class TestBeneficiarySignup:
     def test_register_beneficiary_with_benefactor_email(self):
         """Test registering a beneficiary with benefactor email"""
         timestamp = int(time.time())
-        
+
         # First create a benefactor
         benefactor_email = f"test_benefactor_{timestamp}@test.com"
         benefactor_payload = {
@@ -146,13 +151,15 @@ class TestBeneficiarySignup:
             "password": "TestPassword123",
             "first_name": "Benefactor",
             "last_name": "Owner",
-            "role": "benefactor"
+            "role": "benefactor",
         }
-        
-        benefactor_response = requests.post(f"{BASE_URL}/api/auth/register", json=benefactor_payload)
+
+        benefactor_response = requests.post(
+            f"{BASE_URL}/api/auth/register", json=benefactor_payload
+        )
         print(f"Benefactor created: {benefactor_response.status_code}")
         assert benefactor_response.status_code == 200
-        
+
         # Now register beneficiary with benefactor_email
         beneficiary_payload = {
             "email": f"test_beneficiary_{timestamp}@test.com",
@@ -161,12 +168,14 @@ class TestBeneficiarySignup:
             "last_name": "Member",
             "role": "beneficiary",
             "benefactor_email": benefactor_email,
-            "date_of_birth": "1995-05-15"
+            "date_of_birth": "1995-05-15",
         }
-        
-        response = requests.post(f"{BASE_URL}/api/auth/register", json=beneficiary_payload)
+
+        response = requests.post(
+            f"{BASE_URL}/api/auth/register", json=beneficiary_payload
+        )
         print(f"Beneficiary registration: {response.status_code} - {response.text}")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "Account created" in data.get("message", "")
@@ -174,19 +183,19 @@ class TestBeneficiarySignup:
     def test_register_beneficiary_without_benefactor_email(self):
         """Test registering a beneficiary without benefactor email - should still work"""
         timestamp = int(time.time())
-        
+
         payload = {
             "email": f"test_ben_no_link_{timestamp}@test.com",
             "password": "TestPassword123",
             "first_name": "Unlinked",
             "last_name": "Beneficiary",
             "role": "beneficiary",
-            "date_of_birth": "2000-08-20"
+            "date_of_birth": "2000-08-20",
         }
-        
+
         response = requests.post(f"{BASE_URL}/api/auth/register", json=payload)
         print(f"Unlinked beneficiary: {response.status_code}")
-        
+
         # Backend allows registration without benefactor email, frontend enforces it
         assert response.status_code == 200
 
@@ -194,9 +203,10 @@ class TestBeneficiarySignup:
         """Test registering a minor beneficiary (under 18)"""
         timestamp = int(time.time())
         from datetime import datetime, timedelta
+
         # Set DOB to make user 15 years old
-        dob = (datetime.now() - timedelta(days=15*365)).strftime("%Y-%m-%d")
-        
+        dob = (datetime.now() - timedelta(days=15 * 365)).strftime("%Y-%m-%d")
+
         # Create benefactor first
         benefactor_email = f"test_parent_{timestamp}@test.com"
         benefactor_payload = {
@@ -204,10 +214,10 @@ class TestBeneficiarySignup:
             "password": "TestPassword123",
             "first_name": "Parent",
             "last_name": "Owner",
-            "role": "benefactor"
+            "role": "benefactor",
         }
         requests.post(f"{BASE_URL}/api/auth/register", json=benefactor_payload)
-        
+
         payload = {
             "email": f"test_minor_{timestamp}@test.com",
             "password": "TestPassword123",
@@ -215,12 +225,12 @@ class TestBeneficiarySignup:
             "last_name": "Child",
             "role": "beneficiary",
             "benefactor_email": benefactor_email,
-            "date_of_birth": dob
+            "date_of_birth": dob,
         }
-        
+
         response = requests.post(f"{BASE_URL}/api/auth/register", json=payload)
         print(f"Minor beneficiary: {response.status_code}")
-        
+
         assert response.status_code == 200
 
 
@@ -231,13 +241,13 @@ class TestSubscriptionStatusEndpoint:
         """Test that subscription plans endpoint returns expected data"""
         response = requests.get(f"{BASE_URL}/api/subscriptions/plans")
         print(f"Plans endpoint: {response.status_code}")
-        
+
         assert response.status_code == 200
         data = response.json()
-        
+
         assert "plans" in data
         assert "beneficiary_plans" in data
-        
+
         # Verify expected plans exist
         plan_ids = [p["id"] for p in data["plans"]]
         assert "military" in plan_ids
@@ -246,7 +256,7 @@ class TestSubscriptionStatusEndpoint:
         assert "premium" in plan_ids
         assert "standard" in plan_ids
         assert "base" in plan_ids
-        
+
         print(f"Available plans: {plan_ids}")
         print(f"Beneficiary plans: {[p['id'] for p in data['beneficiary_plans']]}")
 
@@ -257,9 +267,11 @@ class TestCodeReview:
     def test_auth_register_has_eligible_tier_logic(self):
         """Verify auth.py has eligible_tier computation logic"""
         import subprocess
+
         result = subprocess.run(
             ["grep", "-n", "eligible_tier", "/app/backend/routes/auth.py"],
-            capture_output=True, text=True
+            capture_output=True,
+            text=True,
         )
         print(f"eligible_tier occurrences in auth.py:\n{result.stdout}")
         assert "eligible_tier" in result.stdout
@@ -268,9 +280,11 @@ class TestCodeReview:
     def test_auth_register_has_special_status_logic(self):
         """Verify auth.py processes special_status array"""
         import subprocess
+
         result = subprocess.run(
             ["grep", "-n", "special_status", "/app/backend/routes/auth.py"],
-            capture_output=True, text=True
+            capture_output=True,
+            text=True,
         )
         print(f"special_status in auth.py:\n{result.stdout}")
         assert "special_status" in result.stdout
@@ -278,9 +292,11 @@ class TestCodeReview:
     def test_auth_register_has_benefactor_email_linking(self):
         """Verify auth.py has beneficiary-to-benefactor linking logic"""
         import subprocess
+
         result = subprocess.run(
             ["grep", "-n", "benefactor_email", "/app/backend/routes/auth.py"],
-            capture_output=True, text=True
+            capture_output=True,
+            text=True,
         )
         print(f"benefactor_email in auth.py:\n{result.stdout}")
         assert "benefactor_email" in result.stdout
@@ -288,9 +304,16 @@ class TestCodeReview:
     def test_subscription_status_returns_special_fields(self):
         """Verify subscriptions.py returns special_status, eligible_tiers, is_minor"""
         import subprocess
+
         result = subprocess.run(
-            ["grep", "-n", "is_minor\|special_status\|eligible_tiers", "/app/backend/routes/subscriptions.py"],
-            capture_output=True, text=True
+            [
+                "grep",
+                "-n",
+                "is_minor\|special_status\|eligible_tiers",
+                "/app/backend/routes/subscriptions.py",
+            ],
+            capture_output=True,
+            text=True,
         )
         print(f"Subscription status fields:\n{result.stdout}")
         assert "is_minor" in result.stdout
@@ -300,9 +323,16 @@ class TestCodeReview:
     def test_subscription_management_has_auto_tier_logic(self):
         """Verify SubscriptionManagement.js has autoTier and isPlanLocked logic"""
         import subprocess
+
         result = subprocess.run(
-            ["grep", "-n", "autoTier\|isPlanLocked\|isMinorBeneficiary", "/app/frontend/src/components/settings/SubscriptionManagement.js"],
-            capture_output=True, text=True
+            [
+                "grep",
+                "-n",
+                "autoTier\|isPlanLocked\|isMinorBeneficiary",
+                "/app/frontend/src/components/settings/SubscriptionManagement.js",
+            ],
+            capture_output=True,
+            text=True,
         )
         print(f"Auto-tier logic in SubscriptionManagement.js:\n{result.stdout}")
         assert "autoTier" in result.stdout
