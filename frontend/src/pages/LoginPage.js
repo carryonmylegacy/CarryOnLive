@@ -486,7 +486,7 @@ const LoginPage = () => {
                 { icon: FileCheck, text: 'SOC 2 & GDPR compliance pending' },
               ].map(({ icon: Icon, text }, i) => (
                 <RevealSection key={i} delay={i * 0.08}>
-                  <div className="rounded-xl p-6 text-center h-full transition-all duration-500 hover:border-[#d4af37]/20 hover:-translate-y-1"
+                  <div className="rounded-xl p-6 text-center h-full"
                     style={{ background: 'rgba(15,26,46,0.45)', border: '1px solid rgba(14,165,233,0.06)' }}>
                     <Icon className="w-6 h-6 text-[#7b879e] mx-auto mb-4 transition-colors duration-300 group-hover:text-[#d4af37]" />
                     <p className="text-[#94a3b8] text-sm leading-relaxed">{text}</p>
