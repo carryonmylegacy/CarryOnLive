@@ -126,10 +126,10 @@ export const TransitionTab = ({ getAuthHeaders }) => {
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: cert.status === 'pending' ? 'rgba(245,158,11,0.2)' : cert.status === 'approved' ? 'rgba(16,185,129,0.2)' : 'rgba(240,82,82,0.2)' }}>
                   <FileKey className="w-6 h-6" style={{ color: cert.status === 'pending' ? '#F59E0B' : cert.status === 'approved' ? '#22C993' : '#ef4444' }} />
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-[var(--t)]">{cert.estate_name || 'Unknown Estate'}</h3>
-                  <p className="text-sm text-[var(--t4)]">Uploaded by: {cert.uploader_name || cert.uploaded_by}</p>
-                  <p className="text-sm text-[var(--t4)]">File: {cert.file_name}</p>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-[var(--t)] truncate">{cert.estate_name || 'Unknown Estate'}</h3>
+                  <p className="text-sm text-[var(--t4)] truncate">Uploaded by: {cert.uploader_name || cert.uploaded_by}</p>
+                  <p className="text-sm text-[var(--t4)] truncate">File: {cert.file_name}</p>
                   <p className="text-xs text-[var(--t5)] mt-1">{new Date(cert.created_at).toLocaleString()}</p>
                   <div className="mt-2">
                     <span className={`text-xs px-2 py-1 rounded-md font-bold capitalize ${
