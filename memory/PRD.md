@@ -81,3 +81,6 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - Moved all special eligibility checkboxes to own Step 5 (symmetrical 2x3 grid with icons)
 - Signup is now 6 steps: Name → About You → Address → Role → Eligibility → Credentials (beneficiaries skip eligibility)
 - Auto-sync of new plans from code to DB subscription_settings
+- **Enterprise / B2B Partner tier**: Code-based verification (not document upload). Admin creates codes with partner name, discount %, max uses. Users enter code in Settings → auto-approved, applies free/discounted access.
+- Admin B2B Code Management: Create, toggle active/inactive, delete, copy code, track usage
+- Enterprise checkbox on signup eligibility step, greys out other tiers in Settings
