@@ -45,9 +45,20 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - CI/CD fixes (GitHub Actions, Codemagic Xcode 26.3)
 
 ### Pending / Backlog
+- P0: Mobile App rubber-banding/blank screen (Codemagic build validation pending)
+- P1: In-App Viewer for PNG Images (triggers download instead of viewer)
 - P1: VAPID keys on Railway for push notifications
 - P1: Codemagic build for native Face ID testing
 - P2: Animated logo (awaiting asset)
 - P2: SMS OTP via Twilio (awaiting A2P 10DLC)
 - P2: ISO 27001 full compliance
+- P2: Beneficiary Hub & Gentle Intro Verification (user testing pending)
 - P3: Redis-backed rate limiting
+
+### Session Mar 2, 2026
+- Fixed Admin TVT card text bleed (long filenames now truncate with ellipsis)
+- Fixed SDV category tabs mobile overflow (tabs now flex-wrap, no horizontal scrolling needed)
+- Added Guardian "Stop Analysis" button (AbortController-based cancellation during AI analysis)
+- Fixed Guardian page rubber-banding (overscroll-behavior: contain on scroll containers)
+- Disabled pinch-to-zoom for PWA/bookmark mode (viewport meta + gesture event prevention + touch-action CSS)
+- Added overscroll protection to mobile header/footer (touch-action: none, overscroll-behavior: none)
