@@ -442,13 +442,17 @@ Provide a clear, organized analysis with specific findings and recommendations."
         history_messages.append({"role": "user", "content": user_message_text})
 
         # Call xAI Grok — use Grok-4 for heavy analysis, Grok-3-mini for chat
-        use_heavy_model = data.action in (
-            "analyze_vault", "generate_checklist", "analyze_readiness"
-        ) or needs_content
+        use_heavy_model = (
+            data.action in ("analyze_vault", "generate_checklist", "analyze_readiness")
+            or needs_content
+        )
         selected_model = XAI_MODEL if use_heavy_model else XAI_MODEL_LIGHT
 
         completion = xai_client.chat.completions.create(
-            model=selected_model, messages=history_messages, temperature=0.7, max_tokens=4096
+            model=selected_model,
+            messages=history_messages,
+            temperature=0.7,
+            max_tokens=4096,
         )
         response = completion.choices[0].message.content
 
