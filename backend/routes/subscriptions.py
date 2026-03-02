@@ -1556,6 +1556,7 @@ async def notify_benefactor_verified(
     }.get(verification["tier_requested"], verification["tier_requested"])
 
     # Create a customer service message in the benefactor's support portal
+    is_free_tier = verification["tier_requested"] == "hospice"
     message = {
         "id": str(uuid.uuid4()),
         "conversation_id": verification["user_id"],
@@ -1563,16 +1564,16 @@ async def notify_benefactor_verified(
         "sender_name": "CarryOn Support",
         "sender_role": "admin",
         "content": (
+            f"Your {tier_label} verification has been approved. "
+            f"You can now subscribe to the {tier_label} plan at no cost. "
+            f"Go to Settings → Subscription and click Subscribe under the {tier_label} plan. "
+            f"We're here for you."
+        ) if is_free_tier else (
             f"Great news! Your {tier_label} verification has been approved. "
             f"You can now subscribe to the {tier_label} plan. "
             f"Go to Settings → Subscription and click Subscribe under the {tier_label} plan — "
             f"it will go through without any further verification needed. "
             f"Thank you for your service!"
-            if verification["tier_requested"] == "military"
-            else f"Your {tier_label} verification has been approved. "
-            f"You can now subscribe to the {tier_label} plan at no cost. "
-            f"Go to Settings → Subscription and click Subscribe under the {tier_label} plan. "
-            f"We're here for you."
         ),
         "created_at": datetime.now(timezone.utc).isoformat(),
         "read": False,
