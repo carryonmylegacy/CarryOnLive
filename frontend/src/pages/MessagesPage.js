@@ -158,6 +158,7 @@ const MessagesPage = () => {
       streamRef.current = null;
     }
     setCameraReady(false);
+    setShowRecordingOverlay(false);
   };
 
   const runCountdown = () => {
