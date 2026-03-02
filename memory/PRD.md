@@ -59,6 +59,15 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - Fixed Admin TVT card text bleed (long filenames now truncate with ellipsis)
 - Fixed SDV category tabs mobile overflow (tabs now flex-wrap, no horizontal scrolling needed)
 - Added Guardian "Stop Analysis" button (AbortController-based cancellation during AI analysis)
-- Fixed Guardian page rubber-banding (overscroll-behavior: contain on scroll containers)
+- Added Guardian "Thinking Indicator" with cycling status messages + elapsed timer
+- Fixed Guardian page rubber-banding (overscroll-behavior: contain, proper height calc)
 - Disabled pinch-to-zoom for PWA/bookmark mode (viewport meta + gesture event prevention + touch-action CSS)
 - Added overscroll protection to mobile header/footer (touch-action: none, overscroll-behavior: none)
+- Added push notifications to beneficiary settings page (NotificationSettings component)
+- Fixed mobile menu X button clipping on iPhone rounded corners (safe-area-aware positioning)
+- **Google Places Autocomplete** on all address fields: BeneficiariesPage, OnboardingPage, ChecklistPage, SignupPage
+- **Enhanced Signup Wizard** (5 steps): Name → About You (gender, DOB, marital status, dependents) → Address (Google autocomplete) → Role → Credentials
+- **Auto-estate creation** on benefactor registration with encryption salt
+- **Auto-beneficiary stubs**: Spouse stub if married/domestic partnership, adult + minor dependent stubs based on counts
+- Beneficiary cards show "NEEDS INFO" badge for stubs with tap-to-complete prompt
+- Editing a stub clears is_stub flag
