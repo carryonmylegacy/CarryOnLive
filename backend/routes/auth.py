@@ -283,6 +283,38 @@ async def register(data: UserCreate):
         if stubs:
             await db.beneficiaries.insert_many(stubs)
 
+    # --- Link beneficiary to benefactor's estate ---
+    if user["role"] == "beneficiary" and data.benefactor_email:
+        benefactor = await db.users.find_one(
+            {"email": data.benefactor_email, "role": "benefactor"}, {"_id": 0, "id": 1}
+        )
+        if benefactor:
+            estate = await db.estates.find_one(
+                {"owner_id": benefactor["id"]}, {"_id": 0, "id": 1}
+            )
+            if estate:
+                # Add to estate's beneficiaries list
+                await db.estates.update_one(
+                    {"id": estate["id"]},
+                    {"$addToSet": {"beneficiaries": user_id}},
+                )
+                # Create a beneficiary record linking them
+                await db.beneficiaries.update_one(
+                    {"estate_id": estate["id"], "email": data.email},
+                    {"$set": {
+                        "user_id": user_id,
+                        "invitation_status": "accepted",
+                        "name": full_name,
+                        "first_name": data.first_name,
+                        "last_name": data.last_name,
+                    }},
+                )
+                # Store the link on the user for quick lookup
+                await db.users.update_one(
+                    {"id": user_id},
+                    {"$set": {"benefactor_email": data.benefactor_email}},
+                )
+
     # Generate OTP for verification
     otp = generate_otp()
     await db.otps.update_one(
