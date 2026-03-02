@@ -392,10 +392,8 @@ const DashboardPage = () => {
 
         {/* Immediate Action Checklist Preview - Orange */}
         <div 
-          className={`glass-card p-4 lg:p-6 border-l-4 border-l-[#f97316] transition-all duration-300 cursor-pointer ${hoveredSection === 'checklist' ? 'shadow-[0_12px_36px_-6px_rgba(249,115,22,0.3)] scale-[1.02] border-l-[6px]' : ''}`}
+          className="glass-card p-4 lg:p-6 border-l-4 border-l-[#f97316] transition-transform duration-150 cursor-pointer active:scale-[0.98] lg:hover:scale-[1.02] lg:hover:shadow-[0_12px_36px_-6px_rgba(249,115,22,0.3)]"
           data-testid="preview-checklist"
-          onMouseEnter={() => setHoveredSection('checklist')}
-          onMouseLeave={() => setHoveredSection(null)}
           onClick={() => navigate('/checklist')}
         >
           <div className="flex items-center justify-between mb-3">
