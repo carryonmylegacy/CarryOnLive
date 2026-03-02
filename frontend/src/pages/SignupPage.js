@@ -153,6 +153,13 @@ const SignupPage = () => {
         suffix: suffix === 'none' ? null : suffix,
         gender: gender === 'not_selected' ? null : gender,
         date_of_birth: dateOfBirth || null,
+        marital_status: maritalStatus === 'not_selected' ? null : maritalStatus,
+        dependents_over_18: dependentsOver18,
+        dependents_under_18: dependentsUnder18,
+        address_street: addressStreet || null,
+        address_city: addressCity || null,
+        address_state: addressState || null,
+        address_zip: addressZip || null,
         email, password, role
       });
       setRegisteredEmail(email);
