@@ -87,8 +87,8 @@ const AdminPage = () => {
     <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in max-w-full overflow-x-hidden" data-testid="admin-dashboard">
       {/* Header */}
       <div>
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Admin Dashboard</h1>
-        <p className="text-[10px] sm:text-xs text-[var(--t5)] truncate">Platform admin · Transition · DTS</p>
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Admin Dashboard</h1>
+        <p className="text-sm sm:text-base text-[var(--t5)]">Platform Management · Transition Verification · Trustee Services</p>
       </div>
 
       {/* Action Required — items needing admin attention */}
