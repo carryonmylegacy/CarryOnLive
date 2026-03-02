@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Search, Users, Trash2, Loader2, ChevronDown } from 'lucide-react';
+import { Search, Users, Trash2, Loader2, ChevronDown, KeyRound, Unlock } from 'lucide-react';
 import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 import { toast } from '../../utils/toast';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -17,6 +18,9 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders }) => 
   const [roleFilter, setRoleFilter] = useState('all');
   const [actionLoading, setActionLoading] = useState(null);
   const [roleChanging, setRoleChanging] = useState(null);
+  const [unlockUserId, setUnlockUserId] = useState(null);
+  const [masterKeyInput, setMasterKeyInput] = useState('');
+  const [unlocking, setUnlocking] = useState(false);
 
   const filteredUsers = users
     .filter(u => roleFilter === 'all' || u.role === roleFilter)
@@ -49,6 +53,25 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders }) => 
     }
   };
 
+  const handleUnlockVault = async (userId) => {
+    if (!masterKeyInput.trim()) { toast.error('Enter the master key'); return; }
+    setUnlocking(true);
+    try {
+      const res = await axios.post(`${API_URL}/admin/user/${userId}/unlock-all-documents`,
+        { master_key: masterKeyInput },
+        { headers: { ...getAuthHeaders()?.headers, 'Content-Type': 'application/json' } }
+      );
+      toast.error(`Unlocked ${res.data.unlocked_count} document(s). User must re-lock individually.`);
+      setMasterKeyInput('');
+      setUnlockUserId(null);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Master key does not match');
+    } finally {
+      setUnlocking(false);
+    }
+  };
+
+
   return (
     <div className="space-y-4" data-testid="admin-users-tab">
       <div className="flex flex-col sm:flex-row gap-3">
@@ -67,7 +90,8 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders }) => 
         {filteredUsers.map(u => {
           const rc = roleColors[u.role] || roleColors.benefactor;
           return (
-            <div key={u.id} className="glass-card p-3 flex items-center gap-3" data-testid={`admin-user-${u.id}`}>
+            <React.Fragment key={u.id}>
+            <div className="glass-card p-3 flex items-center gap-3" data-testid={`admin-user-${u.id}`}>
               <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: rc.bg, color: rc.color }}>
                 {u.name ? u.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
               </div>
@@ -105,11 +129,39 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders }) => 
               </div>
               <div className="text-xs text-[var(--t5)] hidden sm:block">{u.created_at ? new Date(u.created_at).toLocaleDateString() : ''}</div>
               {u.id !== currentUserId && (
-                <Button variant="ghost" size="sm" className="text-[var(--rd)] hover:bg-[var(--rdbg)]" onClick={() => handleDeleteUser(u.id, u.name)} disabled={actionLoading === u.id} data-testid={`admin-delete-user-${u.id}`}>
-                  {actionLoading === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                </Button>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {u.role === 'benefactor' && (
+                    <Button variant="ghost" size="sm" className="text-[var(--t5)]"
+                      onClick={() => { setUnlockUserId(unlockUserId === u.id ? null : u.id); setMasterKeyInput(''); }}
+                      title="Vault Unlock" data-testid={`vault-unlock-${u.id}`}>
+                      <KeyRound className="w-4 h-4" />
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="sm" className="text-[var(--rd)] hover:bg-[var(--rdbg)]" onClick={() => handleDeleteUser(u.id, u.name)} disabled={actionLoading === u.id} data-testid={`admin-delete-user-${u.id}`}>
+                    {actionLoading === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  </Button>
+                </div>
               )}
             </div>
+            {unlockUserId === u.id && (
+              <div className="px-3 pb-3 -mt-1">
+                <div className="p-3 rounded-xl" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
+                  <p className="text-xs text-[var(--t4)] mb-2">Enter the master key spoken by <strong>{u.name}</strong> to unlock all their vault documents.</p>
+                  <div className="flex gap-2">
+                    <Input value={masterKeyInput} onChange={(e) => setMasterKeyInput(e.target.value)}
+                      placeholder="Master key" className="input-field text-sm flex-1" data-testid="admin-master-key-input" />
+                    <Button size="sm" disabled={unlocking || !masterKeyInput.trim()}
+                      onClick={() => handleUnlockVault(u.id)}
+                      style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: 'white' }}
+                      data-testid="admin-unlock-all-btn">
+                      {unlocking ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Unlock className="w-3 h-3 mr-1" />}
+                      Unlock All
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+            </React.Fragment>
           );
         })}
       </div>
