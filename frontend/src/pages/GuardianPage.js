@@ -333,7 +333,7 @@ const GuardianPage = () => {
   // ═══════════════════════════════════════════════
   if (view === 'landing') {
     return (
-      <div className="flex flex-col h-[calc(100vh-4rem)] lg:h-screen pt-20 lg:pt-0 pb-20 lg:pb-0" style={{ paddingTop: 'calc(5rem + env(safe-area-inset-top, 0px))' }} data-testid="estate-guardian">
+      <div className="flex flex-col h-[calc(100vh-4rem)] lg:h-screen lg:pt-0 pb-20 lg:pb-0" style={{ paddingTop: 'calc(3.75rem + env(safe-area-inset-top, 0px))' }} data-testid="estate-guardian">
         <SectionLockBanner sectionId="guardian" />
 
         <SectionLockedOverlay sectionId="guardian">
