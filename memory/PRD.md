@@ -71,3 +71,9 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - **Auto-beneficiary stubs**: Spouse stub if married/domestic partnership, adult + minor dependent stubs based on counts
 - Beneficiary cards show "NEEDS INFO" badge for stubs with tap-to-complete prompt
 - Editing a stub clears is_stub flag
+- **Special eligibility checkboxes** on signup role step: Active Duty Military, Federal/State Agency Operator, First Responder, Hospice Patient
+- **Auto-tier selection** in Settings: special status → auto-highlights matching tier (military/hospice), greyes out others; Age 18-25 → auto-selects New Adult (no verification)
+- **Beneficiary signup requires benefactor email** to link to the correct estate
+- **Minor beneficiaries** (under 18) see "No Subscription Required" instead of plan cards
+- Backend computes eligible_tier from special_status + DOB on registration
+- Subscription status endpoint returns special_status, eligible_tiers, is_minor
