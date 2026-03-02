@@ -429,10 +429,22 @@ const BeneficiariesPage = () => {
                 </div>
                 
                 <div className="space-y-2 text-sm">
+                  {ben.is_stub && (
+                    <button
+                      onClick={() => openEditModal(ben)}
+                      className="w-full text-left p-2.5 rounded-lg text-xs font-bold text-[var(--yw)] mb-1 transition-all hover:scale-[1.01]"
+                      style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}
+                      data-testid={`complete-stub-${ben.id}`}
+                    >
+                      Tap to complete enrollment — add name, email, and details
+                    </button>
+                  )}
+                  {ben.email && (
                   <div className="flex items-center gap-2 text-[#94a3b8]">
                     <Mail className="w-4 h-4" />
                     <span className="truncate">{ben.email}</span>
                   </div>
+                  )}
                   {ben.phone && (
                     <div className="flex items-center gap-2 text-[#94a3b8]">
                       <Phone className="w-4 h-4" />
