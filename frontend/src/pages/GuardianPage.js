@@ -174,16 +174,54 @@ const actionButtons = [
 // ═══════════════════════════════════════════════
 const GuardianPage = () => {
   const { user, getAuthHeaders } = useAuth();
+  const guardianRef = useRef(null);
 
-  // Lock main-content scrolling while on Guardian page (prevents iOS rubber-banding)
+  // Lock ALL scrolling except the designated scroll areas while on Guardian page
   useEffect(() => {
     const mainContent = document.querySelector('.main-content');
+    const body = document.body;
+    const html = document.documentElement;
+
+    // Lock everything
     if (mainContent) {
       mainContent.style.overflow = 'hidden';
+      mainContent.style.position = 'fixed';
+      mainContent.style.width = '100%';
     }
+    body.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.width = '100%';
+    html.style.overflow = 'hidden';
+
+    // Block touchmove on the guardian container — only allow on scrollable children
+    const handleTouchMove = (e) => {
+      let target = e.target;
+      while (target && target !== guardianRef.current) {
+        if (target.scrollHeight > target.clientHeight && window.getComputedStyle(target).overflowY !== 'hidden') {
+          return; // Allow scroll inside scrollable child
+        }
+        target = target.parentElement;
+      }
+      e.preventDefault(); // Block scroll on non-scrollable areas
+    };
+
+    const el = guardianRef.current;
+    if (el) {
+      el.addEventListener('touchmove', handleTouchMove, { passive: false });
+    }
+
     return () => {
       if (mainContent) {
         mainContent.style.overflow = '';
+        mainContent.style.position = '';
+        mainContent.style.width = '';
+      }
+      body.style.overflow = '';
+      body.style.position = '';
+      body.style.width = '';
+      html.style.overflow = '';
+      if (el) {
+        el.removeEventListener('touchmove', handleTouchMove);
       }
     };
   }, []);
