@@ -90,6 +90,8 @@ const SignupPage = () => {
   const [addressState, setAddressState] = useState('');
   const [addressZip, setAddressZip] = useState('');
   const [role, setRole] = useState('');
+  const [specialStatus, setSpecialStatus] = useState([]);
+  const [benefactorEmail, setBenefactorEmail] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
