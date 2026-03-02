@@ -195,6 +195,7 @@ async def register(data: UserCreate):
             "name": f"{data.last_name} Family Estate",
             "status": "pre-transition",
             "beneficiaries": [],
+            "encryption_salt": generate_estate_salt().hex(),
             "created_at": now.isoformat(),
         }
         await db.estates.insert_one(estate)
