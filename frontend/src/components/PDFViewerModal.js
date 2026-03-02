@@ -43,19 +43,7 @@ const PDFViewerModal = ({ open, onClose, doc, blobUrl, loading, onDownload }) =>
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Close button — outside the frame, top-right corner */}
-      <button
-        onClick={onClose}
-        className="absolute z-[101] w-10 h-10 rounded-full flex items-center justify-center bg-[#1a2440] border border-[rgba(255,255,255,0.15)] text-white transition-transform active:scale-90"
-        style={{
-          top: 'calc(env(safe-area-inset-top, 16px) + 12px)',
-          right: '12px',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
-        }}
-        data-testid="pdf-viewer-close"
-      >
-        <X className="w-5 h-5" />
-      </button>
+      {/* Close button — inside header */}
 
       {/* Floating tile — centered */}
       <div
@@ -79,15 +67,24 @@ const PDFViewerModal = ({ open, onClose, doc, blobUrl, loading, onDownload }) =>
               )}
             </div>
           </div>
-          <Button
-            variant="ghost" size="sm"
-            onClick={() => { onDownload?.(doc); }}
-            className="text-[#94a3b8] hover:text-white h-8 px-3"
-            data-testid="pdf-viewer-download"
-          >
-            <Download className="w-4 h-4 mr-1.5" />
-            <span className="hidden sm:inline text-xs">Download</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost" size="sm"
+              onClick={() => { onDownload?.(doc); }}
+              className="text-[#94a3b8] hover:text-white h-8 px-3"
+              data-testid="pdf-viewer-download"
+            >
+              <Download className="w-4 h-4 mr-1.5" />
+              <span className="hidden sm:inline text-xs">Download</span>
+            </Button>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-[#94a3b8] bg-white/5 active:scale-90 transition-transform"
+              data-testid="pdf-viewer-close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* PDF Controls (only for PDFs) */}

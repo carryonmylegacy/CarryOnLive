@@ -680,7 +680,7 @@ const VaultPage = () => {
                               variant="ghost"
                               size="sm"
                               className="text-[#ef4444] hover:text-[#ef4444]"
-                              onClick={() => handleDelete(doc.id)}
+                              onClick={(e) => { e.stopPropagation(); handleDelete(doc.id); }}
                               title="Delete"
                               aria-label="Delete document"
                             >
