@@ -182,15 +182,9 @@ const GuardianPage = () => {
     const body = document.body;
     const html = document.documentElement;
 
-    // Lock everything
-    if (mainContent) {
-      mainContent.style.overflow = 'hidden';
-      mainContent.style.position = 'fixed';
-      mainContent.style.width = '100%';
-    }
+    // Lock scrolling without repositioning (position:fixed shifts the viewport)
+    if (mainContent) mainContent.style.overflow = 'hidden';
     body.style.overflow = 'hidden';
-    body.style.position = 'fixed';
-    body.style.width = '100%';
     html.style.overflow = 'hidden';
 
     // Block touchmove on the guardian container — only allow on scrollable children
@@ -211,14 +205,8 @@ const GuardianPage = () => {
     }
 
     return () => {
-      if (mainContent) {
-        mainContent.style.overflow = '';
-        mainContent.style.position = '';
-        mainContent.style.width = '';
-      }
+      if (mainContent) mainContent.style.overflow = '';
       body.style.overflow = '';
-      body.style.position = '';
-      body.style.width = '';
       html.style.overflow = '';
       if (el) {
         el.removeEventListener('touchmove', handleTouchMove);
