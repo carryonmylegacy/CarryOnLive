@@ -412,7 +412,7 @@ const LoginPage = () => {
                 <RevealSection key={title} delay={i * 0.12} direction={i % 2 === 0 ? 'left' : 'right'}>
                   <div className="rounded-xl p-6 lg:p-8 h-full transition-transform duration-150 active:scale-[0.98] feature-card"
                     style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 transition-transform duration-500 hover:scale-110" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.15)' }}>
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.15)' }}>
                       <Icon className="w-5 h-5 text-[#d4af37]" />
                     </div>
                     <h4 className="text-white text-lg font-semibold mb-2">{title}</h4>
