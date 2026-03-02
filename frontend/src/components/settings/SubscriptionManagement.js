@@ -616,8 +616,31 @@ export const SubscriptionManagement = ({
                       )}
                     </div>
                   ) : requiresVerification(plan.id) && !isVerifiedFor(plan.id) ? (
-                    // Verification required — show status or verify button
-                    verificationStatus?.status === 'pending' && verificationStatus?.tier_requested === plan.id ? (
+                    // Verification required — show status, code input for enterprise, or verify button
+                    plan.id === 'enterprise' ? (
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <Input
+                            value={b2bCode}
+                            onChange={(e) => setB2bCode(e.target.value.toUpperCase())}
+                            placeholder="Enter partner code"
+                            className="flex-1 text-sm"
+                            style={{ background: 'var(--bg)', border: '1px solid var(--b)' }}
+                            data-testid="b2b-code-input"
+                          />
+                          <Button
+                            onClick={handleVerifyB2bCode}
+                            disabled={verifyingCode || !b2bCode.trim()}
+                            className="text-xs font-bold px-4"
+                            style={{ background: `linear-gradient(135deg, ${style.accent}, ${style.accent}cc)`, color: '#fff' }}
+                            data-testid="verify-b2b-code-btn"
+                          >
+                            {verifyingCode ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Activate'}
+                          </Button>
+                        </div>
+                        <p className="text-[10px] text-[var(--t5)] text-center">Code provided by your employer or partner</p>
+                      </div>
+                    ) : verificationStatus?.status === 'pending' && verificationStatus?.tier_requested === plan.id ? (
                       <div className="w-full text-center text-xs font-bold py-3 rounded-xl"
                         style={{ background: `${style.accent}08`, color: style.accent, border: `1px dashed ${style.accent}40` }}>
                         <Clock className="w-3 h-3 inline mr-1" /> Verification Pending
