@@ -2179,3 +2179,152 @@ async def check_dob_subscription_events():
             continue
 
     return events_triggered
+
+
+# ═══════════════════════════════════════════════════
+# B2B / ENTERPRISE PARTNER CODES
+# ═══════════════════════════════════════════════════
+
+
+@router.get("/admin/b2b-codes")
+async def get_b2b_codes(current_user: dict = Depends(get_current_user)):
+    """List all B2B partner codes."""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    codes = await db.b2b_codes.find({}, {"_id": 0}).to_list(500)
+    return codes
+
+
+@router.post("/admin/b2b-codes")
+async def create_b2b_code(
+    request: Request, current_user: dict = Depends(get_current_user)
+):
+    """Create a new B2B partner code."""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    data = await request.json()
+    code = {
+        "id": str(uuid.uuid4()),
+        "code": data["code"].strip().upper(),
+        "partner_name": data.get("partner_name", ""),
+        "discount_percent": int(data.get("discount_percent", 100)),
+        "max_uses": int(data.get("max_uses", 0)),  # 0 = unlimited
+        "times_used": 0,
+        "active": True,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    # Check uniqueness
+    existing = await db.b2b_codes.find_one({"code": code["code"]}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Code already exists")
+    await db.b2b_codes.insert_one(code)
+    return code
+
+
+@router.put("/admin/b2b-codes/{code_id}")
+async def update_b2b_code(
+    code_id: str, request: Request, current_user: dict = Depends(get_current_user)
+):
+    """Update a B2B partner code."""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    data = await request.json()
+    update = {}
+    if "active" in data:
+        update["active"] = data["active"]
+    if "discount_percent" in data:
+        update["discount_percent"] = int(data["discount_percent"])
+    if "partner_name" in data:
+        update["partner_name"] = data["partner_name"]
+    if "max_uses" in data:
+        update["max_uses"] = int(data["max_uses"])
+    if update:
+        await db.b2b_codes.update_one({"id": code_id}, {"$set": update})
+    updated = await db.b2b_codes.find_one({"id": code_id}, {"_id": 0})
+    return updated
+
+
+@router.delete("/admin/b2b-codes/{code_id}")
+async def delete_b2b_code(
+    code_id: str, current_user: dict = Depends(get_current_user)
+):
+    """Delete a B2B partner code."""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    await db.b2b_codes.delete_one({"id": code_id})
+    return {"deleted": True}
+
+
+@router.post("/subscriptions/verify-b2b-code")
+async def verify_b2b_code(
+    request: Request, current_user: dict = Depends(get_current_user)
+):
+    """Verify a B2B partner code and apply enterprise tier."""
+    data = await request.json()
+    code_str = (data.get("code") or "").strip().upper()
+    if not code_str:
+        raise HTTPException(status_code=400, detail="Code is required")
+
+    code_doc = await db.b2b_codes.find_one(
+        {"code": code_str, "active": True}, {"_id": 0}
+    )
+    if not code_doc:
+        raise HTTPException(status_code=404, detail="Invalid or inactive code")
+
+    # Check max uses
+    if code_doc.get("max_uses", 0) > 0 and code_doc["times_used"] >= code_doc["max_uses"]:
+        raise HTTPException(status_code=400, detail="This code has reached its usage limit")
+
+    # Apply enterprise tier to user
+    discount = code_doc.get("discount_percent", 100)
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {
+            "$set": {
+                "eligible_tier": "enterprise",
+                "special_status": ["enterprise"],
+                "b2b_code": code_str,
+                "b2b_partner": code_doc.get("partner_name", ""),
+                "b2b_discount_percent": discount,
+                "verified_tier": "enterprise",
+            }
+        },
+    )
+
+    # Create verification record (auto-approved)
+    verification = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"],
+        "user_email": current_user.get("email", ""),
+        "user_name": current_user.get("name", ""),
+        "tier_requested": "enterprise",
+        "status": "approved",
+        "doc_type": "B2B Partner Code",
+        "notes": f"Code: {code_str} | Partner: {code_doc.get('partner_name', 'N/A')} | Discount: {discount}%",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "reviewed_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.tier_verifications.insert_one(verification)
+
+    # Increment usage count
+    await db.b2b_codes.update_one({"code": code_str}, {"$inc": {"times_used": 1}})
+
+    # Apply subscription override with discount
+    if discount >= 100:
+        await db.subscription_overrides.update_one(
+            {"user_id": current_user["id"]},
+            {"$set": {"user_id": current_user["id"], "free_access": True, "b2b_partner": code_doc.get("partner_name", "")}},
+            upsert=True,
+        )
+    elif discount > 0:
+        await db.subscription_overrides.update_one(
+            {"user_id": current_user["id"]},
+            {"$set": {"user_id": current_user["id"], "custom_discount": discount, "b2b_partner": code_doc.get("partner_name", "")}},
+            upsert=True,
+        )
+
+    return {
+        "verified": True,
+        "partner_name": code_doc.get("partner_name", ""),
+        "discount_percent": discount,
+    }
