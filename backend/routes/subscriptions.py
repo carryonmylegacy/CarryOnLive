@@ -328,6 +328,20 @@ BENEFICIARY_PLANS = [
             "Applies post-transition when no paid tier exists",
         ],
     },
+    {
+        "id": "ben_veteran",
+        "name": "Veteran",
+        "price": 1.99,
+        "quarterly_price": 1.99,
+        "annual_price": 1.99,
+        "allows_billing_toggle": False,
+        "note": "Flat rate — no discounts (at cost)",
+        "features": [
+            "Full platform access",
+            "Priority support",
+            "Flat rate pricing",
+        ],
+    },
 ]
 
 GRACE_PERIOD_DAYS = 30
