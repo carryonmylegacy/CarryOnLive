@@ -81,6 +81,8 @@ const MessagesPage = () => {
   const [videoUrl, setVideoUrl] = useState(null);
   const [cameraReady, setCameraReady] = useState(false);
   const [countdown, setCountdown] = useState(null);
+  const [facingMode, setFacingMode] = useState('user');
+  const [showRecordingOverlay, setShowRecordingOverlay] = useState(false);
   const videoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
