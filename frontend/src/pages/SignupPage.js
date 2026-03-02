@@ -169,7 +169,9 @@ const SignupPage = () => {
         address_city: addressCity || null,
         address_state: addressState || null,
         address_zip: addressZip || null,
-        email, password, role
+        email, password, role,
+        special_status: specialStatus.length > 0 ? specialStatus : null,
+        benefactor_email: role === 'beneficiary' ? benefactorEmail : null,
       });
       setRegisteredEmail(email);
       setOtpHint(response.data.otp_hint);
