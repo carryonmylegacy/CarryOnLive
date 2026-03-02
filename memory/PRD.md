@@ -84,3 +84,6 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - **Enterprise / B2B Partner tier**: Code-based verification (not document upload). Admin creates codes with partner name, discount %, max uses. Users enter code in Settings → auto-approved, applies free/discounted access.
 - Admin B2B Code Management: Create, toggle active/inactive, delete, copy code, track usage
 - Enterprise checkbox on signup eligibility step, greys out other tiers in Settings
+- **Subscriptions monolith split**: `subscriptions.py` (2351 lines) → `subscriptions/` package with `plans.py` (460), `checkout.py` (980), `verification_and_lifecycle.py` (960)
+- **PNG viewer fix**: Document cards now clickable for preview, View/Download buttons visible on mobile (not hover-only)
+- Mobile app build pipeline verified ready (codemagic.yaml, capacitor config, Cordova bounce plugin)
