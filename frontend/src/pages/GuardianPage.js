@@ -648,7 +648,7 @@ const GuardianPage = () => {
               <div className="flex flex-wrap gap-2 justify-center">
                 {actionButtons.map(({ key, label, icon: Icon, color }) => (
                   <button key={key} onClick={() => sendMessage('', key)}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-transform duration-150 active:scale-[0.96]"
                     style={{ background: `${color}12`, border: `1px solid ${color}25`, color }}
                     data-testid={`guardian-action-${key}`}>
                     <Icon className="w-3.5 h-3.5" /> {label}
