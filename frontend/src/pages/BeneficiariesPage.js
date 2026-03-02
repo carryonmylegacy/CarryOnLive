@@ -432,7 +432,7 @@ const BeneficiariesPage = () => {
                   {ben.is_stub && (
                     <button
                       onClick={() => openEditModal(ben)}
-                      className="w-full text-left p-2.5 rounded-lg text-xs font-bold text-[var(--yw)] mb-1 transition-all hover:scale-[1.01]"
+                      className="w-full text-left p-2.5 rounded-lg text-xs font-bold text-[var(--yw)] mb-1 transition-transform duration-150 active:scale-[0.98]"
                       style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}
                       data-testid={`complete-stub-${ben.id}`}
                     >
