@@ -10,7 +10,7 @@ import requests
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 if not BASE_URL:
-    BASE_URL = "https://vault-pdf-viewer.preview.emergentagent.com"
+    BASE_URL = "https://vault-secure-56.preview.emergentagent.com"
 
 
 class TestAdminEndpoints:
