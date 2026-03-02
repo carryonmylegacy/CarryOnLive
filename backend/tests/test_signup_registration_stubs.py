@@ -71,7 +71,7 @@ class TestRegistrationWithNewFields:
         
         response = requests.post(f"{BASE_URL}/api/auth/register", json=payload)
         assert response.status_code == 200, f"Registration failed: {response.text}"
-        print(f"✓ Single benefactor registration successful")
+        print("✓ Single benefactor registration successful")
         
         return unique_email
 
@@ -92,7 +92,7 @@ class TestRegistrationWithNewFields:
         
         response = requests.post(f"{BASE_URL}/api/auth/register", json=payload)
         assert response.status_code == 200, f"Registration failed: {response.text}"
-        print(f"✓ Domestic partnership registration successful")
+        print("✓ Domestic partnership registration successful")
         
         return unique_email
 
@@ -113,7 +113,7 @@ class TestRegistrationWithNewFields:
         
         response = requests.post(f"{BASE_URL}/api/auth/register", json=payload)
         assert response.status_code == 200, f"Registration failed: {response.text}"
-        print(f"✓ Registration with 5 dependents successful")
+        print("✓ Registration with 5 dependents successful")
         
         return unique_email
 
@@ -132,7 +132,7 @@ class TestRegistrationWithNewFields:
         
         response = requests.post(f"{BASE_URL}/api/auth/register", json=payload)
         assert response.status_code == 200, f"Registration failed: {response.text}"
-        print(f"✓ Beneficiary registration successful (no estate auto-created)")
+        print("✓ Beneficiary registration successful (no estate auto-created)")
         
         return unique_email
 
@@ -154,7 +154,7 @@ class TestRegistrationWithNewFields:
         
         response = requests.post(f"{BASE_URL}/api/auth/register", json=payload)
         assert response.status_code == 200, f"Registration failed: {response.text}"
-        print(f"✓ Registration with full address successful")
+        print("✓ Registration with full address successful")
         
         return unique_email
 
@@ -178,7 +178,7 @@ class TestRegistrationWithNewFields:
         response2 = requests.post(f"{BASE_URL}/api/auth/register", json=payload)
         assert response2.status_code == 400, f"Expected 400 for duplicate email, got {response2.status_code}"
         assert "already registered" in response2.json().get("detail", "").lower()
-        print(f"✓ Duplicate email correctly rejected")
+        print("✓ Duplicate email correctly rejected")
 
     def test_register_weak_password_rejected(self):
         """Test that weak passwords are rejected"""
@@ -195,7 +195,7 @@ class TestRegistrationWithNewFields:
         
         response = requests.post(f"{BASE_URL}/api/auth/register", json=payload)
         assert response.status_code == 400, f"Expected 400 for weak password, got {response.status_code}"
-        print(f"✓ Weak password correctly rejected")
+        print("✓ Weak password correctly rejected")
 
     def test_register_password_complexity_required(self):
         """Test that password must have upper, lower, and digit"""
@@ -212,7 +212,7 @@ class TestRegistrationWithNewFields:
         
         response = requests.post(f"{BASE_URL}/api/auth/register", json=payload)
         assert response.status_code == 400, f"Expected 400 for simple password, got {response.status_code}"
-        print(f"✓ Password complexity requirement enforced")
+        print("✓ Password complexity requirement enforced")
 
     def test_register_optional_fields_can_be_null(self):
         """Test registration with minimal required fields only"""
@@ -228,7 +228,7 @@ class TestRegistrationWithNewFields:
         
         response = requests.post(f"{BASE_URL}/api/auth/register", json=payload)
         assert response.status_code == 200, f"Registration with minimal fields failed: {response.text}"
-        print(f"✓ Registration with minimal fields successful")
+        print("✓ Registration with minimal fields successful")
 
 
 class TestBeneficiaryUpdate:
@@ -246,7 +246,7 @@ class TestBeneficiaryUpdate:
         })
         # Should return 401 (unauthorized), 403 (forbidden), or 404 (not found), not 500
         assert response.status_code in [401, 403, 404, 422], f"Unexpected status: {response.status_code}"
-        print(f"✓ Beneficiary update endpoint accessible (auth required)")
+        print("✓ Beneficiary update endpoint accessible (auth required)")
 
 
 class TestAddressAutocomplete:
@@ -261,7 +261,7 @@ class TestAddressAutocomplete:
         
         assert "REACT_APP_GOOGLE_PLACES_API_KEY" in content
         assert "AIzaSy" in content  # Google API keys start with AIzaSy
-        print(f"✓ Google Places API key configured in frontend")
+        print("✓ Google Places API key configured in frontend")
 
 
 if __name__ == "__main__":
