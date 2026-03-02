@@ -1,6 +1,7 @@
 """CarryOn™ Backend — Stripe Subscriptions"""
 
 import os
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
@@ -10,7 +11,7 @@ from emergentintegrations.payments.stripe.checkout import (
     CheckoutSessionRequest,
     StripeCheckout,
 )
-from fastapi import APIRouter, Depends, Form, HTTPException
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from pydantic import BaseModel
 
 from config import db, logger
