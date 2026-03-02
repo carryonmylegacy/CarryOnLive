@@ -88,7 +88,26 @@ async def export_user_data(current_user: dict = Depends(get_current_user)):
         details="GDPR Article 15/20 data export requested",
     )
 
-    return {
+    # Ensure all data is JSON serializable (handle ObjectId, datetime, etc.)
+    import json
+
+    def make_serializable(obj):
+        if isinstance(obj, dict):
+            return {k: make_serializable(v) for k, v in obj.items() if k != "_id"}
+        elif isinstance(obj, list):
+            return [make_serializable(i) for i in obj]
+        elif hasattr(obj, "isoformat"):
+            return obj.isoformat()
+        elif isinstance(obj, bytes):
+            return "<binary data excluded>"
+        else:
+            try:
+                json.dumps(obj)
+                return obj
+            except (TypeError, ValueError):
+                return str(obj)
+
+    export_data = make_serializable({
         "export_date": datetime.now(timezone.utc).isoformat(),
         "data_subject": user_profile,
         "estates": estates,
@@ -103,7 +122,9 @@ async def export_user_data(current_user: dict = Depends(get_current_user)):
         "consent_preferences": user_consent,
         "consent_history": consent_history,
         "note": "Encrypted document content and message bodies are excluded from this export. They can be accessed through the Secure Document Vault.",
-    }
+    })
+
+    return export_data
 
 
 # ===================== GDPR: RIGHT TO ERASURE =====================
