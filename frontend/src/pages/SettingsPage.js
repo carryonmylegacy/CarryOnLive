@@ -240,15 +240,7 @@ const SettingsPage = () => {
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-[var(--gold)]/20 flex items-center justify-center text-[var(--gold)] text-xl font-bold">
-              {(() => {
-                const suffixes = ['II', 'III', 'IV', 'V', 'VI', 'Jr', 'Jr.', 'Sr', 'Sr.'];
-                const parts = (user?.name || 'U').split(' ');
-                const last = parts[parts.length - 1];
-                const isSuffix = suffixes.includes(last);
-                const nameParts = isSuffix ? parts.slice(0, -1) : parts;
-                const initials = nameParts.map(n => n[0]).join('').toUpperCase();
-                return initials + (isSuffix ? ' ' + last : '');
-              })()}
+              {getInitials(user?.name)}
             </div>
             <div>
               <h3 className="text-[var(--t)] font-semibold text-lg">{user?.name || 'User'}</h3>
