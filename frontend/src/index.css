@@ -780,8 +780,10 @@
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: none;
+    overscroll-behavior-y: none;
     padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
     padding-top: env(safe-area-inset-top, 0px);
+    touch-action: pan-x pan-y;
   }
   
   .main-content::before {
