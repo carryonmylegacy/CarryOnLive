@@ -64,42 +64,38 @@ const DevSwitcher = () => {
   const handleSwitch = async (account) => {
     setSwitching(account.role);
     try {
-      // Persist admin token across all switches so any-to-any works
+      // Persist admin token so any-to-any switching works
       const currentToken = localStorage.getItem('carryon_token');
       const savedAdminToken = localStorage.getItem('dev_switcher_admin_token');
       
-      // If current user is admin, save their token for future switches
       if (user?.role === 'admin' && currentToken) {
         localStorage.setItem('dev_switcher_admin_token', currentToken);
       }
       
-      // Use the persisted admin token (or current if we just saved it)
       const adminToken = localStorage.getItem('dev_switcher_admin_token') || currentToken;
-      
-      localStorage.removeItem('carryon_token');
-      localStorage.removeItem('selected_estate_id');
-      localStorage.removeItem('beneficiary_estate_id');
-      
-      // Mark that this session was initiated by an admin via DEV switcher
-      localStorage.setItem('dev_switcher_admin_session', 'true');
 
       if (account.role === 'admin') {
-        // Restore the saved admin token — no credentials needed
         if (adminToken) {
           localStorage.setItem('carryon_token', adminToken);
+          localStorage.removeItem('selected_estate_id');
+          localStorage.removeItem('beneficiary_estate_id');
           window.location.href = account.redirect;
           return;
         }
         throw new Error('No admin session found. Please log in as admin first.');
       }
 
-      // Benefactor/Beneficiary use dev-switch (server looks up stored password)
-      const headers = { 'Content-Type': 'application/json' };
-      if (adminToken) headers['Authorization'] = `Bearer ${adminToken}`;
+      if (!adminToken) {
+        throw new Error('Admin session expired. Please log in as admin first.');
+      }
 
+      // Call dev-switch BEFORE clearing token — only clear on success
       const response = await fetch(`${API_URL}/api/auth/dev-switch`, {
         method: 'POST',
-        headers,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}`,
+        },
         body: JSON.stringify({ email: account.email }),
       });
       
@@ -113,6 +109,10 @@ const DevSwitcher = () => {
       
       if (!response.ok) throw new Error(data.detail || 'Login failed');
       
+      // Only clear and switch AFTER successful response
+      localStorage.removeItem('selected_estate_id');
+      localStorage.removeItem('beneficiary_estate_id');
+      localStorage.setItem('dev_switcher_admin_session', 'true');
       localStorage.setItem('carryon_token', data.access_token);
       window.location.href = account.redirect;
     } catch (err) {
