@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
 import { Textarea } from '../components/ui/textarea';
 import { toast } from '../utils/toast';
+import AddressAutocomplete from '../components/AddressAutocomplete';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
