@@ -56,11 +56,12 @@ const usStates = [
 ];
 
 const STEPS = [
-  { id: 'name', label: 'Your Name', icon: User, desc: 'As it appears on legal documents' },
+  { id: 'name', label: 'Name', icon: User, desc: 'As it appears on legal documents' },
   { id: 'personal', label: 'About You', icon: Heart, desc: 'Personal details for your estate plan' },
   { id: 'address', label: 'Address', icon: MapPin, desc: 'Your residential address' },
-  { id: 'role', label: 'Your Role', icon: Users, desc: 'How will you use CarryOn?' },
-  { id: 'credentials', label: 'Secure Login', icon: Lock, desc: 'Email and password' },
+  { id: 'role', label: 'Role', icon: Users, desc: 'How will you use CarryOn?' },
+  { id: 'eligibility', label: 'Eligibility', icon: Shield, desc: 'Special tier eligibility' },
+  { id: 'credentials', label: 'Login', icon: Lock, desc: 'Email and password' },
 ];
 
 const inputClass = "h-14 bg-[#0b1322] border-[#1a2a42] text-white text-base placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-xl";
