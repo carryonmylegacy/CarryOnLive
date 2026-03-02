@@ -26,6 +26,7 @@ const TIER_STYLES = {
   military: { accent: '#F59E0B', icon: Shield, label: 'Verified' },
   hospice: { accent: '#ec4899', icon: Heart, label: 'Free' },
   veteran: { accent: '#059669', icon: Award, label: 'Verified' },
+  enterprise: { accent: '#8B5CF6', icon: Zap, label: 'B2B Partner' },
 };
 
 const BeneficiaryBillingToggle = ({ billing, onChange }) => {
