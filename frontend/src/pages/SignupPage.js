@@ -337,14 +337,14 @@ const SignupPage = () => {
             </div>
 
             {/* MOBILE-ONLY — Compact header */}
-            <div className="lg:hidden text-center" style={{
+            <div className="lg:hidden text-center mb-2" style={{
               opacity: entered ? 1 : 0,
               transition: 'opacity 0.6s ease 0.1s',
             }}>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white leading-tight mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                Join CarryOn.<br /><span className="text-[#d4af37]">Protect Your Legacy.</span>
+              <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight mb-0.5" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                Join CarryOn. <span className="text-[#d4af37]">Protect Your Legacy.</span>
               </h1>
-              <p className="text-[#6b7a90] text-sm">Create your account in seconds</p>
+              <p className="text-[#6b7a90] text-xs">Create your account in seconds</p>
             </div>
 
             {/* RIGHT — Wizard Card */}
