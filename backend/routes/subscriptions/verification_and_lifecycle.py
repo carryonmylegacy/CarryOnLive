@@ -821,7 +821,6 @@ async def create_b2b_code(
     if not raw_code or len(raw_code) < 3 or len(raw_code) > 50:
         raise HTTPException(status_code=400, detail="Code must be 3-50 characters")
     # Sanitize: alphanumeric + hyphens/underscores only
-    import re
     if not re.match(r'^[A-Z0-9_-]+$', raw_code):
         raise HTTPException(status_code=400, detail="Code may only contain letters, numbers, hyphens, and underscores")
     partner_name = (data.get("partner_name") or "")[:100].strip()
