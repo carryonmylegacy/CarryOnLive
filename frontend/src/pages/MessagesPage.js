@@ -74,6 +74,7 @@ const MessagesPage = () => {
   const [triggerValue, setTriggerValue] = useState('');
   const [triggerAge, setTriggerAge] = useState('');
   const [triggerDate, setTriggerDate] = useState('');
+  const [customEventLabel, setCustomEventLabel] = useState('');
   
   // Video recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -305,7 +306,8 @@ const MessagesPage = () => {
         trigger_type: triggerType,
         trigger_value: triggerValue || null,
         trigger_age: triggerAge ? parseInt(triggerAge) : null,
-        trigger_date: triggerDate || null
+        trigger_date: triggerDate || null,
+        custom_event_label: triggerValue === 'custom' ? customEventLabel : null,
       };
 
       if (editingMessage) {
@@ -352,6 +354,7 @@ const MessagesPage = () => {
     setTriggerValue('');
     setTriggerAge('');
     setTriggerDate('');
+    setCustomEventLabel('');
     setVideoBlob(null);
     setVideoUrl(null);
     setAudioBlob(null);
@@ -371,6 +374,7 @@ const MessagesPage = () => {
     setTriggerValue(msg.trigger_value || '');
     setTriggerAge(msg.trigger_age ? String(msg.trigger_age) : '');
     setTriggerDate(msg.trigger_date || '');
+    setCustomEventLabel(msg.custom_event_label || '');
     setVideoBlob(null);
     setVideoUrl(null);
     setShowCreateModal(true);
@@ -503,7 +507,7 @@ const MessagesPage = () => {
                               <TriggerIcon className="w-3 h-3" />
                               {msg.trigger_type === 'immediate' && 'Deliver on transition'}
                               {msg.trigger_type === 'age_milestone' && `At age ${msg.trigger_age}`}
-                              {msg.trigger_type === 'event' && `On ${msg.trigger_value}`}
+                              {msg.trigger_type === 'event' && `On ${msg.trigger_value === 'custom' && msg.custom_event_label ? msg.custom_event_label : msg.trigger_value}`}
                               {msg.trigger_type === 'specific_date' && `On ${msg.trigger_date || 'specific date'}`}
                             </p>
                           </div>
@@ -913,6 +917,19 @@ const MessagesPage = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                {triggerValue === 'custom' && (
+                  <div className="mt-3 space-y-1.5">
+                    <Label className="text-[#94a3b8]">Custom Event Description</Label>
+                    <Input
+                      value={customEventLabel}
+                      onChange={(e) => setCustomEventLabel(e.target.value)}
+                      placeholder="e.g., First day at college, Birth of first child"
+                      className="input-field"
+                      data-testid="custom-event-label"
+                    />
+                    <p className="text-xs text-[var(--t5)]">Describe the event so the beneficiary can confirm when it occurs to trigger delivery.</p>
+                  </div>
+                )}
               </div>
             )}
 

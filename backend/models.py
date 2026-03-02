@@ -200,6 +200,7 @@ class MessageCreate(BaseModel):
     trigger_value: Optional[str] = None
     trigger_age: Optional[int] = None
     trigger_date: Optional[str] = None  # ISO date string for specific_date trigger
+    custom_event_label: Optional[str] = None
 
 
 class MessageUpdate(BaseModel):
@@ -214,6 +215,7 @@ class MessageUpdate(BaseModel):
     trigger_value: Optional[str] = None
     trigger_age: Optional[int] = None
     trigger_date: Optional[str] = None
+    custom_event_label: Optional[str] = None
 
 
 class ChecklistItem(BaseModel):
