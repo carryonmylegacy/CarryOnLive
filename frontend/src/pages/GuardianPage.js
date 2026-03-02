@@ -116,7 +116,53 @@ const timeAgo = (dateStr) => {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-// ─── Action Buttons Config ───
+// ─── Thinking Indicator ───
+const ThinkingIndicator = ({ actionLoading, onStop }) => {
+  const [elapsed, setElapsed] = useState(0);
+  const [msgIndex, setMsgIndex] = useState(0);
+
+  const thinkingMessages = actionLoading === 'analyze_vault'
+    ? ['Reading your documents...', 'Reviewing legal provisions...', 'Checking for gaps...', 'Preparing analysis...']
+    : actionLoading === 'generate_checklist'
+    ? ['Reviewing your estate...', 'Identifying action items...', 'Prioritizing by urgency...', 'Building your checklist...']
+    : actionLoading === 'analyze_readiness'
+    ? ['Scoring your documents...', 'Evaluating messages...', 'Checking your checklist...', 'Calculating readiness...']
+    : ['Thinking...', 'Reviewing context...', 'Forming response...'];
+
+  useEffect(() => {
+    const timer = setInterval(() => setElapsed(s => s + 1), 1000);
+    const msgTimer = setInterval(() => setMsgIndex(i => (i + 1) % thinkingMessages.length), 4000);
+    return () => { clearInterval(timer); clearInterval(msgTimer); };
+  }, [thinkingMessages.length]);
+
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+  const timeStr = mins > 0 ? `${mins}:${secs.toString().padStart(2, '0')}` : `${secs}s`;
+
+  return (
+    <div className="flex gap-2.5" data-testid="thinking-indicator">
+      <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+        style={{ background: 'linear-gradient(135deg, #d4af37 0%, #fcd34d 100%)', color: '#0b1120' }}>
+        <Bot className="w-3.5 h-3.5" />
+      </div>
+      <div className="rounded-2xl rounded-tl-md px-4 py-3 space-y-2" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+        <div className="flex items-center gap-2 text-[var(--t4)]">
+          <Loader2 className="w-4 h-4 animate-spin text-[var(--gold)]" />
+          <span className="text-sm" style={{ transition: 'opacity 0.3s' }}>{thinkingMessages[msgIndex]}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] text-[var(--t5)] tabular-nums">{timeStr} elapsed</span>
+          <button onClick={onStop}
+            className="px-2.5 py-1 rounded-lg text-[10px] font-bold text-[var(--rd)] transition-all hover:bg-[var(--rd)]/10"
+            style={{ border: '1px solid rgba(239,68,68,0.3)' }}
+            data-testid="stop-analysis-btn">
+            <X className="w-2.5 h-2.5 inline mr-0.5" /> Stop
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 const actionButtons = [
   { key: 'analyze_vault', label: 'Analyze Vault', icon: FileSearch, color: '#3B7BF7' },
   { key: 'generate_checklist', label: 'Generate Checklist', icon: ListChecks, color: '#22C993' },
