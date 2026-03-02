@@ -19,6 +19,11 @@ export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
   const [editingUser, setEditingUser] = useState(null);
   const [discountInput, setDiscountInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  // B2B codes
+  const [b2bCodes, setB2bCodes] = useState([]);
+  const [showNewCode, setShowNewCode] = useState(false);
+  const [newCodeForm, setNewCodeForm] = useState({ code: '', partner_name: '', discount_percent: 100, max_uses: 0 });
+  const [copiedCode, setCopiedCode] = useState(null);
 
   const headers = getAuthHeaders()?.headers || {};
 
@@ -26,12 +31,14 @@ export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
 
   const fetchData = async () => {
     try {
-      const [settingsRes, usersRes] = await Promise.all([
+      const [settingsRes, usersRes, codesRes] = await Promise.all([
         axios.get(`${API_URL}/admin/subscription-settings`, { headers }),
         axios.get(`${API_URL}/admin/user-subscriptions`, { headers }),
+        axios.get(`${API_URL}/admin/b2b-codes`, { headers }).catch(() => ({ data: [] })),
       ]);
       setSettings(settingsRes.data);
       setUserSubs(usersRes.data);
+      setB2bCodes(codesRes.data || []);
     } catch (err) { toast.error('Failed to load subscription data'); }
     setLoading(false);
   };
