@@ -292,7 +292,7 @@ const SignupPage = () => {
       <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 60% 50% at 30% 50%, rgba(212,175,55,0.04) 0%, transparent 60%)' }} />
 
       {/* MAIN LAYOUT — split like homepage */}
-      <div className="relative z-10 min-h-screen flex items-center pt-16">
+      <div className="relative z-10 min-h-screen flex items-start lg:items-center pt-16">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 w-full py-6 lg:py-0">
           <div className="grid lg:grid-cols-[1fr_520px] gap-6 lg:gap-16 items-center">
 
