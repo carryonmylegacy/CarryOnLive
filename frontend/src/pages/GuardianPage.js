@@ -351,11 +351,11 @@ const GuardianPage = () => {
   // ═══════════════════════════════════════════════
   if (view === 'landing') {
     return (
-      <div className="flex flex-col h-[calc(100vh-4rem)] lg:h-screen lg:pt-0 pb-20 lg:pb-0" style={{ paddingTop: 'calc(3.75rem + env(safe-area-inset-top, 0px))' }} data-testid="estate-guardian">
+      <div className="flex flex-col h-[calc(100vh-4rem)] lg:h-screen lg:pt-0 pb-20 lg:pb-0" style={{ paddingTop: 'calc(3.75rem + env(safe-area-inset-top, 0px))', overscrollBehavior: 'none' }} data-testid="estate-guardian">
         <SectionLockBanner sectionId="guardian" />
 
         <SectionLockedOverlay sectionId="guardian">
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
           <div className="max-w-2xl mx-auto px-4 pt-4 pb-8">
             {/* Hero Section */}
             <div className="text-center mb-8">
