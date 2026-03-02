@@ -3,7 +3,6 @@
 import re
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 
 from fastapi import Depends, Form, HTTPException, Request
 from pydantic import BaseModel
@@ -13,9 +12,6 @@ from utils import get_current_user
 from routes.subscriptions.plans import (
     router,
     DEFAULT_PLANS,
-    BENEFICIARY_PLANS,
-    get_subscription_settings,
-    calculate_trial_status,
     get_price_for_cycle,
     VerificationReviewRequest,
     GRACE_PERIOD_DAYS,

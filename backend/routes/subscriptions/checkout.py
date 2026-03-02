@@ -1,16 +1,15 @@
 """Checkout, plan changes, webhooks, and admin subscription settings."""
 
 import os
-import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Any, Optional
+from typing import Any
 
 import stripe
 from emergentintegrations.payments.stripe.checkout import (
     CheckoutSessionRequest,
     StripeCheckout,
 )
-from fastapi import Depends, Form, HTTPException, Request
+from fastapi import Depends, Form, HTTPException
 from pydantic import BaseModel
 
 from config import db, logger
@@ -21,12 +20,10 @@ from routes.subscriptions.plans import (
     BENEFICIARY_PLANS,
     get_subscription_settings,
     calculate_trial_status,
-    get_price_for_cycle,
     validate_origin_url,
     SubscriptionCheckoutRequest,
     AdminSubscriptionSettings,
     AdminUserSubscriptionOverride,
-    VerificationReviewRequest,
 )
 
 stripe.api_key = os.environ.get("STRIPE_API_KEY")
