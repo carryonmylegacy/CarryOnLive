@@ -402,6 +402,9 @@ const BeneficiariesPage = () => {
                   </div>
                   
                   <div className="flex items-center gap-1">
+                    {ben.is_stub && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--ywbg)] text-[var(--yw)] mr-1">NEEDS INFO</span>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"
