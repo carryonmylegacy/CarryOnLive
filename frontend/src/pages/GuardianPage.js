@@ -636,6 +636,14 @@ const GuardianPage = () => {
                      actionLoading === 'generate_checklist' ? 'Generating checklist...' :
                      actionLoading === 'analyze_readiness' ? 'Analyzing readiness...' : 'Thinking...'}
                   </span>
+                  <button
+                    onClick={stopAnalysis}
+                    className="ml-2 px-2.5 py-1 rounded-lg text-xs font-bold text-[var(--rd)] transition-all hover:bg-[var(--rd)]/10"
+                    style={{ border: '1px solid rgba(239,68,68,0.3)' }}
+                    data-testid="stop-analysis-btn"
+                  >
+                    <X className="w-3 h-3 inline mr-0.5" /> Stop
+                  </button>
                 </div>
               </div>
             </div>
