@@ -130,7 +130,8 @@ const SignupPage = () => {
       if (role === 'beneficiary' && !benefactorEmail.trim()) return false;
       return true;
     }
-    if (step === 4) return email.trim() && password.length >= 8 && password === confirmPassword && smsConsent;
+    if (step === 4) return true; // eligibility is optional
+    if (step === 5) return email.trim() && password.length >= 8 && password === confirmPassword && smsConsent;
     return false;
   };
 
@@ -141,7 +142,7 @@ const SignupPage = () => {
         if (!role) toast.error('Please select your role');
         else if (role === 'beneficiary' && !benefactorEmail.trim()) toast.error('Please enter your benefactor\'s email address');
       }
-      if (step === 4) {
+      if (step === 5) {
         if (!email.trim()) toast.error('Please enter your email');
         else if (password.length < 8) toast.error('Password must be at least 8 characters');
         else if (password !== confirmPassword) toast.error('Passwords do not match');
@@ -149,7 +150,12 @@ const SignupPage = () => {
       }
       return;
     }
-    if (step < 4) goTo(step + 1);
+    // Skip eligibility step for beneficiaries (they go straight to credentials)
+    if (step === 3 && role === 'beneficiary') {
+      goTo(5);
+      return;
+    }
+    if (step < 5) goTo(step + 1);
     else handleSignup();
   };
 
