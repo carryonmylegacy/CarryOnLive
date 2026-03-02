@@ -227,8 +227,8 @@ function App() {
           <AppRoutes />
           <DevSwitcher />
           <Toaster 
-            position="top-right"
-            offset="calc(7rem + env(safe-area-inset-top, 24px))"
+            position="bottom-center"
+            offset="calc(5.5rem + env(safe-area-inset-bottom, 0px))"
             duration={Infinity}
             toastOptions={{
               style: {
