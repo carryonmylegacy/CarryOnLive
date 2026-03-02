@@ -141,10 +141,10 @@ const SignupPage = () => {
   };
 
   const handleNext = () => {
-    // Sync address input from DOM before validation (uncontrolled input)
+    // Sync address from uncontrolled input before validation
     if (step === 2) {
       const streetInput = document.querySelector('[data-testid="signup-address-street"]');
-      if (streetInput && streetInput.value) setAddressStreet(streetInput.value);
+      if (streetInput?.value) setAddressStreet(streetInput.value);
     }
     if (!canAdvance()) {
       if (step === 0) toast.error('Please enter your first and last name');
