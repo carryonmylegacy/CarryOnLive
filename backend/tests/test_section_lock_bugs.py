@@ -14,7 +14,7 @@ import requests
 import os
 
 BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://vault-pdf-viewer.preview.emergentagent.com"
+    "REACT_APP_BACKEND_URL", "https://vault-secure-56.preview.emergentagent.com"
 )
 
 # Test credentials
