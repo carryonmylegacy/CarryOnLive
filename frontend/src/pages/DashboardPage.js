@@ -323,10 +323,8 @@ const DashboardPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Secure Document Vault Preview - Blue */}
         <div 
-          className={`glass-card p-4 lg:p-6 border-l-4 border-l-[#2563eb] transition-all duration-300 cursor-pointer ${hoveredSection === 'vault' ? 'shadow-[0_12px_36px_-6px_rgba(37,99,235,0.3)] scale-[1.02] border-l-[6px]' : ''}`}
+          className="glass-card p-4 lg:p-6 border-l-4 border-l-[#2563eb] transition-transform duration-150 cursor-pointer active:scale-[0.98] lg:hover:scale-[1.02] lg:hover:shadow-[0_12px_36px_-6px_rgba(37,99,235,0.3)]"
           data-testid="preview-vault"
-          onMouseEnter={() => setHoveredSection('vault')}
-          onMouseLeave={() => setHoveredSection(null)}
           onClick={() => navigate('/vault')}
         >
           <div className="flex items-center justify-between mb-3">
