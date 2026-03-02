@@ -297,6 +297,91 @@ export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
           </div>
         </CardContent>
       </Card>
+
+      {/* B2B / Enterprise Partner Codes */}
+      <Card className="glass-card">
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-[var(--t)] flex items-center gap-2">
+              <Briefcase className="w-5 h-5 text-[#8B5CF6]" />
+              B2B Partner Codes
+            </h3>
+            <Button size="sm" className="gold-button text-xs" onClick={() => setShowNewCode(true)} data-testid="add-b2b-code-btn">
+              <Plus className="w-3 h-3 mr-1" /> New Code
+            </Button>
+          </div>
+
+          {showNewCode && (
+            <div className="p-4 rounded-xl mb-4" style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.15)' }}>
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className="space-y-1">
+                  <Label className="text-xs text-[var(--t4)]">Code *</Label>
+                  <Input value={newCodeForm.code} onChange={e => setNewCodeForm({...newCodeForm, code: e.target.value.toUpperCase()})}
+                    placeholder="PARTNER2026" className="input-field text-sm" data-testid="b2b-code-name-input" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-[var(--t4)]">Partner Name</Label>
+                  <Input value={newCodeForm.partner_name} onChange={e => setNewCodeForm({...newCodeForm, partner_name: e.target.value})}
+                    placeholder="Acme Insurance" className="input-field text-sm" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className="space-y-1">
+                  <Label className="text-xs text-[var(--t4)]">Discount %</Label>
+                  <Input type="number" min={0} max={100} value={newCodeForm.discount_percent}
+                    onChange={e => setNewCodeForm({...newCodeForm, discount_percent: parseInt(e.target.value) || 0})}
+                    className="input-field text-sm" data-testid="b2b-discount-input" />
+                  <p className="text-[10px] text-[var(--t5)]">100% = free access</p>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-[var(--t4)]">Max Uses</Label>
+                  <Input type="number" min={0} value={newCodeForm.max_uses}
+                    onChange={e => setNewCodeForm({...newCodeForm, max_uses: parseInt(e.target.value) || 0})}
+                    className="input-field text-sm" />
+                  <p className="text-[10px] text-[var(--t5)]">0 = unlimited</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" className="gold-button text-xs" onClick={createB2bCode} data-testid="save-b2b-code-btn">Create Code</Button>
+                <Button size="sm" variant="outline" className="text-xs border-[var(--b)]" onClick={() => setShowNewCode(false)}>Cancel</Button>
+              </div>
+            </div>
+          )}
+
+          {b2bCodes.length === 0 && !showNewCode ? (
+            <p className="text-sm text-[var(--t5)] text-center py-4">No B2B codes yet. Create one to start onboarding enterprise partners.</p>
+          ) : (
+            <div className="space-y-2">
+              {b2bCodes.map(code => (
+                <div key={code.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--s)]" data-testid={`b2b-code-${code.id}`}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-sm text-[#8B5CF6]">{code.code}</span>
+                      <button onClick={() => copyCode(code.code)} className="text-[var(--t5)] hover:text-[var(--t)]">
+                        {copiedCode === code.code ? <Check className="w-3 h-3 text-[var(--gn2)]" /> : <Copy className="w-3 h-3" />}
+                      </button>
+                      {!code.active && <span className="text-[10px] text-[var(--rd)] font-bold">INACTIVE</span>}
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-[var(--t4)] mt-0.5">
+                      {code.partner_name && <span>{code.partner_name}</span>}
+                      <span className="font-bold" style={{ color: code.discount_percent >= 100 ? '#22C993' : '#F59E0B' }}>
+                        {code.discount_percent >= 100 ? 'Free' : `${code.discount_percent}% off`}
+                      </span>
+                      <span>{code.times_used}{code.max_uses > 0 ? `/${code.max_uses}` : ''} used</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Switch checked={code.active} onCheckedChange={(v) => toggleB2bCode(code.id, v)} />
+                    <button onClick={() => deleteB2bCode(code.id)} className="text-[var(--t5)] hover:text-[var(--rd)]">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
