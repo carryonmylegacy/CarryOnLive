@@ -173,6 +173,8 @@ async def register(data: UserCreate):
     # Special status overrides age-based tier
     if any(s in special_statuses for s in ["military", "first_responder", "federal_agent"]):
         eligible_tier = "military"
+    elif "veteran" in special_statuses:
+        eligible_tier = "veteran"
     elif "hospice" in special_statuses:
         eligible_tier = "hospice"
 
