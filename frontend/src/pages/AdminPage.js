@@ -87,7 +87,7 @@ const AdminPage = () => {
     <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in max-w-full overflow-x-hidden" data-testid="admin-dashboard">
       {/* Header */}
       <div>
-        <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-[var(--t)] whitespace-nowrap" style={{ fontFamily: 'Outfit, sans-serif' }}>Admin Dashboard</h1>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Admin Dashboard</h1>
         <p className="text-[10px] sm:text-xs text-[var(--t5)] truncate">Platform admin · Transition · DTS</p>
       </div>
 
