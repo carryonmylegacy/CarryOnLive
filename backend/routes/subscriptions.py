@@ -531,6 +531,7 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
                 "base": "ben_base",
                 "military": "ben_military",
                 "hospice": "ben_hospice",
+                "veteran": "ben_veteran",
             }
             if ben_sub and ben_sub.get("plan_id"):
                 beneficiary_locked_tier = plan_map.get(ben_sub["plan_id"], "ben_base")
