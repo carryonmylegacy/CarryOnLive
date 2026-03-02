@@ -111,7 +111,16 @@ const OnboardingWizard = () => {
   if (stepsToShow.length === 0) return null;
 
   return (
-    <div className="mb-6" data-testid="onboarding-wizard">
+    <div className="mb-6 animate-slideDown" data-testid="onboarding-wizard">
+      <style>{`
+        @keyframes slideDown {
+          from { opacity: 0; max-height: 0; transform: translateY(-20px); margin-bottom: 0; }
+          to { opacity: 1; max-height: 500px; transform: translateY(0); margin-bottom: 1.5rem; }
+        }
+        .animate-slideDown {
+          animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+      `}</style>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
