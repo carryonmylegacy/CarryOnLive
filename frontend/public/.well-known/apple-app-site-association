@@ -1,0 +1,16 @@
+{
+  "webcredentials": {
+    "apps": [
+      "TEAM_ID.us.carryon.app"
+    ]
+  },
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAM_ID.us.carryon.app",
+        "paths": ["*"]
+      }
+    ]
+  }
+}
