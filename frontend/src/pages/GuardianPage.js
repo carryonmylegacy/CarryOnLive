@@ -270,6 +270,16 @@ const GuardianPage = () => {
     setExporting(false);
   };
 
+  const stopAnalysis = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setLoading(false);
+    setActionLoading(null);
+    setMessages(prev => [...prev, { role: 'assistant', content: 'Analysis stopped by user.' }]);
+  };
+
   const sendMessage = async (messageText, action = null, overrideSessionId = null) => {
     if (!messageText?.trim() && !action) return;
     setShowQuestions(false);
@@ -286,13 +296,16 @@ const GuardianPage = () => {
     if (action) setActionLoading(action);
     setLoading(true);
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
       const response = await axios.post(`${API_URL}/chat/guardian`, {
         message: messageText || displayText,
         session_id: activeSessionId,
         estate_id: estateId,
         action
-      }, { ...getAuthHeaders(), timeout: 120000 });
+      }, { ...getAuthHeaders(), timeout: 120000, signal: controller.signal });
 
       if (!overrideSessionId) setSessionId(response.data.session_id);
       const assistantMsg = { role: 'assistant', content: response.data.response };
@@ -301,18 +314,22 @@ const GuardianPage = () => {
         const result = response.data.action_result;
         if (result.action === 'checklist_generated') {
           assistantMsg.actionBadge = `${result.items_added} checklist items added`;
-          // toast removed
         } else if (result.action === 'readiness_analyzed' && result.readiness) {
           assistantMsg.readiness = result.readiness;
         }
       }
       setMessages(prev => [...prev, assistantMsg]);
     } catch (error) {
+      if (axios.isCancel(error) || error.name === 'AbortError' || error.code === 'ERR_CANCELED') {
+        // Already handled by stopAnalysis
+        return;
+      }
       toast.error('Failed to get response');
       setMessages(prev => [...prev, { role: 'assistant', content: 'I encountered an issue. Please try again.' }]);
     } finally {
       setLoading(false);
       setActionLoading(null);
+      abortControllerRef.current = null;
     }
   };
 
