@@ -169,6 +169,13 @@ async def register(data: UserCreate):
         "suffix": data.suffix,
         "gender": data.gender,
         "date_of_birth": data.date_of_birth,
+        "marital_status": data.marital_status,
+        "dependents_over_18": data.dependents_over_18 or 0,
+        "dependents_under_18": data.dependents_under_18 or 0,
+        "address_street": data.address_street,
+        "address_city": data.address_city,
+        "address_state": data.address_state,
+        "address_zip": data.address_zip,
         "role": data.role
         if data.role in ["benefactor", "beneficiary"]
         else "benefactor",
@@ -177,6 +184,83 @@ async def register(data: UserCreate):
         "created_at": now.isoformat(),
     }
     await db.users.insert_one(user)
+
+    # --- Auto-create estate and beneficiary stubs for benefactors ---
+    if user["role"] == "benefactor":
+        estate_id = str(uuid.uuid4())
+        estate = {
+            "id": estate_id,
+            "owner_id": user_id,
+            "name": f"{data.last_name} Family Estate",
+            "status": "pre-transition",
+            "beneficiaries": [],
+            "created_at": now.isoformat(),
+        }
+        await db.estates.insert_one(estate)
+
+        avatar_colors = [
+            "#d4af37", "#3b82f6", "#10b981", "#8b5cf6",
+            "#ef4444", "#f59e0b", "#ec4899", "#06b6d4",
+        ]
+        color_idx = 0
+        stubs = []
+
+        # Spouse stub if married
+        if data.marital_status in ("married", "domestic_partnership"):
+            stubs.append({
+                "id": str(uuid.uuid4()),
+                "estate_id": estate_id,
+                "first_name": "",
+                "last_name": data.last_name,
+                "name": f"Spouse ({data.last_name})",
+                "relation": "Spouse",
+                "email": "",
+                "initials": "SP",
+                "avatar_color": avatar_colors[color_idx % len(avatar_colors)],
+                "invitation_status": "draft",
+                "is_stub": True,
+                "created_at": now.isoformat(),
+            })
+            color_idx += 1
+
+        # Adult dependent stubs
+        for i in range(data.dependents_over_18 or 0):
+            stubs.append({
+                "id": str(uuid.uuid4()),
+                "estate_id": estate_id,
+                "first_name": "",
+                "last_name": data.last_name,
+                "name": f"Adult Dependent {i + 1}",
+                "relation": "Son",
+                "email": "",
+                "initials": f"A{i + 1}",
+                "avatar_color": avatar_colors[color_idx % len(avatar_colors)],
+                "invitation_status": "draft",
+                "is_stub": True,
+                "created_at": now.isoformat(),
+            })
+            color_idx += 1
+
+        # Minor dependent stubs
+        for i in range(data.dependents_under_18 or 0):
+            stubs.append({
+                "id": str(uuid.uuid4()),
+                "estate_id": estate_id,
+                "first_name": "",
+                "last_name": data.last_name,
+                "name": f"Minor Dependent {i + 1}",
+                "relation": "Son",
+                "email": "",
+                "initials": f"M{i + 1}",
+                "avatar_color": avatar_colors[color_idx % len(avatar_colors)],
+                "invitation_status": "draft",
+                "is_stub": True,
+                "created_at": now.isoformat(),
+            })
+            color_idx += 1
+
+        if stubs:
+            await db.beneficiaries.insert_many(stubs)
 
     # Generate OTP for verification
     otp = generate_otp()
