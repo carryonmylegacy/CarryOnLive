@@ -388,8 +388,8 @@ const OnboardingPage = () => {
                 <div className="space-y-1.5">
                   <Label className="text-[#94a3b8] text-sm">Street Address</Label>
                   <AddressAutocomplete
-                    value={addressStreet}
-                    onChange={(e) => setAddressStreet(e.target.value)}
+                    defaultValue={addressStreet}
+                    onBlur={(val) => setAddressStreet(val)}
                     onSelect={({ street, city, state, zip }) => {
                       setAddressStreet(street);
                       setAddressCity(city);
