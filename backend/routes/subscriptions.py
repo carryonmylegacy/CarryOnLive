@@ -1549,11 +1549,11 @@ async def notify_benefactor_verified(
 
     import uuid
 
-    tier_label = (
-        "Military / First Responder"
-        if verification["tier_requested"] == "military"
-        else "Hospice"
-    )
+    tier_label = {
+        "military": "Military / First Responder",
+        "veteran": "Veteran",
+        "hospice": "Hospice",
+    }.get(verification["tier_requested"], verification["tier_requested"])
 
     # Create a customer service message in the benefactor's support portal
     message = {
