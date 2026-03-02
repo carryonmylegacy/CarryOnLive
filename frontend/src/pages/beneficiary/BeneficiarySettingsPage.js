@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { User, Lock, LogOut, Shield, Moon, Sun } from 'lucide-react';
+import { User, Lock, LogOut, Shield, Moon, Sun, Bell } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Switch } from '../../components/ui/switch';
 import { Separator } from '../../components/ui/separator';
 import { SubscriptionManagement } from '../../components/settings/SubscriptionManagement';
+import NotificationSettings from '../../components/NotificationSettings';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
