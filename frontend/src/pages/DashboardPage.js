@@ -296,7 +296,7 @@ const DashboardPage = () => {
       {/* Mobile only - Beneficiaries full width */}
       <div className="lg:hidden mb-4">
         <div 
-          className="stat-card-beneficiaries rounded-2xl p-4 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] flex flex-col items-center justify-center"
+          className="stat-card-beneficiaries rounded-2xl p-4 cursor-pointer transition-transform duration-150 active:scale-[0.96] lg:hover:scale-[1.02] flex flex-col items-center justify-center"
           onClick={() => navigate('/beneficiaries')}
           data-testid="stat-card-beneficiaries-mobile"
         >
