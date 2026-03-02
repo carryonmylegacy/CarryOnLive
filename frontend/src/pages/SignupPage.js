@@ -523,48 +523,98 @@ const SignupPage = () => {
 
                     {/* STEP 3: Role */}
                     {step === 3 && (
-                      <div className="space-y-4 sm:space-y-5">
+                      <div className="space-y-3">
                         <div>
                           <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>How will you use CarryOn?</h2>
-                          <p className="text-[#6b7a90] text-sm">Select the role that best describes you.</p>
+                          <p className="text-[#6b7a90] text-sm">Select your role{role === 'beneficiary' ? ' and link to your benefactor' : ''}.</p>
                         </div>
-                        <div className="space-y-3 sm:space-y-4">
+                        <div className="space-y-2.5">
                           {[
                             { value: 'benefactor', title: 'Benefactor', subtitle: 'Estate Owner', desc: 'I want to organize my estate, protect my documents, and prepare my family.', color: '#d4af37' },
                             { value: 'beneficiary', title: 'Beneficiary', subtitle: 'Family Member', desc: 'I was invited by a loved one to be part of their estate plan.', color: '#60A5FA' },
                           ].map(r => (
-                            <button key={r.value} type="button" onClick={() => setRole(r.value)}
-                              className="w-full text-left p-4 sm:p-5 rounded-xl transition-all duration-300"
+                            <button key={r.value} type="button" onClick={() => { setRole(r.value); if (r.value === 'benefactor') setBenefactorEmail(''); }}
+                              className="w-full text-left p-3.5 rounded-xl transition-all duration-300"
                               style={{
                                 background: role === r.value ? `linear-gradient(135deg, ${r.color}12, ${r.color}05)` : 'rgba(255,255,255,0.02)',
                                 border: role === r.value ? `2px solid ${r.color}50` : '1px solid rgba(255,255,255,0.06)',
                                 boxShadow: role === r.value ? `0 4px 24px ${r.color}15` : 'none',
-                                transform: role === r.value ? 'scale(1.01)' : 'scale(1)',
                               }}
                               data-testid={`signup-role-${r.value}`}
                             >
-                              <div className="flex items-center gap-3 mb-2">
-                                <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                                   style={{ background: `${r.color}15`, border: `1px solid ${r.color}25` }}>
                                   {r.value === 'benefactor'
-                                    ? <Shield className="w-5 h-5" style={{ color: r.color }} />
-                                    : <Users className="w-5 h-5" style={{ color: r.color }} />}
+                                    ? <Shield className="w-4 h-4" style={{ color: r.color }} />
+                                    : <Users className="w-4 h-4" style={{ color: r.color }} />}
                                 </div>
-                                <div>
-                                  <h3 className="text-white font-semibold text-base">{r.title}</h3>
-                                  <p className="text-xs" style={{ color: r.color }}>{r.subtitle}</p>
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="text-white font-semibold text-sm">{r.title} <span className="text-xs font-normal" style={{ color: r.color }}>· {r.subtitle}</span></h3>
+                                  <p className="text-[#7b879e] text-xs leading-relaxed">{r.desc}</p>
                                 </div>
                                 {role === r.value && (
-                                  <div className="ml-auto w-6 h-6 rounded-full flex items-center justify-center"
+                                  <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
                                     style={{ background: r.color }}>
-                                    <Check className="w-3.5 h-3.5 text-[#080e1a]" />
+                                    <Check className="w-3 h-3 text-[#080e1a]" />
                                   </div>
                                 )}
                               </div>
-                              <p className="text-[#7b879e] text-sm leading-relaxed pl-[52px]">{r.desc}</p>
                             </button>
                           ))}
                         </div>
+
+                        {/* Benefactor: Special status checkboxes */}
+                        {role === 'benefactor' && (
+                          <div className="space-y-2 pt-1">
+                            <p className="text-[#7b879e] text-xs font-medium uppercase tracking-wider">Special Eligibility (if applicable)</p>
+                            {[
+                              { id: 'military', label: 'Active Duty Military' },
+                              { id: 'federal_agent', label: 'Active Federal or State Agency Operator' },
+                              { id: 'first_responder', label: 'First Responder' },
+                              { id: 'hospice', label: 'Hospice Patient' },
+                            ].map(s => (
+                              <button key={s.id} type="button"
+                                onClick={() => setSpecialStatus(prev =>
+                                  prev.includes(s.id) ? prev.filter(x => x !== s.id) : [...prev, s.id]
+                                )}
+                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-all"
+                                style={{
+                                  background: specialStatus.includes(s.id) ? 'rgba(245,158,11,0.08)' : 'rgba(255,255,255,0.02)',
+                                  border: specialStatus.includes(s.id) ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(255,255,255,0.06)',
+                                }}
+                                data-testid={`special-status-${s.id}`}
+                              >
+                                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                                  specialStatus.includes(s.id) ? 'bg-[#F59E0B] border-[#F59E0B]' : 'border-[#3a4a63]'
+                                }`}>
+                                  {specialStatus.includes(s.id) && <Check className="w-2.5 h-2.5 text-[#080e1a]" />}
+                                </div>
+                                <span className={`text-xs ${specialStatus.includes(s.id) ? 'text-[#F59E0B]' : 'text-[#7b879e]'}`}>{s.label}</span>
+                              </button>
+                            ))}
+                            <p className="text-[#3a4a63] text-[10px]">Verification required after sign-up for discounted tier pricing.</p>
+                          </div>
+                        )}
+
+                        {/* Beneficiary: Benefactor email (required) */}
+                        {role === 'beneficiary' && (
+                          <div className="space-y-2 pt-1">
+                            <Label className="text-[#7b879e] text-sm font-medium">Benefactor's Email *</Label>
+                            <div className="relative">
+                              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63]" />
+                              <Input
+                                type="email"
+                                value={benefactorEmail}
+                                onChange={(e) => setBenefactorEmail(e.target.value)}
+                                placeholder="Your benefactor's email address"
+                                className={`${inputClass} pl-11`}
+                                data-testid="signup-benefactor-email"
+                              />
+                            </div>
+                            <p className="text-[#3a4a63] text-xs">This links your account to your benefactor's estate plan.</p>
+                          </div>
+                        )}
                       </div>
                     )}
 
