@@ -445,7 +445,7 @@ const LoginPage = () => {
               ].map(({ step, title, desc }, i) => (
                 <RevealSection key={step} delay={i * 0.15}>
                   <div className="flex gap-5 group">
-                    <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-base transition-all duration-500 group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(212,175,55,0.3)]" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.25)' }}>
+                    <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-base" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.25)' }}>
                       {step}
                     </div>
                     <div>
