@@ -4,7 +4,8 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Shield, Users, FileKey, FolderLock, FileUp, Loader2,
-  Headphones, CreditCard, Activity, Settings
+  Headphones, CreditCard, Activity, Settings,
+  MessageSquare, CheckSquare, AlertTriangle, Clock, ShieldCheck
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Skeleton } from '../components/ui/skeleton';
