@@ -302,17 +302,38 @@ async def register(data: UserCreate):
                     {"id": estate["id"]},
                     {"$addToSet": {"beneficiaries": user_id}},
                 )
-                # Create a beneficiary record linking them
-                await db.beneficiaries.update_one(
-                    {"estate_id": estate["id"], "email": data.email},
-                    {"$set": {
+                # Link to existing beneficiary record or create one
+                existing_ben = await db.beneficiaries.find_one(
+                    {"estate_id": estate["id"], "email": data.email}, {"_id": 0}
+                )
+                if existing_ben:
+                    await db.beneficiaries.update_one(
+                        {"id": existing_ben["id"]},
+                        {"$set": {
+                            "user_id": user_id,
+                            "invitation_status": "accepted",
+                            "name": full_name,
+                            "first_name": data.first_name,
+                            "last_name": data.last_name,
+                            "is_stub": False,
+                        }},
+                    )
+                else:
+                    await db.beneficiaries.insert_one({
+                        "id": str(uuid.uuid4()),
+                        "estate_id": estate["id"],
                         "user_id": user_id,
-                        "invitation_status": "accepted",
-                        "name": full_name,
                         "first_name": data.first_name,
                         "last_name": data.last_name,
-                    }},
-                )
+                        "name": full_name,
+                        "email": data.email,
+                        "relation": "",
+                        "initials": (data.first_name[0] + data.last_name[0]).upper(),
+                        "avatar_color": "#60A5FA",
+                        "invitation_status": "accepted",
+                        "is_stub": False,
+                        "created_at": now.isoformat(),
+                    })
                 # Store the link on the user for quick lookup
                 await db.users.update_one(
                     {"id": user_id},
