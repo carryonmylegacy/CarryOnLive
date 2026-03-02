@@ -85,17 +85,20 @@ async def update_dev_switcher_config(
                 detail=f"Account is not a beneficiary: {data.beneficiary_email}",
             )
 
+    update_fields = {
+        "benefactor_email": data.benefactor_email,
+        "beneficiary_email": data.beneficiary_email,
+        "enabled": data.enabled,
+    }
+    # Only update passwords if provided (don't clear with empty string)
+    if data.benefactor_password:
+        update_fields["benefactor_password"] = data.benefactor_password
+    if data.beneficiary_password:
+        update_fields["beneficiary_password"] = data.beneficiary_password
+
     await db.dev_config.update_one(
         {"id": "dev_switcher"},
-        {
-            "$set": {
-                "benefactor_email": data.benefactor_email,
-                "benefactor_password": data.benefactor_password,
-                "beneficiary_email": data.beneficiary_email,
-                "beneficiary_password": data.beneficiary_password,
-                "enabled": data.enabled,
-            }
-        },
+        {"$set": update_fields},
         upsert=True,
     )
 
