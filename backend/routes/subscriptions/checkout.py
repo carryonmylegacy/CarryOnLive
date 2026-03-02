@@ -157,10 +157,16 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
 
     # Check if beneficiary is a minor (under 18)
     is_minor = False
-    if current_user.get("role") == "beneficiary" and user_doc and user_doc.get("date_of_birth"):
+    if (
+        current_user.get("role") == "beneficiary"
+        and user_doc
+        and user_doc.get("date_of_birth")
+    ):
         try:
             dob = datetime.fromisoformat(user_doc["date_of_birth"])
-            age = (datetime.now(timezone.utc) - dob.replace(tzinfo=timezone.utc)).days // 365
+            age = (
+                datetime.now(timezone.utc) - dob.replace(tzinfo=timezone.utc)
+            ).days // 365
             if age < 18:
                 is_minor = True
         except (ValueError, TypeError):
@@ -981,5 +987,3 @@ async def update_plan_price(
     )
 
     return {"success": True, "message": f"Price updated to ${price:.2f}"}
-
-

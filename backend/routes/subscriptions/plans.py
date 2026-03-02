@@ -456,5 +456,3 @@ def get_price_for_cycle(plan, billing_cycle):
     elif billing_cycle == "annual":
         return plan.get("annual_price", round(plan["price"] * 0.8, 2))
     return plan["price"]
-
-
