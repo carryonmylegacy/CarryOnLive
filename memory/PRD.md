@@ -77,3 +77,7 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - **Minor beneficiaries** (under 18) see "No Subscription Required" instead of plan cards
 - Backend computes eligible_tier from special_status + DOB on registration
 - Subscription status endpoint returns special_status, eligible_tiers, is_minor
+- **Veteran tier** added: $5.99/mo benefactor, $1.99/mo beneficiary, requires DD214 or VA benefits letter verification
+- Moved all special eligibility checkboxes to own Step 5 (symmetrical 2x3 grid with icons)
+- Signup is now 6 steps: Name → About You → Address → Role → Eligibility → Credentials (beneficiaries skip eligibility)
+- Auto-sync of new plans from code to DB subscription_settings
