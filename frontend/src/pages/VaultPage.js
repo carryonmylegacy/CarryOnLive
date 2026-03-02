@@ -21,6 +21,7 @@ import {
   Copy,
   CheckCircle2,
   Eye,
+  EyeOff,
   Mic,
   MicOff,
   Volume2,
@@ -69,6 +70,8 @@ const VaultPage = () => {
   const [showRemoveLockConfirm, setShowRemoveLockConfirm] = useState(false);
   const [newLockPassword, setNewLockPassword] = useState('');
   const [lockingDoc, setLockingDoc] = useState(false);
+  const [showPwEye, setShowPwEye] = useState(false);
+  const [showUnlockPwEye, setShowUnlockPwEye] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [unlockPassword, setUnlockPassword] = useState('');
   const [unlockBackupCode, setUnlockBackupCode] = useState('');
@@ -743,7 +746,7 @@ const VaultPage = () => {
 
       {/* Upload Modal */}
       <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md !top-[5vh] !translate-y-0 max-h-[90vh] overflow-y-scroll">
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md !top-[5vh] !translate-y-0 max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Upload Document
@@ -912,7 +915,7 @@ const VaultPage = () => {
           }
         }
       }}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md !top-[5vh] !translate-y-0 max-h-[90vh] overflow-y-scroll">
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md !top-[5vh] !translate-y-0 max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Unlock Document
@@ -936,14 +939,20 @@ const VaultPage = () => {
             {selectedDoc?.lock_type === 'password' && (
               <div className="space-y-2">
                 <Label className="text-[#94a3b8]">Password</Label>
-                <Input
-                  type="password"
-                  value={unlockPassword}
-                  onChange={(e) => setUnlockPassword(e.target.value)}
-                  placeholder="Enter document password"
-                  className="input-field"
-                  data-testid="unlock-password-input"
-                />
+                <div className="relative">
+                  <Input
+                    type={showUnlockPwEye ? 'text' : 'password'}
+                    value={unlockPassword}
+                    onChange={(e) => setUnlockPassword(e.target.value)}
+                    placeholder="Enter document password"
+                    className="input-field pr-10"
+                    data-testid="unlock-password-input"
+                  />
+                  <button type="button" onClick={() => setShowUnlockPwEye(!showUnlockPwEye)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
+                    {showUnlockPwEye ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
             )}
             
@@ -1240,28 +1249,34 @@ const VaultPage = () => {
       </Dialog>
 
       {/* Set Lock Modal */}
-      <Dialog open={showSetLockModal} onOpenChange={(open) => { setShowSetLockModal(open); if (!open) setNewLockPassword(''); }}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-sm">
+      <Dialog open={showSetLockModal} onOpenChange={(open) => { setShowSetLockModal(open); if (!open) { setNewLockPassword(''); setShowPwEye(false); } }}>
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-sm !top-[10vh] !translate-y-0">
           <DialogHeader>
             <DialogTitle className="text-white text-lg flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
               <Lock className="w-5 h-5 text-[#ef4444]" />
               Lock Document
             </DialogTitle>
             <DialogDescription className="text-[#94a3b8]">
-              Set a password for "{selectedDoc?.name}". A backup code will be generated.
+              Set a password for "{selectedDoc?.name}".
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label className="text-[#94a3b8]">Password (min 4 characters)</Label>
-              <Input
-                type="password"
-                value={newLockPassword}
-                onChange={(e) => setNewLockPassword(e.target.value)}
-                placeholder="Enter a password"
-                className="input-field"
-                data-testid="set-lock-password"
-              />
+              <div className="relative">
+                <Input
+                  type={showPwEye ? 'text' : 'password'}
+                  value={newLockPassword}
+                  onChange={(e) => setNewLockPassword(e.target.value)}
+                  placeholder="Enter a password"
+                  className="input-field pr-10"
+                  data-testid="set-lock-password"
+                />
+                <button type="button" onClick={() => setShowPwEye(!showPwEye)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
+                  {showPwEye ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
             <Button
               onClick={handleSetLock}

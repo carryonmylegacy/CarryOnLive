@@ -228,7 +228,7 @@ function App() {
           <DevSwitcher />
           <Toaster 
             position="bottom-center"
-            offset="calc(5rem + 64px + env(safe-area-inset-bottom, 0px))"
+            offset="calc(10rem + env(safe-area-inset-bottom, 0px))"
             duration={Infinity}
             toastOptions={{
               style: {

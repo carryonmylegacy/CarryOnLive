@@ -19,6 +19,8 @@ const DocThumbnail = ({ doc, getAuthHeaders }) => {
 
   useEffect(() => {
     mountedRef.current = true;
+    setBlobUrl(null);
+    setError(false);
     if (!isPreviewable || doc.is_locked) return;
 
     let objectUrl = null;
