@@ -26,6 +26,13 @@ class UserCreate(BaseModel):
     suffix: Optional[str] = None
     gender: Optional[str] = None
     date_of_birth: Optional[str] = None
+    marital_status: Optional[str] = None
+    dependents_over_18: Optional[int] = 0
+    dependents_under_18: Optional[int] = 0
+    address_street: Optional[str] = None
+    address_city: Optional[str] = None
+    address_state: Optional[str] = None
+    address_zip: Optional[str] = None
     role: str = "benefactor"
 
 
