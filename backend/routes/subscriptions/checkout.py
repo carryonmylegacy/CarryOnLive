@@ -35,7 +35,7 @@ async def get_subscription_plans():
     settings = await get_subscription_settings()
     return {
         "plans": settings.get("plans", DEFAULT_PLANS),
-        "beneficiary_plans": BENEFICIARY_PLANS,
+        "beneficiary_plans": settings.get("beneficiary_plans", BENEFICIARY_PLANS),
         "beta_mode": settings.get("beta_mode", True),
         "family_plan_enabled": settings.get("family_plan_enabled", True),
     }
@@ -864,6 +864,7 @@ async def get_admin_subscription_settings(
 
     return {
         **settings,
+        "beneficiary_plans": settings.get("beneficiary_plans", BENEFICIARY_PLANS),
         "stats": {
             "active_subscriptions": total_subs,
             "free_access_users": free_overrides,
@@ -984,3 +985,44 @@ async def update_plan_price(
     )
 
     return {"success": True, "message": f"Price updated to ${price:.2f}"}
+
+
+@router.put("/admin/beneficiary-plans/{plan_id}/price")
+async def update_beneficiary_plan_price(
+    plan_id: str,
+    price: float = Form(...),
+    current_user: dict = Depends(get_current_user),
+):
+    """Update a beneficiary plan's price (admin only)"""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    from routes.subscriptions.plans import BENEFICIARY_PLANS
+
+    # Beneficiary plans are stored in code, sync to DB
+    settings = await get_subscription_settings()
+    ben_plans = settings.get("beneficiary_plans", BENEFICIARY_PLANS[:])
+
+    found = False
+    for plan in ben_plans:
+        if plan["id"] == plan_id:
+            plan["price"] = price
+            found = True
+            break
+
+    if not found:
+        raise HTTPException(
+            status_code=404, detail=f"Beneficiary plan not found: {plan_id}"
+        )
+
+    await db.subscription_settings.update_one(
+        {"_id": "global"},
+        {
+            "$set": {
+                "beneficiary_plans": ben_plans,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
+    )
+
+    return {"success": True, "message": f"Beneficiary price updated to ${price:.2f}"}

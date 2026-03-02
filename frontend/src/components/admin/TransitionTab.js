@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FileKey, CheckCircle2, Eye, XCircle, Loader2, AlertTriangle, Search, X } from 'lucide-react';
+import { FileKey, CheckCircle2, Eye, XCircle, Loader2, AlertTriangle, Search, X, Trash2 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { toast } from '../../utils/toast';
@@ -84,6 +84,17 @@ export const TransitionTab = ({ getAuthHeaders }) => {
     } catch (err) { toast.error('Failed to reject'); }
     finally { setActionLoading(null); }
   };
+
+  const handleDeleteCert = async (certId) => {
+    if (!window.confirm('Permanently delete this certificate?')) return;
+    setActionLoading(certId);
+    try {
+      await axios.delete(`${API_URL}/transition/certificates/${certId}`, getAuthHeaders());
+      fetchCertificates();
+    } catch (err) { toast.error('Failed to delete'); }
+    finally { setActionLoading(null); }
+  };
+
 
   if (loading) return <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-[var(--gold)]" /></div>;
 
@@ -169,6 +180,18 @@ export const TransitionTab = ({ getAuthHeaders }) => {
                     <Button size="sm" variant="outline" className="text-xs border-[var(--b)] text-[var(--bl3)]"
                       onClick={() => viewDocument(cert)} disabled={docLoading} data-testid={`view-cert-${cert.id}`}>
                       {docLoading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Eye className="w-3 h-3 mr-1" />} View Document
+                    </Button>
+                  </div>
+                )}
+                {(cert.status === 'rejected' || cert.status === 'approved') && (
+                  <div className="flex flex-col gap-2 flex-shrink-0">
+                    <Button size="sm" variant="outline" className="text-xs border-[var(--b)] text-[var(--bl3)]"
+                      onClick={() => viewDocument(cert)} disabled={docLoading}>
+                      {docLoading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Eye className="w-3 h-3 mr-1" />} View Document
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-xs border-[var(--rd)]/30 text-[var(--rd)]"
+                      onClick={() => handleDeleteCert(cert.id)} disabled={actionLoading === cert.id}>
+                      <Trash2 className="w-3 h-3 mr-1" /> Delete
                     </Button>
                   </div>
                 )}

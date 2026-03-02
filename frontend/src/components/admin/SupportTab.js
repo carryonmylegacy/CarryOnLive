@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { MessageCircle, Headphones, UserCircle, Loader2, Send, Search } from 'lucide-react';
+import { MessageCircle, Headphones, UserCircle, Loader2, Send, Search, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from '../../utils/toast';
@@ -122,6 +122,15 @@ export const SupportTab = ({ getAuthHeaders }) => {
                     {new Date(conv.latest_time).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                   </span>
                 </div>
+                <button onClick={(e) => {
+                  e.stopPropagation();
+                  if (!window.confirm('Delete this conversation?')) return;
+                  axios.delete(`${API_URL}/admin/support/conversation/${conv.conversation_id}`, getAuthHeaders())
+                    .then(() => { fetchConversations(); if (selectedConv?.conversation_id === conv.conversation_id) setSelectedConv(null); })
+                    .catch(() => toast.error('Failed to delete'));
+                }} className="mt-1 text-[var(--t5)] active:text-[var(--rd)]">
+                  <Trash2 className="w-3 h-3" />
+                </button>
               </div>
             ))
           )}
