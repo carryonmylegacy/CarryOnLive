@@ -564,7 +564,7 @@ const GuardianPage = () => {
   // CHAT VIEW
   // ═══════════════════════════════════════════════
   return (
-    <div className="flex flex-col overflow-hidden lg:pt-0" style={{ height: 'calc(100vh - env(safe-area-inset-top, 0px) - 80px - env(safe-area-inset-bottom, 0px))', paddingTop: '3.75rem', overscrollBehavior: 'none' }} data-testid="estate-guardian">
+    <div className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10 lg:relative lg:inset-auto" style={{ top: 'calc(3.5rem + env(safe-area-inset-top, 0px))', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', overscrollBehavior: 'none' }} data-testid="estate-guardian">
       <SectionLockBanner sectionId="guardian" />
 
       <SectionLockedOverlay sectionId="guardian">
