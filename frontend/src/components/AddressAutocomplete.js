@@ -2,13 +2,13 @@ import React, { useRef, useEffect, useCallback } from 'react';
 
 /**
  * Google Places-powered address autocomplete input.
- * On selection, calls onSelect with { street, city, state, zip }.
- * Uses a raw <input> to avoid React controlled-component conflicts with Google Places.
+ * Uncontrolled input — Google Places requires direct DOM access.
+ * Reports changes via onChange and address selection via onSelect.
  */
 const AddressAutocomplete = ({ value, onChange, onSelect, placeholder, className, ...props }) => {
   const inputRef = useRef(null);
   const autocompleteRef = useRef(null);
-  const skipNextChange = useRef(false);
+  const isSelecting = useRef(false);
 
   const handlePlaceSelect = useCallback(() => {
     const place = autocompleteRef.current?.getPlace();
@@ -31,19 +31,19 @@ const AddressAutocomplete = ({ value, onChange, onSelect, placeholder, className
     }
 
     const street = [street_number, route].filter(Boolean).join(' ');
+    isSelecting.current = true;
 
-    // Update the input value directly to avoid React re-render fighting Google
-    skipNextChange.current = true;
-    if (inputRef.current) inputRef.current.value = street;
+    if (onSelect) onSelect({ street, city, state, zip });
 
-    if (onSelect) {
-      onSelect({ street, city, state, zip });
-    }
+    // After React state updates, sync the input display
+    requestAnimationFrame(() => {
+      if (inputRef.current) inputRef.current.value = street;
+      isSelecting.current = false;
+    });
   }, [onSelect]);
 
   const initAutocomplete = useCallback(() => {
     if (autocompleteRef.current || !inputRef.current || !window.google?.maps?.places) return false;
-
     autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
       types: ['address'],
       componentRestrictions: { country: 'us' },
@@ -55,31 +55,23 @@ const AddressAutocomplete = ({ value, onChange, onSelect, placeholder, className
 
   useEffect(() => {
     if (initAutocomplete()) return;
-    // Retry until Google Maps loads
     const interval = setInterval(() => {
       if (initAutocomplete()) clearInterval(interval);
     }, 500);
     return () => clearInterval(interval);
   }, [initAutocomplete]);
 
-  // Sync React value to input
-  useEffect(() => {
-    if (inputRef.current && value !== undefined && !skipNextChange.current) {
-      inputRef.current.value = value;
-    }
-    skipNextChange.current = false;
-  }, [value]);
+  const handleChange = (e) => {
+    if (!isSelecting.current && onChange) onChange(e);
+  };
 
-  // Remove unsupported props for raw input
   const { 'data-testid': testId, ...rest } = props;
 
   return (
     <input
       ref={inputRef}
-      defaultValue={value}
-      onChange={(e) => {
-        if (!skipNextChange.current && onChange) onChange(e);
-      }}
+      defaultValue={value || ''}
+      onChange={handleChange}
       placeholder={placeholder || 'Start typing an address...'}
       className={className}
       autoComplete="off"
