@@ -65,9 +65,39 @@ export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
   const updateUserOverride = async (userId, data) => {
     try {
       await axios.put(`${API_URL}/admin/user-subscription/${userId}`, data, { headers: { ...headers, 'Content-Type': 'application/json' } });
-      // toast removed
       fetchData();
     } catch (err) { toast.error('Failed to update'); }
+  };
+
+  const createB2bCode = async () => {
+    if (!newCodeForm.code.trim()) { toast.error('Code is required'); return; }
+    try {
+      await axios.post(`${API_URL}/admin/b2b-codes`, newCodeForm, { headers: { ...headers, 'Content-Type': 'application/json' } });
+      setShowNewCode(false);
+      setNewCodeForm({ code: '', partner_name: '', discount_percent: 100, max_uses: 0 });
+      fetchData();
+    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to create code'); }
+  };
+
+  const toggleB2bCode = async (codeId, active) => {
+    try {
+      await axios.put(`${API_URL}/admin/b2b-codes/${codeId}`, { active }, { headers: { ...headers, 'Content-Type': 'application/json' } });
+      fetchData();
+    } catch (err) { toast.error('Failed to update'); }
+  };
+
+  const deleteB2bCode = async (codeId) => {
+    if (!window.confirm('Delete this B2B code?')) return;
+    try {
+      await axios.delete(`${API_URL}/admin/b2b-codes/${codeId}`, { headers });
+      fetchData();
+    } catch (err) { toast.error('Failed to delete'); }
+  };
+
+  const copyCode = (code) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
   };
 
   if (loading) return <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-[var(--gold)]" /></div>;
