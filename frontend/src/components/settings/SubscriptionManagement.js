@@ -462,6 +462,28 @@ export const SubscriptionManagement = ({
           </div>
         )}
 
+        {/* Minor beneficiary: no charge */}
+        {isMinorBeneficiary && (
+          <div className="p-6 rounded-2xl text-center" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+            <Users className="w-10 h-10 mx-auto text-[#22C993] mb-3 opacity-50" />
+            <h4 className="text-sm font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>No Subscription Required</h4>
+            <p className="text-xs text-[var(--t4)] leading-relaxed max-w-md mx-auto">
+              Beneficiaries under 18 have full access at no charge. Your access is managed through your benefactor's estate plan.
+            </p>
+          </div>
+        )}
+
+        {/* Auto-tier info banner */}
+        {autoTier && !isBeneficiary && (
+          <div className="mb-4 p-3 rounded-xl" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}>
+            <p className="text-xs text-[var(--yw)] leading-relaxed">
+              {isNewAdult
+                ? 'Based on your age (18-25), you qualify for the New Adult tier. No verification required.'
+                : `Based on your special eligibility, you qualify for the ${autoTier === 'military' ? 'Military / First Responder' : 'Hospice'} tier. Verification is required after subscribing.`}
+            </p>
+          </div>
+        )}
+
         {/* Plan Cards */}
         <div className={`grid gap-4 ${displayPlans.length === 1 ? 'grid-cols-1 max-w-sm mx-auto' : displayPlans.length <= 3 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`} data-testid="plan-grid">
           {displayPlans.map((plan) => {
