@@ -653,7 +653,7 @@ const GuardianPage = () => {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto min-h-0" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }} data-testid="chat-messages-area">
+      <div className="flex-1 overflow-y-auto min-h-0" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }} data-testid="chat-messages-area">
         <div className="max-w-3xl mx-auto px-4 py-4 space-y-4">
           {messages.map((msg, index) => (
             <div
