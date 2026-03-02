@@ -847,7 +847,7 @@
   box-shadow: 0 8px 32px rgba(0,0,0,0.5);
   margin-top: 4px;
   font-family: var(--body);
-  z-index: 10000;
+  z-index: 100000 !important;
 }
 .pac-item {
   padding: 10px 14px;
