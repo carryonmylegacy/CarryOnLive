@@ -382,6 +382,15 @@ async def get_subscription_settings():
         await db.subscription_settings.update_one(
             {"_id": "global"}, {"$set": settings}, upsert=True
         )
+    else:
+        # Ensure any new plans from code are added to stored settings
+        stored_ids = {p["id"] for p in settings.get("plans", [])}
+        for plan in DEFAULT_PLANS:
+            if plan["id"] not in stored_ids:
+                settings.setdefault("plans", []).append(plan)
+                await db.subscription_settings.update_one(
+                    {"_id": "global"}, {"$push": {"plans": plan}}
+                )
     return settings
 
 
