@@ -58,6 +58,7 @@ if RESEND_API_KEY:
 XAI_API_KEY = os.environ.get("XAI_API_KEY")
 XAI_BASE_URL = "https://api.x.ai/v1"
 XAI_MODEL = os.environ.get("XAI_MODEL", "grok-4")
+XAI_MODEL_LIGHT = os.environ.get("XAI_MODEL_LIGHT", "grok-3-mini")
 xai_client = None
 if XAI_API_KEY:
     xai_client = XAIClient(api_key=XAI_API_KEY, base_url=XAI_BASE_URL)
