@@ -33,6 +33,8 @@ class UserCreate(BaseModel):
     address_city: Optional[str] = None
     address_state: Optional[str] = None
     address_zip: Optional[str] = None
+    special_status: Optional[list] = None
+    benefactor_email: Optional[str] = None
     role: str = "benefactor"
 
 
