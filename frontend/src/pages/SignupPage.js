@@ -125,7 +125,11 @@ const SignupPage = () => {
   const canAdvance = () => {
     if (step === 0) return firstName.trim() && lastName.trim();
     if (step === 1) return true; // optional fields
-    if (step === 2) return addressStreet.trim() && addressCity.trim() && addressState && addressZip.trim();
+    if (step === 2) {
+      // Read street directly from DOM (uncontrolled input)
+      const streetVal = document.querySelector('[data-testid="signup-address-street"]')?.value || addressStreet;
+      return streetVal.trim() && addressCity.trim() && addressState && addressZip.trim();
+    }
     if (step === 3) {
       if (!role) return false;
       if (role === 'beneficiary' && !benefactorEmail.trim()) return false;
