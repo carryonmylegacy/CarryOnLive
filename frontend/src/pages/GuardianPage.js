@@ -504,7 +504,7 @@ const GuardianPage = () => {
                       onClick={() => resumeSession(s.session_id)}
                       role="button"
                       tabIndex={0}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all hover:bg-[var(--s)] group cursor-pointer"
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-transform duration-150 active:scale-[0.98] cursor-pointer"
                       style={{ border: '1px solid var(--b)' }}
                       data-testid={`session-${s.session_id}`}
                     >
