@@ -119,18 +119,35 @@ const MessagesPage = () => {
   };
 
   // Request camera when switching to video mode
-  const initCamera = async () => {
+  const initCamera = async (facing) => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      // Release any existing stream first
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+      const mode = facing || facingMode;
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: mode },
+        audio: true
+      });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.play();
       }
       setCameraReady(true);
+      setShowRecordingOverlay(true);
     } catch (error) {
       console.error('Camera error:', error);
       toast.error('Camera access denied. Please allow camera permissions.');
+    }
+  };
+
+  const flipCamera = async () => {
+    const newMode = facingMode === 'user' ? 'environment' : 'user';
+    setFacingMode(newMode);
+    if (cameraReady && !isRecording) {
+      await initCamera(newMode);
     }
   };
 
