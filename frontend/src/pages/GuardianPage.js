@@ -175,6 +175,19 @@ const actionButtons = [
 const GuardianPage = () => {
   const { user, getAuthHeaders } = useAuth();
 
+  // Lock main-content scrolling while on Guardian page (prevents iOS rubber-banding)
+  useEffect(() => {
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+      mainContent.style.overflow = 'hidden';
+    }
+    return () => {
+      if (mainContent) {
+        mainContent.style.overflow = '';
+      }
+    };
+  }, []);
+
   // View state: 'landing' or 'chat'
   const [view, setView] = useState('landing');
 
