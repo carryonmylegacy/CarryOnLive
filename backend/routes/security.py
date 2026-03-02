@@ -515,10 +515,11 @@ async def get_master_key_status(current_user: dict = Depends(get_current_user)):
 async def set_master_key(
     data: MasterKeyRequest, current_user: dict = Depends(get_current_user)
 ):
-    """Set or update the vault master key (benefactor only)."""
-    if current_user.get("role") not in ("benefactor", "admin"):
+    """Set or update the vault master key."""
+    if current_user.get("role") not in ("benefactor", "beneficiary", "admin"):
         raise HTTPException(
-            status_code=403, detail="Only benefactors can set a master key"
+            status_code=403,
+            detail="Only benefactors and beneficiaries can set a master key",
         )
     if len(data.master_key.strip()) < 4:
         raise HTTPException(
@@ -589,13 +590,16 @@ async def admin_unlock_all_documents(
     if not verify_password(data.master_key.strip(), user["vault_master_key_hash"]):
         raise HTTPException(status_code=401, detail="Master key does not match")
 
-    # Find all estates owned by this user
-    estates = await db.estates.find({"owner_id": user_id}, {"_id": 0, "id": 1}).to_list(
+    # Find estates owned by or accessible to this user
+    owned = await db.estates.find({"owner_id": user_id}, {"_id": 0, "id": 1}).to_list(
         100
     )
-    estate_ids = [e["id"] for e in estates]
+    ben_records = await db.beneficiaries.find(
+        {"user_id": user_id}, {"_id": 0, "estate_id": 1}
+    ).to_list(100)
+    estate_ids = list({e["id"] for e in owned} | {b["estate_id"] for b in ben_records})
 
-    # Unlock all locked documents
+    # Unlock all locked documents across all accessible estates
     result = await db.documents.update_many(
         {"estate_id": {"$in": estate_ids}, "is_locked": True},
         {

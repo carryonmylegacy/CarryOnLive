@@ -130,7 +130,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders }) => 
               <div className="text-xs text-[var(--t5)] hidden sm:block">{u.created_at ? new Date(u.created_at).toLocaleDateString() : ''}</div>
               {u.id !== currentUserId && (
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  {u.role === 'benefactor' && (
+                  {(u.role === 'benefactor' || u.role === 'beneficiary') && (
                     <Button variant="ghost" size="sm" className="text-[var(--t5)]"
                       onClick={() => { setUnlockUserId(unlockUserId === u.id ? null : u.id); setMasterKeyInput(''); }}
                       title="Vault Unlock" data-testid={`vault-unlock-${u.id}`}>
