@@ -169,7 +169,7 @@ export const SubscriptionManagement = ({
   const showBillingToggle = !isBeneficiary || (lockedPlan && lockedPlan.allows_billing_toggle !== false);
   const beneficiaryNoTierYet = isBeneficiary && !lockedTier;
 
-  const requiresVerification = (planId) => ['military', 'hospice'].includes(planId);
+  const requiresVerification = (planId) => ['military', 'hospice', 'veteran'].includes(planId);
 
   // Check if user is already verified for a tier
   const isVerifiedFor = (planId) => {
@@ -180,10 +180,11 @@ export const SubscriptionManagement = ({
   const VERIFICATION_DOCS = {
     military: ['Military ID', 'Active Duty Orders', 'First Responder Badge'],
     hospice: ['Hospice Enrollment Documentation'],
+    veteran: ['DD214', 'Veterans Administration Benefits Letter'],
   };
 
   // Detect if a plan/billing change is a downgrade (would require refund)
-  const PLAN_RANK = { base: 1, new_adult: 2, military: 3, standard: 4, premium: 5, hospice: 0 };
+  const PLAN_RANK = { base: 1, new_adult: 2, veteran: 3, military: 3, standard: 4, premium: 5, hospice: 0 };
   const CYCLE_RANK = { monthly: 1, quarterly: 2, annual: 3 };
 
   const isDowngrade = (newPlanId, newCycle) => {
