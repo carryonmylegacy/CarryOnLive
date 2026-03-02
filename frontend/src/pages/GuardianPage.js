@@ -726,7 +726,7 @@ const GuardianPage = () => {
           }} data-testid="questions-popover">
             <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid var(--b)' }}>
               <span className="text-xs font-bold text-[var(--t3)]">Helpful Questions</span>
-              <button onClick={() => setShowQuestions(false)} className="text-[var(--t5)] hover:text-[var(--t)]"><X className="w-3.5 h-3.5" /></button>
+              <button onClick={() => setShowQuestions(false)} className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform"><X className="w-3.5 h-3.5" /></button>
             </div>
             <div className="p-2 space-y-0.5">
               {suggestedQuestions.map((q, i) => (
@@ -747,7 +747,7 @@ const GuardianPage = () => {
           }} data-testid="actions-popover">
             <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid var(--b)' }}>
               <span className="text-xs font-bold text-[var(--t3)]">Guardian Actions</span>
-              <button onClick={() => setShowActions(false)} className="text-[var(--t5)] hover:text-[var(--t)]"><X className="w-3.5 h-3.5" /></button>
+              <button onClick={() => setShowActions(false)} className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform"><X className="w-3.5 h-3.5" /></button>
             </div>
             <div className="p-2 space-y-0.5">
               {actionButtons.map(({ key, label, icon: Icon, color }) => (

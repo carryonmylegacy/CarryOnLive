@@ -215,8 +215,8 @@ export default function SubscriptionPaywall({ onDismiss }) {
             <h2 className="text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
               {verificationTier === 'military' ? 'Military / First Responder' : 'Hospice'} Verification
             </h2>
-            <button onClick={() => setShowVerification(false)} className="text-[var(--t5)] hover:text-white">
-              <X className="w-5 h-5" />
+            <button onClick={() => setShowVerification(false)} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform">
+              <X className="w-4 h-4" />
             </button>
           </div>
 
@@ -549,8 +549,8 @@ export default function SubscriptionPaywall({ onDismiss }) {
                   <Users className="w-5 h-5 text-[#d4af37]" />
                   Family Plan Details
                 </h3>
-                <button onClick={() => setShowFamilyInfo(false)} className="text-[var(--t5)] hover:text-white">
-                  <X className="w-5 h-5" />
+                <button onClick={() => setShowFamilyInfo(false)} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform">
+                  <X className="w-4 h-4" />
                 </button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">

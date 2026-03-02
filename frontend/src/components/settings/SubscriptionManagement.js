@@ -769,8 +769,8 @@ export const SubscriptionManagement = ({
                 {verificationTier === 'military' ? 'Military / First Responder' : 'Hospice'} Verification
               </h2>
               <button onClick={() => { setShowVerification(false); setVerificationFile(null); setVerificationDocType(''); }}
-                className="text-[var(--t5)] hover:text-white">
-                <X className="w-5 h-5" />
+                className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform">
+                <X className="w-4 h-4" />
               </button>
             </div>
 

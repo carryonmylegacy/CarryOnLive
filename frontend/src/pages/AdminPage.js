@@ -88,7 +88,7 @@ const AdminPage = () => {
       {/* Header */}
       <div>
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Admin Dashboard</h1>
-        <p className="text-sm sm:text-base text-[var(--t5)]">Platform Management · Transition Verification · Trustee Services</p>
+        <p className="text-xs sm:text-sm text-[var(--t5)]">Platform Management · Transition Verification · Trustee Services</p>
       </div>
 
       {/* Action Required — items needing admin attention */}

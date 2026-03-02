@@ -79,7 +79,7 @@ const PDFViewerModal = ({ open, onClose, doc, blobUrl, loading, onDownload }) =>
             </Button>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-[#94a3b8] bg-white/5 active:scale-90 transition-transform"
+              className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform"
               data-testid="pdf-viewer-close"
             >
               <X className="w-4 h-4" />

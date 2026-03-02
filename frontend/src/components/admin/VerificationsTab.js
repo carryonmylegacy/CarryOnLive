@@ -196,8 +196,8 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
           <div className="bg-[var(--p)] rounded-xl p-4 max-w-lg w-full max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-bold text-[var(--t)]">{viewingDoc.file_name}</h3>
-              <button onClick={() => setViewingDoc(null)} className="text-[var(--t5)] hover:text-white">
-                <X className="w-5 h-5" />
+              <button onClick={() => setViewingDoc(null)} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform">
+                <X className="w-4 h-4" />
               </button>
             </div>
             {viewingDoc.file_data && (
