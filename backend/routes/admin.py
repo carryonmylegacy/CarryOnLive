@@ -161,6 +161,24 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
     total_docs = await db.documents.count_documents({})
     total_messages = await db.messages.count_documents({})
     pending_certs = await db.death_certificates.count_documents({"status": "pending"})
+    reviewing_certs = await db.death_certificates.count_documents(
+        {"status": "reviewing"}
+    )
+    unanswered_messages = await db.support_messages.count_documents(
+        {"sender_role": {"$ne": "admin"}, "read": False}
+    )
+    pending_verifications = await db.tier_verifications.count_documents(
+        {"status": "pending"}
+    )
+    pending_dts = await db.dts_tasks.count_documents({"status": "pending"})
+    active_subs = await db.user_subscriptions.count_documents({"status": "active"})
+    grace_periods = await db.beneficiary_grace_periods.count_documents({})
+    pending_family = await db.family_plan_requests.count_documents(
+        {"status": "pending"}
+    )
+    deletion_requests = await db.deletion_requests.count_documents(
+        {"status": "pending"}
+    )
     return {
         "users": {
             "total": total_users,
@@ -176,6 +194,14 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
         "documents": total_docs,
         "messages": total_messages,
         "pending_certificates": pending_certs,
+        "reviewing_certificates": reviewing_certs,
+        "unanswered_support": unanswered_messages,
+        "pending_verifications": pending_verifications,
+        "pending_dts": pending_dts,
+        "active_subscriptions": active_subs,
+        "grace_periods": grace_periods,
+        "pending_family_requests": pending_family,
+        "pending_deletions": deletion_requests,
     }
 
 
