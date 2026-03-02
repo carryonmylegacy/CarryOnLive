@@ -2204,12 +2204,22 @@ async def create_b2b_code(
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
     data = await request.json()
+    raw_code = (data.get("code") or "").strip().upper()
+    if not raw_code or len(raw_code) < 3 or len(raw_code) > 50:
+        raise HTTPException(status_code=400, detail="Code must be 3-50 characters")
+    # Sanitize: alphanumeric + hyphens/underscores only
+    import re
+    if not re.match(r'^[A-Z0-9_-]+$', raw_code):
+        raise HTTPException(status_code=400, detail="Code may only contain letters, numbers, hyphens, and underscores")
+    partner_name = (data.get("partner_name") or "")[:100].strip()
+    discount = max(0, min(100, int(data.get("discount_percent", 100))))
+    max_uses = max(0, int(data.get("max_uses", 0)))
     code = {
         "id": str(uuid.uuid4()),
-        "code": data["code"].strip().upper(),
-        "partner_name": data.get("partner_name", ""),
-        "discount_percent": int(data.get("discount_percent", 100)),
-        "max_uses": int(data.get("max_uses", 0)),  # 0 = unlimited
+        "code": raw_code,
+        "partner_name": partner_name,
+        "discount_percent": discount,
+        "max_uses": max_uses,
         "times_used": 0,
         "active": True,
         "created_at": datetime.now(timezone.utc).isoformat(),
