@@ -571,39 +571,6 @@ const SignupPage = () => {
                           ))}
                         </div>
 
-                        {/* Benefactor: Special status checkboxes */}
-                        {role === 'benefactor' && (
-                          <div className="space-y-2 pt-1">
-                            <p className="text-[#7b879e] text-xs font-medium uppercase tracking-wider">Special Eligibility (if applicable)</p>
-                            {[
-                              { id: 'military', label: 'Active Duty Military' },
-                              { id: 'federal_agent', label: 'Active Federal or State Agency Operator' },
-                              { id: 'first_responder', label: 'First Responder' },
-                              { id: 'hospice', label: 'Hospice Patient' },
-                            ].map(s => (
-                              <button key={s.id} type="button"
-                                onClick={() => setSpecialStatus(prev =>
-                                  prev.includes(s.id) ? prev.filter(x => x !== s.id) : [...prev, s.id]
-                                )}
-                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-all"
-                                style={{
-                                  background: specialStatus.includes(s.id) ? 'rgba(245,158,11,0.08)' : 'rgba(255,255,255,0.02)',
-                                  border: specialStatus.includes(s.id) ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(255,255,255,0.06)',
-                                }}
-                                data-testid={`special-status-${s.id}`}
-                              >
-                                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                                  specialStatus.includes(s.id) ? 'bg-[#F59E0B] border-[#F59E0B]' : 'border-[#3a4a63]'
-                                }`}>
-                                  {specialStatus.includes(s.id) && <Check className="w-2.5 h-2.5 text-[#080e1a]" />}
-                                </div>
-                                <span className={`text-xs ${specialStatus.includes(s.id) ? 'text-[#F59E0B]' : 'text-[#7b879e]'}`}>{s.label}</span>
-                              </button>
-                            ))}
-                            <p className="text-[#3a4a63] text-[10px]">Verification required after sign-up for discounted tier pricing.</p>
-                          </div>
-                        )}
-
                         {/* Beneficiary: Benefactor email (required) */}
                         {role === 'beneficiary' && (
                           <div className="space-y-2 pt-1">
@@ -625,8 +592,60 @@ const SignupPage = () => {
                       </div>
                     )}
 
-                    {/* STEP 4: Credentials */}
+                    {/* STEP 4: Special Eligibility (benefactors only) */}
                     {step === 4 && (
+                      <div className="space-y-4">
+                        <div>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Special Eligibility</h2>
+                          <p className="text-[#6b7a90] text-sm">Check any that apply for discounted tier pricing.</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2.5">
+                          {[
+                            { id: 'military', label: 'Active Duty Military', icon: Shield, color: '#F59E0B' },
+                            { id: 'federal_agent', label: 'Federal / State Operator', icon: Shield, color: '#3B82F6' },
+                            { id: 'first_responder', label: 'First Responder', icon: Shield, color: '#EF4444' },
+                            { id: 'veteran', label: 'Veteran', icon: Award, color: '#059669' },
+                            { id: 'hospice', label: 'Hospice Patient', icon: Heart, color: '#ec4899' },
+                          ].map(s => {
+                            const active = specialStatus.includes(s.id);
+                            const SIcon = s.icon;
+                            return (
+                              <button key={s.id} type="button"
+                                onClick={() => setSpecialStatus(prev =>
+                                  prev.includes(s.id) ? prev.filter(x => x !== s.id) : [...prev, s.id]
+                                )}
+                                className="flex flex-col items-center gap-2 p-4 rounded-xl text-center transition-all"
+                                style={{
+                                  background: active ? `${s.color}12` : 'rgba(255,255,255,0.02)',
+                                  border: active ? `2px solid ${s.color}50` : '1px solid rgba(255,255,255,0.06)',
+                                  boxShadow: active ? `0 4px 16px ${s.color}15` : 'none',
+                                }}
+                                data-testid={`special-status-${s.id}`}
+                              >
+                                <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                                  style={{ background: active ? `${s.color}20` : 'rgba(255,255,255,0.04)' }}>
+                                  <SIcon className="w-5 h-5" style={{ color: active ? s.color : '#3a4a63' }} />
+                                </div>
+                                <span className={`text-xs font-bold leading-tight ${active ? '' : 'text-[#7b879e]'}`}
+                                  style={active ? { color: s.color } : {}}>
+                                  {s.label}
+                                </span>
+                                {active && (
+                                  <div className="w-5 h-5 rounded-full flex items-center justify-center"
+                                    style={{ background: s.color }}>
+                                    <Check className="w-3 h-3 text-[#080e1a]" />
+                                  </div>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <p className="text-[#3a4a63] text-xs text-center">Verification will be required after sign-up. Skip if none apply.</p>
+                      </div>
+                    )}
+
+                    {/* STEP 5: Credentials */}
+                    {step === 5 && (
                       <div className="space-y-4 sm:space-y-5">
                         <div>
                           <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Secure your account</h2>
