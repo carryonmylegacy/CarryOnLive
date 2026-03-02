@@ -458,17 +458,23 @@ const SignupPage = () => {
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1.5">
                             <Label className="text-[#7b879e] text-sm font-medium">Dependents (18+)</Label>
-                            <Input type="number" min={0} max={20} value={dependentsOver18}
-                              onChange={(e) => setDependentsOver18(Math.max(0, parseInt(e.target.value) || 0))}
-                              className={inputClass} data-testid="signup-dependents-over" />
-                            <p className="text-[#3a4a63] text-[10px]">Adult children, etc.</p>
+                            <Select value={String(dependentsOver18)} onValueChange={(v) => setDependentsOver18(parseInt(v))}>
+                              <SelectTrigger className={selectClass} data-testid="signup-dependents-over"><SelectValue placeholder="0" /></SelectTrigger>
+                              <SelectContent className="bg-[#141C33] border-[#1a2a42]">
+                                {[...Array(11)].map((_, i) => <SelectItem key={i} value={String(i)}>{i}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                            <p className="text-[#525c72] text-[10px]">Adult children, etc.</p>
                           </div>
                           <div className="space-y-1.5">
                             <Label className="text-[#7b879e] text-sm font-medium">Dependents (Under 18)</Label>
-                            <Input type="number" min={0} max={20} value={dependentsUnder18}
-                              onChange={(e) => setDependentsUnder18(Math.max(0, parseInt(e.target.value) || 0))}
-                              className={inputClass} data-testid="signup-dependents-under" />
-                            <p className="text-[#3a4a63] text-[10px]">Minor children</p>
+                            <Select value={String(dependentsUnder18)} onValueChange={(v) => setDependentsUnder18(parseInt(v))}>
+                              <SelectTrigger className={selectClass} data-testid="signup-dependents-under"><SelectValue placeholder="0" /></SelectTrigger>
+                              <SelectContent className="bg-[#141C33] border-[#1a2a42]">
+                                {[...Array(11)].map((_, i) => <SelectItem key={i} value={String(i)}>{i}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                            <p className="text-[#525c72] text-[10px]">Minor children</p>
                           </div>
                         </div>
                         <p className="text-[#3a4a63] text-xs">All fields optional — helps pre-populate your beneficiary list.</p>
