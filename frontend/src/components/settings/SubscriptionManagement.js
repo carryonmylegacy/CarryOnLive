@@ -141,9 +141,26 @@ export const SubscriptionManagement = ({
 
   // For beneficiaries: show only their locked-in tier (determined by benefactor's majority plan)
   // If no locked tier yet, show nothing — they can't choose
+  // For under-18 beneficiaries: no charge tier at all
+  const isMinorBeneficiary = isBeneficiary && subscriptionStatus?.is_minor;
   const displayPlans = isBeneficiary
-    ? (lockedTier ? beneficiaryPlans.filter(p => p.id === lockedTier) : [])
+    ? (isMinorBeneficiary ? [] : (lockedTier ? beneficiaryPlans.filter(p => p.id === lockedTier) : []))
     : plans;
+
+  // Determine auto-selected tier from eligible_tiers / special_status
+  const eligibleTiers = subscriptionStatus?.eligible_tiers || [];
+  const specialStatus = subscriptionStatus?.special_status || [];
+  const hasSpecialStatus = specialStatus.length > 0;
+  const isNewAdult = eligibleTiers.includes('new_adult') && !hasSpecialStatus;
+  const autoTier = hasSpecialStatus
+    ? (specialStatus.includes('hospice') ? 'hospice' : 'military')
+    : (isNewAdult ? 'new_adult' : null);
+
+  // Should a plan be greyed out (not selectable)?
+  const isPlanLocked = (planId) => {
+    if (!autoTier) return false;
+    return planId !== autoTier;
+  };
 
   // Check if beneficiary's locked plan allows billing toggle (military does not)
   const lockedPlan = lockedTier ? beneficiaryPlans.find(p => p.id === lockedTier) : null;
