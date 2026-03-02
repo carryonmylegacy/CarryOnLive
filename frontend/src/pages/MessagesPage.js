@@ -613,7 +613,8 @@ const MessagesPage = () => {
                       <video
                         src={videoUrl}
                         controls
-                        className="w-full rounded-lg max-h-[200px]"
+                        className="w-full rounded-lg"
+                        style={{ maxHeight: '300px' }}
                       />
                       <Button
                         variant="outline"
@@ -628,33 +629,93 @@ const MessagesPage = () => {
                       </Button>
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      <div className="relative">
-                        <video
-                          ref={videoRef}
-                          className="w-full rounded-lg max-h-[200px] bg-[#0F1629]"
-                          muted
-                        />
-                        {/* Countdown overlay */}
-                        {countdown !== null && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-lg">
-                            <span className="text-6xl font-bold text-white animate-pulse" style={{ fontFamily: 'Outfit, sans-serif' }}>{countdown}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex justify-center gap-3">
-                        {!isRecording ? (
-                          <Button onClick={startRecording} disabled={countdown !== null} className="gold-button">
-                            <Camera className="w-5 h-5 mr-2" />
-                            {countdown !== null ? `${countdown}...` : 'Start Recording'}
-                          </Button>
-                        ) : (
-                          <Button onClick={stopRecording} className="bg-[#ef4444] hover:bg-[#dc2626] text-white">
-                            <StopCircle className="w-5 h-5 mr-2" />
-                            Stop Recording
-                          </Button>
-                        )}
-                      </div>
+                    <div className="flex flex-col items-center gap-4 py-6">
+                      <Camera className="w-12 h-12 text-[var(--t5)]" />
+                      <p className="text-sm text-[var(--t4)]">Record a video message for your loved one</p>
+                      <Button onClick={() => initCamera()} className="gold-button">
+                        <Camera className="w-5 h-5 mr-2" />
+                        Open Camera
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Fullscreen Video Recording Overlay */}
+            {showRecordingOverlay && (
+              <div className="fixed inset-0 z-[200] bg-black flex flex-col" data-testid="video-recording-overlay">
+                {/* Camera feed */}
+                <div className="flex-1 relative">
+                  <video
+                    ref={videoRef}
+                    className="w-full h-full object-cover"
+                    muted
+                    playsInline
+                    style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }}
+                  />
+
+                  {/* Countdown overlay */}
+                  {countdown !== null && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                      <span className="text-8xl font-bold text-white animate-pulse" style={{ fontFamily: 'Outfit, sans-serif' }}>{countdown}</span>
+                    </div>
+                  )}
+
+                  {/* Recording indicator */}
+                  {isRecording && (
+                    <div className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
+                      <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+                      <span className="text-white text-sm font-bold">Recording</span>
+                    </div>
+                  )}
+
+                  {/* Top controls — close & flip */}
+                  <div className="absolute top-4 left-4 right-4 flex items-center justify-between" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+                    <button
+                      onClick={() => { if (isRecording) stopRecording(); releaseCamera(); }}
+                      className="w-10 h-10 rounded-full flex items-center justify-center"
+                      style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)' }}
+                      data-testid="recording-close-btn"
+                    >
+                      <X className="w-5 h-5 text-white" />
+                    </button>
+                    {!isRecording && (
+                      <button
+                        onClick={flipCamera}
+                        className="w-10 h-10 rounded-full flex items-center justify-center"
+                        style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)' }}
+                        data-testid="camera-flip-btn"
+                      >
+                        <SwitchCamera className="w-5 h-5 text-white" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Bottom controls */}
+                <div className="flex-shrink-0 flex items-center justify-center py-8 px-6" style={{ background: 'rgba(0,0,0,0.8)', paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}>
+                  {!isRecording && countdown === null ? (
+                    <button
+                      onClick={startRecording}
+                      className="w-20 h-20 rounded-full flex items-center justify-center transition-transform active:scale-90"
+                      style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', boxShadow: '0 4px 24px rgba(212,175,55,0.4)' }}
+                      data-testid="start-recording-btn"
+                    >
+                      <Camera className="w-8 h-8 text-[#080e1a]" />
+                    </button>
+                  ) : isRecording ? (
+                    <button
+                      onClick={stopRecording}
+                      className="w-20 h-20 rounded-full flex items-center justify-center transition-transform active:scale-90"
+                      style={{ background: '#ef4444', boxShadow: '0 4px 24px rgba(239,68,68,0.4)' }}
+                      data-testid="stop-recording-btn"
+                    >
+                      <StopCircle className="w-8 h-8 text-white" />
+                    </button>
+                  ) : (
+                    <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.1)' }}>
+                      <span className="text-3xl font-bold text-white">{countdown}</span>
                     </div>
                   )}
                 </div>
