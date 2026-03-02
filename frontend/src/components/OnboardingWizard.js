@@ -111,14 +111,17 @@ const OnboardingWizard = () => {
   if (stepsToShow.length === 0) return null;
 
   return (
-    <div className="mb-6 animate-slideDown" data-testid="onboarding-wizard">
+    <div className="mb-6 overflow-hidden" data-testid="onboarding-wizard">
+      <div style={{
+        animation: 'wizardSlideIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+        opacity: 0,
+        transform: 'translateY(-30px)',
+      }}>
       <style>{`
-        @keyframes slideDown {
-          from { opacity: 0; max-height: 0; transform: translateY(-20px); margin-bottom: 0; }
-          to { opacity: 1; max-height: 500px; transform: translateY(0); margin-bottom: 1.5rem; }
-        }
-        .animate-slideDown {
-          animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        @keyframes wizardSlideIn {
+          0% { opacity: 0; transform: translateY(-30px); }
+          40% { opacity: 0.6; }
+          100% { opacity: 1; transform: translateY(0); }
         }
       `}</style>
       {/* Header */}
@@ -193,6 +196,7 @@ const OnboardingWizard = () => {
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );
