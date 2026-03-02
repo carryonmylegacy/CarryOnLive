@@ -608,12 +608,12 @@ const SignupPage = () => {
 
                     {/* STEP 4: Special Eligibility (benefactors only) */}
                     {step === 4 && (
-                      <div className="space-y-2.5">
+                      <div className="space-y-3">
                         <div>
                           <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Special Eligibility</h2>
                           <p className="text-[#94a3b8] text-sm">Select if any apply for discounted pricing.</p>
                         </div>
-                        <div className="grid grid-cols-2 gap-1.5">
+                        <div className="grid grid-cols-2 gap-2.5">
                           {[
                             { id: 'military', label: 'Active Duty Military', icon: Shield, color: '#F59E0B' },
                             { id: 'federal_agent', label: 'Federal / State Operator', icon: Shield, color: '#3B82F6' },
@@ -629,24 +629,24 @@ const SignupPage = () => {
                                 onClick={() => setSpecialStatus(prev =>
                                   prev.includes(s.id) ? prev.filter(x => x !== s.id) : [...prev, s.id]
                                 )}
-                                className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-left transition-all"
+                                className="flex items-center gap-2.5 px-3 py-3.5 rounded-xl text-left transition-all"
                                 style={{
                                   background: active ? `${s.color}15` : 'rgba(255,255,255,0.03)',
                                   border: active ? `2px solid ${s.color}60` : '1px solid rgba(255,255,255,0.08)',
                                 }}
                                 data-testid={`special-status-${s.id}`}
                               >
-                                <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                                <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                                   style={{ background: active ? `${s.color}25` : 'rgba(255,255,255,0.05)' }}>
-                                  <SIcon className="w-3.5 h-3.5" style={{ color: active ? s.color : '#64748b' }} />
+                                  <SIcon className="w-4 h-4" style={{ color: active ? s.color : '#64748b' }} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <span className="text-xs font-bold leading-tight block truncate"
+                                  <span className="text-sm font-bold leading-tight block"
                                     style={{ color: active ? s.color : '#cbd5e1' }}>
                                     {s.label}
                                   </span>
                                   {active && s.id !== 'enterprise' && (
-                                    <span className="text-[9px] block" style={{ color: `${s.color}aa` }}>Verification required</span>
+                                    <span className="text-[10px] block mt-0.5" style={{ color: `${s.color}aa` }}>Verification required</span>
                                   )}
                                 </div>
                               </button>
@@ -656,8 +656,8 @@ const SignupPage = () => {
 
                         {/* B2B code input — shown when enterprise is selected */}
                         {specialStatus.includes('enterprise') && (
-                          <div className="p-2.5 rounded-xl" style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)' }}>
-                            <Label className="text-[#a78bfa] text-[10px] font-bold mb-1 block">Partner Access Code *</Label>
+                          <div className="p-3 rounded-xl" style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)' }}>
+                            <Label className="text-[#a78bfa] text-xs font-bold mb-1.5 block">Partner Access Code *</Label>
                             <Input
                               value={b2bCodeSignup}
                               onChange={(e) => setB2bCodeSignup(e.target.value.toUpperCase())}
@@ -668,7 +668,9 @@ const SignupPage = () => {
                           </div>
                         )}
 
-                        <p className="text-[#64748b] text-[10px] text-center">Skip if none apply.</p>
+                        {!specialStatus.includes('enterprise') && (
+                          <p className="text-[#64748b] text-xs text-center pt-2">Skip if none apply.</p>
+                        )}
                       </div>
                     )}
 
