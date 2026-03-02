@@ -2229,6 +2229,7 @@ async def create_b2b_code(
     if existing:
         raise HTTPException(status_code=400, detail="Code already exists")
     await db.b2b_codes.insert_one(code)
+    code.pop("_id", None)
     return code
 
 
