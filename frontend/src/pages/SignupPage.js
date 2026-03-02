@@ -125,7 +125,7 @@ const SignupPage = () => {
   const canAdvance = () => {
     if (step === 0) return firstName.trim() && lastName.trim();
     if (step === 1) return true; // optional fields
-    if (step === 2) return true; // address is optional
+    if (step === 2) return addressStreet.trim() && addressCity.trim() && addressState && addressZip.trim();
     if (step === 3) {
       if (!role) return false;
       if (role === 'beneficiary' && !benefactorEmail.trim()) return false;
@@ -139,6 +139,7 @@ const SignupPage = () => {
   const handleNext = () => {
     if (!canAdvance()) {
       if (step === 0) toast.error('Please enter your first and last name');
+      if (step === 2) toast.error('Please enter your full address');
       if (step === 3) {
         if (!role) toast.error('Please select your role');
         else if (role === 'beneficiary' && !benefactorEmail.trim()) toast.error('Please enter your benefactor\'s email address');
