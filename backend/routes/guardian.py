@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 import pdfplumber
 from fastapi import APIRouter, Depends, HTTPException, Response
 
-from config import XAI_MODEL, db, logger, xai_client
+from config import XAI_MODEL, XAI_MODEL_LIGHT, db, logger, xai_client
 from models import ChatRequest, ChatResponse, ChecklistItem
 from services.audit import audit_log
 from services.encryption import decrypt_aes256, get_estate_salt
