@@ -54,7 +54,21 @@ const MobileNav = () => {
     { to: '/timeline', icon: Clock, label: 'Legacy Timeline' },
   ];
 
-  const accountItems = [
+  // Admin menu items — admin should NOT see user content
+  const adminMenuItems = [
+    { to: '/admin', icon: Home, label: 'Admin Dashboard' },
+    { to: '/admin/transition', icon: FileKey, label: 'Transition Verification (TVT)' },
+    { to: '/admin/dts', icon: Shield, label: 'Designated Trustee Services' },
+    { to: '/admin/support', icon: Headphones, label: 'Customer Support' },
+    { to: '/admin/subscriptions', icon: Users, label: 'Subscriptions' },
+    { to: '/admin/verifications', icon: ShieldCheck, label: 'Tier Verifications' },
+    { to: '/admin/analytics', icon: Settings, label: 'Analytics' },
+    { to: '/admin/activity', icon: Clock, label: 'Activity Log' },
+  ];
+
+  const accountItems = user?.role === 'admin' ? [
+    { to: '/admin/dev-switcher', icon: Settings, label: 'Dev Switcher' },
+  ] : [
     { to: user?.role === 'beneficiary' ? '/beneficiary/settings' : '/settings', icon: Settings, label: 'Settings' },
     { to: '/security-settings', icon: ShieldCheck, label: 'Security Settings' },
     { to: '/support', icon: Headphones, label: 'Customer Support' },
@@ -135,7 +149,9 @@ const MobileNav = () => {
                     
                   </h3>
                   <div>
-                    {myLegacyItems.map((item, idx) => (
+                    {(user?.role === 'admin' ? adminMenuItems : myLegacyItems).map((item, idx) => {
+                      const items = user?.role === 'admin' ? adminMenuItems : myLegacyItems;
+                      return (
                       <div key={item.to}>
                         <NavLink
                           to={item.to}
@@ -158,7 +174,7 @@ const MobileNav = () => {
                           <item.icon className="w-5 h-5" />
                           <span>{item.label}</span>
                         </NavLink>
-                        {idx < myLegacyItems.length - 1 && (
+                        {idx < items.length - 1 && (
                           <div className="flex justify-center">
                             <div style={{ 
                               width: '87.5%', 
@@ -168,7 +184,8 @@ const MobileNav = () => {
                           </div>
                         )}
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
