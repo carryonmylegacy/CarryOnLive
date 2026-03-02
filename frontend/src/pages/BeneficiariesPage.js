@@ -31,6 +31,7 @@ import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
 import { PhotoPicker } from '../components/PhotoPicker';
+import AddressAutocomplete from '../components/AddressAutocomplete';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
