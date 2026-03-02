@@ -579,7 +579,8 @@ const VaultPage = () => {
                 return (
                   <Card
                     key={doc.id}
-                    className="glass-card relative overflow-hidden group"
+                    className="glass-card relative overflow-hidden group cursor-pointer"
+                    onClick={() => doc.is_locked ? (setSelectedDoc(doc), setShowLockModal(true)) : handlePreview(doc)}
                     data-testid={`document-${doc.id}`}
                   >
                     {/* Lock Overlay */}
