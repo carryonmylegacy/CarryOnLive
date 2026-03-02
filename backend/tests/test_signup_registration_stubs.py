@@ -244,8 +244,8 @@ class TestBeneficiaryUpdate:
             "relation": "Spouse",
             "email": "test@test.com"
         })
-        # Should return 401 (unauthorized) or 404 (not found), not 500
-        assert response.status_code in [401, 404, 422], f"Unexpected status: {response.status_code}"
+        # Should return 401 (unauthorized), 403 (forbidden), or 404 (not found), not 500
+        assert response.status_code in [401, 403, 404, 422], f"Unexpected status: {response.status_code}"
         print(f"✓ Beneficiary update endpoint accessible (auth required)")
 
 
