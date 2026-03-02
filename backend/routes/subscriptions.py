@@ -259,6 +259,23 @@ DEFAULT_PLANS = [
             "Honoring those who served",
         ],
     },
+    {
+        "id": "enterprise",
+        "name": "Enterprise / B2B Partner",
+        "price": 0.00,
+        "quarterly_price": 0.00,
+        "annual_price": 0.00,
+        "ben_price": 0.00,
+        "adjustable": False,
+        "note": "Requires partner code",
+        "requires_verification": True,
+        "verification_docs": ["Partner access code"],
+        "features": [
+            "Full platform access",
+            "Provided by your employer or partner",
+            "Free or discounted based on agreement",
+        ],
+    },
 ]
 
 BENEFICIARY_PLANS = [
