@@ -113,14 +113,14 @@ const OnboardingWizard = () => {
   return (
     <div className="mb-6 overflow-hidden" data-testid="onboarding-wizard">
       <div style={{
-        animation: 'wizardSlideIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+        animation: 'wizardSlideIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards',
         opacity: 0,
         transform: 'translateY(-30px)',
       }}>
       <style>{`
         @keyframes wizardSlideIn {
           0% { opacity: 0; transform: translateY(-30px); }
-          40% { opacity: 0.6; }
+          50% { opacity: 0.5; }
           100% { opacity: 1; transform: translateY(0); }
         }
       `}</style>
