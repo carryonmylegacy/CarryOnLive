@@ -195,6 +195,19 @@ async def approve_death_certificate(
     }
 
 
+@router.delete("/transition/certificates/{certificate_id}")
+async def delete_certificate(
+    certificate_id: str, current_user: dict = Depends(get_current_user)
+):
+    """Delete a transition certificate — admin only."""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    result = await db.death_certificates.delete_one({"id": certificate_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Certificate not found")
+    return {"deleted": True}
+
+
 @router.get("/transition/status/{estate_id}")
 async def get_transition_status(
     estate_id: str, current_user: dict = Depends(get_current_user)

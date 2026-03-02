@@ -177,32 +177,25 @@ export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
         </CardContent>
       </Card>
 
-      {/* Pricing Management */}
+      {/* Benefactor Pricing */}
       <Card className="glass-card">
         <CardContent className="p-5">
           <h3 className="text-lg font-bold text-[var(--t)] flex items-center gap-2 mb-4">
             <DollarSign className="w-5 h-5 text-[var(--gold)]" />
-            Plan Pricing
+            Benefactor Plan Pricing
           </h3>
           <div className="space-y-2">
             {(settings?.plans || []).map(plan => (
               <div key={plan.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--s)]" data-testid={`plan-row-${plan.id}`}>
                 <div>
-                  <span className="font-bold text-[var(--t)]">{plan.name}</span>
+                  <span className="font-bold text-[var(--t)] text-sm">{plan.name}</span>
                   {plan.note && <span className="text-xs text-[var(--t5)] ml-2">({plan.note})</span>}
                 </div>
                 <div className="flex items-center gap-3">
                   {editingPrice === plan.id ? (
                     <div className="flex items-center gap-2">
                       <span className="text-[var(--t4)]">$</span>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={newPrice}
-                        onChange={e => setNewPrice(e.target.value)}
-                        className="input-field w-20 text-sm"
-                        autoFocus
-                      />
+                      <Input type="number" step="0.01" value={newPrice} onChange={e => setNewPrice(e.target.value)} className="input-field w-20 text-sm" autoFocus />
                       <Button size="sm" className="gold-button text-xs" onClick={() => updatePrice(plan.id)}>Save</Button>
                       <Button size="sm" variant="outline" className="text-xs border-[var(--b)]" onClick={() => setEditingPrice(null)}>Cancel</Button>
                     </div>
@@ -210,12 +203,51 @@ export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
                     <>
                       <span className="text-[var(--gold)] font-bold text-lg">${plan.price?.toFixed(2)}</span>
                       <span className="text-xs text-[var(--t5)]">/mo</span>
-                      {plan.adjustable !== false && (
-                        <Button size="sm" variant="outline" className="text-xs border-[var(--b)] text-[var(--t4)]" onClick={() => { setEditingPrice(plan.id); setNewPrice(plan.price?.toString() || ''); }}>
-                          Edit
-                        </Button>
-                      )}
-                      {plan.adjustable === false && <span className="text-[10px] text-[var(--t5)]">Fixed</span>}
+                      <Button size="sm" variant="outline" className="text-xs border-[var(--b)] text-[var(--t4)]" onClick={() => { setEditingPrice(plan.id); setNewPrice(plan.price?.toString() || ''); }}>Edit</Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Beneficiary Pricing */}
+      <Card className="glass-card">
+        <CardContent className="p-5">
+          <h3 className="text-lg font-bold text-[var(--t)] flex items-center gap-2 mb-4">
+            <DollarSign className="w-5 h-5 text-[#60A5FA]" />
+            Beneficiary Plan Pricing
+          </h3>
+          <div className="space-y-2">
+            {(settings?.beneficiary_plans || []).map(plan => (
+              <div key={plan.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--s)]" data-testid={`ben-plan-row-${plan.id}`}>
+                <div>
+                  <span className="font-bold text-[var(--t)] text-sm">{plan.name}</span>
+                  {plan.note && <span className="text-xs text-[var(--t5)] ml-2">({plan.note})</span>}
+                </div>
+                <div className="flex items-center gap-3">
+                  {editingPrice === `ben_${plan.id}` ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[var(--t4)]">$</span>
+                      <Input type="number" step="0.01" value={newPrice} onChange={e => setNewPrice(e.target.value)} className="input-field w-20 text-sm" autoFocus />
+                      <Button size="sm" className="gold-button text-xs" onClick={async () => {
+                        try {
+                          const formData = new FormData();
+                          formData.append('price', parseFloat(newPrice));
+                          await axios.put(`${API_URL}/admin/beneficiary-plans/${plan.id}/price`, formData, { headers });
+                          setEditingPrice(null);
+                          fetchData();
+                        } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update'); }
+                      }}>Save</Button>
+                      <Button size="sm" variant="outline" className="text-xs border-[var(--b)]" onClick={() => setEditingPrice(null)}>Cancel</Button>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="text-[#60A5FA] font-bold text-lg">${plan.price?.toFixed(2)}</span>
+                      <span className="text-xs text-[var(--t5)]">/mo</span>
+                      <Button size="sm" variant="outline" className="text-xs border-[var(--b)] text-[var(--t4)]" onClick={() => { setEditingPrice(`ben_${plan.id}`); setNewPrice(plan.price?.toString() || ''); }}>Edit</Button>
                     </>
                   )}
                 </div>
@@ -249,16 +281,18 @@ export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
               const sub = u.subscription;
               return (
                 <div key={u.id} className="p-3 rounded-xl bg-[var(--s)]" data-testid={`user-sub-${u.id}`}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="font-bold text-[var(--t)] text-sm">{u.name || u.email}</span>
-                      <span className="text-xs text-[var(--t5)] ml-2">{u.email}</span>
-                      <span className="text-xs ml-2 px-1.5 py-0.5 rounded bg-[var(--b)] text-[var(--t4)]">{u.role}</span>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-[var(--t)] text-sm">{u.name || u.email}</span>
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-[var(--b)] text-[var(--t4)]">{u.role}</span>
+                      </div>
+                      <p className="text-xs text-[var(--t5)] truncate mt-0.5">{u.email}</p>
                     </div>
-                    <div className="flex items-center gap-3">
-                      {sub && <span className="text-xs text-[var(--gn2)]">{sub.plan_name}</span>}
-                      {override.free_access && <span className="text-xs bg-[var(--gn2)]/10 text-[var(--gn2)] px-2 py-0.5 rounded-full font-bold">Free</span>}
-                      {override.custom_discount > 0 && <span className="text-xs bg-[var(--yw)]/10 text-[var(--yw)] px-2 py-0.5 rounded-full font-bold">{override.custom_discount}% off</span>}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {sub && <span className="text-xs text-[var(--gn2)] font-bold">{sub.plan_name}</span>}
+                      {override.free_access && <span className="text-[10px] bg-[var(--gn2)]/10 text-[var(--gn2)] px-2 py-0.5 rounded-full font-bold">Free</span>}
+                      {override.custom_discount > 0 && <span className="text-[10px] bg-[var(--yw)]/10 text-[var(--yw)] px-2 py-0.5 rounded-full font-bold">{override.custom_discount}%</span>}
                     </div>
                   </div>
                   {editingUser === u.id ? (

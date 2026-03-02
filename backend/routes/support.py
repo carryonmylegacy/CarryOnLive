@@ -214,3 +214,14 @@ async def get_unread_support_count(current_user: dict = Depends(get_current_user
             }
         )
     return {"unread_count": count}
+
+
+@router.delete("/admin/support/conversation/{conversation_id}")
+async def delete_support_conversation(
+    conversation_id: str, current_user: dict = Depends(get_current_user)
+):
+    """Delete all messages in a support conversation — admin only."""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    result = await db.support_messages.delete_many({"conversation_id": conversation_id})
+    return {"deleted": result.deleted_count}
