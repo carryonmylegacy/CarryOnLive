@@ -381,6 +381,96 @@ async def unlock_document(
     }
 
 
+class DocumentLockRequest(BaseModel):
+    password: str
+
+
+@router.post("/documents/{document_id}/lock")
+async def lock_document(
+    document_id: str,
+    data: DocumentLockRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Set a password lock on an existing document."""
+    document = await db.documents.find_one({"id": document_id}, {"_id": 0})
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    estate = await db.estates.find_one({"id": document["estate_id"]}, {"_id": 0})
+    if not estate or estate.get("owner_id") != current_user["id"]:
+        raise HTTPException(
+            status_code=403, detail="Only the estate owner can lock documents"
+        )
+
+    if len(data.password) < 4:
+        raise HTTPException(
+            status_code=400, detail="Password must be at least 4 characters"
+        )
+
+    backup_code = generate_backup_code()
+
+    await db.documents.update_one(
+        {"id": document_id},
+        {
+            "$set": {
+                "is_locked": True,
+                "lock_type": "password",
+                "lock_password_hash": hash_password(data.password),
+                "backup_code": backup_code,
+                "locked_at": datetime.now(timezone.utc).isoformat(),
+                "locked_by": current_user["id"],
+            }
+        },
+    )
+
+    await audit_log(
+        action="document.lock",
+        user_id=current_user["id"],
+        resource_type="document",
+        resource_id=document_id,
+        estate_id=document.get("estate_id"),
+    )
+
+    return {
+        "locked": True,
+        "backup_code": backup_code,
+        "message": "Document locked. Save your backup code securely.",
+    }
+
+
+@router.post("/documents/{document_id}/remove-lock")
+async def remove_document_lock(
+    document_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Remove the password lock from a document (owner only, no password needed)."""
+    document = await db.documents.find_one({"id": document_id}, {"_id": 0})
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    estate = await db.estates.find_one({"id": document["estate_id"]}, {"_id": 0})
+    if not estate or estate.get("owner_id") != current_user["id"]:
+        raise HTTPException(
+            status_code=403, detail="Only the estate owner can remove locks"
+        )
+
+    await db.documents.update_one(
+        {"id": document_id},
+        {
+            "$set": {"is_locked": False},
+            "$unset": {
+                "lock_type": "",
+                "lock_password_hash": "",
+                "backup_code": "",
+                "locked_at": "",
+                "locked_by": "",
+            },
+        },
+    )
+
+    return {"unlocked": True, "message": "Lock removed."}
+
+
 @router.get("/vault/security-info/{estate_id}")
 async def get_vault_security_info(
     estate_id: str, current_user: dict = Depends(get_current_user)

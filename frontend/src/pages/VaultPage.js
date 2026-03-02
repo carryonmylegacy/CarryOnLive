@@ -65,6 +65,10 @@ const VaultPage = () => {
   const [showBackupCodeModal, setShowBackupCodeModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showVoiceSetupModal, setShowVoiceSetupModal] = useState(false);
+  const [showSetLockModal, setShowSetLockModal] = useState(false);
+  const [showRemoveLockConfirm, setShowRemoveLockConfirm] = useState(false);
+  const [newLockPassword, setNewLockPassword] = useState('');
+  const [lockingDoc, setLockingDoc] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [unlockPassword, setUnlockPassword] = useState('');
   const [unlockBackupCode, setUnlockBackupCode] = useState('');
@@ -209,6 +213,42 @@ const VaultPage = () => {
       setUnlocking(false);
     }
   };
+
+  const handleSetLock = async () => {
+    if (!selectedDoc || !newLockPassword || newLockPassword.length < 4) {
+      toast.error('Password must be at least 4 characters');
+      return;
+    }
+    setLockingDoc(true);
+    try {
+      const res = await axios.post(`${API_URL}/documents/${selectedDoc.id}/lock`, { password: newLockPassword }, getAuthHeaders());
+      setBackupCode(res.data.backup_code);
+      setShowSetLockModal(false);
+      setNewLockPassword('');
+      setShowBackupCodeModal(true);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to lock document');
+    } finally {
+      setLockingDoc(false);
+    }
+  };
+
+  const handleRemoveLock = async () => {
+    if (!selectedDoc) return;
+    setLockingDoc(true);
+    try {
+      await axios.post(`${API_URL}/documents/${selectedDoc.id}/remove-lock`, {}, getAuthHeaders());
+      setShowRemoveLockConfirm(false);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to remove lock');
+    } finally {
+      setLockingDoc(false);
+    }
+  };
+
+
 
   const handleDownload = async (doc, password = null, backupCode = null) => {
     setDownloading(doc.id);
@@ -611,23 +651,6 @@ const VaultPage = () => {
                       {/* Thumbnail area */}
                       <div className="h-28 w-full rounded-t-xl overflow-hidden relative">
                         <DocThumbnail doc={doc} getAuthHeaders={getAuthHeaders} />
-                        <div className="absolute top-2 right-2">
-                          {doc.is_locked ? (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setSelectedDoc(doc); setShowLockModal(true); }}
-                              className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-110"
-                              style={{ background: 'rgba(245,158,11,0.2)', backdropFilter: 'blur(4px)' }}
-                              title="Unlock document"
-                              data-testid={`lock-badge-${doc.id}`}
-                            >
-                              <Lock className="w-3 h-3 text-[#f59e0b]" />
-                            </button>
-                          ) : (
-                            <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.15)', backdropFilter: 'blur(4px)' }}>
-                              <Unlock className="w-3 h-3 text-[#10b981]" />
-                            </div>
-                          )}
-                        </div>
                       </div>
                       
                       <div className="p-4 pt-3">
@@ -668,8 +691,27 @@ const VaultPage = () => {
                             <Button
                               variant="ghost"
                               size="sm"
+                              className={doc.is_locked ? 'text-[#ef4444]' : 'text-[#10b981]'}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedDoc(doc);
+                                if (doc.is_locked) {
+                                  setShowRemoveLockConfirm(true);
+                                } else {
+                                  setShowSetLockModal(true);
+                                }
+                              }}
+                              title={doc.is_locked ? 'Locked — tap to remove lock' : 'Unlocked — tap to set password'}
+                              aria-label={doc.is_locked ? 'Remove lock' : 'Set lock'}
+                              data-testid={`lock-toggle-${doc.id}`}
+                            >
+                              {doc.is_locked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               className="text-[#d4af37] hover:text-[#f5d050]"
-                              onClick={() => openEditModal(doc)}
+                              onClick={(e) => { e.stopPropagation(); openEditModal(doc); }}
                               title="Edit"
                               aria-label="Edit document"
                               data-testid={`edit-document-${doc.id}`}
@@ -1196,6 +1238,73 @@ const VaultPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Set Lock Modal */}
+      <Dialog open={showSetLockModal} onOpenChange={(open) => { setShowSetLockModal(open); if (!open) setNewLockPassword(''); }}>
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-white text-lg flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <Lock className="w-5 h-5 text-[#ef4444]" />
+              Lock Document
+            </DialogTitle>
+            <DialogDescription className="text-[#94a3b8]">
+              Set a password for "{selectedDoc?.name}". A backup code will be generated.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="text-[#94a3b8]">Password (min 4 characters)</Label>
+              <Input
+                type="password"
+                value={newLockPassword}
+                onChange={(e) => setNewLockPassword(e.target.value)}
+                placeholder="Enter a password"
+                className="input-field"
+                data-testid="set-lock-password"
+              />
+            </div>
+            <Button
+              onClick={handleSetLock}
+              disabled={lockingDoc || newLockPassword.length < 4}
+              className="w-full"
+              style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: 'white' }}
+              data-testid="confirm-set-lock"
+            >
+              {lockingDoc ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Lock className="w-4 h-4 mr-2" />}
+              Lock Document
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove Lock Confirmation */}
+      <Dialog open={showRemoveLockConfirm} onOpenChange={setShowRemoveLockConfirm}>
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-white text-lg flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <Unlock className="w-5 h-5 text-[#10b981]" />
+              Remove Lock
+            </DialogTitle>
+            <DialogDescription className="text-[#94a3b8]">
+              Remove password protection from "{selectedDoc?.name}"? Anyone with vault access will be able to view it.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 pt-2">
+            <Button variant="outline" className="flex-1 border-[var(--b)] text-[var(--t3)]" onClick={() => setShowRemoveLockConfirm(false)}>Cancel</Button>
+            <Button
+              onClick={handleRemoveLock}
+              disabled={lockingDoc}
+              className="flex-1"
+              style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white' }}
+              data-testid="confirm-remove-lock"
+            >
+              {lockingDoc ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Unlock className="w-4 h-4 mr-2" />}
+              Remove Lock
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       </SectionLockedOverlay>
     </div>
   );
