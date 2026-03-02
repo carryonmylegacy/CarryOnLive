@@ -508,6 +508,17 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
                     benefactor_user["verified_tier"], "ben_base"
                 )
 
+    # Check if beneficiary is a minor (under 18)
+    is_minor = False
+    if current_user.get("role") == "beneficiary" and user_doc and user_doc.get("date_of_birth"):
+        try:
+            dob = datetime.fromisoformat(user_doc["date_of_birth"])
+            age = (datetime.now(timezone.utc) - dob.replace(tzinfo=timezone.utc)).days // 365
+            if age < 18:
+                is_minor = True
+        except (ValueError, TypeError):
+            pass
+
     return {
         "subscription": sub,
         "trial": trial,
@@ -526,6 +537,7 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
         else None,
         "eligible_tiers": eligible_tiers,
         "special_status": special_status,
+        "is_minor": is_minor,
         "user_role": current_user.get("role", "benefactor"),
         "beneficiary_locked_tier": beneficiary_locked_tier,
         "estate_transitioned": estate_transitioned,
