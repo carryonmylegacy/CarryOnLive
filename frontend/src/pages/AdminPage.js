@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Skeleton } from '../components/ui/skeleton';
+import { Switch } from '../components/ui/switch';
 
 import { UsersTab } from '../components/admin/UsersTab';
 import { TransitionTab } from '../components/admin/TransitionTab';
@@ -54,21 +55,32 @@ const AdminPage = () => {
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [otpDisabled, setOtpDisabled] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [usersRes, statsRes] = await Promise.all([
+        const [usersRes, statsRes, settingsRes] = await Promise.all([
           axios.get(`${API_URL}/admin/users`, getAuthHeaders()),
           axios.get(`${API_URL}/admin/stats`, getAuthHeaders()),
+          axios.get(`${API_URL}/admin/platform-settings`, getAuthHeaders()).catch(() => ({ data: {} })),
         ]);
         setUsers(usersRes.data);
         setStats(statsRes.data);
+        setOtpDisabled(settingsRes.data?.otp_disabled || false);
       } catch (err) { console.error(err); }
       finally { setLoading(false); }
     };
     fetchData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const toggleOtp = async () => {
+    const newVal = !otpDisabled;
+    setOtpDisabled(newVal);
+    try {
+      await axios.put(`${API_URL}/admin/platform-settings`, { otp_disabled: newVal }, getAuthHeaders());
+    } catch { setOtpDisabled(!newVal); }
+  };
 
   if (user?.role !== 'admin') {
     return (
@@ -89,6 +101,18 @@ const AdminPage = () => {
       <div>
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Admin Dashboard</h1>
         <p className="text-xs sm:text-sm text-[var(--t5)]">Platform Management · Transition Verification · Trustee Services</p>
+      </div>
+
+      {/* Platform Controls */}
+      <div className="flex items-center justify-between p-3 rounded-xl" style={{ background: otpDisabled ? 'rgba(239,68,68,0.06)' : 'var(--s)', border: otpDisabled ? '1px solid rgba(239,68,68,0.2)' : '1px solid var(--b)' }}>
+        <div className="flex items-center gap-3">
+          <ShieldCheck className="w-5 h-5" style={{ color: otpDisabled ? '#ef4444' : '#10b981' }} />
+          <div>
+            <span className="text-sm font-bold text-[var(--t)]">OTP Verification</span>
+            <p className="text-[10px] text-[var(--t5)]">{otpDisabled ? 'DISABLED — all users bypass OTP' : 'Enabled — users verify via email OTP'}</p>
+          </div>
+        </div>
+        <Switch checked={!otpDisabled} onCheckedChange={() => toggleOtp()} data-testid="otp-toggle" />
       </div>
 
       {/* Action Required — items needing admin attention */}

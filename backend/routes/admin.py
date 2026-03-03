@@ -326,3 +326,32 @@ async def get_activity_log(current_user: dict = Depends(get_current_user)):
     # Sort all activities by timestamp descending
     activities.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
     return activities[:50]
+
+
+# ===================== PLATFORM SETTINGS =====================
+
+
+@router.get("/admin/platform-settings")
+async def get_platform_settings(current_user: dict = Depends(get_current_user)):
+    """Get platform-wide settings (admin only)."""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0})
+    return settings or {"otp_disabled": False}
+
+
+@router.put("/admin/platform-settings")
+async def update_platform_settings(
+    data: dict, current_user: dict = Depends(get_current_user)
+):
+    """Update platform-wide settings (admin only)."""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    allowed_keys = {"otp_disabled"}
+    update = {k: v for k, v in data.items() if k in allowed_keys}
+    if update:
+        await db.platform_settings.update_one(
+            {"_id": "global"}, {"$set": update}, upsert=True
+        )
+    settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0})
+    return settings or {"otp_disabled": False}
