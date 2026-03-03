@@ -117,7 +117,7 @@ const AddressAutocomplete = ({ value, onChange, onSelect, placeholder, className
         onChange={handleInputChange}
         onFocus={() => { if (suggestions.length > 0) setShowDropdown(true); }}
         placeholder={placeholder || 'Start typing an address...'}
-        className={`${className} bg-[var(--bg,#0b1322)] text-[var(--t,#e2e8f0)] border-[var(--b,#1a2a42)]`}
+        className="h-10 w-full rounded-xl border border-[var(--b,#1a2a42)] bg-[var(--bg,#0b1322)] px-4 text-sm font-medium text-[var(--t,#e2e8f0)] placeholder:text-[var(--t5,#3a4a63)] focus:border-[#d4af37] focus:outline-none focus:ring-1 focus:ring-[#d4af37]/20"
         autoComplete="off"
         data-testid={testId || 'address-autocomplete'}
         {...rest}
