@@ -495,40 +495,37 @@ const BeneficiariesPage = () => {
                   </div>
                 )}
                 
-                <div className="mt-4 pt-4 border-t border-[var(--b)] flex items-center justify-between">
-                  {getInvitationStatusBadge(ben)}
+                <div className="mt-4 pt-3 border-t border-[var(--b)]">
+                  <div className="flex items-center justify-between mb-2">
+                    {getInvitationStatusBadge(ben)}
+                  </div>
                   
                   {ben.invitation_status !== 'accepted' && !ben.user_id && (
-                    <div className="flex flex-wrap items-center gap-2 mt-2 pt-2" style={{ borderTop: '1px solid var(--b)' }}>
+                    <div className="grid grid-cols-2 gap-2">
                       <Button
                         size="sm"
                         variant="outline"
-                        className="border-[var(--b)] text-[var(--t3)] hover:bg-[var(--s)] text-xs"
+                        className="border-[var(--b)] text-[var(--t3)] text-xs w-full"
                         onClick={() => handleCopyLink(ben)}
                         data-testid={`copy-invite-link-${ben.id}`}
                       >
                         {copiedLink === ben.id ? (
-                          <Check className="w-3 h-3 mr-1 text-[#10b981]" />
+                          <><Check className="w-3 h-3 mr-1.5 text-[#10b981]" /> Copied</>
                         ) : (
-                          <Copy className="w-3 h-3 mr-1" />
+                          <><Copy className="w-3 h-3 mr-1.5" /> Copy Link</>
                         )}
-                        {copiedLink === ben.id ? 'Copied!' : 'Copy Link'}
                       </Button>
                       <Button
                         size="sm"
-                        variant="outline"
-                        className="border-[#d4af37]/30 text-[#d4af37] hover:bg-[#d4af37]/10"
+                        className="gold-button text-xs w-full"
                         onClick={() => handleSendInvitation(ben.id)}
                         disabled={sendingInvite === ben.id}
                         data-testid={`send-invite-${ben.id}`}
                       >
                         {sendingInvite === ben.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <Loader2 className="w-3 h-3 animate-spin" />
                         ) : (
-                          <>
-                            <Send className="w-3 h-3 mr-1" />
-                            {ben.invitation_status === 'sent' ? 'Resend' : 'Send Invite'}
-                          </>
+                          <><Send className="w-3 h-3 mr-1.5" /> {ben.invitation_status === 'sent' ? 'Resend' : 'Send Invite'}</>
                         )}
                       </Button>
                     </div>
