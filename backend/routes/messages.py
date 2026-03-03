@@ -10,7 +10,7 @@ import base64
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
 
 from config import db, logger
 from models import Message, MessageCreate, MessageUpdate
@@ -303,7 +303,46 @@ async def create_message(
         },
     )
 
-    return message
+    return {"id": message.id, **message.model_dump()}
+
+
+@router.post("/messages/{message_id}/upload-video")
+async def upload_message_video(
+    message_id: str,
+    video: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
+):
+    """Upload video for a message separately (supports large files)."""
+    message = await db.messages.find_one({"id": message_id}, {"_id": 0})
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+
+    estate = await db.estates.find_one({"id": message["estate_id"]}, {"_id": 0})
+    if not estate or estate.get("owner_id") != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    estate_salt = await get_estate_salt(message["estate_id"])
+    video_id = f"video_{message_id}"
+
+    # Read video bytes
+    video_bytes = await video.read()
+    logger.info(
+        f"Video upload for message {message_id}: {len(video_bytes)} bytes, type={video.content_type}"
+    )
+
+    # Encrypt and store
+    encrypted_video = encrypt_aes256(video_bytes, estate_salt)
+    await storage.upload(
+        encrypted_video.encode("ascii"),
+        message["estate_id"],
+        video_id,
+        video.content_type or "video/mp4",
+    )
+
+    # Update message with video reference
+    await db.messages.update_one({"id": message_id}, {"$set": {"video_url": video_id}})
+
+    return {"success": True, "video_id": video_id}
 
 
 @router.put("/messages/{message_id}")
