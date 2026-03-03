@@ -121,14 +121,11 @@ const VaultPage = () => {
   const fetchData = async () => {
     try {
       const estatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders());
-      console.log('Estates fetched:', estatesRes.data.length, estatesRes.data.map(e => e.id));
-      if (estatesRes.data.length > 0) {
-        setEstate(estatesRes.data[0]);
-        const docsRes = await axios.get(`${API_URL}/documents/${estatesRes.data[0].id}`, getAuthHeaders()).catch((err) => { console.error('Docs fetch failed:', err.response?.status, err.response?.data); return { data: [] }; });
-        console.log('Documents fetched:', Array.isArray(docsRes.data) ? docsRes.data.length : 'not array');
+      const estates = Array.isArray(estatesRes.data) ? estatesRes.data : [];
+      if (estates.length > 0) {
+        setEstate(estates[0]);
+        const docsRes = await axios.get(`${API_URL}/documents/${estates[0].id}`, getAuthHeaders()).catch(() => ({ data: [] }));
         setDocuments(Array.isArray(docsRes.data) ? docsRes.data : []);
-      } else {
-        console.warn('No estates found for current user');
       }
     } catch (error) {
       console.error('Fetch error:', error);
