@@ -224,11 +224,21 @@ function AppRoutes() {
 }
 
 function App() {
-  // Initialize Capgo live updates on native platforms
+  // Initialize Capgo live updates and native optimizations
   useEffect(() => {
     if (isNative) {
       CapacitorUpdater.notifyAppReady();
       document.body.classList.add('native-app');
+
+      // Handle background/foreground transitions
+      import('@capacitor/app').then(({ App: CapApp }) => {
+        CapApp.addListener('appStateChange', ({ isActive }) => {
+          if (isActive) {
+            // Returning to foreground — invalidate stale caches
+            import('./utils/apiCache').then(({ clearCache }) => clearCache());
+          }
+        });
+      }).catch(() => {});
     }
   }, []);
 
