@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { Button } from './ui/button';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
 const PDFViewerModal = ({ open, onClose, doc, blobUrl, loading, onDownload }) => {
   const [numPages, setNumPages] = useState(null);
