@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -106,12 +106,49 @@ const MobileNav = () => {
     return benefactorBottomNav;
   };
 
+  const [showDebug, setShowDebug] = useState(false);
+  const debugTapCount = useRef(0);
+  const debugTapTimer = useRef(null);
+
+  const handleDebugTap = () => {
+    debugTapCount.current++;
+    clearTimeout(debugTapTimer.current);
+    if (debugTapCount.current >= 5) {
+      setShowDebug(prev => !prev);
+      debugTapCount.current = 0;
+    } else {
+      debugTapTimer.current = setTimeout(() => { debugTapCount.current = 0; }, 1000);
+    }
+  };
+
   return (
     <>
+      {/* Debug overlay */}
+      {showDebug && (
+        <div className="fixed top-0 left-0 right-0 z-[9999] p-2 text-[10px] font-mono text-green-400" style={{ background: 'rgba(0,0,0,0.9)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+          <div id="debug-info" ref={(el) => {
+            if (!el) return;
+            const mc = document.querySelector('.main-content');
+            const mh = document.querySelector('.mobile-header');
+            const cs = (e, p) => e ? window.getComputedStyle(e)[p] : 'N/A';
+            el.textContent = [
+              `safe-area-top: ${getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-top)') || 'unknown'}`,
+              `body.native-app: ${document.body.classList.contains('native-app')}`,
+              `header.paddingTop: ${cs(mh, 'paddingTop')}`,
+              `header.height: ${mh?.offsetHeight}px`,
+              `main.paddingTop: ${cs(mc, 'paddingTop')}`,
+              `main.offsetTop: ${mc?.offsetTop}px`,
+              `viewport: ${window.innerWidth}x${window.innerHeight}`,
+              `devicePixelRatio: ${window.devicePixelRatio}`,
+            ].join(' | ');
+          }} />
+        </div>
+      )}
+
       {/* Top Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 w-full mobile-header z-50">
         <div className="h-14 flex items-center justify-between px-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3" onClick={handleDebugTap}>
             <img 
               src="/carryon-app-icon.jpg" 
               alt="CarryOn" 
