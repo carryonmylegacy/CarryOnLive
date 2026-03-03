@@ -134,8 +134,8 @@ const MessagesPage = () => {
       }
       const mode = facing || facingMode;
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: mode } },
-        audio: true
+        video: { facingMode: { ideal: mode }, width: { ideal: 640 }, height: { ideal: 480 } },
+        audio: { echoCancellation: true, noiseSuppression: true }
       });
       streamRef.current = stream;
 
@@ -189,14 +189,14 @@ const MessagesPage = () => {
       // 3-2-1 countdown
       await runCountdown();
       
-      // Use best supported format — iOS Safari uses mp4, Chrome/Firefox use webm
-      let recorderOptions = {};
+      // Low bitrate for long recordings — 500kbps video + 64kbps audio ≈ 4MB/min
+      let recorderOptions = { videoBitsPerSecond: 500000, audioBitsPerSecond: 64000 };
       if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
-        recorderOptions = { mimeType: 'video/webm;codecs=vp9' };
+        recorderOptions.mimeType = 'video/webm;codecs=vp9';
       } else if (MediaRecorder.isTypeSupported('video/webm')) {
-        recorderOptions = { mimeType: 'video/webm' };
+        recorderOptions.mimeType = 'video/webm';
       }
-      // iOS Safari: don't pass mimeType, it defaults to mp4
+      // iOS Safari: no mimeType needed, defaults to mp4
       mediaRecorderRef.current = new MediaRecorder(streamRef.current, recorderOptions);
       chunksRef.current = [];
       
@@ -289,33 +289,16 @@ const MessagesPage = () => {
     
     setCreating(true);
     try {
-      let videoData = null;
-      let videoThumbnail = null;
-      if (videoBlob && videoBlob !== 'existing') {
-        const reader = new FileReader();
-        videoData = await new Promise((resolve) => {
-          reader.onloadend = () => resolve(reader.result.split(',')[1]);
-          reader.readAsDataURL(videoBlob);
-        });
-        videoThumbnail = videoThumbnailRef.current || null;
-      }
+      let videoThumbnail = videoThumbnailRef.current || null;
 
-      let voiceData = null;
-      if (audioBlob) {
-        const reader = new FileReader();
-        voiceData = await new Promise((resolve) => {
-          reader.onloadend = () => resolve(reader.result.split(',')[1]);
-          reader.readAsDataURL(audioBlob);
-        });
-      }
-      
+      // Create message first (without video data)
       const payload = {
         title,
         content,
         message_type: messageType,
-        video_data: videoData,
+        video_data: null,
         video_thumbnail: videoThumbnail,
-        voice_data: voiceData,
+        voice_data: null,
         recipients: selectedRecipients,
         trigger_type: triggerType,
         trigger_value: triggerValue || null,
@@ -324,16 +307,36 @@ const MessagesPage = () => {
         custom_event_label: triggerValue === 'custom' ? customEventLabel : null,
       };
 
-      if (editingMessage) {
-        // Edit existing
-        await axios.put(`${API_URL}/messages/${editingMessage.id}`, payload, getAuthHeaders());
-        // toast removed
-      } else {
-        // Create new
-        await axios.post(`${API_URL}/messages`, { ...payload, estate_id: estate.id }, getAuthHeaders());
-        // toast removed
+      // For voice, include inline (small)
+      if (audioBlob) {
+        const reader = new FileReader();
+        const voiceData = await new Promise((resolve) => {
+          reader.onloadend = () => resolve(reader.result.split(',')[1]);
+          reader.readAsDataURL(audioBlob);
+        });
+        payload.voice_data = voiceData;
       }
-      
+
+      let messageId = null;
+
+      if (editingMessage) {
+        await axios.put(`${API_URL}/messages/${editingMessage.id}`, payload, getAuthHeaders());
+        messageId = editingMessage.id;
+      } else {
+        const res = await axios.post(`${API_URL}/messages`, { ...payload, estate_id: estate.id }, getAuthHeaders());
+        messageId = res.data?.id;
+      }
+
+      // Upload video separately if present (chunked via FormData)
+      if (videoBlob && videoBlob !== 'existing' && messageId) {
+        const formData = new FormData();
+        formData.append('video', videoBlob, 'video.mp4');
+        await axios.post(`${API_URL}/messages/${messageId}/upload-video`, formData, {
+          headers: { ...getAuthHeaders().headers, 'Content-Type': 'multipart/form-data' },
+          timeout: 300000, // 5 min timeout for large videos
+        });
+      }
+
       setShowCreateModal(false);
       setEditingMessage(null);
       resetForm();
