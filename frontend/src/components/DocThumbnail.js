@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Document, Page } from 'react-pdf';
-import { FileText, Image as ImageIcon, File } from 'lucide-react';
+import { FileText, File } from 'lucide-react';
 import axios from 'axios';
+import { getCachedBlob, setCachedBlob } from '../utils/blobCache';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -18,10 +19,13 @@ const DocThumbnail = ({ doc }) => {
     setError(false);
     if (!isPreviewable || doc.is_locked) return;
 
+    // Check LRU cache first
+    const cached = getCachedBlob(doc.id);
+    if (cached) { setBlobUrl(cached); return; }
+
     const token = localStorage.getItem('carryon_token');
     if (!token) { setError(true); return; }
 
-    let objectUrl = null;
     setLoading(true);
     axios.get(`${API_URL}/documents/${doc.id}/preview`, {
       headers: { 'Authorization': `Bearer ${token}` },
@@ -29,18 +33,16 @@ const DocThumbnail = ({ doc }) => {
     }).then(res => {
       if (!mountedRef.current) return;
       const blob = new Blob([res.data], { type: doc.file_type });
-      objectUrl = URL.createObjectURL(blob);
-      setBlobUrl(objectUrl);
+      const url = URL.createObjectURL(blob);
+      setCachedBlob(doc.id, url);
+      setBlobUrl(url);
     }).catch(() => {
       if (mountedRef.current) setError(true);
     }).finally(() => {
       if (mountedRef.current) setLoading(false);
     });
 
-    return () => {
-      mountedRef.current = false;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
+    return () => { mountedRef.current = false; };
   }, [doc.id, doc.is_locked, doc.file_type, isPreviewable]);
 
   if (!isPreviewable || doc.is_locked) {
