@@ -6,8 +6,6 @@
 	<array>
 		<string>webcredentials:carryon.us</string>
 		<string>webcredentials:app.carryon.us</string>
-		<string>applinks:carryon.us</string>
-		<string>applinks:app.carryon.us</string>
 	</array>
 </dict>
 </plist>
