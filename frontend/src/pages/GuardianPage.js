@@ -191,7 +191,10 @@ const GuardianPage = () => {
     const handleTouchMove = (e) => {
       let target = e.target;
       while (target && target !== guardianRef.current) {
-        if (target.scrollHeight > target.clientHeight && window.getComputedStyle(target).overflowY !== 'hidden') {
+        const style = window.getComputedStyle(target);
+        const isScrollable = (style.overflowY === 'auto' || style.overflowY === 'scroll') && target.scrollHeight > target.clientHeight;
+        const hasScrollClass = target.classList.contains('overflow-y-auto') || target.classList.contains('overflow-y-scroll');
+        if (isScrollable || hasScrollClass) {
           return; // Allow scroll inside scrollable child
         }
         target = target.parentElement;
