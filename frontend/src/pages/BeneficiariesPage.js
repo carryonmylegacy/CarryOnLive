@@ -499,11 +499,11 @@ const BeneficiariesPage = () => {
                   {getInvitationStatusBadge(ben)}
                   
                   {ben.invitation_status !== 'accepted' && !ben.user_id && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 mt-2 pt-2" style={{ borderTop: '1px solid var(--b)' }}>
                       <Button
                         size="sm"
                         variant="outline"
-                        className="border-[var(--b)] text-[var(--t3)] hover:bg-[var(--s)]"
+                        className="border-[var(--b)] text-[var(--t3)] hover:bg-[var(--s)] text-xs"
                         onClick={() => handleCopyLink(ben)}
                         data-testid={`copy-invite-link-${ben.id}`}
                       >
