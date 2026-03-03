@@ -88,6 +88,7 @@ const MessagesPage = () => {
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const streamRef = useRef(null);
+  const videoThumbnailRef = useRef(null);
 
   // Voice recording state
   const [audioBlob, setAudioBlob] = useState(null);
@@ -204,6 +205,18 @@ const MessagesPage = () => {
       
       mediaRecorderRef.current.start();
       setIsRecording(true);
+
+      // Capture thumbnail from live video feed
+      try {
+        if (videoRef.current) {
+          const canvas = document.createElement('canvas');
+          canvas.width = 320;
+          canvas.height = 180;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+          videoThumbnailRef.current = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+        }
+      } catch { /* non-critical */ }
     } catch (error) {
       console.error('Recording error:', error);
       toast.error('Failed to start recording. Please check camera permissions.');
@@ -268,22 +281,7 @@ const MessagesPage = () => {
           reader.onloadend = () => resolve(reader.result.split(',')[1]);
           reader.readAsDataURL(videoBlob);
         });
-        // Generate thumbnail from video
-        try {
-          const video = document.createElement('video');
-          video.muted = true;
-          video.src = URL.createObjectURL(videoBlob);
-          await new Promise((res, rej) => { video.onloadeddata = res; video.onerror = rej; });
-          video.currentTime = 0.5;
-          await new Promise((res) => { video.onseeked = res; });
-          const canvas = document.createElement('canvas');
-          canvas.width = 320;
-          canvas.height = 180;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          videoThumbnail = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
-          URL.revokeObjectURL(video.src);
-        } catch { /* thumbnail generation failed — non-critical */ }
+        videoThumbnail = videoThumbnailRef.current || null;
       }
 
       let voiceData = null;
@@ -822,12 +820,12 @@ const MessagesPage = () => {
                   beneficiaries.map((ben) => (
                     <div
                       key={ben.id}
-                      className="flex items-center gap-3 p-3 rounded-xl bg-[var(--s)] cursor-pointer"
-                      onClick={() => toggleRecipient(ben.user_id || ben.id)}
+                      className="flex items-center gap-3 p-3 rounded-xl bg-[var(--s)] cursor-pointer active:scale-[0.98] transition-transform duration-150"
+                      onClick={(e) => { e.preventDefault(); toggleRecipient(ben.user_id || ben.id); }}
                     >
                       <Checkbox
                         checked={selectedRecipients.includes(ben.user_id || ben.id)}
-                        onCheckedChange={() => toggleRecipient(ben.user_id || ben.id)}
+                        onCheckedChange={() => {}}
                       />
                       <div
                         className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold overflow-hidden"
