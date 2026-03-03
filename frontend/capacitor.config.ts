@@ -24,6 +24,12 @@ const config: CapacitorConfig = {
   ios: {
     contentInset: 'automatic',
     backgroundColor: '#0F1629',
+    allowsLinkPreview: false,
+    scrollEnabled: true,
+    webView: {
+      allowsInlineMediaPlayback: true,
+      mediaTypesRequiringUserActionForPlayback: 'none',
+    },
   },
   android: {
     backgroundColor: '#0F1629',

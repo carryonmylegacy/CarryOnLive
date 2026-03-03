@@ -684,7 +684,7 @@ const GuardianPage = () => {
         {showQuestions && (
           <div className="absolute bottom-full left-3 right-3 mb-2 rounded-xl overflow-hidden z-10" style={{
             background: 'rgba(20,28,51,0.98)', border: '1px solid rgba(255,255,255,0.1)',
-            boxShadow: '0 -8px 32px rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)',
+            boxShadow: '0 -8px 32px rgba(0,0,0,0.4)', 
           }} data-testid="questions-popover">
             <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid var(--b)' }}>
               <span className="text-xs font-bold text-[var(--t3)]">Helpful Questions</span>
@@ -705,7 +705,7 @@ const GuardianPage = () => {
         {showActions && (
           <div className="absolute bottom-full left-3 right-3 mb-2 rounded-xl overflow-hidden z-10" style={{
             background: 'rgba(20,28,51,0.98)', border: '1px solid rgba(255,255,255,0.1)',
-            boxShadow: '0 -8px 32px rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)',
+            boxShadow: '0 -8px 32px rgba(0,0,0,0.4)', 
           }} data-testid="actions-popover">
             <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid var(--b)' }}>
               <span className="text-xs font-bold text-[var(--t3)]">Guardian Actions</span>

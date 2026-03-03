@@ -84,7 +84,7 @@ const AcceptInvitationPage = () => {
   if (error) {
     return (
       <div className="flex items-center justify-center p-6" style={bgStyle}>
-        <div className="rounded-2xl p-8 text-center max-w-md w-full" style={{ background: 'rgba(15,22,41,0.8)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="rounded-2xl p-8 text-center max-w-md w-full" style={{ background: 'rgba(15,22,41,0.97)', border: '1px solid rgba(255,255,255,0.06)' }}>
           <AlertCircle className="w-16 h-16 text-[#ef4444] mx-auto mb-4" />
           <h2 className="text-xl font-bold text-white mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Invalid Invitation</h2>
           <p className="text-[#94a3b8] mb-6">{error}</p>
@@ -97,7 +97,7 @@ const AcceptInvitationPage = () => {
   if (accepted) {
     return (
       <div className="flex items-center justify-center p-6" style={bgStyle}>
-        <div className="rounded-2xl p-8 text-center max-w-lg w-full" style={{ background: 'rgba(15,22,41,0.8)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="rounded-2xl p-8 text-center max-w-lg w-full" style={{ background: 'rgba(15,22,41,0.97)', border: '1px solid rgba(255,255,255,0.06)' }}>
           <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)' }}>
             <CheckCircle className="w-10 h-10 text-[#10b981]" />
           </div>
@@ -119,7 +119,7 @@ const AcceptInvitationPage = () => {
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 80% 50% at 20% 40%, rgba(212,175,55,0.04), transparent 60%), radial-gradient(ellipse 60% 40% at 80% 60%, rgba(59,130,246,0.03), transparent 50%)' }} />
 
       {/* Nav */}
-      <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(212,175,55,0.08)', background: 'rgba(8,14,26,0.85)', backdropFilter: 'blur(20px)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+      <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(212,175,55,0.08)', background: 'rgba(8,14,26,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
           <h1 className="text-lg font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>
             <span className="text-[#d4af37]">CarryOn</span><span className="text-white text-xs align-top">™</span>
@@ -163,7 +163,7 @@ const AcceptInvitationPage = () => {
             </div>
 
             {/* Right: Glass card */}
-            <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(15,22,41,0.6)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 25px 60px rgba(0,0,0,0.4)' }}>
+            <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(15,22,41,0.95)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 25px 60px rgba(0,0,0,0.4)' }}>
               <div className="p-6 sm:p-8 space-y-6">
                 {/* What this means */}
                 <div className="rounded-xl p-5" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
@@ -246,7 +246,7 @@ const AcceptInvitationPage = () => {
 
             {/* Right: Form */}
             <div className="max-w-md mx-auto lg:max-w-none w-full">
-              <div className="rounded-2xl p-6 sm:p-8" style={{ background: 'rgba(15,22,41,0.6)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 25px 60px rgba(0,0,0,0.4)' }}>
+              <div className="rounded-2xl p-6 sm:p-8" style={{ background: 'rgba(15,22,41,0.95)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 25px 60px rgba(0,0,0,0.4)' }}>
                 <button onClick={() => setStep(1)} className="flex items-center gap-1.5 text-sm text-[#6b7a90] font-medium mb-5">
                   <ArrowLeft className="w-4 h-4" /> Back
                 </button>
