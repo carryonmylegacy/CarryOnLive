@@ -206,7 +206,7 @@ const DashboardPage = () => {
     <div className="p-4 lg:p-8 pt-[4.25rem] lg:pt-8 pb-24 lg:pb-8 animate-fade-in" data-testid="benefactor-dashboard">
       {/* Trial Banner */}
       <div className="mb-4">
-        <TrialBanner onUpgrade={() => setShowPaywall(true)} />
+        <TrialBanner onUpgrade={() => navigate('/settings')} />
       </div>
 
       {/* Header + Estate Selector */}
