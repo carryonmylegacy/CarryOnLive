@@ -216,6 +216,7 @@ function App() {
   useEffect(() => {
     if (isNative) {
       CapacitorUpdater.notifyAppReady();
+      document.body.classList.add('native-app');
     }
   }, []);
 

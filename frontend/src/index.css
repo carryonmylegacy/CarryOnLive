@@ -785,6 +785,11 @@
     padding-top: env(safe-area-inset-top, 0px);
     touch-action: pan-x pan-y;
   }
+
+  /* Native app: header already handles safe-area, reduce main-content padding */
+  .native-app .main-content {
+    padding-top: 0;
+  }
   
   .main-content::before {
     left: 0;
