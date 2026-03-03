@@ -67,6 +67,7 @@ const MobileNav = () => {
   ];
 
   const accountItems = user?.role === 'admin' ? [
+    { to: '/settings', icon: Settings, label: 'Settings' },
     { to: '/admin/dev-switcher', icon: Settings, label: 'Dev Switcher' },
   ] : [
     { to: user?.role === 'beneficiary' ? '/beneficiary/settings' : '/settings', icon: Settings, label: 'Settings' },
