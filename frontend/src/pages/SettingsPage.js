@@ -292,6 +292,24 @@ const SettingsPage = () => {
               data-testid="settings-theme-toggle"
             />
           </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-[var(--t)] font-medium">Auto-Logout Timer</h4>
+              <p className="text-[var(--t5)] text-sm">Log out after being away for this long</p>
+            </div>
+            <select
+              value={localStorage.getItem('carryon_auto_logout_minutes') || '5'}
+              onChange={(e) => localStorage.setItem('carryon_auto_logout_minutes', e.target.value)}
+              className="px-3 py-1.5 rounded-lg text-sm font-bold bg-[var(--s)] border border-[var(--b)] text-[var(--t)]"
+              data-testid="auto-logout-select"
+            >
+              <option value="1">1 min</option>
+              <option value="3">3 min</option>
+              <option value="5">5 min</option>
+              <option value="10">10 min</option>
+              <option value="15">15 min</option>
+            </select>
+          </div>
           {!isAdmin && (
             <div className="flex items-center justify-between">
               <div>

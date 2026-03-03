@@ -8,7 +8,7 @@ const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 export default function TrialBanner({ onUpgrade }) {
   const { token } = useAuth();
   const [trial, setTrial] = useState(null);
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(() => sessionStorage.getItem('trial_banner_dismissed') === 'true');
 
   useEffect(() => {
     if (!token) return;
@@ -65,7 +65,7 @@ export default function TrialBanner({ onUpgrade }) {
           </button>
         )}
         <button
-          onClick={() => setDismissed(true)}
+          onClick={() => { setDismissed(true); sessionStorage.setItem('trial_banner_dismissed', 'true'); }}
           className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform"
           data-testid="trial-dismiss-btn"
         >

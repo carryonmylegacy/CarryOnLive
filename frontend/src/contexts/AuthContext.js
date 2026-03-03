@@ -91,11 +91,36 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('carryon_token');
     localStorage.removeItem('dev_switcher_admin_session');
     localStorage.removeItem('dev_switcher_admin_token');
+    sessionStorage.removeItem('trial_banner_dismissed');
     setToken(null);
     setUser(null);
     setPendingEmail(null);
     setSubscriptionStatus(null);
   };
+
+  // Auto-logout when app is backgrounded for longer than user's timeout setting
+  useEffect(() => {
+    let bgTimer = null;
+    const handleVisibility = () => {
+      const mins = parseInt(localStorage.getItem('carryon_auto_logout_minutes') || '5', 10);
+      if (document.hidden && token) {
+        bgTimer = setTimeout(() => {
+          localStorage.removeItem('carryon_token');
+          sessionStorage.removeItem('trial_banner_dismissed');
+          setToken(null);
+          setUser(null);
+          window.location.href = '/login';
+        }, mins * 60 * 1000);
+      } else if (bgTimer) {
+        clearTimeout(bgTimer);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      if (bgTimer) clearTimeout(bgTimer);
+    };
+  }, [token]);
 
   const devLogin = async (email, password) => {
     const response = await axios.post(`${API_URL}/auth/dev-login`, { email, password });
