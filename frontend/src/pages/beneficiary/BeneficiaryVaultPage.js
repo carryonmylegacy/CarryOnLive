@@ -40,7 +40,7 @@ const BeneficiaryVaultPage = () => {
     setPreviewLoading(true);
     try {
       const res = await axios.get(`${API_URL}/documents/${doc.id}/preview`, {
-        ...getAuthHeaders(),
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('carryon_token')}` },
         responseType: 'blob',
       });
       const url = URL.createObjectURL(res.data);
@@ -56,7 +56,7 @@ const BeneficiaryVaultPage = () => {
     setDownloading(doc.id);
     try {
       const res = await axios.get(`${API_URL}/documents/${doc.id}/preview`, {
-        ...getAuthHeaders(),
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('carryon_token')}` },
         responseType: 'blob',
       });
       const url = URL.createObjectURL(res.data);
