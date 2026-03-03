@@ -752,7 +752,7 @@ const VaultPage = () => {
 
       {/* Upload Modal */}
       <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md !top-[5vh] !translate-y-0 max-h-[85vh] overflow-y-auto">
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md !top-[5vh] !translate-y-0 max-h-[85vh] overflow-y-auto overflow-x-hidden w-[calc(100vw-2rem)]">
           <DialogHeader>
             <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Upload Document
@@ -850,9 +850,9 @@ const VaultPage = () => {
                 />
                 <label htmlFor="file-upload" className="cursor-pointer">
                   {uploadFile ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <FileText className="w-5 h-5 text-[#d4af37]" />
-                      <span className="text-white">{uploadFile.name}</span>
+                    <div className="flex items-center justify-center gap-2 max-w-full">
+                      <FileText className="w-5 h-5 text-[#d4af37] flex-shrink-0" />
+                      <span className="text-white text-sm truncate max-w-[200px]">{uploadFile.name}</span>
                       <button
                         onClick={(e) => {
                           e.preventDefault();
