@@ -36,6 +36,16 @@ async def create_checklist_item(
             status_code=403, detail="Only benefactors can create checklist items"
         )
 
+    # Enforce subscription requirement
+    from guards import get_subscription_access
+
+    access = await get_subscription_access(current_user)
+    if not access["has_access"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Your free trial has ended. Subscribe to continue adding checklist items.",
+        )
+
     # Auto-set order if not provided
     if data.order == 0:
         count = await db.checklists.count_documents({"estate_id": data.estate_id})

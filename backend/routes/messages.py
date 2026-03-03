@@ -212,6 +212,16 @@ async def create_message(
             status_code=403, detail="Only benefactors can create messages"
         )
 
+    # Enforce subscription requirement
+    from guards import get_subscription_access
+
+    access = await get_subscription_access(current_user)
+    if not access["has_access"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Your free trial has ended. Subscribe to continue creating messages.",
+        )
+
     estate_salt = await get_estate_salt(data.estate_id)
 
     message = Message(

@@ -15,6 +15,17 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - **Mobile**: Capacitor 6 → Codemagic → TestFlight
 - **CI/CD**: GitHub Actions (lint + build)
 
+## Subscription & Access Model
+- **Free download** from App Store
+- **30-day free trial** on signup — full access to all features
+- **After trial expires (no subscription)**:
+  - **Benefactor**: Read-only. Can view existing documents, messages, checklist. CANNOT upload new documents, create new messages, or add checklist items.
+  - **Beneficiary**: Can view Living Will/Healthcare Directive and Power of Attorney regardless of subscription. CANNOT upload death certificate to trigger transition until benefactor's estate has active subscription.
+- **Active subscription**: Full access restored
+- **B2B/Enterprise codes**: Override subscription requirement (free_access flag)
+- **Enforcement**: `guards.py` — `require_active_subscription` dependency checks trial, subscription, beta mode, and overrides. Applied to POST endpoints for documents, messages, checklist, and death certificate upload.
+
+
 ## Current Session (Feb 28 – Mar 2, 2026)
 
 ### Completed

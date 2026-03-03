@@ -149,6 +149,15 @@ async def upload_document(
     - Encrypted with AES-256-GCM using per-estate derived key
     - Stored in cloud storage (S3 in prod, local in dev)
     """
+    # Enforce subscription requirement for new uploads
+    from guards import get_subscription_access
+
+    access = await get_subscription_access(current_user)
+    if not access["has_access"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Your free trial has ended. Subscribe to continue uploading documents. Your existing documents are still accessible.",
+        )
     if current_user["role"] != "benefactor":
         raise HTTPException(
             status_code=403, detail="Only benefactors can upload documents"
