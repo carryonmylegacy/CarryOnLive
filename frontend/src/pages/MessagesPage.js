@@ -538,7 +538,7 @@ const MessagesPage = () => {
               {filteredMessages.map((msg) => {
                 const TriggerIcon = triggerIcons[msg.trigger_type] || Send;
                 return (
-                  <Card key={msg.id} className="glass-card group" data-testid={`message-${msg.id}`}>
+                  <Card key={msg.id} className="glass-card" data-testid={`message-${msg.id}`}>
                     <CardContent className="p-5">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-3">
@@ -602,7 +602,7 @@ const MessagesPage = () => {
                         </div>
                         
                         {user?.role === 'benefactor' && !msg.is_delivered && (
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex gap-1">
                             <Button
                               variant="ghost"
                               size="sm"
