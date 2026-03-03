@@ -176,24 +176,6 @@ const GuardianPage = () => {
   const { user, getAuthHeaders } = useAuth();
   const guardianRef = useRef(null);
 
-  // Lock ALL scrolling except the designated scroll areas while on Guardian page
-  useEffect(() => {
-    const mainContent = document.querySelector('.main-content');
-    const body = document.body;
-    const html = document.documentElement;
-
-    // Lock scrolling without repositioning
-    if (mainContent) mainContent.style.overflow = 'hidden';
-    body.style.overflow = 'hidden';
-    html.style.overflow = 'hidden';
-
-    return () => {
-      if (mainContent) mainContent.style.overflow = '';
-      body.style.overflow = '';
-      html.style.overflow = '';
-    };
-  }, []);
-
   // View state: 'landing' or 'chat'
   const [view, setView] = useState('landing');
 
