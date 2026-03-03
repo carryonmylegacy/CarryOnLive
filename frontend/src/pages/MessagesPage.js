@@ -270,12 +270,16 @@ const MessagesPage = () => {
       toast.error('Please fill in title and message');
       return;
     }
+    if (selectedRecipients.length === 0) {
+      toast.error('Please select at least one recipient');
+      return;
+    }
     
     setCreating(true);
     try {
       let videoData = null;
       let videoThumbnail = null;
-      if (videoBlob) {
+      if (videoBlob && videoBlob !== 'existing') {
         const reader = new FileReader();
         videoData = await new Promise((resolve) => {
           reader.onloadend = () => resolve(reader.result.split(',')[1]);
@@ -373,8 +377,14 @@ const MessagesPage = () => {
     setTriggerAge(msg.trigger_age ? String(msg.trigger_age) : '');
     setTriggerDate(msg.trigger_date || '');
     setCustomEventLabel(msg.custom_event_label || '');
-    setVideoBlob(null);
-    setVideoUrl(null);
+    // If the message already has a video, show it as existing (don't reset)
+    if (msg.video_url) {
+      setVideoBlob('existing');
+      setVideoUrl(msg.video_url);
+    } else {
+      setVideoBlob(null);
+      setVideoUrl(null);
+    }
     setShowCreateModal(true);
   };
 
@@ -646,23 +656,27 @@ const MessagesPage = () => {
                 <div className="border border-[var(--b)] rounded-xl p-4 bg-black/20">
                   {videoUrl ? (
                     <div className="space-y-3">
-                      <video
-                        src={videoUrl}
-                        controls
-                        className="w-full rounded-lg"
-                        style={{ maxHeight: '300px' }}
-                      />
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setVideoBlob(null);
-                          setVideoUrl(null);
-                        }}
-                        className="border-[var(--b)] text-white w-full"
-                      >
-                        <X className="w-4 h-4 mr-2" />
-                        Remove Video
-                      </Button>
+                      {videoBlob === 'existing' ? (
+                        <div className="flex items-center gap-3 p-4 rounded-lg" style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.15)' }}>
+                          <Video className="w-8 h-8 text-[#8b5cf6]" />
+                          <div className="flex-1">
+                            <p className="text-white text-sm font-bold">Video recorded</p>
+                            <p className="text-xs text-[#94a3b8]">Existing video will be kept unless you re-record</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <video src={videoUrl} controls className="w-full rounded-lg" style={{ maxHeight: '300px' }} />
+                      )}
+                      <div className="flex gap-2">
+                        <Button variant="outline" className="border-[var(--b)] text-white flex-1" onClick={() => { setVideoBlob(null); setVideoUrl(null); }}>
+                          <X className="w-4 h-4 mr-2" /> {videoBlob === 'existing' ? 'Remove Video' : 'Remove & Re-record'}
+                        </Button>
+                        {videoBlob === 'existing' && (
+                          <Button variant="outline" className="border-[var(--b)] text-[#8b5cf6]" onClick={() => { setVideoBlob(null); setVideoUrl(null); }}>
+                            <Camera className="w-4 h-4 mr-2" /> Re-record
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center gap-4 py-6">
