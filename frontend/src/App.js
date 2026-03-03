@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -7,43 +7,53 @@ import { Toaster } from './components/ui/sonner';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { isNative } from './services/native';
 import SubscriptionPaywall from './components/SubscriptionPaywall';
+import { Loader2 } from 'lucide-react';
 
-// Pages
+// Eagerly loaded (needed immediately)
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
-import OnboardingPage from './pages/OnboardingPage';
-import AcceptInvitationPage from './pages/AcceptInvitationPage';
-import DashboardPage from './pages/DashboardPage';
-import VaultPage from './pages/VaultPage';
-import MessagesPage from './pages/MessagesPage';
-import BeneficiariesPage from './pages/BeneficiariesPage';
-import GuardianPage from './pages/GuardianPage';
-import ChecklistPage from './pages/ChecklistPage';
-import TrusteePage from './pages/TrusteePage';
-import TransitionPage from './pages/TransitionPage';
-import SettingsPage from './pages/SettingsPage';
-import AdminPage from './pages/AdminPage';
-import SupportChatPage from './pages/SupportChatPage';
-import SecuritySettingsPage from './pages/SecuritySettingsPage';
-import DigitalWalletPage from './pages/DigitalWalletPage';
-import LegacyTimelinePage from './pages/LegacyTimelinePage';
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
-import TermsPage from './pages/TermsPage';
+
+// Lazy-loaded pages — only downloaded when navigated to
+const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
+const AcceptInvitationPage = lazy(() => import('./pages/AcceptInvitationPage'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const VaultPage = lazy(() => import('./pages/VaultPage'));
+const MessagesPage = lazy(() => import('./pages/MessagesPage'));
+const BeneficiariesPage = lazy(() => import('./pages/BeneficiariesPage'));
+const GuardianPage = lazy(() => import('./pages/GuardianPage'));
+const ChecklistPage = lazy(() => import('./pages/ChecklistPage'));
+const TrusteePage = lazy(() => import('./pages/TrusteePage'));
+const TransitionPage = lazy(() => import('./pages/TransitionPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const AdminPage = lazy(() => import('./pages/AdminPage'));
+const SupportChatPage = lazy(() => import('./pages/SupportChatPage'));
+const SecuritySettingsPage = lazy(() => import('./pages/SecuritySettingsPage'));
+const DigitalWalletPage = lazy(() => import('./pages/DigitalWalletPage'));
+const LegacyTimelinePage = lazy(() => import('./pages/LegacyTimelinePage'));
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
+const TermsPage = lazy(() => import('./pages/TermsPage'));
 
 // Beneficiary Pages
-import BeneficiaryHubPage from './pages/beneficiary/BeneficiaryHubPage';
-import PreTransitionPage from './pages/beneficiary/PreTransitionPage';
-import BeneficiaryDashboardPage from './pages/beneficiary/BeneficiaryDashboardPage';
-import BeneficiaryVaultPage from './pages/beneficiary/BeneficiaryVaultPage';
-import BeneficiaryMessagesPage from './pages/beneficiary/BeneficiaryMessagesPage';
-import BeneficiaryChecklistPage from './pages/beneficiary/BeneficiaryChecklistPage';
-import BeneficiaryGuardianPage from './pages/beneficiary/BeneficiaryGuardianPage';
-import MilestoneReportPage from './pages/beneficiary/MilestoneReportPage';
-import UploadCertificatePage from './pages/beneficiary/UploadCertificatePage';
-import CondolencePage from './pages/beneficiary/CondolencePage';
-import BeneficiarySettingsPage from './pages/beneficiary/BeneficiarySettingsPage';
+const BeneficiaryHubPage = lazy(() => import('./pages/beneficiary/BeneficiaryHubPage'));
+const PreTransitionPage = lazy(() => import('./pages/beneficiary/PreTransitionPage'));
+const BeneficiaryDashboardPage = lazy(() => import('./pages/beneficiary/BeneficiaryDashboardPage'));
+const BeneficiaryVaultPage = lazy(() => import('./pages/beneficiary/BeneficiaryVaultPage'));
+const BeneficiaryMessagesPage = lazy(() => import('./pages/beneficiary/BeneficiaryMessagesPage'));
+const BeneficiaryChecklistPage = lazy(() => import('./pages/beneficiary/BeneficiaryChecklistPage'));
+const BeneficiaryGuardianPage = lazy(() => import('./pages/beneficiary/BeneficiaryGuardianPage'));
+const MilestoneReportPage = lazy(() => import('./pages/beneficiary/MilestoneReportPage'));
+const UploadCertificatePage = lazy(() => import('./pages/beneficiary/UploadCertificatePage'));
+const CondolencePage = lazy(() => import('./pages/beneficiary/CondolencePage'));
+const BeneficiarySettingsPage = lazy(() => import('./pages/beneficiary/BeneficiarySettingsPage'));
 
-import AboutPage from './pages/AboutPage';
+const AboutPage = lazy(() => import('./pages/AboutPage'));
+
+// Loading fallback
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
+    <Loader2 className="w-8 h-8 text-[#d4af37] animate-spin" />
+  </div>
+);
 
 // Layout
 import DashboardLayout from './components/layout/DashboardLayout';
@@ -119,6 +129,7 @@ const PublicRoute = ({ children }) => {
 
 function AppRoutes() {
   return (
+    <Suspense fallback={<PageLoader />}>
     <Routes>
       {/* Public Routes */}
       <Route path="/login" element={
@@ -208,6 +219,7 @@ function AppRoutes() {
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
+    </Suspense>
   );
 }
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import { cachedGet } from '../utils/apiCache';
 import { 
   FolderLock, 
   MessageSquare, 
@@ -34,7 +35,7 @@ const DashboardPage = () => {
 
   const fetchEstates = async () => {
     try {
-      const response = await axios.get(`${API_URL}/estates`, getAuthHeaders());
+      const response = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders(), 60000);
       setEstates(response.data);
       if (response.data.length > 0) {
         const savedEstateId = localStorage.getItem('selected_estate_id');
