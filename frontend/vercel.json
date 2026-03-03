@@ -3,7 +3,23 @@
   "buildCommand": "yarn build",
   "outputDirectory": "build",
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/accept-invitation/:path*", "destination": "/index.html" },
+    { "source": "/signup", "destination": "/index.html" },
+    { "source": "/login", "destination": "/index.html" },
+    { "source": "/dashboard", "destination": "/index.html" },
+    { "source": "/vault", "destination": "/index.html" },
+    { "source": "/messages", "destination": "/index.html" },
+    { "source": "/guardian", "destination": "/index.html" },
+    { "source": "/checklist", "destination": "/index.html" },
+    { "source": "/beneficiaries", "destination": "/index.html" },
+    { "source": "/settings", "destination": "/index.html" },
+    { "source": "/security-settings", "destination": "/index.html" },
+    { "source": "/support", "destination": "/index.html" },
+    { "source": "/trustee", "destination": "/index.html" },
+    { "source": "/digital-wallet", "destination": "/index.html" },
+    { "source": "/timeline", "destination": "/index.html" },
+    { "source": "/beneficiary/:path*", "destination": "/index.html" },
+    { "source": "/admin/:path*", "destination": "/index.html" }
   ],
   "headers": [
     {
