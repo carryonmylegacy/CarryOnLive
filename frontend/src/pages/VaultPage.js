@@ -27,7 +27,8 @@ import {
   Volume2,
   Search,
   FolderLock,
-  Edit2
+  Edit2,
+  Heart
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -49,6 +50,7 @@ const categories = [
   { id: 'all', label: 'All', icon: FolderOpen },
   { id: 'will', label: 'Will', icon: FileText },
   { id: 'trust', label: 'Trust', icon: FileText },
+  { id: 'living_will', label: 'Living Will', icon: Heart },
   { id: 'life_insurance', label: 'Life Insurance', icon: Shield },
   { id: 'deed', label: 'Deed', icon: File },
   { id: 'poa', label: 'Power of Attorney', icon: FileText },
@@ -788,6 +790,7 @@ const VaultPage = () => {
                 <SelectContent className="bg-[#1A2440] border-[var(--b)]">
                   <SelectItem value="will">Will</SelectItem>
                   <SelectItem value="trust">Trust</SelectItem>
+                  <SelectItem value="living_will">Living Will / Healthcare Directive</SelectItem>
                   <SelectItem value="life_insurance">Life Insurance</SelectItem>
                   <SelectItem value="deed">Deed / Title</SelectItem>
                   <SelectItem value="poa">Power of Attorney</SelectItem>
@@ -1208,6 +1211,7 @@ const VaultPage = () => {
                 <SelectContent className="bg-[#1A2440] border-[var(--b)]">
                   <SelectItem value="will">Will</SelectItem>
                   <SelectItem value="trust">Trust</SelectItem>
+                  <SelectItem value="living_will">Living Will / Healthcare Directive</SelectItem>
                   <SelectItem value="life_insurance">Life Insurance</SelectItem>
                   <SelectItem value="deed">Deed / Title</SelectItem>
                   <SelectItem value="poa">Power of Attorney</SelectItem>
