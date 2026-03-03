@@ -68,6 +68,8 @@ const VaultPage = () => {
   const [uploading, setUploading] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const searchTimerRef = useRef(null);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showLockModal, setShowLockModal] = useState(false);
   const [showBackupCodeModal, setShowBackupCodeModal] = useState(false);
@@ -538,7 +540,7 @@ const VaultPage = () => {
 
   const filteredDocs = documents
     .filter(d => activeCategory === 'all' || d.category === activeCategory)
-    .filter(d => !searchQuery || d.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    .filter(d => !debouncedSearch || d.name.toLowerCase().includes(debouncedSearch.toLowerCase()));
 
   if (loading) {
     return (
@@ -591,7 +593,11 @@ const VaultPage = () => {
         <Search className="w-4 h-4 text-[var(--t5)]" />
         <input
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => { 
+            setSearchQuery(e.target.value);
+            clearTimeout(searchTimerRef.current);
+            searchTimerRef.current = setTimeout(() => setDebouncedSearch(e.target.value), 250);
+          }}
           placeholder="Search documents..."
           className="flex-1 bg-transparent border-none text-[var(--t)] text-sm outline-none placeholder:text-[var(--t5)]"
           data-testid="vault-search"
