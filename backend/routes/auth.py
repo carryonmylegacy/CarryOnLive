@@ -95,6 +95,23 @@ async def login(data: UserLogin, request: Request):
         # Expired trust — clean up
         await db.otp_trust.delete_one({"user_id": user["id"], "ip_address": client_ip})
 
+    # Check platform-wide OTP toggle — if disabled, skip OTP entirely
+    platform_settings = await db.platform_settings.find_one(
+        {"_id": "global"}, {"_id": 0}
+    )
+    if platform_settings and platform_settings.get("otp_disabled"):
+        token = create_token(user["id"], user["email"], user["role"])
+        return TokenResponse(
+            access_token=token,
+            user=UserResponse(
+                id=user["id"],
+                email=user["email"],
+                name=user["name"],
+                role=user["role"],
+                created_at=user["created_at"],
+            ),
+        )
+
     # Send OTP for verification
     otp_code = generate_otp()
     await db.otps.update_one(
