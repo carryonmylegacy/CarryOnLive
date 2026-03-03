@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Document, Page } from 'react-pdf';
+import { Document, Page, pdfjs } from 'react-pdf';
 import { FileText, File } from 'lucide-react';
 import axios from 'axios';
 import { getCachedBlob, setCachedBlob } from '../utils/blobCache';
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
