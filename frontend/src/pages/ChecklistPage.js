@@ -145,6 +145,8 @@ const ChecklistPage = () => {
     }
   };
 
+  const formRef = useRef(null);
+
   const openEdit = (item) => {
     setEditingItem(item);
     setForm({
@@ -155,6 +157,7 @@ const ChecklistPage = () => {
       notes: item.notes || '', due_timeframe: item.due_timeframe || 'first_week',
     });
     setShowForm(true);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
   };
 
   const closeForm = () => {
@@ -338,7 +341,7 @@ const ChecklistPage = () => {
 
       {/* Add/Edit Form */}
       {showForm && (
-        <div className="glass-card p-5 space-y-4" style={{ borderColor: 'var(--gold)', borderWidth: '1px' }}>
+        <div ref={formRef} className="glass-card p-5 space-y-4" style={{ borderColor: 'var(--gold)', borderWidth: '1px' }}>
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold text-[var(--t)]">
               {editingItem ? 'Edit Checklist Item' : 'New Checklist Item'}
@@ -587,11 +590,11 @@ const ChecklistPage = () => {
                     {item.ai_suggested && item.ai_accepted === true && (
                       <span className="text-[10px] text-[#14b8a6] font-bold">Accepted</span>
                     )}
-                    <button onClick={() => openEdit(item)} className="p-1.5 rounded-lg text-[var(--t5)] active:text-[var(--gold)] transition-colors">
+                    <button onClick={(e) => { e.stopPropagation(); openEdit(item); }} className="p-1.5 rounded-lg text-[var(--t5)] active:text-[var(--gold)] transition-colors">
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleDelete(item.id)}
+                      onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}
                       disabled={deleting === item.id}
                       className="p-1.5 rounded-lg text-[var(--t5)] active:text-red-400 transition-colors disabled:opacity-50"
                     >
