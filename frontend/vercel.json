@@ -2,6 +2,9 @@
   "installCommand": "yarn install --frozen-lockfile",
   "buildCommand": "yarn build",
   "outputDirectory": "build",
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/.well-known/apple-app-site-association",
