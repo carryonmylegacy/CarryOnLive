@@ -117,10 +117,26 @@ async def get_message_video(
             estate_id=message.get("estate_id") if message else None,
         )
 
+        # Detect actual video format from magic bytes
+        video_mime = (
+            "video/mp4"
+            if decrypted[:4]
+            in (
+                b"\x00\x00\x00\x18",
+                b"\x00\x00\x00\x1c",
+                b"\x00\x00\x00 ",
+                b"\x00\x00\x00\x14",
+            )
+            or b"ftyp" in decrypted[:12]
+            else "video/webm"
+        )
+        video_ext = "mp4" if video_mime == "video/mp4" else "webm"
         return Response(
             content=decrypted,
-            media_type="video/webm",
-            headers={"Content-Disposition": f'inline; filename="{video_id}.webm"'},
+            media_type=video_mime,
+            headers={
+                "Content-Disposition": f'inline; filename="{video_id}.{video_ext}"'
+            },
         )
     except FileNotFoundError:
         pass
@@ -132,10 +148,14 @@ async def get_message_video(
 
     try:
         video_bytes = base64.b64decode(video["data"])
+        video_mime = "video/mp4" if b"ftyp" in video_bytes[:12] else "video/webm"
+        video_ext = "mp4" if video_mime == "video/mp4" else "webm"
         return Response(
             content=video_bytes,
-            media_type="video/webm",
-            headers={"Content-Disposition": f'inline; filename="{video_id}.webm"'},
+            media_type=video_mime,
+            headers={
+                "Content-Disposition": f'inline; filename="{video_id}.{video_ext}"'
+            },
         )
     except Exception as e:
         logger.error(f"Video decode error: {e}")
