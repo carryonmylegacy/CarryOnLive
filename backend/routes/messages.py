@@ -103,7 +103,7 @@ async def get_message_video(
                 raise HTTPException(status_code=403, detail="Access denied")
 
     # Try cloud storage first
-    video_storage_key = f"videos/{video_id}"
+    video_storage_key = f"estates/{message['estate_id']}/{video_id}"
     try:
         encrypted_blob = await storage.download(video_storage_key)
         estate_salt = await get_estate_salt(message["estate_id"])

@@ -12,7 +12,8 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 const PDFViewerModal = ({ open, onClose, doc, blobUrl, loading, onDownload }) => {
   const [numPages, setNumPages] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [scale, setScale] = useState(1.0);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const [scale, setScale] = useState(isMobile ? 0.5 : 1.0);
   const [pdfError, setPdfError] = useState(false);
 
   const isPdf = doc?.file_type?.toLowerCase().includes('pdf');
