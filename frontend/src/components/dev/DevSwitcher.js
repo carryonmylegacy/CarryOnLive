@@ -134,7 +134,7 @@ const DevSwitcher = () => {
     <div style={{ position: 'fixed', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px) + 4px)', right: 16, zIndex: 99999 }} data-testid="dev-switcher">
       {/* Toggle button */}
       <div
-        onClick={() => setOpen(!open)}
+        onClick={() => { setOpen(!open); if (!open) fetchConfig(); }}
         style={{
           display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px',
           background: 'linear-gradient(135deg, #F59E0B, #D97706)', color: '#000',
