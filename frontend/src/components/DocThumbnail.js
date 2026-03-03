@@ -33,8 +33,13 @@ const DocThumbnail = ({ doc, getAuthHeaders }) => {
       const blob = new Blob([res.data], { type: doc.file_type });
       objectUrl = URL.createObjectURL(blob);
       setBlobUrl(objectUrl);
-    }).catch(() => {
-      if (mountedRef.current) setError(true);
+    }).catch((err) => {
+      if (mountedRef.current) {
+        if (err.response?.status === 403) {
+          console.log('DocThumbnail: Section locked or access denied for', doc.id);
+        }
+        setError(true);
+      }
     }).finally(() => {
       if (mountedRef.current) setLoading(false);
     });

@@ -75,6 +75,8 @@ const MessagesPage = () => {
   const [triggerAge, setTriggerAge] = useState('');
   const [triggerDate, setTriggerDate] = useState('');
   const [customEventLabel, setCustomEventLabel] = useState('');
+  const [playingVideoUrl, setPlayingVideoUrl] = useState(null);
+  const [loadingPlayback, setLoadingPlayback] = useState(false);
   
   // Video recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -388,7 +390,9 @@ const MessagesPage = () => {
       }).then(res => {
         setVideoUrl(URL.createObjectURL(res.data));
       }).catch(() => {
+        setVideoBlob(null);
         setVideoUrl(null);
+        toast.error('Could not load video');
       });
     } else {
       setVideoBlob(null);
@@ -404,6 +408,23 @@ const MessagesPage = () => {
         : [...prev, beneficiaryId]
     );
   };
+
+  const playVideo = async (msg) => {
+    if (!msg.video_url) return;
+    setLoadingPlayback(true);
+    try {
+      const res = await axios.get(`${API_URL}/messages/video/${msg.video_url}`, {
+        ...getAuthHeaders(),
+        responseType: 'blob',
+      });
+      setPlayingVideoUrl(URL.createObjectURL(res.data));
+    } catch {
+      toast.error('Could not load video');
+    } finally {
+      setLoadingPlayback(false);
+    }
+  };
+
 
   const filteredMessages = activeTab === 'all' 
     ? messages 
@@ -540,15 +561,24 @@ const MessagesPage = () => {
                       <p className="text-[#94a3b8] text-sm line-clamp-3 mb-4">{msg.content}</p>
                       
                       {msg.message_type === 'video' && msg.video_thumbnail && (
-                        <div className="mb-4 rounded-xl overflow-hidden relative" style={{ aspectRatio: '16/9' }}>
+                        <div className="mb-4 rounded-xl overflow-hidden relative cursor-pointer active:scale-[0.98] transition-transform" style={{ aspectRatio: '16/9' }}
+                          onClick={(e) => { e.stopPropagation(); playVideo(msg); }}>
                           <img src={`data:image/jpeg;base64,${msg.video_thumbnail}`} alt="Video thumbnail"
                             className="w-full h-full object-cover" />
                           <div className="absolute inset-0 flex items-center justify-center">
                             <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
-                              <Play className="w-6 h-6 text-white ml-0.5" />
+                              {loadingPlayback ? <Loader2 className="w-6 h-6 text-white animate-spin" /> : <Play className="w-6 h-6 text-white ml-0.5" />}
                             </div>
                           </div>
                         </div>
+                      )}
+                      {msg.message_type === 'video' && !msg.video_thumbnail && msg.video_url && (
+                        <button onClick={(e) => { e.stopPropagation(); playVideo(msg); }}
+                          className="mb-4 w-full p-4 rounded-xl flex items-center justify-center gap-2 text-sm text-[#8b5cf6] font-bold active:scale-[0.98] transition-transform"
+                          style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.15)' }}>
+                          {loadingPlayback ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                          Play Video
+                        </button>
                       )}
                       
                       <div className="flex items-center justify-between">
@@ -666,9 +696,9 @@ const MessagesPage = () => {
                   {(videoUrl || videoBlob === 'existing') ? (
                     <div className="space-y-3">
                       {videoUrl ? (
-                        <video src={videoUrl} controls className="w-full rounded-lg" style={{ maxHeight: '300px' }} />
+                        <video src={videoUrl} controls playsInline className="w-full rounded-lg" style={{ maxHeight: '300px' }} />
                       ) : (
-                        <div className="flex items-center justify-center py-6">
+                        <div className="flex items-center justify-center py-8">
                           <Loader2 className="w-6 h-6 animate-spin text-[#8b5cf6]" />
                           <span className="text-sm text-[#94a3b8] ml-2">Loading video...</span>
                         </div>
@@ -1022,6 +1052,20 @@ const MessagesPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Video Playback Modal */}
+      {playingVideoUrl && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80" onClick={() => { URL.revokeObjectURL(playingVideoUrl); setPlayingVideoUrl(null); }}>
+          <div className="relative max-w-2xl w-full" onClick={e => e.stopPropagation()}>
+            <button onClick={() => { URL.revokeObjectURL(playingVideoUrl); setPlayingVideoUrl(null); }}
+              className="absolute -top-10 right-0 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white active:scale-90 transition-transform">
+              <X className="w-4 h-4" />
+            </button>
+            <video src={playingVideoUrl} controls autoPlay playsInline className="w-full rounded-2xl" style={{ maxHeight: '80vh' }} />
+          </div>
+        </div>
+      )}
+
       </SectionLockedOverlay>
     </div>
   );
