@@ -236,7 +236,16 @@ function App() {
           if (isActive) {
             // Returning to foreground — invalidate stale caches
             import('./utils/apiCache').then(({ clearCache }) => clearCache());
+          } else {
+            // Going to background — free memory
+            import('./utils/apiCache').then(({ clearCache }) => clearCache());
+            import('./utils/blobCache').then(({ clearBlobCache }) => clearBlobCache());
           }
+        });
+
+        // Listen for low memory warnings (iOS fires this before killing the app)
+        CapApp.addListener('backButton', () => {
+          // Android back button — no-op for now
         });
       }).catch(() => {});
     }
