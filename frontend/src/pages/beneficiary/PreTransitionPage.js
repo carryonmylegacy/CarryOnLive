@@ -94,8 +94,9 @@ const PreTransitionPage = () => {
 
           {/* Medical Directive */}
           <div
-            className="flex items-center gap-3 p-4 rounded-xl mb-2 cursor-pointer transition-all hover:border-[var(--gn2)]/30"
+            className="flex items-center gap-3 p-4 rounded-xl mb-2 cursor-pointer transition-transform duration-150 active:scale-[0.98]"
             style={{ background: 'rgba(16,185,129,0.04)', border: '1px solid rgba(16,185,129,0.12)' }}
+            onClick={() => navigate('/beneficiary/vault?category=living_will')}
             data-testid="pre-medical-directive"
           >
             <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.12)' }}>
@@ -109,8 +110,9 @@ const PreTransitionPage = () => {
 
           {/* Power of Attorney */}
           <div
-            className="flex items-center gap-3 p-4 rounded-xl cursor-pointer transition-all hover:border-[var(--gn2)]/30"
+            className="flex items-center gap-3 p-4 rounded-xl cursor-pointer transition-transform duration-150 active:scale-[0.98]"
             style={{ background: 'rgba(16,185,129,0.04)', border: '1px solid rgba(16,185,129,0.12)' }}
+            onClick={() => navigate('/beneficiary/vault?category=poa')}
             data-testid="pre-poa"
           >
             <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.12)' }}>
