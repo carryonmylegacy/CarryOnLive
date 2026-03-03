@@ -580,7 +580,7 @@ const MessagesPage = () => {
                           <img src={`data:image/jpeg;base64,${msg.video_thumbnail}`} alt="Video thumbnail"
                             className="w-full h-full object-cover" />
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
+                            <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.65)' }}>
                               {loadingPlayback ? <Loader2 className="w-6 h-6 text-white animate-spin" /> : <Play className="w-6 h-6 text-white ml-0.5" />}
                             </div>
                           </div>
@@ -762,7 +762,7 @@ const MessagesPage = () => {
 
                   {/* Recording indicator */}
                   {isRecording && (
-                    <div className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
+                    <div className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full" style={{ background: 'rgba(0,0,0,0.75)' }}>
                       <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
                       <span className="text-white text-sm font-bold">Recording</span>
                     </div>
@@ -773,7 +773,7 @@ const MessagesPage = () => {
                     <button
                       onClick={() => { if (isRecording) stopRecording(); releaseCamera(); }}
                       className="w-10 h-10 rounded-full flex items-center justify-center"
-                      style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)' }}
+                      style={{ background: 'rgba(0,0,0,0.7)' }}
                       data-testid="recording-close-btn"
                     >
                       <X className="w-5 h-5 text-white" />
@@ -782,7 +782,7 @@ const MessagesPage = () => {
                       <button
                         onClick={flipCamera}
                         className="w-14 h-14 rounded-full flex items-center justify-center"
-                        style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)' }}
+                        style={{ background: 'rgba(0,0,0,0.7)' }}
                         data-testid="camera-flip-btn"
                       >
                         <SwitchCamera className="w-7 h-7 text-white" />
