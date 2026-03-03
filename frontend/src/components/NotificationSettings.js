@@ -45,7 +45,10 @@ const NotificationSettings = ({ getAuthHeaders }) => {
     }
 
     setIsSupported(true);
-    setPermission(Notification.permission);
+    // Don't pre-check permission state — Safari reports inconsistently.
+    // We'll request permission when the user taps the toggle.
+    const perm = Notification.permission;
+    setPermission(perm === 'denied' ? 'default' : perm);
 
     // Check if already subscribed
     try {
