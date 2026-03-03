@@ -340,7 +340,8 @@ const MessagesPage = () => {
       fetchData();
     } catch (error) {
       console.error('Save error:', error);
-      toast.error(editingMessage ? 'Failed to update message' : 'Failed to create message');
+      const detail = error.response?.data?.detail || error.message || 'Unknown error';
+      toast.error(`Failed to ${editingMessage ? 'update' : 'create'} message: ${detail}`);
     } finally {
       setCreating(false);
     }
