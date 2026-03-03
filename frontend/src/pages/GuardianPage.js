@@ -182,36 +182,15 @@ const GuardianPage = () => {
     const body = document.body;
     const html = document.documentElement;
 
-    // Lock scrolling without repositioning (position:fixed shifts the viewport)
+    // Lock scrolling without repositioning
     if (mainContent) mainContent.style.overflow = 'hidden';
     body.style.overflow = 'hidden';
     html.style.overflow = 'hidden';
-
-    // Block touchmove on the guardian container — only allow on scrollable children
-    const handleTouchMove = (e) => {
-      let target = e.target;
-      while (target && target !== guardianRef.current) {
-        if (target.getAttribute('data-testid') === 'chat-messages-area' || 
-            target.classList.contains('overflow-y-auto')) {
-          return;
-        }
-        target = target.parentElement;
-      }
-      e.preventDefault();
-    };
-
-    const el = guardianRef.current;
-    if (el) {
-      el.addEventListener('touchmove', handleTouchMove, { passive: false });
-    }
 
     return () => {
       if (mainContent) mainContent.style.overflow = '';
       body.style.overflow = '';
       html.style.overflow = '';
-      if (el) {
-        el.removeEventListener('touchmove', handleTouchMove);
-      }
     };
   }, []);
 
