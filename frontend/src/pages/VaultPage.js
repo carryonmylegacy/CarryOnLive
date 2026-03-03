@@ -46,11 +46,16 @@ import DocThumbnail from '../components/DocThumbnail';
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const categories = [
-  { id: 'all', label: 'All Documents', icon: FolderOpen },
-  { id: 'legal', label: 'Legal', icon: FileText },
+  { id: 'all', label: 'All', icon: FolderOpen },
+  { id: 'will', label: 'Will', icon: FileText },
+  { id: 'trust', label: 'Trust', icon: FileText },
+  { id: 'life_insurance', label: 'Life Insurance', icon: Shield },
+  { id: 'deed', label: 'Deed', icon: File },
+  { id: 'poa', label: 'Power of Attorney', icon: FileText },
   { id: 'financial', label: 'Financial', icon: File },
-  { id: 'personal', label: 'Personal', icon: FileImage },
   { id: 'medical', label: 'Medical', icon: FileArchive },
+  { id: 'legal', label: 'Legal (Other)', icon: FileText },
+  { id: 'personal', label: 'Personal', icon: FileImage },
 ];
 
 const VaultPage = () => {
@@ -781,10 +786,15 @@ const VaultPage = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-[#1A2440] border-[var(--b)]">
-                  <SelectItem value="legal">Legal</SelectItem>
+                  <SelectItem value="will">Will</SelectItem>
+                  <SelectItem value="trust">Trust</SelectItem>
+                  <SelectItem value="life_insurance">Life Insurance</SelectItem>
+                  <SelectItem value="deed">Deed / Title</SelectItem>
+                  <SelectItem value="poa">Power of Attorney</SelectItem>
                   <SelectItem value="financial">Financial</SelectItem>
+                  <SelectItem value="medical">Medical / Healthcare Directive</SelectItem>
+                  <SelectItem value="legal">Legal (Other)</SelectItem>
                   <SelectItem value="personal">Personal</SelectItem>
-                  <SelectItem value="medical">Medical</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1196,10 +1206,15 @@ const VaultPage = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-[#1A2440] border-[var(--b)]">
-                  <SelectItem value="legal">Legal</SelectItem>
+                  <SelectItem value="will">Will</SelectItem>
+                  <SelectItem value="trust">Trust</SelectItem>
+                  <SelectItem value="life_insurance">Life Insurance</SelectItem>
+                  <SelectItem value="deed">Deed / Title</SelectItem>
+                  <SelectItem value="poa">Power of Attorney</SelectItem>
                   <SelectItem value="financial">Financial</SelectItem>
+                  <SelectItem value="medical">Medical / Healthcare Directive</SelectItem>
+                  <SelectItem value="legal">Legal (Other)</SelectItem>
                   <SelectItem value="personal">Personal</SelectItem>
-                  <SelectItem value="medical">Medical</SelectItem>
                 </SelectContent>
               </Select>
             </div>
