@@ -50,8 +50,7 @@ const DashboardPage = () => {
         const savedEstate = response.data.find(e => e.id === savedEstateId);
         setEstate(savedEstate || response.data[0]);
       }
-    } catch (error) { console.error('Fetch estates error:', error); }
-    finally { setLoading(false); }
+    } catch (error) { console.error('Fetch estates error:', error); setLoading(false); }
   };
 
   const fetchEstateData = async (estateId) => {
@@ -69,6 +68,7 @@ const DashboardPage = () => {
       // Update estate's readiness_score locally to match
       setEstate(prev => prev ? { ...prev, readiness_score: readinessRes.data.overall_score } : prev);
     } catch (error) { console.error('Fetch estate data error:', error); }
+    finally { setLoading(false); }
   };
 
   const handleEstateChange = (newEstate) => { 
