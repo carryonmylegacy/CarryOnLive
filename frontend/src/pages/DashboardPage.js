@@ -33,6 +33,14 @@ const DashboardPage = () => {
   useEffect(() => { fetchEstates(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (estate) fetchEstateData(estate.id); }, [estate]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Prefetch likely next routes after dashboard loads
+  useEffect(() => {
+    if (!loading) {
+      import('./VaultPage').catch(() => {});
+      import('./MessagesPage').catch(() => {});
+    }
+  }, [loading]);
+
   const fetchEstates = async () => {
     try {
       const response = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders(), 60000);

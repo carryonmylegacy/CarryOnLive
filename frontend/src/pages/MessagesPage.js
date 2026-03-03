@@ -710,7 +710,7 @@ const MessagesPage = () => {
                   {(videoUrl || videoBlob === 'existing') ? (
                     <div className="space-y-3">
                       {videoUrl ? (
-                        <video src={videoUrl} controls playsInline className="w-full rounded-lg" style={{ maxHeight: '300px' }} />
+                        <video src={videoUrl} controls playsInline preload="metadata" className="w-full rounded-lg" style={{ maxHeight: '300px' }} />
                       ) : (
                         <div className="flex items-center justify-center py-8">
                           <Loader2 className="w-6 h-6 animate-spin text-[#8b5cf6]" />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -41,7 +41,7 @@ import { Textarea } from '../components/ui/textarea';
 import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
-import PDFViewerModal from '../components/PDFViewerModal';
+const PDFViewerModal = lazy(() => import('../components/PDFViewerModal'));
 import DocThumbnail from '../components/DocThumbnail';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -641,7 +641,7 @@ const VaultPage = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" style={{ contain: 'content' }}>
               {filteredDocs.map((doc) => {
                 return (
                   <Card
@@ -1168,17 +1168,21 @@ const VaultPage = () => {
       </Dialog>
 
       {/* PDF/Image Viewer Floating Tile */}
-      <PDFViewerModal
-        open={showPreviewModal}
-        onClose={closePreview}
-        doc={selectedDoc}
-        blobUrl={previewUrl}
-        loading={previewLoading}
-        onDownload={(d) => {
-          closePreview();
-          handleDownload(d);
-        }}
-      />
+      {showPreviewModal && (
+        <Suspense fallback={<div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60"><Loader2 className="w-8 h-8 text-[#d4af37] animate-spin" /></div>}>
+          <PDFViewerModal
+            open={showPreviewModal}
+            onClose={closePreview}
+            doc={selectedDoc}
+            blobUrl={previewUrl}
+            loading={previewLoading}
+            onDownload={(d) => {
+              closePreview();
+              handleDownload(d);
+            }}
+          />
+        </Suspense>
+      )}
 
       {/* Edit Document Modal */}
       <Dialog open={showEditModal} onOpenChange={(open) => {

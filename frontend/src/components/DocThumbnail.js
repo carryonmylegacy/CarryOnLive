@@ -79,7 +79,7 @@ const DocThumbnail = ({ doc }) => {
 
   if (isImage) {
     return (
-      <img src={blobUrl} alt={doc.name} className="w-full h-full object-cover" loading="lazy" />
+      <img src={blobUrl} alt={doc.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
     );
   }
 
