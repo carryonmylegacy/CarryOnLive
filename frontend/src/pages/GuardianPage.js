@@ -175,6 +175,13 @@ const actionButtons = [
 const GuardianPage = () => {
   const { user, getAuthHeaders } = useAuth();
   const guardianRef = useRef(null);
+  const [headerHeight, setHeaderHeight] = useState(56);
+
+  // Measure actual header height to position Guardian correctly
+  useEffect(() => {
+    const header = document.querySelector('.mobile-header');
+    if (header) setHeaderHeight(header.offsetHeight);
+  }, []);
 
   // View state: 'landing' or 'chat'
   const [view, setView] = useState('landing');
@@ -399,7 +406,7 @@ const GuardianPage = () => {
   // ═══════════════════════════════════════════════
   if (view === 'landing') {
     return (
-      <div ref={guardianRef} className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10 lg:relative lg:inset-auto" style={{ top: 'calc(3.5rem + env(safe-area-inset-top, 0px))', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', overscrollBehavior: 'none', touchAction: 'none' }} data-testid="estate-guardian">
+      <div ref={guardianRef} className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10 lg:relative lg:inset-auto" style={{ top: headerHeight + 'px', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', overscrollBehavior: 'none', touchAction: 'none' }} data-testid="estate-guardian">
         <SectionLockBanner sectionId="guardian" />
 
         <SectionLockedOverlay sectionId="guardian">
@@ -553,7 +560,7 @@ const GuardianPage = () => {
   // CHAT VIEW
   // ═══════════════════════════════════════════════
   return (
-    <div ref={guardianRef} className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10 lg:relative lg:inset-auto" style={{ top: 'calc(3.5rem + env(safe-area-inset-top, 0px))', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', overscrollBehavior: 'none', touchAction: 'none' }} data-testid="estate-guardian">
+    <div ref={guardianRef} className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10 lg:relative lg:inset-auto" style={{ top: headerHeight + 'px', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', overscrollBehavior: 'none', touchAction: 'none' }} data-testid="estate-guardian">
       <SectionLockBanner sectionId="guardian" />
 
       <SectionLockedOverlay sectionId="guardian">
