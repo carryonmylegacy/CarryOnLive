@@ -922,16 +922,37 @@ const MessagesPage = () => {
                   })}
                 </div>
                 {triggerValue === 'custom' && (
-                  <div className="mt-3 space-y-1.5">
-                    <Label className="text-[#94a3b8]">Custom Event Description</Label>
-                    <Input
-                      value={customEventLabel}
-                      onChange={(e) => setCustomEventLabel(e.target.value)}
-                      placeholder="e.g., First day at college, Birth of first child"
-                      className="input-field"
-                      data-testid="custom-event-label"
-                    />
-                    <p className="text-xs text-[var(--t5)]">Describe the event so the beneficiary can confirm when it occurs to trigger delivery.</p>
+                  <div className="mt-3 space-y-2">
+                    <Label className="text-[#94a3b8] text-sm">Common Life Events</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {['First Child', 'Retirement', 'First Home', 'New Job', 'Divorce', 'Turned 18', 'Turned 25', 'Adoption', 'Deployment', 'Custom'].map(evt => (
+                        <button key={evt} type="button"
+                          onClick={() => { if (evt === 'Custom') { setCustomEventLabel(''); } else { setCustomEventLabel(evt); } }}
+                          className="px-3 py-1.5 rounded-full text-xs font-bold transition-transform duration-150 active:scale-95"
+                          style={{
+                            background: customEventLabel === evt ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.04)',
+                            border: customEventLabel === evt ? '1.5px solid rgba(212,175,55,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                            color: customEventLabel === evt ? '#d4af37' : '#94a3b8',
+                          }}
+                          data-testid={`custom-event-${evt.toLowerCase().replace(/\s+/g, '-')}`}
+                        >
+                          {evt}
+                        </button>
+                      ))}
+                    </div>
+                    {(customEventLabel === '' || !['First Child', 'Retirement', 'First Home', 'New Job', 'Divorce', 'Turned 18', 'Turned 25', 'Adoption', 'Deployment'].includes(customEventLabel)) && (
+                      <div className="mt-2 space-y-1.5">
+                        <Label className="text-[#94a3b8] text-sm">Describe Your Event</Label>
+                        <Input
+                          value={customEventLabel}
+                          onChange={(e) => setCustomEventLabel(e.target.value)}
+                          placeholder="e.g., Birth of first grandchild"
+                          className="input-field"
+                          data-testid="custom-event-label"
+                        />
+                        <p className="text-xs text-[var(--t5)]">The beneficiary will confirm this event to trigger delivery.</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
