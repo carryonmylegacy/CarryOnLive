@@ -253,26 +253,73 @@ async def report_milestone(
     await db.milestone_reports.insert_one(report.model_dump())
 
     # Check for messages to deliver based on this milestone
-    messages = await db.messages.find(
-        {
-            "estate_id": data.estate_id,
-            "recipients": current_user["id"],
-            "trigger_type": "event",
-            "trigger_value": data.event_type,
-            "is_delivered": False,
-        },
-        {"_id": 0},
-    ).to_list(100)
+    # Match standard events by trigger_value (birthday, graduation, marriage)
+    # Match custom events by custom_event_label
+    event_type_lower = data.event_type.lower().strip()
 
+    query = {
+        "estate_id": data.estate_id,
+        "recipients": current_user["id"],
+        "trigger_type": "event",
+        "is_delivered": False,
+        "$or": [
+            # Standard event match (birthday, graduation, marriage)
+            {"trigger_value": event_type_lower},
+            # Custom event match by label
+            {"trigger_value": "custom", "custom_event_label": data.event_type},
+            {"trigger_value": "custom", "custom_event_label": data.event_description},
+        ],
+    }
+    messages = await db.messages.find(query, {"_id": 0}).to_list(100)
+
+    # Also check for age milestones if the event is an age-related one
+    age_events = {"turned 18": 18, "turned 25": 25}
+    if event_type_lower in age_events:
+        age_messages = await db.messages.find(
+            {
+                "estate_id": data.estate_id,
+                "recipients": current_user["id"],
+                "trigger_type": "age_milestone",
+                "trigger_age": age_events[event_type_lower],
+                "is_delivered": False,
+            },
+            {"_id": 0},
+        ).to_list(100)
+        messages.extend(age_messages)
+
+    # Also check specific_date messages if event_date matches
+    if data.event_date:
+        date_messages = await db.messages.find(
+            {
+                "estate_id": data.estate_id,
+                "recipients": current_user["id"],
+                "trigger_type": "specific_date",
+                "trigger_date": data.event_date,
+                "is_delivered": False,
+            },
+            {"_id": 0},
+        ).to_list(100)
+        messages.extend(date_messages)
+
+    # Deduplicate by message id
+    seen = set()
+    unique_messages = []
     for msg in messages:
+        if msg["id"] not in seen:
+            seen.add(msg["id"])
+            unique_messages.append(msg)
+
+    for msg in unique_messages:
         await db.messages.update_one(
             {"id": msg["id"]},
             {
                 "$set": {
                     "is_delivered": True,
                     "delivered_at": datetime.now(timezone.utc).isoformat(),
+                    "delivered_via": "milestone_report",
+                    "milestone_report_id": report.id,
                 }
             },
         )
 
-    return {"id": report.id, "messages_delivered": len(messages)}
+    return {"id": report.id, "messages_delivered": len(unique_messages)}
