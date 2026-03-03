@@ -43,6 +43,7 @@ import { SectionLockBanner, SectionLockedOverlay } from '../components/security/
 import { Skeleton } from '../components/ui/skeleton';
 const PDFViewerModal = lazy(() => import('../components/PDFViewerModal'));
 import DocThumbnail from '../components/DocThumbnail';
+import { useWorkerFilter } from '../utils/useWorkerFilter';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -538,9 +539,7 @@ const VaultPage = () => {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const filteredDocs = documents
-    .filter(d => activeCategory === 'all' || d.category === activeCategory)
-    .filter(d => !debouncedSearch || d.name.toLowerCase().includes(debouncedSearch.toLowerCase()));
+  const filteredDocs = useWorkerFilter(documents, debouncedSearch, activeCategory);
 
   if (loading) {
     return (

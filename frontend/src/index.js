@@ -20,6 +20,18 @@ document.addEventListener('touchend', (e) => {
   lastTouchEnd = now;
 }, { passive: false });
 
+// Mark all future scroll/touchstart listeners as passive by default
+// This tells the browser it can start scrolling without waiting for JS
+if (typeof EventTarget !== 'undefined') {
+  const orig = EventTarget.prototype.addEventListener;
+  EventTarget.prototype.addEventListener = function(type, fn, opts) {
+    if ((type === 'touchstart' || type === 'scroll') && opts === undefined) {
+      opts = { passive: true };
+    }
+    return orig.call(this, type, fn, opts);
+  };
+}
+
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
