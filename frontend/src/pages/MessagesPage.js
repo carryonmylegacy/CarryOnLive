@@ -189,7 +189,15 @@ const MessagesPage = () => {
       // 3-2-1 countdown
       await runCountdown();
       
-      mediaRecorderRef.current = new MediaRecorder(streamRef.current);
+      // Use best supported format — iOS Safari uses mp4, Chrome/Firefox use webm
+      let recorderOptions = {};
+      if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
+        recorderOptions = { mimeType: 'video/webm;codecs=vp9' };
+      } else if (MediaRecorder.isTypeSupported('video/webm')) {
+        recorderOptions = { mimeType: 'video/webm' };
+      }
+      // iOS Safari: don't pass mimeType, it defaults to mp4
+      mediaRecorderRef.current = new MediaRecorder(streamRef.current, recorderOptions);
       chunksRef.current = [];
       
       mediaRecorderRef.current.ondataavailable = (e) => {
@@ -199,7 +207,9 @@ const MessagesPage = () => {
       };
       
       mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+        // Use the actual recorded MIME type
+        const actualMime = mediaRecorderRef.current.mimeType || 'video/mp4';
+        const blob = new Blob(chunksRef.current, { type: actualMime });
         setVideoBlob(blob);
         setVideoUrl(URL.createObjectURL(blob));
         releaseCamera();
