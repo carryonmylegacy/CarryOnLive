@@ -484,9 +484,15 @@ Provide a clear, organized analysis with specific findings and recommendations."
                             title=item["title"],
                             description=item.get("description", ""),
                             category=item.get("category", "first_month"),
+                            priority=item.get("priority", "medium"),
                             order=max_order + items_added + 1,
                         )
-                        await db.checklists.insert_one(checklist_item.model_dump())
+                        item_dict = checklist_item.model_dump()
+                        item_dict["ai_suggested"] = True
+                        item_dict["ai_accepted"] = (
+                            None  # None=pending, True=accepted, False=rejected
+                        )
+                        await db.checklists.insert_one(item_dict)
                         items_added += 1
 
                 # Recalculate readiness

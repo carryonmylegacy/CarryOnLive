@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
   CheckSquare, Plus, Trash2, Edit2, Phone, Mail, MapPin, FileText,
   Briefcase, Users, Heart, Shield, Building, Stethoscope, ChevronDown,
   ChevronUp, GripVertical, Sparkles, Save, X, AlertTriangle, Clock,
-  CalendarClock, ArrowUpDown
+  CalendarClock, ArrowUpDown, Check, XCircle, Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Progress } from '../components/ui/progress';
@@ -85,6 +85,11 @@ const ChecklistPage = () => {
   const [deleting, setDeleting] = useState(null);
   const [showTemplates, setShowTemplates] = useState(false);
   const [suggestingAI, setSuggestingAI] = useState(false);
+  const [aiElapsed, setAiElapsed] = useState(0);
+  const [feedbackItem, setFeedbackItem] = useState(null);
+  const [feedbackText, setFeedbackText] = useState('');
+  const aiAbortRef = useRef(null);
+  const aiTimerRef = useRef(null);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchData(); }, []);
@@ -175,25 +180,52 @@ const ChecklistPage = () => {
   const handleAISuggest = async () => {
     if (!estate) return;
     setSuggestingAI(true);
+    setAiElapsed(0);
+    aiTimerRef.current = setInterval(() => setAiElapsed(s => s + 1), 1000);
+    const controller = new AbortController();
+    aiAbortRef.current = controller;
     try {
       const res = await axios.post(`${API_URL}/chat/guardian`, {
         estate_id: estate.id,
         action: 'generate_checklist',
-        message: 'Analyze all documents in my Secure Digital Vault and generate specific, actionable checklist items my beneficiaries should follow. Extract contact info (names, phones, addresses) from the documents where possible.',
-      }, getAuthHeaders());
+        message: 'Analyze all documents in my Secure Digital Vault and generate specific, actionable checklist items with appropriate priority levels (critical, high, medium, low). Extract contact info where possible. Return items sorted by priority.',
+      }, { ...getAuthHeaders(), signal: controller.signal });
 
       const added = res.data?.action_result?.items_added || 0;
-      if (added > 0) {
-        // toast removed
-        fetchData();
-      } else {
-        // toast removed
-      }
+      if (added > 0) fetchData();
     } catch (err) {
-      toast.error('AI suggestion failed — try again later');
+      if (!axios.isCancel(err)) toast.error('AI suggestion failed — try again later');
     } finally {
       setSuggestingAI(false);
+      clearInterval(aiTimerRef.current);
+      aiAbortRef.current = null;
     }
+  };
+
+  const stopAISuggest = () => {
+    if (aiAbortRef.current) aiAbortRef.current.abort();
+  };
+
+  const handleAcceptItem = async (itemId) => {
+    try {
+      await axios.post(`${API_URL}/checklists/${itemId}/accept`, {}, getAuthHeaders());
+      setChecklists(prev => prev.map(c => c.id === itemId ? { ...c, ai_accepted: true } : c));
+    } catch { toast.error('Failed to accept'); }
+  };
+
+  const handleRejectItem = async (itemId) => {
+    setFeedbackItem(itemId);
+    setFeedbackText('');
+  };
+
+  const submitRejection = async () => {
+    if (!feedbackItem) return;
+    try {
+      await axios.post(`${API_URL}/checklists/${feedbackItem}/reject-with-feedback`, { feedback: feedbackText }, getAuthHeaders());
+      setChecklists(prev => prev.filter(c => c.id !== feedbackItem));
+      setFeedbackItem(null);
+      setFeedbackText('');
+    } catch { toast.error('Failed to reject'); }
   };
 
   const totalCount = checklists.length;
@@ -262,7 +294,12 @@ const ChecklistPage = () => {
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold glass-card hover:border-[var(--gold)] text-[var(--t)] disabled:opacity-50"
         >
           <Sparkles className={`w-4 h-4 text-[var(--gold)] ${suggestingAI ? 'animate-spin' : ''}`} />
-          {suggestingAI ? 'Analyzing Vault...' : 'AI Suggest from Vault'}
+          {suggestingAI ? (
+            <>
+              Analyzing... <span className="tabular-nums text-xs text-[var(--t5)]">{aiElapsed}s</span>
+              <button onClick={(e) => { e.stopPropagation(); stopAISuggest(); }} className="ml-1 px-2 py-0.5 rounded text-[10px] font-bold text-[var(--rd)] border border-[var(--rd)]/30">Stop</button>
+            </>
+          ) : 'AI Suggest from Vault'}
         </button>
       </div>
 
@@ -485,14 +522,22 @@ const ChecklistPage = () => {
             return (
               <div
                 key={item.id}
-                className="glass-card p-4 transition-all hover:border-[var(--b2)]"
-                style={{ borderLeft: `3px solid ${priColor}` }}
+                className="glass-card p-4 transition-all"
+                style={{
+                  borderLeft: `3px solid ${priColor}`,
+                  outline: item.ai_suggested && item.ai_accepted !== true ? '1.5px solid rgba(20,184,166,0.4)' : 'none',
+                  background: item.ai_suggested && item.ai_accepted !== true ? 'rgba(20,184,166,0.03)' : undefined,
+                }}
               >
                 <div className="flex items-start gap-3">
                   {/* Category icon */}
                   <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
                     style={{ background: catInfo.color + '15' }}>
-                    <CatIcon className="w-4 h-4" style={{ color: catInfo.color }} />
+                    {item.ai_suggested ? (
+                      <Sparkles className="w-4 h-4 text-[#14b8a6]" />
+                    ) : (
+                      <CatIcon className="w-4 h-4" style={{ color: catInfo.color }} />
+                    )}
                   </div>
 
                   {/* Content */}
@@ -523,19 +568,32 @@ const ChecklistPage = () => {
                   </div>
 
                   {/* Tags + Actions */}
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
                     <span className="text-xs px-2 py-0.5 rounded font-bold capitalize" style={{
                       background: priColor + '15', color: priColor, border: `1px solid ${priColor}33`
                     }}>
                       {item.priority}
                     </span>
-                    <button onClick={() => openEdit(item)} className="p-1.5 rounded-lg hover:bg-[var(--s)] text-[var(--t5)] hover:text-[var(--gold)] transition-colors">
+                    {item.ai_suggested && item.ai_accepted === null && (
+                      <>
+                        <button onClick={() => handleAcceptItem(item.id)} className="p-1.5 rounded-lg text-[#14b8a6] active:scale-90 transition-transform" title="Accept">
+                          <Check className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleRejectItem(item.id)} className="p-1.5 rounded-lg text-[#ef4444] active:scale-90 transition-transform" title="Reject">
+                          <XCircle className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+                    {item.ai_suggested && item.ai_accepted === true && (
+                      <span className="text-[10px] text-[#14b8a6] font-bold">Accepted</span>
+                    )}
+                    <button onClick={() => openEdit(item)} className="p-1.5 rounded-lg text-[var(--t5)] active:text-[var(--gold)] transition-colors">
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(item.id)}
                       disabled={deleting === item.id}
-                      className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--t5)] hover:text-red-400 transition-colors disabled:opacity-50"
+                      className="p-1.5 rounded-lg text-[var(--t5)] active:text-red-400 transition-colors disabled:opacity-50"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -547,6 +605,32 @@ const ChecklistPage = () => {
         </div>
       )}
       </SectionLockedOverlay>
+
+      {/* Rejection Feedback Modal */}
+      {feedbackItem && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setFeedbackItem(null)} />
+          <div className="relative rounded-2xl p-6 max-w-sm w-full" style={{ background: 'var(--bg2)', border: '1px solid var(--b)', boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}>
+            <h3 className="text-lg font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Why not this item?</h3>
+            <p className="text-xs text-[var(--t4)] mb-4">Optional — helps the AI learn your preferences.</p>
+            <textarea
+              value={feedbackText}
+              onChange={(e) => setFeedbackText(e.target.value)}
+              placeholder="e.g., Already handled, not relevant, too vague..."
+              rows={3}
+              className="w-full px-3 py-2.5 rounded-lg bg-[var(--b)] border border-[var(--b2)] text-[var(--t)] text-sm focus:outline-none focus:border-[var(--gold)] resize-none mb-4"
+            />
+            <div className="flex gap-2">
+              <button onClick={submitRejection} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold" style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: 'white' }}>
+                Remove Item
+              </button>
+              <button onClick={() => setFeedbackItem(null)} className="px-4 py-2.5 rounded-xl text-sm font-bold glass-card text-[var(--t4)]">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

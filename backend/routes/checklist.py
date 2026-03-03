@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from config import db
 from models import ChecklistItem, ChecklistItemCreate, ChecklistItemUpdate
@@ -166,3 +166,62 @@ async def reorder_checklists(
         await db.checklists.update_one({"id": item_id}, {"$set": {"order": idx + 1}})
 
     return {"success": True, "message": "Order updated"}
+
+
+@router.post("/checklists/{item_id}/accept")
+async def accept_ai_item(item_id: str, current_user: dict = Depends(get_current_user)):
+    """Accept an AI-suggested checklist item."""
+    if current_user["role"] != "benefactor":
+        raise HTTPException(status_code=403, detail="Only benefactors can accept items")
+    await db.checklists.update_one(
+        {"id": item_id},
+        {
+            "$set": {
+                "ai_accepted": True,
+                "accepted_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
+    )
+    return {"success": True}
+
+
+@router.post("/checklists/{item_id}/reject")
+async def reject_ai_item(item_id: str, current_user: dict = Depends(get_current_user)):
+    """Reject an AI-suggested checklist item with optional feedback."""
+    if current_user["role"] != "benefactor":
+        raise HTTPException(status_code=403, detail="Only benefactors can reject items")
+    return {"success": True}
+
+
+@router.post("/checklists/{item_id}/reject-with-feedback")
+async def reject_ai_item_with_feedback(
+    item_id: str, request: Request, current_user: dict = Depends(get_current_user)
+):
+    """Reject an AI-suggested checklist item with feedback."""
+    if current_user["role"] != "benefactor":
+        raise HTTPException(status_code=403, detail="Only benefactors can reject items")
+    data = await request.json()
+    feedback = data.get("feedback", "")
+    await db.checklists.update_one(
+        {"id": item_id},
+        {
+            "$set": {
+                "ai_accepted": False,
+                "rejected_at": datetime.now(timezone.utc).isoformat(),
+                "rejection_feedback": feedback,
+            }
+        },
+    )
+    # Store feedback for AI learning
+    await db.ai_feedback.insert_one(
+        {
+            "user_id": current_user["id"],
+            "type": "checklist_rejection",
+            "item_id": item_id,
+            "feedback": feedback,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
+    # Delete the rejected item
+    await db.checklists.delete_one({"id": item_id})
+    return {"success": True}
