@@ -377,10 +377,19 @@ const MessagesPage = () => {
     setTriggerAge(msg.trigger_age ? String(msg.trigger_age) : '');
     setTriggerDate(msg.trigger_date || '');
     setCustomEventLabel(msg.custom_event_label || '');
-    // If the message already has a video, show it as existing (don't reset)
+    // If the message already has a video, fetch it for playback
     if (msg.video_url) {
       setVideoBlob('existing');
-      setVideoUrl(msg.video_url);
+      setVideoUrl(null); // will be fetched
+      // Fetch video blob for playback
+      axios.get(`${API_URL}/messages/video/${msg.video_url}`, {
+        ...getAuthHeaders(),
+        responseType: 'blob',
+      }).then(res => {
+        setVideoUrl(URL.createObjectURL(res.data));
+      }).catch(() => {
+        setVideoUrl(null);
+      });
     } else {
       setVideoBlob(null);
       setVideoUrl(null);
@@ -654,28 +663,23 @@ const MessagesPage = () => {
               <div className="space-y-3">
                 <Label className="text-[#94a3b8]">Video Recording</Label>
                 <div className="border border-[var(--b)] rounded-xl p-4 bg-black/20">
-                  {videoUrl ? (
+                  {(videoUrl || videoBlob === 'existing') ? (
                     <div className="space-y-3">
-                      {videoBlob === 'existing' ? (
-                        <div className="flex items-center gap-3 p-4 rounded-lg" style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.15)' }}>
-                          <Video className="w-8 h-8 text-[#8b5cf6]" />
-                          <div className="flex-1">
-                            <p className="text-white text-sm font-bold">Video recorded</p>
-                            <p className="text-xs text-[#94a3b8]">Existing video will be kept unless you re-record</p>
-                          </div>
-                        </div>
-                      ) : (
+                      {videoUrl ? (
                         <video src={videoUrl} controls className="w-full rounded-lg" style={{ maxHeight: '300px' }} />
+                      ) : (
+                        <div className="flex items-center justify-center py-6">
+                          <Loader2 className="w-6 h-6 animate-spin text-[#8b5cf6]" />
+                          <span className="text-sm text-[#94a3b8] ml-2">Loading video...</span>
+                        </div>
                       )}
                       <div className="flex gap-2">
-                        <Button variant="outline" className="border-[var(--b)] text-white flex-1" onClick={() => { setVideoBlob(null); setVideoUrl(null); }}>
-                          <X className="w-4 h-4 mr-2" /> {videoBlob === 'existing' ? 'Remove Video' : 'Remove & Re-record'}
+                        <Button variant="outline" className="border-[var(--b)] text-white flex-1" onClick={() => { if (videoUrl && videoBlob === 'existing') URL.revokeObjectURL(videoUrl); setVideoBlob(null); setVideoUrl(null); }}>
+                          <X className="w-4 h-4 mr-2" /> Remove
                         </Button>
-                        {videoBlob === 'existing' && (
-                          <Button variant="outline" className="border-[var(--b)] text-[#8b5cf6]" onClick={() => { setVideoBlob(null); setVideoUrl(null); }}>
-                            <Camera className="w-4 h-4 mr-2" /> Re-record
-                          </Button>
-                        )}
+                        <Button variant="outline" className="border-[var(--b)] text-[#8b5cf6]" onClick={() => { if (videoUrl && videoBlob === 'existing') URL.revokeObjectURL(videoUrl); setVideoBlob(null); setVideoUrl(null); }}>
+                          <Camera className="w-4 h-4 mr-2" /> Re-record
+                        </Button>
                       </div>
                     </div>
                   ) : (
