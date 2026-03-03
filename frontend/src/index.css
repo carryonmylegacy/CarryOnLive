@@ -783,6 +783,10 @@
   .native-app .main-content {
     padding-top: 0;
   }
+
+  .native-app .mobile-header {
+    padding-top: calc(env(safe-area-inset-top, 0px) / 2);
+  }
   
   .main-content::before {
     left: 0;
