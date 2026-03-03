@@ -3,14 +3,5 @@
     "apps": [
       "2KL2Z3CXB2.us.carryon.app"
     ]
-  },
-  "applinks": {
-    "apps": [],
-    "details": [
-      {
-        "appID": "2KL2Z3CXB2.us.carryon.app",
-        "paths": ["*"]
-      }
-    ]
   }
 }
