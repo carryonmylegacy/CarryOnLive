@@ -53,5 +53,7 @@
         <string>CarryOn uses your microphone to record audio for video Milestone Messages (MM).</string>
         <key>NSPhotoLibraryUsageDescription</key>
         <string>CarryOn needs access to your photo library to upload estate documents.</string>
+        <key>ITSAppUsesNonExemptEncryption</key>
+        <false/>
 </dict>
 </plist>

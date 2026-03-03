@@ -1,5 +1,6 @@
 """CarryOn™ Backend — Authentication Routes"""
 
+import os
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -486,29 +487,40 @@ class OTPVerifyWithTrust(BaseModel):
 @router.post("/auth/verify-otp", response_model=TokenResponse)
 async def verify_otp(data: OTPVerifyWithTrust, request: Request):
     """Verify OTP and return access token. Optionally trust this device for the rest of the day."""
-    stored_otp = await db.otps.find_one({"email": data.email}, {"_id": 0})
-    if not stored_otp or stored_otp["otp"] != data.otp:
-        raise HTTPException(status_code=401, detail="Invalid OTP")
+    # Apple App Review demo bypass — configurable via env var
+    demo_email = os.environ.get("DEMO_REVIEW_EMAIL", "")
+    demo_otp = os.environ.get("DEMO_REVIEW_OTP", "")
+    is_demo_bypass = (
+        demo_email and demo_otp and data.email == demo_email and data.otp == demo_otp
+    )
 
-    # Check OTP expiry (10 minutes)
-    otp_created = stored_otp.get("created_at", "")
-    if otp_created:
-        try:
-            created_time = datetime.fromisoformat(otp_created.replace("Z", "+00:00"))
-            if datetime.now(timezone.utc) - created_time > timedelta(minutes=10):
-                await db.otps.delete_one({"email": data.email})
-                raise HTTPException(
-                    status_code=401, detail="OTP expired. Please request a new one."
+    if not is_demo_bypass:
+        stored_otp = await db.otps.find_one({"email": data.email}, {"_id": 0})
+        if not stored_otp or stored_otp["otp"] != data.otp:
+            raise HTTPException(status_code=401, detail="Invalid OTP")
+
+        # Check OTP expiry (10 minutes)
+        otp_created = stored_otp.get("created_at", "")
+        if otp_created:
+            try:
+                created_time = datetime.fromisoformat(
+                    otp_created.replace("Z", "+00:00")
                 )
-        except (ValueError, TypeError):
-            pass
+                if datetime.now(timezone.utc) - created_time > timedelta(minutes=10):
+                    await db.otps.delete_one({"email": data.email})
+                    raise HTTPException(
+                        status_code=401,
+                        detail="OTP expired. Please request a new one.",
+                    )
+            except (ValueError, TypeError):
+                pass
+
+        # Delete used OTP
+        await db.otps.delete_one({"email": data.email})
 
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-
-    # Delete used OTP
-    await db.otps.delete_one({"email": data.email})
 
     # If user opts to trust this device for today, store trust entry
     if data.trust_today:
