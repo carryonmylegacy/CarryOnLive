@@ -23,6 +23,23 @@ async def upload_death_certificate(
     current_user: dict = Depends(get_current_user),
 ):
     """Upload a death certificate for verification — encrypted with AES-256-GCM."""
+
+    # Enforce subscription: the estate's benefactor must have an active subscription
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
+    if estate:
+        benefactor = await db.users.find_one({"id": estate.get("owner_id")}, {"_id": 0})
+        if benefactor:
+            from guards import get_subscription_access
+
+            access = await get_subscription_access(
+                {"id": benefactor["id"], "role": benefactor.get("role", "benefactor")}
+            )
+            if not access["has_access"]:
+                raise HTTPException(
+                    status_code=403,
+                    detail="The estate owner's subscription is inactive. A subscription is required to process transition requests.",
+                )
+
     content = await file.read()
 
     # Encrypt the death certificate with the estate's encryption key
