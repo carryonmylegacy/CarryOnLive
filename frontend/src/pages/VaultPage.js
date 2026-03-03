@@ -280,7 +280,7 @@ const VaultPage = () => {
       if (params.length > 0) url += `?${params.join('&')}`;
       
       const response = await axios.get(url, {
-        ...getAuthHeaders(),
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('carryon_token')}` },
         responseType: 'blob'
       });
       
@@ -398,8 +398,9 @@ const VaultPage = () => {
 
     try {
       const url = `${API_URL}/documents/${doc.id}/preview`;
+      const token = localStorage.getItem('carryon_token');
       const response = await axios.get(url, {
-        ...getAuthHeaders(),
+        headers: { 'Authorization': `Bearer ${token}` },
         responseType: 'blob'
       });
 
