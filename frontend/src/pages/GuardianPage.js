@@ -413,14 +413,21 @@ const GuardianPage = () => {
         <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }}>
           <div className="max-w-2xl mx-auto px-4 pt-4 pb-8">
             {/* Title */}
-            <div className="flex items-center gap-2 mb-5">
+            <div className="flex items-center gap-2 mb-3">
               <Sparkles className="w-5 h-5 text-[var(--gold)]" />
               <h1 className="text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid="guardian-hero-title">
                 Estate Guardian AI (EGA)
               </h1>
             </div>
 
-            {/* Ask Anything Input — auto-growing textarea */}
+            {/* Legal Disclaimer */}
+            <div className="mb-5 p-3 rounded-xl" style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.1)' }}>
+              <p className="text-[10px] text-[var(--t5)] leading-relaxed">
+                <strong className="text-[var(--gold)]">Not Legal Advice</strong> — EGA is an AI assistant, not a licensed attorney. For legally binding decisions, always consult a bar-certified attorney licensed in your jurisdiction. Your documents are analyzed within the encrypted vault and are never shared externally.
+              </p>
+            </div>
+
+            {/* Ask Anything Input */}
             <form onSubmit={handleLandingSubmit} className="mb-5">
               <div className="flex items-end gap-2 p-2 rounded-2xl" style={{
                 background: 'var(--s)',
@@ -430,12 +437,12 @@ const GuardianPage = () => {
                 <textarea
                   ref={landingInputRef}
                   value={landingInput}
-                  onChange={(e) => { setLandingInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 80) + 'px'; }}
+                  onChange={(e) => setLandingInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleLandingSubmit(e); } }}
                   placeholder="Ask anything about your estate plan..."
-                  className="flex-1 bg-transparent text-sm text-[var(--t)] placeholder:text-[var(--t5)] outline-none px-3 py-2.5 resize-none"
-                  rows={1}
-                  style={{ maxHeight: '80px' }}
+                  className="flex-1 bg-transparent text-sm text-[var(--t)] placeholder:text-[var(--t5)] outline-none px-3 py-2 resize-none"
+                  rows={3}
+                  style={{ overflow: "auto", scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.15) transparent" }}
                   data-testid="landing-input"
                 />
                 <Button type="submit" disabled={!landingInput.trim()}
@@ -518,10 +525,6 @@ const GuardianPage = () => {
               )}
             </div>
 
-            {/* Legal Disclaimer — in place of security badges */}
-            <p className="text-[10px] text-[var(--t5)] leading-relaxed text-center px-2">
-              <strong className="text-[var(--gold)]">Not Legal Advice</strong> — EGA is an AI assistant, not a licensed attorney. For legally binding decisions, always consult a bar-certified attorney licensed in your jurisdiction. Your documents are analyzed within the encrypted vault and are never shared externally.
-            </p>
           </div>
         </div>
         </SectionLockedOverlay>
@@ -733,12 +736,12 @@ const GuardianPage = () => {
             <textarea
               ref={inputRef}
               value={input}
-              onChange={(e) => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 80) + 'px'; }}
+              onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (input.trim() && !loading) { sendMessage(input); } } }}
               placeholder="Ask about your estate plan..."
               className="flex-1 bg-transparent text-sm text-[var(--t)] placeholder:text-[var(--t5)] outline-none resize-none py-1"
-              rows={1}
-              style={{ maxHeight: '80px' }}
+              rows={3}
+              style={{ overflow: "auto", scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.15) transparent" }}
               disabled={loading}
               data-testid="guardian-input"
             />
