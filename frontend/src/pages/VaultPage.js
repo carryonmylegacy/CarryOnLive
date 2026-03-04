@@ -870,11 +870,25 @@ const VaultPage = () => {
             
             <div className="space-y-2">
               <Label className="text-[#94a3b8]">File</Label>
-              <div className="border-2 border-dashed border-[var(--b)] rounded-xl p-6 text-center hover:border-[#d4af37]/50 transition-colors">
+              <div
+                onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = '#d4af37'; }}
+                onDragLeave={(e) => { e.currentTarget.style.borderColor = ''; }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.style.borderColor = '';
+                  const file = e.dataTransfer.files[0];
+                  if (file) {
+                    const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif', 'image/webp', 'image/tiff'];
+                    if (!allowed.includes(file.type)) { toast.error('Only PDFs and images accepted. No editable document formats.'); return; }
+                    setUploadFile(file);
+                  }
+                }}
+                className="border-2 border-dashed border-[var(--b)] rounded-xl p-6 text-center transition-colors">
                 <input
                   type="file"
                   id="file-upload"
                   className="hidden"
+                  accept="application/pdf,image/jpeg,image/png,image/heic,image/heif,image/webp,image/tiff"
                   onChange={(e) => setUploadFile(e.target.files[0])}
                   data-testid="upload-file-input"
                 />
@@ -897,7 +911,7 @@ const VaultPage = () => {
                     <>
                       <Upload className="w-8 h-8 mx-auto text-[#64748b] mb-2" />
                       <p className="text-white">Click to upload or drag & drop</p>
-                      <p className="text-[#64748b] text-sm mt-1">PDF, DOC, JPG, PNG up to 10MB</p>
+                      <p className="text-[#64748b] text-sm mt-1">PDF and images only (no editable formats) · Up to 25MB</p>
                     </>
                   )}
                 </label>
