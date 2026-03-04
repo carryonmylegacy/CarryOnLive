@@ -59,6 +59,7 @@ const PageLoader = () => (
 import DashboardLayout from './components/layout/DashboardLayout';
 
 import DevSwitcher from './components/dev/DevSwitcher';
+import ShareUploadModal from './components/ShareUploadModal';
 
 // Error boundary for lazy-loaded routes
 class RouteErrorBoundary extends React.Component {
@@ -147,6 +148,22 @@ const PublicRoute = ({ children }) => {
 
   return children;
 };
+
+// Share Extension handler — processes files shared from other apps
+function ShareHandler() {
+  const { useShareTarget } = require('./hooks/useShareTarget');
+  const share = useShareTarget();
+  if (!share.showCategoryPicker) return null;
+  return (
+    <ShareUploadModal
+      pendingShare={share.pendingShare}
+      categories={share.CATEGORY_OPTIONS}
+      uploading={share.uploading}
+      onUpload={share.uploadSharedFile}
+      onCancel={share.cancelShare}
+    />
+  );
+}
 
 function AppRoutes() {
   return (
@@ -280,6 +297,7 @@ function App() {
         <SectionLockProvider>
         <BrowserRouter>
           <AppRoutes />
+          <ShareHandler />
           <DevSwitcher />
           <Toaster 
             position="bottom-center"
