@@ -311,46 +311,54 @@ const MobileNav = () => {
         </div>
       </header>
 
-      {/* Bottom Navigation — compact like PayPal */}
+      {/* Bottom Navigation */}
       <nav className="lg:hidden fixed bottom-0 left-0 w-full mobile-bottom-nav z-50 pb-safe">
-        <div className="flex items-end h-14 px-2">
-          {getBottomNav().map((item) => {
+        <div className="flex items-end h-16 px-1">
+          {getBottomNav().map((item, index) => {
             const isCenter = item.isCenter;
+            const showDivider = index < getBottomNav().length - 1;
             
             return (
-              <NavLink
-                key={item.id || item.to}
-                to={item.to}
-                className={({ isActive }) =>
-                  isCenter 
-                    ? `flex flex-col items-center -mt-5 flex-1`
-                    : `flex flex-col items-center gap-0.5 py-1.5 flex-1 ${isActive ? 'text-[var(--gold)]' : ''}`
-                }
-                style={({ isActive }) => (!isCenter && !isActive ? { color: 'rgba(255,255,255,0.5)' } : {})}
-                data-testid={`mobile-nav-${item.label.toLowerCase()}`}
-              >
-                {({ isActive }) => (
-                  isCenter ? (
-                    <>
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-all ${
-                        isActive 
-                          ? 'bg-gradient-to-br from-[var(--gold)] to-[var(--gold2)] text-[#08090F]' 
-                          : 'bg-[var(--bg3)] text-[var(--t3)] border border-[var(--b)]'
-                      }`}>
+              <React.Fragment key={item.id || item.to}>
+                <NavLink
+                  to={item.to}
+                  className={({ isActive }) =>
+                    isCenter 
+                      ? `flex flex-col items-center -mt-6 flex-1`
+                      : `mobile-nav-item flex flex-col items-center gap-1 py-2 flex-1 ${isActive ? 'active' : ''}`
+                  }
+                  style={({ isActive }) => (!isCenter && !isActive ? { color: 'rgba(255,255,255,0.7)' } : {})}
+                  data-testid={`mobile-nav-${item.label.toLowerCase()}`}
+                >
+                  {({ isActive }) => (
+                    isCenter ? (
+                      <>
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-all ${
+                          isActive 
+                            ? 'bg-gradient-to-br from-[var(--gold)] to-[var(--gold2)] text-[#08090F]' 
+                            : 'bg-[var(--bg3)] text-[var(--t3)] border border-[var(--b)]'
+                        }`}>
+                          <item.icon className="w-6 h-6" />
+                        </div>
+                        <span className={`text-xs mt-1 font-semibold ${isActive ? 'text-[var(--gold)]' : 'text-white/70'}`}>
+                          {item.label}
+                        </span>
+                      </>
+                    ) : (
+                      <>
                         <item.icon className="w-5 h-5" />
-                      </div>
-                      <span className={`text-[10px] mt-0.5 font-bold ${isActive ? 'text-[var(--gold)]' : 'text-white/50'}`}>
-                        {item.label}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <item.icon className="w-4 h-4" />
-                      <span className="text-[10px] font-bold">{item.label}</span>
-                    </>
-                  )
+                        <span className="text-xs font-semibold">{item.label}</span>
+                      </>
+                    )
+                  )}
+                </NavLink>
+                {showDivider && (
+                  <div 
+                    className="h-10 flex-shrink-0" 
+                    style={{ alignSelf: 'center', width: '2px', backgroundColor: 'rgba(255,255,255,0.35)' }}
+                  />
                 )}
-              </NavLink>
+              </React.Fragment>
             );
           })}
         </div>
