@@ -412,57 +412,30 @@ const GuardianPage = () => {
         <SectionLockedOverlay sectionId="guardian">
         <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }}>
           <div className="max-w-2xl mx-auto px-4 pt-4 pb-8">
-            {/* Hero Section */}
-            <div className="text-center mb-8">
-              <div className="relative w-16 h-16 mx-auto mb-4">
-                <div className="absolute inset-0 rounded-2xl" style={{
-                  background: 'linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%)',
-                  border: '2px solid rgba(212,175,55,0.3)',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 var(--b)',
-                }} />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Bot className="w-7 h-7 text-[var(--gold)]" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center" style={{
-                  background: 'linear-gradient(135deg, #22C993, #16a34a)',
-                  boxShadow: '0 2px 6px rgba(34,201,147,0.4)',
-                }}>
-                  <Lock className="w-2.5 h-2.5 text-white" />
-                </div>
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid="guardian-hero-title">
-                Estate Guardian (EGA)
+            {/* Title */}
+            <div className="flex items-center gap-2 mb-5">
+              <Sparkles className="w-5 h-5 text-[var(--gold)]" />
+              <h1 className="text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid="guardian-hero-title">
+                Estate Guardian AI (EGA)
               </h1>
-              <p className="text-sm text-[var(--t4)] max-w-md mx-auto mb-4">
-                Your AI estate planning specialist — living inside your encrypted vault, trained in the estate law of all 50 U.S. states.
-              </p>
-              {/* Security Badges */}
-              <div className="flex items-center justify-center gap-3 flex-wrap">
-                <span className="flex items-center gap-1.5 text-[10px] text-[var(--t5)] px-2.5 py-1 rounded-full" style={{ background: 'rgba(34,201,147,0.08)', border: '1px solid rgba(34,201,147,0.15)' }}>
-                  <Shield className="w-2.5 h-2.5 text-[#22C993]" /> AES-256 Encrypted
-                </span>
-                <span className="flex items-center gap-1.5 text-[10px] text-[var(--t5)] px-2.5 py-1 rounded-full" style={{ background: 'rgba(59,123,247,0.08)', border: '1px solid rgba(59,123,247,0.15)' }}>
-                  <Lock className="w-2.5 h-2.5 text-[#3B7BF7]" /> Zero-Knowledge Vault
-                </span>
-                <span className="flex items-center gap-1.5 text-[10px] text-[var(--t5)] px-2.5 py-1 rounded-full" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)' }}>
-                  <Shield className="w-2.5 h-2.5 text-[var(--gold)]" /> 2FA Protected
-                </span>
-              </div>
             </div>
 
-            {/* Ask Anything Input */}
-            <form onSubmit={handleLandingSubmit} className="mb-8">
-              <div className="flex items-center gap-2 p-2 rounded-2xl" style={{
+            {/* Ask Anything Input — auto-growing textarea */}
+            <form onSubmit={handleLandingSubmit} className="mb-5">
+              <div className="flex items-end gap-2 p-2 rounded-2xl" style={{
                 background: 'var(--s)',
                 border: '1px solid rgba(255,255,255,0.1)',
                 boxShadow: '0 4px 24px -4px rgba(0,0,0,0.3)',
               }}>
-                <input
+                <textarea
                   ref={landingInputRef}
                   value={landingInput}
-                  onChange={(e) => setLandingInput(e.target.value)}
+                  onChange={(e) => { setLandingInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 80) + 'px'; }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleLandingSubmit(e); } }}
                   placeholder="Ask anything about your estate plan..."
-                  className="flex-1 bg-transparent text-sm text-[var(--t)] placeholder:text-[var(--t5)] outline-none px-3 py-2.5"
+                  className="flex-1 bg-transparent text-sm text-[var(--t)] placeholder:text-[var(--t5)] outline-none px-3 py-2.5 resize-none"
+                  rows={1}
+                  style={{ maxHeight: '80px' }}
                   data-testid="landing-input"
                 />
                 <Button type="submit" disabled={!landingInput.trim()}
@@ -474,52 +447,54 @@ const GuardianPage = () => {
             </form>
 
             {/* Quick Actions */}
-            <div className="flex flex-wrap gap-2 justify-center mb-8">
-              {actionButtons.map(({ key, label, icon: Icon, color }) => (
-                <button key={key} onClick={() => { startNewChat(); setTimeout(() => sendMessage('', key, `chat_${user?.id || 'anon'}_${Date.now().toString(36)}`), 200); }}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-transform duration-150 active:scale-[0.96]"
-                  style={{ background: `${color}12`, border: `1px solid ${color}25`, color }}
-                  data-testid={`landing-action-${key}`}>
-                  <Icon className="w-3.5 h-3.5" />
-                  {label}
-                </button>
-              ))}
+            <div className="glass-card p-4 mb-5">
+              <h2 className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider mb-3">Quick Actions</h2>
+              <div className="flex flex-wrap gap-2">
+                {actionButtons.map(({ key, label, icon: Icon, color }) => (
+                  <button key={key} onClick={() => { startNewChat(); setTimeout(() => sendMessage('', key, `chat_${user?.id || 'anon'}_${Date.now().toString(36)}`), 200); }}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-transform duration-150 active:scale-[0.96]"
+                    style={{ background: `${color}12`, border: `1px solid ${color}25`, color }}
+                    data-testid={`landing-action-${key}`}>
+                    <Icon className="w-3.5 h-3.5" />
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Recent Sessions */}
-            <div className="space-y-2">
+            {/* Recent Conversations */}
+            <div className="glass-card p-4 mb-5">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xs font-bold text-[var(--t4)] uppercase tracking-wider">Recent Conversations</h2>
-                <button onClick={() => startNewChat()} className="flex items-center gap-1.5 text-xs font-bold text-[var(--gold)] hover:text-[var(--gold2)] transition-colors" data-testid="new-chat-btn">
+                <h2 className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider">Recent Conversations</h2>
+                <button onClick={() => startNewChat()} className="flex items-center gap-1.5 text-xs font-bold text-[var(--gold)] transition-colors" data-testid="new-chat-btn">
                   <Plus className="w-3.5 h-3.5" /> New Chat
                 </button>
               </div>
 
               {sessionsLoading ? (
-                <div className="flex items-center justify-center py-8 text-[var(--t5)]">
+                <div className="flex items-center justify-center py-6 text-[var(--t5)]">
                   <Loader2 className="w-5 h-5 animate-spin" />
                 </div>
               ) : sessions.length === 0 ? (
-                <div className="text-center py-10">
-                  <MessageSquare className="w-10 h-10 mx-auto mb-3 text-[var(--t5)] opacity-40" />
+                <div className="text-center py-6">
+                  <MessageSquare className="w-8 h-8 mx-auto mb-2 text-[var(--t5)] opacity-40" />
                   <p className="text-sm text-[var(--t5)]">No conversations yet</p>
-                  <p className="text-xs text-[var(--t5)] mt-1">Start a new chat above to get started</p>
                 </div>
               ) : (
-                <div className="space-y-1.5" data-testid="session-list">
+                <div className="space-y-1.5 max-h-[210px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.15) transparent' }} data-testid="session-list">
                   {sessions.map((s) => (
                     <div
                       key={s.session_id}
                       onClick={() => resumeSession(s.session_id)}
                       role="button"
                       tabIndex={0}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-transform duration-150 active:scale-[0.98] cursor-pointer"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-transform duration-150 active:scale-[0.98] cursor-pointer"
                       style={{ border: '1px solid var(--b)' }}
                       data-testid={`session-${s.session_id}`}
                     >
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                         style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.12)' }}>
-                        <MessageSquare className="w-3.5 h-3.5 text-[var(--gold)]" />
+                        <MessageSquare className="w-3 h-3 text-[var(--gold)]" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-[var(--t2)] truncate">{s.title}</p>
@@ -543,12 +518,10 @@ const GuardianPage = () => {
               )}
             </div>
 
-            {/* Legal Disclaimer */}
-            <div className="mt-8 p-3 rounded-xl text-center" style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.1)' }}>
-              <p className="text-[10px] text-[var(--t5)] leading-relaxed">
-                <strong className="text-[var(--gold)]">Not Legal Advice</strong> — EGA is an AI assistant, not a licensed attorney. For legally binding decisions, always consult a bar-certified attorney licensed in your jurisdiction. Your documents are analyzed within the encrypted vault and are never shared externally.
-              </p>
-            </div>
+            {/* Legal Disclaimer — in place of security badges */}
+            <p className="text-[10px] text-[var(--t5)] leading-relaxed text-center px-2">
+              <strong className="text-[var(--gold)]">Not Legal Advice</strong> — EGA is an AI assistant, not a licensed attorney. For legally binding decisions, always consult a bar-certified attorney licensed in your jurisdiction. Your documents are analyzed within the encrypted vault and are never shared externally.
+            </p>
           </div>
         </div>
         </SectionLockedOverlay>
@@ -754,15 +727,18 @@ const GuardianPage = () => {
               </button>
             </>
           )}
-          <div className="flex-1 flex items-center rounded-xl px-3 py-2.5" style={{
+          <div className="flex-1 flex items-end rounded-xl px-3 py-2" style={{
             background: 'var(--s)', border: '1px solid var(--b)',
           }}>
-            <input
+            <textarea
               ref={inputRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 80) + 'px'; }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (input.trim() && !loading) { sendMessage(input); } } }}
               placeholder="Ask about your estate plan..."
-              className="flex-1 bg-transparent text-sm text-[var(--t)] placeholder:text-[var(--t5)] outline-none"
+              className="flex-1 bg-transparent text-sm text-[var(--t)] placeholder:text-[var(--t5)] outline-none resize-none py-1"
+              rows={1}
+              style={{ maxHeight: '80px' }}
               disabled={loading}
               data-testid="guardian-input"
             />
