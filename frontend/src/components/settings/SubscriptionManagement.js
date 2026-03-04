@@ -31,13 +31,13 @@ const TIER_STYLES = {
 
 const BeneficiaryBillingToggle = ({ billing, onChange }) => {
   const cycles = [
-    { id: 'monthly', label: 'Monthly', save: null },
-    { id: 'quarterly', label: 'Quarterly', save: '10%' },
     { id: 'annual', label: 'Annual', save: '20%' },
+    { id: 'quarterly', label: 'Quarterly', save: '10%' },
+    { id: 'monthly', label: 'Monthly', save: null },
   ];
 
   return (
-    <div className="flex justify-center mb-8" data-testid="billing-toggle">
+    <div className="mb-8 text-center" data-testid="billing-toggle">
       <div className="inline-flex p-1 rounded-2xl" style={{
         background: 'var(--s)',
         border: '1px solid var(--b)',
@@ -47,11 +47,15 @@ const BeneficiaryBillingToggle = ({ billing, onChange }) => {
           <button
             key={c.id}
             onClick={() => onChange(c.id)}
-            className="relative px-6 py-2.5 rounded-xl text-xs font-bold transition-all duration-300"
+            className="relative px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300"
             style={{
-              background: billing === c.id ? 'linear-gradient(135deg, #d4af37, #c9a033)' : 'transparent',
+              background: billing === c.id
+                ? c.id === 'annual' ? 'linear-gradient(135deg, #22C993, #10b981)' : 'linear-gradient(135deg, #d4af37, #c9a033)'
+                : 'transparent',
               color: billing === c.id ? '#0F1629' : 'var(--t5)',
-              boxShadow: billing === c.id ? '0 4px 16px rgba(212,175,55,0.35)' : 'none',
+              boxShadow: billing === c.id
+                ? c.id === 'annual' ? '0 4px 16px rgba(34,201,147,0.35)' : '0 4px 16px rgba(212,175,55,0.35)'
+                : 'none',
             }}
             data-testid={`billing-${c.id}`}
           >
@@ -65,6 +69,7 @@ const BeneficiaryBillingToggle = ({ billing, onChange }) => {
           </button>
         ))}
       </div>
+      <p className="text-[10px] text-[var(--t5)] mt-2">Most families choose the annual plan to ensure uninterrupted access.</p>
     </div>
   );
 };
@@ -77,14 +82,22 @@ const PriceDisplay = ({ plan, billing }) => {
   if (billing === 'quarterly') displayPrice = plan.quarterly_price || basePrice * 0.9;
   else if (billing === 'annual') displayPrice = plan.annual_price || basePrice * 0.8;
 
-  const periodLabel = billing === 'annual' ? '/mo billed annually' : billing === 'quarterly' ? '/mo billed quarterly' : '/month';
+  const annualTotal = (displayPrice * 12).toFixed(0);
 
   return (
-    <div className="flex items-baseline gap-1">
-      <span className="text-3xl font-bold tracking-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
-        ${displayPrice.toFixed(2)}
-      </span>
-      <span className="text-sm text-[var(--t4)]">{periodLabel}</span>
+    <div>
+      <div className="flex items-baseline gap-1">
+        <span className="text-3xl font-bold tracking-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
+          ${displayPrice.toFixed(2)}
+        </span>
+        <span className="text-sm text-[var(--t4)]">/mo</span>
+      </div>
+      {billing === 'annual' && (
+        <p className="text-xs text-[var(--gn2)] font-bold mt-0.5">${annualTotal}/year · Save {Math.round((1 - displayPrice / basePrice) * 100)}%</p>
+      )}
+      {billing === 'quarterly' && (
+        <p className="text-xs text-[var(--t5)] mt-0.5">billed quarterly</p>
+      )}
     </div>
   );
 };
@@ -98,7 +111,7 @@ export const SubscriptionManagement = ({
   const { user } = useAuth();
   const [plans, setPlans] = useState([]);
   const [beneficiaryPlans, setBeneficiaryPlans] = useState([]);
-  const [billing, setBilling] = useState('monthly');
+  const [billing, setBilling] = useState('annual');
   const [subscribing, setSubscribing] = useState(null);
   const [cancellingPlan, setCancellingPlan] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
