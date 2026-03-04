@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   Shield, Users, FileKey, FolderLock, FileUp, Loader2,
   Headphones, CreditCard, Activity, Settings,
-  MessageSquare, CheckSquare, AlertTriangle, Clock, ShieldCheck
+  MessageSquare, CheckSquare, AlertTriangle, Clock, ShieldCheck, TrendingUp
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Skeleton } from '../components/ui/skeleton';
@@ -143,6 +143,7 @@ const AdminPage = () => {
 
       {/* Platform Overview */}
       {stats && (
+        <>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
           {[
             { v: stats.users.total, l: 'Total Users', sub: `${stats.users.benefactors} benefactors · ${stats.users.beneficiaries} beneficiaries`, icon: Users, color: '#60A5FA', path: '/admin' },
@@ -159,6 +160,21 @@ const AdminPage = () => {
             </div>
           ))}
         </div>
+
+        {/* Viral Growth Metrics */}
+        <div className="grid grid-cols-2 gap-3 mt-3">
+          <div className="glass-card p-3 text-center">
+            <Users className="w-4 h-4 mx-auto mb-1 text-[#d4af37]" />
+            <div className="text-2xl font-bold text-[var(--t)]">{stats.avg_beneficiaries_per_benefactor || 0}</div>
+            <div className="text-xs text-[var(--t4)]">Avg Beneficiaries / Benefactor</div>
+          </div>
+          <div className="glass-card p-3 text-center cursor-pointer active:scale-[0.96] transition-transform" onClick={() => navigate('/admin')}>
+            <TrendingUp className="w-4 h-4 mx-auto mb-1 text-[#22C993]" />
+            <div className="text-2xl font-bold text-[var(--t)]">{stats.beneficiaries_converted || 0}</div>
+            <div className="text-xs text-[var(--t4)]">Beneficiaries → Benefactors</div>
+          </div>
+        </div>
+        </>
       )}
 
       {/* Tabs */}

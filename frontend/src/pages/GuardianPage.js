@@ -7,6 +7,8 @@ import {
   User,
   Loader2,
   Sparkles,
+  ArrowUp,
+  StopCircle,
   FileSearch,
   ListChecks,
   Gauge,
@@ -440,16 +442,19 @@ const GuardianPage = () => {
                   onChange={(e) => setLandingInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleLandingSubmit(e); } }}
                   placeholder="Ask anything about your estate plan..."
-                  className="flex-1 bg-transparent text-sm text-[var(--t)] placeholder:text-[var(--t5)] outline-none px-3 py-2 resize-none"
+                  className="w-full bg-transparent text-sm text-[var(--t)] placeholder:text-[var(--t5)] outline-none px-3 py-2 resize-none"
                   rows={3}
-                  style={{ overflow: "auto", scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.15) transparent" }}
+                  style={{ overflow: 'auto', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.15) transparent' }}
                   data-testid="landing-input"
                 />
-                <Button type="submit" disabled={!landingInput.trim()}
-                  className="gold-button h-10 w-10 p-0 rounded-xl flex-shrink-0"
-                  data-testid="landing-send-button">
-                  <Send className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center justify-end px-2 pb-1.5">
+                  <button type="submit" disabled={!landingInput.trim()}
+                    className="w-8 h-8 rounded-xl flex items-center justify-center active:scale-90 transition-transform disabled:opacity-30"
+                    style={{ background: landingInput.trim() ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'var(--s)', color: landingInput.trim() ? '#080e1a' : 'var(--t5)' }}
+                    data-testid="landing-send-button">
+                    <ArrowUp className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </form>
 
@@ -708,49 +713,59 @@ const GuardianPage = () => {
           </div>
         )}
 
-        <div className="flex items-center gap-1.5 justify-center mb-1.5">
-          <Shield className="w-2.5 h-2.5 text-[#22C993]" />
-          <span className="text-[9px] text-[var(--t5)]">Encrypted session · Not legal advice · Consult a licensed attorney</span>
+        <div className="flex items-center gap-1.5 justify-center mb-1">
+          <span className="text-[9px] text-[var(--t5)]">Encrypted · Not legal advice</span>
         </div>
 
-        <form onSubmit={handleChatSubmit} className="flex items-center gap-2 max-w-3xl mx-auto">
-          {hasConversation && (
-            <>
-              <button type="button" onClick={() => { setShowActions(!showActions); setShowQuestions(false); }}
-                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-150 active:scale-90"
-                style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.15)' }}
-                data-testid="actions-toggle">
-                <Sparkles className="w-4 h-4 text-[#d4af37]" />
-              </button>
-              <button type="button" onClick={() => { setShowQuestions(!showQuestions); setShowActions(false); }}
-                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-150 active:scale-90"
-                style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
-                data-testid="questions-toggle">
-                <HelpCircle className="w-4 h-4 text-[var(--t4)]" />
-              </button>
-            </>
-          )}
-          <div className="flex-1 flex items-end rounded-xl px-3 py-2" style={{
-            background: 'var(--s)', border: '1px solid var(--b)',
-          }}>
+        <form onSubmit={handleChatSubmit} className="flex items-end gap-2 max-w-3xl mx-auto px-3 pb-2">
+          <div className="flex-1 rounded-2xl px-3 py-1.5" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
             <textarea
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (input.trim() && !loading) { sendMessage(input); } } }}
               placeholder="Ask about your estate plan..."
-              className="flex-1 bg-transparent text-sm text-[var(--t)] placeholder:text-[var(--t5)] outline-none resize-none py-1"
+              className="w-full bg-transparent text-sm text-[var(--t)] placeholder:text-[var(--t5)] outline-none resize-none py-1.5"
               rows={3}
-              style={{ overflow: "auto", scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.15) transparent" }}
+              style={{ overflow: 'auto', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.15) transparent' }}
               disabled={loading}
               data-testid="guardian-input"
             />
+            <div className="flex items-center justify-between pt-1 pb-0.5">
+              <div className="flex items-center gap-1">
+                {hasConversation && (
+                  <>
+                    <button type="button" onClick={() => { setShowActions(!showActions); setShowQuestions(false); }}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--gold)] active:scale-90 transition-transform"
+                      data-testid="actions-toggle">
+                      <Sparkles className="w-3.5 h-3.5" />
+                    </button>
+                    <button type="button" onClick={() => { setShowQuestions(!showQuestions); setShowActions(false); }}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform"
+                      data-testid="questions-toggle">
+                      <HelpCircle className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                {loading ? (
+                  <button type="button" onClick={stopAnalysis}
+                    className="w-8 h-8 rounded-xl flex items-center justify-center bg-[var(--rd)] text-white active:scale-90 transition-transform"
+                    data-testid="stop-btn">
+                    <StopCircle className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button type="submit" disabled={!input.trim()}
+                    className="w-8 h-8 rounded-xl flex items-center justify-center active:scale-90 transition-transform disabled:opacity-30"
+                    style={{ background: input.trim() ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'var(--s)', color: input.trim() ? '#080e1a' : 'var(--t5)' }}
+                    data-testid="guardian-send-button">
+                    <ArrowUp className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
-          <Button type="submit" disabled={loading || !input.trim()}
-            className="gold-button w-9 h-9 p-0 rounded-xl flex-shrink-0"
-            data-testid="guardian-send-button">
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          </Button>
         </form>
       </div>
 
