@@ -207,8 +207,8 @@ const NotificationSettings = ({ getAuthHeaders }) => {
               <h3 className="font-bold text-[var(--t)]">Push Notifications</h3>
               <p className="text-sm text-[var(--t4)]">
                 {isSubscribed 
-                  ? 'You\'ll receive alerts for messages, DTS updates, and more' 
-                  : 'Enable to receive important alerts'}
+                  ? 'You\'ll receive alerts for messages, transition updates, and support replies' 
+                  : 'Get notified about milestone messages, document updates, transition status changes, and support responses'}
               </p>
             </div>
           </div>
