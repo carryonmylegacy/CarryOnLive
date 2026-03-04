@@ -409,57 +409,73 @@ const GuardianPage = () => {
   if (view === 'landing') {
     return (
       <div ref={guardianRef} className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10 lg:relative lg:inset-auto" style={{ top: headerHeight + 'px', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', overscrollBehavior: 'none', touchAction: 'none' }} data-testid="estate-guardian">
-        <SectionLockBanner sectionId="guardian" />
 
-        <SectionLockedOverlay sectionId="guardian">
+        {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }}>
-          <div className="max-w-2xl mx-auto px-4 pt-4 pb-8">
-            {/* Title */}
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-5 h-5 text-[var(--gold)]" />
-              <h1 className="text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid="guardian-hero-title">
-                Estate Guardian AI (EGA)
-              </h1>
-            </div>
-
-            {/* Legal Disclaimer */}
-            <div className="mb-5 p-3 rounded-xl" style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.1)' }}>
-              <p className="text-[10px] text-[var(--t5)] leading-relaxed">
-                <strong className="text-[var(--gold)]">Not Legal Advice</strong> — EGA is an AI assistant, not a licensed attorney. For legally binding decisions, always consult a bar-certified attorney licensed in your jurisdiction. Your documents are analyzed within the encrypted vault and are never shared externally.
-              </p>
-            </div>
-
-            {/* Ask Anything Input */}
-            <form onSubmit={handleLandingSubmit} className="mb-5">
-              <div className="flex items-end gap-2 p-2 rounded-2xl" style={{
-                background: 'var(--s)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                boxShadow: '0 4px 24px -4px rgba(0,0,0,0.3)',
-              }}>
-                <textarea
-                  ref={landingInputRef}
-                  value={landingInput}
-                  onChange={(e) => setLandingInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleLandingSubmit(e); } }}
-                  placeholder="Ask anything about your estate plan..."
-                  className="w-full bg-transparent text-sm text-[var(--t)] placeholder:text-[var(--t5)] outline-none px-3 py-2 resize-none"
-                  rows={3}
-                  style={{ overflow: 'auto', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.15) transparent' }}
-                  data-testid="landing-input"
-                />
-                <div className="flex items-center justify-end px-2 pb-1.5">
-                  <button type="submit" disabled={!landingInput.trim()}
-                    className="w-8 h-8 rounded-xl flex items-center justify-center active:scale-90 transition-transform disabled:opacity-30"
-                    style={{ background: landingInput.trim() ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'var(--s)', color: landingInput.trim() ? '#080e1a' : 'var(--t5)' }}
-                    data-testid="landing-send-button">
-                    <ArrowUp className="w-4 h-4" />
-                  </button>
-                </div>
+          <div className="max-w-2xl mx-auto px-4 pt-4 pb-4">
+            {/* Header — matches SDV, DTS, Beneficiaries format */}
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                <Sparkles className="w-5 h-5 text-[var(--gold)]" />
               </div>
-            </form>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid="guardian-hero-title">
+                  Estate Guardian AI (EGA)
+                </h1>
+                <ul className="text-xs text-[var(--t5)] mt-1 space-y-0.5">
+                  <li>· AI estate planning assistant trained in all 50 U.S. states</li>
+                  <li>· Analyzes your vault, identifies gaps, generates checklists</li>
+                  <li>· Not legal advice — consult a licensed attorney for decisions</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Recent Conversations */}
+            <div className="glass-card p-4 mb-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider">Recent Conversations</h2>
+                <button onClick={() => startNewChat()} className="flex items-center gap-1.5 text-xs font-bold text-[var(--gold)]" data-testid="new-chat-btn">
+                  <Plus className="w-3.5 h-3.5" /> New Chat
+                </button>
+              </div>
+              {sessionsLoading ? (
+                <div className="flex items-center justify-center py-6 text-[var(--t5)]">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                </div>
+              ) : sessions.length === 0 ? (
+                <div className="text-center py-6">
+                  <MessageSquare className="w-8 h-8 mx-auto mb-2 text-[var(--t5)] opacity-40" />
+                  <p className="text-sm text-[var(--t5)]">No conversations yet</p>
+                </div>
+              ) : (
+                <div className="space-y-1.5 max-h-[210px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.15) transparent' }} data-testid="session-list">
+                  {sessions.map((s) => (
+                    <div key={s.session_id} onClick={() => resumeSession(s.session_id)} role="button" tabIndex={0}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-transform duration-150 active:scale-[0.98] cursor-pointer"
+                      style={{ border: '1px solid var(--b)' }} data-testid={`session-${s.session_id}`}>
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.12)' }}>
+                        <MessageSquare className="w-3 h-3 text-[var(--gold)]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-[var(--t2)] truncate">{s.title}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] text-[var(--t5)] flex items-center gap-1"><Clock className="w-2.5 h-2.5" /> {timeAgo(s.last_message_at)}</span>
+                          <span className="text-[10px] text-[var(--t5)]">{s.message_count} msgs</span>
+                        </div>
+                      </div>
+                      <button onClick={(e) => deleteSession(e, s.session_id)}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--t5)] active:text-red-400 active:bg-red-400/10 transition-colors flex-shrink-0"
+                        data-testid={`delete-session-${s.session_id}`}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Quick Actions */}
-            <div className="glass-card p-4 mb-5">
+            <div className="glass-card p-4 mb-4">
               <h2 className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider mb-3">Quick Actions</h2>
               <div className="flex flex-wrap gap-2">
                 {actionButtons.map(({ key, label, icon: Icon, color }) => (
@@ -473,66 +489,35 @@ const GuardianPage = () => {
                 ))}
               </div>
             </div>
-
-            {/* Recent Conversations */}
-            <div className="glass-card p-4 mb-5">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider">Recent Conversations</h2>
-                <button onClick={() => startNewChat()} className="flex items-center gap-1.5 text-xs font-bold text-[var(--gold)] transition-colors" data-testid="new-chat-btn">
-                  <Plus className="w-3.5 h-3.5" /> New Chat
-                </button>
-              </div>
-
-              {sessionsLoading ? (
-                <div className="flex items-center justify-center py-6 text-[var(--t5)]">
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                </div>
-              ) : sessions.length === 0 ? (
-                <div className="text-center py-6">
-                  <MessageSquare className="w-8 h-8 mx-auto mb-2 text-[var(--t5)] opacity-40" />
-                  <p className="text-sm text-[var(--t5)]">No conversations yet</p>
-                </div>
-              ) : (
-                <div className="space-y-1.5 max-h-[210px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.15) transparent' }} data-testid="session-list">
-                  {sessions.map((s) => (
-                    <div
-                      key={s.session_id}
-                      onClick={() => resumeSession(s.session_id)}
-                      role="button"
-                      tabIndex={0}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-transform duration-150 active:scale-[0.98] cursor-pointer"
-                      style={{ border: '1px solid var(--b)' }}
-                      data-testid={`session-${s.session_id}`}
-                    >
-                      <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.12)' }}>
-                        <MessageSquare className="w-3 h-3 text-[var(--gold)]" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-[var(--t2)] truncate">{s.title}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[10px] text-[var(--t5)] flex items-center gap-1">
-                            <Clock className="w-2.5 h-2.5" /> {timeAgo(s.last_message_at)}
-                          </span>
-                          <span className="text-[10px] text-[var(--t5)]">{s.message_count} msgs</span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={(e) => deleteSession(e, s.session_id)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--t5)] active:text-red-400 active:bg-red-400/10 transition-colors flex-shrink-0"
-                        data-testid={`delete-session-${s.session_id}`}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
           </div>
         </div>
-        </SectionLockedOverlay>
+
+        {/* Fixed input at bottom — matches chat view */}
+        <div className="flex-shrink-0 px-3 pb-2 pt-1" style={{ borderTop: '1px solid var(--b)' }}>
+          <form onSubmit={handleLandingSubmit}>
+            <div className="rounded-2xl px-3 py-1.5 max-w-2xl mx-auto" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+              <textarea
+                ref={landingInputRef}
+                value={landingInput}
+                onChange={(e) => setLandingInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleLandingSubmit(e); } }}
+                placeholder="Ask anything about your estate plan..."
+                className="w-full bg-transparent text-sm text-[var(--t)] placeholder:text-[var(--t5)] outline-none resize-none px-1 py-2"
+                rows={3}
+                style={{ overflow: 'auto', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.15) transparent' }}
+                data-testid="landing-input"
+              />
+              <div className="flex items-center justify-end pb-1">
+                <button type="submit" disabled={!landingInput.trim()}
+                  className="w-8 h-8 rounded-xl flex items-center justify-center active:scale-90 transition-transform disabled:opacity-30"
+                  style={{ background: landingInput.trim() ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'var(--s)', color: landingInput.trim() ? '#080e1a' : 'var(--t5)' }}
+                  data-testid="landing-send-button">
+                  <ArrowUp className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
     );
   }
@@ -542,9 +527,7 @@ const GuardianPage = () => {
   // ═══════════════════════════════════════════════
   return (
     <div ref={guardianRef} className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10 lg:relative lg:inset-auto" style={{ top: headerHeight + 'px', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', overscrollBehavior: 'none', touchAction: 'none' }} data-testid="estate-guardian">
-      <SectionLockBanner sectionId="guardian" />
 
-      <SectionLockedOverlay sectionId="guardian">
       {/* Chat Header */}
       <div className="flex items-center justify-between px-4 py-2 flex-shrink-0" style={{
         borderBottom: '1px solid var(--b)',
@@ -775,7 +758,6 @@ const GuardianPage = () => {
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
-      </SectionLockedOverlay>
     </div>
   );
 };
