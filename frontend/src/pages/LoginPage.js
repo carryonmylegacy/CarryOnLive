@@ -5,6 +5,7 @@ import { Mail, Lock, Eye, EyeOff, Loader2, Shield, FileText, Users, ChevronRight
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { toast } from '../utils/toast';
+import { isNative } from '../services/native';
 
 /* ─── scroll-reveal hook ─── */
 const useReveal = (threshold = 0.15) => {
@@ -170,6 +171,53 @@ const LoginPage = () => {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#0B1221' }}>
         <img src="/carryon-logo.jpg" alt="CarryOn" className="w-32 h-auto opacity-60" />
+      </div>
+    );
+  }
+
+  // Native app: simplified login — just the card, no website content
+  if (isNative) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: 'linear-gradient(168deg, #080e1a 0%, #0d1627 30%, #111d35 60%, #0a1122 100%)' }}>
+        <img src="/carryon-logo.jpg" alt="CarryOn" className="w-[140px] h-auto mb-6" />
+        <div className="w-full max-w-sm rounded-2xl p-7 relative" style={{
+          background: 'linear-gradient(160deg, rgba(17,27,48,0.97), rgba(13,22,40,0.99))',
+          border: '1px solid rgba(212,175,55,0.12)',
+          boxShadow: '0 8px 80px rgba(0,0,0,0.5)',
+        }}>
+          <div className="absolute top-0 left-7 right-7 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
+          <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Sign In</h2>
+          <p className="text-[#475569] text-sm mb-6">Access your CarryOn account</p>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="relative">
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63]" />
+              <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)}
+                className="h-12 bg-[#0b1322] border-[#1a2a42] text-white placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-xl pl-10"
+                autoComplete="username" data-testid="login-email" />
+            </div>
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63]" />
+              <Input type={showPw ? 'text' : 'password'} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)}
+                className="h-12 bg-[#0b1322] border-[#1a2a42] text-white placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-xl pl-10 pr-10"
+                autoComplete="current-password" data-testid="login-password" />
+              <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#3a4a63]">
+                {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            <Button type="submit" disabled={loading || !email || !password} className="w-full h-12 rounded-xl text-base font-bold"
+              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }} data-testid="login-submit">
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sign In'}
+            </Button>
+          </form>
+          <div className="mt-5 flex items-center justify-between">
+            <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-medium">Create Account</button>
+            <span className="text-[#334155] text-xs">Forgot Password?</span>
+          </div>
+          <div className="mt-5 pt-4 border-t flex items-center justify-center gap-2" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+            <Shield className="w-3.5 h-3.5 text-[#10b981]" />
+            <span className="text-[#475569] text-xs">Bank-grade security · 256-bit SSL</span>
+          </div>
+        </div>
       </div>
     );
   }
