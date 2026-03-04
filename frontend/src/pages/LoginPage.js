@@ -553,7 +553,7 @@ const LoginPage = () => {
               <p>(703) 884-1527</p>
             </div>
           </div>
-          <p className="text-center text-[#2A3C55] text-xs mt-6">&copy; {new Date().getFullYear()} CarryOn Technologies. All rights reserved.</p>
+          <p className="text-center text-[#2A3C55] text-xs mt-6">&copy; {new Date().getFullYear()} CarryOn Technologies LLC. All rights reserved.</p>
         </div>
       </footer>
 
