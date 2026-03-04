@@ -182,6 +182,25 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
     deletion_requests = await db.deletion_requests.count_documents(
         {"status": "pending"}
     )
+    # Viral metrics
+    total_beneficiary_records = await db.beneficiaries.count_documents(
+        {"is_stub": {"$ne": True}}
+    )
+    avg_bens_per_benefactor = round(total_beneficiary_records / max(benefactors, 1), 1)
+    # Beneficiaries who became benefactors
+    beneficiary_emails = await db.users.find(
+        {"role": "beneficiary"}, {"_id": 0, "email": 1}
+    ).to_list(10000)
+    ben_emails = {u["email"] for u in beneficiary_emails}
+    benefactor_emails = await db.users.find(
+        {"role": "benefactor"}, {"_id": 0, "email": 1, "benefactor_email": 1}
+    ).to_list(10000)
+    ben_to_benefactor_count = sum(
+        1
+        for u in benefactor_emails
+        if u.get("benefactor_email") or u["email"] in ben_emails
+    )
+
     return {
         "users": {
             "total": total_users,
@@ -205,6 +224,8 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
         "grace_periods": grace_periods,
         "pending_family_requests": pending_family,
         "pending_deletions": deletion_requests,
+        "avg_beneficiaries_per_benefactor": avg_bens_per_benefactor,
+        "beneficiaries_converted": ben_to_benefactor_count,
     }
 
 
