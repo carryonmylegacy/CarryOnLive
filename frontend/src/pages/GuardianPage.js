@@ -376,6 +376,8 @@ const GuardianPage = () => {
         }
       }
       setMessages(prev => [...prev, assistantMsg]);
+      // Haptic feedback — quick vibration to signal response is ready
+      if (navigator.vibrate) navigator.vibrate(50);
     } catch (error) {
       if (axios.isCancel(error) || error.name === 'AbortError' || error.code === 'ERR_CANCELED') {
         // Already handled by stopAnalysis
