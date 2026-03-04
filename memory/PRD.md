@@ -109,3 +109,5 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - **P3: ID.me military verification** — Required for DoD contracts
 - Fix native app download button (use share sheet instead of blob download)
 - Remove debug 5-tap overlay from header
+- **P1: Share Extension — full native setup** — iOS Share Extension target needs to be added in Xcode (plugin installed, web handler built, Info.plist configured). Also needs: macOS share sheet support, Android intent-filter for receiving shared files, Windows/PC drag-and-drop upload via web. Walk user through Xcode target creation on next Codemagic build.
+- **P1: Apple Passkeys** — (see above)
