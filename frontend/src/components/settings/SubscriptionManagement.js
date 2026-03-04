@@ -708,6 +708,21 @@ export const SubscriptionManagement = ({
           })}
         </div>
 
+        {/* Apple-required subscription disclosures */}
+        <div className="mt-4 p-3 rounded-xl text-center space-y-1" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+          <p className="text-[10px] text-[var(--t5)]">
+            Subscriptions auto-renew monthly unless cancelled at least 24 hours before the end of the current billing period.
+            Payment is charged to your payment method at confirmation of purchase.
+          </p>
+          <p className="text-[10px] text-[var(--t5)]">
+            You can manage or cancel your subscription anytime from Settings.
+          </p>
+          <div className="flex justify-center gap-3 pt-1">
+            <a href="https://carryon.us/terms" target="_blank" rel="noopener noreferrer" className="text-[10px] text-[var(--gold)] font-bold">Terms of Service</a>
+            <a href="https://carryon.us/privacy" target="_blank" rel="noopener noreferrer" className="text-[10px] text-[var(--gold)] font-bold">Privacy Policy</a>
+          </div>
+        </div>
+
         {/* Beneficiary: Family Plan Request */}
         {isBeneficiary && (
           <div className="mt-6 p-4 rounded-xl" style={{ background: 'rgba(96,165,250,0.05)', border: '1px solid rgba(96,165,250,0.12)' }}>
