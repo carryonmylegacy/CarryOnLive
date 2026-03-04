@@ -98,3 +98,14 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - **Subscriptions monolith split**: `subscriptions.py` (2351 lines) → `subscriptions/` package with `plans.py` (460), `checkout.py` (980), `verification_and_lifecycle.py` (960)
 - **PNG viewer fix**: Document cards now clickable for preview, View/Download buttons visible on mobile (not hover-only)
 - Mobile app build pipeline verified ready (codemagic.yaml, capacitor config, Cordova bounce plugin)
+
+
+## Backlog (Post v1.0 Approval)
+- **P1: Apple Passkeys** — Add "Sign in with Passkey" via `@argo-navis-dev/capacitor-passkey-plugin`. Associated Domains already configured. Backend WebAuthn routes partially built. Requires plugin install, challenge/verify endpoints, frontend registration + login flow. Target: v1.1
+- **P2: Will Creation Wizard** — TurboTax-style guided will creation. Major revenue driver.
+- **P2: OCR Document Scanning** — Camera-to-vault with text extraction (Tesseract)
+- **P3: Eternal Echo (AI Digital Corpus)** — Persona AI for posthumous beneficiary interaction
+- **P3: Uber-style distributed task queue** — For scaled customer support teams
+- **P3: ID.me military verification** — Required for DoD contracts
+- Fix native app download button (use share sheet instead of blob download)
+- Remove debug 5-tap overlay from header
