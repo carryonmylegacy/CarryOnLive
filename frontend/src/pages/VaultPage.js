@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -62,6 +63,7 @@ const categories = [
 
 const VaultPage = () => {
   const { user, getAuthHeaders, token } = useAuth();
+  const navigate = useNavigate();
   const [documents, setDocuments] = useState([]);
   const [estate, setEstate] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -82,6 +84,7 @@ const VaultPage = () => {
   const [lockingDoc, setLockingDoc] = useState(false);
   const [showPwEye, setShowPwEye] = useState(false);
   const [showUnlockPwEye, setShowUnlockPwEye] = useState(false);
+  const [showInvitePrompt, setShowInvitePrompt] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [unlockPassword, setUnlockPassword] = useState('');
   const [unlockBackupCode, setUnlockBackupCode] = useState('');
@@ -191,6 +194,12 @@ const VaultPage = () => {
       setShowUploadModal(false);
       resetUploadForm();
       fetchData();
+
+      // Prompt to invite beneficiaries after first document upload
+      if (documents.length === 0 && !sessionStorage.getItem('invite_prompt_shown')) {
+        sessionStorage.setItem('invite_prompt_shown', 'true');
+        setTimeout(() => setShowInvitePrompt(true), 1500);
+      }
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('Failed to upload document');
@@ -1378,6 +1387,26 @@ const VaultPage = () => {
       </Dialog>
 
       </SectionLockedOverlay>
+
+      {/* Invite prompt after first upload */}
+      {showInvitePrompt && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowInvitePrompt(false)} />
+          <div className="relative rounded-2xl p-6 max-w-sm w-full text-center" style={{ background: 'var(--bg2)', border: '1px solid var(--b)', boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}>
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)' }}>
+              <Heart className="w-8 h-8 text-[#d4af37]" />
+            </div>
+            <h3 className="text-xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Your Legacy Has Begun</h3>
+            <p className="text-sm text-[var(--t4)] mb-5">Invite someone you trust so they can access your documents when needed.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowInvitePrompt(false)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold glass-card text-[var(--t4)]">Later</button>
+              <button onClick={() => { setShowInvitePrompt(false); navigate('/beneficiaries'); }} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}>
+                Invite Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
