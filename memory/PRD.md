@@ -105,10 +105,11 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - **P2: Will Creation Wizard** — TurboTax-style guided will creation. Major revenue driver.
 - **P2: OCR Document Scanning** — Camera-to-vault with text extraction (Tesseract)
 - **P3: Uber-style distributed task queue** — For scaled customer support teams
-- **P3: ID.me military verification** — Required for DoD contracts
 - ~~Fix native app download button~~ — COMPLETED (uses Filesystem + Share sheet on native)
 - ~~Remove debug 5-tap overlay from header~~ — COMPLETED
 - ~~**Eternal Echo (AI Digital Corpus)**~~ — CANCELLED
+- ~~**Will Creation Wizard**~~ — CANCELLED
+- ~~**ID.me military verification**~~ — CANCELLED
 - **P1: Share Extension — full native setup** — iOS Share Extension target needs to be added in Xcode (plugin installed, web handler built, Info.plist configured). Also needs: macOS share sheet support, Android intent-filter for receiving shared files, Windows/PC drag-and-drop upload via web. Walk user through Xcode target creation on next Codemagic build.
 - **P1: Operations Admin Page** — Separate admin portal for Chief of Staff. Everything except revenue analytics. Focused on platform operations: support tickets, verifications, transitions, user management, system health. Accessible via a new role or tab.
 - ~~**P1: Revenue Analytics on Master Admin**~~ — COMPLETED: MRR, ARR, total revenue, MoM growth, ARPU, churn, LTV tiles now on admin dashboard.

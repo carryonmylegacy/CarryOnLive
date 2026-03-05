@@ -55,7 +55,7 @@ class TestAdminUsersEndpoint:
         # Check that at least one user has subscription field (may be null)
         has_subscription_field = any("subscription" in u for u in data)
         assert has_subscription_field, "Users should have subscription field"
-        print(f"✓ Users have subscription info attached")
+        print("✓ Users have subscription info attached")
 
     def test_admin_users_benefactors_have_linked_beneficiaries(self, auth_headers):
         """Test that benefactor users have linked_beneficiaries array"""
@@ -105,7 +105,7 @@ class TestAdminStatsEndpoint:
         assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
         assert isinstance(data, dict), "Response should be a dict"
-        print(f"✓ Admin stats endpoint returned successfully")
+        print("✓ Admin stats endpoint returned successfully")
 
     def test_stats_contains_user_counts(self, auth_headers):
         """Test that stats contains user breakdown"""
@@ -161,7 +161,7 @@ class TestAdminRevenueMetrics:
         assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
         assert isinstance(data, dict), "Response should be a dict"
-        print(f"✓ Revenue metrics endpoint returned successfully")
+        print("✓ Revenue metrics endpoint returned successfully")
 
     def test_revenue_metrics_structure(self, auth_headers):
         """Test that revenue metrics has expected fields"""
@@ -200,7 +200,7 @@ class TestNewAdultSignupAPI:
         response = requests.post(f"{BASE_URL}/api/auth/register", json={})
         # Should get validation error, not 404
         assert response.status_code in [400, 422], f"Register endpoint should exist: {response.status_code}"
-        print(f"✓ Register endpoint exists and returns validation errors")
+        print("✓ Register endpoint exists and returns validation errors")
 
     def test_subscription_plans_include_new_adult(self, auth_headers):
         """Test that subscription plans include new_adult tier"""

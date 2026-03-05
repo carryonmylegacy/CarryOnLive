@@ -180,7 +180,7 @@ async def get_all_conversations(current_user: dict = Depends(get_current_user)):
         )
         result.append(
             {
-                "conversation_id": conv["_id"],
+                "conversation_id": str(conv["_id"]),
                 "user_name": user.get("name", "Unknown") if user else "Unknown",
                 "user_email": user.get("email", "") if user else "",
                 "user_role": user.get("role", "benefactor") if user else "benefactor",

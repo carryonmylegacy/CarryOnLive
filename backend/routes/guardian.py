@@ -607,7 +607,7 @@ async def get_chat_sessions(current_user: dict = Depends(get_current_user)):
 
         sessions.append(
             {
-                "session_id": s["_id"],
+                "session_id": str(s["_id"]),
                 "title": title,
                 "last_message_at": s["last_message_at"],
                 "message_count": s["message_count"],
