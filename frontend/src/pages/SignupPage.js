@@ -463,15 +463,15 @@ const SignupPage = () => {
 
                 {/* Progress Bar */}
                 <div className="px-5 sm:px-7 pt-5 sm:pt-7 pb-2">
-                  <div className="flex items-center gap-0.5 sm:gap-1 mb-3 overflow-hidden">
+                  <div className="flex items-center gap-0 sm:gap-1 mb-3 overflow-hidden">
                     {STEPS.map((s, i) => (
-                      <div key={s.id} className="flex items-center flex-1">
+                      <div key={s.id} className="flex items-center flex-1 min-w-0">
                         <button
                           onClick={() => { if (i < step) goTo(i); }}
-                          className="flex items-center gap-1.5 sm:gap-2 group"
+                          className="flex items-center gap-1 sm:gap-2 group flex-shrink-0"
                           style={{ cursor: i < step ? 'pointer' : 'default' }}
                         >
-                          <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold transition-all duration-500 flex-shrink-0" style={{
+                          <div className={`${STEPS.length > 8 ? 'w-5 h-5 text-[8px]' : 'w-6 h-6 text-[10px]'} sm:w-8 sm:h-8 rounded-full flex items-center justify-center sm:text-xs font-bold transition-all duration-500 flex-shrink-0`} style={{
                             background: i <= step ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'rgba(255,255,255,0.05)',
                             color: i <= step ? '#080e1a' : '#3a4a63',
                             boxShadow: i === step ? '0 0 16px rgba(212,175,55,0.4)' : 'none',
@@ -483,7 +483,7 @@ const SignupPage = () => {
                           </span>
                         </button>
                         {i < STEPS.length - 1 && (
-                          <div className="flex-1 h-[2px] mx-1.5 sm:mx-2 rounded-full transition-all duration-700" style={{
+                          <div className={`flex-1 h-[2px] ${STEPS.length > 8 ? 'mx-0.5 sm:mx-1' : 'mx-1 sm:mx-2'} rounded-full transition-all duration-700 min-w-[4px]`} style={{
                             background: i < step ? '#d4af37' : 'rgba(255,255,255,0.06)',
                           }} />
                         )}
@@ -495,7 +495,7 @@ const SignupPage = () => {
 
                 {/* Step Content */}
                 <div className="px-5 sm:px-7 pb-5 sm:pb-7 flex flex-col" style={{ height: 500 }}>
-                  <div ref={scrollRef} className="flex-1 overflow-y-auto scrollbar-hide" style={getSlideStyle()}>
+                  <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide px-1" style={getSlideStyle()}>
                     {/* STEP 0: Name */}
                     {currentStep?.id === 'name' && (
                       <div className="space-y-4 sm:space-y-5">
@@ -724,13 +724,13 @@ const SignupPage = () => {
 
                     {/* STEP 2: Address */}
                     {currentStep?.id === 'address' && (
-                      <div className="space-y-4 sm:space-y-5">
+                      <div className="space-y-3">
                         <div>
-                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Your residential address</h2>
-                          <p className="text-[#6b7a90] text-sm">Used by EGA to analyze estate law specific to your state.</p>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-0.5" style={{ fontFamily: 'Outfit, sans-serif' }}>Your residential address</h2>
+                          <p className="text-[#6b7a90] text-xs">Used by EGA to analyze estate law specific to your state.</p>
                         </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-[#7b879e] text-sm font-medium">Street Address <span className="text-red-400">*</span></Label>
+                        <div className="space-y-1">
+                          <Label className="text-[#7b879e] text-xs font-medium">Street Address <span className="text-red-400">*</span></Label>
                           <AddressAutocomplete
                             value={addressStreet}
                             onChange={(e) => setAddressStreet(e.target.value)}
@@ -745,19 +745,19 @@ const SignupPage = () => {
                             data-testid="signup-address-street"
                           />
                         </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-[#7b879e] text-sm font-medium">Apt, Suite, Unit (optional)</Label>
+                        <div className="space-y-1">
+                          <Label className="text-[#7b879e] text-xs font-medium">Apt, Suite, Unit (optional)</Label>
                           <Input value={addressLine2} onChange={(e) => setAddressLine2(e.target.value)}
                             placeholder="Apt 4B, Suite 200, etc." className={inputClass} data-testid="signup-address-line2" />
                         </div>
-                        <div className="grid grid-cols-3 gap-3">
-                          <div className="space-y-1.5">
-                            <Label className="text-[#7b879e] text-sm font-medium">City <span className="text-red-400">*</span></Label>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="space-y-1">
+                            <Label className="text-[#7b879e] text-xs font-medium">City <span className="text-red-400">*</span></Label>
                             <Input value={addressCity} onChange={(e) => setAddressCity(e.target.value)}
                               placeholder="City" className={inputClass} data-testid="signup-address-city" />
                           </div>
-                          <div className="space-y-1.5">
-                            <Label className="text-[#7b879e] text-sm font-medium">State <span className="text-red-400">*</span></Label>
+                          <div className="space-y-1">
+                            <Label className="text-[#7b879e] text-xs font-medium">State <span className="text-red-400">*</span></Label>
                             <Select value={addressState} onValueChange={setAddressState}>
                               <SelectTrigger className={selectClass} data-testid="signup-address-state"><SelectValue placeholder="State" /></SelectTrigger>
                               <SelectContent className="bg-[#141C33] border-[#1a2a42] max-h-48">
@@ -765,15 +765,15 @@ const SignupPage = () => {
                               </SelectContent>
                             </Select>
                           </div>
-                          <div className="space-y-1.5">
-                            <Label className="text-[#7b879e] text-sm font-medium">ZIP <span className="text-red-400">*</span></Label>
+                          <div className="space-y-1">
+                            <Label className="text-[#7b879e] text-xs font-medium">ZIP <span className="text-red-400">*</span></Label>
                             <Input value={addressZip} onChange={(e) => setAddressZip(e.target.value)}
                               placeholder="ZIP" className={inputClass} maxLength={10} data-testid="signup-address-zip" />
                           </div>
                         </div>
-                        <div className="p-3 rounded-xl" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.12)' }}>
-                          <p className="text-[#d4af37] text-xs leading-relaxed flex items-start gap-2">
-                            <Shield className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                        <div className="p-2.5 rounded-xl" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.12)' }}>
+                          <p className="text-[#d4af37] text-[11px] leading-relaxed flex items-start gap-2">
+                            <Shield className="w-3 h-3 flex-shrink-0 mt-0.5" />
                             Your address is encrypted and stored securely. It's only used for estate law analysis and is never shared.
                           </p>
                         </div>
