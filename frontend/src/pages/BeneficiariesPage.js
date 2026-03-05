@@ -91,6 +91,7 @@ const BeneficiariesPage = () => {
   const [showPrimaryDisclaimer, setShowPrimaryDisclaimer] = useState(null);
   const [accessRequests, setAccessRequests] = useState([]);
   const [handlingRequest, setHandlingRequest] = useState(null);
+  const [changingPrimary, setChangingPrimary] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -273,6 +274,7 @@ const BeneficiariesPage = () => {
       await axios.put(`${API_URL}/beneficiaries/${beneficiaryId}/set-primary`, {}, getAuthHeaders());
       toast.success('Primary beneficiary designated');
       setShowPrimaryDisclaimer(null);
+      setChangingPrimary(false);
       fetchData();
     } catch (error) {
       console.error('Set primary error:', error);
@@ -345,6 +347,8 @@ const BeneficiariesPage = () => {
   const displayName = firstName && lastName 
     ? `${firstName}${middleName ? ' ' + middleName : ''} ${lastName}${suffix ? ' ' + suffix : ''}`
     : '';
+
+  const primaryBeneficiary = beneficiaries.find(b => b.is_primary);
 
   if (loading) {
     return (
@@ -578,15 +582,25 @@ const BeneficiariesPage = () => {
                   )}
 
                   {/* Designate Primary */}
+                  {ben.is_primary && (
+                    <button
+                      className="w-full mt-2 text-[10px] text-[var(--t5)] hover:text-[#F59E0B] transition-colors"
+                      onClick={() => setChangingPrimary(true)}
+                      data-testid={`change-primary-${ben.id}`}
+                    >
+                      Change Primary Beneficiary
+                    </button>
+                  )}
                   {!ben.is_primary && !ben.is_stub && (
                     <Button
                       size="sm"
                       variant="outline"
-                      className="w-full mt-2 text-xs border-[var(--b)] text-[#22C993] hover:bg-[#22C993]/10"
+                      className={`w-full mt-2 text-xs border-[var(--b)] ${(primaryBeneficiary && !changingPrimary) ? 'text-[var(--t5)] opacity-50 cursor-not-allowed' : 'text-[#22C993] hover:bg-[#22C993]/10'}`}
                       onClick={() => setShowPrimaryDisclaimer(ben)}
+                      disabled={!!primaryBeneficiary && !changingPrimary}
                       data-testid={`designate-primary-${ben.id}`}
                     >
-                      <Shield className="w-3 h-3 mr-1.5" /> Designate as Primary
+                      <Shield className="w-3 h-3 mr-1.5" /> {(primaryBeneficiary && !changingPrimary) ? 'Primary Already Designated' : 'Designate as Primary'}
                     </Button>
                   )}
                 </div>
