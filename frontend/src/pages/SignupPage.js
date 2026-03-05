@@ -357,7 +357,7 @@ const SignupPage = () => {
     }, 300);
   };
 
-  // Validate beneficiary email: no duplicates across beneficiaries, no existing system users
+  // Validate beneficiary email: no duplicates across beneficiaries
   const validateBenEmail = async (emailVal, benIndex) => {
     if (!emailVal || !emailVal.trim()) {
       setEmailErrors(prev => { const n = { ...prev }; delete n[benIndex]; return n; });
@@ -365,23 +365,13 @@ const SignupPage = () => {
     }
     const normalizedEmail = emailVal.toLowerCase().trim();
 
-    // Check for duplicate across other beneficiaries
+    // Check for duplicate across other beneficiaries being enrolled
     const isDuplicate = beneficiaries.some((b, i) => i !== benIndex && b.email && b.email.toLowerCase().trim() === normalizedEmail);
     if (isDuplicate) {
       setEmailErrors(prev => ({ ...prev, [benIndex]: 'This email is already assigned to another beneficiary.' }));
       return;
     }
 
-    // Check if email exists in system
-    try {
-      const res = await axios.post(`${API_URL}/auth/check-email`, { email: normalizedEmail });
-      if (res.data.exists) {
-        setEmailErrors(prev => ({ ...prev, [benIndex]: 'This email is already registered in the system.' }));
-        return;
-      }
-    } catch (err) {
-      // Silently fail — don't block signup if check fails
-    }
     setEmailErrors(prev => { const n = { ...prev }; delete n[benIndex]; return n; });
   };
 
@@ -541,8 +531,8 @@ const SignupPage = () => {
                 </div>
 
                 {/* Step Content */}
-                <div className="px-4 sm:px-7 pb-5 sm:pb-7 flex flex-col" style={{ height: 500 }}>
-                  <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide px-2" style={getSlideStyle()}>
+                <div className="px-4 sm:px-6 pb-5 sm:pb-7 flex flex-col" style={{ height: 500 }}>
+                  <div ref={scrollRef} className="flex-1 overflow-auto scrollbar-hide px-3" style={getSlideStyle()}>
                     {/* STEP 0: Name */}
                     {currentStep?.id === 'name' && (
                       <div className="space-y-4 sm:space-y-5">

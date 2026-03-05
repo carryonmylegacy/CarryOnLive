@@ -71,9 +71,6 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
     if estate_id:
         completed["create_estate"] = True
         # Count any beneficiaries (including stubs from signup) as complete
-        has_beneficiaries = (
-            await db.beneficiaries.count_documents({"estate_id": estate_id}) > 0
-        )
         completed["upload_document"] = (
             await db.documents.count_documents({"estate_id": estate_id}) > 0
         )
