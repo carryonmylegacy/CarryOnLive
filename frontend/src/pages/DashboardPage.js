@@ -32,6 +32,8 @@ const DashboardPage = () => {
   const [showPaywall, setShowPaywall] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [justCompletedActivation, setJustCompletedActivation] = useState(false);
+  const [showGuidedFlow, setShowGuidedFlow] = useState(false);
+  const [guidedStep, setGuidedStep] = useState(null);
 
   const handleCelebrationDismiss = () => {
     setShowCelebration(false);
@@ -77,7 +79,21 @@ const DashboardPage = () => {
       // Update estate's readiness_score locally to match
       setEstate(prev => prev ? { ...prev, readiness_score: readinessRes.data.overall_score } : prev);
     } catch (error) { console.error('Fetch estate data error:', error); }
-    finally { setLoading(false); }
+    finally { 
+      setLoading(false);
+      // Check if user needs guided activation
+      if (!sessionStorage.getItem('carryon_activation_done')) {
+        try {
+          const progressRes = await axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
+          const steps = progressRes.data?.steps || [];
+          const nextIncomplete = steps.find(s => !s.completed);
+          if (nextIncomplete && !progressRes.data?.all_complete) {
+            setGuidedStep(nextIncomplete);
+            setShowGuidedFlow(true);
+          }
+        } catch {}
+      }
+    }
   };
 
   const handleEstateChange = (newEstate) => { 
@@ -215,6 +231,46 @@ const DashboardPage = () => {
             onEstateChange={handleEstateChange} 
             onEstatesUpdate={fetchEstates} 
           />
+        </div>
+      </div>
+    );
+  }
+
+  // Guided activation — full-screen overlay for first-time users
+  if (showGuidedFlow && guidedStep) {
+    const STEP_ROUTES = {
+      create_message: '/messages',
+      upload_document: '/vault',
+      add_beneficiary: '/beneficiaries',
+      customize_checklist: '/checklist',
+      review_readiness: '/guardian',
+    };
+    const STEP_LABELS = {
+      create_message: { title: 'Leave a Message for Your Loved Ones', desc: 'Record a video, voice, or written message. You can edit or re-record anytime.', icon: '💬', step: 1 },
+      upload_document: { title: 'Upload Your First Estate Document', desc: 'Securely store a will, trust, insurance policy, or other important document.', icon: '📄', step: 2 },
+      customize_checklist: { title: 'Review Your Action Checklist', desc: 'Customize the steps your loved ones will follow when they need it most.', icon: '✓', step: 3 },
+      review_readiness: { title: 'Consult the Estate Guardian', desc: 'Get an AI analysis of your estate plan and personalized next steps.', icon: '✨', step: 4 },
+    };
+    const stepInfo = STEP_LABELS[guidedStep.key] || STEP_LABELS.create_message;
+    const route = STEP_ROUTES[guidedStep.key];
+    const totalSteps = 4;
+
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6" style={{ background: 'linear-gradient(168deg, #080e1a 0%, #0d1627 30%, #111d35 60%, #0a1122 100%)' }}>
+        <div className="max-w-md w-full text-center">
+          <div className="text-6xl mb-6">{stepInfo.icon}</div>
+          <p className="text-xs text-[#d4af37] font-bold uppercase tracking-widest mb-3">Step {stepInfo.step} of {totalSteps}</p>
+          <h1 className="text-2xl font-bold text-white mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>{stepInfo.title}</h1>
+          <p className="text-sm text-[#94a3b8] mb-8">{stepInfo.desc}</p>
+          <button onClick={() => { setShowGuidedFlow(false); navigate(route); }}
+            className="w-full py-3.5 rounded-xl text-base font-bold mb-4"
+            style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}>
+            Let's Go
+          </button>
+          <button onClick={() => { setShowGuidedFlow(false); sessionStorage.setItem('carryon_activation_done', 'true'); }}
+            className="text-sm text-[#64748b]">
+            Skip for now
+          </button>
         </div>
       </div>
     );
