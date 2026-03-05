@@ -4,6 +4,8 @@ import {
   CreditCard, Loader2, Clock, ChevronRight, Zap, Shield, X, Check,
   Crown, Star, Heart, Award, ArrowRight, Users, Mail, Sparkles, Upload
 } from 'lucide-react';
+import { isNative } from '../../services/native';
+import { purchaseIAP, IAP_PRODUCTS, isIAPAvailable, restoreIAPPurchases } from '../../services/iap';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -270,7 +272,6 @@ export const SubscriptionManagement = ({
     // Gate verification-required plans
     if (requiresVerification(planId) && !isVerifiedFor(planId)) {
       if (verificationStatus?.status === 'pending') {
-        // toast removed
         return;
       }
       setVerificationTier(planId);
@@ -280,6 +281,20 @@ export const SubscriptionManagement = ({
 
     setSubscribing(planId);
     try {
+      // Native iOS app → Apple In-App Purchase
+      if (isNative && await isIAPAvailable()) {
+        const iapId = `us.carryon.app.${planId}_${billing}`;
+        const result = await purchaseIAP(iapId);
+        if (result.cancelled) {
+          setSubscribing(null);
+          return;
+        }
+        if (refreshSubscription) await refreshSubscription();
+        setSubscribing(null);
+        return;
+      }
+
+      // Web/PWA → Stripe
       const res = await axios.post(`${API_URL}/subscriptions/checkout`, {
         plan_id: planId,
         billing_cycle: billing,
@@ -288,14 +303,11 @@ export const SubscriptionManagement = ({
       if (res.data.url) {
         window.location.href = res.data.url;
       } else if (res.data.free) {
-        // toast removed
         if (refreshSubscription) await refreshSubscription();
       }
     } catch (e) {
-      const detail = e.response?.data?.detail || 'Failed to start checkout';
-      if (detail.includes('beta')) {
-        // toast removed
-      } else {
+      const detail = e.response?.data?.detail || e.message || 'Failed to start checkout';
+      if (!detail.includes('beta')) {
         toast.error(detail);
       }
     }
@@ -725,14 +737,18 @@ export const SubscriptionManagement = ({
         <div className="mt-4 p-3 rounded-xl text-center space-y-1" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
           <p className="text-[10px] text-[var(--t5)]">
             Subscriptions auto-renew monthly unless cancelled at least 24 hours before the end of the current billing period.
-            Payment is charged to your payment method at confirmation of purchase.
+            Payment is charged to your {isNative ? 'Apple ID' : 'payment method'} at confirmation of purchase.
           </p>
           <p className="text-[10px] text-[var(--t5)]">
-            You can manage or cancel your subscription anytime from Settings.
+            You can manage or cancel your subscription anytime from {isNative ? 'iPhone Settings → Subscriptions' : 'Settings'}.
           </p>
           <div className="flex justify-center gap-3 pt-1">
             <a href="https://carryon.us/terms" target="_blank" rel="noopener noreferrer" className="text-[10px] text-[var(--gold)] font-bold">Terms of Service</a>
             <a href="https://carryon.us/privacy" target="_blank" rel="noopener noreferrer" className="text-[10px] text-[var(--gold)] font-bold">Privacy Policy</a>
+            {isNative && (
+              <button onClick={async () => { try { await restoreIAPPurchases(); if (refreshSubscription) refreshSubscription(); } catch {} }}
+                className="text-[10px] text-[#3B82F6] font-bold">Restore Purchases</button>
+            )}
           </div>
         </div>
 

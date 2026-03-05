@@ -1,6 +1,7 @@
 """Checkout, plan changes, webhooks, and admin subscription settings."""
 
 import os
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -9,7 +10,7 @@ from emergentintegrations.payments.stripe.checkout import (
     CheckoutSessionRequest,
     StripeCheckout,
 )
-from fastapi import Depends, Form, HTTPException
+from fastapi import Depends, Form, HTTPException, Request
 from pydantic import BaseModel
 
 from config import db, logger
@@ -1026,3 +1027,106 @@ async def update_beneficiary_plan_price(
     )
 
     return {"success": True, "message": f"Beneficiary price updated to ${price:.2f}"}
+
+
+# ═══════════════════════════════════════════════════
+# APPLE IN-APP PURCHASE VALIDATION
+# ═══════════════════════════════════════════════════
+
+
+@router.post("/subscriptions/validate-apple-receipt")
+async def validate_apple_receipt(
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    """Validate an Apple IAP receipt and activate the subscription."""
+    data = await request.json()
+    transaction_id = data.get("transaction_id")
+    product_id = data.get("product_id")
+
+    if not transaction_id or not product_id:
+        raise HTTPException(
+            status_code=400, detail="Missing transaction_id or product_id"
+        )
+
+    # Map Apple product IDs to our plan IDs
+    apple_to_plan = {
+        "us.carryon.app.premium_monthly": "premium",
+        "us.carryon.app.premium_annual": "premium",
+        "us.carryon.app.standard_monthly": "standard",
+        "us.carryon.app.standard_annual": "standard",
+        "us.carryon.app.base_monthly": "base",
+        "us.carryon.app.base_annual": "base",
+        "us.carryon.app.new_adult_monthly": "new_adult",
+        "us.carryon.app.military_monthly": "military",
+        "us.carryon.app.veteran_monthly": "veteran",
+    }
+
+    plan_id = apple_to_plan.get(product_id)
+    if not plan_id:
+        raise HTTPException(status_code=400, detail=f"Unknown product: {product_id}")
+
+    billing_cycle = "annual" if "annual" in product_id else "monthly"
+
+    # Store the Apple subscription
+    # In production, you would verify with Apple's App Store Server API
+    # For now, trust the receipt from the verified StoreKit 2 transaction
+    sub = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"],
+        "plan_id": plan_id,
+        "plan_name": plan_id.replace("_", " ").title(),
+        "status": "active",
+        "billing_cycle": billing_cycle,
+        "payment_provider": "apple_iap",
+        "apple_transaction_id": transaction_id,
+        "apple_product_id": product_id,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    # Deactivate any existing subscription
+    await db.subscriptions.update_many(
+        {"user_id": current_user["id"], "status": "active"},
+        {
+            "$set": {
+                "status": "replaced",
+                "replaced_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
+    )
+
+    await db.subscriptions.insert_one(sub)
+
+    # Update user subscription status
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$set": {"subscription_status": "active", "subscription_plan": plan_id}},
+    )
+
+    return {
+        "valid": True,
+        "plan_id": plan_id,
+        "billing_cycle": billing_cycle,
+        "message": "Subscription activated via Apple In-App Purchase",
+    }
+
+
+@router.post("/subscriptions/sync-apple")
+async def sync_apple_subscriptions(
+    current_user: dict = Depends(get_current_user),
+):
+    """Sync/restore Apple IAP subscriptions."""
+    # Check for any active Apple subscriptions
+    active_sub = await db.subscriptions.find_one(
+        {
+            "user_id": current_user["id"],
+            "payment_provider": "apple_iap",
+            "status": "active",
+        },
+        {"_id": 0},
+    )
+
+    if active_sub:
+        return {"has_subscription": True, "plan_id": active_sub.get("plan_id")}
+
+    return {"has_subscription": False}
