@@ -7,6 +7,9 @@ import { Toaster } from './components/ui/sonner';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { isNative } from './services/native';
 import SubscriptionPaywall from './components/SubscriptionPaywall';
+import DashboardLayout from './components/layout/DashboardLayout';
+import DevSwitcher from './components/dev/DevSwitcher';
+import ShareUploadModal from './components/ShareUploadModal';
 import { Loader2 } from 'lucide-react';
 
 // Eagerly loaded (needed immediately)
@@ -54,12 +57,6 @@ const PageLoader = () => (
     <Loader2 className="w-8 h-8 text-[#d4af37] animate-spin" />
   </div>
 );
-
-// Layout
-import DashboardLayout from './components/layout/DashboardLayout';
-
-import DevSwitcher from './components/dev/DevSwitcher';
-import ShareUploadModal from './components/ShareUploadModal';
 
 // Error boundary for lazy-loaded routes
 class RouteErrorBoundary extends React.Component {

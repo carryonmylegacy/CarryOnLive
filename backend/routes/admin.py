@@ -135,9 +135,9 @@ async def get_all_users(current_user: dict = Depends(get_current_user)):
     users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
 
     # Build estate owner → beneficiaries map
-    estates = await db.estates.find(
-        {}, {"_id": 0, "id": 1, "owner_id": 1}
-    ).to_list(10000)
+    estates = await db.estates.find({}, {"_id": 0, "id": 1, "owner_id": 1}).to_list(
+        10000
+    )
     estate_by_owner = {e["owner_id"]: e["id"] for e in estates}
 
     all_bens = await db.beneficiaries.find(

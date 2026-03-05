@@ -243,7 +243,7 @@ const BeneficiariesPage = () => {
   };
 
   const handleDelete = async (beneficiaryId) => {
-    if (!confirm('Are you sure you want to remove this beneficiary?')) return;
+    if (!window.confirm('Are you sure you want to remove this beneficiary?')) return;
     
     try {
       await axios.delete(`${API_URL}/beneficiaries/${beneficiaryId}`, getAuthHeaders());

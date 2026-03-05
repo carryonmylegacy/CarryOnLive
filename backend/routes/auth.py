@@ -280,17 +280,20 @@ async def register(data: UserCreate):
         enrollments = data.beneficiary_enrollments or []
         for i, ben in enumerate(enrollments):
             first = ben.get("first_name", "").strip()
+            middle = ben.get("middle_name", "").strip()
             last = ben.get("last_name", data.last_name).strip()
             initials = (
                 (first[0] if first else "?") + (last[0] if last else "?")
             ).upper()
+            full_name = " ".join(p for p in [first, middle, last] if p)
             beneficiaries_to_insert.append(
                 {
                     "id": str(uuid.uuid4()),
                     "estate_id": estate_id,
                     "first_name": first,
+                    "middle_name": middle,
                     "last_name": last,
-                    "name": f"{first} {last}".strip(),
+                    "name": full_name,
                     "relation": ben.get("relation", ""),
                     "email": ben.get("email", "") or "",
                     "dob": ben.get("dob"),

@@ -119,6 +119,7 @@ const SignupPage = () => {
       const updated = slots.map((slot, idx) => ({
         ...slot,
         first_name: prev[idx]?.first_name || '',
+        middle_name: prev[idx]?.middle_name || '',
         last_name: prev[idx]?.last_name || lastName,
         email: prev[idx]?.email || '',
         dob: prev[idx]?.dob || '',
@@ -490,7 +491,7 @@ const SignupPage = () => {
 
                 {/* Step Content */}
                 <div className="px-5 sm:px-7 pb-5 sm:pb-7 flex flex-col" style={{ height: 500 }}>
-                  <div className="flex-1 overflow-hidden" style={getSlideStyle()}>
+                  <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide" style={getSlideStyle()}>
                     {/* STEP 0: Name */}
                     {currentStep?.id === 'name' && (
                       <div className="space-y-4 sm:space-y-5">
@@ -500,7 +501,7 @@ const SignupPage = () => {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label className="text-[#7b879e] text-sm font-medium">First Name *</Label>
+                            <Label className="text-[#7b879e] text-sm font-medium">First Name <span className="text-red-400">*</span></Label>
                             <Input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)}
                               placeholder="John" className={inputClass} data-testid="signup-firstname-input" autoFocus />
                           </div>
@@ -512,7 +513,7 @@ const SignupPage = () => {
                         </div>
                         <div className="grid grid-cols-3 gap-4">
                           <div className="col-span-2 space-y-2">
-                            <Label className="text-[#7b879e] text-sm font-medium">Last Name *</Label>
+                            <Label className="text-[#7b879e] text-sm font-medium">Last Name <span className="text-red-400">*</span></Label>
                             <Input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)}
                               placeholder="Mitchell" className={inputClass} data-testid="signup-lastname-input" />
                           </div>
@@ -555,7 +556,7 @@ const SignupPage = () => {
                         </div>
                         {isMinor && (
                           <div className="space-y-1.5 pt-2">
-                            <Label className="text-[#7b879e] text-sm font-medium">Your Benefactor's Email *</Label>
+                            <Label className="text-[#7b879e] text-sm font-medium">Your Benefactor's Email <span className="text-red-400">*</span></Label>
                             <div className="relative">
                               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63]" />
                               <Input type="email" value={benefactorEmail} onChange={(e) => setBenefactorEmail(e.target.value)}
@@ -576,7 +577,7 @@ const SignupPage = () => {
                           <p className="text-[#6b7a90] text-sm">This helps us set up your beneficiaries.</p>
                         </div>
                         <div className="space-y-1.5">
-                          <Label className="text-[#7b879e] text-sm font-medium">Marital Status</Label>
+                          <Label className="text-[#7b879e] text-sm font-medium">Marital Status <span className="text-red-400">*</span></Label>
                           <Select value={maritalStatus} onValueChange={setMaritalStatus}>
                             <SelectTrigger className={selectClass} data-testid="signup-marital-select"><SelectValue placeholder="Select..." /></SelectTrigger>
                             <SelectContent className="bg-[#141C33] border-[#1a2a42]">
@@ -584,6 +585,9 @@ const SignupPage = () => {
                             </SelectContent>
                           </Select>
                         </div>
+                        {(maritalStatus === 'married' || maritalStatus === 'domestic_partnership') && (
+                          <p className="text-[#525c72] text-[10px] -mt-1">Your spouse will be added as a beneficiary in the next step — do not count them as a dependent below.</p>
+                        )}
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1.5">
                             <Label className="text-[#7b879e] text-sm font-medium">Dependents (18+)</Label>
@@ -604,6 +608,7 @@ const SignupPage = () => {
                             </Select>
                           </div>
                         </div>
+                        <p className="text-[#525c72] text-[10px]">Don't include your spouse — only children, elderly parents, or other individuals you financially support.</p>
                       </div>
                     )}
 
@@ -630,21 +635,32 @@ const SignupPage = () => {
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1.5">
-                              <Label className="text-[#7b879e] text-sm font-medium">First Name *</Label>
+                              <Label className="text-[#7b879e] text-sm font-medium">First Name <span className="text-red-400">*</span></Label>
                               <Input value={ben.first_name} onChange={(e) => updateBen('first_name', e.target.value)}
                                 placeholder="First name" className={inputClass} />
                             </div>
                             <div className="space-y-1.5">
-                              <Label className="text-[#7b879e] text-sm font-medium">Last Name</Label>
-                              <Input value={ben.last_name} onChange={(e) => updateBen('last_name', e.target.value)}
-                                placeholder="Last name" className={inputClass} />
+                              <Label className="text-[#7b879e] text-sm font-medium">Middle Name</Label>
+                              <Input value={ben.middle_name || ''} onChange={(e) => updateBen('middle_name', e.target.value)}
+                                placeholder="Middle name" className={inputClass} />
                             </div>
                           </div>
-                          {ben.requireEmail && (
+                          <div className="space-y-1.5">
+                            <Label className="text-[#7b879e] text-sm font-medium">Last Name</Label>
+                            <Input value={ben.last_name} onChange={(e) => updateBen('last_name', e.target.value)}
+                              placeholder="Last name" className={inputClass} />
+                          </div>
+                          {ben.requireEmail ? (
                             <div className="space-y-1.5">
-                              <Label className="text-[#7b879e] text-sm font-medium">Email *</Label>
+                              <Label className="text-[#7b879e] text-sm font-medium">Email <span className="text-red-400">*</span></Label>
                               <Input type="email" value={ben.email} onChange={(e) => updateBen('email', e.target.value)}
                                 placeholder="Their email address" className={inputClass} />
+                            </div>
+                          ) : (
+                            <div className="space-y-1.5">
+                              <Label className="text-[#7b879e] text-sm font-medium">Email (optional)</Label>
+                              <Input type="email" value={ben.email || ''} onChange={(e) => updateBen('email', e.target.value)}
+                                placeholder="Their email address (if applicable)" className={inputClass} />
                             </div>
                           )}
                           <div className="space-y-1.5">
@@ -688,7 +704,7 @@ const SignupPage = () => {
                           <p className="text-[#6b7a90] text-sm">Used by EGA to analyze estate law specific to your state.</p>
                         </div>
                         <div className="space-y-1.5">
-                          <Label className="text-[#7b879e] text-sm font-medium">Street Address</Label>
+                          <Label className="text-[#7b879e] text-sm font-medium">Street Address <span className="text-red-400">*</span></Label>
                           <AddressAutocomplete
                             value={addressStreet}
                             onChange={(e) => setAddressStreet(e.target.value)}
@@ -783,7 +799,7 @@ const SignupPage = () => {
                         {/* Beneficiary: Benefactor email (required) */}
                         {role === 'beneficiary' && (
                           <div className="space-y-1.5">
-                            <Label className="text-[#7b879e] text-sm font-medium">Benefactor's Email *</Label>
+                            <Label className="text-[#7b879e] text-sm font-medium">Benefactor's Email <span className="text-red-400">*</span></Label>
                             <div className="relative">
                               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63]" />
                               <Input
@@ -887,7 +903,7 @@ const SignupPage = () => {
                           <p className="text-[#6b7a90] text-sm">Choose a strong password to protect your legacy.</p>
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-[#7b879e] text-sm font-medium">Email *</Label>
+                          <Label className="text-[#7b879e] text-sm font-medium">Email <span className="text-red-400">*</span></Label>
                           <div className="relative">
                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a4a63]" />
                             <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
@@ -897,7 +913,7 @@ const SignupPage = () => {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label className="text-[#7b879e] text-sm font-medium">Password *</Label>
+                            <Label className="text-[#7b879e] text-sm font-medium">Password <span className="text-red-400">*</span></Label>
                             <div className="relative">
                               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a4a63]" />
                               <Input type={showPassword ? 'text' : 'password'} value={password}
@@ -910,7 +926,7 @@ const SignupPage = () => {
                             </div>
                           </div>
                           <div className="space-y-2">
-                            <Label className="text-[#7b879e] text-sm font-medium">Confirm *</Label>
+                            <Label className="text-[#7b879e] text-sm font-medium">Confirm <span className="text-red-400">*</span></Label>
                             <div className="relative">
                               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a4a63]" />
                               <Input type={showPassword ? 'text' : 'password'} value={confirmPassword}

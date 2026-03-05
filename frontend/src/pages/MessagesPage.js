@@ -359,7 +359,7 @@ const MessagesPage = () => {
   };
 
   const handleDelete = async (messageId) => {
-    if (!confirm('Are you sure you want to delete this message?')) return;
+    if (!window.confirm('Are you sure you want to delete this message?')) return;
     
     try {
       await axios.delete(`${API_URL}/messages/${messageId}`, getAuthHeaders());

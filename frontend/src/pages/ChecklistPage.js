@@ -211,6 +211,7 @@ const ChecklistPage = () => {
 
   const stopAISuggest = () => {
     if (aiAbortRef.current) aiAbortRef.current.abort();
+  };
 
   const handleActivationAction = async (itemId, action) => {
     try {
@@ -229,8 +230,6 @@ const ChecklistPage = () => {
   
   const handleCompleteChecklist = () => {
     setShowReturnPopup(true);
-  };
-
   };
 
   const handleAcceptItem = async (itemId) => {

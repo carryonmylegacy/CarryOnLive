@@ -42,9 +42,9 @@ import { Textarea } from '../components/ui/textarea';
 import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
-const PDFViewerModal = lazy(() => import('../components/PDFViewerModal'));
 import DocThumbnail from '../components/DocThumbnail';
 import { ReturnPopup } from '../components/GuidedActivation';
+const PDFViewerModal = lazy(() => import('../components/PDFViewerModal'));
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -352,7 +352,7 @@ const VaultPage = () => {
   };
 
   const handleDelete = async (docId) => {
-    if (!confirm('Are you sure you want to delete this document?')) return;
+    if (!window.confirm('Are you sure you want to delete this document?')) return;
     
     try {
       await axios.delete(`${API_URL}/documents/${docId}`, getAuthHeaders());
@@ -726,7 +726,7 @@ const VaultPage = () => {
                           variant="ghost" 
                           size="sm" 
                           className="text-[#3b82f6] hover:text-[#60a5fa]"
-                          onClick={(e) => { e.stopPropagation(); doc.is_locked ? (setSelectedDoc(doc), setShowLockModal(true)) : handlePreview(doc); }}
+                          onClick={(e) => { e.stopPropagation(); if (doc.is_locked) { setSelectedDoc(doc); setShowLockModal(true); } else { handlePreview(doc); } }}
                           title="View"
                           aria-label="View document"
                           data-testid={`view-document-${doc.id}`}
@@ -737,7 +737,7 @@ const VaultPage = () => {
                           variant="ghost" 
                           size="sm" 
                           className="text-[#94a3b8] hover:text-white"
-                          onClick={(e) => { e.stopPropagation(); doc.is_locked ? (setSelectedDoc(doc), setShowLockModal(true)) : handleDownload(doc); }}
+                          onClick={(e) => { e.stopPropagation(); if (doc.is_locked) { setSelectedDoc(doc); setShowLockModal(true); } else { handleDownload(doc); } }}
                           disabled={downloading === doc.id}
                           title="Download"
                           aria-label="Download document"
