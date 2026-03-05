@@ -294,18 +294,49 @@ const VaultPage = () => {
         responseType: 'blob'
       });
       
-      // Create download link
-      const blob = new Blob([response.data], { type: doc.file_type });
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = doc.name;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(downloadUrl);
-      
-      // toast removed
+      // Native app: write to filesystem then open share sheet
+      const { Capacitor } = await import('@capacitor/core');
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const { Filesystem, Directory } = await import('@capacitor/filesystem');
+          const { Share } = await import('@capacitor/share');
+          
+          // Convert blob to base64
+          const reader = new FileReader();
+          const base64Data = await new Promise((resolve) => {
+            reader.onloadend = () => resolve(reader.result.split(',')[1]);
+            reader.readAsDataURL(response.data);
+          });
+          
+          // Write to cache directory
+          const fileName = doc.name || 'document';
+          const result = await Filesystem.writeFile({
+            path: fileName,
+            data: base64Data,
+            directory: Directory.Cache,
+          });
+          
+          // Open native share sheet so user can save/share the file
+          await Share.share({
+            title: doc.name,
+            url: result.uri,
+          });
+        } catch (nativeErr) {
+          console.error('Native download fallback:', nativeErr);
+          toast.error('Could not save file. Please try again.');
+        }
+      } else {
+        // Web/PWA: standard blob download
+        const blob = new Blob([response.data], { type: doc.file_type });
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = doc.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(downloadUrl);
+      }
     } catch (error) {
       console.error('Download error:', error);
       if (error.response?.status === 401) {
