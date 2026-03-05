@@ -68,6 +68,7 @@ const SignupPage = () => {
   const [direction, setDirection] = useState('right');
   const [slidePhase, setSlidePhase] = useState('idle'); // 'idle' | 'exit' | 'enter'
   const [emailErrors, setEmailErrors] = useState({});
+  const [benefactorEmailError, setBenefactorEmailError] = useState('');
   const [entered, setEntered] = useState(false);
   const scrollRef = useRef(null);
 
@@ -215,6 +216,7 @@ const SignupPage = () => {
     if (sid === 'role') {
       if (!role) return false;
       if (role === 'beneficiary' && !benefactorEmail.trim()) return false;
+      if (role === 'beneficiary' && benefactorEmailError) return false;
       return true;
     }
     if (sid === 'marital') return true;
@@ -373,6 +375,24 @@ const SignupPage = () => {
     }
 
     setEmailErrors(prev => { const n = { ...prev }; delete n[benIndex]; return n; });
+  };
+
+  // Validate benefactor email exists with an active estate
+  const validateBenefactorEmail = async (emailVal) => {
+    if (!emailVal || !emailVal.trim()) {
+      setBenefactorEmailError('');
+      return;
+    }
+    try {
+      const res = await axios.post(`${API_URL}/auth/check-benefactor-email`, { email: emailVal.trim() });
+      if (!res.data.valid) {
+        setBenefactorEmailError(res.data.message);
+      } else {
+        setBenefactorEmailError('');
+      }
+    } catch (err) {
+      // Silently fail
+    }
   };
 
   // Two-phase slide: exit (current slides out) → enter (new slides in)
@@ -872,13 +892,18 @@ const SignupPage = () => {
                               <Input
                                 type="email"
                                 value={benefactorEmail}
-                                onChange={(e) => setBenefactorEmail(e.target.value)}
+                                onChange={(e) => { setBenefactorEmail(e.target.value); if (benefactorEmailError) setBenefactorEmailError(''); }}
+                                onBlur={() => validateBenefactorEmail(benefactorEmail)}
                                 placeholder="Your benefactor's email address"
-                                className={`${inputClass} pl-11`}
+                                className={`${inputClass} pl-11 ${benefactorEmailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30' : ''}`}
                                 data-testid="signup-benefactor-email"
                               />
                             </div>
-                            <p className="text-[#525c72] text-[10px]">Links your account to their estate plan.</p>
+                            {benefactorEmailError ? (
+                              <p className="text-red-400 text-xs">{benefactorEmailError}</p>
+                            ) : (
+                              <p className="text-[#525c72] text-[10px]">Links your account to their estate plan.</p>
+                            )}
                           </div>
                         )}
 

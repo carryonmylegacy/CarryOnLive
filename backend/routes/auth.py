@@ -64,6 +64,23 @@ async def check_email_exists(data: EmailCheckRequest):
     return {"exists": user is not None}
 
 
+@router.post("/auth/check-benefactor-email")
+async def check_benefactor_email(data: EmailCheckRequest):
+    """Check if an email belongs to a benefactor with an active estate."""
+    email = data.email.lower().strip()
+    user = await db.users.find_one(
+        {"email": email, "role": "benefactor"}, {"_id": 0, "id": 1}
+    )
+    if not user:
+        return {"valid": False, "message": "No benefactor estates are associated with that email address."}
+    estate = await db.estates.find_one(
+        {"owner_id": user["id"]}, {"_id": 0, "id": 1}
+    )
+    if not estate:
+        return {"valid": False, "message": "No benefactor estates are associated with that email address."}
+    return {"valid": True}
+
+
 @router.post("/auth/login")
 async def login(data: UserLogin, request: Request):
     """Login — verifies credentials, then sends OTP unless user has a daily trust token."""
