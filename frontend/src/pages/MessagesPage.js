@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import { ReturnPopup } from '../components/GuidedActivation';
 import {
   MessageSquare,
   Plus,
@@ -56,6 +58,7 @@ const eventTypes = [
 
 const MessagesPage = () => {
   const { user, getAuthHeaders } = useAuth();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [estate, setEstate] = useState(null);
@@ -77,6 +80,7 @@ const MessagesPage = () => {
   const [customEventLabel, setCustomEventLabel] = useState('');
   const [playingVideoUrl, setPlayingVideoUrl] = useState(null);
   const [loadingPlayback, setLoadingPlayback] = useState(false);
+  const [showReturnPopup, setShowReturnPopup] = useState(false);
   
   // Video recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -338,9 +342,13 @@ const MessagesPage = () => {
       }
 
       setShowCreateModal(false);
+      const wasFirstMessage = !editingMessage && messages.length === 0;
       setEditingMessage(null);
       resetForm();
       fetchData();
+      if (wasFirstMessage) {
+        setTimeout(() => setShowReturnPopup(true), 500);
+      }
     } catch (error) {
       console.error('Save error:', error);
       const detail = error.response?.data?.detail || error.message || 'Unknown error';
@@ -522,14 +530,13 @@ const MessagesPage = () => {
           {filteredMessages.length === 0 ? (
             <Card className="glass-card">
               <CardContent className="p-12 text-center">
-                <MessageSquare className="w-16 h-16 mx-auto text-[#64748b] mb-4" />
-                <h3 className="text-xl font-semibold text-white mb-2">No messages yet</h3>
-                <p className="text-[#94a3b8] mb-6">
-                  Create your first milestone message
-                </p>
-                <Button className="gold-button" onClick={() => { setEditingMessage(null); resetForm(); setShowCreateModal(true); }}>
+                <MessageSquare className="w-16 h-16 mx-auto text-[#8b5cf6] mb-4 opacity-50" />
+                <h3 className="text-xl font-semibold text-white mb-2">Leave a Message for Your Loved Ones</h3>
+                <p className="text-[#94a3b8] mb-2">Record a video, voice, or written message — delivered when they need it most.</p>
+                <p className="text-xs text-[#64748b] mb-6">You can edit or re-record anytime. Nothing is permanent until you say so.</p>
+                <Button className="gold-button text-base px-8 py-3" onClick={() => { setEditingMessage(null); resetForm(); setShowCreateModal(true); }}>
                   <Plus className="w-5 h-5 mr-2" />
-                  Create Message
+                  Create Your First Milestone Message
                 </Button>
               </CardContent>
             </Card>
@@ -1081,6 +1088,11 @@ const MessagesPage = () => {
       )}
 
       </SectionLockedOverlay>
+
+      {showReturnPopup && (
+        <ReturnPopup step="message" onReturn={() => { setShowReturnPopup(false); navigate('/dashboard'); }}
+          onAlternate={() => { setShowReturnPopup(false); setEditingMessage(null); resetForm(); setShowCreateModal(true); }} />
+      )}
     </div>
   );
 };

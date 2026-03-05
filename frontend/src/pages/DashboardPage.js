@@ -16,6 +16,7 @@ import {
 import EstateSelector from '../components/estate/EstateSelector';
 import TrialBanner from '../components/TrialBanner';
 import OnboardingWizard from '../components/OnboardingWizard';
+import { ActivationCelebration } from '../components/GuidedActivation';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -29,6 +30,7 @@ const DashboardPage = () => {
   const [readiness, setReadiness] = useState({ documents: { score: 0 }, messages: { score: 0 }, checklist: { score: 0 } });
   const [loading, setLoading] = useState(true);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   useEffect(() => { fetchEstates(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (estate) fetchEstateData(estate.id); }, [estate]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -239,7 +241,12 @@ const DashboardPage = () => {
       </div>
 
       {/* Onboarding Wizard — shown early so it's visible on mobile */}
-      <OnboardingWizard />
+      <OnboardingWizard onAllComplete={() => {
+        if (!sessionStorage.getItem('carryon_celebration_shown')) {
+          sessionStorage.setItem('carryon_celebration_shown', 'true');
+          setTimeout(() => setShowCelebration(true), 1500);
+        }
+      }} />
 
       {/* Estate Readiness Score Card */}
       <div className="glass-card p-4 lg:p-6 mb-4" data-testid="readiness-card">
@@ -443,6 +450,7 @@ const DashboardPage = () => {
           </button>
         </div>
       </div>
+      {showCelebration && <ActivationCelebration onDismiss={() => setShowCelebration(false)} />}
     </div>
   );
 };
