@@ -108,12 +108,11 @@ const OnboardingWizard = ({ onAllComplete }) => {
   const allSteps = progress.steps || [];
   const incompleteSteps = allSteps.filter(s => !s.completed || popping[s.key]);
   const completedSteps = allSteps.filter(s => s.completed);
-  const isFirstSession = !sessionStorage.getItem('carryon_activation_done') && completedSteps.length < allSteps.length;
-  const allComplete = incompleteSteps.length === 0;
+  const allComplete = incompleteSteps.length === 0 && allSteps.length > 0;
 
-  // First session: show only the next step. Returning: show all incomplete.
+  // Always show ONE step at a time until all are complete
   const nextStep = incompleteSteps[0];
-  const stepsToShow = showAll ? allSteps : isFirstSession ? (nextStep ? [nextStep] : []) : incompleteSteps;
+  const stepsToShow = showAll ? allSteps : allComplete ? allSteps : (nextStep ? [nextStep] : []);
 
   // Personalize with beneficiary names
   const benNames = (progress.beneficiary_names || []).slice(0, 3);
@@ -126,7 +125,7 @@ const OnboardingWizard = ({ onAllComplete }) => {
   }
 
   if (stepsToShow.length === 0 && !allComplete) return null;
-  if (manuallyDismissed && !showAll && !isFirstSession) return null;
+  if (manuallyDismissed && !showAll && allComplete) return null;
 
   return (
     <div className="mb-6 overflow-hidden" data-testid="onboarding-wizard">

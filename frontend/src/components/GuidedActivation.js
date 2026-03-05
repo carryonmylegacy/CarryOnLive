@@ -90,7 +90,8 @@ export const ReturnPopup = ({ step, beneficiaryNames, onReturn, onAlternate }) =
  * All tiles fade in, then this overlay fades in on top.
  */
 export const ActivationCelebration = ({ onDismiss }) => (
-  <div className="fixed inset-0 z-[200] flex items-center justify-center p-6"
+  <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 cursor-pointer"
+    onClick={onDismiss}
     style={{ animation: 'fadeInSlow 1.5s ease forwards' }}>
     <style>{`
       @keyframes fadeInSlow { 0% { opacity: 0; } 40% { opacity: 0; } 100% { opacity: 1; } }
@@ -100,7 +101,7 @@ export const ActivationCelebration = ({ onDismiss }) => (
         100% { transform: scale(1); opacity: 1; }
       }
     `}</style>
-    <div className="absolute inset-0 bg-black/50" onClick={onDismiss} />
+    <div className="absolute inset-0 bg-black/50" />
     <div className="relative rounded-2xl p-8 max-w-sm w-full text-center"
       style={{
         background: 'var(--bg2, #0F1629)',
@@ -117,12 +118,8 @@ export const ActivationCelebration = ({ onDismiss }) => (
         Congratulations
       </h2>
       <p className="text-base text-[#d4af37] font-semibold mb-2">You've created the beginnings of your estate plan.</p>
-      <p className="text-sm text-[#94a3b8] mb-6">Your loved ones are already more protected than 70% of American families.</p>
-      <button onClick={onDismiss}
-        className="px-8 py-3 rounded-xl text-sm font-bold"
-        style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}>
-        Continue to Dashboard
-      </button>
+      <p className="text-sm text-[#94a3b8] mb-4">Your loved ones are already more protected than 70% of American families.</p>
+      <p className="text-xs text-[#64748b] italic">(tap anywhere to continue exploring CarryOn)</p>
     </div>
   </div>
 );
