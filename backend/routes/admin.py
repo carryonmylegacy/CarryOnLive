@@ -1,6 +1,6 @@
 """CarryOn™ Backend — Admin Routes"""
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -226,6 +226,114 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
         "pending_deletions": deletion_requests,
         "avg_beneficiaries_per_benefactor": avg_bens_per_benefactor,
         "beneficiaries_converted": ben_to_benefactor_count,
+    }
+
+
+@router.get("/admin/launch-metrics")
+async def get_launch_metrics(current_user: dict = Depends(get_current_user)):
+    """Real-time launch metrics — admin only."""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    now = datetime.now(timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+    seven_days_ago = (now - timedelta(days=7)).isoformat()
+    thirty_days_ago = (now - timedelta(days=30)).isoformat()
+
+    # New benefactor signups — today, 7d, 30d, all time
+    signups_today = await db.users.count_documents(
+        {"role": "benefactor", "created_at": {"$gte": today_start}}
+    )
+    signups_7d = await db.users.count_documents(
+        {"role": "benefactor", "created_at": {"$gte": seven_days_ago}}
+    )
+    signups_30d = await db.users.count_documents(
+        {"role": "benefactor", "created_at": {"$gte": thirty_days_ago}}
+    )
+    total_benefactors = await db.users.count_documents({"role": "benefactor"})
+
+    # Beneficiaries invited per benefactor
+    total_bens = await db.beneficiaries.count_documents({"is_stub": {"$ne": True}})
+    avg_invited = round(total_bens / max(total_benefactors, 1), 1)
+
+    # Beneficiary activation rate (accepted invitations / total invitations)
+    total_invited = await db.beneficiaries.count_documents(
+        {"invitation_status": {"$in": ["sent", "pending", "accepted"]}}
+    )
+    total_accepted = await db.beneficiaries.count_documents(
+        {"invitation_status": "accepted"}
+    )
+    activation_rate = round((total_accepted / max(total_invited, 1)) * 100, 1)
+
+    # Trial → paid conversion
+    total_trialing = await db.users.count_documents(
+        {"role": "benefactor", "subscription_status": "trialing"}
+    )
+    total_paid = await db.subscriptions.count_documents({"status": "active"})
+    total_expired_trials = await db.users.count_documents(
+        {"role": "benefactor", "subscription_status": {"$in": ["expired", "inactive"]}}
+    )
+    conversion_rate = round(
+        (total_paid / max(total_paid + total_expired_trials, 1)) * 100, 1
+    )
+
+    # Day-7 retention: users who signed up 7+ days ago and logged in within last 7 days
+    users_7d_old = await db.users.find(
+        {"role": "benefactor", "created_at": {"$lte": seven_days_ago}},
+        {"_id": 0, "id": 1},
+    ).to_list(10000)
+    old_user_ids = [u["id"] for u in users_7d_old]
+    if old_user_ids:
+        active_7d = await db.users.count_documents(
+            {
+                "id": {"$in": old_user_ids},
+                "last_login_at": {"$gte": seven_days_ago},
+            }
+        )
+        retention_7d = round((active_7d / len(old_user_ids)) * 100, 1)
+    else:
+        retention_7d = 0
+
+    # Day-30 retention
+    users_30d_old = await db.users.find(
+        {"role": "benefactor", "created_at": {"$lte": thirty_days_ago}},
+        {"_id": 0, "id": 1},
+    ).to_list(10000)
+    old_30_ids = [u["id"] for u in users_30d_old]
+    if old_30_ids:
+        active_30d = await db.users.count_documents(
+            {
+                "id": {"$in": old_30_ids},
+                "last_login_at": {"$gte": thirty_days_ago},
+            }
+        )
+        retention_30d = round((active_30d / len(old_30_ids)) * 100, 1)
+    else:
+        retention_30d = 0
+
+    return {
+        "signups": {
+            "today": signups_today,
+            "last_7d": signups_7d,
+            "last_30d": signups_30d,
+            "all_time": total_benefactors,
+        },
+        "avg_beneficiaries_invited": avg_invited,
+        "activation": {
+            "total_invited": total_invited,
+            "total_accepted": total_accepted,
+            "rate": activation_rate,
+        },
+        "conversion": {
+            "trialing": total_trialing,
+            "paid": total_paid,
+            "expired": total_expired_trials,
+            "rate": conversion_rate,
+        },
+        "retention": {
+            "day_7": retention_7d,
+            "day_30": retention_30d,
+        },
     }
 
 
