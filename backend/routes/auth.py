@@ -101,6 +101,10 @@ async def login(data: UserLogin, request: Request):
     )
     if platform_settings and platform_settings.get("otp_disabled"):
         token = create_token(user["id"], user["email"], user["role"])
+        await db.users.update_one(
+            {"id": user["id"]},
+            {"$set": {"last_login_at": datetime.now(timezone.utc).isoformat()}},
+        )
         return TokenResponse(
             access_token=token,
             user=UserResponse(
@@ -566,6 +570,10 @@ async def verify_otp(data: OTPVerifyWithTrust, request: Request):
         )
 
     token = create_token(user["id"], user["email"], user["role"])
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"last_login_at": datetime.now(timezone.utc).isoformat()}},
+    )
 
     return TokenResponse(
         access_token=token,

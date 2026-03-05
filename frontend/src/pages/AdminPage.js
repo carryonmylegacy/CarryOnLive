@@ -19,6 +19,7 @@ import { SubscriptionsTab } from '../components/admin/SubscriptionsTab';
 import { VerificationsTab } from '../components/admin/VerificationsTab';
 import { AnalyticsTab } from '../components/admin/AnalyticsTab';
 import { ActivityTab } from '../components/admin/ActivityTab';
+import { LaunchMetricsTab } from '../components/admin/LaunchMetricsTab';
 import { DevSwitcherTab } from '../components/admin/DevSwitcherTab';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -31,6 +32,7 @@ const TAB_CONFIG = [
   { key: 'subscriptions', label: 'Subs', icon: CreditCard, path: '/admin/subscriptions' },
   { key: 'verifications', label: 'Verify', icon: FileKey, path: '/admin/verifications' },
   { key: 'analytics', label: 'Analytics', icon: Activity, path: '/admin/analytics' },
+  { key: 'launch', label: 'Launch', icon: TrendingUp, path: '/admin/launch' },
   { key: 'activity', label: 'Activity', icon: Activity, path: '/admin/activity' },
   { key: 'dev-switcher', label: 'Dev', icon: Settings, path: '/admin/dev-switcher' },
 ];
@@ -197,6 +199,7 @@ const AdminPage = () => {
       {tab === 'subscriptions' && <SubscriptionsTab getAuthHeaders={getAuthHeaders} users={users} />}
       {tab === 'verifications' && <VerificationsTab getAuthHeaders={getAuthHeaders} />}
       {tab === 'analytics' && <AnalyticsTab getAuthHeaders={getAuthHeaders} />}
+      {tab === 'launch' && <LaunchMetricsTab getAuthHeaders={getAuthHeaders} />}
       {tab === 'activity' && <ActivityTab getAuthHeaders={getAuthHeaders} />}
       {tab === 'dev-switcher' && <DevSwitcherTab users={users} getAuthHeaders={getAuthHeaders} />}
     </div>
