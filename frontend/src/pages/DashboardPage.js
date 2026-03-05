@@ -241,19 +241,20 @@ const DashboardPage = () => {
     const STEP_ROUTES = {
       create_message: '/messages',
       upload_document: '/vault',
-      add_beneficiary: '/beneficiaries',
+      designate_primary: '/beneficiaries',
       customize_checklist: '/checklist',
       review_readiness: '/guardian',
     };
     const STEP_LABELS = {
-      create_message: { title: 'Leave a Message for Your Loved Ones', desc: 'Record a video, voice, or written message. You can edit or re-record anytime.', icon: '💬', step: 1 },
-      upload_document: { title: 'Upload Your First Estate Document', desc: 'Securely store a will, trust, insurance policy, or other important document.', icon: '📄', step: 2 },
-      customize_checklist: { title: 'Review Your Action Checklist', desc: 'Customize the steps your loved ones will follow when they need it most.', icon: '✓', step: 3 },
-      review_readiness: { title: 'Consult the Estate Guardian', desc: 'Get an AI analysis of your estate plan and personalized next steps.', icon: '✨', step: 4 },
+      create_message: { title: 'Leave a Message for Your Loved Ones', desc: 'Record a video, voice, or written message. You can edit or re-record anytime.', step: 1 },
+      upload_document: { title: 'Upload Your First Estate Document', desc: 'Securely store a will, trust, insurance policy, or other important document.', step: 2 },
+      designate_primary: { title: 'Designate Your Primary Beneficiary', desc: 'Choose who will serve as trustee of your estate and have authority to manage beneficiary access after transition.', step: 3 },
+      customize_checklist: { title: 'Review Your Action Checklist', desc: 'Customize the steps your loved ones will follow when they need it most.', step: 4 },
+      review_readiness: { title: 'Consult the Estate Guardian', desc: 'Get an AI analysis of your estate plan and personalized next steps.', step: 5 },
     };
     const stepInfo = STEP_LABELS[guidedStep.key] || STEP_LABELS.create_message;
     const route = STEP_ROUTES[guidedStep.key];
-    const totalSteps = 4;
+    const totalSteps = 5;
 
     return (
       <div className="min-h-screen flex items-center justify-center p-6" style={{ background: 'linear-gradient(168deg, #080e1a 0%, #0d1627 30%, #111d35 60%, #0a1122 100%)' }}>

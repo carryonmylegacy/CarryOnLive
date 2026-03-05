@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, FileText, Upload, MessageSquare, CheckSquare, ChevronRight, X } from 'lucide-react';
+import { Sparkles, FileText, Upload, MessageSquare, CheckSquare, ChevronRight, X, UserCheck } from 'lucide-react';
 
 /**
  * Bouncing "Return to Dashboard" popup — appears after completing an activation step.
@@ -23,6 +23,14 @@ export const ReturnPopup = ({ step, beneficiaryNames, onReturn, onAlternate }) =
       alternateText: 'Add Another Document',
       icon: Upload,
       color: '#3B82F6',
+    },
+    primary: {
+      title: 'Your estate is in trusted hands.',
+      subtitle: 'Your primary beneficiary will serve as trustee after transition.',
+      returnText: 'Return to Dashboard for Next Steps',
+      alternateText: null,
+      icon: UserCheck,
+      color: '#22C993',
     },
     checklist: {
       title: 'Your loved ones will thank you for this.',
