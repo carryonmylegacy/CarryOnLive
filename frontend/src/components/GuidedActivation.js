@@ -20,7 +20,7 @@ export const ReturnPopup = ({ step, beneficiaryNames, onReturn, onAlternate }) =
       title: 'Great start — your vault is no longer empty.',
       subtitle: 'Every document you add strengthens your plan.',
       returnText: 'Head Back to Your Dashboard',
-      alternateText: null,
+      alternateText: 'Add Another Document',
       icon: Upload,
       color: '#3B82F6',
     },

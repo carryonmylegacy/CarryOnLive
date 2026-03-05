@@ -1402,7 +1402,8 @@ const VaultPage = () => {
 
       {/* Invite prompt after first upload */}
       {showReturnPopup && (
-        <ReturnPopup step="document" onReturn={() => { setShowReturnPopup(false); navigate('/dashboard'); }} />
+        <ReturnPopup step="document" onReturn={() => { setShowReturnPopup(false); navigate('/dashboard'); }}
+          onAlternate={() => { setShowReturnPopup(false); setShowUploadModal(true); }} />
       )}
 
       {showInvitePrompt && (
