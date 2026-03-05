@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  FolderLock, Users, FileUp, MessageSquare,
+  FolderLock, Users, FileUp, MessageSquare, CheckSquare,
   ChevronRight, X, Sparkles, Check
 } from 'lucide-react';
 import { Progress } from '../components/ui/progress';
@@ -12,10 +12,11 @@ const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const STEP_CONFIG = {
   create_estate: { icon: FolderLock, color: '#d4af37', bg: 'rgba(212,175,55,0.08)', border: 'rgba(212,175,55,0.2)', route: '/dashboard', label: 'Create Your Estate', desc: 'Set up your first estate to get started' },
+  create_message: { icon: MessageSquare, color: '#8b5cf6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.2)', route: '/messages', label: 'Leave a Milestone Message', desc: 'Record a message for your loved ones — edit anytime' },
+  upload_document: { icon: FileUp, color: '#10b981', bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.2)', route: '/vault', label: 'Upload an Estate Document', desc: 'Secure your important files in the vault' },
   add_beneficiary: { icon: Users, color: '#3b82f6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)', route: '/beneficiaries', label: 'Add a Beneficiary', desc: 'Designate who receives your legacy' },
-  upload_document: { icon: FileUp, color: '#10b981', bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.2)', route: '/vault', label: 'Upload a Document', desc: 'Secure your important files in the vault' },
-  create_message: { icon: MessageSquare, color: '#8b5cf6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.2)', route: '/messages', label: 'Create a Message', desc: 'Record a milestone message for loved ones' },
-  review_readiness: { icon: Sparkles, color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', route: '/guardian', label: 'Consult the Estate Guardian', desc: 'Analyze your vault and populate your checklist' },
+  customize_checklist: { icon: CheckSquare, color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', route: '/checklist', label: 'Customize Your Action Checklist', desc: 'Review the steps your loved ones will follow' },
+  review_readiness: { icon: Sparkles, color: '#d4af37', bg: 'rgba(212,175,55,0.08)', border: 'rgba(212,175,55,0.2)', route: '/guardian', label: 'Consult the Estate Guardian', desc: 'Get an AI analysis of your estate plan' },
 };
 
 const OnboardingWizard = () => {
@@ -106,9 +107,25 @@ const OnboardingWizard = () => {
   // Determine which steps to show
   const allSteps = progress.steps || [];
   const incompleteSteps = allSteps.filter(s => !s.completed || popping[s.key]);
-  const stepsToShow = showAll ? allSteps : incompleteSteps;
+  const completedSteps = allSteps.filter(s => s.completed);
+  const isFirstSession = !sessionStorage.getItem('carryon_activation_done') && completedSteps.length < allSteps.length;
+  const allComplete = incompleteSteps.length === 0;
 
-  if (stepsToShow.length === 0) return null;
+  // First session: show only the next step. Returning: show all incomplete.
+  const nextStep = incompleteSteps[0];
+  const stepsToShow = showAll ? allSteps : isFirstSession ? (nextStep ? [nextStep] : []) : incompleteSteps;
+
+  // Personalize with beneficiary names
+  const benNames = (progress.beneficiary_names || []).slice(0, 3);
+  const benLabel = benNames.length > 0 ? benNames.join(', ') : 'your loved ones';
+
+  if (allComplete && !sessionStorage.getItem('carryon_celebration_shown')) {
+    sessionStorage.setItem('carryon_celebration_shown', 'true');
+    sessionStorage.setItem('carryon_activation_done', 'true');
+  }
+
+  if (stepsToShow.length === 0 && !allComplete) return null;
+  if (manuallyDismissed && !showAll && !isFirstSession) return null;
 
   return (
     <div className="mb-6 overflow-hidden" data-testid="onboarding-wizard">
@@ -123,6 +140,20 @@ const OnboardingWizard = () => {
           50% { opacity: 0.5; }
           100% { opacity: 1; transform: translateY(0); }
         }
+        @keyframes waterBalloonPop {
+          0% { transform: scale(1); }
+          15% { transform: scale(1.15) rotate(-2deg); }
+          30% { transform: scale(0.95) rotate(1deg); }
+          45% { transform: scale(1.08); }
+          60% { transform: scale(0.98); }
+          100% { transform: scale(1); }
+        }
+        @keyframes ripplePulse {
+          0% { box-shadow: 0 0 0 0 rgba(212,175,55,0.4); }
+          70% { box-shadow: 0 0 0 15px rgba(212,175,55,0); }
+          100% { box-shadow: 0 0 0 0 rgba(212,175,55,0); }
+        }
+        .tile-pop { animation: waterBalloonPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1), ripplePulse 1s ease-out; }
       `}</style>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
@@ -150,10 +181,14 @@ const OnboardingWizard = () => {
           const isPop = popping[step.key];
           const isComplete = step.completed && !isPop;
 
+          const label = step.key === 'create_message' && benNames.length > 0
+            ? `Leave a message for ${benLabel}!`
+            : config.label;
+
           return (
             <div
               key={step.key}
-              className="transition-all duration-500"
+              className={`transition-all duration-500 ${isPop ? 'tile-pop' : ''}`}
               style={{
                 opacity: isPop ? 0 : 1,
                 transform: isPop ? 'scale(1.15)' : 'scale(1)',
@@ -184,7 +219,7 @@ const OnboardingWizard = () => {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-lg font-bold ${isComplete ? 'text-[var(--t5)] line-through' : 'text-[var(--t)]'}`}>{config.label}</p>
+                  <p className={`text-lg font-bold ${isComplete ? 'text-[var(--t5)] line-through' : 'text-[var(--t)]'}`}>{label}</p>
                   <p className={`text-base ${isComplete ? 'text-[var(--t5)]' : 'text-[var(--t4)]'}`}>{config.desc}</p>
                 </div>
                 {isComplete ? (

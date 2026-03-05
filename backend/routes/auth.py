@@ -323,6 +323,71 @@ async def register(data: UserCreate):
         if stubs:
             await db.beneficiaries.insert_many(stubs)
 
+        # Seed 5 default Immediate Action Checklist items
+        default_checklist = [
+            {
+                "id": str(uuid.uuid4()),
+                "estate_id": estate_id,
+                "title": "Call your designated executor — they have instructions",
+                "description": "Your first call should be to the person you've designated to handle your estate. Edit this item to add their name and phone number.",
+                "category": "first_week",
+                "priority": "critical",
+                "order": 1,
+                "is_default": True,
+                "activation_status": None,
+                "created_at": now.isoformat(),
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "estate_id": estate_id,
+                "title": "Contact employer HR to report the death and ask about benefits",
+                "description": "Life insurance through work, final paycheck, COBRA health coverage, and any survivor benefits.",
+                "category": "first_week",
+                "priority": "critical",
+                "order": 2,
+                "is_default": True,
+                "activation_status": None,
+                "created_at": now.isoformat(),
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "estate_id": estate_id,
+                "title": "Request 10 certified copies of the death certificate",
+                "description": "Banks, insurance companies, and government agencies each require an original. Most families don't request enough.",
+                "category": "first_week",
+                "priority": "high",
+                "order": 3,
+                "is_default": True,
+                "activation_status": None,
+                "created_at": now.isoformat(),
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "estate_id": estate_id,
+                "title": "Freeze or monitor all joint financial accounts",
+                "description": "Notify banks of the death. Prevent unauthorized transactions. Do not close accounts until the executor advises.",
+                "category": "first_week",
+                "priority": "high",
+                "order": 4,
+                "is_default": True,
+                "activation_status": None,
+                "created_at": now.isoformat(),
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "estate_id": estate_id,
+                "title": "Do NOT make any major financial decisions for 30 days",
+                "description": "Grief impairs judgment. Avoid selling property, changing investments, or lending money during the initial period.",
+                "category": "first_month",
+                "priority": "high",
+                "order": 5,
+                "is_default": True,
+                "activation_status": None,
+                "created_at": now.isoformat(),
+            },
+        ]
+        await db.checklists.insert_many(default_checklist)
+
     # --- Link beneficiary to benefactor's estate ---
     if user["role"] == "beneficiary" and data.benefactor_email:
         benefactor = await db.users.find_one(

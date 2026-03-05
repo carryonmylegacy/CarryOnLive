@@ -20,19 +20,24 @@ ONBOARDING_STEPS = [
         "description": "Set up your estate with a name and state",
     },
     {
+        "key": "create_message",
+        "label": "Leave a Milestone Message",
+        "description": "Record a message for your loved ones",
+    },
+    {
+        "key": "upload_document",
+        "label": "Upload an Estate Document",
+        "description": "Securely store your first important document",
+    },
+    {
         "key": "add_beneficiary",
         "label": "Add a Beneficiary",
         "description": "Add at least one person you want to protect",
     },
     {
-        "key": "upload_document",
-        "label": "Upload a Document",
-        "description": "Securely store your first important document",
-    },
-    {
-        "key": "create_message",
-        "label": "Create a Message",
-        "description": "Write a milestone message for a loved one",
+        "key": "customize_checklist",
+        "label": "Customize Your Action Checklist",
+        "description": "Review the steps your loved ones will follow",
     },
     {
         "key": "review_readiness",
@@ -92,6 +97,13 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
         completed["create_message"] = (
             await db.messages.count_documents({"estate_id": estate_id}) > 0
         )
+        # Checklist customized: at least one item has activation_status set (accepted/edited/removed)
+        completed["customize_checklist"] = (
+            await db.checklists.count_documents(
+                {"estate_id": estate_id, "activation_status": {"$ne": None}}
+            )
+            > 0
+        )
     # review_readiness is manual — preserve from stored progress
     if progress.get("completed_steps", {}).get("review_readiness"):
         completed["review_readiness"] = True
@@ -129,6 +141,19 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
             {"$set": {"dismissed": False}},
         )
 
+    # Get beneficiary names for personalization
+    ben_names = []
+    if estate_id:
+        bens = await db.beneficiaries.find(
+            {"estate_id": estate_id, "is_stub": {"$ne": True}},
+            {"_id": 0, "first_name": 1, "name": 1},
+        ).to_list(10)
+        ben_names = [
+            b.get("first_name") or b.get("name", "").split(" ")[0]
+            for b in bens
+            if b.get("first_name") or b.get("name")
+        ]
+
     return {
         "steps": steps_with_status,
         "completed_count": done,
@@ -136,6 +161,7 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
         "progress_pct": int((done / total) * 100) if total else 0,
         "all_complete": all_complete,
         "dismissed": all_complete,
+        "beneficiary_names": ben_names[:3],
     }
 
 
