@@ -3,7 +3,8 @@
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+import bcrypt
 from pydantic import BaseModel
 
 from config import db
@@ -498,12 +499,25 @@ async def get_launch_metrics(current_user: dict = Depends(get_current_user)):
 
 
 @router.delete("/admin/users/{user_id}")
-async def delete_user(user_id: str, current_user: dict = Depends(get_current_user)):
-    """Delete a user and all associated data — admin only"""
+async def delete_user(
+    user_id: str,
+    admin_password: str = Query(..., description="Admin password for confirmation"),
+    current_user: dict = Depends(get_current_user),
+):
+    """Delete a user and all associated data — admin only, requires password"""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     if user_id == current_user["id"]:
         raise HTTPException(status_code=400, detail="Cannot delete yourself")
+
+    # Verify admin password
+    admin_doc = await db.users.find_one(
+        {"id": current_user["id"]}, {"_id": 0, "password": 1}
+    )
+    if not admin_doc or not bcrypt.checkpw(
+        admin_password.encode(), admin_doc["password"].encode()
+    ):
+        raise HTTPException(status_code=401, detail="Incorrect admin password")
 
     user = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "role": 1})
     if not user:
