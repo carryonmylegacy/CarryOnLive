@@ -451,7 +451,7 @@ const SignupPage = () => {
               transform: entered ? 'translateX(0)' : 'translateX(40px)',
               transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.3s',
             }}>
-              <div className="w-full max-w-[100vw] rounded-2xl relative" style={{
+              <div className="w-full max-w-[100vw] rounded-2xl relative overflow-hidden" style={{
                 background: 'linear-gradient(160deg, rgba(18,28,48,0.97), rgba(12,20,38,0.99))',
                 border: '1px solid rgba(212,175,55,0.12)',
                 boxShadow: '0 8px 80px rgba(0,0,0,0.5), 0 0 50px rgba(212,175,55,0.02)',
@@ -493,7 +493,7 @@ const SignupPage = () => {
 
                 {/* Step Content */}
                 <div className="px-5 sm:px-7 pb-5 sm:pb-7 flex flex-col" style={{ height: 500 }}>
-                  <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide px-[3px]" style={getSlideStyle()}>
+                  <div className="flex-1 overflow-y-auto scrollbar-hide" style={getSlideStyle()}>
                     {/* STEP 0: Name */}
                     {currentStep?.id === 'name' && (
                       <div className="space-y-4 sm:space-y-5">
