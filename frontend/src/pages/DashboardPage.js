@@ -31,6 +31,13 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [showPaywall, setShowPaywall] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [justCompletedActivation, setJustCompletedActivation] = useState(false);
+
+  const handleCelebrationDismiss = () => {
+    setShowCelebration(false);
+    setJustCompletedActivation(true);
+    setTimeout(() => sessionStorage.setItem('carryon_first_explore', 'done'), 100);
+  };
 
   useEffect(() => { fetchEstates(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (estate) fetchEstateData(estate.id); }, [estate]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -224,10 +231,14 @@ const DashboardPage = () => {
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl lg:text-4xl font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
-            Welcome back, {getUserFirstName()}
+            {justCompletedActivation
+              ? <>{getUserFirstName()}, let's continue exploring CarryOn</>
+              : <>Welcome back, {getUserFirstName()}</>}
           </h1>
           <p className="text-[var(--t4)] text-base lg:text-xl">
-            Your legacy is taking shape. Here's your overview.
+            {justCompletedActivation
+              ? 'Click anywhere and have fun securing your family\'s future!'
+              : 'Your legacy is taking shape. Here\'s your overview.'}
           </p>
         </div>
         <div className="sm:mt-1">
@@ -450,7 +461,7 @@ const DashboardPage = () => {
           </button>
         </div>
       </div>
-      {showCelebration && <ActivationCelebration onDismiss={() => setShowCelebration(false)} />}
+      {showCelebration && <ActivationCelebration onDismiss={handleCelebrationDismiss} />}
     </div>
   );
 };
