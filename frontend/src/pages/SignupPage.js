@@ -120,18 +120,19 @@ const SignupPage = () => {
         ...slot,
         first_name: prev[idx]?.first_name || '',
         middle_name: prev[idx]?.middle_name || '',
-        last_name: prev[idx]?.last_name || lastName,
+        last_name: prev[idx]?.last_name || '',
         email: prev[idx]?.email || '',
         dob: prev[idx]?.dob || '',
         same_address: prev[idx]?.same_address !== undefined ? prev[idx].same_address : true,
         address_street: prev[idx]?.address_street || '',
+        address_line2: prev[idx]?.address_line2 || '',
         address_city: prev[idx]?.address_city || '',
         address_state: prev[idx]?.address_state || '',
         address_zip: prev[idx]?.address_zip || '',
       }));
       return updated;
     });
-  }, [maritalStatus, dependentsOver18, dependentsUnder18, lastName, isNewAdult]);
+  }, [maritalStatus, dependentsOver18, dependentsUnder18, isNewAdult]);
 
   // Dynamic steps
   const computeSteps = () => {
@@ -444,7 +445,7 @@ const SignupPage = () => {
             </div>
 
             {/* RIGHT — Wizard Card */}
-            <div className="flex justify-center lg:justify-end" style={{
+            <div className="flex justify-center lg:justify-end overflow-hidden" style={{
               opacity: entered ? 1 : 0,
               transform: entered ? 'translateX(0)' : 'translateX(40px)',
               transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.3s',
@@ -458,7 +459,7 @@ const SignupPage = () => {
                 <div className="absolute top-0 left-8 right-8 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
 
                 {/* Progress Bar */}
-                <div className="px-5 sm:px-7 pt-5 sm:pt-7 pb-2">
+                <div className="px-4 sm:px-7 pt-5 sm:pt-7 pb-2">
                   <div className="flex items-center gap-0.5 sm:gap-1 mb-3 overflow-hidden">
                     {STEPS.map((s, i) => (
                       <div key={s.id} className="flex items-center flex-1">
@@ -490,7 +491,7 @@ const SignupPage = () => {
                 </div>
 
                 {/* Step Content */}
-                <div className="px-5 sm:px-7 pb-5 sm:pb-7 flex flex-col" style={{ height: 500 }}>
+                <div className="px-4 sm:px-7 pb-5 sm:pb-7 flex flex-col" style={{ height: 500 }}>
                   <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide" style={getSlideStyle()}>
                     {/* STEP 0: Name */}
                     {currentStep?.id === 'name' && (
@@ -675,20 +676,37 @@ const SignupPage = () => {
                           </div>
                           {!ben.same_address && (
                             <div className="space-y-2">
-                              <AddressAutocomplete value={ben.address_street} onChange={(e) => updateBen('address_street', e.target.value)}
-                                onSelect={({ street, city, state, zip }) => {
-                                  setBeneficiaries(prev => prev.map((b, i) => i === idx ? { ...b, address_street: street, address_city: city, address_state: state, address_zip: zip } : b));
-                                }}
-                                placeholder="Their street address" className={inputClass} />
+                              <div className="space-y-1.5">
+                                <Label className="text-[#7b879e] text-sm font-medium">Street Address <span className="text-red-400">*</span></Label>
+                                <AddressAutocomplete value={ben.address_street} onChange={(e) => updateBen('address_street', e.target.value)}
+                                  onSelect={({ street, city, state, zip }) => {
+                                    setBeneficiaries(prev => prev.map((b, i) => i === idx ? { ...b, address_street: street, address_city: city, address_state: state, address_zip: zip } : b));
+                                  }}
+                                  placeholder="Their street address" className={inputClass} />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label className="text-[#7b879e] text-sm font-medium">Apt, Suite, Unit (optional)</Label>
+                                <Input value={ben.address_line2 || ''} onChange={(e) => updateBen('address_line2', e.target.value)}
+                                  placeholder="Apt 4B, Suite 200, etc." className={inputClass} />
+                              </div>
                               <div className="grid grid-cols-3 gap-2">
-                                <Input value={ben.address_city} onChange={(e) => updateBen('address_city', e.target.value)} placeholder="City" className={inputClass} />
-                                <Select value={ben.address_state} onValueChange={(v) => updateBen('address_state', v)}>
-                                  <SelectTrigger className={selectClass}><SelectValue placeholder="State" /></SelectTrigger>
-                                  <SelectContent className="bg-[#141C33] border-[#1a2a42] max-h-48">
-                                    {usStates.map(st => <SelectItem key={st} value={st}>{st}</SelectItem>)}
-                                  </SelectContent>
-                                </Select>
-                                <Input value={ben.address_zip} onChange={(e) => updateBen('address_zip', e.target.value)} placeholder="ZIP" className={inputClass} maxLength={10} />
+                                <div className="space-y-1">
+                                  <Label className="text-[#7b879e] text-[10px] font-medium">City <span className="text-red-400">*</span></Label>
+                                  <Input value={ben.address_city} onChange={(e) => updateBen('address_city', e.target.value)} placeholder="City" className={inputClass} />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="text-[#7b879e] text-[10px] font-medium">State <span className="text-red-400">*</span></Label>
+                                  <Select value={ben.address_state} onValueChange={(v) => updateBen('address_state', v)}>
+                                    <SelectTrigger className={selectClass}><SelectValue placeholder="State" /></SelectTrigger>
+                                    <SelectContent className="bg-[#141C33] border-[#1a2a42] max-h-48">
+                                      {usStates.map(st => <SelectItem key={st} value={st}>{st}</SelectItem>)}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="text-[#7b879e] text-[10px] font-medium">ZIP <span className="text-red-400">*</span></Label>
+                                  <Input value={ben.address_zip} onChange={(e) => updateBen('address_zip', e.target.value)} placeholder="ZIP" className={inputClass} maxLength={10} />
+                                </div>
                               </div>
                             </div>
                           )}
@@ -726,12 +744,12 @@ const SignupPage = () => {
                         </div>
                         <div className="grid grid-cols-3 gap-3">
                           <div className="space-y-1.5">
-                            <Label className="text-[#7b879e] text-sm font-medium">City</Label>
+                            <Label className="text-[#7b879e] text-sm font-medium">City <span className="text-red-400">*</span></Label>
                             <Input value={addressCity} onChange={(e) => setAddressCity(e.target.value)}
                               placeholder="City" className={inputClass} data-testid="signup-address-city" />
                           </div>
                           <div className="space-y-1.5">
-                            <Label className="text-[#7b879e] text-sm font-medium">State</Label>
+                            <Label className="text-[#7b879e] text-sm font-medium">State <span className="text-red-400">*</span></Label>
                             <Select value={addressState} onValueChange={setAddressState}>
                               <SelectTrigger className={selectClass} data-testid="signup-address-state"><SelectValue placeholder="State" /></SelectTrigger>
                               <SelectContent className="bg-[#141C33] border-[#1a2a42] max-h-48">
@@ -740,7 +758,7 @@ const SignupPage = () => {
                             </Select>
                           </div>
                           <div className="space-y-1.5">
-                            <Label className="text-[#7b879e] text-sm font-medium">ZIP Code</Label>
+                            <Label className="text-[#7b879e] text-sm font-medium">ZIP <span className="text-red-400">*</span></Label>
                             <Input value={addressZip} onChange={(e) => setAddressZip(e.target.value)}
                               placeholder="ZIP" className={inputClass} maxLength={10} data-testid="signup-address-zip" />
                           </div>
