@@ -111,6 +111,7 @@ class Beneficiary(BaseModel):
     initials: str = ""
     photo_url: Optional[str] = None  # Base64 profile photo or URL
     # Invitation tracking
+    is_primary: bool = False  # Primary beneficiary acts as trustee post-transition
     invitation_status: str = "pending"  # pending, sent, accepted
     invitation_token: Optional[str] = None
     invitation_sent_at: Optional[str] = None
