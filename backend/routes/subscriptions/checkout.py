@@ -170,6 +170,22 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
         except (ValueError, TypeError):
             pass
 
+    # Determine paired pricing if estate has transitioned
+    paired_price = None
+    if estate_transitioned and benefactor_id:
+        settings = await get_subscription_settings()
+        benefactor_plan_id = None
+        ben_sub_doc = await db.user_subscriptions.find_one(
+            {"user_id": benefactor_id}, {"_id": 0, "plan_id": 1}
+        )
+        if ben_sub_doc:
+            benefactor_plan_id = ben_sub_doc.get("plan_id")
+        if benefactor_plan_id:
+            for p in settings.get("plans", DEFAULT_PLANS):
+                if p["id"] == benefactor_plan_id:
+                    paired_price = p.get("paired_price")
+                    break
+
     return {
         "subscription": sub,
         "trial": trial,
@@ -192,6 +208,7 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
         "user_role": current_user.get("role", "benefactor"),
         "beneficiary_locked_tier": beneficiary_locked_tier,
         "estate_transitioned": estate_transitioned,
+        "paired_price": paired_price,
     }
 
 
@@ -1027,6 +1044,42 @@ async def update_beneficiary_plan_price(
     )
 
     return {"success": True, "message": f"Beneficiary price updated to ${price:.2f}"}
+
+
+@router.put("/admin/plans/{plan_id}/paired-price")
+async def update_paired_price(
+    plan_id: str,
+    price: float = Form(...),
+    current_user: dict = Depends(get_current_user),
+):
+    """Update a plan's paired price — the price beneficiaries pay post-transition (admin only)"""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    settings = await get_subscription_settings()
+    plans = settings.get("plans", DEFAULT_PLANS)
+
+    found = False
+    for plan in plans:
+        if plan["id"] == plan_id:
+            plan["paired_price"] = price
+            found = True
+            break
+
+    if not found:
+        raise HTTPException(status_code=404, detail=f"Plan not found: {plan_id}")
+
+    await db.subscription_settings.update_one(
+        {"_id": "global"},
+        {
+            "$set": {
+                "plans": plans,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
+    )
+
+    return {"success": True, "message": f"Paired price updated to ${price:.2f}"}
 
 
 # ═══════════════════════════════════════════════════

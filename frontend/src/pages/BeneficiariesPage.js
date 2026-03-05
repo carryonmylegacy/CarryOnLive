@@ -19,6 +19,10 @@ import {
   Edit2,
   Copy,
   Check,
+  Shield,
+  AlertTriangle,
+  UserCheck,
+  XCircle,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -83,6 +87,10 @@ const BeneficiariesPage = () => {
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(null);
+  const [settingPrimary, setSettingPrimary] = useState(null);
+  const [showPrimaryDisclaimer, setShowPrimaryDisclaimer] = useState(null);
+  const [accessRequests, setAccessRequests] = useState([]);
+  const [handlingRequest, setHandlingRequest] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -93,8 +101,12 @@ const BeneficiariesPage = () => {
       const estatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders());
       if (estatesRes.data.length > 0) {
         setEstate(estatesRes.data[0]);
-        const bensRes = await axios.get(`${API_URL}/beneficiaries/${estatesRes.data[0].id}`, getAuthHeaders());
+        const [bensRes, requestsRes] = await Promise.all([
+          axios.get(`${API_URL}/beneficiaries/${estatesRes.data[0].id}`, getAuthHeaders()),
+          axios.get(`${API_URL}/beneficiaries/access-requests/${estatesRes.data[0].id}`, getAuthHeaders()).catch(() => ({ data: [] })),
+        ]);
         setBeneficiaries(bensRes.data);
+        setAccessRequests(requestsRes.data || []);
       }
     } catch (error) {
       console.error('Fetch error:', error);
@@ -255,6 +267,35 @@ const BeneficiariesPage = () => {
     }
   };
 
+  const handleSetPrimary = async (beneficiaryId) => {
+    setSettingPrimary(beneficiaryId);
+    try {
+      await axios.put(`${API_URL}/beneficiaries/${beneficiaryId}/set-primary`, {}, getAuthHeaders());
+      toast.success('Primary beneficiary designated');
+      setShowPrimaryDisclaimer(null);
+      fetchData();
+    } catch (error) {
+      console.error('Set primary error:', error);
+      toast.error(error.response?.data?.detail || 'Failed to designate primary beneficiary');
+    } finally {
+      setSettingPrimary(null);
+    }
+  };
+
+  const handleAccessRequest = async (requestId, action) => {
+    setHandlingRequest(requestId);
+    try {
+      await axios.put(`${API_URL}/beneficiaries/access-requests/${requestId}`, { action }, getAuthHeaders());
+      toast.success(`Request ${action}d`);
+      fetchData();
+    } catch (error) {
+      console.error('Access request error:', error);
+      toast.error(error.response?.data?.detail || `Failed to ${action} request`);
+    } finally {
+      setHandlingRequest(null);
+    }
+  };
+
   const resetForm = () => {
     setFirstName('');
     setMiddleName('');
@@ -405,6 +446,11 @@ const BeneficiariesPage = () => {
                     {ben.is_stub && (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--ywbg)] text-[var(--yw)] mr-1">NEEDS INFO</span>
                     )}
+                    {ben.is_primary && (
+                      <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full mr-1" style={{ background: 'rgba(34,201,147,0.15)', color: '#22C993' }} data-testid={`primary-badge-${ben.id}`}>
+                        <Shield className="w-3 h-3" /> PRIMARY
+                      </span>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"
@@ -529,6 +575,19 @@ const BeneficiariesPage = () => {
                         )}
                       </Button>
                     </div>
+                  )}
+
+                  {/* Designate Primary */}
+                  {!ben.is_primary && !ben.is_stub && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full mt-2 text-xs border-[var(--b)] text-[#22C993] hover:bg-[#22C993]/10"
+                      onClick={() => setShowPrimaryDisclaimer(ben)}
+                      data-testid={`designate-primary-${ben.id}`}
+                    >
+                      <Shield className="w-3 h-3 mr-1.5" /> Designate as Primary
+                    </Button>
                   )}
                 </div>
               </CardContent>
@@ -835,6 +894,110 @@ const BeneficiariesPage = () => {
               )}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Access Requests Section */}
+      {accessRequests.length > 0 && (
+        <Card className="glass-card" data-testid="access-requests-section">
+          <CardContent className="p-5">
+            <h3 className="text-lg font-bold text-[var(--t)] flex items-center gap-2 mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <AlertTriangle className="w-5 h-5 text-[#F59E0B]" />
+              Pending Access Requests
+            </h3>
+            <p className="text-xs text-[var(--t5)] mb-4">
+              These individuals are requesting to be added as beneficiaries. As the designated approver, only you can grant or deny access.
+            </p>
+            <div className="space-y-3">
+              {accessRequests.map(req => (
+                <div key={req.id} className="p-4 rounded-xl flex items-center justify-between" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }} data-testid={`access-request-${req.id}`}>
+                  <div>
+                    <p className="text-sm font-bold text-[var(--t)]">{req.requester_name}</p>
+                    <p className="text-xs text-[var(--t5)]">{req.requester_email}</p>
+                    {req.message && <p className="text-xs text-[var(--t4)] mt-1 italic">"{req.message}"</p>}
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Button
+                      size="sm"
+                      className="text-xs bg-[#22C993] hover:bg-[#1db882] text-white"
+                      onClick={() => handleAccessRequest(req.id, 'approve')}
+                      disabled={handlingRequest === req.id}
+                      data-testid={`approve-request-${req.id}`}
+                    >
+                      {handlingRequest === req.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <><UserCheck className="w-3 h-3 mr-1" /> Approve</>}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs border-[var(--rd2)] text-[var(--rd2)]"
+                      onClick={() => handleAccessRequest(req.id, 'deny')}
+                      disabled={handlingRequest === req.id}
+                      data-testid={`deny-request-${req.id}`}
+                    >
+                      <XCircle className="w-3 h-3 mr-1" /> Deny
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Primary Beneficiary Disclaimer Modal */}
+      <Dialog open={!!showPrimaryDisclaimer} onOpenChange={(open) => !open && setShowPrimaryDisclaimer(null)}>
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-[var(--t)] text-xl flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <Shield className="w-5 h-5 text-[#22C993]" />
+              Designate Primary Beneficiary
+            </DialogTitle>
+          </DialogHeader>
+          {showPrimaryDisclaimer && (
+            <div className="space-y-4 py-2" data-testid="primary-disclaimer-modal">
+              <div className="p-4 rounded-xl" style={{ background: 'rgba(34,201,147,0.06)', border: '1px solid rgba(34,201,147,0.15)' }}>
+                <p className="text-sm text-[var(--t3)] leading-relaxed">
+                  You are about to designate <strong className="text-[#22C993]">{showPrimaryDisclaimer.name}</strong> as the primary beneficiary of your estate.
+                </p>
+              </div>
+              <div className="p-4 rounded-xl" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}>
+                <h4 className="text-sm font-bold text-[#F59E0B] flex items-center gap-2 mb-2">
+                  <AlertTriangle className="w-4 h-4" />
+                  Important Disclaimer
+                </h4>
+                <ul className="text-xs text-[var(--t4)] space-y-2 list-disc pl-4">
+                  <li>This person will serve as the <strong>trustee</strong> of your estate after your transition.</li>
+                  <li>They will have the <strong>sole authority</strong> to approve or deny new beneficiaries who request access to your estate after you have passed.</li>
+                  <li>No other beneficiary will have this power unless you change this designation.</li>
+                  <li>You can change your primary beneficiary at any time while your estate is active.</li>
+                </ul>
+              </div>
+              <p className="text-xs text-[var(--t5)] italic text-center">
+                By proceeding, you confirm that you understand the responsibilities being granted to this individual.
+              </p>
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 border-[var(--b)] text-white"
+                  onClick={() => setShowPrimaryDisclaimer(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1 bg-[#22C993] hover:bg-[#1db882] text-white font-bold"
+                  onClick={() => handleSetPrimary(showPrimaryDisclaimer.id)}
+                  disabled={settingPrimary === showPrimaryDisclaimer.id}
+                  data-testid="confirm-primary-btn"
+                >
+                  {settingPrimary === showPrimaryDisclaimer.id ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Designating...</>
+                  ) : (
+                    <><Shield className="w-4 h-4 mr-2" /> Confirm Designation</>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
       </SectionLockedOverlay>

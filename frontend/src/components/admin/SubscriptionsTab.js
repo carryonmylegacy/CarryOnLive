@@ -257,6 +257,53 @@ export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
         </CardContent>
       </Card>
 
+      {/* Paired Pricing (Post-Transition) */}
+      <Card className="glass-card">
+        <CardContent className="p-5">
+          <h3 className="text-lg font-bold text-[var(--t)] flex items-center gap-2 mb-2">
+            <DollarSign className="w-5 h-5 text-[#F59E0B]" />
+            Paired Pricing (Post-Transition)
+          </h3>
+          <p className="text-xs text-[var(--t5)] mb-4">
+            The price beneficiaries pay when joining an estate after the benefactor has transitioned. Based on the benefactor's original subscription tier.
+          </p>
+          <div className="space-y-2">
+            {(settings?.plans || []).map(plan => (
+              <div key={`paired_${plan.id}`} className="flex items-center justify-between p-3 rounded-xl bg-[var(--s)]" data-testid={`paired-plan-row-${plan.id}`}>
+                <div>
+                  <span className="font-bold text-[var(--t)] text-sm">{plan.name}</span>
+                  <span className="text-xs text-[var(--t5)] ml-2">(benefactor tier)</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  {editingPrice === `paired_${plan.id}` ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[var(--t4)]">$</span>
+                      <Input type="number" step="0.01" value={newPrice} onChange={e => setNewPrice(e.target.value)} className="input-field w-20 text-sm" autoFocus />
+                      <Button size="sm" className="gold-button text-xs" onClick={async () => {
+                        try {
+                          const formData = new FormData();
+                          formData.append('price', parseFloat(newPrice));
+                          await axios.put(`${API_URL}/admin/plans/${plan.id}/paired-price`, formData, { headers });
+                          setEditingPrice(null);
+                          fetchData();
+                        } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update'); }
+                      }}>Save</Button>
+                      <Button size="sm" variant="outline" className="text-xs border-[var(--b)]" onClick={() => setEditingPrice(null)}>Cancel</Button>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="text-[#F59E0B] font-bold text-lg">${(plan.paired_price ?? 0).toFixed(2)}</span>
+                      <span className="text-xs text-[var(--t5)]">/mo</span>
+                      <Button size="sm" variant="outline" className="text-xs border-[var(--b)] text-[var(--t4)]" onClick={() => { setEditingPrice(`paired_${plan.id}`); setNewPrice(plan.paired_price?.toString() || '0'); }}>Edit</Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Per-User Overrides */}
       <Card className="glass-card">
         <CardContent className="p-5">

@@ -151,6 +151,7 @@ DEFAULT_PLANS = [
         "quarterly_price": 8.99,
         "annual_price": 7.99,
         "ben_price": 2.99,
+        "paired_price": 4.99,
         "adjustable": True,
         "features": [
             "Everything in Standard",
@@ -166,6 +167,7 @@ DEFAULT_PLANS = [
         "quarterly_price": 8.09,
         "annual_price": 7.19,
         "ben_price": 3.99,
+        "paired_price": 5.99,
         "adjustable": True,
         "features": [
             "Everything in Base",
@@ -181,6 +183,7 @@ DEFAULT_PLANS = [
         "quarterly_price": 7.19,
         "annual_price": 6.39,
         "ben_price": 4.99,
+        "paired_price": 6.99,
         "adjustable": True,
         "features": [
             "Immediate Action Checklist",
@@ -195,6 +198,7 @@ DEFAULT_PLANS = [
         "quarterly_price": 3.59,
         "annual_price": 3.19,
         "ben_price": 1.99,
+        "paired_price": 3.99,
         "adjustable": False,
         "note": "Ages 18-25 · Auto-detected",
         "requires_age_verification": True,
@@ -211,6 +215,7 @@ DEFAULT_PLANS = [
         "quarterly_price": 5.39,
         "annual_price": 4.79,
         "ben_price": 1.99,
+        "paired_price": 3.99,
         "adjustable": False,
         "note": "Requires verification",
         "requires_verification": True,
@@ -228,6 +233,7 @@ DEFAULT_PLANS = [
         "quarterly_price": 0.00,
         "annual_price": 0.00,
         "ben_price": 4.99,
+        "paired_price": 6.99,
         "adjustable": False,
         "note": "Requires hospice verification",
         "requires_verification": True,
@@ -245,6 +251,7 @@ DEFAULT_PLANS = [
         "quarterly_price": 5.39,
         "annual_price": 4.79,
         "ben_price": 1.99,
+        "paired_price": 3.99,
         "adjustable": False,
         "note": "Requires verification",
         "requires_verification": True,
@@ -262,6 +269,7 @@ DEFAULT_PLANS = [
         "quarterly_price": 0.00,
         "annual_price": 0.00,
         "ben_price": 0.00,
+        "paired_price": 0.00,
         "adjustable": False,
         "note": "Requires partner code",
         "requires_verification": True,
@@ -410,13 +418,26 @@ async def get_subscription_settings():
         )
     else:
         # Ensure any new plans from code are added to stored settings
+        # and merge new fields from DEFAULT_PLANS into existing stored plans
         stored_ids = {p["id"] for p in settings.get("plans", [])}
+        needs_update = False
         for plan in DEFAULT_PLANS:
             if plan["id"] not in stored_ids:
                 settings.setdefault("plans", []).append(plan)
-                await db.subscription_settings.update_one(
-                    {"_id": "global"}, {"$push": {"plans": plan}}
-                )
+                needs_update = True
+            else:
+                # Merge new fields from code into stored plan
+                for stored_plan in settings.get("plans", []):
+                    if stored_plan["id"] == plan["id"]:
+                        for key in plan:
+                            if key not in stored_plan:
+                                stored_plan[key] = plan[key]
+                                needs_update = True
+                        break
+        if needs_update:
+            await db.subscription_settings.update_one(
+                {"_id": "global"}, {"$set": {"plans": settings["plans"]}}
+            )
     return settings
 
 
