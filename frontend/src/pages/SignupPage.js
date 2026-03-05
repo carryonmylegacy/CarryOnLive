@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -68,6 +68,7 @@ const SignupPage = () => {
   const [direction, setDirection] = useState('right');
   const [slidePhase, setSlidePhase] = useState('idle'); // 'idle' | 'exit' | 'enter'
   const [entered, setEntered] = useState(false);
+  const scrollRef = useRef(null);
 
   // Form state
   const [firstName, setFirstName] = useState('');
@@ -197,6 +198,7 @@ const SignupPage = () => {
     setTimeout(() => {
       setStep(nextStep);
       setSlidePhase('enter');
+      if (scrollRef.current) scrollRef.current.scrollTop = 0;
       setTimeout(() => setSlidePhase('idle'), 350);
     }, 300);
   };
@@ -493,7 +495,7 @@ const SignupPage = () => {
 
                 {/* Step Content */}
                 <div className="px-5 sm:px-7 pb-5 sm:pb-7 flex flex-col" style={{ height: 500 }}>
-                  <div className="flex-1 overflow-y-auto scrollbar-hide" style={getSlideStyle()}>
+                  <div ref={scrollRef} className="flex-1 overflow-y-auto scrollbar-hide" style={getSlideStyle()}>
                     {/* STEP 0: Name */}
                     {currentStep?.id === 'name' && (
                       <div className="space-y-4 sm:space-y-5">
@@ -671,7 +673,12 @@ const SignupPage = () => {
                               className={dateInputClass} max={new Date().toISOString().split('T')[0]} />
                           </div>
                           <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                            <input type="checkbox" checked={ben.same_address} onChange={(e) => updateBen('same_address', e.target.checked)}
+                            <input type="checkbox" checked={ben.same_address} onChange={(e) => {
+                              updateBen('same_address', e.target.checked);
+                              if (!e.target.checked && scrollRef.current) {
+                                setTimeout(() => scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' }), 100);
+                              }
+                            }}
                               className="w-4 h-4 rounded" />
                             <span className="text-sm text-[#94a3b8]">Same address as mine</span>
                           </div>
