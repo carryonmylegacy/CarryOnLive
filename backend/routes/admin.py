@@ -189,14 +189,32 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
     """Get platform stats — admin only"""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
-    total_users = await db.users.count_documents({})
-    benefactors = await db.users.count_documents({"role": "benefactor"})
-    beneficiaries = await db.users.count_documents({"role": "beneficiary"})
-    admins = await db.users.count_documents({"role": "admin"})
-    total_estates = await db.estates.count_documents({})
-    transitioned = await db.estates.count_documents({"status": "transitioned"})
-    total_docs = await db.documents.count_documents({})
-    total_messages = await db.messages.count_documents({})
+
+    # Get all existing user IDs for cross-referencing
+    all_users = await db.users.find(
+        {}, {"_id": 0, "id": 1, "role": 1, "email": 1, "benefactor_email": 1}
+    ).to_list(100000)
+    user_ids = {u["id"] for u in all_users}
+
+    total_users = len(all_users)
+    benefactors = sum(1 for u in all_users if u.get("role") == "benefactor")
+    beneficiaries_count = sum(1 for u in all_users if u.get("role") == "beneficiary")
+    admins = sum(1 for u in all_users if u.get("role") == "admin")
+
+    # Only count estates owned by existing users
+    total_estates = await db.estates.count_documents(
+        {"owner_id": {"$in": list(user_ids)}}
+    )
+    transitioned = await db.estates.count_documents(
+        {"owner_id": {"$in": list(user_ids)}, "status": "transitioned"}
+    )
+
+    total_docs = await db.documents.count_documents(
+        {"owner_id": {"$in": list(user_ids)}}
+    )
+    total_messages = await db.messages.count_documents(
+        {"user_id": {"$in": list(user_ids)}}
+    )
     pending_certs = await db.death_certificates.count_documents({"status": "pending"})
     reviewing_certs = await db.death_certificates.count_documents(
         {"status": "reviewing"}
@@ -208,7 +226,10 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
         {"status": "pending"}
     )
     pending_dts = await db.dts_tasks.count_documents({"status": "pending"})
-    active_subs = await db.user_subscriptions.count_documents({"status": "active"})
+    # Only count subscriptions for existing users
+    active_subs = await db.user_subscriptions.count_documents(
+        {"status": "active", "user_id": {"$in": list(user_ids)}}
+    )
     grace_periods = await db.beneficiary_grace_periods.count_documents({})
     pending_family = await db.family_plan_requests.count_documents(
         {"status": "pending"}
@@ -216,30 +237,33 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
     deletion_requests = await db.deletion_requests.count_documents(
         {"status": "pending"}
     )
-    # Viral metrics
+
+    # Viral metrics — only count beneficiaries linked to existing benefactors' estates
+    benefactor_ids = [u["id"] for u in all_users if u.get("role") == "benefactor"]
+    estates_for_benefactors = await db.estates.find(
+        {"owner_id": {"$in": benefactor_ids}}, {"_id": 0, "id": 1}
+    ).to_list(100000)
+    benefactor_estate_ids = [e["id"] for e in estates_for_benefactors]
+
     total_beneficiary_records = await db.beneficiaries.count_documents(
-        {"is_stub": {"$ne": True}}
+        {"estate_id": {"$in": benefactor_estate_ids}, "is_stub": {"$ne": True}}
     )
     avg_bens_per_benefactor = round(total_beneficiary_records / max(benefactors, 1), 1)
+
     # Beneficiaries who became benefactors
-    beneficiary_emails = await db.users.find(
-        {"role": "beneficiary"}, {"_id": 0, "email": 1}
-    ).to_list(10000)
-    ben_emails = {u["email"] for u in beneficiary_emails}
-    benefactor_emails = await db.users.find(
-        {"role": "benefactor"}, {"_id": 0, "email": 1, "benefactor_email": 1}
-    ).to_list(10000)
+    ben_emails = {u["email"] for u in all_users if u.get("role") == "beneficiary"}
     ben_to_benefactor_count = sum(
         1
-        for u in benefactor_emails
-        if u.get("benefactor_email") or u["email"] in ben_emails
+        for u in all_users
+        if u.get("role") == "benefactor"
+        and (u.get("benefactor_email") or u["email"] in ben_emails)
     )
 
     return {
         "users": {
             "total": total_users,
             "benefactors": benefactors,
-            "beneficiaries": beneficiaries,
+            "beneficiaries": beneficiaries_count,
             "admins": admins,
         },
         "estates": {
@@ -475,15 +499,88 @@ async def get_launch_metrics(current_user: dict = Depends(get_current_user)):
 
 @router.delete("/admin/users/{user_id}")
 async def delete_user(user_id: str, current_user: dict = Depends(get_current_user)):
-    """Delete a user — admin only"""
+    """Delete a user and all associated data — admin only"""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     if user_id == current_user["id"]:
         raise HTTPException(status_code=400, detail="Cannot delete yourself")
-    result = await db.users.delete_one({"id": user_id})
-    if result.deleted_count == 0:
+
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "role": 1})
+    if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return {"message": "User deleted"}
+
+    # Cascade delete all associated data
+    # Find estates owned by this user
+    estates = await db.estates.find({"owner_id": user_id}, {"_id": 0, "id": 1}).to_list(
+        1000
+    )
+    estate_ids = [e["id"] for e in estates]
+
+    if estate_ids:
+        # Delete beneficiaries, documents, messages tied to these estates
+        await db.beneficiaries.delete_many({"estate_id": {"$in": estate_ids}})
+        await db.documents.delete_many({"estate_id": {"$in": estate_ids}})
+        await db.messages.delete_many({"estate_id": {"$in": estate_ids}})
+        await db.checklists.delete_many({"estate_id": {"$in": estate_ids}})
+        await db.estates.delete_many({"id": {"$in": estate_ids}})
+
+    # Delete user's subscription, sessions, and other user-keyed data
+    await db.user_subscriptions.delete_many({"user_id": user_id})
+    await db.ai_feedback.delete_many({"user_id": user_id})
+    await db.dts_tasks.delete_many({"user_id": user_id})
+
+    # Finally delete the user
+    await db.users.delete_one({"id": user_id})
+    return {"message": "User and all associated data deleted"}
+
+
+@router.post("/admin/cleanup-orphans")
+async def cleanup_orphans(current_user: dict = Depends(get_current_user)):
+    """Remove orphaned records not linked to any existing user — admin only"""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    all_users = await db.users.find({}, {"_id": 0, "id": 1}).to_list(100000)
+    user_ids = [u["id"] for u in all_users]
+
+    # Find orphan estates (owner_id not in existing users)
+    all_estates = await db.estates.find({}, {"_id": 0, "id": 1, "owner_id": 1}).to_list(
+        100000
+    )
+    orphan_estates = [e for e in all_estates if e["owner_id"] not in set(user_ids)]
+    orphan_estate_ids = [e["id"] for e in orphan_estates]
+    orphan_owner_ids = list({e["owner_id"] for e in orphan_estates})
+
+    deleted = {
+        "estates": 0,
+        "beneficiaries": 0,
+        "documents": 0,
+        "messages": 0,
+        "checklists": 0,
+        "subscriptions": 0,
+    }
+
+    if orphan_estate_ids:
+        r = await db.beneficiaries.delete_many(
+            {"estate_id": {"$in": orphan_estate_ids}}
+        )
+        deleted["beneficiaries"] = r.deleted_count
+        r = await db.documents.delete_many({"estate_id": {"$in": orphan_estate_ids}})
+        deleted["documents"] = r.deleted_count
+        r = await db.messages.delete_many({"estate_id": {"$in": orphan_estate_ids}})
+        deleted["messages"] = r.deleted_count
+        r = await db.checklists.delete_many({"estate_id": {"$in": orphan_estate_ids}})
+        deleted["checklists"] = r.deleted_count
+        r = await db.estates.delete_many({"id": {"$in": orphan_estate_ids}})
+        deleted["estates"] = r.deleted_count
+
+    if orphan_owner_ids:
+        r = await db.user_subscriptions.delete_many(
+            {"user_id": {"$in": orphan_owner_ids}}
+        )
+        deleted["subscriptions"] = r.deleted_count
+
+    return {"message": "Orphan cleanup complete", "deleted": deleted}
 
 
 @router.put("/admin/users/{user_id}/role")
