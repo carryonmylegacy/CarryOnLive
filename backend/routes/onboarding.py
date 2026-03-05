@@ -30,9 +30,9 @@ ONBOARDING_STEPS = [
         "description": "Securely store your first important document",
     },
     {
-        "key": "add_beneficiary",
-        "label": "Add a Beneficiary",
-        "description": "Add at least one person you want to protect",
+        "key": "designate_primary",
+        "label": "Designate Your Primary Beneficiary",
+        "description": "Choose who will serve as trustee of your estate",
     },
     {
         "key": "customize_checklist",
@@ -41,8 +41,8 @@ ONBOARDING_STEPS = [
     },
     {
         "key": "review_readiness",
-        "label": "Review Readiness",
-        "description": "Check your estate readiness score",
+        "label": "Consult the Estate Guardian",
+        "description": "Get an AI analysis of your estate plan",
     },
 ]
 
@@ -71,7 +71,7 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
     if estate_id:
         completed["create_estate"] = True
         # Count any beneficiaries (including stubs from signup) as complete
-        completed["add_beneficiary"] = (
+        has_beneficiaries = (
             await db.beneficiaries.count_documents({"estate_id": estate_id}) > 0
         )
         completed["upload_document"] = (
@@ -79,6 +79,13 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
         )
         completed["create_message"] = (
             await db.messages.count_documents({"estate_id": estate_id}) > 0
+        )
+        # Primary beneficiary designated
+        completed["designate_primary"] = (
+            await db.beneficiaries.count_documents(
+                {"estate_id": estate_id, "is_primary": True}
+            )
+            > 0
         )
         # Checklist customized: at least one item has activation_status set (accepted/edited/removed)
         completed["customize_checklist"] = (

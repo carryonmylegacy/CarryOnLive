@@ -136,6 +136,55 @@ async def delete_beneficiary(
     return {"message": "Beneficiary removed"}
 
 
+@router.put("/beneficiaries/{beneficiary_id}/set-primary")
+async def set_primary_beneficiary(
+    beneficiary_id: str, current_user: dict = Depends(get_current_user)
+):
+    """Designate a beneficiary as the primary beneficiary (trustee) of the estate."""
+    if current_user["role"] != "benefactor":
+        raise HTTPException(
+            status_code=403, detail="Only benefactors can designate a primary beneficiary"
+        )
+
+    # Find the beneficiary to get their estate_id
+    ben = await db.beneficiaries.find_one(
+        {"id": beneficiary_id}, {"_id": 0, "estate_id": 1, "name": 1}
+    )
+    if not ben:
+        raise HTTPException(status_code=404, detail="Beneficiary not found")
+
+    estate_id = ben["estate_id"]
+
+    # Clear any existing primary designation for this estate
+    await db.beneficiaries.update_many(
+        {"estate_id": estate_id, "is_primary": True},
+        {"$set": {"is_primary": False}},
+    )
+
+    # Set the new primary
+    await db.beneficiaries.update_one(
+        {"id": beneficiary_id},
+        {"$set": {"is_primary": True}},
+    )
+
+    return {
+        "message": f"{ben.get('name', 'Beneficiary')} designated as primary beneficiary",
+        "primary_beneficiary_id": beneficiary_id,
+    }
+
+
+@router.get("/beneficiaries/{estate_id}/primary")
+async def get_primary_beneficiary(
+    estate_id: str, current_user: dict = Depends(get_current_user)
+):
+    """Get the primary beneficiary for an estate."""
+    primary = await db.beneficiaries.find_one(
+        {"estate_id": estate_id, "is_primary": True}, {"_id": 0}
+    )
+    return {"primary": primary}
+
+
+
 @router.put("/beneficiaries/{beneficiary_id}")
 async def update_beneficiary(
     beneficiary_id: str,
