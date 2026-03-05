@@ -67,6 +67,7 @@ const SignupPage = () => {
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState('right');
   const [slidePhase, setSlidePhase] = useState('idle'); // 'idle' | 'exit' | 'enter'
+  const [emailErrors, setEmailErrors] = useState({});
   const [entered, setEntered] = useState(false);
   const scrollRef = useRef(null);
 
@@ -223,6 +224,7 @@ const SignupPage = () => {
       if (!ben) return false;
       if (!ben.first_name.trim()) return false;
       if (ben.requireEmail && !ben.email.trim()) return false;
+      if (emailErrors[idx]) return false;
       return true;
     }
     if (sid === 'eligibility') {
@@ -243,7 +245,11 @@ const SignupPage = () => {
         else if (role === 'beneficiary' && !benefactorEmail.trim()) toast.error('Please enter your benefactor\'s email address');
       }
       if (sid === 'personal' && isMinor && !benefactorEmail.trim()) toast.error('Please enter your benefactor\'s email');
-      if (sid?.startsWith('beneficiary_')) toast.error('Please fill in the required fields');
+      if (sid?.startsWith('beneficiary_')) {
+        const idx = currentStep.benIndex;
+        if (emailErrors[idx]) toast.error(emailErrors[idx]);
+        else toast.error('Please fill in the required fields');
+      }
       if (sid === 'eligibility' && specialStatus.includes('enterprise') && !b2bCodeSignup.trim()) toast.error('Please enter your partner access code');
       if (sid === 'credentials') {
         if (!email.trim()) toast.error('Please enter your email');
@@ -336,6 +342,47 @@ const SignupPage = () => {
     } catch {
       toast.error('Failed to resend code');
     }
+  };
+
+  // Auto-scroll on input focus so next field below is visible
+  const handleFieldFocus = (e) => {
+    if (!scrollRef.current) return;
+    const el = e.target;
+    const fieldContainer = el.closest('.space-y-1, .space-y-1\\.5') || el.parentElement;
+    if (!fieldContainer) return;
+    const nextSibling = fieldContainer.parentElement?.querySelector(`:scope > *:nth-child(${Array.from(fieldContainer.parentElement.children).indexOf(fieldContainer) + 2})`);
+    const targetEl = nextSibling || fieldContainer;
+    setTimeout(() => {
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 300);
+  };
+
+  // Validate beneficiary email: no duplicates across beneficiaries, no existing system users
+  const validateBenEmail = async (emailVal, benIndex) => {
+    if (!emailVal || !emailVal.trim()) {
+      setEmailErrors(prev => { const n = { ...prev }; delete n[benIndex]; return n; });
+      return;
+    }
+    const normalizedEmail = emailVal.toLowerCase().trim();
+
+    // Check for duplicate across other beneficiaries
+    const isDuplicate = beneficiaries.some((b, i) => i !== benIndex && b.email && b.email.toLowerCase().trim() === normalizedEmail);
+    if (isDuplicate) {
+      setEmailErrors(prev => ({ ...prev, [benIndex]: 'This email is already assigned to another beneficiary.' }));
+      return;
+    }
+
+    // Check if email exists in system
+    try {
+      const res = await axios.post(`${API_URL}/auth/check-email`, { email: normalizedEmail });
+      if (res.data.exists) {
+        setEmailErrors(prev => ({ ...prev, [benIndex]: 'This email is already registered in the system.' }));
+        return;
+      }
+    } catch (err) {
+      // Silently fail — don't block signup if check fails
+    }
+    setEmailErrors(prev => { const n = { ...prev }; delete n[benIndex]; return n; });
   };
 
   // Two-phase slide: exit (current slides out) → enter (new slides in)
@@ -494,8 +541,8 @@ const SignupPage = () => {
                 </div>
 
                 {/* Step Content */}
-                <div className="px-5 sm:px-7 pb-5 sm:pb-7 flex flex-col" style={{ height: 500 }}>
-                  <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide px-1" style={getSlideStyle()}>
+                <div className="px-4 sm:px-7 pb-5 sm:pb-7 flex flex-col" style={{ height: 500 }}>
+                  <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide px-2" style={getSlideStyle()}>
                     {/* STEP 0: Name */}
                     {currentStep?.id === 'name' && (
                       <div className="space-y-4 sm:space-y-5">
@@ -641,30 +688,34 @@ const SignupPage = () => {
                             <div className="space-y-1.5">
                               <Label className="text-[#7b879e] text-sm font-medium">First Name <span className="text-red-400">*</span></Label>
                               <Input value={ben.first_name} onChange={(e) => updateBen('first_name', e.target.value)}
-                                placeholder="First name" className={inputClass} />
+                                onFocus={handleFieldFocus} placeholder="First name" className={inputClass} />
                             </div>
                             <div className="space-y-1.5">
                               <Label className="text-[#7b879e] text-sm font-medium">Middle Name</Label>
                               <Input value={ben.middle_name || ''} onChange={(e) => updateBen('middle_name', e.target.value)}
-                                placeholder="Middle name" className={inputClass} />
+                                onFocus={handleFieldFocus} placeholder="Middle name" className={inputClass} />
                             </div>
                           </div>
                           <div className="space-y-1.5">
                             <Label className="text-[#7b879e] text-sm font-medium">Last Name</Label>
                             <Input value={ben.last_name} onChange={(e) => updateBen('last_name', e.target.value)}
-                              placeholder="Last name" className={inputClass} />
+                              onFocus={handleFieldFocus} placeholder="Last name" className={inputClass} />
                           </div>
                           {ben.requireEmail ? (
                             <div className="space-y-1.5">
                               <Label className="text-[#7b879e] text-sm font-medium">Email <span className="text-red-400">*</span></Label>
-                              <Input type="email" value={ben.email} onChange={(e) => updateBen('email', e.target.value)}
-                                placeholder="Their email address" className={inputClass} />
+                              <Input type="email" value={ben.email} onChange={(e) => { updateBen('email', e.target.value); if (emailErrors[idx]) setEmailErrors(prev => { const n = { ...prev }; delete n[idx]; return n; }); }}
+                                onBlur={() => validateBenEmail(ben.email, idx)}
+                                onFocus={handleFieldFocus} placeholder="Their email address" className={`${inputClass} ${emailErrors[idx] ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30' : ''}`} />
+                              {emailErrors[idx] && <p className="text-red-400 text-xs mt-1">{emailErrors[idx]}</p>}
                             </div>
                           ) : (
                             <div className="space-y-1.5">
                               <Label className="text-[#7b879e] text-sm font-medium">Email (optional)</Label>
-                              <Input type="email" value={ben.email || ''} onChange={(e) => updateBen('email', e.target.value)}
-                                placeholder="Their email address (if applicable)" className={inputClass} />
+                              <Input type="email" value={ben.email || ''} onChange={(e) => { updateBen('email', e.target.value); if (emailErrors[idx]) setEmailErrors(prev => { const n = { ...prev }; delete n[idx]; return n; }); }}
+                                onBlur={() => validateBenEmail(ben.email, idx)}
+                                onFocus={handleFieldFocus} placeholder="Their email address (if applicable)" className={`${inputClass} ${emailErrors[idx] ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30' : ''}`} />
+                              {emailErrors[idx] && <p className="text-red-400 text-xs mt-1">{emailErrors[idx]}</p>}
                             </div>
                           )}
                           <div className="space-y-1.5">

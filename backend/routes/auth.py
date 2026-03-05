@@ -51,6 +51,19 @@ def get_client_ip(request: Request) -> str:
 # ===================== AUTH ROUTES =====================
 
 
+class EmailCheckRequest(BaseModel):
+    email: str
+
+
+@router.post("/auth/check-email")
+async def check_email_exists(data: EmailCheckRequest):
+    """Check if an email is already registered. Used during signup to prevent duplicates."""
+    user = await db.users.find_one(
+        {"email": data.email.lower().strip()}, {"_id": 0, "id": 1}
+    )
+    return {"exists": user is not None}
+
+
 @router.post("/auth/login")
 async def login(data: UserLogin, request: Request):
     """Login — verifies credentials, then sends OTP unless user has a daily trust token."""
