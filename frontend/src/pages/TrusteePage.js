@@ -216,7 +216,7 @@ const PaymentForm = ({ task, onPaymentSaved, getAuthHeaders }) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label className="text-[var(--t4)]">Cardholder Name</Label>
+        <Label className="text-[var(--t4)]">Cardholder Name <span className="text-red-400">*</span></Label>
         <Input
           className="input-field"
           placeholder="Name on card"
@@ -228,7 +228,7 @@ const PaymentForm = ({ task, onPaymentSaved, getAuthHeaders }) => {
       </div>
       
       <div className="space-y-2">
-        <Label className="text-[var(--t4)]">Card Number, Expiry & CVC</Label>
+        <Label className="text-[var(--t4)]">Card Number, Expiry & CVC <span className="text-red-400">*</span></Label>
         <div className="p-4 rounded-xl bg-[var(--s)] border border-[var(--b)]" style={{ minHeight: 48 }}>
           <CardElement 
             options={cardElementOptions} 
@@ -239,7 +239,7 @@ const PaymentForm = ({ task, onPaymentSaved, getAuthHeaders }) => {
       </div>
 
       <div className="space-y-2">
-        <Label className="text-[var(--t4)]">Billing ZIP Code</Label>
+        <Label className="text-[var(--t4)]">Billing ZIP Code <span className="text-red-400">*</span></Label>
         <Input
           className="input-field"
           placeholder="e.g., 92101"
@@ -646,7 +646,7 @@ const TrusteePage = () => {
             {editTask && (
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label className="text-[var(--t4)]">Task Title</Label>
+                  <Label className="text-[var(--t4)]">Task Title <span className="text-red-400">*</span></Label>
                   <Input
                     className="input-field"
                     value={editTask.title}
@@ -656,7 +656,7 @@ const TrusteePage = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="text-[var(--t4)]">Task Type</Label>
+                  <Label className="text-[var(--t4)]">Task Type <span className="text-red-400">*</span></Label>
                   <select
                     className="input-field w-full rounded-lg p-3 bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm"
                     value={editTask.type}
@@ -669,7 +669,7 @@ const TrusteePage = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="text-[var(--t4)]">Instructions</Label>
+                  <Label className="text-[var(--t4)]">Instructions <span className="text-red-400">*</span></Label>
                   <textarea
                     className="input-field w-full rounded-lg p-3 min-h-[120px] bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm"
                     value={editTask.desc}
@@ -898,8 +898,8 @@ const TrusteePage = () => {
               <p className="text-sm text-[var(--bl3)] leading-relaxed">Be as detailed as possible. Include names, addresses, account numbers, amounts, and any specific sequencing. The DTS team will use this to build your itemized quote.</p>
             </div>
             <div className="space-y-4">
-              <div><Label className="text-[var(--t4)]">Task Title</Label><Input className="input-field mt-1" value={newTask.title} onChange={e => setNewTask(p => ({ ...p, title: e.target.value }))} placeholder="e.g., Close 5 personal subscription accounts" /></div>
-              <div><Label className="text-[var(--t4)]">Detailed Instructions for the DTS Team</Label>
+              <div><Label className="text-[var(--t4)]">Task Title <span className="text-red-400">*</span></Label><Input className="input-field mt-1" value={newTask.title} onChange={e => setNewTask(p => ({ ...p, title: e.target.value }))} placeholder="e.g., Close 5 personal subscription accounts" /></div>
+              <div><Label className="text-[var(--t4)]">Detailed Instructions for the DTS Team <span className="text-red-400">*</span></Label>
                 <textarea className="input-field mt-1 w-full rounded-lg p-3 min-h-[160px] bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm" value={newTask.desc} onChange={e => setNewTask(p => ({ ...p, desc: e.target.value }))}
                   placeholder={"Describe exactly what you need done. Include:\n\n• Who/what is involved\n• Specific addresses, account names, amounts\n• Required sequence of operations\n• Any special handling requirements\n• What success looks like"} />
               </div>
@@ -1140,7 +1140,7 @@ const TrusteePage = () => {
           {editTask && (
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label className="text-[var(--t4)]">Task Title</Label>
+                <Label className="text-[var(--t4)]">Task Title <span className="text-red-400">*</span></Label>
                 <Input
                   className="input-field"
                   value={editTask.title}
@@ -1150,7 +1150,7 @@ const TrusteePage = () => {
               </div>
               
               <div className="space-y-2">
-                <Label className="text-[var(--t4)]">Task Type</Label>
+                <Label className="text-[var(--t4)]">Task Type <span className="text-red-400">*</span></Label>
                 <select
                   className="input-field w-full rounded-lg p-3 bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm"
                   value={editTask.type}
@@ -1163,7 +1163,7 @@ const TrusteePage = () => {
               </div>
               
               <div className="space-y-2">
-                <Label className="text-[var(--t4)]">Instructions</Label>
+                <Label className="text-[var(--t4)]">Instructions <span className="text-red-400">*</span></Label>
                 <textarea
                   className="input-field w-full rounded-lg p-3 min-h-[120px] bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm"
                   value={editTask.desc}

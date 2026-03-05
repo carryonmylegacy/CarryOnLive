@@ -589,7 +589,7 @@ const BeneficiariesPage = () => {
               
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label className="text-[#94a3b8]">First Name *</Label>
+                  <Label className="text-[#94a3b8]">First Name <span className="text-red-400">*</span></Label>
                   <Input
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
@@ -611,7 +611,7 @@ const BeneficiariesPage = () => {
               
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label className="text-[#94a3b8]">Last Name *</Label>
+                  <Label className="text-[#94a3b8]">Last Name <span className="text-red-400">*</span></Label>
                   <Input
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
@@ -640,7 +640,7 @@ const BeneficiariesPage = () => {
               
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label className="text-[#94a3b8]">Relationship *</Label>
+                  <Label className="text-[#94a3b8]">Relationship <span className="text-red-400">*</span></Label>
                   <Select value={relation} onValueChange={setRelation}>
                     <SelectTrigger className="input-field" data-testid="beneficiary-relation-select">
                       <SelectValue placeholder="Select relationship" />
@@ -684,7 +684,7 @@ const BeneficiariesPage = () => {
               <h3 className="text-sm font-medium text-[#d4af37] uppercase tracking-wide">Contact Information</h3>
               
               <div className="space-y-2">
-                <Label className="text-[#94a3b8]">Email Address *</Label>
+                <Label className="text-[#94a3b8]">Email Address <span className="text-red-400">*</span></Label>
                 <Input
                   type="email"
                   value={email}

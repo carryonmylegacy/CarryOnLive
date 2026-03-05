@@ -253,7 +253,7 @@ const WalletEntryModal = ({ entry, beneficiaries, onClose, onSaved, getAuthHeade
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-[var(--t4)] text-xs">Account Name *</Label>
+              <Label className="text-[var(--t4)] text-xs">Account Name <span className="text-red-400">*</span></Label>
               <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g., Coinbase" className="input-field mt-1" data-testid="wallet-name" />
             </div>
             <div>
@@ -267,7 +267,7 @@ const WalletEntryModal = ({ entry, beneficiaries, onClose, onSaved, getAuthHeade
             </div>
           </div>
           <div>
-            <Label className="text-[var(--t4)] text-xs">Login / Username / Email *</Label>
+            <Label className="text-[var(--t4)] text-xs">Login / Username / Email <span className="text-red-400">*</span></Label>
             <Input value={login} onChange={e => setLogin(e.target.value)} placeholder="username or email" className="input-field mt-1" data-testid="wallet-login" />
           </div>
           <div className="relative">

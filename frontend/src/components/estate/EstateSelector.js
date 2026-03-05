@@ -157,7 +157,7 @@ const EstateSelector = ({ currentEstate, onEstateChange, estates, onEstatesUpdat
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label className="text-[var(--t4)]">Estate Name</Label>
+              <Label className="text-[var(--t4)]">Estate Name <span className="text-red-400">*</span></Label>
               <Input
                 value={newEstateName}
                 onChange={(e) => setNewEstateName(e.target.value)}

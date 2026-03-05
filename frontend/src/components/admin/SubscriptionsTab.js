@@ -349,7 +349,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
             <div className="p-4 rounded-xl mb-4" style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.15)' }}>
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div className="space-y-1">
-                  <Label className="text-xs text-[var(--t4)]">Code *</Label>
+                  <Label className="text-xs text-[var(--t4)]">Code <span className="text-red-400">*</span></Label>
                   <Input value={newCodeForm.code} onChange={e => setNewCodeForm({...newCodeForm, code: e.target.value.toUpperCase()})}
                     placeholder="PARTNER2026" className="input-field text-sm" data-testid="b2b-code-name-input" />
                 </div>

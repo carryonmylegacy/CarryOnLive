@@ -131,7 +131,7 @@ const EmergencyAccessPanel = ({ estates }) => {
             </p>
 
             <div className="space-y-1">
-              <Label className="text-xs text-[#94a3b8]">Estate *</Label>
+              <Label className="text-xs text-[#94a3b8]">Estate <span className="text-red-400">*</span></Label>
               <select
                 value={form.estate_id}
                 onChange={e => setForm(f => ({ ...f, estate_id: e.target.value }))}
@@ -146,7 +146,7 @@ const EmergencyAccessPanel = ({ estates }) => {
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs text-[#94a3b8]">Your Relationship *</Label>
+              <Label className="text-xs text-[#94a3b8]">Your Relationship <span className="text-red-400">*</span></Label>
               <Input
                 value={form.relationship_to_benefactor}
                 onChange={e => setForm(f => ({ ...f, relationship_to_benefactor: e.target.value }))}
@@ -157,7 +157,7 @@ const EmergencyAccessPanel = ({ estates }) => {
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs text-[#94a3b8]">Reason for Request *</Label>
+              <Label className="text-xs text-[#94a3b8]">Reason for Request <span className="text-red-400">*</span></Label>
               <textarea
                 value={form.reason}
                 onChange={e => setForm(f => ({ ...f, reason: e.target.value }))}

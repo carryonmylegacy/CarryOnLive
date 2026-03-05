@@ -687,7 +687,7 @@ const MessagesPage = () => {
             
             {/* Title */}
             <div className="space-y-2">
-              <Label className="text-[#94a3b8]">Message Title</Label>
+              <Label className="text-[#94a3b8]">Message Title <span className="text-red-400">*</span></Label>
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -699,7 +699,7 @@ const MessagesPage = () => {
             
             {/* Content */}
             <div className="space-y-2">
-              <Label className="text-[#94a3b8]">Message Content</Label>
+              <Label className="text-[#94a3b8]">Message Content <span className="text-red-400">*</span></Label>
               <Textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}

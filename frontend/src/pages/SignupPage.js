@@ -878,7 +878,7 @@ const SignupPage = () => {
                         {/* B2B code input — shown when enterprise is selected */}
                         {specialStatus.includes('enterprise') && (
                           <div className="p-3 rounded-xl" style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)' }}>
-                            <Label className="text-[#a78bfa] text-xs font-bold mb-1.5 block">Partner Access Code *</Label>
+                            <Label className="text-[#a78bfa] text-xs font-bold mb-1.5 block">Partner Access Code <span className="text-red-400">*</span></Label>
                             <Input
                               value={b2bCodeSignup}
                               onChange={(e) => setB2bCodeSignup(e.target.value.toUpperCase())}
