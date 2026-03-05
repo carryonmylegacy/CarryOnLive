@@ -3,6 +3,12 @@ import ReactDOM from "react-dom/client";
 import "@/index.css";
 import App from "@/App";
 
+// Detect native app immediately (before React renders) to prevent layout flash
+try {
+  const isCapacitor = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+  if (isCapacitor) document.body.classList.add('native-app');
+} catch {}
+
 // Prevent pinch-to-zoom on iOS PWA/bookmark to make it feel native
 document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
 document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });

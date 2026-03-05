@@ -477,7 +477,7 @@ const MessagesPage = () => {
         </div>
         <Button
           className="gold-button w-full sm:w-auto"
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => { setEditingMessage(null); resetForm(); setShowCreateModal(true); }}
           data-testid="create-message-button"
         >
           <Plus className="w-5 h-5 mr-2" />
@@ -527,7 +527,7 @@ const MessagesPage = () => {
                 <p className="text-[#94a3b8] mb-6">
                   Create your first milestone message
                 </p>
-                <Button className="gold-button" onClick={() => setShowCreateModal(true)}>
+                <Button className="gold-button" onClick={() => { setEditingMessage(null); resetForm(); setShowCreateModal(true); }}>
                   <Plus className="w-5 h-5 mr-2" />
                   Create Message
                 </Button>
