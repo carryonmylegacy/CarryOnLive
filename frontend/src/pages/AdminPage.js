@@ -152,18 +152,6 @@ const AdminPage = () => {
         </div>
       )}
 
-      {/* Platform Controls */}
-      <div className="flex items-center justify-between p-3 rounded-xl" style={{ background: otpDisabled ? 'rgba(239,68,68,0.06)' : 'var(--s)', border: otpDisabled ? '1px solid rgba(239,68,68,0.2)' : '1px solid var(--b)' }}>
-        <div className="flex items-center gap-3">
-          <ShieldCheck className="w-5 h-5" style={{ color: otpDisabled ? '#ef4444' : '#10b981' }} />
-          <div>
-            <span className="text-sm font-bold text-[var(--t)]">OTP Verification</span>
-            <p className="text-[10px] text-[var(--t5)]">{otpDisabled ? 'DISABLED — all users bypass OTP' : 'Enabled — users verify via email OTP'}</p>
-          </div>
-        </div>
-        <Switch checked={!otpDisabled} onCheckedChange={() => toggleOtp()} data-testid="otp-toggle" />
-      </div>
-
       {/* Action Required — items needing admin attention */}
       {stats && (stats.unanswered_support > 0 || stats.pending_certificates > 0 || stats.reviewing_certificates > 0 || stats.pending_verifications > 0 || stats.pending_dts > 0 || stats.pending_family_requests > 0 || stats.pending_deletions > 0) && (
         <div className="glass-card p-4" style={{ borderLeft: '3px solid #F43F5E' }}>
