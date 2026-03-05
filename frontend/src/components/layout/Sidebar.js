@@ -24,6 +24,35 @@ import {
 } from 'lucide-react';
 import { Switch } from '../ui/switch';
 
+const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+const OtpToggle = () => {
+  const [otpDisabled, setOtpDisabled] = useState(false);
+  useEffect(() => {
+    const token = localStorage.getItem('carryon_token');
+    if (token) {
+      axios.get(`${API_URL}/admin/platform-settings`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(res => setOtpDisabled(res.data?.otp_disabled || false))
+        .catch(() => {});
+    }
+  }, []);
+  const toggle = async () => {
+    const newVal = !otpDisabled;
+    setOtpDisabled(newVal);
+    const token = localStorage.getItem('carryon_token');
+    axios.put(`${API_URL}/admin/platform-settings`, { otp_disabled: newVal }, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }).catch(() => setOtpDisabled(!newVal));
+  };
+  return (
+    <div className="mx-3 my-2 flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: otpDisabled ? 'rgba(239,68,68,0.06)' : 'var(--s)', border: `1px solid ${otpDisabled ? 'rgba(239,68,68,0.2)' : 'var(--b)'}` }}>
+      <div className="flex items-center gap-2">
+        <ShieldCheck className="w-4 h-4" style={{ color: otpDisabled ? '#ef4444' : '#10b981' }} />
+        <span className="text-xs font-bold text-[var(--t)]">OTP</span>
+      </div>
+      <Switch checked={!otpDisabled} onCheckedChange={toggle} />
+    </div>
+  );
+};
+
 const Sidebar = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -197,6 +226,11 @@ const Sidebar = () => {
           <span className="sb-logo-subtitle">{getRoleLabel()}</span>
         </div>
       </div>
+
+      {/* Admin OTP Toggle */}
+      {user?.role === 'admin' && (
+        <OtpToggle />
+      )}
 
       {/* Beta Banner */}
       <BetaBanner />
