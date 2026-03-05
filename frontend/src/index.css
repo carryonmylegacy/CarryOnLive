@@ -776,7 +776,7 @@
     padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
     padding-top: env(safe-area-inset-top, 0px);
     touch-action: pan-x pan-y;
-    contain: layout style;
+    contain: style;
   }
 
   /* Native app: header already handles safe-area, reduce main-content padding */
