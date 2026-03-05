@@ -5,9 +5,10 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   Shield, Users, FileKey, FolderLock, FileUp, Loader2,
   Headphones, CreditCard, Activity, Settings,
-  MessageSquare, CheckSquare, AlertTriangle, Clock, ShieldCheck, TrendingUp
+  MessageSquare, CheckSquare, AlertTriangle, Clock, ShieldCheck, TrendingUp, Trash2
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
+import { toast } from '../utils/toast';
 import { Skeleton } from '../components/ui/skeleton';
 import { Switch } from '../components/ui/switch';
 
@@ -59,6 +60,29 @@ const AdminPage = () => {
   const [revenue, setRevenue] = useState(null);
   const [loading, setLoading] = useState(true);
   const [otpDisabled, setOtpDisabled] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
+
+  const handleCleanup = async () => {
+    setCleaning(true);
+    try {
+      const res = await axios.post(`${API_URL}/admin/cleanup-orphans`, {}, getAuthHeaders());
+      const d = res.data.deleted;
+      const total = Object.values(d).reduce((a, b) => a + b, 0);
+      if (total > 0) {
+        toast.success(`Cleaned up ${total} orphaned record(s)`);
+        // Refresh stats
+        const [statsRes, usersRes] = await Promise.all([
+          axios.get(`${API_URL}/admin/stats`, getAuthHeaders()),
+          axios.get(`${API_URL}/admin/users`, getAuthHeaders()),
+        ]);
+        setStats(statsRes.data);
+        setUsers(usersRes.data);
+      } else {
+        toast.success('No orphaned records found');
+      }
+    } catch (err) { toast.error('Cleanup failed'); }
+    finally { setCleaning(false); }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -103,9 +127,22 @@ const AdminPage = () => {
   return (
     <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in max-w-full overflow-x-hidden" data-testid="admin-dashboard">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Admin Dashboard</h1>
-        <p className="text-xs sm:text-sm text-[var(--t5)]">Platform Management · Transition Verification · Trustee Services</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Admin Dashboard</h1>
+          <p className="text-xs sm:text-sm text-[var(--t5)]">Platform Management · Transition Verification · Trustee Services</p>
+        </div>
+        <button
+          onClick={handleCleanup}
+          disabled={cleaning}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold text-[var(--t5)] hover:text-[var(--t3)] transition-colors"
+          style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+          title="Remove orphaned records from deleted users"
+          data-testid="admin-cleanup-btn"
+        >
+          {cleaning ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+          Clean Up
+        </button>
       </div>
 
       {/* Revenue Analytics */}
