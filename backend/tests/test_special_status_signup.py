@@ -12,7 +12,7 @@ import pytest
 import requests
 
 BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://vault-secure-56.preview.emergentagent.com"
+    "REACT_APP_BACKEND_URL", "https://vault-admin-metrics.preview.emergentagent.com"
 ).rstrip("/")
 
 
