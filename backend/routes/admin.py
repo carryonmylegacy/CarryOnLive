@@ -129,11 +129,39 @@ async def get_public_dev_switcher_config():
 
 @router.get("/admin/users")
 async def get_all_users(current_user: dict = Depends(get_current_user)):
-    """Get all users with subscription info — admin only"""
+    """Get all users with subscription info and beneficiary tree — admin only"""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
-    # Attach subscription info to each user
+
+    # Build estate owner → beneficiaries map
+    estates = await db.estates.find(
+        {}, {"_id": 0, "id": 1, "owner_id": 1}
+    ).to_list(10000)
+    estate_by_owner = {e["owner_id"]: e["id"] for e in estates}
+
+    all_bens = await db.beneficiaries.find(
+        {},
+        {
+            "_id": 0,
+            "id": 1,
+            "estate_id": 1,
+            "name": 1,
+            "email": 1,
+            "relation": 1,
+            "user_id": 1,
+            "is_stub": 1,
+            "invitation_status": 1,
+        },
+    ).to_list(100000)
+
+    bens_by_estate = {}
+    for b in all_bens:
+        eid = b.get("estate_id")
+        if eid:
+            bens_by_estate.setdefault(eid, []).append(b)
+
+    # Attach subscription info and linked beneficiaries to each user
     for u in users:
         sub = await db.user_subscriptions.find_one(
             {"user_id": u["id"]},
@@ -147,6 +175,12 @@ async def get_all_users(current_user: dict = Depends(get_current_user)):
             },
         )
         u["subscription"] = sub
+
+        # For benefactors, attach their beneficiary list
+        if u.get("role") == "benefactor":
+            estate_id = estate_by_owner.get(u["id"])
+            u["linked_beneficiaries"] = bens_by_estate.get(estate_id, [])
+
     return users
 
 

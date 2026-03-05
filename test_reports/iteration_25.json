@@ -67,7 +67,7 @@
   "seed_data_creation": "None - used existing test data",
   "retest_needed": false,
   "should_main_agent_self_test": false,
-  "context_for_next_testing_agent": "Security hardening iteration 25 complete. All 6 security headers (X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy, HSTS) verified. Dev-login restricted to admin role (403 for non-admin). Rate limiting configured (20 req/60s on auth endpoints). CORS tightened. App URL: https://vault-secure-56.preview.emergentagent.com. Beta mode is ON.",
+  "context_for_next_testing_agent": "Security hardening iteration 25 complete. All 6 security headers (X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy, HSTS) verified. Dev-login restricted to admin role (403 for non-admin). Rate limiting configured (20 req/60s on auth endpoints). CORS tightened. App URL: https://vault-admin-metrics.preview.emergentagent.com. Beta mode is ON.",
   "features_verified": {
     "security_headers": {
       "status": "WORKING",

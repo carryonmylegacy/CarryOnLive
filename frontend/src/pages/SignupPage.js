@@ -94,17 +94,25 @@ const SignupPage = () => {
   const userAge = dateOfBirth ? Math.floor((Date.now() - new Date(dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null;
   const isMinor = userAge !== null && userAge < 18;
 
-  // Generate beneficiary slots based on marital status + dependents
+  const isNewAdult = userAge !== null && userAge >= 18 && userAge <= 25 && role === 'benefactor';
+
+  // Generate beneficiary slots based on marital status + dependents (or parents for new adults)
   useEffect(() => {
     const slots = [];
-    if (maritalStatus === 'married' || maritalStatus === 'domestic_partnership') {
-      slots.push({ relation: 'Spouse', requireEmail: true });
-    }
-    for (let i = 0; i < dependentsOver18; i++) {
-      slots.push({ relation: `Adult Dependent ${i + 1}`, requireEmail: true });
-    }
-    for (let i = 0; i < dependentsUnder18; i++) {
-      slots.push({ relation: `Minor Dependent ${i + 1}`, requireEmail: false });
+    if (isNewAdult) {
+      // New adults: prompt to add parents, not dependents
+      slots.push({ relation: 'Parent / Guardian 1', requireEmail: true });
+      slots.push({ relation: 'Parent / Guardian 2', requireEmail: true });
+    } else {
+      if (maritalStatus === 'married' || maritalStatus === 'domestic_partnership') {
+        slots.push({ relation: 'Spouse', requireEmail: true });
+      }
+      for (let i = 0; i < dependentsOver18; i++) {
+        slots.push({ relation: `Adult Dependent ${i + 1}`, requireEmail: true });
+      }
+      for (let i = 0; i < dependentsUnder18; i++) {
+        slots.push({ relation: `Minor Dependent ${i + 1}`, requireEmail: false });
+      }
     }
     // Preserve existing data, add new slots, trim excess
     setBeneficiaries(prev => {
@@ -122,7 +130,7 @@ const SignupPage = () => {
       }));
       return updated;
     });
-  }, [maritalStatus, dependentsOver18, dependentsUnder18, lastName]);
+  }, [maritalStatus, dependentsOver18, dependentsUnder18, lastName, isNewAdult]);
 
   // Dynamic steps
   const computeSteps = () => {
@@ -139,6 +147,15 @@ const SignupPage = () => {
     steps.push({ id: 'role', label: 'Role', icon: Users });
     if (role === 'beneficiary') {
       // Beneficiary: skip marital, dependents, eligibility
+      steps.push({ id: 'credentials', label: 'Login', icon: Lock });
+      return steps;
+    }
+    if (isNewAdult) {
+      // New adults: skip marital step AND eligibility — go straight to parent enrollment → credentials
+      // They auto-qualify for New Adult tier; no verification needed
+      beneficiaries.forEach((ben, idx) => {
+        steps.push({ id: `beneficiary_${idx}`, label: ben.relation, icon: Users, benIndex: idx });
+      });
       steps.push({ id: 'credentials', label: 'Login', icon: Lock });
       return steps;
     }
@@ -598,13 +615,18 @@ const SignupPage = () => {
                       const updateBen = (field, value) => {
                         setBeneficiaries(prev => prev.map((b, i) => i === idx ? { ...b, [field]: value } : b));
                       };
+                      const isParentStep = isNewAdult && ben.relation?.startsWith('Parent');
                       return (
                         <div className="space-y-3">
                           <div>
                             <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
                               {ben.relation}
                             </h2>
-                            <p className="text-[#6b7a90] text-sm">Enter their details to add them as a beneficiary.</p>
+                            <p className="text-[#6b7a90] text-sm">
+                              {isParentStep
+                                ? 'Give them access to your Power of Attorney, Living Will, and estate — so they can act on your behalf if something happens.'
+                                : 'Enter their details to add them as a beneficiary.'}
+                            </p>
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1.5">
@@ -774,6 +796,16 @@ const SignupPage = () => {
                               />
                             </div>
                             <p className="text-[#525c72] text-[10px]">Links your account to their estate plan.</p>
+                          </div>
+                        )}
+
+                        {/* New Adult info banner */}
+                        {role === 'benefactor' && isNewAdult && (
+                          <div className="p-3 rounded-xl" style={{ background: 'rgba(183,148,246,0.06)', border: '1px solid rgba(183,148,246,0.15)' }}>
+                            <p className="text-[#B794F6] text-xs leading-relaxed flex items-start gap-2">
+                              <Award className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                              As a New Adult (18-25), you'll set up your parents as beneficiaries so they can access your POA and Living Will if needed. You qualify for our New Adult tier — no additional verification required.
+                            </p>
                           </div>
                         )}
                       </div>
