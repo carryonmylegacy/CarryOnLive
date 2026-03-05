@@ -449,7 +449,7 @@ const SignupPage = () => {
               transform: entered ? 'translateX(0)' : 'translateX(40px)',
               transition: 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.3s',
             }}>
-              <div className="w-full rounded-2xl relative" style={{
+              <div className="w-full max-w-[100vw] overflow-hidden rounded-2xl relative" style={{
                 background: 'linear-gradient(160deg, rgba(18,28,48,0.97), rgba(12,20,38,0.99))',
                 border: '1px solid rgba(212,175,55,0.12)',
                 boxShadow: '0 8px 80px rgba(0,0,0,0.5), 0 0 50px rgba(212,175,55,0.02)',
@@ -459,7 +459,7 @@ const SignupPage = () => {
 
                 {/* Progress Bar */}
                 <div className="px-5 sm:px-7 pt-5 sm:pt-7 pb-2">
-                  <div className="flex items-center gap-1 mb-3">
+                  <div className="flex items-center gap-0.5 sm:gap-1 mb-3 overflow-hidden">
                     {STEPS.map((s, i) => (
                       <div key={s.id} className="flex items-center flex-1">
                         <button
@@ -467,7 +467,7 @@ const SignupPage = () => {
                           className="flex items-center gap-1.5 sm:gap-2 group"
                           style={{ cursor: i < step ? 'pointer' : 'default' }}
                         >
-                          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 flex-shrink-0" style={{
+                          <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold transition-all duration-500 flex-shrink-0" style={{
                             background: i <= step ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'rgba(255,255,255,0.05)',
                             color: i <= step ? '#080e1a' : '#3a4a63',
                             boxShadow: i === step ? '0 0 16px rgba(212,175,55,0.4)' : 'none',
@@ -590,18 +590,18 @@ const SignupPage = () => {
                         )}
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1.5">
-                            <Label className="text-[#7b879e] text-sm font-medium">Dependents (18+)</Label>
-                            <Select value={String(dependentsOver18)} onValueChange={(v) => setDependentsOver18(parseInt(v))}>
-                              <SelectTrigger className={selectClass} data-testid="signup-dependents-over"><SelectValue placeholder="0" /></SelectTrigger>
+                            <Label className="text-[#7b879e] text-sm font-medium">Under 18</Label>
+                            <Select value={String(dependentsUnder18)} onValueChange={(v) => setDependentsUnder18(parseInt(v))}>
+                              <SelectTrigger className={selectClass} data-testid="signup-dependents-under"><SelectValue placeholder="0" /></SelectTrigger>
                               <SelectContent className="bg-[#141C33] border-[#1a2a42]">
                                 {[...Array(11)].map((_, i) => <SelectItem key={i} value={String(i)}>{i}</SelectItem>)}
                               </SelectContent>
                             </Select>
                           </div>
                           <div className="space-y-1.5">
-                            <Label className="text-[#7b879e] text-sm font-medium">Dependents (Under 18)</Label>
-                            <Select value={String(dependentsUnder18)} onValueChange={(v) => setDependentsUnder18(parseInt(v))}>
-                              <SelectTrigger className={selectClass} data-testid="signup-dependents-under"><SelectValue placeholder="0" /></SelectTrigger>
+                            <Label className="text-[#7b879e] text-sm font-medium">18+</Label>
+                            <Select value={String(dependentsOver18)} onValueChange={(v) => setDependentsOver18(parseInt(v))}>
+                              <SelectTrigger className={selectClass} data-testid="signup-dependents-over"><SelectValue placeholder="0" /></SelectTrigger>
                               <SelectContent className="bg-[#141C33] border-[#1a2a42]">
                                 {[...Array(11)].map((_, i) => <SelectItem key={i} value={String(i)}>{i}</SelectItem>)}
                               </SelectContent>
