@@ -67,7 +67,7 @@ const EstateSelector = ({ currentEstate, onEstateChange, estates, onEstatesUpdat
   };
 
   const handleDeleteEstate = async (estateId) => {
-    if (!confirm('Are you sure you want to delete this estate? This will delete all documents, messages, and beneficiaries.')) {
+    if (!window.confirm('Are you sure you want to delete this estate? This will delete all documents, messages, and beneficiaries.')) {
       return;
     }
     
