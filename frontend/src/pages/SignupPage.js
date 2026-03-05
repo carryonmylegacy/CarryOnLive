@@ -56,7 +56,7 @@ const usStates = [
 ];
 
 // Steps are computed dynamically based on form state
-const inputClass = "h-14 px-4 bg-[#0b1322] border border-[#1a2a42] text-white text-base placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/20 focus:outline-none rounded-xl w-full";
+const inputClass = "h-14 px-4 bg-[#0b1322] border border-[#1a2a42] text-white text-base placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-1 focus:ring-inset focus:ring-[#d4af37]/30 focus:outline-none rounded-xl w-full";
 const dateInputClass = inputClass + " pr-2";
 const selectClass = "h-14 bg-[#0b1322] border-[#1a2a42] text-white text-base rounded-xl [&>span]:text-white";
 
@@ -493,7 +493,7 @@ const SignupPage = () => {
 
                 {/* Step Content */}
                 <div className="px-5 sm:px-7 pb-5 sm:pb-7 flex flex-col" style={{ height: 500 }}>
-                  <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide" style={getSlideStyle()}>
+                  <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide px-[3px]" style={getSlideStyle()}>
                     {/* STEP 0: Name */}
                     {currentStep?.id === 'name' && (
                       <div className="space-y-4 sm:space-y-5">
