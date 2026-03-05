@@ -229,6 +229,108 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
     }
 
 
+@router.get("/admin/revenue-metrics")
+async def get_revenue_metrics(current_user: dict = Depends(get_current_user)):
+    """Revenue analytics — admin only."""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    now = datetime.now(timezone.utc)
+    this_month_start = now.replace(
+        day=1, hour=0, minute=0, second=0, microsecond=0
+    ).isoformat()
+    last_month_start = (
+        (now.replace(day=1) - timedelta(days=1))
+        .replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        .isoformat()
+    )
+    last_month_end = now.replace(
+        day=1, hour=0, minute=0, second=0, microsecond=0
+    ).isoformat()
+
+    # Active subscriptions with their plan prices
+    active_subs = await db.subscriptions.find(
+        {"status": "active"},
+        {"_id": 0, "plan_id": 1, "amount": 1, "billing_cycle": 1, "created_at": 1},
+    ).to_list(100000)
+
+    # Calculate MRR from active subscriptions
+    mrr = 0.0
+    for sub in active_subs:
+        amount = sub.get("amount", 0) or 0
+        cycle = sub.get("billing_cycle", "monthly")
+        if cycle == "annual":
+            mrr += amount / 12
+        elif cycle == "quarterly":
+            mrr += amount / 3
+        else:
+            mrr += amount
+
+    arr = mrr * 12
+
+    # Total revenue (all time) from completed payments
+    payments = await db.payments.find(
+        {"status": "succeeded"}, {"_id": 0, "amount": 1, "created_at": 1}
+    ).to_list(100000)
+    total_revenue = sum(p.get("amount", 0) for p in payments) / 100  # cents to dollars
+
+    # This month's revenue
+    this_month_payments = [
+        p for p in payments if p.get("created_at", "") >= this_month_start
+    ]
+    revenue_this_month = sum(p.get("amount", 0) for p in this_month_payments) / 100
+
+    # Last month's revenue
+    last_month_payments = [
+        p
+        for p in payments
+        if last_month_start <= p.get("created_at", "") < last_month_end
+    ]
+    revenue_last_month = sum(p.get("amount", 0) for p in last_month_payments) / 100
+
+    # MoM growth rate
+    if revenue_last_month > 0:
+        mom_growth = round(
+            ((revenue_this_month - revenue_last_month) / revenue_last_month) * 100, 1
+        )
+    else:
+        mom_growth = 0 if revenue_this_month == 0 else 100
+
+    # ARPU (Average Revenue Per User)
+    total_paying = len(active_subs)
+    arpu_monthly = round(mrr / max(total_paying, 1), 2)
+    arpu_annual = round(arr / max(total_paying, 1), 2)
+
+    # Churn: users who cancelled this month
+    cancelled_this_month = await db.subscriptions.count_documents(
+        {"status": "cancelled", "cancelled_at": {"$gte": this_month_start}}
+    )
+    total_subs_start_of_month = total_paying + cancelled_this_month
+    churn_rate = round(
+        (cancelled_this_month / max(total_subs_start_of_month, 1)) * 100, 1
+    )
+
+    # LTV estimate (ARPU / churn rate)
+    if churn_rate > 0:
+        ltv = round(arpu_monthly / (churn_rate / 100), 2)
+    else:
+        ltv = arpu_annual * 3  # Assume 3-year lifetime if no churn yet
+
+    return {
+        "mrr": round(mrr, 2),
+        "arr": round(arr, 2),
+        "total_revenue": round(total_revenue, 2),
+        "revenue_this_month": round(revenue_this_month, 2),
+        "revenue_last_month": round(revenue_last_month, 2),
+        "mom_growth": mom_growth,
+        "paying_subscribers": total_paying,
+        "arpu_monthly": arpu_monthly,
+        "arpu_annual": arpu_annual,
+        "churn_rate": churn_rate,
+        "ltv": round(ltv, 2),
+    }
+
+
 @router.get("/admin/launch-metrics")
 async def get_launch_metrics(current_user: dict = Depends(get_current_user)):
     """Real-time launch metrics — admin only."""

@@ -110,4 +110,5 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - Fix native app download button (use share sheet instead of blob download)
 - Remove debug 5-tap overlay from header
 - **P1: Share Extension — full native setup** — iOS Share Extension target needs to be added in Xcode (plugin installed, web handler built, Info.plist configured). Also needs: macOS share sheet support, Android intent-filter for receiving shared files, Windows/PC drag-and-drop upload via web. Walk user through Xcode target creation on next Codemagic build.
-- **P1: Apple Passkeys** — (see above)
+- **P1: Operations Admin Page** — Separate admin portal for Chief of Staff. Everything except revenue analytics. Focused on platform operations: support tickets, verifications, transitions, user management, system health. Accessible via a new role or tab.
+- **P1: Revenue Analytics on Master Admin** — Add top-of-dashboard revenue tiles: MRR, ARR, total revenue, growth rate (MoM), ARPU, churn rate, LTV. Each tile shows monthly + annual. Positioned above existing metrics.

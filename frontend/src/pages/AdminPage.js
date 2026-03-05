@@ -56,20 +56,23 @@ const AdminPage = () => {
 
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState(null);
+  const [revenue, setRevenue] = useState(null);
   const [loading, setLoading] = useState(true);
   const [otpDisabled, setOtpDisabled] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [usersRes, statsRes, settingsRes] = await Promise.all([
+        const [usersRes, statsRes, settingsRes, revenueRes] = await Promise.all([
           axios.get(`${API_URL}/admin/users`, getAuthHeaders()),
           axios.get(`${API_URL}/admin/stats`, getAuthHeaders()),
           axios.get(`${API_URL}/admin/platform-settings`, getAuthHeaders()).catch(() => ({ data: {} })),
+          axios.get(`${API_URL}/admin/revenue-metrics`, getAuthHeaders()).catch(() => ({ data: null })),
         ]);
         setUsers(usersRes.data);
         setStats(statsRes.data);
         setOtpDisabled(settingsRes.data?.otp_disabled || false);
+        setRevenue(revenueRes.data);
       } catch (err) { console.error(err); }
       finally { setLoading(false); }
     };
@@ -104,6 +107,50 @@ const AdminPage = () => {
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Admin Dashboard</h1>
         <p className="text-xs sm:text-sm text-[var(--t5)]">Platform Management · Transition Verification · Trustee Services</p>
       </div>
+
+      {/* Revenue Analytics */}
+      {revenue && (
+        <div className="mb-4">
+          <p className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2">Revenue</p>
+          <div className="grid grid-cols-3 gap-2 mb-2">
+            <div className="glass-card p-3 text-center">
+              <div className="text-xl font-bold text-[#22C993]" style={{ fontFamily: 'Outfit, sans-serif' }}>${revenue.mrr.toLocaleString()}</div>
+              <div className="text-[10px] text-[var(--t4)] font-bold">MRR</div>
+              <div className="text-[9px] text-[var(--t5)]">${revenue.arr.toLocaleString()}/yr ARR</div>
+            </div>
+            <div className="glass-card p-3 text-center">
+              <div className="text-xl font-bold text-[#d4af37]" style={{ fontFamily: 'Outfit, sans-serif' }}>${revenue.total_revenue.toLocaleString()}</div>
+              <div className="text-[10px] text-[var(--t4)] font-bold">Total Revenue</div>
+              <div className="text-[9px] text-[var(--t5)]">${revenue.revenue_this_month.toLocaleString()} this month</div>
+            </div>
+            <div className="glass-card p-3 text-center">
+              <div className="text-xl font-bold" style={{ fontFamily: 'Outfit, sans-serif', color: revenue.mom_growth >= 0 ? '#22C993' : '#EF4444' }}>
+                {revenue.mom_growth >= 0 ? '+' : ''}{revenue.mom_growth}%
+              </div>
+              <div className="text-[10px] text-[var(--t4)] font-bold">MoM Growth</div>
+              <div className="text-[9px] text-[var(--t5)]">${revenue.revenue_last_month.toLocaleString()} last month</div>
+            </div>
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            <div className="glass-card p-2.5 text-center">
+              <div className="text-lg font-bold text-[var(--t)]">{revenue.paying_subscribers}</div>
+              <div className="text-[9px] text-[var(--t5)]">Paying</div>
+            </div>
+            <div className="glass-card p-2.5 text-center">
+              <div className="text-lg font-bold text-[#3B82F6]">${revenue.arpu_monthly}</div>
+              <div className="text-[9px] text-[var(--t5)]">ARPU/mo</div>
+            </div>
+            <div className="glass-card p-2.5 text-center">
+              <div className="text-lg font-bold" style={{ color: revenue.churn_rate > 5 ? '#EF4444' : '#22C993' }}>{revenue.churn_rate}%</div>
+              <div className="text-[9px] text-[var(--t5)]">Churn</div>
+            </div>
+            <div className="glass-card p-2.5 text-center">
+              <div className="text-lg font-bold text-[#d4af37]">${revenue.ltv}</div>
+              <div className="text-[9px] text-[var(--t5)]">LTV</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Platform Controls */}
       <div className="flex items-center justify-between p-3 rounded-xl" style={{ background: otpDisabled ? 'rgba(239,68,68,0.06)' : 'var(--s)', border: otpDisabled ? '1px solid rgba(239,68,68,0.2)' : '1px solid var(--b)' }}>
