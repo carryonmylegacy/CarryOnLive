@@ -460,7 +460,7 @@ const SignupPage = () => {
                 <div className="absolute top-0 left-8 right-8 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
 
                 {/* Progress Bar */}
-                <div className="px-4 sm:px-7 pt-5 sm:pt-7 pb-2">
+                <div className="px-5 sm:px-7 pt-5 sm:pt-7 pb-2">
                   <div className="flex items-center gap-0.5 sm:gap-1 mb-3 overflow-hidden">
                     {STEPS.map((s, i) => (
                       <div key={s.id} className="flex items-center flex-1">
@@ -492,7 +492,7 @@ const SignupPage = () => {
                 </div>
 
                 {/* Step Content */}
-                <div className="px-4 sm:px-7 pb-5 sm:pb-7 flex flex-col" style={{ height: 500 }}>
+                <div className="px-5 sm:px-7 pb-5 sm:pb-7 flex flex-col" style={{ height: 500 }}>
                   <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide" style={getSlideStyle()}>
                     {/* STEP 0: Name */}
                     {currentStep?.id === 'name' && (
