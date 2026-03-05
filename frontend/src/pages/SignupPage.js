@@ -55,15 +55,7 @@ const usStates = [
   'VA','WA','WV','WI','WY','DC',
 ];
 
-const STEPS = [
-  { id: 'name', label: 'Name', icon: User, desc: 'As it appears on legal documents' },
-  { id: 'personal', label: 'About You', icon: Heart, desc: 'Personal details for your estate plan' },
-  { id: 'address', label: 'Address', icon: MapPin, desc: 'Your residential address' },
-  { id: 'role', label: 'Role', icon: Users, desc: 'How will you use CarryOn?' },
-  { id: 'eligibility', label: 'Eligibility', icon: Shield, desc: 'Special tier eligibility' },
-  { id: 'credentials', label: 'Login', icon: Lock, desc: 'Email and password' },
-];
-
+// Steps are computed dynamically based on form state
 const inputClass = "h-14 px-4 bg-[#0b1322] border border-[#1a2a42] text-white text-base placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 focus:outline-none rounded-xl w-full";
 const selectClass = "h-14 bg-[#0b1322] border-[#1a2a42] text-white text-base rounded-xl [&>span]:text-white";
 
@@ -94,7 +86,74 @@ const SignupPage = () => {
   const [specialStatus, setSpecialStatus] = useState([]);
   const [benefactorEmail, setBenefactorEmail] = useState('');
   const [b2bCodeSignup, setB2bCodeSignup] = useState('');
+  const [addressLine2, setAddressLine2] = useState('');
+  const [beneficiaries, setBeneficiaries] = useState([]); // [{first_name, last_name, email, dob, same_address, address_street, address_city, address_state, address_zip}]
   const [email, setEmail] = useState('');
+
+  // Compute age from DOB
+  const userAge = dateOfBirth ? Math.floor((Date.now() - new Date(dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null;
+  const isMinor = userAge !== null && userAge < 18;
+
+  // Generate beneficiary slots based on marital status + dependents
+  useEffect(() => {
+    const slots = [];
+    if (maritalStatus === 'married' || maritalStatus === 'domestic_partnership') {
+      slots.push({ relation: 'Spouse', requireEmail: true });
+    }
+    for (let i = 0; i < dependentsOver18; i++) {
+      slots.push({ relation: `Adult Dependent ${i + 1}`, requireEmail: true });
+    }
+    for (let i = 0; i < dependentsUnder18; i++) {
+      slots.push({ relation: `Minor Dependent ${i + 1}`, requireEmail: false });
+    }
+    // Preserve existing data, add new slots, trim excess
+    setBeneficiaries(prev => {
+      const updated = slots.map((slot, idx) => ({
+        ...slot,
+        first_name: prev[idx]?.first_name || '',
+        last_name: prev[idx]?.last_name || lastName,
+        email: prev[idx]?.email || '',
+        dob: prev[idx]?.dob || '',
+        same_address: prev[idx]?.same_address !== undefined ? prev[idx].same_address : true,
+        address_street: prev[idx]?.address_street || '',
+        address_city: prev[idx]?.address_city || '',
+        address_state: prev[idx]?.address_state || '',
+        address_zip: prev[idx]?.address_zip || '',
+      }));
+      return updated;
+    });
+  }, [maritalStatus, dependentsOver18, dependentsUnder18, lastName]);
+
+  // Dynamic steps
+  const computeSteps = () => {
+    const steps = [
+      { id: 'name', label: 'Name', icon: User },
+      { id: 'personal', label: 'About You', icon: Heart },
+    ];
+    if (isMinor) {
+      // Under 18: Name → About You (with benefactor email) → Credentials
+      steps.push({ id: 'credentials', label: 'Login', icon: Lock });
+      return steps;
+    }
+    steps.push({ id: 'address', label: 'Address', icon: MapPin });
+    steps.push({ id: 'role', label: 'Role', icon: Users });
+    if (role === 'beneficiary') {
+      // Beneficiary: skip marital, dependents, eligibility
+      steps.push({ id: 'credentials', label: 'Login', icon: Lock });
+      return steps;
+    }
+    steps.push({ id: 'marital', label: 'Family', icon: Heart });
+    // Add a step for each beneficiary
+    beneficiaries.forEach((ben, idx) => {
+      steps.push({ id: `beneficiary_${idx}`, label: ben.relation, icon: Users, benIndex: idx });
+    });
+    steps.push({ id: 'eligibility', label: 'Eligibility', icon: Shield });
+    steps.push({ id: 'credentials', label: 'Login', icon: Lock });
+    return steps;
+  };
+
+  const STEPS = computeSteps();
+  const currentStep = STEPS[step] || STEPS[0];
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -123,32 +182,48 @@ const SignupPage = () => {
   };
 
   const canAdvance = () => {
-    if (step === 0) return firstName.trim() && lastName.trim();
-    if (step === 1) return true; // optional fields
-    if (step === 2) return addressStreet.trim() && addressCity.trim() && addressState && addressZip.trim();
-    if (step === 3) {
+    const sid = currentStep?.id;
+    if (sid === 'name') return firstName.trim() && lastName.trim();
+    if (sid === 'personal') {
+      if (isMinor) return !!benefactorEmail.trim();
+      return true;
+    }
+    if (sid === 'address') return addressStreet.trim() && addressCity.trim() && addressState && addressZip.trim();
+    if (sid === 'role') {
       if (!role) return false;
       if (role === 'beneficiary' && !benefactorEmail.trim()) return false;
       return true;
     }
-    if (step === 4) {
+    if (sid === 'marital') return true;
+    if (sid?.startsWith('beneficiary_')) {
+      const idx = currentStep.benIndex;
+      const ben = beneficiaries[idx];
+      if (!ben) return false;
+      if (!ben.first_name.trim()) return false;
+      if (ben.requireEmail && !ben.email.trim()) return false;
+      return true;
+    }
+    if (sid === 'eligibility') {
       if (specialStatus.includes('enterprise') && !b2bCodeSignup.trim()) return false;
       return true;
     }
-    if (step === 5) return email.trim() && password.length >= 8 && password === confirmPassword && smsConsent;
+    if (sid === 'credentials') return email.trim() && password.length >= 8 && password === confirmPassword && smsConsent;
     return false;
   };
 
   const handleNext = () => {
     if (!canAdvance()) {
-      if (step === 0) toast.error('Please enter your first and last name');
-      if (step === 2) toast.error('Please enter your full address');
-      if (step === 3) {
+      const sid = currentStep?.id;
+      if (sid === 'name') toast.error('Please enter your first and last name');
+      if (sid === 'address') toast.error('Please enter your full address');
+      if (sid === 'role') {
         if (!role) toast.error('Please select your role');
         else if (role === 'beneficiary' && !benefactorEmail.trim()) toast.error('Please enter your benefactor\'s email address');
       }
-      if (step === 4 && specialStatus.includes('enterprise') && !b2bCodeSignup.trim()) toast.error('Please enter your partner access code');
-      if (step === 5) {
+      if (sid === 'personal' && isMinor && !benefactorEmail.trim()) toast.error('Please enter your benefactor\'s email');
+      if (sid?.startsWith('beneficiary_')) toast.error('Please fill in the required fields');
+      if (sid === 'eligibility' && specialStatus.includes('enterprise') && !b2bCodeSignup.trim()) toast.error('Please enter your partner access code');
+      if (sid === 'credentials') {
         if (!email.trim()) toast.error('Please enter your email');
         else if (password.length < 8) toast.error('Password must be at least 8 characters');
         else if (password !== confirmPassword) toast.error('Passwords do not match');
@@ -156,12 +231,7 @@ const SignupPage = () => {
       }
       return;
     }
-    // Skip eligibility step for beneficiaries (they go straight to credentials)
-    if (step === 3 && role === 'beneficiary') {
-      goTo(5);
-      return;
-    }
-    if (step < 5) goTo(step + 1);
+    if (step < STEPS.length - 1) goTo(step + 1);
     else handleSignup();
   };
 
@@ -182,6 +252,19 @@ const SignupPage = () => {
         address_city: addressCity || null,
         address_state: addressState || null,
         address_zip: addressZip || null,
+        address_line2: addressLine2 || null,
+        beneficiary_enrollments: beneficiaries.filter(b => b.first_name.trim()).map(b => ({
+          first_name: b.first_name,
+          last_name: b.last_name,
+          email: b.email || null,
+          dob: b.dob || null,
+          relation: b.relation,
+          same_address: b.same_address,
+          address_street: b.same_address ? null : b.address_street,
+          address_city: b.same_address ? null : b.address_city,
+          address_state: b.same_address ? null : b.address_state,
+          address_zip: b.same_address ? null : b.address_zip,
+        })),
         email, password, role,
         special_status: specialStatus.length > 0 ? specialStatus : null,
         benefactor_email: role === 'beneficiary' ? benefactorEmail : null,
@@ -392,7 +475,7 @@ const SignupPage = () => {
                 <div className="px-5 sm:px-7 pb-5 sm:pb-7 flex flex-col" style={{ height: 500 }}>
                   <div className="flex-1 overflow-hidden" style={getSlideStyle()}>
                     {/* STEP 0: Name */}
-                    {step === 0 && (
+                    {currentStep?.id === 'name' && (
                       <div className="space-y-4 sm:space-y-5">
                         <div>
                           <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>What's your full legal name?</h2>
@@ -430,11 +513,11 @@ const SignupPage = () => {
                     )}
 
                     {/* STEP 1: Personal */}
-                    {step === 1 && (
+                    {currentStep?.id === 'personal' && (
                       <div className="space-y-3 sm:space-y-4">
                         <div>
                           <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Tell us about yourself</h2>
-                          <p className="text-[#6b7a90] text-sm">Helps EGA analyze your estate under the right state laws.</p>
+                          <p className="text-[#6b7a90] text-sm">Helps personalize your experience.</p>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1.5">
@@ -452,6 +535,28 @@ const SignupPage = () => {
                               className={inputClass} data-testid="signup-dob-input"
                               max={new Date().toISOString().split('T')[0]} />
                           </div>
+                        </div>
+                        {isMinor && (
+                          <div className="space-y-1.5 pt-2">
+                            <Label className="text-[#7b879e] text-sm font-medium">Your Benefactor's Email *</Label>
+                            <div className="relative">
+                              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63]" />
+                              <Input type="email" value={benefactorEmail} onChange={(e) => setBenefactorEmail(e.target.value)}
+                                placeholder="The email your benefactor uses on CarryOn"
+                                className={`${inputClass} pl-11`} data-testid="signup-minor-benefactor-email" />
+                            </div>
+                            <p className="text-[#525c72] text-[10px]">Since you're under 18, you'll be linked to your benefactor's estate.</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Marital Status & Dependents (benefactors only) */}
+                    {currentStep?.id === 'marital' && (
+                      <div className="space-y-3">
+                        <div>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Your Family</h2>
+                          <p className="text-[#6b7a90] text-sm">This helps us set up your beneficiaries.</p>
                         </div>
                         <div className="space-y-1.5">
                           <Label className="text-[#7b879e] text-sm font-medium">Marital Status</Label>
@@ -471,7 +576,6 @@ const SignupPage = () => {
                                 {[...Array(11)].map((_, i) => <SelectItem key={i} value={String(i)}>{i}</SelectItem>)}
                               </SelectContent>
                             </Select>
-                            <p className="text-[#525c72] text-[10px]">Adult children, etc.</p>
                           </div>
                           <div className="space-y-1.5">
                             <Label className="text-[#7b879e] text-sm font-medium">Dependents (Under 18)</Label>
@@ -481,15 +585,81 @@ const SignupPage = () => {
                                 {[...Array(11)].map((_, i) => <SelectItem key={i} value={String(i)}>{i}</SelectItem>)}
                               </SelectContent>
                             </Select>
-                            <p className="text-[#525c72] text-[10px]">Minor children</p>
                           </div>
                         </div>
-                        <p className="text-[#3a4a63] text-xs">All fields optional — helps pre-populate your beneficiary list.</p>
                       </div>
                     )}
 
+                    {/* Beneficiary enrollment tiles (dynamic) */}
+                    {currentStep?.id?.startsWith('beneficiary_') && (() => {
+                      const idx = currentStep.benIndex;
+                      const ben = beneficiaries[idx];
+                      if (!ben) return null;
+                      const updateBen = (field, value) => {
+                        setBeneficiaries(prev => prev.map((b, i) => i === idx ? { ...b, [field]: value } : b));
+                      };
+                      return (
+                        <div className="space-y-3">
+                          <div>
+                            <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                              {ben.relation}
+                            </h2>
+                            <p className="text-[#6b7a90] text-sm">Enter their details to add them as a beneficiary.</p>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                              <Label className="text-[#7b879e] text-sm font-medium">First Name *</Label>
+                              <Input value={ben.first_name} onChange={(e) => updateBen('first_name', e.target.value)}
+                                placeholder="First name" className={inputClass} />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label className="text-[#7b879e] text-sm font-medium">Last Name</Label>
+                              <Input value={ben.last_name} onChange={(e) => updateBen('last_name', e.target.value)}
+                                placeholder="Last name" className={inputClass} />
+                            </div>
+                          </div>
+                          {ben.requireEmail && (
+                            <div className="space-y-1.5">
+                              <Label className="text-[#7b879e] text-sm font-medium">Email *</Label>
+                              <Input type="email" value={ben.email} onChange={(e) => updateBen('email', e.target.value)}
+                                placeholder="Their email address" className={inputClass} />
+                            </div>
+                          )}
+                          <div className="space-y-1.5">
+                            <Label className="text-[#7b879e] text-sm font-medium">Date of Birth</Label>
+                            <Input type="date" value={ben.dob} onChange={(e) => updateBen('dob', e.target.value)}
+                              className={inputClass} max={new Date().toISOString().split('T')[0]} />
+                          </div>
+                          <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                            <input type="checkbox" checked={ben.same_address} onChange={(e) => updateBen('same_address', e.target.checked)}
+                              className="w-4 h-4 rounded" />
+                            <span className="text-sm text-[#94a3b8]">Same address as mine</span>
+                          </div>
+                          {!ben.same_address && (
+                            <div className="space-y-2">
+                              <AddressAutocomplete value={ben.address_street} onChange={(e) => updateBen('address_street', e.target.value)}
+                                onSelect={({ street, city, state, zip }) => {
+                                  setBeneficiaries(prev => prev.map((b, i) => i === idx ? { ...b, address_street: street, address_city: city, address_state: state, address_zip: zip } : b));
+                                }}
+                                placeholder="Their street address" className={inputClass} />
+                              <div className="grid grid-cols-3 gap-2">
+                                <Input value={ben.address_city} onChange={(e) => updateBen('address_city', e.target.value)} placeholder="City" className={inputClass} />
+                                <Select value={ben.address_state} onValueChange={(v) => updateBen('address_state', v)}>
+                                  <SelectTrigger className={selectClass}><SelectValue placeholder="State" /></SelectTrigger>
+                                  <SelectContent className="bg-[#141C33] border-[#1a2a42] max-h-48">
+                                    {usStates.map(st => <SelectItem key={st} value={st}>{st}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                                <Input value={ben.address_zip} onChange={(e) => updateBen('address_zip', e.target.value)} placeholder="ZIP" className={inputClass} maxLength={10} />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
                     {/* STEP 2: Address */}
-                    {step === 2 && (
+                    {currentStep?.id === 'address' && (
                       <div className="space-y-4 sm:space-y-5">
                         <div>
                           <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Your residential address</h2>
@@ -510,6 +680,11 @@ const SignupPage = () => {
                             className={inputClass}
                             data-testid="signup-address-street"
                           />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-[#7b879e] text-sm font-medium">Apt, Suite, Unit (optional)</Label>
+                          <Input value={addressLine2} onChange={(e) => setAddressLine2(e.target.value)}
+                            placeholder="Apt 4B, Suite 200, etc." className={inputClass} data-testid="signup-address-line2" />
                         </div>
                         <div className="grid grid-cols-3 gap-3">
                           <div className="space-y-1.5">
@@ -542,7 +717,7 @@ const SignupPage = () => {
                     )}
 
                     {/* STEP 3: Role */}
-                    {step === 3 && (
+                    {currentStep?.id === 'role' && (
                       <div className="space-y-2.5">
                         <div>
                           <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>How will you use CarryOn?</h2>
@@ -605,7 +780,7 @@ const SignupPage = () => {
                     )}
 
                     {/* STEP 4: Special Eligibility (benefactors only) */}
-                    {step === 4 && (
+                    {currentStep?.id === 'eligibility' && (
                       <div className="space-y-3">
                         <div>
                           <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Special Eligibility</h2>
@@ -673,7 +848,7 @@ const SignupPage = () => {
                     )}
 
                     {/* STEP 5: Credentials */}
-                    {step === 5 && (
+                    {currentStep?.id === 'credentials' && (
                       <div className="space-y-4 sm:space-y-5">
                         <div>
                           <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Secure your account</h2>
@@ -736,11 +911,7 @@ const SignupPage = () => {
                   <div className="flex-shrink-0">
                     <div className="flex items-center justify-between pt-4 sm:pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                     {step > 0 ? (
-                      <button onClick={() => {
-                        // Beneficiaries skip eligibility step (4), go from credentials (5) back to role (3)
-                        if (step === 5 && role === 'beneficiary') goTo(3);
-                        else goTo(step - 1);
-                      }}
+                      <button onClick={() => goTo(step - 1)}
                         className="flex items-center gap-2 text-[#6b7a90] text-sm font-medium hover:text-white transition-colors"
                         data-testid="signup-back-btn">
                         <ArrowLeft className="w-4 h-4" /> Back
@@ -763,7 +934,7 @@ const SignupPage = () => {
                     >
                       {loading ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating...</>
-                      ) : step === 5 ? (
+                      ) : currentStep?.id === 'credentials' ? (
                         <>Create Account <ChevronRight className="w-4 h-4 ml-1" /></>
                       ) : (
                         <>Continue <ArrowRight className="w-4 h-4 ml-1" /></>
