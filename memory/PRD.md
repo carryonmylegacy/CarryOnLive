@@ -128,3 +128,17 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
   - Added optional email field for minor dependents
   - Added red asterisks (`<span className="text-red-400">*</span>`) on all mandatory fields throughout signup (First Name, Last Name, Email, Password, Confirm, Benefactor Email, Street Address, Marital Status, Beneficiary First Name, Beneficiary Email)
   - Fixed "Something went wrong" on IAC page (missing closing brace on `stopAISuggest` function in ChecklistPage.js caused dependent variables to be scoped incorrectly)
+
+### Session Mar 5, 2026 (continued)
+- **Primary Beneficiary Designation Feature (P0)**:
+  - **Backend**: Added `is_primary` field to Beneficiary model. Created `PUT /api/beneficiaries/{id}/set-primary` and `GET /api/beneficiaries/{estate_id}/primary` endpoints. Only one primary per estate (clears existing before setting new). Onboarding progress tracks `designate_primary` completion by checking live data.
+  - **Frontend**: BeneficiariesPage now shows "Designate as Primary" button on each non-stub beneficiary card. Shows green "PRIMARY" badge with Shield icon on the designated beneficiary. Legal disclaimer modal with 4 bullet points about trustee responsibilities before confirming designation.
+  - **Guided Activation Flow**: `designate_primary` is step 3 of 5 in the Getting Started flow (message → document → designate_primary → checklist → guardian). GuidedActivation component has a return popup variant for the primary step.
+
+- **Post-Transition Beneficiary Access Requests**:
+  - **Backend**: `POST /api/beneficiaries/request-access` creates a pending access request. If estate is pre-transition, request goes to the benefactor; if post-transition, it goes to the primary beneficiary (trustee). `GET /api/beneficiaries/access-requests/{estate_id}` lists pending requests. `PUT /api/beneficiaries/access-requests/{request_id}` allows approving/denying requests with automatic beneficiary creation and 30-day grace period on approval.
+  - **Frontend**: BeneficiariesPage shows "Pending Access Requests" section when requests exist, with approve/deny buttons. Push notifications sent to approvers and requesters.
+
+- **Paired Pricing (Post-Transition)**:
+  - **Backend**: Added `paired_price` field to all DEFAULT_PLANS (Premium: $4.99, Standard: $5.99, Base: $6.99, New Adult: $3.99, Military: $3.99, Hospice: $6.99, Veteran: $3.99, Enterprise: $0). `GET /api/subscriptions/status` now returns `paired_price` when estate is transitioned. `PUT /api/admin/plans/{plan_id}/paired-price` allows admin to update paired prices. Plan sync logic updated to merge new fields from code into stored DB plans.
+  - **Frontend**: Admin SubscriptionsTab now has a "Paired Pricing (Post-Transition)" section showing each benefactor tier's paired price with inline editing, matching the existing pricing UI pattern.
