@@ -3,6 +3,7 @@
 import asyncio
 import base64
 import json as json_module
+import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -74,12 +75,13 @@ def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode(), hashed.encode())
 
 
-def create_token(user_id: str, email: str, role: str) -> str:
+def create_token(user_id: str, email: str, role: str, session_id: str = None) -> str:
     now = datetime.now(timezone.utc)
     payload = {
         "user_id": user_id,
         "email": email,
         "role": role,
+        "session_id": session_id or str(uuid.uuid4()),
         "issued_at": now.isoformat(),
         "exp": now + timedelta(hours=JWT_EXPIRATION_HOURS),
     }
@@ -117,6 +119,17 @@ async def get_current_user(
     user = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
+
+    # Single-session enforcement — admin exempt
+    if user.get("role") != "admin":
+        token_session = payload.get("session_id")
+        active_session = user.get("active_session_id")
+        if token_session and active_session and token_session != active_session:
+            raise HTTPException(
+                status_code=401,
+                detail="signed_in_elsewhere",
+            )
+
     return user
 
 

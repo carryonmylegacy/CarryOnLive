@@ -25,6 +25,21 @@ router = APIRouter()
 TRIAL_DURATION_DAYS = 30
 
 
+async def create_session_token(user_id, email, role):
+    """Create a token and store the session_id on the user for single-session enforcement."""
+    import uuid as _uuid
+
+    session_id = str(_uuid.uuid4())
+    token = create_token(user_id, email, role, session_id)
+    # Admin is exempt from single-session — don't overwrite their session
+    if role != "admin":
+        await db.users.update_one(
+            {"id": user_id},
+            {"$set": {"active_session_id": session_id}},
+        )
+    return token
+
+
 def get_client_ip(request: Request) -> str:
     """Get real client IP, accounting for reverse proxies."""
     forwarded = request.headers.get("x-forwarded-for", "")
@@ -79,7 +94,9 @@ async def login(data: UserLogin, request: Request):
             expires = datetime.fromisoformat(trust["expires_at"])
             if datetime.now(timezone.utc) < expires:
                 # Trusted — skip OTP, return token directly
-                token = create_token(user["id"], user["email"], user["role"])
+                token = await create_session_token(
+                    user["id"], user["email"], user["role"]
+                )
                 return TokenResponse(
                     access_token=token,
                     user=UserResponse(
@@ -100,7 +117,7 @@ async def login(data: UserLogin, request: Request):
         {"_id": "global"}, {"_id": 0}
     )
     if platform_settings and platform_settings.get("otp_disabled"):
-        token = create_token(user["id"], user["email"], user["role"])
+        token = await create_session_token(user["id"], user["email"], user["role"])
         await db.users.update_one(
             {"id": user["id"]},
             {"$set": {"last_login_at": datetime.now(timezone.utc).isoformat()}},
@@ -634,7 +651,7 @@ async def verify_otp(data: OTPVerifyWithTrust, request: Request):
             upsert=True,
         )
 
-    token = create_token(user["id"], user["email"], user["role"])
+    token = await create_session_token(user["id"], user["email"], user["role"])
     await db.users.update_one(
         {"id": user["id"]},
         {"$set": {"last_login_at": datetime.now(timezone.utc).isoformat()}},
@@ -711,7 +728,7 @@ async def dev_login(data: UserLogin, request: Request):
                 status_code=403, detail="Invalid admin token for impersonation"
             )
 
-    token = create_token(user["id"], user["email"], user["role"])
+    token = await create_session_token(user["id"], user["email"], user["role"])
     return TokenResponse(
         access_token=token,
         user=UserResponse(
@@ -769,7 +786,7 @@ async def dev_switch(data: DevSwitchRequest, request: Request):
             detail="Stored password is incorrect. Update it in Admin → Dev Switcher.",
         )
 
-    token = create_token(user["id"], user["email"], user["role"])
+    token = await create_session_token(user["id"], user["email"], user["role"])
     return TokenResponse(
         access_token=token,
         user=UserResponse(

@@ -23,6 +23,25 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Global interceptor — detect single-session enforcement
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      res => res,
+      err => {
+        if (err.response?.status === 401 && err.response?.data?.detail === 'signed_in_elsewhere') {
+          localStorage.removeItem('carryon_token');
+          sessionStorage.removeItem('trial_banner_dismissed');
+          setToken(null);
+          setUser(null);
+          alert('Your session ended because you signed in on another device.');
+          window.location.href = '/login';
+        }
+        return Promise.reject(err);
+      }
+    );
+    return () => axios.interceptors.response.eject(interceptor);
+  }, []);
+
   useEffect(() => {
     const initAuth = async () => {
       if (token) {
