@@ -56,7 +56,8 @@ const usStates = [
 ];
 
 // Steps are computed dynamically based on form state
-const inputClass = "h-14 px-4 bg-[#0b1322] border border-[#1a2a42] text-white text-base placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 focus:outline-none rounded-xl w-full";
+const inputClass = "h-14 px-4 bg-[#0b1322] border border-[#1a2a42] text-white text-base placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/20 focus:outline-none rounded-xl w-full";
+const dateInputClass = inputClass + " pr-2";
 const selectClass = "h-14 bg-[#0b1322] border-[#1a2a42] text-white text-base rounded-xl [&>span]:text-white";
 
 const SignupPage = () => {
@@ -551,7 +552,7 @@ const SignupPage = () => {
                           <div className="space-y-1.5">
                             <Label className="text-[#7b879e] text-sm font-medium">Date of Birth</Label>
                             <Input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)}
-                              className={inputClass} data-testid="signup-dob-input"
+                              className={dateInputClass} data-testid="signup-dob-input"
                               max={new Date().toISOString().split('T')[0]} />
                           </div>
                         </div>
@@ -667,7 +668,7 @@ const SignupPage = () => {
                           <div className="space-y-1.5">
                             <Label className="text-[#7b879e] text-sm font-medium">Date of Birth</Label>
                             <Input type="date" value={ben.dob} onChange={(e) => updateBen('dob', e.target.value)}
-                              className={inputClass} max={new Date().toISOString().split('T')[0]} />
+                              className={dateInputClass} max={new Date().toISOString().split('T')[0]} />
                           </div>
                           <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
                             <input type="checkbox" checked={ben.same_address} onChange={(e) => updateBen('same_address', e.target.checked)}
