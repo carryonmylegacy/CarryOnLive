@@ -36,6 +36,8 @@ class UserCreate(BaseModel):
     special_status: Optional[list] = None
     benefactor_email: Optional[str] = None
     b2b_code: Optional[str] = None
+    address_line2: Optional[str] = None
+    beneficiary_enrollments: Optional[list] = None
     role: str = "benefactor"
 
 

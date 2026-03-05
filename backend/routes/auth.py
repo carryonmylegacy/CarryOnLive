@@ -274,71 +274,102 @@ async def register(data: UserCreate):
             "#ec4899",
             "#06b6d4",
         ]
-        color_idx = 0
-        stubs = []
+        beneficiaries_to_insert = []
 
-        # Spouse stub if married
-        if data.marital_status in ("married", "domestic_partnership"):
-            stubs.append(
+        # Use enrolled beneficiaries from signup if provided
+        enrollments = data.beneficiary_enrollments or []
+        for i, ben in enumerate(enrollments):
+            first = ben.get("first_name", "").strip()
+            last = ben.get("last_name", data.last_name).strip()
+            initials = (
+                (first[0] if first else "?") + (last[0] if last else "?")
+            ).upper()
+            beneficiaries_to_insert.append(
                 {
                     "id": str(uuid.uuid4()),
                     "estate_id": estate_id,
-                    "first_name": "",
-                    "last_name": data.last_name,
-                    "name": f"Spouse ({data.last_name})",
-                    "relation": "Spouse",
-                    "email": "",
-                    "initials": "SP",
-                    "avatar_color": avatar_colors[color_idx % len(avatar_colors)],
-                    "invitation_status": "draft",
-                    "is_stub": True,
+                    "first_name": first,
+                    "last_name": last,
+                    "name": f"{first} {last}".strip(),
+                    "relation": ben.get("relation", ""),
+                    "email": ben.get("email", "") or "",
+                    "dob": ben.get("dob"),
+                    "initials": initials,
+                    "avatar_color": avatar_colors[i % len(avatar_colors)],
+                    "invitation_status": "pending" if ben.get("email") else "draft",
+                    "is_stub": not bool(first),
+                    "address_street": ben.get("address_street")
+                    if not ben.get("same_address")
+                    else data.address_street,
+                    "address_city": ben.get("address_city")
+                    if not ben.get("same_address")
+                    else data.address_city,
+                    "address_state": ben.get("address_state")
+                    if not ben.get("same_address")
+                    else data.address_state,
+                    "address_zip": ben.get("address_zip")
+                    if not ben.get("same_address")
+                    else data.address_zip,
                     "created_at": now.isoformat(),
                 }
             )
-            color_idx += 1
 
-        # Adult dependent stubs
-        for i in range(data.dependents_over_18 or 0):
-            stubs.append(
-                {
-                    "id": str(uuid.uuid4()),
-                    "estate_id": estate_id,
-                    "first_name": "",
-                    "last_name": data.last_name,
-                    "name": f"Adult Dependent {i + 1}",
-                    "relation": "Son",
-                    "email": "",
-                    "initials": f"A{i + 1}",
-                    "avatar_color": avatar_colors[color_idx % len(avatar_colors)],
-                    "invitation_status": "draft",
-                    "is_stub": True,
-                    "created_at": now.isoformat(),
-                }
-            )
-            color_idx += 1
+        # Fallback: if no enrollments but marital/dependents info, create stubs
+        if not enrollments:
+            if data.marital_status in ("married", "domestic_partnership"):
+                beneficiaries_to_insert.append(
+                    {
+                        "id": str(uuid.uuid4()),
+                        "estate_id": estate_id,
+                        "first_name": "",
+                        "last_name": data.last_name,
+                        "name": f"Spouse ({data.last_name})",
+                        "relation": "Spouse",
+                        "email": "",
+                        "initials": "SP",
+                        "avatar_color": avatar_colors[0],
+                        "invitation_status": "draft",
+                        "is_stub": True,
+                        "created_at": now.isoformat(),
+                    }
+                )
+            for i in range(data.dependents_over_18 or 0):
+                beneficiaries_to_insert.append(
+                    {
+                        "id": str(uuid.uuid4()),
+                        "estate_id": estate_id,
+                        "first_name": "",
+                        "last_name": data.last_name,
+                        "name": f"Adult Dependent {i + 1}",
+                        "relation": "Son",
+                        "email": "",
+                        "initials": f"A{i + 1}",
+                        "avatar_color": avatar_colors[(i + 1) % len(avatar_colors)],
+                        "invitation_status": "draft",
+                        "is_stub": True,
+                        "created_at": now.isoformat(),
+                    }
+                )
+            for i in range(data.dependents_under_18 or 0):
+                beneficiaries_to_insert.append(
+                    {
+                        "id": str(uuid.uuid4()),
+                        "estate_id": estate_id,
+                        "first_name": "",
+                        "last_name": data.last_name,
+                        "name": f"Minor Dependent {i + 1}",
+                        "relation": "Son",
+                        "email": "",
+                        "initials": f"M{i + 1}",
+                        "avatar_color": avatar_colors[(i + 2) % len(avatar_colors)],
+                        "invitation_status": "draft",
+                        "is_stub": True,
+                        "created_at": now.isoformat(),
+                    }
+                )
 
-        # Minor dependent stubs
-        for i in range(data.dependents_under_18 or 0):
-            stubs.append(
-                {
-                    "id": str(uuid.uuid4()),
-                    "estate_id": estate_id,
-                    "first_name": "",
-                    "last_name": data.last_name,
-                    "name": f"Minor Dependent {i + 1}",
-                    "relation": "Son",
-                    "email": "",
-                    "initials": f"M{i + 1}",
-                    "avatar_color": avatar_colors[color_idx % len(avatar_colors)],
-                    "invitation_status": "draft",
-                    "is_stub": True,
-                    "created_at": now.isoformat(),
-                }
-            )
-            color_idx += 1
-
-        if stubs:
-            await db.beneficiaries.insert_many(stubs)
+        if beneficiaries_to_insert:
+            await db.beneficiaries.insert_many(beneficiaries_to_insert)
 
         # Seed 5 default Immediate Action Checklist items
         default_checklist = [
