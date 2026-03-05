@@ -19,7 +19,7 @@ const STEP_CONFIG = {
   review_readiness: { icon: Sparkles, color: '#d4af37', bg: 'rgba(212,175,55,0.08)', border: 'rgba(212,175,55,0.2)', route: '/guardian', label: 'Consult the Estate Guardian', desc: 'Get an AI analysis of your estate plan' },
 };
 
-const OnboardingWizard = () => {
+const OnboardingWizard = ({ onAllComplete }) => {
   const { user, getAuthHeaders } = useAuth();
   const navigate = useNavigate();
   const [progress, setProgress] = useState(null);
@@ -122,6 +122,7 @@ const OnboardingWizard = () => {
   if (allComplete && !sessionStorage.getItem('carryon_celebration_shown')) {
     sessionStorage.setItem('carryon_celebration_shown', 'true');
     sessionStorage.setItem('carryon_activation_done', 'true');
+    if (onAllComplete) onAllComplete();
   }
 
   if (stepsToShow.length === 0 && !allComplete) return null;

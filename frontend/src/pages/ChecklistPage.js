@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import { ReturnPopup } from '../components/GuidedActivation';
 import {
   CheckSquare, Plus, Trash2, Edit2, Phone, Mail, MapPin, FileText,
   Briefcase, Users, Heart, Shield, Building, Stethoscope, ChevronDown,
@@ -75,6 +77,8 @@ const EMPTY_FORM = {
 
 const ChecklistPage = () => {
   const { getAuthHeaders } = useAuth();
+  const navigate = useNavigate();
+  const [showReturnPopup, setShowReturnPopup] = useState(false);
   const [checklists, setChecklists] = useState([]);
   const [estate, setEstate] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -207,6 +211,26 @@ const ChecklistPage = () => {
 
   const stopAISuggest = () => {
     if (aiAbortRef.current) aiAbortRef.current.abort();
+
+  const handleActivationAction = async (itemId, action) => {
+    try {
+      if (action === 'remove') {
+        await axios.delete(`${API_URL}/checklists/${itemId}`, getAuthHeaders());
+        setChecklists(prev => prev.filter(c => c.id !== itemId));
+      } else {
+        await axios.put(`${API_URL}/checklists/${itemId}`, { activation_status: action }, getAuthHeaders());
+        setChecklists(prev => prev.map(c => c.id === itemId ? { ...c, activation_status: action } : c));
+      }
+    } catch { toast.error('Failed to update'); }
+  };
+
+  const defaultItems = checklists.filter(c => c.is_default);
+  const allDefaultsResolved = defaultItems.length === 0 || defaultItems.every(c => c.activation_status);
+  
+  const handleCompleteChecklist = () => {
+    setShowReturnPopup(true);
+  };
+
   };
 
   const handleAcceptItem = async (itemId) => {
@@ -590,6 +614,22 @@ const ChecklistPage = () => {
                     {item.ai_suggested && item.ai_accepted === true && (
                       <span className="text-[10px] text-[#14b8a6] font-bold">Accepted</span>
                     )}
+                    {item.is_default && !item.activation_status && (
+                      <>
+                        <button onClick={() => handleActivationAction(item.id, 'accepted')} className="px-2 py-1 rounded-lg text-[10px] font-bold text-[#10b981] active:scale-90 transition-transform" style={{ border: '1px solid rgba(16,185,129,0.3)' }}>
+                          Accept
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); openEdit(item); handleActivationAction(item.id, 'edited'); }} className="px-2 py-1 rounded-lg text-[10px] font-bold text-[#d4af37] active:scale-90 transition-transform" style={{ border: '1px solid rgba(212,175,55,0.3)' }}>
+                          Edit
+                        </button>
+                        <button onClick={() => handleActivationAction(item.id, 'remove')} className="px-2 py-1 rounded-lg text-[10px] font-bold text-[#ef4444] active:scale-90 transition-transform" style={{ border: '1px solid rgba(239,68,68,0.3)' }}>
+                          Remove
+                        </button>
+                      </>
+                    )}
+                    {item.is_default && item.activation_status && (
+                      <span className="text-[10px] text-[#10b981] font-bold capitalize">{item.activation_status}</span>
+                    )}
                     <button onClick={(e) => { e.stopPropagation(); openEdit(item); }} className="p-1.5 rounded-lg text-[var(--t5)] active:text-[var(--gold)] transition-colors">
                       <Edit2 className="w-4 h-4" />
                     </button>
@@ -608,6 +648,30 @@ const ChecklistPage = () => {
         </div>
       )}
       </SectionLockedOverlay>
+
+      {/* Complete for Now button — only for default items */}
+      {defaultItems.length > 0 && (
+        <div className="mt-4 text-center">
+          <button
+            onClick={handleCompleteChecklist}
+            disabled={!allDefaultsResolved}
+            className="px-6 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-30"
+            style={{
+              background: allDefaultsResolved ? 'linear-gradient(135deg, #3B82F6, #2563EB)' : 'var(--s)',
+              color: allDefaultsResolved ? '#fff' : 'var(--t5)',
+            }}
+            data-testid="complete-checklist-btn">
+            Complete Checklist Editing for Now
+          </button>
+          {!allDefaultsResolved && (
+            <p className="text-[10px] text-[var(--t5)] mt-2">Accept, edit, or remove each default item to continue</p>
+          )}
+        </div>
+      )}
+
+      {showReturnPopup && (
+        <ReturnPopup step="checklist" onReturn={() => { setShowReturnPopup(false); navigate('/dashboard'); }} />
+      )}
 
       {/* Rejection Feedback Modal */}
       {feedbackItem && (

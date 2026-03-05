@@ -44,6 +44,7 @@ import { SectionLockBanner, SectionLockedOverlay } from '../components/security/
 import { Skeleton } from '../components/ui/skeleton';
 const PDFViewerModal = lazy(() => import('../components/PDFViewerModal'));
 import DocThumbnail from '../components/DocThumbnail';
+import { ReturnPopup } from '../components/GuidedActivation';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -85,6 +86,7 @@ const VaultPage = () => {
   const [showPwEye, setShowPwEye] = useState(false);
   const [showUnlockPwEye, setShowUnlockPwEye] = useState(false);
   const [showInvitePrompt, setShowInvitePrompt] = useState(false);
+  const [showReturnPopup, setShowReturnPopup] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [unlockPassword, setUnlockPassword] = useState('');
   const [unlockBackupCode, setUnlockBackupCode] = useState('');
@@ -198,7 +200,7 @@ const VaultPage = () => {
       // Prompt to invite beneficiaries after first document upload
       if (documents.length === 0 && !sessionStorage.getItem('invite_prompt_shown')) {
         sessionStorage.setItem('invite_prompt_shown', 'true');
-        setTimeout(() => setShowInvitePrompt(true), 1500);
+        setTimeout(() => setShowReturnPopup(true), 500);
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -632,17 +634,13 @@ const VaultPage = () => {
           {filteredDocs.length === 0 ? (
             <Card className="glass-card">
               <CardContent className="p-12 text-center">
-                <FolderOpen className="w-16 h-16 mx-auto text-[#64748b] mb-4" />
-                <h3 className="text-xl font-semibold text-white mb-2">No documents yet</h3>
-                <p className="text-[#94a3b8] mb-6">
-                  Upload your first document to get started
-                </p>
-                <Button
-                  className="gold-button"
-                  onClick={() => setShowUploadModal(true)}
-                >
+                <FolderOpen className="w-16 h-16 mx-auto text-[#10b981] mb-4 opacity-50" />
+                <h3 className="text-xl font-semibold text-white mb-2">Your Vault Awaits</h3>
+                <p className="text-[#94a3b8] mb-2">Securely store your wills, trusts, insurance policies, and other critical documents.</p>
+                <p className="text-xs text-[#64748b] mb-6">AES-256 encrypted. Only PDFs and images accepted — no editable formats.</p>
+                <Button className="gold-button text-base px-8 py-3" onClick={() => setShowUploadModal(true)}>
                   <Plus className="w-5 h-5 mr-2" />
-                  Upload Document
+                  Upload Your First Estate Document
                 </Button>
               </CardContent>
             </Card>
@@ -1403,6 +1401,10 @@ const VaultPage = () => {
       </SectionLockedOverlay>
 
       {/* Invite prompt after first upload */}
+      {showReturnPopup && (
+        <ReturnPopup step="document" onReturn={() => { setShowReturnPopup(false); navigate('/dashboard'); }} />
+      )}
+
       {showInvitePrompt && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowInvitePrompt(false)} />
