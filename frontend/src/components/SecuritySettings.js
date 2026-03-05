@@ -115,7 +115,7 @@ const SecuritySettings = ({ getAuthHeaders }) => {
         {showMasterKeyInput && (
           <div className="mt-4 pt-4 space-y-3" style={{ borderTop: '1px solid var(--b)' }}>
             <div className="space-y-1.5">
-              <Label className="text-xs text-[var(--t4)]">{hasMasterKey ? 'New Master Key' : 'Master Key'}</Label>
+              <Label className="text-xs text-[var(--t4)]">{hasMasterKey ? 'New Master Key' : 'Master Key'} <span className="text-red-400">*</span></Label>
               <Input
                 type="password"
                 value={masterKeyInput}
@@ -410,7 +410,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
         {voiceEnabled && (
           <div className="ml-6 space-y-3">
             <div>
-              <Label className="text-[var(--t4)] text-xs">Your Passphrase</Label>
+              <Label className="text-[var(--t4)] text-xs">Your Passphrase <span className="text-red-400">*</span></Label>
               <Input
                 value={voicePhrase}
                 onChange={e => setVoicePhrase(e.target.value)}
@@ -497,7 +497,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
               </div>
             )}
             <div>
-              <Label className="text-[var(--t4)] text-xs">Your Answer</Label>
+              <Label className="text-[var(--t4)] text-xs">Your Answer <span className="text-red-400">*</span></Label>
               <Input
                 value={answer}
                 onChange={e => setAnswer(e.target.value)}

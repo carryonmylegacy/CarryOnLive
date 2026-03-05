@@ -341,7 +341,7 @@ const UnlockModal = ({ sectionId, settings: s, onClose, onUnlocked }) => {
           {currentStep === 'password' && (
             <div className="space-y-4">
               <div className="relative">
-                <Label className="text-[var(--t4)] text-xs">Section Password</Label>
+                <Label className="text-[var(--t4)] text-xs">Section Password <span className="text-red-400">*</span></Label>
                 <Input
                   type={showPw ? 'text' : 'password'}
                   value={password}
@@ -416,7 +416,7 @@ const UnlockModal = ({ sectionId, settings: s, onClose, onUnlocked }) => {
                 </div>
               </div>
               <div>
-                <Label className="text-[var(--t4)] text-xs">Your Answer</Label>
+                <Label className="text-[var(--t4)] text-xs">Your Answer <span className="text-red-400">*</span></Label>
                 <Input
                   value={securityAnswer}
                   onChange={e => setSecurityAnswer(e.target.value)}

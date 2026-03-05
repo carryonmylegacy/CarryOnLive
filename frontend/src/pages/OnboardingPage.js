@@ -306,22 +306,22 @@ const OnboardingPage = () => {
             {/* Essential Fields */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-[#94a3b8] text-sm">First Name *</Label>
+                <Label className="text-[#94a3b8] text-sm">First Name <span className="text-red-400">*</span></Label>
                 <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="John" className="input-field" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[#94a3b8] text-sm">Last Name *</Label>
+                <Label className="text-[#94a3b8] text-sm">Last Name <span className="text-red-400">*</span></Label>
                 <Input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Smith" className="input-field" />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[#94a3b8] text-sm">Email Address *</Label>
+              <Label className="text-[#94a3b8] text-sm">Email Address <span className="text-red-400">*</span></Label>
               <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="john@email.com" className="input-field" />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[#94a3b8] text-sm">Relationship *</Label>
+              <Label className="text-[#94a3b8] text-sm">Relationship <span className="text-red-400">*</span></Label>
               <Select value={relation} onValueChange={setRelation}>
                 <SelectTrigger className="input-field">
                   <SelectValue placeholder="Select relationship" />

@@ -255,7 +255,7 @@ const AcceptInvitationPage = () => {
 
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <Label className="text-[#94a3b8] text-sm">Password</Label>
+                    <Label className="text-[#94a3b8] text-sm">Password <span className="text-red-400">*</span></Label>
                     <div className="relative">
                       <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63]" />
                       <Input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
@@ -283,7 +283,7 @@ const AcceptInvitationPage = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-[#94a3b8] text-sm">Confirm Password</Label>
+                    <Label className="text-[#94a3b8] text-sm">Confirm Password <span className="text-red-400">*</span></Label>
                     <div className="relative">
                       <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63]" />
                       <Input type={showPassword ? 'text' : 'password'} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}

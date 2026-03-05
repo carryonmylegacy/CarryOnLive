@@ -817,7 +817,7 @@ const VaultPage = () => {
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label className="text-[#94a3b8]">Document Name</Label>
+              <Label className="text-[#94a3b8]">Document Name <span className="text-red-400">*</span></Label>
               <Input
                 value={uploadName}
                 onChange={(e) => setUploadName(e.target.value)}
@@ -828,7 +828,7 @@ const VaultPage = () => {
             </div>
             
             <div className="space-y-2">
-              <Label className="text-[#94a3b8]">Category</Label>
+              <Label className="text-[#94a3b8]">Category <span className="text-red-400">*</span></Label>
               <Select value={uploadCategory} onValueChange={setUploadCategory}>
                 <SelectTrigger className="input-field" data-testid="upload-category-select">
                   <SelectValue />
@@ -865,7 +865,7 @@ const VaultPage = () => {
             
             {uploadLockType === 'password' && (
               <div className="space-y-2">
-                <Label className="text-[#94a3b8]">Set Document Password</Label>
+              <Label className="text-[#94a3b8]">Set Document Password <span className="text-red-400">*</span></Label>
                 <Input
                   type="password"
                   value={uploadLockPassword}
@@ -882,7 +882,7 @@ const VaultPage = () => {
             
             {uploadLockType === 'voice' && (
               <div className="space-y-2">
-                <Label className="text-[#94a3b8]">Set Voice Passphrase</Label>
+              <Label className="text-[#94a3b8]">Set Voice Passphrase <span className="text-red-400">*</span></Label>
                 <Input
                   type="text"
                   value={uploadVoicePassphrase}
@@ -898,7 +898,7 @@ const VaultPage = () => {
             )}
             
             <div className="space-y-2">
-              <Label className="text-[#94a3b8]">File</Label>
+              <Label className="text-[#94a3b8]">File <span className="text-red-400">*</span></Label>
               <div
                 onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = '#d4af37'; }}
                 onDragLeave={(e) => { e.currentTarget.style.borderColor = ''; }}
@@ -1017,7 +1017,7 @@ const VaultPage = () => {
             
             {selectedDoc?.lock_type === 'password' && (
               <div className="space-y-2">
-                <Label className="text-[#94a3b8]">Password</Label>
+                <Label className="text-[#94a3b8]">Password <span className="text-red-400">*</span></Label>
                 <div className="relative">
                   <Input
                     type={showUnlockPwEye ? 'text' : 'password'}
@@ -1256,7 +1256,7 @@ const VaultPage = () => {
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label className="text-[#94a3b8]">Document Name</Label>
+              <Label className="text-[#94a3b8]">Document Name <span className="text-red-400">*</span></Label>
               <Input
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
@@ -1267,7 +1267,7 @@ const VaultPage = () => {
             </div>
             
             <div className="space-y-2">
-              <Label className="text-[#94a3b8]">Category</Label>
+              <Label className="text-[#94a3b8]">Category <span className="text-red-400">*</span></Label>
               <Select value={editCategory} onValueChange={setEditCategory}>
                 <SelectTrigger className="input-field" data-testid="edit-document-category-select">
                   <SelectValue />
@@ -1351,7 +1351,7 @@ const VaultPage = () => {
           </DialogHeader>
           <div className="space-y-3 py-2">
             <div className="space-y-1.5">
-              <Label className="text-[#94a3b8] text-sm">Password (min 4 characters)</Label>
+              <Label className="text-[#94a3b8] text-sm">Password (min 4 characters) <span className="text-red-400">*</span></Label>
               <div className="relative">
                 <Input
                   type={showPwEye ? 'text' : 'password'}
@@ -1368,7 +1368,7 @@ const VaultPage = () => {
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-[#94a3b8] text-sm">Confirm Password</Label>
+              <Label className="text-[#94a3b8] text-sm">Confirm Password <span className="text-red-400">*</span></Label>
               <div className="relative">
                 <Input
                   type={showPwEye ? 'text' : 'password'}
