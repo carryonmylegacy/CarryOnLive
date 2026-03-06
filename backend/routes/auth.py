@@ -813,29 +813,44 @@ async def dev_login(data: UserLogin, request: Request):
 
 @router.post("/auth/dev-switch")
 async def dev_switch(data: DevSwitchRequest, request: Request):
-    """Admin-only impersonation using stored dev_config credentials.
-    The admin token is required. Password is looked up from dev_config on the server."""
-    # Require a valid admin token
+    """Portal switcher: allows switching between configured dev accounts.
+    Requires a valid session token (any role). Password is looked up from dev_config on the server.
+    Security: stored passwords in dev_config are the access gate; only admins can configure them."""
+    # Require a valid session token (any authenticated user)
     auth_header = request.headers.get("authorization", "")
     if not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=403, detail="Admin authorization required")
+        raise HTTPException(status_code=403, detail="Authentication required")
     try:
         token_str = auth_header.split(" ")[1]
         payload = decode_token(token_str)
-        caller = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
-        if not caller or caller.get("role") != "admin":
-            raise HTTPException(
-                status_code=403, detail="Only admins can use dev-switch"
-            )
+        caller = await db.users.find_one(
+            {"id": payload["user_id"]}, {"_id": 0, "id": 1, "email": 1, "role": 1}
+        )
+        if not caller:
+            raise HTTPException(status_code=401, detail="User not found")
     except HTTPException:
         raise
     except Exception:
-        raise HTTPException(status_code=403, detail="Invalid admin token")
+        raise HTTPException(status_code=401, detail="Invalid token")
 
-    # Look up stored password from dev_config
+    # Look up dev_config to verify the caller is an admin or a configured dev account
     config = await db.dev_config.find_one({"id": "dev_switcher"}, {"_id": 0})
-    if not config:
+    if not config or not config.get("enabled", True):
         raise HTTPException(status_code=404, detail="Dev switcher not configured")
+
+    configured_emails = {
+        config.get("benefactor_email", ""),
+        config.get("beneficiary_email", ""),
+    }
+    configured_emails.discard("")
+
+    is_admin = caller.get("role") == "admin"
+    is_configured_account = caller.get("email") in configured_emails
+    if not is_admin and not is_configured_account:
+        raise HTTPException(
+            status_code=403,
+            detail="Only admins or configured dev accounts can use portal switcher",
+        )
 
     stored_password = None
     if config.get("benefactor_email") == data.email:
