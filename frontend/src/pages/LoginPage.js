@@ -178,8 +178,15 @@ const LoginPage = () => {
   // Native app: simplified login — just the card, no website content
   if (isNative) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: 'linear-gradient(168deg, #080e1a 0%, #0d1627 30%, #111d35 60%, #0a1122 100%)' }}>
-        <img src="/carryon-logo.jpg" alt="CarryOn" className="w-[140px] h-auto mb-6" />
+      <div className="fixed inset-0 flex flex-col items-center justify-center px-6" style={{
+        background: 'linear-gradient(168deg, #080e1a 0%, #0d1627 30%, #111d35 60%, #0a1122 100%)',
+        overflow: 'hidden',
+        overscrollBehavior: 'none',
+        touchAction: 'none',
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      }}>
+        <img src="/carryon-logo.jpg" alt="CarryOn" className="w-[180px] h-auto mb-8" />
         <div className="w-full max-w-sm rounded-2xl p-7 relative" style={{
           background: 'linear-gradient(160deg, rgba(17,27,48,0.97), rgba(13,22,40,0.99))',
           border: '1px solid rgba(212,175,55,0.12)',
