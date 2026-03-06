@@ -150,6 +150,7 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
         "progress_pct": int((done / total) * 100) if total else 0,
         "all_complete": all_complete,
         "dismissed": all_complete,
+        "celebration_shown": progress.get("celebration_shown", False),
         "beneficiary_names": ben_names[:3],
     }
 
@@ -183,6 +184,17 @@ async def dismiss_onboarding(current_user: dict = Depends(get_current_user)):
     await db.onboarding_progress.update_one(
         {"user_id": current_user["id"]},
         {"$set": {"dismissed": True, "user_id": current_user["id"]}},
+        upsert=True,
+    )
+    return {"success": True}
+
+
+@router.post("/onboarding/celebration-shown")
+async def mark_celebration_shown(current_user: dict = Depends(get_current_user)):
+    """Mark the celebration as shown so it never appears again."""
+    await db.onboarding_progress.update_one(
+        {"user_id": current_user["id"]},
+        {"$set": {"celebration_shown": True, "user_id": current_user["id"]}},
         upsert=True,
     )
     return {"success": True}
