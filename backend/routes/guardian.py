@@ -546,6 +546,7 @@ Provide a clear, organized analysis with specific findings and recommendations."
                 "user_id": current_user["id"],
                 "role": "assistant",
                 "content": response,
+                "action_result": action_result,
                 "created_at": datetime.now(timezone.utc).isoformat(),
             }
         )
