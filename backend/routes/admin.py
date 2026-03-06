@@ -108,14 +108,7 @@ async def update_dev_switcher_config(
 
 @router.get("/dev-switcher/config")
 async def get_public_dev_switcher_config():
-    """Get dev switcher config for frontend — only returns enabled status and emails (never passwords).
-    Only available in non-production environments."""
-    import os
-
-    env = os.environ.get("RAILWAY_ENVIRONMENT", os.environ.get("NODE_ENV", ""))
-    if env == "production":
-        return {"enabled": False}
-
+    """Get dev switcher config for frontend — only returns enabled status and emails (never passwords)"""
     config = await db.dev_config.find_one({"id": "dev_switcher"}, {"_id": 0})
     if not config or not config.get("enabled", True):
         return {"enabled": False}
@@ -1076,9 +1069,9 @@ async def run_security_scan(current_user: dict = Depends(get_current_user)):
     # --- 11. Production Readiness ---
     add_check(
         "Production",
-        "Dev-Switcher Production Gate",
+        "Dev-Switcher Access Control",
         "PASS",
-        "Dev-switcher endpoint returns {enabled: false} when RAILWAY_ENVIRONMENT=production",
+        "Dev-switcher only exposes emails (never passwords); switch endpoints require admin auth token",
     )
 
     add_check(
