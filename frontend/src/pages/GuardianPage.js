@@ -188,7 +188,7 @@ const GuardianPage = () => {
   const [isListening, setIsListening] = useState(false);
   const [showOnboardingReturn, setShowOnboardingReturn] = useState(false);
   const recognitionRef = useRef(null);
-  const guidedFlowDoneRef = useRef(!!localStorage.getItem('carryon_celebration_shown'));
+  const [guidedFlowDone, setGuidedFlowDone] = useState(false);
 
   // Measure actual header height to position Guardian correctly
   useEffect(() => {
@@ -279,6 +279,10 @@ const GuardianPage = () => {
   useEffect(() => {
     fetchSessions();
     fetchEstate();
+    // Check if onboarding is complete to stop pulse animation
+    axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders())
+      .then(res => { if (res.data?.celebration_shown || res.data?.all_complete) setGuidedFlowDone(true); })
+      .catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -537,7 +541,7 @@ const GuardianPage = () => {
               <div className="grid grid-cols-2 gap-2">
                 {actionButtons.map(({ key, label, icon: Icon, color }) => {
                   const isReadiness = key === 'analyze_readiness';
-                  const shouldBounce = isReadiness && !guidedFlowDoneRef.current;
+                  const shouldBounce = isReadiness && !guidedFlowDone;
                   return (
                   <button key={key} onClick={() => { startNewChat(); setTimeout(() => sendMessage('', key, `chat_${user?.id || 'anon'}_${Date.now().toString(36)}`), 200); }}
                     className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-transform duration-150 active:scale-[0.96] w-full"

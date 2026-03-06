@@ -92,10 +92,10 @@ const DashboardPage = () => {
         if (nextIncomplete && !progressRes.data?.all_complete) {
           setGuidedStep({ ...nextIncomplete, beneficiary_names: progressRes.data?.beneficiary_names || [] });
           setShowGuidedFlow(true);
-        } else if (progressRes.data?.all_complete && !localStorage.getItem('carryon_celebration_shown')) {
-          // All steps complete — show celebration
-          localStorage.setItem('carryon_celebration_shown', 'true');
+        } else if (progressRes.data?.all_complete && !progressRes.data?.celebration_shown) {
+          // All steps complete — show celebration (one-time, persisted on backend)
           guidedDismissedRef.current = true;
+          try { axios.post(`${API_URL}/onboarding/celebration-shown`, {}, getAuthHeaders()); } catch {}
           setTimeout(() => setShowCelebration(true), 600);
         }
       }
@@ -431,10 +431,7 @@ const DashboardPage = () => {
 
       {/* Onboarding Wizard — shown early so it's visible on mobile */}
       <OnboardingWizard onAllComplete={() => {
-        if (!localStorage.getItem('carryon_celebration_shown')) {
-          localStorage.setItem('carryon_celebration_shown', 'true');
-          setTimeout(() => setShowCelebration(true), 1500);
-        }
+        // Celebration is handled by fetchEstateData via backend flag — no-op here
       }} />
 
       {/* Estate Readiness Score Card */}

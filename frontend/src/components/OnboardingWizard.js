@@ -119,14 +119,17 @@ const OnboardingWizard = ({ onAllComplete }) => {
   const benNames = (progress.beneficiary_names || []).slice(0, 3);
   const benLabel = benNames.length > 0 ? benNames.join(', ') : 'your loved ones';
 
-  if (allComplete && !localStorage.getItem('carryon_celebration_shown')) {
-    localStorage.setItem('carryon_celebration_shown', 'true');
-    sessionStorage.setItem('carryon_activation_done', 'true');
+  if (allComplete && !progress.celebration_shown) {
     if (onAllComplete) onAllComplete();
   }
 
-  // After celebration has been shown, hide the wizard permanently (user can re-enable in Settings)
-  if (allComplete && localStorage.getItem('carryon_celebration_shown')) {
+  // After celebration has been shown (persisted on backend), hide the wizard permanently
+  if (allComplete && progress.celebration_shown) {
+    return null;
+  }
+
+  // Also hide if all complete — celebration is handled by DashboardPage
+  if (allComplete) {
     return null;
   }
 
