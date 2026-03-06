@@ -121,6 +121,19 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - **Toast Z-Index Fix**: Toaster component z-index raised to 99999 (from default) so error toasts appear above all modals (Dialog z-50, overlays z-[200]). Users can now see and dismiss toast errors even when a modal is open.
 - **IAC Errors**: The stacking errors from activation_status updates were fixed in a previous session (model fields added). The z-index fix ensures any remaining toast errors are interactable.
 
+### Session Mar 6, 2026 — Major Batch: 6-Step Onboarding, Sidebar Reorder, EGA + MM Improvements
+- **New DAV Step (add_credential)**: Added Step 5 "Store a Digital Account Credential" to onboarding flow (now 6 total). Backend onboarding.py updated with step definition and completion check (`db.credentials.count_documents`). DigitalWalletPage shows ReturnPopup after first credential saved.
+- **Sidebar Reorder**: Menu now: Dashboard, MM, SDV, IAC, DAV, EGA, DTS, Beneficiaries, Legacy Timeline.
+- **Step Counter Font**: Increased to text-xl/text-2xl (60% of title size), bold uppercase.
+- **Name Format**: Frosted glass step 1 now shows "Name 1, Name 2, and/or Name 3" for personalized messaging.
+- **Congrats Pane Fix**: Now triggers from `fetchEstateData` when `all_complete` is true. Uses `sessionStorage('carryon_celebration_shown')` to prevent repeats. Added "re-enable in Settings" note.
+- **EGA Quick Actions**: Changed from flex-wrap to 2-column grid. Buttons fill tiles and are centered. Removed border-top line above prompt.
+- **Voice-to-Text**: Working mic buttons added to EGA landing input (Web Speech API), EGA chat input, and Messages page content textarea ("Dictate Message"). Continuous recognition with interim results.
+- **Copy Button**: Added to all EGA assistant message responses.
+- **Persistent Return Button**: Pulsing gold "Return to Dashboard to complete onboarding" button shows only during Getting Started flow after first EGA response. Never shows again after onboarding.
+- **Signup Underlines**: "Adult" in "Adult Dependent 1" and "Minor" in "Minor Dependent 1" now underlined with gold for clarity.
+- **Address Input Fix**: AddressAutocomplete now accepts className prop for consistent input heights.
+
 ## Pending / Backlog
 - P0: Mobile App rubber-banding/blank screen (Codemagic build validation pending)
 - P1: In-App Viewer for PNG Images (triggers download instead of viewer)
