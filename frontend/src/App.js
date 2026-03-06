@@ -261,41 +261,16 @@ function AppRoutes() {
 }
 
 function App() {
-  // Measure and set safe-area CSS variable based on actual viewport state
+  // Force StatusBar overlay on native iOS so viewport-fit=cover is always active.
+  // Without this, initial load has the system handling safe area AND our CSS adding
+  // padding, causing double spacing. After forcing overlay, our CSS is the sole handler.
   useEffect(() => {
-    function updateSafeArea() {
-      const probe = document.createElement('div');
-      probe.style.cssText = 'position:fixed;top:0;left:0;height:env(safe-area-inset-top,0px);width:0;visibility:hidden;pointer-events:none;';
-      document.body.appendChild(probe);
-      const envValue = probe.offsetHeight;
-      document.body.removeChild(probe);
-
-      // If viewport height ≈ screen height, viewport-fit=cover is active
-      // and WE must handle the safe area. Otherwise, the system handles it.
-      const viewportCoversScreen = window.innerHeight >= (window.screen.height - 10);
-      const effectiveTop = viewportCoversScreen ? envValue : 0;
-      document.documentElement.style.setProperty('--sat', effectiveTop + 'px');
-
-      // Also measure bottom
-      const probeB = document.createElement('div');
-      probeB.style.cssText = 'position:fixed;bottom:0;left:0;height:env(safe-area-inset-bottom,0px);width:0;visibility:hidden;pointer-events:none;';
-      document.body.appendChild(probeB);
-      const envBottom = probeB.offsetHeight;
-      document.body.removeChild(probeB);
-      const effectiveBottom = viewportCoversScreen ? envBottom : 0;
-      document.documentElement.style.setProperty('--sab', effectiveBottom + 'px');
+    if (isNative) {
+      import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
+        StatusBar.setOverlaysWebView({ overlay: true }).catch(() => {});
+        StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
+      }).catch(() => {});
     }
-
-    updateSafeArea();
-    // Re-measure after viewport-fit=cover may activate (slight delay)
-    const t1 = setTimeout(updateSafeArea, 300);
-    const t2 = setTimeout(updateSafeArea, 1000);
-    window.addEventListener('resize', updateSafeArea);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      window.removeEventListener('resize', updateSafeArea);
-    };
   }, []);
 
   // Initialize Capgo live updates and native optimizations
@@ -335,7 +310,7 @@ function App() {
           <DevSwitcher />
           <Toaster 
             position="bottom-center"
-            offset="calc(10rem + var(--sab, 0px))"
+            offset="calc(10rem + env(safe-area-inset-bottom, 0px))"
             duration={Infinity}
             toastOptions={{
               style: {

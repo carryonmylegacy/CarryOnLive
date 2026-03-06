@@ -12,6 +12,7 @@
     "@capacitor/ios": "^6",
     "@capacitor/push-notifications": "^6",
     "@capacitor/share": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.1",
     "@capgo/capacitor-native-biometric": "^8.4.2",
     "@capgo/capacitor-share-target": "^8.0.20",
     "@capgo/capacitor-updater": "^8.43.8",
