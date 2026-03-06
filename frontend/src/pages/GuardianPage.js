@@ -25,7 +25,10 @@ import {
   Trash2,
   Clock,
   Shield,
-  Lock
+  Lock,
+  Copy,
+  Mic,
+  MicOff
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { toast } from '../utils/toast';
@@ -182,6 +185,10 @@ const GuardianPage = () => {
   const guardianRef = useRef(null);
   const [headerHeight, setHeaderHeight] = useState(56);
   const [showReturnPopup, setShowReturnPopup] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [showOnboardingReturn, setShowOnboardingReturn] = useState(false);
+  const recognitionRef = useRef(null);
+  const guidedFlowDoneRef = useRef(!!sessionStorage.getItem('carryon_celebration_shown'));
 
   // Measure actual header height to position Guardian correctly
   useEffect(() => {
@@ -212,6 +219,41 @@ const GuardianPage = () => {
   const inputRef = useRef(null);
   const landingInputRef = useRef(null);
   const abortControllerRef = useRef(null);
+
+  // Voice-to-text using Web Speech API
+  const toggleVoiceInput = useCallback((setter, currentValue) => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error('Voice input is not supported in this browser');
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+    let finalTranscript = currentValue || '';
+    recognition.onresult = (event) => {
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalTranscript += (finalTranscript ? ' ' : '') + event.results[i][0].transcript;
+        } else {
+          interim += event.results[i][0].transcript;
+        }
+      }
+      setter(finalTranscript + (interim ? ' ' + interim : ''));
+    };
+    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => setIsListening(false);
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+  }, [isListening]);
 
   // ─── Data Fetching ───
   const fetchSessions = useCallback(async () => {
@@ -383,7 +425,8 @@ const GuardianPage = () => {
             try {
               await axios.post(`${API_URL}/onboarding/complete-step/review_readiness`, {}, getAuthHeaders());
             } catch {}
-            setTimeout(() => setShowReturnPopup(true), 1500);
+            // Show persistent return button (not popup) during onboarding
+            setShowOnboardingReturn(true);
           }
         }
       }
@@ -491,13 +534,13 @@ const GuardianPage = () => {
             {/* Quick Actions */}
             <div className="glass-card p-4 mb-4">
               <h2 className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider mb-3">Quick Actions</h2>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {actionButtons.map(({ key, label, icon: Icon, color }) => {
                   const isReadiness = key === 'analyze_readiness';
-                  const shouldBounce = isReadiness && !sessionStorage.getItem('carryon_activation_done');
+                  const shouldBounce = isReadiness && !guidedFlowDoneRef.current;
                   return (
                   <button key={key} onClick={() => { startNewChat(); setTimeout(() => sendMessage('', key, `chat_${user?.id || 'anon'}_${Date.now().toString(36)}`), 200); }}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-transform duration-150 active:scale-[0.96]"
+                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-transform duration-150 active:scale-[0.96] w-full"
                     style={{
                       background: `${color}12`, border: `1px solid ${color}25`, color,
                       animation: shouldBounce ? 'gentlePulse 2s ease-in-out infinite' : 'none',
@@ -514,8 +557,8 @@ const GuardianPage = () => {
           </div>
         </div>
 
-        {/* Fixed input at bottom — matches chat view */}
-        <div className="flex-shrink-0 px-3 pb-2 pt-1" style={{ borderTop: '1px solid var(--b)' }}>
+        {/* Fixed input at bottom */}
+        <div className="flex-shrink-0 px-3 pb-2 pt-1">
           <form onSubmit={handleLandingSubmit}>
             <div className="rounded-2xl px-3 py-1.5 max-w-2xl mx-auto" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
               <textarea
@@ -529,7 +572,12 @@ const GuardianPage = () => {
                 style={{ overflow: 'auto', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.15) transparent' }}
                 data-testid="landing-input"
               />
-              <div className="flex items-center justify-end pb-1">
+              <div className="flex items-center justify-between pb-1">
+                <button type="button" onClick={() => toggleVoiceInput(setLandingInput, landingInput)}
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center active:scale-90 transition-transform ${isListening ? 'bg-red-500/20 text-red-400' : 'text-[var(--t5)] hover:text-[var(--t3)]'}`}
+                  data-testid="landing-mic-button">
+                  {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                </button>
                 <button type="submit" disabled={!landingInput.trim()}
                   className="w-8 h-8 rounded-xl flex items-center justify-center active:scale-90 transition-transform disabled:opacity-30"
                   style={{ background: landingInput.trim() ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'var(--s)', color: landingInput.trim() ? '#080e1a' : 'var(--t5)' }}
@@ -614,6 +662,13 @@ const GuardianPage = () => {
                 msg.role === 'user' ? 'bg-[var(--gold)] text-[#0b1120] rounded-tr-md' : 'text-[var(--t2)] rounded-tl-md'
               }`} style={msg.role === 'assistant' ? { background: 'var(--s)', border: '1px solid var(--b)' } : {}}>
                 {msg.role === 'assistant' ? <MarkdownText content={msg.content} /> : <p className="text-sm whitespace-pre-wrap">{msg.content}</p>}
+                {msg.role === 'assistant' && !loading && (
+                  <button onClick={() => { navigator.clipboard.writeText(msg.content); toast.success('Copied to clipboard'); }}
+                    className="mt-2 flex items-center gap-1.5 text-[10px] text-[var(--t5)] hover:text-[var(--gold)] transition-colors"
+                    data-testid={`copy-message-${index}`}>
+                    <Copy className="w-3 h-3" /> Copy
+                  </button>
+                )}
                 {msg.actionBadge && (
                   <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-[#22c993]">
                     <CheckCircle2 className="w-3.5 h-3.5" /> {msg.actionBadge}
@@ -718,6 +773,24 @@ const GuardianPage = () => {
           </div>
         )}
 
+        {/* Persistent "Return to Dashboard" during onboarding */}
+        {showOnboardingReturn && (
+          <div className="flex justify-center px-4 py-2">
+            <button onClick={() => navigate('/dashboard')}
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold transition-transform active:scale-[0.97]"
+              style={{
+                background: 'linear-gradient(135deg, #d4af37, #b8962e)',
+                color: '#080e1a',
+                boxShadow: '0 4px 20px rgba(212,175,55,0.3)',
+                animation: 'onboardingPulse 2.5s ease-in-out infinite',
+              }}
+              data-testid="ega-return-dashboard-btn">
+              Return to Dashboard to complete the onboarding process
+            </button>
+            <style>{`@keyframes onboardingPulse { 0%,100% { transform: scale(1); box-shadow: 0 4px 20px rgba(212,175,55,0.3); } 50% { transform: scale(1.03); box-shadow: 0 6px 28px rgba(212,175,55,0.5); } }`}</style>
+          </div>
+        )}
+
         <div className="flex items-center gap-1.5 justify-center mb-1">
           <span className="text-[9px] text-[var(--t5)]">Encrypted · Not legal advice</span>
         </div>
@@ -738,6 +811,11 @@ const GuardianPage = () => {
             />
             <div className="flex items-center justify-between pt-1 pb-0.5">
               <div className="flex items-center gap-1">
+                <button type="button" onClick={() => toggleVoiceInput(setInput, input)}
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center active:scale-90 transition-transform ${isListening ? 'bg-red-500/20 text-red-400' : 'text-[var(--t5)] hover:text-[var(--t3)]'}`}
+                  data-testid="chat-mic-button">
+                  {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+                </button>
                 {hasConversation && (
                   <>
                     <button type="button" onClick={() => { setShowActions(!showActions); setShowQuestions(false); }}

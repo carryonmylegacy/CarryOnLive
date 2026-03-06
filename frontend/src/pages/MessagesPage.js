@@ -16,6 +16,7 @@ import {
   Send,
   X,
   Mic,
+  MicOff,
   Loader2,
   Camera,
   StopCircle,
@@ -96,6 +97,39 @@ const MessagesPage = () => {
   const chunksRef = useRef([]);
   const streamRef = useRef(null);
   const videoThumbnailRef = useRef(null);
+  const speechRecognitionRef = useRef(null);
+  const [isSpeechListening, setIsSpeechListening] = useState(false);
+
+  const toggleSpeechToText = () => {
+    if (isSpeechListening) {
+      speechRecognitionRef.current?.stop();
+      setIsSpeechListening(false);
+      return;
+    }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) { toast.error('Voice input not supported in this browser'); return; }
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+    let finalTranscript = content || '';
+    recognition.onresult = (event) => {
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalTranscript += (finalTranscript ? ' ' : '') + event.results[i][0].transcript;
+        } else {
+          interim += event.results[i][0].transcript;
+        }
+      }
+      setContent(finalTranscript + (interim ? ' ' + interim : ''));
+    };
+    recognition.onerror = () => setIsSpeechListening(false);
+    recognition.onend = () => setIsSpeechListening(false);
+    speechRecognitionRef.current = recognition;
+    recognition.start();
+    setIsSpeechListening(true);
+  };
 
   // Voice recording state
   const [audioBlob, setAudioBlob] = useState(null);
@@ -762,6 +796,11 @@ const MessagesPage = () => {
                 className="input-field min-h-[120px]"
                 data-testid="message-content-input"
               />
+              <button type="button" onClick={toggleSpeechToText}
+                className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors ${isSpeechListening ? 'bg-red-500/20 text-red-400' : 'text-[var(--t5)] hover:text-[var(--t3)] hover:bg-[var(--s)]'}`}
+                data-testid="message-mic-button">
+                {isSpeechListening ? <><MicOff className="w-3.5 h-3.5" /> Stop Dictation</> : <><Mic className="w-3.5 h-3.5" /> Dictate Message</>}
+              </button>
             </div>
             
             {/* Video Recording */}

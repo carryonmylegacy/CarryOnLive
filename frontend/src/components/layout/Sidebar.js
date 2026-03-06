@@ -98,13 +98,13 @@ const Sidebar = () => {
       title: '',
       items: [
         { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-        { to: '/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
         { to: '/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
+        { to: '/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
         { to: '/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
-        { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
-        { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
-        { to: '/guardian', icon: Sparkles, label: 'Estate Guardian (EGA)' },
         { to: '/digital-wallet', icon: KeyRound, label: 'Digital Access Vault (DAV)' },
+        { to: '/guardian', icon: Sparkles, label: 'Estate Guardian (EGA)' },
+        { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
+        { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
         { to: '/timeline', icon: Clock, label: 'Legacy Timeline' },
       ]
     },

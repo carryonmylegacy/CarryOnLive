@@ -35,6 +35,11 @@ ONBOARDING_STEPS = [
         "description": "Review the steps your loved ones will follow",
     },
     {
+        "key": "add_credential",
+        "label": "Store a Digital Account Credential",
+        "description": "Add a login and password to your Digital Access Vault",
+    },
+    {
         "key": "review_readiness",
         "label": "Consult the Estate Guardian",
         "description": "Get an AI analysis of your estate plan",
@@ -83,6 +88,10 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
                 {"estate_id": estate_id, "activation_status": {"$ne": None}}
             )
             > 0
+        )
+        # DAV credential stored
+        completed["add_credential"] = (
+            await db.credentials.count_documents({"estate_id": estate_id}) > 0
         )
     # review_readiness is manual — preserve from stored progress
     if progress.get("completed_steps", {}).get("review_readiness"):

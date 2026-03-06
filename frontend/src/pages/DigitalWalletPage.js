@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { KeyRound, Plus, Trash2, Edit2, Eye, EyeOff, Shield, Loader2, User, Wallet, Globe, Mail, Cloud, CreditCard, MoreHorizontal, X, Check } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
@@ -9,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
+import { ReturnPopup } from '../components/GuidedActivation';
 import axios from 'axios';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -25,6 +27,7 @@ const CATEGORIES = [
 
 const DigitalWalletPage = () => {
   const { user, getAuthHeaders } = useAuth();
+  const navigate = useNavigate();
   const [entries, setEntries] = useState([]);
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +35,7 @@ const DigitalWalletPage = () => {
   const [editEntry, setEditEntry] = useState(null);
   const [visiblePasswords, setVisiblePasswords] = useState({});
   const [estateId, setEstateId] = useState(null);
+  const [showReturnPopup, setShowReturnPopup] = useState(false);
 
   useEffect(() => { fetchData(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -54,6 +58,20 @@ const DigitalWalletPage = () => {
       console.error('Digital wallet fetch error:', err);
     }
     setLoading(false);
+  };
+
+  const handleCredentialSaved = async () => {
+    setShowAdd(false);
+    setEditEntry(null);
+    await fetchData();
+    // Show return popup for onboarding flow (first credential added)
+    if (!sessionStorage.getItem('carryon_dav_popup_shown')) {
+      sessionStorage.setItem('carryon_dav_popup_shown', 'true');
+      try {
+        await axios.post(`${API_URL}/onboarding/complete-step/add_credential`, {}, getAuthHeaders());
+      } catch {}
+      setTimeout(() => setShowReturnPopup(true), 1000);
+    }
   };
 
   const handleDelete = async (entryId) => {
@@ -189,7 +207,7 @@ const DigitalWalletPage = () => {
           entry={editEntry}
           beneficiaries={beneficiaries}
           onClose={() => { setShowAdd(false); setEditEntry(null); }}
-          onSaved={() => { setShowAdd(false); setEditEntry(null); fetchData(); }}
+          onSaved={handleCredentialSaved}
           getAuthHeaders={getAuthHeaders}
         />
       )}
@@ -201,6 +219,10 @@ const DigitalWalletPage = () => {
         </div>
       </div>
       </SectionLockedOverlay>
+
+      {showReturnPopup && (
+        <ReturnPopup step="credential" onReturn={() => { setShowReturnPopup(false); navigate('/dashboard'); }} onAlternate={() => { setShowReturnPopup(false); setShowAdd(true); }} />
+      )}
     </div>
   );
 };
