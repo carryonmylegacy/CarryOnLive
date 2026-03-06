@@ -78,6 +78,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         ]
         moderate_paths = [
             "/api/auth/register",
+            "/api/auth/check-email",
+            "/api/auth/check-benefactor-email",
             "/api/compliance/data-export",
         ]
         exempt_paths = [
@@ -90,7 +92,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if path in exempt_paths:
             limit = None  # Admin-only endpoints, already auth-gated
         elif path in strict_paths:
-            limit = 200  # Auth endpoints: relaxed for dev/testing
+            limit = 10  # Auth endpoints: strict limit to prevent brute force
         elif path in moderate_paths:
             limit = self.max_requests  # Moderate: 20/min
         elif path.startswith("/api/") and path != "/api/health":

@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
 import { toast } from '../utils/toast';
 import AddressAutocomplete from '../components/AddressAutocomplete';
+import DateMaskInput from '../components/DateMaskInput';
 import axios from 'axios';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -58,53 +59,6 @@ const usStates = [
 // Steps are computed dynamically based on form state
 const inputClass = "h-14 px-4 bg-[#0b1322] border border-[#1a2a42] text-white text-base placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-1 focus:ring-inset focus:ring-[#d4af37]/30 focus:outline-none rounded-xl w-full";
 const selectClass = "h-14 bg-[#0b1322] border-[#1a2a42] text-white text-base rounded-xl [&>span]:text-white";
-
-// Masked date input — replaces <input type="date"> to avoid Safari native rendering clipping
-const DateMaskInput = ({ value, onChange, className, onFocus, ...props }) => {
-  // value is YYYY-MM-DD (internal), display is MM/DD/YYYY
-  const toDisplay = (v) => {
-    if (!v) return '';
-    const parts = v.split('-');
-    if (parts.length === 3) return `${parts[1]}/${parts[2]}/${parts[0]}`;
-    return v;
-  };
-  const [display, setDisplay] = React.useState(toDisplay(value));
-
-  React.useEffect(() => { setDisplay(toDisplay(value)); }, [value]);
-
-  const handleChange = (e) => {
-    let raw = e.target.value.replace(/[^\d]/g, '');
-    if (raw.length > 8) raw = raw.slice(0, 8);
-    let formatted = '';
-    if (raw.length > 0) formatted = raw.slice(0, 2);
-    if (raw.length > 2) formatted += '/' + raw.slice(2, 4);
-    if (raw.length > 4) formatted += '/' + raw.slice(4, 8);
-    setDisplay(formatted);
-    if (raw.length === 8) {
-      const mm = raw.slice(0, 2), dd = raw.slice(2, 4), yyyy = raw.slice(4, 8);
-      const m = parseInt(mm), d = parseInt(dd), y = parseInt(yyyy);
-      if (m >= 1 && m <= 12 && d >= 1 && d <= 31 && y >= 1900 && y <= 2100) {
-        onChange({ target: { value: `${yyyy}-${mm}-${dd}` } });
-      }
-    } else {
-      onChange({ target: { value: '' } });
-    }
-  };
-
-  return (
-    <Input
-      type="text"
-      inputMode="numeric"
-      placeholder="MM/DD/YYYY"
-      value={display}
-      onChange={handleChange}
-      onFocus={onFocus}
-      className={className}
-      maxLength={10}
-      {...props}
-    />
-  );
-};
 
 const SignupPage = () => {
   const navigate = useNavigate();
