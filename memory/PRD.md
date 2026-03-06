@@ -105,6 +105,12 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - **Video Thumbnail/Poster Fixed**: After recording a video in Messages, a poster thumbnail is now generated from the first frame of the recorded video blob (using canvas capture). The `poster` attribute is set on the `<video>` element for reliable cross-browser display. Also generates poster when loading existing videos for editing.
 - **IAC Errors Fixed**: Added `activation_status`, `is_default`, `ai_accepted`, and `is_completed` fields to `ChecklistItemUpdate` Pydantic model. Also added `is_default`, `activation_status`, `ai_accepted` to `ChecklistItem` model. Previously, updating `activation_status` via PUT returned 400 "No fields to update" because the field was silently dropped by Pydantic validation.
 
+### Session Mar 6, 2026 — Smooth Transitions & Light Mode
+- **Dashboard Flash Prevention**: Onboarding progress check now runs in parallel with estate data fetch (not sequentially after). Dashboard content stays opacity:0 until `dashboardReady` state is set via `requestAnimationFrame`, preventing flash of dashboard content before overlay appears.
+- **Smoother Overlay Animations**: Guided overlay uses 0.8s cubic-bezier fade-in (up from 0.5s ease). Bubble content animates in with spring-like easing and 0.2s delay.
+- **Light Mode Support**: All hardcoded dark colors in guided overlay, celebration overlay, and ReturnPopup replaced with CSS custom properties (`--guided-overlay-bg`, `--guided-title`, `--guided-desc`, etc.). Light mode variants defined in `[data-theme="light"]` block in `index.css`.
+- **ReturnPopup Light Mode**: Frosted glass backdrop, title text, subtitle text, and button borders all use CSS variables for theme awareness.
+
 ## Pending / Backlog
 - P0: Mobile App rubber-banding/blank screen (Codemagic build validation pending)
 - P1: In-App Viewer for PNG Images (triggers download instead of viewer)
