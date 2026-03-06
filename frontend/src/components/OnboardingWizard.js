@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Users, FileUp, MessageSquare, CheckSquare,
-  ChevronRight, X, Sparkles, Check
+  ChevronRight, X, Sparkles, Check, KeyRound
 } from 'lucide-react';
 import { Progress } from '../components/ui/progress';
 
@@ -15,6 +15,7 @@ const STEP_CONFIG = {
   upload_document: { icon: FileUp, color: '#10b981', bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.2)', route: '/vault', label: 'Upload an Estate Document', desc: 'Secure your important files in the vault' },
   designate_primary: { icon: Users, color: '#3b82f6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)', route: '/beneficiaries', label: 'Designate Your Primary Beneficiary', desc: 'Choose who will serve as trustee of your estate' },
   customize_checklist: { icon: CheckSquare, color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', route: '/checklist', label: 'Customize Your Action Checklist', desc: 'Review the steps your loved ones will follow' },
+  add_credential: { icon: KeyRound, color: '#06b6d4', bg: 'rgba(6,182,212,0.08)', border: 'rgba(6,182,212,0.2)', route: '/digital-wallet', label: 'Store a Digital Account Credential', desc: 'Add a login and password to your Digital Access Vault' },
   review_readiness: { icon: Sparkles, color: '#d4af37', bg: 'rgba(212,175,55,0.08)', border: 'rgba(212,175,55,0.2)', route: '/guardian', label: 'Consult the Estate Guardian', desc: 'Get an AI analysis of your estate plan' },
 };
 
@@ -93,6 +94,7 @@ const OnboardingWizard = ({ onAllComplete }) => {
 
   const handleStepClick = async (step) => {
     const config = STEP_CONFIG[step.key];
+    if (!config) return;
     if (step.key === 'review_readiness' && !step.completed) {
       try { await axios.post(`${API_URL}/onboarding/complete-step/review_readiness`, {}, getAuthHeaders()); }
       catch (err) { console.error(err); }
@@ -176,6 +178,7 @@ const OnboardingWizard = ({ onAllComplete }) => {
       <div className="space-y-3">
         {stepsToShow.map((step) => {
           const config = STEP_CONFIG[step.key];
+          if (!config) return null;
           const Icon = config.icon;
           const isPop = popping[step.key];
           const isComplete = step.completed && !isPop;

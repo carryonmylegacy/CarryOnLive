@@ -54,11 +54,11 @@ def login_user(session, email, password, trust_device=True):
     if data.get("access_token"):
         # Direct login without OTP (trusted device)
         return data.get("access_token"), data.get("user", {})
-    
+
     # OTP required
     if not data.get("requires_otp", False):
         return None, None
-        
+
     # Step 2: Get OTP from logs
     otp = get_otp_from_logs(email)
     if not otp:
@@ -66,8 +66,8 @@ def login_user(session, email, password, trust_device=True):
 
     # Step 3: Verify OTP
     response = session.post(
-        f"{BASE_URL}/api/auth/verify-otp", 
-        json={"email": email, "otp": otp, "trust_device": trust_device}
+        f"{BASE_URL}/api/auth/verify-otp",
+        json={"email": email, "otp": otp, "trust_device": trust_device},
     )
     if response.status_code != 200:
         return None, None
@@ -84,7 +84,7 @@ class TestDTSDeleteAPI:
         """Login as admin user"""
         session = requests.Session()
         session.headers.update({"Content-Type": "application/json"})
-        
+
         # Try with fulltest@test.com first (known working admin/benefactor)
         # Then try info@carryon.us
         for email, password in [
@@ -96,7 +96,7 @@ class TestDTSDeleteAPI:
                 session.headers.update({"Authorization": f"Bearer {token}"})
                 print(f"✓ Logged in as admin: {email}")
                 return session, user, password
-        
+
         pytest.skip("Could not login as admin user")
 
     @pytest.fixture(scope="class")
@@ -104,13 +104,15 @@ class TestDTSDeleteAPI:
         """Login as benefactor user"""
         session = requests.Session()
         session.headers.update({"Content-Type": "application/json"})
-        
-        token, user = login_user(session, TEST_BENEFACTOR_EMAIL, TEST_BENEFACTOR_PASSWORD)
+
+        token, user = login_user(
+            session, TEST_BENEFACTOR_EMAIL, TEST_BENEFACTOR_PASSWORD
+        )
         if token and user and user.get("role") == "benefactor":
             session.headers.update({"Authorization": f"Bearer {token}"})
             print(f"✓ Logged in as benefactor: {TEST_BENEFACTOR_EMAIL}")
             return session, user
-        
+
         pytest.skip("Could not login as benefactor user")
 
     @pytest.fixture(scope="class")
@@ -143,7 +145,9 @@ class TestDTSDeleteAPI:
         print(f"✓ Created test DTS task: {task['id']}")
         return task
 
-    def test_admin_delete_without_password_returns_400(self, admin_session, benefactor_session, estate_id):
+    def test_admin_delete_without_password_returns_400(
+        self, admin_session, benefactor_session, estate_id
+    ):
         """Admin DELETE without admin_password should return 400"""
         # Create a task first
         bsession, _ = benefactor_session
@@ -155,19 +159,29 @@ class TestDTSDeleteAPI:
             "confidential": "full",
         }
         create_response = bsession.post(f"{BASE_URL}/api/dts/tasks", json=task_data)
-        assert create_response.status_code == 200, f"Failed to create task: {create_response.text}"
+        assert create_response.status_code == 200, (
+            f"Failed to create task: {create_response.text}"
+        )
         task_id = create_response.json()["id"]
-        
+
         # Admin tries to delete without password
         session, user, _ = admin_session
         response = session.delete(f"{BASE_URL}/api/dts/tasks/{task_id}")
-        
-        assert response.status_code == 400, f"Expected 400, got {response.status_code}: {response.text}"
-        data = response.json()
-        assert "password" in data.get("detail", "").lower(), f"Error should mention password: {data}"
-        print(f"✓ Admin delete without password correctly returns 400: {data.get('detail')}")
 
-    def test_admin_delete_with_wrong_password_returns_403(self, admin_session, benefactor_session, estate_id):
+        assert response.status_code == 400, (
+            f"Expected 400, got {response.status_code}: {response.text}"
+        )
+        data = response.json()
+        assert "password" in data.get("detail", "").lower(), (
+            f"Error should mention password: {data}"
+        )
+        print(
+            f"✓ Admin delete without password correctly returns 400: {data.get('detail')}"
+        )
+
+    def test_admin_delete_with_wrong_password_returns_403(
+        self, admin_session, benefactor_session, estate_id
+    ):
         """Admin DELETE with wrong password should return 403"""
         # Create a task first
         bsession, _ = benefactor_session
@@ -179,20 +193,32 @@ class TestDTSDeleteAPI:
             "confidential": "partial",
         }
         create_response = bsession.post(f"{BASE_URL}/api/dts/tasks", json=task_data)
-        assert create_response.status_code == 200, f"Failed to create task: {create_response.text}"
+        assert create_response.status_code == 200, (
+            f"Failed to create task: {create_response.text}"
+        )
         task_id = create_response.json()["id"]
-        
+
         # Admin tries to delete with wrong password
         session, user, _ = admin_session
-        response = session.delete(f"{BASE_URL}/api/dts/tasks/{task_id}?admin_password=wrong_password_123")
-        
-        assert response.status_code == 403, f"Expected 403, got {response.status_code}: {response.text}"
-        data = response.json()
-        assert "incorrect" in data.get("detail", "").lower() or "password" in data.get("detail", "").lower(), \
-            f"Error should mention incorrect password: {data}"
-        print(f"✓ Admin delete with wrong password correctly returns 403: {data.get('detail')}")
+        response = session.delete(
+            f"{BASE_URL}/api/dts/tasks/{task_id}?admin_password=wrong_password_123"
+        )
 
-    def test_admin_delete_with_correct_password_succeeds(self, admin_session, benefactor_session, estate_id):
+        assert response.status_code == 403, (
+            f"Expected 403, got {response.status_code}: {response.text}"
+        )
+        data = response.json()
+        assert (
+            "incorrect" in data.get("detail", "").lower()
+            or "password" in data.get("detail", "").lower()
+        ), f"Error should mention incorrect password: {data}"
+        print(
+            f"✓ Admin delete with wrong password correctly returns 403: {data.get('detail')}"
+        )
+
+    def test_admin_delete_with_correct_password_succeeds(
+        self, admin_session, benefactor_session, estate_id
+    ):
         """Admin DELETE with correct password should succeed"""
         # Create a task first
         bsession, _ = benefactor_session
@@ -204,18 +230,24 @@ class TestDTSDeleteAPI:
             "confidential": "timed",
         }
         create_response = bsession.post(f"{BASE_URL}/api/dts/tasks", json=task_data)
-        assert create_response.status_code == 200, f"Failed to create task: {create_response.text}"
+        assert create_response.status_code == 200, (
+            f"Failed to create task: {create_response.text}"
+        )
         task_id = create_response.json()["id"]
-        
+
         # Admin deletes with correct password
         session, user, password = admin_session
-        response = session.delete(f"{BASE_URL}/api/dts/tasks/{task_id}?admin_password={password}")
-        
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+        response = session.delete(
+            f"{BASE_URL}/api/dts/tasks/{task_id}?admin_password={password}"
+        )
+
+        assert response.status_code == 200, (
+            f"Expected 200, got {response.status_code}: {response.text}"
+        )
         data = response.json()
-        assert data.get("success") == True, f"Expected success=True: {data}"
+        assert data.get("success"), f"Expected success=True: {data}"
         print(f"✓ Admin delete with correct password succeeded: {data}")
-        
+
         # Verify task is actually deleted
         verify_response = session.get(f"{BASE_URL}/api/dts/task/{task_id}")
         assert verify_response.status_code == 404, "Task should be deleted (404)"
@@ -225,10 +257,14 @@ class TestDTSDeleteAPI:
         """DELETE non-existent task should return 404"""
         session, user, password = admin_session
         fake_task_id = "nonexistent-task-id-12345"
-        
-        response = session.delete(f"{BASE_URL}/api/dts/tasks/{fake_task_id}?admin_password={password}")
-        
-        assert response.status_code == 404, f"Expected 404, got {response.status_code}: {response.text}"
+
+        response = session.delete(
+            f"{BASE_URL}/api/dts/tasks/{fake_task_id}?admin_password={password}"
+        )
+
+        assert response.status_code == 404, (
+            f"Expected 404, got {response.status_code}: {response.text}"
+        )
         print("✓ Delete of non-existent task correctly returns 404")
 
 
