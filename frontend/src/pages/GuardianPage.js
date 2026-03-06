@@ -4,9 +4,9 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { ReturnPopup } from '../components/GuidedActivation';
 import {
-  Bot,
   Send,
   User,
+  Users,
   Loader2,
   Sparkles,
   ArrowUp,
@@ -25,7 +25,6 @@ import {
   Trash2,
   Clock,
   Shield,
-  Lock,
   Copy,
   Mic,
   MicOff
@@ -150,7 +149,7 @@ const ThinkingIndicator = ({ actionLoading, onStop }) => {
     <div className="flex gap-2.5" data-testid="thinking-indicator">
       <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
         style={{ background: 'linear-gradient(135deg, #d4af37 0%, #fcd34d 100%)', color: '#0b1120' }}>
-        <Bot className="w-3.5 h-3.5" />
+        <Sparkles className="w-3.5 h-3.5" />
       </div>
       <div className="rounded-2xl rounded-tl-md px-4 py-3 space-y-2" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
         <div className="flex items-center gap-2 text-[var(--t4)]">
@@ -174,6 +173,7 @@ const actionButtons = [
   { key: 'analyze_vault', label: 'Analyze Vault', icon: FileSearch, color: '#3B7BF7' },
   { key: 'generate_checklist', label: 'Generate Checklist', icon: ListChecks, color: '#22C993' },
   { key: 'analyze_readiness', label: 'Readiness Score', icon: Gauge, color: '#F5A623' },
+  { key: 'beneficiary_review', label: 'Beneficiary Review', icon: Users, color: '#8b5cf6' },
 ];
 
 // ═══════════════════════════════════════════════
@@ -391,7 +391,7 @@ const GuardianPage = () => {
     const activeSessionId = overrideSessionId || sessionId;
 
     const displayText = action
-      ? { analyze_vault: 'Analyze my Document Vault', generate_checklist: 'Generate my Action Checklist', analyze_readiness: 'Analyze my Estate Readiness Score' }[action] || messageText
+      ? { analyze_vault: 'Analyze my Document Vault', generate_checklist: 'Generate my Action Checklist', analyze_readiness: 'Analyze my Estate Readiness Score', beneficiary_review: 'Review my beneficiary designations and coverage' }[action] || messageText
       : messageText;
 
     setMessages(prev => [...prev, { role: 'user', content: displayText }]);
@@ -608,15 +608,12 @@ const GuardianPage = () => {
             data-testid="back-to-landing-btn">
             <ArrowLeft className="w-4 h-4 text-[var(--t3)]" />
           </button>
-          <div className="relative w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%)', border: '1px solid rgba(212,175,55,0.3)' }}>
-            <Bot className="w-4 h-4 text-[var(--gold)]" />
-            <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full flex items-center justify-center" style={{ background: '#22C993' }}>
-              <Lock className="w-1.5 h-1.5 text-white" />
-            </div>
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)' }}>
+            <Sparkles className="w-4 h-4 text-[var(--gold)]" />
           </div>
           <div>
-            <h1 className="text-sm font-bold text-[var(--t)] leading-none" style={{ fontFamily: 'Outfit, sans-serif' }}>EGA</h1>
+            <h1 className="text-sm font-bold text-[var(--t)] leading-none" style={{ fontFamily: 'Outfit, sans-serif' }}>Estate Guardian AI (EGA)</h1>
             <span className="text-[var(--t5)] text-[10px] flex items-center gap-1">
               <Shield className="w-2 h-2 text-[#22C993]" /> AES-256 encrypted session
             </span>
@@ -656,7 +653,7 @@ const GuardianPage = () => {
               <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
                 msg.role === 'user' ? 'bg-[var(--gold)]/20 text-[var(--gold)]' : ''
               }`} style={msg.role === 'assistant' ? { background: 'linear-gradient(135deg, #d4af37 0%, #fcd34d 100%)', color: '#0b1120' } : {}}>
-                {msg.role === 'user' ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
+                {msg.role === 'user' ? <User className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
               </div>
               <div className={`max-w-[82%] rounded-2xl px-4 py-3 ${
                 msg.role === 'user' ? 'bg-[var(--gold)] text-[#0b1120] rounded-tr-md' : 'text-[var(--t2)] rounded-tl-md'
