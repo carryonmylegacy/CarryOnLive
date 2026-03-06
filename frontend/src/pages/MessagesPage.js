@@ -86,6 +86,7 @@ const MessagesPage = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [videoBlob, setVideoBlob] = useState(null);
   const [videoUrl, setVideoUrl] = useState(null);
+  const [videoPosterUrl, setVideoPosterUrl] = useState(null);
   const [cameraReady, setCameraReady] = useState(false);
   const [countdown, setCountdown] = useState(null);
   const [facingMode, setFacingMode] = useState('user');
@@ -215,8 +216,30 @@ const MessagesPage = () => {
         const actualMime = mediaRecorderRef.current.mimeType || 'video/mp4';
         const blob = new Blob(chunksRef.current, { type: actualMime });
         setVideoBlob(blob);
-        setVideoUrl(URL.createObjectURL(blob));
+        const blobUrl = URL.createObjectURL(blob);
+        setVideoUrl(blobUrl);
         releaseCamera();
+        // Generate poster thumbnail from recorded video
+        try {
+          const tempVideo = document.createElement('video');
+          tempVideo.muted = true;
+          tempVideo.playsInline = true;
+          tempVideo.preload = 'auto';
+          tempVideo.src = blobUrl;
+          tempVideo.currentTime = 0.5;
+          tempVideo.addEventListener('seeked', () => {
+            try {
+              const canvas = document.createElement('canvas');
+              canvas.width = tempVideo.videoWidth || 640;
+              canvas.height = tempVideo.videoHeight || 480;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
+              const posterDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+              setVideoPosterUrl(posterDataUrl);
+            } catch { /* non-critical */ }
+          }, { once: true });
+          tempVideo.load();
+        } catch { /* non-critical */ }
       };
       
       mediaRecorderRef.current.start();
@@ -383,6 +406,7 @@ const MessagesPage = () => {
     setCustomEventLabel('');
     setVideoBlob(null);
     setVideoUrl(null);
+    setVideoPosterUrl(null);
     setAudioBlob(null);
     setAudioUrl(null);
     setEditingMessage(null);
@@ -405,20 +429,51 @@ const MessagesPage = () => {
     if (msg.video_url) {
       setVideoBlob('existing');
       setVideoUrl(null); // will be fetched
+      // Use existing thumbnail as poster if available
+      if (msg.video_thumbnail) {
+        setVideoPosterUrl(`data:image/jpeg;base64,${msg.video_thumbnail}`);
+      } else {
+        setVideoPosterUrl(null);
+      }
       // Fetch video blob for playback
       axios.get(`${API_URL}/messages/video/${msg.video_url}`, {
         ...getAuthHeaders(),
         responseType: 'blob',
       }).then(res => {
-        setVideoUrl(URL.createObjectURL(res.data));
+        const blobUrl = URL.createObjectURL(res.data);
+        setVideoUrl(blobUrl);
+        // Generate poster if none exists
+        if (!msg.video_thumbnail) {
+          try {
+            const tempVideo = document.createElement('video');
+            tempVideo.muted = true;
+            tempVideo.playsInline = true;
+            tempVideo.preload = 'auto';
+            tempVideo.src = blobUrl;
+            tempVideo.currentTime = 0.5;
+            tempVideo.addEventListener('seeked', () => {
+              try {
+                const canvas = document.createElement('canvas');
+                canvas.width = tempVideo.videoWidth || 640;
+                canvas.height = tempVideo.videoHeight || 480;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
+                setVideoPosterUrl(canvas.toDataURL('image/jpeg', 0.8));
+              } catch { /* non-critical */ }
+            }, { once: true });
+            tempVideo.load();
+          } catch { /* non-critical */ }
+        }
       }).catch(() => {
         setVideoBlob(null);
         setVideoUrl(null);
+        setVideoPosterUrl(null);
         toast.error('Could not load video');
       });
     } else {
       setVideoBlob(null);
       setVideoUrl(null);
+      setVideoPosterUrl(null);
     }
     setShowCreateModal(true);
   };
@@ -717,7 +772,7 @@ const MessagesPage = () => {
                   {(videoUrl || videoBlob === 'existing') ? (
                     <div className="space-y-3">
                       {videoUrl ? (
-                        <video src={videoUrl} controls playsInline preload="metadata" className="w-full rounded-lg" style={{ maxHeight: '300px' }} />
+                        <video src={videoUrl} poster={videoPosterUrl || undefined} controls playsInline preload="metadata" className="w-full rounded-lg" style={{ maxHeight: '300px' }} />
                       ) : (
                         <div className="flex items-center justify-center py-8">
                           <Loader2 className="w-6 h-6 animate-spin text-[#8b5cf6]" />
@@ -725,10 +780,10 @@ const MessagesPage = () => {
                         </div>
                       )}
                       <div className="flex gap-2">
-                        <Button variant="outline" className="border-[var(--b)] text-white flex-1" onClick={() => { if (videoUrl && videoBlob === 'existing') URL.revokeObjectURL(videoUrl); setVideoBlob(null); setVideoUrl(null); }}>
+                        <Button variant="outline" className="border-[var(--b)] text-white flex-1" onClick={() => { if (videoUrl && videoBlob === 'existing') URL.revokeObjectURL(videoUrl); setVideoBlob(null); setVideoUrl(null); setVideoPosterUrl(null); }}>
                           <X className="w-4 h-4 mr-2" /> Remove
                         </Button>
-                        <Button variant="outline" className="border-[var(--b)] text-[#8b5cf6]" onClick={() => { if (videoUrl && videoBlob === 'existing') URL.revokeObjectURL(videoUrl); setVideoBlob(null); setVideoUrl(null); }}>
+                        <Button variant="outline" className="border-[var(--b)] text-[#8b5cf6]" onClick={() => { if (videoUrl && videoBlob === 'existing') URL.revokeObjectURL(videoUrl); setVideoBlob(null); setVideoUrl(null); setVideoPosterUrl(null); }}>
                           <Camera className="w-4 h-4 mr-2" /> Re-record
                         </Button>
                       </div>
