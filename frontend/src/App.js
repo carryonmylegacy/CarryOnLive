@@ -261,16 +261,31 @@ function AppRoutes() {
 }
 
 function App() {
-  // Force StatusBar overlay on native iOS so viewport-fit=cover is always active.
-  // Without this, initial load has the system handling safe area AND our CSS adding
-  // padding, causing double spacing. After forcing overlay, our CSS is the sole handler.
+  // On native cold start, the system pushes the WebView below the status bar
+  // (viewport=894), but env(safe-area-inset-top) still returns 62px, causing
+  // double padding. We suppress our safe-area CSS until viewport-fit=cover
+  // activates (viewport grows to 956), at which point WE become the sole handler.
   useEffect(() => {
-    if (isNative) {
-      import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
-        StatusBar.setOverlaysWebView({ overlay: true }).catch(() => {});
-        StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
-      }).catch(() => {});
+    if (!isNative) return;
+
+    // Immediately suppress safe-area padding — system handles it on cold start
+    document.documentElement.classList.add('system-safe-area');
+
+    function checkViewport() {
+      // If viewport now covers the full screen, we need to handle safe area
+      if (window.innerHeight >= window.screen.height - 20) {
+        document.documentElement.classList.remove('system-safe-area');
+      }
     }
+
+    window.addEventListener('resize', checkViewport);
+    // Periodic checks in case resize doesn't fire
+    const timers = [500, 1000, 2000, 5000].map(ms => setTimeout(checkViewport, ms));
+
+    return () => {
+      window.removeEventListener('resize', checkViewport);
+      timers.forEach(clearTimeout);
+    };
   }, []);
 
   // Initialize Capgo live updates and native optimizations
