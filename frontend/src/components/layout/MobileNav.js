@@ -53,11 +53,88 @@ const MobileOtpToggle = () => {
   );
 };
 
+const DebugValues = () => {
+  const [vals, setVals] = React.useState({});
+  React.useEffect(() => {
+    const cs = getComputedStyle(document.documentElement);
+    const get = (prop) => cs.getPropertyValue(prop) || '0px';
+    const headerEl = document.querySelector('.mobile-header');
+    const headerStyle = headerEl ? getComputedStyle(headerEl) : null;
+    setVals({
+      sat: get('env(safe-area-inset-top)'),
+      sab: get('env(safe-area-inset-bottom)'),
+      sal: get('env(safe-area-inset-left)'),
+      sar: get('env(safe-area-inset-right)'),
+      headerPt: headerStyle?.paddingTop || 'N/A',
+      headerH: headerEl?.offsetHeight || 'N/A',
+      headerBcr: headerEl ? JSON.stringify(headerEl.getBoundingClientRect()) : 'N/A',
+      dpr: window.devicePixelRatio,
+      screenW: window.screen.width,
+      screenH: window.screen.height,
+      innerW: window.innerWidth,
+      innerH: window.innerHeight,
+      ua: navigator.userAgent.slice(0, 80),
+    });
+  }, []);
+
+  // Also measure via a hidden div trick
+  const [measuredTop, setMeasuredTop] = React.useState('N/A');
+  React.useEffect(() => {
+    const div = document.createElement('div');
+    div.style.cssText = 'position:fixed;top:0;left:0;height:env(safe-area-inset-top,0px);width:1px;pointer-events:none;';
+    document.body.appendChild(div);
+    setTimeout(() => {
+      setMeasuredTop(div.offsetHeight + 'px');
+      document.body.removeChild(div);
+    }, 100);
+  }, []);
+
+  const row = (label, value) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+      <span style={{ color: '#aaa', fontSize: '12px' }}>{label}</span>
+      <span style={{ color: '#4ade80', fontSize: '12px', fontWeight: 'bold', maxWidth: '180px', wordBreak: 'break-all', textAlign: 'right' }}>{String(value)}</span>
+    </div>
+  );
+
+  return (
+    <div>
+      {row('safe-area-inset-top (CSS)', vals.sat)}
+      {row('safe-area-inset-top (measured)', measuredTop)}
+      {row('safe-area-inset-bottom', vals.sab)}
+      {row('safe-area-inset-left', vals.sal)}
+      {row('safe-area-inset-right', vals.sar)}
+      {row('Header paddingTop', vals.headerPt)}
+      {row('Header offsetHeight', vals.headerH)}
+      {row('Device Pixel Ratio', vals.dpr)}
+      {row('Screen', `${vals.screenW}x${vals.screenH}`)}
+      {row('Viewport', `${vals.innerW}x${vals.innerH}`)}
+      <div style={{ marginTop: '8px', padding: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px' }}>
+        <span style={{ color: '#aaa', fontSize: '10px', wordBreak: 'break-all' }}>{vals.ua}</span>
+      </div>
+    </div>
+  );
+};
+
 const MobileNav = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [tapCount, setTapCount] = useState(0);
+  const [showDebug, setShowDebug] = useState(false);
+  const tapTimerRef = React.useRef(null);
+
+  const handleLogoTap = () => {
+    const newCount = tapCount + 1;
+    setTapCount(newCount);
+    clearTimeout(tapTimerRef.current);
+    if (newCount >= 5) {
+      setShowDebug(true);
+      setTapCount(0);
+    } else {
+      tapTimerRef.current = setTimeout(() => setTapCount(0), 1500);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -139,7 +216,7 @@ const MobileNav = () => {
       {/* Top Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 w-full mobile-header z-50" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="h-14 flex items-center justify-between px-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3" onClick={handleLogoTap}>
             <img 
               src="/carryon-app-icon.jpg" 
               alt="CarryOn" 
@@ -309,6 +386,29 @@ const MobileNav = () => {
           </Sheet>
         </div>
       </header>
+
+      {/* Debug Safe Area Overlay */}
+      {showDebug && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.85)', zIndex: 99999,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          padding: '20px', color: '#fff', fontFamily: 'monospace'
+        }}>
+          <div style={{ background: '#1a1a2e', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '340px' }}>
+            <h3 style={{ color: '#E0AD2B', fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', textAlign: 'center' }}>Safe Area Debug</h3>
+            <DebugValues />
+            <button
+              onClick={() => setShowDebug(false)}
+              style={{
+                marginTop: '16px', width: '100%', padding: '12px',
+                background: '#E0AD2B', color: '#000', fontWeight: 'bold',
+                borderRadius: '8px', border: 'none', fontSize: '14px', cursor: 'pointer'
+              }}
+            >Close</button>
+          </div>
+        </div>
+      )}
 
       {/* Bottom Navigation */}
       <nav className="lg:hidden fixed bottom-0 left-0 w-full mobile-bottom-nav z-50 pb-safe">
