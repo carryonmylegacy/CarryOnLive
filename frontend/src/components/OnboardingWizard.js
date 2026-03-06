@@ -125,8 +125,12 @@ const OnboardingWizard = ({ onAllComplete }) => {
     if (onAllComplete) onAllComplete();
   }
 
+  // After celebration has been shown, hide the wizard permanently (user can re-enable in Settings)
+  if (allComplete && sessionStorage.getItem('carryon_celebration_shown')) {
+    return null;
+  }
+
   if (stepsToShow.length === 0 && !allComplete) return null;
-  if (manuallyDismissed && !showAll && allComplete) return null;
 
   return (
     <div className="mb-6 overflow-hidden" data-testid="onboarding-wizard">
