@@ -54,28 +54,34 @@ export const ReturnPopup = ({ step, beneficiaryNames, onReturn, onAlternate }) =
   const Icon = v.icon;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
-      <div className="absolute inset-0 bg-black/60" />
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6"
+      style={{ animation: 'returnPopupFadeIn 0.5s ease forwards' }}>
+      <style>{`
+        @keyframes returnPopupFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes gentleBounce {
+          0% { opacity: 0; transform: scale(0.85) translateY(20px); }
+          50% { transform: scale(1.03) translateY(-5px); }
+          100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
+      <div className="absolute inset-0" style={{ background: 'var(--guided-overlay-bg, rgba(8,14,26,0.75))', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }} />
       <div className="relative rounded-2xl p-7 max-w-sm w-full text-center"
         style={{
           background: 'var(--bg2, #0F1629)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
-          animation: 'gentleBounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+          border: '1px solid var(--b, rgba(255,255,255,0.08))',
+          boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
+          animation: 'gentleBounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s forwards',
+          opacity: 0,
         }}>
-        <style>{`
-          @keyframes gentleBounce {
-            0% { opacity: 0; transform: scale(0.85) translateY(20px); }
-            50% { transform: scale(1.03) translateY(-5px); }
-            100% { opacity: 1; transform: scale(1) translateY(0); }
-          }
-        `}</style>
         <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
           style={{ background: `${v.color}15`, border: `1px solid ${v.color}25` }}>
           <Icon className="w-7 h-7" style={{ color: v.color }} />
         </div>
-        <h2 className="text-xl font-bold text-white mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>{v.title}</h2>
-        <p className="text-sm text-[#94a3b8] mb-6">{v.subtitle}</p>
+        <h2 className="text-xl font-bold mb-2" style={{ fontFamily: 'Outfit, sans-serif', color: 'var(--t, #ffffff)' }}>{v.title}</h2>
+        <p className="text-sm mb-6" style={{ color: 'var(--t4, #94a3b8)' }}>{v.subtitle}</p>
         <button onClick={onReturn}
           className="w-full py-3 rounded-xl text-sm font-bold mb-3"
           style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}>
@@ -83,8 +89,8 @@ export const ReturnPopup = ({ step, beneficiaryNames, onReturn, onAlternate }) =
         </button>
         {v.alternateText && onAlternate && (
           <button onClick={onAlternate}
-            className="w-full py-2.5 rounded-xl text-sm font-bold text-[#94a3b8]"
-            style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+            className="w-full py-2.5 rounded-xl text-sm font-bold"
+            style={{ color: 'var(--t4, #94a3b8)', border: '1px solid var(--b, rgba(255,255,255,0.08))' }}>
             {v.alternateText}
           </button>
         )}

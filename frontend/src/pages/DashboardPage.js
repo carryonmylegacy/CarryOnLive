@@ -36,6 +36,7 @@ const DashboardPage = () => {
   const [justCompletedActivation, setJustCompletedActivation] = useState(false);
   const [showGuidedFlow, setShowGuidedFlow] = useState(false);
   const [guidedStep, setGuidedStep] = useState(null);
+  const [dashboardReady, setDashboardReady] = useState(false);
 
   const handleCelebrationDismiss = () => {
     setShowCelebration(false);
@@ -68,33 +69,39 @@ const DashboardPage = () => {
 
   const fetchEstateData = async (estateId) => {
     try {
-      const [docsRes, msgsRes, bensRes, checklistRes, readinessRes] = await Promise.all([
+      // Fetch estate data AND onboarding progress in parallel
+      const needsGuidedCheck = !sessionStorage.getItem('carryon_activation_done');
+      const fetches = [
         axios.get(`${API_URL}/documents/${estateId}`, getAuthHeaders()),
         axios.get(`${API_URL}/messages/${estateId}`, getAuthHeaders()),
         axios.get(`${API_URL}/beneficiaries/${estateId}`, getAuthHeaders()),
         axios.get(`${API_URL}/checklists/${estateId}`, getAuthHeaders()),
-        axios.get(`${API_URL}/estate/${estateId}/readiness`, getAuthHeaders())
-      ]);
+        axios.get(`${API_URL}/estate/${estateId}/readiness`, getAuthHeaders()),
+      ];
+      if (needsGuidedCheck) {
+        fetches.push(axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders()).catch(() => null));
+      }
+      const results = await Promise.all(fetches);
+      const [docsRes, msgsRes, bensRes, checklistRes, readinessRes] = results;
       setStats({ documents: docsRes.data.length, messages: msgsRes.data.length, beneficiaries: bensRes.data.length });
       setChecklists(checklistRes.data);
       setReadiness(readinessRes.data);
-      // Update estate's readiness_score locally to match
       setEstate(prev => prev ? { ...prev, readiness_score: readinessRes.data.overall_score } : prev);
-    } catch (error) { console.error('Fetch estate data error:', error); }
-    finally { 
-      setLoading(false);
-      // Check if user needs guided activation
-      if (!sessionStorage.getItem('carryon_activation_done')) {
-        try {
-          const progressRes = await axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
-          const steps = progressRes.data?.steps || [];
-          const nextIncomplete = steps.find(s => !s.completed);
-          if (nextIncomplete && !progressRes.data?.all_complete) {
-            setGuidedStep({ ...nextIncomplete, beneficiary_names: progressRes.data?.beneficiary_names || [] });
-            setShowGuidedFlow(true);
-          }
-        } catch {}
+
+      // Process onboarding progress if fetched
+      if (needsGuidedCheck && results[5]?.data) {
+        const steps = results[5].data?.steps || [];
+        const nextIncomplete = steps.find(s => !s.completed);
+        if (nextIncomplete && !results[5].data?.all_complete) {
+          setGuidedStep({ ...nextIncomplete, beneficiary_names: results[5].data?.beneficiary_names || [] });
+          setShowGuidedFlow(true);
+        }
       }
+    } catch (error) { console.error('Fetch estate data error:', error); }
+    finally {
+      setLoading(false);
+      // Short delay to allow React to render overlay before revealing
+      requestAnimationFrame(() => setDashboardReady(true));
     }
   };
 
@@ -292,15 +299,15 @@ const DashboardPage = () => {
 
     return (
       <div className="fixed inset-0 z-[150] flex items-center justify-center" data-testid="guided-overlay"
-        style={{ animation: 'frostedFadeIn 0.5s ease forwards' }}>
+        style={{ animation: 'guidedOverlayIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
         <style>{`
-          @keyframes frostedFadeIn {
+          @keyframes guidedOverlayIn {
             from { opacity: 0; }
             to { opacity: 1; }
           }
           @keyframes bubbleIn {
-            0% { opacity: 0; transform: scale(0.8) translateY(30px); }
-            60% { transform: scale(1.03) translateY(-5px); }
+            0% { opacity: 0; transform: scale(0.85) translateY(40px); }
+            60% { transform: scale(1.02) translateY(-4px); }
             100% { opacity: 1; transform: scale(1) translateY(0); }
           }
           @keyframes pulseRing {
@@ -310,23 +317,24 @@ const DashboardPage = () => {
           }
         `}</style>
 
-        {/* Frosted glass backdrop */}
+        {/* Frosted glass backdrop — theme-aware */}
         <div className="absolute inset-0" style={{
-          backdropFilter: 'blur(16px) saturate(120%)',
-          WebkitBackdropFilter: 'blur(16px) saturate(120%)',
-          background: 'rgba(8,14,26,0.7)',
+          backdropFilter: 'blur(20px) saturate(130%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(130%)',
+          background: 'var(--guided-overlay-bg, rgba(8,14,26,0.75))',
         }} />
 
         {/* Close X button — upper right */}
         <button onClick={dismissOverlay}
-          className="absolute top-5 right-5 z-10 w-10 h-10 rounded-full flex items-center justify-center text-white/40 hover:text-white/80 hover:bg-white/10 transition-all"
+          className="absolute top-5 right-5 z-10 w-10 h-10 rounded-full flex items-center justify-center transition-all"
+          style={{ color: 'var(--guided-muted, rgba(255,255,255,0.4))' }}
           data-testid="guided-close-btn">
           <X className="w-5 h-5" />
         </button>
 
         {/* Center bubble */}
         <div className="relative max-w-md w-full mx-6 text-center"
-          style={{ animation: 'bubbleIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both' }}>
+          style={{ animation: 'bubbleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both' }}>
 
           {/* Step counter */}
           <p className="text-xs font-bold uppercase tracking-[0.25em] mb-6"
@@ -345,11 +353,12 @@ const DashboardPage = () => {
           </div>
 
           {/* Title and description */}
-          <h1 className="text-2xl lg:text-3xl font-bold text-white mb-3"
-            style={{ fontFamily: 'Outfit, sans-serif' }}>
+          <h1 className="text-2xl lg:text-3xl font-bold mb-3"
+            style={{ fontFamily: 'Outfit, sans-serif', color: 'var(--guided-title, #ffffff)' }}>
             {title}
           </h1>
-          <p className="text-sm lg:text-base text-[#94a3b8] mb-8 max-w-sm mx-auto leading-relaxed">
+          <p className="text-sm lg:text-base mb-8 max-w-sm mx-auto leading-relaxed"
+            style={{ color: 'var(--guided-desc, #94a3b8)' }}>
             {stepInfo.desc}
           </p>
 
@@ -363,8 +372,8 @@ const DashboardPage = () => {
 
           {/* Skip link */}
           <button onClick={dismissOverlay}
-            className="mt-8 px-5 py-2 rounded-full text-xs text-[#64748b] hover:text-[#94a3b8] transition-colors"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+            className="mt-8 px-5 py-2 rounded-full text-xs transition-colors"
+            style={{ color: 'var(--guided-skip, #64748b)', background: 'var(--guided-skip-bg, rgba(255,255,255,0.04))', border: '1px solid var(--guided-skip-border, rgba(255,255,255,0.06))' }}
             data-testid="guided-skip-btn">
             Skip this step for now
           </button>
@@ -374,7 +383,8 @@ const DashboardPage = () => {
   };
 
   return (
-    <div className="p-4 lg:p-8 pt-[4.25rem] lg:pt-8 pb-24 lg:pb-8 animate-fade-in" data-testid="benefactor-dashboard">
+    <div className="p-4 lg:p-8 pt-[4.25rem] lg:pt-8 pb-24 lg:pb-8" data-testid="benefactor-dashboard"
+      style={{ opacity: dashboardReady ? 1 : 0, transition: 'opacity 0.6s ease' }}>
       {/* Trial Banner */}
       <div className="mb-4">
         <TrialBanner onUpgrade={() => navigate('/settings')} />
@@ -616,29 +626,28 @@ const DashboardPage = () => {
       </div>
       {showCelebration && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center" data-testid="celebration-overlay"
-          style={{ animation: 'frostedFadeIn 0.5s ease forwards' }}>
+          style={{ animation: 'guidedOverlayIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
           <style>{`
-            @keyframes frostedFadeIn { from { opacity: 0; } to { opacity: 1; } }
             @keyframes celebrationBounce {
               0% { opacity: 0; transform: scale(0.7) translateY(40px); }
               50% { transform: scale(1.05) translateY(-10px); }
               100% { opacity: 1; transform: scale(1) translateY(0); }
             }
-            @keyframes confettiSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
           `}</style>
           <div className="absolute inset-0" style={{
-            backdropFilter: 'blur(16px) saturate(120%)',
-            WebkitBackdropFilter: 'blur(16px) saturate(120%)',
-            background: 'rgba(8,14,26,0.7)',
+            backdropFilter: 'blur(20px) saturate(130%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(130%)',
+            background: 'var(--guided-overlay-bg, rgba(8,14,26,0.75))',
           }} />
           <button onClick={handleCelebrationDismiss}
-            className="absolute top-5 right-5 z-10 w-10 h-10 rounded-full flex items-center justify-center text-white/40 hover:text-white/80 hover:bg-white/10 transition-all"
+            className="absolute top-5 right-5 z-10 w-10 h-10 rounded-full flex items-center justify-center transition-all"
+            style={{ color: 'var(--guided-muted, rgba(255,255,255,0.4))' }}
             data-testid="celebration-close-btn">
             <X className="w-5 h-5" />
           </button>
           <div className="relative max-w-lg w-full mx-6 text-center p-8 rounded-3xl"
             style={{
-              animation: 'celebrationBounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both',
+              animation: 'celebrationBounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both',
               background: 'radial-gradient(ellipse at center, rgba(212,175,55,0.08) 0%, transparent 70%)',
               border: '1px solid rgba(212,175,55,0.15)',
             }}>
@@ -646,10 +655,12 @@ const DashboardPage = () => {
               style={{ background: 'rgba(212,175,55,0.12)', border: '2px solid rgba(212,175,55,0.3)' }}>
               <Sparkles className="w-10 h-10 text-[#d4af37]" />
             </div>
-            <h1 className="text-3xl lg:text-4xl font-bold text-white mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            <h1 className="text-3xl lg:text-4xl font-bold mb-4"
+              style={{ fontFamily: 'Outfit, sans-serif', color: 'var(--guided-title, #ffffff)' }}>
               Congratulations!
             </h1>
-            <p className="text-base lg:text-lg text-[#94a3b8] mb-8 max-w-sm mx-auto leading-relaxed">
+            <p className="text-base lg:text-lg mb-8 max-w-sm mx-auto leading-relaxed"
+              style={{ color: 'var(--guided-desc, #94a3b8)' }}>
               You have completed the initial creation of your estate plan. Welcome to CarryOn — continue exploring and building the security your family deserves!
             </p>
             <button onClick={handleCelebrationDismiss}
