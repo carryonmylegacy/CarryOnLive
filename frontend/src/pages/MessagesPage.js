@@ -870,7 +870,7 @@ const MessagesPage = () => {
                   )}
 
                   {/* Top controls — close & flip */}
-                  <div className="absolute top-4 left-4 right-4 flex items-center justify-between" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+                  <div className="absolute top-4 left-4 right-4 flex items-center justify-between" style={{ paddingTop: 'var(--sat, 0px)' }}>
                     <button
                       onClick={() => { if (isRecording) stopRecording(); releaseCamera(); }}
                       className="w-10 h-10 rounded-full flex items-center justify-center"
@@ -893,7 +893,7 @@ const MessagesPage = () => {
                 </div>
 
                 {/* Bottom controls */}
-                <div className="flex-shrink-0 flex items-center justify-center py-8 px-6" style={{ background: 'rgba(0,0,0,0.8)', paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}>
+                <div className="flex-shrink-0 flex items-center justify-center py-8 px-6" style={{ background: 'rgba(0,0,0,0.8)', paddingBottom: 'calc(2rem + var(--sab, 0px))' }}>
                   {!isRecording && countdown === null ? (
                     <button
                       onClick={startRecording}

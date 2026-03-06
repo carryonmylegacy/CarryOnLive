@@ -119,7 +119,7 @@ const AcceptInvitationPage = () => {
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 80% 50% at 20% 40%, rgba(212,175,55,0.04), transparent 60%), radial-gradient(ellipse 60% 40% at 80% 60%, rgba(59,130,246,0.03), transparent 50%)' }} />
 
       {/* Nav */}
-      <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(212,175,55,0.08)', background: 'rgba(8,14,26,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+      <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(212,175,55,0.08)', background: 'rgba(8,14,26,0.97)', paddingTop: 'var(--sat, 0px)' }}>
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
           <h1 className="text-lg font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>
             <span className="text-[#d4af37]">CarryOn</span><span className="text-white text-xs align-top">™</span>
@@ -130,7 +130,7 @@ const AcceptInvitationPage = () => {
 
       {step === 1 ? (
         /* ═══ STEP 1: Warm Introduction ═══ */
-        <div className="pt-20 pb-12 px-4 sm:px-6" style={{ paddingTop: 'calc(5rem + env(safe-area-inset-top, 0px))' }}>
+        <div className="pt-20 pb-12 px-4 sm:px-6" style={{ paddingTop: 'calc(5rem + var(--sat, 0px))' }}>
           <div className="max-w-6xl mx-auto lg:grid lg:grid-cols-2 lg:gap-16 lg:items-start">
             
             {/* Left: Hero message */}
@@ -218,7 +218,7 @@ const AcceptInvitationPage = () => {
         </div>
       ) : (
         /* ═══ STEP 2: Create Account ═══ */
-        <div className="pt-20 pb-12 px-4 sm:px-6" style={{ paddingTop: 'calc(5rem + env(safe-area-inset-top, 0px))' }}>
+        <div className="pt-20 pb-12 px-4 sm:px-6" style={{ paddingTop: 'calc(5rem + var(--sat, 0px))' }}>
           <div className="max-w-6xl mx-auto lg:grid lg:grid-cols-2 lg:gap-16 lg:items-center">
 
             {/* Left: Reassurance */}
