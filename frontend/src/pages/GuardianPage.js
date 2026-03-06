@@ -188,7 +188,7 @@ const GuardianPage = () => {
   const [isListening, setIsListening] = useState(false);
   const [showOnboardingReturn, setShowOnboardingReturn] = useState(false);
   const recognitionRef = useRef(null);
-  const [guidedFlowDone, setGuidedFlowDone] = useState(false);
+  const [guidedFlowDone, setGuidedFlowDone] = useState(true);
 
   // Measure actual header height to position Guardian correctly
   useEffect(() => {
@@ -279,9 +279,9 @@ const GuardianPage = () => {
   useEffect(() => {
     fetchSessions();
     fetchEstate();
-    // Check if onboarding is complete to stop pulse animation
+    // Check if onboarding is complete to control pulse animation
     axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders())
-      .then(res => { if (res.data?.celebration_shown || res.data?.all_complete) setGuidedFlowDone(true); })
+      .then(res => { if (!res.data?.celebration_shown && !res.data?.all_complete) setGuidedFlowDone(false); })
       .catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -311,7 +311,16 @@ const GuardianPage = () => {
     setLoading(true);
     try {
       const res = await axios.get(`${API_URL}/chat/history/${sid}`, getAuthHeaders());
-      const history = res.data.map(m => ({ role: m.role, content: m.content }));
+      const history = res.data.map(m => {
+        const msg = { role: m.role, content: m.content };
+        if (m.action_result?.action === 'readiness_analyzed' && m.action_result?.readiness) {
+          msg.readiness = m.action_result.readiness;
+        }
+        if (m.action_result?.action === 'checklist_generated') {
+          msg.actionBadge = `${m.action_result.items_added} checklist items added`;
+        }
+        return msg;
+      });
       setMessages(history.length > 0 ? history : [{
         role: 'assistant',
         content: `Hello ${user?.name?.split(' ')[0] || 'there'}! Resuming our conversation...`
@@ -578,7 +587,7 @@ const GuardianPage = () => {
               />
               <div className="flex items-center justify-between pb-1">
                 <button type="button" onClick={() => toggleVoiceInput(setLandingInput, landingInput)}
-                  className={`w-8 h-8 rounded-xl flex items-center justify-center active:scale-90 transition-transform ${isListening ? 'bg-red-500/20 text-red-400' : 'text-[var(--t5)] hover:text-[var(--t3)]'}`}
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center active:scale-90 transition-transform ${isListening ? 'bg-red-500/20 text-red-400' : 'text-[var(--gold)] hover:bg-[var(--gold)]/10'}`}
                   data-testid="landing-mic-button">
                   {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                 </button>
@@ -813,7 +822,7 @@ const GuardianPage = () => {
             <div className="flex items-center justify-between pt-1 pb-0.5">
               <div className="flex items-center gap-1">
                 <button type="button" onClick={() => toggleVoiceInput(setInput, input)}
-                  className={`w-7 h-7 rounded-lg flex items-center justify-center active:scale-90 transition-transform ${isListening ? 'bg-red-500/20 text-red-400' : 'text-[var(--t5)] hover:text-[var(--t3)]'}`}
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center active:scale-90 transition-transform ${isListening ? 'bg-red-500/20 text-red-400' : 'text-[var(--gold)] hover:bg-[var(--gold)]/10'}`}
                   data-testid="chat-mic-button">
                   {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
                 </button>
