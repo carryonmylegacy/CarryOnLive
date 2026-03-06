@@ -55,15 +55,7 @@
         <string>CarryOn needs access to your photo library to upload estate documents.</string>
         <key>ITSAppUsesNonExemptEncryption</key>
         <false/>
-        <key>NSExtension</key>
-        <dict>
-                <key>NSExtensionActivationRule</key>
-                <dict>
-                        <key>NSExtensionActivationSupportsFileWithMaxCount</key>
-                        <integer>1</integer>
-                        <key>NSExtensionActivationSupportsImageWithMaxCount</key>
-                        <integer>1</integer>
-                </dict>
-        </dict>
+        <key>NSSpeechRecognitionUsageDescription</key>
+        <string>CarryOn uses speech recognition for voice-to-text input in the Estate Guardian AI and Milestone Messages.</string>
 </dict>
 </plist>
