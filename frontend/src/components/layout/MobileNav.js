@@ -63,10 +63,6 @@ const DebugValues = () => {
     setVals({
       sat: get('env(safe-area-inset-top)'),
       sab: get('env(safe-area-inset-bottom)'),
-      sal: get('env(safe-area-inset-left)'),
-      sar: get('env(safe-area-inset-right)'),
-      satVar: cs.getPropertyValue('--sat') || 'not set',
-      sabVar: cs.getPropertyValue('--sab') || 'not set',
       headerPt: headerStyle?.paddingTop || 'N/A',
       headerH: headerEl?.offsetHeight || 'N/A',
       dpr: window.devicePixelRatio,
@@ -75,6 +71,7 @@ const DebugValues = () => {
       innerW: window.innerWidth,
       innerH: window.innerHeight,
       viewportCovers: window.innerHeight >= (window.screen.height - 10) ? 'YES' : 'NO',
+      isNativeApp: document.body.classList.contains('native-app') ? 'YES' : 'NO',
       ua: navigator.userAgent.slice(0, 80),
     });
   }, []);
@@ -102,10 +99,9 @@ const DebugValues = () => {
     <div>
       {row('safe-area-inset-top (CSS)', vals.sat)}
       {row('safe-area-inset-top (measured)', measuredTop)}
-      {row('--sat (JS variable)', vals.satVar)}
       {row('viewport-fit=cover active?', vals.viewportCovers)}
+      {row('native-app class?', vals.isNativeApp)}
       {row('safe-area-inset-bottom', vals.sab)}
-      {row('--sab (JS variable)', vals.sabVar)}
       {row('Header paddingTop', vals.headerPt)}
       {row('Header offsetHeight', vals.headerH)}
       {row('Device Pixel Ratio', vals.dpr)}
@@ -127,7 +123,12 @@ const MobileNav = () => {
   const [showDebug, setShowDebug] = useState(false);
   const tapTimerRef = React.useRef(null);
 
+  const lastTapRef = React.useRef(0);
   const handleLogoTap = (e) => {
+    // Debounce to prevent double-fire from touch + click
+    const now = Date.now();
+    if (now - lastTapRef.current < 100) return;
+    lastTapRef.current = now;
     e.preventDefault();
     e.stopPropagation();
     const newCount = tapCount + 1;
@@ -248,7 +249,7 @@ const MobileNav = () => {
             style={{ 
               background: theme === 'dark' ? '#141C33' : '#DBEAFE',
               borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-              paddingTop: 'var(--sat, 0px)'
+              paddingTop: 'env(safe-area-inset-top, 0px)'
             }}
           >
             <div className="flex flex-col h-full">
