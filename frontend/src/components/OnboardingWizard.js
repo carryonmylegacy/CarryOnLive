@@ -119,14 +119,14 @@ const OnboardingWizard = ({ onAllComplete }) => {
   const benNames = (progress.beneficiary_names || []).slice(0, 3);
   const benLabel = benNames.length > 0 ? benNames.join(', ') : 'your loved ones';
 
-  if (allComplete && !sessionStorage.getItem('carryon_celebration_shown')) {
-    sessionStorage.setItem('carryon_celebration_shown', 'true');
+  if (allComplete && !localStorage.getItem('carryon_celebration_shown')) {
+    localStorage.setItem('carryon_celebration_shown', 'true');
     sessionStorage.setItem('carryon_activation_done', 'true');
     if (onAllComplete) onAllComplete();
   }
 
   // After celebration has been shown, hide the wizard permanently (user can re-enable in Settings)
-  if (allComplete && sessionStorage.getItem('carryon_celebration_shown')) {
+  if (allComplete && localStorage.getItem('carryon_celebration_shown')) {
     return null;
   }
 

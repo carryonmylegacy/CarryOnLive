@@ -92,9 +92,9 @@ const DashboardPage = () => {
         if (nextIncomplete && !progressRes.data?.all_complete) {
           setGuidedStep({ ...nextIncomplete, beneficiary_names: progressRes.data?.beneficiary_names || [] });
           setShowGuidedFlow(true);
-        } else if (progressRes.data?.all_complete && !sessionStorage.getItem('carryon_celebration_shown')) {
+        } else if (progressRes.data?.all_complete && !localStorage.getItem('carryon_celebration_shown')) {
           // All steps complete — show celebration
-          sessionStorage.setItem('carryon_celebration_shown', 'true');
+          localStorage.setItem('carryon_celebration_shown', 'true');
           guidedDismissedRef.current = true;
           setTimeout(() => setShowCelebration(true), 600);
         }
@@ -431,8 +431,8 @@ const DashboardPage = () => {
 
       {/* Onboarding Wizard — shown early so it's visible on mobile */}
       <OnboardingWizard onAllComplete={() => {
-        if (!sessionStorage.getItem('carryon_celebration_shown')) {
-          sessionStorage.setItem('carryon_celebration_shown', 'true');
+        if (!localStorage.getItem('carryon_celebration_shown')) {
+          localStorage.setItem('carryon_celebration_shown', 'true');
           setTimeout(() => setShowCelebration(true), 1500);
         }
       }} />
