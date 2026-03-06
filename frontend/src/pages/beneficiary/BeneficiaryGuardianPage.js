@@ -72,7 +72,7 @@ const BeneficiaryGuardianPage = () => {
   const handleSubmit = (e) => { e.preventDefault(); sendMessage(input); };
 
   return (
-    <div className="p-4 lg:p-6 h-[calc(100vh-4rem)] lg:h-screen flex flex-col animate-fade-in pt-20 lg:pt-6" data-testid="beneficiary-guardian">
+    <div className="p-4 lg:p-6 h-[calc(100vh-4rem)] lg:h-screen flex flex-col animate-fade-in pt-4 lg:pt-6" data-testid="beneficiary-guardian">
       {/* Header */}
       <div className="mb-3">
         <div className="flex items-center gap-3 mb-2">

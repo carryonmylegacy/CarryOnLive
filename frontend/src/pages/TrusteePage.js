@@ -432,7 +432,7 @@ const TrusteePage = () => {
   // === SUBMITTED SUCCESS ===
   if (view === 'submitted') {
     return (
-      <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 animate-fade-in text-center" data-testid="dts-submitted">
+      <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 animate-fade-in text-center" data-testid="dts-submitted">
         <div className="max-w-md mx-auto mt-16">
           <div className="w-20 h-20 rounded-2xl bg-[var(--gnbg)] flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 className="w-10 h-10 text-[var(--gn2)]" />
@@ -456,7 +456,7 @@ const TrusteePage = () => {
     const TypeIcon = typeConfig[t.type]?.icon || Shield;
 
     return (
-      <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="dts-detail">
+      <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="dts-detail">
         <div className="flex items-center justify-between">
           <Button variant="outline" size="sm" className="border-[var(--b)] text-[var(--t3)]" onClick={() => { setView('list'); setSelectedId(null); }}>
             <ChevronLeft className="w-4 h-4 mr-1" /> All Tasks
@@ -807,7 +807,7 @@ const TrusteePage = () => {
   if (view === 'create') {
     const steps = ['Beneficiary', 'Task Type', 'Instructions', 'Confidentiality', 'Submit'];
     return (
-      <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="dts-create">
+      <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="dts-create">
         <Button variant="outline" size="sm" className="border-[var(--b)] text-[var(--t3)]" onClick={() => { setView('list'); setCreateStep(0); }}>
           <ChevronLeft className="w-4 h-4 mr-1" /> Cancel
         </Button>
@@ -981,7 +981,7 @@ const TrusteePage = () => {
 
   // === TASK LIST (DEFAULT) ===
   return (
-    <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="dts-page">
+    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="dts-page">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">

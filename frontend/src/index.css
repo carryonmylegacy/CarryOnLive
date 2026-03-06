@@ -792,18 +792,10 @@
     overscroll-behavior: none;
     overscroll-behavior-y: none;
     padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
-    padding-top: env(safe-area-inset-top, 0px);
+    /* 56px = mobile header bar height (h-14), plus safe-area for the notch/status bar */
+    padding-top: calc(56px + env(safe-area-inset-top, 0px));
     touch-action: pan-x pan-y;
     contain: style;
-  }
-
-  /* Native app: header already handles safe-area, reduce main-content padding */
-  .native-app .main-content {
-    padding-top: 0;
-  }
-
-  .native-app .mobile-header {
-    padding-top: 0;
   }
   
   .main-content::before {
