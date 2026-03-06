@@ -1,7 +1,6 @@
 """Checkout, plan changes, webhooks, and admin subscription settings."""
 
 import os
-import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -1121,39 +1120,31 @@ async def validate_apple_receipt(
 
     billing_cycle = "annual" if "annual" in product_id else "monthly"
 
-    # Store the Apple subscription
-    # In production, you would verify with Apple's App Store Server API
-    # For now, trust the receipt from the verified StoreKit 2 transaction
-    sub = {
-        "id": str(uuid.uuid4()),
-        "user_id": current_user["id"],
-        "plan_id": plan_id,
-        "plan_name": plan_id.replace("_", " ").title(),
-        "status": "active",
-        "billing_cycle": billing_cycle,
-        "payment_provider": "apple_iap",
-        "apple_transaction_id": transaction_id,
-        "apple_product_id": product_id,
-        "created_at": datetime.now(timezone.utc).isoformat(),
-    }
+    # Store the Apple subscription in user_subscriptions (same collection as Stripe)
+    now = datetime.now(timezone.utc)
+    if billing_cycle == "annual":
+        period_end = now + timedelta(days=365)
+    else:
+        period_end = now + timedelta(days=30)
 
-    # Deactivate any existing subscription
-    await db.subscriptions.update_many(
-        {"user_id": current_user["id"], "status": "active"},
+    await db.user_subscriptions.update_one(
+        {"user_id": current_user["id"]},
         {
             "$set": {
-                "status": "replaced",
-                "replaced_at": datetime.now(timezone.utc).isoformat(),
+                "user_id": current_user["id"],
+                "plan_id": plan_id,
+                "plan_name": plan_id.replace("_", " ").title(),
+                "status": "active",
+                "billing_cycle": billing_cycle,
+                "payment_provider": "apple_iap",
+                "apple_transaction_id": transaction_id,
+                "apple_product_id": product_id,
+                "current_period_start": now.isoformat(),
+                "current_period_end": period_end.isoformat(),
+                "activated_at": now.isoformat(),
             }
         },
-    )
-
-    await db.subscriptions.insert_one(sub)
-
-    # Update user subscription status
-    await db.users.update_one(
-        {"id": current_user["id"]},
-        {"$set": {"subscription_status": "active", "subscription_plan": plan_id}},
+        upsert=True,
     )
 
     return {
@@ -1169,8 +1160,7 @@ async def sync_apple_subscriptions(
     current_user: dict = Depends(get_current_user),
 ):
     """Sync/restore Apple IAP subscriptions."""
-    # Check for any active Apple subscriptions
-    active_sub = await db.subscriptions.find_one(
+    active_sub = await db.user_subscriptions.find_one(
         {
             "user_id": current_user["id"],
             "payment_provider": "apple_iap",

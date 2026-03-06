@@ -3,10 +3,12 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Crown, Shield, Check, Star, ChevronRight, Loader2,
-  Upload, Clock, AlertTriangle, Users, X, Heart, Award
+  Upload, Clock, AlertTriangle, Users, X, Heart, Award, RotateCcw
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from '../utils/toast';
+import { isNative, platform } from '../services/native';
+import { isIAPAvailable, purchaseIAP, restoreIAPPurchases, IAP_PRODUCTS } from '../services/iap';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -44,7 +46,17 @@ export default function SubscriptionPaywall({ onDismiss }) {
   const [showFamilyInfo, setShowFamilyInfo] = useState(false);
   const [confirmingPayment, setConfirmingPayment] = useState(false);
 
+  const [useAppleIAP, setUseAppleIAP] = useState(false);
+  const [restoringPurchases, setRestoringPurchases] = useState(false);
+
   const headers = { Authorization: `Bearer ${token}` };
+
+  // Check if Apple IAP is available (native iOS only)
+  useEffect(() => {
+    if (isNative && platform === 'ios') {
+      isIAPAvailable().then(available => setUseAppleIAP(available));
+    }
+  }, []);
 
   // Handle post-payment redirect — check session_id in URL
   useEffect(() => {
@@ -129,6 +141,28 @@ export default function SubscriptionPaywall({ onDismiss }) {
 
     setCheckoutLoading(true);
     try {
+      // Native iOS: use Apple In-App Purchase
+      if (useAppleIAP) {
+        const productKey = `${plan.id}_${billing}`;
+        const productId = IAP_PRODUCTS[productKey];
+        if (!productId) {
+          toast.error(`No IAP product configured for ${plan.name} (${billing})`);
+          setCheckoutLoading(false);
+          return;
+        }
+        const result = await purchaseIAP(productId);
+        if (result.cancelled) {
+          setCheckoutLoading(false);
+          return;
+        }
+        toast.success('Subscription activated!');
+        await refreshSubscription();
+        fetchData();
+        setCheckoutLoading(false);
+        return;
+      }
+
+      // Web: use Stripe checkout
       const res = await axios.post(`${API_URL}/subscriptions/checkout`, {
         plan_id: plan.id,
         billing_cycle: billing,
@@ -136,15 +170,29 @@ export default function SubscriptionPaywall({ onDismiss }) {
       }, { headers });
 
       if (res.data.free) {
-        // toast removed
         fetchData();
       } else if (res.data.url) {
         window.location.href = res.data.url;
       }
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to start checkout');
+      toast.error(err.response?.data?.detail || err.message || 'Failed to start checkout');
     }
     setCheckoutLoading(false);
+  };
+
+  const handleRestorePurchases = async () => {
+    setRestoringPurchases(true);
+    try {
+      const result = await restoreIAPPurchases();
+      if (result.success) {
+        toast.success('Purchases restored successfully');
+        await refreshSubscription();
+        fetchData();
+      }
+    } catch (err) {
+      toast.error('Failed to restore purchases');
+    }
+    setRestoringPurchases(false);
   };
 
   const handleVerificationUpload = async () => {
@@ -582,6 +630,19 @@ export default function SubscriptionPaywall({ onDismiss }) {
             data-testid="paywall-dismiss"
           >
             Continue with free trial ({trial.days_remaining} days remaining)
+          </button>
+        )}
+
+        {/* Restore Purchases (Apple IAP requirement) */}
+        {useAppleIAP && (
+          <button
+            onClick={handleRestorePurchases}
+            disabled={restoringPurchases}
+            className="text-sm text-[var(--gold)] underline mb-4 flex items-center gap-1 mx-auto"
+            data-testid="paywall-restore-purchases"
+          >
+            {restoringPurchases ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
+            Restore Purchases
           </button>
         )}
 
