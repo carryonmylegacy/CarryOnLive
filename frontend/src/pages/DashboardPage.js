@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
@@ -37,6 +37,7 @@ const DashboardPage = () => {
   const [showGuidedFlow, setShowGuidedFlow] = useState(false);
   const [guidedStep, setGuidedStep] = useState(null);
   const [dashboardReady, setDashboardReady] = useState(false);
+  const guidedDismissedRef = useRef(false);
 
   const handleCelebrationDismiss = () => {
     setShowCelebration(false);
@@ -45,7 +46,7 @@ const DashboardPage = () => {
   };
 
   useEffect(() => { fetchEstates(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (estate) fetchEstateData(estate.id); }, [estate]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (estate?.id) fetchEstateData(estate.id); }, [estate?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Prefetch likely next routes after dashboard loads
   useEffect(() => {
@@ -69,39 +70,36 @@ const DashboardPage = () => {
 
   const fetchEstateData = async (estateId) => {
     try {
-      // Fetch estate data AND onboarding progress in parallel
-      const needsGuidedCheck = !sessionStorage.getItem('carryon_activation_done');
-      const fetches = [
+      // Always fetch estate data AND onboarding progress in parallel
+      const [docsRes, msgsRes, bensRes, checklistRes, readinessRes, progressRes] = await Promise.all([
         axios.get(`${API_URL}/documents/${estateId}`, getAuthHeaders()),
         axios.get(`${API_URL}/messages/${estateId}`, getAuthHeaders()),
         axios.get(`${API_URL}/beneficiaries/${estateId}`, getAuthHeaders()),
         axios.get(`${API_URL}/checklists/${estateId}`, getAuthHeaders()),
         axios.get(`${API_URL}/estate/${estateId}/readiness`, getAuthHeaders()),
-      ];
-      if (needsGuidedCheck) {
-        fetches.push(axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders()).catch(() => null));
-      }
-      const results = await Promise.all(fetches);
-      const [docsRes, msgsRes, bensRes, checklistRes, readinessRes] = results;
+        axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders()).catch(() => null),
+      ]);
       setStats({ documents: docsRes.data.length, messages: msgsRes.data.length, beneficiaries: bensRes.data.length });
       setChecklists(checklistRes.data);
       setReadiness(readinessRes.data);
       setEstate(prev => prev ? { ...prev, readiness_score: readinessRes.data.overall_score } : prev);
 
-      // Process onboarding progress if fetched
-      if (needsGuidedCheck && results[5]?.data) {
-        const steps = results[5].data?.steps || [];
+      // Show guided flow overlay if there are incomplete steps and user hasn't dismissed this visit
+      if (!guidedDismissedRef.current && progressRes?.data) {
+        const steps = progressRes.data?.steps || [];
         const nextIncomplete = steps.find(s => !s.completed);
-        if (nextIncomplete && !results[5].data?.all_complete) {
-          setGuidedStep({ ...nextIncomplete, beneficiary_names: results[5].data?.beneficiary_names || [] });
+        if (nextIncomplete && !progressRes.data?.all_complete) {
+          setGuidedStep({ ...nextIncomplete, beneficiary_names: progressRes.data?.beneficiary_names || [] });
           setShowGuidedFlow(true);
         }
       }
     } catch (error) { console.error('Fetch estate data error:', error); }
     finally {
       setLoading(false);
-      // Short delay to allow React to render overlay before revealing
-      requestAnimationFrame(() => setDashboardReady(true));
+      // Delay reveal until overlay is rendered
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setDashboardReady(true));
+      });
     }
   };
 
@@ -293,8 +291,8 @@ const DashboardPage = () => {
     }
 
     const dismissOverlay = () => {
+      guidedDismissedRef.current = true;
       setShowGuidedFlow(false);
-      sessionStorage.setItem('carryon_activation_done', 'true');
     };
 
     return (
@@ -384,7 +382,10 @@ const DashboardPage = () => {
 
   return (
     <div className="p-4 lg:p-8 pt-[4.25rem] lg:pt-8 pb-24 lg:pb-8" data-testid="benefactor-dashboard"
-      style={{ opacity: dashboardReady ? 1 : 0, transition: 'opacity 0.6s ease' }}>
+      style={{
+        opacity: dashboardReady ? 1 : 0,
+        transition: 'opacity 0.5s ease',
+      }}>
       {/* Trial Banner */}
       <div className="mb-4">
         <TrialBanner onUpgrade={() => navigate('/settings')} />
