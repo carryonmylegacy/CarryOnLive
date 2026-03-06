@@ -851,7 +851,7 @@ const MessagesPage = () => {
                     className="w-full h-full object-cover"
                     muted
                     playsInline
-                    style={{ transform: 'none' }}
+                    style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }}
                   />
 
                   {/* Countdown overlay */}
