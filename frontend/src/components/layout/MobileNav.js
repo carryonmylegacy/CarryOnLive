@@ -72,6 +72,7 @@ const DebugValues = () => {
       innerH: window.innerHeight,
       viewportCovers: window.innerHeight >= (window.screen.height - 10) ? 'YES' : 'NO',
       isNativeApp: document.body.classList.contains('native-app') ? 'YES' : 'NO',
+      systemSafeArea: document.documentElement.classList.contains('system-safe-area') ? 'YES (system handles)' : 'NO (we handle)',
       ua: navigator.userAgent.slice(0, 80),
     });
   }, []);
@@ -101,6 +102,7 @@ const DebugValues = () => {
       {row('safe-area-inset-top (measured)', measuredTop)}
       {row('viewport-fit=cover active?', vals.viewportCovers)}
       {row('native-app class?', vals.isNativeApp)}
+      {row('system-safe-area?', vals.systemSafeArea)}
       {row('safe-area-inset-bottom', vals.sab)}
       {row('Header paddingTop', vals.headerPt)}
       {row('Header offsetHeight', vals.headerH)}

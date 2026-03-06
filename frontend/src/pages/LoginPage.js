@@ -183,8 +183,6 @@ const LoginPage = () => {
         overflow: 'hidden',
         overscrollBehavior: 'none',
         touchAction: 'none',
-        paddingTop: 'env(safe-area-inset-top, 0px)',
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}>
         <img src="/carryon-logo.jpg" alt="CarryOn" className="w-[180px] h-auto mb-8" />
         <div className="w-full max-w-sm rounded-2xl p-7 relative" style={{
