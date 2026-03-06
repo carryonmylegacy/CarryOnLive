@@ -138,6 +138,7 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - **VERIFIED & TESTED**: Fixed critical crash caused by missing `add_credential` config in `OnboardingWizard.js` STEP_CONFIG object. Added KeyRound icon, cyan color (#06b6d4), /digital-wallet route, label, and description. Added null guard (`if (!config) return null`) as defensive fallback.
 - **CI/CD Linting**: Both `ruff format . --check` and `ruff check .` pass cleanly (85 files formatted).
 - **Test Results**: 100% pass rate — dashboard loads correctly, onboarding wizard renders "4 of 6 complete", guided overlay shows "STEP 3 OF 6".
+- **DAV Step Completion Bug Fixed**: Backend `onboarding.py` was checking `db.credentials` (non-existent collection) instead of `db.digital_wallet` for `add_credential` step completion. Fixed to use correct collection name. Verified: step now correctly marks as DONE when a DAV entry exists.
 
 ## Pending / Backlog
 - P0: Mobile App rubber-banding/blank screen (Codemagic build validation pending)

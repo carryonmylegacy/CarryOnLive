@@ -91,7 +91,7 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
         )
         # DAV credential stored
         completed["add_credential"] = (
-            await db.credentials.count_documents({"estate_id": estate_id}) > 0
+            await db.digital_wallet.count_documents({"estate_id": estate_id}) > 0
         )
     # review_readiness is manual — preserve from stored progress
     if progress.get("completed_steps", {}).get("review_readiness"):
