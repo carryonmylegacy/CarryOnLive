@@ -72,12 +72,16 @@ async def check_benefactor_email(data: EmailCheckRequest):
         {"email": email, "role": "benefactor"}, {"_id": 0, "id": 1}
     )
     if not user:
-        return {"valid": False, "message": "No benefactor estates are associated with that email address."}
-    estate = await db.estates.find_one(
-        {"owner_id": user["id"]}, {"_id": 0, "id": 1}
-    )
+        return {
+            "valid": False,
+            "message": "No benefactor estates are associated with that email address.",
+        }
+    estate = await db.estates.find_one({"owner_id": user["id"]}, {"_id": 0, "id": 1})
     if not estate:
-        return {"valid": False, "message": "No benefactor estates are associated with that email address."}
+        return {
+            "valid": False,
+            "message": "No benefactor estates are associated with that email address.",
+        }
     return {"valid": True}
 
 
@@ -665,9 +669,7 @@ async def verify_otp(data: OTPVerifyWithTrust, request: Request):
         stored_otp = await db.otps.find_one({"email": data.email}, {"_id": 0})
         import hmac
 
-        if not stored_otp or not hmac.compare_digest(
-            stored_otp["otp"], data.otp
-        ):
+        if not stored_otp or not hmac.compare_digest(stored_otp["otp"], data.otp):
             raise HTTPException(status_code=401, detail="Invalid OTP")
 
         # Check OTP expiry (10 minutes)
