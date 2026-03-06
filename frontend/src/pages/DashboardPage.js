@@ -11,7 +11,9 @@ import {
   ChevronRight,
   Clock,
   CheckCircle2,
-  Circle
+  Circle,
+  X,
+  Sparkles
 } from 'lucide-react';
 import EstateSelector from '../components/estate/EstateSelector';
 import TrialBanner from '../components/TrialBanner';
@@ -88,7 +90,7 @@ const DashboardPage = () => {
           const steps = progressRes.data?.steps || [];
           const nextIncomplete = steps.find(s => !s.completed);
           if (nextIncomplete && !progressRes.data?.all_complete) {
-            setGuidedStep(nextIncomplete);
+            setGuidedStep({ ...nextIncomplete, beneficiary_names: progressRes.data?.beneficiary_names || [] });
             setShowGuidedFlow(true);
           }
         } catch {}
@@ -236,8 +238,10 @@ const DashboardPage = () => {
     );
   }
 
-  // Guided activation — full-screen overlay for first-time users
-  if (showGuidedFlow && guidedStep) {
+  // Guided activation — frosted glass overlay on top of the dashboard
+  const renderGuidedOverlay = () => {
+    if (!showGuidedFlow || !guidedStep) return null;
+
     const STEP_ROUTES = {
       create_message: '/messages',
       upload_document: '/vault',
@@ -245,37 +249,129 @@ const DashboardPage = () => {
       customize_checklist: '/checklist',
       review_readiness: '/guardian',
     };
+    const STEP_ICONS = {
+      create_message: MessageSquare,
+      upload_document: FolderLock,
+      designate_primary: Users,
+      customize_checklist: CheckSquare,
+      review_readiness: Sparkles,
+    };
+    const STEP_COLORS = {
+      create_message: '#8b5cf6',
+      upload_document: '#10b981',
+      designate_primary: '#3b82f6',
+      customize_checklist: '#f59e0b',
+      review_readiness: '#d4af37',
+    };
     const STEP_LABELS = {
-      create_message: { title: 'Leave a Message for Your Loved Ones', desc: 'Record a video, voice, or written message. You can edit or re-record anytime.', step: 1 },
-      upload_document: { title: 'Upload Your First Estate Document', desc: 'Securely store a will, trust, insurance policy, or other important document.', step: 2 },
+      create_message: { title: 'Leave a Message for Your Loved Ones', desc: 'Record a video, voice, or written message for your beneficiaries. You can edit or re-record anytime.', step: 1 },
+      upload_document: { title: 'Upload Your First Estate Document', desc: 'Securely store a will, trust, insurance policy, or other important document in your encrypted vault.', step: 2 },
       designate_primary: { title: 'Designate Your Primary Beneficiary', desc: 'Choose who will serve as trustee of your estate and have authority to manage beneficiary access after transition.', step: 3 },
       customize_checklist: { title: 'Review Your Action Checklist', desc: 'Customize the steps your loved ones will follow when they need it most.', step: 4 },
-      review_readiness: { title: 'Consult the Estate Guardian', desc: 'Get an AI analysis of your estate plan and personalized next steps.', step: 5 },
+      review_readiness: { title: 'Consult the Estate Guardian', desc: 'Get an AI analysis of your estate plan and your personalized readiness score.', step: 5 },
     };
     const stepInfo = STEP_LABELS[guidedStep.key] || STEP_LABELS.create_message;
     const route = STEP_ROUTES[guidedStep.key];
+    const StepIcon = STEP_ICONS[guidedStep.key] || Sparkles;
+    const stepColor = STEP_COLORS[guidedStep.key] || '#d4af37';
     const totalSteps = 5;
 
+    // Personalize step 1 with beneficiary names
+    let title = stepInfo.title;
+    if (guidedStep.key === 'create_message') {
+      const benNames = guidedStep.beneficiary_names || [];
+      if (benNames.length > 0) {
+        title = `Leave a Message for ${benNames.join(', ')}`;
+      }
+    }
+
+    const dismissOverlay = () => {
+      setShowGuidedFlow(false);
+      sessionStorage.setItem('carryon_activation_done', 'true');
+    };
+
     return (
-      <div className="min-h-screen flex items-center justify-center p-6" style={{ background: 'linear-gradient(168deg, #080e1a 0%, #0d1627 30%, #111d35 60%, #0a1122 100%)' }}>
-        <div className="max-w-md w-full text-center">
-          <div className="text-6xl mb-6">{stepInfo.icon}</div>
-          <p className="text-xs text-[#d4af37] font-bold uppercase tracking-widest mb-3">Step {stepInfo.step} of {totalSteps}</p>
-          <h1 className="text-2xl font-bold text-white mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>{stepInfo.title}</h1>
-          <p className="text-sm text-[#94a3b8] mb-8">{stepInfo.desc}</p>
+      <div className="fixed inset-0 z-[150] flex items-center justify-center" data-testid="guided-overlay"
+        style={{ animation: 'frostedFadeIn 0.5s ease forwards' }}>
+        <style>{`
+          @keyframes frostedFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          @keyframes bubbleIn {
+            0% { opacity: 0; transform: scale(0.8) translateY(30px); }
+            60% { transform: scale(1.03) translateY(-5px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+          }
+          @keyframes pulseRing {
+            0% { box-shadow: 0 0 0 0 ${stepColor}40; }
+            70% { box-shadow: 0 0 0 20px ${stepColor}00; }
+            100% { box-shadow: 0 0 0 0 ${stepColor}00; }
+          }
+        `}</style>
+
+        {/* Frosted glass backdrop */}
+        <div className="absolute inset-0" style={{
+          backdropFilter: 'blur(16px) saturate(120%)',
+          WebkitBackdropFilter: 'blur(16px) saturate(120%)',
+          background: 'rgba(8,14,26,0.7)',
+        }} />
+
+        {/* Close X button — upper right */}
+        <button onClick={dismissOverlay}
+          className="absolute top-5 right-5 z-10 w-10 h-10 rounded-full flex items-center justify-center text-white/40 hover:text-white/80 hover:bg-white/10 transition-all"
+          data-testid="guided-close-btn">
+          <X className="w-5 h-5" />
+        </button>
+
+        {/* Center bubble */}
+        <div className="relative max-w-md w-full mx-6 text-center"
+          style={{ animation: 'bubbleIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both' }}>
+
+          {/* Step counter */}
+          <p className="text-xs font-bold uppercase tracking-[0.25em] mb-6"
+            style={{ color: stepColor }}>
+            Step {stepInfo.step} of {totalSteps}
+          </p>
+
+          {/* Large icon bubble */}
+          <div className="w-28 h-28 rounded-full flex items-center justify-center mx-auto mb-6"
+            style={{
+              background: `radial-gradient(circle, ${stepColor}20 0%, ${stepColor}08 70%)`,
+              border: `2px solid ${stepColor}35`,
+              animation: 'pulseRing 2.5s ease-in-out infinite',
+            }}>
+            <StepIcon className="w-14 h-14" style={{ color: stepColor }} />
+          </div>
+
+          {/* Title and description */}
+          <h1 className="text-2xl lg:text-3xl font-bold text-white mb-3"
+            style={{ fontFamily: 'Outfit, sans-serif' }}>
+            {title}
+          </h1>
+          <p className="text-sm lg:text-base text-[#94a3b8] mb-8 max-w-sm mx-auto leading-relaxed">
+            {stepInfo.desc}
+          </p>
+
+          {/* CTA button */}
           <button onClick={() => { setShowGuidedFlow(false); navigate(route); }}
-            className="w-full py-3.5 rounded-xl text-base font-bold mb-4"
-            style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}>
-            Let's Go
+            className="w-full max-w-xs mx-auto py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
+            style={{ background: `linear-gradient(135deg, ${stepColor}, ${stepColor}cc)`, color: '#080e1a', boxShadow: `0 8px 32px ${stepColor}30` }}
+            data-testid="guided-cta-btn">
+            Let's Go <ChevronRight className="w-5 h-5" />
           </button>
-          <button onClick={() => { setShowGuidedFlow(false); sessionStorage.setItem('carryon_activation_done', 'true'); }}
-            className="text-sm text-[#64748b]">
-            Skip for now
+
+          {/* Skip link */}
+          <button onClick={dismissOverlay}
+            className="mt-8 px-5 py-2 rounded-full text-xs text-[#64748b] hover:text-[#94a3b8] transition-colors"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+            data-testid="guided-skip-btn">
+            Skip this step for now
           </button>
         </div>
       </div>
     );
-  }
+  };
 
   return (
     <div className="p-4 lg:p-8 pt-[4.25rem] lg:pt-8 pb-24 lg:pb-8 animate-fade-in" data-testid="benefactor-dashboard">
@@ -518,7 +614,54 @@ const DashboardPage = () => {
           </button>
         </div>
       </div>
-      {showCelebration && <ActivationCelebration onDismiss={handleCelebrationDismiss} />}
+      {showCelebration && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center" data-testid="celebration-overlay"
+          style={{ animation: 'frostedFadeIn 0.5s ease forwards' }}>
+          <style>{`
+            @keyframes frostedFadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes celebrationBounce {
+              0% { opacity: 0; transform: scale(0.7) translateY(40px); }
+              50% { transform: scale(1.05) translateY(-10px); }
+              100% { opacity: 1; transform: scale(1) translateY(0); }
+            }
+            @keyframes confettiSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+          `}</style>
+          <div className="absolute inset-0" style={{
+            backdropFilter: 'blur(16px) saturate(120%)',
+            WebkitBackdropFilter: 'blur(16px) saturate(120%)',
+            background: 'rgba(8,14,26,0.7)',
+          }} />
+          <button onClick={handleCelebrationDismiss}
+            className="absolute top-5 right-5 z-10 w-10 h-10 rounded-full flex items-center justify-center text-white/40 hover:text-white/80 hover:bg-white/10 transition-all"
+            data-testid="celebration-close-btn">
+            <X className="w-5 h-5" />
+          </button>
+          <div className="relative max-w-lg w-full mx-6 text-center p-8 rounded-3xl"
+            style={{
+              animation: 'celebrationBounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both',
+              background: 'radial-gradient(ellipse at center, rgba(212,175,55,0.08) 0%, transparent 70%)',
+              border: '1px solid rgba(212,175,55,0.15)',
+            }}>
+            <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5"
+              style={{ background: 'rgba(212,175,55,0.12)', border: '2px solid rgba(212,175,55,0.3)' }}>
+              <Sparkles className="w-10 h-10 text-[#d4af37]" />
+            </div>
+            <h1 className="text-3xl lg:text-4xl font-bold text-white mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              Congratulations!
+            </h1>
+            <p className="text-base lg:text-lg text-[#94a3b8] mb-8 max-w-sm mx-auto leading-relaxed">
+              You have completed the initial creation of your estate plan. Welcome to CarryOn — continue exploring and building the security your family deserves!
+            </p>
+            <button onClick={handleCelebrationDismiss}
+              className="w-full max-w-xs mx-auto py-4 rounded-2xl text-base font-bold transition-transform active:scale-[0.97]"
+              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}
+              data-testid="celebration-explore-btn">
+              Explore Your Dashboard
+            </button>
+          </div>
+        </div>
+      )}
+      {renderGuidedOverlay()}
     </div>
   );
 };

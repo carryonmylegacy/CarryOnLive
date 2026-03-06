@@ -113,6 +113,17 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - **Verification**: All 19 backend security tests passed (iteration 50). Frontend signup flow, DateMaskInput, and OTP modal all verified functional.
 - **Security Scan Endpoint**: Built admin-only `GET /api/admin/security-scan` that runs 41 automated checks across 11 categories (Authentication, Encryption, Rate Limiting, Security Headers, CORS, File Upload, Data Protection, Database, External Services, Compliance, Production Readiness). Returns letter grade (A/B/C/F), per-check pass/warn/fail with details. Produces SOC 2 audit evidence.
 
+### Session Mar 6, 2026 — Guided Activation Frosted Glass Overlay + IAC Fixes
+- **Frosted Glass Overlay**: Replaced the old full-screen dark guided activation with a frosted glass (`backdrop-filter: blur(16px)`) overlay on top of the visible dashboard. Shows a centered bubble with step icon, "Step X of 5" label, title, description, and gold "Let's Go" CTA button. Includes X close button (upper-right) and "Skip this step for now" pill at the bottom.
+- **5-Step Onboarding**: Removed `create_estate` from ONBOARDING_STEPS (auto-completed at registration). Now exactly 5 steps: create_message → upload_document → designate_primary → customize_checklist → review_readiness.
+- **Default IAC Items Fixed**: Exactly 5 items with `category=immediate`, all beneficiary-focused for post-transition guidance. Demo account cleaned from 30 items to correct 5.
+- **ReturnPopup on BeneficiariesPage**: Congratulatory modal appears after designating primary beneficiary.
+- **ReturnPopup on GuardianPage**: Congratulatory modal appears after first EGA analysis.
+- **ReturnPopup messages updated**: Exact user-specified wording for primary ("Congratulations — you made a huge step!"), checklist ("Congratulations — a huge next step!"), guardian ("Congratulations! You have completed the initial creation of your estate plan...").
+- **Celebration Overlay**: Final celebration after all 5 steps complete also uses frosted glass with X close button.
+- **Personalized Step 1**: "Leave a Message for [beneficiary names]" using names from onboarding.
+- **Dev Switcher fixed**: Reverted production gate, updated auth to accept any configured account token (not just admin).
+
 ## Backlog (Post v1.0 Approval)
 - **P1: Apple Passkeys** — Add "Sign in with Passkey" via `@argo-navis-dev/capacitor-passkey-plugin`. Associated Domains already configured. Backend WebAuthn routes partially built. Requires plugin install, challenge/verify endpoints, frontend registration + login flow. Target: v1.1
 - **P2: Will Creation Wizard** — TurboTax-style guided will creation. Major revenue driver.
