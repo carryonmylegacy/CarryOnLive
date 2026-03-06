@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Shield, Clock, CheckCircle2, XCircle, Loader2, Package, Lock,
-  DollarSign, Mail, Flame, ChevronRight, Search
+  DollarSign, Mail, Flame, ChevronRight, Search, Trash2, AlertTriangle, Eye, EyeOff
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -22,6 +22,10 @@ export const DTSTab = ({ getAuthHeaders }) => {
   const [quoteItems, setQuoteItems] = useState([{ description: '', cost: '' }]);
   const [actionLoading, setActionLoading] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [showDeletePw, setShowDeletePw] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchTasks();
@@ -64,6 +68,95 @@ export const DTSTab = ({ getAuthHeaders }) => {
       fetchTasks();
     } catch (err) { toast.error('Failed'); }
     finally { setActionLoading(null); }
+  };
+
+  const handleDeleteDts = async () => {
+    if (!deleteTarget || !deletePassword.trim()) return;
+    setDeleting(true);
+    try {
+      await axios.delete(`${API_URL}/dts/tasks/${deleteTarget.id}?admin_password=${encodeURIComponent(deletePassword)}`, getAuthHeaders());
+      setDtsTasks(prev => prev.filter(t => t.id !== deleteTarget.id));
+      toast.success(`DTS request "${deleteTarget.title}" deleted`);
+      setDeleteTarget(null);
+      setDeletePassword('');
+      setSelectedDts(null);
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'Failed to delete';
+      toast.error(msg);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // Delete Confirmation Modal (shared with detail view and list view)
+  const renderDeleteModal = () => {
+    if (!deleteTarget) return null;
+    return (
+      <div className="fixed inset-0 z-[999] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
+        <div className="w-full max-w-sm rounded-2xl p-6 space-y-4 animate-fade-in"
+          style={{
+            background: 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(15,22,41,0.98) 40%)',
+            border: '1.5px solid rgba(212,175,55,0.3)',
+            boxShadow: '0 0 40px rgba(212,175,55,0.08)',
+          }}
+          data-testid="dts-delete-confirm-modal">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)' }}>
+              <AlertTriangle className="w-5 h-5 text-red-400" />
+            </div>
+            <div>
+              <h3 className="text-white font-bold text-base" style={{ fontFamily: 'Outfit, sans-serif' }}>Delete DTS Request</h3>
+              <p className="text-[var(--t5)] text-[10px]">This action is irreversible</p>
+            </div>
+          </div>
+
+          <div className="p-3 rounded-xl" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.12)' }}>
+            <p className="text-sm text-[var(--t3)]">
+              Permanently delete <strong className="text-white">{deleteTarget.title}</strong>?
+            </p>
+            <p className="text-[10px] text-red-400/80 mt-1">
+              This will remove the DTS request, all quote line items, and related activity logs.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[var(--t4)] text-xs font-medium">Enter your admin password to confirm <span className="text-red-400">*</span></label>
+            <div className="relative">
+              <Input
+                type={showDeletePw ? 'text' : 'password'}
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && deletePassword.trim() && handleDeleteDts()}
+                placeholder="Admin password"
+                className="h-11 bg-[#0b1322] border-[#1a2a42] text-white placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-xl pr-10"
+                autoFocus
+                data-testid="dts-delete-confirm-password"
+              />
+              <button type="button" onClick={() => setShowDeletePw(!showDeletePw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3a4a63]">
+                {showDeletePw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-1">
+            <Button variant="ghost" className="flex-1 text-[var(--t4)]"
+              onClick={() => { setDeleteTarget(null); setDeletePassword(''); }}
+              disabled={deleting}
+              data-testid="dts-delete-cancel-btn">
+              Cancel
+            </Button>
+            <Button className="flex-1 font-bold"
+              style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: 'white' }}
+              onClick={handleDeleteDts}
+              disabled={deleting || !deletePassword.trim()}
+              data-testid="dts-delete-confirm-btn">
+              {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+              Delete Permanently
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (loading) return <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-[var(--gold)]" /></div>;
@@ -138,6 +231,23 @@ export const DTSTab = ({ getAuthHeaders }) => {
             ))}
           </div>
         </CardContent></Card>
+
+        {/* Delete Request */}
+        <Card className="glass-card"><CardContent className="p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-[var(--rd)] mb-1">Danger Zone</h3>
+              <p className="text-xs text-[var(--t5)]">Permanently delete this DTS request and all associated data.</p>
+            </div>
+            <Button size="sm" variant="outline"
+              className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+              onClick={() => { setDeleteTarget({ id: selectedDts.id, title: selectedDts.title }); setDeletePassword(''); setShowDeletePw(false); }}
+              data-testid="dts-delete-btn">
+              <Trash2 className="w-4 h-4 mr-2" /> Delete Request
+            </Button>
+          </div>
+        </CardContent></Card>
+        {renderDeleteModal()}
       </div>
     );
   }
@@ -198,6 +308,7 @@ export const DTSTab = ({ getAuthHeaders }) => {
           );
         })
       )}
+      {renderDeleteModal()}
     </div>
   );
 };

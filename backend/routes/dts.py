@@ -308,8 +308,21 @@ async def update_dts_task(
 
 
 @router.delete("/dts/tasks/{task_id}")
-async def delete_dts_task(task_id: str, current_user: dict = Depends(get_current_user)):
+async def delete_dts_task(
+    task_id: str,
+    admin_password: str = None,
+    current_user: dict = Depends(get_current_user),
+):
     """Delete a DTS task completely"""
+    # Admin must provide password
+    if current_user["role"] == "admin":
+        if not admin_password:
+            raise HTTPException(status_code=400, detail="Admin password required")
+        from utils import verify_password
+
+        if not verify_password(admin_password, current_user["password"]):
+            raise HTTPException(status_code=403, detail="Incorrect admin password")
+
     task = await db.dts_tasks.find_one({"id": task_id}, {"_id": 0})
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
