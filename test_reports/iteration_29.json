@@ -91,7 +91,7 @@
   "seed_data_creation": "None - used existing test data",
   "retest_needed": false,
   "should_main_agent_self_test": false,
-  "context_for_next_testing_agent": "Full platform audit complete. 22/31 backend tests passed, 9 skipped due to rate limiting. All frontend pages working. Security features verified: rate limiting (10/min login), security headers, NoSQL injection protection, no password leaks. Known issue: React duplicate key warning '/admin' in sidebar navigation. XSS test in chat shows payloads are escaped. App URL: https://estate-transition.preview.emergentagent.com. Admin login: admin@carryon.com / admin123",
+  "context_for_next_testing_agent": "Full platform audit complete. 22/31 backend tests passed, 9 skipped due to rate limiting. All frontend pages working. Security features verified: rate limiting (10/min login), security headers, NoSQL injection protection, no password leaks. Known issue: React duplicate key warning '/admin' in sidebar navigation. XSS test in chat shows payloads are escaped. App URL: https://benefactor-join.preview.emergentagent.com. Admin login: admin@carryon.com / admin123",
   "security_audit_results": {
     "rate_limiting": "PASS - 10 requests/min for login endpoints",
     "security_headers": "PASS - X-Frame-Options: DENY, X-Content-Type-Options: nosniff, HSTS, XSS-Protection",
