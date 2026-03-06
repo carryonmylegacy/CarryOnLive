@@ -134,6 +134,11 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - **Signup Underlines**: "Adult" in "Adult Dependent 1" and "Minor" in "Minor Dependent 1" now underlined with gold for clarity.
 - **Address Input Fix**: AddressAutocomplete now accepts className prop for consistent input heights.
 
+### Session Mar 6, 2026 — Critical Crash Fix (add_credential)
+- **VERIFIED & TESTED**: Fixed critical crash caused by missing `add_credential` config in `OnboardingWizard.js` STEP_CONFIG object. Added KeyRound icon, cyan color (#06b6d4), /digital-wallet route, label, and description. Added null guard (`if (!config) return null`) as defensive fallback.
+- **CI/CD Linting**: Both `ruff format . --check` and `ruff check .` pass cleanly (85 files formatted).
+- **Test Results**: 100% pass rate — dashboard loads correctly, onboarding wizard renders "4 of 6 complete", guided overlay shows "STEP 3 OF 6".
+
 ## Pending / Backlog
 - P0: Mobile App rubber-banding/blank screen (Codemagic build validation pending)
 - P1: In-App Viewer for PNG Images (triggers download instead of viewer)
