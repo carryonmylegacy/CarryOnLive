@@ -669,7 +669,8 @@ const ChecklistPage = () => {
       )}
 
       {showReturnPopup && (
-        <ReturnPopup step="checklist" onReturn={() => { setShowReturnPopup(false); navigate('/dashboard'); }} />
+        <ReturnPopup step="checklist" onReturn={() => { setShowReturnPopup(false); navigate('/dashboard'); }} 
+          onAlternate={() => { setShowReturnPopup(false); }} />
       )}
 
       {/* Rejection Feedback Modal */}

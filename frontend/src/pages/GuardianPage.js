@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import { ReturnPopup } from '../components/GuidedActivation';
 import {
   Bot,
   Send,
@@ -176,8 +178,10 @@ const actionButtons = [
 // ═══════════════════════════════════════════════
 const GuardianPage = () => {
   const { user, getAuthHeaders } = useAuth();
+  const navigate = useNavigate();
   const guardianRef = useRef(null);
   const [headerHeight, setHeaderHeight] = useState(56);
+  const [showReturnPopup, setShowReturnPopup] = useState(false);
 
   // Measure actual header height to position Guardian correctly
   useEffect(() => {
@@ -373,6 +377,14 @@ const GuardianPage = () => {
           assistantMsg.actionBadge = `${result.items_added} checklist items added`;
         } else if (result.action === 'readiness_analyzed' && result.readiness) {
           assistantMsg.readiness = result.readiness;
+          // Show congratulations popup on first EGA analysis (during onboarding)
+          if (!sessionStorage.getItem('carryon_ega_popup_shown')) {
+            sessionStorage.setItem('carryon_ega_popup_shown', 'true');
+            try {
+              await axios.post(`${API_URL}/onboarding/complete-step/review_readiness`, {}, getAuthHeaders());
+            } catch {}
+            setTimeout(() => setShowReturnPopup(true), 1500);
+          }
         }
       }
       setMessages(prev => [...prev, assistantMsg]);
@@ -768,6 +780,9 @@ const GuardianPage = () => {
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
+      {showReturnPopup && (
+        <ReturnPopup step="guardian" onReturn={() => { setShowReturnPopup(false); navigate('/dashboard'); }} />
+      )}
     </div>
   );
 };
