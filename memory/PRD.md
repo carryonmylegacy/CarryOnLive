@@ -116,6 +116,11 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - **Skip No Longer Permanently Kills Panes**: Removed `sessionStorage('carryon_activation_done')` entirely. Replaced with a `useRef(guidedDismissedRef)` that resets on component re-mount. X and Skip now dismiss only for the current page visit; navigating away and back re-checks onboarding progress.
 - **Dashboard Flash Eliminated**: Added double `requestAnimationFrame` before setting `dashboardReady`, ensuring the overlay has time to render before the dashboard content fades in.
 
+### Session Mar 6, 2026 — DTS Delete + Toast Fix + IAC Errors
+- **DTS Delete Button**: Added "Danger Zone" card with "Delete Request" button in DTS detail view. Clicking opens admin password confirmation modal (same pattern as user delete). Backend `DELETE /dts/tasks/{task_id}` now requires `admin_password` query param for admin users.
+- **Toast Z-Index Fix**: Toaster component z-index raised to 99999 (from default) so error toasts appear above all modals (Dialog z-50, overlays z-[200]). Users can now see and dismiss toast errors even when a modal is open.
+- **IAC Errors**: The stacking errors from activation_status updates were fixed in a previous session (model fields added). The z-index fix ensures any remaining toast errors are interactable.
+
 ## Pending / Backlog
 - P0: Mobile App rubber-banding/blank screen (Codemagic build validation pending)
 - P1: In-App Viewer for PNG Images (triggers download instead of viewer)
