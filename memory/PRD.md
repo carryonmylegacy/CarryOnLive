@@ -111,6 +111,7 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - **Monolith Organization**:
   - Extracted `DateMaskInput` component from SignupPage.js (1186→1140 lines) into standalone `/app/frontend/src/components/DateMaskInput.js` for reusability and maintainability.
 - **Verification**: All 19 backend security tests passed (iteration 50). Frontend signup flow, DateMaskInput, and OTP modal all verified functional.
+- **Security Scan Endpoint**: Built admin-only `GET /api/admin/security-scan` that runs 41 automated checks across 11 categories (Authentication, Encryption, Rate Limiting, Security Headers, CORS, File Upload, Data Protection, Database, External Services, Compliance, Production Readiness). Returns letter grade (A/B/C/F), per-check pass/warn/fail with details. Produces SOC 2 audit evidence.
 
 ## Backlog (Post v1.0 Approval)
 - **P1: Apple Passkeys** — Add "Sign in with Passkey" via `@argo-navis-dev/capacitor-passkey-plugin`. Associated Domains already configured. Backend WebAuthn routes partially built. Requires plugin install, challenge/verify endpoints, frontend registration + login flow. Target: v1.1
