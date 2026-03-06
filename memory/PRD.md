@@ -100,6 +100,18 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - Mobile app build pipeline verified ready (codemagic.yaml, capacitor config, Cordova bounce plugin)
 
 
+### Session Mar 6, 2026 — Security Hardening & Apple Readiness Audit
+- **Comprehensive End-to-End Lint**: Both frontend (ESLint) and backend (ruff) pass with zero errors across all source and test files.
+- **Security Hardening**:
+  - Tightened auth endpoint rate limiting from 200 req/min (dev) to 10 req/min (production-ready) for login, verify-otp, resend-otp, verify-password, and deletion-request.
+  - Added check-email and check-benefactor-email endpoints to moderate rate limiting tier (20 req/min) to prevent user enumeration abuse.
+  - Removed insecure encryption key fallback in config.py — server now fails fast if ENCRYPTION_KEY is missing, matching JWT_SECRET behavior.
+  - Made OTP comparison timing-safe using `hmac.compare_digest()` to prevent timing side-channel attacks.
+  - Gated public dev-switcher config endpoint behind environment check — returns `{enabled: false}` in production.
+- **Monolith Organization**:
+  - Extracted `DateMaskInput` component from SignupPage.js (1186→1140 lines) into standalone `/app/frontend/src/components/DateMaskInput.js` for reusability and maintainability.
+- **Verification**: All 19 backend security tests passed (iteration 50). Frontend signup flow, DateMaskInput, and OTP modal all verified functional.
+
 ## Backlog (Post v1.0 Approval)
 - **P1: Apple Passkeys** — Add "Sign in with Passkey" via `@argo-navis-dev/capacitor-passkey-plugin`. Associated Domains already configured. Backend WebAuthn routes partially built. Requires plugin install, challenge/verify endpoints, frontend registration + login flow. Target: v1.1
 - **P2: Will Creation Wizard** — TurboTax-style guided will creation. Major revenue driver.
