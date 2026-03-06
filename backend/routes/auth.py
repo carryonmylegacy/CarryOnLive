@@ -663,7 +663,11 @@ async def verify_otp(data: OTPVerifyWithTrust, request: Request):
 
     if not is_demo_bypass:
         stored_otp = await db.otps.find_one({"email": data.email}, {"_id": 0})
-        if not stored_otp or stored_otp["otp"] != data.otp:
+        import hmac
+
+        if not stored_otp or not hmac.compare_digest(
+            stored_otp["otp"], data.otp
+        ):
             raise HTTPException(status_code=401, detail="Invalid OTP")
 
         # Check OTP expiry (10 minutes)

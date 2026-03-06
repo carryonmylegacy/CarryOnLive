@@ -37,9 +37,8 @@ JWT_EXPIRATION_HOURS = 8
 # Encryption — NO FALLBACK: missing key MUST fail fast
 ENCRYPTION_KEY = os.environ.get("ENCRYPTION_KEY")
 if not ENCRYPTION_KEY:
-    ENCRYPTION_KEY = "carryon-default-encryption-key-32b!"
-    logger.warning(
-        "ENCRYPTION_KEY not explicitly set — using .env value. Ensure a strong key is set in production."
+    raise RuntimeError(
+        "FATAL: ENCRYPTION_KEY environment variable is not set. Server cannot start without it."
     )
 ENCRYPTION_SALT = (
     b"carryon_salt_2024"  # Legacy V1 only; new encryption uses per-estate salts

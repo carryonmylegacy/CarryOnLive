@@ -219,7 +219,7 @@ class TestAccessRequests:
         )
         # 403 because benefactor cannot request access
         assert response.status_code in [403], f"Expected 403, got {response.status_code}: {response.text}"
-        print(f"PASS: request-access correctly requires beneficiary role")
+        print("PASS: request-access correctly requires beneficiary role")
     
     def test_handle_access_request_format(self, benefactor_token):
         """Test that handle-access-request endpoint validates action format"""
@@ -339,7 +339,7 @@ class TestOnboardingProgress:
         assert designate_primary_step is not None, "Expected designate_primary step in onboarding"
         assert "completed" in designate_primary_step
         
-        print(f"PASS: onboarding progress includes designate_primary step")
+        print("PASS: onboarding progress includes designate_primary step")
         print(f"  - Label: {designate_primary_step.get('label')}")
         print(f"  - Completed: {designate_primary_step.get('completed')}")
 
@@ -362,7 +362,7 @@ class TestSubscriptionStatusPairedPrice:
         data = response.json()
         # paired_price may be null if estate not transitioned or user is not beneficiary
         # but the field should be present in the response structure
-        print(f"PASS: subscription status response structure")
+        print("PASS: subscription status response structure")
         print(f"  - user_role: {data.get('user_role')}")
         print(f"  - estate_transitioned: {data.get('estate_transitioned')}")
         print(f"  - paired_price: {data.get('paired_price')}")
@@ -390,7 +390,7 @@ class TestBeneficiaryModel:
             # Check first beneficiary has is_primary field
             ben = data[0]
             assert "is_primary" in ben, "Expected is_primary field in beneficiary"
-            print(f"PASS: beneficiaries include is_primary field")
+            print("PASS: beneficiaries include is_primary field")
             print(f"  - First beneficiary: {ben.get('name')} (is_primary: {ben.get('is_primary')})")
         else:
             print("PASS: beneficiaries endpoint works (no beneficiaries in estate)")
