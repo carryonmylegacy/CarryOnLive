@@ -93,14 +93,14 @@ const DigitalWalletPage = () => {
 
   if (loading) {
     return (
-      <div className="p-4 lg:p-6 pt-20 lg:pt-6 flex justify-center items-center h-64">
+      <div className="p-4 lg:p-6 pt-4 lg:pt-6 flex justify-center items-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-[var(--gold)]" />
       </div>
     );
   }
 
   return (
-    <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in max-w-4xl mx-auto" data-testid="digital-wallet-page">
+    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in max-w-4xl mx-auto" data-testid="digital-wallet-page">
       <SectionLockBanner sectionId="vault" />
 
       <SectionLockedOverlay sectionId="vault">

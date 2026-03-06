@@ -218,7 +218,7 @@ const DashboardPage = () => {
 
   if (loading) {
     return (
-      <div className="p-4 lg:p-8 pt-[4.25rem] lg:pt-8 animate-fade-in">
+      <div className="p-4 lg:p-8 pt-4 lg:pt-8 animate-fade-in">
         <div className="h-8 w-64 bg-[var(--s)] rounded-lg mb-4 animate-pulse" />
         <div className="h-5 w-80 bg-[var(--s)] rounded-lg mb-6 animate-pulse" />
         <div className="h-48 bg-[var(--s)] rounded-2xl mb-4 animate-pulse" />
@@ -231,7 +231,7 @@ const DashboardPage = () => {
 
   if (!estate && estates.length === 0) {
     return (
-      <div className="p-4 lg:p-8 pt-[4.25rem] lg:pt-8 animate-fade-in">
+      <div className="p-4 lg:p-8 pt-4 lg:pt-8 animate-fade-in">
         <div className="glass-card max-w-lg mx-auto mt-8 p-8 lg:p-12 text-center">
           <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-[var(--gold)]/20 flex items-center justify-center">
             <FolderLock className="w-8 h-8 text-[var(--gold)]" />
@@ -395,7 +395,7 @@ const DashboardPage = () => {
   };
 
   return (
-    <div className="p-4 lg:p-8 pt-[4.25rem] lg:pt-8 pb-24 lg:pb-8" data-testid="benefactor-dashboard"
+    <div className="p-4 lg:p-8 pt-4 lg:pt-8 pb-24 lg:pb-8" data-testid="benefactor-dashboard"
       style={{
         opacity: dashboardReady ? 1 : 0,
         transition: 'opacity 0.5s ease',

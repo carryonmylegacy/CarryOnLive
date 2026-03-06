@@ -86,13 +86,13 @@ const BeneficiaryVaultPage = () => {
     .filter(d => !searchQuery || d.name?.toLowerCase().includes(searchQuery.toLowerCase()));
 
   if (loading) return (
-    <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-4">
+    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-4">
       {[1,2,3].map(i => <Skeleton key={i} className="h-24 bg-[var(--s)] rounded-xl" />)}
     </div>
   );
 
   return (
-    <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6" data-testid="beneficiary-vault">
+    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6" data-testid="beneficiary-vault">
       <button onClick={() => navigate('/beneficiary/dashboard')} className="inline-flex items-center gap-1 text-sm font-bold text-[#60A5FA] mb-4">
         <ChevronLeft className="w-4 h-4" /> Back to Dashboard
       </button>

@@ -113,7 +113,7 @@ const AdminPage = () => {
 
   if (user?.role !== 'admin') {
     return (
-      <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 animate-fade-in">
+      <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 animate-fade-in">
         <Card className="glass-card"><CardContent className="p-12 text-center">
           <Shield className="w-16 h-16 mx-auto text-[#ef4444] mb-4" />
           <h3 className="text-xl font-bold text-[var(--t)] mb-2">Access Denied</h3>
@@ -122,10 +122,10 @@ const AdminPage = () => {
     );
   }
 
-  if (loading) return <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6"><Skeleton className="h-12 w-64 bg-[var(--s)]" /></div>;
+  if (loading) return <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6"><Skeleton className="h-12 w-64 bg-[var(--s)]" /></div>;
 
   return (
-    <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in max-w-full overflow-x-hidden" data-testid="admin-dashboard">
+    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in max-w-full overflow-x-hidden" data-testid="admin-dashboard">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>

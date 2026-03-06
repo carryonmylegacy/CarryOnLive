@@ -40,7 +40,7 @@ const PreTransitionPage = () => {
 
   if (loading) {
     return (
-      <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 space-y-6">
+      <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6">
         <Skeleton className="h-10 w-64 bg-[var(--s)]" />
         <Skeleton className="h-48 bg-[var(--s)] rounded-2xl" />
       </div>
@@ -48,7 +48,7 @@ const PreTransitionPage = () => {
   }
 
   return (
-    <div className="p-4 lg:p-6 pt-20 lg:pt-6 pb-24 lg:pb-6 animate-fade-in" data-testid="pre-transition">
+    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 animate-fade-in" data-testid="pre-transition">
       {/* Back to estates */}
       <Button
         variant="outline"
