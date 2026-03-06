@@ -1103,27 +1103,62 @@ async def validate_apple_receipt(
 
     # Map Apple product IDs to our plan IDs
     apple_to_plan = {
+        # Benefactor plans
         "us.carryon.app.premium_monthly": "premium",
+        "us.carryon.app.premium_quarterly": "premium",
         "us.carryon.app.premium_annual": "premium",
         "us.carryon.app.standard_monthly": "standard",
+        "us.carryon.app.standard_quarterly": "standard",
         "us.carryon.app.standard_annual": "standard",
         "us.carryon.app.base_monthly": "base",
+        "us.carryon.app.base_quarterly": "base",
         "us.carryon.app.base_annual": "base",
         "us.carryon.app.new_adult_monthly": "new_adult",
+        "us.carryon.app.new_adult_quarterly": "new_adult",
+        "us.carryon.app.new_adult_annual": "new_adult",
         "us.carryon.app.military_monthly": "military",
+        "us.carryon.app.military_quarterly": "military",
+        "us.carryon.app.military_annual": "military",
         "us.carryon.app.veteran_monthly": "veteran",
+        "us.carryon.app.veteran_quarterly": "veteran",
+        "us.carryon.app.veteran_annual": "veteran",
+        # Beneficiary plans
+        "us.carryon.app.ben_premium_monthly": "ben_premium",
+        "us.carryon.app.ben_premium_quarterly": "ben_premium",
+        "us.carryon.app.ben_premium_annual": "ben_premium",
+        "us.carryon.app.ben_standard_monthly": "ben_standard",
+        "us.carryon.app.ben_standard_quarterly": "ben_standard",
+        "us.carryon.app.ben_standard_annual": "ben_standard",
+        "us.carryon.app.ben_base_monthly": "ben_base",
+        "us.carryon.app.ben_base_quarterly": "ben_base",
+        "us.carryon.app.ben_base_annual": "ben_base",
+        "us.carryon.app.ben_military_monthly": "ben_military",
+        "us.carryon.app.ben_military_quarterly": "ben_military",
+        "us.carryon.app.ben_military_annual": "ben_military",
+        "us.carryon.app.ben_veteran_monthly": "ben_veteran",
+        "us.carryon.app.ben_veteran_quarterly": "ben_veteran",
+        "us.carryon.app.ben_veteran_annual": "ben_veteran",
+        "us.carryon.app.ben_hospice_monthly": "ben_hospice",
     }
 
     plan_id = apple_to_plan.get(product_id)
     if not plan_id:
         raise HTTPException(status_code=400, detail=f"Unknown product: {product_id}")
 
-    billing_cycle = "annual" if "annual" in product_id else "monthly"
+    billing_cycle = (
+        "annual"
+        if "annual" in product_id
+        else "quarterly"
+        if "quarterly" in product_id
+        else "monthly"
+    )
 
     # Store the Apple subscription in user_subscriptions (same collection as Stripe)
     now = datetime.now(timezone.utc)
     if billing_cycle == "annual":
         period_end = now + timedelta(days=365)
+    elif billing_cycle == "quarterly":
+        period_end = now + timedelta(days=90)
     else:
         period_end = now + timedelta(days=30)
 
