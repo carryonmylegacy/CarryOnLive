@@ -231,7 +231,7 @@ const LoginPage = () => {
     }}>
 
       {/* NAV BAR */}
-      <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(14,165,233,0.06)', background: 'rgba(11,18,33,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+      <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(14,165,233,0.06)', background: 'rgba(11,18,33,0.97)', paddingTop: 'var(--sat, 0px)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           <img src="/carryon-logo.jpg" alt="CarryOn" className="h-12" />
           <div className="hidden md:flex items-center gap-8">
@@ -251,7 +251,7 @@ const LoginPage = () => {
       </nav>
 
       {/* ═══════════════════ HERO — FLAG BG + LOGO + LOGIN ═══════════════════ */}
-      <section className="min-h-screen flex items-start sm:items-center relative overflow-hidden" style={{ paddingTop: 'calc(5rem + env(safe-area-inset-top, 0px))' }}>
+      <section className="min-h-screen flex items-start sm:items-center relative overflow-hidden" style={{ paddingTop: 'calc(5rem + var(--sat, 0px))' }}>
         {/* Flag background that fades on scroll */}
         <div className="absolute inset-0 z-0" style={{ opacity: flagOpacity * 0.5 }}>
           <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" />

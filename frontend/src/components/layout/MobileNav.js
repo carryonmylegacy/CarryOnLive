@@ -65,14 +65,16 @@ const DebugValues = () => {
       sab: get('env(safe-area-inset-bottom)'),
       sal: get('env(safe-area-inset-left)'),
       sar: get('env(safe-area-inset-right)'),
+      satVar: cs.getPropertyValue('--sat') || 'not set',
+      sabVar: cs.getPropertyValue('--sab') || 'not set',
       headerPt: headerStyle?.paddingTop || 'N/A',
       headerH: headerEl?.offsetHeight || 'N/A',
-      headerBcr: headerEl ? JSON.stringify(headerEl.getBoundingClientRect()) : 'N/A',
       dpr: window.devicePixelRatio,
       screenW: window.screen.width,
       screenH: window.screen.height,
       innerW: window.innerWidth,
       innerH: window.innerHeight,
+      viewportCovers: window.innerHeight >= (window.screen.height - 10) ? 'YES' : 'NO',
       ua: navigator.userAgent.slice(0, 80),
     });
   }, []);
@@ -100,9 +102,10 @@ const DebugValues = () => {
     <div>
       {row('safe-area-inset-top (CSS)', vals.sat)}
       {row('safe-area-inset-top (measured)', measuredTop)}
+      {row('--sat (JS variable)', vals.satVar)}
+      {row('viewport-fit=cover active?', vals.viewportCovers)}
       {row('safe-area-inset-bottom', vals.sab)}
-      {row('safe-area-inset-left', vals.sal)}
-      {row('safe-area-inset-right', vals.sar)}
+      {row('--sab (JS variable)', vals.sabVar)}
       {row('Header paddingTop', vals.headerPt)}
       {row('Header offsetHeight', vals.headerH)}
       {row('Device Pixel Ratio', vals.dpr)}
@@ -216,7 +219,7 @@ const MobileNav = () => {
   return (
     <>
       {/* Top Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 w-full mobile-header z-50" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+      <header className="lg:hidden fixed top-0 left-0 w-full mobile-header z-50">
         <div className="h-14 flex items-center justify-between px-4">
           <div className="flex items-center gap-3 relative" onTouchEnd={handleLogoTap} onClick={handleLogoTap} style={{ cursor: 'pointer', touchAction: 'manipulation' }}>
             <img 
@@ -245,7 +248,7 @@ const MobileNav = () => {
             style={{ 
               background: theme === 'dark' ? '#141C33' : '#DBEAFE',
               borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-              paddingTop: 'env(safe-area-inset-top, 0px)'
+              paddingTop: 'var(--sat, 0px)'
             }}
           >
             <div className="flex flex-col h-full">
