@@ -188,7 +188,7 @@ const GuardianPage = () => {
   const [isListening, setIsListening] = useState(false);
   const [showOnboardingReturn, setShowOnboardingReturn] = useState(false);
   const recognitionRef = useRef(null);
-  const guidedFlowDoneRef = useRef(!!sessionStorage.getItem('carryon_celebration_shown'));
+  const guidedFlowDoneRef = useRef(!!localStorage.getItem('carryon_celebration_shown'));
 
   // Measure actual header height to position Guardian correctly
   useEffect(() => {
