@@ -111,6 +111,11 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - **Light Mode Support**: All hardcoded dark colors in guided overlay, celebration overlay, and ReturnPopup replaced with CSS custom properties (`--guided-overlay-bg`, `--guided-title`, `--guided-desc`, etc.). Light mode variants defined in `[data-theme="light"]` block in `index.css`.
 - **ReturnPopup Light Mode**: Frosted glass backdrop, title text, subtitle text, and button borders all use CSS variables for theme awareness.
 
+### Session Mar 6, 2026 — Overlay Behavior Fixes (3 Bugs)
+- **X Button Bounce-Back Fixed**: Root cause was `useEffect([estate])` triggering infinite re-runs of `fetchEstateData` (because `setEstate` creates new object refs), causing a race condition that re-set `showGuidedFlow=true` after X dismissed it. Fixed by changing dependency to `[estate?.id]`.
+- **Skip No Longer Permanently Kills Panes**: Removed `sessionStorage('carryon_activation_done')` entirely. Replaced with a `useRef(guidedDismissedRef)` that resets on component re-mount. X and Skip now dismiss only for the current page visit; navigating away and back re-checks onboarding progress.
+- **Dashboard Flash Eliminated**: Added double `requestAnimationFrame` before setting `dashboardReady`, ensuring the overlay has time to render before the dashboard content fades in.
+
 ## Pending / Backlog
 - P0: Mobile App rubber-banding/blank screen (Codemagic build validation pending)
 - P1: In-App Viewer for PNG Images (triggers download instead of viewer)
