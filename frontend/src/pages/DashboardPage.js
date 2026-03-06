@@ -13,7 +13,8 @@ import {
   CheckCircle2,
   Circle,
   X,
-  Sparkles
+  Sparkles,
+  KeyRound
 } from 'lucide-react';
 import EstateSelector from '../components/estate/EstateSelector';
 import TrialBanner from '../components/TrialBanner';
@@ -91,6 +92,11 @@ const DashboardPage = () => {
         if (nextIncomplete && !progressRes.data?.all_complete) {
           setGuidedStep({ ...nextIncomplete, beneficiary_names: progressRes.data?.beneficiary_names || [] });
           setShowGuidedFlow(true);
+        } else if (progressRes.data?.all_complete && !sessionStorage.getItem('carryon_celebration_shown')) {
+          // All steps complete — show celebration
+          sessionStorage.setItem('carryon_celebration_shown', 'true');
+          guidedDismissedRef.current = true;
+          setTimeout(() => setShowCelebration(true), 600);
         }
       }
     } catch (error) { console.error('Fetch estate data error:', error); }
@@ -252,6 +258,7 @@ const DashboardPage = () => {
       upload_document: '/vault',
       designate_primary: '/beneficiaries',
       customize_checklist: '/checklist',
+      add_credential: '/digital-wallet',
       review_readiness: '/guardian',
     };
     const STEP_ICONS = {
@@ -259,6 +266,7 @@ const DashboardPage = () => {
       upload_document: FolderLock,
       designate_primary: Users,
       customize_checklist: CheckSquare,
+      add_credential: KeyRound,
       review_readiness: Sparkles,
     };
     const STEP_COLORS = {
@@ -266,6 +274,7 @@ const DashboardPage = () => {
       upload_document: '#10b981',
       designate_primary: '#3b82f6',
       customize_checklist: '#f59e0b',
+      add_credential: '#06b6d4',
       review_readiness: '#d4af37',
     };
     const STEP_LABELS = {
@@ -273,20 +282,25 @@ const DashboardPage = () => {
       upload_document: { title: 'Upload Your First Estate Document', desc: 'Securely store a will, trust, insurance policy, or other important document in your encrypted vault.', step: 2 },
       designate_primary: { title: 'Designate Your Primary Beneficiary', desc: 'Choose who will serve as trustee of your estate and have authority to manage beneficiary access after transition.', step: 3 },
       customize_checklist: { title: 'Review Your Action Checklist', desc: 'Customize the steps your loved ones will follow when they need it most.', step: 4 },
-      review_readiness: { title: 'Consult the Estate Guardian', desc: 'Get an AI analysis of your estate plan and your personalized readiness score.', step: 5 },
+      add_credential: { title: 'Store a Digital Account Credential', desc: 'Add one account login and password to your Digital Access Vault so your beneficiaries can manage your accounts.', step: 5 },
+      review_readiness: { title: 'Consult the Estate Guardian', desc: 'Get an AI analysis of your estate plan and your personalized readiness score.', step: 6 },
     };
     const stepInfo = STEP_LABELS[guidedStep.key] || STEP_LABELS.create_message;
     const route = STEP_ROUTES[guidedStep.key];
     const StepIcon = STEP_ICONS[guidedStep.key] || Sparkles;
     const stepColor = STEP_COLORS[guidedStep.key] || '#d4af37';
-    const totalSteps = 5;
+    const totalSteps = 6;
 
     // Personalize step 1 with beneficiary names
     let title = stepInfo.title;
     if (guidedStep.key === 'create_message') {
       const benNames = guidedStep.beneficiary_names || [];
-      if (benNames.length > 0) {
-        title = `Leave a Message for ${benNames.join(', ')}`;
+      if (benNames.length === 1) {
+        title = `Leave a Message for ${benNames[0]}`;
+      } else if (benNames.length === 2) {
+        title = `Leave a Message for ${benNames[0]} and/or ${benNames[1]}`;
+      } else if (benNames.length >= 3) {
+        title = `Leave a Message for ${benNames[0]}, ${benNames[1]}, and/or ${benNames[2]}`;
       }
     }
 
@@ -335,7 +349,7 @@ const DashboardPage = () => {
           style={{ animation: 'bubbleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both' }}>
 
           {/* Step counter */}
-          <p className="text-xs font-bold uppercase tracking-[0.25em] mb-6"
+          <p className="text-sm font-bold uppercase tracking-[0.25em] mb-6"
             style={{ color: stepColor }}>
             Step {stepInfo.step} of {totalSteps}
           </p>
@@ -660,9 +674,13 @@ const DashboardPage = () => {
               style={{ fontFamily: 'Outfit, sans-serif', color: 'var(--guided-title, #ffffff)' }}>
               Congratulations!
             </h1>
-            <p className="text-base lg:text-lg mb-8 max-w-sm mx-auto leading-relaxed"
+            <p className="text-base lg:text-lg mb-2 max-w-sm mx-auto leading-relaxed"
               style={{ color: 'var(--guided-desc, #94a3b8)' }}>
               You have completed the initial creation of your estate plan. Welcome to CarryOn — continue exploring and building the security your family deserves!
+            </p>
+            <p className="text-xs mb-8 max-w-sm mx-auto"
+              style={{ color: 'var(--guided-skip, #64748b)' }}>
+              If you wish to view the Getting Started steps again, you can re-enable it in Settings.
             </p>
             <button onClick={handleCelebrationDismiss}
               className="w-full max-w-xs mx-auto py-4 rounded-2xl text-base font-bold transition-transform active:scale-[0.97]"

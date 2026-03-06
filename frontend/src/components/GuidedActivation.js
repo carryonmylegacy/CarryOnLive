@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, FileText, Upload, MessageSquare, CheckSquare, ChevronRight, X, UserCheck } from 'lucide-react';
+import { Sparkles, FileText, Upload, MessageSquare, CheckSquare, ChevronRight, X, UserCheck, KeyRound } from 'lucide-react';
 
 /**
  * Bouncing "Return to Dashboard" popup — appears after completing an activation step.
@@ -47,6 +47,14 @@ export const ReturnPopup = ({ step, beneficiaryNames, onReturn, onAlternate }) =
       alternateText: null,
       icon: Sparkles,
       color: '#d4af37',
+    },
+    credential: {
+      title: 'Great — your Digital Access Vault is started!',
+      subtitle: 'Your beneficiaries will be able to manage your accounts when the time comes. You can add more credentials anytime.',
+      returnText: 'Return to Dashboard for Next Steps',
+      alternateText: 'Add Another Credential',
+      icon: KeyRound,
+      color: '#06b6d4',
     },
   };
 

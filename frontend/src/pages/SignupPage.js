@@ -683,7 +683,11 @@ const SignupPage = () => {
                         <div className="space-y-3">
                           <div>
                             <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                              {ben.relation}
+                              {ben.relation?.startsWith('Adult Dependent') ? (
+                                <><span style={{ textDecoration: 'underline', textDecorationColor: '#d4af37', textUnderlineOffset: '3px' }}>Adult</span>{ben.relation.replace('Adult', '')}</>
+                              ) : ben.relation?.startsWith('Minor Dependent') ? (
+                                <><span style={{ textDecoration: 'underline', textDecorationColor: '#d4af37', textUnderlineOffset: '3px' }}>Minor</span>{ben.relation.replace('Minor', '')}</>
+                              ) : ben.relation}
                             </h2>
                             <p className="text-[#6b7a90] text-sm">
                               {isParentStep
