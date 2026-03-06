@@ -143,7 +143,8 @@ async def set_primary_beneficiary(
     """Designate a beneficiary as the primary beneficiary (trustee) of the estate."""
     if current_user["role"] != "benefactor":
         raise HTTPException(
-            status_code=403, detail="Only benefactors can designate a primary beneficiary"
+            status_code=403,
+            detail="Only benefactors can designate a primary beneficiary",
         )
 
     # Find the beneficiary to get their estate_id
@@ -309,7 +310,9 @@ async def handle_access_request(
 ):
     """Approve or deny a beneficiary access request."""
     if data.action not in ("approve", "deny"):
-        raise HTTPException(status_code=400, detail="Action must be 'approve' or 'deny'")
+        raise HTTPException(
+            status_code=400, detail="Action must be 'approve' or 'deny'"
+        )
 
     req = await db.access_requests.find_one({"id": request_id}, {"_id": 0})
     if not req:
@@ -317,7 +320,10 @@ async def handle_access_request(
 
     # Verify current user is the approver
     if req["approver_id"] != current_user["id"] and current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Only the designated approver can act on this request")
+        raise HTTPException(
+            status_code=403,
+            detail="Only the designated approver can act on this request",
+        )
 
     await db.access_requests.update_one(
         {"id": request_id},
@@ -332,9 +338,7 @@ async def handle_access_request(
 
     if data.action == "approve":
         # Add requester as a beneficiary to the estate
-        requester = await db.users.find_one(
-            {"id": req["requester_id"]}, {"_id": 0}
-        )
+        requester = await db.users.find_one({"id": req["requester_id"]}, {"_id": 0})
         if requester:
             # Add to estate beneficiaries array
             await db.estates.update_one(
@@ -350,7 +354,9 @@ async def handle_access_request(
             if not existing_ben:
                 name = requester.get("name", requester.get("email", ""))
                 first_name = requester.get("first_name", name.split(" ")[0])
-                last_name = requester.get("last_name", name.split(" ")[-1] if " " in name else "")
+                last_name = requester.get(
+                    "last_name", name.split(" ")[-1] if " " in name else ""
+                )
                 from models import Beneficiary
 
                 new_ben = Beneficiary(
@@ -376,7 +382,11 @@ async def handle_access_request(
                     "$set": {
                         "id": str(uuid.uuid4()),
                         "beneficiary_id": req["requester_id"],
-                        "benefactor_id": (await db.estates.find_one({"id": req["estate_id"]}, {"_id": 0, "owner_id": 1})).get("owner_id", ""),
+                        "benefactor_id": (
+                            await db.estates.find_one(
+                                {"id": req["estate_id"]}, {"_id": 0, "owner_id": 1}
+                            )
+                        ).get("owner_id", ""),
                         "reason": "post_transition_approval",
                         "grace_starts_at": datetime.now(timezone.utc).isoformat(),
                         "grace_ends_at": grace_end.isoformat(),

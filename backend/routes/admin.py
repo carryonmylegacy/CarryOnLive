@@ -740,7 +740,6 @@ async def update_platform_settings(
     return settings or {"otp_disabled": False}
 
 
-
 # ===================== SECURITY SCAN (SOC 2 Audit Evidence) =====================
 
 
@@ -1091,7 +1090,15 @@ async def run_security_scan(current_user: dict = Depends(get_current_user)):
 
     # --- Summary ---
     total = passed + failed + warnings
-    grade = "A" if failed == 0 and warnings <= 2 else "B" if failed == 0 else "C" if failed <= 2 else "F"
+    grade = (
+        "A"
+        if failed == 0 and warnings <= 2
+        else "B"
+        if failed == 0
+        else "C"
+        if failed <= 2
+        else "F"
+    )
 
     return {
         "scan_timestamp": now,
