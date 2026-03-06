@@ -78,6 +78,15 @@
     /* Border Radius */
     --r: 14px;
     --sidebar-width: 260px;
+
+    /* Guided overlay / frosted glass */
+    --guided-overlay-bg: rgba(8,14,26,0.75);
+    --guided-title: #ffffff;
+    --guided-desc: #94a3b8;
+    --guided-muted: rgba(255,255,255,0.4);
+    --guided-skip: #64748b;
+    --guided-skip-bg: rgba(255,255,255,0.04);
+    --guided-skip-border: rgba(255,255,255,0.06);
     
     /* Shadcn Variables — teal primary, warm gold accent */
     --background: 220 45% 9%;
@@ -161,6 +170,15 @@
     --border: 210 50% 88%;
     --input: 210 50% 88%;
     --ring: 43 74% 45%;
+
+    /* Guided overlay / frosted glass — light mode */
+    --guided-overlay-bg: rgba(240,247,255,0.82);
+    --guided-title: #0F172A;
+    --guided-desc: #475569;
+    --guided-muted: rgba(15,23,42,0.35);
+    --guided-skip: #64748b;
+    --guided-skip-bg: rgba(0,0,0,0.04);
+    --guided-skip-border: rgba(0,0,0,0.08);
   }
 }
 
