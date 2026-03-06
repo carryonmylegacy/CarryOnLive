@@ -124,7 +124,9 @@ const MobileNav = () => {
   const [showDebug, setShowDebug] = useState(false);
   const tapTimerRef = React.useRef(null);
 
-  const handleLogoTap = () => {
+  const handleLogoTap = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     const newCount = tapCount + 1;
     setTapCount(newCount);
     clearTimeout(tapTimerRef.current);
@@ -132,7 +134,7 @@ const MobileNav = () => {
       setShowDebug(true);
       setTapCount(0);
     } else {
-      tapTimerRef.current = setTimeout(() => setTapCount(0), 1500);
+      tapTimerRef.current = setTimeout(() => setTapCount(0), 2000);
     }
   };
 
@@ -216,15 +218,19 @@ const MobileNav = () => {
       {/* Top Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 w-full mobile-header z-50" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="h-14 flex items-center justify-between px-4">
-          <div className="flex items-center gap-3" onClick={handleLogoTap}>
+          <div className="flex items-center gap-3 relative" onTouchEnd={handleLogoTap} onClick={handleLogoTap} style={{ cursor: 'pointer', touchAction: 'manipulation' }}>
             <img 
               src="/carryon-app-icon.jpg" 
               alt="CarryOn" 
               className="w-10 h-10 rounded-xl object-cover"
+              style={{ pointerEvents: 'none' }}
             />
-            <span className="text-[#E0AD2B] font-bold text-lg" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            <span className="text-[#E0AD2B] font-bold text-lg" style={{ fontFamily: 'Outfit, sans-serif', pointerEvents: 'none' }}>
               CarryOn™
             </span>
+            {tapCount > 0 && tapCount < 5 && (
+              <span style={{ position: 'absolute', top: -4, right: -8, background: '#E0AD2B', color: '#000', borderRadius: '50%', width: 18, height: 18, fontSize: 10, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{tapCount}</span>
+            )}
           </div>
 
           <Sheet open={open} onOpenChange={setOpen}>
