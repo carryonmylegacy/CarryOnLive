@@ -306,9 +306,11 @@ function App() {
                 border: '1px solid rgba(244,63,94,0.3)',
                 color: 'var(--t)',
                 maxWidth: '420px',
+                zIndex: 99999,
               },
             }}
             closeButton={false}
+            style={{ zIndex: 99999 }}
           />
         </BrowserRouter>
         </SectionLockProvider>
