@@ -141,6 +141,14 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - **DAV Step Completion Bug Fixed**: Backend `onboarding.py` was checking `db.credentials` (non-existent collection) instead of `db.digital_wallet` for `add_credential` step completion. Fixed to use correct collection name. Verified: step now correctly marks as DONE when a DAV entry exists.
 - **Post-Celebration Wizard Auto-Hide**: After the Congrats celebration is dismissed, the Getting Started wizard now returns `null` (hides completely) instead of rendering all completed steps. User can re-enable via Settings.
 
+### Session Mar 6, 2026 — Apple IAP Integration (Guideline 3.1.1 Fix)
+- **Apple Rejection Fix**: App was rejected because subscriptions were only purchasable via Stripe (external payment). Added Apple In-App Purchase flow for native iOS app.
+- **Frontend Integration**: `SubscriptionPaywall.js` now detects native iOS via `isNative && platform === 'ios'`, uses `purchaseIAP()` from `iap.js` instead of Stripe checkout. Added "Restore Purchases" button (Apple requirement).
+- **Backend Fix**: Receipt validation endpoint (`/subscriptions/validate-apple-receipt`) was writing to wrong collection (`db.subscriptions` instead of `db.user_subscriptions`). Fixed to use `db.user_subscriptions` with `upsert=True`, matching the Stripe flow.
+- **Shared Secret**: Added `APPLE_SHARED_SECRET` to backend `.env` for future receipt verification.
+- **Info.plist Fix**: Removed erroneous `NSExtension` block from main app Info.plist that was causing CodeMagic "Validation failed" publish errors. Added `NSSpeechRecognitionUsageDescription`.
+- **Rate Limit**: Auth endpoints loosened from 10 → 30 requests/min for development.
+
 ## Pending / Backlog
 - P0: Mobile App rubber-banding/blank screen (Codemagic build validation pending)
 - P1: In-App Viewer for PNG Images (triggers download instead of viewer)
