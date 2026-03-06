@@ -137,7 +137,7 @@ const MobileNav = () => {
   return (
     <>
       {/* Top Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 w-full mobile-header z-50">
+      <header className="lg:hidden fixed top-0 left-0 w-full mobile-header z-50" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="h-14 flex items-center justify-between px-4">
           <div className="flex items-center gap-3">
             <img 
@@ -161,7 +161,8 @@ const MobileNav = () => {
             className="w-72 p-0 border-l"
             style={{ 
               background: theme === 'dark' ? '#141C33' : '#DBEAFE',
-              borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'
+              borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+              paddingTop: 'env(safe-area-inset-top, 0px)'
             }}
           >
             <div className="flex flex-col h-full">
