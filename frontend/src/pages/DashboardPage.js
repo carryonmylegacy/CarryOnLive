@@ -349,7 +349,7 @@ const DashboardPage = () => {
           style={{ animation: 'bubbleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both' }}>
 
           {/* Step counter */}
-          <p className="text-sm font-bold uppercase tracking-[0.25em] mb-6"
+          <p className="text-xl lg:text-2xl font-bold uppercase tracking-[0.2em] mb-6"
             style={{ color: stepColor }}>
             Step {stepInfo.step} of {totalSteps}
           </p>
