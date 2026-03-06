@@ -15,11 +15,6 @@ router = APIRouter()
 
 ONBOARDING_STEPS = [
     {
-        "key": "create_estate",
-        "label": "Create Your Estate",
-        "description": "Set up your estate with a name and state",
-    },
-    {
         "key": "create_message",
         "label": "Leave a Milestone Message",
         "description": "Record a message for your loved ones",
@@ -69,8 +64,6 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
 
     completed = {}
     if estate_id:
-        completed["create_estate"] = True
-        # Count any beneficiaries (including stubs from signup) as complete
         completed["upload_document"] = (
             await db.documents.count_documents({"estate_id": estate_id}) > 0
         )

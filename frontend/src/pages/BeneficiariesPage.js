@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import { ReturnPopup } from '../components/GuidedActivation';
 import {
   Users,
   Plus,
@@ -57,10 +59,12 @@ const usStates = [
 
 const BeneficiariesPage = () => {
   const { getAuthHeaders } = useAuth();
+  const navigate = useNavigate();
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [estate, setEstate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showPrimaryPopup, setShowPrimaryPopup] = useState(false);
   const [adding, setAdding] = useState(false);
   const [sendingInvite, setSendingInvite] = useState(null);
   const [expandedCard, setExpandedCard] = useState(null);
@@ -276,6 +280,7 @@ const BeneficiariesPage = () => {
       setShowPrimaryDisclaimer(null);
       setChangingPrimary(false);
       fetchData();
+      setShowPrimaryPopup(true);
     } catch (error) {
       console.error('Set primary error:', error);
       toast.error(error.response?.data?.detail || 'Failed to designate primary beneficiary');
@@ -1015,6 +1020,9 @@ const BeneficiariesPage = () => {
         </DialogContent>
       </Dialog>
       </SectionLockedOverlay>
+      {showPrimaryPopup && (
+        <ReturnPopup step="primary" onReturn={() => { setShowPrimaryPopup(false); navigate('/dashboard'); }} />
+      )}
     </div>
   );
 };
