@@ -12,7 +12,7 @@ import pytest
 import requests
 
 BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://dashboard-guide-6.preview.emergentagent.com"
+    "REACT_APP_BACKEND_URL", "https://onboarding-crash-fix.preview.emergentagent.com"
 ).rstrip("/")
 
 
