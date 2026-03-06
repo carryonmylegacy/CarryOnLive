@@ -227,7 +227,7 @@ class ChecklistItem(BaseModel):
     estate_id: str
     title: str
     description: str = ""
-    category: str = "general"  # legal, financial, insurance, property, medical, personal, government, general
+    category: str = "general"  # legal, financial, insurance, property, medical, personal, government, general, immediate
     priority: str = "medium"  # critical, high, medium, low
     action_type: str = "custom"  # call, email, visit, file_paperwork, notify, custom
     contact_name: Optional[str] = None
@@ -243,6 +243,9 @@ class ChecklistItem(BaseModel):
     completed_by: Optional[str] = None
     order: int = 0
     created_by: str = "benefactor"  # benefactor or ai_suggested
+    is_default: bool = False
+    activation_status: Optional[str] = None
+    ai_accepted: Optional[bool] = None
     created_at: str = Field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
@@ -277,6 +280,10 @@ class ChecklistItemUpdate(BaseModel):
     notes: Optional[str] = None
     due_timeframe: Optional[str] = None
     order: Optional[int] = None
+    activation_status: Optional[str] = None
+    is_default: Optional[bool] = None
+    ai_accepted: Optional[bool] = None
+    is_completed: Optional[bool] = None
 
 
 class DeathCertificate(BaseModel):
