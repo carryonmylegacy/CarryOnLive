@@ -64,17 +64,16 @@ const DevSwitcher = () => {
   const handleSwitch = async (account) => {
     setSwitching(account.role);
     try {
-      // Persist admin token so any-to-any switching works
       const currentToken = localStorage.getItem('carryon_token');
-      const savedAdminToken = localStorage.getItem('dev_switcher_admin_token');
       
+      // Always save admin token when we ARE admin
       if (user?.role === 'admin' && currentToken) {
         localStorage.setItem('dev_switcher_admin_token', currentToken);
       }
-      
-      const adminToken = localStorage.getItem('dev_switcher_admin_token') || currentToken;
 
       if (account.role === 'admin') {
+        // Restore saved admin session
+        const adminToken = localStorage.getItem('dev_switcher_admin_token');
         if (adminToken) {
           localStorage.setItem('carryon_token', adminToken);
           localStorage.removeItem('selected_estate_id');
@@ -85,16 +84,16 @@ const DevSwitcher = () => {
         throw new Error('No admin session found. Please log in as admin first.');
       }
 
-      if (!adminToken) {
-        throw new Error('Admin session expired. Please log in as admin first.');
+      // Use current token for dev-switch (backend accepts any configured account's token)
+      if (!currentToken) {
+        throw new Error('No active session. Please log in first.');
       }
 
-      // Call dev-switch BEFORE clearing token — only clear on success
       const response = await fetch(`${API_URL}/api/auth/dev-switch`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${adminToken}`,
+          'Authorization': `Bearer ${currentToken}`,
         },
         body: JSON.stringify({ email: account.email }),
       });
