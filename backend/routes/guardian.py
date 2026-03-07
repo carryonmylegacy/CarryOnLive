@@ -453,6 +453,7 @@ Provide a clear, organized analysis with specific findings and recommendations."
             messages=history_messages,
             temperature=0.7,
             max_tokens=4096,
+            timeout=90,
         )
         response = completion.choices[0].message.content
 
@@ -555,9 +556,16 @@ Provide a clear, organized analysis with specific findings and recommendations."
             response=response, session_id=session_id, action_result=action_result
         )
     except Exception as e:
-        logger.error(f"AI chat error: {e}")
+        error_msg = str(e)
+        logger.error(f"AI chat error: {error_msg}")
+        if "timeout" in error_msg.lower() or "timed out" in error_msg.lower():
+            raise HTTPException(
+                status_code=504,
+                detail="The AI analysis is taking longer than expected. Please try again — shorter queries respond faster.",
+            )
         raise HTTPException(
-            status_code=500, detail="AI service temporarily unavailable"
+            status_code=500,
+            detail="AI service temporarily unavailable. Please try again in a moment.",
         )
 
 
