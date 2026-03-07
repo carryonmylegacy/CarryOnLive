@@ -69,7 +69,7 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
 
     is_beta = settings.get("beta_mode", True)
     has_free_access = override and override.get("free_access", False)
-    has_active_sub = sub and sub.get("status") == "active"
+    has_active_sub = sub and sub.get("status") in ("active", "past_due")
 
     # User has access if: beta mode OR free override OR active subscription OR trial active
     has_access = (
@@ -1085,45 +1085,7 @@ async def update_paired_price(
 # APPLE IN-APP PURCHASE VALIDATION
 # ═══════════════════════════════════════════════════
 
-
-APPLE_TO_PLAN = {
-    # Benefactor plans
-    "us.carryon.app.premium_monthly": "premium",
-    "us.carryon.app.premium_quarterly": "premium",
-    "us.carryon.app.premium_annual": "premium",
-    "us.carryon.app.standard_monthly": "standard",
-    "us.carryon.app.standard_quarterly": "standard",
-    "us.carryon.app.standard_annual": "standard",
-    "us.carryon.app.base_monthly": "base",
-    "us.carryon.app.base_quarterly": "base",
-    "us.carryon.app.base_annual": "base",
-    "us.carryon.app.new_adult_monthly": "new_adult",
-    "us.carryon.app.new_adult_quarterly": "new_adult",
-    "us.carryon.app.new_adult_annual": "new_adult",
-    "us.carryon.app.military_monthly": "military",
-    "us.carryon.app.military_quarterly": "military",
-    "us.carryon.app.military_annual": "military",
-    "us.carryon.app.veteran_monthly": "veteran",
-    "us.carryon.app.veteran_quarterly": "veteran",
-    "us.carryon.app.veteran_annual": "veteran",
-    # Beneficiary plans
-    "us.carryon.app.ben_premium_monthly": "ben_premium",
-    "us.carryon.app.ben_premium_quarterly": "ben_premium",
-    "us.carryon.app.ben_premium_annual": "ben_premium",
-    "us.carryon.app.ben_standard_monthly": "ben_standard",
-    "us.carryon.app.ben_standard_quarterly": "ben_standard",
-    "us.carryon.app.ben_standard_annual": "ben_standard",
-    "us.carryon.app.ben_base_monthly": "ben_base",
-    "us.carryon.app.ben_base_quarterly": "ben_base",
-    "us.carryon.app.ben_base_annual": "ben_base",
-    "us.carryon.app.ben_military_monthly": "ben_military",
-    "us.carryon.app.ben_military_quarterly": "ben_military",
-    "us.carryon.app.ben_military_annual": "ben_military",
-    "us.carryon.app.ben_veteran_monthly": "ben_veteran",
-    "us.carryon.app.ben_veteran_quarterly": "ben_veteran",
-    "us.carryon.app.ben_veteran_annual": "ben_veteran",
-    "us.carryon.app.ben_hospice_monthly": "ben_hospice",
-}
+from routes.subscriptions.apple_webhook import APPLE_TO_PLAN
 
 
 async def verify_apple_receipt_with_server(receipt_data: str) -> dict:

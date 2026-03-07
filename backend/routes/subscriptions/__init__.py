@@ -23,3 +23,4 @@ from routes.subscriptions.verification_and_lifecycle import (  # noqa: F401
 # These modules register their routes on the shared router
 import routes.subscriptions.checkout  # noqa: F401
 import routes.subscriptions.verification_and_lifecycle  # noqa: F401
+import routes.subscriptions.apple_webhook  # noqa: F401

@@ -1,0 +1,122 @@
+{
+  "summary": "Apple App Store Server Notifications v2 webhook handler testing complete. All 10 backend tests PASS. Frontend login/dashboard/settings flows verified working.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_results": {
+    "backend_health_check": {
+      "status": "PASS",
+      "endpoint": "/api/health",
+      "response": "healthy, database connected"
+    },
+    "apple_webhook_empty_body": {
+      "status": "PASS",
+      "endpoint": "/api/webhook/apple",
+      "description": "Returns 400 with 'Missing signedPayload' for empty JSON body {}"
+    },
+    "apple_webhook_missing_signedPayload": {
+      "status": "PASS",
+      "endpoint": "/api/webhook/apple",
+      "description": "Returns 400 with 'Missing signedPayload' when signedPayload key absent"
+    },
+    "apple_webhook_malformed_jws": {
+      "status": "PASS",
+      "endpoint": "/api/webhook/apple",
+      "description": "Returns 400 with 'Invalid signedPayload' for JWS without 3 parts"
+    },
+    "apple_webhook_invalid_base64_jws": {
+      "status": "PASS",
+      "endpoint": "/api/webhook/apple",
+      "description": "Returns 400 with 'Invalid signedPayload' for JWS with invalid base64"
+    },
+    "apple_webhook_jws_without_x5c": {
+      "status": "PASS",
+      "endpoint": "/api/webhook/apple",
+      "description": "Returns 400 with 'Invalid signedPayload' for JWS without x5c certificate chain"
+    },
+    "subscription_plans_endpoint": {
+      "status": "PASS",
+      "endpoint": "/api/subscriptions/plans",
+      "description": "Returns plans array with premium, standard, base plans"
+    },
+    "subscription_status_endpoint": {
+      "status": "PASS",
+      "endpoint": "/api/subscriptions/status",
+      "description": "Returns valid subscription status for authenticated user"
+    },
+    "apple_receipt_validation_empty": {
+      "status": "PASS",
+      "endpoint": "/api/subscriptions/validate-apple-receipt",
+      "description": "Returns 400 with 'Missing transaction_id or product_id' for empty body"
+    },
+    "apple_receipt_validation_unknown_product": {
+      "status": "PASS",
+      "endpoint": "/api/subscriptions/validate-apple-receipt",
+      "description": "Returns 400 with 'Unknown product: ...' for invalid product IDs"
+    },
+    "login_flow": {
+      "status": "PASS",
+      "credential": "fulltest@test.com / Password.123",
+      "description": "Login successful, redirects to /dashboard"
+    },
+    "dashboard_loads": {
+      "status": "PASS",
+      "description": "Dashboard loads correctly with sidebar navigation and onboarding flow"
+    },
+    "settings_page_loads": {
+      "status": "PASS",
+      "description": "Settings page loads with Profile, Push Notifications, and Subscription sections"
+    },
+    "gdpr_delete_account_option": {
+      "status": "PASS",
+      "description": "GDPR Article 17 compliant delete account option found in settings"
+    },
+    "guards_past_due_status": {
+      "status": "PASS",
+      "location": "guards.py line 37",
+      "description": "Subscription guards correctly treat 'past_due' (Apple grace period) as active access"
+    },
+    "checkout_past_due_status": {
+      "status": "PASS",
+      "location": "checkout.py line 72",
+      "description": "Subscription status endpoint correctly includes 'past_due' as active subscription"
+    },
+    "apple_to_plan_mapping": {
+      "status": "PASS",
+      "location": "apple_webhook.py lines 29-64",
+      "description": "APPLE_TO_PLAN mapping covers all product IDs (premium, standard, base, new_adult, military, veteran, hospice, beneficiary variants)"
+    }
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_apple_webhook.py",
+    "/app/test_reports/pytest/apple_webhook_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Apple webhook correctly implements JWS verification with x5c certificate chain extraction",
+    "Webhook logs all notifications to apple_webhook_log collection for audit trail",
+    "APPLE_TO_PLAN mapping is now DRY - imported from apple_webhook.py in checkout.py",
+    "'past_due' status properly treated as active in both guards.py and checkout.py for Apple grace period",
+    "All notification handlers (SUBSCRIBED, DID_RENEW, EXPIRED, DID_FAIL_TO_RENEW, REFUND, REVOKE, DID_CHANGE_RENEWAL_STATUS) properly implemented"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_apple_webhook.py"
+  ],
+  "success_rate": {
+    "backend": "100% (10/10 pytest tests passed)",
+    "frontend": "100% (all UI flows verified)"
+  },
+  "test_credentials": {
+    "benefactor": "fulltest@test.com / Password.123"
+  },
+  "seed_data_creation": "None - used existing test user",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Apple webhook testing completed. All error handling paths verified. The webhook JWS verification requires real Apple-signed payloads which cannot be generated in test environment - only error paths were testable. Backend test file /app/backend/tests/test_apple_webhook.py covers all webhook error scenarios. Login flow uses fulltest@test.com / Password.123."
+}
