@@ -24,6 +24,13 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
         estates = await db.estates.find(
             {"beneficiaries": current_user["id"]}, {"_id": 0}
         ).to_list(100)
+        # Enrich with benefactor photo for display
+        for estate in estates:
+            owner = await db.users.find_one(
+                {"id": estate.get("owner_id")}, {"_id": 0, "photo_url": 1}
+            )
+            if owner and owner.get("photo_url"):
+                estate["owner_photo_url"] = owner["photo_url"]
     else:  # admin
         estates = await db.estates.find({}, {"_id": 0}).to_list(100)
     return estates
@@ -68,6 +75,7 @@ async def get_family_connections(current_user: dict = Depends(get_current_user))
                 "status": estate.get("status", "pre-transition"),
                 "readiness_score": estate.get("readiness_score", 0),
                 "benefactor_id": benefactor.get("id"),
+                "photo_url": benefactor.get("photo_url", ""),
             }
         )
 
