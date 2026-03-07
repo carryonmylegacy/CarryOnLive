@@ -1,5 +1,18 @@
 # CarryOn — Changelog
 
+## Mar 7, 2026 — Full Codebase Audit (Pre-App Store Submission)
+
+### Critical Fixes Applied:
+1. **capacitor.config.json (iOS) — contentInset mismatch** — Was still `"automatic"`, safe area fix was never synced to native project. Fixed to `"never"`
+2. **capacitor.config.json (Android)** — Synced to match TS source config
+3. **Podfile — 6 missing native pods** — Added CapacitorApp, CapacitorFilesystem, CapacitorShare, CapacitorStatusBar, CapgoCapacitorShareTarget, CapgoNativePurchases
+4. **packageClassList — 3 wrong class names + 2 missing** — Corrected AppPlugin, FilesystemPlugin, StatusBarPlugin; added CapacitorShareTargetPlugin, NativePurchasesPlugin
+5. **PrivacyInfo.xcprivacy — not in Xcode project** — Added to PBXFileReference, PBXGroup, PBXBuildFile, PBXResourcesBuildPhase
+6. **App.entitlements — missing aps-environment** — Added `production` push notification entitlement
+7. **Backend scheduler — broken import** — Added `check_dob_subscription_events` to subscriptions package exports
+
+
+
 ## Mar 7, 2026 — 6 Pre-App-Store Refinements
 
 1. **Remove "Flat rate — no discounts" text** — Cleared note from Military/First Responder and Veteran beneficiary tiers (backend plans.py defaults)
