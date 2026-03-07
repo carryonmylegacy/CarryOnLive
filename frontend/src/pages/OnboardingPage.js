@@ -336,6 +336,26 @@ const OnboardingPage = () => {
             </div>
 
             {/* Advanced Fields Toggle */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-[#94a3b8] text-sm">Date of Birth</Label>
+                <DateMaskInput value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className="input-field" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[#94a3b8] text-sm">Gender</Label>
+                <Select value={gender} onValueChange={setGender}>
+                  <SelectTrigger className="input-field">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <button
               type="button"
               onClick={() => setShowAdvanced(!showAdvanced)}
@@ -363,26 +383,6 @@ const OnboardingPage = () => {
                       else if (digits.length > 0) f = `(${digits}`;
                       setPhone(f);
                     }} placeholder="(123) 456-7890" className="input-field" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-[#94a3b8] text-sm">Date of Birth</Label>
-                    <DateMaskInput value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className="input-field" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[#94a3b8] text-sm">Gender</Label>
-                    <Select value={gender} onValueChange={setGender}>
-                      <SelectTrigger className="input-field">
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
                   </div>
                 </div>
 

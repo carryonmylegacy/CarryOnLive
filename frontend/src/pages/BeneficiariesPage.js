@@ -796,7 +796,7 @@ const BeneficiariesPage = () => {
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-[#d4af37] uppercase tracking-wide">Address</h3>
               
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label className="text-[#94a3b8]">Street Address</Label>
                 <AddressAutocomplete
                   value={addressStreet}
@@ -812,39 +812,19 @@ const BeneficiariesPage = () => {
                 />
               </div>
               
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <div className="space-y-2">
-                  <Label className="text-[#94a3b8]">City</Label>
-                  <Input
-                    value={addressCity}
-                    onChange={(e) => setAddressCity(e.target.value)}
-                    placeholder="San Diego"
-                    className="input-field"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[#94a3b8]">State</Label>
-                  <Select value={addressState} onValueChange={setAddressState}>
-                    <SelectTrigger className="input-field">
-                      <SelectValue placeholder="State" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)] max-h-48">
-                      {usStates.map((st) => (
-                        <SelectItem key={st} value={st}>{st}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2 col-span-2 sm:col-span-1">
-                  <Label className="text-[#94a3b8]">ZIP Code</Label>
-                  <Input
-                    value={addressZip}
-                    onChange={(e) => setAddressZip(e.target.value)}
-                    placeholder="92101"
-                    className="input-field"
-                    maxLength={10}
-                  />
-                </div>
+              <div className="grid grid-cols-3 gap-2">
+                <Input value={addressCity} onChange={(e) => setAddressCity(e.target.value)} placeholder="City" className="input-field" />
+                <Select value={addressState} onValueChange={setAddressState}>
+                  <SelectTrigger className="input-field">
+                    <SelectValue placeholder="State" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)] max-h-48">
+                    {usStates.map((st) => (
+                      <SelectItem key={st} value={st}>{st}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input value={addressZip} onChange={(e) => setAddressZip(e.target.value)} placeholder="ZIP" className="input-field" maxLength={10} />
               </div>
             </div>
 
