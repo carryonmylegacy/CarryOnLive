@@ -16,6 +16,10 @@ from routes.subscriptions.plans import (  # noqa: F401
     get_price_for_cycle,
 )
 
+from routes.subscriptions.verification_and_lifecycle import (  # noqa: F401
+    check_dob_subscription_events,
+)
+
 # These modules register their routes on the shared router
 import routes.subscriptions.checkout  # noqa: F401
 import routes.subscriptions.verification_and_lifecycle  # noqa: F401
