@@ -745,13 +745,23 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     user_doc = await db.users.find_one(
         {"id": current_user["id"]}, {"_id": 0, "photo_url": 1}
     )
+    photo = (user_doc or {}).get("photo_url", "")
+
+    # Fallback: if beneficiary has no user photo, check their beneficiary record
+    if not photo and current_user.get("role") == "beneficiary":
+        ben_rec = await db.beneficiaries.find_one(
+            {"user_id": current_user["id"]}, {"_id": 0, "photo_url": 1}
+        )
+        if ben_rec:
+            photo = ben_rec.get("photo_url", "")
+
     return UserResponse(
         id=current_user["id"],
         email=current_user["email"],
         name=current_user["name"],
         role=current_user["role"],
         created_at=current_user["created_at"],
-        photo_url=(user_doc or {}).get("photo_url", ""),
+        photo_url=photo or "",
     )
 
 
