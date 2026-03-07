@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { ReturnPopup } from '../components/GuidedActivation';
@@ -78,8 +78,6 @@ const EMPTY_FORM = {
 const ChecklistPage = () => {
   const { getAuthHeaders } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const fromGettingStarted = location.state?.fromGettingStarted === true;
   const [showReturnPopup, setShowReturnPopup] = useState(false);
   const [checklists, setChecklists] = useState([]);
   const [estate, setEstate] = useState(null);
@@ -650,8 +648,8 @@ const ChecklistPage = () => {
       )}
       </SectionLockedOverlay>
 
-      {/* Complete for Now button — only when arriving from getting-started flow */}
-      {fromGettingStarted && defaultItems.length > 0 && (
+      {/* Complete for Now button — only for default items */}
+      {defaultItems.length > 0 && (
         <div className="mt-4 text-center">
           <button
             onClick={handleCompleteChecklist}

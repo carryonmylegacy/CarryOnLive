@@ -197,7 +197,7 @@ const LegacyTimelinePage = () => {
               border: `1px solid ${s.color}15`,
             }}>
               <s.icon className="w-5 h-5 mx-auto mb-2" style={{ color: s.color }} />
-              <div className="text-2xl font-bold text-[var(--t)]">{s.value}</div>
+              <div className="text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>{s.value}</div>
               <div className="text-[var(--t5)] text-xs">{s.label}</div>
             </div>
           ))}

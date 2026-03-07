@@ -259,7 +259,7 @@ const MobileNav = () => {
               <div className="h-12" />
 
               {/* MY LEGACY Section */}
-              <nav className="flex-1 px-4 overflow-y-auto" role="navigation" aria-label="Main menu">
+              <nav className="flex-1 px-4 overflow-y-auto">
                 <div className="mb-6">
                   <h3 
                     className="text-xs font-semibold tracking-wider uppercase mb-3 px-2"
@@ -423,7 +423,7 @@ const MobileNav = () => {
       )}
 
       {/* Bottom Navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 w-full mobile-bottom-nav z-50 pb-safe" role="navigation" aria-label="Bottom navigation">
+      <nav className="lg:hidden fixed bottom-0 left-0 w-full mobile-bottom-nav z-50 pb-safe">
         <div className="flex items-end h-16 px-1">
           {getBottomNav().map((item, index) => {
             const isCenter = item.isCenter;
@@ -444,7 +444,6 @@ const MobileNav = () => {
                     return (!isCenter && !isActive ? { color: theme === 'dark' ? 'rgba(255,255,255,0.7)' : '#1e3a5f' } : {});
                   }}
                   data-testid={`mobile-nav-${item.label.toLowerCase()}`}
-                  aria-label={item.label}
                 >
                   {({ isActive: routeActive }) => {
                     const isActive = routeActive && !item.forceInactive;

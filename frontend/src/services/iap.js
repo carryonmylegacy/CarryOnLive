@@ -103,7 +103,7 @@ export async function purchaseIAP(productId) {
       productType: 'AUTO_RENEWABLE_SUBSCRIPTION',
     });
     
-    // Send receipt + transaction to backend for server-side Apple verification
+    // Send to backend for validation
     const token = localStorage.getItem('carryon_token');
     const res = await fetch(`${API_URL}/subscriptions/validate-apple-receipt`, {
       method: 'POST',
@@ -112,7 +112,7 @@ export async function purchaseIAP(productId) {
         'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
-        receipt: result.receipt || '',
+        receipt: result.receipt,
         transaction_id: result.transactionIdentifier,
         product_id: productId,
       }),
