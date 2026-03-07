@@ -444,8 +444,9 @@ const GuardianPage = () => {
         // Already handled by stopAnalysis
         return;
       }
-      toast.error('Failed to get response');
-      setMessages(prev => [...prev, { role: 'assistant', content: 'I encountered an issue. Please try again.' }]);
+      const errDetail = error.response?.data?.detail || '';
+      toast.error(errDetail || 'Failed to get response');
+      setMessages(prev => [...prev, { role: 'assistant', content: errDetail || 'I encountered a temporary issue connecting to the AI service. Please try again — it usually works on the second attempt.' }]);
     } finally {
       setLoading(false);
       setActionLoading(null);
