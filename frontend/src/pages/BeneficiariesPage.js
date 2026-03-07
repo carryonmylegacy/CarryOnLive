@@ -900,7 +900,7 @@ const BeneficiariesPage = () => {
                 setEditingBeneficiary(null);
                 resetForm();
               }}
-              className="border-[var(--b)] text-white"
+              className="border-[var(--b)] text-[var(--t)]"
             >
               Cancel
             </Button>

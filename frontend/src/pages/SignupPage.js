@@ -228,6 +228,7 @@ const SignupPage = () => {
       const ben = beneficiaries[idx];
       if (!ben) return false;
       if (!ben.first_name.trim()) return false;
+      if (!ben.last_name.trim()) return false;
       if (ben.requireEmail && !ben.email.trim()) return false;
       if (emailErrors[idx]) return false;
       return true;
@@ -712,7 +713,7 @@ const SignupPage = () => {
                             </div>
                           </div>
                           <div className="space-y-1.5">
-                            <Label className="text-[#7b879e] text-sm font-medium">Last Name</Label>
+                            <Label className="text-[#7b879e] text-sm font-medium">Last Name <span className="text-red-400">*</span></Label>
                             <Input value={ben.last_name} onChange={(e) => updateBen('last_name', e.target.value)}
                               onFocus={handleFieldFocus} placeholder="Last name" className={inputClass} />
                           </div>
