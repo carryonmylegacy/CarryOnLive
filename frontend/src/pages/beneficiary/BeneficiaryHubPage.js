@@ -36,19 +36,21 @@ const BeneficiaryHubPage = () => {
   const [estates, setEstates] = useState([]);
   const [familyConnections, setFamilyConnections] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [myPhoto, setMyPhoto] = useState(null);
 
   useEffect(() => { fetchData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
     try {
-      // Fetch both estates and family connections for orbit visualization
-      const [estatesRes, connectionsRes] = await Promise.all([
+      const [estatesRes, connectionsRes, meRes] = await Promise.all([
         axios.get(`${API_URL}/estates`, getAuthHeaders()),
-        axios.get(`${API_URL}/beneficiary/family-connections`, getAuthHeaders()).catch(() => ({ data: [] }))
+        axios.get(`${API_URL}/beneficiary/family-connections`, getAuthHeaders()).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/auth/me`, getAuthHeaders()).catch(() => ({ data: {} })),
       ]);
       setEstates(estatesRes.data);
       setFamilyConnections(connectionsRes.data);
+      if (meRes.data.photo_url) setMyPhoto(meRes.data.photo_url);
     } catch (err) { console.error('Fetch data error:', err); }
     finally { setLoading(false); }
   };
@@ -122,17 +124,19 @@ const BeneficiaryHubPage = () => {
             >
               <CardContent className="p-5 text-center relative">
                 <div
-                  className="w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center text-lg font-bold text-white"
+                  className="w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center text-lg font-bold text-white overflow-hidden"
                   style={{
-                    background: isTransitioned
+                    background: estate.owner_photo_url ? 'transparent' : (isTransitioned
                       ? 'linear-gradient(135deg, #6D28D9, #A855F7)'
-                      : 'linear-gradient(135deg, #1E40AF, #3B82F6)',
+                      : 'linear-gradient(135deg, #1E40AF, #3B82F6)'),
                     opacity: isTransitioned ? 1 : 0.6,
                     border: isTransitioned ? '2px solid rgba(224,173,43,0.3)' : '2px dashed var(--b2)',
                     boxShadow: isTransitioned ? '0 6px 24px rgba(109,40,217,0.4), 0 1px 0 rgba(255,255,255,0.2) inset' : '0 4px 16px rgba(0,0,0,0.3)'
                   }}
                 >
-                  {ownerInitials}
+                  {estate.owner_photo_url ? (
+                    <img src={estate.owner_photo_url} alt={estate.name} className="w-full h-full object-cover" />
+                  ) : ownerInitials}
                 </div>
                 <h3 className="font-bold text-[var(--t)] text-lg">{estate.name}</h3>
                 <p className="text-sm text-[var(--t4)] mb-1">Estate</p>
@@ -151,9 +155,11 @@ const BeneficiaryHubPage = () => {
           <div className="space-y-2">
             {/* Beneficiary (You) at top */}
             <div className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.15)' }}>
-              <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-                style={{ background: 'linear-gradient(135deg, #7C3AED, #A855F7)', border: '2px solid rgba(212,175,55,0.4)' }}>
-                {user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
+              <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0 overflow-hidden"
+                style={{ background: myPhoto ? 'transparent' : 'linear-gradient(135deg, #7C3AED, #A855F7)', border: '2px solid rgba(212,175,55,0.4)' }}>
+                {myPhoto ? (
+                  <img src={myPhoto} alt="You" className="w-full h-full object-cover" />
+                ) : (user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U')}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-[var(--t)] truncate">{user?.name || 'You'}</p>
@@ -181,13 +187,15 @@ const BeneficiaryHubPage = () => {
                   }}
                   data-testid={`family-member-${i}`}
                 >
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 overflow-hidden"
                     style={{
-                      background: gradient,
+                      background: member.photo_url ? 'transparent' : gradient,
                       color: level === 0 ? '#1a1a2e' : 'white',
                       border: isTransitioned ? '2px solid rgba(212,175,55,0.5)' : '2px solid rgba(255,255,255,0.15)',
                     }}>
-                    {initials}
+                    {member.photo_url ? (
+                      <img src={member.photo_url} alt={name} className="w-full h-full object-cover" />
+                    ) : initials}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-[var(--t)] truncate">{name}</p>
