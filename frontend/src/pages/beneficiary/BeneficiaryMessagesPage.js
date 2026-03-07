@@ -14,6 +14,8 @@ const BeneficiaryMessagesPage = () => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedMsg, setSelectedMsg] = useState(null);
+  const [videoBlobUrl, setVideoBlobUrl] = useState(null);
+  const [videoLoading, setVideoLoading] = useState(false);
 
   useEffect(() => { fetchMessages();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -40,7 +42,7 @@ const BeneficiaryMessagesPage = () => {
     const formatLabel = m.message_type === 'text' ? 'Written Message' : m.message_type === 'video' ? 'Video Recording' : 'Voice Recording';
     return (
       <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 animate-fade-in" data-testid="ben-message-detail">
-        <button onClick={() => setSelectedMsg(null)} className="inline-flex items-center gap-1 text-sm font-bold text-[#60A5FA] mb-5">
+        <button onClick={() => { setSelectedMsg(null); setVideoBlobUrl(null); }} className="inline-flex items-center gap-1 text-sm font-bold text-[#60A5FA] mb-5">
           <ChevronLeft className="w-4 h-4" /> All Messages
         </button>
         <div className="flex items-center gap-3 mb-4">
@@ -91,15 +93,35 @@ const BeneficiaryMessagesPage = () => {
           <Card className="glass-card">
             <CardContent className="p-5 lg:p-8">
               {m.video_url ? (
-                <div className="rounded-xl overflow-hidden mb-4" style={{ background: '#000', aspectRatio: '16/9' }}>
-                  <video
-                    controls
-                    className="w-full h-full"
-                    src={`${process.env.REACT_APP_BACKEND_URL}/api/messages/video/${m.video_url}`}
+                videoBlobUrl ? (
+                  <div className="rounded-xl overflow-hidden mb-4" style={{ background: '#000', aspectRatio: '16/9' }}>
+                    <video controls autoPlay playsInline className="w-full h-full" src={videoBlobUrl}>
+                      Your browser does not support video playback.
+                    </video>
+                  </div>
+                ) : (
+                  <div
+                    className="rounded-xl flex items-center justify-center mb-4 cursor-pointer transition-all active:scale-[0.98]"
+                    style={{ background: 'rgba(37,99,235,0.05)', border: '2px dashed rgba(37,99,235,0.2)', aspectRatio: '16/9' }}
+                    onClick={async () => {
+                      setVideoLoading(true);
+                      try {
+                        const res = await axios.get(`${API_URL}/messages/video/${m.video_url}`, { ...getAuthHeaders(), responseType: 'blob' });
+                        setVideoBlobUrl(URL.createObjectURL(res.data));
+                      } catch { /* silent */ }
+                      finally { setVideoLoading(false); }
+                    }}
                   >
-                    Your browser does not support video playback.
-                  </video>
-                </div>
+                    <div className="text-center">
+                      {videoLoading ? (
+                        <div className="w-12 h-12 mx-auto border-3 border-[var(--bl3)] border-t-transparent rounded-full animate-spin mb-2" />
+                      ) : (
+                        <Play className="w-12 h-12 mx-auto text-[var(--bl3)] mb-2" />
+                      )}
+                      <div className="text-sm text-[var(--t4)]">{videoLoading ? 'Loading...' : 'Tap to play video'}</div>
+                    </div>
+                  </div>
+                )
               ) : (
                 <div className="rounded-xl flex items-center justify-center mb-4" style={{ background: 'rgba(37,99,235,0.05)', border: '2px dashed rgba(37,99,235,0.2)', aspectRatio: '16/9' }}>
                   <div className="text-center">

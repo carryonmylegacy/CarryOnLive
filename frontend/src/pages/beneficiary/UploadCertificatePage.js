@@ -1,12 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
-import { FileText, Upload, Shield, ChevronLeft, CheckCircle2, AlertTriangle, Loader2, Lock } from 'lucide-react';
+import { FileText, Upload, Shield, ChevronLeft, CheckCircle2, AlertTriangle, Loader2, Lock, Clock, Search } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { toast } from '../../utils/toast';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+const STATUS_CONFIG = {
+  pending: { label: 'Pending Review', color: '#F59E0B', icon: Clock, description: 'Your death certificate has been received and is waiting for a TVT member to begin review.' },
+  reviewing: { label: 'Under Review', color: '#3B82F6', icon: Search, description: 'A TVT member is currently reviewing your submitted death certificate.' },
+  authenticated: { label: 'Verified', color: '#10B981', icon: CheckCircle2, description: 'The death certificate has been authenticated. The estate transition is being finalized.' },
+  approved: { label: 'Approved — Transition Complete', color: '#10B981', icon: CheckCircle2, description: 'The transition is complete. You now have access to the estate.' },
+};
 
 const UploadCertificatePage = () => {
   const { getAuthHeaders } = useAuth();
@@ -14,6 +21,23 @@ const UploadCertificatePage = () => {
   const [step, setStep] = useState(0);
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [existingCert, setExistingCert] = useState(null);
+  const [checkingStatus, setCheckingStatus] = useState(true);
+
+  useEffect(() => {
+    const checkExisting = async () => {
+      try {
+        const estateId = localStorage.getItem('beneficiary_estate_id');
+        if (!estateId) { setCheckingStatus(false); return; }
+        const res = await axios.get(`${API_URL}/transition/status/${estateId}`, getAuthHeaders());
+        if (res.data.certificate && ['pending', 'reviewing', 'authenticated', 'approved'].includes(res.data.certificate.status)) {
+          setExistingCert(res.data.certificate);
+        }
+      } catch { /* no existing cert */ }
+      finally { setCheckingStatus(false); }
+    };
+    checkExisting();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const steps = ['Before You Begin', 'Upload Document', 'Confirm & Submit'];
 
@@ -41,6 +65,72 @@ const UploadCertificatePage = () => {
       toast.error('Failed to upload certificate');
     } finally { setUploading(false); }
   };
+
+  if (checkingStatus) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
+        <Loader2 className="w-8 h-8 text-[var(--gold)] animate-spin" />
+      </div>
+    );
+  }
+
+  // Show status tracker if a certificate has already been submitted
+  if (existingCert) {
+    const config = STATUS_CONFIG[existingCert.status] || STATUS_CONFIG.pending;
+    const StatusIcon = config.icon;
+    const stages = ['pending', 'reviewing', 'approved'];
+    const currentStageIdx = stages.indexOf(existingCert.status === 'authenticated' ? 'approved' : existingCert.status);
+
+    return (
+      <div className="min-h-screen flex items-center justify-center p-5 animate-fade-in"
+        style={{ background: 'radial-gradient(ellipse at 30% 20%, rgba(37,99,235,0.08), transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(139,92,246,0.05), transparent 50%), linear-gradient(145deg, #0B1120, #0F1629 40%, #0A1628)' }}
+        data-testid="certificate-status">
+        <div className="w-full max-w-md">
+          <button onClick={() => navigate('/beneficiary/pre')} className="inline-flex items-center gap-1 text-sm font-bold text-[#60A5FA] mb-6">
+            <ChevronLeft className="w-4 h-4" /> Back
+          </button>
+
+          <div className="glass-card p-6 text-center mb-6">
+            <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: `${config.color}15` }}>
+              <StatusIcon className="w-8 h-8" style={{ color: config.color }} />
+            </div>
+            <h2 className="text-xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>{config.label}</h2>
+            <p className="text-sm text-[var(--t4)] leading-relaxed">{config.description}</p>
+            {existingCert.file_name && (
+              <p className="text-xs text-[var(--t5)] mt-3">File: {existingCert.file_name}</p>
+            )}
+          </div>
+
+          {/* Progress tracker */}
+          <div className="glass-card p-5">
+            <p className="text-[10px] text-[var(--t5)] uppercase tracking-wider font-bold mb-4">Verification Progress</p>
+            <div className="space-y-3">
+              {[
+                { label: 'Certificate Received', stage: 0 },
+                { label: 'Under TVT Review', stage: 1 },
+                { label: 'Verified & Transition Complete', stage: 2 },
+              ].map((s, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                    style={{
+                      background: i <= currentStageIdx ? `${config.color}20` : 'var(--s)',
+                      border: `2px solid ${i <= currentStageIdx ? config.color : 'var(--b)'}`,
+                    }}>
+                    {i <= currentStageIdx ? (
+                      <CheckCircle2 className="w-4 h-4" style={{ color: config.color }} />
+                    ) : (
+                      <div className="w-2 h-2 rounded-full bg-[var(--t5)]" />
+                    )}
+                  </div>
+                  <span className={`text-sm font-medium ${i <= currentStageIdx ? 'text-[var(--t)]' : 'text-[var(--t5)]'}`}>{s.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-5 animate-fade-in"
