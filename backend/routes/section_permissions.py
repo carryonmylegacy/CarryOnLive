@@ -80,8 +80,13 @@ async def get_my_section_permissions(
     if not ben:
         raise HTTPException(status_code=404, detail="Not a beneficiary of this estate")
 
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
-    is_transitioned = estate and estate.get("status") == "transitioned"
+    # Authoritative check: an approved death certificate MUST exist for transition access.
+    # Never trust estate.status alone — it can get out of sync.
+    approved_cert = await db.death_certificates.find_one(
+        {"estate_id": estate_id, "status": {"$in": ["approved", "authenticated"]}},
+        {"_id": 0, "id": 1},
+    )
+    is_transitioned = bool(approved_cert)
 
     perms = await db.section_permissions.find_one(
         {"estate_id": estate_id, "beneficiary_id": ben["id"]}, {"_id": 0}
@@ -109,6 +114,13 @@ async def update_section_permissions(
         raise HTTPException(status_code=404, detail="Estate not found")
 
     is_transitioned = estate.get("status") == "transitioned"
+    # Double-check with authoritative certificate lookup
+    if is_transitioned:
+        approved_cert = await db.death_certificates.find_one(
+            {"estate_id": estate_id, "status": {"$in": ["approved", "authenticated"]}},
+            {"_id": 0, "id": 1},
+        )
+        is_transitioned = bool(approved_cert)
     is_owner = estate.get("owner_id") == current_user["id"]
     is_admin = current_user.get("role") == "admin"
 
