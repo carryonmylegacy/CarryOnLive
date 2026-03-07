@@ -20,7 +20,8 @@ import {
   Headphones,
   ShieldCheck,
   KeyRound,
-  Clock
+  Clock,
+  CreditCard
 } from 'lucide-react';
 import { Switch } from '../ui/switch';
 
@@ -112,6 +113,7 @@ const Sidebar = () => {
       title: 'ACCOUNT',
       items: [
         { to: '/settings', icon: Settings, label: 'Settings' },
+        { to: '/settings#subscription', icon: CreditCard, label: 'Subscription' },
         { to: '/security-settings', icon: ShieldCheck, label: 'Security Settings' },
         { to: '/support', icon: Headphones, label: 'Customer Support' },
       ]
@@ -140,6 +142,7 @@ const Sidebar = () => {
       title: 'ACCOUNT',
       items: [
         { to: '/beneficiary/settings', icon: Settings, label: 'Settings' },
+        { to: '/beneficiary/settings#subscription', icon: CreditCard, label: 'Subscription' },
         { to: '/support', icon: Headphones, label: 'Customer Support' },
       ]
     }
@@ -168,6 +171,7 @@ const Sidebar = () => {
       title: 'ACCOUNT',
       items: [
         { to: '/settings', icon: Settings, label: 'Settings' },
+        { to: '/settings#subscription', icon: CreditCard, label: 'Subscription' },
         { to: '/security-settings', icon: ShieldCheck, label: 'Security Settings' },
       ]
     }

@@ -742,13 +742,55 @@ async def verify_otp(data: OTPVerifyWithTrust, request: Request):
 @router.get("/auth/me", response_model=UserResponse)
 async def get_me(current_user: dict = Depends(get_current_user)):
     """Get the current authenticated user's profile."""
+    user_doc = await db.users.find_one(
+        {"id": current_user["id"]}, {"_id": 0, "photo_url": 1}
+    )
     return UserResponse(
         id=current_user["id"],
         email=current_user["email"],
         name=current_user["name"],
         role=current_user["role"],
         created_at=current_user["created_at"],
+        photo_url=(user_doc or {}).get("photo_url", ""),
     )
+
+
+class ProfilePhotoUpdate(BaseModel):
+    photo_data: str
+    file_name: str = "photo.jpg"
+
+
+@router.put("/auth/profile-photo")
+async def update_profile_photo(
+    data: ProfilePhotoUpdate, current_user: dict = Depends(get_current_user)
+):
+    """Upload a profile photo as base64. Stores as a data URL for simplicity."""
+    import base64
+
+    try:
+        raw = base64.b64decode(data.photo_data)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid base64 data")
+
+    if len(raw) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Photo must be under 5MB")
+
+    ext = data.file_name.rsplit(".", 1)[-1].lower() if "." in data.file_name else "jpg"
+    mime = {
+        "jpg": "image/jpeg",
+        "jpeg": "image/jpeg",
+        "png": "image/png",
+        "webp": "image/webp",
+        "heic": "image/heic",
+    }.get(ext, "image/jpeg")
+    data_url = f"data:{mime};base64,{data.photo_data}"
+
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$set": {"photo_url": data_url}},
+    )
+
+    return {"photo_url": data_url}
 
 
 @router.post("/auth/logout")
