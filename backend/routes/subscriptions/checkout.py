@@ -14,6 +14,7 @@ from pydantic import BaseModel
 
 from config import db, logger
 from utils import get_current_user
+from routes.subscriptions.apple_webhook import APPLE_TO_PLAN
 from routes.subscriptions.plans import (
     router,
     DEFAULT_PLANS,
@@ -1084,8 +1085,6 @@ async def update_paired_price(
 # ═══════════════════════════════════════════════════
 # APPLE IN-APP PURCHASE VALIDATION
 # ═══════════════════════════════════════════════════
-
-from routes.subscriptions.apple_webhook import APPLE_TO_PLAN
 
 
 async def verify_apple_receipt_with_server(receipt_data: str) -> dict:

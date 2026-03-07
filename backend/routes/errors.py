@@ -29,8 +29,10 @@ class ClientErrorReport(BaseModel):
 async def report_client_error(report: ClientErrorReport, request: Request):
     """Receive a client-side error report. No auth required so pre-login crashes are captured."""
     forwarded = request.headers.get("x-forwarded-for", "")
-    client_ip = forwarded.split(",")[0].strip() if forwarded else (
-        request.client.host if request.client else "unknown"
+    client_ip = (
+        forwarded.split(",")[0].strip()
+        if forwarded
+        else (request.client.host if request.client else "unknown")
     )
 
     doc = {
@@ -38,7 +40,8 @@ async def report_client_error(report: ClientErrorReport, request: Request):
         "stack": report.stack[:5000],
         "component": report.component[:200],
         "url": report.url[:500],
-        "user_agent": report.user_agent[:500] or request.headers.get("user-agent", "")[:500],
+        "user_agent": report.user_agent[:500]
+        or request.headers.get("user-agent", "")[:500],
         "app_version": report.app_version[:20],
         "platform": report.platform[:10],
         "severity": report.severity,

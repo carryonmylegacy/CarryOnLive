@@ -8,12 +8,10 @@ Apple docs: https://developer.apple.com/documentation/appstoreservernotification
 
 import base64
 import json
-import os
 from datetime import datetime, timedelta, timezone
 
 import jwt
 from cryptography import x509
-from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from fastapi import HTTPException, Request
 
 from config import db, logger
@@ -122,7 +120,9 @@ def decode_apple_jws(signed_payload: str, verify: bool = True) -> dict:
     pub_key = _extract_public_key_from_x5c(x5c)
 
     if verify and not _verify_cert_chain(x5c):
-        logger.warning("Apple JWS chain verification failed — root fingerprint mismatch")
+        logger.warning(
+            "Apple JWS chain verification failed — root fingerprint mismatch"
+        )
         # Don't hard-fail; Apple may rotate certificates. Log and continue.
 
     # PyJWT with ES256 + cryptography backend
@@ -234,7 +234,12 @@ async def _handle_expired(txn: dict, renewal: dict | None):
 
     await db.user_subscriptions.update_one(
         {"user_id": app_account_token, "payment_provider": "apple_iap"},
-        {"$set": {"status": "expired", "expired_at": datetime.now(timezone.utc).isoformat()}},
+        {
+            "$set": {
+                "status": "expired",
+                "expired_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
     )
     logger.info(f"Apple EXPIRED: user={app_account_token}")
 
@@ -246,7 +251,10 @@ async def _handle_did_fail_to_renew(txn: dict, renewal: dict | None):
         return
 
     grace = txn.get("gracePeriodExpiresDate")
-    update: dict = {"status": "past_due", "renewal_failed_at": datetime.now(timezone.utc).isoformat()}
+    update: dict = {
+        "status": "past_due",
+        "renewal_failed_at": datetime.now(timezone.utc).isoformat(),
+    }
     if grace:
         update["grace_period_end"] = _ms_to_dt(grace).isoformat()
 
@@ -284,7 +292,12 @@ async def _handle_revoke(txn: dict, renewal: dict | None):
 
     await db.user_subscriptions.update_one(
         {"user_id": app_account_token, "payment_provider": "apple_iap"},
-        {"$set": {"status": "revoked", "revoked_at": datetime.now(timezone.utc).isoformat()}},
+        {
+            "$set": {
+                "status": "revoked",
+                "revoked_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
     )
     logger.info(f"Apple REVOKE: user={app_account_token}")
 
@@ -300,7 +313,9 @@ async def _handle_renewal_status_change(txn: dict, renewal: dict | None):
         {"user_id": app_account_token, "payment_provider": "apple_iap"},
         {"$set": {"auto_renew": auto_renew}},
     )
-    logger.info(f"Apple RENEWAL_STATUS: user={app_account_token} auto_renew={auto_renew}")
+    logger.info(
+        f"Apple RENEWAL_STATUS: user={app_account_token} auto_renew={auto_renew}"
+    )
 
 
 _NOTIFICATION_HANDLERS = {
@@ -356,7 +371,9 @@ async def apple_webhook(request: Request):
         try:
             txn_info = decode_apple_jws(signed_txn)
         except Exception as e:
-            logger.warning(f"Apple webhook: failed to decode signedTransactionInfo: {e}")
+            logger.warning(
+                f"Apple webhook: failed to decode signedTransactionInfo: {e}"
+            )
 
     # Decode nested signedRenewalInfo
     renewal_info: dict | None = None
