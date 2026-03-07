@@ -217,7 +217,7 @@ function AppRoutes() {
         <Route path="/beneficiary" element={<BeneficiaryHubPage />} />
         <Route path="/beneficiary/pre" element={<PreTransitionPage />} />
         <Route path="/beneficiary/dashboard" element={<TransitionGate><BeneficiaryDashboardPage /></TransitionGate>} />
-        <Route path="/beneficiary/vault" element={<TransitionGate section="vault"><BeneficiaryVaultPage /></TransitionGate>} />
+        <Route path="/beneficiary/vault" element={<TransitionGate section="vault" allowPreTransition><BeneficiaryVaultPage /></TransitionGate>} />
         <Route path="/beneficiary/messages" element={<TransitionGate section="messages"><BeneficiaryMessagesPage /></TransitionGate>} />
         <Route path="/beneficiary/checklist" element={<TransitionGate section="checklist"><BeneficiaryChecklistPage /></TransitionGate>} />
         <Route path="/beneficiary/guardian" element={<TransitionGate section="guardian"><BeneficiaryGuardianPage /></TransitionGate>} />
