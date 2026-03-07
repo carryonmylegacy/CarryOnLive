@@ -282,7 +282,7 @@ const WalletEntryModal = ({ entry, beneficiaries, onClose, onSaved, getAuthHeade
               <Label className="text-[var(--t4)] text-xs">Category</Label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger className="input-field mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent className="bg-[#141C33] border-[var(--b)]" style={{ zIndex: 99999 }}>
+                <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]" style={{ zIndex: 99999 }}>
                   {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value} className="text-[var(--t2)]">{c.label}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -311,7 +311,7 @@ const WalletEntryModal = ({ entry, beneficiaries, onClose, onSaved, getAuthHeade
             <Label className="text-[var(--t4)] text-xs">Assign to Beneficiary (who receives this upon transition)</Label>
             <Select value={beneficiaryId || 'none'} onValueChange={(val) => setBeneficiaryId(val === 'none' ? '' : val)}>
               <SelectTrigger className="input-field mt-1"><SelectValue placeholder="Select beneficiary..." /></SelectTrigger>
-              <SelectContent className="bg-[#141C33] border-[var(--b)]" style={{ zIndex: 99999 }}>
+              <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]" style={{ zIndex: 99999 }}>
                 <SelectItem value="none" className="text-[var(--t4)]">No one (keep private)</SelectItem>
                 {beneficiaries.map(b => (
                   <SelectItem key={b.id} value={b.id} className="text-[var(--t2)]">

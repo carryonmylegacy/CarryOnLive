@@ -357,7 +357,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
           <SelectTrigger className="input-field mt-1 w-full text-sm">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent className="bg-[#141C33] border-[var(--b)]" style={{ zIndex: 99999 }}>
+          <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]" style={{ zIndex: 99999 }}>
             {LOCK_MODES.map(m => (
               <SelectItem key={m.value} value={m.value} className="text-[var(--t2)] hover:bg-[var(--s)] cursor-pointer text-sm">{m.label}</SelectItem>
             ))}
@@ -476,7 +476,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
                 <SelectTrigger className="input-field mt-1 w-full text-sm">
                   <SelectValue placeholder="Select a question..." />
                 </SelectTrigger>
-                <SelectContent className="bg-[#141C33] border-[var(--b)] max-h-60" style={{ zIndex: 99999 }}>
+                <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)] max-h-60" style={{ zIndex: 99999 }}>
                   {questions.map(q => (
                     <SelectItem key={q} value={q} className="text-[var(--t2)] hover:bg-[var(--s)] cursor-pointer text-sm">{q}</SelectItem>
                   ))}

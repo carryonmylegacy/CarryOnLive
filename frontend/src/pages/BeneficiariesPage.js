@@ -38,6 +38,7 @@ import { SectionLockBanner, SectionLockedOverlay } from '../components/security/
 import { Skeleton } from '../components/ui/skeleton';
 import { PhotoPicker } from '../components/PhotoPicker';
 import AddressAutocomplete from '../components/AddressAutocomplete';
+import DateMaskInput from '../components/DateMaskInput';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -704,7 +705,7 @@ const BeneficiariesPage = () => {
                     <SelectTrigger className="input-field">
                       <SelectValue placeholder="None" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#1A2440] border-[var(--b)]">
+                    <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
                       <SelectItem value="none">None</SelectItem>
                       <SelectItem value="Jr.">Jr.</SelectItem>
                       <SelectItem value="Sr.">Sr.</SelectItem>
@@ -723,7 +724,7 @@ const BeneficiariesPage = () => {
                     <SelectTrigger className="input-field" data-testid="beneficiary-relation-select">
                       <SelectValue placeholder="Select relationship" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#1A2440] border-[var(--b)]">
+                    <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
                       {relations.map((rel) => (
                         <SelectItem key={rel} value={rel}>{rel}</SelectItem>
                       ))}
@@ -736,7 +737,7 @@ const BeneficiariesPage = () => {
                     <SelectTrigger className="input-field" data-testid="beneficiary-gender-select">
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#1A2440] border-[var(--b)]">
+                    <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
                       <SelectItem value="male">Male</SelectItem>
                       <SelectItem value="female">Female</SelectItem>
                       <SelectItem value="other">Other</SelectItem>
@@ -747,8 +748,7 @@ const BeneficiariesPage = () => {
               
               <div className="space-y-2">
                 <Label className="text-[#94a3b8]">Date of Birth</Label>
-                <Input
-                  type="date"
+                <DateMaskInput
                   value={dateOfBirth}
                   onChange={(e) => setDateOfBirth(e.target.value)}
                   className="input-field"
@@ -812,7 +812,7 @@ const BeneficiariesPage = () => {
                 />
               </div>
               
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div className="space-y-2">
                   <Label className="text-[#94a3b8]">City</Label>
                   <Input
@@ -828,14 +828,14 @@ const BeneficiariesPage = () => {
                     <SelectTrigger className="input-field">
                       <SelectValue placeholder="State" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#1A2440] border-[var(--b)] max-h-48">
+                    <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)] max-h-48">
                       {usStates.map((st) => (
                         <SelectItem key={st} value={st}>{st}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 col-span-2 sm:col-span-1">
                   <Label className="text-[#94a3b8]">ZIP Code</Label>
                   <Input
                     value={addressZip}

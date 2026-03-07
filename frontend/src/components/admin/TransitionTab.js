@@ -220,7 +220,7 @@ export const TransitionTab = ({ getAuthHeaders }) => {
       {/* Document Viewer Modal */}
       {viewingDoc && (
         <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4" onClick={closeDocViewer}>
-          <div className="bg-[#1A2440] rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-auto" onClick={e => e.stopPropagation()}
+          <div className="bg-[var(--bg2)] rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-auto" onClick={e => e.stopPropagation()}
             style={{ border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}>
             <div className="flex items-center justify-between p-4 border-b border-[var(--b)]">
               <div>
