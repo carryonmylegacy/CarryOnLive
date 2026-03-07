@@ -57,6 +57,8 @@ const usStates = [
 ];
 
 // Steps are computed dynamically based on form state
+const beneficiaryRelations = ['Spouse', 'Son', 'Daughter', 'Parent', 'Sibling', 'Grandchild', 'Friend', 'Other'];
+
 const inputClass = "h-14 px-4 bg-[#0b1322] border border-[#1a2a42] text-white text-base placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-1 focus:ring-inset focus:ring-[#d4af37]/30 focus:outline-none rounded-xl w-full";
 const selectClass = "h-14 bg-[#0b1322] border-[#1a2a42] text-white text-base rounded-xl [&>span]:text-white";
 
@@ -127,6 +129,7 @@ const SignupPage = () => {
         last_name: prev[idx]?.last_name || '',
         email: prev[idx]?.email || '',
         dob: prev[idx]?.dob || '',
+        gender: prev[idx]?.gender || '',
         same_address: prev[idx]?.same_address !== undefined ? prev[idx].same_address : true,
         address_street: prev[idx]?.address_street || '',
         address_line2: prev[idx]?.address_line2 || '',
@@ -288,6 +291,7 @@ const SignupPage = () => {
           last_name: b.last_name,
           email: b.email || null,
           dob: b.dob || null,
+          gender: b.gender || null,
           relation: b.relation,
           same_address: b.same_address,
           address_street: b.same_address ? null : b.address_street,
@@ -549,7 +553,7 @@ const SignupPage = () => {
                 </div>
 
                 {/* Step Content */}
-                <div className="px-4 sm:px-6 pb-5 sm:pb-7 flex flex-col" style={{ height: 500 }}>
+                <div className="px-4 sm:px-6 pb-5 sm:pb-7 flex flex-col" style={{ height: 540 }}>
                   <div ref={scrollRef} className="flex-1 overflow-auto scrollbar-hide px-3" style={getSlideStyle()}>
                     {/* STEP 0: Name */}
                     {currentStep?.id === 'name' && (
@@ -734,6 +738,30 @@ const SignupPage = () => {
                             <DateMaskInput value={ben.dob} onChange={(e) => updateBen('dob', e.target.value)}
                               onFocus={handleFieldFocus} className={inputClass} />
                           </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                              <Label className="text-[#7b879e] text-sm font-medium">Relationship</Label>
+                              <Select value={ben.relation} onValueChange={(v) => updateBen('relation', v)}>
+                                <SelectTrigger className={selectClass} data-testid={`ben-relation-select-${idx}`}><SelectValue placeholder="Select..." /></SelectTrigger>
+                                <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
+                                  {beneficiaryRelations.map(rel => (
+                                    <SelectItem key={rel} value={rel}>{rel}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label className="text-[#7b879e] text-sm font-medium">Sex</Label>
+                              <Select value={ben.gender || ''} onValueChange={(v) => updateBen('gender', v)}>
+                                <SelectTrigger className={selectClass} data-testid={`ben-gender-select-${idx}`}><SelectValue placeholder="Select..." /></SelectTrigger>
+                                <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
+                                  <SelectItem value="male">Male</SelectItem>
+                                  <SelectItem value="female">Female</SelectItem>
+                                  <SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
                           <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
                             <input type="checkbox" checked={ben.same_address} onChange={(e) => {
                               updateBen('same_address', e.target.checked);
@@ -786,7 +814,7 @@ const SignupPage = () => {
 
                     {/* STEP 2: Address */}
                     {currentStep?.id === 'address' && (
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         <div>
                           <h2 className="text-white text-lg sm:text-xl font-semibold mb-0.5" style={{ fontFamily: 'Outfit, sans-serif' }}>Your residential address</h2>
                           <p className="text-[#6b7a90] text-xs">Used by EGA to analyze estate law specific to your state.</p>

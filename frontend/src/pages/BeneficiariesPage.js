@@ -813,18 +813,27 @@ const BeneficiariesPage = () => {
               </div>
               
               <div className="grid grid-cols-3 gap-2">
-                <Input value={addressCity} onChange={(e) => setAddressCity(e.target.value)} placeholder="City" className="input-field" />
-                <Select value={addressState} onValueChange={setAddressState}>
-                  <SelectTrigger className="input-field">
-                    <SelectValue placeholder="State" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)] max-h-48">
-                    {usStates.map((st) => (
-                      <SelectItem key={st} value={st}>{st}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Input value={addressZip} onChange={(e) => setAddressZip(e.target.value)} placeholder="ZIP" className="input-field" maxLength={10} />
+                <div className="space-y-1.5">
+                  <Label className="text-[#94a3b8] text-xs">City</Label>
+                  <Input value={addressCity} onChange={(e) => setAddressCity(e.target.value)} placeholder="City" className="input-field" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[#94a3b8] text-xs">State</Label>
+                  <Select value={addressState} onValueChange={setAddressState}>
+                    <SelectTrigger className="input-field">
+                      <SelectValue placeholder="State" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)] max-h-48">
+                      {usStates.map((st) => (
+                        <SelectItem key={st} value={st}>{st}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[#94a3b8] text-xs">ZIP</Label>
+                  <Input value={addressZip} onChange={(e) => setAddressZip(e.target.value)} placeholder="ZIP" className="input-field" maxLength={10} />
+                </div>
               </div>
             </div>
 
