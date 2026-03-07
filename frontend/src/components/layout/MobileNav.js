@@ -185,7 +185,7 @@ const MobileNav = () => {
     { to: '/admin/dev-switcher', icon: Settings, label: 'Dev Switcher' },
   ] : [
     { to: user?.role === 'beneficiary' ? '/beneficiary/settings' : '/settings', icon: Settings, label: 'Settings' },
-    { to: (user?.role === 'beneficiary' ? '/beneficiary/settings' : '/settings') + '#subscription', icon: CreditCard, label: 'Subscription' },
+    { to: '/subscription', icon: CreditCard, label: 'Subscription' },
     { to: '/security-settings', icon: ShieldCheck, label: 'Security Settings' },
     { to: '/support', icon: Headphones, label: 'Customer Support' },
   ];
