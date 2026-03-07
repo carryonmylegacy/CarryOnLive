@@ -580,7 +580,7 @@ const SignupPage = () => {
                             <Label className="text-[#7b879e] text-sm font-medium">Suffix</Label>
                             <Select value={suffix} onValueChange={setSuffix}>
                               <SelectTrigger className={selectClass} data-testid="signup-suffix-select"><SelectValue placeholder="None" /></SelectTrigger>
-                              <SelectContent className="bg-[#141C33] border-[#1a2a42]">
+                              <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
                                 {suffixOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                               </SelectContent>
                             </Select>
@@ -601,7 +601,7 @@ const SignupPage = () => {
                             <Label className="text-[#7b879e] text-sm font-medium">Gender</Label>
                             <Select value={gender} onValueChange={setGender}>
                               <SelectTrigger className={selectClass} data-testid="signup-gender-select"><SelectValue placeholder="Select..." /></SelectTrigger>
-                              <SelectContent className="bg-[#141C33] border-[#1a2a42]">
+                              <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
                                 {genderOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                               </SelectContent>
                             </Select>
@@ -638,7 +638,7 @@ const SignupPage = () => {
                           <Label className="text-[#7b879e] text-sm font-medium">Marital Status <span className="text-red-400">*</span></Label>
                           <Select value={maritalStatus} onValueChange={setMaritalStatus}>
                             <SelectTrigger className={selectClass} data-testid="signup-marital-select"><SelectValue placeholder="Select..." /></SelectTrigger>
-                            <SelectContent className="bg-[#141C33] border-[#1a2a42]">
+                            <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
                               {maritalOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                             </SelectContent>
                           </Select>
@@ -651,7 +651,7 @@ const SignupPage = () => {
                             <Label className="text-[#7b879e] text-sm font-medium">Under 18</Label>
                             <Select value={String(dependentsUnder18)} onValueChange={(v) => setDependentsUnder18(parseInt(v))}>
                               <SelectTrigger className={selectClass} data-testid="signup-dependents-under"><SelectValue placeholder="0" /></SelectTrigger>
-                              <SelectContent className="bg-[#141C33] border-[#1a2a42]">
+                              <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
                                 {[...Array(11)].map((_, i) => <SelectItem key={i} value={String(i)}>{i}</SelectItem>)}
                               </SelectContent>
                             </Select>
@@ -660,7 +660,7 @@ const SignupPage = () => {
                             <Label className="text-[#7b879e] text-sm font-medium">18+</Label>
                             <Select value={String(dependentsOver18)} onValueChange={(v) => setDependentsOver18(parseInt(v))}>
                               <SelectTrigger className={selectClass} data-testid="signup-dependents-over"><SelectValue placeholder="0" /></SelectTrigger>
-                              <SelectContent className="bg-[#141C33] border-[#1a2a42]">
+                              <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
                                 {[...Array(11)].map((_, i) => <SelectItem key={i} value={String(i)}>{i}</SelectItem>)}
                               </SelectContent>
                             </Select>
@@ -768,7 +768,7 @@ const SignupPage = () => {
                                   <Label className="text-[#7b879e] text-[10px] font-medium">State <span className="text-red-400">*</span></Label>
                                   <Select value={ben.address_state} onValueChange={(v) => updateBen('address_state', v)}>
                                     <SelectTrigger className={selectClass}><SelectValue placeholder="State" /></SelectTrigger>
-                                    <SelectContent className="bg-[#141C33] border-[#1a2a42] max-h-48">
+                                    <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)] max-h-48">
                                       {usStates.map(st => <SelectItem key={st} value={st}>{st}</SelectItem>)}
                                     </SelectContent>
                                   </Select>
@@ -822,7 +822,7 @@ const SignupPage = () => {
                             <Label className="text-[#7b879e] text-xs font-medium">State <span className="text-red-400">*</span></Label>
                             <Select value={addressState} onValueChange={setAddressState}>
                               <SelectTrigger className={selectClass} data-testid="signup-address-state"><SelectValue placeholder="State" /></SelectTrigger>
-                              <SelectContent className="bg-[#141C33] border-[#1a2a42] max-h-48">
+                              <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)] max-h-48">
                                 {usStates.map(st => <SelectItem key={st} value={st}>{st}</SelectItem>)}
                               </SelectContent>
                             </Select>

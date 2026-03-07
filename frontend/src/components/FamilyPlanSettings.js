@@ -286,7 +286,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
               />
               <Select value={inviteRole} onValueChange={setInviteRole}>
                 <SelectTrigger className="input-field w-32 text-sm"><SelectValue /></SelectTrigger>
-                <SelectContent className="bg-[#141C33] border-[var(--b)]" style={{ zIndex: 99999 }}>
+                <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]" style={{ zIndex: 99999 }}>
                   <SelectItem value="benefactor" className="text-[var(--t2)]">Benefactor</SelectItem>
                   <SelectItem value="beneficiary" className="text-[var(--t2)]">Beneficiary</SelectItem>
                 </SelectContent>

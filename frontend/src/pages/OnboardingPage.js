@@ -13,6 +13,7 @@ import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
 import { Textarea } from '../components/ui/textarea';
+import DateMaskInput from '../components/DateMaskInput';
 import { toast } from '../utils/toast';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 
@@ -326,7 +327,7 @@ const OnboardingPage = () => {
                 <SelectTrigger className="input-field">
                   <SelectValue placeholder="Select relationship" />
                 </SelectTrigger>
-                <SelectContent className="bg-[#141C33] border-[var(--b)]">
+                <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
                   {relations.map((rel) => (
                     <SelectItem key={rel} value={rel}>{rel}</SelectItem>
                   ))}
@@ -368,7 +369,7 @@ const OnboardingPage = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label className="text-[#94a3b8] text-sm">Date of Birth</Label>
-                    <Input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className="input-field" />
+                    <DateMaskInput value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className="input-field" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-[#94a3b8] text-sm">Gender</Label>
@@ -376,7 +377,7 @@ const OnboardingPage = () => {
                       <SelectTrigger className="input-field">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#141C33] border-[var(--b)]">
+                      <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
                         <SelectItem value="male">Male</SelectItem>
                         <SelectItem value="female">Female</SelectItem>
                         <SelectItem value="other">Other</SelectItem>
@@ -407,7 +408,7 @@ const OnboardingPage = () => {
                     <SelectTrigger className="input-field">
                       <SelectValue placeholder="State" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#141C33] border-[var(--b)] max-h-48">
+                    <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)] max-h-48">
                       {usStates.map((st) => (
                         <SelectItem key={st} value={st}>{st}</SelectItem>
                       ))}

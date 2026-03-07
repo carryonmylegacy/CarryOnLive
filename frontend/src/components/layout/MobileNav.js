@@ -206,7 +206,7 @@ const MobileNav = () => {
   ];
 
   const adminBottomNav = [
-    { id: 'admin-users', to: '/admin', icon: Users, label: 'Users' },
+    { id: 'admin-users', to: '/admin', icon: Users, label: 'Users', forceInactive: true },
     { id: 'admin-tvt', to: '/admin/transition', icon: FileKey, label: 'TVT' },
     { id: 'admin-home', to: '/admin', icon: Home, label: 'Home', isCenter: true },
     { id: 'admin-dts', to: '/admin/dts', icon: Shield, label: 'DTS' },
@@ -433,15 +433,21 @@ const MobileNav = () => {
               <React.Fragment key={item.id || item.to}>
                 <NavLink
                   to={item.to}
-                  className={({ isActive }) =>
-                    isCenter 
+                  className={({ isActive: routeActive }) => {
+                    const isActive = routeActive && !item.forceInactive;
+                    return isCenter 
                       ? `flex flex-col items-center -mt-6 flex-1`
-                      : `mobile-nav-item flex flex-col items-center gap-1 py-2 flex-1 ${isActive ? 'active' : ''}`
-                  }
-                  style={({ isActive }) => (!isCenter && !isActive ? { color: theme === 'dark' ? 'rgba(255,255,255,0.7)' : '#1e3a5f' } : {})}
+                      : `mobile-nav-item flex flex-col items-center gap-1 py-2 flex-1 ${isActive ? 'active' : ''}`;
+                  }}
+                  style={({ isActive: routeActive }) => {
+                    const isActive = routeActive && !item.forceInactive;
+                    return (!isCenter && !isActive ? { color: theme === 'dark' ? 'rgba(255,255,255,0.7)' : '#1e3a5f' } : {});
+                  }}
                   data-testid={`mobile-nav-${item.label.toLowerCase()}`}
                 >
-                  {({ isActive }) => (
+                  {({ isActive: routeActive }) => {
+                    const isActive = routeActive && !item.forceInactive;
+                    return (
                     isCenter ? (
                       <>
                         <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-all ${
@@ -462,7 +468,7 @@ const MobileNav = () => {
                         <span className="text-xs font-semibold">{item.label}</span>
                       </>
                     )
-                  )}
+                  );}}
                 </NavLink>
                 {showDivider && (
                   <div 

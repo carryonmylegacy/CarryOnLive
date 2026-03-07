@@ -171,7 +171,7 @@ export function PhotoPicker({ onPhotoSelected, currentPhoto, onRemove }) {
 
       {/* Source Picker Dialog */}
       <Dialog open={showSourcePicker} onOpenChange={setShowSourcePicker}>
-        <DialogContent className="sm:max-w-xs bg-[#0f1d35] border-[#1e3a5f] text-white" aria-describedby={undefined}>
+        <DialogContent className="sm:max-w-xs bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Add Photo</DialogTitle>
           </DialogHeader>
@@ -200,7 +200,7 @@ export function PhotoPicker({ onPhotoSelected, currentPhoto, onRemove }) {
 
       {/* Camera Dialog */}
       <Dialog open={showCamera} onOpenChange={(open) => { if (!open) cancelCamera(); }}>
-        <DialogContent className="sm:max-w-md bg-[#0f1d35] border-[#1e3a5f] text-white p-0 overflow-hidden">
+        <DialogContent className="sm:max-w-md bg-[var(--bg2)] border-[var(--b)] text-[var(--t)] p-0 overflow-hidden">
           <div className="relative">
             <video
               ref={videoRef}
@@ -228,7 +228,7 @@ export function PhotoPicker({ onPhotoSelected, currentPhoto, onRemove }) {
 
       {/* Crop/Zoom Dialog */}
       <Dialog open={showCropper} onOpenChange={setShowCropper}>
-        <DialogContent className="sm:max-w-lg bg-[#0f1d35] border-[#1e3a5f] text-white p-0">
+        <DialogContent className="sm:max-w-lg bg-[var(--bg2)] border-[var(--b)] text-[var(--t)] p-0">
           <DialogHeader className="p-4 pb-0">
             <DialogTitle>Crop & Zoom</DialogTitle>
           </DialogHeader>

@@ -43,6 +43,67 @@ import { Checkbox } from '../components/ui/checkbox';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
+const VideoPlaybackModal = ({ url, onClose }) => {
+  const videoRef = React.useRef(null);
+  const [showControls, setShowControls] = React.useState(true);
+  const timerRef = React.useRef(null);
+
+  const hideAfterDelay = () => {
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setShowControls(false), 2000);
+  };
+
+  React.useEffect(() => {
+    hideAfterDelay();
+    return () => clearTimeout(timerRef.current);
+  }, []);
+
+  const handleTap = (e) => {
+    e.stopPropagation();
+    if (showControls) {
+      setShowControls(false);
+      clearTimeout(timerRef.current);
+    } else {
+      setShowControls(true);
+      hideAfterDelay();
+    }
+  };
+
+  const togglePlay = (e) => {
+    e.stopPropagation();
+    const v = videoRef.current;
+    if (!v) return;
+    v.paused ? v.play() : v.pause();
+    hideAfterDelay();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black" onClick={onClose}>
+      <div className="relative w-full h-full flex items-center justify-center" onClick={handleTap}>
+        <video ref={videoRef} src={url} autoPlay playsInline className="w-full h-full object-contain" style={{ maxHeight: '100vh' }} />
+        {/* Auto-fading controls overlay */}
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: showControls ? 'auto' : 'none',
+          opacity: showControls ? 1 : 0, transition: 'opacity 0.3s ease',
+        }}>
+          {/* Close button */}
+          <button onClick={(e) => { e.stopPropagation(); onClose(); }}
+            style={{ position: 'absolute', top: 'calc(16px + env(safe-area-inset-top, 0px))', right: 16, zIndex: 10 }}
+            className="w-10 h-10 rounded-full bg-black/50 flex items-center justify-center text-white active:scale-90 transition-transform">
+            <X className="w-5 h-5" />
+          </button>
+          {/* Play/Pause center button */}
+          <button onClick={togglePlay}
+            className="absolute inset-0 m-auto w-16 h-16 rounded-full bg-black/40 flex items-center justify-center text-white active:scale-90 transition-transform">
+            {videoRef.current?.paused !== false ? <Play className="w-8 h-8 ml-1" /> : <Pause className="w-8 h-8" />}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 const triggerIcons = {
   immediate: Send,
   age_milestone: Calendar,
@@ -1015,7 +1076,7 @@ const MessagesPage = () => {
                 <SelectTrigger className="input-field">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-[#1A2440] border-[var(--b)]">
+                <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
                   <SelectItem value="immediate">
                     <div className="flex items-center gap-2">
                       <Send className="w-4 h-4" />
@@ -1170,15 +1231,10 @@ const MessagesPage = () => {
 
       {/* Video Playback Modal */}
       {playingVideoUrl && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80" onClick={() => { URL.revokeObjectURL(playingVideoUrl); setPlayingVideoUrl(null); }}>
-          <div className="relative max-w-2xl w-full" onClick={e => e.stopPropagation()}>
-            <button onClick={() => { URL.revokeObjectURL(playingVideoUrl); setPlayingVideoUrl(null); }}
-              className="absolute -top-10 right-0 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white active:scale-90 transition-transform">
-              <X className="w-4 h-4" />
-            </button>
-            <video src={playingVideoUrl} controls autoPlay playsInline className="w-full rounded-2xl" style={{ maxHeight: '80vh' }} />
-          </div>
-        </div>
+        <VideoPlaybackModal 
+          url={playingVideoUrl} 
+          onClose={() => { URL.revokeObjectURL(playingVideoUrl); setPlayingVideoUrl(null); }} 
+        />
       )}
 
       </SectionLockedOverlay>

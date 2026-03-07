@@ -833,7 +833,7 @@ const VaultPage = () => {
                 <SelectTrigger className="input-field" data-testid="upload-category-select">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-[#1A2440] border-[var(--b)]">
+                <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
                   <SelectItem value="will">Will</SelectItem>
                   <SelectItem value="trust">Trust</SelectItem>
                   <SelectItem value="living_will">Living Will / Healthcare Directive</SelectItem>
@@ -854,7 +854,7 @@ const VaultPage = () => {
                 <SelectTrigger className="input-field" data-testid="upload-lock-select">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-[#1A2440] border-[var(--b)]">
+                <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
                   <SelectItem value="none">No Lock</SelectItem>
                   <SelectItem value="password">Password Protected</SelectItem>
                   <SelectItem value="voice">Voice Verification</SelectItem>
@@ -1098,7 +1098,7 @@ const VaultPage = () => {
                     <div className="w-full border-t border-[var(--b)]"></div>
                   </div>
                   <div className="relative flex justify-center text-xs">
-                    <span className="bg-[#1A2440] px-2 text-[#64748b]">Or use backup code</span>
+                    <span className="bg-[var(--bg2)] px-2 text-[var(--t5)]">Or use backup code</span>
                   </div>
                 </div>
               </div>
@@ -1272,7 +1272,7 @@ const VaultPage = () => {
                 <SelectTrigger className="input-field" data-testid="edit-document-category-select">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-[#1A2440] border-[var(--b)]">
+                <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
                   <SelectItem value="will">Will</SelectItem>
                   <SelectItem value="trust">Trust</SelectItem>
                   <SelectItem value="living_will">Living Will / Healthcare Directive</SelectItem>
