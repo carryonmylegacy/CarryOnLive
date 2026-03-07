@@ -438,7 +438,7 @@ const MobileNav = () => {
                       ? `flex flex-col items-center -mt-6 flex-1`
                       : `mobile-nav-item flex flex-col items-center gap-1 py-2 flex-1 ${isActive ? 'active' : ''}`
                   }
-                  style={({ isActive }) => (!isCenter && !isActive ? { color: 'rgba(255,255,255,0.7)' } : {})}
+                  style={({ isActive }) => (!isCenter && !isActive ? { color: theme === 'dark' ? 'rgba(255,255,255,0.7)' : '#1e3a5f' } : {})}
                   data-testid={`mobile-nav-${item.label.toLowerCase()}`}
                 >
                   {({ isActive }) => (
@@ -451,7 +451,8 @@ const MobileNav = () => {
                         }`}>
                           <item.icon className="w-6 h-6" />
                         </div>
-                        <span className={`text-xs mt-1 font-semibold ${isActive ? 'text-[var(--gold)]' : 'text-white/70'}`}>
+                        <span className={`text-xs mt-1 font-semibold ${isActive ? 'text-[var(--gold)]' : ''}`}
+                          style={!isActive ? { color: theme === 'dark' ? 'rgba(255,255,255,0.7)' : '#1e3a5f' } : {}}>
                           {item.label}
                         </span>
                       </>
@@ -466,7 +467,7 @@ const MobileNav = () => {
                 {showDivider && (
                   <div 
                     className="h-10 flex-shrink-0" 
-                    style={{ alignSelf: 'center', width: '2px', backgroundColor: 'rgba(255,255,255,0.35)' }}
+                    style={{ alignSelf: 'center', width: '2px', backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.35)' : 'rgba(30,58,95,0.2)' }}
                   />
                 )}
               </React.Fragment>
