@@ -278,7 +278,7 @@ const PaymentForm = ({ task, onPaymentSaved, getAuthHeaders }) => {
 };
 
 const TrusteePage = () => {
-  const { getAuthHeaders } = useAuth();
+  const { getAuthHeaders, subscriptionStatus } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [view, setView] = useState('list');
   const [selectedId, setSelectedId] = useState(null);
@@ -286,6 +286,18 @@ const TrusteePage = () => {
   const [newTask, setNewTask] = useState({ type: '', title: '', desc: '', confidential: 'full', discloseTo: '', timedRelease: '', beneficiary: '' });
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [estateId, setEstateId] = useState(null);
+  const [showTrialGate, setShowTrialGate] = useState(false);
+
+  // Check if user is in trial without a paid subscription (DTS requires paid sub)
+  useEffect(() => {
+    if (!subscriptionStatus) return;
+    const { trial, has_subscription, eligible_tiers } = subscriptionStatus;
+    const isFreeAccess = (eligible_tiers || []).some(t => ['hospice', 'enterprise'].includes(t));
+    const hasPaidSub = has_subscription || subscriptionStatus.beta_mode || isFreeAccess;
+    if (trial?.trial_active && !hasPaidSub) {
+      setShowTrialGate(true);
+    }
+  }, [subscriptionStatus]);
   
   // Edit/Delete state
   const [showEditModal, setShowEditModal] = useState(false);
@@ -428,6 +440,35 @@ const TrusteePage = () => {
       setDeleting(false);
     }
   };
+
+  // === TRIAL GATE — DTS requires paid subscription ===
+  if (showTrialGate) {
+    return (
+      <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 animate-fade-in" data-testid="dts-trial-gate">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
+          <div className="glass-card p-8 max-w-md w-full text-center" style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}>
+            <div className="w-14 h-14 rounded-2xl mx-auto mb-5 flex items-center justify-center" style={{ background: 'var(--seal-bg)' }}>
+              <Shield className="w-7 h-7 text-[var(--gold)]" />
+            </div>
+            <h2 className="text-xl font-bold text-[var(--t)] mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              Designated Trustee Services
+            </h2>
+            <p className="text-sm text-[var(--t3)] leading-relaxed mb-6">
+              DTS is a premium feature that becomes available with an active subscription. Your free trial gives you full access to explore every other part of CarryOn — when you're ready, choose a plan to unlock DTS.
+            </p>
+            <button
+              onClick={() => setShowTrialGate(false)}
+              className="px-8 py-3 rounded-xl text-sm font-bold transition-transform active:scale-95"
+              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
+              data-testid="dts-trial-gate-ok"
+            >
+              OK, Got It
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // === SUBMITTED SUCCESS ===
   if (view === 'submitted') {
