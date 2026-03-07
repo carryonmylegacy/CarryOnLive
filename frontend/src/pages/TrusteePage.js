@@ -457,7 +457,7 @@ const TrusteePage = () => {
               DTS is a premium feature that becomes available with an active subscription. Your free trial gives you full access to explore every other part of CarryOn — when you're ready, choose a plan to unlock DTS.
             </p>
             <button
-              onClick={() => setShowTrialGate(false)}
+              onClick={() => window.history.back()}
               className="px-8 py-3 rounded-xl text-sm font-bold transition-transform active:scale-95"
               style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
               data-testid="dts-trial-gate-ok"
