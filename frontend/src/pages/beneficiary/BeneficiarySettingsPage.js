@@ -10,6 +10,7 @@ import { Switch } from '../../components/ui/switch';
 import { Separator } from '../../components/ui/separator';
 import { SubscriptionManagement } from '../../components/settings/SubscriptionManagement';
 import NotificationSettings from '../../components/NotificationSettings';
+import { PhotoPicker } from '../../components/PhotoPicker';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -18,6 +19,7 @@ const BeneficiarySettingsPage = () => {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [estate, setEstate] = useState(null);
+  const [profilePhoto, setProfilePhoto] = useState(null);
 
   useEffect(() => {
     const fetchEstate = async () => {
@@ -30,6 +32,9 @@ const BeneficiarySettingsPage = () => {
       }
     };
     fetchEstate();
+    axios.get(`${API_URL}/auth/me`, getAuthHeaders()).then(res => {
+      if (res.data.photo_url) setProfilePhoto(res.data.photo_url);
+    }).catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLogout = () => { logout(); navigate('/login'); };
@@ -45,6 +50,28 @@ const BeneficiarySettingsPage = () => {
       <Card className="glass-card">
         <CardHeader><CardTitle className="text-[var(--t)] flex items-center gap-2"><User className="w-5 h-5 text-[var(--gold)]" /> Account</CardTitle></CardHeader>
         <CardContent>
+          <div className="flex items-center gap-4 mb-4">
+            <PhotoPicker
+              currentPhoto={profilePhoto}
+              onPhotoSelected={async (file, previewUrl) => {
+                setProfilePhoto(previewUrl);
+                const reader = new FileReader();
+                reader.onload = async () => {
+                  const base64 = reader.result.split(',')[1];
+                  try { await axios.put(`${API_URL}/auth/profile-photo`, { photo_data: base64, file_name: file.name }, getAuthHeaders()); } catch {}
+                };
+                reader.readAsDataURL(file);
+              }}
+              onRemove={async () => {
+                setProfilePhoto(null);
+                try { await axios.put(`${API_URL}/auth/profile-photo`, { photo_data: '', file_name: '' }, getAuthHeaders()); } catch {}
+              }}
+            />
+            <div>
+              <h3 className="text-[var(--t)] font-semibold">{user?.name || 'User'}</h3>
+              <p className="text-[var(--t4)] text-sm">{user?.email || ''}</p>
+            </div>
+          </div>
           <div className="space-y-0">
             {[
               ['Email', user?.email || ''],
