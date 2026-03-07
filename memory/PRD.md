@@ -4,47 +4,58 @@
 CarryOn is a secure, AI-powered estate planning platform for American families. It helps users organize critical end-of-life documents, milestone messages, and digital asset credentials, encrypted and stored securely for beneficiaries to access when the time comes.
 
 ## Core Architecture
-- **Frontend**: React 19 (CRA via Craco) + Tailwind CSS + Shadcn/UI — 32 pages, 82 components, 66 packages
-- **Backend**: FastAPI (Python 3.11) — 209 endpoints, 28 route modules, 7 services
-- **Database**: MongoDB Atlas (production) / local MongoDB (preview) — 41 collections
-- **Storage**: AWS S3 (carryon-vault, us-east-2)
-- **AI**: xAI Grok-4 (Estate Guardian AI)
-- **Payments**: Stripe + Apple IAP (StoreKit 2) + Apple Server Notifications v2
+- **Frontend**: React 19 (CRA via Craco) + Tailwind CSS + Shadcn/UI
+- **Backend**: FastAPI (Python 3.11) — 215+ endpoints, 29 route modules
+- **Database**: MongoDB Atlas (production) / local MongoDB (preview)
 - **Auth**: JWT + OTP + WebAuthn Passkeys + Native Biometric (Face ID)
-- **Email**: Resend (OTP, notifications, digests)
-- **Hosting**: Vercel (frontend) + Railway (backend)
+- **Payments**: Stripe + Apple IAP (StoreKit 2) + Apple Server Notifications v2
 - **Mobile**: Capacitor 6 → Codemagic → TestFlight
-- **CI/CD**: GitHub Actions (lint + build)
 
-## Pre-App Store Features (Implemented Feb 2026)
-1. **Error Tracking** — `/api/errors/report` endpoint captures frontend crashes (message, stack, component, device info). No auth required for pre-login crashes.
-2. **Network Status Banner** — Offline/reconnecting indicator with red/green states.
-3. **Accessibility (VoiceOver)** — ARIA labels on all navigation elements (sidebar, bottom nav, menu drawer).
-4. **Force Update Gate** — Minimum version check on native launch. Blocks with "Update Required" screen if below `min_version`.
-5. **Haptic Feedback** — `@capacitor/haptics` for light/medium/success/warning/error taps on native.
-6. **Pull-to-Refresh** — Dashboard, Vault, Messages pages. Touch-based with 80px threshold + haptic tap.
-7. **Structured Logging** — `RequestTraceMiddleware` adds `X-Request-Id` to all responses and logs `req=ID method=X path=Y status=Z ms=N`.
+## Transition Architecture (NEW — Feb 2026)
+
+### Pre-Transition (benefactor alive):
+- Beneficiary can ONLY view: POA + Healthcare Directive/Living Will
+- All other sections (Vault, Messages, Checklist, Guardian, Digital Wallet) are GATED
+- Beneficiary CAN upload death certificate to initiate TVT
+
+### TVT Approval:
+- Admin reviews and approves death certificate
+- Estate status → "transitioned"
+- Benefactor account → permanently locked (account_locked: true)
+- Immediate-delivery messages released
+- 30-day grace periods created for beneficiaries
+
+### Post-Transition:
+- Beneficiaries get READ-ONLY access based on per-beneficiary section permissions
+- EGA (Estate Guardian AI) queries allowed
+- Primary beneficiary inherits permission management for other beneficiaries
+- Benefactor account immutable forever
+
+### Section Permissions:
+- Per-beneficiary, per-section toggles (vault, messages, checklist, guardian, digital_wallet, timeline)
+- Benefactor sets these while alive
+- Primary beneficiary manages them post-transition
+- Backend: `/api/estate/{id}/section-permissions` (GET/PUT)
+- Backend: `/api/beneficiary/my-permissions/{estate_id}` (GET)
+- Frontend: `TransitionGate` component wraps all post-transition beneficiary routes
 
 ## Test Credentials
 - **Admin**: info@carryon.us / Demo1234!
 - **Benefactor Test**: fulltest@test.com / Password.123
-- **Benefactor Demo**: demo@carryon.us / Demo1234!
-
-## App Store Status — ALL CLEAR
-All compliance and quality checks passed across 4 test iterations (60-63).
 
 ## Pending / Backlog
+
+### P0 (Critical - In Progress)
+- Benefactor UI: Per-beneficiary section permission toggles on BeneficiariesPage
+- Primary beneficiary: Permission management UI post-transition
 
 ### P1 (High)
 - Operations Admin Page for Chief of Staff
 - VAPID keys on Railway for push notifications
+- Re-apply frontend features (network banner, force update, error reporting, pull-to-refresh) — requires careful yarn.lock management
 
 ### P2 (Medium)
 - SMS OTP via Twilio (awaiting A2P 10DLC)
 - Will Creation Wizard
 - OCR Document Scanning
-- App Rating Prompt (StoreKit review)
-
-### P3 (Low)
-- Redis-backed rate limiting
-- Animated logo (awaiting asset)
+- PostHog analytics (currently removed due to Safari crash — re-add via CDN once fixed)

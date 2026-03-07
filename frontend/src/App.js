@@ -36,6 +36,8 @@ const LegacyTimelinePage = lazy(() => import('./pages/LegacyTimelinePage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 
+import TransitionGate from './components/TransitionGate';
+
 // Beneficiary Pages
 const BeneficiaryHubPage = lazy(() => import('./pages/beneficiary/BeneficiaryHubPage'));
 const PreTransitionPage = lazy(() => import('./pages/beneficiary/PreTransitionPage'));
@@ -214,12 +216,12 @@ function AppRoutes() {
       }>
         <Route path="/beneficiary" element={<BeneficiaryHubPage />} />
         <Route path="/beneficiary/pre" element={<PreTransitionPage />} />
-        <Route path="/beneficiary/dashboard" element={<BeneficiaryDashboardPage />} />
-        <Route path="/beneficiary/vault" element={<BeneficiaryVaultPage />} />
-        <Route path="/beneficiary/messages" element={<BeneficiaryMessagesPage />} />
-        <Route path="/beneficiary/checklist" element={<BeneficiaryChecklistPage />} />
-        <Route path="/beneficiary/guardian" element={<BeneficiaryGuardianPage />} />
-        <Route path="/beneficiary/milestone" element={<MilestoneReportPage />} />
+        <Route path="/beneficiary/dashboard" element={<TransitionGate><BeneficiaryDashboardPage /></TransitionGate>} />
+        <Route path="/beneficiary/vault" element={<TransitionGate section="vault"><BeneficiaryVaultPage /></TransitionGate>} />
+        <Route path="/beneficiary/messages" element={<TransitionGate section="messages"><BeneficiaryMessagesPage /></TransitionGate>} />
+        <Route path="/beneficiary/checklist" element={<TransitionGate section="checklist"><BeneficiaryChecklistPage /></TransitionGate>} />
+        <Route path="/beneficiary/guardian" element={<TransitionGate section="guardian"><BeneficiaryGuardianPage /></TransitionGate>} />
+        <Route path="/beneficiary/milestone" element={<TransitionGate><MilestoneReportPage /></TransitionGate>} />
         <Route path="/beneficiary/settings" element={<BeneficiarySettingsPage />} />
       </Route>
 

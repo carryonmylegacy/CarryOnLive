@@ -67,3 +67,18 @@ async def require_active_subscription(
             detail="Your free trial has ended. Subscribe to continue adding content. Your existing documents and messages are still accessible.",
         )
     return access
+
+
+async def require_account_not_locked(
+    current_user: dict = Depends(get_current_user),
+):
+    """Block all write operations if the benefactor's account is locked (post-transition)."""
+    user = await db.users.find_one(
+        {"id": current_user["id"]}, {"_id": 0, "account_locked": 1}
+    )
+    if user and user.get("account_locked"):
+        raise HTTPException(
+            status_code=403,
+            detail="This estate has been sealed following transition. No further changes are permitted.",
+        )
+    return current_user

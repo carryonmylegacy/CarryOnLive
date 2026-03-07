@@ -138,6 +138,9 @@ async def approve_death_certificate(
     )
 
     # Seal the benefactor's estate (immutable)
+    estate_doc = await db.estates.find_one(
+        {"id": certificate["estate_id"]}, {"_id": 0, "beneficiaries": 1, "owner_id": 1}
+    )
     await db.estates.update_one(
         {"id": certificate["estate_id"]},
         {
@@ -148,6 +151,18 @@ async def approve_death_certificate(
             }
         },
     )
+
+    # Lock the benefactor's account permanently — no further edits allowed
+    if estate_doc and estate_doc.get("owner_id"):
+        await db.users.update_one(
+            {"id": estate_doc["owner_id"]},
+            {
+                "$set": {
+                    "account_locked": True,
+                    "locked_at": datetime.now(timezone.utc).isoformat(),
+                }
+            },
+        )
 
     # Deliver all messages marked for immediate delivery
     await db.messages.update_many(
@@ -176,10 +191,6 @@ async def approve_death_certificate(
         {"estate_id": certificate["estate_id"]}, {"_id": 0, "user_id": 1}
     ).to_list(100)
 
-    # Also check estate.beneficiaries array
-    estate_doc = await db.estates.find_one(
-        {"id": certificate["estate_id"]}, {"_id": 0, "beneficiaries": 1, "owner_id": 1}
-    )
     all_ben_ids = set()
     for bl in beneficiary_links:
         if bl.get("user_id"):
