@@ -57,7 +57,7 @@ const orbitColors = [
   ['linear-gradient(135deg, #1E40AF, #3B82F6)', 'rgba(59,130,246,0.3)'], // Blue for great-grandparents
 ];
 
-const OrbitVisualization = ({ estates, userInitials, onEstateClick, benefactors }) => {
+const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, benefactors }) => {
   // Use benefactors if provided (organized by relationship), otherwise fall back to estates
   const members = benefactors || estates || [];
   
@@ -256,7 +256,9 @@ const OrbitVisualization = ({ estates, userInitials, onEstateClick, benefactors 
             border: '2px solid rgba(212,175,55,0.2)',
             animation: 'pulse 3s ease-in-out infinite',
           }} />
-          {userInitials}
+          {userPhoto ? (
+            <img src={userPhoto} alt="You" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+          ) : userInitials}
         </div>
       </div>
 
