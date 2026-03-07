@@ -9,7 +9,7 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - **Database**: MongoDB Atlas (production) / local MongoDB (preview) — 35 collections
 - **Storage**: AWS S3 (carryon-vault, us-east-2)
 - **AI**: xAI Grok-4 (Estate Guardian AI)
-- **Payments**: Stripe (checkout, subscriptions, proration)
+- **Payments**: Stripe (checkout, subscriptions, proration) + Apple IAP (native iOS)
 - **Email**: Resend (OTP, notifications, digests)
 - **Hosting**: Vercel (frontend) + Railway (backend)
 - **Mobile**: Capacitor 6 → Codemagic → TestFlight
@@ -30,10 +30,21 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - **Benefactor Test**: fulltest@test.com / Password.123
 - **Benefactor Demo**: demo@carryon.us / Demo1234!
 
+## App Store Audit Status (Feb 2026)
+All critical App Store compliance issues resolved:
+- Privacy Manifest (PrivacyInfo.xcprivacy) — Complete with DiskSpace, FileTimestamp, UserDefaults API declarations + analytics data types
+- Subscription disclosure (Guideline 3.1.2) — Auto-renewal terms, Privacy/Terms links
+- Apple IAP receipt validation — Server-side verification with Apple + transaction replay protection
+- LaunchScreen — Dark background matching app theme
+- Account deletion — GDPR Article 17 compliant
+- Push notifications — aps-environment entitlement configured
+- Encryption export compliance — ITSAppUsesNonExemptEncryption = false
+
 ## Pending / Backlog
 
 ### P0 (Critical)
-- ~~iOS Safe Area Double Padding~~ — RESOLVED. Root cause: `contentInset: 'automatic'` in capacitor.config.ts. Fixed by setting `contentInset: 'never'`. Verified by user on TestFlight.
+- ~~iOS Safe Area Double Padding~~ — RESOLVED
+- ~~App Store Compliance Audit~~ — RESOLVED (Feb 2026)
 
 ### P1 (High)
 - Apple Passkeys ("Sign in with Passkey") via `@argo-navis-dev/capacitor-passkey-plugin`
