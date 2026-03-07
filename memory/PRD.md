@@ -33,7 +33,7 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 ## Pending / Backlog
 
 ### P0 (Critical)
-- iOS Safe Area Double Padding — recurring issue where content is pushed too far down on initial iOS native load. Multiple fix attempts with JS-based toggling of `system-safe-area` class have been unreliable.
+- ~~iOS Safe Area Double Padding~~ — RESOLVED. Root cause: `contentInset: 'automatic'` in capacitor.config.ts. Fixed by setting `contentInset: 'never'`. Verified by user on TestFlight.
 
 ### P1 (High)
 - Apple Passkeys ("Sign in with Passkey") via `@argo-navis-dev/capacitor-passkey-plugin`
