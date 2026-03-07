@@ -482,8 +482,8 @@ const GuardianPage = () => {
       <style>{`@media (min-width: 1024px) { [data-testid="estate-guardian"] { left: var(--sidebar-width, 260px) !important; bottom: 0 !important; } }`}</style>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }}>
-          <div className="max-w-2xl mx-auto px-4 pt-4 pb-4">
+        <div className="flex-1 overflow-y-auto flex flex-col" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }}>
+          <div className="max-w-2xl mx-auto px-4 pt-4 pb-4 w-full flex-1 flex flex-col justify-center lg:justify-center">
             {/* Header — matches SDV, DTS, Beneficiaries format */}
             <div className="flex items-start gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)' }}>
