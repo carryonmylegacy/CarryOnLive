@@ -105,7 +105,7 @@ const BeneficiaryDashboardPage = () => {
           data-testid="stat-checklist"
         >
           <CheckSquare className="w-6 h-6 lg:w-8 lg:h-8 opacity-70 mb-2" />
-          <div className="text-2xl lg:text-4xl font-bold">
+          <div className="text-2xl lg:text-4xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>
             {stats.checklistsDone}/{stats.checklists}
           </div>
           <div className="text-xs lg:text-sm opacity-85 text-center font-bold">Immediate Action<br />Checklist</div>
@@ -117,7 +117,7 @@ const BeneficiaryDashboardPage = () => {
           data-testid="stat-vault"
         >
           <FolderLock className="w-6 h-6 lg:w-8 lg:h-8 opacity-70 mb-2" />
-          <div className="text-2xl lg:text-4xl font-bold">
+          <div className="text-2xl lg:text-4xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>
             {stats.documents}
           </div>
           <div className="text-xs lg:text-sm opacity-85 text-center font-bold">Secure Document<br />Vault</div>
@@ -129,7 +129,7 @@ const BeneficiaryDashboardPage = () => {
           data-testid="stat-messages"
         >
           <MessageSquare className="w-6 h-6 lg:w-8 lg:h-8 opacity-70 mb-2" />
-          <div className="text-2xl lg:text-4xl font-bold">
+          <div className="text-2xl lg:text-4xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>
             {stats.messages}
           </div>
           <div className="text-xs lg:text-sm opacity-85 text-center font-bold">Milestone<br />Messages</div>

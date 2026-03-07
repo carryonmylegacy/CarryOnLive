@@ -82,7 +82,7 @@ export const AnalyticsTab = ({ getAuthHeaders }) => {
                 </div>
                 <span className="text-[10px] text-[var(--t5)] font-bold uppercase tracking-wider">{kpi.label}</span>
               </div>
-              <p className="text-2xl font-bold text-[var(--t)]">{kpi.value}</p>
+              <p className="text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Cormorant Garamond, serif' }}>{kpi.value}</p>
               <p className="text-[10px] text-[var(--t5)] mt-0.5">{kpi.sub}</p>
             </CardContent>
           </Card>

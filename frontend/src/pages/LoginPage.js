@@ -53,8 +53,6 @@ const LoginPage = () => {
   const [showBiometricPrompt, setShowBiometricPrompt] = useState(false);
   const [biometricLoading, setBiometricLoading] = useState(true);
   const [pendingLoginResult, setPendingLoginResult] = useState(null);
-  const [passkeyAvailable, setPasskeyAvailable] = useState(false);
-  const [passkeyLoading, setPasskeyLoading] = useState(false);
 
   const navigateWithFade = (path) => {
     setExiting(true);
@@ -85,13 +83,6 @@ const LoginPage = () => {
       setBiometricLoading(false);
     };
     tryBiometric();
-
-    // Check passkey availability (non-blocking)
-    import('../services/passkey').then(({ isPasskeySupported, hasRegisteredPasskey }) => {
-      if (isPasskeySupported()) {
-        hasRegisteredPasskey().then(setPasskeyAvailable);
-      }
-    }).catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* flag fade on scroll */
@@ -175,28 +166,6 @@ const LoginPage = () => {
     }
   };
 
-  const handlePasskeyLogin = async () => {
-    setPasskeyLoading(true);
-    try {
-      const { authenticateWithPasskey } = await import('../services/passkey');
-      const result = await authenticateWithPasskey(email || '');
-      if (result.access_token) {
-        localStorage.setItem('carryon_token', result.access_token);
-        const dest = result.user?.role === 'admin' ? '/admin' : result.user?.role === 'beneficiary' ? '/beneficiary' : '/dashboard';
-        navigate(dest);
-      }
-    } catch (err) {
-      const msg = err.message || '';
-      if (msg.includes('cancelled') || msg.includes('AbortError') || msg.includes('NotAllowedError')) {
-        // User dismissed the prompt — silent
-      } else {
-        toast.error('Passkey sign-in failed. Try email and password.');
-      }
-    } finally {
-      setPasskeyLoading(false);
-    }
-  };
-
   // Show nothing while checking biometric
   if (biometricLoading) {
     return (
@@ -245,22 +214,6 @@ const LoginPage = () => {
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sign In'}
             </Button>
           </form>
-          {passkeyAvailable && (
-            <>
-              <div className="flex items-center gap-3 my-4">
-                <div className="flex-1 h-px bg-[#1a2a42]" />
-                <span className="text-[#334155] text-[10px] uppercase tracking-widest font-medium">or</span>
-                <div className="flex-1 h-px bg-[#1a2a42]" />
-              </div>
-              <button onClick={handlePasskeyLogin} disabled={passkeyLoading}
-                className="w-full h-12 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.97]"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#e2e8f0' }}
-                data-testid="login-passkey-native">
-                {passkeyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-[#d4af37]" />}
-                Sign in with Passkey
-              </button>
-            </>
-          )}
           <div className="mt-5 flex items-center justify-between">
             <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-medium">Create Account</button>
             <span className="text-[#334155] text-xs">Forgot Password?</span>
@@ -381,22 +334,6 @@ const LoginPage = () => {
                       {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Signing In...</> : 'Sign In'}
                     </Button>
                   </form>
-                  {passkeyAvailable && (
-                    <>
-                      <div className="flex items-center gap-3 my-4">
-                        <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
-                        <span className="text-[#334155] text-[10px] uppercase tracking-widest font-medium">or</span>
-                        <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
-                      </div>
-                      <button onClick={handlePasskeyLogin} disabled={passkeyLoading}
-                        className="w-full h-11 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:border-[#d4af37]/30"
-                        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#e2e8f0' }}
-                        data-testid="login-passkey-web">
-                        {passkeyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-[#d4af37]" />}
-                        Sign in with Passkey
-                      </button>
-                    </>
-                  )}
                   <div className="mt-5 flex items-center justify-between">
                     <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-medium hover:text-[#fcd34d] transition-colors">Create Account</button>
                     <span className="text-[#334155] text-xs cursor-pointer hover:text-[#7b879e] transition-colors">Forgot Password?</span>

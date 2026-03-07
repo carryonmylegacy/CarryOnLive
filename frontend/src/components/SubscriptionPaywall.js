@@ -646,21 +646,14 @@ export default function SubscriptionPaywall({ onDismiss }) {
           </button>
         )}
 
-        {/* Apple-required subscription disclosure (Guideline 3.1.2) */}
-        <div className="text-center mb-4 animate-fade-in max-w-md mx-auto">
+        {/* Footer */}
+        <div className="text-center mb-4 animate-fade-in">
           <p className="text-[var(--t5)] text-xs">
             AES-256 Encrypted · Zero-Knowledge Architecture · All plans include full security
           </p>
-          <p className="text-[var(--t5)] text-[10px] mt-2 leading-relaxed">
-            Payment will be charged to your {useAppleIAP ? 'Apple ID' : 'payment method'} at confirmation of purchase.
-            Subscriptions automatically renew unless canceled at least 24 hours before the end of the current period.
-            {useAppleIAP ? ' Manage subscriptions in your iPhone Settings > Apple ID > Subscriptions.' : ''}
+          <p className="text-[var(--t5)] text-xs mt-1">
+            Cancel anytime · No long-term commitment
           </p>
-          <div className="flex items-center justify-center gap-3 mt-2">
-            <a href="/terms" className="text-[var(--t5)] text-[10px] underline hover:text-[var(--t4)]" data-testid="paywall-terms-link">Terms of Service</a>
-            <span className="text-[var(--t5)] text-[10px]">·</span>
-            <a href="/privacy" className="text-[var(--t5)] text-[10px] underline hover:text-[var(--t4)]" data-testid="paywall-privacy-link">Privacy Policy</a>
-          </div>
         </div>
       </div>
     </div>

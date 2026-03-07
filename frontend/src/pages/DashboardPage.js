@@ -20,7 +20,6 @@ import EstateSelector from '../components/estate/EstateSelector';
 import TrialBanner from '../components/TrialBanner';
 import OnboardingWizard from '../components/OnboardingWizard';
 import { ActivationCelebration } from '../components/GuidedActivation';
-import { usePullToRefresh } from '../hooks/usePullToRefresh';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -40,12 +39,6 @@ const DashboardPage = () => {
   const [guidedStep, setGuidedStep] = useState(null);
   const [dashboardReady, setDashboardReady] = useState(false);
   const guidedDismissedRef = useRef(false);
-
-  const refreshAll = async () => {
-    if (estate?.id) await fetchEstateData(estate.id);
-    else await fetchEstates();
-  };
-  const { pullProps, PullIndicator } = usePullToRefresh(refreshAll);
 
   const handleCelebrationDismiss = () => {
     setShowCelebration(false);
@@ -187,7 +180,7 @@ const DashboardPage = () => {
         </svg>
         
         <div className="absolute -bottom-16 lg:-bottom-24 left-1/2 transform -translate-x-1/2 text-center">
-          <div className="text-3xl lg:text-5xl font-bold text-[var(--t)]">
+          <div className="text-3xl lg:text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
             {score}%
           </div>
           <div className="text-base lg:text-2xl font-bold whitespace-nowrap" style={{ color: scoreInfo.color }}>
@@ -206,7 +199,7 @@ const DashboardPage = () => {
       data-testid={`stat-card-${label.toLowerCase().replace(/\s+/g, '-')}`}
     >
       <Icon className="stat-icon w-6 h-6 lg:w-8 lg:h-8 opacity-70 mb-2 lg:mb-4" />
-      <div className="text-3xl lg:text-5xl font-bold mb-2 text-center">
+      <div className="text-3xl lg:text-5xl font-bold mb-2 text-center" style={{ fontFamily: 'Outfit, sans-serif' }}>
         {value}
       </div>
       <div className="opacity-80 text-base lg:text-lg font-bold leading-tight text-center">
@@ -382,7 +375,7 @@ const DashboardPage = () => {
           </p>
 
           {/* CTA button */}
-          <button onClick={() => { setShowGuidedFlow(false); navigate(route, { state: { fromGettingStarted: true } }); }}
+          <button onClick={() => { setShowGuidedFlow(false); navigate(route); }}
             className="w-full max-w-xs mx-auto py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
             style={{ background: `linear-gradient(135deg, ${stepColor}, ${stepColor}cc)`, color: '#080e1a', boxShadow: `0 8px 32px ${stepColor}30` }}
             data-testid="guided-cta-btn">
@@ -403,12 +396,10 @@ const DashboardPage = () => {
 
   return (
     <div className="p-4 lg:p-8 pt-4 lg:pt-8 pb-24 lg:pb-8" data-testid="benefactor-dashboard"
-      {...pullProps}
       style={{
         opacity: dashboardReady ? 1 : 0,
         transition: 'opacity 0.5s ease',
       }}>
-      <PullIndicator />
       {/* Trial Banner */}
       <div className="mb-4">
         <TrialBanner onUpgrade={() => navigate('/settings')} />
@@ -512,7 +503,7 @@ const DashboardPage = () => {
           data-testid="stat-card-beneficiaries-mobile"
         >
           <Users className="stat-icon w-8 h-8 opacity-70 mb-2" />
-          <span className="text-3xl font-bold mb-1">
+          <span className="text-3xl font-bold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
             {stats.beneficiaries}
           </span>
           <span className="opacity-80 text-base lg:text-lg font-bold text-center">Beneficiaries</span>
