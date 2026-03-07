@@ -478,7 +478,8 @@ const GuardianPage = () => {
   // ═══════════════════════════════════════════════
   if (view === 'landing') {
     return (
-      <div ref={guardianRef} className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10 lg:relative lg:inset-auto" style={{ top: headerHeight + 'px', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', overscrollBehavior: 'none', touchAction: 'none' }} data-testid="estate-guardian">
+      <div ref={guardianRef} className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10" style={{ top: headerHeight + 'px', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', left: 0, overscrollBehavior: 'none', touchAction: 'none' }} data-testid="estate-guardian">
+      <style>{`@media (min-width: 1024px) { [data-testid="estate-guardian"] { left: var(--sidebar-width, 260px) !important; bottom: 0 !important; } }`}</style>
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }}>
@@ -609,7 +610,8 @@ const GuardianPage = () => {
   // CHAT VIEW
   // ═══════════════════════════════════════════════
   return (
-    <div ref={guardianRef} className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10 lg:relative lg:inset-auto" style={{ top: headerHeight + 'px', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', overscrollBehavior: 'none', touchAction: 'none' }} data-testid="estate-guardian">
+    <div ref={guardianRef} className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10" style={{ top: headerHeight + 'px', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', left: 0, overscrollBehavior: 'none', touchAction: 'none' }} data-testid="estate-guardian">
+      <style>{`@media (min-width: 1024px) { [data-testid="estate-guardian"] { left: var(--sidebar-width, 260px) !important; bottom: 0 !important; } }`}</style>
 
       {/* Chat Header */}
       <div className="flex items-center justify-between px-4 py-2 flex-shrink-0" style={{
