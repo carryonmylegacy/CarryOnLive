@@ -34,7 +34,7 @@ export default function TrialBanner({ onUpgrade }) {
   const colors = {
     urgent: { bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)', text: '#ef4444', icon: '#ef4444' },
     warning: { bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', text: '#F59E0B', icon: '#F59E0B' },
-    info: { bg: 'rgba(212,175,55,0.06)', border: 'rgba(212,175,55,0.15)', text: '#1B4F72', icon: '#2563EB' },
+    info: { bg: 'var(--trial-info-bg)', border: 'var(--trial-info-border)', text: 'var(--trial-info-text)', icon: 'var(--trial-info-icon)' },
   };
 
   const c = colors[urgency];
