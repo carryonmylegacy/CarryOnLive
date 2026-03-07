@@ -21,6 +21,9 @@ const BeneficiaryVaultPage = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [downloading, setDownloading] = useState(null);
+  const [isTransitioned, setIsTransitioned] = useState(true);
+
+  const PRE_TRANSITION_CATEGORIES = ['living_will', 'poa'];
 
   useEffect(() => { fetchDocs();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -29,8 +32,16 @@ const BeneficiaryVaultPage = () => {
     try {
       const estateId = localStorage.getItem('beneficiary_estate_id');
       if (!estateId) { navigate('/beneficiary'); return; }
+
+      // Check transition status
+      const estateRes = await axios.get(`${API_URL}/estates/${estateId}`, getAuthHeaders());
+      const transitioned = estateRes.data?.status === 'transitioned';
+      setIsTransitioned(transitioned);
+
       const res = await axios.get(`${API_URL}/documents/${estateId}`, getAuthHeaders());
-      setDocuments(res.data);
+      // Pre-transition: only show POA and Living Will
+      const docs = transitioned ? res.data : res.data.filter(d => PRE_TRANSITION_CATEGORIES.includes(d.category));
+      setDocuments(docs);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };

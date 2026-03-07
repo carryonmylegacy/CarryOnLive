@@ -11,13 +11,19 @@ const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
  * Pre-transition: redirects to /beneficiary (hub) or /beneficiary/pre.
  * Post-transition: renders children only if the beneficiary has permission for the section.
  */
-const TransitionGate = ({ section, children }) => {
+const TransitionGate = ({ section, allowPreTransition, children }) => {
   const { token } = useAuth();
   const [status, setStatus] = useState(null); // null = loading
   const estateId = localStorage.getItem('beneficiary_estate_id');
 
   useEffect(() => {
     if (!estateId || !token) { setStatus({ allowed: false }); return; }
+
+    // If this route is allowed pre-transition (e.g. POA/Living Will vault view), skip the gate
+    if (allowPreTransition) {
+      setStatus({ allowed: true });
+      return;
+    }
 
     axios.get(`${API_URL}/beneficiary/my-permissions/${estateId}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -33,7 +39,7 @@ const TransitionGate = ({ section, children }) => {
         }
       })
       .catch(() => setStatus({ allowed: false, redirect: '/beneficiary' }));
-  }, [estateId, token, section]);
+  }, [estateId, token, section, allowPreTransition]);
 
   if (status === null) {
     return (
