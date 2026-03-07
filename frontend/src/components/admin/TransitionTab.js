@@ -86,12 +86,16 @@ export const TransitionTab = ({ getAuthHeaders }) => {
   };
 
   const handleDeleteCert = async (certId) => {
-    if (!window.confirm('Permanently delete this certificate?')) return;
+    const password = window.prompt('Enter your admin password to delete this certificate and reverse the transition:');
+    if (!password) return;
     setActionLoading(certId);
     try {
-      await axios.delete(`${API_URL}/transition/certificates/${certId}`, getAuthHeaders());
+      await axios.delete(`${API_URL}/transition/certificates/${certId}?admin_password=${encodeURIComponent(password)}`, getAuthHeaders());
+      toast.success('Certificate deleted — transition reversed');
       fetchCertificates();
-    } catch (err) { toast.error('Failed to delete'); }
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to delete');
+    }
     finally { setActionLoading(null); }
   };
 

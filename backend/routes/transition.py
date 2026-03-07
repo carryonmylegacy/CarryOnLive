@@ -225,15 +225,83 @@ async def approve_death_certificate(
 
 @router.delete("/transition/certificates/{certificate_id}")
 async def delete_certificate(
-    certificate_id: str, current_user: dict = Depends(get_current_user)
+    certificate_id: str,
+    admin_password: str = "",
+    current_user: dict = Depends(get_current_user),
 ):
-    """Delete a transition certificate — admin only."""
+    """Delete a transition certificate and REVERSE the transition — admin only, requires password."""
+    import bcrypt
+
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
-    result = await db.death_certificates.delete_one({"id": certificate_id})
-    if result.deleted_count == 0:
+
+    # Verify admin password
+    if not admin_password:
+        raise HTTPException(status_code=400, detail="Admin password required")
+    admin_doc = await db.users.find_one(
+        {"id": current_user["id"]}, {"_id": 0, "password": 1}
+    )
+    if not admin_doc or not bcrypt.checkpw(
+        admin_password.encode(), admin_doc["password"].encode()
+    ):
+        raise HTTPException(status_code=401, detail="Incorrect admin password")
+
+    # Find the certificate and its estate before deleting
+    certificate = await db.death_certificates.find_one(
+        {"id": certificate_id}, {"_id": 0}
+    )
+    if not certificate:
         raise HTTPException(status_code=404, detail="Certificate not found")
-    return {"deleted": True}
+
+    estate_id = certificate.get("estate_id")
+
+    # Delete the certificate
+    await db.death_certificates.delete_one({"id": certificate_id})
+
+    # If this was an approved certificate, REVERSE the transition
+    if certificate.get("status") in ("approved", "authenticated") and estate_id:
+        # Re-open the estate (un-seal)
+        await db.estates.update_one(
+            {"id": estate_id},
+            {
+                "$set": {"status": "pre-transition"},
+                "$unset": {"transitioned_at": "", "sealed_by": ""},
+            },
+        )
+
+        # Unlock the benefactor's account
+        estate_doc = await db.estates.find_one(
+            {"id": estate_id}, {"_id": 0, "owner_id": 1}
+        )
+        if estate_doc and estate_doc.get("owner_id"):
+            await db.users.update_one(
+                {"id": estate_doc["owner_id"]},
+                {
+                    "$set": {"account_locked": False},
+                    "$unset": {"locked_at": ""},
+                },
+            )
+
+        # Un-deliver immediate messages (so they can be re-delivered on next approval)
+        await db.messages.update_many(
+            {
+                "estate_id": estate_id,
+                "trigger_type": "immediate",
+                "delivered_via": {"$exists": False},
+            },
+            {"$set": {"is_delivered": False}, "$unset": {"delivered_at": ""}},
+        )
+
+        # Remove grace periods
+        await db.beneficiary_grace_periods.delete_many(
+            {"reason": "benefactor_transition"}
+        )
+
+    return {
+        "deleted": True,
+        "transition_reversed": certificate.get("status")
+        in ("approved", "authenticated"),
+    }
 
 
 @router.get("/transition/status/{estate_id}")
