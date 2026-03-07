@@ -175,7 +175,7 @@ const BeneficiaryHubPage = () => {
                 <div
                   key={member.id || `member-${i}`}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 cursor-pointer transition-all hover:brightness-110"
-                  style={{ background: 'rgba(15,24,42,0.5)', border: '1px solid var(--b)' }}
+                  style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
                   onClick={() => {
                     const estateId = member.estate_id || member.id;
                     localStorage.setItem('beneficiary_estate_id', estateId);
@@ -208,8 +208,8 @@ const BeneficiaryHubPage = () => {
         {/* Emergency Access Protocol */}
         <EmergencyAccessPanel estates={estates} />
 
-        <div className="rounded-xl p-4" style={{ background: 'rgba(37,99,235,0.05)', border: '1px solid rgba(37,99,235,0.1)' }}>
-          <p className="text-sm text-[var(--bl3)] leading-relaxed">
+        <div className="rounded-xl p-4" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+          <p className="text-sm text-[var(--t3)] leading-relaxed">
             Your beneficiary cost is determined by each benefactor's subscription tier. You maintain one CarryOn™ account with access to all connected estates. Billing for each estate begins only after a verified transition event.
           </p>
         </div>

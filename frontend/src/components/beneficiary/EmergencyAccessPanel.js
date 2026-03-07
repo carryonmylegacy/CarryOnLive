@@ -74,7 +74,7 @@ const EmergencyAccessPanel = ({ estates }) => {
   const hasPending = requests.some(r => r.status === 'pending');
 
   return (
-    <Card className="border-[var(--b)] bg-[#0F1629]/80" data-testid="emergency-access-panel">
+    <Card className="border-[var(--b)] bg-[var(--bg2)]" data-testid="emergency-access-panel">
       <CardHeader className="pb-3">
         <CardTitle className="text-white text-base flex items-center gap-2">
           <Shield className="w-5 h-5 text-[#ef4444]" />

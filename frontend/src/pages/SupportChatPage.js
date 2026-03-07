@@ -83,7 +83,8 @@ const SupportChatPage = () => {
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10 lg:relative lg:inset-auto" style={{ top: headerHeight + 'px', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }} data-testid="support-chat-page">
+    <div className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10" style={{ top: headerHeight + 'px', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', left: 0 }} data-testid="support-chat-page">
+      <style>{`@media (min-width: 1024px) { [data-testid="support-chat-page"] { left: var(--sidebar-width, 260px) !important; bottom: 0 !important; } }`}</style>
       {/* Header */}
       <div className="flex-shrink-0 p-4 border-b border-[var(--b)] bg-[var(--bg)]">
         <div className="flex items-center gap-3">
