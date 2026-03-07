@@ -213,6 +213,15 @@ const BeneficiaryHubPage = () => {
             Your beneficiary cost is determined by each benefactor's subscription tier. You maintain one CarryOn™ account with access to all connected estates. Billing for each estate begins only after a verified transition event.
           </p>
         </div>
+
+        {/* CTA: Become a benefactor */}
+        <div className="glass-card p-5 text-center" style={{ borderColor: 'rgba(212,175,55,0.15)' }}>
+          <h3 className="text-base font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Protect Your Own Family</h3>
+          <p className="text-xs text-[var(--t4)] mb-4">Start your own estate plan and give your loved ones the same peace of mind.</p>
+          <button onClick={() => { window.open('/signup', '_blank'); }} className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-transform active:scale-95" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}>
+            Start Your Own Estate Plan
+          </button>
+        </div>
       </div>
     </div>
   );
