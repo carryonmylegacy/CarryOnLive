@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import axios from 'axios';
@@ -18,16 +18,12 @@ import {
   Trash2,
   FileText,
   AlertTriangle,
-  CheckCircle2,
-  Info,
-  Camera,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Switch } from '../components/ui/switch';
 import { Separator } from '../components/ui/separator';
 import { toast } from '../utils/toast';
-import { getInitials } from '../utils/initials';
 import NotificationSettings from '../components/NotificationSettings';
 import { PhotoPicker } from '../components/PhotoPicker';
 
@@ -37,9 +33,7 @@ const SettingsPage = () => {
   const { user, logout, token } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
-  const location = useLocation();
   const [profilePhoto, setProfilePhoto] = useState(null);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [weeklyDigest, setWeeklyDigest] = useState(true);
   const [digestLoading, setDigestLoading] = useState(false);
   const [digestSending, setDigestSending] = useState(false);
@@ -181,7 +175,7 @@ const SettingsPage = () => {
     }
     setDeleteLoading(true);
     try {
-      const res = await axios.post(`${API_URL}/compliance/deletion-request`, {
+      await axios.post(`${API_URL}/compliance/deletion-request`, {
         confirm_email: deleteEmail,
         reason: deleteReason,
       }, getAuthHeaders());
@@ -232,7 +226,6 @@ const SettingsPage = () => {
               currentPhoto={profilePhoto}
               onPhotoSelected={async (file, previewUrl) => {
                 setProfilePhoto(previewUrl);
-                setUploadingPhoto(true);
                 try {
                   const reader = new FileReader();
                   reader.onload = async () => {
@@ -240,8 +233,7 @@ const SettingsPage = () => {
                     await axios.put(`${API_URL}/auth/profile-photo`, { photo_data: base64, file_name: file.name }, getAuthHeaders());
                   };
                   reader.readAsDataURL(file);
-                } catch { toast.error('Failed to upload photo'); }
-                finally { setUploadingPhoto(false); }
+                } catch { /* silent */ }
               }}
               onRemove={async () => {
                 setProfilePhoto(null);
