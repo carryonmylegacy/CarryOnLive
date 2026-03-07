@@ -33,6 +33,7 @@ const SupportChatPage = lazy(() => import('./pages/SupportChatPage'));
 const SecuritySettingsPage = lazy(() => import('./pages/SecuritySettingsPage'));
 const DigitalWalletPage = lazy(() => import('./pages/DigitalWalletPage'));
 const LegacyTimelinePage = lazy(() => import('./pages/LegacyTimelinePage'));
+const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 
@@ -249,6 +250,7 @@ function AppRoutes() {
         </ProtectedRoute>
       }>
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/subscription" element={<SubscriptionPage />} />
         <Route path="/security-settings" element={<SecuritySettingsPage />} />
         <Route path="/support" element={<SupportChatPage />} />
       </Route>

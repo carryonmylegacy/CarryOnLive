@@ -30,25 +30,19 @@ import { toast } from '../utils/toast';
 import { getInitials } from '../utils/initials';
 import NotificationSettings from '../components/NotificationSettings';
 import { PhotoPicker } from '../components/PhotoPicker';
-import FamilyPlanSettings from '../components/FamilyPlanSettings';
-import SubscriptionPaywall from '../components/SubscriptionPaywall';
-import { SubscriptionManagement } from '../components/settings/SubscriptionManagement';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const SettingsPage = () => {
-  const { user, logout, subscriptionStatus, refreshSubscription, token } = useAuth();
+  const { user, logout, token } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const subscriptionRef = useRef(null);
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [weeklyDigest, setWeeklyDigest] = useState(true);
   const [digestLoading, setDigestLoading] = useState(false);
   const [digestSending, setDigestSending] = useState(false);
-  const [showPaywall, setShowPaywall] = useState(false);
-  const [confirmingPayment, setConfirmingPayment] = useState(false);
   const [onboardingVisible, setOnboardingVisible] = useState(() => localStorage.getItem('carryon_onboarding_dismissed') !== 'true');
 
   // GDPR state
@@ -71,45 +65,6 @@ const SettingsPage = () => {
     const token = localStorage.getItem('carryon_token');
     return { headers: { Authorization: `Bearer ${token}` } };
   };
-
-  // Handle post-checkout redirect — detect session_id in URL after Stripe redirect
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const sessionId = params.get('session_id');
-    if (!sessionId || !token) return;
-
-    setConfirmingPayment(true);
-    const headers = { Authorization: `Bearer ${token}` };
-
-    axios.get(`${API_URL}/subscriptions/checkout-status/${sessionId}`, { headers })
-      .then(async (res) => {
-        if (res.data?.payment_status === 'paid' || res.data?.payment_status === 'complete') {
-          // toast removed
-          window.history.replaceState({}, '', window.location.pathname);
-          if (refreshSubscription) await refreshSubscription();
-        } else {
-          // toast removed
-          // Retry after a few seconds for async payment processing
-          setTimeout(async () => {
-            try {
-              const retry = await axios.get(`${API_URL}/subscriptions/checkout-status/${sessionId}`, { headers });
-              if (retry.data?.payment_status === 'paid' || retry.data?.payment_status === 'complete') {
-                // toast removed
-                window.history.replaceState({}, '', window.location.pathname);
-                if (refreshSubscription) await refreshSubscription();
-              }
-            } catch (e) { /* ignore retry errors */ }
-            setConfirmingPayment(false);
-          }, 5000);
-          return;
-        }
-        setConfirmingPayment(false);
-      })
-      .catch(() => {
-        toast.error('Could not confirm payment. Please refresh or contact support.');
-        setConfirmingPayment(false);
-      });
-  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const fetchDigestPref = async () => {
@@ -134,13 +89,6 @@ const SettingsPage = () => {
       if (res.data.photo_url) setProfilePhoto(res.data.photo_url);
     }).catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Scroll to subscription section when navigated via #subscription
-  useEffect(() => {
-    if (location.hash === '#subscription' && subscriptionRef.current) {
-      setTimeout(() => subscriptionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
-    }
-  }, [location.hash]);
 
   const toggleDigest = async (val) => {
     setDigestLoading(true);
@@ -260,20 +208,13 @@ const SettingsPage = () => {
 
   return (
     <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in max-w-4xl mx-auto" data-testid="settings-page">
-      {/* Post-checkout payment confirmation */}
-      {confirmingPayment && (
-        <div className="fixed inset-0 z-50 bg-[#0a0e1a]/80 flex items-center justify-center flex-col gap-3">
-          <Loader2 className="w-8 h-8 text-[var(--gold)] animate-spin" />
-          <p className="text-[var(--t4)] text-sm">Confirming your payment...</p>
-        </div>
-      )}
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
           Settings
         </h1>
         <p className="text-[var(--t4)] mt-1 text-sm sm:text-base">
-          Manage your account, subscription, and preferences
+          Manage your account and preferences
         </p>
       </div>
 
@@ -320,23 +261,6 @@ const SettingsPage = () => {
 
       {/* Push Notifications */}
       <NotificationSettings getAuthHeaders={() => getAuthHeaders()} />
-
-      {/* Subscription Plans — hidden for admin */}
-      {!isAdmin && (
-        <div ref={subscriptionRef}>
-        <SubscriptionManagement
-          subscriptionStatus={subscriptionStatus}
-          refreshSubscription={refreshSubscription}
-          getAuthHeaders={() => getAuthHeaders()}
-          onShowPaywall={() => setShowPaywall(true)}
-        />
-        </div>
-      )}
-
-      {/* Family Plan — hidden for admin */}
-      {!isAdmin && (
-        <FamilyPlanSettings getAuthHeaders={() => getAuthHeaders()} />
-      )}
 
       {/* Appearance */}
       <Card className="glass-card">
@@ -730,11 +654,6 @@ const SettingsPage = () => {
           CarryOn™ v1.0.0 · © 2024 CarryOn Inc.
         </p>
       </div>
-
-      {/* Paywall Modal */}
-      {showPaywall && (
-        <SubscriptionPaywall onDismiss={() => setShowPaywall(false)} />
-      )}
     </div>
   );
 };
