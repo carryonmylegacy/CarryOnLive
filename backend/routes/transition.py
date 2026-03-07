@@ -282,15 +282,21 @@ async def delete_certificate(
                 },
             )
 
-        # Un-deliver immediate messages (so they can be re-delivered on next approval)
+        # Un-deliver ALL messages (full revert to pre-transition state)
         await db.messages.update_many(
+            {"estate_id": estate_id, "is_delivered": True},
             {
-                "estate_id": estate_id,
-                "trigger_type": "immediate",
-                "delivered_via": {"$exists": False},
+                "$set": {"is_delivered": False},
+                "$unset": {
+                    "delivered_at": "",
+                    "delivered_via": "",
+                    "milestone_report_id": "",
+                },
             },
-            {"$set": {"is_delivered": False}, "$unset": {"delivered_at": ""}},
         )
+
+        # Remove milestone reports
+        await db.milestone_reports.delete_many({"estate_id": estate_id})
 
         # Remove grace periods
         await db.beneficiary_grace_periods.delete_many(
