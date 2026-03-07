@@ -88,14 +88,11 @@ const BeneficiaryHubPage = () => {
           estates={estates}
           benefactors={familyConnections.length > 0 ? familyConnections : estates}
           userInitials={user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
-          onEstateClick={(member) => {
+          onEstateClick={async (member) => {
             const estateId = member.estate_id || member.id;
             localStorage.setItem('beneficiary_estate_id', estateId);
-            if (member.status === 'transitioned') {
-              navigate('/beneficiary/dashboard');
-            } else {
-              navigate('/beneficiary/pre');
-            }
+            // Always navigate to pre — TransitionGate on dashboard will allow through if cert exists
+            navigate('/beneficiary/pre');
           }}
         />
       )}
@@ -121,11 +118,7 @@ const BeneficiaryHubPage = () => {
               }}
               onClick={() => {
                 localStorage.setItem('beneficiary_estate_id', estate.id);
-                if (isTransitioned) {
-                  navigate('/beneficiary/dashboard');
-                } else {
-                  navigate('/beneficiary/pre');
-                }
+                navigate('/beneficiary/pre');
               }}
               data-testid={`estate-card-${estate.id}`}
             >

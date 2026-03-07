@@ -40,7 +40,9 @@ const BeneficiaryDashboardPage = () => {
       const estateId = localStorage.getItem('beneficiary_estate_id');
       if (!estateId) { navigate('/beneficiary'); return; }
       const estateRes = await axios.get(`${API_URL}/estates/${estateId}`, getAuthHeaders());
-      if (estateRes.data.status !== 'transitioned') { navigate('/beneficiary/pre'); return; }
+      // Authoritative check via death certificate (not estate.status)
+      const permRes = await axios.get(`${API_URL}/beneficiary/my-permissions/${estateId}`, getAuthHeaders());
+      if (!permRes.data.is_transitioned) { navigate('/beneficiary/pre'); return; }
       setEstate(estateRes.data);
 
       const [docsRes, msgsRes, clRes] = await Promise.all([
