@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
-import { Lock, FolderLock, MessageSquare, CheckSquare, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Lock, FolderLock, MessageSquare, CheckSquare, ChevronRight, ChevronLeft, Users, Settings } from 'lucide-react';
 import { Skeleton } from '../../components/ui/skeleton';
+import { Switch } from '../../components/ui/switch';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -16,6 +17,20 @@ const BeneficiaryDashboardPage = () => {
   const [documents, setDocuments] = useState([]);
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [myPerms, setMyPerms] = useState(null);
+  const [allPerms, setAllPerms] = useState([]);
+  const [otherBens, setOtherBens] = useState([]);
+  const [showPermPanel, setShowPermPanel] = useState(false);
+  const [savingPerm, setSavingPerm] = useState(null);
+
+  const SECTION_LABELS = {
+    vault: 'Secure Document Vault',
+    messages: 'Milestone Messages',
+    checklist: 'Immediate Action Checklist',
+    guardian: 'Estate Guardian AI',
+    digital_wallet: 'Digital Access Vault',
+    timeline: 'Legacy Timeline',
+  };
 
   useEffect(() => { fetchData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -42,6 +57,20 @@ const BeneficiaryDashboardPage = () => {
         checklists: clRes.data.length,
         checklistsDone: clRes.data.filter(c => c.is_completed).length,
       });
+
+      // Fetch my permissions and all beneficiary permissions (if primary)
+      try {
+        const permRes = await axios.get(`${API_URL}/beneficiary/my-permissions/${estateId}`, getAuthHeaders());
+        setMyPerms(permRes.data);
+        if (permRes.data.is_primary) {
+          const [allPermsRes, bensRes] = await Promise.all([
+            axios.get(`${API_URL}/estate/${estateId}/section-permissions`, getAuthHeaders()),
+            axios.get(`${API_URL}/beneficiaries/${estateId}`, getAuthHeaders()),
+          ]);
+          setAllPerms(allPermsRes.data || []);
+          setOtherBens((bensRes.data || []).filter(b => b.user_id !== user?.id));
+        }
+      } catch { /* permissions endpoint may not exist for older estates */ }
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -195,6 +224,65 @@ const BeneficiaryDashboardPage = () => {
           </button>
         </div>
       </div>
+
+      {/* Primary Beneficiary: Manage Permissions for other beneficiaries */}
+      {myPerms?.is_primary && otherBens.length > 0 && (
+        <div className="glass-card p-4 lg:p-5 mb-4" style={{ borderLeft: '3px solid var(--gold)' }} data-testid="primary-permissions-panel">
+          <button
+            className="w-full flex items-center justify-between"
+            onClick={() => setShowPermPanel(!showPermPanel)}
+          >
+            <div className="flex items-center gap-2">
+              <Settings className="w-5 h-5 text-[var(--gold)]" />
+              <h3 className="font-bold text-[var(--t)] text-sm">Manage Beneficiary Access</h3>
+            </div>
+            <ChevronRight className={`w-4 h-4 text-[var(--t4)] transition-transform ${showPermPanel ? 'rotate-90' : ''}`} />
+          </button>
+          {showPermPanel && (
+            <div className="mt-4 space-y-4">
+              <p className="text-xs text-[var(--t5)]">As primary beneficiary, you control which sections other beneficiaries can access.</p>
+              {otherBens.map(ben => {
+                const benPerms = allPerms.find(p => p.beneficiary_id === ben.id);
+                const sections = benPerms?.sections || Object.fromEntries(Object.keys(SECTION_LABELS).map(s => [s, true]));
+                return (
+                  <div key={ben.id} className="rounded-xl p-3" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Users className="w-4 h-4 text-[var(--t4)]" />
+                      <span className="text-sm font-bold text-[var(--t)]">{ben.name || 'Unnamed'}</span>
+                      <span className="text-[10px] text-[var(--t5)] capitalize">{ben.relation}</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {Object.entries(SECTION_LABELS).map(([key, label]) => (
+                        <div key={key} className="flex items-center justify-between py-0.5">
+                          <span className="text-xs text-[var(--t3)]">{label}</span>
+                          <Switch
+                            checked={sections[key] !== false}
+                            disabled={savingPerm === ben.id + key}
+                            onCheckedChange={async () => {
+                              setSavingPerm(ben.id + key);
+                              const updated = { ...sections, [key]: !sections[key] };
+                              try {
+                                const estateId = localStorage.getItem('beneficiary_estate_id');
+                                await axios.put(`${API_URL}/estate/${estateId}/section-permissions`, {
+                                  beneficiary_id: ben.id,
+                                  sections: updated,
+                                }, getAuthHeaders());
+                                setAllPerms(prev => prev.map(p => p.beneficiary_id === ben.id ? { ...p, sections: updated } : p));
+                              } catch { /* silent */ }
+                              finally { setSavingPerm(null); }
+                            }}
+                            data-testid={`primary-perm-${key}-${ben.id}`}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Beneficiary → Benefactor conversion */}
       <div className="glass-card p-5 text-center" style={{ borderColor: 'rgba(212,175,55,0.15)' }}>

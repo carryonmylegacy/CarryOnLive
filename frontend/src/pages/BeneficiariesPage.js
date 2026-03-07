@@ -34,6 +34,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
 import { Textarea } from '../components/ui/textarea';
 import { toast } from '../utils/toast';
+import { Switch } from '../components/ui/switch';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
 import { PhotoPicker } from '../components/PhotoPicker';
@@ -98,6 +99,17 @@ const BeneficiariesPage = () => {
   const [accessRequests, setAccessRequests] = useState([]);
   const [handlingRequest, setHandlingRequest] = useState(null);
   const [changingPrimary, setChangingPrimary] = useState(false);
+  const [sectionPerms, setSectionPerms] = useState({});
+  const [savingPerms, setSavingPerms] = useState(null);
+
+  const SECTION_LABELS = {
+    vault: 'Secure Document Vault (SDV)',
+    messages: 'Milestone Messages (MM)',
+    checklist: 'Immediate Action Checklist (IAC)',
+    guardian: 'Estate Guardian AI (EGA)',
+    digital_wallet: 'Digital Access Vault (DAV)',
+    timeline: 'Legacy Timeline',
+  };
 
   useEffect(() => {
     fetchData();
@@ -108,12 +120,18 @@ const BeneficiariesPage = () => {
       const estatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders());
       if (estatesRes.data.length > 0) {
         setEstate(estatesRes.data[0]);
-        const [bensRes, requestsRes] = await Promise.all([
+        const [bensRes, requestsRes, permsRes] = await Promise.all([
           axios.get(`${API_URL}/beneficiaries/${estatesRes.data[0].id}`, getAuthHeaders()),
           axios.get(`${API_URL}/beneficiaries/access-requests/${estatesRes.data[0].id}`, getAuthHeaders()).catch(() => ({ data: [] })),
+          axios.get(`${API_URL}/estate/${estatesRes.data[0].id}/section-permissions`, getAuthHeaders()).catch(() => ({ data: [] })),
         ]);
         setBeneficiaries(bensRes.data);
         setAccessRequests(requestsRes.data || []);
+        const permsMap = {};
+        for (const p of (permsRes.data || [])) {
+          permsMap[p.beneficiary_id] = p.sections;
+        }
+        setSectionPerms(permsMap);
       }
     } catch (error) {
       console.error('Fetch error:', error);
@@ -268,11 +286,28 @@ const BeneficiariesPage = () => {
     
     try {
       await axios.delete(`${API_URL}/beneficiaries/${beneficiaryId}`, getAuthHeaders());
-      // toast removed
       setBeneficiaries(beneficiaries.filter(b => b.id !== beneficiaryId));
     } catch (error) {
       console.error('Delete error:', error);
       toast.error('Failed to remove beneficiary');
+    }
+  };
+
+  const handleToggleSection = async (beneficiaryId, section, currentValue) => {
+    if (!estate) return;
+    setSavingPerms(beneficiaryId + section);
+    const current = sectionPerms[beneficiaryId] || Object.fromEntries(Object.keys(SECTION_LABELS).map(s => [s, true]));
+    const updated = { ...current, [section]: !currentValue };
+    try {
+      await axios.put(`${API_URL}/estate/${estate.id}/section-permissions`, {
+        beneficiary_id: beneficiaryId,
+        sections: updated,
+      }, getAuthHeaders());
+      setSectionPerms(prev => ({ ...prev, [beneficiaryId]: updated }));
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to update permissions');
+    } finally {
+      setSavingPerms(null);
     }
   };
 
@@ -556,6 +591,28 @@ const BeneficiariesPage = () => {
                 )}
                 
                 <div className="mt-4 pt-3 border-t border-[var(--b)]">
+                  {/* Section Access Permissions — what this beneficiary sees after transition */}
+                  <div className="mb-3">
+                    <p className="text-[10px] text-[var(--t5)] uppercase tracking-wider font-bold mb-2">Post-Transition Access</p>
+                    <div className="space-y-1.5">
+                      {Object.entries(SECTION_LABELS).map(([key, label]) => {
+                        const perms = sectionPerms[ben.id] || {};
+                        const enabled = perms[key] !== undefined ? perms[key] : true;
+                        return (
+                          <div key={key} className="flex items-center justify-between py-1">
+                            <span className="text-xs text-[var(--t3)]">{label}</span>
+                            <Switch
+                              checked={enabled}
+                              onCheckedChange={() => handleToggleSection(ben.id, key, enabled)}
+                              disabled={savingPerms === ben.id + key}
+                              data-testid={`perm-${key}-${ben.id}`}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   <div className="flex items-center justify-between mb-2">
                     {getInvitationStatusBadge(ben)}
                   </div>
