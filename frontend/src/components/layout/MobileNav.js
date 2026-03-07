@@ -72,7 +72,7 @@ const DebugValues = () => {
       innerH: window.innerHeight,
       viewportCovers: window.innerHeight >= (window.screen.height - 10) ? 'YES' : 'NO',
       isNativeApp: document.body.classList.contains('native-app') ? 'YES' : 'NO',
-      systemSafeArea: document.documentElement.classList.contains('system-safe-area') ? 'YES (system handles)' : 'NO (we handle)',
+      systemSafeArea: 'contentInset: never',
       ua: navigator.userAgent.slice(0, 80),
     });
   }, []);

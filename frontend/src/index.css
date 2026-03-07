@@ -843,14 +843,6 @@
   overscroll-behavior: none;
 }
 
-/* When system handles safe area (native cold start, viewport not covering screen) */
-.system-safe-area .mobile-header {
-  padding-top: 0 !important;
-}
-.system-safe-area .main-content {
-  padding-top: 56px !important;
-}
-
 /* Mobile Bottom Navigation */
 .mobile-bottom-nav {
   background: var(--mobile-nav-bg);

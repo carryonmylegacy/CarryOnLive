@@ -261,31 +261,15 @@ function AppRoutes() {
 }
 
 function App() {
-  // On native cold start, the system pushes the WebView below the status bar
-  // (viewport=894), but env(safe-area-inset-top) still returns 62px, causing
-  // double padding. We suppress our safe-area CSS until viewport-fit=cover
-  // activates (viewport grows to 956), at which point WE become the sole handler.
+  // Ensure WebView extends behind the status bar on native iOS.
+  // With contentInset:'never' in capacitor.config + this call, only our
+  // CSS env(safe-area-inset-top) handles the notch — no double padding.
   useEffect(() => {
     if (!isNative) return;
-
-    // Immediately suppress safe-area padding — system handles it on cold start
-    document.documentElement.classList.add('system-safe-area');
-
-    function checkViewport() {
-      // If viewport now covers the full screen, we need to handle safe area
-      if (window.innerHeight >= window.screen.height - 20) {
-        document.documentElement.classList.remove('system-safe-area');
-      }
-    }
-
-    window.addEventListener('resize', checkViewport);
-    // Periodic checks in case resize doesn't fire
-    const timers = [500, 1000, 2000, 5000].map(ms => setTimeout(checkViewport, ms));
-
-    return () => {
-      window.removeEventListener('resize', checkViewport);
-      timers.forEach(clearTimeout);
-    };
+    import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
+      StatusBar.setOverlaysWebView({ overlay: true });
+      StatusBar.setStyle({ style: Style.Dark });
+    }).catch(() => {});
   }, []);
 
   // Initialize Capgo live updates and native optimizations
