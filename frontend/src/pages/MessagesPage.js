@@ -74,28 +74,30 @@ const VideoPlaybackModal = ({ url, onClose }) => {
     const v = videoRef.current;
     if (!v) return;
     v.paused ? v.play() : v.pause();
+    setShowControls(true);
     hideAfterDelay();
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black" onClick={onClose}>
-      <div className="relative w-full h-full flex items-center justify-center" onClick={handleTap}>
-        <video ref={videoRef} src={url} autoPlay playsInline className="w-full h-full object-contain" style={{ maxHeight: '100vh' }} />
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80" onClick={onClose}>
+      <div className="relative max-w-2xl w-full" onClick={handleTap} style={{ borderRadius: '16px', overflow: 'hidden' }}>
+        <video ref={videoRef} src={url} autoPlay playsInline className="w-full rounded-2xl" style={{ maxHeight: '80vh', display: 'block' }} />
         {/* Auto-fading controls overlay */}
         <div style={{
-          position: 'absolute', inset: 0, pointerEvents: showControls ? 'auto' : 'none',
+          position: 'absolute', inset: 0, borderRadius: '16px',
+          pointerEvents: showControls ? 'auto' : 'none',
           opacity: showControls ? 1 : 0, transition: 'opacity 0.3s ease',
+          background: showControls ? 'linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.5) 100%)' : 'transparent',
         }}>
-          {/* Close button */}
+          {/* Close button - inside the video window */}
           <button onClick={(e) => { e.stopPropagation(); onClose(); }}
-            style={{ position: 'absolute', top: 'calc(16px + env(safe-area-inset-top, 0px))', right: 16, zIndex: 10 }}
-            className="w-10 h-10 rounded-full bg-black/50 flex items-center justify-center text-white active:scale-90 transition-transform">
-            <X className="w-5 h-5" />
+            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 flex items-center justify-center text-white active:scale-90 transition-transform">
+            <X className="w-4 h-4" />
           </button>
           {/* Play/Pause center button */}
           <button onClick={togglePlay}
-            className="absolute inset-0 m-auto w-16 h-16 rounded-full bg-black/40 flex items-center justify-center text-white active:scale-90 transition-transform">
-            {videoRef.current?.paused !== false ? <Play className="w-8 h-8 ml-1" /> : <Pause className="w-8 h-8" />}
+            className="absolute inset-0 m-auto w-14 h-14 rounded-full bg-black/50 flex items-center justify-center text-white active:scale-90 transition-transform">
+            {videoRef.current?.paused !== false ? <Play className="w-7 h-7 ml-0.5" /> : <Pause className="w-7 h-7" />}
           </button>
         </div>
       </div>
