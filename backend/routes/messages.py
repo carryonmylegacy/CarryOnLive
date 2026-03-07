@@ -102,9 +102,14 @@ async def get_message_video(
     message = await db.messages.find_one({"video_url": video_id}, {"_id": 0})
     if message:
         if current_user["role"] == "beneficiary":
-            if current_user["id"] not in message.get(
-                "recipients", []
-            ) or not message.get("is_delivered"):
+            ben_records = await db.beneficiaries.find(
+                {"estate_id": message["estate_id"], "user_id": current_user["id"]},
+                {"_id": 0, "id": 1},
+            ).to_list(10)
+            valid_ids = {current_user["id"]} | {b["id"] for b in ben_records}
+            if not (valid_ids & set(message.get("recipients", []))) or not message.get(
+                "is_delivered"
+            ):
                 raise HTTPException(status_code=403, detail="Access denied")
         elif current_user["role"] == "benefactor":
             estate = await db.estates.find_one({"id": message["estate_id"]}, {"_id": 0})
@@ -179,9 +184,14 @@ async def get_message_voice(
     message = await db.messages.find_one({"voice_url": voice_id}, {"_id": 0})
     if message:
         if current_user["role"] == "beneficiary":
-            if current_user["id"] not in message.get(
-                "recipients", []
-            ) or not message.get("is_delivered"):
+            ben_records = await db.beneficiaries.find(
+                {"estate_id": message["estate_id"], "user_id": current_user["id"]},
+                {"_id": 0, "id": 1},
+            ).to_list(10)
+            valid_ids = {current_user["id"]} | {b["id"] for b in ben_records}
+            if not (valid_ids & set(message.get("recipients", []))) or not message.get(
+                "is_delivered"
+            ):
                 raise HTTPException(status_code=403, detail="Access denied")
         elif current_user["role"] == "benefactor":
             estate = await db.estates.find_one({"id": message["estate_id"]}, {"_id": 0})
