@@ -1,14 +1,43 @@
 """CarryOn™ Backend — Security Middleware
-Rate limiting, security headers, and CORS configuration.
+Rate limiting, security headers, request tracing, and CORS configuration.
 """
 
 import os
 import time
+import uuid
 from collections import defaultdict
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
+
+from config import logger
+
+
+class RequestTraceMiddleware(BaseHTTPMiddleware):
+    """Attach a unique request ID and log structured request/response info."""
+
+    async def dispatch(self, request: Request, call_next):
+        request_id = request.headers.get("x-request-id", str(uuid.uuid4())[:8])
+        request.state.request_id = request_id
+
+        start = time.monotonic()
+        response = await call_next(request)
+        elapsed_ms = round((time.monotonic() - start) * 1000)
+
+        path = request.url.path
+        if path.startswith("/api/") and path != "/api/health":
+            logger.info(
+                "req=%s method=%s path=%s status=%d ms=%d",
+                request_id,
+                request.method,
+                path,
+                response.status_code,
+                elapsed_ms,
+            )
+
+        response.headers["X-Request-Id"] = request_id
+        return response
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
