@@ -5,8 +5,8 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 
 ## Core Architecture
 - **Frontend**: React 19 (CRA via Craco) + Tailwind CSS + Shadcn/UI — 32 pages, 74 components, 65 packages
-- **Backend**: FastAPI (Python 3.11) — 170 endpoints, 26 route modules, 7 services, modular architecture
-- **Database**: MongoDB Atlas (production) / local MongoDB (preview) — 35 collections
+- **Backend**: FastAPI (Python 3.11) — 172 endpoints, 27 route modules, 7 services, modular architecture
+- **Database**: MongoDB Atlas (production) / local MongoDB (preview) — 37 collections
 - **Storage**: AWS S3 (carryon-vault, us-east-2)
 - **AI**: xAI Grok-4 (Estate Guardian AI)
 - **Payments**: Stripe (checkout, subscriptions, proration) + Apple IAP (native iOS)
@@ -15,51 +15,58 @@ CarryOn is a secure, AI-powered estate planning platform for American families. 
 - **Mobile**: Capacitor 6 → Codemagic → TestFlight
 - **CI/CD**: GitHub Actions (lint + build)
 
+## Apple Subscription Lifecycle (NEW — Feb 2026)
+- **Client-side IAP**: `@capgo/native-purchases` handles StoreKit 2 purchase flow
+- **Receipt Validation**: Server-side verification via Apple's `verifyReceipt` endpoint + transaction replay protection (`apple_transactions` collection)
+- **Server Notifications v2**: Webhook at `/api/webhook/apple` receives JWS-signed lifecycle events
+  - `SUBSCRIBED` → Activate subscription
+  - `DID_RENEW` → Extend period
+  - `DID_FAIL_TO_RENEW` → Mark `past_due` (grace period — user retains access)
+  - `EXPIRED` / `GRACE_PERIOD_EXPIRED` → Revoke access
+  - `REFUND` → Mark refunded, revoke access
+  - `REVOKE` → Family Sharing revoked
+  - `DID_CHANGE_RENEWAL_STATUS` → Update auto-renew flag
+- **Audit Trail**: All webhook notifications logged to `apple_webhook_log`
+
 ## Subscription & Access Model
 - **Free download** from App Store
 - **30-day free trial** on signup — full access to all features
 - **After trial expires (no subscription)**:
-  - **Benefactor**: Read-only. Can view existing documents, messages, checklist. CANNOT upload new documents, create new messages, or add checklist items.
-  - **Beneficiary**: Can view Living Will/Healthcare Directive and Power of Attorney regardless of subscription. CANNOT upload death certificate to trigger transition until benefactor's estate has active subscription.
-- **Active subscription**: Full access restored
-- **B2B/Enterprise codes**: Override subscription requirement (free_access flag)
-- **Enforcement**: `guards.py` — `require_active_subscription` dependency checks trial, subscription, beta mode, and overrides. Applied to POST endpoints for documents, messages, checklist, and death certificate upload.
+  - **Benefactor**: Read-only
+  - **Beneficiary**: Can view Living Will/Healthcare Directive and POA only
+- **Active subscription** or **past_due** (Apple grace period): Full access
+- **B2B/Enterprise codes**: Override subscription requirement
+- **Enforcement**: `guards.py` — `require_active_subscription` checks trial, subscription (active/past_due), beta mode, and overrides
 
 ## Test Credentials
 - **Admin**: info@carryon.us / Demo1234!
 - **Benefactor Test**: fulltest@test.com / Password.123
 - **Benefactor Demo**: demo@carryon.us / Demo1234!
 
-## App Store Audit Status (Feb 2026)
-All critical App Store compliance issues resolved:
-- Privacy Manifest (PrivacyInfo.xcprivacy) — Complete with DiskSpace, FileTimestamp, UserDefaults API declarations + analytics data types
-- Subscription disclosure (Guideline 3.1.2) — Auto-renewal terms, Privacy/Terms links
-- Apple IAP receipt validation — Server-side verification with Apple + transaction replay protection
-- LaunchScreen — Dark background matching app theme
-- Account deletion — GDPR Article 17 compliant
-- Push notifications — aps-environment entitlement configured
-- Encryption export compliance — ITSAppUsesNonExemptEncryption = false
+## App Store Audit Status (Feb 2026) — ALL CLEAR
+- Privacy Manifest complete (DiskSpace, FileTimestamp, UserDefaults, analytics)
+- Subscription disclosure compliant (auto-renewal, Privacy/Terms links)
+- Apple IAP receipt validation with server-side verification
+- Apple Server Notifications v2 webhook implemented
+- LaunchScreen dark background matching app theme
+- Account deletion GDPR-compliant
+- Push notification entitlement configured
+- Encryption export compliance declared
 
 ## Pending / Backlog
 
-### P0 (Critical)
-- ~~iOS Safe Area Double Padding~~ — RESOLVED
-- ~~App Store Compliance Audit~~ — RESOLVED (Feb 2026)
-
 ### P1 (High)
-- Apple Passkeys ("Sign in with Passkey") via `@argo-navis-dev/capacitor-passkey-plugin`
-- Share Extension — full native iOS Share Extension target in Xcode
+- Apple Passkeys ("Sign in with Passkey")
+- Share Extension — native iOS target in Xcode
 - Operations Admin Page for Chief of Staff
 - VAPID keys on Railway for push notifications
-- Codemagic build for native Face ID testing
 
 ### P2 (Medium)
-- SMS OTP via Twilio (awaiting A2P 10DLC approval)
+- SMS OTP via Twilio (awaiting A2P 10DLC)
 - Animated logo (awaiting asset)
 - ISO 27001 full compliance
-- Beneficiary Hub & Gentle Intro Verification
-- Will Creation Wizard — TurboTax-style guided will creation
-- OCR Document Scanning — Camera-to-vault with text extraction
+- Will Creation Wizard
+- OCR Document Scanning
 
 ### P3 (Low)
 - Redis-backed rate limiting
