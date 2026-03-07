@@ -63,10 +63,19 @@ async def get_messages(estate_id: str, current_user: dict = Depends(get_current_
     estate_salt = await get_estate_salt(estate_id)
 
     if current_user["role"] == "beneficiary":
+        # A beneficiary's user_id may differ from their beneficiary record ID.
+        # Messages store recipients as beneficiary record IDs (set by benefactor).
+        # Look up all beneficiary record IDs linked to this user for matching.
+        ben_records = await db.beneficiaries.find(
+            {"estate_id": estate_id, "user_id": current_user["id"]},
+            {"_id": 0, "id": 1},
+        ).to_list(10)
+        recipient_ids = [current_user["id"]] + [b["id"] for b in ben_records]
+
         messages = await db.messages.find(
             {
                 "estate_id": estate_id,
-                "recipients": current_user["id"],
+                "recipients": {"$in": recipient_ids},
                 "is_delivered": True,
             },
             {"_id": 0},
