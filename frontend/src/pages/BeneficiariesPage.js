@@ -86,6 +86,7 @@ const BeneficiariesPage = () => {
   const [addressCity, setAddressCity] = useState('');
   const [addressState, setAddressState] = useState('');
   const [addressZip, setAddressZip] = useState('');
+  const [addressLine2, setAddressLine2] = useState('');
   const [ssnLastFour, setSsnLastFour] = useState('');
   const [notes, setNotes] = useState('');
   const [avatarColor, setAvatarColor] = useState(avatarColors[0]);
@@ -180,6 +181,7 @@ const BeneficiariesPage = () => {
         address_city: addressCity || null,
         address_state: addressState || null,
         address_zip: addressZip || null,
+        address_line2: addressLine2 || null,
         ssn_last_four: ssnLastFour || null,
         notes: notes || null,
         avatar_color: avatarColor
@@ -222,6 +224,7 @@ const BeneficiariesPage = () => {
     setAddressCity(ben.address_city || '');
     setAddressState(ben.address_state || '');
     setAddressZip(ben.address_zip || '');
+    setAddressLine2(ben.address_line2 || '');
     setSsnLastFour(ben.ssn_last_four || '');
     setNotes(ben.notes || '');
     setAvatarColor(ben.avatar_color || avatarColors[0]);
@@ -318,6 +321,7 @@ const BeneficiariesPage = () => {
     setAddressCity('');
     setAddressState('');
     setAddressZip('');
+    setAddressLine2('');
     setSsnLastFour('');
     setNotes('');
     setAvatarColor(avatarColors[0]);
@@ -811,6 +815,16 @@ const BeneficiariesPage = () => {
                   className="input-field"
                 />
               </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-[#94a3b8]">Apt, Suite, Unit (optional)</Label>
+                <Input
+                  value={addressLine2}
+                  onChange={(e) => setAddressLine2(e.target.value)}
+                  placeholder="Apt 4B, Suite 200, etc."
+                  className="input-field"
+                />
+              </div>
               
               <div className="grid grid-cols-3 gap-2">
                 <div className="space-y-1.5">
@@ -834,6 +848,13 @@ const BeneficiariesPage = () => {
                   <Label className="text-[#94a3b8] text-xs">ZIP</Label>
                   <Input value={addressZip} onChange={(e) => setAddressZip(e.target.value)} placeholder="ZIP" className="input-field" maxLength={10} />
                 </div>
+              </div>
+
+              <div className="p-2.5 rounded-xl" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.12)' }}>
+                <p className="text-[#d4af37] text-[11px] leading-relaxed flex items-start gap-2">
+                  <Shield className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                  Address is encrypted and stored securely. It's only used for estate law analysis and is never shared.
+                </p>
               </div>
             </div>
 
