@@ -11,13 +11,11 @@ let installed = false;
 
 function sendReport(report) {
   try {
-    navigator.sendBeacon?.(
-      `${API_URL}/errors/report`,
-      new Blob([JSON.stringify(report)], { type: 'application/json' })
-    ) || fetch(`${API_URL}/errors/report`, {
+    fetch(`${API_URL}/errors/report`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(report),
+      credentials: 'omit',
       keepalive: true,
     }).catch(() => {});
   } catch {

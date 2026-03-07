@@ -33,7 +33,14 @@
         -->
         <title>CarryOn™ - Estate Planning & Legacy Management</title>
         <script>window.addEventListener("error",function(e){if(e.error instanceof DOMException&&e.error.name==="DataCloneError"&&e.message&&e.message.includes("PerformanceServerTiming")){e.stopImmediatePropagation();e.preventDefault()}},true);</script>
-        <script src="https://assets.emergent.sh/scripts/emergent-main.js"></script>
+        <script>
+            // Only load Emergent platform script on preview domains (not production)
+            if (window.location.hostname.includes('emergentagent.com')) {
+                var ems = document.createElement('script');
+                ems.src = 'https://assets.emergent.sh/scripts/emergent-main.js';
+                document.head.appendChild(ems);
+            }
+        </script>
         <!--
         These two scripts have been added for the Visual Edits, please do not edit or remove them
         -->
