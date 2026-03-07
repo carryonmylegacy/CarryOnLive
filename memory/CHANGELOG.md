@@ -1,5 +1,16 @@
 # CarryOn — Changelog
 
+## Mar 7, 2026 — 6 Pre-App-Store Refinements
+
+1. **Remove "Flat rate — no discounts" text** — Cleared note from Military/First Responder and Veteran beneficiary tiers (backend plans.py defaults)
+2. **Font uniformity** — Removed inline fontFamily overrides (Cormorant Garamond, Outfit) from metric numbers across AnalyticsTab, AdminPage, LaunchMetricsTab, DashboardPage, BeneficiaryDashboardPage, LegacyTimelinePage. Body font (DM Sans) now uniform for data values
+3. **Trial banner dark blue text** — Changed 'info' urgency tier text from gold (#d4af37) to dark blue (#1B4F72) with blue icon (#2563EB) for better light-mode visibility
+4. **IAC button conditional display** — "Complete Checklist Editing for Now" button now only shows when arriving from getting-started guided flow (via location.state.fromGettingStarted)
+5. **EGA header buttons refinement** — Increased button sizes from w-8/h-8 to w-10/h-10, icons from w-3.5 to w-5. Removed redundant "+" (New Chat) button from chat header
+6. **Support chat page layout** — Fixed page to fit in one viewport using fixed positioning with proper header and bottom nav offsets
+
+
+
 ## Feb 28, 2026 — Security Hardening Audit + 5 Enhancement Features
 
 ### Linting (3 Passes)
