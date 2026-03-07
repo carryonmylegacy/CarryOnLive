@@ -4,7 +4,6 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { ReturnPopup } from '../components/GuidedActivation';
 import {
-  Send,
   User,
   Users,
   Loader2,
@@ -18,7 +17,6 @@ import {
   HelpCircle,
   X,
   FileDown,
-  Info,
   ArrowLeft,
   MessageSquare,
   Plus,
@@ -29,9 +27,9 @@ import {
   Mic,
   MicOff
 } from 'lucide-react';
-import { Button } from '../components/ui/button';
+
 import { toast } from '../utils/toast';
-import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
+// removed unused SectionLock from '../components/security/SectionLock';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
