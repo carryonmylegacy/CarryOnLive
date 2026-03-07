@@ -104,6 +104,7 @@ class Beneficiary(BaseModel):
     address_city: Optional[str] = None
     address_state: Optional[str] = None
     address_zip: Optional[str] = None
+    address_line2: Optional[str] = None
     # Additional fields
     ssn_last_four: Optional[str] = None  # Last 4 of SSN for estate planning
     notes: Optional[str] = None  # Special instructions or notes
@@ -135,6 +136,7 @@ class BeneficiaryCreate(BaseModel):
     address_city: Optional[str] = None
     address_state: Optional[str] = None
     address_zip: Optional[str] = None
+    address_line2: Optional[str] = None
     ssn_last_four: Optional[str] = None
     notes: Optional[str] = None
     avatar_color: str = "#d4af37"
