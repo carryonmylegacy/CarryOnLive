@@ -89,7 +89,10 @@ export function PhotoPicker({ onPhotoSelected, currentPhoto, onRemove }) {
     const canvas = document.createElement('canvas');
     canvas.width = videoRef.current.videoWidth;
     canvas.height = videoRef.current.videoHeight;
-    canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
+    const ctx = canvas.getContext('2d');
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(videoRef.current, 0, 0);
     const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
 
     // Stop camera
@@ -208,6 +211,7 @@ export function PhotoPicker({ onPhotoSelected, currentPhoto, onRemove }) {
               playsInline
               muted
               className="w-full aspect-square object-cover"
+              style={{ transform: 'scaleX(-1)' }}
             />
             <div className="absolute bottom-0 left-0 right-0 p-4 flex justify-center gap-4 bg-gradient-to-t from-black/80">
               <Button variant="outline" onClick={cancelCamera} className="border-white/30">
