@@ -88,6 +88,7 @@ const BeneficiaryHubPage = () => {
           estates={estates}
           benefactors={familyConnections.length > 0 ? familyConnections : estates}
           userInitials={user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
+          userPhoto={myPhoto}
           onEstateClick={async (member) => {
             const estateId = member.estate_id || member.id;
             localStorage.setItem('beneficiary_estate_id', estateId);
