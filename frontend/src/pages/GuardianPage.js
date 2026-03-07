@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { ReturnPopup } from '../components/GuidedActivation';
@@ -182,11 +182,13 @@ const actionButtons = [
 const GuardianPage = () => {
   const { user, getAuthHeaders } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromGettingStarted = location.state?.fromGettingStarted === true;
   const guardianRef = useRef(null);
   const [headerHeight, setHeaderHeight] = useState(56);
   const [showReturnPopup, setShowReturnPopup] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [showOnboardingReturn, setShowOnboardingReturn] = useState(false);
+  const [showOnboardingReturn, setShowOnboardingReturn] = useState(fromGettingStarted);
   const recognitionRef = useRef(null);
   const [guidedFlowDone, setGuidedFlowDone] = useState(true);
 
@@ -432,15 +434,6 @@ const GuardianPage = () => {
           assistantMsg.actionBadge = `${result.items_added} checklist items added`;
         } else if (result.action === 'readiness_analyzed' && result.readiness) {
           assistantMsg.readiness = result.readiness;
-          // Show congratulations popup on first EGA analysis (during onboarding)
-          if (!sessionStorage.getItem('carryon_ega_popup_shown')) {
-            sessionStorage.setItem('carryon_ega_popup_shown', 'true');
-            try {
-              await axios.post(`${API_URL}/onboarding/complete-step/review_readiness`, {}, getAuthHeaders());
-            } catch {}
-            // Show persistent return button (not popup) during onboarding
-            setShowOnboardingReturn(true);
-          }
         }
       }
       setMessages(prev => [...prev, assistantMsg]);
@@ -783,7 +776,10 @@ const GuardianPage = () => {
         {/* Persistent "Return to Dashboard" during onboarding */}
         {showOnboardingReturn && (
           <div className="flex justify-center px-4 py-2">
-            <button onClick={() => navigate('/dashboard')}
+            <button onClick={async () => {
+              try { await axios.post(`${API_URL}/onboarding/complete-step/review_readiness`, {}, getAuthHeaders()); } catch {}
+              navigate('/dashboard');
+            }}
               className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold transition-transform active:scale-[0.97]"
               style={{
                 background: 'linear-gradient(135deg, #d4af37, #b8962e)',
@@ -792,7 +788,7 @@ const GuardianPage = () => {
                 animation: 'onboardingPulse 2.5s ease-in-out infinite',
               }}
               data-testid="ega-return-dashboard-btn">
-              Return to Dashboard to complete the onboarding process
+              Done — Return to Dashboard
             </button>
             <style>{`@keyframes onboardingPulse { 0%,100% { transform: scale(1); box-shadow: 0 4px 20px rgba(212,175,55,0.3); } 50% { transform: scale(1.03); box-shadow: 0 6px 28px rgba(212,175,55,0.5); } }`}</style>
           </div>
