@@ -72,6 +72,12 @@
     --header-shadow: 0 4px 24px -4px rgba(0,0,0,0.45);
     --bottomnav-shadow: 0 -8px 32px -4px rgba(0,0,0,0.5);
     
+    /* Trial banner info tier — dark mode: dark blue bg, gold text */
+    --trial-info-bg: rgba(27,79,114,0.25);
+    --trial-info-border: rgba(212,175,55,0.3);
+    --trial-info-text: #D4A537;
+    --trial-info-icon: #D4A537;
+    
     /* Typography */
     --serif: 'Cormorant Garamond', Georgia, serif;
     --sans: 'Outfit', system-ui, sans-serif;
@@ -136,6 +142,12 @@
     --gold: #B8860B;
     --gold2: #D4A537;
     --seal-bg: rgba(184,134,11,0.12);
+    
+    /* Trial banner info tier — light mode: gold bg, dark blue text */
+    --trial-info-bg: rgba(212,175,55,0.12);
+    --trial-info-border: rgba(184,134,11,0.25);
+    --trial-info-text: #1B4F72;
+    --trial-info-icon: #1B4F72;
     
     /* Card backgrounds — soft pastels with teal undertone */
     --card-vault: linear-gradient(135deg, #BAE6FD 0%, #7DD3FC 100%);
