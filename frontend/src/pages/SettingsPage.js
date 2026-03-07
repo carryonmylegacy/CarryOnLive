@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import axios from 'axios';
@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Info,
+  Camera,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -38,6 +39,10 @@ const SettingsPage = () => {
   const { user, logout, subscriptionStatus, refreshSubscription, token } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
+  const subscriptionRef = useRef(null);
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [weeklyDigest, setWeeklyDigest] = useState(true);
   const [digestLoading, setDigestLoading] = useState(false);
   const [digestSending, setDigestSending] = useState(false);
@@ -123,7 +128,18 @@ const SettingsPage = () => {
     import('../services/passkey').then(({ isPasskeySupported, hasRegisteredPasskey }) => {
       if (isPasskeySupported()) { setPasskeySupported(true); hasRegisteredPasskey().then(setPasskeyRegistered); }
     }).catch(() => {});
+    // Fetch profile photo
+    axios.get(`${API_URL}/auth/me`, getAuthHeaders()).then(res => {
+      if (res.data.photo_url) setProfilePhoto(res.data.photo_url);
+    }).catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Scroll to subscription section when navigated via #subscription
+  useEffect(() => {
+    if (location.hash === '#subscription' && subscriptionRef.current) {
+      setTimeout(() => subscriptionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
+    }
+  }, [location.hash]);
 
   const toggleDigest = async (val) => {
     setDigestLoading(true);
@@ -148,6 +164,23 @@ const SettingsPage = () => {
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleProfilePhotoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error('Photo must be under 5MB'); return; }
+    setUploadingPhoto(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result.split(',')[1];
+        await axios.put(`${API_URL}/auth/profile-photo`, { photo_data: base64, file_name: file.name }, getAuthHeaders());
+        setProfilePhoto(reader.result);
+      };
+      reader.readAsDataURL(file);
+    } catch { toast.error('Failed to upload photo'); }
+    finally { setUploadingPhoto(false); }
   };
 
   const handlePasskeyToggle = async () => {
@@ -270,9 +303,19 @@ const SettingsPage = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-[var(--gold)]/20 flex items-center justify-center text-[var(--gold)] text-xl font-bold">
-              {getInitials(user?.name)}
-            </div>
+            <label className="relative cursor-pointer group">
+              <div className="w-16 h-16 rounded-full bg-[var(--gold)]/20 flex items-center justify-center text-[var(--gold)] text-xl font-bold overflow-hidden">
+                {profilePhoto ? (
+                  <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  getInitials(user?.name)
+                )}
+              </div>
+              <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                {uploadingPhoto ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : <Camera className="w-5 h-5 text-white" />}
+              </div>
+              <input type="file" accept="image/*" className="hidden" onChange={handleProfilePhotoChange} data-testid="profile-photo-input" />
+            </label>
             <div>
               <h3 className="text-[var(--t)] font-semibold text-lg">{user?.name || 'User'}</h3>
               <p className="text-[var(--t4)] text-sm">{user?.email || ''}</p>
@@ -289,12 +332,14 @@ const SettingsPage = () => {
 
       {/* Subscription Plans — hidden for admin */}
       {!isAdmin && (
+        <div ref={subscriptionRef}>
         <SubscriptionManagement
           subscriptionStatus={subscriptionStatus}
           refreshSubscription={refreshSubscription}
           getAuthHeaders={() => getAuthHeaders()}
           onShowPaywall={() => setShowPaywall(true)}
         />
+        </div>
       )}
 
       {/* Family Plan — hidden for admin */}

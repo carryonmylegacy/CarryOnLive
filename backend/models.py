@@ -60,6 +60,7 @@ class UserResponse(BaseModel):
     name: str
     role: str
     created_at: str
+    photo_url: str = ""
 
 
 class TokenResponse(BaseModel):
