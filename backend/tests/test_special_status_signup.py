@@ -12,7 +12,7 @@ import pytest
 import requests
 
 BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://safe-area-patch.preview.emergentagent.com"
+    "REACT_APP_BACKEND_URL", "https://deploy-verified-1.preview.emergentagent.com"
 ).rstrip("/")
 
 

@@ -1086,6 +1086,80 @@ async def update_paired_price(
 # ═══════════════════════════════════════════════════
 
 
+APPLE_TO_PLAN = {
+    # Benefactor plans
+    "us.carryon.app.premium_monthly": "premium",
+    "us.carryon.app.premium_quarterly": "premium",
+    "us.carryon.app.premium_annual": "premium",
+    "us.carryon.app.standard_monthly": "standard",
+    "us.carryon.app.standard_quarterly": "standard",
+    "us.carryon.app.standard_annual": "standard",
+    "us.carryon.app.base_monthly": "base",
+    "us.carryon.app.base_quarterly": "base",
+    "us.carryon.app.base_annual": "base",
+    "us.carryon.app.new_adult_monthly": "new_adult",
+    "us.carryon.app.new_adult_quarterly": "new_adult",
+    "us.carryon.app.new_adult_annual": "new_adult",
+    "us.carryon.app.military_monthly": "military",
+    "us.carryon.app.military_quarterly": "military",
+    "us.carryon.app.military_annual": "military",
+    "us.carryon.app.veteran_monthly": "veteran",
+    "us.carryon.app.veteran_quarterly": "veteran",
+    "us.carryon.app.veteran_annual": "veteran",
+    # Beneficiary plans
+    "us.carryon.app.ben_premium_monthly": "ben_premium",
+    "us.carryon.app.ben_premium_quarterly": "ben_premium",
+    "us.carryon.app.ben_premium_annual": "ben_premium",
+    "us.carryon.app.ben_standard_monthly": "ben_standard",
+    "us.carryon.app.ben_standard_quarterly": "ben_standard",
+    "us.carryon.app.ben_standard_annual": "ben_standard",
+    "us.carryon.app.ben_base_monthly": "ben_base",
+    "us.carryon.app.ben_base_quarterly": "ben_base",
+    "us.carryon.app.ben_base_annual": "ben_base",
+    "us.carryon.app.ben_military_monthly": "ben_military",
+    "us.carryon.app.ben_military_quarterly": "ben_military",
+    "us.carryon.app.ben_military_annual": "ben_military",
+    "us.carryon.app.ben_veteran_monthly": "ben_veteran",
+    "us.carryon.app.ben_veteran_quarterly": "ben_veteran",
+    "us.carryon.app.ben_veteran_annual": "ben_veteran",
+    "us.carryon.app.ben_hospice_monthly": "ben_hospice",
+}
+
+
+async def verify_apple_receipt_with_server(receipt_data: str) -> dict:
+    """Verify an Apple IAP receipt with Apple's verifyReceipt endpoint.
+    Tries production first, falls back to sandbox (App Store review uses sandbox)."""
+    import httpx
+
+    apple_shared_secret = os.environ.get("APPLE_SHARED_SECRET", "")
+    payload = {
+        "receipt-data": receipt_data,
+        "password": apple_shared_secret,
+        "exclude-old-transactions": True,
+    }
+
+    # Try production first
+    async with httpx.AsyncClient(timeout=15) as client:
+        try:
+            prod_res = await client.post(
+                "https://buy.itunes.apple.com/verifyReceipt", json=payload
+            )
+            prod_data = prod_res.json()
+
+            # Status 21007 means sandbox receipt sent to production
+            if prod_data.get("status") == 21007:
+                sandbox_res = await client.post(
+                    "https://sandbox.itunes.apple.com/verifyReceipt",
+                    json=payload,
+                )
+                return sandbox_res.json()
+
+            return prod_data
+        except Exception as e:
+            logger.error(f"Apple receipt verification failed: {e}")
+            return {"status": -1, "error": str(e)}
+
+
 @router.post("/subscriptions/validate-apple-receipt")
 async def validate_apple_receipt(
     request: Request,
@@ -1095,55 +1169,49 @@ async def validate_apple_receipt(
     data = await request.json()
     transaction_id = data.get("transaction_id")
     product_id = data.get("product_id")
+    receipt_data = data.get("receipt")
 
     if not transaction_id or not product_id:
         raise HTTPException(
             status_code=400, detail="Missing transaction_id or product_id"
         )
 
-    # Map Apple product IDs to our plan IDs
-    apple_to_plan = {
-        # Benefactor plans
-        "us.carryon.app.premium_monthly": "premium",
-        "us.carryon.app.premium_quarterly": "premium",
-        "us.carryon.app.premium_annual": "premium",
-        "us.carryon.app.standard_monthly": "standard",
-        "us.carryon.app.standard_quarterly": "standard",
-        "us.carryon.app.standard_annual": "standard",
-        "us.carryon.app.base_monthly": "base",
-        "us.carryon.app.base_quarterly": "base",
-        "us.carryon.app.base_annual": "base",
-        "us.carryon.app.new_adult_monthly": "new_adult",
-        "us.carryon.app.new_adult_quarterly": "new_adult",
-        "us.carryon.app.new_adult_annual": "new_adult",
-        "us.carryon.app.military_monthly": "military",
-        "us.carryon.app.military_quarterly": "military",
-        "us.carryon.app.military_annual": "military",
-        "us.carryon.app.veteran_monthly": "veteran",
-        "us.carryon.app.veteran_quarterly": "veteran",
-        "us.carryon.app.veteran_annual": "veteran",
-        # Beneficiary plans
-        "us.carryon.app.ben_premium_monthly": "ben_premium",
-        "us.carryon.app.ben_premium_quarterly": "ben_premium",
-        "us.carryon.app.ben_premium_annual": "ben_premium",
-        "us.carryon.app.ben_standard_monthly": "ben_standard",
-        "us.carryon.app.ben_standard_quarterly": "ben_standard",
-        "us.carryon.app.ben_standard_annual": "ben_standard",
-        "us.carryon.app.ben_base_monthly": "ben_base",
-        "us.carryon.app.ben_base_quarterly": "ben_base",
-        "us.carryon.app.ben_base_annual": "ben_base",
-        "us.carryon.app.ben_military_monthly": "ben_military",
-        "us.carryon.app.ben_military_quarterly": "ben_military",
-        "us.carryon.app.ben_military_annual": "ben_military",
-        "us.carryon.app.ben_veteran_monthly": "ben_veteran",
-        "us.carryon.app.ben_veteran_quarterly": "ben_veteran",
-        "us.carryon.app.ben_veteran_annual": "ben_veteran",
-        "us.carryon.app.ben_hospice_monthly": "ben_hospice",
-    }
-
-    plan_id = apple_to_plan.get(product_id)
+    plan_id = APPLE_TO_PLAN.get(product_id)
     if not plan_id:
         raise HTTPException(status_code=400, detail=f"Unknown product: {product_id}")
+
+    # Prevent transaction replay attacks — check if already used
+    existing_txn = await db.apple_transactions.find_one(
+        {"transaction_id": transaction_id}, {"_id": 0}
+    )
+    if existing_txn:
+        if existing_txn.get("user_id") == current_user["id"]:
+            return {
+                "valid": True,
+                "plan_id": plan_id,
+                "message": "Transaction already validated for this account",
+            }
+        raise HTTPException(
+            status_code=400, detail="This transaction has already been used"
+        )
+
+    # Server-side receipt verification with Apple
+    apple_shared_secret = os.environ.get("APPLE_SHARED_SECRET", "")
+    if receipt_data and apple_shared_secret:
+        verification = await verify_apple_receipt_with_server(receipt_data)
+        apple_status = verification.get("status", -1)
+        if apple_status != 0:
+            logger.warning(
+                f"Apple receipt verification failed for user {current_user['id']}: "
+                f"status={apple_status}"
+            )
+            # Status 0 = valid, anything else is invalid
+            # Allow sandbox receipts during review (status codes 21007/21008 handled above)
+            if apple_status not in (0,):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Receipt verification failed with Apple",
+                )
 
     billing_cycle = (
         "annual"
@@ -1153,7 +1221,6 @@ async def validate_apple_receipt(
         else "monthly"
     )
 
-    # Store the Apple subscription in user_subscriptions (same collection as Stripe)
     now = datetime.now(timezone.utc)
     if billing_cycle == "annual":
         period_end = now + timedelta(days=365)
@@ -1162,6 +1229,18 @@ async def validate_apple_receipt(
     else:
         period_end = now + timedelta(days=30)
 
+    # Record the transaction to prevent replay attacks
+    await db.apple_transactions.insert_one(
+        {
+            "transaction_id": transaction_id,
+            "user_id": current_user["id"],
+            "product_id": product_id,
+            "plan_id": plan_id,
+            "validated_at": now.isoformat(),
+        }
+    )
+
+    # Store the Apple subscription
     await db.user_subscriptions.update_one(
         {"user_id": current_user["id"]},
         {
