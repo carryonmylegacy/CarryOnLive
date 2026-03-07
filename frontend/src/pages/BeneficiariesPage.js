@@ -464,7 +464,7 @@ const BeneficiariesPage = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-[#3b82f6] opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="text-[#3b82f6] transition-opacity"
                       onClick={() => openEditModal(ben)}
                       data-testid={`edit-beneficiary-${ben.id}`}
                       aria-label={`Edit ${ben.first_name} ${ben.last_name}`}
@@ -474,7 +474,7 @@ const BeneficiariesPage = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-[#ef4444] opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="text-[#ef4444] transition-opacity"
                       onClick={() => handleDelete(ben.id)}
                       data-testid={`delete-beneficiary-${ben.id}`}
                       aria-label={`Delete ${ben.first_name} ${ben.last_name}`}
