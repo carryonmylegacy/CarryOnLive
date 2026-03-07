@@ -55,6 +55,9 @@ const SettingsPage = () => {
   const [deleteEmail, setDeleteEmail] = useState('');
   const [deleteReason, setDeleteReason] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [passkeySupported, setPasskeySupported] = useState(false);
+  const [passkeyRegistered, setPasskeyRegistered] = useState(false);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
 
   const isAdmin = user?.role === 'admin';
 
@@ -117,6 +120,9 @@ const SettingsPage = () => {
     };
     fetchDigestPref();
     fetchConsent();
+    import('../services/passkey').then(({ isPasskeySupported, hasRegisteredPasskey }) => {
+      if (isPasskeySupported()) { setPasskeySupported(true); hasRegisteredPasskey().then(setPasskeyRegistered); }
+    }).catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleDigest = async (val) => {
@@ -142,6 +148,30 @@ const SettingsPage = () => {
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handlePasskeyToggle = async () => {
+    if (passkeyRegistered) {
+      const { clearPasskeyFlag } = await import('../services/passkey');
+      clearPasskeyFlag();
+      setPasskeyRegistered(false);
+      toast.success('Passkey removed from this app');
+      return;
+    }
+    setPasskeyLoading(true);
+    try {
+      const { registerPasskey } = await import('../services/passkey');
+      await registerPasskey(token);
+      setPasskeyRegistered(true);
+      toast.success('Passkey registered — you can now sign in without a password');
+    } catch (err) {
+      const msg = err.message || '';
+      if (!msg.includes('cancelled') && !msg.includes('AbortError') && !msg.includes('NotAllowedError')) {
+        toast.error(msg || 'Failed to register passkey');
+      }
+    } finally {
+      setPasskeyLoading(false);
+    }
   };
 
   const updateConsent = async (field, value) => {
@@ -403,6 +433,18 @@ const SettingsPage = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
+          {passkeySupported && (
+            <>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-[var(--t)] font-medium">Passkey (Face ID / Touch ID)</h4>
+                  <p className="text-[var(--t5)] text-sm">Sign in without a password</p>
+                </div>
+                <Switch checked={passkeyRegistered} onCheckedChange={handlePasskeyToggle} disabled={passkeyLoading} data-testid="settings-passkey-toggle" />
+              </div>
+              <Separator className="bg-[var(--b)]" />
+            </>
+          )}
           <Button variant="outline" className="w-full border-[var(--b)] text-[var(--t)] justify-between">
             Change Password
             <ChevronRight className="w-4 h-4" />

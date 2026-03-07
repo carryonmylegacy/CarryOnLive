@@ -32,7 +32,7 @@ export const LaunchMetricsTab = ({ getAuthHeaders }) => {
   const MetricCard = ({ icon: Icon, color, value, label, sub }) => (
     <div className="glass-card p-4 text-center">
       <Icon className="w-5 h-5 mx-auto mb-2" style={{ color }} />
-      <div className="text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>{value}</div>
+      <div className="text-2xl font-bold text-[var(--t)]">{value}</div>
       <div className="text-xs font-bold text-[var(--t4)] mt-0.5">{label}</div>
       {sub && <div className="text-[10px] text-[var(--t5)] mt-1">{sub}</div>}
     </div>
@@ -42,7 +42,7 @@ export const LaunchMetricsTab = ({ getAuthHeaders }) => {
     <div className="glass-card p-4">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-bold text-[var(--t4)]">{label}</span>
-        <span className="text-lg font-bold" style={{ color, fontFamily: 'Outfit, sans-serif' }}>{rate}%</span>
+        <span className="text-lg font-bold" style={{ color }}>{rate}%</span>
       </div>
       <div className="h-2 rounded-full bg-[var(--s)]">
         <div className="h-2 rounded-full transition-all duration-700" style={{ width: `${Math.min(rate, 100)}%`, background: color }} />
