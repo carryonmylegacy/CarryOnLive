@@ -151,17 +151,17 @@ const AdminPage = () => {
           <p className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2">Revenue</p>
           <div className="grid grid-cols-3 gap-2 mb-2">
             <div className="glass-card p-3 text-center">
-              <div className="text-xl font-bold text-[#22C993]" style={{ fontFamily: 'Outfit, sans-serif' }}>${revenue.mrr.toLocaleString()}</div>
+              <div className="text-xl font-bold text-[#22C993]">${revenue.mrr.toLocaleString()}</div>
               <div className="text-[10px] text-[var(--t4)] font-bold">MRR</div>
               <div className="text-[9px] text-[var(--t5)]">${revenue.arr.toLocaleString()}/yr ARR</div>
             </div>
             <div className="glass-card p-3 text-center">
-              <div className="text-xl font-bold text-[#d4af37]" style={{ fontFamily: 'Outfit, sans-serif' }}>${revenue.total_revenue.toLocaleString()}</div>
+              <div className="text-xl font-bold text-[#d4af37]">${revenue.total_revenue.toLocaleString()}</div>
               <div className="text-[10px] text-[var(--t4)] font-bold">Total Revenue</div>
               <div className="text-[9px] text-[var(--t5)]">${revenue.revenue_this_month.toLocaleString()} this month</div>
             </div>
             <div className="glass-card p-3 text-center">
-              <div className="text-xl font-bold" style={{ fontFamily: 'Outfit, sans-serif', color: revenue.mom_growth >= 0 ? '#22C993' : '#EF4444' }}>
+              <div className="text-xl font-bold" style={{ color: revenue.mom_growth >= 0 ? '#22C993' : '#EF4444' }}>
                 {revenue.mom_growth >= 0 ? '+' : ''}{revenue.mom_growth}%
               </div>
               <div className="text-[10px] text-[var(--t4)] font-bold">MoM Growth</div>

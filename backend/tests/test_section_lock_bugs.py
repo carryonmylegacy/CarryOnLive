@@ -14,7 +14,7 @@ import requests
 import os
 
 BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://benef-layout-fix.preview.emergentagent.com"
+    "REACT_APP_BACKEND_URL", "https://safe-area-patch.preview.emergentagent.com"
 )
 
 # Test credentials
