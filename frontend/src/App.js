@@ -308,6 +308,21 @@ function App() {
     }
   }, []);
 
+  // Load PostHog analytics safely after React mounts (never in index.html)
+  useEffect(() => {
+    try {
+      import('posthog-js').then(({ default: posthog }) => {
+        posthog.init('phc_xAvL2Iq4tFmANRE7kzbKwaSqp1HJjN7x48s3vr0CMjs', {
+          api_host: 'https://us.i.posthog.com',
+          person_profiles: 'identified_only',
+          disable_session_recording: true,
+          autocapture: false,
+          capture_pageview: true,
+        });
+      }).catch(() => {});
+    } catch { /* PostHog must never crash the app */ }
+  }, []);
+
   return (
     <ForceUpdateGate>
     <ThemeProvider>
