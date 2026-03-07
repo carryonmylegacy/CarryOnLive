@@ -329,11 +329,10 @@ BENEFICIARY_PLANS = [
         "quarterly_price": 1.99,
         "annual_price": 1.99,
         "allows_billing_toggle": False,
-        "note": "Flat rate — no discounts (at cost)",
+        "note": "",
         "features": [
             "Full platform access",
             "Priority support",
-            "Flat rate pricing",
         ],
     },
     {
@@ -356,11 +355,10 @@ BENEFICIARY_PLANS = [
         "quarterly_price": 1.99,
         "annual_price": 1.99,
         "allows_billing_toggle": False,
-        "note": "Flat rate — no discounts (at cost)",
+        "note": "",
         "features": [
             "Full platform access",
             "Priority support",
-            "Flat rate pricing",
         ],
     },
     {

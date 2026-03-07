@@ -99,7 +99,7 @@ const OnboardingWizard = ({ onAllComplete }) => {
       try { await axios.post(`${API_URL}/onboarding/complete-step/review_readiness`, {}, getAuthHeaders()); }
       catch (err) { console.error(err); }
     }
-    navigate(config.route);
+    navigate(config.route, { state: config.route === '/checklist' ? { fromGettingStarted: true } : undefined });
   };
 
   if (loading || !progress) return null;
