@@ -15,7 +15,6 @@ const PreTransitionPage = () => {
   const [estate, setEstate] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const fetchEstate = async () => {
       try {
@@ -23,8 +22,9 @@ const PreTransitionPage = () => {
         if (estateId) {
           const res = await axios.get(`${API_URL}/estates/${estateId}`, getAuthHeaders());
           setEstate(res.data);
-          // If already transitioned, redirect to dashboard
-          if (res.data.status === 'transitioned') {
+          // Check authoritative transition status (death certificate, not estate.status)
+          const permRes = await axios.get(`${API_URL}/beneficiary/my-permissions/${estateId}`, getAuthHeaders());
+          if (permRes.data.is_transitioned) {
             navigate('/beneficiary/dashboard');
             return;
           }
