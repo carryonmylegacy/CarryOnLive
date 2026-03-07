@@ -1,6 +1,7 @@
 """CarryOn™ Backend — Estate Routes"""
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 
 from config import db
 from models import Estate, EstateCreate, EstateUpdate
@@ -24,13 +25,20 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
         estates = await db.estates.find(
             {"beneficiaries": current_user["id"]}, {"_id": 0}
         ).to_list(100)
-        # Enrich with benefactor photo for display
+        # Enrich with benefactor photo for display (check for beneficiary override first)
         for estate in estates:
-            owner = await db.users.find_one(
-                {"id": estate.get("owner_id")}, {"_id": 0, "photo_url": 1}
+            override = await db.beneficiary_display_overrides.find_one(
+                {"user_id": current_user["id"], "estate_id": estate["id"]},
+                {"_id": 0, "owner_photo_url": 1},
             )
-            if owner and owner.get("photo_url"):
-                estate["owner_photo_url"] = owner["photo_url"]
+            if override and override.get("owner_photo_url"):
+                estate["owner_photo_url"] = override["owner_photo_url"]
+            else:
+                owner = await db.users.find_one(
+                    {"id": estate.get("owner_id")}, {"_id": 0, "photo_url": 1}
+                )
+                if owner and owner.get("photo_url"):
+                    estate["owner_photo_url"] = owner["photo_url"]
     else:  # admin
         estates = await db.estates.find({}, {"_id": 0}).to_list(100)
     return estates
@@ -63,6 +71,17 @@ async def get_family_connections(current_user: dict = Depends(get_current_user))
         if not benefactor:
             continue
 
+        # Check for beneficiary display override (beneficiary-side only, never touches benefactor)
+        override = await db.beneficiary_display_overrides.find_one(
+            {"user_id": current_user["id"], "estate_id": estate["id"]},
+            {"_id": 0, "owner_photo_url": 1},
+        )
+        display_photo = (
+            override.get("owner_photo_url", "")
+            if override and override.get("owner_photo_url")
+            else benefactor.get("photo_url", "")
+        )
+
         # Combine estate and relationship info
         connections.append(
             {
@@ -75,11 +94,47 @@ async def get_family_connections(current_user: dict = Depends(get_current_user))
                 "status": estate.get("status", "pre-transition"),
                 "readiness_score": estate.get("readiness_score", 0),
                 "benefactor_id": benefactor.get("id"),
-                "photo_url": benefactor.get("photo_url", ""),
+                "photo_url": display_photo,
             }
         )
 
     return connections
+
+
+class DisplayOverrideUpdate(BaseModel):
+    estate_id: str
+    owner_photo_url: str
+
+
+@router.put("/beneficiary/display-override")
+async def update_display_override(
+    data: DisplayOverrideUpdate, current_user: dict = Depends(get_current_user)
+):
+    """Beneficiary sets a display override for how they see a benefactor's photo.
+    This NEVER modifies the benefactor's actual data — it's stored separately
+    in beneficiary_display_overrides and only affects the beneficiary's view."""
+    if current_user["role"] != "beneficiary":
+        raise HTTPException(
+            status_code=403, detail="Only beneficiaries can set display overrides"
+        )
+
+    # Verify this user is actually a beneficiary of this estate
+    estate = await db.estates.find_one({"id": data.estate_id}, {"_id": 0})
+    if not estate or current_user["id"] not in (estate.get("beneficiaries") or []):
+        raise HTTPException(status_code=403, detail="Not a beneficiary of this estate")
+
+    await db.beneficiary_display_overrides.update_one(
+        {"user_id": current_user["id"], "estate_id": data.estate_id},
+        {
+            "$set": {
+                "user_id": current_user["id"],
+                "estate_id": data.estate_id,
+                "owner_photo_url": data.owner_photo_url,
+            }
+        },
+        upsert=True,
+    )
+    return {"success": True}
 
 
 @router.get("/estates/{estate_id}")
