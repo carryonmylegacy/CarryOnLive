@@ -117,7 +117,7 @@ const AddressAutocomplete = ({ value, onChange, onSelect, placeholder, className
         onChange={handleInputChange}
         onFocus={() => { if (suggestions.length > 0) setShowDropdown(true); }}
         placeholder={placeholder || 'Start typing an address...'}
-        className={className || "h-14 w-full rounded-xl border border-[var(--b,#1a2a42)] bg-[var(--bg,#0b1322)] px-4 text-base font-medium text-[var(--t,#e2e8f0)] placeholder:text-[var(--t5,#3a4a63)] focus:border-[#d4af37] focus:outline-none focus:ring-1 focus:ring-[#d4af37]/20"}
+        className={className || "input-field"}
         autoComplete="off"
         data-testid={testId || 'address-autocomplete'}
         {...rest}
@@ -125,9 +125,9 @@ const AddressAutocomplete = ({ value, onChange, onSelect, placeholder, className
       {showDropdown && suggestions.length > 0 && (
         <div className="absolute left-0 right-0 top-full mt-1 rounded-xl overflow-hidden"
           style={{
-            background: '#141C33',
-            border: '1px solid rgba(255,255,255,0.1)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+            background: 'var(--bg2)',
+            border: '1px solid var(--b)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
             zIndex: 100000,
           }}>
           {suggestions.map((s, i) => (
@@ -135,14 +135,14 @@ const AddressAutocomplete = ({ value, onChange, onSelect, placeholder, className
               key={s.placeId || i}
               type="button"
               onClick={() => handleSelectSuggestion(s)}
-              className="w-full text-left px-4 py-3 text-sm text-[#e2e8f0] hover:bg-[rgba(212,175,55,0.1)] transition-colors"
-              style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+              className="w-full text-left px-4 py-3 text-sm hover:bg-[rgba(212,175,55,0.1)] transition-colors"
+              style={{ color: 'var(--t)', borderBottom: '1px solid var(--b)' }}
             >
-              <span className="font-bold text-white">
+              <span style={{ fontWeight: 'bold', color: 'var(--t)' }}>
                 {s.structuredFormat?.mainText?.text || s.text?.text}
               </span>
               {s.structuredFormat?.secondaryText?.text && (
-                <span className="text-[#94a3b8] ml-1.5 text-xs">
+                <span style={{ color: 'var(--t5)', marginLeft: '6px', fontSize: '12px' }}>
                   {s.structuredFormat.secondaryText.text}
                 </span>
               )}
