@@ -29,6 +29,7 @@ import { Separator } from '../components/ui/separator';
 import { toast } from '../utils/toast';
 import { getInitials } from '../utils/initials';
 import NotificationSettings from '../components/NotificationSettings';
+import { PhotoPicker } from '../components/PhotoPicker';
 import FamilyPlanSettings from '../components/FamilyPlanSettings';
 import SubscriptionPaywall from '../components/SubscriptionPaywall';
 import { SubscriptionManagement } from '../components/settings/SubscriptionManagement';
@@ -166,23 +167,6 @@ const SettingsPage = () => {
     navigate('/login');
   };
 
-  const handleProfilePhotoChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { toast.error('Photo must be under 5MB'); return; }
-    setUploadingPhoto(true);
-    try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64 = reader.result.split(',')[1];
-        await axios.put(`${API_URL}/auth/profile-photo`, { photo_data: base64, file_name: file.name }, getAuthHeaders());
-        setProfilePhoto(reader.result);
-      };
-      reader.readAsDataURL(file);
-    } catch { toast.error('Failed to upload photo'); }
-    finally { setUploadingPhoto(false); }
-  };
-
   const handlePasskeyToggle = async () => {
     if (passkeyRegistered) {
       const { clearPasskeyFlag } = await import('../services/passkey');
@@ -303,19 +287,26 @@ const SettingsPage = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
-            <label className="relative cursor-pointer group">
-              <div className="w-16 h-16 rounded-full bg-[var(--gold)]/20 flex items-center justify-center text-[var(--gold)] text-xl font-bold overflow-hidden">
-                {profilePhoto ? (
-                  <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
-                ) : (
-                  getInitials(user?.name)
-                )}
-              </div>
-              <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                {uploadingPhoto ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : <Camera className="w-5 h-5 text-white" />}
-              </div>
-              <input type="file" accept="image/*" className="hidden" onChange={handleProfilePhotoChange} data-testid="profile-photo-input" />
-            </label>
+            <PhotoPicker
+              currentPhoto={profilePhoto}
+              onPhotoSelected={async (file, previewUrl) => {
+                setProfilePhoto(previewUrl);
+                setUploadingPhoto(true);
+                try {
+                  const reader = new FileReader();
+                  reader.onload = async () => {
+                    const base64 = reader.result.split(',')[1];
+                    await axios.put(`${API_URL}/auth/profile-photo`, { photo_data: base64, file_name: file.name }, getAuthHeaders());
+                  };
+                  reader.readAsDataURL(file);
+                } catch { toast.error('Failed to upload photo'); }
+                finally { setUploadingPhoto(false); }
+              }}
+              onRemove={async () => {
+                setProfilePhoto(null);
+                try { await axios.put(`${API_URL}/auth/profile-photo`, { photo_data: '', file_name: '' }, getAuthHeaders()); } catch {}
+              }}
+            />
             <div>
               <h3 className="text-[var(--t)] font-semibold text-lg">{user?.name || 'User'}</h3>
               <p className="text-[var(--t4)] text-sm">{user?.email || ''}</p>
