@@ -32,9 +32,9 @@ async def get_subscription_access(current_user: dict = Depends(get_current_user)
     if override and override.get("free_access"):
         return {"has_access": True, "reason": "free_access"}
 
-    # Check active subscription
+    # Check active subscription (including Apple grace period)
     sub = await db.subscriptions.find_one(
-        {"user_id": user["id"], "status": "active"}, {"_id": 0}
+        {"user_id": user["id"], "status": {"$in": ["active", "past_due"]}}, {"_id": 0}
     )
     if sub:
         return {"has_access": True, "reason": "subscription"}

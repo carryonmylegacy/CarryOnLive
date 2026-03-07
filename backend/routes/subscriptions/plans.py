@@ -12,6 +12,9 @@ from pydantic import BaseModel
 from config import db, logger
 from utils import get_current_user
 
+# Apple bundle ID — used by webhook to verify notifications are for our app
+APPLE_BUNDLE_ID = "us.carryon.app"
+
 # Allowed domains for Stripe redirect URLs (prevents open redirect)
 ALLOWED_REDIRECT_DOMAINS = {
     "app.carryon.us",

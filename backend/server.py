@@ -83,6 +83,7 @@ async def lifespan(app):
             [("user_id", 1), ("section_id", 1)]
         )
         await db.apple_transactions.create_index("transaction_id", unique=True)
+        await db.apple_webhook_log.create_index("received_at")
         logger.info("Database indexes created/verified")
     except Exception as e:
         logger.warning(f"Index creation warning (may already exist): {e}")
