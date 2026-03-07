@@ -76,7 +76,7 @@ const EmergencyAccessPanel = ({ estates }) => {
   return (
     <Card className="border-[var(--b)] bg-[var(--bg2)]" data-testid="emergency-access-panel">
       <CardHeader className="pb-3">
-        <CardTitle className="text-white text-base flex items-center gap-2">
+        <CardTitle className="text-[var(--t)] text-base flex items-center gap-2">
           <Shield className="w-5 h-5 text-[#ef4444]" />
           Emergency Access Protocol
         </CardTitle>
@@ -91,7 +91,7 @@ const EmergencyAccessPanel = ({ estates }) => {
             </div>
             {activeAccess.map(a => (
               <div key={a.id} className="text-xs text-[#94a3b8] mt-1">
-                <span className="text-white">{a.estate_name}</span> — {a.access_level === 'full' ? 'Full Access' : 'Read-Only'} until {new Date(a.access_expires_at).toLocaleDateString()}
+                <span className="text-[var(--t)]">{a.estate_name}</span> — {a.access_level === 'full' ? 'Full Access' : 'Read-Only'} until {new Date(a.access_expires_at).toLocaleDateString()}
               </div>
             ))}
           </div>
@@ -110,7 +110,7 @@ const EmergencyAccessPanel = ({ estates }) => {
                     <Icon className="w-4 h-4" style={{ color: config.color }} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white truncate">{r.estate_name}</p>
+                    <p className="text-sm text-[var(--t)] truncate">{r.estate_name}</p>
                     <p className="text-xs text-[#64748b]">{config.label} {r.reviewed_at ? `- ${new Date(r.reviewed_at).toLocaleDateString()}` : ''}</p>
                   </div>
                 </div>
@@ -124,7 +124,7 @@ const EmergencyAccessPanel = ({ estates }) => {
           <div className="space-y-3 p-4 rounded-lg bg-[var(--s)] border border-[var(--b)]">
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle className="w-4 h-4 text-[#f59e0b]" />
-              <p className="text-sm font-medium text-white">Request Emergency Access</p>
+              <p className="text-sm font-medium text-[var(--t)]">Request Emergency Access</p>
             </div>
             <p className="text-xs text-[#94a3b8]">
               This request will be reviewed by our Transition Verification Team. Emergency requests are typically processed within 2-4 hours.
@@ -135,7 +135,7 @@ const EmergencyAccessPanel = ({ estates }) => {
               <select
                 value={form.estate_id}
                 onChange={e => setForm(f => ({ ...f, estate_id: e.target.value }))}
-                className="w-full bg-[var(--s)] border border-[var(--b)] rounded-lg px-3 py-2 text-sm text-white"
+                className="w-full bg-[var(--s)] border border-[var(--b)] rounded-lg px-3 py-2 text-sm text-[var(--t)]"
                 data-testid="emergency-estate-select"
               >
                 <option value="">Select estate...</option>
@@ -151,7 +151,7 @@ const EmergencyAccessPanel = ({ estates }) => {
                 value={form.relationship_to_benefactor}
                 onChange={e => setForm(f => ({ ...f, relationship_to_benefactor: e.target.value }))}
                 placeholder="e.g., Daughter, Spouse, Sibling"
-                className="bg-[var(--s)] border-[var(--b)] text-white text-sm"
+                className="bg-[var(--s)] border-[var(--b)] text-[var(--t)] text-sm"
                 data-testid="emergency-relationship-input"
               />
             </div>
@@ -163,7 +163,7 @@ const EmergencyAccessPanel = ({ estates }) => {
                 onChange={e => setForm(f => ({ ...f, reason: e.target.value }))}
                 placeholder="Please explain why you need emergency access..."
                 rows={3}
-                className="w-full bg-[var(--s)] border border-[var(--b)] rounded-lg px-3 py-2 text-sm text-white placeholder-[#64748b] resize-none"
+                className="w-full bg-[var(--s)] border border-[var(--b)] rounded-lg px-3 py-2 text-sm text-[var(--t)] placeholder-[#64748b] resize-none"
                 data-testid="emergency-reason-input"
               />
             </div>
@@ -181,12 +181,12 @@ const EmergencyAccessPanel = ({ estates }) => {
                   setForm(prev => ({ ...prev, contact_phone: f }));
                 }}
                 placeholder="(123) 456-7890"
-                className="bg-[var(--s)] border-[var(--b)] text-white text-sm"
+                className="bg-[var(--s)] border-[var(--b)] text-[var(--t)] text-sm"
               />
             </div>
 
             <div className="flex gap-2 pt-2">
-              <Button onClick={handleSubmit} disabled={submitting} className="flex-1 bg-[#ef4444] hover:bg-[#dc2626] text-white text-sm" data-testid="emergency-submit-btn">
+              <Button onClick={handleSubmit} disabled={submitting} className="flex-1 bg-[#ef4444] hover:bg-[#dc2626] text-[var(--t)] text-sm" data-testid="emergency-submit-btn">
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
                 Submit Request
               </Button>
