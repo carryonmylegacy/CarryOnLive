@@ -9,6 +9,7 @@
     "@capacitor/cli": "^6",
     "@capacitor/core": "^6",
     "@capacitor/filesystem": "^8.1.2",
+    "@capacitor/haptics": "^8.0.1",
     "@capacitor/ios": "^6",
     "@capacitor/push-notifications": "^6",
     "@capacitor/share": "^8.0.1",

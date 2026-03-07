@@ -10,7 +10,13 @@ import SubscriptionPaywall from './components/SubscriptionPaywall';
 import DashboardLayout from './components/layout/DashboardLayout';
 import DevSwitcher from './components/dev/DevSwitcher';
 import ShareUploadModal from './components/ShareUploadModal';
+import NetworkBanner from './components/NetworkBanner';
+import ForceUpdateGate from './components/ForceUpdateGate';
+import { initErrorReporting, reportComponentError } from './utils/errorReporter';
 import { Loader2 } from 'lucide-react';
+
+// Install global error reporting at module load time
+initErrorReporting();
 
 // Eagerly loaded (needed immediately)
 import LoginPage from './pages/LoginPage';
@@ -62,6 +68,9 @@ const PageLoader = () => (
 class RouteErrorBoundary extends React.Component {
   state = { hasError: false };
   static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(error, errorInfo) {
+    reportComponentError(error, errorInfo);
+  }
   render() {
     if (this.state.hasError) {
       return (
@@ -300,10 +309,12 @@ function App() {
   }, []);
 
   return (
+    <ForceUpdateGate>
     <ThemeProvider>
       <AuthProvider>
         <SectionLockProvider>
         <BrowserRouter>
+          <NetworkBanner />
           <AppRoutes />
           <ShareHandler />
           <DevSwitcher />
@@ -327,6 +338,7 @@ function App() {
         </SectionLockProvider>
       </AuthProvider>
     </ThemeProvider>
+    </ForceUpdateGate>
   );
 }
 

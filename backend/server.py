@@ -12,6 +12,7 @@ from fastapi import APIRouter, FastAPI
 from config import client, db, logger
 from middleware import (
     RateLimitMiddleware,
+    RequestTraceMiddleware,
     SecurityHeadersMiddleware,
     configure_cors,
 )
@@ -39,6 +40,7 @@ from routes.support import router as support_router
 from routes.timeline import router as timeline_router
 from routes.transition import router as transition_router
 from routes.webauthn import router as webauthn_router
+from routes.errors import router as errors_router
 from schedulers import daily_dob_check_scheduler, weekly_digest_scheduler
 
 
@@ -84,6 +86,7 @@ async def lifespan(app):
         )
         await db.apple_transactions.create_index("transaction_id", unique=True)
         await db.apple_webhook_log.create_index("received_at")
+        await db.client_errors.create_index("created_at")
         logger.info("Database indexes created/verified")
     except Exception as e:
         logger.warning(f"Index creation warning (may already exist): {e}")
@@ -131,6 +134,7 @@ api_router.include_router(support_router)
 api_router.include_router(timeline_router)
 api_router.include_router(transition_router)
 api_router.include_router(webauthn_router)
+api_router.include_router(errors_router)
 
 
 @api_router.get("/health")
@@ -141,13 +145,19 @@ async def health_check():
         db_status = "connected"
     except Exception:
         db_status = "disconnected"
-    return {"status": "healthy", "database": db_status, "version": "1.0.0"}
+    return {
+        "status": "healthy",
+        "database": db_status,
+        "version": "1.0.0",
+        "min_version": "1.0.0",
+    }
 
 
 app.include_router(api_router)
 
 # ===================== MIDDLEWARE (order: last added = first executed) =====================
 
+app.add_middleware(RequestTraceMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RateLimitMiddleware, max_requests=20, window_seconds=60)
 configure_cors(app)

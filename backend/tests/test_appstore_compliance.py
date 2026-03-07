@@ -137,7 +137,7 @@ class TestAppleReceiptValidation:
         assert response.status_code == 400
         data = response.json()
         assert "Missing transaction_id or product_id" in data["detail"]
-        print(f"Missing transaction_id correctly rejected")
+        print("Missing transaction_id correctly rejected")
 
     def test_validate_apple_receipt_missing_product_id(self, auth_token):
         """Verify rejection when only transaction_id is provided"""
@@ -153,7 +153,7 @@ class TestAppleReceiptValidation:
         assert response.status_code == 400
         data = response.json()
         assert "Missing transaction_id or product_id" in data["detail"]
-        print(f"Missing product_id correctly rejected")
+        print("Missing product_id correctly rejected")
 
     def test_validate_apple_receipt_unknown_product_id(self, auth_token):
         """Verify /api/subscriptions/validate-apple-receipt rejects unknown product IDs"""

@@ -40,6 +40,7 @@ import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
 import { Checkbox } from '../components/ui/checkbox';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -199,6 +200,8 @@ const MessagesPage = () => {
   const [audioUrl, setAudioUrl] = useState(null);
   const audioRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+
+  const { pullProps, PullIndicator } = usePullToRefresh(fetchData);
 
   useEffect(() => {
     fetchData();
@@ -619,7 +622,9 @@ const MessagesPage = () => {
 
   return (
     <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="milestone-messages"
+      {...pullProps}
       style={{ background: 'radial-gradient(ellipse at top left, rgba(139,92,246,0.15), transparent 55%), radial-gradient(ellipse at bottom right, rgba(124,58,237,0.08), transparent 55%)' }}>
+      <PullIndicator />
       {/* Header - matching prototype */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">

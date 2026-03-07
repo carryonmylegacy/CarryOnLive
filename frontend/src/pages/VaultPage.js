@@ -44,6 +44,7 @@ import { SectionLockBanner, SectionLockedOverlay } from '../components/security/
 import { Skeleton } from '../components/ui/skeleton';
 import DocThumbnail from '../components/DocThumbnail';
 import { ReturnPopup } from '../components/GuidedActivation';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 const PDFViewerModal = lazy(() => import('../components/PDFViewerModal'));
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -118,6 +119,8 @@ const VaultPage = () => {
   const [editCategory, setEditCategory] = useState('legal');
   const [editNotes, setEditNotes] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const { pullProps, PullIndicator } = usePullToRefresh(fetchData);
 
   useEffect(() => {
     fetchData();
@@ -597,7 +600,9 @@ const VaultPage = () => {
 
   return (
     <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="document-vault"
+      {...pullProps}
       style={{ background: 'radial-gradient(ellipse at top left, rgba(37,99,235,0.15), transparent 55%), radial-gradient(ellipse at bottom right, rgba(59,130,246,0.08), transparent 55%)' }}>
+      <PullIndicator />
       {/* Header - matching prototype */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">

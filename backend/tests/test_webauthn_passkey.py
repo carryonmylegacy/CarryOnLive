@@ -80,7 +80,7 @@ class TestWebAuthnLoginOptions:
         assert data["rpId"] == "carryon.us"
         assert "userVerification" in data
         assert data["userVerification"] == "required"
-        print(f"✓ Login options without email returned valid challenge")
+        print("✓ Login options without email returned valid challenge")
 
     def test_login_options_with_email(self):
         """WebAuthn login-options returns challenge with email"""
@@ -94,7 +94,7 @@ class TestWebAuthnLoginOptions:
         assert "rpId" in data
         # allowCredentials will be empty if no passkeys registered
         assert "allowCredentials" in data
-        print(f"✓ Login options with email returned valid challenge")
+        print("✓ Login options with email returned valid challenge")
 
     def test_login_options_with_nonexistent_email(self):
         """WebAuthn login-options works with nonexistent email (graceful handling)"""
@@ -154,7 +154,7 @@ class TestWebAuthnRegisterOptions:
         assert data["authenticatorSelection"]["authenticatorAttachment"] == "platform"
         assert data["authenticatorSelection"]["userVerification"] == "required"
 
-        print(f"✓ Register options returned valid configuration for WebAuthn")
+        print("✓ Register options returned valid configuration for WebAuthn")
 
     def test_register_options_without_auth(self):
         """WebAuthn register-options returns 401/403 without authentication"""

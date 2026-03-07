@@ -20,6 +20,7 @@ import EstateSelector from '../components/estate/EstateSelector';
 import TrialBanner from '../components/TrialBanner';
 import OnboardingWizard from '../components/OnboardingWizard';
 import { ActivationCelebration } from '../components/GuidedActivation';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -39,6 +40,12 @@ const DashboardPage = () => {
   const [guidedStep, setGuidedStep] = useState(null);
   const [dashboardReady, setDashboardReady] = useState(false);
   const guidedDismissedRef = useRef(false);
+
+  const refreshAll = async () => {
+    if (estate?.id) await fetchEstateData(estate.id);
+    else await fetchEstates();
+  };
+  const { pullProps, PullIndicator } = usePullToRefresh(refreshAll);
 
   const handleCelebrationDismiss = () => {
     setShowCelebration(false);
@@ -396,10 +403,12 @@ const DashboardPage = () => {
 
   return (
     <div className="p-4 lg:p-8 pt-4 lg:pt-8 pb-24 lg:pb-8" data-testid="benefactor-dashboard"
+      {...pullProps}
       style={{
         opacity: dashboardReady ? 1 : 0,
         transition: 'opacity 0.5s ease',
       }}>
+      <PullIndicator />
       {/* Trial Banner */}
       <div className="mb-4">
         <TrialBanner onUpgrade={() => navigate('/settings')} />
