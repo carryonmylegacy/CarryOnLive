@@ -263,6 +263,8 @@ const Sidebar = () => {
   ];
 
   const getNavSections = () => {
+    // Admin viewing ops portal should see operator nav
+    if (user?.role === 'admin' && window.location.pathname.startsWith('/ops')) return operatorNavSections;
     if (user?.role === 'admin') return adminNavSections;
     if (user?.role === 'operator') return operatorNavSections;
     if (user?.role === 'beneficiary') return beneficiaryNavSections;
@@ -288,6 +290,7 @@ const Sidebar = () => {
 
   const getRoleLabel = () => {
     if (user?.role === 'beneficiary') return 'BENEFICIARY';
+    if (user?.role === 'admin' && window.location.pathname.startsWith('/ops')) return 'OPERATIONS';
     if (user?.role === 'admin') return 'FOUNDER PORTAL';
     if (user?.role === 'operator') return 'OPERATIONS';
     return 'BENEFACTOR PORTAL';
