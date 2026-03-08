@@ -24,9 +24,9 @@ const CondolencePage = () => {
 
   const estateId = localStorage.getItem('beneficiary_estate_id');
 
-  // Show condolence message for 5 seconds, then show tracker
+  // Show condolence message for 20 seconds, then show tracker
   useEffect(() => {
-    const t = setTimeout(() => setShowCondolence(false), 5000);
+    const t = setTimeout(() => setShowCondolence(false), 20000);
     return () => clearTimeout(t);
   }, []);
 

@@ -202,7 +202,15 @@ async def register(data: UserCreate):
     # Check if email already exists
     existing = await db.users.find_one({"email": data.email}, {"_id": 0})
     if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        existing_role = existing.get("role", "")
+        if existing_role == "beneficiary" and data.role == "benefactor":
+            raise HTTPException(
+                status_code=400,
+                detail="This email is already registered as a beneficiary. Please log in with your existing account — you can start your own estate plan from the beneficiary dashboard.",
+            )
+        raise HTTPException(
+            status_code=400, detail="Email already registered. Please log in instead."
+        )
 
     # Validate password — minimum security for sensitive estate data
     if len(data.password) < 8:

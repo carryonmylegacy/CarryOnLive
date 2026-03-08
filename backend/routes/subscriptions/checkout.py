@@ -295,8 +295,8 @@ async def create_subscription_checkout(
         raise HTTPException(status_code=500, detail="Payment service not configured")
 
     origin = validate_origin_url(data.origin_url)
-    success_url = f"{origin}/settings?session_id={{CHECKOUT_SESSION_ID}}"
-    cancel_url = f"{origin}/settings"
+    success_url = f"{origin}/subscription?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{origin}/subscription"
 
     # Use backend's own URL for webhook, not frontend origin
     backend_url = os.environ.get(
