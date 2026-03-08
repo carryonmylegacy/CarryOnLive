@@ -11,6 +11,7 @@
     --bg2: #0F1A2E;
     --bg3: #152238;
     --content-bg: #0B1221;
+    --notification-bg: rgba(15, 26, 46, 0.92);
     
     /* Surface & Border Colors — subtle glass depth */
     --s: rgba(255,255,255,0.04);
@@ -125,6 +126,7 @@
     --bg2: #E8F1FB;
     --bg3: #DAE8F8;
     --content-bg: #F4F9FF;
+    --notification-bg: rgba(232, 241, 251, 0.92);
     
     /* Surface & Border */
     --s: rgba(14,165,233,0.04);

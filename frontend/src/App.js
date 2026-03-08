@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SectionLockProvider } from './components/security/SectionLock';
-import { Toaster } from './components/ui/sonner';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { isNative } from './services/native';
 import SubscriptionPaywall from './components/SubscriptionPaywall';
@@ -11,6 +10,7 @@ import DashboardLayout from './components/layout/DashboardLayout';
 import ShareUploadModal from './components/ShareUploadModal';
 import ForceUpdateGate from './components/ForceUpdateGate';
 import NetworkStatusBanner from './components/NetworkStatusBanner';
+import NotificationContainer from './components/AppNotification';
 import { initErrorReporter, reportError } from './utils/errorReporter';
 import { Loader2 } from 'lucide-react';
 
@@ -339,24 +339,9 @@ function App() {
         <SectionLockProvider>
         <BrowserRouter>
           <NetworkStatusBanner />
+          <NotificationContainer />
           <AppRoutes />
           <ShareHandler />
-          <Toaster 
-            position="bottom-center"
-            offset="calc(10rem + env(safe-area-inset-bottom, 0px))"
-            duration={Infinity}
-            toastOptions={{
-              style: {
-                background: 'var(--bg2)',
-                border: '1px solid rgba(244,63,94,0.3)',
-                color: 'var(--t)',
-                maxWidth: '420px',
-                zIndex: 99999,
-              },
-            }}
-            closeButton={false}
-            style={{ zIndex: 99999 }}
-          />
         </BrowserRouter>
         </SectionLockProvider>
       </AuthProvider>
