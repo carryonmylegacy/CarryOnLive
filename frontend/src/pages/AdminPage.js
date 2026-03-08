@@ -122,7 +122,7 @@ const AdminPage = ({ operatorMode = false }) => {
     } catch { setOtpDisabled(!newVal); }
   };
 
-  if (user?.role !== 'admin') {
+  if (user?.role !== 'admin' && user?.role !== 'operator') {
     return (
       <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 animate-fade-in">
         <Card className="glass-card"><CardContent className="p-12 text-center">
@@ -208,13 +208,13 @@ const AdminPage = ({ operatorMode = false }) => {
           <h3 className="text-sm font-bold text-[#F43F5E] mb-3 uppercase tracking-wider">Needs Your Attention</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
             {[
-              stats.unanswered_support > 0 && { v: stats.unanswered_support, l: 'Unanswered Messages', icon: MessageSquare, color: '#F43F5E', path: '/admin/support' },
-              stats.pending_certificates > 0 && { v: stats.pending_certificates, l: 'Pending Transitions', icon: FileKey, color: '#F59E0B', path: '/admin/transition' },
-              stats.reviewing_certificates > 0 && { v: stats.reviewing_certificates, l: 'Reviewing Certs', icon: FileKey, color: '#FBBF24', path: '/admin/transition' },
-              stats.pending_verifications > 0 && { v: stats.pending_verifications, l: 'Pending Verifications', icon: ShieldCheck, color: '#F97316', path: '/admin/verifications' },
-              stats.pending_dts > 0 && { v: stats.pending_dts, l: 'Pending DTS Tasks', icon: CheckSquare, color: '#8B5CF6', path: '/admin/dts' },
-              stats.pending_family_requests > 0 && { v: stats.pending_family_requests, l: 'Family Plan Requests', icon: Users, color: '#0EA5E9', path: '/admin/subscriptions' },
-              stats.pending_deletions > 0 && { v: stats.pending_deletions, l: 'Deletion Requests', icon: AlertTriangle, color: '#EF4444', path: '/admin/activity' },
+              stats.unanswered_support > 0 && { v: stats.unanswered_support, l: 'Unanswered Messages', icon: MessageSquare, color: '#F43F5E', path: operatorMode ? '/ops/support' : '/admin/support' },
+              stats.pending_certificates > 0 && { v: stats.pending_certificates, l: 'Pending Transitions', icon: FileKey, color: '#F59E0B', path: operatorMode ? '/ops/transition' : '/admin/transition' },
+              stats.reviewing_certificates > 0 && { v: stats.reviewing_certificates, l: 'Reviewing Certs', icon: FileKey, color: '#FBBF24', path: operatorMode ? '/ops/transition' : '/admin/transition' },
+              stats.pending_verifications > 0 && { v: stats.pending_verifications, l: 'Pending Verifications', icon: ShieldCheck, color: '#F97316', path: operatorMode ? '/ops/verifications' : '/admin/verifications' },
+              stats.pending_dts > 0 && { v: stats.pending_dts, l: 'Pending DTS Tasks', icon: CheckSquare, color: '#8B5CF6', path: operatorMode ? '/ops/dts' : '/admin/dts' },
+              !operatorMode && stats.pending_family_requests > 0 && { v: stats.pending_family_requests, l: 'Family Plan Requests', icon: Users, color: '#0EA5E9', path: '/admin/subscriptions' },
+              !operatorMode && stats.pending_deletions > 0 && { v: stats.pending_deletions, l: 'Deletion Requests', icon: AlertTriangle, color: '#EF4444', path: '/admin/activity' },
             ].filter(Boolean).map(s => (
               <div key={s.l} className="rounded-xl p-3 text-center cursor-pointer active:scale-[0.96] transition-transform"
                 style={{ background: `${s.color}10`, border: `1px solid ${s.color}20` }}

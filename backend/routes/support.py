@@ -40,7 +40,7 @@ async def send_support_message(
     # For users, conversation_id is their user_id
     # For admins responding, they provide the conversation_id (user's id)
 
-    if current_user["role"] == "admin":
+    if current_user["role"] in ("admin", "operator"):
         if not data.conversation_id:
             raise HTTPException(
                 status_code=400, detail="Conversation ID required for admin responses"
@@ -54,7 +54,7 @@ async def send_support_message(
         "conversation_id": conversation_id,
         "sender_id": current_user["id"],
         "sender_name": current_user.get("name", current_user.get("email", "User")),
-        "sender_role": current_user["role"],
+        "sender_role": "admin" if current_user["role"] in ("admin", "operator") else current_user["role"],
         "content": data.content,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "read": False,
@@ -63,7 +63,7 @@ async def send_support_message(
     await db.support_messages.insert_one(message)
 
     # Send push notification
-    if current_user["role"] == "admin":
+    if current_user["role"] in ("admin", "operator"):
         # Admin sent message -> notify user
         asyncio.create_task(
             send_push_notification(
@@ -112,8 +112,8 @@ async def get_my_support_messages(current_user: dict = Depends(get_current_user)
 async def get_conversation_messages(
     conversation_id: str, current_user: dict = Depends(get_current_user)
 ):
-    """Admin: Get messages for a specific conversation"""
-    if current_user["role"] != "admin":
+    """Admin/Operator: Get messages for a specific conversation"""
+    if current_user["role"] not in ("admin", "operator"):
         raise HTTPException(status_code=403, detail="Admin access required")
 
     messages = (
@@ -136,13 +136,26 @@ async def get_conversation_messages(
 
 
 @router.get("/support/conversations")
-async def get_all_conversations(current_user: dict = Depends(get_current_user)):
-    """Admin: Get all support conversations with latest message"""
-    if current_user["role"] != "admin":
+async def get_all_conversations(
+    include_deleted: bool = False,
+    current_user: dict = Depends(get_current_user)
+):
+    """Admin: Get all support conversations with latest message.
+    include_deleted=true shows soft-deleted conversations (founder only)."""
+    if current_user["role"] not in ("admin", "operator"):
         raise HTTPException(status_code=403, detail="Admin access required")
+
+    # Build match stage — exclude soft-deleted unless founder requests them
+    match_stage = {}
+    if include_deleted and current_user["role"] == "admin":
+        # Founder sees everything, including deleted
+        pass
+    else:
+        match_stage["soft_deleted"] = {"$ne": True}
 
     # Get unique conversation IDs and their latest messages
     pipeline = [
+        {"$match": match_stage},
         {"$sort": {"created_at": -1}},
         {
             "$group": {
@@ -151,6 +164,9 @@ async def get_all_conversations(current_user: dict = Depends(get_current_user)):
                 "latest_time": {"$first": "$created_at"},
                 "sender_name": {"$first": "$sender_name"},
                 "sender_role": {"$first": "$sender_role"},
+                "soft_deleted": {"$first": {"$ifNull": ["$soft_deleted", False]}},
+                "deleted_at": {"$first": "$deleted_at"},
+                "deleted_by": {"$first": "$deleted_by"},
                 "unread_count": {
                     "$sum": {
                         "$cond": [
@@ -190,6 +206,8 @@ async def get_all_conversations(current_user: dict = Depends(get_current_user)):
                 "latest_time": conv["latest_time"],
                 "sender_role": conv["sender_role"],
                 "unread_count": conv["unread_count"],
+                "soft_deleted": conv.get("soft_deleted", False),
+                "deleted_at": conv.get("deleted_at"),
             }
         )
 
@@ -199,8 +217,8 @@ async def get_all_conversations(current_user: dict = Depends(get_current_user)):
 @router.get("/support/unread-count")
 async def get_unread_support_count(current_user: dict = Depends(get_current_user)):
     """Get count of unread support messages"""
-    if current_user["role"] == "admin":
-        # Admin sees unread from users
+    if current_user["role"] in ("admin", "operator"):
+        # Staff sees unread from users
         count = await db.support_messages.count_documents(
             {"sender_role": {"$ne": "admin"}, "read": False}
         )
@@ -220,8 +238,33 @@ async def get_unread_support_count(current_user: dict = Depends(get_current_user
 async def delete_support_conversation(
     conversation_id: str, current_user: dict = Depends(get_current_user)
 ):
-    """Delete all messages in a support conversation — admin only."""
+    """Soft-delete all messages in a support conversation — admin/operator."""
+    if current_user["role"] not in ("admin", "operator"):
+        raise HTTPException(status_code=403, detail="Admin or operator only")
+    # Soft-delete: mark messages as deleted instead of removing them
+    await db.support_messages.update_many(
+        {"conversation_id": conversation_id},
+        {"$set": {
+            "soft_deleted": True,
+            "deleted_at": datetime.now(timezone.utc).isoformat(),
+            "deleted_by": current_user["id"],
+            "deleted_by_role": current_user["role"],
+        }}
+    )
+    return {"soft_deleted": True, "conversation_id": conversation_id}
+
+
+@router.post("/admin/support/conversation/{conversation_id}/restore")
+async def restore_support_conversation(
+    conversation_id: str, current_user: dict = Depends(get_current_user)
+):
+    """Restore a soft-deleted support conversation — founder (admin) only."""
     if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin only")
-    result = await db.support_messages.delete_many({"conversation_id": conversation_id})
-    return {"deleted": result.deleted_count}
+        raise HTTPException(status_code=403, detail="Only the Founder can restore deleted items")
+    result = await db.support_messages.update_many(
+        {"conversation_id": conversation_id, "soft_deleted": True},
+        {"$unset": {"soft_deleted": "", "deleted_at": "", "deleted_by": "", "deleted_by_role": ""}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="No deleted conversation found")
+    return {"restored": True, "conversation_id": conversation_id}

@@ -87,13 +87,20 @@ async def get_verification_status(current_user: dict = Depends(get_current_user)
 
 
 @router.get("/admin/verifications")
-async def get_all_verifications(current_user: dict = Depends(get_current_user)):
-    """Get all verification requests (admin only)"""
-    if current_user.get("role") != "admin":
+async def get_all_verifications(
+    include_deleted: bool = False,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get all verification requests (admin/operator)"""
+    if current_user.get("role") not in ("admin", "operator"):
         raise HTTPException(status_code=403, detail="Admin access required")
 
+    query = {}
+    if not (include_deleted and current_user.get("role") == "admin"):
+        query["soft_deleted"] = {"$ne": True}
+
     verifications = (
-        await db.tier_verifications.find({}, {"_id": 0, "file_data": 0})
+        await db.tier_verifications.find(query, {"_id": 0, "file_data": 0})
         .sort("submitted_at", -1)
         .to_list(200)
     )
@@ -128,8 +135,8 @@ async def review_verification(
     data: VerificationReviewRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    """Approve or deny a verification request (admin only)"""
-    if current_user.get("role") != "admin":
+    """Approve or deny a verification request (admin/operator)"""
+    if current_user.get("role") not in ("admin", "operator"):
         raise HTTPException(status_code=403, detail="Admin access required")
 
     if data.action not in ["approve", "deny"]:
@@ -268,6 +275,52 @@ async def notify_benefactor_verified(
         "success": True,
         "message": f"Notification sent to {verification.get('user_name', verification.get('user_email', ''))}",
     }
+
+
+@router.delete("/admin/verifications/{verification_id}")
+async def delete_verification(
+    verification_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Soft-delete a verification request — admin/operator."""
+    if current_user.get("role") not in ("admin", "operator"):
+        raise HTTPException(status_code=403, detail="Admin or operator only")
+
+    verification = await db.tier_verifications.find_one(
+        {"id": verification_id}, {"_id": 0}
+    )
+    if not verification:
+        raise HTTPException(status_code=404, detail="Verification not found")
+
+    await db.tier_verifications.update_one(
+        {"id": verification_id},
+        {"$set": {
+            "soft_deleted": True,
+            "deleted_at": datetime.now(timezone.utc).isoformat(),
+            "deleted_by": current_user["id"],
+            "deleted_by_role": current_user.get("role"),
+        }}
+    )
+    return {"soft_deleted": True, "verification_id": verification_id}
+
+
+@router.post("/admin/verifications/{verification_id}/restore")
+async def restore_verification(
+    verification_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Restore a soft-deleted verification — founder (admin) only."""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Only the Founder can restore deleted items")
+
+    result = await db.tier_verifications.update_one(
+        {"id": verification_id, "soft_deleted": True},
+        {"$unset": {"soft_deleted": "", "deleted_at": "", "deleted_by": "", "deleted_by_role": ""}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="No deleted verification found")
+    return {"restored": True, "verification_id": verification_id}
+
 
 
 @router.get("/admin/subscription-stats")

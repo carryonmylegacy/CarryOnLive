@@ -54,6 +54,8 @@ const SettingsPage = () => {
   const [passkeyLoading, setPasskeyLoading] = useState(false);
 
   const isAdmin = user?.role === 'admin';
+  const isOperator = user?.role === 'operator';
+  const isStaff = isAdmin || isOperator;
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem('carryon_token');
@@ -292,7 +294,7 @@ const SettingsPage = () => {
               <option value="15">15 min</option>
             </select>
           </div>
-          {!isAdmin && (
+          {!isStaff && (
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="text-[var(--t)] font-medium">Getting Started Guide</h4>
@@ -319,7 +321,8 @@ const SettingsPage = () => {
         </CardContent>
       </Card>
 
-      {/* Notifications */}
+      {/* Notifications — benefactor/beneficiary only */}
+      {!isStaff && (
       <Card className="glass-card">
         <CardHeader>
           <CardTitle className="text-[var(--t)] flex items-center gap-2">
@@ -375,6 +378,7 @@ const SettingsPage = () => {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Security */}
       <Card className="glass-card">
@@ -408,7 +412,8 @@ const SettingsPage = () => {
         </CardContent>
       </Card>
 
-      {/* Privacy & Data Rights (GDPR) */}
+      {/* Privacy & Data Rights (GDPR) — benefactor/beneficiary only */}
+      {!isStaff && (<>
       <Card className="glass-card" data-testid="gdpr-settings">
         <CardHeader>
           <CardTitle className="text-[var(--t)] flex items-center gap-2">
@@ -620,6 +625,7 @@ const SettingsPage = () => {
           </div>
         </div>
       )}
+      </>)}
 
       {/* Sign Out */}
       <Card className="glass-card border-[#ef4444]/20">
