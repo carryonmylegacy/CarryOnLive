@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FileKey, CheckCircle2, Eye, XCircle, Loader2, AlertTriangle, Search, X, Trash2 } from 'lucide-react';
+import { FileKey, CheckCircle2, Eye, XCircle, Loader2, AlertTriangle, Search, X, Trash2, EyeOff } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { toast } from '../../utils/toast';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -14,6 +16,10 @@ export const TransitionTab = ({ getAuthHeaders }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewingDoc, setViewingDoc] = useState(null);
   const [docLoading, setDocLoading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [showDeletePassword, setShowDeletePassword] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     fetchCertificates();
@@ -85,18 +91,19 @@ export const TransitionTab = ({ getAuthHeaders }) => {
     finally { setActionLoading(null); }
   };
 
-  const handleDeleteCert = async (certId) => {
-    const password = window.prompt('Enter your admin password to delete this certificate and reverse the transition:');
-    if (!password) return;
-    setActionLoading(certId);
+  const handleDeleteCert = async () => {
+    if (!deleteTarget || !deletePassword) return;
+    setDeleteLoading(true);
     try {
-      await axios.delete(`${API_URL}/transition/certificates/${certId}?admin_password=${encodeURIComponent(password)}`, getAuthHeaders());
+      await axios.delete(`${API_URL}/transition/certificates/${deleteTarget.id}?admin_password=${encodeURIComponent(deletePassword)}`, getAuthHeaders());
       toast.success('Certificate deleted — transition reversed');
+      setDeleteTarget(null);
+      setDeletePassword('');
       fetchCertificates();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to delete');
     }
-    finally { setActionLoading(null); }
+    finally { setDeleteLoading(false); }
   };
 
 
@@ -169,6 +176,10 @@ export const TransitionTab = ({ getAuthHeaders }) => {
                       onClick={() => viewDocument(cert)} disabled={docLoading} data-testid={`view-cert-${cert.id}`}>
                       {docLoading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Eye className="w-3 h-3 mr-1" />} View Document
                     </Button>
+                    <Button size="sm" variant="outline" className="text-xs border-[var(--rd)]/30 text-[var(--rd)]"
+                      onClick={() => setDeleteTarget(cert)}>
+                      <Trash2 className="w-3 h-3 mr-1" /> Delete
+                    </Button>
                   </div>
                 )}
                 {cert.status === 'reviewing' && (
@@ -185,6 +196,10 @@ export const TransitionTab = ({ getAuthHeaders }) => {
                       onClick={() => viewDocument(cert)} disabled={docLoading} data-testid={`view-cert-${cert.id}`}>
                       {docLoading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Eye className="w-3 h-3 mr-1" />} View Document
                     </Button>
+                    <Button size="sm" variant="outline" className="text-xs border-[var(--rd)]/30 text-[var(--rd)]"
+                      onClick={() => setDeleteTarget(cert)}>
+                      <Trash2 className="w-3 h-3 mr-1" /> Delete
+                    </Button>
                   </div>
                 )}
                 {(cert.status === 'rejected' || cert.status === 'approved') && (
@@ -194,7 +209,7 @@ export const TransitionTab = ({ getAuthHeaders }) => {
                       {docLoading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Eye className="w-3 h-3 mr-1" />} View Document
                     </Button>
                     <Button size="sm" variant="outline" className="text-xs border-[var(--rd)]/30 text-[var(--rd)]"
-                      onClick={() => handleDeleteCert(cert.id)} disabled={actionLoading === cert.id}>
+                      onClick={() => setDeleteTarget(cert)}>
                       <Trash2 className="w-3 h-3 mr-1" /> Delete
                     </Button>
                   </div>
@@ -245,6 +260,60 @@ export const TransitionTab = ({ getAuthHeaders }) => {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) { setDeleteTarget(null); setDeletePassword(''); setShowDeletePassword(false); } }}>
+        <DialogContent className="glass-card border-[var(--rd)]/30 max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-[var(--t)] flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-[var(--rd)]" />
+              Delete Certificate
+            </DialogTitle>
+            <DialogDescription className="text-[var(--t4)]">
+              {deleteTarget?.status === 'approved'
+                ? 'This will reverse the transition — the benefactor account will be unlocked and all delivered messages will be undelivered.'
+                : 'This will permanently delete this death certificate submission.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div>
+              <label className="text-xs text-[var(--t4)] mb-1 block">Enter your admin password to confirm</label>
+              <div className="relative">
+                <Input
+                  type={showDeletePassword ? 'text' : 'password'}
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  placeholder="Admin password"
+                  className="bg-[var(--s)] border-[var(--b)] text-[var(--t)] pr-10"
+                  data-testid="delete-cert-password"
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowDeletePassword(!showDeletePassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]"
+                >
+                  {showDeletePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1 border-[var(--b)] text-[var(--t)]" onClick={() => { setDeleteTarget(null); setDeletePassword(''); }}>
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-[var(--rd)] hover:bg-[var(--rd)]/90 text-white"
+                disabled={!deletePassword || deleteLoading}
+                onClick={handleDeleteCert}
+                data-testid="confirm-delete-cert"
+              >
+                {deleteLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Trash2 className="w-4 h-4 mr-1" />}
+                Delete
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

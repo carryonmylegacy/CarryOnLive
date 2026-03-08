@@ -531,17 +531,33 @@ async def delete_user(
     estate_ids = [e["id"] for e in estates]
 
     if estate_ids:
-        # Delete beneficiaries, documents, messages tied to these estates
+        # Delete ALL data tied to these estates
         await db.beneficiaries.delete_many({"estate_id": {"$in": estate_ids}})
         await db.documents.delete_many({"estate_id": {"$in": estate_ids}})
         await db.messages.delete_many({"estate_id": {"$in": estate_ids}})
         await db.checklists.delete_many({"estate_id": {"$in": estate_ids}})
+        await db.death_certificates.delete_many({"estate_id": {"$in": estate_ids}})
+        await db.chat_history.delete_many({"estate_id": {"$in": estate_ids}})
+        await db.milestone_reports.delete_many({"estate_id": {"$in": estate_ids}})
+        await db.digital_credentials.delete_many({"estate_id": {"$in": estate_ids}})
+        await db.section_permissions.delete_many({"estate_id": {"$in": estate_ids}})
+        await db.beneficiary_display_overrides.delete_many(
+            {"estate_id": {"$in": estate_ids}}
+        )
+        await db.beneficiary_grace_periods.delete_many(
+            {"estate_id": {"$in": estate_ids}}
+        )
+        await db.apple_transactions.delete_many({"user_id": user_id})
         await db.estates.delete_many({"id": {"$in": estate_ids}})
 
     # Delete user's subscription, sessions, and other user-keyed data
     await db.user_subscriptions.delete_many({"user_id": user_id})
     await db.ai_feedback.delete_many({"user_id": user_id})
     await db.dts_tasks.delete_many({"user_id": user_id})
+    await db.support_chats.delete_many({"user_id": user_id})
+    await db.onboarding_progress.delete_many({"user_id": user_id})
+    await db.client_errors.delete_many({"user_id": user_id})
+    await db.webauthn_credentials.delete_many({"user_id": user_id})
 
     # Finally delete the user
     await db.users.delete_one({"id": user_id})
