@@ -42,7 +42,7 @@ class UserCreate(BaseModel):
 
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    email: str  # Can be email or username (operators use non-email usernames)
     password: str
     otp_method: str = "email"  # "email" or "sms"
     phone: Optional[str] = None  # Required if otp_method is "sms"
@@ -61,6 +61,7 @@ class UserResponse(BaseModel):
     role: str
     created_at: str
     photo_url: str = ""
+    operator_role: str = ""
 
 
 class TokenResponse(BaseModel):

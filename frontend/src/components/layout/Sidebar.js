@@ -247,6 +247,7 @@ const Sidebar = () => {
         { to: '/admin/system-health', icon: HeartPulse, label: 'System Health' },
         { to: '/admin/escalations', icon: AlertTriangle, label: 'Escalations' },
         { to: '/admin/knowledge-base', icon: BookOpen, label: 'Knowledge Base' },
+        { to: '/admin/p1-settings', icon: Shield, label: 'P1 Contact Settings' },
       ]
     }
   ];
@@ -260,6 +261,10 @@ const Sidebar = () => {
         { to: '/ops/escalations', icon: AlertTriangle, label: 'Escalate' },
         { to: '/ops/shift-notes', icon: StickyNote, label: 'Shift Notes' },
         { to: '/ops/knowledge-base', icon: BookOpen, label: 'SOPs' },
+        // Managers get team management
+        ...(user?.operator_role === 'manager' ? [
+          { to: '/ops/operators', icon: Users, label: 'Team' },
+        ] : []),
       ]
     }
   ];
@@ -294,6 +299,7 @@ const Sidebar = () => {
     if (user?.role === 'beneficiary') return 'BENEFICIARY';
     if (user?.role === 'admin' && window.location.pathname.startsWith('/ops')) return 'OPERATIONS';
     if (user?.role === 'admin') return 'FOUNDER PORTAL';
+    if (user?.role === 'operator' && user?.operator_role === 'manager') return 'OPS MANAGER';
     if (user?.role === 'operator') return 'OPERATIONS';
     return 'BENEFACTOR PORTAL';
   };

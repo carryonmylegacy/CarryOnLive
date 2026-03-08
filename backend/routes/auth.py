@@ -120,6 +120,22 @@ async def login(data: UserLogin, request: Request):
     # Clear failed attempts on successful login
     await db.failed_logins.delete_many({"email": data.email})
 
+    # Check for transitioned benefactor accounts (sealed)
+    if user.get("role") == "benefactor":
+        estates = await db.estates.find(
+            {"owner_id": user["id"]}, {"_id": 0, "status": 1, "transitioned_at": 1}
+        ).to_list(10)
+        transitioned_estate = next(
+            (e for e in estates if e.get("status") == "transitioned"), None
+        )
+        if transitioned_estate:
+            # Return sealed flag — frontend shows locked screen
+            return {
+                "sealed": True,
+                "transitioned_at": transitioned_estate.get("transitioned_at", ""),
+                "message": "This account has been transitioned and is immutably sealed.",
+            }
+
     # Operators use their contact_email for OTP (not their username)
     if user.get("role") == "operator":
         otp_email = user.get("contact_email", "")
@@ -147,6 +163,7 @@ async def login(data: UserLogin, request: Request):
                     name=user["name"],
                     role=user["role"],
                     created_at=user["created_at"],
+                    operator_role=user.get("operator_role", ""),
                 ),
             )
         # Has contact_email — use it for OTP (override the login email for OTP sending)
@@ -171,6 +188,7 @@ async def login(data: UserLogin, request: Request):
                         name=user["name"],
                         role=user["role"],
                         created_at=user["created_at"],
+                        operator_role=user.get("operator_role", ""),
                     ),
                 )
         except (ValueError, TypeError):
@@ -196,6 +214,7 @@ async def login(data: UserLogin, request: Request):
                 name=user["name"],
                 role=user["role"],
                 created_at=user["created_at"],
+                operator_role=user.get("operator_role", ""),
             ),
         )
 
@@ -795,6 +814,7 @@ async def verify_otp(data: OTPVerifyWithTrust, request: Request):
             name=user["name"],
             role=user["role"],
             created_at=user["created_at"],
+            operator_role=user.get("operator_role", ""),
         ),
     )
 
@@ -822,6 +842,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         role=current_user["role"],
         created_at=current_user["created_at"],
         photo_url=photo or "",
+        operator_role=current_user.get("operator_role", ""),
     )
 
 
@@ -919,6 +940,7 @@ async def dev_login(data: UserLogin, request: Request):
             name=user["name"],
             role=user["role"],
             created_at=user["created_at"],
+            operator_role=user.get("operator_role", ""),
         ),
     )
 
@@ -992,5 +1014,6 @@ async def dev_switch(data: DevSwitchRequest, request: Request):
             name=user["name"],
             role=user["role"],
             created_at=user["created_at"],
+            operator_role=user.get("operator_role", ""),
         ),
     )

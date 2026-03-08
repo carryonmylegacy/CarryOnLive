@@ -70,6 +70,10 @@ export const AuthProvider = ({ children }) => {
     }
     const response = await axios.post(`${API_URL}/auth/login`, payload);
     const data = response.data;
+    // Sealed account — transitioned benefactor
+    if (data.sealed) {
+      return { sealed: true, transitioned_at: data.transitioned_at };
+    }
     // Direct login (OTP disabled) — token returned immediately
     if (data.access_token) {
       localStorage.setItem('carryon_token', data.access_token);

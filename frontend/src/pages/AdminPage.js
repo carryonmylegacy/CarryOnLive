@@ -32,6 +32,7 @@ import { QuickSearchTab } from '../components/admin/QuickSearchTab';
 import { EscalationsTab } from '../components/admin/EscalationsTab';
 import { ShiftNotesTab } from '../components/admin/ShiftNotesTab';
 import { KnowledgeBaseTab } from '../components/admin/KnowledgeBaseTab';
+import { P1ContactSettingsTab } from '../components/admin/P1ContactSettingsTab';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -53,6 +54,7 @@ const TAB_CONFIG = [
   { key: 'system-health', label: 'System Health', icon: HeartPulse, path: '/admin/system-health' },
   { key: 'escalations', label: 'Escalations', icon: AlertTriangle, path: '/admin/escalations' },
   { key: 'knowledge-base', label: 'Knowledge Base', icon: BookOpen, path: '/admin/knowledge-base' },
+  { key: 'p1-settings', label: 'P1 Contact', icon: AlertTriangle, path: '/admin/p1-settings' },
   // Operator sidebar features
   { key: 'my-activity', label: 'My Activity', icon: Clock, path: '/ops/my-activity' },
   { key: 'search', label: 'Search', icon: Search, path: '/ops/search' },
@@ -82,11 +84,13 @@ const PATH_TO_TAB = {
   '/admin/system-health': 'system-health',
   '/admin/escalations': 'escalations',
   '/admin/knowledge-base': 'knowledge-base',
+  '/admin/p1-settings': 'p1-settings',
   '/ops/my-activity': 'my-activity',
   '/ops/search': 'search',
   '/ops/escalations': 'ops-escalations',
   '/ops/shift-notes': 'shift-notes',
   '/ops/knowledge-base': 'ops-kb',
+  '/ops/operators': 'operators',
 };
 
 const AdminPage = ({ operatorMode = false }) => {
@@ -403,7 +407,10 @@ const AdminPage = ({ operatorMode = false }) => {
         {TAB_CONFIG.filter(t => {
           if (operatorMode) {
             // Operators: work queues + operator tools
-            return ['transition', 'dts', 'support', 'verifications', 'my-activity', 'search', 'ops-escalations', 'shift-notes', 'ops-kb'].includes(t.key);
+            const opsTabs = ['transition', 'dts', 'support', 'verifications', 'my-activity', 'search', 'ops-escalations', 'shift-notes', 'ops-kb'];
+            // Managers also get team management
+            if (user?.operator_role === 'manager') opsTabs.push('operators');
+            return opsTabs.includes(t.key);
           }
           // Founder: all except operator-specific tabs
           return !['my-activity', 'search', 'ops-escalations', 'shift-notes', 'ops-kb'].includes(t.key);
@@ -427,7 +434,7 @@ const AdminPage = ({ operatorMode = false }) => {
       {tab === 'analytics' && <AnalyticsTab getAuthHeaders={getAuthHeaders} />}
       {tab === 'launch' && <LaunchMetricsTab getAuthHeaders={getAuthHeaders} />}
       {tab === 'activity' && <ActivityTab getAuthHeaders={getAuthHeaders} />}
-      {tab === 'operators' && !operatorMode && <OperatorsTab getAuthHeaders={getAuthHeaders} />}
+      {tab === 'operators' && (!operatorMode || user?.operator_role === 'manager') && <OperatorsTab getAuthHeaders={getAuthHeaders} />}
       {tab === 'audit' && !operatorMode && <AuditTrailTab getAuthHeaders={getAuthHeaders} />}
       {tab === 'dev-switcher' && !operatorMode && <DevSwitcherTab users={users} getAuthHeaders={getAuthHeaders} />}
       {/* New Founder features */}
@@ -435,6 +442,7 @@ const AdminPage = ({ operatorMode = false }) => {
       {tab === 'system-health' && !operatorMode && <SystemHealthTab getAuthHeaders={getAuthHeaders} />}
       {tab === 'escalations' && !operatorMode && <EscalationsTab getAuthHeaders={getAuthHeaders} isFounder={true} />}
       {tab === 'knowledge-base' && !operatorMode && <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={true} />}
+      {tab === 'p1-settings' && !operatorMode && <P1ContactSettingsTab getAuthHeaders={getAuthHeaders} />}
       {/* New Operator features */}
       {tab === 'my-activity' && operatorMode && <MyActivityTab getAuthHeaders={getAuthHeaders} />}
       {tab === 'search' && operatorMode && <QuickSearchTab getAuthHeaders={getAuthHeaders} />}

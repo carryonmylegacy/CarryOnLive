@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { toast } from '../utils/toast';
 import { isNative } from '../services/native';
+import SealedAccountScreen from '../components/SealedAccountScreen';
 import { haptics } from '../utils/haptics';
 
 /* ─── scroll-reveal hook ─── */
@@ -56,6 +57,7 @@ const LoginPage = () => {
   const [pendingLoginResult, setPendingLoginResult] = useState(null);
   const [passkeyAvailable, setPasskeyAvailable] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
+  const [sealedAccount, setSealedAccount] = useState(null);
 
   const navigateWithFade = (path) => {
     setExiting(true);
@@ -128,6 +130,10 @@ const LoginPage = () => {
     setLoading(true);
     try {
       const result = await login(email, password);
+      if (result.sealed) {
+        setSealedAccount({ transitionedAt: result.transitioned_at });
+        return;
+      }
       if (result.direct) {
         await completeLogin(result);
       } else {
@@ -200,6 +206,16 @@ const LoginPage = () => {
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#0B1221' }}>
         <img src="/carryon-logo.jpg" alt="CarryOn" className="w-32 h-auto opacity-60" />
       </div>
+    );
+  }
+
+  // Sealed account — transitioned benefactor
+  if (sealedAccount) {
+    return (
+      <SealedAccountScreen
+        transitionedAt={sealedAccount.transitionedAt}
+        onBack={() => setSealedAccount(null)}
+      />
     );
   }
 
