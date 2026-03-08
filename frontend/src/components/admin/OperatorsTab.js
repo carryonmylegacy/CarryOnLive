@@ -13,7 +13,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
   const [operators, setOperators] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ email: '', password: '', name: '' });
+  const [form, setForm] = useState({ username: '', password: '', name: '' });
   const [creating, setCreating] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deletePassword, setDeletePassword] = useState('');
@@ -32,13 +32,13 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
   useEffect(() => { fetchOperators(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCreate = async () => {
-    if (!form.email || !form.password || !form.name) { toast.error('All fields required'); return; }
+    if (!form.username || !form.password || !form.name) { toast.error('All fields required'); return; }
     setCreating(true);
     try {
       await axios.post(`${API_URL}/founder/operators`, form, getAuthHeaders());
       toast.success('Operator account created');
       setShowCreate(false);
-      setForm({ email: '', password: '', name: '' });
+      setForm({ username: '', password: '', name: '' });
       fetchOperators();
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed'); }
     finally { setCreating(false); }
@@ -82,7 +82,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
                   </div>
                   <div>
                     <p className="text-sm font-bold text-[var(--t)]">{op.name}</p>
-                    <p className="text-xs text-[var(--t5)]">{op.email}</p>
+                    <p className="text-xs text-[var(--t5)]">Username: {op.email}</p>
                     <p className="text-[10px] text-[var(--t5)]">Created: {new Date(op.created_at).toLocaleDateString()}</p>
                   </div>
                 </div>
@@ -103,7 +103,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
           <div className="space-y-3 pt-2">
             <Input placeholder="Full name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
               className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" />
-            <Input placeholder="Email" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
+            <Input placeholder="Username (any format)" value={form.username} onChange={e => setForm({ ...form, username: e.target.value })}
               className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" />
             <div className="relative">
               <Input placeholder="Password" type={showFormPassword ? 'text' : 'password'} value={form.password}
@@ -126,7 +126,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
       <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) { setDeleteTarget(null); setDeletePassword(''); } }}>
         <DialogContent className="glass-card border-[var(--rd)]/30 max-w-md">
           <DialogHeader><DialogTitle className="text-[var(--t)]">Remove Operator</DialogTitle></DialogHeader>
-          <p className="text-sm text-[var(--t4)]">Remove <strong>{deleteTarget?.name}</strong> ({deleteTarget?.email})? Enter your password to confirm.</p>
+          <p className="text-sm text-[var(--t4)]">Remove <strong>{deleteTarget?.name}</strong> (username: {deleteTarget?.email})? Enter your password to confirm.</p>
           <div className="relative mt-2">
             <Input type={showDeletePassword ? 'text' : 'password'} value={deletePassword}
               onChange={e => setDeletePassword(e.target.value)} placeholder="Your password"
