@@ -482,17 +482,50 @@ async def report_milestone(
             seen.add(msg["id"])
             unique_messages.append(msg)
 
+    # Create pending delivery records for worker review (NOT auto-deliver)
+    deliveries_created = []
     for msg in unique_messages:
-        await db.messages.update_one(
-            {"id": msg["id"]},
-            {
-                "$set": {
-                    "is_delivered": True,
-                    "delivered_at": datetime.now(timezone.utc).isoformat(),
-                    "delivered_via": "milestone_report",
-                    "milestone_report_id": report.id,
-                }
-            },
-        )
+        delivery = {
+            "id": str(uuid.uuid4()),
+            "milestone_report_id": report.id,
+            "estate_id": data.estate_id,
+            "message_id": msg["id"],
+            "message_title": msg.get("title", ""),
+            "beneficiary_id": current_user["id"],
+            "beneficiary_name": current_user.get("name", ""),
+            "event_type": data.event_type,
+            "event_description": data.event_description,
+            "event_date": data.event_date,
+            "status": "pending_review",  # pending_review, approved, rejected
+            "reviewed_by": None,
+            "reviewed_at": None,
+            "review_notes": None,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await db.milestone_deliveries.insert_one(delivery)
+        deliveries_created.append(delivery["id"])
 
-    return {"id": report.id, "messages_delivered": len(unique_messages)}
+    # NOTIFICATION: Notify all staff about pending milestone review
+    if unique_messages:
+        from services.notifications import notify
+        import asyncio
+        asyncio.create_task(notify.all_staff(
+            "Milestone Review Required",
+            f"{current_user.get('name', 'Beneficiary')} reported a milestone ({data.event_type}). "
+            f"{len(unique_messages)} matching message(s) found — worker review required before delivery.",
+            url="/ops/milestones",
+            priority="normal",
+            metadata={
+                "report_id": report.id,
+                "event_type": data.event_type,
+                "matches": len(unique_messages),
+            },
+        ))
+
+    return {
+        "id": report.id,
+        "matches_found": len(unique_messages),
+        "pending_review": len(deliveries_created),
+        "message": f"{len(unique_messages)} matching message(s) found. A CarryOn team member will review and deliver them shortly."
+        if unique_messages else "Milestone recorded. No matching messages found at this time.",
+    }

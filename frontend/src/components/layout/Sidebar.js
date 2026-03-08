@@ -30,7 +30,8 @@ import {
   AlertTriangle,
   BookOpen,
   Search,
-  StickyNote
+  StickyNote,
+  Gift
 } from 'lucide-react';
 import { Switch } from '../ui/switch';
 import { toast } from '../../utils/toast';
@@ -266,6 +267,7 @@ const Sidebar = () => {
         { to: '/ops/search', icon: Search, label: 'Quick Search' },
         { to: '/ops/escalations', icon: AlertTriangle, label: 'Escalate' },
         { to: '/ops/shift-notes', icon: StickyNote, label: 'Shift Notes' },
+        { to: '/ops/milestones', icon: Gift, label: 'Milestones' },
         { to: '/ops/knowledge-base', icon: BookOpen, label: 'SOPs' },
       ]
     }

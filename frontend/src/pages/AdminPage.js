@@ -34,6 +34,7 @@ import { ShiftNotesTab } from '../components/admin/ShiftNotesTab';
 import { KnowledgeBaseTab } from '../components/admin/KnowledgeBaseTab';
 import { P1ContactSettingsTab } from '../components/admin/P1ContactSettingsTab';
 import { OpsDashboardTab } from '../components/admin/OpsDashboardTab';
+import { MilestoneDeliveriesTab } from '../components/admin/MilestoneDeliveriesTab';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -57,6 +58,7 @@ const TAB_CONFIG = [
   { key: 'knowledge-base', label: 'Knowledge Base', icon: BookOpen, path: '/admin/knowledge-base' },
   { key: 'p1-settings', label: 'P1 Contact', icon: AlertTriangle, path: '/admin/p1-settings' },
   { key: 'ops-dashboard', label: 'Ops Dashboard', icon: Activity, path: '/admin/ops-dashboard' },
+  { key: 'milestones', label: 'Milestones', icon: CheckSquare, path: '/admin/milestones' },
   // Operator sidebar features
   { key: 'my-activity', label: 'My Activity', icon: Clock, path: '/ops/my-activity' },
   { key: 'search', label: 'Search', icon: Search, path: '/ops/search' },
@@ -88,6 +90,7 @@ const PATH_TO_TAB = {
   '/admin/knowledge-base': 'knowledge-base',
   '/admin/p1-settings': 'p1-settings',
   '/admin/ops-dashboard': 'ops-dashboard',
+  '/admin/milestones': 'milestones',
   '/ops/my-activity': 'my-activity',
   '/ops/search': 'search',
   '/ops/escalations': 'ops-escalations',
@@ -96,6 +99,7 @@ const PATH_TO_TAB = {
   '/ops/operators': 'operators',
   '/ops/dashboard': 'ops-dashboard',
   '/ops/ops-dashboard': 'ops-dashboard',
+  '/ops/milestones': 'milestones',
 };
 
 const AdminPage = ({ operatorMode = false }) => {
@@ -413,7 +417,7 @@ const AdminPage = ({ operatorMode = false }) => {
         {TAB_CONFIG.filter(t => {
           if (operatorMode) {
             // Operators: work queues + operator tools
-            const opsTabs = ['transition', 'dts', 'support', 'verifications', 'my-activity', 'search', 'ops-escalations', 'shift-notes', 'ops-kb'];
+            const opsTabs = ['transition', 'dts', 'support', 'verifications', 'milestones', 'my-activity', 'search', 'ops-escalations', 'shift-notes', 'ops-kb'];
             // Managers also get team management + dashboard
             if (user?.operator_role === 'manager') opsTabs.push('operators', 'ops-dashboard');
             return opsTabs.includes(t.key);
@@ -456,6 +460,7 @@ const AdminPage = ({ operatorMode = false }) => {
       {tab === 'shift-notes' && operatorMode && <ShiftNotesTab getAuthHeaders={getAuthHeaders} />}
       {tab === 'ops-kb' && operatorMode && <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={false} />}
       {tab === 'ops-dashboard' && <OpsDashboardTab getAuthHeaders={getAuthHeaders} />}
+      {tab === 'milestones' && <MilestoneDeliveriesTab getAuthHeaders={getAuthHeaders} />}
     </div>
   );
 };
