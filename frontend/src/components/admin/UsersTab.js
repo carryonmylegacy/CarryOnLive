@@ -140,23 +140,18 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders }) => 
               </div>
             )}
           </div>
-          <div className="relative">
-            <select
-              value={u.role}
-              onChange={(e) => handleRoleChange(u.id, u.name, e.target.value)}
-              disabled={u.id === currentUserId || roleChanging === u.id}
-              className="text-xs px-2 py-1 pr-6 rounded-md font-bold capitalize appearance-none cursor-pointer border-0 outline-none"
+          <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
+            <span
+              className="text-xs px-2 py-1 rounded-md font-bold capitalize"
               style={{ background: rc.bg, color: rc.color }}
-              data-testid={`admin-role-select-${u.id}`}
+              data-testid={`admin-role-badge-${u.id}`}
             >
-              <option value="benefactor">benefactor</option>
-              <option value="beneficiary">beneficiary</option>
-              <option value="admin">admin</option>
-            </select>
-            {roleChanging === u.id ? (
-              <Loader2 className="w-3 h-3 animate-spin absolute right-1 top-1/2 -translate-y-1/2" style={{ color: rc.color }} />
-            ) : (
-              <ChevronDown className="w-3 h-3 absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: rc.color }} />
+              {u.role}
+            </span>
+            {u.created_at && (
+              <span className="text-[10px] text-[var(--t5)]">
+                {new Date(u.created_at).toLocaleDateString()}
+              </span>
             )}
           </div>
           <div className="text-xs text-[var(--t5)] hidden sm:block">{u.created_at ? new Date(u.created_at).toLocaleDateString() : ''}</div>
