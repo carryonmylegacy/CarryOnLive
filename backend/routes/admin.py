@@ -187,8 +187,8 @@ async def get_all_users(current_user: dict = Depends(get_current_user)):
 
 @router.get("/admin/stats")
 async def get_admin_stats(current_user: dict = Depends(get_current_user)):
-    """Get platform stats — admin only"""
-    if current_user["role"] != "admin":
+    """Get platform stats — admin/operator"""
+    if current_user["role"] not in ("admin", "operator"):
         raise HTTPException(status_code=403, detail="Admin access required")
 
     # Get all existing user IDs for cross-referencing

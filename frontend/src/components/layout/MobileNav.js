@@ -188,15 +188,34 @@ const MobileNav = () => {
     { to: '/ops/verifications', icon: ShieldCheck, label: 'Tier Verifications' },
   ];
 
-  const accountItems = user?.role === 'admin' ? [
-    { to: '/settings', icon: Settings, label: 'Settings' },
-    { to: '/admin/dev-switcher', icon: Settings, label: 'Dev Switcher' },
-  ] : [
-    { to: user?.role === 'beneficiary' ? '/beneficiary/settings' : '/settings', icon: Settings, label: 'Settings' },
-    { to: '/subscription', icon: CreditCard, label: 'Subscription' },
-    { to: '/security-settings', icon: ShieldCheck, label: 'Security Settings' },
-    { to: '/support', icon: Headphones, label: 'Customer Support' },
-  ];
+  const getAccountItems = () => {
+    if (user?.role === 'admin') {
+      return [
+        { to: '/settings', icon: Settings, label: 'Settings' },
+        { to: '/admin/dev-switcher', icon: Settings, label: 'Dev Switcher' },
+      ];
+    }
+    if (user?.role === 'operator') {
+      return [
+        { to: '/settings', icon: Settings, label: 'Settings' },
+      ];
+    }
+    if (user?.role === 'beneficiary') {
+      return [
+        { to: '/beneficiary/settings', icon: Settings, label: 'Settings' },
+        { to: '/support', icon: Headphones, label: 'Customer Support' },
+      ];
+    }
+    // Benefactor
+    return [
+      { to: '/settings', icon: Settings, label: 'Settings' },
+      { to: '/subscription', icon: CreditCard, label: 'Subscription' },
+      { to: '/security-settings', icon: ShieldCheck, label: 'Security Settings' },
+      { to: '/support', icon: Headphones, label: 'Customer Support' },
+    ];
+  };
+
+  const accountItems = getAccountItems();
 
   // Bottom nav for benefactor - 5 items with Home in center
   const benefactorBottomNav = [
@@ -364,8 +383,8 @@ const MobileNav = () => {
                 </div>
               </nav>
 
-              {/* Admin OTP Toggle */}
-              {user?.role === 'admin' && (
+              {/* Admin OTP Toggle — Founder only */}
+              {user?.role === 'admin' && !window.location.pathname.startsWith('/ops') && (
                 <div className="px-4 pb-2">
                   <MobileOtpToggle />
                 </div>

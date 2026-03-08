@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Shield, Clock, CheckCircle2, XCircle, Loader2, Package, Lock,
-  DollarSign, Mail, Flame, ChevronRight, Search, Trash2, AlertTriangle, Eye, EyeOff
+  DollarSign, Mail, Flame, ChevronRight, Search, Trash2, AlertTriangle, Eye, EyeOff, RotateCcw
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from '../../utils/toast';
+import { useAuth } from '../../contexts/AuthContext';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -16,6 +17,8 @@ const confColors = { full: '#F98080', partial: '#FFCB57', timed: '#7AABFD' };
 const statusColors = { submitted: 'var(--bl3)', quoted: 'var(--yw)', approved: 'var(--gn2)', ready: 'var(--gn2)', executed: '#B794F6', destroyed: 'var(--t5)' };
 
 export const DTSTab = ({ getAuthHeaders }) => {
+  const { user } = useAuth();
+  const isFounder = user?.role === 'admin' && !window.location.pathname.startsWith('/ops');
   const [dtsTasks, setDtsTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDts, setSelectedDts] = useState(null);
@@ -26,14 +29,18 @@ export const DTSTab = ({ getAuthHeaders }) => {
   const [deletePassword, setDeletePassword] = useState('');
   const [showDeletePw, setShowDeletePw] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleted, setShowDeleted] = useState(false);
 
   useEffect(() => {
     fetchTasks();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [showDeleted]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchTasks = async () => {
     try {
-      const res = await axios.get(`${API_URL}/dts/tasks/all`, getAuthHeaders());
+      const url = isFounder && showDeleted
+        ? `${API_URL}/dts/tasks/all?include_deleted=true`
+        : `${API_URL}/dts/tasks/all`;
+      const res = await axios.get(url, getAuthHeaders());
       setDtsTasks(res.data || []);
     } catch (err) {
       console.error('Failed to fetch DTS tasks:', err);
@@ -266,10 +273,28 @@ export const DTSTab = ({ getAuthHeaders }) => {
   return (
     <div className="space-y-4" data-testid="admin-dts-tab">
       <div className="rounded-xl p-4" style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.12)' }}>
-        <h3 className="font-bold text-[var(--pr2)] mb-2">DTS Team Portal</h3>
-        <p className="text-sm text-[var(--t3)] leading-relaxed">
-          Review incoming DTS requests. Research feasibility and costs, then submit itemized quotes to benefactors.
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-bold text-[var(--pr2)] mb-2">DTS Team Portal</h3>
+            <p className="text-sm text-[var(--t3)] leading-relaxed">
+              Review incoming DTS requests. Research feasibility and costs, then submit itemized quotes to benefactors.
+            </p>
+          </div>
+          {isFounder && (
+            <button
+              onClick={() => setShowDeleted(!showDeleted)}
+              className="text-[10px] font-bold px-2 py-1 rounded flex-shrink-0"
+              style={{
+                background: showDeleted ? 'rgba(239,68,68,0.1)' : 'var(--s)',
+                color: showDeleted ? '#ef4444' : 'var(--t5)',
+                border: `1px solid ${showDeleted ? 'rgba(239,68,68,0.2)' : 'var(--b)'}`
+              }}
+              data-testid="dts-show-deleted-toggle"
+            >
+              {showDeleted ? 'Showing Deleted' : 'Show Deleted'}
+            </button>
+          )}
+        </div>
       </div>
 
       {dtsTasks.length > 0 && (
@@ -288,21 +313,57 @@ export const DTSTab = ({ getAuthHeaders }) => {
       ) : (
         filteredTasks.map(task => {
           const TypeIcon = typeIcons[task.task_type] || Shield;
+          const isDeleted = task.soft_deleted;
           return (
-            <Card key={task.id} className="glass-card cursor-pointer hover:border-[var(--b2)]" onClick={() => { setSelectedDts(task); setQuoteItems([{ description: '', cost: '' }]); }} data-testid={`dts-admin-${task.id}`}>
+            <Card key={task.id} className={`glass-card ${isDeleted ? 'opacity-50' : 'cursor-pointer hover:border-[var(--b2)]'}`}
+              style={isDeleted ? { background: 'rgba(239,68,68,0.04)' } : {}}
+              onClick={() => { if (!isDeleted) { setSelectedDts(task); setQuoteItems([{ description: '', cost: '' }]); } }}
+              data-testid={`dts-admin-${task.id}`}>
               <CardContent className="p-4 flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(139,92,246,0.08)' }}>
                   <TypeIcon className="w-5 h-5" style={{ color: confColors[task.confidential] || '#B794F6' }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-bold text-[var(--t)] text-sm truncate">{task.title}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="font-bold text-[var(--t)] text-sm truncate">{task.title}</div>
+                    {isDeleted && <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--rdbg)] text-[var(--rd)] font-bold flex-shrink-0">DELETED</span>}
+                  </div>
                   <div className="flex gap-2 mt-1 flex-wrap">
                     <span className="text-xs px-2 py-0.5 rounded-md font-bold" style={{ background: 'var(--s)', color: statusColors[task.status] }}>{task.status}</span>
                     <span className="text-xs text-[var(--t5)]">{task.task_type?.replace(/_/g, ' ')}</span>
                     {task.line_items?.length > 0 && <span className="text-xs font-bold text-[var(--gold2)]">${task.line_items.reduce((s, i) => s + (i.approved !== false ? i.cost : 0), 0).toLocaleString()}</span>}
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-[var(--t5)]" />
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {isDeleted && isFounder ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        axios.post(`${API_URL}/dts/tasks/${task.id}/restore`, {}, getAuthHeaders())
+                          .then(() => { toast.success('DTS task restored'); fetchTasks(); })
+                          .catch(() => toast.error('Failed to restore'));
+                      }}
+                      className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold text-[var(--gn2)] hover:bg-[var(--gnbg)] transition-colors"
+                      data-testid={`restore-dts-${task.id}`}
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" /> Restore
+                    </button>
+                  ) : !isDeleted ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteTarget({ id: task.id, title: task.title });
+                        setDeletePassword('');
+                        setShowDeletePw(false);
+                      }}
+                      className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold text-[var(--rd)] hover:bg-[var(--rdbg)] transition-colors"
+                      data-testid={`delete-dts-${task.id}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  ) : null}
+                  {!isDeleted && <ChevronRight className="w-5 h-5 text-[var(--t5)]" />}
+                </div>
               </CardContent>
             </Card>
           );

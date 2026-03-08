@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { MessageCircle, Headphones, UserCircle, Loader2, Send, Search, Trash2, KeyRound, Unlock } from 'lucide-react';
+import { MessageCircle, Headphones, UserCircle, Loader2, Send, Search, Trash2, KeyRound, Unlock, RotateCcw } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { toast } from '../../utils/toast';
+import { useAuth } from '../../contexts/AuthContext';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export const SupportTab = ({ getAuthHeaders }) => {
+  const { user } = useAuth();
+  const isFounder = user?.role === 'admin' && !window.location.pathname.startsWith('/ops');
   const [conversations, setConversations] = useState([]);
   const [selectedConv, setSelectedConv] = useState(null);
   const [convMessages, setConvMessages] = useState([]);
@@ -18,10 +21,14 @@ export const SupportTab = ({ getAuthHeaders }) => {
   const [showUnlockPanel, setShowUnlockPanel] = useState(false);
   const [masterKeyInput, setMasterKeyInput] = useState('');
   const [unlockingDocs, setUnlockingDocs] = useState(false);
+  const [showDeleted, setShowDeleted] = useState(false);
 
   const fetchConversations = async () => {
     try {
-      const res = await axios.get(`${API_URL}/support/conversations`, getAuthHeaders());
+      const url = isFounder && showDeleted
+        ? `${API_URL}/support/conversations?include_deleted=true`
+        : `${API_URL}/support/conversations`;
+      const res = await axios.get(url, getAuthHeaders());
       setConversations(res.data);
     } catch (err) { console.error('Error fetching conversations:', err); }
   };
@@ -55,7 +62,7 @@ export const SupportTab = ({ getAuthHeaders }) => {
     fetchConversations();
     const interval = setInterval(fetchConversations, 15000);
     return () => clearInterval(interval);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [showDeleted]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (selectedConv) {
@@ -83,7 +90,23 @@ export const SupportTab = ({ getAuthHeaders }) => {
             <MessageCircle className="w-5 h-5 text-[var(--gn2)]" />
             Conversations
           </h3>
-          <p className="text-xs text-[var(--t5)]">{filteredConversations.length} {searchQuery ? 'matching' : 'active'}</p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-[var(--t5)]">{filteredConversations.length} {searchQuery ? 'matching' : 'active'}</p>
+            {isFounder && (
+              <button
+                onClick={() => setShowDeleted(!showDeleted)}
+                className="text-[10px] font-bold px-2 py-0.5 rounded"
+                style={{
+                  background: showDeleted ? 'rgba(239,68,68,0.1)' : 'var(--s)',
+                  color: showDeleted ? '#ef4444' : 'var(--t5)',
+                  border: `1px solid ${showDeleted ? 'rgba(239,68,68,0.2)' : 'var(--b)'}`
+                }}
+                data-testid="support-show-deleted-toggle"
+              >
+                {showDeleted ? 'Showing Deleted' : 'Show Deleted'}
+              </button>
+            )}
+          </div>
         </div>
         <div className="p-3 border-b border-[var(--b)]">
           <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
@@ -101,17 +124,21 @@ export const SupportTab = ({ getAuthHeaders }) => {
             filteredConversations.map(conv => (
               <div
                 key={conv.conversation_id}
-                onClick={() => setSelectedConv(conv)}
+                onClick={() => !conv.soft_deleted && setSelectedConv(conv)}
                 className={`p-4 border-b border-[var(--b)] cursor-pointer hover:bg-[var(--s)] transition-colors ${
                   selectedConv?.conversation_id === conv.conversation_id ? 'bg-[var(--s)]' : ''
-                }`}
+                } ${conv.soft_deleted ? 'opacity-50' : ''}`}
+                style={conv.soft_deleted ? { background: 'rgba(239,68,68,0.04)' } : {}}
                 data-testid={`conv-${conv.conversation_id}`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-[var(--t)] truncate">{conv.user_name || 'Unknown'}</span>
-                      {conv.unread_count > 0 && (
+                      {conv.soft_deleted && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--rdbg)] text-[var(--rd)] font-bold">DELETED</span>
+                      )}
+                      {!conv.soft_deleted && conv.unread_count > 0 && (
                         <span className="bg-[var(--rd)] text-white text-xs px-1.5 py-0.5 rounded-full font-bold">
                           {conv.unread_count}
                         </span>
@@ -122,19 +149,40 @@ export const SupportTab = ({ getAuthHeaders }) => {
                       {conv.sender_role === 'admin' ? 'You: ' : ''}{conv.latest_message}
                     </p>
                   </div>
-                  <span className="text-xs text-[var(--t5)] whitespace-nowrap">
-                    {new Date(conv.latest_time).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                  </span>
+                  <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                    <span className="text-xs text-[var(--t5)] whitespace-nowrap">
+                      {new Date(conv.latest_time).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                    </span>
+                    {conv.soft_deleted && isFounder ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          axios.post(`${API_URL}/admin/support/conversation/${conv.conversation_id}/restore`, {}, getAuthHeaders())
+                            .then(() => { toast.success('Conversation restored'); fetchConversations(); })
+                            .catch(() => toast.error('Failed to restore'));
+                        }}
+                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold text-[var(--gn2)] hover:bg-[var(--gnbg)] transition-colors"
+                        data-testid={`restore-conv-${conv.conversation_id}`}
+                      >
+                        <RotateCcw className="w-3 h-3" /> Restore
+                      </button>
+                    ) : !conv.soft_deleted ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!window.confirm('Delete this conversation?')) return;
+                          axios.delete(`${API_URL}/admin/support/conversation/${conv.conversation_id}`, getAuthHeaders())
+                            .then(() => { fetchConversations(); if (selectedConv?.conversation_id === conv.conversation_id) setSelectedConv(null); })
+                            .catch(() => toast.error('Failed to delete'));
+                        }}
+                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold text-[var(--rd)] hover:bg-[var(--rdbg)] transition-colors"
+                        data-testid={`delete-conv-${conv.conversation_id}`}
+                      >
+                        <Trash2 className="w-3 h-3" /> Delete
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
-                <button onClick={(e) => {
-                  e.stopPropagation();
-                  if (!window.confirm('Delete this conversation?')) return;
-                  axios.delete(`${API_URL}/admin/support/conversation/${conv.conversation_id}`, getAuthHeaders())
-                    .then(() => { fetchConversations(); if (selectedConv?.conversation_id === conv.conversation_id) setSelectedConv(null); })
-                    .catch(() => toast.error('Failed to delete'));
-                }} className="mt-1 text-[var(--t5)] active:text-[var(--rd)]">
-                  <Trash2 className="w-3 h-3" />
-                </button>
               </div>
             ))
           )}

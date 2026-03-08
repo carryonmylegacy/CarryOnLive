@@ -64,7 +64,7 @@ async def upload_death_certificate(
 @router.get("/transition/certificates")
 async def get_pending_certificates(current_user: dict = Depends(get_current_user)):
     """List pending death certificates for admin review."""
-    if current_user["role"] != "admin":
+    if current_user["role"] not in ("admin", "operator"):
         raise HTTPException(
             status_code=403, detail="Only admins can view pending certificates"
         )

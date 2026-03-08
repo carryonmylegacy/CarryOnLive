@@ -151,29 +151,19 @@ const Sidebar = () => {
 
   const adminNavSections = [
     {
-      title: 'FOUNDER OPS',
+      title: '',
       items: [
         { to: '/admin', icon: LayoutDashboard, label: 'Dashboard & Users' },
-      ]
-    },
-    {
-      title: 'VERIFICATION',
-      items: [
         { to: '/admin/transition', icon: FileKey, label: 'Transition Verification' },
-      ]
-    },
-    {
-      title: 'DTS',
-      items: [
         { to: '/admin/dts', icon: Shield, label: 'DTS Management' },
+        { to: '/admin/support', icon: Headphones, label: 'Customer Support' },
+        { to: '/admin/verifications', icon: ShieldCheck, label: 'Tier Verifications' },
       ]
     },
     {
       title: 'ACCOUNT',
       items: [
         { to: '/settings', icon: Settings, label: 'Settings' },
-        { to: '/subscription', icon: CreditCard, label: 'Subscription' },
-        { to: '/security-settings', icon: ShieldCheck, label: 'Security Settings' },
       ]
     }
   ];
@@ -223,7 +213,8 @@ const Sidebar = () => {
 
   const getRoleLabel = () => {
     if (user?.role === 'beneficiary') return 'BENEFICIARY';
-    if (user?.role === 'admin') return 'ADMINISTRATOR';
+    if (user?.role === 'admin') return 'FOUNDER PORTAL';
+    if (user?.role === 'operator') return 'OPERATIONS';
     return 'BENEFACTOR PORTAL';
   };
 
@@ -252,8 +243,8 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* Admin OTP Toggle */}
-      {user?.role === 'admin' && (
+      {/* Admin OTP Toggle — Founder only, not operators */}
+      {user?.role === 'admin' && !window.location.pathname.startsWith('/ops') && (
         <OtpToggle />
       )}
 
