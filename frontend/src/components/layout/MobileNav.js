@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { haptics } from '../../utils/haptics';
 import { Switch } from '../ui/switch';
 import {
   LayoutDashboard,
@@ -401,7 +402,7 @@ const MobileNav = () => {
             </>
           )}
 
-          <Sheet open={open} onOpenChange={setOpen}>
+          <Sheet open={open} onOpenChange={(v) => { setOpen(v); if (v) haptics.light(); }}>
             <SheetTrigger asChild>
               <button className="p-2 text-[var(--t)]" data-testid="mobile-menu-button" aria-label="Open navigation menu">
                 <Menu className="w-6 h-6" />

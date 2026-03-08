@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
+import PullToRefreshIndicator from '../PullToRefreshIndicator';
+import { haptics } from '../../utils/haptics';
 
 const DashboardLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('carryon_sidebar_collapsed') === 'true');
+  const location = useLocation();
 
   useEffect(() => {
     const onStorage = () => setSidebarCollapsed(localStorage.getItem('carryon_sidebar_collapsed') === 'true');
@@ -14,8 +18,22 @@ const DashboardLayout = () => {
     return () => { window.removeEventListener('storage', onStorage); window.removeEventListener('sidebar-toggle', onStorage); };
   }, []);
 
+  const handleRefresh = useCallback(async () => {
+    haptics.medium();
+    // Dispatch a custom event so page components can react
+    window.dispatchEvent(new CustomEvent('carryon-pull-refresh'));
+    // Small delay so users feel the refresh
+    await new Promise(r => setTimeout(r, 600));
+    haptics.success();
+  }, []);
+
+  const { pullProgress, refreshing } = usePullToRefresh(handleRefresh);
+
   return (
     <div className="app">
+      {/* Pull-to-refresh indicator */}
+      <PullToRefreshIndicator pullProgress={pullProgress} refreshing={refreshing} />
+
       {/* Background decorations */}
       <div 
         className="floating-orb" 

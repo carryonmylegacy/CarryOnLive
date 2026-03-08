@@ -9,6 +9,9 @@ import { isNative } from './services/native';
 import SubscriptionPaywall from './components/SubscriptionPaywall';
 import DashboardLayout from './components/layout/DashboardLayout';
 import ShareUploadModal from './components/ShareUploadModal';
+import ForceUpdateGate from './components/ForceUpdateGate';
+import NetworkStatusBanner from './components/NetworkStatusBanner';
+import { initErrorReporter, reportError } from './utils/errorReporter';
 import { Loader2 } from 'lucide-react';
 
 // Eagerly loaded (needed immediately)
@@ -61,10 +64,13 @@ const PageLoader = () => (
   </div>
 );
 
-// Error boundary for lazy-loaded routes
+// Error boundary for lazy-loaded routes — reports to backend
 class RouteErrorBoundary extends React.Component {
   state = { hasError: false };
   static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(error, info) {
+    reportError(error, info?.componentStack ? `ErrorBoundary:${info.componentStack.split('\n')[1]?.trim()}` : 'ErrorBoundary');
+  }
   render() {
     if (this.state.hasError) {
       return (
@@ -298,6 +304,9 @@ function App() {
 
   // Initialize Capgo live updates and native optimizations
   useEffect(() => {
+    // Initialize global error reporter
+    initErrorReporter();
+
     if (isNative) {
       CapacitorUpdater.notifyAppReady();
       document.body.classList.add('native-app');
@@ -324,10 +333,12 @@ function App() {
   }, []);
 
   return (
+    <ForceUpdateGate>
     <ThemeProvider>
       <AuthProvider>
         <SectionLockProvider>
         <BrowserRouter>
+          <NetworkStatusBanner />
           <AppRoutes />
           <ShareHandler />
           <Toaster 
@@ -350,6 +361,7 @@ function App() {
         </SectionLockProvider>
       </AuthProvider>
     </ThemeProvider>
+    </ForceUpdateGate>
   );
 }
 

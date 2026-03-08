@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { toast } from '../utils/toast';
 import { isNative } from '../services/native';
+import { haptics } from '../utils/haptics';
 
 /* ─── scroll-reveal hook ─── */
 const useReveal = (threshold = 0.15) => {
@@ -115,6 +116,7 @@ const LoginPage = () => {
   };
 
   const navigateToHome = (result) => {
+    haptics.success();
     if (result.user?.role === 'admin') navigate('/admin');
     else if (result.user?.role === 'operator') navigate('/ops');
     else if (result.user?.role === 'beneficiary') navigate('/beneficiary');

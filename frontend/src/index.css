@@ -984,3 +984,10 @@
 [data-theme="light"] .pac-item-query {
   color: #0f172a;
 }
+
+
+/* ── Network Status Banner Animation ────────────────────────── */
+@keyframes slideDown {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
