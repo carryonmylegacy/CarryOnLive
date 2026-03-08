@@ -33,8 +33,8 @@ const TIER_COLORS = {
 export default function SubscriptionPaywall({ onDismiss }) {
   const { token, refreshSubscription } = useAuth();
   const [plans, setPlans] = useState([]);
-  const [billing, setBilling] = useState('monthly');
-  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [billing, setBilling] = useState('annual');
+  const [selectedPlan, setSelectedPlan] = useState('premium');
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [subStatus, setSubStatus] = useState(null);
@@ -387,12 +387,20 @@ export default function SubscriptionPaywall({ onDismiss }) {
               onClick={() => setBilling(b)}
               className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all capitalize relative ${
                 billing === b
-                  ? 'bg-[#d4af37] text-[#0F1629]'
+                  ? b === 'annual'
+                    ? 'text-[#0F1629]'
+                    : 'bg-[#d4af37] text-[#0F1629]'
                   : 'bg-[var(--s)] text-[var(--t5)] hover:text-[var(--t)] border border-[var(--b)]'
               }`}
+              style={billing === b && b === 'annual' ? { background: 'linear-gradient(135deg, #22C993, #10b981)', boxShadow: '0 4px 16px rgba(34,201,147,0.35)' } : {}}
               data-testid={`paywall-billing-${b}`}
             >
               {b}
+              {b === 'annual' && billing !== 'annual' && (
+                <span className="absolute -top-2 -right-2 text-[10px] bg-[#22C993] text-white px-1.5 py-0.5 rounded-full font-bold">
+                  Best Value
+                </span>
+              )}
               {b !== 'monthly' && billing === b && (
                 <span className="absolute -top-2 -right-2 text-[10px] bg-[#22C993] text-white px-1.5 py-0.5 rounded-full font-bold">
                   {getSavingsLabel()}
@@ -412,43 +420,88 @@ export default function SubscriptionPaywall({ onDismiss }) {
             const eligibleTiers = subStatus?.eligible_tiers || [];
             const eligible = plan.id !== 'new_adult' || eligibleTiers.includes('new_adult');
 
+            // Subscription state
+            const activePlanId = subStatus?.plan_id;
+            const activeBilling = subStatus?.billing_cycle;
+            const hasActiveSub = activePlanId && subStatus?.status === 'active';
+            const isActivePlan = hasActiveSub && activePlanId === plan.id;
+            const isGreyedOut = hasActiveSub && !isActivePlan;
+
+            // Should show "Recommended" pulse: user is subscribed but NOT on premium annual
+            const isPremiumAnnual = isPremium && billing === 'annual';
+            const showRecommendedPulse = isPremiumAnnual && hasActiveSub && !(activePlanId === 'premium' && activeBilling === 'annual');
+
             return (
               <div
                 key={plan.id}
-                onClick={() => eligible && setSelectedPlan(plan.id)}
+                onClick={() => eligible && !isGreyedOut && setSelectedPlan(plan.id)}
                 className={`relative rounded-2xl overflow-hidden transition-all duration-300 group ${
-                  !eligible ? 'opacity-45 cursor-default' : 'cursor-pointer'
+                  !eligible || isGreyedOut ? 'opacity-40 cursor-default' : 'cursor-pointer'
                 } ${
-                  eligible && isPremium ? 'hover:-translate-y-2 sm:scale-[1.03]' : eligible ? 'hover:-translate-y-1' : ''
+                  eligible && !isGreyedOut && isPremium ? 'hover:-translate-y-2 sm:scale-[1.03]' : eligible && !isGreyedOut ? 'hover:-translate-y-1' : ''
                 }`}
                 style={{
-                  background: isPremium 
-                    ? `linear-gradient(168deg, rgba(212,175,55,0.15) 0%, var(--s) 40%)`
-                    : isSelected 
-                      ? `linear-gradient(168deg, ${colors.bg} 0%, var(--s) 100%)`
-                      : 'var(--s)',
-                  border: isPremium 
-                    ? '2px solid rgba(212,175,55,0.4)'
-                    : isSelected 
-                      ? `2px solid ${colors.border}` 
-                      : '1px solid var(--b)',
-                  boxShadow: isPremium 
-                    ? '0 12px 48px -8px rgba(212,175,55,0.3), 0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
-                    : isSelected
-                      ? `0 8px 32px -6px ${colors.accent}44, 0 2px 8px rgba(0,0,0,0.25)`
-                      : '0 4px 16px -4px rgba(0,0,0,0.3)',
+                  background: isActivePlan
+                    ? `linear-gradient(168deg, ${colors.bg} 0%, var(--s) 40%)`
+                    : isPremium
+                      ? `linear-gradient(168deg, rgba(212,175,55,0.15) 0%, var(--s) 40%)`
+                      : isSelected && !isGreyedOut
+                        ? `linear-gradient(168deg, ${colors.bg} 0%, var(--s) 100%)`
+                        : 'var(--s)',
+                  border: isActivePlan
+                    ? `2px solid ${colors.border}`
+                    : isPremium
+                      ? '2px solid rgba(212,175,55,0.4)'
+                      : isSelected && !isGreyedOut
+                        ? `2px solid ${colors.border}`
+                        : '1px solid var(--b)',
+                  boxShadow: isActivePlan
+                    ? `0 8px 32px -6px ${colors.accent}44, 0 2px 8px rgba(0,0,0,0.25)`
+                    : isPremium
+                      ? '0 12px 48px -8px rgba(212,175,55,0.3), 0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
+                      : isSelected && !isGreyedOut
+                        ? `0 8px 32px -6px ${colors.accent}44, 0 2px 8px rgba(0,0,0,0.25)`
+                        : '0 4px 16px -4px rgba(0,0,0,0.3)',
+                  animation: showRecommendedPulse ? 'recommendedPulse 2.5s ease-in-out infinite' : 'none',
                 }}
                 data-testid={`paywall-plan-${plan.id}`}
               >
+                {/* Recommended pulse animation */}
+                {showRecommendedPulse && (
+                  <style>{`
+                    @keyframes recommendedPulse {
+                      0%, 100% { box-shadow: 0 12px 48px -8px rgba(212,175,55,0.3), 0 4px 16px rgba(0,0,0,0.3); }
+                      50% { box-shadow: 0 12px 48px -8px rgba(212,175,55,0.5), 0 4px 24px rgba(212,175,55,0.15), 0 0 0 3px rgba(212,175,55,0.12); }
+                    }
+                  `}</style>
+                )}
+
                 {/* Premium shimmer line */}
                 {isPremium && (
                   <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.6), transparent)' }} />
                 )}
 
-                {isPremium && (
+                {/* Active subscription badge */}
+                {isActivePlan && (
                   <div className="absolute -top-0 left-1/2 -translate-x-1/2 text-xs font-bold px-4 py-1.5 rounded-b-xl"
-                    style={{ background: 'linear-gradient(180deg, #d4af37, #b8962e)', color: '#0F1629', boxShadow: '0 4px 16px rgba(212,175,55,0.4)' }}>
-                    Most Popular
+                    style={{ background: 'linear-gradient(180deg, #22C993, #16A34A)', color: 'white', boxShadow: '0 4px 16px rgba(34,201,147,0.4)' }}>
+                    Your Plan
+                  </div>
+                )}
+
+                {/* Premium label or Recommended CTA */}
+                {isPremium && !isActivePlan && (
+                  <div className="absolute -top-0 left-1/2 -translate-x-1/2 text-xs font-bold px-4 py-1.5 rounded-b-xl"
+                    style={{
+                      background: showRecommendedPulse
+                        ? 'linear-gradient(180deg, #22C993, #16A34A)'
+                        : 'linear-gradient(180deg, #d4af37, #b8962e)',
+                      color: showRecommendedPulse ? 'white' : '#0F1629',
+                      boxShadow: showRecommendedPulse
+                        ? '0 4px 16px rgba(34,201,147,0.4)'
+                        : '0 4px 16px rgba(212,175,55,0.4)',
+                    }}>
+                    {showRecommendedPulse ? 'Recommended — Best Value' : 'Most Popular'}
                   </div>
                 )}
 
@@ -501,24 +554,34 @@ export default function SubscriptionPaywall({ onDismiss }) {
                   {/* CTA Button */}
                   {!eligible ? (
                     <div className="w-full text-center text-xs font-medium py-3 rounded-xl text-[var(--t5)]" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
-                      Ages 18–25 only
+                      Ages 18-25 only
+                    </div>
+                  ) : isActivePlan ? (
+                    <div className="w-full text-center text-xs font-bold py-3 rounded-xl text-[#22C993]"
+                      style={{ background: 'rgba(34,201,147,0.08)', border: '1px solid rgba(34,201,147,0.2)' }}
+                      data-testid={`paywall-active-${plan.id}`}>
+                      Current Plan
+                    </div>
+                  ) : isGreyedOut && !showRecommendedPulse ? (
+                    <div className="w-full text-center text-xs font-medium py-3 rounded-xl text-[var(--t5)]" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+                      {plan.price > (plans.find(p => p.id === activePlanId)?.price || 0) ? 'Upgrade' : 'Downgrade'}
                     </div>
                   ) : (
                     <Button
                       onClick={(e) => { e.stopPropagation(); handleCheckout(plan); }}
                       disabled={checkoutLoading}
                       className={`w-full text-sm font-bold py-5 transition-all duration-300 ${
-                        isPremium
+                        isPremium || showRecommendedPulse
                           ? 'gold-button shadow-[0_4px_20px_rgba(212,175,55,0.3)]'
                           : isSelected
                             ? 'gold-button'
                             : 'bg-transparent border-2 hover:bg-[var(--s)]'
                       }`}
-                      style={!isPremium && !isSelected ? { borderColor: `${colors.accent}40`, color: colors.accent } : {}}
+                      style={!isPremium && !isSelected && !showRecommendedPulse ? { borderColor: `${colors.accent}40`, color: colors.accent } : {}}
                       data-testid={`paywall-select-${plan.id}`}
                     >
                       {checkoutLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                      {plan.requires_verification && plan.id !== 'new_adult' ? 'Verify & Subscribe' : 'Subscribe'}
+                      {showRecommendedPulse ? 'Upgrade to Best Value' : plan.requires_verification && plan.id !== 'new_adult' ? 'Verify & Subscribe' : 'Subscribe'}
                       <ChevronRight className="w-4 h-4 ml-1" />
                     </Button>
                   )}

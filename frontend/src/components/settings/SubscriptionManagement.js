@@ -546,8 +546,12 @@ export const SubscriptionManagement = ({
             const locked = isPlanLocked(plan.id);
             const isAutoSelected = autoTier === plan.id;
 
+            // Premium Annual recommendation pulse
+            const isPremiumAnnual = (plan.id === 'premium' || plan.id === 'ben_premium') && billing === 'annual';
+            const showRecommendedPulse = isPremiumAnnual && currentPlanId && !isCurrent && !(currentPlanId === plan.id && currentBilling === 'annual');
+
             return (
-              <div key={plan.id} className={`relative rounded-2xl overflow-hidden transition-all duration-300 group ${locked ? 'opacity-40 pointer-events-none' : 'hover:-translate-y-1'}`} style={{
+              <div key={plan.id} className={`relative rounded-2xl overflow-hidden transition-all duration-300 group ${locked ? 'opacity-40 pointer-events-none' : isCurrent ? '' : 'hover:-translate-y-1'}`} style={{
                 background: isAutoSelected
                   ? `linear-gradient(168deg, ${style.accent}15, ${style.accent}06)`
                   : isCurrent
@@ -567,12 +571,27 @@ export const SubscriptionManagement = ({
                   : isRecommended
                     ? `0 8px 32px ${style.accent}15`
                     : '0 2px 8px rgba(0,0,0,0.05)',
+                opacity: currentPlanId && !isCurrent && !showRecommendedPulse ? 0.5 : 1,
+                animation: showRecommendedPulse ? 'recommendedPulseMgmt 2.5s ease-in-out infinite' : 'none',
               }} data-testid={`plan-${plan.id}`}>
+                {/* Recommended pulse animation */}
+                {showRecommendedPulse && (
+                  <style>{`
+                    @keyframes recommendedPulseMgmt {
+                      0%, 100% { box-shadow: 0 8px 32px ${style.accent}20; opacity: 1; }
+                      50% { box-shadow: 0 8px 32px ${style.accent}40, 0 0 0 3px ${style.accent}15; opacity: 1; }
+                    }
+                  `}</style>
+                )}
+
                 {/* Label badges */}
-                {(style.label || isCurrent || isAutoSelected) && (
+                {(style.label || isCurrent || isAutoSelected || showRecommendedPulse) && (
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 text-[9px] font-bold px-3 py-0.5 rounded-b-lg z-10"
-                    style={{ background: style.accent, color: '#0F1629' }}>
-                    {isCurrent ? 'Current Plan' : isAutoSelected ? 'Your Tier' : style.label}
+                    style={{
+                      background: showRecommendedPulse ? '#22C993' : style.accent,
+                      color: showRecommendedPulse ? '#fff' : '#0F1629',
+                    }}>
+                    {isCurrent ? 'Current Plan' : isAutoSelected ? 'Your Tier' : showRecommendedPulse ? 'Recommended — Best Value' : style.label}
                   </div>
                 )}
 
