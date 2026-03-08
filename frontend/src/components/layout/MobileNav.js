@@ -620,6 +620,12 @@ const MobileNav = () => {
         </div>
       )}
 
+      {/* Bottom fade zone — frosted gradient behind nav area */}
+      <div className="lg:hidden fixed bottom-0 left-0 w-full z-40 pointer-events-none" style={{
+        height: 'calc(80px + env(safe-area-inset-bottom, 4px))',
+        background: 'linear-gradient(to top, var(--bg) 0%, var(--bg) 20%, transparent 100%)',
+      }} />
+
       {/* Bottom Navigation — floating glass pill */}
       <nav className="lg:hidden fixed bottom-0 left-0 w-full z-50" role="navigation" aria-label="Bottom navigation" style={{ paddingBottom: 'env(safe-area-inset-bottom, 4px)' }}>
         <div className="mx-2 mb-1 mobile-bottom-nav rounded-[22px] overflow-hidden">
