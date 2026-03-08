@@ -11,6 +11,7 @@ import ShareUploadModal from './components/ShareUploadModal';
 import ForceUpdateGate from './components/ForceUpdateGate';
 import NetworkStatusBanner from './components/NetworkStatusBanner';
 import NotificationContainer from './components/AppNotification';
+import { AmberAlertProvider } from './components/AmberAlert';
 import { initErrorReporter, reportError } from './utils/errorReporter';
 import { Loader2 } from 'lucide-react';
 
@@ -340,6 +341,7 @@ function App() {
         <BrowserRouter>
           <NetworkStatusBanner />
           <NotificationContainer />
+          <AmberAlertProvider />
           <AppRoutes />
           <ShareHandler />
         </BrowserRouter>

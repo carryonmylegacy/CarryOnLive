@@ -292,3 +292,75 @@ async def restore_support_conversation(
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="No deleted conversation found")
     return {"restored": True, "conversation_id": conversation_id}
+
+
+
+class P1EmergencyRequest(BaseModel):
+    reason: str = "sealed_account"  # sealed_account, death_cert_error, transition_error
+
+
+@router.post("/support/p1-emergency")
+async def create_p1_emergency_thread(
+    data: P1EmergencyRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Create a Priority 1 emergency support thread.
+    Auto-sends a message and alerts ALL staff with Amber Alert."""
+    reason_labels = {
+        "sealed_account": "Account incorrectly sealed — benefactor reports being alive",
+        "death_cert_error": "Death certificate uploaded in error — benefactor reports being alive",
+        "transition_error": "Estate transition initiated in error — benefactor reports being alive",
+    }
+
+    reason_text = reason_labels.get(data.reason, f"Priority 1 Emergency: {data.reason}")
+
+    # Create the emergency message
+    message = {
+        "id": str(uuid.uuid4()),
+        "conversation_id": current_user["id"],
+        "sender_id": current_user["id"],
+        "sender_name": current_user.get("name", current_user.get("email", "User")),
+        "sender_role": current_user["role"],
+        "content": f"PRIORITY 1 EMERGENCY: {reason_text}\n\nThis user has triggered an emergency alert indicating they are alive and their account may have been incorrectly transitioned. IMMEDIATE ACTION REQUIRED.",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "read": False,
+        "priority": "p1",
+        "is_emergency": True,
+    }
+    await db.support_messages.insert_one(message)
+
+    # Mark conversation as P1
+    await db.support_conversations.update_one(
+        {"user_id": current_user["id"]},
+        {"$set": {
+            "user_id": current_user["id"],
+            "priority": "p1",
+            "is_emergency": True,
+            "status": "open",
+            "subject": f"P1 EMERGENCY: {current_user.get('name', 'User')}",
+            "user_name": current_user.get("name", ""),
+            "user_email": current_user.get("email", ""),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }},
+        upsert=True,
+    )
+
+    # Send Amber Alert to ALL staff (critical security alert)
+    from services.notifications import notify
+    asyncio.create_task(notify.all_staff_security(
+        "P1 EMERGENCY: Benefactor Reports Being Alive",
+        f"{current_user.get('name', 'User')} ({current_user.get('email', '')}) has triggered an I'm Still Alive emergency. Reason: {data.reason}. IMMEDIATE ACTION REQUIRED.",
+        url="/ops/support",
+        metadata={
+            "user_id": current_user["id"],
+            "user_name": current_user.get("name", ""),
+            "reason": data.reason,
+            "emergency": True,
+        },
+    ))
+
+    return {
+        "success": True,
+        "message": "Emergency alert sent to all staff. A support team member will contact you immediately.",
+        "conversation_id": current_user["id"],
+    }

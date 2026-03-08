@@ -15,6 +15,7 @@ const SupportChatPage = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(56);
+  const [emergencySent, setEmergencySent] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -22,6 +23,28 @@ const SupportChatPage = () => {
     const header = document.querySelector('.mobile-header');
     if (header) setHeaderHeight(header.offsetHeight);
   }, []);
+
+  // Auto-trigger P1 emergency if URL has priority=p1
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const priority = params.get('priority');
+    const reason = params.get('reason');
+    if (priority === 'p1' && reason && !emergencySent) {
+      const triggerEmergency = async () => {
+        try {
+          await axios.post(`${API_URL}/support/p1-emergency`, { reason }, getAuthHeaders());
+          setEmergencySent(true);
+          toast.success('Emergency alert sent to the CarryOn team. Someone will contact you immediately.');
+          // Clean URL
+          window.history.replaceState({}, '', window.location.pathname);
+          fetchMessages();
+        } catch (err) {
+          toast.error('Failed to send emergency alert. Please call the number below.');
+        }
+      };
+      triggerEmergency();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

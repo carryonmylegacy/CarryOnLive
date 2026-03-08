@@ -55,24 +55,25 @@ async def upload_death_certificate(
     )
     await db.death_certificates.insert_one(certificate.model_dump())
 
-    # NOTIFICATION: Security alert to benefactor + all staff
+    # NOTIFICATION: Security alert to benefactor + Amber Alert to all staff
     from services.notifications import notify
     if estate:
+        estate_name = estate.get("name", estate_id)
         owner_id = estate.get("owner_id")
         if owner_id:
             asyncio.create_task(notify.security_alert(
                 owner_id,
                 "Security Alert: Death Certificate Uploaded",
                 "A death certificate has been uploaded to your estate. If this was NOT authorized by you, tap here immediately.",
-                url="/support?priority=p1&reason=death_cert_uploaded",
-                metadata={"estate_id": estate_id, "certificate_id": certificate.id},
+                url="/support?priority=p1&reason=death_cert_error",
+                metadata={"estate_id": estate_id, "certificate_id": certificate.id, "estate_name": estate_name},
             ))
-        asyncio.create_task(notify.all_staff(
-            "New TVT Request",
-            f"Death certificate uploaded for estate {estate.get('name', estate_id)}",
+        # Amber Alert to ALL staff (critical security alert — triggers full-screen overlay)
+        asyncio.create_task(notify.all_staff_security(
+            "Death Certificate Uploaded",
+            f"A death certificate has been uploaded for estate '{estate_name}'. TVT review required.",
             url="/ops/transition",
-            priority="high",
-            metadata={"estate_id": estate_id},
+            metadata={"estate_id": estate_id, "estate_name": estate_name, "certificate_id": certificate.id},
         ))
 
     return {
