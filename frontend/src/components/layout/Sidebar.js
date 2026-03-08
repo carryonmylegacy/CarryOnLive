@@ -178,8 +178,28 @@ const Sidebar = () => {
     }
   ];
 
+  const operatorNavSections = [
+    {
+      title: 'OPERATIONS',
+      items: [
+        { to: '/ops', icon: LayoutDashboard, label: 'Operations Dashboard' },
+        { to: '/ops/transition', icon: FileKey, label: 'Transition Verification' },
+        { to: '/ops/dts', icon: Shield, label: 'DTS Management' },
+        { to: '/ops/support', icon: Headphones, label: 'Customer Support' },
+        { to: '/ops/verifications', icon: ShieldCheck, label: 'Tier Verifications' },
+      ]
+    },
+    {
+      title: 'ACCOUNT',
+      items: [
+        { to: '/settings', icon: Settings, label: 'Settings' },
+      ]
+    }
+  ];
+
   const getNavSections = () => {
     if (user?.role === 'admin') return adminNavSections;
+    if (user?.role === 'operator') return operatorNavSections;
     if (user?.role === 'beneficiary') return beneficiaryNavSections;
     return benefactorNavSections;
   };

@@ -42,6 +42,7 @@ from routes.transition import router as transition_router
 from routes.webauthn import router as webauthn_router
 from routes.errors import router as errors_router
 from routes.section_permissions import router as section_permissions_router
+from routes.operators import router as operators_router
 from schedulers import daily_dob_check_scheduler, weekly_digest_scheduler
 
 
@@ -88,6 +89,9 @@ async def lifespan(app):
         await db.apple_transactions.create_index("transaction_id", unique=True)
         await db.apple_webhook_log.create_index("received_at")
         await db.client_errors.create_index("created_at")
+        await db.audit_trail.create_index([("timestamp", -1)])
+        await db.audit_trail.create_index("actor_id")
+        await db.audit_trail.create_index("category")
         logger.info("Database indexes created/verified")
     except Exception as e:
         logger.warning(f"Index creation warning (may already exist): {e}")
@@ -137,6 +141,7 @@ api_router.include_router(transition_router)
 api_router.include_router(webauthn_router)
 api_router.include_router(errors_router)
 api_router.include_router(section_permissions_router)
+api_router.include_router(operators_router)
 
 
 @api_router.get("/health")

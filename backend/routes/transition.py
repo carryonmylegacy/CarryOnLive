@@ -3,11 +3,11 @@
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 
 from config import db
 from models import DeathCertificate, MilestoneReport, MilestoneReportCreate
-from services.audit import audit_log
+from services.audit import get_client_ip, log_audit_event
 from services.encryption import encrypt_aes256, get_estate_salt
 from utils import get_current_user
 
@@ -54,15 +54,6 @@ async def upload_death_certificate(
     )
     await db.death_certificates.insert_one(certificate.model_dump())
 
-    await audit_log(
-        action="transition.certificate_upload",
-        user_id=current_user["id"],
-        resource_type="death_certificate",
-        resource_id=certificate.id,
-        estate_id=estate_id,
-        details={"file_name": file.filename, "encrypted": True},
-    )
-
     return {
         "id": certificate.id,
         "status": "pending",
@@ -86,10 +77,12 @@ async def get_pending_certificates(current_user: dict = Depends(get_current_user
 
 @router.post("/transition/begin-review/{certificate_id}")
 async def begin_review(
-    certificate_id: str, current_user: dict = Depends(get_current_user)
+    certificate_id: str,
+    request: Request,
+    current_user: dict = Depends(get_current_user),
 ):
     """TVT member opens and begins reviewing a certificate"""
-    if current_user["role"] != "admin":
+    if current_user["role"] not in ("admin", "operator"):
         raise HTTPException(
             status_code=403, detail="Only TVT members can review certificates"
         )
@@ -106,17 +99,32 @@ async def begin_review(
             }
         },
     )
+
+    await log_audit_event(
+        actor_id=current_user["id"],
+        actor_email=current_user["email"],
+        actor_role=current_user["role"],
+        action="tvt_begin_review",
+        category="tvt",
+        resource_type="death_certificate",
+        resource_id=certificate_id,
+        details={"estate_id": cert.get("estate_id", "")},
+        ip_address=get_client_ip(request),
+    )
+
     return {"message": "Review started"}
 
 
 @router.post("/transition/approve/{certificate_id}")
 async def approve_death_certificate(
-    certificate_id: str, current_user: dict = Depends(get_current_user)
+    certificate_id: str,
+    request: Request,
+    current_user: dict = Depends(get_current_user),
 ):
     """Approve or reject a death certificate."""
-    if current_user["role"] != "admin":
+    if current_user["role"] not in ("admin", "operator"):
         raise HTTPException(
-            status_code=403, detail="Only admins can approve certificates"
+            status_code=403, detail="Only authorized personnel can approve certificates"
         )
 
     certificate = await db.death_certificates.find_one(
@@ -216,6 +224,22 @@ async def approve_death_certificate(
                     "created_at": datetime.now(timezone.utc).isoformat(),
                 }
             )
+
+    await log_audit_event(
+        actor_id=current_user["id"],
+        actor_email=current_user["email"],
+        actor_role=current_user["role"],
+        action="tvt_approve",
+        category="tvt",
+        resource_type="death_certificate",
+        resource_id=certificate_id,
+        details={
+            "estate_id": certificate["estate_id"],
+            "beneficiaries": len(all_ben_ids),
+        },
+        ip_address=get_client_ip(request),
+        severity="critical",
+    )
 
     return {
         "message": "Certificate approved, benefactor sealed, beneficiary access granted",
