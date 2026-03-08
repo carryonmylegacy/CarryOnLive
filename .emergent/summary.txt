@@ -1,166 +1,160 @@
 <analysis>**original_problem_statement:**
-The user's initial request from the previous session was to overhaul the Operations Portal by cleaning up menus, adding soft-delete/restore functionality, and adding dashboard tiles.
-
-During this session, the user's requests expanded significantly:
-1.  **Menu & Settings Cleanup (Correction):** The user was dissatisfied with the previous menu cleanup. They requested to strip the Founder and Operator portal menus down to only Light/Dark Mode and Sign Out, removing all redundant links. The corresponding Settings page for these roles was also to be simplified.
-2.  **Enforce Core Security Principles:** The user expressed deep concern about the platform's security architecture, demanding verification and fixes to ensure a one-way check valve where a beneficiary can NEVER access a benefactor's account. This included handling complex dual-role scenarios (a user who is both a benefactor and a beneficiary).
-3.  **Conditional UI for Estate Switcher:** The estate selection dropdown should only be visible if a user is connected to more than one estate.
-4.  **Collapsible Sidebar:** Implement a collapsible sidebar for the Founder and Operator portals (later accepted for all portals) to switch between a full view (icon + label) and a minimized view (icon only).
-5.  **UI/UX Refinements:**
-    *   Move the estate switcher out of the sidebar and into the main page header to avoid awkward UI when the sidebar is collapsed.
-    *   Make the Beta banner display as a compact icon (β) in the collapsed sidebar.
-    *   Move the DEV portal-switching functionality from a floating button to the main logo icon, accessible only to the Founder, and ensure it works on desktop (collapsed/expanded) and mobile/PWA.
-6.  **Implement 10 New Features:** Based on the agent's suggestions, the user requested the full implementation of 10 new features (5 for the Founder portal, 5 for the Operations portal).
-7.  **Run Housekeeping:** Execute the full  script to ensure code quality, security, and fix any linting errors that were causing CI checks to fail.
-8.  **Mobile/PWA Parity:** Ensure all changes and new features from this session work correctly and are accessible in the mobile and PWA formats.
+The user's initial goal was to overhaul the Operations Portal. This expanded into several major workstreams across sessions:
+1.  **UI/UX Overhaul:**
+    *   Simplify Founder/Operator portal menus to essentials.
+    *   Implement a persistent, collapsible sidebar for all portals.
+    *   Relocate the DEV and Estate switchers for better usability.
+    *   Overhaul the toast/notification system, replacing the basic  toasts with a polished, iOS-style, slide-from-top notification component.
+2.  **Security & Access Control:**
+    *   Harden backend security by moving from role-based to membership-based access control, closing a critical security flaw.
+    *   Define and plan for an immutably sealed account screen for deceased benefactors.
+3.  **New Feature Implementation:**
+    *   Scaffold 10 new features for Founder/Operator portals (5 each).
+    *   Re-implement 5 deferred native-like PWA features (haptics, pull-to-refresh, network status banner, force update gate, error reporter) using existing dependencies to avoid build issues.
+4.  **Upcoming Major Build (User-Requested Fork):**
+    *   Flesh out the logic and triggers for a comprehensive push notification system based on specific user events.
+    *   Review and fully implement the entire Digital Trustee Services (DTS) workflow.
+    *   Design and plan for a multi-tier operator account structure (Manager vs. Worker).
+    *   The user explicitly requested to fork the session before this large build to ensure a clean state.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a multi-portal platform (Benefactor, Beneficiary, Founder, Operator) with role-based access control. The staff-facing portals (Founder, Operator) have undergone significant UI/UX changes.
-
-Key features implemented in this session:
--   **Simplified Staff Menus:** The Founder and Operator sidebars and mobile menus have been stripped down to essentials.
--   **Hardened Backend Security:** The access control logic was refactored from being -based to being membership-based (, ), closing a critical security gap for dual-role users.
--   **Collapsible Sidebar:** A persistent, collapsible sidebar is now present in all portals, allowing users to switch between an expanded and icon-only view.
--   **Relocated DEV Switcher:** The developer portal switcher has been moved from a floating button into the main logo icon. It is only accessible to Founders and works across desktop and mobile.
--   **Relocated Estate Switcher:** The estate selection dropdown has been removed from the sidebar and is now consistently located in the top-right of the main page content for both Benefactors and Beneficiaries.
--   **New Feature Scaffolding:** Scaffolding (backend routes, frontend components, and navigation links) for 10 new features for the Founder and Operator portals has been created. The features themselves are currently placeholders.
+The application is a multi-portal platform with role-based access. Recent work has significantly enhanced the UI/UX and core functionality:
+-   A fully functional, persistent, collapsible sidebar is present on all portals.
+-   A new, custom, iOS-style notification system has replaced the old toasts. It supports light/dark themes, swipe-to-dismiss, and different notification types (error, success, info).
+-   Five native-like PWA features have been implemented without new dependencies: haptic feedback on interactions, pull-to-refresh on main content areas, a network status banner, a global error reporter, and a force update gate.
+-   Backend security has been hardened with membership-based access control.
+-   Scaffolding (placeholder components and routes) for 10 new staff portal features is in place.
 
 **Last working item**:
--   Last item agent was working: The agent was auditing and ensuring that all features implemented during this session were fully functional and accessible on mobile/PWA. It had identified that the new tool links were missing from the mobile menu () and that the logic for displaying operator vs. founder items was incorrect (the recurring path vs. role issue). The agent implemented fixes for these issues and was in the process of taking a screenshot to verify the mobile UI.
--   Status: IN PROGRESS
--   Agent Testing Done: N
--   Which testing method agent to use? screenshot tool
+-   Last item agent was working: The agent was creating this comprehensive handoff document to prepare for a new fork. This was done immediately after successfully building, integrating, and testing the new application-wide notification system, as requested by the user before starting the next phase of development.
+-   Status: NONE
+-   Agent Testing Done: Y
+-   Which testing method agent to use? NA
 -   User Testing Done: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1:** (P0) Mobile/PWA UI and Logic Verification
-    -   **Description:** The agent has applied fixes to  to add the 10 new tool links and to correctly display Operator-specific items when a Founder views the  portal. These changes need to be visually confirmed on a mobile viewport. The agent was struggling to get a clean screenshot due to login issues.
-    -   **Next debug checklist:**
-        1.  Log in as the founder ().
-        2.  Navigate to the Founder portal.
-        3.  Take a mobile-width screenshot.
-        4.  Click the logo to open the DEV portal switcher and switch to the Operations Portal.
-        5.  Take another mobile-width screenshot.
-        6.  Verify the hamburger menu in the Operations portal shows the correct 5 Operator tools (My Activity, Quick Search, etc.).
-        7.  Verify the bottom navigation also shows Operator-specific icons.
-    -   **Why fix this issue and what will be achieved with the fix?** To ensure feature parity and a correct user experience on mobile devices and PWAs, as requested by the user.
-    -   **Status:** IN PROGRESS
-    -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?** frontend
-    -   **Blocked on other issue:** None
+-   None. All identified issues from the previous session were resolved.
 
 **In progress Task List**:
 -   **Task 1:** (P0) Full Implementation of 10 New Staff Portal Features
-    -   **Description:** The agent has created the boilerplate for 10 new features (5 for Founder, 5 for Operator), but the components are just empty placeholders. The actual functionality needs to be built.
-    -   **Where to resume:** The frontend components exist in . The backend routes are in . The agent should pick one feature, plan its implementation (backend logic, DB schema if needed, frontend UI), and build it end-to-end.
-    -   **What will be achieved with this?** This will deliver on the user's request to add significant value and utility to the staff portals.
+    -   **Description:** The boilerplate for 10 new features (5 for Founder, 5 for Operator) exists, but the components are just empty placeholders. The actual functionality needs to be built.
+    -   **Where to resume:** The frontend components are in . The backend routes are in . The agent should begin by fully implementing one feature end-to-end.
+    -   **What will be achieved with this?** This will deliver significant value and utility to the staff portals, as originally requested.
     -   **Status:** IN PROGRESS
     -   **Should Test frontend/backend/both after fix?** both
-    -   **Blocked on something:** None
+    -   **Blocked on something:** None.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   **P0: Re-implement Deferred Features:** A set of UI/UX features (pull-to-refresh, native haptics, network status banner, force update gate, error reporter) were previously rolled back. These need to be carefully re-implemented, paying close attention to Capacitor dependencies to avoid breaking .
-    -   **P1: Finalize Share Extension Setup:** The user needs guidance on the manual configuration steps in Xcode and App Store Connect to complete the setup for the native iOS Share Extension.
+    -   **P0: Phase 1 - Push Notification & DTS/Operator Workflow Implementation:** This is the next major build, as planned with the user.
+        -   **Sub-Task 1: Implement Push Notification Backend Logic:** Build the backend triggers for the newly designed notification UI based on the user-approved event list. This includes special handling for security-sensitive notifications (e.g., death certificate uploaded) which must link to a priority support channel.
+        -   **Sub-Task 2: Implement DTS Workflow:** Review all verbiage and process flows in the DTS section of the app and build out all associated screens and backend logic to make it fully functional.
+        -   **Sub-Task 3: Design & Implement Multi-Tier Operator Roles:**
+            -   Implement Operations Manager and Operations Worker roles.
+            -   The Founder must be able to create, edit, and delete Manager accounts.
+            -   Managers must be able to create, edit, and delete Worker accounts.
+            -   A Founder notification for New Operator enrolled/deleted by Manager must be added.
+        -   **Sub-Task 4: Implement Immutable Sealed Account Screen:** Create the locked screen that appears when a transitioned benefactor attempts to log in. This must include a contact support button.
+    -   **P1: Finalize Share Extension Setup:** Guide the user through the manual Xcode and App Store Connect configuration for the iOS Share Extension.
 
 -   **Future Tasks:**
-    -   **P2: Twilio SMS OTP:** Implement this feature once the user confirms they have received A2P 10DLC approval from Twilio.
+    -   **P2: Twilio SMS OTP:** Implement this feature once the user confirms A2P 10DLC approval from Twilio.
 
 **Completed work in this session**
--   **Staff Portal Menu Overhaul:** Stripped Founder/Operator sidebars and mobile menus down to essentials (, ).
--   **RBAC Security Fix:** Refactored backend access control from -based to membership-based, fixing a critical flaw for dual-role users (, , ).
--   **Collapsible Sidebar Implementation:** Added a fully functional, persistent collapsible sidebar to all portals (, , ).
--   **DEV Portal Switcher Relocation:** Moved the switcher from a floating button to the logo icon (Founder only) and ensured it works on desktop/mobile (, , ).
--   **Estate Switcher Relocation:** Moved the beneficiary estate switcher from the sidebar to the main page header (, ).
--   **New Feature Scaffolding:** Created backend routes, frontend components, and navigation for 10 new Founder/Operator tools.
--   **Housekeeping & CI Fix:** Ran the  script and fixed all linting errors, resolving a failing GitHub CI check.
--   **Recurring Bug Fix:** Fixed logic in  and  to use the URL path () instead of user role to determine which nav items to display.
+-   **Mobile/PWA Verification:** Confirmed full mobile and PWA functionality for all recent UI changes, including path-based rendering for staff portals.
+-   **Deferred Feature Re-implementation:** Successfully implemented Haptics, Pull-to-Refresh, Network Status Banner, Force Update Gate, and a Global Error Reporter without adding new dependencies.
+-   **Notification System Overhaul:** Replaced the entire  toast system with a custom-built, polished, iOS-style slide-in notification component.
+-   All completed work was verified via the automated testing agent, achieving 100% pass rates.
 
 **Earlier issues found/mentioned but not fixed**
 -   None.
 
 **Known issue recurrence from previous fork**
--   **Issue recurrence in previous fork:** Production Crashes from yarn add v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/add for documentation about this command./.
--   **Recurrence count:** 0 (in this session)
--   **Status:** RESOLVED (by avoidance)
--   **New Recurring Issue Found:**
-    -   **Description:** The agent repeatedly implemented UI logic that checked  instead of the current URL path () to determine what to display. This caused an admin user viewing the Operations Portal () to see Founder-specific menus instead of Operator-specific ones. This mistake was made in  and then again in  before being corrected.
-    -   **Status:** RESOLVED
-    -   **Note:** The next agent must internalize this rule: **For staff portals, UI variation depends on the URL path, not just the user's role.**
+-   **Issue 1: Production Crashes from yarn add v1.22.22
+info Visit https://yarnpkg.com/en/docs/cli/add for documentation about this command./**
+    -   **Status:** RESOLVED (by avoidance). The agent successfully added 5 new features by using only existing dependencies and web APIs, proving this is a viable strategy. The next agent must continue to avoid yarn run v1.22.22
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. unless absolutely necessary.
+-   **Issue 2: Path-Based vs. Role-Based Rendering**
+    -   **Description:** The UI for staff portals must be rendered based on the URL path (, ), not the user's role.
+    -   **Status:** RESOLVED. The logic was confirmed to be working correctly on both desktop and mobile during this session's testing. This remains a critical architectural rule to follow.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Soft Deletes:** Using  fields to hide data instead of permanently deleting it.
--   **Role-Based Access Control (RBAC):** Backend checks to secure endpoints based on user roles (, ).
--   **Membership-Based Access Control:** A more granular RBAC pattern used to fix a security flaw. Instead of checking a user's static , the logic checks their relationship to a specific data object (e.g.,  or  of an estate).
--   **Path-Based UI Rendering:** A critical frontend pattern for this app. When a user can view multiple portals (e.g., a founder viewing the ops portal), the UI must be determined by the current URL path ( vs. ) rather than just the user's role.
--   **State Persistence with :** Used to remember the collapsed/expanded state of the sidebar across page loads.
--   **Component Communication via Custom Events:** The  component dispatches a custom  event, which the  component listens for to adjust its own styling.
+-   **Custom Notification System:** A bespoke React component for displaying polished, iOS-style notifications, managing a queue of messages, and handling auto-dismiss and swipe gestures.
+-   **Browser/Web APIs for PWA Features:** Leveraging , , , and touch events (, ) to create native-like experiences without external libraries.
+-   **Global Error Handling:** Using a combination of a React Error Boundary and a global  listener to catch all UI exceptions and report them to a backend endpoint ().
+-   **Client-Side Version Gating:** A  component that fetches  from the  endpoint and blocks the app if the client is outdated, forcing a refresh.
+-   **Membership-Based Access Control:** Backend logic that checks a user's relationship to a specific data object (e.g., ) instead of just their global role.
 
 **key DB schema**
--   ****: {uid=0(root) gid=0(root) groups=0(root), , , , : ['all', 'benefactors', 'beneficiaries']}
--   ****: {uid=0(root) gid=0(root) groups=0(root), , , , }
--   ****: {uid=0(root) gid=0(root) groups=0(root), , , , , , }
--   ****: {uid=0(root) gid=0(root) groups=0(root), , , }
--   ****: {uid=0(root) gid=0(root) groups=0(root), , , , , }
+-   No changes made in this session.
 
 **changes in tech stack**
 -   No changes.
 
 **All files of reference**
--   **Primary Modified Frontend:** , , , 
--   **Primary Modified Backend:** , , 
--   **Primary Created Files:**  and all components inside .
+-   : Central hub for integrating the new PWA/UI features.
+-   : The central utility for triggering notifications.
+-   : The new component that renders notifications.
+-   : The component for an individual notification message.
+-   : Contains the logic for the global error handler.
+-   : Component for client-side version checking.
 
 **Areas that need refactoring**:
--   The 10 new components in  are just stubs and need to be fully implemented.
+-   The 10 new components in  need to be fully implemented.
+-   The entire DTS section needs to be reviewed and implemented to be a fully functional workflow, not just placeholder text.
 
 **key api endpoints**
--   : New endpoint for founder audit trail.
--   : New endpoint for creating platform announcements.
--   (and 8 other new placeholder endpoints under )
+-   : Now actively used by the new global error reporter.
+-   : Now actively used by the  for version checking.
 
 **Critical Info for New Agent**
--   **CRITICAL RULE:** When implementing UI for staff portals, **ALWAYS use the URL path** ( vs. ) to determine what to show. Do NOT rely solely on , as a Founder can view the Operations portal. This was a recurring bug that caused significant user frustration.
--   **DO NOT MODIFY  carelessly.** Adding/removing frontend dependencies has caused production crashes in the past.
--   The 10 new features requested by the user are currently just placeholders. The next major task is to build them out. Start with one, get it working, and then move to the next.
+-   **FORK REQUESTED:** The user has explicitly requested this fork to start the next large build. You must begin by presenting a plan based on the Upcoming Tasks section.
+-   **NOTIFICATION SYSTEM:** The UI is **DONE**. Your next task is to build the **backend logic** that calls the  utility for the specific events defined in the user's plan.
+-   **MULTI-TIER OPERATORS:** The user has defined a new requirement for Manager and Worker operator roles. This needs to be designed and implemented.
+-   **CRITICAL RULE (URL vs. ROLE):** UI for staff portals (, ) **MUST** be determined by the URL path, not just the user's role. This was verified again and is crucial.
+-   **CRITICAL RULE (YARN.LOCK):** DO NOT run yarn add v1.22.22
+info Visit https://yarnpkg.com/en/docs/cli/add for documentation about this command. or yarn remove v1.22.22
+info Visit https://yarnpkg.com/en/docs/cli/remove for documentation about this command.. The previous agent successfully added 5 features without touching . Continue this practice.
 
 **documents and test reports created in this job**
 -   
+-   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Go back through all the changes from this session and make sure they work on mobile/PWA. (Status: In Progress)
-2.  **User:** For the floating DEV menu, make it work on collapsed sidebar and mobile, popping out from the logo. (Status: Completed)
-3.  **User:** Will the DEV menu fix work on collapsed sidebar and mobile? (Status: Acknowledged, led to fix)
-4.  **User:** The DEV menu is cut off. (Status: Completed)
-5.  **User:** How did the menu mistake happen again? (Status: Agent self-corrected and acknowledged the recurring pattern)
-6.  **User:** The side menu buttons you added for the ops portal go to the founder portal! (Status: Completed)
-7.  **User:** Did the housekeeping fix the GitHub CI failure? (Status: Completed)
-8.  **User:** The housekeeping script ran too fast, did it run everything? (Status: Completed, agent re-ran the full script)
-9.  **User:** Let's run housekeeping. (Status: Completed)
-10. **User:** I skipped the testing agent, did I mess anything up? (Status: Acknowledged)
+1.  **User:** Confirmed the plan to create a polished handoff for the next session. (Status: Completed)
+2.  **User:** Defined the immutably sealed screen for transitioned benefactor accounts. (Status: Pending Implementation)
+3.  **User:** Confirmed the multi-tier operator structure: Founder creates Managers, Managers create Workers. (Status: Pending Implementation)
+4.  **User:** Requested a fork before starting the next big build (notifications, DTS, operator roles). (Status: Actioned by creating this handoff)
+5.  **User:** Added a requirement for a priority alert button on security-sensitive notifications (e.g., death certificate). (Status: Pending Implementation)
+6.  **User:** Discussed the need to flesh out the multi-tier operator account structure. (Status: Pending Implementation)
+7.  **User:** Refined the list of push notification events, correcting agent's assumptions and adding new ones. (Status: Plan Updated)
+8.  **User:** Confirmed that Benefactors/Beneficiaries can message each other and requested more specific notification text for document uploads. (Status: Plan Updated)
+9.  **User:** Provided feedback on notification look/feel: should be polished, iOS-style, slide from top, and replace all old error toasts. (Status: Completed)
+10. **User:** Asked the agent to propose a list of push notification events for all user roles. (Status: Completed)
 
 **Project Health Check:**
 -   **Broken:** None.
--   **Mocked:** The 10 new features in the Founder and Operator portals are currently mocked with placeholder components and backend endpoints.
+-   **Mocked:**
+    -   The 10 new features in the Founder and Operator portals.
+    -   The entire Digital Trustee Services (DTS) workflow.
 
 **3rd Party Integrations**
 -   None added in this session.
 
 **Testing status**
--   Testing agent used after significant changes: YES. It was used after scaffolding the 10 new features and passed. It was skipped for a smaller change by user request.
+-   Testing agent used after significant changes: YES (twice).
 -   Troubleshoot agent used after agent stuck in loop: NO
--   Test files created: 
--   Known regressions: None.
+-   Test files created: , 
+-   Known regressions: None. Both test runs passed with 100% success.
 
 **Credentials to test flow:**
 -   **Founder Portal:**  / 
 -   **Benefactor Test Account:**  / 
 
 **What agent forgot to execute**
--   The agent did not forget to execute any direct commands, but the primary pending work is the full implementation of the 10 features requested by the user, which were correctly scaffolded as a first step.</analysis>
+-   Nothing. The agent correctly followed the user's explicit instructions to build the notification UI first and then prepare for a fork *before* implementing the complex backend logic and workflows. This was a deliberate and user-approved sequencing of tasks.</analysis>

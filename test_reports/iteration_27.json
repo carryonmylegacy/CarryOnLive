@@ -65,7 +65,7 @@
   "seed_data_creation": "None - used existing test data",
   "retest_needed": false,
   "should_main_agent_self_test": false,
-  "context_for_next_testing_agent": "Settings page refactoring verified. Subscription components properly extracted to /app/frontend/src/components/settings/ (SubscriptionManagement.js, PlanCard.js, BillingToggle.js). All plan cards, billing toggles, and status bars render correctly. Guardian page working 100%. App URL: https://ops-portal-revamp.preview.emergentagent.com. Login: admin@carryon.com / admin123.",
+  "context_for_next_testing_agent": "Settings page refactoring verified. Subscription components properly extracted to /app/frontend/src/components/settings/ (SubscriptionManagement.js, PlanCard.js, BillingToggle.js). All plan cards, billing toggles, and status bars render correctly. Guardian page working 100%. App URL: https://notification-hub-85.preview.emergentagent.com. Login: admin@carryon.com / admin123.",
   "features_verified": {
     "settings_page_structure": {
       "status": "WORKING",

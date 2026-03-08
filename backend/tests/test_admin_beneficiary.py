@@ -10,7 +10,7 @@ import requests
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 if not BASE_URL:
-    BASE_URL = "https://ops-portal-revamp.preview.emergentagent.com"
+    BASE_URL = "https://notification-hub-85.preview.emergentagent.com"
 
 
 class TestAdminEndpoints:
