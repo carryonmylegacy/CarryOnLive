@@ -157,16 +157,11 @@ async def get_estate(estate_id: str, current_user: dict = Depends(get_current_us
     if not estate:
         raise HTTPException(status_code=404, detail="Estate not found")
 
-    # Check access
-    if (
-        current_user["role"] == "benefactor"
-        and estate["owner_id"] != current_user["id"]
-    ):
-        raise HTTPException(status_code=403, detail="Access denied")
-    if (
-        current_user["role"] == "beneficiary"
-        and current_user["id"] not in estate["beneficiaries"]
-    ):
+    # Check access — based on actual relationship, not just role
+    is_owner = estate["owner_id"] == current_user["id"]
+    is_beneficiary = current_user["id"] in estate.get("beneficiaries", [])
+    is_admin = current_user["role"] in ("admin", "operator")
+    if not (is_owner or is_beneficiary or is_admin):
         raise HTTPException(status_code=403, detail="Access denied")
 
     return estate
@@ -431,15 +426,11 @@ async def get_activity_log(
     if not estate:
         raise HTTPException(status_code=404, detail="Estate not found")
 
-    # Check access
-    if (
-        current_user["role"] == "benefactor"
-        and estate["owner_id"] != current_user["id"]
-    ):
-        raise HTTPException(status_code=403, detail="Access denied")
-    if current_user["role"] == "beneficiary" and current_user["id"] not in estate.get(
-        "beneficiaries", []
-    ):
+    # Check access — based on actual relationship, not just role
+    is_owner = estate["owner_id"] == current_user["id"]
+    is_beneficiary = current_user["id"] in estate.get("beneficiaries", [])
+    is_admin = current_user.get("role") == "admin"
+    if not (is_owner or is_beneficiary or is_admin):
         raise HTTPException(status_code=403, detail="Access denied")
 
     activities = (
