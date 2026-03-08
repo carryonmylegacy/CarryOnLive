@@ -168,9 +168,9 @@ const MobileNav = () => {
     { to: '/timeline', icon: Clock, label: 'Legacy Timeline' },
   ];
 
-  // Admin menu items — admin should NOT see user content
+  // Founder menu items — founder should NOT see user content
   const adminMenuItems = [
-    { to: '/admin', icon: Home, label: 'Admin Dashboard' },
+    { to: '/admin', icon: Home, label: 'Founder Dashboard' },
     { to: '/admin/transition', icon: FileKey, label: 'Transition Verification (TVT)' },
     { to: '/admin/dts', icon: Shield, label: 'Designated Trustee Services' },
     { to: '/admin/support', icon: Headphones, label: 'Customer Support' },

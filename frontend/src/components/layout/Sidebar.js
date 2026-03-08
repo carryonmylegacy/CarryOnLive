@@ -151,7 +151,7 @@ const Sidebar = () => {
 
   const adminNavSections = [
     {
-      title: 'ADMINISTRATION',
+      title: 'FOUNDER OPS',
       items: [
         { to: '/admin', icon: LayoutDashboard, label: 'Dashboard & Users' },
       ]
