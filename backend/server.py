@@ -43,6 +43,7 @@ from routes.webauthn import router as webauthn_router
 from routes.errors import router as errors_router
 from routes.section_permissions import router as section_permissions_router
 from routes.operators import router as operators_router
+from routes.staff_tools import router as staff_tools_router
 from schedulers import daily_dob_check_scheduler, weekly_digest_scheduler
 
 
@@ -142,6 +143,7 @@ api_router.include_router(webauthn_router)
 api_router.include_router(errors_router)
 api_router.include_router(section_permissions_router)
 api_router.include_router(operators_router)
+api_router.include_router(staff_tools_router)
 
 
 @api_router.get("/health")
