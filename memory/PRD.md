@@ -8,7 +8,7 @@ Multi-portal estate planning platform with four distinct roles: Benefactor, Bene
 - **Backend:** FastAPI (Python)
 - **Database:** MongoDB
 - **Roles:** Benefactor, Beneficiary, Founder (admin), Operator (Manager + Worker)
-- **Notification System:** Custom iOS-style slide-in notifications (replaced Sonner)
+- **Notification System:** Custom iOS-style slide-in notifications + In-app notification storage + Web Push
 
 ## Critical Invariants
 - **ONE-WAY CHECK VALVE:** A beneficiary can NEVER access the benefactor account.
@@ -21,150 +21,105 @@ Multi-portal estate planning platform with four distinct roles: Benefactor, Bene
 
 ## What's Been Implemented
 
+### Push Notification System (Mar 8, 2026)
+- **Centralized notification service** (`services/notifications.py`) — dual delivery: in-app (MongoDB) + web push (VAPID)
+- **In-app notifications API:** GET /api/notifications, POST /api/notifications/{id}/read, POST /api/notifications/read-all, GET /api/notifications/unread-count
+- **Notification Bell** in sidebar — polls every 30s, shows badge with unread count, opens panel with notification list
+- **Notification triggers wired into:**
+  - Death certificate upload → Security alert to benefactor + all staff notification
+  - Transition approval → Beneficiary notifications + staff notification
+  - DTS task creation → All staff notification
+  - DTS task assignment → Assigned operator notification
+  - Support messages → In-app notification to recipient(s)
+  - Operator create/delete by manager → Founder notification
+- **Fire-and-forget pattern:** All triggers use `asyncio.create_task` for non-blocking delivery
+
+### Operator Activity Dashboard (Mar 8, 2026)
+- **GET /api/ops/dashboard** — Real-time metrics endpoint (Founder + Manager only)
+- **Work Queues:** DTS total/unassigned, Support open/unanswered, TVT pending/reviewing, Verifications, Escalations
+- **Team Activity:** Per-operator profiles with online status, tasks assigned/active/completed, completion rate, 24h action count
+- **Recent Shift Notes:** Last 24h shift notes with author and timestamp
+- **Auto-refresh:** Dashboard polls every 30s
+- **Access:** Dashboard is the default view for Managers at /ops, available as tab for Founder at /admin/ops-dashboard
+
+### DTS Task Assignment (Mar 8, 2026)
+- **POST /api/dts/tasks/{id}/assign** — Assign DTS tasks to operators
+- Founder and Managers can assign; Workers cannot
+- Assigned operator receives notification
+- `assigned_to`, `assigned_by`, `assigned_at` fields on DTS tasks
+
 ### Multi-Tier Operator System (Mar 8, 2026)
 - **Operator Hierarchy:** Founder (admin) → Operations Manager → Operations Worker
-- **Founder capabilities:** Create/edit/delete any operator (manager or worker)
-- **Manager capabilities:** Create/edit/delete workers only. Cannot create/edit/delete managers.
-- **Worker role:** Handles assigned tasks (TVT, DTS, Support, Verifications)
-- **Architecture:** Unlimited future accounts supported. Current soft limits: 2 managers, 10 workers
-- **Separate entry points:** Each operator has unique username/password, their own workspace at /ops
-- **Sidebar:** Managers see "Team" nav item for worker management. Label shows "OPS MANAGER" for managers.
-- **OperatorsTab:** Displays Managers section (golden crown) and Workers section (blue wrench) with role badges
-- **Edit operator:** Full edit dialog with name, email, phone, title, notes, password reset
-- **Delete operator:** Requires password confirmation for security
-- **Backend fields:** `operator_role` field on user document ("manager" or "worker"). Legacy operators default to "worker".
-- **Auth:** `operator_role` included in /auth/me response and login TokenResponse
+- **Founder:** Create/edit/delete any operator
+- **Manager:** Create/edit/delete workers only. Cannot manage managers.
+- **Architecture:** Unlimited future accounts. Current soft limits: 2 managers, 10 workers
+- **Separate entry points:** Each operator has unique username/password, workspace at /ops
+- **Sidebar:** Managers see "Ops Dashboard" + "Team" nav items. Label shows "OPS MANAGER"
+- **OperatorsTab:** Manager/Worker sections with role badges (crown/wrench icons)
 
 ### Sealed Account Screen (Mar 8, 2026)
-- **When:** A transitioned benefactor tries to log in
-- **Backend:** Login checks if benefactor's estate has status="transitioned", returns `{sealed: true, transitioned_at: "..."}`
-- **Frontend:** Full-screen dark blue locked screen with glass tile
-- **Content:** "This account was transitioned on [date/time] and is therefore immutably sealed."
-- **Priority 1 Contact Support:** Three options:
-  - Live Chat (links to /support?priority=p1&reason=sealed_account)
-  - Email (mailto:founder@carryon.us with pre-filled subject)
-  - Phone Call (tel: link to configured number)
-- **Back to login** button to return
-- **No menu, no navigation** — just the sealed notice and P1 contact
-
-### P1 Contact Settings (Mar 8, 2026)
-- **Founder-only settings** in admin portal sidebar
-- **Configurable:** Email, phone number, live chat toggle
+- **Backend:** Login checks if benefactor's estate is transitioned, returns `{sealed: true}`
+- **Frontend:** Full-screen locked screen with P1 Contact Support (chat, email, phone)
+- **P1 Contact Settings:** Founder-only settings in admin portal. Public API for sealed screen.
 - **Defaults:** email=founder@carryon.us, phone=(808) 585-1156, chat_enabled=true
-- **Phone number restriction:** ONLY shown on sealed account screen, nowhere else
-- **Public API:** /api/founder/p1-contact-settings-public (no auth required for sealed screen)
-- **Staff API:** /api/founder/p1-contact-settings (GET for staff, PUT for founder only)
 
-### Notification System (Mar 8, 2026)
-- **iOS-style slide-in notifications** replacing old Sonner toasts
-- Slide in from top, glass-morphism background, auto-dismiss after 4s
-- Types: error (red), success (green), info (blue), warning (yellow), push (gold), critical (dark red)
-
-### P0 Features (Mar 8, 2026)
-1. **Pull-to-Refresh** — Touch gesture + visual indicator
-2. **Native Haptics** — `navigator.vibrate()` on key interactions
-3. **Network Status Banner** — Red offline / green reconnection
-4. **Force Update Gate** — Checks `/api/health` min_version
-5. **Error Reporter** — Global error handlers → `POST /api/errors/report`
-
-### Staff Portal Features
-**Founder (5):** Announcements, System Health, Escalations, Knowledge Base, P1 Contact Settings
-**Operations (5):** My Activity, Quick Search, Escalate, Shift Notes, SOPs
-**Manager-only:** Team management (worker CRUD)
-
-### Infrastructure
-- Collapsible sidebar, DEV portal switcher, estate switcher relocation
-- RBAC hardened to membership-based access
-- Security hardening, passkey auth, biometric auth
+### Earlier Features
+- iOS-style slide-in notification UI (replaced Sonner)
+- PWA features: Pull-to-Refresh, Haptics, Network Status Banner, Force Update Gate, Error Reporter
+- Staff Portal Features: Announcements, System Health, Escalations, Knowledge Base, My Activity, Quick Search, Shift Notes, SOPs
+- AES-256-GCM encryption, membership-based access control
 
 ## Prioritized Backlog
 
-### P0 — Push Notification Events (APPROVED BY USER)
+### P0 — "I'm Still Alive" Emergency Flow (PARTIALLY DONE)
+- Death cert upload notification fires with security alert ✅
+- Need: Prominent "I'm Still Alive — Emergency Contact" button in benefactor notification
+- Need: P1 thread in support chat immediately alerts ALL operators
+- Need: Benefactor window from death cert upload through verification to halt the process
 
-**Benefactor notifications:**
-- Beneficiary accepted their invitation
-- Beneficiary uploaded a document (e.g., death certificate) — **SECURITY ALERT with "I'm Still Alive — Emergency Contact" button**
-- DTS estimate received and awaiting approval
-- Founder message received (via Support Chat)
-- System update push (platform announcements)
-- Transition status changed — **SECURITY ALERT with "I'm Still Alive — Emergency Contact" button**
-- Support reply received
-- Subscription expiring / payment failed
+### P0 — DTS Workflow Full Implementation (PARTIALLY DONE)
+- Task assignment for Managers ✅
+- All staff see DTS tasks ✅
+- Need: Review all verbiage/UI flows end-to-end
+- Need: DTS task assignment UI in frontend DTSTab
+- Full status flow: submitted → quoted → approved → ready → executed → destroyed
 
-**Beneficiary notifications:**
-- Invited to an estate (new invitation)
-- New milestone message unlocked
-- Transition initiated on your estate
-- New document shared with you (specify doc type)
-- Support reply received
-
-**Founder notifications:**
-- New operator escalation submitted
-- New support ticket created
-- New user signup
-- Transition initiated (any estate)
-- System health alert (error spike)
-- Subscription payment received
-- New Operator enrolled or deleted by Operations Manager
-
-**Operator notifications:**
-- New support ticket assigned
-- Escalation response from founder
-- Shift note left by another operator
-- New DTS request from a benefactor
-- New DTS task assigned
-- Verification request submitted
-- High-priority support ticket flagged
-
-### P0 — "I'm Still Alive" Emergency Flow
-- Death certificate upload and transition status change notifications include a prominent button
-- Button deep-links to Priority 1 emergency support chat thread
-- P1 thread immediately alerts ALL operators
-
-### P0 — DTS Workflow Full Implementation
-- Review all verbiage and process flows
-- Task assignment capabilities for Managers
-- All TVT, Customer Service, DTS requests visible to all staff (Founder, Managers, Workers)
-- Status flow: submitted → quoted → approved → ready → executed → destroyed
+### P0 — Remaining Notification Triggers
+- Beneficiary invitation accepted → benefactor notification
+- Subscription expiring / payment failed → benefactor notification
+- New user signup → founder notification
+- System health alert → founder notification
 
 ### P1 — Milestone Message Automation (PLACEHOLDER)
-- Automated workflow: Beneficiary triggers Milestone Notification
-- System searches estate for matching Milestone Messages
-- Delivers to correct beneficiary on time
+- Automated: Beneficiary triggers Milestone Notification → System searches estate → Delivers to correct beneficiary
 - Human oversight: CarryOn Worker notified, reviews automated match before delivery
-- **Build AFTER this big build phase**
+- Build AFTER this big build phase
 
-### P1 — Finalize Share Extension Setup
-- iOS/Xcode manual configuration guidance
-
+### P1 — Share Extension Setup
 ### P2 — Twilio SMS OTP
-- Pending A2P 10DLC approval
 
 ## Key Files
 
-### Multi-Tier Operator System
-- `backend/routes/operators.py` — Full CRUD for managers/workers + P1 contact settings + audit trail
-- `frontend/src/components/admin/OperatorsTab.js` — Manager/Worker hierarchy display
-- `frontend/src/components/admin/P1ContactSettingsTab.js` — P1 emergency contact settings
-- `frontend/src/components/layout/Sidebar.js` — Role-aware nav (manager gets Team tab)
-
-### Sealed Account Screen
-- `frontend/src/components/SealedAccountScreen.js` — Full sealed screen with P1 contact options
-- `frontend/src/pages/LoginPage.js` — Handles sealed response from login API
-- `frontend/src/contexts/AuthContext.js` — Login function returns sealed flag
-- `backend/routes/auth.py` — Checks transitioned estates on benefactor login
-
 ### Notification System
-- `src/components/AppNotification.js` — iOS-style notification system
-- `src/utils/toast.js` — Routes toast.error/success/info/warning to notify API
+- `backend/services/notifications.py` — Centralized service (in-app + push)
+- `backend/routes/notifications.py` — CRUD endpoints
+- `frontend/src/components/NotificationBell.js` — Sidebar bell + panel
 
-### Core Files
-- `App.js` — ForceUpdateGate, NetworkStatusBanner, NotificationContainer, routing
-- `backend/models.py` — UserResponse with operator_role, UserLogin accepts non-email usernames
+### Operator Dashboard
+- `backend/routes/ops_dashboard.py` — Dashboard API
+- `frontend/src/components/admin/OpsDashboardTab.js` — Dashboard UI
 
-### DTS System
-- `pages/TrusteePage.js` — Frontend for Digital Trustee Services
-- `backend/routes/dts.py` — DTS CRUD, quoting, approval, status management
+### Multi-Tier Operators
+- `backend/routes/operators.py` — CRUD + P1 settings + audit trail
+- `frontend/src/components/admin/OperatorsTab.js` — Manager/Worker hierarchy
+
+### Sealed Account
+- `frontend/src/components/SealedAccountScreen.js` — Locked screen
+- `frontend/src/components/admin/P1ContactSettingsTab.js` — P1 settings
+
+### DTS
+- `backend/routes/dts.py` — DTS CRUD + task assignment
+- `frontend/src/pages/TrusteePage.js` — DTS frontend
 
 ## Key Credentials
 - Founder: info@carryon.us / Demo1234!
