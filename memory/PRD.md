@@ -16,6 +16,7 @@ Multi-portal estate planning platform with four distinct roles: Benefactor, Bene
 - **DO NOT modify yarn.lock carelessly** — caused production crashes previously.
 - **Soft-delete is the standard** for all operational data deletions.
 - **Do not show UI for features that don't apply** to the current user's state.
+- **PATH-BASED UI RENDERING:** For staff portals, UI variation depends on the URL path (/admin vs /ops), NOT just the user's role. A founder viewing /ops sees operator tools.
 
 ## What's Been Implemented
 
@@ -27,20 +28,32 @@ Multi-portal estate planning platform with four distinct roles: Benefactor, Bene
 - Soft-delete system (backend + frontend)
 - Operations Dashboard tiles (auto-refreshing)
 - RBAC hardening
+- Security hardening (16 fixes), 5 enhancement features
+- Pre-App Store refinements
 
-### Current Session (Feb 2026)
+### Current Session (Mar 8, 2026)
+
+#### P0: Mobile/PWA Verification - COMPLETED
+- Verified all 10 new staff tools work on mobile viewport (hamburger menu + bottom nav)
+- Verified DEV portal switcher works from mobile logo tap
+- Verified correct path-based rendering when admin views ops portal on mobile
+- Verified desktop sidebar shows correct tools per portal
+- Backend: 11/11 API tests passed (100%)
+- Frontend: All features working correctly (100%)
+- Testing agent confirmed: no issues found
+
+### Previous Session (Feb-Mar 2026)
 
 #### Menu & Navigation Cleanup
 - Stripped Operator & Founder sidebar/hamburger menus to Logo + Tools + Theme + Sign Out
 - Removed "Beneficiary Portal" link from benefactor sidebar
 - Settings page shows only Appearance + Sign Out for staff
-- Benefactor/Beneficiary menus untouched
 - OTP toggle preserved in Founder portal
 
 #### Collapsible Sidebar
 - Toggle between expanded (icon + label) and collapsed (icon only) on desktop
 - Persists via localStorage across sessions
-- Beta banner becomes Greek beta (beta) icon when collapsed
+- Beta banner becomes Greek beta icon when collapsed
 - All portals supported
 
 #### Estate Switcher Relocation
@@ -52,24 +65,22 @@ Multi-portal estate planning platform with four distinct roles: Benefactor, Bene
 - Moved Portal Switcher into the CarryOn logo icon (sidebar, founder-only)
 - Removed floating DEV button overlay from App.js
 - Non-admin users cannot trigger the switcher (security enforced)
-- Same menu preserved: switch between Benefactor, Beneficiary, Founder, Operations portals
-- Fixed dual-role scenario: benefactor who is also a beneficiary can now access beneficiary estates in read-only view
-- Updated estates.py (detail + activity endpoints) and messages.py (list, video, voice endpoints) to use membership-based checks
+- Works on desktop (expanded/collapsed) and mobile
 
-#### 10 New Staff Portal Features (All SOC2 Compliant)
+#### 10 New Staff Portal Features (All SOC2 Compliant) - FULLY IMPLEMENTED
 
 **Founder Portal (4 features):**
-1. **Platform Announcements** — Create/deactivate announcements targeted at specific audiences (all, benefactors, beneficiaries, operators). Audit-logged.
-2. **System Health Monitor** — Real-time database stats, active sessions, client errors, audit events, queue health. Auto-refreshes every 60s.
-3. **Escalations (Founder View)** — View all operator escalations, resolve with notes. Audit-logged.
-4. **Knowledge Base** — Create/edit/delete SOPs and procedures, categorized by department. Operators can read.
+1. **Platform Announcements** — Create/deactivate announcements targeted at specific audiences
+2. **System Health Monitor** — Real-time database stats, active sessions, client errors, audit events
+3. **Escalations (Founder View)** — View all operator escalations, resolve with notes
+4. **Knowledge Base** — Create/edit/delete SOPs and procedures, categorized by department
 
 **Operations Portal (5 features):**
-1. **My Activity Log** — Personal audit trail grouped by date, showing all actions with severity levels.
-2. **Quick Search** — Universal search across users, support tickets, DTS tasks, verifications.
-3. **Escalate to Founder** — Submit issues requiring founder attention with priority levels and related context.
-4. **Shift Notes & Handoff** — Leave notes for the next operator, with acknowledge system.
-5. **Knowledge Base / SOPs** — Read-only access to founder-created procedures.
+1. **My Activity Log** — Personal audit trail grouped by date
+2. **Quick Search** — Universal search across users, support tickets, DTS tasks, verifications
+3. **Escalate to Founder** — Submit issues requiring founder attention with priority levels
+4. **Shift Notes & Handoff** — Leave notes for the next operator, with acknowledge system
+5. **Knowledge Base / SOPs** — Read-only access to founder-created procedures
 
 ## Key Files
 - **Backend:** `routes/staff_tools.py` (all new endpoints), `routes/estates.py`, `routes/messages.py`
@@ -90,6 +101,6 @@ Multi-portal estate planning platform with four distinct roles: Benefactor, Bene
 - Pending user's A2P 10DLC approval
 
 ## Key Credentials
-- Founder: admin@carryon.com / Demo1234!
+- Founder: info@carryon.us / Demo1234!
 - Benefactor: fulltest@test.com / Password.123
 - Operator: Created via Founder Portal > Operators tab
