@@ -212,7 +212,9 @@
   html {
     scroll-behavior: smooth;
     overscroll-behavior: none;
-    -webkit-text-size-adjust: 100%;
+    /* Allow iOS Dynamic Type text scaling for accessibility */
+    -webkit-text-size-adjust: auto;
+    text-size-adjust: auto;
   }
   
   body {
@@ -934,6 +936,58 @@
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* iOS Dynamic Type — ensure all fixed-height elements expand with text scaling */
+@media (max-width: 1024px) {
+  /* Mobile header: use min-height so it expands with larger text */
+  .mobile-header > div {
+    min-height: 3rem;
+    height: auto;
+  }
+
+  /* Bottom nav: use min-height so buttons expand */
+  .mobile-bottom-nav > div {
+    min-height: 3.5rem;
+    height: auto;
+  }
+
+  /* Nav items in bottom bar: allow wrapping and growth */
+  .mobile-nav-item {
+    min-height: 2.5rem;
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+  }
+
+  /* Glass cards: never clip content */
+  .glass-card {
+    overflow: visible;
+    min-height: auto;
+  }
+
+  /* All buttons: use min-height, never fixed height */
+  button, .btn, [role="button"] {
+    min-height: auto;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  /* Tiles and cards: flexible padding */
+  [class*="rounded-xl"], [class*="rounded-2xl"] {
+    overflow-wrap: break-word;
+  }
+
+  /* Input fields: scale with text */
+  input, textarea, select {
+    min-height: 2.5rem;
+    font-size: max(16px, 1em); /* Prevents iOS zoom on focus */
+  }
+
+  /* Tabs: allow text wrapping */
+  [data-testid^="admin-tab-"], [data-testid^="billing-"] {
+    white-space: normal;
+    min-height: 2rem;
   }
 }
 

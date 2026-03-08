@@ -393,7 +393,7 @@ const MobileNav = () => {
     <>
       {/* Top Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 w-full mobile-header z-50">
-        <div className="h-12 flex items-center justify-between px-4">
+        <div className="min-h-[3rem] flex items-center justify-between px-4 py-1">
           <div className="flex items-center gap-3 relative"
             onTouchStart={handleLogoTouchStart}
             onTouchEnd={handleLogoTouchEnd}
@@ -674,7 +674,7 @@ const MobileNav = () => {
       {/* Bottom Navigation — floating glass pill */}
       <nav className="lg:hidden fixed bottom-0 left-0 w-full z-50" role="navigation" aria-label="Bottom navigation" style={{ paddingBottom: 'env(safe-area-inset-bottom, 4px)' }}>
         <div className="mx-2 mb-1 mobile-bottom-nav rounded-[22px] overflow-hidden">
-          <div className="flex items-end h-14 px-2">
+          <div className="flex items-end min-h-[3.5rem] px-2">
           {getBottomNav().map((item, index) => {
             const isCenter = item.isCenter;
             const showDivider = index < getBottomNav().length - 1;
