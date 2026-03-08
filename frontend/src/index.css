@@ -875,7 +875,7 @@
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: none;
     overscroll-behavior-y: none;
-    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 8px));
     /* 48px = mobile header bar height (h-12), plus safe-area for the notch/status bar */
     padding-top: calc(48px + env(safe-area-inset-top, 0px));
     touch-action: pan-x pan-y;
