@@ -402,7 +402,7 @@ const DashboardPage = () => {
       }}>
       {/* Trial Banner */}
       <div className="mb-4">
-        <TrialBanner onUpgrade={() => navigate('/settings')} />
+        <TrialBanner onUpgrade={() => navigate('/subscription')} />
       </div>
 
       {/* Header + Estate Selector */}
