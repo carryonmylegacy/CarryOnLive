@@ -83,8 +83,7 @@ async def create_dts_task(
 
 @router.get("/dts/tasks/all")
 async def get_all_dts_tasks(
-    include_deleted: bool = False,
-    current_user: dict = Depends(get_current_user)
+    include_deleted: bool = False, current_user: dict = Depends(get_current_user)
 ):
     """Admin gets all DTS tasks across all estates"""
     if current_user["role"] not in ("admin", "operator"):
@@ -92,7 +91,9 @@ async def get_all_dts_tasks(
     query = {}
     if not (include_deleted and current_user["role"] == "admin"):
         query["soft_deleted"] = {"$ne": True}
-    tasks = await db.dts_tasks.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
+    tasks = (
+        await db.dts_tasks.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
+    )
     return tasks
 
 
@@ -357,12 +358,14 @@ async def delete_dts_task(
     # Soft-delete instead of hard delete
     await db.dts_tasks.update_one(
         {"id": task_id},
-        {"$set": {
-            "soft_deleted": True,
-            "deleted_at": datetime.now(timezone.utc).isoformat(),
-            "deleted_by": current_user["id"],
-            "deleted_by_role": current_user["role"],
-        }}
+        {
+            "$set": {
+                "soft_deleted": True,
+                "deleted_at": datetime.now(timezone.utc).isoformat(),
+                "deleted_by": current_user["id"],
+                "deleted_by_role": current_user["role"],
+            }
+        },
     )
 
     await log_activity(
@@ -373,7 +376,11 @@ async def delete_dts_task(
         f"DTS task soft-deleted: {task['title']}",
     )
 
-    return {"success": True, "message": "Task deleted successfully", "soft_deleted": True}
+    return {
+        "success": True,
+        "message": "Task deleted successfully",
+        "soft_deleted": True,
+    }
 
 
 @router.post("/dts/tasks/{task_id}/restore")
@@ -383,15 +390,26 @@ async def restore_dts_task(
 ):
     """Restore a soft-deleted DTS task — founder (admin) only."""
     if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Only the Founder can restore deleted items")
+        raise HTTPException(
+            status_code=403, detail="Only the Founder can restore deleted items"
+        )
 
-    task = await db.dts_tasks.find_one({"id": task_id, "soft_deleted": True}, {"_id": 0})
+    task = await db.dts_tasks.find_one(
+        {"id": task_id, "soft_deleted": True}, {"_id": 0}
+    )
     if not task:
         raise HTTPException(status_code=404, detail="No deleted task found")
 
     await db.dts_tasks.update_one(
         {"id": task_id},
-        {"$unset": {"soft_deleted": "", "deleted_at": "", "deleted_by": "", "deleted_by_role": ""}}
+        {
+            "$unset": {
+                "soft_deleted": "",
+                "deleted_at": "",
+                "deleted_by": "",
+                "deleted_by_role": "",
+            }
+        },
     )
 
     await log_activity(
@@ -410,8 +428,7 @@ async def restore_dts_task(
 
 @router.get("/transition/certificates/all")
 async def get_all_certificates(
-    include_deleted: bool = False,
-    current_user: dict = Depends(get_current_user)
+    include_deleted: bool = False, current_user: dict = Depends(get_current_user)
 ):
     """Get all certificates with full details for verification team"""
     if current_user["role"] not in ("admin", "operator"):
@@ -457,12 +474,14 @@ async def soft_delete_certificate(
 
     await db.death_certificates.update_one(
         {"id": certificate_id},
-        {"$set": {
-            "soft_deleted": True,
-            "deleted_at": datetime.now(timezone.utc).isoformat(),
-            "deleted_by": current_user["id"],
-            "deleted_by_role": current_user["role"],
-        }}
+        {
+            "$set": {
+                "soft_deleted": True,
+                "deleted_at": datetime.now(timezone.utc).isoformat(),
+                "deleted_by": current_user["id"],
+                "deleted_by_role": current_user["role"],
+            }
+        },
     )
     return {"soft_deleted": True, "certificate_id": certificate_id}
 
@@ -474,7 +493,9 @@ async def restore_certificate(
 ):
     """Restore a soft-deleted certificate — founder (admin) only."""
     if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Only the Founder can restore deleted items")
+        raise HTTPException(
+            status_code=403, detail="Only the Founder can restore deleted items"
+        )
 
     cert = await db.death_certificates.find_one(
         {"id": certificate_id, "soft_deleted": True}, {"_id": 0}
@@ -484,7 +505,14 @@ async def restore_certificate(
 
     await db.death_certificates.update_one(
         {"id": certificate_id},
-        {"$unset": {"soft_deleted": "", "deleted_at": "", "deleted_by": "", "deleted_by_role": ""}}
+        {
+            "$unset": {
+                "soft_deleted": "",
+                "deleted_at": "",
+                "deleted_by": "",
+                "deleted_by_role": "",
+            }
+        },
     )
     return {"restored": True, "certificate_id": certificate_id}
 

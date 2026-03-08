@@ -82,7 +82,11 @@ async def list_announcements(
 ):
     require_staff(current_user)
     query = {"is_active": True} if active_only else {}
-    items = await db.announcements.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    items = (
+        await db.announcements.find(query, {"_id": 0})
+        .sort("created_at", -1)
+        .to_list(100)
+    )
     return items
 
 
@@ -95,7 +99,12 @@ async def delete_announcement(
     require_founder(current_user)
     result = await db.announcements.update_one(
         {"id": announcement_id},
-        {"$set": {"is_active": False, "deactivated_at": datetime.now(timezone.utc).isoformat()}},
+        {
+            "$set": {
+                "is_active": False,
+                "deactivated_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
     )
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Announcement not found")
@@ -132,6 +141,7 @@ async def get_system_health(current_user: dict = Depends(get_current_user)):
 
     # Active sessions (tokens issued in last 24h)
     from datetime import timedelta
+
     day_ago = (now - timedelta(hours=24)).isoformat()
     active_sessions = await db.users.count_documents({"last_login": {"$gte": day_ago}})
 
@@ -142,7 +152,9 @@ async def get_system_health(current_user: dict = Depends(get_current_user)):
 
     # Audit events today
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
-    audit_today = await db.audit_trail.count_documents({"timestamp": {"$gte": today_start}})
+    audit_today = await db.audit_trail.count_documents(
+        {"timestamp": {"$gte": today_start}}
+    )
 
     # Support queue
     open_tickets = await db.support_conversations.count_documents(
@@ -182,9 +194,7 @@ async def get_my_activity(
 ):
     require_staff(current_user)
     entries = (
-        await db.audit_trail.find(
-            {"actor_id": current_user["id"]}, {"_id": 0}
-        )
+        await db.audit_trail.find({"actor_id": current_user["id"]}, {"_id": 0})
         .sort("timestamp", -1)
         .limit(limit)
         .to_list(limit)
@@ -208,38 +218,92 @@ async def quick_search(
 
     # Search support conversations
     support = await db.support_conversations.find(
-        {"deleted_at": {"$exists": False}}, {"_id": 0, "id": 1, "user_email": 1, "user_name": 1, "status": 1, "subject": 1}
+        {"deleted_at": {"$exists": False}},
+        {"_id": 0, "id": 1, "user_email": 1, "user_name": 1, "status": 1, "subject": 1},
     ).to_list(500)
     for s in support:
-        if query_lower in (s.get("user_email", "") or "").lower() or query_lower in (s.get("user_name", "") or "").lower() or query_lower in (s.get("subject", "") or "").lower():
-            results.append({"type": "support", "id": s["id"], "title": s.get("subject", s.get("user_name", "Support Ticket")), "subtitle": s.get("user_email", ""), "status": s.get("status", "")})
+        if (
+            query_lower in (s.get("user_email", "") or "").lower()
+            or query_lower in (s.get("user_name", "") or "").lower()
+            or query_lower in (s.get("subject", "") or "").lower()
+        ):
+            results.append(
+                {
+                    "type": "support",
+                    "id": s["id"],
+                    "title": s.get("subject", s.get("user_name", "Support Ticket")),
+                    "subtitle": s.get("user_email", ""),
+                    "status": s.get("status", ""),
+                }
+            )
 
     # Search users
     users = await db.users.find(
-        {"$or": [
-            {"email": {"$regex": q, "$options": "i"}},
-            {"name": {"$regex": q, "$options": "i"}},
-        ]},
+        {
+            "$or": [
+                {"email": {"$regex": q, "$options": "i"}},
+                {"name": {"$regex": q, "$options": "i"}},
+            ]
+        },
         {"_id": 0, "id": 1, "email": 1, "name": 1, "role": 1},
     ).to_list(20)
     for u in users:
-        results.append({"type": "user", "id": u["id"], "title": u.get("name", u["email"]), "subtitle": u["email"], "status": u.get("role", "")})
+        results.append(
+            {
+                "type": "user",
+                "id": u["id"],
+                "title": u.get("name", u["email"]),
+                "subtitle": u["email"],
+                "status": u.get("role", ""),
+            }
+        )
 
     # Search DTS tasks
     dts = await db.dts_tasks.find(
-        {"deleted_at": {"$exists": False}}, {"_id": 0, "id": 1, "benefactor_name": 1, "benefactor_email": 1, "status": 1}
+        {"deleted_at": {"$exists": False}},
+        {"_id": 0, "id": 1, "benefactor_name": 1, "benefactor_email": 1, "status": 1},
     ).to_list(500)
     for d in dts:
-        if query_lower in (d.get("benefactor_email", "") or "").lower() or query_lower in (d.get("benefactor_name", "") or "").lower():
-            results.append({"type": "dts", "id": d["id"], "title": d.get("benefactor_name", "DTS Task"), "subtitle": d.get("benefactor_email", ""), "status": d.get("status", "")})
+        if (
+            query_lower in (d.get("benefactor_email", "") or "").lower()
+            or query_lower in (d.get("benefactor_name", "") or "").lower()
+        ):
+            results.append(
+                {
+                    "type": "dts",
+                    "id": d["id"],
+                    "title": d.get("benefactor_name", "DTS Task"),
+                    "subtitle": d.get("benefactor_email", ""),
+                    "status": d.get("status", ""),
+                }
+            )
 
     # Search verifications
     verifications = await db.id_verifications.find(
-        {"deleted_at": {"$exists": False}}, {"_id": 0, "id": 1, "user_email": 1, "user_name": 1, "status": 1, "verification_type": 1}
+        {"deleted_at": {"$exists": False}},
+        {
+            "_id": 0,
+            "id": 1,
+            "user_email": 1,
+            "user_name": 1,
+            "status": 1,
+            "verification_type": 1,
+        },
     ).to_list(500)
     for v in verifications:
-        if query_lower in (v.get("user_email", "") or "").lower() or query_lower in (v.get("user_name", "") or "").lower():
-            results.append({"type": "verification", "id": v["id"], "title": v.get("user_name", "Verification"), "subtitle": v.get("verification_type", v.get("user_email", "")), "status": v.get("status", "")})
+        if (
+            query_lower in (v.get("user_email", "") or "").lower()
+            or query_lower in (v.get("user_name", "") or "").lower()
+        ):
+            results.append(
+                {
+                    "type": "verification",
+                    "id": v["id"],
+                    "title": v.get("user_name", "Verification"),
+                    "subtitle": v.get("verification_type", v.get("user_email", "")),
+                    "status": v.get("status", ""),
+                }
+            )
 
     return results[:50]
 
@@ -308,7 +372,9 @@ async def list_escalations(
     # Operators see their own; founders see all
     if current_user.get("role") == "operator":
         query["created_by"] = current_user["id"]
-    items = await db.escalations.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    items = (
+        await db.escalations.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    )
     return items
 
 
@@ -327,16 +393,20 @@ async def resolve_escalation(
     now = datetime.now(timezone.utc)
     result = await db.escalations.update_one(
         {"id": escalation_id, "status": "open"},
-        {"$set": {
-            "status": "resolved",
-            "resolved_at": now.isoformat(),
-            "resolved_by": current_user["id"],
-            "resolved_by_name": current_user.get("name", current_user["email"]),
-            "resolution_note": data.resolution_note,
-        }},
+        {
+            "$set": {
+                "status": "resolved",
+                "resolved_at": now.isoformat(),
+                "resolved_by": current_user["id"],
+                "resolved_by_name": current_user.get("name", current_user["email"]),
+                "resolution_note": data.resolution_note,
+            }
+        },
     )
     if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="Escalation not found or already resolved")
+        raise HTTPException(
+            status_code=404, detail="Escalation not found or already resolved"
+        )
     await log_audit_event(
         actor_id=current_user["id"],
         actor_email=current_user["email"],
@@ -400,7 +470,9 @@ async def list_shift_notes(
     current_user: dict = Depends(get_current_user),
 ):
     require_staff(current_user)
-    items = await db.shift_notes.find({}, {"_id": 0}).sort("created_at", -1).to_list(limit)
+    items = (
+        await db.shift_notes.find({}, {"_id": 0}).sort("created_at", -1).to_list(limit)
+    )
     return items
 
 
@@ -412,11 +484,15 @@ async def acknowledge_shift_note(
     require_staff(current_user)
     await db.shift_notes.update_one(
         {"id": note_id},
-        {"$addToSet": {"acknowledged_by": {
-            "user_id": current_user["id"],
-            "name": current_user.get("name", current_user["email"]),
-            "at": datetime.now(timezone.utc).isoformat(),
-        }}},
+        {
+            "$addToSet": {
+                "acknowledged_by": {
+                    "user_id": current_user["id"],
+                    "name": current_user.get("name", current_user["email"]),
+                    "at": datetime.now(timezone.utc).isoformat(),
+                }
+            }
+        },
     )
     return {"acknowledged": True}
 
@@ -477,7 +553,11 @@ async def list_kb_articles(
     query = {}
     if category:
         query["category"] = category
-    items = await db.knowledge_base.find(query, {"_id": 0}).sort("updated_at", -1).to_list(100)
+    items = (
+        await db.knowledge_base.find(query, {"_id": 0})
+        .sort("updated_at", -1)
+        .to_list(100)
+    )
     return items
 
 
@@ -491,13 +571,15 @@ async def update_kb_article(
     require_founder(current_user)
     result = await db.knowledge_base.update_one(
         {"id": article_id},
-        {"$set": {
-            "title": data.title,
-            "content": data.content,
-            "category": data.category,
-            "tags": data.tags,
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-        }},
+        {
+            "$set": {
+                "title": data.title,
+                "content": data.content,
+                "category": data.category,
+                "tags": data.tags,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
     )
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Article not found")
