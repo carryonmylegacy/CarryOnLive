@@ -1,126 +1,166 @@
 <analysis>**original_problem_statement:**
-The user requested a series of fixes and enhancements for the Operations Portal, which is used by company staff (). The key requirements were:
-1.  **Menu & Navigation Cleanup:** Audit the menus in all four portals (Benefactor, Beneficiary, Founder, Operator) and remove any items that are not relevant to that specific role. Specifically, the Operations Portal contained incorrect links to the Founder portal and benefactor-specific pages like Subscription.
-2.  **Add Delete Functionality:** Implement a visible delete button for every item within each tab of the Operations Portal (TVT, DTS, Support, Verify).
-3.  **Implement Soft-Delete with Restore:** Deletions made by an Operator should be soft deletes. Only a user with the Founder role should be able to see and restore these soft-deleted items.
-4.  **Role-Specific Settings:** The global OTP (One-Time Password) toggle should only be visible in the Founder portal, not the Operations portal.
-5.  **Operations Dashboard Tiles:** Add persistent, auto-refreshing status tiles to the top of the Operations Dashboard. These tiles should represent each work queue (TVT, DTS, Support, etc.), highlight when new work is available, and act as a quick navigation link to the relevant tab.
+The user's initial request from the previous session was to overhaul the Operations Portal by cleaning up menus, adding soft-delete/restore functionality, and adding dashboard tiles.
+
+During this session, the user's requests expanded significantly:
+1.  **Menu & Settings Cleanup (Correction):** The user was dissatisfied with the previous menu cleanup. They requested to strip the Founder and Operator portal menus down to only Light/Dark Mode and Sign Out, removing all redundant links. The corresponding Settings page for these roles was also to be simplified.
+2.  **Enforce Core Security Principles:** The user expressed deep concern about the platform's security architecture, demanding verification and fixes to ensure a one-way check valve where a beneficiary can NEVER access a benefactor's account. This included handling complex dual-role scenarios (a user who is both a benefactor and a beneficiary).
+3.  **Conditional UI for Estate Switcher:** The estate selection dropdown should only be visible if a user is connected to more than one estate.
+4.  **Collapsible Sidebar:** Implement a collapsible sidebar for the Founder and Operator portals (later accepted for all portals) to switch between a full view (icon + label) and a minimized view (icon only).
+5.  **UI/UX Refinements:**
+    *   Move the estate switcher out of the sidebar and into the main page header to avoid awkward UI when the sidebar is collapsed.
+    *   Make the Beta banner display as a compact icon (β) in the collapsed sidebar.
+    *   Move the DEV portal-switching functionality from a floating button to the main logo icon, accessible only to the Founder, and ensure it works on desktop (collapsed/expanded) and mobile/PWA.
+6.  **Implement 10 New Features:** Based on the agent's suggestions, the user requested the full implementation of 10 new features (5 for the Founder portal, 5 for the Operations portal).
+7.  **Run Housekeeping:** Execute the full  script to ensure code quality, security, and fix any linting errors that were causing CI checks to fail.
+8.  **Mobile/PWA Parity:** Ensure all changes and new features from this session work correctly and are accessible in the mobile and PWA formats.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a multi-portal platform with four distinct roles: Benefactor, Beneficiary, Founder (), and Operator. The agent has just completed a major overhaul of the staff-facing portals (Founder and Operator).
+The application is a multi-portal platform (Benefactor, Beneficiary, Founder, Operator) with role-based access control. The staff-facing portals (Founder, Operator) have undergone significant UI/UX changes.
 
-Key existing components:
--   **Role-Aware Navigation:** The main sidebar and mobile navigation menus are now fully role-aware, showing only relevant links and information for the logged-in user.
--   **Soft-Delete System:** A comprehensive soft-delete and restore mechanism has been implemented on the backend for all operational data (support tickets, DTS tasks, verifications, TVT). Operators can soft-delete, and Founders have a UI to view and restore deleted items.
--   **Operations Portal UI:** All item lists in the Operations portal now feature prominent delete buttons.
--   **Operations Dashboard:** The dashboard for operators now features four persistent, auto-refreshing tiles at the top that provide at-a-glance stats for each work queue and highlight pending tasks.
+Key features implemented in this session:
+-   **Simplified Staff Menus:** The Founder and Operator sidebars and mobile menus have been stripped down to essentials.
+-   **Hardened Backend Security:** The access control logic was refactored from being -based to being membership-based (, ), closing a critical security gap for dual-role users.
+-   **Collapsible Sidebar:** A persistent, collapsible sidebar is now present in all portals, allowing users to switch between an expanded and icon-only view.
+-   **Relocated DEV Switcher:** The developer portal switcher has been moved from a floating button into the main logo icon. It is only accessible to Founders and works across desktop and mobile.
+-   **Relocated Estate Switcher:** The estate selection dropdown has been removed from the sidebar and is now consistently located in the top-right of the main page content for both Benefactors and Beneficiaries.
+-   **New Feature Scaffolding:** Scaffolding (backend routes, frontend components, and navigation links) for 10 new features for the Founder and Operator portals has been created. The features themselves are currently placeholders.
 
 **Last working item**:
--   Last item agent was working: Implementing persistent, auto-refreshing status tiles on the Operations Dashboard to show pending work for TVT, DTS, Support, and Verification queues.
--   Status: COMPLETED
--   Agent Testing Done: Y
--   Which testing method agent to use? NA
+-   Last item agent was working: The agent was auditing and ensuring that all features implemented during this session were fully functional and accessible on mobile/PWA. It had identified that the new tool links were missing from the mobile menu () and that the logic for displaying operator vs. founder items was incorrect (the recurring path vs. role issue). The agent implemented fixes for these issues and was in the process of taking a screenshot to verify the mobile UI.
+-   Status: IN PROGRESS
+-   Agent Testing Done: N
+-   Which testing method agent to use? screenshot tool
 -   User Testing Done: N
 
 **All Pending/In progress Issue list**:
--   None. All user requests from this session have been addressed.
+-   **Issue 1:** (P0) Mobile/PWA UI and Logic Verification
+    -   **Description:** The agent has applied fixes to  to add the 10 new tool links and to correctly display Operator-specific items when a Founder views the  portal. These changes need to be visually confirmed on a mobile viewport. The agent was struggling to get a clean screenshot due to login issues.
+    -   **Next debug checklist:**
+        1.  Log in as the founder ().
+        2.  Navigate to the Founder portal.
+        3.  Take a mobile-width screenshot.
+        4.  Click the logo to open the DEV portal switcher and switch to the Operations Portal.
+        5.  Take another mobile-width screenshot.
+        6.  Verify the hamburger menu in the Operations portal shows the correct 5 Operator tools (My Activity, Quick Search, etc.).
+        7.  Verify the bottom navigation also shows Operator-specific icons.
+    -   **Why fix this issue and what will be achieved with the fix?** To ensure feature parity and a correct user experience on mobile devices and PWAs, as requested by the user.
+    -   **Status:** IN PROGRESS
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** frontend
+    -   **Blocked on other issue:** None
 
 **In progress Task List**:
--   None.
+-   **Task 1:** (P0) Full Implementation of 10 New Staff Portal Features
+    -   **Description:** The agent has created the boilerplate for 10 new features (5 for Founder, 5 for Operator), but the components are just empty placeholders. The actual functionality needs to be built.
+    -   **Where to resume:** The frontend components exist in . The backend routes are in . The agent should pick one feature, plan its implementation (backend logic, DB schema if needed, frontend UI), and build it end-to-end.
+    -   **What will be achieved with this?** This will deliver on the user's request to add significant value and utility to the staff portals.
+    -   **Status:** IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?** both
+    -   **Blocked on something:** None
 
 **Upcoming and Future Tasks**
-
 -   **Upcoming Tasks:**
-    -   **P0: Re-implement Deferred Features:** A set of UI/UX features (pull-to-refresh, native haptics, network status banner, force update gate, error reporter) were previously rolled back to fix a critical production bug. These need to be carefully re-implemented. This will involve adding Capacitor dependencies, which must be done with caution to avoid the previous  issues.
+    -   **P0: Re-implement Deferred Features:** A set of UI/UX features (pull-to-refresh, native haptics, network status banner, force update gate, error reporter) were previously rolled back. These need to be carefully re-implemented, paying close attention to Capacitor dependencies to avoid breaking .
     -   **P1: Finalize Share Extension Setup:** The user needs guidance on the manual configuration steps in Xcode and App Store Connect to complete the setup for the native iOS Share Extension.
 
 -   **Future Tasks:**
     -   **P2: Twilio SMS OTP:** Implement this feature once the user confirms they have received A2P 10DLC approval from Twilio.
 
 **Completed work in this session**
--   **Portal Menu Overhaul:**
-    -   Cleaned up menus across all four portals (, ) to be strictly role-specific.
-    -   Removed incorrect pages (e.g., Subscription, Security Settings) and tabs (Founder Ops) from the Operations portal.
--   **Soft-Delete Implementation:**
-    -   **Backend:** Modified endpoints for Support, DTS, TVT, and Verifications to perform soft-deletes by adding  and  fields. Added new Founder-only endpoints to restore data and view deleted items. (Files: , , , ).
-    -   **Frontend:** Implemented the UI for soft-delete. Operators see a standard delete/trash icon. Founders see a Show Deleted toggle and a Restore button for soft-deleted items. (Files: , , , ).
--   **Operations Dashboard Tiles:**
-    -   Added four persistent, auto-refreshing status tiles to the  when in .
-    -   These tiles fetch data from  every 30 seconds, highlight queues with pending work, and allow for quick navigation.
--   **RBAC & UI Hardening:**
-    -   Updated numerous backend endpoints to grant Operators correct access while protecting Founder-only actions.
-    -   Made the  role-aware, hiding benefactor-only sections (e.g., GDPR, Notifications) from staff.
+-   **Staff Portal Menu Overhaul:** Stripped Founder/Operator sidebars and mobile menus down to essentials (, ).
+-   **RBAC Security Fix:** Refactored backend access control from -based to membership-based, fixing a critical flaw for dual-role users (, , ).
+-   **Collapsible Sidebar Implementation:** Added a fully functional, persistent collapsible sidebar to all portals (, , ).
+-   **DEV Portal Switcher Relocation:** Moved the switcher from a floating button to the logo icon (Founder only) and ensured it works on desktop/mobile (, , ).
+-   **Estate Switcher Relocation:** Moved the beneficiary estate switcher from the sidebar to the main page header (, ).
+-   **New Feature Scaffolding:** Created backend routes, frontend components, and navigation for 10 new Founder/Operator tools.
+-   **Housekeeping & CI Fix:** Ran the  script and fixed all linting errors, resolving a failing GitHub CI check.
+-   **Recurring Bug Fix:** Fixed logic in  and  to use the URL path () instead of user role to determine which nav items to display.
 
 **Earlier issues found/mentioned but not fixed**
 -   None.
 
 **Known issue recurrence from previous fork**
--   **Production Crashes from yarn add v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/add for documentation about this command./:** The previous handoff warned against modifying  carelessly. The agent successfully avoided this by not adding any new frontend dependencies. This remains a critical point of caution for future work, especially when re-implementing the deferred UI features.
+-   **Issue recurrence in previous fork:** Production Crashes from yarn add v1.22.22
+info Visit https://yarnpkg.com/en/docs/cli/add for documentation about this command./.
+-   **Recurrence count:** 0 (in this session)
+-   **Status:** RESOLVED (by avoidance)
+-   **New Recurring Issue Found:**
+    -   **Description:** The agent repeatedly implemented UI logic that checked  instead of the current URL path () to determine what to display. This caused an admin user viewing the Operations Portal () to see Founder-specific menus instead of Operator-specific ones. This mistake was made in  and then again in  before being corrected.
+    -   **Status:** RESOLVED
+    -   **Note:** The next agent must internalize this rule: **For staff portals, UI variation depends on the URL path, not just the user's role.**
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Soft Deletes:** Implemented by adding  and  fields to MongoDB documents. Backend queries were updated to filter these out by default () and include them when requested by a Founder.
--   **Role-Based Access Control (RBAC):** Expanded backend endpoint dependencies to check for  for shared staff functions, while reserving sensitive actions for  only.
--   **Conditional Rendering (React):** Extensively used to build role-specific UIs, from entire page layouts () and navigation menus () down to individual buttons (Restore vs. Delete).
--   **Polling for Live Updates:** Used  in the  component to periodically poll the  endpoint, providing operators with a near-real-time view of pending work without websockets.
+-   **Soft Deletes:** Using  fields to hide data instead of permanently deleting it.
+-   **Role-Based Access Control (RBAC):** Backend checks to secure endpoints based on user roles (, ).
+-   **Membership-Based Access Control:** A more granular RBAC pattern used to fix a security flaw. Instead of checking a user's static , the logic checks their relationship to a specific data object (e.g.,  or  of an estate).
+-   **Path-Based UI Rendering:** A critical frontend pattern for this app. When a user can view multiple portals (e.g., a founder viewing the ops portal), the UI must be determined by the current URL path ( vs. ) rather than just the user's role.
+-   **State Persistence with :** Used to remember the collapsed/expanded state of the sidebar across page loads.
+-   **Component Communication via Custom Events:** The  component dispatches a custom  event, which the  component listens for to adjust its own styling.
 
 **key DB schema**
--   ****: Added , .
--   ****: Added , .
--   ****: Added , .
--   ****: Added , .
+-   ****: {uid=0(root) gid=0(root) groups=0(root), , , , : ['all', 'benefactors', 'beneficiaries']}
+-   ****: {uid=0(root) gid=0(root) groups=0(root), , , , }
+-   ****: {uid=0(root) gid=0(root) groups=0(root), , , , , , }
+-   ****: {uid=0(root) gid=0(root) groups=0(root), , , }
+-   ****: {uid=0(root) gid=0(root) groups=0(root), , , , , }
 
 **changes in tech stack**
 -   No changes.
 
 **All files of reference**
--   **Backend Routers:** , , , , 
--   **Frontend Pages & Components:** , , , , and the four tab components in .
+-   **Primary Modified Frontend:** , , , 
+-   **Primary Modified Backend:** , , 
+-   **Primary Created Files:**  and all components inside .
 
 **Areas that need refactoring**:
--   None.
+-   The 10 new components in  are just stubs and need to be fully implemented.
 
 **key api endpoints**
--   : A new pattern of Founder-only endpoints added for each data type (e.g., ).
--   : Endpoints for all operational data types were converted to perform soft-deletes.
--   : Existing endpoint now serves live data for the new Operations Dashboard tiles.
+-   : New endpoint for founder audit trail.
+-   : New endpoint for creating platform announcements.
+-   (and 8 other new placeholder endpoints under )
 
 **Critical Info for New Agent**
--   **DO NOT MODIFY !** This cannot be overstated. A previous session spent significant time fixing production crashes caused by this. If you must add frontend dependencies (e.g., for the deferred features), use yarn add v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/add for documentation about this command. and test thoroughly.
--   **Understand the Founder vs. Operator Roles:** The platform has a strict separation of duties. The Founder () is the superuser. The Operator has a stripped-down portal () for daily tasks. All changes must respect this hierarchy.
--   **Soft-Delete is the Standard:** All deletions of operational data are now soft-deletes. Permanent deletion is a Founder-only, high-privilege action.
+-   **CRITICAL RULE:** When implementing UI for staff portals, **ALWAYS use the URL path** ( vs. ) to determine what to show. Do NOT rely solely on , as a Founder can view the Operations portal. This was a recurring bug that caused significant user frustration.
+-   **DO NOT MODIFY  carelessly.** Adding/removing frontend dependencies has caused production crashes in the past.
+-   The 10 new features requested by the user are currently just placeholders. The next major task is to build them out. Start with one, get it working, and then move to the next.
 
 **documents and test reports created in this job**
 -   
--   
--    (updated)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Place auto-refreshing tiles at the top of the Operations Dashboard to show pending work for each queue. (Status: Completed)
-2.  **User:** Initial multi-part request to fix the Operations portal: add delete buttons, implement founder-only restore, clean up all menus across all portals, and remove incorrect navigation items/toggles. (Status: Completed)
+1.  **User:** Go back through all the changes from this session and make sure they work on mobile/PWA. (Status: In Progress)
+2.  **User:** For the floating DEV menu, make it work on collapsed sidebar and mobile, popping out from the logo. (Status: Completed)
+3.  **User:** Will the DEV menu fix work on collapsed sidebar and mobile? (Status: Acknowledged, led to fix)
+4.  **User:** The DEV menu is cut off. (Status: Completed)
+5.  **User:** How did the menu mistake happen again? (Status: Agent self-corrected and acknowledged the recurring pattern)
+6.  **User:** The side menu buttons you added for the ops portal go to the founder portal! (Status: Completed)
+7.  **User:** Did the housekeeping fix the GitHub CI failure? (Status: Completed)
+8.  **User:** The housekeeping script ran too fast, did it run everything? (Status: Completed, agent re-ran the full script)
+9.  **User:** Let's run housekeeping. (Status: Completed)
+10. **User:** I skipped the testing agent, did I mess anything up? (Status: Acknowledged)
 
 **Project Health Check:**
--   **Healthy:** The application is stable. The requested features and fixes were implemented successfully and verified via the testing agent, which reported a 100% success rate on two separate runs.
+-   **Broken:** None.
+-   **Mocked:** The 10 new features in the Founder and Operator portals are currently mocked with placeholder components and backend endpoints.
 
 **3rd Party Integrations**
--   No new integrations were added in this session.
+-   None added in this session.
 
 **Testing status**
--   Testing agent used after significant changes: YES. The testing agent was called twice and reported 100% pass rates for both backend and frontend tests.
+-   Testing agent used after significant changes: YES. It was used after scaffolding the 10 new features and passed. It was skipped for a smaller change by user request.
 -   Troubleshoot agent used after agent stuck in loop: NO
--   Test files created: , 
+-   Test files created: 
 -   Known regressions: None.
 
 **Credentials to test flow:**
--   **Founder Portal:**  /  or  (password unknown, but account exists)
+-   **Founder Portal:**  / 
 -   **Benefactor Test Account:**  / 
--   **Operator Accounts:** Can be created via the Founder Portal in the Operators tab.
 
 **What agent forgot to execute**
--   Nothing. The agent successfully completed all tasks requested by the user in this session. The deferred tasks from the prior session are correctly noted as upcoming work.</analysis>
+-   The agent did not forget to execute any direct commands, but the primary pending work is the full implementation of the 10 features requested by the user, which were correctly scaffolded as a first step.</analysis>
