@@ -161,12 +161,12 @@ const MobileNav = () => {
     try {
       const res = await fetch(`${BASE_URL}/api/dev-switcher/config`);
       const data = await res.json();
-      // Also fetch operator accounts for the switcher
-      const token = localStorage.getItem('carryon_token');
-      if (token) {
+      // Fetch operator accounts using the admin token (not current session)
+      const adminToken = localStorage.getItem('dev_switcher_admin_token') || localStorage.getItem('carryon_token');
+      if (adminToken) {
         try {
           const opsRes = await fetch(`${BASE_URL}/api/founder/operators`, {
-            headers: { Authorization: `Bearer ${token}` },
+            headers: { Authorization: `Bearer ${adminToken}` },
           });
           if (opsRes.ok) {
             data.operators = await opsRes.json();
