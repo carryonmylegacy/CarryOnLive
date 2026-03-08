@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
-import { Lock, FolderLock, MessageSquare, CheckSquare, ChevronRight, ChevronLeft, Users, Settings } from 'lucide-react';
+import { Lock, FolderLock, MessageSquare, CheckSquare, ChevronRight, ChevronLeft, ChevronDown, Users, Settings } from 'lucide-react';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Switch } from '../../components/ui/switch';
 
@@ -12,6 +12,8 @@ const BeneficiaryDashboardPage = () => {
   const { user, getAuthHeaders } = useAuth();
   const navigate = useNavigate();
   const [estate, setEstate] = useState(null);
+  const [allEstates, setAllEstates] = useState([]);
+  const [estateSwitcherOpen, setEstateSwitcherOpen] = useState(false);
   const [stats, setStats] = useState({ documents: 0, messages: 0, checklists: 0, checklistsDone: 0 });
   const [checklists, setChecklists] = useState([]);
   const [documents, setDocuments] = useState([]);
@@ -39,6 +41,11 @@ const BeneficiaryDashboardPage = () => {
     try {
       const estateId = localStorage.getItem('beneficiary_estate_id');
       if (!estateId) { navigate('/beneficiary'); return; }
+
+      // Fetch all estates for the switcher
+      const allEstatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders()).catch(() => ({ data: [] }));
+      setAllEstates(allEstatesRes.data);
+
       const estateRes = await axios.get(`${API_URL}/estates/${estateId}`, getAuthHeaders());
       // Authoritative check via death certificate (not estate.status)
       const permRes = await axios.get(`${API_URL}/beneficiary/my-permissions/${estateId}`, getAuthHeaders());
@@ -113,24 +120,68 @@ const BeneficiaryDashboardPage = () => {
         </div>
       </div>
 
-      {/* Back to Estates */}
-      <button
-        onClick={() => navigate('/beneficiary')}
-        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl mb-4 text-sm font-bold transition-all"
-        style={{ background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.35)', color: '#60A5FA' }}
-        data-testid="back-to-estates"
-      >
-        <ChevronLeft className="w-4 h-4" /> Back to My Estates
-      </button>
+      {/* Back to Estates — only when single estate */}
+      {allEstates.length <= 1 && (
+        <button
+          onClick={() => navigate('/beneficiary')}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl mb-4 text-sm font-bold transition-all"
+          style={{ background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.35)', color: '#60A5FA' }}
+          data-testid="back-to-estates"
+        >
+          <ChevronLeft className="w-4 h-4" /> Back to My Estates
+        </button>
+      )}
 
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl lg:text-3xl font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
-          {firstName}, we're here for you
-        </h1>
-        <p className="text-[var(--t4)] text-sm lg:text-base">
-          {benefactorFirst} prepared these resources to help guide you.
-        </p>
+      {/* Header with Estate Switcher */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            {firstName}, we're here for you
+          </h1>
+          <p className="text-[var(--t4)] text-sm lg:text-base">
+            {benefactorFirst} prepared these resources to help guide you.
+          </p>
+        </div>
+
+        {/* Estate Switcher — only when multiple estates */}
+        {allEstates.length > 1 && (
+          <div className="relative sm:mt-1" data-testid="beneficiary-estate-selector">
+            <button
+              onClick={() => setEstateSwitcherOpen(!estateSwitcherOpen)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
+              style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)' }}
+            >
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
+                style={{ background: estate?.status === 'transitioned' ? 'linear-gradient(135deg, #6D28D9, #A855F7)' : 'linear-gradient(135deg, #1E40AF, #3B82F6)' }}>
+                {estate?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?'}
+              </div>
+              <span className="truncate max-w-[140px]">{estate?.name || 'Estate'}'s Estate</span>
+              <ChevronDown className="w-4 h-4 flex-shrink-0" style={{ transform: estateSwitcherOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+            </button>
+            {estateSwitcherOpen && (
+              <div className="absolute right-0 top-full mt-1 min-w-[220px] rounded-xl overflow-hidden z-50"
+                style={{ background: 'var(--bg3)', border: '1px solid var(--b)', boxShadow: '0 8px 30px rgba(0,0,0,0.4)' }}>
+                {allEstates.map(est => (
+                  <div key={est.id}
+                    onClick={() => {
+                      localStorage.setItem('beneficiary_estate_id', est.id);
+                      setEstateSwitcherOpen(false);
+                      window.location.reload();
+                    }}
+                    className="flex items-center gap-2 px-4 py-3 cursor-pointer transition-all hover:bg-[var(--s)]"
+                    style={{ background: estate?.id === est.id ? 'rgba(224,173,43,0.08)' : 'transparent', borderBottom: '1px solid var(--b)' }}>
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
+                      style={{ background: est.status === 'transitioned' ? 'linear-gradient(135deg, #6D28D9, #A855F7)' : 'linear-gradient(135deg, #1E40AF, #3B82F6)' }}>
+                      {est.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                    </div>
+                    <span className="text-sm font-bold" style={{ color: estate?.id === est.id ? 'var(--gold2)' : 'var(--t2)' }}>{est.name}'s Estate</span>
+                    {estate?.id === est.id && <span className="ml-auto text-xs text-[var(--gold2)]">Active</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Stat Cards */}

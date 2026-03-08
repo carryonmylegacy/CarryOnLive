@@ -235,49 +235,7 @@ const Sidebar = () => {
       {/* Beta Banner */}
       {!collapsed && <BetaBanner />}
 
-      {/* Beneficiary Estate Switcher — only show dropdown when multiple estates */}
-      {user?.role === 'beneficiary' && benEstates.length > 1 && (
-        <div className="px-3 mb-1 relative">
-          <div
-            onClick={() => setSwitcherOpen(!switcherOpen)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all"
-            style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
-            data-testid="estate-switcher"
-          >
-            <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-              style={{ background: activeEstate?.status === 'transitioned' ? 'linear-gradient(135deg, #6D28D9, #A855F7)' : 'linear-gradient(135deg, #1E40AF, #3B82F6)' }}>
-              {activeEstate?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?'}
-            </div>
-            <div className="flex-1 overflow-hidden">
-              <div className="text-sm font-bold text-[var(--t)] truncate">{activeEstate?.name || 'Select Estate'}'s Estate</div>
-            </div>
-            <span className="text-xs text-[var(--t5)]" style={{ transform: switcherOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>▼</span>
-          </div>
-          {switcherOpen && (
-            <div className="absolute left-3 right-3 top-full mt-1 rounded-lg overflow-hidden z-50" style={{ background: 'var(--bg3)', border: '1px solid var(--b)', boxShadow: '0 8px 30px rgba(0,0,0,0.4)' }}>
-              {benEstates.map(est => (
-                <div key={est.id} onClick={() => switchEstate(est)}
-                  className="flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-all hover:bg-[var(--s)]"
-                  style={{ background: activeEstateId === est.id ? 'rgba(224,173,43,0.08)' : 'transparent', borderBottom: '1px solid var(--b)' }}>
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
-                    style={{ background: est.status === 'transitioned' ? 'linear-gradient(135deg, #6D28D9, #A855F7)' : 'linear-gradient(135deg, #1E40AF, #3B82F6)' }}>
-                    {est.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-xs font-bold" style={{ color: activeEstateId === est.id ? 'var(--gold2)' : 'var(--t2)' }}>{est.name}</div>
-                  </div>
-                  {activeEstateId === est.id && <span className="text-xs text-[var(--gold2)]">✓</span>}
-                </div>
-              ))}
-              <div onClick={() => { setSwitcherOpen(false); navigate('/beneficiary'); }}
-                className="flex items-center gap-2 px-3 py-2.5 cursor-pointer hover:bg-[var(--s)]">
-                <Users className="w-4 h-4 text-[#60A5FA]" />
-                <span className="text-xs font-bold text-[#60A5FA]">View All Estates</span>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Beneficiary Estate Switcher — removed from sidebar, now in page header */}
 
       {/* Navigation Sections */}
       <nav className="flex-1 overflow-y-auto py-4">
