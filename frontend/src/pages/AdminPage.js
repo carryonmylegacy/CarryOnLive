@@ -3,14 +3,14 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  Shield, Users, FileKey, FolderLock, FileUp, Loader2,
+  Shield, Users, FileKey, FolderLock, Loader2,
   Headphones, CreditCard, Activity, Settings,
   MessageSquare, CheckSquare, AlertTriangle, Clock, ShieldCheck, TrendingUp, Trash2
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { toast } from '../utils/toast';
 import { Skeleton } from '../components/ui/skeleton';
-import { Switch } from '../components/ui/switch';
+
 
 import { UsersTab } from '../components/admin/UsersTab';
 import { TransitionTab } from '../components/admin/TransitionTab';
