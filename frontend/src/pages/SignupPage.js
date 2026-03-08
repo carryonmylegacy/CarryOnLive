@@ -114,10 +114,10 @@ const SignupPage = () => {
         slots.push({ relation: 'Spouse', requireEmail: true });
       }
       for (let i = 0; i < dependentsOver18; i++) {
-        slots.push({ relation: `Adult Dependent ${i + 1}`, requireEmail: true });
+        slots.push({ relation: `Adult Beneficiary ${i + 1}`, requireEmail: true });
       }
       for (let i = 0; i < dependentsUnder18; i++) {
-        slots.push({ relation: `Minor Dependent ${i + 1}`, requireEmail: false });
+        slots.push({ relation: `Minor Beneficiary ${i + 1}`, requireEmail: false });
       }
     }
     // Preserve existing data, add new slots, trim excess
@@ -649,7 +649,7 @@ const SignupPage = () => {
                           </Select>
                         </div>
                         {(maritalStatus === 'married' || maritalStatus === 'domestic_partnership') && (
-                          <p className="text-[#525c72] text-[10px] -mt-1">Your spouse will be added as a beneficiary in the next step — do not count them as a dependent below.</p>
+                          <p className="text-[#525c72] text-[10px] -mt-1">Your spouse will be added as a beneficiary in the next step — do not count them below.</p>
                         )}
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1.5">
@@ -671,7 +671,7 @@ const SignupPage = () => {
                             </Select>
                           </div>
                         </div>
-                        <p className="text-[#525c72] text-[10px]">Don't include your spouse — only children, elderly parents, or other individuals you financially support.</p>
+                        <p className="text-[#525c72] text-[10px]">Don't include your spouse — only children, elderly parents, or other beneficiaries.</p>
                       </div>
                     )}
 
@@ -688,9 +688,9 @@ const SignupPage = () => {
                         <div className="space-y-3">
                           <div>
                             <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                              {ben.relation?.startsWith('Adult Dependent') ? (
+                              {ben.relation?.startsWith('Adult Beneficiary') ? (
                                 <><span style={{ textDecoration: 'underline', textDecorationColor: '#d4af37', textUnderlineOffset: '3px' }}>Adult</span>{ben.relation.replace('Adult', '')}</>
-                              ) : ben.relation?.startsWith('Minor Dependent') ? (
+                              ) : ben.relation?.startsWith('Minor Beneficiary') ? (
                                 <><span style={{ textDecoration: 'underline', textDecorationColor: '#d4af37', textUnderlineOffset: '3px' }}>Minor</span>{ben.relation.replace('Minor', '')}</>
                               ) : ben.relation}
                             </h2>
@@ -712,10 +712,30 @@ const SignupPage = () => {
                                 onFocus={handleFieldFocus} placeholder="Middle name" className={inputClass} />
                             </div>
                           </div>
-                          <div className="space-y-1.5">
-                            <Label className="text-[#7b879e] text-sm font-medium">Last Name <span className="text-red-400">*</span></Label>
-                            <Input value={ben.last_name} onChange={(e) => updateBen('last_name', e.target.value)}
-                              onFocus={handleFieldFocus} placeholder="Last name" className={inputClass} />
+                          <div className="grid grid-cols-3 gap-3">
+                            <div className="space-y-1.5 col-span-2">
+                              <Label className="text-[#7b879e] text-sm font-medium">Last Name <span className="text-red-400">*</span></Label>
+                              <Input value={ben.last_name} onChange={(e) => updateBen('last_name', e.target.value)}
+                                onFocus={handleFieldFocus} placeholder="Last name" className={inputClass} />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label className="text-[#7b879e] text-sm font-medium">Suffix</Label>
+                              <Select value={ben.suffix || ''} onValueChange={(v) => updateBen('suffix', v === 'none' ? '' : v)}>
+                                <SelectTrigger className={selectClass}><SelectValue placeholder="—" /></SelectTrigger>
+                                <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
+                                  <SelectItem value="none">None</SelectItem>
+                                  <SelectItem value="Jr.">Jr.</SelectItem>
+                                  <SelectItem value="Sr.">Sr.</SelectItem>
+                                  <SelectItem value="II">II</SelectItem>
+                                  <SelectItem value="III">III</SelectItem>
+                                  <SelectItem value="IV">IV</SelectItem>
+                                  <SelectItem value="V">V</SelectItem>
+                                  <SelectItem value="Esq.">Esq.</SelectItem>
+                                  <SelectItem value="MD">MD</SelectItem>
+                                  <SelectItem value="PhD">PhD</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
                           {ben.requireEmail ? (
                             <div className="space-y-1.5">
