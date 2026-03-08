@@ -876,12 +876,20 @@ const SignupPage = () => {
                       <div className="space-y-2.5">
                         <div>
                           <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>How will you use CarryOn?</h2>
-                          <p className="text-[#6b7a90] text-sm">Select your role.</p>
+                          <p className="text-[#6b7a90] text-sm">Select your primary role. You only need one account — it works for both.</p>
                         </div>
+
+                        {/* One account clarification */}
+                        <div className="rounded-xl p-3" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}>
+                          <p className="text-xs text-[var(--gold)] leading-relaxed">
+                            One email, one account. If someone has already added you as a beneficiary, choose Beneficiary below and enter their email. You can always start your own estate plan later from within your account.
+                          </p>
+                        </div>
+
                         <div className="space-y-2">
                           {[
-                            { value: 'benefactor', title: 'Benefactor', subtitle: 'Estate Owner', desc: 'Organize and protect your estate for your family.', color: '#d4af37' },
-                            { value: 'beneficiary', title: 'Beneficiary', subtitle: 'Family Member', desc: 'Access an estate plan a loved one set up for you.', color: '#60A5FA' },
+                            { value: 'benefactor', title: 'Benefactor', subtitle: 'Estate Owner', desc: 'I want to organize and protect my estate for my family.', color: '#d4af37' },
+                            { value: 'beneficiary', title: 'Beneficiary', subtitle: 'Family Member', desc: 'A loved one has set up an estate plan and added me.', color: '#60A5FA' },
                           ].map(r => (
                             <button key={r.value} type="button" onClick={() => { setRole(r.value); if (r.value === 'benefactor') setBenefactorEmail(''); }}
                               className="w-full text-left p-3 rounded-xl transition-all duration-300"
