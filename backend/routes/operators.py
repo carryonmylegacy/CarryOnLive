@@ -30,7 +30,7 @@ def require_founder(current_user: dict):
 
 
 class CreateOperatorRequest(BaseModel):
-    email: str
+    username: str
     password: str
     name: str
 
@@ -41,21 +41,24 @@ async def create_operator(
     request: Request,
     current_user: dict = Depends(get_current_user),
 ):
-    """Create a new operator account — founder only."""
+    """Create a new operator account — founder only.
+    Username can be any string (not required to be an email)."""
     require_founder(current_user)
 
-    existing = await db.users.find_one({"email": data.email}, {"_id": 0, "id": 1})
+    # Store username in the email field (auth system queries by it)
+    existing = await db.users.find_one({"email": data.username}, {"_id": 0, "id": 1})
     if existing:
-        raise HTTPException(status_code=400, detail="Email already in use")
+        raise HTTPException(status_code=400, detail="Username already in use")
 
     hashed = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt()).decode()
     now = datetime.now(timezone.utc)
     operator = {
         "id": str(uuid.uuid4()),
-        "email": data.email,
+        "email": data.username,
         "name": data.name,
         "password": hashed,
         "role": "operator",
+        "is_operator": True,
         "created_at": now.isoformat(),
         "created_by": current_user["id"],
     }
@@ -69,7 +72,7 @@ async def create_operator(
         category="user_mgmt",
         resource_type="user",
         resource_id=operator["id"],
-        details={"operator_email": data.email, "operator_name": data.name},
+        details={"operator_username": data.username, "operator_name": data.name},
         ip_address=get_client_ip(request),
         severity="info",
     )
@@ -77,6 +80,7 @@ async def create_operator(
     return {
         "id": operator["id"],
         "email": operator["email"],
+        "username": operator["email"],
         "name": operator["name"],
         "role": "operator",
         "created_at": operator["created_at"],

@@ -120,6 +120,33 @@ async def login(data: UserLogin, request: Request):
     # Clear failed attempts on successful login
     await db.failed_logins.delete_many({"email": data.email})
 
+    # Operators skip OTP entirely — they use username/password only (no email to receive OTP)
+    if user.get("role") == "operator":
+        token = await create_session_token(user["id"], user["email"], user["role"])
+        await db.users.update_one(
+            {"id": user["id"]},
+            {"$set": {"last_login_at": datetime.now(timezone.utc).isoformat()}},
+        )
+        await log_audit_event(
+            actor_id=user["id"],
+            actor_email=user["email"],
+            actor_role="operator",
+            action="login",
+            category="auth",
+            ip_address=client_ip,
+            severity="info",
+        )
+        return TokenResponse(
+            access_token=token,
+            user=UserResponse(
+                id=user["id"],
+                email=user["email"],
+                name=user["name"],
+                role=user["role"],
+                created_at=user["created_at"],
+            ),
+        )
+
     # Check if user has a valid daily OTP trust (skip OTP for today)
     trust = await db.otp_trust.find_one(
         {"user_id": user["id"], "ip_address": client_ip}, {"_id": 0}
