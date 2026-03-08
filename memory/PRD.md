@@ -44,10 +44,12 @@ Multi-portal estate planning platform with four distinct roles: Benefactor, Bene
 - Pending user's A2P 10DLC approval from Twilio
 
 ## Critical Notes
+- **ONE-WAY CHECK VALVE (CORE INVARIANT):** A beneficiary can NEVER access the benefactor account that designated them. The relationship flows one way only — benefactor grants access downstream to beneficiary, never the reverse. A user who happens to also be a benefactor only accesses their OWN benefactor account. This is a non-negotiable security boundary of the platform kernel.
 - DO NOT modify yarn.lock carelessly (caused production crashes previously)
 - Soft-delete is the standard for all operational data deletions
 - Founder = superuser (admin role), Operator = employee with limited portal (/ops)
 - All backend routes prefixed with /api
+- Do not show UI elements for features that don't apply to the current user's state (e.g., no "Beneficiary Portal" link unless the user is actually a beneficiary of another estate)
 
 ## Key Credentials
 - Founder: info@carryon.us / Demo1234!
