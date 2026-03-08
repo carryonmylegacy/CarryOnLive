@@ -98,16 +98,22 @@ const AdminPage = ({ operatorMode = false }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [usersRes, statsRes, settingsRes, revenueRes] = await Promise.all([
-          axios.get(`${API_URL}/admin/users`, getAuthHeaders()),
-          axios.get(`${API_URL}/admin/stats`, getAuthHeaders()),
-          axios.get(`${API_URL}/admin/platform-settings`, getAuthHeaders()).catch(() => ({ data: {} })),
-          axios.get(`${API_URL}/admin/revenue-metrics`, getAuthHeaders()).catch(() => ({ data: null })),
-        ]);
-        setUsers(usersRes.data);
-        setStats(statsRes.data);
-        setOtpDisabled(settingsRes.data?.otp_disabled || false);
-        setRevenue(revenueRes.data);
+        if (operatorMode) {
+          // Operators only need stats for the work queue tiles
+          const statsRes = await axios.get(`${API_URL}/admin/stats`, getAuthHeaders());
+          setStats(statsRes.data);
+        } else {
+          const [usersRes, statsRes, settingsRes, revenueRes] = await Promise.all([
+            axios.get(`${API_URL}/admin/users`, getAuthHeaders()),
+            axios.get(`${API_URL}/admin/stats`, getAuthHeaders()),
+            axios.get(`${API_URL}/admin/platform-settings`, getAuthHeaders()).catch(() => ({ data: {} })),
+            axios.get(`${API_URL}/admin/revenue-metrics`, getAuthHeaders()).catch(() => ({ data: null })),
+          ]);
+          setUsers(usersRes.data);
+          setStats(statsRes.data);
+          setOtpDisabled(settingsRes.data?.otp_disabled || false);
+          setRevenue(revenueRes.data);
+        }
       } catch (err) { console.error(err); }
       finally { setLoading(false); }
     };
@@ -121,6 +127,18 @@ const AdminPage = ({ operatorMode = false }) => {
       await axios.put(`${API_URL}/admin/platform-settings`, { otp_disabled: newVal }, getAuthHeaders());
     } catch { setOtpDisabled(!newVal); }
   };
+
+  // Poll stats every 30s so new requests "pop in" for operators
+  useEffect(() => {
+    if (!operatorMode) return;
+    const poll = setInterval(async () => {
+      try {
+        const res = await axios.get(`${API_URL}/admin/stats`, getAuthHeaders());
+        setStats(res.data);
+      } catch { /* silent */ }
+    }, 30000);
+    return () => clearInterval(poll);
+  }, [operatorMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (user?.role !== 'admin' && user?.role !== 'operator') {
     return (
@@ -202,19 +220,106 @@ const AdminPage = ({ operatorMode = false }) => {
         </div>
       )}
 
-      {/* Action Required — items needing admin attention */}
-      {stats && (stats.unanswered_support > 0 || stats.pending_certificates > 0 || stats.reviewing_certificates > 0 || stats.pending_verifications > 0 || stats.pending_dts > 0 || stats.pending_family_requests > 0 || stats.pending_deletions > 0) && (
+      {/* Operator Work Queue Tiles — always visible, highlight when there's pending work */}
+      {operatorMode && stats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" data-testid="ops-work-tiles">
+          {[
+            {
+              key: 'tvt',
+              label: 'Transition Verification',
+              sub: 'Death certificates to review',
+              icon: FileKey,
+              count: (stats.pending_certificates || 0) + (stats.reviewing_certificates || 0),
+              color: '#F59E0B',
+              path: '/ops/transition',
+            },
+            {
+              key: 'dts',
+              label: 'Trustee Services',
+              sub: 'DTS requests to process',
+              icon: Shield,
+              count: stats.pending_dts || 0,
+              color: '#8B5CF6',
+              path: '/ops/dts',
+            },
+            {
+              key: 'support',
+              label: 'Customer Support',
+              sub: 'Messages awaiting reply',
+              icon: MessageSquare,
+              count: stats.unanswered_support || 0,
+              color: '#F43F5E',
+              path: '/ops/support',
+            },
+            {
+              key: 'verify',
+              label: 'Tier Verifications',
+              sub: 'Discount verifications pending',
+              icon: ShieldCheck,
+              count: stats.pending_verifications || 0,
+              color: '#F97316',
+              path: '/ops/verifications',
+            },
+          ].map(tile => {
+            const hasWork = tile.count > 0;
+            return (
+              <div
+                key={tile.key}
+                onClick={() => navigate(tile.path)}
+                className="rounded-xl p-4 cursor-pointer active:scale-[0.97] transition-all"
+                style={{
+                  background: hasWork ? `${tile.color}12` : 'var(--s)',
+                  border: `2px solid ${hasWork ? `${tile.color}40` : 'var(--b)'}`,
+                  boxShadow: hasWork ? `0 0 20px ${tile.color}15` : 'none',
+                }}
+                data-testid={`ops-tile-${tile.key}`}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all"
+                    style={{
+                      background: hasWork ? `${tile.color}20` : 'var(--bg2)',
+                      border: `1px solid ${hasWork ? `${tile.color}30` : 'var(--b)'}`,
+                    }}
+                  >
+                    <tile.icon className="w-5 h-5" style={{ color: hasWork ? tile.color : 'var(--t5)' }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-[var(--t)] truncate">{tile.label}</span>
+                      {hasWork && (
+                        <span
+                          className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 animate-pulse"
+                          style={{ background: `${tile.color}25`, color: tile.color }}
+                        >
+                          {tile.count}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-[var(--t5)] truncate mt-0.5">
+                      {hasWork ? `${tile.count} ${tile.sub}` : 'All clear'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Action Required — Founder only (items needing admin attention) */}
+      {!operatorMode && stats && (stats.unanswered_support > 0 || stats.pending_certificates > 0 || stats.reviewing_certificates > 0 || stats.pending_verifications > 0 || stats.pending_dts > 0 || stats.pending_family_requests > 0 || stats.pending_deletions > 0) && (
         <div className="glass-card p-4" style={{ borderLeft: '3px solid #F43F5E' }}>
           <h3 className="text-sm font-bold text-[#F43F5E] mb-3 uppercase tracking-wider">Needs Your Attention</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
             {[
-              stats.unanswered_support > 0 && { v: stats.unanswered_support, l: 'Unanswered Messages', icon: MessageSquare, color: '#F43F5E', path: operatorMode ? '/ops/support' : '/admin/support' },
-              stats.pending_certificates > 0 && { v: stats.pending_certificates, l: 'Pending Transitions', icon: FileKey, color: '#F59E0B', path: operatorMode ? '/ops/transition' : '/admin/transition' },
-              stats.reviewing_certificates > 0 && { v: stats.reviewing_certificates, l: 'Reviewing Certs', icon: FileKey, color: '#FBBF24', path: operatorMode ? '/ops/transition' : '/admin/transition' },
-              stats.pending_verifications > 0 && { v: stats.pending_verifications, l: 'Pending Verifications', icon: ShieldCheck, color: '#F97316', path: operatorMode ? '/ops/verifications' : '/admin/verifications' },
-              stats.pending_dts > 0 && { v: stats.pending_dts, l: 'Pending DTS Tasks', icon: CheckSquare, color: '#8B5CF6', path: operatorMode ? '/ops/dts' : '/admin/dts' },
-              !operatorMode && stats.pending_family_requests > 0 && { v: stats.pending_family_requests, l: 'Family Plan Requests', icon: Users, color: '#0EA5E9', path: '/admin/subscriptions' },
-              !operatorMode && stats.pending_deletions > 0 && { v: stats.pending_deletions, l: 'Deletion Requests', icon: AlertTriangle, color: '#EF4444', path: '/admin/activity' },
+              stats.unanswered_support > 0 && { v: stats.unanswered_support, l: 'Unanswered Messages', icon: MessageSquare, color: '#F43F5E', path: '/admin/support' },
+              stats.pending_certificates > 0 && { v: stats.pending_certificates, l: 'Pending Transitions', icon: FileKey, color: '#F59E0B', path: '/admin/transition' },
+              stats.reviewing_certificates > 0 && { v: stats.reviewing_certificates, l: 'Reviewing Certs', icon: FileKey, color: '#FBBF24', path: '/admin/transition' },
+              stats.pending_verifications > 0 && { v: stats.pending_verifications, l: 'Pending Verifications', icon: ShieldCheck, color: '#F97316', path: '/admin/verifications' },
+              stats.pending_dts > 0 && { v: stats.pending_dts, l: 'Pending DTS Tasks', icon: CheckSquare, color: '#8B5CF6', path: '/admin/dts' },
+              stats.pending_family_requests > 0 && { v: stats.pending_family_requests, l: 'Family Plan Requests', icon: Users, color: '#0EA5E9', path: '/admin/subscriptions' },
+              stats.pending_deletions > 0 && { v: stats.pending_deletions, l: 'Deletion Requests', icon: AlertTriangle, color: '#EF4444', path: '/admin/activity' },
             ].filter(Boolean).map(s => (
               <div key={s.l} className="rounded-xl p-3 text-center cursor-pointer active:scale-[0.96] transition-transform"
                 style={{ background: `${s.color}10`, border: `1px solid ${s.color}20` }}
