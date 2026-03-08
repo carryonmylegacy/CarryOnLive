@@ -132,7 +132,7 @@ export const SubscriptionManagement = ({
   const isBeneficiary = user?.role === 'beneficiary';
   const currentSub = subscriptionStatus?.subscription;
   const currentPlanId = currentSub?.plan_id;
-  const currentBilling = currentSub?.billing_cycle || 'monthly';
+  const currentBilling = currentSub?.billing_cycle;
   const isBeta = subscriptionStatus?.beta_mode;
   const lockedTier = subscriptionStatus?.beneficiary_locked_tier;
   const estateTransitioned = subscriptionStatus?.estate_transitioned || false;
@@ -154,7 +154,8 @@ export const SubscriptionManagement = ({
     };
     fetchPlans();
     fetchVerification();
-    if (currentBilling) setBilling(currentBilling);
+    // Only override billing default if user has an active subscription
+    if (currentSub?.billing_cycle) setBilling(currentSub.billing_cycle);
   }, [currentBilling]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // For beneficiaries: show only their locked-in tier (determined by benefactor's majority plan)
@@ -640,7 +641,7 @@ export const SubscriptionManagement = ({
                     <div className="space-y-2">
                       <div className="w-full text-center text-xs font-bold py-3 rounded-xl"
                         style={{ background: `${style.accent}10`, color: style.accent, border: `1px solid ${style.accent}25` }}>
-                        <Check className="w-3 h-3 inline mr-1" /> Active · {currentBilling}
+                        <Check className="w-3 h-3 inline mr-1" /> Active · {currentBilling || billing}
                       </div>
                       {billing !== currentBilling && (
                         <Button
