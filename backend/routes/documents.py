@@ -306,6 +306,23 @@ async def upload_document(
         },
     )
 
+    # NOTIFICATION: Notify beneficiaries that a new document was uploaded
+    import asyncio
+    from services.notifications import notify as _notify
+    beneficiaries = await db.beneficiaries.find(
+        {"estate_id": estate_id, "user_id": {"$exists": True, "$ne": None}},
+        {"_id": 0, "user_id": 1},
+    ).to_list(100)
+    category_label = category.replace("_", " ").title()
+    for ben in beneficiaries:
+        if ben.get("user_id"):
+            asyncio.create_task(_notify.beneficiary(
+                ben["user_id"],
+                f"New {category_label} Document",
+                f"A new {category_label.lower()} document '{name}' has been uploaded to the vault.",
+                url="/beneficiary/vault",
+            ))
+
     response = {
         "id": document.id,
         "name": document.name,

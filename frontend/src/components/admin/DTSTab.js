@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Shield, Clock, CheckCircle2, XCircle, Loader2, Package, Lock,
-  DollarSign, Mail, Flame, ChevronRight, Search, Trash2, AlertTriangle, Eye, EyeOff, RotateCcw
+  DollarSign, Mail, Flame, ChevronRight, Search, Trash2, AlertTriangle, Eye, EyeOff, RotateCcw, UserPlus
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from '../../utils/toast';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -30,9 +31,19 @@ export const DTSTab = ({ getAuthHeaders }) => {
   const [showDeletePw, setShowDeletePw] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
+  const [operators, setOperators] = useState([]);
+  const [assigning, setAssigning] = useState(null);
 
   useEffect(() => {
     fetchTasks();
+    // Fetch operators for assignment
+    const fetchOps = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/founder/operators`, getAuthHeaders());
+        setOperators(res.data || []);
+      } catch {}
+    };
+    fetchOps();
   }, [showDeleted]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchTasks = async () => {
@@ -70,11 +81,20 @@ export const DTSTab = ({ getAuthHeaders }) => {
   const handleUpdateDtsStatus = async (taskId, status) => {
     setActionLoading(taskId);
     try {
-      await axios.post(`${API_URL}/dts/tasks/${taskId}/status?status=${status}`, {}, getAuthHeaders());
-      // toast removed
+      await axios.post(`${API_URL}/dts/tasks/${taskId}/status?task_status=${status}`, {}, getAuthHeaders());
       fetchTasks();
     } catch (err) { toast.error('Failed'); }
     finally { setActionLoading(null); }
+  };
+
+  const handleAssignTask = async (taskId, operatorId) => {
+    setAssigning(taskId);
+    try {
+      const res = await axios.post(`${API_URL}/dts/tasks/${taskId}/assign`, { operator_id: operatorId }, getAuthHeaders());
+      toast.success(res.data.message || 'Task assigned');
+      fetchTasks();
+    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to assign'); }
+    finally { setAssigning(null); }
   };
 
   const handleDeleteDts = async () => {
@@ -239,6 +259,43 @@ export const DTSTab = ({ getAuthHeaders }) => {
           </div>
         </CardContent></Card>
 
+        {/* Task Assignment */}
+        {(user?.role === 'admin' || user?.operator_role === 'manager') && operators.length > 0 && (
+          <Card className="glass-card"><CardContent className="p-5">
+            <h3 className="font-bold text-[var(--t)] mb-1">Assign Operator</h3>
+            <p className="text-xs text-[var(--t5)] mb-3">Assign this task to a team member for execution.</p>
+            {selectedDts.assigned_to && (
+              <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-lg text-xs"
+                style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.15)' }}>
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#22C993]" />
+                <span className="text-[var(--t3)]">
+                  Currently assigned to: <strong className="text-[var(--t)]">
+                    {operators.find(o => o.id === selectedDts.assigned_to)?.name || selectedDts.assigned_to}
+                  </strong>
+                </span>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Select
+                value={selectedDts.assigned_to || ""}
+                onValueChange={(v) => handleAssignTask(selectedDts.id, v)}
+                disabled={assigning === selectedDts.id}
+              >
+                <SelectTrigger className="bg-[var(--s)] border-[var(--b)] text-[var(--t)] flex-1" data-testid="dts-assign-select">
+                  <SelectValue placeholder="Select operator..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {operators.map(op => (
+                    <SelectItem key={op.id} value={op.id}>
+                      {op.name} {op.operator_role === 'manager' ? '(Manager)' : ''} {op.title ? `· ${op.title}` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent></Card>
+        )}
+
         {/* Delete Request */}
         <Card className="glass-card"><CardContent className="p-5">
           <div className="flex items-center justify-between">
@@ -331,6 +388,11 @@ export const DTSTab = ({ getAuthHeaders }) => {
                   <div className="flex gap-2 mt-1 flex-wrap">
                     <span className="text-xs px-2 py-0.5 rounded-md font-bold" style={{ background: 'var(--s)', color: statusColors[task.status] }}>{task.status}</span>
                     <span className="text-xs text-[var(--t5)]">{task.task_type?.replace(/_/g, ' ')}</span>
+                    {task.assigned_to && (
+                      <span className="text-xs px-2 py-0.5 rounded-md" style={{ background: 'rgba(34,197,94,0.08)', color: '#22C993' }}>
+                        {operators.find(o => o.id === task.assigned_to)?.name || 'Assigned'}
+                      </span>
+                    )}
                     {task.line_items?.length > 0 && <span className="text-xs font-bold text-[var(--gold2)]">${task.line_items.reduce((s, i) => s + (i.approved !== false ? i.cost : 0), 0).toLocaleString()}</span>}
                   </div>
                 </div>

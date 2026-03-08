@@ -857,12 +857,13 @@ async def accept_invitation(data: AcceptInvitationRequest):
 
     # Notify the benefactor that the invitation was accepted
     estate = await db.estates.find_one(
-        {"id": beneficiary["estate_id"]}, {"_id": 0, "user_id": 1}
+        {"id": beneficiary["estate_id"]}, {"_id": 0, "user_id": 1, "owner_id": 1}
     )
-    if estate:
+    benefactor_id = (estate or {}).get("owner_id") or (estate or {}).get("user_id")
+    if benefactor_id:
         asyncio.create_task(
             send_push_notification(
-                estate["user_id"],
+                benefactor_id,
                 "Invitation Accepted",
                 f"{full_name} has accepted your invitation and joined your estate plan",
                 "/beneficiaries",
@@ -870,6 +871,14 @@ async def accept_invitation(data: AcceptInvitationRequest):
                 "beneficiary",
             )
         )
+        # In-app notification
+        from services.notifications import notify
+        asyncio.create_task(notify.benefactor(
+            benefactor_id,
+            "Beneficiary Joined Your Estate",
+            f"{full_name} has accepted your invitation and is now part of your estate plan.",
+            url="/beneficiaries",
+        ))
 
     # Generate token for auto-login
     token = create_token(user_id, beneficiary["email"], "beneficiary")
