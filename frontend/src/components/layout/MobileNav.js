@@ -634,13 +634,11 @@ const MobileNav = () => {
                   to={item.to}
                   className={({ isActive: routeActive }) => {
                     const isActive = routeActive && !item.forceInactive;
-                    return isCenter 
-                      ? `flex flex-col items-center -mt-6 flex-1`
-                      : `mobile-nav-item flex flex-col items-center gap-1 py-2 flex-1 ${isActive ? 'active' : ''}`;
+                    return `mobile-nav-item flex flex-col items-center gap-1 py-2 flex-1 ${isActive ? 'active' : ''}`;
                   }}
                   style={({ isActive: routeActive }) => {
                     const isActive = routeActive && !item.forceInactive;
-                    return (!isCenter && !isActive ? { color: theme === 'dark' ? 'rgba(255,255,255,0.7)' : '#1e3a5f' } : {});
+                    return (!isActive ? { color: theme === 'dark' ? 'rgba(255,255,255,0.7)' : '#1e3a5f' } : {});
                   }}
                   data-testid={`mobile-nav-${item.label.toLowerCase()}`}
                   aria-label={item.label}
@@ -648,26 +646,10 @@ const MobileNav = () => {
                   {({ isActive: routeActive }) => {
                     const isActive = routeActive && !item.forceInactive;
                     return (
-                    isCenter ? (
-                      <>
-                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-all ${
-                          isActive 
-                            ? 'bg-gradient-to-br from-[var(--gold)] to-[var(--gold2)] text-[#08090F]' 
-                            : 'bg-[var(--bg3)] text-[var(--t3)] border border-[var(--b)]'
-                        }`}>
-                          <item.icon className="w-6 h-6" />
-                        </div>
-                        <span className={`text-xs mt-1 font-semibold ${isActive ? 'text-[var(--gold)]' : ''}`}
-                          style={!isActive ? { color: theme === 'dark' ? 'rgba(255,255,255,0.7)' : '#1e3a5f' } : {}}>
-                          {item.label}
-                        </span>
-                      </>
-                    ) : (
                       <>
                         <item.icon className="w-5 h-5" />
                         <span className="text-xs font-semibold">{item.label}</span>
                       </>
-                    )
                   );}}
                 </NavLink>
                 {showDivider && (
