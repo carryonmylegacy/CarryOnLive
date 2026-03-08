@@ -214,7 +214,8 @@ const SettingsPage = () => {
         </p>
       </div>
 
-      {/* Profile */}
+      {/* Profile — benefactor/beneficiary only */}
+      {!isStaff && (
       <Card className="glass-card">
         <CardHeader>
           <CardTitle className="text-[var(--t)] flex items-center gap-2">
@@ -252,9 +253,10 @@ const SettingsPage = () => {
           </div>
         </CardContent>
       </Card>
+      )}
 
-      {/* Push Notifications */}
-      <NotificationSettings getAuthHeaders={() => getAuthHeaders()} />
+      {/* Push Notifications — benefactor/beneficiary only */}
+      {!isStaff && <NotificationSettings getAuthHeaders={() => getAuthHeaders()} />}
 
       {/* Appearance */}
       <Card className="glass-card">
@@ -380,7 +382,8 @@ const SettingsPage = () => {
       </Card>
       )}
 
-      {/* Security */}
+      {/* Security — benefactor/beneficiary only */}
+      {!isStaff && (
       <Card className="glass-card">
         <CardHeader>
           <CardTitle className="text-[var(--t)] flex items-center gap-2">
@@ -411,6 +414,7 @@ const SettingsPage = () => {
           </Button>
         </CardContent>
       </Card>
+      )}
 
       {/* Privacy & Data Rights (GDPR) — benefactor/beneficiary only */}
       {!isStaff && (<>

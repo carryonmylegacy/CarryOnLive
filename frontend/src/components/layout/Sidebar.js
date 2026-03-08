@@ -149,43 +149,9 @@ const Sidebar = () => {
     }
   ];
 
-  const adminNavSections = [
-    {
-      title: '',
-      items: [
-        { to: '/admin', icon: LayoutDashboard, label: 'Dashboard & Users' },
-        { to: '/admin/transition', icon: FileKey, label: 'Transition Verification' },
-        { to: '/admin/dts', icon: Shield, label: 'DTS Management' },
-        { to: '/admin/support', icon: Headphones, label: 'Customer Support' },
-        { to: '/admin/verifications', icon: ShieldCheck, label: 'Tier Verifications' },
-      ]
-    },
-    {
-      title: 'ACCOUNT',
-      items: [
-        { to: '/settings', icon: Settings, label: 'Settings' },
-      ]
-    }
-  ];
+  const adminNavSections = [];
 
-  const operatorNavSections = [
-    {
-      title: 'OPERATIONS',
-      items: [
-        { to: '/ops', icon: LayoutDashboard, label: 'Operations Dashboard' },
-        { to: '/ops/transition', icon: FileKey, label: 'Transition Verification' },
-        { to: '/ops/dts', icon: Shield, label: 'DTS Management' },
-        { to: '/ops/support', icon: Headphones, label: 'Customer Support' },
-        { to: '/ops/verifications', icon: ShieldCheck, label: 'Tier Verifications' },
-      ]
-    },
-    {
-      title: 'ACCOUNT',
-      items: [
-        { to: '/settings', icon: Settings, label: 'Settings' },
-      ]
-    }
-  ];
+  const operatorNavSections = [];
 
   const getNavSections = () => {
     if (user?.role === 'admin') return adminNavSections;

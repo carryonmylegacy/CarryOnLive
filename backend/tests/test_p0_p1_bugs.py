@@ -11,7 +11,7 @@ import requests
 import os
 
 BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://beneficiary-gate.preview.emergentagent.com"
+    "REACT_APP_BACKEND_URL", "https://operator-dashboard-4.preview.emergentagent.com"
 )
 
 # Test credentials - using the founder account
