@@ -63,7 +63,6 @@ const TAB_CONFIG = [
   { key: 'ops-escalations', label: 'Escalate', icon: AlertTriangle, path: '/ops/escalations' },
   { key: 'shift-notes', label: 'Shift Notes', icon: StickyNote, path: '/ops/shift-notes' },
   { key: 'ops-kb', label: 'SOPs', icon: BookOpen, path: '/ops/knowledge-base' },
-  { key: 'ops-dashboard', label: 'Dashboard', icon: Activity, path: '/ops/dashboard' },
 ];
 
 const PATH_TO_TAB = {
@@ -96,6 +95,7 @@ const PATH_TO_TAB = {
   '/ops/knowledge-base': 'ops-kb',
   '/ops/operators': 'operators',
   '/ops/dashboard': 'ops-dashboard',
+  '/ops/ops-dashboard': 'ops-dashboard',
 };
 
 const AdminPage = ({ operatorMode = false }) => {
