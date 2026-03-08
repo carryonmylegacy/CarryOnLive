@@ -29,7 +29,14 @@ const PreTransitionPage = () => {
             return;
           }
         }
-      } catch (err) { console.error(err); }
+      } catch (err) {
+        // Estate may have been deleted — clear stale reference and go back to hub
+        if (err.response?.status === 404 || err.response?.status === 403) {
+          localStorage.removeItem('beneficiary_estate_id');
+          navigate('/beneficiary');
+          return;
+        }
+      }
       finally { setLoading(false); }
     };
     fetchEstate();

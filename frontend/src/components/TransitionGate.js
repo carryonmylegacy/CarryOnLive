@@ -38,7 +38,12 @@ const TransitionGate = ({ section, allowPreTransition, children }) => {
           setStatus({ allowed: true });
         }
       })
-      .catch(() => setStatus({ allowed: false, redirect: '/beneficiary' }));
+      .catch((err) => {
+        if (err.response?.status === 404 || err.response?.status === 403) {
+          localStorage.removeItem('beneficiary_estate_id');
+        }
+        setStatus({ allowed: false, redirect: '/beneficiary' });
+      });
   }, [estateId, token, section, allowPreTransition]);
 
   if (status === null) {

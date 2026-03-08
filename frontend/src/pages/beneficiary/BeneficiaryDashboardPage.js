@@ -73,7 +73,13 @@ const BeneficiaryDashboardPage = () => {
           setOtherBens((bensRes.data || []).filter(b => b.user_id !== user?.id));
         }
       } catch { /* permissions endpoint may not exist for older estates */ }
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      if (err.response?.status === 404 || err.response?.status === 403) {
+        localStorage.removeItem('beneficiary_estate_id');
+        navigate('/beneficiary');
+        return;
+      }
+    }
     finally { setLoading(false); }
   };
 
