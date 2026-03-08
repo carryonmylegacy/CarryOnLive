@@ -112,7 +112,6 @@ const Sidebar = () => {
     {
       title: 'ACCOUNT',
       items: [
-        { to: '/beneficiary', icon: Home, label: 'Beneficiary Portal' },
         { to: '/settings', icon: Settings, label: 'Settings' },
         { to: '/subscription', icon: CreditCard, label: 'Subscription' },
         { to: '/security-settings', icon: ShieldCheck, label: 'Security Settings' },
