@@ -159,7 +159,7 @@ const BeneficiaryDashboardPage = () => {
               <ChevronDown className="w-4 h-4 flex-shrink-0" style={{ transform: estateSwitcherOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
             </button>
             {estateSwitcherOpen && (
-              <div className="absolute right-0 top-full mt-1 min-w-[220px] rounded-xl overflow-hidden z-50"
+              <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1 min-w-[220px] rounded-xl overflow-hidden z-50"
                 style={{ background: 'var(--bg3)', border: '1px solid var(--b)', boxShadow: '0 8px 30px rgba(0,0,0,0.4)' }}>
                 {allEstates.map(est => (
                   <div key={est.id}

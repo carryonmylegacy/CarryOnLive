@@ -24,7 +24,13 @@ import {
   ShieldCheck,
   KeyRound,
   Clock,
-  CreditCard
+  CreditCard,
+  Megaphone,
+  HeartPulse,
+  AlertTriangle,
+  BookOpen,
+  Search,
+  StickyNote
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import { toast } from '../../utils/toast';
@@ -234,9 +240,20 @@ const MobileNav = () => {
     { to: '/timeline', icon: Clock, label: 'Legacy Timeline' },
   ];
 
-  // Staff portals (admin/operator) — no menu items, only theme + sign out
-  const adminMenuItems = [];
-  const operatorMenuItems = [];
+  // Staff portals — tool shortcuts in hamburger menu
+  const adminMenuItems = [
+    { to: '/admin/announcements', icon: Megaphone, label: 'Announcements' },
+    { to: '/admin/system-health', icon: HeartPulse, label: 'System Health' },
+    { to: '/admin/escalations', icon: AlertTriangle, label: 'Escalations' },
+    { to: '/admin/knowledge-base', icon: BookOpen, label: 'Knowledge Base' },
+  ];
+  const operatorMenuItems = [
+    { to: '/ops/my-activity', icon: Clock, label: 'My Activity' },
+    { to: '/ops/search', icon: Search, label: 'Quick Search' },
+    { to: '/ops/escalations', icon: AlertTriangle, label: 'Escalate' },
+    { to: '/ops/shift-notes', icon: StickyNote, label: 'Shift Notes' },
+    { to: '/ops/knowledge-base', icon: BookOpen, label: 'SOPs' },
+  ];
 
   const getAccountItems = () => {
     if (user?.role === 'admin') return [];
@@ -292,6 +309,8 @@ const MobileNav = () => {
   ];
 
   const getBottomNav = () => {
+    // Admin viewing ops portal should see operator bottom nav
+    if (user?.role === 'admin' && window.location.pathname.startsWith('/ops')) return operatorBottomNav;
     if (user?.role === 'admin') return adminBottomNav;
     if (user?.role === 'operator') return operatorBottomNav;
     if (user?.role === 'beneficiary') return beneficiaryBottomNav;
@@ -403,19 +422,21 @@ const MobileNav = () => {
 
               {/* MY LEGACY Section */}
               <nav className="flex-1 px-4 overflow-y-auto" role="navigation" aria-label="Main menu">
-                {/* Main nav items — hidden for staff (admin/operator) */}
-                {(user?.role === 'admin' ? adminMenuItems : user?.role === 'operator' ? operatorMenuItems : myLegacyItems).length > 0 && (
+                {/* Main nav items — path-aware for admin viewing ops */}
+                {(() => {
+                  const isOpsView = user?.role === 'admin' && window.location.pathname.startsWith('/ops');
+                  const menuItems = isOpsView ? operatorMenuItems : (user?.role === 'admin' ? adminMenuItems : user?.role === 'operator' ? operatorMenuItems : myLegacyItems);
+                  const sectionTitle = isOpsView ? 'TOOLS' : (user?.role === 'admin' ? 'TOOLS' : user?.role === 'operator' ? 'TOOLS' : '');
+                  return menuItems.length > 0 && (
                 <div className="mb-6">
                   <h3 
                     className="text-xs font-semibold tracking-wider uppercase mb-3 px-2"
                     style={{ color: theme === 'dark' ? '#525C72' : '#64748B' }}
                   >
-                    
+                    {sectionTitle}
                   </h3>
                   <div>
-                    {(user?.role === 'admin' ? adminMenuItems : user?.role === 'operator' ? operatorMenuItems : myLegacyItems).map((item, idx) => {
-                      const items = user?.role === 'admin' ? adminMenuItems : user?.role === 'operator' ? operatorMenuItems : myLegacyItems;
-                      return (
+                    {menuItems.map((item, idx) => (
                       <div key={item.to}>
                         <NavLink
                           to={item.to}
@@ -438,7 +459,7 @@ const MobileNav = () => {
                           <item.icon className="w-5 h-5" />
                           <span>{item.label}</span>
                         </NavLink>
-                        {idx < items.length - 1 && (
+                        {idx < menuItems.length - 1 && (
                           <div className="flex justify-center">
                             <div style={{ 
                               width: '87.5%', 
@@ -448,11 +469,11 @@ const MobileNav = () => {
                           </div>
                         )}
                       </div>
-                      );
-                    })}
+                    ))}
                   </div>
                 </div>
-                )}
+                  );
+                })()}
 
                 {/* ACCOUNT Section — hidden for staff (admin/operator) */}
                 {accountItems.length > 0 && (

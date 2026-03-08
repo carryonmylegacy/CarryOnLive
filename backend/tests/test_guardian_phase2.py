@@ -12,7 +12,7 @@ import os
 import time
 
 BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://operator-dashboard-4.preview.emergentagent.com"
+    "REACT_APP_BACKEND_URL", "https://ops-portal-revamp.preview.emergentagent.com"
 ).rstrip("/")
 
 
