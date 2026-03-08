@@ -88,8 +88,7 @@ async def get_verification_status(current_user: dict = Depends(get_current_user)
 
 @router.get("/admin/verifications")
 async def get_all_verifications(
-    include_deleted: bool = False,
-    current_user: dict = Depends(get_current_user)
+    include_deleted: bool = False, current_user: dict = Depends(get_current_user)
 ):
     """Get all verification requests (admin/operator)"""
     if current_user.get("role") not in ("admin", "operator"):
@@ -294,12 +293,14 @@ async def delete_verification(
 
     await db.tier_verifications.update_one(
         {"id": verification_id},
-        {"$set": {
-            "soft_deleted": True,
-            "deleted_at": datetime.now(timezone.utc).isoformat(),
-            "deleted_by": current_user["id"],
-            "deleted_by_role": current_user.get("role"),
-        }}
+        {
+            "$set": {
+                "soft_deleted": True,
+                "deleted_at": datetime.now(timezone.utc).isoformat(),
+                "deleted_by": current_user["id"],
+                "deleted_by_role": current_user.get("role"),
+            }
+        },
     )
     return {"soft_deleted": True, "verification_id": verification_id}
 
@@ -311,16 +312,24 @@ async def restore_verification(
 ):
     """Restore a soft-deleted verification — founder (admin) only."""
     if current_user.get("role") != "admin":
-        raise HTTPException(status_code=403, detail="Only the Founder can restore deleted items")
+        raise HTTPException(
+            status_code=403, detail="Only the Founder can restore deleted items"
+        )
 
     result = await db.tier_verifications.update_one(
         {"id": verification_id, "soft_deleted": True},
-        {"$unset": {"soft_deleted": "", "deleted_at": "", "deleted_by": "", "deleted_by_role": ""}}
+        {
+            "$unset": {
+                "soft_deleted": "",
+                "deleted_at": "",
+                "deleted_by": "",
+                "deleted_by_role": "",
+            }
+        },
     )
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="No deleted verification found")
     return {"restored": True, "verification_id": verification_id}
-
 
 
 @router.get("/admin/subscription-stats")

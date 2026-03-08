@@ -54,7 +54,9 @@ async def send_support_message(
         "conversation_id": conversation_id,
         "sender_id": current_user["id"],
         "sender_name": current_user.get("name", current_user.get("email", "User")),
-        "sender_role": "admin" if current_user["role"] in ("admin", "operator") else current_user["role"],
+        "sender_role": "admin"
+        if current_user["role"] in ("admin", "operator")
+        else current_user["role"],
         "content": data.content,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "read": False,
@@ -137,8 +139,7 @@ async def get_conversation_messages(
 
 @router.get("/support/conversations")
 async def get_all_conversations(
-    include_deleted: bool = False,
-    current_user: dict = Depends(get_current_user)
+    include_deleted: bool = False, current_user: dict = Depends(get_current_user)
 ):
     """Admin: Get all support conversations with latest message.
     include_deleted=true shows soft-deleted conversations (founder only)."""
@@ -244,12 +245,14 @@ async def delete_support_conversation(
     # Soft-delete: mark messages as deleted instead of removing them
     await db.support_messages.update_many(
         {"conversation_id": conversation_id},
-        {"$set": {
-            "soft_deleted": True,
-            "deleted_at": datetime.now(timezone.utc).isoformat(),
-            "deleted_by": current_user["id"],
-            "deleted_by_role": current_user["role"],
-        }}
+        {
+            "$set": {
+                "soft_deleted": True,
+                "deleted_at": datetime.now(timezone.utc).isoformat(),
+                "deleted_by": current_user["id"],
+                "deleted_by_role": current_user["role"],
+            }
+        },
     )
     return {"soft_deleted": True, "conversation_id": conversation_id}
 
@@ -260,10 +263,19 @@ async def restore_support_conversation(
 ):
     """Restore a soft-deleted support conversation — founder (admin) only."""
     if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Only the Founder can restore deleted items")
+        raise HTTPException(
+            status_code=403, detail="Only the Founder can restore deleted items"
+        )
     result = await db.support_messages.update_many(
         {"conversation_id": conversation_id, "soft_deleted": True},
-        {"$unset": {"soft_deleted": "", "deleted_at": "", "deleted_by": "", "deleted_by_role": ""}}
+        {
+            "$unset": {
+                "soft_deleted": "",
+                "deleted_at": "",
+                "deleted_by": "",
+                "deleted_by_role": "",
+            }
+        },
     )
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="No deleted conversation found")
