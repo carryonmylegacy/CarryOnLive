@@ -61,6 +61,13 @@ const DevSwitcher = () => {
     redirect: '/admin'
   });
 
+  accounts.push({
+    label: 'Operations Portal',
+    role: 'ops_view',
+    color: '#3B82F6',
+    redirect: '/ops'
+  });
+
   const handleSwitch = async (account) => {
     setSwitching(account.role);
     try {
@@ -82,6 +89,12 @@ const DevSwitcher = () => {
           return;
         }
         throw new Error('No admin session found. Please log in as admin first.');
+      }
+
+      if (account.role === 'ops_view') {
+        // Just navigate to ops portal — founder stays logged in as admin
+        window.location.href = '/ops';
+        return;
       }
 
       // Use current token for dev-switch (backend accepts any configured account's token)
