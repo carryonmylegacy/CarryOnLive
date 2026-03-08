@@ -233,7 +233,15 @@ const Sidebar = () => {
       )}
 
       {/* Beta Banner */}
-      {!collapsed && <BetaBanner />}
+      {collapsed ? (
+        <div className="mx-auto my-2 w-9 h-9 rounded-lg flex items-center justify-center" 
+          style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}
+          title="BETA = FREE">
+          <span className="text-base font-bold text-[var(--gn2)]" style={{ fontFamily: 'serif' }}>&beta;</span>
+        </div>
+      ) : (
+        <BetaBanner />
+      )}
 
       {/* Beneficiary Estate Switcher — removed from sidebar, now in page header */}
 
