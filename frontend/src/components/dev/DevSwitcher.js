@@ -78,35 +78,32 @@ const DevSwitcher = () => {
         localStorage.setItem('dev_switcher_admin_token', currentToken);
       }
 
-      if (account.role === 'admin') {
-        // Restore saved admin session
+      if (account.role === 'admin' || account.role === 'ops_view') {
+        // Both Founder Portal and Operations Portal need the admin token
         const adminToken = localStorage.getItem('dev_switcher_admin_token');
         if (adminToken) {
           localStorage.setItem('carryon_token', adminToken);
           localStorage.removeItem('selected_estate_id');
           localStorage.removeItem('beneficiary_estate_id');
+          localStorage.setItem('dev_switcher_admin_session', 'true');
           window.location.href = account.redirect;
           return;
         }
         throw new Error('No admin session found. Please log in as admin first.');
       }
 
-      if (account.role === 'ops_view') {
-        // Just navigate to ops portal — founder stays logged in as admin
-        window.location.href = '/ops';
-        return;
-      }
-
-      // Use current token for dev-switch (backend accepts any configured account's token)
-      if (!currentToken) {
-        throw new Error('No active session. Please log in first.');
+      // For benefactor/beneficiary switches, always use the ADMIN token
+      // (the dev-switch endpoint requires admin auth)
+      const switchToken = localStorage.getItem('dev_switcher_admin_token') || currentToken;
+      if (!switchToken) {
+        throw new Error('No active session. Please log in as founder first.');
       }
 
       const response = await fetch(`${API_URL}/api/auth/dev-switch`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentToken}`,
+          'Authorization': `Bearer ${switchToken}`,
         },
         body: JSON.stringify({ email: account.email }),
       });
