@@ -168,38 +168,13 @@ const MobileNav = () => {
     { to: '/timeline', icon: Clock, label: 'Legacy Timeline' },
   ];
 
-  // Founder menu items — founder should NOT see user content
-  const adminMenuItems = [
-    { to: '/admin', icon: Home, label: 'Founder Dashboard' },
-    { to: '/admin/transition', icon: FileKey, label: 'Transition Verification (TVT)' },
-    { to: '/admin/dts', icon: Shield, label: 'Designated Trustee Services' },
-    { to: '/admin/support', icon: Headphones, label: 'Customer Support' },
-    { to: '/admin/subscriptions', icon: Users, label: 'Subscriptions' },
-    { to: '/admin/verifications', icon: ShieldCheck, label: 'Tier Verifications' },
-    { to: '/admin/analytics', icon: Settings, label: 'Analytics' },
-    { to: '/admin/activity', icon: Clock, label: 'Activity Log' },
-  ];
-
-  const operatorMenuItems = [
-    { to: '/ops', icon: Home, label: 'Operations Dashboard' },
-    { to: '/ops/transition', icon: FileKey, label: 'Transition Verification (TVT)' },
-    { to: '/ops/dts', icon: Shield, label: 'Designated Trustee Services' },
-    { to: '/ops/support', icon: Headphones, label: 'Customer Support' },
-    { to: '/ops/verifications', icon: ShieldCheck, label: 'Tier Verifications' },
-  ];
+  // Staff portals (admin/operator) — no menu items, only theme + sign out
+  const adminMenuItems = [];
+  const operatorMenuItems = [];
 
   const getAccountItems = () => {
-    if (user?.role === 'admin') {
-      return [
-        { to: '/settings', icon: Settings, label: 'Settings' },
-        { to: '/admin/dev-switcher', icon: Settings, label: 'Dev Switcher' },
-      ];
-    }
-    if (user?.role === 'operator') {
-      return [
-        { to: '/settings', icon: Settings, label: 'Settings' },
-      ];
-    }
+    if (user?.role === 'admin') return [];
+    if (user?.role === 'operator') return [];
     if (user?.role === 'beneficiary') {
       return [
         { to: '/beneficiary/settings', icon: Settings, label: 'Settings' },
@@ -235,11 +210,11 @@ const MobileNav = () => {
   ];
 
   const adminBottomNav = [
-    { id: 'admin-users', to: '/admin', icon: Users, label: 'Users', forceInactive: true },
     { id: 'admin-tvt', to: '/admin/transition', icon: FileKey, label: 'TVT' },
+    { id: 'admin-support', to: '/admin/support', icon: Headphones, label: 'Support' },
     { id: 'admin-home', to: '/admin', icon: Home, label: 'Home', isCenter: true },
     { id: 'admin-dts', to: '/admin/dts', icon: Shield, label: 'DTS' },
-    { id: 'admin-dev', to: '/admin/dev-switcher', icon: Settings, label: 'Dev' },
+    { id: 'admin-verify', to: '/admin/verifications', icon: ShieldCheck, label: 'Verify' },
   ];
 
   const operatorBottomNav = [
@@ -298,6 +273,8 @@ const MobileNav = () => {
 
               {/* MY LEGACY Section */}
               <nav className="flex-1 px-4 overflow-y-auto" role="navigation" aria-label="Main menu">
+                {/* Main nav items — hidden for staff (admin/operator) */}
+                {(user?.role === 'admin' ? adminMenuItems : user?.role === 'operator' ? operatorMenuItems : myLegacyItems).length > 0 && (
                 <div className="mb-6">
                   <h3 
                     className="text-xs font-semibold tracking-wider uppercase mb-3 px-2"
@@ -345,8 +322,10 @@ const MobileNav = () => {
                     })}
                   </div>
                 </div>
+                )}
 
-                {/* ACCOUNT Section */}
+                {/* ACCOUNT Section — hidden for staff (admin/operator) */}
+                {accountItems.length > 0 && (
                 <div className="mb-6">
                   <h3 
                     className="text-xs font-semibold tracking-wider uppercase mb-3 px-2"
@@ -381,6 +360,7 @@ const MobileNav = () => {
                     ))}
                   </div>
                 </div>
+                )}
               </nav>
 
               {/* Admin OTP Toggle — Founder only */}

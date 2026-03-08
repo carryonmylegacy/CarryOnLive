@@ -1,53 +1,31 @@
 <analysis>**original_problem_statement:**
-The user's initial goal was to fix a recurring iOS safe area bug and several other UI inconsistencies. This request evolved significantly throughout the session.
-
-Key stages of the project:
-1.  **Initial UI Fixes & Audit:** Addressed six specific UI/UX issues and conducted a deep audit for Apple App Store compliance, fixing critical native configuration bugs.
-2.  **New Features:** Implemented Apple Passkeys and set up the file structure for a native iOS Share Extension.
-3.  **Production Crash Debugging:** A major part of the session was dedicated to diagnosing and fixing a series of critical production crashes on Safari. The root cause was identified as a  dependency drift causing a Temporal Dead Zone (TDZ) bug. This required rolling back all frontend changes and carefully re-applying them without modifying dependencies.
-4.  **Architectural Overhaul:**
-    *   Fixed a critical security flaw where beneficiaries had full access to benefactor accounts before the benefactor's death was verified. A  was implemented.
-    *   Established a new multi-role system, renaming the Admin portal to a Founder portal and creating a new, stripped-down Operations portal for day-to-day staff.
-    *   Implemented a SOC 2-compliant audit trail for all operator and founder actions.
-    *   Hardened the user deletion process to ensure a full cascade delete of all related data without affecting linked-but-separate user accounts.
-5.  **Housekeeping Script:** Created a persistent 
-==========================================
-  CarryOn™ Housekeeping Protocol
-==========================================
-
-1. Backend ruff check ............ [0;32mPASS[0m
-2. Backend ruff format ........... [0;32mPASS[0m
-3. Frontend ESLint (errors) ...... [0;32mPASS[0m
-4. Frontend build ................ [0;32mPASS[0m
-5. yarn.lock unchanged ........... [0;32mPASS[0m (hash: de33c8137984)
-6. MongoDB _id leak scan ......... [0;32mPASS[0m
-7. Hardcoded secrets scan ........ [0;32mPASS[0m
-8. Sensitive console.log scan .... [0;32mPASS[0m
-9. Deprecated datetime scan ...... [0;32mPASS[0m
-10. Backend health check ......... [0;32mPASS[0m
-11. Unprotected endpoint audit ... [0;32mPASS[0m (31 route files audited)
-
-==========================================
-  [0;32mALL CHECKS PASSED[0m — codebase is clean
-==========================================
-
-Safety reminder: Do NOT run yarn add/remove.
-To fix ruff format: cd /app/backend && ruff format . script to allow the user to run a comprehensive, read-only audit in future sessions without risking a repeat of the production crashes.
+The user requested a series of fixes and enhancements for the Operations Portal, which is used by company staff (). The key requirements were:
+1.  **Menu & Navigation Cleanup:** Audit the menus in all four portals (Benefactor, Beneficiary, Founder, Operator) and remove any items that are not relevant to that specific role. Specifically, the Operations Portal contained incorrect links to the Founder portal and benefactor-specific pages like Subscription.
+2.  **Add Delete Functionality:** Implement a visible delete button for every item within each tab of the Operations Portal (TVT, DTS, Support, Verify).
+3.  **Implement Soft-Delete with Restore:** Deletions made by an Operator should be soft deletes. Only a user with the Founder role should be able to see and restore these soft-deleted items.
+4.  **Role-Specific Settings:** The global OTP (One-Time Password) toggle should only be visible in the Founder portal, not the Operations portal.
+5.  **Operations Dashboard Tiles:** Add persistent, auto-refreshing status tiles to the top of the Operations Dashboard. These tiles should represent each work queue (TVT, DTS, Support, etc.), highlight when new work is available, and act as a quick navigation link to the relevant tab.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a robust, multi-tenant estate planning platform with four distinct user roles: Benefactor, Beneficiary, Founder (), and Operator. The codebase has been significantly hardened after a series of production crashes were diagnosed and resolved. Critical security and architectural flaws related to beneficiary access have been fixed. A new SOC 2-compliant audit logging system is in place for all privileged actions. A reusable  script is now part of the codebase for safe, repeatable audits.
+The application is a multi-portal platform with four distinct roles: Benefactor, Beneficiary, Founder (), and Operator. The agent has just completed a major overhaul of the staff-facing portals (Founder and Operator).
+
+Key existing components:
+-   **Role-Aware Navigation:** The main sidebar and mobile navigation menus are now fully role-aware, showing only relevant links and information for the logged-in user.
+-   **Soft-Delete System:** A comprehensive soft-delete and restore mechanism has been implemented on the backend for all operational data (support tickets, DTS tasks, verifications, TVT). Operators can soft-delete, and Founders have a UI to view and restore deleted items.
+-   **Operations Portal UI:** All item lists in the Operations portal now feature prominent delete buttons.
+-   **Operations Dashboard:** The dashboard for operators now features four persistent, auto-refreshing tiles at the top that provide at-a-glance stats for each work queue and highlight pending tasks.
 
 **Last working item**:
--   Last item agent was working: Creating a persistent  script to automate future SOC 2 audits, security hardening, and linting checks in a safe, read-only manner.
+-   Last item agent was working: Implementing persistent, auto-refreshing status tiles on the Operations Dashboard to show pending work for TVT, DTS, Support, and Verification queues.
 -   Status: COMPLETED
 -   Agent Testing Done: Y
 -   Which testing method agent to use? NA
 -   User Testing Done: N
 
 **All Pending/In progress Issue list**:
--   None. The last requested task was completed.
+-   None. All user requests from this session have been addressed.
 
 **In progress Task List**:
 -   None.
@@ -55,204 +33,94 @@ The application is a robust, multi-tenant estate planning platform with four dis
 **Upcoming and Future Tasks**
 
 -   **Upcoming Tasks:**
-    -   **P0: Re-implement Deferred Features:** Several UI/UX features (pull-to-refresh, native haptics, network status banner, force update gate, error reporter) were built but had to be rolled back to fix the production Safari crash. These need to be re-implemented carefully, likely using yarn add v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/add for documentation about this command. to prevent dependency drift.
-    -   **P1: Finalize Share Extension Setup:** The user must be guided through the manual steps in Xcode and App Store Connect to register the App Group and Share Extension target before it can be built and deployed via CodeMagic.
+    -   **P0: Re-implement Deferred Features:** A set of UI/UX features (pull-to-refresh, native haptics, network status banner, force update gate, error reporter) were previously rolled back to fix a critical production bug. These need to be carefully re-implemented. This will involve adding Capacitor dependencies, which must be done with caution to avoid the previous  issues.
+    -   **P1: Finalize Share Extension Setup:** The user needs guidance on the manual configuration steps in Xcode and App Store Connect to complete the setup for the native iOS Share Extension.
 
 -   **Future Tasks:**
-    -   **P2: Twilio SMS OTP:** Implement once the user receives A2P 10DLC approval from Twilio.
+    -   **P2: Twilio SMS OTP:** Implement this feature once the user confirms they have received A2P 10DLC approval from Twilio.
 
 **Completed work in this session**
--   **New Multi-Role Architecture (Founder/Operator):**
-    -   Created a new  role with a stripped-down Operations Portal for TVT, DTS, and support tasks.
-    -   Renamed the Admin portal to the Founder portal, which retains god-like access, including financial analytics, user management, and new operator management capabilities.
--   **SOC 2 Compliance & Security Hardening:**
-    -   Implemented an immutable, SOC 2-compliant audit trail () that records all privileged actions with user details, IP, and an integrity hash.
-    -   Hardened the admin user deletion endpoint to cascade-delete all 15 associated data collections for an estate, while correctly preserving the user accounts of linked beneficiaries.
--   **Critical Bug Fixes & Stability:**
-    -   **Resolved Production Crashes:** Diagnosed and fixed a series of critical production crashes on Safari related to a  dependency drift and a JavaScript Temporal Dead Zone (TDZ) bug.
-    -   **Fixed Beneficiary Access Flaw:** Corrected a major architectural flaw that gave beneficiaries full pre-transition access. Implemented a  and authoritative backend checks to strictly enforce access rules.
--   **Feature Implementation:**
-    -   Implemented Apple Passkey (WebAuthn) login and registration.
-    -   Created all necessary native files for an iOS Share Extension.
-    -   Developed a seamless workflow for existing beneficiaries to upgrade to a benefactor role without creating a new account.
-    -   Integrated user-uploaded profile photos across the entire platform, replacing initial-based avatars.
--   **Housekeeping Automation:**
-    -   Created 
-==========================================
-  CarryOn™ Housekeeping Protocol
-==========================================
-
-1. Backend ruff check ............ [0;32mPASS[0m
-2. Backend ruff format ........... [0;32mPASS[0m
-3. Frontend ESLint (errors) ...... [0;32mPASS[0m
-4. Frontend build ................ [0;32mPASS[0m
-5. yarn.lock unchanged ........... [0;32mPASS[0m (hash: de33c8137984)
-6. MongoDB _id leak scan ......... [0;32mPASS[0m
-7. Hardcoded secrets scan ........ [0;32mPASS[0m
-8. Sensitive console.log scan .... [0;32mPASS[0m
-9. Deprecated datetime scan ...... [0;32mPASS[0m
-10. Backend health check ......... [0;32mPASS[0m
-11. Unprotected endpoint audit ... [0;32mPASS[0m (31 route files audited)
-
-==========================================
-  [0;32mALL CHECKS PASSED[0m — codebase is clean
-==========================================
-
-Safety reminder: Do NOT run yarn add/remove.
-To fix ruff format: cd /app/backend && ruff format ., a persistent, read-only script to run a comprehensive 11-point audit of the codebase safely.
--   **UI/UX Refinements:**
-    -   Extracted Subscription management from the Settings page into its own dedicated page.
-    -   Corrected numerous UI/UX issues, including fixing the post-payment redirect flow, improving legibility of UI elements in light/dark modes, and ensuring chat interfaces have fixed headers/footers with scrollable content areas.
+-   **Portal Menu Overhaul:**
+    -   Cleaned up menus across all four portals (, ) to be strictly role-specific.
+    -   Removed incorrect pages (e.g., Subscription, Security Settings) and tabs (Founder Ops) from the Operations portal.
+-   **Soft-Delete Implementation:**
+    -   **Backend:** Modified endpoints for Support, DTS, TVT, and Verifications to perform soft-deletes by adding  and  fields. Added new Founder-only endpoints to restore data and view deleted items. (Files: , , , ).
+    -   **Frontend:** Implemented the UI for soft-delete. Operators see a standard delete/trash icon. Founders see a Show Deleted toggle and a Restore button for soft-deleted items. (Files: , , , ).
+-   **Operations Dashboard Tiles:**
+    -   Added four persistent, auto-refreshing status tiles to the  when in .
+    -   These tiles fetch data from  every 30 seconds, highlight queues with pending work, and allow for quick navigation.
+-   **RBAC & UI Hardening:**
+    -   Updated numerous backend endpoints to grant Operators correct access while protecting Founder-only actions.
+    -   Made the  role-aware, hiding benefactor-only sections (e.g., GDPR, Notifications) from staff.
 
 **Earlier issues found/mentioned but not fixed**
 -   None.
 
 **Known issue recurrence from previous fork**
 -   **Production Crashes from yarn add v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/add for documentation about this command./:** This critical issue was discovered and resolved in this session. The  script and clear instructions have been put in place to prevent future agents from repeating the mistake of modifying  carelessly.
+info Visit https://yarnpkg.com/en/docs/cli/add for documentation about this command./:** The previous handoff warned against modifying  carelessly. The agent successfully avoided this by not adding any new frontend dependencies. This remains a critical point of caution for future work, especially when re-implementing the deferred UI features.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Dependency Locking:** The critical importance of not altering  without specific intention () to prevent breaking changes from transitive dependencies, especially to avoid browser-specific bugs like Safari's Temporal Dead Zone (TDZ).
--   **SOC 2 Compliance:** Implementing key controls like Role-Based Access Control (RBAC), separation of duties (Founder vs. Operator), and maintaining an immutable audit trail for all privileged actions.
--   **Architectural Gating:** Using a combination of frontend components () and authoritative backend API checks to robustly enforce business logic and security rules.
--   **Cascade Deletes:** The process of safely deleting a primary record (e.g., a user account) and ensuring all its dependent data across multiple database collections is also removed, while correctly preserving linked but independent records (e.g., other user accounts).
--   **Dual-Role User Model:** Architecting the system to allow a single user account to hold multiple roles (e.g., being both a beneficiary of one estate and a benefactor of their own) and switch between contexts seamlessly.
+-   **Soft Deletes:** Implemented by adding  and  fields to MongoDB documents. Backend queries were updated to filter these out by default () and include them when requested by a Founder.
+-   **Role-Based Access Control (RBAC):** Expanded backend endpoint dependencies to check for  for shared staff functions, while reserving sensitive actions for  only.
+-   **Conditional Rendering (React):** Extensively used to build role-specific UIs, from entire page layouts () and navigation menus () down to individual buttons (Restore vs. Delete).
+-   **Polling for Live Updates:** Used  in the  component to periodically poll the  endpoint, providing operators with a near-real-time view of pending work without websockets.
 
 **key DB schema**
--   **audit_log (new):** 
--   **users (updated):** Added , , , ,  for operator accounts. The  field now includes .
--   **beneficiary_display_overrides (new):**  to allow beneficiaries to override photos without touching benefactor data.
+-   ****: Added , .
+-   ****: Added , .
+-   ****: Added , .
+-   ****: Added , .
 
 **changes in tech stack**
--   No changes. The stack remains React 19 (after debugging on 18) and FastAPI, with a stable  file.
+-   No changes.
 
 **All files of reference**
--   
-==========================================
-  CarryOn™ Housekeeping Protocol
-==========================================
-
-1. Backend ruff check ............ [0;32mPASS[0m
-2. Backend ruff format ........... [0;32mPASS[0m
-3. Frontend ESLint (errors) ...... [0;32mPASS[0m
-4. Frontend build ................ [0;32mPASS[0m
-5. yarn.lock unchanged ........... [0;32mPASS[0m (hash: de33c8137984)
-6. MongoDB _id leak scan ......... [0;32mPASS[0m
-7. Hardcoded secrets scan ........ [0;32mPASS[0m
-8. Sensitive console.log scan .... [0;32mPASS[0m
-9. Deprecated datetime scan ...... [0;32mPASS[0m
-10. Backend health check ......... [0;32mPASS[0m
-11. Unprotected endpoint audit ... [0;32mPASS[0m (31 route files audited)
-
-==========================================
-  [0;32mALL CHECKS PASSED[0m — codebase is clean
-==========================================
-
-Safety reminder: Do NOT run yarn add/remove.
-To fix ruff format: cd /app/backend && ruff format . (Key for future maintenance)
--    (Core of the audit logging system)
--    (Core of the new role management system)
--    (Handles logic for Founder vs. Operator views)
--    (Critical for beneficiary security)
--    (Critical file that must not be modified carelessly)
+-   **Backend Routers:** , , , , 
+-   **Frontend Pages & Components:** , , , , and the four tab components in .
 
 **Areas that need refactoring**:
--   None. The agent performed an extensive audit and refactoring during this session.
+-   None.
 
 **key api endpoints**
--   : Create a new operator account.
--   : List all operator accounts.
--   : Delete an operator account.
--   : Query the SOC 2 audit trail.
--   : Upgrade an existing beneficiary user to also be a benefactor.
+-   : A new pattern of Founder-only endpoints added for each data type (e.g., ).
+-   : Endpoints for all operational data types were converted to perform soft-deletes.
+-   : Existing endpoint now serves live data for the new Operations Dashboard tiles.
 
 **Critical Info for New Agent**
--   **DO NOT MODIFY !** A significant part of this session was spent fixing critical production crashes caused by yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. commands altering transitive dependencies. If you need to add a frontend dependency, you must do so carefully (e.g., using yarn add v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/add for documentation about this command.).
--   **Use the Housekeeping Script:** The user may ask for another audit or housekeeping. Use the command 
-==========================================
-  CarryOn™ Housekeeping Protocol
-==========================================
-
-1. Backend ruff check ............ [0;32mPASS[0m
-2. Backend ruff format ........... [0;32mPASS[0m
-3. Frontend ESLint (errors) ...... [0;32mPASS[0m
-4. Frontend build ................ [0;32mPASS[0m
-5. yarn.lock unchanged ........... [0;32mPASS[0m (hash: de33c8137984)
-6. MongoDB _id leak scan ......... [0;32mPASS[0m
-7. Hardcoded secrets scan ........ [0;32mPASS[0m
-8. Sensitive console.log scan .... [0;32mPASS[0m
-9. Deprecated datetime scan ...... [0;32mPASS[0m
-10. Backend health check ......... [0;32mPASS[0m
-11. Unprotected endpoint audit ... [0;32mPASS[0m (31 route files audited)
-
-==========================================
-  [0;32mALL CHECKS PASSED[0m — codebase is clean
-==========================================
-
-Safety reminder: Do NOT run yarn add/remove.
-To fix ruff format: cd /app/backend && ruff format .. This script is designed to be safe and read-only.
--   **Deferred Features Exist:** A group of features (pull-to-refresh, haptics, network banner, error reporting) were rolled back to ensure stability. The user will likely request these again. They require adding Capacitor dependencies, which was the source of the previous crashes, so proceed with extreme caution.
--   **Understand the Role System:** The platform now has four roles (, ,  (Founder), ) with distinct permissions enforced on both the frontend and backend. All privileged actions are logged.
+-   **DO NOT MODIFY !** This cannot be overstated. A previous session spent significant time fixing production crashes caused by this. If you must add frontend dependencies (e.g., for the deferred features), use yarn add v1.22.22
+info Visit https://yarnpkg.com/en/docs/cli/add for documentation about this command. and test thoroughly.
+-   **Understand the Founder vs. Operator Roles:** The platform has a strict separation of duties. The Founder () is the superuser. The Operator has a stripped-down portal () for daily tasks. All changes must respect this hierarchy.
+-   **Soft-Delete is the Standard:** All deletions of operational data are now soft-deletes. Permanent deletion is a Founder-only, high-privilege action.
 
 **documents and test reports created in this job**
 -   
-==========================================
-  CarryOn™ Housekeeping Protocol
-==========================================
-
-1. Backend ruff check ............ [0;32mPASS[0m
-2. Backend ruff format ........... [0;32mPASS[0m
-3. Frontend ESLint (errors) ...... [0;32mPASS[0m
-4. Frontend build ................ [0;32mPASS[0m
-5. yarn.lock unchanged ........... [0;32mPASS[0m (hash: de33c8137984)
-6. MongoDB _id leak scan ......... [0;32mPASS[0m
-7. Hardcoded secrets scan ........ [0;32mPASS[0m
-8. Sensitive console.log scan .... [0;32mPASS[0m
-9. Deprecated datetime scan ...... [0;32mPASS[0m
-10. Backend health check ......... [0;32mPASS[0m
-11. Unprotected endpoint audit ... [0;32mPASS[0m (31 route files audited)
-
-==========================================
-  [0;32mALL CHECKS PASSED[0m — codebase is clean
-==========================================
-
-Safety reminder: Do NOT run yarn add/remove.
-To fix ruff format: cd /app/backend && ruff format .
+-   
+-    (updated)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Requested a persistent housekeeping script to automate future audits without causing crashes. (Status: Completed)
-2.  **User:** Requested that the Operator creation form be expanded to include fields like name, email, phone, and title, and that OTP should use the provided email. (Status: Completed)
-3.  **User:** Initially requested that Operator accounts use arbitrary usernames instead of emails and skip OTP. (Status: Completed, then revised by the next request)
-4.  **User:** Asked to ensure the dev switcher allows seamless navigation between all portal types (Beneficiary, Benefactor, Operations, Founder). (Status: Completed)
-5.  **User:** Asked for confirmation of the Operator account creation and login workflow. (Status: Completed)
-6.  **User:** Requested the creation of a new, stripped-down Operations portal and the renaming of the Admin portal to a Founder portal with expanded permissions and SOC 2 audit logging. (Status: Completed)
-7.  **User:** Asked to change all user-facing Admin labels to Founder. (Status: Completed)
-8.  **User:** Asked for confirmation that deleting a benefactor account does not delete the beneficiary's user account, only the link between them. (Status: Completed)
-9.  **User:** Expressed concern that deleting a user account might incorrectly delete associated beneficiary accounts. (Status: Agent verified logic is correct).
-10. **User:** Requested a series of fixes for the admin portal: use consistent password modals, add delete buttons to all TVT statuses, and ensure deleting a user account cascade-deletes all related data. (Status: Completed)
+1.  **User:** Place auto-refreshing tiles at the top of the Operations Dashboard to show pending work for each queue. (Status: Completed)
+2.  **User:** Initial multi-part request to fix the Operations portal: add delete buttons, implement founder-only restore, clean up all menus across all portals, and remove incorrect navigation items/toggles. (Status: Completed)
 
 **Project Health Check:**
--   **Healthy:** The platform is significantly more stable, secure, and feature-rich than at the start of the session. Critical production crashes and architectural security flaws have been resolved.
+-   **Healthy:** The application is stable. The requested features and fixes were implemented successfully and verified via the testing agent, which reported a 100% success rate on two separate runs.
 
 **3rd Party Integrations**
--   No new integrations were added. The existing stack includes Stripe, Apple IAP, Resend, xAI Grok, Twilio, AWS S3, MongoDB Atlas, and Capgo. PostHog was removed from the codebase to fix crashes.
+-   No new integrations were added in this session.
 
 **Testing status**
--   Testing agent used after significant changes: YES
--   Troubleshoot agent used after agent stuck in loop: NO (Agent self-corrected)
--   Test files created: Numerous test files were created and updated by the testing agent throughout the session.
+-   Testing agent used after significant changes: YES. The testing agent was called twice and reported 100% pass rates for both backend and frontend tests.
+-   Troubleshoot agent used after agent stuck in loop: NO
+-   Test files created: , 
 -   Known regressions: None.
 
 **Credentials to test flow:**
--   **Founder Portal:**  / 
+-   **Founder Portal:**  /  or  (password unknown, but account exists)
 -   **Benefactor Test Account:**  / 
 -   **Operator Accounts:** Can be created via the Founder Portal in the Operators tab.
 
 **What agent forgot to execute**
--   The agent deliberately rolled back a set of 7 UI/UX features (pull-to-refresh, haptics, etc.) to stabilize the application after a series of production crashes. This was not forgotten but is a key piece of deferred work for the next session.</analysis>
+-   Nothing. The agent successfully completed all tasks requested by the user in this session. The deferred tasks from the prior session are correctly noted as upcoming work.</analysis>
