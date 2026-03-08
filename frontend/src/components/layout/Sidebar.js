@@ -32,8 +32,10 @@ import {
   StickyNote
 } from 'lucide-react';
 import { Switch } from '../ui/switch';
+import { toast } from '../../utils/toast';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
 const OtpToggle = ({ collapsed }) => {
   const [otpDisabled, setOtpDisabled] = useState(false);
@@ -76,6 +78,70 @@ const Sidebar = () => {
   const [benEstates, setBenEstates] = useState([]);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('carryon_sidebar_collapsed') === 'true');
+  // Dev portal switcher (founder only)
+  const [devOpen, setDevOpen] = useState(false);
+  const [devConfig, setDevConfig] = useState(null);
+  const [devSwitching, setDevSwitching] = useState(null);
+
+  const isAdminSession = user?.role === 'admin' || localStorage.getItem('dev_switcher_admin_session') === 'true';
+
+  const fetchDevConfig = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/dev-switcher/config`);
+      const data = await res.json();
+      setDevConfig(data);
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (isAdminSession) fetchDevConfig();
+  }, [isAdminSession]); // eslint-disable-line
+
+  const devAccounts = [];
+  if (devConfig?.benefactor?.email) devAccounts.push({ label: 'Benefactor', email: devConfig.benefactor.email, password: devConfig.benefactor.password, role: 'benefactor', color: '#2563eb', redirect: '/dashboard' });
+  if (devConfig?.beneficiary?.email) devAccounts.push({ label: 'Beneficiary', email: devConfig.beneficiary.email, password: devConfig.beneficiary.password, role: 'beneficiary', color: '#8b5cf6', redirect: '/beneficiary' });
+  devAccounts.push({ label: 'Founder Portal', role: 'admin', color: '#E0AD2B', redirect: '/admin' });
+  devAccounts.push({ label: 'Operations Portal', role: 'ops_view', color: '#3B82F6', redirect: '/ops' });
+
+  const handleDevSwitch = async (account) => {
+    setDevSwitching(account.role);
+    try {
+      const currentToken = localStorage.getItem('carryon_token');
+      if (user?.role === 'admin' && currentToken) {
+        localStorage.setItem('dev_switcher_admin_token', currentToken);
+      }
+      if (account.role === 'admin' || account.role === 'ops_view') {
+        const adminToken = localStorage.getItem('dev_switcher_admin_token');
+        if (adminToken) {
+          localStorage.setItem('carryon_token', adminToken);
+          localStorage.removeItem('selected_estate_id');
+          localStorage.removeItem('beneficiary_estate_id');
+          localStorage.setItem('dev_switcher_admin_session', 'true');
+          window.location.href = account.redirect;
+          return;
+        }
+        throw new Error('No admin session found.');
+      }
+      const switchToken = localStorage.getItem('dev_switcher_admin_token') || currentToken;
+      if (!switchToken) throw new Error('No active session.');
+      const response = await fetch(`${BASE_URL}/api/auth/dev-switch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${switchToken}` },
+        body: JSON.stringify({ email: account.email }),
+      });
+      let data;
+      try { data = await response.json(); } catch { data = { detail: `Server returned ${response.status}` }; }
+      if (!response.ok) throw new Error(data.detail || 'Login failed');
+      localStorage.removeItem('selected_estate_id');
+      localStorage.removeItem('beneficiary_estate_id');
+      localStorage.setItem('dev_switcher_admin_session', 'true');
+      localStorage.setItem('carryon_token', data.access_token);
+      window.location.href = account.redirect;
+    } catch (err) {
+      toast.error('Switch failed: ' + err.message);
+      setDevSwitching(null);
+    }
+  };
 
   const toggleCollapsed = () => {
     const next = !collapsed;
@@ -229,8 +295,10 @@ const Sidebar = () => {
 
   return (
     <aside className={`sb hidden lg:flex ${collapsed ? 'collapsed' : ''}`} data-testid="sidebar" role="navigation" aria-label="Main navigation">
-      {/* Logo Section */}
-      <div className="sb-logo">
+      {/* Logo Section — clickable for founder portal switcher */}
+      <div className="sb-logo" style={{ cursor: isAdminSession ? 'pointer' : 'default' }}
+        onClick={() => { if (isAdminSession) { setDevOpen(!devOpen); if (!devOpen) fetchDevConfig(); } }}
+        data-testid="sidebar-logo">
         <img 
           src="/carryon-app-icon.jpg" 
           alt="CarryOn™" 
@@ -253,6 +321,69 @@ const Sidebar = () => {
           </div>
         )}
       </div>
+
+      {/* Dev Portal Switcher Panel — founder only */}
+      {devOpen && isAdminSession && (
+        <div className="mx-2 mb-2 rounded-xl overflow-hidden" style={{
+          background: '#0F1629', border: '1px solid rgba(245,158,11,0.3)',
+          boxShadow: '0 12px 40px rgba(0,0,0,0.5)', zIndex: 100,
+        }}>
+          <div style={{ padding: '12px 14px' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 8 }}>
+              Portal Switcher
+            </div>
+            {user && (
+              <div style={{ fontSize: 12, color: '#94A3B8', marginBottom: 10, padding: '8px 10px', background: 'rgba(255,255,255,0.04)', borderRadius: 8 }}>
+                Logged in as: <strong style={{ color: '#E2E8F0' }}>{user.name || user.email}</strong>
+                <br /><span style={{ textTransform: 'capitalize', color: '#F0C95C' }}>{user.role}</span>
+              </div>
+            )}
+            {!devConfig?.benefactor?.email && !devConfig?.beneficiary?.email && (
+              <div style={{ padding: 10, background: 'rgba(245,158,11,0.1)', borderRadius: 8, marginBottom: 8, border: '1px dashed rgba(245,158,11,0.3)' }}>
+                <div style={{ fontSize: 11, color: '#F59E0B', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Settings className="w-3 h-3" /> Not Configured
+                </div>
+                <div style={{ fontSize: 10, color: '#94A3B8' }}>
+                  Go to Admin → Dev Switcher to assign accounts for quick switching.
+                </div>
+              </div>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              {devAccounts.map(acc => {
+                const isActive = acc.role === 'admin' ? (user?.role === 'admin' && !window.location.pathname.startsWith('/ops')) : acc.role === 'ops_view' ? window.location.pathname.startsWith('/ops') : user?.email === acc.email;
+                return (
+                  <div key={acc.role}
+                    onClick={(e) => { e.stopPropagation(); if (!isActive && !devSwitching) handleDevSwitch(acc); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+                      background: isActive ? 'rgba(224,173,43,0.1)' : 'rgba(255,255,255,0.03)',
+                      border: `1px solid ${isActive ? 'rgba(224,173,43,0.3)' : 'rgba(255,255,255,0.06)'}`,
+                      borderRadius: 10, cursor: isActive || devSwitching ? 'default' : 'pointer',
+                      transition: 'all .15s', opacity: devSwitching ? 0.5 : 1,
+                    }}
+                    data-testid={`dev-switch-${acc.role}`}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: '50%', background: acc.color,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 11, fontWeight: 700, color: 'white', flexShrink: 0,
+                      border: isActive ? '2px solid #F0C95C' : '2px solid transparent',
+                    }}>
+                      {acc.role[0].toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: isActive ? '#F0C95C' : '#E2E8F0' }}>{acc.label}</div>
+                      <div style={{ fontSize: 10, color: '#64748B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{acc.email || (acc.role === 'admin' ? 'Restore admin session' : acc.role === 'ops_view' ? 'View as operator' : 'Not configured')}</div>
+                    </div>
+                    {isActive && <span style={{ fontSize: 10, color: '#F0C95C', flexShrink: 0 }}>Active</span>}
+                    {devSwitching === acc.role && <div className="w-4 h-4 border-2 border-[#F0C95C] border-t-transparent rounded-full animate-spin" />}
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ marginTop: 8, fontSize: 10, color: '#525C72', textAlign: 'center' }}>No OTP required · Instant switch</div>
+          </div>
+        </div>
+      )}
 
       {/* Admin OTP Toggle — Founder only, not operators */}
       {user?.role === 'admin' && !window.location.pathname.startsWith('/ops') && (

@@ -8,7 +8,6 @@ import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { isNative } from './services/native';
 import SubscriptionPaywall from './components/SubscriptionPaywall';
 import DashboardLayout from './components/layout/DashboardLayout';
-import DevSwitcher from './components/dev/DevSwitcher';
 import ShareUploadModal from './components/ShareUploadModal';
 import { Loader2 } from 'lucide-react';
 
@@ -331,7 +330,6 @@ function App() {
         <BrowserRouter>
           <AppRoutes />
           <ShareHandler />
-          <DevSwitcher />
           <Toaster 
             position="bottom-center"
             offset="calc(10rem + env(safe-area-inset-bottom, 0px))"

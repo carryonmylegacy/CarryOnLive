@@ -48,7 +48,11 @@ Multi-portal estate planning platform with four distinct roles: Benefactor, Bene
 - Beneficiary: estate selector at top-right of dashboard header (only when 2+ estates)
 - Benefactor: EstateSelector already at top-right (hides for single estate)
 
-#### Access Control Fix
+#### Dev Portal Switcher Relocation
+- Moved Portal Switcher into the CarryOn logo icon (sidebar, founder-only)
+- Removed floating DEV button overlay from App.js
+- Non-admin users cannot trigger the switcher (security enforced)
+- Same menu preserved: switch between Benefactor, Beneficiary, Founder, Operations portals
 - Fixed dual-role scenario: benefactor who is also a beneficiary can now access beneficiary estates in read-only view
 - Updated estates.py (detail + activity endpoints) and messages.py (list, video, voice endpoints) to use membership-based checks
 
