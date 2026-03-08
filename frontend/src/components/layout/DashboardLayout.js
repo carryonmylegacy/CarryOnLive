@@ -1,9 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 
 const DashboardLayout = () => {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('carryon_sidebar_collapsed') === 'true');
+
+  useEffect(() => {
+    const onStorage = () => setSidebarCollapsed(localStorage.getItem('carryon_sidebar_collapsed') === 'true');
+    window.addEventListener('storage', onStorage);
+    // Also listen for custom event from same tab
+    window.addEventListener('sidebar-toggle', onStorage);
+    return () => { window.removeEventListener('storage', onStorage); window.removeEventListener('sidebar-toggle', onStorage); };
+  }, []);
+
   return (
     <div className="app">
       {/* Background decorations */}
@@ -36,7 +46,7 @@ const DashboardLayout = () => {
       <MobileNav />
       
       {/* Main Content */}
-      <main id="main-content" className="main-content" role="main" aria-label="Main content">
+      <main id="main-content" className={`main-content ${sidebarCollapsed ? 'sb-collapsed' : ''}`} role="main" aria-label="Main content">
         <Outlet />
       </main>
     </div>
