@@ -120,32 +120,36 @@ async def login(data: UserLogin, request: Request):
     # Clear failed attempts on successful login
     await db.failed_logins.delete_many({"email": data.email})
 
-    # Operators skip OTP entirely — they use username/password only (no email to receive OTP)
+    # Operators use their contact_email for OTP (not their username)
     if user.get("role") == "operator":
-        token = await create_session_token(user["id"], user["email"], user["role"])
-        await db.users.update_one(
-            {"id": user["id"]},
-            {"$set": {"last_login_at": datetime.now(timezone.utc).isoformat()}},
-        )
-        await log_audit_event(
-            actor_id=user["id"],
-            actor_email=user["email"],
-            actor_role="operator",
-            action="login",
-            category="auth",
-            ip_address=client_ip,
-            severity="info",
-        )
-        return TokenResponse(
-            access_token=token,
-            user=UserResponse(
-                id=user["id"],
-                email=user["email"],
-                name=user["name"],
-                role=user["role"],
-                created_at=user["created_at"],
-            ),
-        )
+        otp_email = user.get("contact_email", "")
+        if not otp_email:
+            # No contact email — skip OTP, direct login
+            token = await create_session_token(user["id"], user["email"], user["role"])
+            await db.users.update_one(
+                {"id": user["id"]},
+                {"$set": {"last_login_at": datetime.now(timezone.utc).isoformat()}},
+            )
+            await log_audit_event(
+                actor_id=user["id"],
+                actor_email=user["email"],
+                actor_role="operator",
+                action="login",
+                category="auth",
+                ip_address=client_ip,
+                severity="info",
+            )
+            return TokenResponse(
+                access_token=token,
+                user=UserResponse(
+                    id=user["id"],
+                    email=user["email"],
+                    name=user["name"],
+                    role=user["role"],
+                    created_at=user["created_at"],
+                ),
+            )
+        # Has contact_email — use it for OTP (override the login email for OTP sending)
 
     # Check if user has a valid daily OTP trust (skip OTP for today)
     trust = await db.otp_trust.find_one(
@@ -197,6 +201,12 @@ async def login(data: UserLogin, request: Request):
 
     # Send OTP for verification
     otp_code = generate_otp()
+    # For operators, use their contact_email for OTP delivery
+    otp_target_email = (
+        user.get("contact_email", data.email)
+        if user.get("role") == "operator"
+        else data.email
+    )
     await db.otps.update_one(
         {"email": data.email},
         {
@@ -211,7 +221,9 @@ async def login(data: UserLogin, request: Request):
     # Send OTP via email
     email_sent = False
     try:
-        email_sent = await send_otp_email(data.email, otp_code, user["name"].split()[0])
+        email_sent = await send_otp_email(
+            otp_target_email, otp_code, user["name"].split()[0]
+        )
     except Exception:
         logger.warning(f"OTP email send failed for {data.email} — OTP still stored")
 

@@ -32,7 +32,12 @@ def require_founder(current_user: dict):
 class CreateOperatorRequest(BaseModel):
     username: str
     password: str
-    name: str
+    first_name: str
+    last_name: str
+    email: str = ""
+    phone: str = ""
+    title: str = ""  # e.g. "TVT Reviewer", "Support Lead"
+    notes: str = ""
 
 
 @router.post("/founder/operators")
@@ -52,10 +57,17 @@ async def create_operator(
 
     hashed = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt()).decode()
     now = datetime.now(timezone.utc)
+    full_name = f"{data.first_name} {data.last_name}".strip()
     operator = {
         "id": str(uuid.uuid4()),
         "email": data.username,
-        "name": data.name,
+        "name": full_name,
+        "first_name": data.first_name,
+        "last_name": data.last_name,
+        "contact_email": data.email,
+        "phone": data.phone,
+        "title": data.title,
+        "notes": data.notes,
         "password": hashed,
         "role": "operator",
         "is_operator": True,
@@ -72,7 +84,7 @@ async def create_operator(
         category="user_mgmt",
         resource_type="user",
         resource_id=operator["id"],
-        details={"operator_username": data.username, "operator_name": data.name},
+        details={"operator_username": data.username, "operator_name": full_name},
         ip_address=get_client_ip(request),
         severity="info",
     )
@@ -81,7 +93,12 @@ async def create_operator(
         "id": operator["id"],
         "email": operator["email"],
         "username": operator["email"],
-        "name": operator["name"],
+        "name": full_name,
+        "first_name": data.first_name,
+        "last_name": data.last_name,
+        "contact_email": data.email,
+        "phone": data.phone,
+        "title": data.title,
         "role": "operator",
         "created_at": operator["created_at"],
     }
@@ -89,11 +106,15 @@ async def create_operator(
 
 @router.get("/founder/operators")
 async def list_operators(current_user: dict = Depends(get_current_user)):
-    """List all operator accounts — founder only."""
+    """List all operator accounts with full details — founder only."""
     require_founder(current_user)
 
     operators = await db.users.find(
-        {"role": "operator"}, {"_id": 0, "password": 0}
+        {"role": "operator"},
+        {
+            "_id": 0,
+            "password": 0,
+        },
     ).to_list(100)
     return operators
 
