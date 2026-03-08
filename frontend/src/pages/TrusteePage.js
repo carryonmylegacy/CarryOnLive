@@ -289,11 +289,13 @@ const TrusteePage = () => {
   // Check if user is in trial without a paid subscription (DTS requires paid sub)
   useEffect(() => {
     if (!subscriptionStatus) return;
-    const { trial, has_subscription, eligible_tiers } = subscriptionStatus;
-    const isFreeAccess = (eligible_tiers || []).some(t => ['hospice', 'enterprise'].includes(t));
-    const hasPaidSub = has_subscription || subscriptionStatus.beta_mode || isFreeAccess;
+    const { trial, subscription, has_active_subscription, beta_mode, free_access } = subscriptionStatus;
+    const isFreeAccess = free_access || (subscriptionStatus.eligible_tiers || []).some(t => ['hospice', 'enterprise'].includes(t));
+    const hasPaidSub = has_active_subscription || (subscription?.status === 'active') || beta_mode || isFreeAccess;
     if (trial?.trial_active && !hasPaidSub) {
       setShowTrialGate(true);
+    } else {
+      setShowTrialGate(false);
     }
   }, [subscriptionStatus]);
   
