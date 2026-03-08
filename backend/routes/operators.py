@@ -341,6 +341,43 @@ async def delete_operator(
 # ── Audit Trail Query ────────────────────────────────────────────────
 
 
+class OperatorDevLoginRequest(BaseModel):
+    operator_email: str
+
+
+@router.post("/founder/operator-dev-login")
+async def operator_dev_login(
+    data: OperatorDevLoginRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Admin impersonation: login as an operator for dev/testing purposes.
+    Founder only — generates a token for the target operator."""
+    require_founder(current_user)
+
+    operator = await db.users.find_one(
+        {"email": data.operator_email, "role": "operator"}, {"_id": 0}
+    )
+    if not operator:
+        raise HTTPException(status_code=404, detail="Operator not found")
+
+    from routes.auth import create_session_token
+    from models import UserResponse, TokenResponse
+
+    token = await create_session_token(operator["id"], operator["email"], operator["role"])
+
+    return TokenResponse(
+        access_token=token,
+        user=UserResponse(
+            id=operator["id"],
+            email=operator["email"],
+            name=operator["name"],
+            role=operator["role"],
+            created_at=operator["created_at"],
+            operator_role=operator.get("operator_role", ""),
+        ),
+    )
+
+
 @router.get("/founder/audit-trail")
 async def get_audit_trail(
     limit: int = Query(100, le=500),

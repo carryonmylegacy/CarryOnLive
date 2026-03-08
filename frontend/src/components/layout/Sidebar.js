@@ -92,6 +92,18 @@ const Sidebar = () => {
     try {
       const res = await fetch(`${BASE_URL}/api/dev-switcher/config`);
       const data = await res.json();
+      // Also fetch operator accounts for the switcher
+      const token = localStorage.getItem('carryon_token');
+      if (token) {
+        try {
+          const opsRes = await fetch(`${BASE_URL}/api/founder/operators`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (opsRes.ok) {
+            data.operators = await opsRes.json();
+          }
+        } catch {}
+      }
       setDevConfig(data);
     } catch {}
   };
@@ -105,6 +117,20 @@ const Sidebar = () => {
   if (devConfig?.beneficiary?.email) devAccounts.push({ label: 'Beneficiary', email: devConfig.beneficiary.email, password: devConfig.beneficiary.password, role: 'beneficiary', color: '#8b5cf6', redirect: '/beneficiary' });
   devAccounts.push({ label: 'Founder Portal', role: 'admin', color: '#E0AD2B', redirect: '/admin' });
   devAccounts.push({ label: 'Operations Portal', role: 'ops_view', color: '#3B82F6', redirect: '/ops' });
+  // Add operator accounts from the operators list
+  if (devConfig?.operators) {
+    devConfig.operators.forEach(op => {
+      const isManager = op.operator_role === 'manager';
+      devAccounts.push({
+        label: `${op.name} (${isManager ? 'Manager' : 'Team Member'})`,
+        email: op.email,
+        role: `operator_${op.id}`,
+        color: isManager ? '#F59E0B' : '#06B6D4',
+        redirect: '/ops',
+        isOperator: true,
+      });
+    });
+  }
 
   const handleDevSwitch = async (account) => {
     setDevSwitching(account.role);
@@ -124,6 +150,26 @@ const Sidebar = () => {
           return;
         }
         throw new Error('No admin session found.');
+      }
+      // Operator accounts — use admin impersonation via dev-login
+      if (account.isOperator) {
+        const adminToken = localStorage.getItem('dev_switcher_admin_token') || currentToken;
+        if (!adminToken) throw new Error('No admin session found.');
+        // Fetch the operator's password from the backend (admin-only endpoint)
+        const loginRes = await fetch(`${BASE_URL}/api/founder/operator-dev-login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` },
+          body: JSON.stringify({ operator_email: account.email }),
+        });
+        let loginData;
+        try { loginData = await loginRes.json(); } catch { loginData = { detail: `Server returned ${loginRes.status}` }; }
+        if (!loginRes.ok) throw new Error(loginData.detail || 'Login failed');
+        localStorage.removeItem('selected_estate_id');
+        localStorage.removeItem('beneficiary_estate_id');
+        localStorage.setItem('dev_switcher_admin_session', 'true');
+        localStorage.setItem('carryon_token', loginData.access_token);
+        window.location.href = account.redirect;
+        return;
       }
       const switchToken = localStorage.getItem('dev_switcher_admin_token') || currentToken;
       if (!switchToken) throw new Error('No active session.');

@@ -128,7 +128,7 @@ export const OpsDashboardTab = ({ getAuthHeaders }) => {
                           background: op.operator_role === 'manager' ? 'rgba(245,158,11,0.12)' : 'rgba(59,130,246,0.12)',
                           color: op.operator_role === 'manager' ? '#F59E0B' : '#3B82F6',
                         }}>
-                        {op.operator_role}
+                        {op.operator_role === 'manager' ? 'Manager' : 'Team Member'}
                       </span>
                     </div>
                     <div className="text-[10px] text-[var(--t5)] truncate">

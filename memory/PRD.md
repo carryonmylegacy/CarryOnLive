@@ -1,62 +1,53 @@
 # CarryOn Platform - Product Requirements Document
 
 ## Original Problem Statement
-Multi-portal estate planning platform with four distinct roles: Benefactor, Beneficiary, Founder (admin), and Operator (Manager/Worker). The platform manages estate documents, milestone messages, beneficiary management, and operational workflows.
+Multi-portal estate planning platform: Benefactor, Beneficiary, Founder (admin), Operator (Manager + Team Member).
 
 ## Core Architecture
-- **Frontend:** React (CRA) with Shadcn UI components
-- **Backend:** FastAPI (Python)
-- **Database:** MongoDB
-- **Roles:** Benefactor, Beneficiary, Founder (admin), Operator (Manager + Worker)
-- **Notification System:** In-app (MongoDB) + Web Push (VAPID) + Amber Alert (critical security events)
+- React (CRA) + FastAPI + MongoDB
+- Notification: In-app + Web Push + Amber Alert
+- UX Label: "Team Member" (backend: "worker")
 
 ## Critical Invariants
 - DO NOT modify yarn.lock
 - PATH-BASED UI RENDERING for staff portals
-- OPERATOR HIERARCHY: Founder→Manager→Worker
-- Membership-based access control, estate isolation
-- Soft-delete standard
+- OPERATOR HIERARCHY: Founder→Manager→Team Member
 
 ## Implemented Features (All Tested)
 
-### Milestone Message Automation (Mar 8, 2026)
-- **Flow:** Beneficiary reports milestone → System searches estate for matching messages → Creates pending delivery records
-- **Human oversight:** Workers review automated matches before delivery via Milestones tab
-- **Approve:** Delivers message to beneficiary + sends notification
-- **Reject:** Message NOT delivered
-- **Context:** Workers can see ALL estate messages to verify correct match
-- **Notifications:** All staff notified when matches found; beneficiary notified on approval
-- **Endpoints:** GET /api/milestones/deliveries, /stats, /{id}, POST /{id}/review
-
 ### Multi-Tier Operator System
-- Founder→Manager→Worker with CRUD, edit, password reset
+- Founder→Manager→Team Member with CRUD, edit, password reset
+- UX: "Team Member" everywhere (code: "worker")
+- DEV Portal Switcher shows all operator accounts for instant switching
+- Admin impersonation: POST /api/founder/operator-dev-login
 
-### Amber Alert Emergency System
-- Full-screen overlay, EAS tone (853Hz+960Hz), continuous vibration, repeats until acknowledged
+### Amber Alert + "I'm Still Alive" Emergency
+- EAS tone (853Hz+960Hz), vibration, full-screen overlay until acknowledged
+- P1 emergency thread, sealed account screen
 
-### "I'm Still Alive" Emergency Flow
-- P1 emergency thread, sealed account screen, auto-trigger from URL params
+### Push Notification System (All Triggers)
+- In-app + Web Push, Notification Bell in sidebar
+- Triggers: death cert, transition, DTS, support, operator CRUD, invitations, signups, doc uploads
 
-### Push Notification System (Complete)
-- Dual delivery (in-app + Web Push), all triggers wired
-
-### DTS Workflow (Complete)
+### DTS Workflow
 - Task assignment UI, status flow, quote creation
 
 ### Operator Activity Dashboard
 - Real-time work queues, team activity, completion rates
 
+### Milestone Message Automation
+- Beneficiary reports → System finds matches → Worker reviews → Approve/Reject
+
 ### Sealed Account Screen
-- P1 Contact Support (chat, email, phone)
+- P1 Contact Support (chat, email, phone), Founder-configurable
 
-## Prioritized Backlog
-
-### P1 — Share Extension Setup (iOS/Xcode)
-### P2 — Twilio SMS OTP (pending A2P 10DLC)
-### P2 — Subscription expiring / health alert notifications
+## Backlog
+- P1: Share Extension Setup
+- P2: Twilio SMS OTP
+- P2: Subscription/health alert notifications
 
 ## Key Credentials
 - Founder: info@carryon.us / Demo1234!
 - Benefactor: fulltest@test.com / Password.123
-- Test Manager: ops_manager_1 / Manager123!
-- Test Worker: ops_worker_1 / Worker123!
+- Manager: ops_manager_1 / Manager123!
+- Team Member: ops_worker_1 / Worker123!

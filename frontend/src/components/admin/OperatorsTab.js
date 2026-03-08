@@ -16,6 +16,7 @@ const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const RoleBadge = ({ role }) => {
   const isManager = role === 'manager';
+  const label = isManager ? 'Manager' : 'Team Member';
   return (
     <span
       className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
@@ -26,7 +27,7 @@ const RoleBadge = ({ role }) => {
       }}
       data-testid={`role-badge-${role}`}
     >
-      {isManager ? 'Manager' : 'Worker'}
+      {label}
     </span>
   );
 };
@@ -73,7 +74,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
     setCreating(true);
     try {
       await axios.post(`${API_URL}/founder/operators`, form, getAuthHeaders());
-      toast.success(`${form.operator_role === 'manager' ? 'Manager' : 'Worker'} account created`);
+      toast.success(`${form.operator_role === 'manager' ? 'Manager' : 'Team Member'} account created`);
       setShowCreate(false);
       setForm({
         username: '', password: '', first_name: '', last_name: '',
@@ -143,7 +144,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
         <h3 className="text-sm font-bold text-[var(--t)] uppercase tracking-wider">Operations Team</h3>
         <Button size="sm" className="text-xs" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
           onClick={() => setShowCreate(true)} data-testid="add-operator-btn">
-          <Plus className="w-3 h-3 mr-1" /> Add {isFounder ? 'Operator' : 'Worker'}
+          <Plus className="w-3 h-3 mr-1" /> Add {isFounder ? 'Operator' : 'Team Member'}
         </Button>
       </div>
 
@@ -176,12 +177,12 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Wrench className="w-4 h-4 text-[#3B82F6]" />
-              <span className="text-xs font-bold text-[var(--t)] uppercase tracking-wider">Operations Workers</span>
+              <span className="text-xs font-bold text-[var(--t)] uppercase tracking-wider">Operations Team Members</span>
               <span className="text-[10px] text-[var(--t5)]">({workers.length})</span>
             </div>
             {workers.length === 0 ? (
               <Card className="glass-card"><CardContent className="p-4 text-center text-[var(--t5)] text-xs">
-                No workers yet. Add workers to handle daily operations.
+                No team members yet. Add team members to handle daily operations.
               </CardContent></Card>
             ) : (
               <div className="space-y-2">
@@ -200,7 +201,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
         <DialogContent className="glass-card max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-[var(--t)]">
-              Create {form.operator_role === 'manager' ? 'Manager' : 'Worker'} Account
+              Create {form.operator_role === 'manager' ? 'Manager' : 'Team Member'} Account
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 pt-2">
@@ -214,7 +215,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="manager">Operations Manager</SelectItem>
-                    <SelectItem value="worker">Operations Worker</SelectItem>
+                    <SelectItem value="worker">Operations Team Member</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -253,7 +254,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
             <Button className="w-full" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
               disabled={creating} onClick={handleCreate} data-testid="create-operator-submit">
               {creating ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-              Create {form.operator_role === 'manager' ? 'Manager' : 'Worker'}
+              Create {form.operator_role === 'manager' ? 'Manager' : 'Team Member'}
             </Button>
           </div>
         </DialogContent>
