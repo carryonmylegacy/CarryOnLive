@@ -159,6 +159,93 @@ async def get_estate(estate_id: str, current_user: dict = Depends(get_current_us
     return estate
 
 
+@router.post("/beneficiary/become-benefactor")
+async def beneficiary_become_benefactor(current_user: dict = Depends(get_current_user)):
+    """Upgrade a beneficiary account to also function as a benefactor.
+    Creates their estate and updates their role. They retain all beneficiary access."""
+    import uuid
+    from datetime import datetime, timezone
+
+    if current_user["role"] != "beneficiary":
+        raise HTTPException(status_code=400, detail="Already a benefactor")
+
+    # Check if they already own an estate (shouldn't happen, but guard)
+    existing = await db.estates.find_one(
+        {"owner_id": current_user["id"]}, {"_id": 0, "id": 1}
+    )
+    if existing:
+        raise HTTPException(status_code=400, detail="You already have an estate")
+
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    now = datetime.now(timezone.utc)
+    last_name = user.get(
+        "last_name", user.get("name", "").split()[-1] if user.get("name") else "Family"
+    )
+
+    # Create estate
+    estate_id = str(uuid.uuid4())
+    estate = {
+        "id": estate_id,
+        "owner_id": current_user["id"],
+        "name": f"{last_name} Family Estate",
+        "status": "pre-transition",
+        "beneficiaries": [],
+        "encryption_salt": generate_estate_salt().hex(),
+        "created_at": now.isoformat(),
+    }
+    await db.estates.insert_one(estate)
+
+    # Upgrade role to benefactor (they keep beneficiary access through estate.beneficiaries links)
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$set": {"role": "benefactor"}},
+    )
+
+    # Seed default checklist
+    default_checklist = [
+        {
+            "id": str(uuid.uuid4()),
+            "estate_id": estate_id,
+            "title": "Call your designated executor — they have instructions",
+            "category": "immediate",
+            "priority": "critical",
+            "order": 1,
+            "is_default": True,
+            "created_at": now.isoformat(),
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "estate_id": estate_id,
+            "title": "Contact employer HR to report the death and ask about benefits",
+            "category": "immediate",
+            "priority": "critical",
+            "order": 2,
+            "is_default": True,
+            "created_at": now.isoformat(),
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "estate_id": estate_id,
+            "title": "Request 10 certified copies of the death certificate",
+            "category": "immediate",
+            "priority": "high",
+            "order": 3,
+            "is_default": True,
+            "created_at": now.isoformat(),
+        },
+    ]
+    await db.checklists.insert_many(default_checklist)
+
+    return {
+        "success": True,
+        "estate_id": estate_id,
+        "message": "Your estate has been created. You are now a benefactor.",
+    }
+
+
 @router.post("/estates")
 async def create_estate(
     data: EstateCreate, current_user: dict = Depends(get_current_user)
