@@ -210,7 +210,27 @@ const MobileNav = () => {
   };
 
   const lastTapRef = React.useRef(0);
+  const longPressTriggered = React.useRef(false);
+
+  // Long press (800ms) on logo → spacing debug overlay (works for ALL users including admin)
+  const handleLogoTouchStart = () => {
+    longPressTriggered.current = false;
+    longPressTimerRef.current = setTimeout(() => {
+      longPressTriggered.current = true;
+      setShowDebug(true);
+      try { navigator.vibrate && navigator.vibrate([50, 30, 50]); } catch {}
+    }, 800);
+  };
+  const handleLogoTouchEnd = () => {
+    clearTimeout(longPressTimerRef.current);
+  };
+
   const handleLogoTap = (e) => {
+    // If long press just triggered, don't fire tap
+    if (longPressTriggered.current) {
+      longPressTriggered.current = false;
+      return;
+    }
     const now = Date.now();
     if (now - lastTapRef.current < 100) return;
     lastTapRef.current = now;
@@ -222,18 +242,6 @@ const MobileNav = () => {
       if (!devOpen) fetchDevConfig();
       return;
     }
-  };
-
-  // Long press (800ms) on logo → spacing debug overlay
-  const handleLogoTouchStart = (e) => {
-    if (isAdminSession) return; // Admin uses tap for dev switcher
-    longPressTimerRef.current = setTimeout(() => {
-      setShowDebug(true);
-      haptics.heavy && haptics.heavy();
-    }, 800);
-  };
-  const handleLogoTouchEnd = () => {
-    clearTimeout(longPressTimerRef.current);
   };
 
   const handleLogout = () => {
