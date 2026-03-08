@@ -216,8 +216,8 @@ const Sidebar = () => {
       {/* Beta Banner */}
       <BetaBanner />
 
-      {/* Beneficiary Estate Switcher */}
-      {user?.role === 'beneficiary' && benEstates.length > 0 && (
+      {/* Beneficiary Estate Switcher — only show dropdown when multiple estates */}
+      {user?.role === 'beneficiary' && benEstates.length > 1 && (
         <div className="px-3 mb-1 relative">
           <div
             onClick={() => setSwitcherOpen(!switcherOpen)}
