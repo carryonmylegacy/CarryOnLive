@@ -62,10 +62,20 @@ async def get_messages(estate_id: str, current_user: dict = Depends(get_current_
     """List all milestone messages for an estate."""
     estate_salt = await get_estate_salt(estate_id)
 
-    if current_user["role"] == "beneficiary":
-        # A beneficiary's user_id may differ from their beneficiary record ID.
-        # Messages store recipients as beneficiary record IDs (set by benefactor).
-        # Look up all beneficiary record IDs linked to this user for matching.
+    # Determine relationship to estate
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
+    if not estate:
+        raise HTTPException(status_code=404, detail="Estate not found")
+
+    is_owner = estate["owner_id"] == current_user["id"]
+    is_ben = current_user["id"] in estate.get("beneficiaries", [])
+    is_admin = current_user["role"] in ("admin", "operator")
+
+    if not (is_owner or is_ben or is_admin):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    if is_ben and not is_owner:
+        # Beneficiary view (regardless of role): only delivered messages they're a recipient of
         ben_records = await db.beneficiaries.find(
             {"estate_id": estate_id, "user_id": current_user["id"]},
             {"_id": 0, "id": 1},
@@ -81,6 +91,7 @@ async def get_messages(estate_id: str, current_user: dict = Depends(get_current_
             {"_id": 0},
         ).to_list(100)
     else:
+        # Owner or admin: see all messages
         messages = await db.messages.find({"estate_id": estate_id}, {"_id": 0}).to_list(
             100
         )
@@ -101,7 +112,13 @@ async def get_message_video(
     # Check if video is in cloud storage
     message = await db.messages.find_one({"video_url": video_id}, {"_id": 0})
     if message:
-        if current_user["role"] == "beneficiary":
+        estate = await db.estates.find_one({"id": message["estate_id"]}, {"_id": 0})
+        is_owner = estate and estate["owner_id"] == current_user["id"]
+        is_ben = estate and current_user["id"] in estate.get("beneficiaries", [])
+        is_admin = current_user["role"] in ("admin", "operator")
+
+        if is_ben and not is_owner:
+            # Beneficiary view: only delivered messages they're a recipient of
             ben_records = await db.beneficiaries.find(
                 {"estate_id": message["estate_id"], "user_id": current_user["id"]},
                 {"_id": 0, "id": 1},
@@ -111,10 +128,8 @@ async def get_message_video(
                 "is_delivered"
             ):
                 raise HTTPException(status_code=403, detail="Access denied")
-        elif current_user["role"] == "benefactor":
-            estate = await db.estates.find_one({"id": message["estate_id"]}, {"_id": 0})
-            if not estate or estate["owner_id"] != current_user["id"]:
-                raise HTTPException(status_code=403, detail="Access denied")
+        elif not (is_owner or is_admin):
+            raise HTTPException(status_code=403, detail="Access denied")
 
     # Try cloud storage first
     video_storage_key = f"estates/{message['estate_id']}/{video_id}"
@@ -183,7 +198,13 @@ async def get_message_voice(
     """Get voice recording data for a message"""
     message = await db.messages.find_one({"voice_url": voice_id}, {"_id": 0})
     if message:
-        if current_user["role"] == "beneficiary":
+        estate = await db.estates.find_one({"id": message["estate_id"]}, {"_id": 0})
+        is_owner = estate and estate["owner_id"] == current_user["id"]
+        is_ben = estate and current_user["id"] in estate.get("beneficiaries", [])
+        is_admin = current_user["role"] in ("admin", "operator")
+
+        if is_ben and not is_owner:
+            # Beneficiary view: only delivered messages they're a recipient of
             ben_records = await db.beneficiaries.find(
                 {"estate_id": message["estate_id"], "user_id": current_user["id"]},
                 {"_id": 0, "id": 1},
@@ -193,10 +214,8 @@ async def get_message_voice(
                 "is_delivered"
             ):
                 raise HTTPException(status_code=403, detail="Access denied")
-        elif current_user["role"] == "benefactor":
-            estate = await db.estates.find_one({"id": message["estate_id"]}, {"_id": 0})
-            if not estate or estate["owner_id"] != current_user["id"]:
-                raise HTTPException(status_code=403, detail="Access denied")
+        elif not (is_owner or is_admin):
+            raise HTTPException(status_code=403, detail="Access denied")
 
     voice_storage_key = f"voices/{voice_id}"
     try:
