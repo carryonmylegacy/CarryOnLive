@@ -620,9 +620,9 @@ const MobileNav = () => {
         </div>
       )}
 
-      {/* Bottom Navigation — floating glass oval */}
-      <nav className="lg:hidden fixed bottom-0 left-0 w-full z-50" role="navigation" aria-label="Bottom navigation">
-        <div className="mx-2 mobile-bottom-nav rounded-t-[24px] overflow-hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      {/* Bottom Navigation — floating glass pill */}
+      <nav className="lg:hidden fixed bottom-0 left-0 w-full z-50" role="navigation" aria-label="Bottom navigation" style={{ paddingBottom: 'env(safe-area-inset-bottom, 4px)' }}>
+        <div className="mx-2 mb-1 mobile-bottom-nav rounded-[22px] overflow-hidden">
           <div className="flex items-end h-14 px-2">
           {getBottomNav().map((item, index) => {
             const isCenter = item.isCenter;
