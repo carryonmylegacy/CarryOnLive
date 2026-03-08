@@ -330,10 +330,10 @@ const Sidebar = () => {
         <>
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99 }}
             onClick={() => setDevOpen(false)} />
-          <div className="absolute left-2 right-2 rounded-xl overflow-hidden" style={{
-            top: collapsed ? '60px' : '70px',
+          <div style={{
+            position: 'fixed', top: 70, left: 8, width: 280,
             background: '#0F1629', border: '1px solid rgba(245,158,11,0.3)',
-            boxShadow: '0 12px 40px rgba(0,0,0,0.6)', zIndex: 100,
+            borderRadius: 12, boxShadow: '0 12px 40px rgba(0,0,0,0.6)', zIndex: 100,
           }}>
             <div style={{ padding: '12px 14px' }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 8 }}>
