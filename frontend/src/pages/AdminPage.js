@@ -5,7 +5,8 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   Shield, Users, FileKey, FolderLock, Loader2,
   Headphones, CreditCard, Activity, Settings,
-  MessageSquare, CheckSquare, AlertTriangle, Clock, ShieldCheck, TrendingUp, Trash2
+  MessageSquare, CheckSquare, AlertTriangle, Clock, ShieldCheck, TrendingUp, Trash2,
+  Megaphone, HeartPulse, Search, StickyNote, BookOpen
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { toast } from '../utils/toast';
@@ -24,6 +25,13 @@ import { LaunchMetricsTab } from '../components/admin/LaunchMetricsTab';
 import { DevSwitcherTab } from '../components/admin/DevSwitcherTab';
 import { OperatorsTab } from '../components/admin/OperatorsTab';
 import { AuditTrailTab } from '../components/admin/AuditTrailTab';
+import { AnnouncementsTab } from '../components/admin/AnnouncementsTab';
+import { SystemHealthTab } from '../components/admin/SystemHealthTab';
+import { MyActivityTab } from '../components/admin/MyActivityTab';
+import { QuickSearchTab } from '../components/admin/QuickSearchTab';
+import { EscalationsTab } from '../components/admin/EscalationsTab';
+import { ShiftNotesTab } from '../components/admin/ShiftNotesTab';
+import { KnowledgeBaseTab } from '../components/admin/KnowledgeBaseTab';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -40,6 +48,17 @@ const TAB_CONFIG = [
   { key: 'operators', label: 'Operators', icon: Users, path: '/admin/operators' },
   { key: 'audit', label: 'Audit Trail', icon: Shield, path: '/admin/audit' },
   { key: 'dev-switcher', label: 'Dev', icon: Settings, path: '/admin/dev-switcher' },
+  // Founder-only sidebar features
+  { key: 'announcements', label: 'Announcements', icon: Megaphone, path: '/admin/announcements' },
+  { key: 'system-health', label: 'System Health', icon: HeartPulse, path: '/admin/system-health' },
+  { key: 'escalations', label: 'Escalations', icon: AlertTriangle, path: '/admin/escalations' },
+  { key: 'knowledge-base', label: 'Knowledge Base', icon: BookOpen, path: '/admin/knowledge-base' },
+  // Operator sidebar features
+  { key: 'my-activity', label: 'My Activity', icon: Clock, path: '/ops/my-activity' },
+  { key: 'search', label: 'Search', icon: Search, path: '/ops/search' },
+  { key: 'ops-escalations', label: 'Escalate', icon: AlertTriangle, path: '/ops/escalations' },
+  { key: 'shift-notes', label: 'Shift Notes', icon: StickyNote, path: '/ops/shift-notes' },
+  { key: 'ops-kb', label: 'SOPs', icon: BookOpen, path: '/ops/knowledge-base' },
 ];
 
 const PATH_TO_TAB = {
@@ -58,6 +77,16 @@ const PATH_TO_TAB = {
   '/ops/dts': 'dts',
   '/ops/support': 'support',
   '/ops/verifications': 'verifications',
+  // New sidebar features
+  '/admin/announcements': 'announcements',
+  '/admin/system-health': 'system-health',
+  '/admin/escalations': 'escalations',
+  '/admin/knowledge-base': 'knowledge-base',
+  '/ops/my-activity': 'my-activity',
+  '/ops/search': 'search',
+  '/ops/escalations': 'ops-escalations',
+  '/ops/shift-notes': 'shift-notes',
+  '/ops/knowledge-base': 'ops-kb',
 };
 
 const AdminPage = ({ operatorMode = false }) => {
@@ -373,10 +402,11 @@ const AdminPage = ({ operatorMode = false }) => {
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         {TAB_CONFIG.filter(t => {
           if (operatorMode) {
-            // Operators: TVT, Support, DTS, Verifications only
-            return ['transition', 'dts', 'support', 'verifications'].includes(t.key);
+            // Operators: work queues + operator tools
+            return ['transition', 'dts', 'support', 'verifications', 'my-activity', 'search', 'ops-escalations', 'shift-notes', 'ops-kb'].includes(t.key);
           }
-          return true;
+          // Founder: all except operator-specific tabs
+          return !['my-activity', 'search', 'ops-escalations', 'shift-notes', 'ops-kb'].includes(t.key);
         }).map(t => (
           <button key={t.key} onClick={() => navigate(operatorMode ? t.path.replace('/admin', '/ops') : t.path)}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
@@ -400,6 +430,17 @@ const AdminPage = ({ operatorMode = false }) => {
       {tab === 'operators' && !operatorMode && <OperatorsTab getAuthHeaders={getAuthHeaders} />}
       {tab === 'audit' && !operatorMode && <AuditTrailTab getAuthHeaders={getAuthHeaders} />}
       {tab === 'dev-switcher' && !operatorMode && <DevSwitcherTab users={users} getAuthHeaders={getAuthHeaders} />}
+      {/* New Founder features */}
+      {tab === 'announcements' && !operatorMode && <AnnouncementsTab getAuthHeaders={getAuthHeaders} />}
+      {tab === 'system-health' && !operatorMode && <SystemHealthTab getAuthHeaders={getAuthHeaders} />}
+      {tab === 'escalations' && !operatorMode && <EscalationsTab getAuthHeaders={getAuthHeaders} isFounder={true} />}
+      {tab === 'knowledge-base' && !operatorMode && <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={true} />}
+      {/* New Operator features */}
+      {tab === 'my-activity' && operatorMode && <MyActivityTab getAuthHeaders={getAuthHeaders} />}
+      {tab === 'search' && operatorMode && <QuickSearchTab getAuthHeaders={getAuthHeaders} />}
+      {tab === 'ops-escalations' && operatorMode && <EscalationsTab getAuthHeaders={getAuthHeaders} isFounder={false} />}
+      {tab === 'shift-notes' && operatorMode && <ShiftNotesTab getAuthHeaders={getAuthHeaders} />}
+      {tab === 'ops-kb' && operatorMode && <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={false} />}
     </div>
   );
 };

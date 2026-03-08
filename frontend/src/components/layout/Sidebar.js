@@ -23,7 +23,13 @@ import {
   Clock,
   CreditCard,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  Megaphone,
+  HeartPulse,
+  AlertTriangle,
+  BookOpen,
+  Search,
+  StickyNote
 } from 'lucide-react';
 import { Switch } from '../ui/switch';
 
@@ -165,9 +171,30 @@ const Sidebar = () => {
     }
   ];
 
-  const adminNavSections = [];
+  const adminNavSections = [
+    {
+      title: 'TOOLS',
+      items: [
+        { to: '/admin/announcements', icon: Megaphone, label: 'Announcements' },
+        { to: '/admin/system-health', icon: HeartPulse, label: 'System Health' },
+        { to: '/admin/escalations', icon: AlertTriangle, label: 'Escalations' },
+        { to: '/admin/knowledge-base', icon: BookOpen, label: 'Knowledge Base' },
+      ]
+    }
+  ];
 
-  const operatorNavSections = [];
+  const operatorNavSections = [
+    {
+      title: 'TOOLS',
+      items: [
+        { to: '/ops/my-activity', icon: Clock, label: 'My Activity' },
+        { to: '/ops/search', icon: Search, label: 'Quick Search' },
+        { to: '/ops/escalations', icon: AlertTriangle, label: 'Escalate' },
+        { to: '/ops/shift-notes', icon: StickyNote, label: 'Shift Notes' },
+        { to: '/ops/knowledge-base', icon: BookOpen, label: 'SOPs' },
+      ]
+    }
+  ];
 
   const getNavSections = () => {
     if (user?.role === 'admin') return adminNavSections;
