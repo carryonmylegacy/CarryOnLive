@@ -78,6 +78,8 @@
     --trial-info-border: rgba(212,175,55,0.3);
     --trial-info-text: #D4A537;
     --trial-info-icon: #D4A537;
+    --trial-btn-bg: #D4A537;
+    --trial-btn-text: #0F1629;
     
     /* Typography */
     --serif: 'Cormorant Garamond', Georgia, serif;
@@ -150,6 +152,8 @@
     --trial-info-border: rgba(184,134,11,0.25);
     --trial-info-text: #1B4F72;
     --trial-info-icon: #1B4F72;
+    --trial-btn-bg: #1B4F72;
+    --trial-btn-text: #D4A537;
     
     /* Card backgrounds — soft pastels with teal undertone */
     --card-vault: linear-gradient(135deg, #BAE6FD 0%, #7DD3FC 100%);

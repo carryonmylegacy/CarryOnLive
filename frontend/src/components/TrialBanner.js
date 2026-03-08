@@ -58,7 +58,10 @@ export default function TrialBanner({ onUpgrade }) {
           <button
             onClick={onUpgrade}
             className="text-xs font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
-            style={{ background: c.icon, color: '#0F1629' }}
+            style={{
+              background: urgency === 'info' ? 'var(--trial-btn-bg)' : c.icon,
+              color: urgency === 'info' ? 'var(--trial-btn-text)' : '#0F1629',
+            }}
             data-testid="trial-upgrade-btn"
           >
             Choose Plan <ChevronRight className="w-3 h-3" />
