@@ -41,7 +41,7 @@ class TestHealthAndErrorReporting:
         assert response.status_code == 200
         data = response.json()
         assert "received" in data
-        assert data["received"] == True
+        assert data["received"]
         print("✓ Error report accepted")
 
     def test_error_report_with_severity(self):
@@ -108,7 +108,7 @@ class TestAdminEndpoints:
             with open("/tmp/admin_token.txt", "r") as f:
                 token = f.read().strip()
             return {"Authorization": f"Bearer {token}"}
-        except:
+        except Exception:
             pytest.skip("No admin token available")
 
     def test_admin_announcements_endpoint(self, auth_headers):

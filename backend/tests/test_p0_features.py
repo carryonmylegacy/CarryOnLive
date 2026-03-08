@@ -32,7 +32,7 @@ class TestErrorReporter:
         )
         assert response.status_code == 200
         data = response.json()
-        assert data.get("received") == True
+        assert data.get("received")
         print("PASS: Error report basic submission works (200 OK)")
 
     def test_error_report_with_all_fields(self):
@@ -52,7 +52,7 @@ class TestErrorReporter:
         )
         assert response.status_code == 200
         data = response.json()
-        assert data.get("received") == True
+        assert data.get("received")
         print("PASS: Error report with all fields works (200 OK)")
 
     def test_error_report_fatal_severity(self):
@@ -69,7 +69,7 @@ class TestErrorReporter:
         )
         assert response.status_code == 200
         data = response.json()
-        assert data.get("received") == True
+        assert data.get("received")
         print("PASS: Fatal severity error accepted (200 OK)")
 
     def test_error_report_minimal(self):
@@ -80,7 +80,7 @@ class TestErrorReporter:
         )
         assert response.status_code == 200
         data = response.json()
-        assert data.get("received") == True
+        assert data.get("received")
         print("PASS: Minimal error report works (200 OK)")
 
 

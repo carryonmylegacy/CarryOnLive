@@ -113,7 +113,7 @@ class TestP1EmergencyFeature:
             headers=founder_headers,
         )
         assert notif_before.status_code == 200
-        count_before = len(notif_before.json().get("notifications", []))
+        len(notif_before.json().get("notifications", []))
 
         # Create P1 emergency as benefactor
         benefactor_token = self.get_token(

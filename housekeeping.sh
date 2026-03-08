@@ -439,13 +439,20 @@ else
   echo -e "$INFO (already clean)"
 fi
 
-# Auto-fix 2: Fix ruff lint issues (safe fixes only)
+# Auto-fix 2: Fix ruff lint issues (safe + unsafe fixes for test files)
 echo -n "R2. Auto-fix lint (safe only) ..... "
 cd /app/backend
 if ! ruff check . > /dev/null 2>&1; then
   ruff check --fix . > /dev/null 2>&1 || true
-  echo -e "${GREEN}FIXED${NC} (safe auto-fixes applied)"
-  REPAIRS=$((REPAIRS + 1))
+  ruff check --fix --unsafe-fixes tests/ > /dev/null 2>&1 || true
+  # Fix bare except → except Exception (common in test files)
+  find tests/ -name "*.py" -exec sed -i 's/    except:$/    except Exception:/g' {} + 2>/dev/null || true
+  if ruff check . > /dev/null 2>&1; then
+    echo -e "${GREEN}FIXED${NC}"
+    REPAIRS=$((REPAIRS + 1))
+  else
+    echo -e "${YELLOW}PARTIAL${NC} (some issues remain — run ruff check manually)"
+  fi
 else
   echo -e "$INFO (no lint issues)"
 fi

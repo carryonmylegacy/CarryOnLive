@@ -17,7 +17,7 @@ def get_admin_token():
     try:
         with open("/tmp/admin_token.txt", "r") as f:
             return f.read().strip()
-    except:
+    except Exception:
         return None
 
 
@@ -53,7 +53,7 @@ class TestAnnouncements:
         data = response.json()
         assert "id" in data
         assert data["title"].startswith("TEST_Announcement_")
-        assert data["is_active"] == True
+        assert data["is_active"]
         return data["id"]
 
     def test_list_announcements(self, admin_headers):

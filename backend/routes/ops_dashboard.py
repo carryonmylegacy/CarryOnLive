@@ -29,7 +29,6 @@ async def get_ops_dashboard(current_user: dict = Depends(get_current_user)):
 
     now = datetime.now(timezone.utc)
     day_ago = (now - timedelta(hours=24)).isoformat()
-    week_ago = (now - timedelta(days=7)).isoformat()
 
     # Get all operators
     operators = await db.users.find(

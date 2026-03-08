@@ -597,7 +597,7 @@ class TestOpsOpsDashboard:
         )
         # Admin stats might return 200 or 404 depending on implementation
         if resp.status_code == 200:
-            stats = resp.json()
+            resp.json()
             print("✅ GET /api/admin/stats - Dashboard stats accessible")
         else:
             # Try alternative endpoint

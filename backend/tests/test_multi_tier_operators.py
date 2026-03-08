@@ -151,7 +151,7 @@ class TestOperatorCRUD:
         resp = requests.get(f"{BASE_URL}/api/founder/operators", headers=auth_headers)
         assert resp.status_code == 200
         operators = resp.json()
-        usernames = [op.get("email") for op in operators]
+        [op.get("email") for op in operators]
         # At least check that our test ones exist if they were created
         print(f"✓ Operators list contains {len(operators)} entries")
 
@@ -311,7 +311,7 @@ class TestP1ContactSettings:
         )
         assert resp.status_code == 200
         data = resp.json()
-        assert data.get("updated") == True
+        assert data.get("updated")
         print("✓ Founder can update P1 contact settings")
 
 
@@ -372,7 +372,7 @@ class TestOperatorEditDelete:
             json=edit_data,
         )
         assert resp.status_code == 200
-        assert resp.json().get("updated") == True
+        assert resp.json().get("updated")
         print("✓ Operator edited successfully")
 
     def test_delete_operator_requires_password(self, auth_headers):
@@ -400,7 +400,7 @@ class TestOperatorEditDelete:
             headers=auth_headers,
         )
         assert resp.status_code == 200
-        assert resp.json().get("deleted") == True
+        assert resp.json().get("deleted")
         print("✓ Delete with correct password succeeded")
 
 

@@ -363,7 +363,9 @@ async def operator_dev_login(
     from routes.auth import create_session_token
     from models import UserResponse, TokenResponse
 
-    token = await create_session_token(operator["id"], operator["email"], operator["role"])
+    token = await create_session_token(
+        operator["id"], operator["email"], operator["role"]
+    )
 
     return TokenResponse(
         access_token=token,

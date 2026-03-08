@@ -122,7 +122,7 @@ class TestNotificationEndpoints:
 
         # All returned notifications should be unread
         for notif in data["notifications"]:
-            assert notif.get("read") == False, "All notifications should be unread"
+            assert not notif.get("read"), "All notifications should be unread"
         print(
             f"✓ GET /api/notifications?unread_only=true - Found {len(data['notifications'])} unread notifications"
         )
@@ -166,7 +166,7 @@ class TestNotificationEndpoints:
         )
         assert response.status_code == 200
         data = response.json()
-        assert data.get("read") == True, "Response should confirm read=True"
+        assert data.get("read"), "Response should confirm read=True"
         print(
             f"✓ POST /api/notifications/{notif_id}/read - Marked notification as read"
         )
@@ -470,7 +470,7 @@ class TestNotificationTriggers:
         response = requests.get(
             f"{BASE_URL}/api/notifications/unread-count", headers=founder_headers
         )
-        initial_count = response.json().get("unread_count", 0)
+        response.json().get("unread_count", 0)
 
         # Create DTS task
         response = requests.post(
@@ -525,7 +525,7 @@ class TestNotificationTriggers:
         response = requests.get(
             f"{BASE_URL}/api/notifications/unread-count", headers=founder_headers
         )
-        initial_count = response.json().get("unread_count", 0)
+        response.json().get("unread_count", 0)
 
         # Send support message
         response = requests.post(
@@ -577,7 +577,7 @@ class TestOperatorNotificationsToFounder:
         response = requests.get(
             f"{BASE_URL}/api/notifications/unread-count", headers=founder_headers
         )
-        initial_count = response.json().get("unread_count", 0)
+        response.json().get("unread_count", 0)
 
         # Manager creates a worker
         test_username = f"test_worker_{int(time.time())}"
