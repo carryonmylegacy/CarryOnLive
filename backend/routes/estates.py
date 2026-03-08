@@ -150,6 +150,59 @@ async def update_display_override(
     return {"success": True}
 
 
+class EstatePhotoUpdate(BaseModel):
+    photo_data: str
+    file_name: str = "estate_photo.jpg"
+
+
+@router.put("/estates/{estate_id}/photo")
+async def update_estate_photo(
+    estate_id: str,
+    data: EstatePhotoUpdate,
+    current_user: dict = Depends(get_current_user),
+):
+    """Set the estate photo — benefactor only (owner of the estate).
+    This is separate from the benefactor's personal profile photo."""
+    import base64
+
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
+    if not estate:
+        raise HTTPException(status_code=404, detail="Estate not found")
+    if estate.get("owner_id") != current_user["id"]:
+        raise HTTPException(
+            status_code=403, detail="Only the estate owner can set the estate photo"
+        )
+
+    if not data.photo_data:
+        # Remove estate photo
+        await db.estates.update_one(
+            {"id": estate_id}, {"$unset": {"estate_photo_url": ""}}
+        )
+        return {"estate_photo_url": ""}
+
+    try:
+        raw = base64.b64decode(data.photo_data)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid base64 data")
+
+    if len(raw) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Photo must be under 5MB")
+
+    ext = data.file_name.rsplit(".", 1)[-1].lower() if "." in data.file_name else "jpg"
+    mime = {
+        "jpg": "image/jpeg",
+        "jpeg": "image/jpeg",
+        "png": "image/png",
+        "webp": "image/webp",
+    }.get(ext, "image/jpeg")
+    data_url = f"data:{mime};base64,{data.photo_data}"
+
+    await db.estates.update_one(
+        {"id": estate_id}, {"$set": {"estate_photo_url": data_url}}
+    )
+    return {"estate_photo_url": data_url}
+
+
 @router.get("/estates/{estate_id}")
 async def get_estate(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Get a single estate by ID."""

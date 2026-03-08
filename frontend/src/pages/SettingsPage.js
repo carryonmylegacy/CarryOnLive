@@ -52,6 +52,9 @@ const SettingsPage = () => {
   const [passkeySupported, setPasskeySupported] = useState(false);
   const [passkeyRegistered, setPasskeyRegistered] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
+  const [estatePhoto, setEstatePhoto] = useState(null);
+  const [estateId, setEstateId] = useState(null);
+  const [estateName, setEstateName] = useState('');
 
   const isAdmin = user?.role === 'admin';
   const isOperator = user?.role === 'operator';
@@ -83,6 +86,16 @@ const SettingsPage = () => {
     // Fetch profile photo
     axios.get(`${API_URL}/auth/me`, getAuthHeaders()).then(res => {
       if (res.data.photo_url) setProfilePhoto(res.data.photo_url);
+    }).catch(() => {});
+    // Fetch estate photo (benefactors only)
+    axios.get(`${API_URL}/estates`, getAuthHeaders()).then(res => {
+      const estates = res.data || [];
+      const owned = estates.find(e => !e.is_beneficiary_estate);
+      if (owned) {
+        setEstateId(owned.id);
+        setEstateName(owned.name || '');
+        if (owned.estate_photo_url) setEstatePhoto(owned.estate_photo_url);
+      }
     }).catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -249,6 +262,47 @@ const SettingsPage = () => {
               <span className="inline-block mt-1 px-2 py-0.5 bg-[var(--gold)]/20 text-[var(--gold)] text-xs rounded-full capitalize">
                 {user?.role || 'benefactor'}
               </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      )}
+
+      {/* Estate Photo — benefactor only */}
+      {user?.role === 'benefactor' && estateId && (
+      <Card className="glass-card">
+        <CardHeader>
+          <CardTitle className="text-[var(--t)] flex items-center gap-2">
+            <Shield className="w-5 h-5 text-[var(--gold)]" />
+            Estate Photo
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-[var(--t4)]">
+            Set a photo for <strong>{estateName}</strong>. This appears on your estate card and is separate from your personal profile photo.
+          </p>
+          <div className="flex items-center gap-4">
+            <PhotoPicker
+              currentPhoto={estatePhoto}
+              onPhotoSelected={async (file, previewUrl) => {
+                setEstatePhoto(previewUrl);
+                try {
+                  const reader = new FileReader();
+                  reader.onload = async () => {
+                    const base64 = reader.result.split(',')[1];
+                    await axios.put(`${API_URL}/estates/${estateId}/photo`, { photo_data: base64, file_name: file.name }, getAuthHeaders());
+                  };
+                  reader.readAsDataURL(file);
+                } catch { /* silent */ }
+              }}
+              onRemove={async () => {
+                setEstatePhoto(null);
+                try { await axios.put(`${API_URL}/estates/${estateId}/photo`, { photo_data: '', file_name: '' }, getAuthHeaders()); } catch {}
+              }}
+            />
+            <div>
+              <h3 className="text-[var(--t)] font-semibold">{estateName}</h3>
+              <p className="text-[var(--t5)] text-xs">Visible to your beneficiaries</p>
             </div>
           </div>
         </CardContent>

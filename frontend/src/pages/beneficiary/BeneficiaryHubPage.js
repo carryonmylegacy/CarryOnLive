@@ -103,6 +103,7 @@ const BeneficiaryHubPage = () => {
         {estates.map(estate => {
           const isTransitioned = estate.status === 'transitioned';
           const ownerInitials = estate.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+          const estatePhoto = estate.estate_photo_url || estate.owner_photo_url;
 
           return (
             <Card
@@ -127,7 +128,7 @@ const BeneficiaryHubPage = () => {
                 <div
                   className="w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center text-lg font-bold text-white overflow-hidden"
                   style={{
-                    background: estate.owner_photo_url ? 'transparent' : (isTransitioned
+                    background: estatePhoto ? 'transparent' : (isTransitioned
                       ? 'linear-gradient(135deg, #6D28D9, #A855F7)'
                       : 'linear-gradient(135deg, #1E40AF, #3B82F6)'),
                     opacity: isTransitioned ? 1 : 0.6,
@@ -135,8 +136,8 @@ const BeneficiaryHubPage = () => {
                     boxShadow: isTransitioned ? '0 6px 24px rgba(109,40,217,0.4), 0 1px 0 rgba(255,255,255,0.2) inset' : '0 4px 16px rgba(0,0,0,0.3)'
                   }}
                 >
-                  {estate.owner_photo_url ? (
-                    <img src={estate.owner_photo_url} alt={estate.name} className="w-full h-full object-cover" />
+                  {estatePhoto ? (
+                    <img src={estatePhoto} alt={estate.name} className="w-full h-full object-cover" />
                   ) : ownerInitials}
                 </div>
                 <h3 className="font-bold text-[var(--t)] text-lg">{estate.name}</h3>
