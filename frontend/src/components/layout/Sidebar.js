@@ -21,13 +21,15 @@ import {
   ShieldCheck,
   KeyRound,
   Clock,
-  CreditCard
+  CreditCard,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 import { Switch } from '../ui/switch';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-const OtpToggle = () => {
+const OtpToggle = ({ collapsed }) => {
   const [otpDisabled, setOtpDisabled] = useState(false);
   useEffect(() => {
     const token = localStorage.getItem('carryon_token');
@@ -43,6 +45,13 @@ const OtpToggle = () => {
     const token = localStorage.getItem('carryon_token');
     axios.put(`${API_URL}/admin/platform-settings`, { otp_disabled: newVal }, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }).catch(() => setOtpDisabled(!newVal));
   };
+  if (collapsed) {
+    return (
+      <div className="mx-1 my-2 flex items-center justify-center px-2 py-2 rounded-lg cursor-pointer" onClick={toggle} title={`OTP ${otpDisabled ? 'Disabled' : 'Enabled'}`} style={{ background: otpDisabled ? 'rgba(239,68,68,0.06)' : 'var(--s)', border: `1px solid ${otpDisabled ? 'rgba(239,68,68,0.2)' : 'var(--b)'}` }}>
+        <ShieldCheck className="w-5 h-5" style={{ color: otpDisabled ? '#ef4444' : '#10b981' }} />
+      </div>
+    );
+  }
   return (
     <div className="mx-3 my-2 flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: otpDisabled ? 'rgba(239,68,68,0.06)' : 'var(--s)', border: `1px solid ${otpDisabled ? 'rgba(239,68,68,0.2)' : 'var(--b)'}` }}>
       <div className="flex items-center gap-2">
@@ -60,6 +69,14 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const [benEstates, setBenEstates] = useState([]);
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('carryon_sidebar_collapsed') === 'true');
+
+  const toggleCollapsed = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    localStorage.setItem('carryon_sidebar_collapsed', String(next));
+    window.dispatchEvent(new Event('sidebar-toggle'));
+  };
 
   // Fetch estates for beneficiary sidebar switcher
   useEffect(() => {
@@ -184,7 +201,7 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="sb hidden lg:flex" data-testid="sidebar" role="navigation" aria-label="Main navigation">
+    <aside className={`sb hidden lg:flex ${collapsed ? 'collapsed' : ''}`} data-testid="sidebar" role="navigation" aria-label="Main navigation">
       {/* Logo Section */}
       <div className="sb-logo">
         <img 
@@ -202,19 +219,21 @@ const Sidebar = () => {
         >
           <Shield className="w-5 h-5" />
         </div>
-        <div className="sb-logo-text">
-          <span className="sb-logo-title">CarryOn™</span>
-          <span className="sb-logo-subtitle">{getRoleLabel()}</span>
-        </div>
+        {!collapsed && (
+          <div className="sb-logo-text">
+            <span className="sb-logo-title">CarryOn™</span>
+            <span className="sb-logo-subtitle">{getRoleLabel()}</span>
+          </div>
+        )}
       </div>
 
       {/* Admin OTP Toggle — Founder only, not operators */}
       {user?.role === 'admin' && !window.location.pathname.startsWith('/ops') && (
-        <OtpToggle />
+        <OtpToggle collapsed={collapsed} />
       )}
 
       {/* Beta Banner */}
-      <BetaBanner />
+      {!collapsed && <BetaBanner />}
 
       {/* Beneficiary Estate Switcher — only show dropdown when multiple estates */}
       {user?.role === 'beneficiary' && benEstates.length > 1 && (
@@ -264,16 +283,17 @@ const Sidebar = () => {
       <nav className="flex-1 overflow-y-auto py-4">
         {getNavSections().map((section, idx) => (
           <div key={idx} className="nav-section">
-            {section.title && <div className="nav-section-title">{section.title}</div>}
+            {section.title && !collapsed && <div className="nav-section-title">{section.title}</div>}
             {section.items.map((item, itemIdx) => (
               <React.Fragment key={item.to}>
                 <NavLink
                   to={item.to}
                   className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                   data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                  title={collapsed ? item.label : undefined}
                 >
                   <item.icon />
-                  <span>{item.label}</span>
+                  {!collapsed && <span>{item.label}</span>}
                 </NavLink>
                 {itemIdx < section.items.length - 1 && (
                   <div className="nav-divider" />
@@ -287,36 +307,67 @@ const Sidebar = () => {
       {/* Footer - Theme Toggle & User */}
       <div className="sb-user">
         {/* Theme Toggle */}
-        <div className="theme-toggle mb-4" data-testid="theme-toggle">
-          <div className="theme-toggle-label" onClick={toggleTheme}>
-            {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-            <span>{theme === 'dark' ? 'Dark' : 'Light'} Mode</span>
+        {collapsed ? (
+          <button
+            onClick={toggleTheme}
+            className="nav-item w-full justify-center mb-3"
+            title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+            data-testid="theme-toggle"
+          >
+            {theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+          </button>
+        ) : (
+          <div className="theme-toggle mb-4" data-testid="theme-toggle">
+            <div className="theme-toggle-label" onClick={toggleTheme}>
+              {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              <span>{theme === 'dark' ? 'Dark' : 'Light'} Mode</span>
+            </div>
+            <Switch
+              checked={theme === 'dark'}
+              onCheckedChange={toggleTheme}
+            />
           </div>
-          <Switch
-            checked={theme === 'dark'}
-            onCheckedChange={toggleTheme}
-          />
-        </div>
+        )}
 
         {/* User Info */}
-        <div className="sb-user-info">
-          <div className="sb-avatar">
-            {getUserInitials()}
+        {collapsed ? (
+          <div className="sb-user-info justify-center" title={getUserDisplayName()}>
+            <div className="sb-avatar">
+              {getUserInitials()}
+            </div>
           </div>
-          <div className="sb-user-details">
-            <div className="sb-user-name">{getUserDisplayName()}</div>
-            <div className="sb-user-email">{user?.email || ''}</div>
+        ) : (
+          <div className="sb-user-info">
+            <div className="sb-avatar">
+              {getUserInitials()}
+            </div>
+            <div className="sb-user-details">
+              <div className="sb-user-name">{getUserDisplayName()}</div>
+              <div className="sb-user-email">{user?.email || ''}</div>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Logout Button */}
         <button
           onClick={handleLogout}
-          className="nav-item w-full mt-3 text-[var(--rd)] hover:bg-[var(--rdbg)]"
+          className={`nav-item w-full mt-3 text-[var(--rd)] hover:bg-[var(--rdbg)] ${collapsed ? 'justify-center' : ''}`}
           data-testid="logout-button"
+          title={collapsed ? 'Sign Out' : undefined}
         >
           <LogOut className="w-5 h-5" />
-          <span>Sign Out</span>
+          {!collapsed && <span>Sign Out</span>}
+        </button>
+
+        {/* Collapse Toggle */}
+        <button
+          onClick={toggleCollapsed}
+          className={`nav-item w-full mt-2 ${collapsed ? 'justify-center' : ''}`}
+          data-testid="sidebar-collapse-toggle"
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {collapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
+          {!collapsed && <span>Collapse</span>}
         </button>
       </div>
     </aside>
