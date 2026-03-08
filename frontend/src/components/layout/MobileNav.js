@@ -180,6 +180,14 @@ const MobileNav = () => {
     { to: '/admin/activity', icon: Clock, label: 'Activity Log' },
   ];
 
+  const operatorMenuItems = [
+    { to: '/ops', icon: Home, label: 'Operations Dashboard' },
+    { to: '/ops/transition', icon: FileKey, label: 'Transition Verification (TVT)' },
+    { to: '/ops/dts', icon: Shield, label: 'Designated Trustee Services' },
+    { to: '/ops/support', icon: Headphones, label: 'Customer Support' },
+    { to: '/ops/verifications', icon: ShieldCheck, label: 'Tier Verifications' },
+  ];
+
   const accountItems = user?.role === 'admin' ? [
     { to: '/settings', icon: Settings, label: 'Settings' },
     { to: '/admin/dev-switcher', icon: Settings, label: 'Dev Switcher' },
@@ -215,8 +223,17 @@ const MobileNav = () => {
     { id: 'admin-dev', to: '/admin/dev-switcher', icon: Settings, label: 'Dev' },
   ];
 
+  const operatorBottomNav = [
+    { id: 'ops-tvt', to: '/ops/transition', icon: FileKey, label: 'TVT' },
+    { id: 'ops-support', to: '/ops/support', icon: Headphones, label: 'Support' },
+    { id: 'ops-home', to: '/ops', icon: Home, label: 'Home', isCenter: true },
+    { id: 'ops-dts', to: '/ops/dts', icon: Shield, label: 'DTS' },
+    { id: 'ops-verify', to: '/ops/verifications', icon: ShieldCheck, label: 'Verify' },
+  ];
+
   const getBottomNav = () => {
     if (user?.role === 'admin') return adminBottomNav;
+    if (user?.role === 'operator') return operatorBottomNav;
     if (user?.role === 'beneficiary') return beneficiaryBottomNav;
     return benefactorBottomNav;
   };
@@ -270,8 +287,8 @@ const MobileNav = () => {
                     
                   </h3>
                   <div>
-                    {(user?.role === 'admin' ? adminMenuItems : myLegacyItems).map((item, idx) => {
-                      const items = user?.role === 'admin' ? adminMenuItems : myLegacyItems;
+                    {(user?.role === 'admin' ? adminMenuItems : user?.role === 'operator' ? operatorMenuItems : myLegacyItems).map((item, idx) => {
+                      const items = user?.role === 'admin' ? adminMenuItems : user?.role === 'operator' ? operatorMenuItems : myLegacyItems;
                       return (
                       <div key={item.to}>
                         <NavLink

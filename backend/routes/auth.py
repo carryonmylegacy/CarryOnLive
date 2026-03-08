@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from config import db, logger
 from models import TokenResponse, UserCreate, UserLogin, UserResponse
+from services.audit import log_audit_event
 from utils import (
     create_token,
     decode_token,
@@ -734,6 +735,18 @@ async def verify_otp(data: OTPVerifyWithTrust, request: Request):
         {"id": user["id"]},
         {"$set": {"last_login_at": datetime.now(timezone.utc).isoformat()}},
     )
+
+    # Audit log for operator/founder logins
+    if user["role"] in ("admin", "operator"):
+        await log_audit_event(
+            actor_id=user["id"],
+            actor_email=user["email"],
+            actor_role=user["role"],
+            action="login",
+            category="auth",
+            ip_address=client_ip,
+            severity="info",
+        )
 
     return TokenResponse(
         access_token=token,

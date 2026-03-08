@@ -22,6 +22,8 @@ import { AnalyticsTab } from '../components/admin/AnalyticsTab';
 import { ActivityTab } from '../components/admin/ActivityTab';
 import { LaunchMetricsTab } from '../components/admin/LaunchMetricsTab';
 import { DevSwitcherTab } from '../components/admin/DevSwitcherTab';
+import { OperatorsTab } from '../components/admin/OperatorsTab';
+import { AuditTrailTab } from '../components/admin/AuditTrailTab';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -35,6 +37,8 @@ const TAB_CONFIG = [
   { key: 'analytics', label: 'Analytics', icon: Activity, path: '/admin/analytics' },
   { key: 'launch', label: 'Launch', icon: TrendingUp, path: '/admin/launch' },
   { key: 'activity', label: 'Activity', icon: Activity, path: '/admin/activity' },
+  { key: 'operators', label: 'Operators', icon: Users, path: '/admin/operators' },
+  { key: 'audit', label: 'Audit Trail', icon: Shield, path: '/admin/audit' },
   { key: 'dev-switcher', label: 'Dev', icon: Settings, path: '/admin/dev-switcher' },
 ];
 
@@ -47,13 +51,20 @@ const PATH_TO_TAB = {
   '/admin/verifications': 'verifications',
   '/admin/analytics': 'analytics',
   '/admin/activity': 'activity',
+  '/admin/operators': 'operators',
+  '/admin/audit': 'audit',
+  // Operations portal paths map to the same tabs
+  '/ops/transition': 'transition',
+  '/ops/dts': 'dts',
+  '/ops/support': 'support',
+  '/ops/verifications': 'verifications',
 };
 
-const AdminPage = () => {
+const AdminPage = ({ operatorMode = false }) => {
   const { user, getAuthHeaders } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const tab = PATH_TO_TAB[location.pathname] || 'users';
+  const tab = PATH_TO_TAB[location.pathname] || (operatorMode ? 'transition' : 'users');
 
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState(null);
@@ -129,9 +140,10 @@ const AdminPage = () => {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Founder Dashboard</h1>
-          <p className="text-xs sm:text-sm text-[var(--t5)]">Platform Management · Transition Verification · Trustee Services</p>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>{operatorMode ? 'Operations Dashboard' : 'Founder Dashboard'}</h1>
+          <p className="text-xs sm:text-sm text-[var(--t5)]">{operatorMode ? 'Transition Verification · Customer Service · Trustee Services' : 'Platform Management · Transition Verification · Trustee Services'}</p>
         </div>
+        {!operatorMode && (
         <button
           onClick={handleCleanup}
           disabled={cleaning}
@@ -143,10 +155,11 @@ const AdminPage = () => {
           {cleaning ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
           Clean Up
         </button>
+        )}
       </div>
 
-      {/* Revenue Analytics */}
-      {revenue && (
+      {/* Revenue Analytics — founder only */}
+      {!operatorMode && revenue && (
         <div className="mb-4">
           <p className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2">Revenue</p>
           <div className="grid grid-cols-3 gap-2 mb-2">
@@ -215,8 +228,8 @@ const AdminPage = () => {
         </div>
       )}
 
-      {/* Platform Overview */}
-      {stats && (
+      {/* Platform Overview — founder only */}
+      {!operatorMode && stats && (
         <>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
           {[
@@ -253,8 +266,14 @@ const AdminPage = () => {
 
       {/* Tabs */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-        {TAB_CONFIG.map(t => (
-          <button key={t.key} onClick={() => navigate(t.path)}
+        {TAB_CONFIG.filter(t => {
+          if (operatorMode) {
+            // Operators: TVT, Support, DTS, Verifications only
+            return ['transition', 'dts', 'support', 'verifications'].includes(t.key);
+          }
+          return true;
+        }).map(t => (
+          <button key={t.key} onClick={() => navigate(operatorMode ? t.path.replace('/admin', '/ops') : t.path)}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
               tab === t.key ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'
             }`} data-testid={`admin-tab-${t.key}`}>
@@ -273,7 +292,9 @@ const AdminPage = () => {
       {tab === 'analytics' && <AnalyticsTab getAuthHeaders={getAuthHeaders} />}
       {tab === 'launch' && <LaunchMetricsTab getAuthHeaders={getAuthHeaders} />}
       {tab === 'activity' && <ActivityTab getAuthHeaders={getAuthHeaders} />}
-      {tab === 'dev-switcher' && <DevSwitcherTab users={users} getAuthHeaders={getAuthHeaders} />}
+      {tab === 'operators' && !operatorMode && <OperatorsTab getAuthHeaders={getAuthHeaders} />}
+      {tab === 'audit' && !operatorMode && <AuditTrailTab getAuthHeaders={getAuthHeaders} />}
+      {tab === 'dev-switcher' && !operatorMode && <DevSwitcherTab users={users} getAuthHeaders={getAuthHeaders} />}
     </div>
   );
 };

@@ -75,7 +75,7 @@ const LoginPage = () => {
         const result = await authenticateWithBiometric();
         if (result?.access_token) {
           localStorage.setItem('carryon_token', result.access_token);
-          const dest = result.user?.role === 'admin' ? '/admin' : result.user?.role === 'beneficiary' ? '/beneficiary' : '/dashboard';
+          const dest = result.user?.role === 'admin' ? '/admin' : result.user?.role === 'operator' ? '/ops' : result.user?.role === 'beneficiary' ? '/beneficiary' : '/dashboard';
           navigate(dest);
           return;
         }
@@ -116,6 +116,7 @@ const LoginPage = () => {
 
   const navigateToHome = (result) => {
     if (result.user?.role === 'admin') navigate('/admin');
+    else if (result.user?.role === 'operator') navigate('/ops');
     else if (result.user?.role === 'beneficiary') navigate('/beneficiary');
     else navigate('/dashboard');
   };

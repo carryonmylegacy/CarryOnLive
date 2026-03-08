@@ -34,6 +34,7 @@ const SecuritySettingsPage = lazy(() => import('./pages/SecuritySettingsPage'));
 const DigitalWalletPage = lazy(() => import('./pages/DigitalWalletPage'));
 const LegacyTimelinePage = lazy(() => import('./pages/LegacyTimelinePage'));
 const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'));
+const OperationsPage = lazy(() => import('./pages/OperationsPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 
@@ -100,8 +101,12 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   if (allowedRoles && !allowedRoles.includes(user?.role)) {
-    // Admins can access ALL pages
+    // Founder (admin) can access ALL pages
     if (user?.role === 'admin') {
+      return children;
+    }
+    // Operators can access admin routes (they share the same portal structure)
+    if (user?.role === 'operator' && allowedRoles.includes('admin')) {
       return children;
     }
     // Benefactors can also access beneficiary routes (they may have been a beneficiary first)
@@ -111,6 +116,9 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     // Redirect based on role
     if (user?.role === 'beneficiary') {
       return <Navigate to="/beneficiary" replace />;
+    }
+    if (user?.role === 'operator') {
+      return <Navigate to="/ops" replace />;
     }
     return <Navigate to="/dashboard" replace />;
   }
@@ -245,6 +253,15 @@ function AppRoutes() {
         </ProtectedRoute>
       }>
         <Route path="/admin/*" element={<AdminPage />} />
+      </Route>
+
+      {/* Operations Portal Routes */}
+      <Route element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <DashboardLayout />
+        </ProtectedRoute>
+      }>
+        <Route path="/ops/*" element={<OperationsPage />} />
       </Route>
 
       {/* Shared Settings Route */}
