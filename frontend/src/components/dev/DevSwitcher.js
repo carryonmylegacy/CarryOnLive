@@ -55,7 +55,7 @@ const DevSwitcher = () => {
   
   // Always include admin option - admin can configure it
   accounts.push({
-    label: 'Admin Portal',
+    label: 'Founder Portal',
     role: 'admin',
     color: '#E0AD2B',
     redirect: '/admin'
