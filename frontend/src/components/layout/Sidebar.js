@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { Switch } from '../ui/switch';
 import { toast } from '../../utils/toast';
+import NotificationBell from '../NotificationBell';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const BASE_URL = process.env.REACT_APP_BACKEND_URL;
@@ -256,15 +257,16 @@ const Sidebar = () => {
     {
       title: 'TOOLS',
       items: [
+        // Managers get dashboard first
+        ...(user?.operator_role === 'manager' ? [
+          { to: '/ops/dashboard', icon: LayoutDashboard, label: 'Ops Dashboard' },
+          { to: '/ops/operators', icon: Users, label: 'Team' },
+        ] : []),
         { to: '/ops/my-activity', icon: Clock, label: 'My Activity' },
         { to: '/ops/search', icon: Search, label: 'Quick Search' },
         { to: '/ops/escalations', icon: AlertTriangle, label: 'Escalate' },
         { to: '/ops/shift-notes', icon: StickyNote, label: 'Shift Notes' },
         { to: '/ops/knowledge-base', icon: BookOpen, label: 'SOPs' },
-        // Managers get team management
-        ...(user?.operator_role === 'manager' ? [
-          { to: '/ops/operators', icon: Users, label: 'Team' },
-        ] : []),
       ]
     }
   ];
@@ -444,8 +446,11 @@ const Sidebar = () => {
         ))}
       </nav>
 
-      {/* Footer - Theme Toggle & User */}
+      {/* Footer - Notifications, Theme Toggle & User */}
       <div className="sb-user">
+        {/* Notification Bell */}
+        <NotificationBell collapsed={collapsed} />
+
         {/* Theme Toggle */}
         {collapsed ? (
           <button

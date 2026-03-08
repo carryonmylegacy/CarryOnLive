@@ -33,6 +33,7 @@ import { EscalationsTab } from '../components/admin/EscalationsTab';
 import { ShiftNotesTab } from '../components/admin/ShiftNotesTab';
 import { KnowledgeBaseTab } from '../components/admin/KnowledgeBaseTab';
 import { P1ContactSettingsTab } from '../components/admin/P1ContactSettingsTab';
+import { OpsDashboardTab } from '../components/admin/OpsDashboardTab';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -55,12 +56,14 @@ const TAB_CONFIG = [
   { key: 'escalations', label: 'Escalations', icon: AlertTriangle, path: '/admin/escalations' },
   { key: 'knowledge-base', label: 'Knowledge Base', icon: BookOpen, path: '/admin/knowledge-base' },
   { key: 'p1-settings', label: 'P1 Contact', icon: AlertTriangle, path: '/admin/p1-settings' },
+  { key: 'ops-dashboard', label: 'Ops Dashboard', icon: Activity, path: '/admin/ops-dashboard' },
   // Operator sidebar features
   { key: 'my-activity', label: 'My Activity', icon: Clock, path: '/ops/my-activity' },
   { key: 'search', label: 'Search', icon: Search, path: '/ops/search' },
   { key: 'ops-escalations', label: 'Escalate', icon: AlertTriangle, path: '/ops/escalations' },
   { key: 'shift-notes', label: 'Shift Notes', icon: StickyNote, path: '/ops/shift-notes' },
   { key: 'ops-kb', label: 'SOPs', icon: BookOpen, path: '/ops/knowledge-base' },
+  { key: 'ops-dashboard', label: 'Dashboard', icon: Activity, path: '/ops/dashboard' },
 ];
 
 const PATH_TO_TAB = {
@@ -85,19 +88,22 @@ const PATH_TO_TAB = {
   '/admin/escalations': 'escalations',
   '/admin/knowledge-base': 'knowledge-base',
   '/admin/p1-settings': 'p1-settings',
+  '/admin/ops-dashboard': 'ops-dashboard',
   '/ops/my-activity': 'my-activity',
   '/ops/search': 'search',
   '/ops/escalations': 'ops-escalations',
   '/ops/shift-notes': 'shift-notes',
   '/ops/knowledge-base': 'ops-kb',
   '/ops/operators': 'operators',
+  '/ops/dashboard': 'ops-dashboard',
 };
 
 const AdminPage = ({ operatorMode = false }) => {
   const { user, getAuthHeaders } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const tab = PATH_TO_TAB[location.pathname] || (operatorMode ? 'transition' : 'users');
+  const defaultOpsTab = user?.operator_role === 'manager' ? 'ops-dashboard' : 'transition';
+  const tab = PATH_TO_TAB[location.pathname] || (operatorMode ? defaultOpsTab : 'users');
 
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState(null);
@@ -408,8 +414,8 @@ const AdminPage = ({ operatorMode = false }) => {
           if (operatorMode) {
             // Operators: work queues + operator tools
             const opsTabs = ['transition', 'dts', 'support', 'verifications', 'my-activity', 'search', 'ops-escalations', 'shift-notes', 'ops-kb'];
-            // Managers also get team management
-            if (user?.operator_role === 'manager') opsTabs.push('operators');
+            // Managers also get team management + dashboard
+            if (user?.operator_role === 'manager') opsTabs.push('operators', 'ops-dashboard');
             return opsTabs.includes(t.key);
           }
           // Founder: all except operator-specific tabs
@@ -449,6 +455,7 @@ const AdminPage = ({ operatorMode = false }) => {
       {tab === 'ops-escalations' && operatorMode && <EscalationsTab getAuthHeaders={getAuthHeaders} isFounder={false} />}
       {tab === 'shift-notes' && operatorMode && <ShiftNotesTab getAuthHeaders={getAuthHeaders} />}
       {tab === 'ops-kb' && operatorMode && <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={false} />}
+      {tab === 'ops-dashboard' && <OpsDashboardTab getAuthHeaders={getAuthHeaders} />}
     </div>
   );
 };

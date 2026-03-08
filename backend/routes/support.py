@@ -64,9 +64,10 @@ async def send_support_message(
 
     await db.support_messages.insert_one(message)
 
-    # Send push notification
+    # Send push notification + in-app notification
+    from services.notifications import notify
     if current_user["role"] in ("admin", "operator"):
-        # Admin sent message -> notify user
+        # Admin sent message -> notify user (push + in-app)
         asyncio.create_task(
             send_push_notification(
                 conversation_id,
@@ -77,8 +78,14 @@ async def send_support_message(
                 "support",
             )
         )
+        asyncio.create_task(notify.benefactor(
+            conversation_id,
+            "Support Reply",
+            data.content[:100] + ("..." if len(data.content) > 100 else ""),
+            url="/support",
+        ))
     else:
-        # User sent message -> notify admins
+        # User sent message -> notify all staff (push + in-app)
         asyncio.create_task(
             send_push_to_all_admins(
                 "New Support Message",
@@ -87,6 +94,11 @@ async def send_support_message(
                 "admin-support",
             )
         )
+        asyncio.create_task(notify.all_staff(
+            "New Support Message",
+            f"{current_user.get('name', 'User')}: {data.content[:80]}",
+            url="/ops/support",
+        ))
 
     return {k: v for k, v in message.items() if k != "_id"}
 

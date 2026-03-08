@@ -126,6 +126,17 @@ async def create_operator(
         severity="info",
     )
 
+    # NOTIFICATION: If manager created a worker, notify founder
+    if current_user.get("role") == "operator" and current_user.get("operator_role") == "manager":
+        from services.notifications import notify
+        import asyncio
+        asyncio.create_task(notify.founder(
+            "New Operator Enrolled",
+            f"Manager {current_user.get('name', '')} created {data.operator_role} account: {full_name}",
+            url="/admin/operators",
+            priority="normal",
+        ))
+
     return {
         "id": operator["id"],
         "email": operator["email"],
@@ -285,6 +296,17 @@ async def delete_operator(
         ip_address=get_client_ip(request) if request else "",
         severity="critical",
     )
+
+    # NOTIFICATION: If manager deleted a worker, notify founder
+    if current_user.get("role") == "operator" and current_user.get("operator_role") == "manager":
+        from services.notifications import notify
+        import asyncio
+        asyncio.create_task(notify.founder(
+            "Operator Deleted",
+            f"Manager {current_user.get('name', '')} removed {op_role}: {op['email']}",
+            url="/admin/operators",
+            priority="normal",
+        ))
 
     return {"deleted": True}
 

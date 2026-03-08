@@ -63,7 +63,10 @@ async def create_dts_task(
         "disclose_to": data.disclose_to,
         "timed_release": data.timed_release,
         "beneficiary": data.beneficiary,
-        "status": "submitted",  # submitted, quoted, approved, ready, executed, destroyed
+        "status": "submitted",
+        "assigned_to": None,
+        "assigned_by": None,
+        "assigned_at": None,
         "line_items": [],
         "payment_method": None,
         "credentials": [],
@@ -78,6 +81,17 @@ async def create_dts_task(
         "dts_request_created",
         f"DTS request: {data.title}",
     )
+
+    # NOTIFICATION: New DTS request → all staff
+    from services.notifications import notify
+    asyncio.create_task(notify.all_staff(
+        "New DTS Request",
+        f"New DTS task from {current_user['name']}: {data.title}",
+        url="/ops/dts",
+        priority="normal",
+        metadata={"task_id": task["id"], "estate_id": data.estate_id},
+    ))
+
     return {k: v for k, v in task.items() if k != "_id"}
 
 
@@ -235,9 +249,9 @@ async def approve_dts_task(
 async def update_dts_status(
     task_id: str, task_status: str, current_user: dict = Depends(get_current_user)
 ):
-    """Admin updates task status"""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Only DTS team can update status")
+    """Admin/Manager updates task status"""
+    if current_user["role"] not in ("admin", "operator"):
+        raise HTTPException(status_code=403, detail="Only staff can update status")
     valid = ["submitted", "quoted", "approved", "ready", "executed", "destroyed"]
     if task_status not in valid:
         raise HTTPException(
@@ -253,6 +267,59 @@ async def update_dts_status(
         },
     )
     return {"message": f"Status updated to {task_status}"}
+
+
+class DTSAssignRequest(BaseModel):
+    operator_id: str
+
+
+@router.post("/dts/tasks/{task_id}/assign")
+async def assign_dts_task(
+    task_id: str,
+    data: DTSAssignRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Assign a DTS task to an operator. Founder or Manager only."""
+    if current_user["role"] == "admin":
+        pass  # Founder can assign
+    elif current_user["role"] == "operator" and current_user.get("operator_role") == "manager":
+        pass  # Manager can assign
+    else:
+        raise HTTPException(status_code=403, detail="Only founders and managers can assign tasks")
+
+    task = await db.dts_tasks.find_one({"id": task_id}, {"_id": 0})
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    # Verify target is an operator
+    target = await db.users.find_one(
+        {"id": data.operator_id, "role": "operator"}, {"_id": 0, "name": 1}
+    )
+    if not target:
+        raise HTTPException(status_code=404, detail="Operator not found")
+
+    await db.dts_tasks.update_one(
+        {"id": task_id},
+        {"$set": {
+            "assigned_to": data.operator_id,
+            "assigned_by": current_user["id"],
+            "assigned_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }},
+    )
+
+    # Notify the assigned operator
+    from services.notifications import notify
+    asyncio.create_task(notify.operator(
+        data.operator_id,
+        "DTS Task Assigned",
+        f"You've been assigned: {task['title']}",
+        url="/ops/dts",
+        priority="normal",
+        metadata={"task_id": task_id},
+    ))
+
+    return {"message": f"Task assigned to {target['name']}"}
 
 
 class DTSTaskUpdate(BaseModel):

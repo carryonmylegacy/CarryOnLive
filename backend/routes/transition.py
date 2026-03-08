@@ -1,5 +1,6 @@
 """CarryOn™ Backend — Estate Transition Routes"""
 
+import asyncio
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -53,6 +54,26 @@ async def upload_death_certificate(
         file_name=file.filename or "death_certificate.pdf",
     )
     await db.death_certificates.insert_one(certificate.model_dump())
+
+    # NOTIFICATION: Security alert to benefactor + all staff
+    from services.notifications import notify
+    if estate:
+        owner_id = estate.get("owner_id")
+        if owner_id:
+            asyncio.create_task(notify.security_alert(
+                owner_id,
+                "Security Alert: Death Certificate Uploaded",
+                "A death certificate has been uploaded to your estate. If this was NOT authorized by you, tap here immediately.",
+                url="/support?priority=p1&reason=death_cert_uploaded",
+                metadata={"estate_id": estate_id, "certificate_id": certificate.id},
+            ))
+        asyncio.create_task(notify.all_staff(
+            "New TVT Request",
+            f"Death certificate uploaded for estate {estate.get('name', estate_id)}",
+            url="/ops/transition",
+            priority="high",
+            metadata={"estate_id": estate_id},
+        ))
 
     return {
         "id": certificate.id,
@@ -240,6 +261,31 @@ async def approve_death_certificate(
         ip_address=get_client_ip(request),
         severity="critical",
     )
+
+    # NOTIFICATION: Transition completed
+    from services.notifications import notify
+    estate_name = ""
+    if estate_doc:
+        e = await db.estates.find_one({"id": certificate["estate_id"]}, {"_id": 0, "name": 1})
+        estate_name = (e or {}).get("name", "")
+
+    # Notify beneficiaries
+    for ben_id in all_ben_ids:
+        asyncio.create_task(notify.beneficiary(
+            ben_id,
+            "Estate Transition Complete",
+            f"The estate '{estate_name}' has been transitioned. You now have access to estate documents and messages.",
+            url="/beneficiary/dashboard",
+            priority="high",
+        ))
+
+    # Notify all staff
+    asyncio.create_task(notify.all_staff(
+        "Transition Completed",
+        f"Estate '{estate_name}' has been fully transitioned and sealed.",
+        url="/ops/transition",
+        priority="normal",
+    ))
 
     return {
         "message": "Certificate approved, benefactor sealed, beneficiary access granted",
