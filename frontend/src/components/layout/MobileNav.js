@@ -306,7 +306,7 @@ const MobileNav = () => {
   const benefactorBottomNav = [
     { to: '/vault', icon: FolderLock, label: 'Vault' },
     { to: '/guardian', icon: Sparkles, label: 'Guardian' },
-    { to: '/dashboard', icon: Home, label: 'Home', isCenter: true },
+    { to: '/dashboard', icon: Home, label: 'Dashboard', isCenter: true },
     { to: '/messages', icon: MessageSquare, label: 'Milestone' },
     { to: '/trustee', icon: Shield, label: 'Trustee' },
   ];
@@ -314,7 +314,7 @@ const MobileNav = () => {
   const beneficiaryBottomNav = [
     { to: '/beneficiary/vault', icon: FolderLock, label: 'Vault' },
     { to: '/beneficiary/guardian', icon: Sparkles, label: 'Guardian' },
-    { to: '/beneficiary/dashboard', icon: Home, label: 'Home', isCenter: true },
+    { to: '/beneficiary/dashboard', icon: Home, label: 'Dashboard', isCenter: true },
     { to: '/beneficiary/messages', icon: MessageSquare, label: 'Messages' },
     { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Checklist' },
   ];
@@ -322,7 +322,7 @@ const MobileNav = () => {
   const adminBottomNav = [
     { id: 'admin-tvt', to: '/admin/transition', icon: FileKey, label: 'TVT' },
     { id: 'admin-support', to: '/admin/support', icon: Headphones, label: 'Support' },
-    { id: 'admin-home', to: '/admin', icon: Home, label: 'Home', isCenter: true },
+    { id: 'admin-home', to: '/admin', icon: Home, label: 'Dashboard', isCenter: true },
     { id: 'admin-dts', to: '/admin/dts', icon: Shield, label: 'DTS' },
     { id: 'admin-verify', to: '/admin/verifications', icon: ShieldCheck, label: 'Verify' },
   ];
@@ -330,7 +330,7 @@ const MobileNav = () => {
   const operatorBottomNav = [
     { id: 'ops-tvt', to: '/ops/transition', icon: FileKey, label: 'TVT' },
     { id: 'ops-support', to: '/ops/support', icon: Headphones, label: 'Support' },
-    { id: 'ops-home', to: '/ops', icon: Home, label: 'Home', isCenter: true },
+    { id: 'ops-home', to: '/ops', icon: Home, label: 'Dashboard', isCenter: true },
     { id: 'ops-dts', to: '/ops/dts', icon: Shield, label: 'DTS' },
     { id: 'ops-verify', to: '/ops/verifications', icon: ShieldCheck, label: 'Verify' },
   ];
@@ -620,9 +620,10 @@ const MobileNav = () => {
         </div>
       )}
 
-      {/* Bottom Navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 w-full mobile-bottom-nav z-50 pb-safe" role="navigation" aria-label="Bottom navigation">
-        <div className="flex items-end h-14 px-1">
+      {/* Bottom Navigation — floating glass oval */}
+      <nav className="lg:hidden fixed bottom-0 left-0 w-full z-50 pb-safe" role="navigation" aria-label="Bottom navigation">
+        <div className="mx-3 mb-1 mobile-bottom-nav rounded-[28px] overflow-hidden">
+          <div className="flex items-end h-14 px-2">
           {getBottomNav().map((item, index) => {
             const isCenter = item.isCenter;
             const showDivider = index < getBottomNav().length - 1;
@@ -672,12 +673,13 @@ const MobileNav = () => {
                 {showDivider && (
                   <div 
                     className="h-10 flex-shrink-0" 
-                    style={{ alignSelf: 'center', width: '2px', backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.35)' : 'rgba(30,58,95,0.2)' }}
+                    style={{ alignSelf: 'center', width: '1px', backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(30,58,95,0.12)' }}
                   />
                 )}
               </React.Fragment>
             );
           })}
+          </div>
         </div>
       </nav>
     </>
