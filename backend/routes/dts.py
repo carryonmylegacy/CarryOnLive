@@ -84,13 +84,16 @@ async def create_dts_task(
 
     # NOTIFICATION: New DTS request → all staff
     from services.notifications import notify
-    asyncio.create_task(notify.all_staff(
-        "New DTS Request",
-        f"New DTS task from {current_user['name']}: {data.title}",
-        url="/ops/dts",
-        priority="normal",
-        metadata={"task_id": task["id"], "estate_id": data.estate_id},
-    ))
+
+    asyncio.create_task(
+        notify.all_staff(
+            "New DTS Request",
+            f"New DTS task from {current_user['name']}: {data.title}",
+            url="/ops/dts",
+            priority="normal",
+            metadata={"task_id": task["id"], "estate_id": data.estate_id},
+        )
+    )
 
     return {k: v for k, v in task.items() if k != "_id"}
 
@@ -282,10 +285,15 @@ async def assign_dts_task(
     """Assign a DTS task to an operator. Founder or Manager only."""
     if current_user["role"] == "admin":
         pass  # Founder can assign
-    elif current_user["role"] == "operator" and current_user.get("operator_role") == "manager":
+    elif (
+        current_user["role"] == "operator"
+        and current_user.get("operator_role") == "manager"
+    ):
         pass  # Manager can assign
     else:
-        raise HTTPException(status_code=403, detail="Only founders and managers can assign tasks")
+        raise HTTPException(
+            status_code=403, detail="Only founders and managers can assign tasks"
+        )
 
     task = await db.dts_tasks.find_one({"id": task_id}, {"_id": 0})
     if not task:
@@ -300,24 +308,29 @@ async def assign_dts_task(
 
     await db.dts_tasks.update_one(
         {"id": task_id},
-        {"$set": {
-            "assigned_to": data.operator_id,
-            "assigned_by": current_user["id"],
-            "assigned_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-        }},
+        {
+            "$set": {
+                "assigned_to": data.operator_id,
+                "assigned_by": current_user["id"],
+                "assigned_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
     )
 
     # Notify the assigned operator
     from services.notifications import notify
-    asyncio.create_task(notify.operator(
-        data.operator_id,
-        "DTS Task Assigned",
-        f"You've been assigned: {task['title']}",
-        url="/ops/dts",
-        priority="normal",
-        metadata={"task_id": task_id},
-    ))
+
+    asyncio.create_task(
+        notify.operator(
+            data.operator_id,
+            "DTS Task Assigned",
+            f"You've been assigned: {task['title']}",
+            url="/ops/dts",
+            priority="normal",
+            metadata={"task_id": task_id},
+        )
+    )
 
     return {"message": f"Task assigned to {target['name']}"}
 

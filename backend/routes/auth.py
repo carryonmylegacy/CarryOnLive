@@ -661,12 +661,15 @@ async def register(data: UserCreate):
     # NOTIFICATION: New user signup → founder
     import asyncio
     from services.notifications import notify
-    asyncio.create_task(notify.founder(
-        "New User Signup",
-        f"{full_name} ({data.email}) registered as {user['role']}",
-        url="/admin",
-        priority="normal",
-    ))
+
+    asyncio.create_task(
+        notify.founder(
+            "New User Signup",
+            f"{full_name} ({data.email}) registered as {user['role']}",
+            url="/admin",
+            priority="normal",
+        )
+    )
 
     return {
         "message": "Account created. Please verify with OTP.",

@@ -58,7 +58,9 @@ async def get_delivery_stats(current_user: dict = Depends(get_current_user)):
     """Get milestone delivery stats for the dashboard."""
     require_staff(current_user)
 
-    pending = await db.milestone_deliveries.count_documents({"status": "pending_review"})
+    pending = await db.milestone_deliveries.count_documents(
+        {"status": "pending_review"}
+    )
     approved = await db.milestone_deliveries.count_documents({"status": "approved"})
     rejected = await db.milestone_deliveries.count_documents({"status": "rejected"})
 
@@ -78,9 +80,7 @@ async def get_delivery_detail(
     """Get full delivery detail including the message content for review."""
     require_staff(current_user)
 
-    delivery = await db.milestone_deliveries.find_one(
-        {"id": delivery_id}, {"_id": 0}
-    )
+    delivery = await db.milestone_deliveries.find_one({"id": delivery_id}, {"_id": 0})
     if not delivery:
         raise HTTPException(status_code=404, detail="Delivery not found")
 
@@ -97,8 +97,17 @@ async def get_delivery_detail(
     # Get all messages in the estate for context
     all_messages = await db.messages.find(
         {"estate_id": delivery["estate_id"]},
-        {"_id": 0, "id": 1, "title": 1, "trigger_type": 1, "trigger_value": 1,
-         "trigger_age": 1, "recipients": 1, "is_delivered": 1, "message_type": 1},
+        {
+            "_id": 0,
+            "id": 1,
+            "title": 1,
+            "trigger_type": 1,
+            "trigger_value": 1,
+            "trigger_age": 1,
+            "recipients": 1,
+            "is_delivered": 1,
+            "message_type": 1,
+        },
     ).to_list(100)
 
     # Get milestone report
@@ -130,7 +139,9 @@ async def review_delivery(
     require_staff(current_user)
 
     if data.action not in ("approve", "reject"):
-        raise HTTPException(status_code=400, detail="Action must be 'approve' or 'reject'")
+        raise HTTPException(
+            status_code=400, detail="Action must be 'approve' or 'reject'"
+        )
 
     delivery = await db.milestone_deliveries.find_one(
         {"id": delivery_id, "status": "pending_review"}, {"_id": 0}
@@ -143,38 +154,47 @@ async def review_delivery(
 
     await db.milestone_deliveries.update_one(
         {"id": delivery_id},
-        {"$set": {
-            "status": new_status,
-            "reviewed_by": current_user["id"],
-            "reviewed_by_name": current_user.get("name", ""),
-            "reviewed_at": now.isoformat(),
-            "review_notes": data.notes,
-        }},
+        {
+            "$set": {
+                "status": new_status,
+                "reviewed_by": current_user["id"],
+                "reviewed_by_name": current_user.get("name", ""),
+                "reviewed_at": now.isoformat(),
+                "review_notes": data.notes,
+            }
+        },
     )
 
     if data.action == "approve":
         # Deliver the message
         await db.messages.update_one(
             {"id": delivery["message_id"]},
-            {"$set": {
-                "is_delivered": True,
-                "delivered_at": now.isoformat(),
-                "delivered_via": "milestone_review",
-                "milestone_report_id": delivery["milestone_report_id"],
-                "delivered_by": current_user["id"],
-            }},
+            {
+                "$set": {
+                    "is_delivered": True,
+                    "delivered_at": now.isoformat(),
+                    "delivered_via": "milestone_review",
+                    "milestone_report_id": delivery["milestone_report_id"],
+                    "delivered_by": current_user["id"],
+                }
+            },
         )
 
         # Notify the beneficiary
-        asyncio.create_task(notify.beneficiary(
-            delivery["beneficiary_id"],
-            "New Milestone Message Unlocked",
-            f"A milestone message '{delivery.get('message_title', 'Message')}' has been delivered to you.",
-            url="/beneficiary/messages",
-            priority="high",
-            metadata={"message_id": delivery["message_id"]},
-        ))
+        asyncio.create_task(
+            notify.beneficiary(
+                delivery["beneficiary_id"],
+                "New Milestone Message Unlocked",
+                f"A milestone message '{delivery.get('message_title', 'Message')}' has been delivered to you.",
+                url="/beneficiary/messages",
+                priority="high",
+                metadata={"message_id": delivery["message_id"]},
+            )
+        )
 
         return {"status": "approved", "message": "Message delivered to beneficiary"}
     else:
-        return {"status": "rejected", "message": "Delivery rejected — message will not be delivered"}
+        return {
+            "status": "rejected",
+            "message": "Delivery rejected — message will not be delivered",
+        }

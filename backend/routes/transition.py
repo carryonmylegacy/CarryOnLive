@@ -57,24 +57,37 @@ async def upload_death_certificate(
 
     # NOTIFICATION: Security alert to benefactor + Amber Alert to all staff
     from services.notifications import notify
+
     if estate:
         estate_name = estate.get("name", estate_id)
         owner_id = estate.get("owner_id")
         if owner_id:
-            asyncio.create_task(notify.security_alert(
-                owner_id,
-                "Security Alert: Death Certificate Uploaded",
-                "A death certificate has been uploaded to your estate. If this was NOT authorized by you, tap here immediately.",
-                url="/support?priority=p1&reason=death_cert_error",
-                metadata={"estate_id": estate_id, "certificate_id": certificate.id, "estate_name": estate_name},
-            ))
+            asyncio.create_task(
+                notify.security_alert(
+                    owner_id,
+                    "Security Alert: Death Certificate Uploaded",
+                    "A death certificate has been uploaded to your estate. If this was NOT authorized by you, tap here immediately.",
+                    url="/support?priority=p1&reason=death_cert_error",
+                    metadata={
+                        "estate_id": estate_id,
+                        "certificate_id": certificate.id,
+                        "estate_name": estate_name,
+                    },
+                )
+            )
         # Amber Alert to ALL staff (critical security alert — triggers full-screen overlay)
-        asyncio.create_task(notify.all_staff_security(
-            "Death Certificate Uploaded",
-            f"A death certificate has been uploaded for estate '{estate_name}'. TVT review required.",
-            url="/ops/transition",
-            metadata={"estate_id": estate_id, "estate_name": estate_name, "certificate_id": certificate.id},
-        ))
+        asyncio.create_task(
+            notify.all_staff_security(
+                "Death Certificate Uploaded",
+                f"A death certificate has been uploaded for estate '{estate_name}'. TVT review required.",
+                url="/ops/transition",
+                metadata={
+                    "estate_id": estate_id,
+                    "estate_name": estate_name,
+                    "certificate_id": certificate.id,
+                },
+            )
+        )
 
     return {
         "id": certificate.id,
@@ -265,28 +278,35 @@ async def approve_death_certificate(
 
     # NOTIFICATION: Transition completed
     from services.notifications import notify
+
     estate_name = ""
     if estate_doc:
-        e = await db.estates.find_one({"id": certificate["estate_id"]}, {"_id": 0, "name": 1})
+        e = await db.estates.find_one(
+            {"id": certificate["estate_id"]}, {"_id": 0, "name": 1}
+        )
         estate_name = (e or {}).get("name", "")
 
     # Notify beneficiaries
     for ben_id in all_ben_ids:
-        asyncio.create_task(notify.beneficiary(
-            ben_id,
-            "Estate Transition Complete",
-            f"The estate '{estate_name}' has been transitioned. You now have access to estate documents and messages.",
-            url="/beneficiary/dashboard",
-            priority="high",
-        ))
+        asyncio.create_task(
+            notify.beneficiary(
+                ben_id,
+                "Estate Transition Complete",
+                f"The estate '{estate_name}' has been transitioned. You now have access to estate documents and messages.",
+                url="/beneficiary/dashboard",
+                priority="high",
+            )
+        )
 
     # Notify all staff
-    asyncio.create_task(notify.all_staff(
-        "Transition Completed",
-        f"Estate '{estate_name}' has been fully transitioned and sealed.",
-        url="/ops/transition",
-        priority="normal",
-    ))
+    asyncio.create_task(
+        notify.all_staff(
+            "Transition Completed",
+            f"Estate '{estate_name}' has been fully transitioned and sealed.",
+            url="/ops/transition",
+            priority="normal",
+        )
+    )
 
     return {
         "message": "Certificate approved, benefactor sealed, beneficiary access granted",
@@ -509,23 +529,27 @@ async def report_milestone(
     if unique_messages:
         from services.notifications import notify
         import asyncio
-        asyncio.create_task(notify.all_staff(
-            "Milestone Review Required",
-            f"{current_user.get('name', 'Beneficiary')} reported a milestone ({data.event_type}). "
-            f"{len(unique_messages)} matching message(s) found — worker review required before delivery.",
-            url="/ops/milestones",
-            priority="normal",
-            metadata={
-                "report_id": report.id,
-                "event_type": data.event_type,
-                "matches": len(unique_messages),
-            },
-        ))
+
+        asyncio.create_task(
+            notify.all_staff(
+                "Milestone Review Required",
+                f"{current_user.get('name', 'Beneficiary')} reported a milestone ({data.event_type}). "
+                f"{len(unique_messages)} matching message(s) found — worker review required before delivery.",
+                url="/ops/milestones",
+                priority="normal",
+                metadata={
+                    "report_id": report.id,
+                    "event_type": data.event_type,
+                    "matches": len(unique_messages),
+                },
+            )
+        )
 
     return {
         "id": report.id,
         "matches_found": len(unique_messages),
         "pending_review": len(deliveries_created),
         "message": f"{len(unique_messages)} matching message(s) found. A CarryOn team member will review and deliver them shortly."
-        if unique_messages else "Milestone recorded. No matching messages found at this time.",
+        if unique_messages
+        else "Milestone recorded. No matching messages found at this time.",
     }

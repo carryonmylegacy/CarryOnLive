@@ -66,6 +66,7 @@ async def send_support_message(
 
     # Send push notification + in-app notification
     from services.notifications import notify
+
     if current_user["role"] in ("admin", "operator"):
         # Admin sent message -> notify user (push + in-app)
         asyncio.create_task(
@@ -78,12 +79,14 @@ async def send_support_message(
                 "support",
             )
         )
-        asyncio.create_task(notify.benefactor(
-            conversation_id,
-            "Support Reply",
-            data.content[:100] + ("..." if len(data.content) > 100 else ""),
-            url="/support",
-        ))
+        asyncio.create_task(
+            notify.benefactor(
+                conversation_id,
+                "Support Reply",
+                data.content[:100] + ("..." if len(data.content) > 100 else ""),
+                url="/support",
+            )
+        )
     else:
         # User sent message -> notify all staff (push + in-app)
         asyncio.create_task(
@@ -94,11 +97,13 @@ async def send_support_message(
                 "admin-support",
             )
         )
-        asyncio.create_task(notify.all_staff(
-            "New Support Message",
-            f"{current_user.get('name', 'User')}: {data.content[:80]}",
-            url="/ops/support",
-        ))
+        asyncio.create_task(
+            notify.all_staff(
+                "New Support Message",
+                f"{current_user.get('name', 'User')}: {data.content[:80]}",
+                url="/ops/support",
+            )
+        )
 
     return {k: v for k, v in message.items() if k != "_id"}
 
@@ -294,7 +299,6 @@ async def restore_support_conversation(
     return {"restored": True, "conversation_id": conversation_id}
 
 
-
 class P1EmergencyRequest(BaseModel):
     reason: str = "sealed_account"  # sealed_account, death_cert_error, transition_error
 
@@ -332,32 +336,37 @@ async def create_p1_emergency_thread(
     # Mark conversation as P1
     await db.support_conversations.update_one(
         {"user_id": current_user["id"]},
-        {"$set": {
-            "user_id": current_user["id"],
-            "priority": "p1",
-            "is_emergency": True,
-            "status": "open",
-            "subject": f"P1 EMERGENCY: {current_user.get('name', 'User')}",
-            "user_name": current_user.get("name", ""),
-            "user_email": current_user.get("email", ""),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-        }},
+        {
+            "$set": {
+                "user_id": current_user["id"],
+                "priority": "p1",
+                "is_emergency": True,
+                "status": "open",
+                "subject": f"P1 EMERGENCY: {current_user.get('name', 'User')}",
+                "user_name": current_user.get("name", ""),
+                "user_email": current_user.get("email", ""),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
         upsert=True,
     )
 
     # Send Amber Alert to ALL staff (critical security alert)
     from services.notifications import notify
-    asyncio.create_task(notify.all_staff_security(
-        "P1 EMERGENCY: Benefactor Reports Being Alive",
-        f"{current_user.get('name', 'User')} ({current_user.get('email', '')}) has triggered an I'm Still Alive emergency. Reason: {data.reason}. IMMEDIATE ACTION REQUIRED.",
-        url="/ops/support",
-        metadata={
-            "user_id": current_user["id"],
-            "user_name": current_user.get("name", ""),
-            "reason": data.reason,
-            "emergency": True,
-        },
-    ))
+
+    asyncio.create_task(
+        notify.all_staff_security(
+            "P1 EMERGENCY: Benefactor Reports Being Alive",
+            f"{current_user.get('name', 'User')} ({current_user.get('email', '')}) has triggered an I'm Still Alive emergency. Reason: {data.reason}. IMMEDIATE ACTION REQUIRED.",
+            url="/ops/support",
+            metadata={
+                "user_id": current_user["id"],
+                "user_name": current_user.get("name", ""),
+                "reason": data.reason,
+                "emergency": True,
+            },
+        )
+    )
 
     return {
         "success": True,

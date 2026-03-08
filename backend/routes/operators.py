@@ -31,7 +31,10 @@ def require_founder_or_manager(current_user: dict):
     """Founder or Operations Manager can manage workers."""
     if current_user.get("role") == "admin":
         return
-    if current_user.get("role") == "operator" and current_user.get("operator_role") == "manager":
+    if (
+        current_user.get("role") == "operator"
+        and current_user.get("operator_role") == "manager"
+    ):
         return
     raise HTTPException(status_code=403, detail="Manager or Founder access required")
 
@@ -73,7 +76,9 @@ async def create_operator(
 
     # Validate operator_role
     if data.operator_role not in ("manager", "worker"):
-        raise HTTPException(status_code=400, detail="operator_role must be 'manager' or 'worker'")
+        raise HTTPException(
+            status_code=400, detail="operator_role must be 'manager' or 'worker'"
+        )
 
     # Only founder can create managers
     if data.operator_role == "manager":
@@ -127,15 +132,21 @@ async def create_operator(
     )
 
     # NOTIFICATION: If manager created a worker, notify founder
-    if current_user.get("role") == "operator" and current_user.get("operator_role") == "manager":
+    if (
+        current_user.get("role") == "operator"
+        and current_user.get("operator_role") == "manager"
+    ):
         from services.notifications import notify
         import asyncio
-        asyncio.create_task(notify.founder(
-            "New Operator Enrolled",
-            f"Manager {current_user.get('name', '')} created {data.operator_role} account: {full_name}",
-            url="/admin/operators",
-            priority="normal",
-        ))
+
+        asyncio.create_task(
+            notify.founder(
+                "New Operator Enrolled",
+                f"Manager {current_user.get('name', '')} created {data.operator_role} account: {full_name}",
+                url="/admin/operators",
+                priority="normal",
+            )
+        )
 
     return {
         "id": operator["id"],
@@ -160,7 +171,10 @@ async def list_operators(current_user: dict = Depends(get_current_user)):
     - Managers see only workers."""
     if current_user.get("role") == "admin":
         query = {"role": "operator"}
-    elif current_user.get("role") == "operator" and current_user.get("operator_role") == "manager":
+    elif (
+        current_user.get("role") == "operator"
+        and current_user.get("operator_role") == "manager"
+    ):
         query = {"role": "operator", "operator_role": "worker"}
     else:
         raise HTTPException(status_code=403, detail="Access denied")
@@ -188,9 +202,7 @@ async def edit_operator(
     """Edit an operator account.
     - Founder can edit any operator.
     - Managers can only edit workers."""
-    op = await db.users.find_one(
-        {"id": operator_id, "role": "operator"}, {"_id": 0}
-    )
+    op = await db.users.find_one({"id": operator_id, "role": "operator"}, {"_id": 0})
     if not op:
         raise HTTPException(status_code=404, detail="Operator not found")
 
@@ -201,7 +213,9 @@ async def edit_operator(
         if current_user.get("operator_role") != "manager":
             raise HTTPException(status_code=403, detail="Manager access required")
         if op_role == "manager":
-            raise HTTPException(status_code=403, detail="Managers cannot edit other managers")
+            raise HTTPException(
+                status_code=403, detail="Managers cannot edit other managers"
+            )
     elif current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Access denied")
 
@@ -211,7 +225,9 @@ async def edit_operator(
     if data.last_name is not None:
         update_fields["last_name"] = data.last_name
     if data.first_name is not None or data.last_name is not None:
-        fn = data.first_name if data.first_name is not None else op.get("first_name", "")
+        fn = (
+            data.first_name if data.first_name is not None else op.get("first_name", "")
+        )
         ln = data.last_name if data.last_name is not None else op.get("last_name", "")
         update_fields["name"] = f"{fn} {ln}".strip()
     if data.email is not None:
@@ -223,7 +239,9 @@ async def edit_operator(
     if data.notes is not None:
         update_fields["notes"] = data.notes
     if data.password is not None and data.password:
-        update_fields["password"] = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt()).decode()
+        update_fields["password"] = bcrypt.hashpw(
+            data.password.encode(), bcrypt.gensalt()
+        ).decode()
 
     if not update_fields:
         return {"updated": False, "message": "No fields to update"}
@@ -257,7 +275,8 @@ async def delete_operator(
     - Founder can delete any operator (manager or worker).
     - Managers can only delete workers."""
     op = await db.users.find_one(
-        {"id": operator_id, "role": "operator"}, {"_id": 0, "email": 1, "operator_role": 1}
+        {"id": operator_id, "role": "operator"},
+        {"_id": 0, "email": 1, "operator_role": 1},
     )
     if not op:
         raise HTTPException(status_code=404, detail="Operator not found")
@@ -269,7 +288,9 @@ async def delete_operator(
         if current_user.get("operator_role") != "manager":
             raise HTTPException(status_code=403, detail="Manager access required")
         if op_role == "manager":
-            raise HTTPException(status_code=403, detail="Managers cannot delete other managers")
+            raise HTTPException(
+                status_code=403, detail="Managers cannot delete other managers"
+            )
     elif current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Access denied")
 
@@ -298,15 +319,21 @@ async def delete_operator(
     )
 
     # NOTIFICATION: If manager deleted a worker, notify founder
-    if current_user.get("role") == "operator" and current_user.get("operator_role") == "manager":
+    if (
+        current_user.get("role") == "operator"
+        and current_user.get("operator_role") == "manager"
+    ):
         from services.notifications import notify
         import asyncio
-        asyncio.create_task(notify.founder(
-            "Operator Deleted",
-            f"Manager {current_user.get('name', '')} removed {op_role}: {op['email']}",
-            url="/admin/operators",
-            priority="normal",
-        ))
+
+        asyncio.create_task(
+            notify.founder(
+                "Operator Deleted",
+                f"Manager {current_user.get('name', '')} removed {op_role}: {op['email']}",
+                url="/admin/operators",
+                priority="normal",
+            )
+        )
 
     return {"deleted": True}
 
@@ -363,9 +390,7 @@ async def get_p1_contact_settings(
     if current_user.get("role") not in ("admin", "operator"):
         raise HTTPException(status_code=403, detail="Staff access required")
 
-    settings = await db.platform_settings.find_one(
-        {"_id": "p1_contact"}, {"_id": 0}
-    )
+    settings = await db.platform_settings.find_one({"_id": "p1_contact"}, {"_id": 0})
     if not settings:
         settings = {
             "email": "founder@carryon.us",
@@ -386,11 +411,13 @@ async def update_p1_contact_settings(
 
     await db.platform_settings.update_one(
         {"_id": "p1_contact"},
-        {"$set": {
-            "email": data.email,
-            "phone": data.phone,
-            "chat_enabled": data.chat_enabled,
-        }},
+        {
+            "$set": {
+                "email": data.email,
+                "phone": data.phone,
+                "chat_enabled": data.chat_enabled,
+            }
+        },
         upsert=True,
     )
 
@@ -402,7 +429,11 @@ async def update_p1_contact_settings(
         category="platform",
         resource_type="settings",
         resource_id="p1_contact",
-        details={"email": data.email, "phone_updated": True, "chat_enabled": data.chat_enabled},
+        details={
+            "email": data.email,
+            "phone_updated": True,
+            "chat_enabled": data.chat_enabled,
+        },
         ip_address=get_client_ip(request),
         severity="info",
     )
@@ -410,14 +441,11 @@ async def update_p1_contact_settings(
     return {"updated": True}
 
 
-
 @router.get("/founder/p1-contact-settings-public")
 async def get_p1_contact_settings_public():
     """Get Priority 1 contact settings — public, no auth required.
     This is a critical safety endpoint for the sealed account screen."""
-    settings = await db.platform_settings.find_one(
-        {"_id": "p1_contact"}, {"_id": 0}
-    )
+    settings = await db.platform_settings.find_one({"_id": "p1_contact"}, {"_id": 0})
     if not settings:
         settings = {
             "email": "founder@carryon.us",

@@ -873,12 +873,15 @@ async def accept_invitation(data: AcceptInvitationRequest):
         )
         # In-app notification
         from services.notifications import notify
-        asyncio.create_task(notify.benefactor(
-            benefactor_id,
-            "Beneficiary Joined Your Estate",
-            f"{full_name} has accepted your invitation and is now part of your estate plan.",
-            url="/beneficiaries",
-        ))
+
+        asyncio.create_task(
+            notify.benefactor(
+                benefactor_id,
+                "Beneficiary Joined Your Estate",
+                f"{full_name} has accepted your invitation and is now part of your estate plan.",
+                url="/beneficiaries",
+            )
+        )
 
     # Generate token for auto-login
     token = create_token(user_id, beneficiary["email"], "beneficiary")
