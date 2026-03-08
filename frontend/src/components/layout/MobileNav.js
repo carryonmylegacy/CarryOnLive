@@ -70,11 +70,16 @@ const DebugValues = () => {
     const get = (prop) => cs.getPropertyValue(prop) || '0px';
     const headerEl = document.querySelector('.mobile-header');
     const headerStyle = headerEl ? getComputedStyle(headerEl) : null;
+    const bottomNavEl = document.querySelector('.mobile-bottom-nav');
+    const bottomNavStyle = bottomNavEl ? getComputedStyle(bottomNavEl) : null;
     setVals({
       sat: get('env(safe-area-inset-top)'),
       sab: get('env(safe-area-inset-bottom)'),
       headerPt: headerStyle?.paddingTop || 'N/A',
       headerH: headerEl?.offsetHeight || 'N/A',
+      headerMb: headerStyle?.marginBottom || '0',
+      bottomNavH: bottomNavEl?.offsetHeight || 'N/A',
+      bottomNavPb: bottomNavStyle?.paddingBottom || 'N/A',
       dpr: window.devicePixelRatio,
       screenW: window.screen.width,
       screenH: window.screen.height,
@@ -82,41 +87,53 @@ const DebugValues = () => {
       innerH: window.innerHeight,
       viewportCovers: window.innerHeight >= (window.screen.height - 10) ? 'YES' : 'NO',
       isNativeApp: document.body.classList.contains('native-app') ? 'YES' : 'NO',
-      systemSafeArea: 'contentInset: never',
       ua: navigator.userAgent.slice(0, 80),
     });
   }, []);
 
-  // Also measure via a hidden div trick
+  // Measure safe-area-inset-top via hidden div
   const [measuredTop, setMeasuredTop] = React.useState('N/A');
+  const [measuredBottom, setMeasuredBottom] = React.useState('N/A');
   React.useEffect(() => {
-    const div = document.createElement('div');
-    div.style.cssText = 'position:fixed;top:0;left:0;height:env(safe-area-inset-top,0px);width:1px;pointer-events:none;';
-    document.body.appendChild(div);
+    const divTop = document.createElement('div');
+    divTop.style.cssText = 'position:fixed;top:0;left:0;height:env(safe-area-inset-top,0px);width:1px;pointer-events:none;';
+    const divBottom = document.createElement('div');
+    divBottom.style.cssText = 'position:fixed;bottom:0;left:0;height:env(safe-area-inset-bottom,0px);width:1px;pointer-events:none;';
+    document.body.appendChild(divTop);
+    document.body.appendChild(divBottom);
     setTimeout(() => {
-      setMeasuredTop(div.offsetHeight + 'px');
-      document.body.removeChild(div);
+      setMeasuredTop(divTop.offsetHeight + 'px');
+      setMeasuredBottom(divBottom.offsetHeight + 'px');
+      document.body.removeChild(divTop);
+      document.body.removeChild(divBottom);
     }, 100);
   }, []);
 
-  const row = (label, value) => (
+  const row = (label, value, highlight) => (
     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
       <span style={{ color: '#aaa', fontSize: '12px' }}>{label}</span>
-      <span style={{ color: '#4ade80', fontSize: '12px', fontWeight: 'bold', maxWidth: '180px', wordBreak: 'break-all', textAlign: 'right' }}>{String(value)}</span>
+      <span style={{ color: highlight ? '#E0AD2B' : '#4ade80', fontSize: '12px', fontWeight: 'bold', maxWidth: '180px', wordBreak: 'break-all', textAlign: 'right' }}>{String(value)}</span>
     </div>
   );
 
   return (
     <div>
+      <div style={{ fontSize: '10px', color: '#E0AD2B', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '8px' }}>Top Spacing</div>
       {row('safe-area-inset-top (CSS)', vals.sat)}
-      {row('safe-area-inset-top (measured)', measuredTop)}
-      {row('viewport-fit=cover active?', vals.viewportCovers)}
-      {row('native-app class?', vals.isNativeApp)}
-      {row('system-safe-area?', vals.systemSafeArea)}
-      {row('safe-area-inset-bottom', vals.sab)}
+      {row('safe-area-inset-top (measured)', measuredTop, true)}
       {row('Header paddingTop', vals.headerPt)}
-      {row('Header offsetHeight', vals.headerH)}
-      {row('Device Pixel Ratio', vals.dpr)}
+      {row('Header total height', vals.headerH + 'px')}
+      <div style={{ height: 12 }} />
+      <div style={{ fontSize: '10px', color: '#E0AD2B', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '8px' }}>Bottom Spacing</div>
+      {row('safe-area-inset-bottom (CSS)', vals.sab)}
+      {row('safe-area-inset-bottom (measured)', measuredBottom, true)}
+      {row('Bottom Nav height', vals.bottomNavH + 'px')}
+      {row('Bottom Nav paddingBottom', vals.bottomNavPb)}
+      <div style={{ height: 12 }} />
+      <div style={{ fontSize: '10px', color: '#E0AD2B', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '8px' }}>Device</div>
+      {row('viewport-fit=cover?', vals.viewportCovers)}
+      {row('Native app?', vals.isNativeApp)}
+      {row('DPR', vals.dpr)}
       {row('Screen', `${vals.screenW}x${vals.screenH}`)}
       {row('Viewport', `${vals.innerW}x${vals.innerH}`)}
       <div style={{ marginTop: '8px', padding: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px' }}>
@@ -131,9 +148,8 @@ const MobileNav = () => {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [tapCount, setTapCount] = useState(0);
   const [showDebug, setShowDebug] = useState(false);
-  const tapTimerRef = React.useRef(null);
+  const longPressTimerRef = React.useRef(null);
 
   // Dev portal switcher (founder only)
   const [devOpen, setDevOpen] = useState(false);
@@ -206,16 +222,18 @@ const MobileNav = () => {
       if (!devOpen) fetchDevConfig();
       return;
     }
-    // Non-admin: 5-tap debug
-    const newCount = tapCount + 1;
-    setTapCount(newCount);
-    clearTimeout(tapTimerRef.current);
-    if (newCount >= 5) {
+  };
+
+  // Long press (800ms) on logo → spacing debug overlay
+  const handleLogoTouchStart = (e) => {
+    if (isAdminSession) return; // Admin uses tap for dev switcher
+    longPressTimerRef.current = setTimeout(() => {
       setShowDebug(true);
-      setTapCount(0);
-    } else {
-      tapTimerRef.current = setTimeout(() => setTapCount(0), 2000);
-    }
+      haptics.heavy && haptics.heavy();
+    }, 800);
+  };
+  const handleLogoTouchEnd = () => {
+    clearTimeout(longPressTimerRef.current);
   };
 
   const handleLogout = () => {
@@ -322,8 +340,13 @@ const MobileNav = () => {
     <>
       {/* Top Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 w-full mobile-header z-50">
-        <div className="h-14 flex items-center justify-between px-4">
-          <div className="flex items-center gap-3 relative" onTouchEnd={handleLogoTap} onClick={handleLogoTap} style={{ cursor: 'pointer', touchAction: 'manipulation' }}>
+        <div className="h-12 flex items-center justify-between px-4">
+          <div className="flex items-center gap-3 relative"
+            onTouchStart={handleLogoTouchStart}
+            onTouchEnd={handleLogoTouchEnd}
+            onTouchCancel={handleLogoTouchEnd}
+            onClick={handleLogoTap}
+            style={{ cursor: 'pointer', touchAction: 'manipulation', userSelect: 'none', WebkitUserSelect: 'none' }}>
             <img 
               src="/carryon-app-icon.jpg" 
               alt="CarryOn" 
@@ -333,9 +356,6 @@ const MobileNav = () => {
             <span className="text-[#E0AD2B] font-bold text-lg" style={{ fontFamily: 'Outfit, sans-serif', pointerEvents: 'none' }}>
               CarryOn™
             </span>
-            {tapCount > 0 && tapCount < 5 && !isAdminSession && (
-              <span style={{ position: 'absolute', top: -4, right: -8, background: '#E0AD2B', color: '#000', borderRadius: '50%', width: 18, height: 18, fontSize: 10, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{tapCount}</span>
-            )}
           </div>
 
           {/* Dev Portal Switcher — mobile, founder only */}
@@ -594,7 +614,7 @@ const MobileNav = () => {
 
       {/* Bottom Navigation */}
       <nav className="lg:hidden fixed bottom-0 left-0 w-full mobile-bottom-nav z-50 pb-safe" role="navigation" aria-label="Bottom navigation">
-        <div className="flex items-end h-16 px-1">
+        <div className="flex items-end h-14 px-1">
           {getBottomNav().map((item, index) => {
             const isCenter = item.isCenter;
             const showDivider = index < getBottomNav().length - 1;
