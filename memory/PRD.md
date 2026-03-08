@@ -83,6 +83,7 @@ Multi-tenant estate planning platform with four user roles: Benefactor, Benefici
 - **Settings Page**: Hides Notifications (Weekly Digest) and GDPR/Privacy sections for staff (admin/operator)
 - **Role-Aware Paths**: "Needs Your Attention" dashboard cards use operator-aware paths when in operatorMode
 - **Operator Access**: All Operations Portal endpoints (stats, support, DTS, TVT, verifications) now accept both admin and operator roles
+- **Operations Dashboard Work Queue Tiles**: Added 4 persistent, always-visible status tiles (TVT, DTS, Support, Verify) at the top of the Operations Dashboard. Tiles highlight with colored border/glow/pulsing badge when there's pending work, and show "All clear" when empty. Click navigates to the relevant tab. Auto-refreshes every 30s so new requests pop in for logged-in operators.
 
 ## Prioritized Backlog
 
