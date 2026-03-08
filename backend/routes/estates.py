@@ -18,9 +18,25 @@ router = APIRouter()
 async def get_estates(current_user: dict = Depends(get_current_user)):
     """List all estates for the current user."""
     if current_user["role"] == "benefactor":
+        # Return estates they OWN
         estates = await db.estates.find(
             {"owner_id": current_user["id"]}, {"_id": 0}
         ).to_list(100)
+        # Also return estates they're a BENEFICIARY of (upgraded users)
+        ben_estates = await db.estates.find(
+            {"beneficiaries": current_user["id"]}, {"_id": 0}
+        ).to_list(100)
+        owned_ids = {e["id"] for e in estates}
+        for be in ben_estates:
+            if be["id"] not in owned_ids:
+                # Enrich with benefactor photo
+                owner = await db.users.find_one(
+                    {"id": be.get("owner_id")}, {"_id": 0, "photo_url": 1}
+                )
+                if owner and owner.get("photo_url"):
+                    be["owner_photo_url"] = owner["photo_url"]
+                be["is_beneficiary_estate"] = True
+                estates.append(be)
     elif current_user["role"] == "beneficiary":
         estates = await db.estates.find(
             {"beneficiaries": current_user["id"]}, {"_id": 0}
@@ -47,18 +63,15 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
 @router.get("/beneficiary/family-connections")
 async def get_family_connections(current_user: dict = Depends(get_current_user)):
     """Get all family connections for a beneficiary with relationship data for orbit visualization"""
-    if current_user["role"] != "beneficiary":
-        raise HTTPException(
-            status_code=403, detail="Only beneficiaries can access family connections"
-        )
-
-    # Find all beneficiary records for this user (to get relationship info)
-    beneficiary_records = await db.beneficiaries.find(
+    # Allow both beneficiaries and benefactors who are also beneficiaries
+    ben_records = await db.beneficiaries.find(
         {"user_id": current_user["id"]}, {"_id": 0}
     ).to_list(100)
+    if not ben_records:
+        return []
 
     connections = []
-    for ben_record in beneficiary_records:
+    for ben_record in ben_records:
         # Get the estate
         estate = await db.estates.find_one({"id": ben_record["estate_id"]}, {"_id": 0})
         if not estate:

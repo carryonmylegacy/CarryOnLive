@@ -100,8 +100,12 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   if (allowedRoles && !allowedRoles.includes(user?.role)) {
-    // Admins can access ALL pages during development
+    // Admins can access ALL pages
     if (user?.role === 'admin') {
+      return children;
+    }
+    // Benefactors can also access beneficiary routes (they may have been a beneficiary first)
+    if (user?.role === 'benefactor' && allowedRoles.includes('beneficiary')) {
       return children;
     }
     // Redirect based on role
