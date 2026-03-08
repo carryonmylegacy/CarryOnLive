@@ -140,7 +140,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders }) => 
               </div>
             )}
           </div>
-          <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2 flex-shrink-0">
             <span
               className="text-xs px-2 py-1 rounded-md font-bold capitalize"
               style={{ background: rc.bg, color: rc.color }}
@@ -149,12 +149,11 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders }) => 
               {u.role}
             </span>
             {u.created_at && (
-              <span className="text-[10px] text-[var(--t5)]">
+              <span className="text-[10px] text-[var(--t5)] sm:text-xs">
                 {new Date(u.created_at).toLocaleDateString()}
               </span>
             )}
           </div>
-          <div className="text-xs text-[var(--t5)] hidden sm:block">{u.created_at ? new Date(u.created_at).toLocaleDateString() : ''}</div>
           {u.id !== currentUserId && (
             <div className="flex items-center gap-1 flex-shrink-0">
               {(u.role === 'benefactor' || u.role === 'beneficiary') && (
