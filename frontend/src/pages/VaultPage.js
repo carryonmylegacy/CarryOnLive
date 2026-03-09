@@ -189,7 +189,7 @@ const VaultPage = () => {
       
       // toast removed
       
-      // Show backup code if provided
+      toast.success('Document uploaded successfully');
       if (response.data.backup_code) {
         setBackupCode(response.data.backup_code);
         setShowBackupCodeModal(true);
@@ -905,9 +905,19 @@ const VaultPage = () => {
                   e.currentTarget.style.borderColor = '';
                   const file = e.dataTransfer.files[0];
                   if (file) {
-                    const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif', 'image/webp', 'image/tiff'];
-                    if (!allowed.includes(file.type)) { toast.error('Only PDFs and images accepted. No editable document formats.'); return; }
+                    const ext = file.name.split('.').pop().toLowerCase();
+                    const allowedExts = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'heif', 'webp', 'tiff', 'tif'];
+                    const allowedMimes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif', 'image/webp', 'image/tiff'];
+                    if (!allowedMimes.includes(file.type) && !allowedExts.includes(ext)) {
+                      toast.error('Only PDFs and images accepted. No editable document formats (.doc, .docx, .pages, etc.).');
+                      return;
+                    }
                     setUploadFile(file);
+                    if (!uploadName) {
+                      const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
+                      setUploadName(nameWithoutExt);
+                    }
+                    toast.success(`"${file.name}" selected — fill in details and tap Upload`);
                   }
                 }}
                 className="border-2 border-dashed border-[var(--b)] rounded-xl p-6 text-center transition-colors">
@@ -916,7 +926,16 @@ const VaultPage = () => {
                   id="file-upload"
                   className="hidden"
                   accept="application/pdf,image/jpeg,image/png,image/heic,image/heif,image/webp,image/tiff"
-                  onChange={(e) => setUploadFile(e.target.files[0])}
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      setUploadFile(file);
+                      if (!uploadName) {
+                        const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
+                        setUploadName(nameWithoutExt);
+                      }
+                    }
+                  }}
                   data-testid="upload-file-input"
                 />
                 <label htmlFor="file-upload" className="cursor-pointer">
