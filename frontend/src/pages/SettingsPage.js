@@ -55,6 +55,7 @@ const SettingsPage = () => {
   const [estatePhoto, setEstatePhoto] = useState(null);
   const [estateId, setEstateId] = useState(null);
   const [estateName, setEstateName] = useState('');
+  const [settingsReady, setSettingsReady] = useState(false);
 
   const isAdmin = user?.role === 'admin';
   const isOperator = user?.role === 'operator';
@@ -96,7 +97,7 @@ const SettingsPage = () => {
         setEstateName(owned.name || '');
         if (owned.estate_photo_url) setEstatePhoto(owned.estate_photo_url);
       }
-    }).catch(() => {});
+    }).catch(() => {}).finally(() => setSettingsReady(true));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleDigest = async (val) => {
@@ -169,14 +170,24 @@ const SettingsPage = () => {
     setExportLoading(true);
     try {
       const res = await axios.get(`${API_URL}/compliance/data-export`, getAuthHeaders());
-      const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+      const jsonStr = JSON.stringify(res.data, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
       const url = window.URL.createObjectURL(blob);
+      const filename = `carryon-data-export-${new Date().toISOString().split('T')[0]}.json`;
+
+      // iOS Safari/PWA: use a visible anchor in the DOM
       const link = document.createElement('a');
       link.href = url;
-      link.download = `carryon-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      link.download = filename;
+      link.style.display = 'none';
+      document.body.appendChild(link);
       link.click();
-      window.URL.revokeObjectURL(url);
-      // toast removed
+      // Fallback: if click didn't trigger download (iOS PWA), open in new tab
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }, 1000);
+      toast.success('Your data export is downloading');
     } catch (e) {
       toast.error(e.response?.data?.detail || e.message || 'Failed to export data');
     }
@@ -214,6 +225,14 @@ const SettingsPage = () => {
       toast.error('Could not load retention policy');
     }
   };
+
+  if (!settingsReady) {
+    return (
+      <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 max-w-4xl mx-auto flex justify-center py-12">
+        <div className="w-6 h-6 border-2 border-[var(--gold)] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in max-w-4xl mx-auto" data-testid="settings-page">
