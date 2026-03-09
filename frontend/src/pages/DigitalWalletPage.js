@@ -241,7 +241,8 @@ const WalletEntryPanel = ({ entry, beneficiaries, onClose, onSaved, getAuthHeade
   const [showPw, setShowPw] = useState(false);
 
   const handleSave = async () => {
-    if (!name || !login) { toast.error('Account name and login are required'); return; }
+    if (!name) { toast.error('Account Name is required'); return; }
+    if (!login) { toast.error('Login / Username / Email is required'); return; }
     setSaving(true);
     try {
       const data = {

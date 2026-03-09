@@ -179,10 +179,11 @@ const BeneficiariesPage = () => {
   };
 
   const handleAddOrEdit = async () => {
-    if (!firstName || !lastName || !email || !relation) {
-      toast.error('Please fill all required fields (First Name, Last Name, Email, Relationship)');
-      return;
-    }
+    if (!firstName) { toast.error('First Name is required'); return; }
+    if (!lastName) { toast.error('Last Name is required'); return; }
+    if (!email) { toast.error('Email Address is required'); return; }
+    if (email && !/\S+@\S+\.\S+/.test(email)) { toast.error('Please enter a valid email address'); return; }
+    if (!relation) { toast.error('Relationship is required'); return; }
     
     setAdding(true);
     try {

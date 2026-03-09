@@ -404,10 +404,8 @@ export default function EditMilestoneMessagePage() {
   };
 
   const handleSave = async () => {
-    if (!title || !content) {
-      toast.error('Please fill in title and message');
-      return;
-    }
+    if (!title) { toast.error('Message Title is required'); return; }
+    if (!content) { toast.error('Message Content is required'); return; }
     if (selectedRecipients.length === 0) {
       toast.error('Please select at least one recipient');
       return;

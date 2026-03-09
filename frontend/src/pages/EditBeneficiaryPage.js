@@ -175,10 +175,11 @@ export default function EditBeneficiaryPage() {
   };
 
   const handleSave = async () => {
-    if (!form.firstName || !form.lastName || !form.email || !form.relation) {
-      toast.error('Please fill all required fields (First Name, Last Name, Email, Relationship)');
-      return;
-    }
+    if (!form.firstName) { toast.error('First Name is required'); return; }
+    if (!form.lastName) { toast.error('Last Name is required'); return; }
+    if (!form.email) { toast.error('Email Address is required'); return; }
+    if (form.email && !/\S+@\S+\.\S+/.test(form.email)) { toast.error('Please enter a valid email address'); return; }
+    if (!form.relation) { toast.error('Relationship is required'); return; }
 
     setSaving(true);
     try {

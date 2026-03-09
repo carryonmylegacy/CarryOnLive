@@ -142,18 +142,16 @@ const VaultPage = () => {
   };
 
   const handleUpload = async () => {
-    if (!uploadFile || !uploadName) {
-      toast.error('Please fill all required fields');
-      return;
-    }
+    if (!uploadFile) { toast.error('Please select a file to upload'); return; }
+    if (!uploadName) { toast.error('Document Name is required'); return; }
     
     if (uploadLockType === 'password' && !uploadLockPassword) {
-      toast.error('Please set a password for the locked document');
+      toast.error('Password is required for a password-protected document');
       return;
     }
     
     if (uploadLockType === 'voice' && !uploadVoicePassphrase) {
-      toast.error('Please set a voice passphrase for voice verification');
+      toast.error('Voice passphrase is required for voice-verified documents');
       return;
     }
     
