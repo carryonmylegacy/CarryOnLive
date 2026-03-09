@@ -19,13 +19,16 @@ import { Loader2 } from 'lucide-react';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 
+// Core pages — eagerly loaded for fast navigation
+import DashboardPage from './pages/DashboardPage';
+import VaultPage from './pages/VaultPage';
+import MessagesPage from './pages/MessagesPage';
+import BeneficiariesPage from './pages/BeneficiariesPage';
+import DigitalWalletPage from './pages/DigitalWalletPage';
+
 // Lazy-loaded pages — only downloaded when navigated to
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const AcceptInvitationPage = lazy(() => import('./pages/AcceptInvitationPage'));
-const DashboardPage = lazy(() => import('./pages/DashboardPage'));
-const VaultPage = lazy(() => import('./pages/VaultPage'));
-const MessagesPage = lazy(() => import('./pages/MessagesPage'));
-const BeneficiariesPage = lazy(() => import('./pages/BeneficiariesPage'));
 const EditBeneficiaryPage = lazy(() => import('./pages/EditBeneficiaryPage'));
 const EditMilestoneMessagePage = lazy(() => import('./pages/EditMilestoneMessagePage'));
 const GuardianPage = lazy(() => import('./pages/GuardianPage'));
@@ -36,7 +39,6 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
 const SupportChatPage = lazy(() => import('./pages/SupportChatPage'));
 const SecuritySettingsPage = lazy(() => import('./pages/SecuritySettingsPage'));
-const DigitalWalletPage = lazy(() => import('./pages/DigitalWalletPage'));
 const LegacyTimelinePage = lazy(() => import('./pages/LegacyTimelinePage'));
 const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'));
 const OperationsPage = lazy(() => import('./pages/OperationsPage'));

@@ -879,6 +879,65 @@
   .slide-panel-exit {
     animation: panelSlideOut 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
+
+  /* ── SlidePanel component ── */
+  .slide-panel-root {
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+  }
+  .slide-panel-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    transition: opacity 0.25s ease;
+  }
+  .slide-panel-body {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg, #0F1629);
+    overflow: hidden;
+  }
+  .slide-panel-hdr {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--b);
+    flex-shrink: 0;
+  }
+  .slide-panel-scroll {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 20px;
+    padding-bottom: 32px;
+  }
+
+  /* Desktop: panel fills main-content area (right of sidebar) */
+  @media (min-width: 1025px) {
+    .slide-panel-root {
+      left: var(--sb-offset, var(--sidebar-width, 260px));
+    }
+  }
+
+  /* Mobile: full screen, respect header safe-area, stay under bottom nav */
+  @media (max-width: 1024px) {
+    .slide-panel-hdr {
+      padding-top: calc(12px + env(safe-area-inset-top, 0px));
+    }
+    .slide-panel-scroll {
+      padding-bottom: calc(32px + 56px + env(safe-area-inset-bottom, 8px));
+    }
+  }
   
   /* Floating Orbs - Only in dark mode */
   .floating-orb {

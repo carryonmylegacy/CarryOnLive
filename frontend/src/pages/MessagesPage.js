@@ -40,6 +40,7 @@ import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
 import { Checkbox } from '../components/ui/checkbox';
+import SlidePanel from '../components/SlidePanel';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -512,7 +513,17 @@ const MessagesPage = () => {
   };
 
   const openEdit = (msg) => {
-    navigate(`/messages/${msg.id}/edit`, { state: { message: msg } });
+    setEditingMessage(msg);
+    setTitle(msg.title || '');
+    setContent(msg.content || '');
+    setMessageType(msg.message_type || 'text');
+    setSelectedRecipients(msg.recipients || []);
+    setTriggerType(msg.trigger_type || 'immediate');
+    setTriggerValue(msg.trigger_value || '');
+    setTriggerAge(msg.trigger_age ? String(msg.trigger_age) : '');
+    setTriggerDate(msg.trigger_date || '');
+    setCustomEventLabel(msg.custom_event_label || '');
+    setShowCreateModal(true);
   };
 
   const toggleRecipient = (beneficiaryId) => {
@@ -733,19 +744,14 @@ const MessagesPage = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Create Message Modal */}
-      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-2xl max-h-[90vh] overflow-y-scroll !top-[5vh] !translate-y-0">
-          <DialogHeader>
-            <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              {editingMessage ? 'Edit Message' : 'Create Milestone Message'}
-            </DialogTitle>
-            <DialogDescription className="text-[#94a3b8]">
-              {editingMessage ? 'Update your message content and delivery settings' : 'Leave a heartfelt message for your loved ones'}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-5 py-4">
+      {/* Create/Edit Message Panel */}
+      <SlidePanel
+        open={showCreateModal}
+        onClose={() => { setShowCreateModal(false); setEditingMessage(null); resetForm(); }}
+        title={editingMessage ? 'Edit Message' : 'Create Milestone Message'}
+        subtitle={editingMessage ? 'Update your message content and delivery settings' : 'Leave a heartfelt message for your loved ones'}
+      >
+          <div className="space-y-5">
             {/* Message Type Toggle */}
             <div className="flex gap-2">
               <Button
@@ -1137,7 +1143,7 @@ const MessagesPage = () => {
             )}
           </div>
           
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-3 pt-4">
             <Button
               variant="outline"
               onClick={() => {
@@ -1168,8 +1174,7 @@ const MessagesPage = () => {
               )}
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
+      </SlidePanel>
 
       {/* Video Playback Modal */}
       {playingVideoUrl && (

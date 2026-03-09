@@ -44,6 +44,7 @@ import { SectionLockBanner, SectionLockedOverlay } from '../components/security/
 import { Skeleton } from '../components/ui/skeleton';
 import DocThumbnail from '../components/DocThumbnail';
 import { ReturnPopup } from '../components/GuidedActivation';
+import SlidePanel from '../components/SlidePanel';
 const PDFViewerModal = lazy(() => import('../components/PDFViewerModal'));
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -803,17 +804,13 @@ const VaultPage = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Upload Modal */}
-      <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md !top-[5vh] !translate-y-0 max-h-[85vh] overflow-y-auto overflow-x-hidden w-[calc(100vw-2rem)]">
-          <DialogHeader>
-            <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              Upload Document
-            </DialogTitle>
-            <DialogDescription className="text-[#94a3b8]">
-              Add a new document to your secure vault
-            </DialogDescription>
-          </DialogHeader>
+      {/* Upload Document Panel */}
+      <SlidePanel
+        open={showUploadModal}
+        onClose={() => { setShowUploadModal(false); resetUploadForm(); }}
+        title="Upload Document"
+        subtitle="Add a new document to your secure vault"
+      >
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -948,7 +945,7 @@ const VaultPage = () => {
             </div>
           </div>
           
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-3 pt-4">
             <Button
               variant="outline"
               onClick={() => {
@@ -978,8 +975,7 @@ const VaultPage = () => {
               )}
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
+      </SlidePanel>
 
       {/* Lock Modal */}
       <Dialog open={showLockModal} onOpenChange={(open) => {
@@ -1233,26 +1229,13 @@ const VaultPage = () => {
         </Suspense>
       )}
 
-      {/* Edit Document Modal */}
-      <Dialog open={showEditModal} onOpenChange={(open) => {
-        setShowEditModal(open);
-        if (!open) {
-          setEditingDoc(null);
-          setEditName('');
-          setEditCategory('legal');
-          setEditNotes('');
-        }
-      }}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md !top-[5vh] !translate-y-0 max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-white text-xl flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              <Edit2 className="w-5 h-5 text-[#d4af37]" />
-              Edit Document
-            </DialogTitle>
-            <DialogDescription className="text-[#94a3b8]">
-              Update the document metadata
-            </DialogDescription>
-          </DialogHeader>
+      {/* Edit Document Panel */}
+      <SlidePanel
+        open={showEditModal}
+        onClose={() => { setShowEditModal(false); setEditingDoc(null); setEditName(''); setEditCategory('legal'); setEditNotes(''); }}
+        title="Edit Document"
+        subtitle="Update the document metadata"
+      >
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -1307,7 +1290,7 @@ const VaultPage = () => {
             )}
           </div>
           
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-3 pt-4">
             <Button
               variant="outline"
               onClick={() => setShowEditModal(false)}
@@ -1334,8 +1317,7 @@ const VaultPage = () => {
               )}
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
+      </SlidePanel>
 
       {/* Set Lock Modal */}
       <Dialog open={showSetLockModal} onOpenChange={(open) => { setShowSetLockModal(open); if (!open) { setNewLockPassword(''); setConfirmLockPassword(''); setShowPwEye(false); } }}>

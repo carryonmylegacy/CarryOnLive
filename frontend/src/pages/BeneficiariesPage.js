@@ -40,6 +40,7 @@ import { Skeleton } from '../components/ui/skeleton';
 import { PhotoPicker } from '../components/PhotoPicker';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import DateMaskInput from '../components/DateMaskInput';
+import SlidePanel from '../components/SlidePanel';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -228,7 +229,27 @@ const BeneficiariesPage = () => {
   };
 
   const openEditModal = (ben) => {
-    navigate(`/beneficiaries/${ben.id}/edit`, { state: { beneficiary: ben } });
+    setEditingBeneficiary(ben);
+    setFirstName(ben.first_name || ben.name?.split(' ')[0] || '');
+    setMiddleName(ben.middle_name || '');
+    setLastName(ben.last_name || ben.name?.split(' ').slice(-1)[0] || '');
+    setSuffix(ben.suffix || '');
+    setEmail(ben.email || '');
+    setPhone(ben.phone ? ben.phone.replace('+1', '') : '');
+    setRelation(ben.relation || '');
+    setDateOfBirth(ben.date_of_birth || '');
+    setGender(ben.gender || '');
+    setAddressStreet(ben.address_street || '');
+    setAddressCity(ben.address_city || '');
+    setAddressState(ben.address_state || '');
+    setAddressZip(ben.address_zip || '');
+    setAddressLine2(ben.address_line2 || '');
+    setSsnLastFour(ben.ssn_last_four || '');
+    setNotes(ben.notes || '');
+    setAvatarColor(ben.avatar_color || avatarColors[0]);
+    setPhotoPreview(ben.photo_url || null);
+    setPhotoFile(null);
+    setShowAddModal(true);
   };
 
   const handleSendInvitation = async (beneficiaryId) => {
@@ -657,23 +678,13 @@ const BeneficiariesPage = () => {
         </div>
       )}
 
-      {/* Add/Edit Beneficiary Modal - Enhanced */}
-      <Dialog open={showAddModal} onOpenChange={(open) => {
-        setShowAddModal(open);
-        if (!open) {
-          setEditingBeneficiary(null);
-          resetForm();
-        }
-      }}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-2xl max-h-[90vh] overflow-y-scroll !top-[5vh] !translate-y-0">
-          <DialogHeader>
-            <DialogTitle className="text-[var(--t)] text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              {editingBeneficiary ? 'Edit Beneficiary' : 'Add Beneficiary'}
-            </DialogTitle>
-            <DialogDescription className="text-[#94a3b8]">
-              {editingBeneficiary ? 'Update the details for this beneficiary' : 'Add a family member or loved one to your estate plan'}
-            </DialogDescription>
-          </DialogHeader>
+      {/* Add/Edit Beneficiary Panel */}
+      <SlidePanel
+        open={showAddModal}
+        onClose={() => { setShowAddModal(false); setEditingBeneficiary(null); resetForm(); }}
+        title={editingBeneficiary ? 'Edit Beneficiary' : 'Add Beneficiary'}
+        subtitle={editingBeneficiary ? 'Update the details for this beneficiary' : 'Add a family member or loved one to your estate plan'}
+      >
           
           <div className="space-y-6 py-4">
             {/* Avatar Preview — click to pick/crop photo */}
@@ -960,8 +971,7 @@ const BeneficiariesPage = () => {
               )}
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
+      </SlidePanel>
 
       {/* Access Requests Section */}
       {accessRequests.length > 0 && (
