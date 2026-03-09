@@ -1,6 +1,7 @@
 """CarryOn™ Backend — Authentication Routes"""
 
 import os
+import random
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -948,6 +949,91 @@ async def change_password(
     )
 
     return {"message": "Password changed successfully"}
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    email: str
+    otp: str
+    new_password: str
+
+
+@router.post("/auth/forgot-password")
+async def forgot_password(data: ForgotPasswordRequest):
+    """Send a password reset OTP to the user's email."""
+    email = data.email.lower().strip()
+    user = await db.users.find_one({"email": email}, {"_id": 0, "id": 1, "name": 1})
+    # Always return success to prevent email enumeration
+    if not user:
+        return {"message": "If that email exists, a reset code has been sent."}
+
+    otp = f"{random.randint(0, 999999):06d}"
+    await db.otp_codes.insert_one(
+        {
+            "email": email,
+            "code": otp,
+            "purpose": "password_reset",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "expires_at": (
+                datetime.now(timezone.utc) + timedelta(minutes=10)
+            ).isoformat(),
+        }
+    )
+
+    first_name = (user.get("name") or "").split()[0] or "there"
+    await send_otp_email(email, otp, first_name)
+    return {"message": "If that email exists, a reset code has been sent."}
+
+
+@router.post("/auth/reset-password")
+async def reset_password(data: ResetPasswordRequest):
+    """Verify OTP and set new password."""
+    email = data.email.lower().strip()
+
+    if len(data.new_password) < 8:
+        raise HTTPException(
+            status_code=400, detail="Password must be at least 8 characters"
+        )
+
+    # Find valid OTP
+    otp_doc = await db.otp_codes.find_one(
+        {"email": email, "code": data.otp, "purpose": "password_reset"},
+        {"_id": 0},
+        sort=[("created_at", -1)],
+    )
+    if not otp_doc:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset code")
+
+    # Check expiry
+    try:
+        expires = datetime.fromisoformat(otp_doc["expires_at"].replace("Z", "+00:00"))
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) > expires:
+            raise HTTPException(
+                status_code=400,
+                detail="Reset code has expired. Please request a new one.",
+            )
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid reset code")
+
+    # Update password
+    user = await db.users.find_one({"email": email}, {"_id": 0, "id": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="Account not found")
+
+    new_hash = hash_password(data.new_password)
+    await db.users.update_one({"id": user["id"]}, {"$set": {"password": new_hash}})
+
+    # Clean up OTP
+    await db.otp_codes.delete_many({"email": email, "purpose": "password_reset"})
+
+    return {
+        "message": "Password reset successfully. You can now log in with your new password."
+    }
 
 
 class DevSwitchRequest(BaseModel):
