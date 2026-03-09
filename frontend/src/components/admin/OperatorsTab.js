@@ -198,7 +198,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
 
       {/* Create Operator Dialog */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="glass-card max-w-md max-h-[85vh] overflow-y-auto">
+        <DialogContent className="glass-card max-w-md">
           <DialogHeader>
             <DialogTitle className="text-[var(--t)]">
               Create {form.operator_role === 'manager' ? 'Manager' : 'Team Member'} Account
@@ -262,7 +262,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
 
       {/* Edit Operator Dialog */}
       <Dialog open={!!editTarget} onOpenChange={(open) => { if (!open) setEditTarget(null); }}>
-        <DialogContent className="glass-card max-w-md max-h-[85vh] overflow-y-auto">
+        <DialogContent className="glass-card max-w-md">
           <DialogHeader>
             <DialogTitle className="text-[var(--t)]">Edit Operator — {editTarget?.name}</DialogTitle>
           </DialogHeader>

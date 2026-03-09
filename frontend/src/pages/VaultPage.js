@@ -805,7 +805,7 @@ const VaultPage = () => {
 
       {/* Upload Modal */}
       <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md !top-[5vh] !translate-y-0 max-h-[85vh] overflow-y-auto overflow-x-hidden w-[calc(100vw-2rem)]">
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md w-[calc(100vw-2rem)]">
           <DialogHeader>
             <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Upload Document
@@ -994,7 +994,7 @@ const VaultPage = () => {
           }
         }
       }}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md !top-[5vh] !translate-y-0 max-h-[85vh] overflow-y-auto">
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Unlock Document
@@ -1174,7 +1174,7 @@ const VaultPage = () => {
 
       {/* Backup Code Modal */}
       <Dialog open={showBackupCodeModal} onOpenChange={setShowBackupCodeModal}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md !top-[5vh] !translate-y-0">
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-white text-xl flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
               <Key className="w-5 h-5 text-[#d4af37]" />
@@ -1243,7 +1243,7 @@ const VaultPage = () => {
           setEditNotes('');
         }
       }}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md !top-[5vh] !translate-y-0 max-h-[90vh] overflow-y-auto">
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-white text-xl flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
               <Edit2 className="w-5 h-5 text-[#d4af37]" />
@@ -1339,7 +1339,7 @@ const VaultPage = () => {
 
       {/* Set Lock Modal */}
       <Dialog open={showSetLockModal} onOpenChange={(open) => { setShowSetLockModal(open); if (!open) { setNewLockPassword(''); setConfirmLockPassword(''); setShowPwEye(false); } }}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-sm !top-[10vh] !translate-y-0">
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-white text-lg flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
               <Lock className="w-5 h-5 text-[#ef4444]" />

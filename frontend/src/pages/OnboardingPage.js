@@ -272,7 +272,7 @@ const OnboardingPage = () => {
 
       {/* Add Beneficiary Modal */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-lg max-h-[85vh] overflow-y-scroll !top-[5vh] !translate-y-0">
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-white text-xl flex items-center gap-2">
               <UserPlus className="w-5 h-5 text-[#d4af37]" />

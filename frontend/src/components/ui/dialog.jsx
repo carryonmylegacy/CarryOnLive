@@ -4,8 +4,7 @@ import { X } from "lucide-react"
 
 import { cn } from "../../lib/utils"
 
-// Wrap Dialog to always use modal={false} — bypasses react-remove-scroll
-// which causes scroll lock on iOS PWA
+// Use modal={false} to bypass react-remove-scroll (iOS PWA scroll lock)
 const Dialog = React.forwardRef(({ children, ...props }, ref) => (
   <DialogPrimitive.Root {...props} modal={false}>
     {children}
@@ -19,7 +18,6 @@ const DialogPortal = DialogPrimitive.Portal
 
 const DialogClose = DialogPrimitive.Close
 
-// Custom overlay — since modal={false} disables Radix's overlay
 const DialogOverlay = React.forwardRef(({ className, ...props }, ref) => (
   <div
     ref={ref}
@@ -31,28 +29,35 @@ const DialogOverlay = React.forwardRef(({ className, ...props }, ref) => (
 ))
 DialogOverlay.displayName = "DialogOverlay"
 
+// iOS PWA fix: The dialog card sits inside a full-screen scrollable wrapper.
+// iOS can scroll a full-screen fixed element (inset-0 + overflow-y-auto),
+// but CANNOT scroll a smaller fixed element (top-5vh + max-h-90vh + overflow-y-scroll).
 const DialogContent = React.forwardRef(({ className, children, onOpenAutoFocus, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      onOpenAutoFocus={(e) => {
-        // Prevent focus steal which can cause scroll jump on iOS
-        e.preventDefault();
-        if (onOpenAutoFocus) onOpenAutoFocus(e);
-      }}
-      className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg",
-        className
-      )}
-      {...props}>
-      {children}
-      <DialogPrimitive.Close
-        className="absolute right-4 top-4 w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] transition-transform active:scale-90 focus:outline-none">
-        <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
-      </DialogPrimitive.Close>
-    </DialogPrimitive.Content>
+    {/* Full-screen scrollable wrapper — this is what iOS actually scrolls */}
+    <div className="fixed inset-0 z-50 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className="min-h-full flex items-start justify-center py-[5vh] px-4 sm:px-0">
+        <DialogPrimitive.Content
+          ref={ref}
+          onOpenAutoFocus={(e) => {
+            e.preventDefault();
+            if (onOpenAutoFocus) onOpenAutoFocus(e);
+          }}
+          className={cn(
+            "relative z-50 w-full max-w-lg gap-4 border bg-background p-6 shadow-lg sm:rounded-lg",
+            className
+          )}
+          {...props}>
+          {children}
+          <DialogPrimitive.Close
+            className="absolute right-4 top-4 w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] transition-transform active:scale-90 focus:outline-none">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </DialogPrimitive.Close>
+        </DialogPrimitive.Content>
+      </div>
+    </div>
   </DialogPortal>
 ))
 DialogContent.displayName = DialogPrimitive.Content.displayName
