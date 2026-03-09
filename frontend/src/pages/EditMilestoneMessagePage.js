@@ -32,6 +32,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Skeleton } from '../components/ui/skeleton';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from '../utils/toast';
+import { cachedGet } from '../utils/apiCache';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -101,7 +102,7 @@ export default function EditMilestoneMessagePage() {
   useEffect(() => {
     const fetchMessageData = async () => {
       try {
-        const estatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders());
+        const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
         const estateId = estatesRes.data?.[0]?.id;
         if (!estateId) {
           toast.error('Estate not found');

@@ -9,6 +9,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { toast } from '../utils/toast';
+import { cachedGet } from '../utils/apiCache';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
 import AddressAutocomplete from '../components/AddressAutocomplete';
@@ -104,7 +105,7 @@ export default function EditBeneficiaryPage() {
   useEffect(() => {
     const fetchBeneficiary = async () => {
       try {
-        const estatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders());
+        const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
         const estateId = estatesRes.data?.[0]?.id;
         if (!estateId) {
           toast.error('Estate not found');

@@ -59,7 +59,7 @@ const DashboardPage = () => {
 
   const fetchEstates = async () => {
     try {
-      const response = await axios.get(`${API_URL}/estates`, getAuthHeaders());
+      const response = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
       setEstates(response.data);
       if (response.data.length > 0) {
         const savedEstateId = localStorage.getItem('selected_estate_id');

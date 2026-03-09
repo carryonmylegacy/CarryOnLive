@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { cachedGet } from '../utils/apiCache';
 import { useAuth } from '../contexts/AuthContext';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -309,7 +310,7 @@ const TrusteePage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const estatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders());
+        const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
         if (estatesRes.data.length > 0) {
           const eid = localStorage.getItem('selected_estate_id') || estatesRes.data[0].id;
           setEstateId(eid);

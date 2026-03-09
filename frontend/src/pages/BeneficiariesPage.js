@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import { cachedGet } from '../utils/apiCache';
 import { ReturnPopup } from '../components/GuidedActivation';
 import {
   Users,
@@ -118,7 +119,7 @@ const BeneficiariesPage = () => {
 
   const fetchData = async () => {
     try {
-      const estatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders());
+      const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
       if (estatesRes.data.length > 0) {
         setEstate(estatesRes.data[0]);
         const [bensRes, requestsRes, permsRes] = await Promise.all([

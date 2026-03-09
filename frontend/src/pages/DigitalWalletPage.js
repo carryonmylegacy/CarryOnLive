@@ -12,6 +12,7 @@ import { SectionLockBanner, SectionLockedOverlay } from '../components/security/
 import { ReturnPopup } from '../components/GuidedActivation';
 import SlidePanel from '../components/SlidePanel';
 import axios from 'axios';
+import { cachedGet } from '../utils/apiCache';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -43,7 +44,7 @@ const DigitalWalletPage = () => {
     try {
       const headers = getAuthHeaders()?.headers;
       if (!headers) { setLoading(false); return; }
-      const estatesRes = await axios.get(`${API_URL}/estates`, { headers });
+      const estatesRes = await cachedGet(axios, `${API_URL}/estates`, { headers });
       if (estatesRes.data.length > 0) {
         const eid = estatesRes.data[0].id;
         setEstateId(eid);

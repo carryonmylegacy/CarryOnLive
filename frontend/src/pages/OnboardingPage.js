@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
+import { cachedGet } from '../utils/apiCache';
 import {
   Users, Plus, ArrowRight, Loader2, CheckCircle, UserPlus,
   Mail, Phone, Calendar, MapPin, ChevronDown, ChevronUp, X
@@ -63,7 +64,7 @@ const OnboardingPage = () => {
 
   const fetchData = async () => {
     try {
-      const estatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders());
+      const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
       if (estatesRes.data.length > 0) {
         setEstate(estatesRes.data[0]);
         const bensRes = await axios.get(`${API_URL}/beneficiaries/${estatesRes.data[0].id}`, getAuthHeaders());

@@ -929,10 +929,13 @@
     }
   }
 
-  /* Mobile: full screen, respect header safe-area, stay under bottom nav */
+  /* Mobile: full screen, panel body starts below the fixed mobile header, stays under bottom nav */
   @media (max-width: 1024px) {
+    .slide-panel-body {
+      top: calc(48px + env(safe-area-inset-top, 0px));
+    }
     .slide-panel-hdr {
-      padding-top: calc(12px + env(safe-area-inset-top, 0px));
+      padding-top: 12px;
     }
     .slide-panel-scroll {
       padding-bottom: calc(32px + 56px + env(safe-area-inset-bottom, 8px));

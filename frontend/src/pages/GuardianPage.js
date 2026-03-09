@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { cachedGet } from '../utils/apiCache';
 import { useAuth } from '../contexts/AuthContext';
 import { ReturnPopup } from '../components/GuidedActivation';
 import {
@@ -267,7 +268,7 @@ const GuardianPage = () => {
 
   const fetchEstate = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_URL}/estates`, getAuthHeaders());
+      const res = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
       if (res.data.length > 0) {
         const savedId = localStorage.getItem('selected_estate_id');
         const estate = res.data.find(e => e.id === savedId) || res.data[0];
@@ -371,7 +372,7 @@ const GuardianPage = () => {
     setExporting(true);
     try {
       const headers = getAuthHeaders()?.headers;
-      const estatesRes = await axios.get(`${API_URL}/estates`, { headers });
+      const estatesRes = await cachedGet(axios, `${API_URL}/estates`, { headers });
       if (!estatesRes.data.length) { toast.error('No estate found'); setExporting(false); return; }
       const eId = estatesRes.data[0].id;
       const res = await axios.get(`${API_URL}/estate/${eId}/export-pdf`, { headers, responseType: 'blob' });

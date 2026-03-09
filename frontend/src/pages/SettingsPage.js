@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import axios from 'axios';
+import { cachedGet } from '../utils/apiCache';
 import {
   Moon,
   Sun,
@@ -99,7 +100,7 @@ const SettingsPage = () => {
       if (res.data.photo_url) setProfilePhoto(res.data.photo_url);
     }).catch(() => {});
     // Fetch estate photo (benefactors only)
-    axios.get(`${API_URL}/estates`, getAuthHeaders()).then(res => {
+    cachedGet(axios, `${API_URL}/estates`, getAuthHeaders()).then(res => {
       const estates = res.data || [];
       const owned = estates.find(e => !e.is_beneficiary_estate);
       if (owned) {

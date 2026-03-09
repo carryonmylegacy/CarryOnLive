@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { cachedGet } from '../utils/apiCache';
 import { useAuth } from '../contexts/AuthContext';
 import { ReturnPopup } from '../components/GuidedActivation';
 import {
@@ -102,7 +103,7 @@ const ChecklistPage = () => {
 
   const fetchData = async () => {
     try {
-      const estatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders());
+      const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
       if (estatesRes.data.length > 0) {
         setEstate(estatesRes.data[0]);
         const checklistRes = await axios.get(`${API_URL}/checklists/${estatesRes.data[0].id}`, getAuthHeaders());

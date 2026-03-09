@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import { cachedGet } from '../utils/apiCache';
 import {
   FileText,
   Upload,
@@ -126,7 +127,7 @@ const VaultPage = () => {
 
   const fetchData = async () => {
     try {
-      const estatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders());
+      const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
       const estates = Array.isArray(estatesRes.data) ? estatesRes.data : [];
       if (estates.length > 0) {
         setEstate(estates[0]);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { cachedGet } from '../utils/apiCache';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Clock, FileText, Users, MessageSquare, CheckCircle2,
@@ -134,7 +135,7 @@ const LegacyTimelinePage = () => {
         
         // If no estate selected, fetch estates and pick the first one
         if (!estateId) {
-          const estatesRes = await axios.get(`${API_URL}/estates`, {
+          const estatesRes = await cachedGet(axios, `${API_URL}/estates`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           const estates = estatesRes.data || [];

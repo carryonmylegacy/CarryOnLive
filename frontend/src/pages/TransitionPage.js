@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { cachedGet } from '../utils/apiCache';
 import { useAuth } from '../contexts/AuthContext';
 import {
   FileKey,
@@ -35,7 +36,7 @@ const TransitionPage = () => {
 
   const fetchData = async () => {
     try {
-      const estatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders());
+      const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
       if (estatesRes.data.length > 0) {
         setEstate(estatesRes.data[0]);
         const statusRes = await axios.get(`${API_URL}/transition/status/${estatesRes.data[0].id}`, getAuthHeaders());
