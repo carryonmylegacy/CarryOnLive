@@ -527,7 +527,11 @@ export default function SubscriptionPaywall({ onDismiss }) {
 
                   {plan.ben_price !== undefined && (
                     <p className="text-sm font-bold text-[var(--t4)] mb-4">
-                      Beneficiary: <span className="text-[var(--t3)]">${plan.ben_price.toFixed(2)}/mo</span>
+                      Beneficiary: <span className="text-[var(--t3)]">${(
+                        billing === 'annual' ? plan.ben_price * 0.8
+                        : billing === 'quarterly' ? plan.ben_price * 0.9
+                        : plan.ben_price
+                      ).toFixed(2)}/mo</span>
                     </p>
                   )}
 
