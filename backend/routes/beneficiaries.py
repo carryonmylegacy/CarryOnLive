@@ -784,7 +784,9 @@ async def accept_invitation(data: AcceptInvitationRequest):
         )
 
     # Check if email already has an account
-    existing_user = await db.users.find_one({"email": beneficiary["email"]}, {"_id": 0})
+    existing_user = await db.users.find_one(
+        {"email": beneficiary["email"].lower().strip()}, {"_id": 0}
+    )
     if existing_user:
         # Link existing account to this beneficiary record
         await db.beneficiaries.update_one(
@@ -830,7 +832,7 @@ async def accept_invitation(data: AcceptInvitationRequest):
 
     new_user = {
         "id": user_id,
-        "email": beneficiary["email"],
+        "email": beneficiary["email"].lower().strip(),
         "password": hash_password(data.password),
         "name": full_name,
         "first_name": beneficiary["first_name"],

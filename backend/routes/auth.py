@@ -105,7 +105,7 @@ async def login(data: UserLogin, request: Request):
             detail="Account temporarily locked due to too many failed attempts. Please try again in 15 minutes.",
         )
 
-    user = await db.users.find_one({"email": data.email}, {"_id": 0})
+    user = await db.users.find_one({"email": data.email.lower().strip()}, {"_id": 0})
     if not user or not verify_password(data.password, user["password"]):
         # Record failed attempt
         await db.failed_logins.insert_one(
