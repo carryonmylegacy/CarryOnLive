@@ -54,38 +54,3 @@ async def daily_dob_check_scheduler():
         except Exception as e:
             logger.error(f"DOB lifecycle check failed: {e}")
         await asyncio.sleep(86400)  # Run daily
-
-
-async def health_alert_scheduler():
-    """Check for error spikes every 15 minutes and alert founder if threshold exceeded."""
-    from datetime import datetime, timedelta, timezone
-
-    await asyncio.sleep(120)  # Wait 2 min after startup
-    ERROR_THRESHOLD = 20  # Alert if more than 20 errors in 15 minutes
-
-    while True:
-        try:
-            from config import db
-
-            now = datetime.now(timezone.utc)
-            window_start = (now - timedelta(minutes=15)).isoformat()
-
-            error_count = await db.client_errors.count_documents(
-                {"created_at": {"$gte": window_start}}
-            )
-
-            if error_count >= ERROR_THRESHOLD:
-                from services.notifications import notify
-
-                await notify.founder(
-                    "System Health Alert",
-                    f"{error_count} client errors in the last 15 minutes. This may indicate a platform issue requiring attention.",
-                    url="/admin/system-health",
-                    priority="high",
-                )
-                logger.warning(
-                    f"Health alert: {error_count} errors in 15min (threshold: {ERROR_THRESHOLD})"
-                )
-        except Exception as e:
-            logger.error(f"Health alert check failed: {e}")
-        await asyncio.sleep(900)  # Check every 15 minutes

@@ -1,6 +1,5 @@
 """Checkout, plan changes, webhooks, and admin subscription settings."""
 
-import asyncio
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -439,16 +438,6 @@ async def stripe_webhook(request: Any):
                             "updated_at": datetime.now(timezone.utc).isoformat(),
                         }
                     },
-                )
-                # NOTIFICATION: Payment received → founder
-                from services.notifications import notify
-
-                asyncio.create_task(
-                    notify.founder(
-                        "Subscription Payment Received",
-                        f"Payment confirmed for session {event.session_id[:12]}...",
-                        url="/admin/subscriptions",
-                    )
                 )
 
         return {"received": True}
