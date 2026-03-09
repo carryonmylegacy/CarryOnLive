@@ -10,7 +10,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-export const TransitionTab = ({ getAuthHeaders }) => {
+export const TransitionTab = ({ getAuthHeaders, onStatsChange }) => {
   const { user } = useAuth();
   const isFounder = user?.role === 'admin' && !window.location.pathname.startsWith('/ops');
   const [certificates, setCertificates] = useState([]);
@@ -81,8 +81,8 @@ export const TransitionTab = ({ getAuthHeaders }) => {
     setActionLoading(certId);
     try {
       await axios.post(`${API_URL}/transition/approve/${certId}`, {}, getAuthHeaders());
-      // toast removed
       fetchCertificates();
+      if (onStatsChange) onStatsChange();
     } catch (err) { toast.error('Failed to approve'); }
     finally { setActionLoading(null); }
   };
@@ -92,8 +92,8 @@ export const TransitionTab = ({ getAuthHeaders }) => {
     setActionLoading(certId);
     try {
       await axios.post(`${API_URL}/transition/reject/${certId}`, {}, getAuthHeaders());
-      // toast removed
       fetchCertificates();
+      if (onStatsChange) onStatsChange();
     } catch (err) { toast.error('Failed to reject'); }
     finally { setActionLoading(null); }
   };
@@ -114,6 +114,7 @@ export const TransitionTab = ({ getAuthHeaders }) => {
       setDeleteTarget(null);
       setDeletePassword('');
       fetchCertificates();
+      if (onStatsChange) onStatsChange();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to delete');
     } finally { setDeleteLoading(false); }

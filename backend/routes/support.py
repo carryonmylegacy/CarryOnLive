@@ -98,7 +98,7 @@ async def send_support_message(
             )
         )
         asyncio.create_task(
-            notify.all_staff(
+            notify.p4_alert(
                 "New Support Message",
                 f"{current_user.get('name', 'User')}: {data.content[:80]}",
                 url="/ops/support",

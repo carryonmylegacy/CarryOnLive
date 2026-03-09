@@ -203,8 +203,41 @@ class _Notify:
         await send_security_alert(user_id, title, body, url, metadata)
 
     async def all_staff_security(self, title, body, url="/admin", metadata=None):
+        """P1 Alert — Amber Alert to ALL staff (buried alive, emergency contact)"""
         await send_to_all_staff(
             title, body, url, "security_alert", "critical", "security-alert", metadata
+        )
+
+    async def p2_alert(self, title, body, url="/ops", metadata=None):
+        """P2 Alert — All staff (Founder + Managers + Team Members). No Amber Alert."""
+        await send_to_all_staff(
+            title, body, url, "p2_alert", "high", "p2-alert", metadata
+        )
+
+    async def p3_alert(self, title, body, url="/ops", metadata=None):
+        """P3 Alert — Operators only (Managers + Team Members). Not founder."""
+        await send_to_role(
+            "operator",
+            title,
+            body,
+            url,
+            "p3_alert",
+            "normal",
+            "p3-alert",
+            metadata=metadata,
+        )
+
+    async def p4_alert(self, title, body, url="/ops", metadata=None):
+        """P4 Alert — Operators only (Managers + Team Members). Routine work items."""
+        await send_to_role(
+            "operator",
+            title,
+            body,
+            url,
+            "p4_alert",
+            "normal",
+            "p4-alert",
+            metadata=metadata,
         )
 
 

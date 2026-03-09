@@ -75,10 +75,10 @@ async def upload_death_certificate(
                     },
                 )
             )
-        # Amber Alert to ALL staff (critical security alert — triggers full-screen overlay)
+        # P2 Alert to ALL staff — new TVT request (no Amber Alert)
         asyncio.create_task(
-            notify.all_staff_security(
-                "Death Certificate Uploaded",
+            notify.p2_alert(
+                "New TVT Request",
                 f"A death certificate has been uploaded for estate '{estate_name}'. TVT review required.",
                 url="/ops/transition",
                 metadata={
@@ -531,12 +531,11 @@ async def report_milestone(
         import asyncio
 
         asyncio.create_task(
-            notify.all_staff(
+            notify.p3_alert(
                 "Milestone Review Required",
                 f"{current_user.get('name', 'Beneficiary')} reported a milestone ({data.event_type}). "
-                f"{len(unique_messages)} matching message(s) found — worker review required before delivery.",
+                f"{len(unique_messages)} matching message(s) found — review required before delivery.",
                 url="/ops/milestones",
-                priority="normal",
                 metadata={
                     "report_id": report.id,
                     "event_type": data.event_type,

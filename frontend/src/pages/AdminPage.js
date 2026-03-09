@@ -167,6 +167,13 @@ const AdminPage = ({ operatorMode = false }) => {
     fetchData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const refreshStats = async () => {
+    try {
+      const statsRes = await axios.get(`${API_URL}/admin/stats`, getAuthHeaders());
+      setStats(statsRes.data);
+    } catch {}
+  };
+
   const toggleOtp = async () => {
     const newVal = !otpDisabled;
     setOtpDisabled(newVal);
@@ -440,7 +447,7 @@ const AdminPage = ({ operatorMode = false }) => {
 
       {/* Tab Content */}
       {tab === 'users' && <UsersTab users={users} setUsers={setUsers} currentUserId={user?.id} getAuthHeaders={getAuthHeaders} operatorMode={operatorMode} />}
-      {tab === 'transition' && <TransitionTab getAuthHeaders={getAuthHeaders} />}
+      {tab === 'transition' && <TransitionTab getAuthHeaders={getAuthHeaders} onStatsChange={refreshStats} />}
       {tab === 'dts' && <DTSTab getAuthHeaders={getAuthHeaders} />}
       {tab === 'support' && <SupportTab getAuthHeaders={getAuthHeaders} />}
       {tab === 'subscriptions' && <SubscriptionsTab getAuthHeaders={getAuthHeaders} users={users} />}

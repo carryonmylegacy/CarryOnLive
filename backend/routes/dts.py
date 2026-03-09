@@ -82,15 +82,14 @@ async def create_dts_task(
         f"DTS request: {data.title}",
     )
 
-    # NOTIFICATION: New DTS request → all staff
+    # P4 Alert: New DTS request → Ops Manager + Team Members
     from services.notifications import notify
 
     asyncio.create_task(
-        notify.all_staff(
+        notify.p4_alert(
             "New DTS Request",
             f"New DTS task from {current_user['name']}: {data.title}",
             url="/ops/dts",
-            priority="normal",
             metadata={"task_id": task["id"], "estate_id": data.estate_id},
         )
     )
