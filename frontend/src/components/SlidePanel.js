@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ArrowLeft } from 'lucide-react';
 
 /**
@@ -7,10 +7,13 @@ import { ArrowLeft } from 'lucide-react';
  * Desktop (≥1025px):  fills the full main-content area (right of sidebar).
  * Mobile  (<1025px):  full-screen, respects header safe-area, slides UNDER
  *                      the floating bottom nav (z-index 45 < nav's 50).
+ *                      Swipe right-to-left to dismiss.
  */
 export default function SlidePanel({ open, onClose, title, subtitle, children }) {
   const [mounted, setMounted] = useState(false);
   const [closing, setClosing] = useState(false);
+  const panelRef = useRef(null);
+  const touchRef = useRef({ startX: 0, startY: 0, dx: 0, swiping: false });
 
   useEffect(() => {
     if (open) {
@@ -39,6 +42,58 @@ export default function SlidePanel({ open, onClose, title, subtitle, children })
     return () => window.removeEventListener('keydown', onKey);
   }, [mounted, handleClose]);
 
+  // ── Swipe-to-dismiss (mobile only) ──
+  const onTouchStart = useCallback((e) => {
+    if (window.innerWidth >= 1025) return;
+    const t = e.touches[0];
+    touchRef.current = { startX: t.clientX, startY: t.clientY, dx: 0, swiping: false };
+  }, []);
+
+  const onTouchMove = useCallback((e) => {
+    if (window.innerWidth >= 1025) return;
+    const ref = touchRef.current;
+    const t = e.touches[0];
+    const dx = t.clientX - ref.startX;
+    const dy = Math.abs(t.clientY - ref.startY);
+
+    // Only start swiping if horizontal movement dominates and is rightward
+    if (!ref.swiping && dx > 10 && dx > dy) {
+      ref.swiping = true;
+    }
+    if (!ref.swiping || dx <= 0) return;
+
+    ref.dx = dx;
+    if (panelRef.current) {
+      panelRef.current.style.transform = `translateX(${dx}px)`;
+      panelRef.current.style.transition = 'none';
+    }
+  }, []);
+
+  const onTouchEnd = useCallback(() => {
+    if (window.innerWidth >= 1025) return;
+    const ref = touchRef.current;
+    const el = panelRef.current;
+    if (!el) return;
+
+    if (ref.swiping && ref.dx > 120) {
+      // Swipe far enough → dismiss
+      el.style.transition = 'transform 0.2s ease-out';
+      el.style.transform = 'translateX(100%)';
+      setTimeout(() => {
+        el.style.transform = '';
+        el.style.transition = '';
+        setMounted(false);
+        onClose();
+      }, 200);
+    } else {
+      // Snap back
+      el.style.transition = 'transform 0.2s ease-out';
+      el.style.transform = 'translateX(0)';
+      setTimeout(() => { el.style.transition = ''; }, 200);
+    }
+    touchRef.current = { startX: 0, startY: 0, dx: 0, swiping: false };
+  }, [onClose]);
+
   if (!mounted) return null;
 
   const isCollapsed = localStorage.getItem('carryon_sidebar_collapsed') === 'true';
@@ -56,7 +111,13 @@ export default function SlidePanel({ open, onClose, title, subtitle, children })
       />
 
       {/* Panel body */}
-      <div className={`slide-panel-body ${closing ? 'slide-panel-exit' : 'slide-panel-enter'}`}>
+      <div
+        ref={panelRef}
+        className={`slide-panel-body ${closing ? 'slide-panel-exit' : 'slide-panel-enter'}`}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         {/* Header bar */}
         <div className="slide-panel-hdr">
           <button
