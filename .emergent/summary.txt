@@ -1,160 +1,202 @@
 <analysis>**original_problem_statement:**
 The user's initial goal was to overhaul the Operations Portal. This expanded into several major workstreams across sessions:
 1.  **UI/UX Overhaul:**
-    *   Simplify Founder/Operator portal menus to essentials.
     *   Implement a persistent, collapsible sidebar for all portals.
-    *   Relocate the DEV and Estate switchers for better usability.
-    *   Overhaul the toast/notification system, replacing the basic  toasts with a polished, iOS-style, slide-from-top notification component.
+    *   Relocate DEV and Estate switchers for better usability.
+    *   Overhaul the toast/notification system with a polished, iOS-style component.
+    *   Implement a floating glass-panel bottom navigation bar for mobile/PWA, inspired by the United Airlines app.
+    *   Address various UI spacing and layout issues to maximize screen real estate.
 2.  **Security & Access Control:**
-    *   Harden backend security by moving from role-based to membership-based access control, closing a critical security flaw.
-    *   Define and plan for an immutably sealed account screen for deceased benefactors.
+    *   Harden backend security with membership-based access control.
+    *   Implement an immutably sealed account screen for deceased benefactors with a P1 contact button.
+    *   Require admin password for sensitive delete operations (e.g., TVT).
 3.  **New Feature Implementation:**
-    *   Scaffold 10 new features for Founder/Operator portals (5 each).
-    *   Re-implement 5 deferred native-like PWA features (haptics, pull-to-refresh, network status banner, force update gate, error reporter) using existing dependencies to avoid build issues.
-4.  **Upcoming Major Build (User-Requested Fork):**
-    *   Flesh out the logic and triggers for a comprehensive push notification system based on specific user events.
-    *   Review and fully implement the entire Digital Trustee Services (DTS) workflow.
-    *   Design and plan for a multi-tier operator account structure (Manager vs. Worker).
-    *   The user explicitly requested to fork the session before this large build to ensure a clean state.
+    *   Implement a multi-tier operator account structure (Founder > Manager > Team Member) with full CRUD capabilities.
+    *   Build a comprehensive, priority-based notification system (P1-P4 alerts), including a full-screen Amber Alert for buried alive scenarios.
+    *   Build an Operator Activity Dashboard to provide real-time visibility into team performance and work queues.
+    *   Flesh out the Digital Trustee Services (DTS) workflow, including task assignment.
+    *   Implement a human-in-the-loop review workflow for Milestone Message delivery.
+    *   Enable password change and Forgot Password functionality for all users.
+    *   Allow operators to view all non-founder users.
+    *   Differentiate between Benefactor and Estate profile photos.
+4.  **Compliance & Build:**
+    *   Enhance the  script with a comprehensive SOC 2 compliance audit.
+    *   Resolve production deployment and iOS native build issues (CodeMagic).
+    *   Scaffold the iOS/macOS Share Extension.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a multi-portal platform with role-based access. Recent work has significantly enhanced the UI/UX and core functionality:
--   A fully functional, persistent, collapsible sidebar is present on all portals.
--   A new, custom, iOS-style notification system has replaced the old toasts. It supports light/dark themes, swipe-to-dismiss, and different notification types (error, success, info).
--   Five native-like PWA features have been implemented without new dependencies: haptic feedback on interactions, pull-to-refresh on main content areas, a network status banner, a global error reporter, and a force update gate.
--   Backend security has been hardened with membership-based access control.
--   Scaffolding (placeholder components and routes) for 10 new staff portal features is in place.
+The application is a mature, multi-portal platform featuring a FastAPI backend and a React/Capacitor frontend. A sophisticated multi-tier operator system (Founder, Manager, Team Member) is fully implemented with granular permissions. The platform includes a detailed, priority-based notification system, featuring a full-screen Amber Alert for critical P1 emergencies. A comprehensive Operator Activity Dashboard, DTS task assignment, and a Milestone Message review workflow are all functional. The UI has been significantly refined with a floating glass-panel navigation bar for mobile and numerous other tweaks. The  script includes a robust SOC 2 compliance audit. Password reset and change functionalities are implemented for all users. However, a critical scroll-locking bug exists on iOS PWA for modal dialogs.
 
 **Last working item**:
--   Last item agent was working: The agent was creating this comprehensive handoff document to prepare for a new fork. This was done immediately after successfully building, integrating, and testing the new application-wide notification system, as requested by the user before starting the next phase of development.
--   Status: NONE
--   Agent Testing Done: Y
--   Which testing method agent to use? NA
--   User Testing Done: N
+-   Last item agent was working: The agent was attempting to fix a critical, recurring scroll-locking bug on iOS PWA that occurs when opening modal dialogs, specifically in the Edit Beneficiary and Edit Milestone Message flows. After multiple failed attempts that worsened the UI, the agent reverted all changes related to the fix, restoring the UI to its original state but leaving the bug unresolved.
+-   Status: BLOCKED
+-   Agent Testing Done: N
+-   Which testing method agent to use? This is a device-specific frontend bug. The next agent should propose a well-researched solution before implementing. The primary verification will be manual testing on an iOS PWA, as confirmed by the user.
+-   User Testing Done: Y
 
 **All Pending/In progress Issue list**:
--   None. All identified issues from the previous session were resolved.
+-   Issue 1: (P0) iOS PWA Modal Dialogs Cause Scroll Lock
+
+**Issues Detail**:
+-   **Issue 1**:
+    -   **Description:** On iOS PWA, opening a modal dialog (e.g., editing a beneficiary or milestone message) causes the entire page to become scroll-locked. The user cannot scroll the dialog content or the background page. This makes the edit functionality unusable on mobile. The user is extremely frustrated with this issue.
+    -   **Attempted fixes:**
+        1.  CSS overrides targeting . (Failed)
+        2.  Disabling Radix Dialog's  prop and adding a custom backdrop. (Failed)
+        3.  Replacing Radix Dialog with a custom full-screen modal component. (Failed, introduced new layout issues).
+        4.  Replacing the modal with an inline edit form. (Failed, poor UX, user rejected).
+        5.  Creating a new  wrapper component. (Failed, broke other dialogs).
+        *All attempts have been reverted.*
+    -   **Next debug checklist**:
+        -   This is a known incompatibility between Radix UI's scroll-locking mechanism () and WebKit's behavior for  elements inside a PWA.
+        -   Do not repeat the previous failed attempts.
+        -   Research alternative solutions for Radix UI on iOS PWAs. One potential path is to use a different modal/dialog library that is known to be compatible with iOS PWA scroll behavior, or to use a full-page navigation pattern for editing instead of a modal.
+        -   Propose a new, non-incremental strategy to the user before implementing.
+    -   **Why fix this issue and what will be achieved with the fix?** This is a critical bug blocking core functionality (editing beneficiaries and messages) on the primary mobile platform (iOS PWA). Fixing it is essential for usability.
+    -   **Status:** BLOCKED
+    -   **Is recurring issue?** Y
+    -   **Should Test frontend/backend/both after fix?** frontend
+    -   **Blocked on other issue:** None.
 
 **In progress Task List**:
--   **Task 1:** (P0) Full Implementation of 10 New Staff Portal Features
-    -   **Description:** The boilerplate for 10 new features (5 for Founder, 5 for Operator) exists, but the components are just empty placeholders. The actual functionality needs to be built.
-    -   **Where to resume:** The frontend components are in . The backend routes are in . The agent should begin by fully implementing one feature end-to-end.
-    -   **What will be achieved with this?** This will deliver significant value and utility to the staff portals, as originally requested.
-    -   **Status:** IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?** both
-    -   **Blocked on something:** None.
+-   None.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   **P0: Phase 1 - Push Notification & DTS/Operator Workflow Implementation:** This is the next major build, as planned with the user.
-        -   **Sub-Task 1: Implement Push Notification Backend Logic:** Build the backend triggers for the newly designed notification UI based on the user-approved event list. This includes special handling for security-sensitive notifications (e.g., death certificate uploaded) which must link to a priority support channel.
-        -   **Sub-Task 2: Implement DTS Workflow:** Review all verbiage and process flows in the DTS section of the app and build out all associated screens and backend logic to make it fully functional.
-        -   **Sub-Task 3: Design & Implement Multi-Tier Operator Roles:**
-            -   Implement Operations Manager and Operations Worker roles.
-            -   The Founder must be able to create, edit, and delete Manager accounts.
-            -   Managers must be able to create, edit, and delete Worker accounts.
-            -   A Founder notification for New Operator enrolled/deleted by Manager must be added.
-        -   **Sub-Task 4: Implement Immutable Sealed Account Screen:** Create the locked screen that appears when a transitioned benefactor attempts to log in. This must include a contact support button.
-    -   **P1: Finalize Share Extension Setup:** Guide the user through the manual Xcode and App Store Connect configuration for the iOS Share Extension.
+    -   **P1: Twilio SMS OTP Integration:** Implement two-factor authentication via SMS. (Status: BLOCKED, awaiting user's A2P 10DLC approval from Twilio).
+    -   **P1: Finalize Share Extension Setup:** The user needs to perform manual configuration in Xcode and App Store Connect to complete the iOS Share Extension setup. A guide has been provided at . (Status: BLOCKED on user action).
 
 -   **Future Tasks:**
-    -   **P2: Twilio SMS OTP:** Implement this feature once the user confirms A2P 10DLC approval from Twilio.
+    -   None.
 
 **Completed work in this session**
--   **Mobile/PWA Verification:** Confirmed full mobile and PWA functionality for all recent UI changes, including path-based rendering for staff portals.
--   **Deferred Feature Re-implementation:** Successfully implemented Haptics, Pull-to-Refresh, Network Status Banner, Force Update Gate, and a Global Error Reporter without adding new dependencies.
--   **Notification System Overhaul:** Replaced the entire  toast system with a custom-built, polished, iOS-style slide-in notification component.
--   All completed work was verified via the automated testing agent, achieving 100% pass rates.
+-   **Multi-Tier Operator System:** Fully implemented Founder, Manager, and Team Member roles with distinct permissions, CRUD operations, and visibility in the UI.
+-   **Amber Alert & Notification Hierarchy:** Created a P1-P4 notification system. P1 (buried alive) triggers a full-screen, audible, vibrating Amber Alert for all staff. Other priorities (TVT, DTS, etc.) send standard in-app notifications to relevant roles.
+-   **Operator & Founder Dashboards:** Built an Operator Activity Dashboard and integrated it as the default view for Managers and a tab for the Founder.
+-   **Workflow Implementation:** Completed the frontend for DTS task assignment and the full human-in-the-loop review workflow for Milestone Messages.
+-   **Sealed Account Screen:** Implemented the locked screen for transitioned benefactors.
+-   **Password Management:** Added Forgot Password flow on the login page and Change Password functionality in user settings.
+-   **UI/UX Overhaul:**
+    -   Redesigned the mobile bottom navigation to be a floating glass oval with a frosted backdrop, inspired by the United Airlines app.
+    -   Renamed Worker to Team Member across all user-facing UI.
+    -   Resolved numerous layout and spacing issues.
+-   **Bug Fixes & Enhancements:**
+    -   Fixed subscription paywall logic to prevent users from being trapped.
+    -   Corrected an issue where beneficiary birthdays weren't displaying.
+    -   Fixed an issue where creating a benefactor account overwrote the user's beneficiary role.
+    -   Added admin password requirement for deleting TVT requests.
+    -   Gave operators access to view all non-founder users.
+-   **Build & Compliance:**
+    -   Significantly enhanced  with a multi-point SOC 2 compliance audit.
+    -   Resolved a production deployment crash and multiple iOS CodeMagic build failures.
+    -   Generated comprehensive documentation for the tech stack and App Store subscription setup.
 
 **Earlier issues found/mentioned but not fixed**
--   None.
+-   **Subscription/Health Alert Notifications:** A P2 task to add backend schedulers for subscription and system health alerts was implemented, but it caused a production deployment to crash. The changes were fully reverted, and the user explicitly requested to remove this task from the backlog.
 
 **Known issue recurrence from previous fork**
--   **Issue 1: Production Crashes from yarn add v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/add for documentation about this command./**
-    -   **Status:** RESOLVED (by avoidance). The agent successfully added 5 new features by using only existing dependencies and web APIs, proving this is a viable strategy. The next agent must continue to avoid yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. unless absolutely necessary.
--   **Issue 2: Path-Based vs. Role-Based Rendering**
-    -   **Description:** The UI for staff portals must be rendered based on the URL path (, ), not the user's role.
-    -   **Status:** RESOLVED. The logic was confirmed to be working correctly on both desktop and mobile during this session's testing. This remains a critical architectural rule to follow.
+-   None.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Custom Notification System:** A bespoke React component for displaying polished, iOS-style notifications, managing a queue of messages, and handling auto-dismiss and swipe gestures.
--   **Browser/Web APIs for PWA Features:** Leveraging , , , and touch events (, ) to create native-like experiences without external libraries.
--   **Global Error Handling:** Using a combination of a React Error Boundary and a global  listener to catch all UI exceptions and report them to a backend endpoint ().
--   **Client-Side Version Gating:** A  component that fetches  from the  endpoint and blocks the app if the client is outdated, forcing a refresh.
--   **Membership-Based Access Control:** Backend logic that checks a user's relationship to a specific data object (e.g., ) instead of just their global role.
+-   **Multi-Tier Operator RBAC:** A hierarchical access control system (Founder > Manager > Team Member) implemented in the backend, controlling API access and UI visibility.
+-   **Priority-Based Notification System:** A centralized service () that sends notifications (P1-P4) to specific user roles, with P1 triggering a full-screen Amber Alert.
+-   **Amber Alert System:** A React context () and provider that listens for critical notifications and triggers a full-screen overlay with sound (Web Audio API) and vibration, which persists until acknowledged.
+-   **iOS PWA UI Styling:** Advanced CSS techniques including  for glassmorphism, gradients for frosted effects, and careful handling of  for the floating bottom navigation bar.
+-   **SOC 2 Compliance Scripting:** The  script now performs automated checks for access control, encryption, audit trail integrity, and other SOC 2 trust criteria.
+-   **Build & Deployment Debugging:** The session involved significant debugging of production deployment failures on Railway and native iOS build failures on CodeMagic, identifying issues with background schedulers and provisioning profiles.
 
 **key DB schema**
--   No changes made in this session.
+-   **users:** Added  (can be 'manager' or 'worker'). The  field can now be an array (e.g., ).
+-   **dts_tasks:** Added .
+-   **notifications:** New collection to store persistent in-app notifications. Includes a  field.
+-   **milestone_deliveries:** New collection to manage the human-in-the-loop review workflow for milestone messages.
+-   **estates:** Added .
 
 **changes in tech stack**
--   No changes.
+-   None.
 
 **All files of reference**
--   : Central hub for integrating the new PWA/UI features.
--   : The central utility for triggering notifications.
--   : The new component that renders notifications.
--   : The component for an individual notification message.
--   : Contains the logic for the global error handler.
--   : Component for client-side version checking.
+-   : Contains the primary UI element (edit dialog) that triggers the critical scroll-lock bug.
+-   : Also contains a dialog affected by the scroll-lock bug.
+-   : The underlying Shadcn/UI dialog component that is at the center of the scroll-lock issue.
+-   : Contains the heavily customized floating glass navigation bar.
+-   : Core logic for the new priority-based alerting system.
+-   : Manages the state for the P1 Amber Alert overlay.
+-   : Contains the endpoints for the multi-tier operator system.
+-   : The enhanced audit script.
 
 **Areas that need refactoring**:
--   The 10 new components in  need to be fully implemented.
--   The entire DTS section needs to be reviewed and implemented to be a fully functional workflow, not just placeholder text.
+-   The modal dialog implementation in  and  needs to be completely re-architected to avoid the iOS PWA scroll-lock bug. A solution that does not rely on  overlays, such as a dedicated navigation route for editing, should be considered.
 
 **key api endpoints**
--   : Now actively used by the new global error reporter.
--   : Now actively used by the  for version checking.
+-   : Create a new operator (Manager or Team Member).
+-   : List all operators.
+-   : Update an operator.
+-   : Delete an operator.
+-   : Get stats for the Operator Activity Dashboard.
+-   : Get pending milestone deliveries for review.
+-   : Approve a milestone delivery.
+-   : Initiate password reset flow.
+-   : Complete password reset with OTP.
 
 **Critical Info for New Agent**
--   **FORK REQUESTED:** The user has explicitly requested this fork to start the next large build. You must begin by presenting a plan based on the Upcoming Tasks section.
--   **NOTIFICATION SYSTEM:** The UI is **DONE**. Your next task is to build the **backend logic** that calls the  utility for the specific events defined in the user's plan.
--   **MULTI-TIER OPERATORS:** The user has defined a new requirement for Manager and Worker operator roles. This needs to be designed and implemented.
--   **CRITICAL RULE (URL vs. ROLE):** UI for staff portals (, ) **MUST** be determined by the URL path, not just the user's role. This was verified again and is crucial.
--   **CRITICAL RULE (YARN.LOCK):** DO NOT run yarn add v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/add for documentation about this command. or yarn remove v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/remove for documentation about this command.. The previous agent successfully added 5 features without touching . Continue this practice.
+-   **PWA SCROLL-LOCK BUG IS P0:** The highest priority is to fix the scroll-locking issue in modal dialogs on iOS PWA. The user is extremely frustrated, and multiple attempts have failed and been reverted. Do not repeat previous CSS or component-swapping hacks. A fresh, well-researched strategy is required. Consider replacing the modal pattern with a full-page navigation pattern for editing on mobile.
+-   **DO NOT RE-IMPLEMENT P2 NOTIFICATIONS:** A backend scheduler for subscription/health alerts was built, caused a production crash, and was reverted. The user has explicitly stated they do not want this feature. Do not attempt to add it back.
+-   **USER IS TECHNICAL:** The user manages their own GitHub, Railway, and CodeMagic deployments. They are sensitive to build failures and will provide detailed logs. Trust their reports of production issues.
+-   **AVOID yarn add v1.22.22
+info Visit https://yarnpkg.com/en/docs/cli/add for documentation about this command.:** The strict rule against modifying  remains in effect.
 
 **documents and test reports created in this job**
--   
--   
+-   : A comprehensive summary of the platform's tech stack, features, and architecture.
+-   : A guide for the user to complete the iOS Share Extension setup in Xcode.
+-   : An updated guide for setting up all 36 subscription products in App Store Connect with  identifiers.
+-   Multiple test reports from .
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Confirmed the plan to create a polished handoff for the next session. (Status: Completed)
-2.  **User:** Defined the immutably sealed screen for transitioned benefactor accounts. (Status: Pending Implementation)
-3.  **User:** Confirmed the multi-tier operator structure: Founder creates Managers, Managers create Workers. (Status: Pending Implementation)
-4.  **User:** Requested a fork before starting the next big build (notifications, DTS, operator roles). (Status: Actioned by creating this handoff)
-5.  **User:** Added a requirement for a priority alert button on security-sensitive notifications (e.g., death certificate). (Status: Pending Implementation)
-6.  **User:** Discussed the need to flesh out the multi-tier operator account structure. (Status: Pending Implementation)
-7.  **User:** Refined the list of push notification events, correcting agent's assumptions and adding new ones. (Status: Plan Updated)
-8.  **User:** Confirmed that Benefactors/Beneficiaries can message each other and requested more specific notification text for document uploads. (Status: Plan Updated)
-9.  **User:** Provided feedback on notification look/feel: should be polished, iOS-style, slide from top, and replace all old error toasts. (Status: Completed)
-10. **User:** Asked the agent to propose a list of push notification events for all user roles. (Status: Completed)
+1.  **User:** Reports being stuck on the paywall after a successful purchase. (Status: Addressed by making the paywall dismissible and fixing webhook logic).
+2.  **User:** Reports scroll-lock after picking a photo in the beneficiary edit dialog. (Status: Investigated, part of the larger scroll-lock issue).
+3.  **User:** Reports the beneficiary edit dialog is locked even before picking a photo. (Status: Confirmed, part of the larger scroll-lock issue).
+4.  **User:** Frustrated that the scroll-lock issue is still not fixed and the attempted fixes broke the UI. (Status: Unresolved).
+5.  **User:** Confirms the UI is restored but the scroll-lock bug remains in Beneficiaries and Milestone Messages. The modal dialogs cover the entire screen and are distorted. (Status: Unresolved).
+6.  **User:** Extremely frustrated after another failed attempt to fix the scroll-lock bug. (Status: Unresolved).
+7.  **User:** Again expresses extreme frustration with the failed fixes for the scroll-lock bug and confirms it's still locked. (Status: Unresolved).
+8.  **User:** Asks agent to stop pitching the upgrade plan as it's not relevant to their workflow. (Status: Noted).
+9.  **User:** Correctly identifies that the agent's proposed fix for the scroll-lock bug in Milestone Messages doesn't work because that page is also locked. Criticizes the agent's attempts for breaking the UI. (Status: Unresolved).
+10. **User:** Asks if the agent is sure they want the user to push the broken code. (Status: Addressed by reverting).
 
 **Project Health Check:**
--   **Broken:** None.
+-   **Broken:**
+    -   The Edit Beneficiary modal on  is unusable on iOS PWA due to a scroll-lock bug.
+    -   The Edit Milestone Message modal on  is unusable on iOS PWA due to the same scroll-lock bug.
 -   **Mocked:**
-    -   The 10 new features in the Founder and Operator portals.
-    -   The entire Digital Trustee Services (DTS) workflow.
+    -   Twilio SMS OTP (pending user action).
+    -   iOS Share Extension (pending user action).
 
 **3rd Party Integrations**
--   None added in this session.
+-   xAI (Grok)
+-   Stripe
+-   Apple In-App Purchase
+-   AWS S3 (compatible)
+-   Resend
+-   Twilio (scaffolded, not active)
+-   Google Places
+-   Capgo
+-   CodeMagic
 
 **Testing status**
--   Testing agent used after significant changes: YES (twice).
+-   Testing agent used after significant changes: YES. The agent ran a full regression test at the end which passed, but this did not cover the device-specific iOS PWA scroll-lock bug.
 -   Troubleshoot agent used after agent stuck in loop: NO
--   Test files created: , 
--   Known regressions: None. Both test runs passed with 100% success.
+-   Test files created: None new.
+-   Known regressions: The critical iOS PWA scroll-lock bug in dialogs.
 
 **Credentials to test flow:**
 -   **Founder Portal:**  / 
 -   **Benefactor Test Account:**  / 
 
 **What agent forgot to execute**
--   Nothing. The agent correctly followed the user's explicit instructions to build the notification UI first and then prepare for a fork *before* implementing the complex backend logic and workflows. This was a deliberate and user-approved sequencing of tasks.</analysis>
+-   The agent failed to solve the critical iOS PWA scroll-locking bug despite multiple attempts, leading to significant user frustration and consuming a large portion of the session. All attempted fixes were ultimately reverted.</analysis>

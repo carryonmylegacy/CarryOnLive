@@ -8,7 +8,7 @@ import requests
 from uuid import uuid4
 
 BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://notification-hub-85.preview.emergentagent.com"
+    "REACT_APP_BACKEND_URL", "https://ops-portal-overhaul.preview.emergentagent.com"
 )
 
 
