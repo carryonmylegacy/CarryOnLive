@@ -398,7 +398,7 @@ async def register(data: UserCreate):
                     "name": full_name,
                     "relation": ben.get("relation", ""),
                     "email": ben.get("email", "") or "",
-                    "dob": ben.get("dob"),
+                    "date_of_birth": ben.get("dob"),
                     "initials": initials,
                     "avatar_color": avatar_colors[i % len(avatar_colors)],
                     "invitation_status": "pending" if ben.get("email") else "draft",

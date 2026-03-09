@@ -35,6 +35,10 @@ async def get_beneficiaries(
     beneficiaries = await db.beneficiaries.find(
         {"estate_id": estate_id}, {"_id": 0}
     ).to_list(100)
+    # Normalize dob → date_of_birth for legacy records
+    for b in beneficiaries:
+        if "dob" in b and "date_of_birth" not in b:
+            b["date_of_birth"] = b.pop("dob")
     return beneficiaries
 
 
