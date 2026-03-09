@@ -120,6 +120,54 @@ const VaultPage = () => {
   const [editCategory, setEditCategory] = useState('legal');
   const [editNotes, setEditNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [globalDragOver, setGlobalDragOver] = useState(false);
+  const dragCounterRef = useRef(0);
+
+  // Global drag-and-drop: drop a file anywhere on the page → opens Upload panel
+  useEffect(() => {
+    const onDragEnter = (e) => {
+      e.preventDefault();
+      dragCounterRef.current++;
+      if (e.dataTransfer?.types?.includes('Files')) setGlobalDragOver(true);
+    };
+    const onDragLeave = (e) => {
+      e.preventDefault();
+      dragCounterRef.current--;
+      if (dragCounterRef.current <= 0) { dragCounterRef.current = 0; setGlobalDragOver(false); }
+    };
+    const onDragOver = (e) => e.preventDefault();
+    const onDrop = (e) => {
+      e.preventDefault();
+      dragCounterRef.current = 0;
+      setGlobalDragOver(false);
+      if (showUploadModal) return; // Already in upload panel, let the inner handler deal with it
+      const file = e.dataTransfer?.files?.[0];
+      if (!file) return;
+      const ext = file.name.split('.').pop().toLowerCase();
+      const allowedExts = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'heif', 'webp', 'tiff', 'tif'];
+      const allowedMimes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif', 'image/webp', 'image/tiff'];
+      if (!allowedMimes.includes(file.type) && !allowedExts.includes(ext)) {
+        toast.error('Only PDFs and images accepted. No editable document formats (.doc, .docx, .pages, etc.).');
+        return;
+      }
+      setUploadFile(file);
+      const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
+      setUploadName(nameWithoutExt);
+      setShowUploadModal(true);
+      toast.success(`"${file.name}" ready — review details and tap Upload`);
+    };
+    const el = document.getElementById('main-content') || document.body;
+    el.addEventListener('dragenter', onDragEnter);
+    el.addEventListener('dragleave', onDragLeave);
+    el.addEventListener('dragover', onDragOver);
+    el.addEventListener('drop', onDrop);
+    return () => {
+      el.removeEventListener('dragenter', onDragEnter);
+      el.removeEventListener('dragleave', onDragLeave);
+      el.removeEventListener('dragover', onDragOver);
+      el.removeEventListener('drop', onDrop);
+    };
+  }, [showUploadModal]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchData();
@@ -596,8 +644,22 @@ const VaultPage = () => {
   }
 
   return (
-    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="document-vault"
+    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in relative" data-testid="document-vault"
       style={{ background: 'radial-gradient(ellipse at top left, rgba(37,99,235,0.15), transparent 55%), radial-gradient(ellipse at bottom right, rgba(59,130,246,0.08), transparent 55%)' }}>
+
+      {/* Global drag overlay */}
+      {globalDragOver && !showUploadModal && (
+        <div className="fixed inset-0 z-[44] flex items-center justify-center pointer-events-none" data-testid="vault-drag-overlay">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="relative flex flex-col items-center gap-4 p-10 rounded-3xl border-2 border-dashed border-[#d4af37]"
+            style={{ background: 'rgba(15,22,41,0.9)' }}>
+            <Upload className="w-16 h-16 text-[#d4af37]" />
+            <p className="text-xl font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>Drop to Upload</p>
+            <p className="text-sm text-[#94a3b8]">Release to add this document to your Secure Vault</p>
+          </div>
+        </div>
+      )}
+
       {/* Header - matching prototype */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
