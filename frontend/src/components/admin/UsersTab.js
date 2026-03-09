@@ -148,6 +148,14 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders }) => 
             >
               {u.role}
             </span>
+            {u.is_also_beneficiary && (
+              <span
+                className="text-xs px-2 py-1 rounded-md font-bold"
+                style={{ background: 'rgba(139,92,246,0.1)', color: '#B794F6' }}
+              >
+                beneficiary
+              </span>
+            )}
             {u.created_at && (
               <span className="text-[10px] text-[var(--t5)] sm:text-xs">
                 {new Date(u.created_at).toLocaleDateString()}

@@ -269,10 +269,17 @@ async def beneficiary_become_benefactor(current_user: dict = Depends(get_current
     }
     await db.estates.insert_one(estate)
 
-    # Upgrade role to benefactor (they keep beneficiary access through estate.beneficiaries links)
+    # Add benefactor role — user retains beneficiary access through estate.beneficiaries links
+    # Store both roles so admin can see they are both beneficiary AND benefactor
     await db.users.update_one(
         {"id": current_user["id"]},
-        {"$set": {"role": "benefactor"}},
+        {
+            "$set": {
+                "role": "benefactor",
+                "is_also_beneficiary": True,
+                "beneficiary_since": current_user.get("created_at"),
+            }
+        },
     )
 
     # Seed default checklist
