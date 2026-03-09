@@ -227,15 +227,25 @@ async def beneficiary_become_benefactor(current_user: dict = Depends(get_current
     import uuid
     from datetime import datetime, timezone
 
-    if current_user["role"] != "beneficiary":
-        raise HTTPException(status_code=400, detail="Already a benefactor")
-
-    # Check if they already own an estate (shouldn't happen, but guard)
-    existing = await db.estates.find_one(
-        {"owner_id": current_user["id"]}, {"_id": 0, "id": 1}
-    )
-    if existing:
-        raise HTTPException(status_code=400, detail="You already have an estate")
+    if current_user["role"] == "benefactor":
+        # Already a benefactor — check if they have an estate
+        existing = await db.estates.find_one(
+            {"owner_id": current_user["id"]}, {"_id": 0, "id": 1}
+        )
+        if existing:
+            raise HTTPException(
+                status_code=400,
+                detail="You already have an estate plan. Go to your Dashboard to manage it.",
+            )
+        # Role is benefactor but no estate exists — create one
+    elif current_user["role"] == "admin" or current_user["role"] == "operator":
+        raise HTTPException(
+            status_code=400, detail="Staff accounts cannot create estate plans"
+        )
+    elif current_user["role"] != "beneficiary":
+        raise HTTPException(
+            status_code=400, detail="Unable to create estate plan for this account type"
+        )
 
     user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
     if not user:
