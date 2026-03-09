@@ -909,6 +909,47 @@ async def logout(request: Request, current_user: dict = Depends(get_current_user
     return {"message": "Logged out successfully"}
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@router.post("/auth/change-password")
+async def change_password(
+    data: ChangePasswordRequest,
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    """Change the current user's password. Requires current password verification."""
+    if len(data.new_password) < 8:
+        raise HTTPException(
+            status_code=400, detail="New password must be at least 8 characters"
+        )
+
+    user_doc = await db.users.find_one(
+        {"id": current_user["id"]}, {"_id": 0, "password": 1}
+    )
+    if not user_doc or not verify_password(data.current_password, user_doc["password"]):
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+
+    new_hash = hash_password(data.new_password)
+    await db.users.update_one(
+        {"id": current_user["id"]}, {"$set": {"password": new_hash}}
+    )
+
+    await log_audit_event(
+        actor_id=current_user["id"],
+        actor_email=current_user["email"],
+        actor_role=current_user["role"],
+        action="password_change",
+        category="auth",
+        ip_address=get_client_ip(request),
+        severity="info",
+    )
+
+    return {"message": "Password changed successfully"}
+
+
 class DevSwitchRequest(BaseModel):
     email: str
 

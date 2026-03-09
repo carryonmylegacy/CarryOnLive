@@ -18,6 +18,8 @@ import {
   Trash2,
   FileText,
   AlertTriangle,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -52,6 +54,13 @@ const SettingsPage = () => {
   const [passkeySupported, setPasskeySupported] = useState(false);
   const [passkeyRegistered, setPasskeyRegistered] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [currentPw, setCurrentPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [pwLoading, setPwLoading] = useState(false);
+  const [showCurrentPw, setShowCurrentPw] = useState(false);
+  const [showNewPw, setShowNewPw] = useState(false);
   const [estatePhoto, setEstatePhoto] = useState(null);
   const [estateId, setEstateId] = useState(null);
   const [estateName, setEstateName] = useState('');
@@ -477,10 +486,55 @@ const SettingsPage = () => {
               <Separator className="bg-[var(--b)]" />
             </>
           )}
-          <Button variant="outline" className="w-full border-[var(--b)] text-[var(--t)] justify-between">
+          <Button variant="outline" className="w-full border-[var(--b)] text-[var(--t)] justify-between"
+            onClick={() => setShowChangePassword(!showChangePassword)} data-testid="change-password-btn">
             Change Password
             <ChevronRight className="w-4 h-4" />
           </Button>
+          {showChangePassword && (
+            <div className="space-y-3 p-3 rounded-xl" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+              <div className="relative">
+                <Input type={showCurrentPw ? 'text' : 'password'} value={currentPw}
+                  onChange={e => setCurrentPw(e.target.value)} placeholder="Current password"
+                  className="bg-[var(--bg)] border-[var(--b)] text-[var(--t)] pr-10" data-testid="current-password" />
+                <button type="button" onClick={() => setShowCurrentPw(!showCurrentPw)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
+                  {showCurrentPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <div className="relative">
+                <Input type={showNewPw ? 'text' : 'password'} value={newPw}
+                  onChange={e => setNewPw(e.target.value)} placeholder="New password"
+                  className="bg-[var(--bg)] border-[var(--b)] text-[var(--t)] pr-10" data-testid="new-password" />
+                <button type="button" onClick={() => setShowNewPw(!showNewPw)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
+                  {showNewPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <Input type={showNewPw ? 'text' : 'password'} value={confirmPw}
+                onChange={e => setConfirmPw(e.target.value)} placeholder="Confirm new password"
+                className={`bg-[var(--bg)] border-[var(--b)] text-[var(--t)] ${confirmPw && newPw !== confirmPw ? 'border-red-500' : ''}`}
+                data-testid="confirm-new-password" />
+              {confirmPw && newPw !== confirmPw && (
+                <p className="text-red-400 text-xs"><span className="text-red-400">*</span> Passwords do not match</p>
+              )}
+              <Button className="w-full" disabled={!currentPw || !newPw || newPw !== confirmPw || pwLoading}
+                style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
+                onClick={async () => {
+                  setPwLoading(true);
+                  try {
+                    await axios.post(`${API_URL}/auth/change-password`, { current_password: currentPw, new_password: newPw }, getAuthHeaders());
+                    toast.success('Password changed successfully');
+                    setShowChangePassword(false);
+                    setCurrentPw(''); setNewPw(''); setConfirmPw('');
+                  } catch (err) { toast.error(err.response?.data?.detail || 'Failed to change password'); }
+                  finally { setPwLoading(false); }
+                }} data-testid="submit-change-password">
+                {pwLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                Update Password
+              </Button>
+            </div>
+          )}
           <Button variant="outline" className="w-full border-[var(--b)] text-[var(--t)] justify-between">
             Two-Factor Authentication
             <span className="text-[#10b981] text-sm">Enabled</span>
