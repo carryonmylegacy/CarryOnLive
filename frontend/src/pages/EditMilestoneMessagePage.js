@@ -353,6 +353,9 @@ export default function EditMilestoneMessagePage() {
   const startVoiceRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      await runCountdown();
+
       audioRecorderRef.current = new MediaRecorder(stream);
       audioChunksRef.current = [];
 
@@ -361,14 +364,14 @@ export default function EditMilestoneMessagePage() {
       };
 
       audioRecorderRef.current.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const mimeType = audioRecorderRef.current?.mimeType || 'audio/webm';
+        const blob = new Blob(audioChunksRef.current, { type: mimeType });
         setAudioBlob(blob);
         const blobUrl = URL.createObjectURL(blob);
         setAudioUrl(blobUrl);
         stream.getTracks().forEach((track) => track.stop());
       };
 
-      await runCountdown();
       audioRecorderRef.current.start();
       setIsRecording(true);
     } catch (error) {

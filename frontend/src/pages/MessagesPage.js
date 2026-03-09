@@ -369,7 +369,12 @@ const MessagesPage = () => {
 
   const startVoiceRecording = async () => {
     try {
+      // Get mic permission FIRST (may show permission dialog)
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      // THEN run the countdown so user isn't waiting during permission prompt
+      await runCountdown();
+
       audioRecorderRef.current = new MediaRecorder(stream);
       audioChunksRef.current = [];
 
@@ -378,14 +383,13 @@ const MessagesPage = () => {
       };
 
       audioRecorderRef.current.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        // Use the actual recorded MIME type (Safari uses mp4, Chrome uses webm)
+        const mimeType = audioRecorderRef.current?.mimeType || 'audio/webm';
+        const blob = new Blob(audioChunksRef.current, { type: mimeType });
         setAudioBlob(blob);
         setAudioUrl(URL.createObjectURL(blob));
         stream.getTracks().forEach(track => track.stop());
       };
-
-      // 3-2-1 countdown
-      await runCountdown();
 
       audioRecorderRef.current.start();
       setIsRecording(true);
