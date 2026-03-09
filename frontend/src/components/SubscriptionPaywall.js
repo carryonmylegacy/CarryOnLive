@@ -329,6 +329,18 @@ export default function SubscriptionPaywall({ onDismiss }) {
   return (
     <div className="fixed inset-0 z-[9999] bg-[var(--bg)]/98 overflow-y-auto" data-testid="subscription-paywall">
       <div className="min-h-screen flex flex-col items-center justify-center py-8 px-4">
+        {/* Skip / Continue link */}
+        <div className="w-full max-w-5xl flex justify-end mb-2">
+          <button
+            onClick={() => { if (onDismiss) onDismiss(); else window.location.href = '/dashboard'; }}
+            className="text-xs text-[var(--t5)] hover:text-[var(--t3)] transition-colors px-3 py-1.5 rounded-lg"
+            style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+            data-testid="paywall-skip"
+          >
+            {subStatus?.has_active_subscription ? 'Go to Dashboard' : 'Continue to Dashboard'}
+          </button>
+        </div>
+
         {/* Header */}
         <div className="text-center mb-8 max-w-lg animate-fade-in">
           <img src="/carryon-logo.jpg" alt="CarryOn" className="w-[120px] h-auto mx-auto mb-4" />
