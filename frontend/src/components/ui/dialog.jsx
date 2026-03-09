@@ -4,13 +4,7 @@ import { X } from "lucide-react"
 
 import { cn } from "../../lib/utils"
 
-// Use modal={false} to bypass react-remove-scroll (iOS PWA scroll lock)
-const Dialog = React.forwardRef(({ children, ...props }, ref) => (
-  <DialogPrimitive.Root {...props} modal={false}>
-    {children}
-  </DialogPrimitive.Root>
-))
-Dialog.displayName = "Dialog"
+const Dialog = DialogPrimitive.Root
 
 const DialogTrigger = DialogPrimitive.Trigger
 
@@ -19,31 +13,50 @@ const DialogPortal = DialogPrimitive.Portal
 const DialogClose = DialogPrimitive.Close
 
 const DialogOverlay = React.forwardRef(({ className, ...props }, ref) => (
-  <div
+  <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-black/80",
+      "fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
     {...props} />
 ))
-DialogOverlay.displayName = "DialogOverlay"
+DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
-// iOS PWA fix: The dialog card sits inside a full-screen scrollable wrapper.
-// iOS can scroll a full-screen fixed element (inset-0 + overflow-y-auto),
-// but CANNOT scroll a smaller fixed element (top-5vh + max-h-90vh + overflow-y-scroll).
-const DialogContent = React.forwardRef(({ className, children, onOpenAutoFocus, ...props }, ref) => (
+const DialogContent = React.forwardRef(({ className, children, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
-    {/* Full-screen scrollable wrapper — this is what iOS actually scrolls */}
+    <DialogPrimitive.Content
+      ref={ref}
+      className={cn(
+        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
+        className
+      )}
+      {...props}>
+      {children}
+      <DialogPrimitive.Close
+        className="absolute right-4 top-4 w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] transition-transform active:scale-90 focus:outline-none">
+        <X className="h-4 w-4" />
+        <span className="sr-only">Close</span>
+      </DialogPrimitive.Close>
+    </DialogPrimitive.Content>
+  </DialogPortal>
+))
+DialogContent.displayName = DialogPrimitive.Content.displayName
+
+/**
+ * ScrollableDialogContent — iOS PWA safe version.
+ * Uses a full-screen scrollable wrapper instead of overflow-y on the dialog card itself.
+ * Use this for dialogs with long form content (Beneficiaries edit, Messages create, etc.)
+ */
+const ScrollableDialogContent = React.forwardRef(({ className, children, ...props }, ref) => (
+  <DialogPortal>
+    <DialogOverlay />
     <div className="fixed inset-0 z-50 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
       <div className="min-h-full flex items-start justify-center py-[5vh] px-4 sm:px-0">
         <DialogPrimitive.Content
           ref={ref}
-          onOpenAutoFocus={(e) => {
-            e.preventDefault();
-            if (onOpenAutoFocus) onOpenAutoFocus(e);
-          }}
+          onOpenAutoFocus={(e) => e.preventDefault()}
           className={cn(
             "relative z-50 w-full max-w-lg gap-4 border bg-background p-6 shadow-lg sm:rounded-lg",
             className
@@ -60,7 +73,7 @@ const DialogContent = React.forwardRef(({ className, children, onOpenAutoFocus, 
     </div>
   </DialogPortal>
 ))
-DialogContent.displayName = DialogPrimitive.Content.displayName
+ScrollableDialogContent.displayName = "ScrollableDialogContent"
 
 const DialogHeader = ({
   className,
@@ -114,6 +127,7 @@ export {
   DialogClose,
   DialogTrigger,
   DialogContent,
+  ScrollableDialogContent,
   DialogHeader,
   DialogFooter,
   DialogTitle,

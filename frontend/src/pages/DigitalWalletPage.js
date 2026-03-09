@@ -268,7 +268,7 @@ const WalletEntryModal = ({ entry, beneficiaries, onClose, onSaved, getAuthHeade
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="glass-card border-[var(--b2)] sm:max-w-lg" data-testid="wallet-entry-modal">
+      <DialogContent className="glass-card border-[var(--b2)] sm:max-w-lg !top-[5vh] !translate-y-0 max-h-[90vh] overflow-y-scroll" data-testid="wallet-entry-modal">
         <DialogHeader>
           <DialogTitle className="text-[var(--t)]">{entry ? 'Edit Account' : 'Add Digital Account'}</DialogTitle>
         </DialogHeader>

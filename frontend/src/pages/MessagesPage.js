@@ -34,7 +34,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
+import { Dialog, DialogContent, ScrollableDialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
@@ -795,7 +795,7 @@ const MessagesPage = () => {
 
       {/* Create Message Modal */}
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-2xl">
+        <ScrollableDialogContent className="glass-card border-[var(--b)] sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-white text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
               {editingMessage ? 'Edit Message' : 'Create Milestone Message'}
@@ -1228,7 +1228,7 @@ const MessagesPage = () => {
               )}
             </Button>
           </div>
-        </DialogContent>
+        </ScrollableDialogContent>
       </Dialog>
 
       {/* Video Playback Modal */}

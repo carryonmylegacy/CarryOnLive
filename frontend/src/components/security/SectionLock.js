@@ -316,7 +316,7 @@ const UnlockModal = ({ sectionId, settings: s, onClose, onUnlocked }) => {
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="glass-card border-[var(--b2)] sm:max-w-md overflow-hidden" data-testid="unlock-modal">
+      <DialogContent className="glass-card border-[var(--b2)] sm:max-w-md overflow-hidden !top-[5vh] !translate-y-0 max-h-[90vh] overflow-y-auto" data-testid="unlock-modal">
         <DialogHeader className="px-5 pt-5 pb-3" style={{ background: 'linear-gradient(135deg, rgba(224,173,43,0.08), rgba(139,92,246,0.05))' }}>
           <DialogTitle className="text-[var(--t)]">Unlock {sec?.name}</DialogTitle>
           <DialogDescription className="text-[var(--t4)]">

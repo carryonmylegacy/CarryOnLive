@@ -31,7 +31,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
+import { Dialog, DialogContent, ScrollableDialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
 import { Textarea } from '../components/ui/textarea';
 import { toast } from '../utils/toast';
 import { Switch } from '../components/ui/switch';
@@ -685,7 +685,7 @@ const BeneficiariesPage = () => {
           resetForm();
         }
       }}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-2xl">
+        <ScrollableDialogContent className="glass-card border-[var(--b)] sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-[var(--t)] text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
               {editingBeneficiary ? 'Edit Beneficiary' : 'Add Beneficiary'}
@@ -980,7 +980,7 @@ const BeneficiariesPage = () => {
               )}
             </Button>
           </div>
-        </DialogContent>
+        </ScrollableDialogContent>
       </Dialog>
 
       {/* Access Requests Section */}

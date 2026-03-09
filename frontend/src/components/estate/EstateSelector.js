@@ -145,7 +145,7 @@ const EstateSelector = ({ currentEstate, onEstateChange, estates, onEstatesUpdat
 
       {/* Create Estate Modal */}
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md">
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-md !top-[5vh] !translate-y-0">
           <DialogHeader>
             <DialogTitle className="text-[var(--t)] text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Create New Estate
