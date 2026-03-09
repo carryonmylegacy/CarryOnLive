@@ -703,6 +703,12 @@ const BeneficiariesPage = () => {
                 onPhotoSelected={(file, previewUrl) => {
                   setPhotoFile(file);
                   setPhotoPreview(previewUrl);
+                  // Fix iOS scroll lock after native file picker closes
+                  setTimeout(() => {
+                    document.body.style.overflow = '';
+                    document.body.style.position = '';
+                    document.body.style.touchAction = '';
+                  }, 300);
                 }}
                 onRemove={() => { setPhotoFile(null); setPhotoPreview(null); }}
               />
