@@ -26,6 +26,8 @@ const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const VaultPage = lazy(() => import('./pages/VaultPage'));
 const MessagesPage = lazy(() => import('./pages/MessagesPage'));
 const BeneficiariesPage = lazy(() => import('./pages/BeneficiariesPage'));
+const EditBeneficiaryPage = lazy(() => import('./pages/EditBeneficiaryPage'));
+const EditMilestoneMessagePage = lazy(() => import('./pages/EditMilestoneMessagePage'));
 const GuardianPage = lazy(() => import('./pages/GuardianPage'));
 const ChecklistPage = lazy(() => import('./pages/ChecklistPage'));
 const TrusteePage = lazy(() => import('./pages/TrusteePage'));
@@ -220,7 +222,9 @@ function AppRoutes() {
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/vault" element={<VaultPage />} />
         <Route path="/messages" element={<MessagesPage />} />
+        <Route path="/messages/:messageId/edit" element={<EditMilestoneMessagePage />} />
         <Route path="/beneficiaries" element={<BeneficiariesPage />} />
+        <Route path="/beneficiaries/:beneficiaryId/edit" element={<EditBeneficiaryPage />} />
         <Route path="/guardian" element={<GuardianPage />} />
         <Route path="/checklist" element={<ChecklistPage />} />
         <Route path="/trustee" element={<TrusteePage />} />

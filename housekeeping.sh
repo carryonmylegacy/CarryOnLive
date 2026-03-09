@@ -418,6 +418,41 @@ else
   echo -e "$WARN (only $INDEX_COUNT indexes — may need more for performance)"
 fi
 
+# ── CC8.1 — Environment Discipline ──────────────────────────────────
+echo -n "33. [CC8.1] Env fallback scan ...... "
+FRONTEND_ENV_FALLBACKS=$(grep -rEn "REACT_APP_BACKEND_URL.*(\|\||\?\?)" /app/frontend/src --include="*.js" --include="*.jsx" 2>/dev/null | wc -l)
+BACKEND_ENV_FALLBACKS=$(grep -rEn "os\.(environ\.get|getenv)\(('|\")?(MONGO_URL|DB_NAME)('|\")?,\s*['\"]" /app/backend --include="*.py" --exclude-dir="tests" 2>/dev/null | wc -l)
+TOTAL_ENV_FALLBACKS=$((FRONTEND_ENV_FALLBACKS + BACKEND_ENV_FALLBACKS))
+if [ "$TOTAL_ENV_FALLBACKS" = "0" ]; then
+  echo -e "$PASS"
+else
+  echo -e "$FAIL ($TOTAL_ENV_FALLBACKS protected env fallback patterns found)"
+  SOC2_ISSUES=$((SOC2_ISSUES + 1))
+fi
+
+# ── A1.2 — Recent Runtime Errors ────────────────────────────────────
+echo -n "34. [A1.2] Recent backend logs ..... "
+RECENT_BACKEND_ERRORS=$(tail -n 120 /var/log/supervisor/backend.err.log 2>/dev/null | grep -c "Traceback\|Exception\|ERROR" || true)
+if [ "$RECENT_BACKEND_ERRORS" = "0" ]; then
+  echo -e "$PASS"
+else
+  echo -e "$WARN ($RECENT_BACKEND_ERRORS recent error patterns in backend.err.log — review logs)"
+fi
+
+# ── CC8.1 — iOS/PWA Edit Flow Regression Guard ──────────────────────
+echo -n "35. [CC8.1] Route editor audit ..... "
+ROUTE_EDITOR_ISSUES=0
+grep -q '/beneficiaries/:beneficiaryId/edit' /app/frontend/src/App.js 2>/dev/null || ROUTE_EDITOR_ISSUES=$((ROUTE_EDITOR_ISSUES + 1))
+grep -q '/messages/:messageId/edit' /app/frontend/src/App.js 2>/dev/null || ROUTE_EDITOR_ISSUES=$((ROUTE_EDITOR_ISSUES + 1))
+grep -q 'navigate(`/beneficiaries/${ben.id}/edit`' /app/frontend/src/pages/BeneficiariesPage.js 2>/dev/null || ROUTE_EDITOR_ISSUES=$((ROUTE_EDITOR_ISSUES + 1))
+grep -q 'navigate(`/messages/${msg.id}/edit`' /app/frontend/src/pages/MessagesPage.js 2>/dev/null || ROUTE_EDITOR_ISSUES=$((ROUTE_EDITOR_ISSUES + 1))
+if [ "$ROUTE_EDITOR_ISSUES" = "0" ]; then
+  echo -e "$PASS"
+else
+  echo -e "$FAIL ($ROUTE_EDITOR_ISSUES route editor wiring issue(s))"
+  SOC2_ISSUES=$((SOC2_ISSUES + 1))
+fi
+
 echo ""
 
 # ══════════════════════════════════════════════════════════════

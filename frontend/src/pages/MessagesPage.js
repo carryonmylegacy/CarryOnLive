@@ -512,67 +512,7 @@ const MessagesPage = () => {
   };
 
   const openEdit = (msg) => {
-    setEditingMessage(msg);
-    setTitle(msg.title);
-    setContent(msg.content);
-    setMessageType(msg.message_type || 'text');
-    setSelectedRecipients(msg.recipients || []);
-    setTriggerType(msg.trigger_type || 'immediate');
-    setTriggerValue(msg.trigger_value || '');
-    setTriggerAge(msg.trigger_age ? String(msg.trigger_age) : '');
-    setTriggerDate(msg.trigger_date || '');
-    setCustomEventLabel(msg.custom_event_label || '');
-    // If the message already has a video, fetch it for playback
-    if (msg.video_url) {
-      setVideoBlob('existing');
-      setVideoUrl(null); // will be fetched
-      // Use existing thumbnail as poster if available
-      if (msg.video_thumbnail) {
-        setVideoPosterUrl(`data:image/jpeg;base64,${msg.video_thumbnail}`);
-      } else {
-        setVideoPosterUrl(null);
-      }
-      // Fetch video blob for playback
-      axios.get(`${API_URL}/messages/video/${msg.video_url}`, {
-        ...getAuthHeaders(),
-        responseType: 'blob',
-      }).then(res => {
-        const blobUrl = URL.createObjectURL(res.data);
-        setVideoUrl(blobUrl);
-        // Generate poster if none exists
-        if (!msg.video_thumbnail) {
-          try {
-            const tempVideo = document.createElement('video');
-            tempVideo.muted = true;
-            tempVideo.playsInline = true;
-            tempVideo.preload = 'auto';
-            tempVideo.src = blobUrl;
-            tempVideo.currentTime = 0.5;
-            tempVideo.addEventListener('seeked', () => {
-              try {
-                const canvas = document.createElement('canvas');
-                canvas.width = tempVideo.videoWidth || 640;
-                canvas.height = tempVideo.videoHeight || 480;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
-                setVideoPosterUrl(canvas.toDataURL('image/jpeg', 0.8));
-              } catch { /* non-critical */ }
-            }, { once: true });
-            tempVideo.load();
-          } catch { /* non-critical */ }
-        }
-      }).catch(() => {
-        setVideoBlob(null);
-        setVideoUrl(null);
-        setVideoPosterUrl(null);
-        toast.error('Could not load video');
-      });
-    } else {
-      setVideoBlob(null);
-      setVideoUrl(null);
-      setVideoPosterUrl(null);
-    }
-    setShowCreateModal(true);
+    navigate(`/messages/${msg.id}/edit`, { state: { message: msg } });
   };
 
   const toggleRecipient = (beneficiaryId) => {

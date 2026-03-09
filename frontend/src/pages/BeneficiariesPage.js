@@ -228,27 +228,7 @@ const BeneficiariesPage = () => {
   };
 
   const openEditModal = (ben) => {
-    setEditingBeneficiary(ben);
-    setFirstName(ben.first_name || ben.name?.split(' ')[0] || '');
-    setMiddleName(ben.middle_name || '');
-    setLastName(ben.last_name || ben.name?.split(' ').slice(-1)[0] || '');
-    setSuffix(ben.suffix || '');
-    setEmail(ben.email || '');
-    setPhone(ben.phone || '');
-    setRelation(ben.relation || '');
-    setDateOfBirth(ben.date_of_birth || '');
-    setGender(ben.gender || '');
-    setAddressStreet(ben.address_street || '');
-    setAddressCity(ben.address_city || '');
-    setAddressState(ben.address_state || '');
-    setAddressZip(ben.address_zip || '');
-    setAddressLine2(ben.address_line2 || '');
-    setSsnLastFour(ben.ssn_last_four || '');
-    setNotes(ben.notes || '');
-    setAvatarColor(ben.avatar_color || avatarColors[0]);
-    setPhotoFile(null);
-    setPhotoPreview(ben.photo_url || null);
-    setShowAddModal(true);
+    navigate(`/beneficiaries/${ben.id}/edit`, { state: { beneficiary: ben } });
   };
 
   const handleSendInvitation = async (beneficiaryId) => {

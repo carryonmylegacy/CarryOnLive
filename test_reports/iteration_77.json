@@ -1,0 +1,73 @@
+{
+  "summary": "Route-based edit screens testing complete. Both Edit Beneficiary and Edit Milestone Message pages work correctly with full-page routes replacing the broken modal pattern. Fixed missing estate_id bug in Edit Beneficiary save.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "EditBeneficiaryPage/EditMilestoneMessagePage",
+        "issues": ["Console warning: <span> cannot be a child of <select> - hydration error from dev tooling instrumentation (non-blocking)"]
+      }
+    ]
+  },
+  "passed_tests": [
+    "Edit Beneficiary: Route /beneficiaries/:beneficiaryId/edit navigates correctly",
+    "Edit Beneficiary: Form loads with existing beneficiary data (first_name, last_name, email, relation, etc.)",
+    "Edit Beneficiary: Back button returns to beneficiaries list",
+    "Edit Beneficiary: Save button works (after fix) - redirects to list with success toast",
+    "Edit Beneficiary: Cancel button returns to beneficiaries list",
+    "Edit Milestone Message: Route /messages/:messageId/edit navigates correctly",
+    "Edit Milestone Message: Form loads with existing message data (title, content, recipients, trigger)",
+    "Edit Milestone Message: Back button returns to messages list",
+    "Edit Milestone Message: Save button works - redirects to list with success toast",
+    "Edit Milestone Message: Cancel button returns to messages list",
+    "No blank screen or route crash when opening either edit route"
+  ],
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Fixed: EditBeneficiaryPage.js line 185 - Added missing estate_id to PUT payload (was causing 422 Unprocessable Entity)",
+    "Console warning about <span> inside <select> is from React dev tooling instrumentation, not actual code - non-blocking"
+  ],
+  "updated_files": [
+    "/app/frontend/src/pages/EditBeneficiaryPage.js"
+  ],
+  "success_rate": {
+    "backend": "N/A (frontend-only test per request)",
+    "frontend": "100% (all route-based edit flows verified working)"
+  },
+  "test_credentials": "Benefactor: fulltest@test.com / Password.123",
+  "seed_data_creation": "Used existing beneficiary 'Route Editor' and message 'Test' from prior test setup",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Route-based edit pages for beneficiaries and messages are fully functional. The old modal pattern has been replaced with full-page routes: /beneficiaries/:id/edit and /messages/:id/edit. Both pages load existing data, support save/cancel, and properly navigate back to their list pages. Rate limiting on login can occur with rapid testing (~10 requests triggers 429).",
+  "features_verified": {
+    "beneficiary_edit_route": [
+      "Navigation from list to edit route works",
+      "Form pre-populated with existing beneficiary data",
+      "Save persists changes and redirects back",
+      "Back/Cancel returns to list without saving",
+      "Direct URL access to edit route works"
+    ],
+    "message_edit_route": [
+      "Navigation from list to edit route works",
+      "Form pre-populated with existing message data",
+      "Message type toggle (Written/Voice/Video) present",
+      "Recipients selection present and functional",
+      "Trigger type selection present and functional",
+      "Save persists changes and redirects back",
+      "Back/Cancel returns to list without saving"
+    ]
+  },
+  "bug_fixed": {
+    "description": "Edit Beneficiary save was returning 422 Unprocessable Entity",
+    "root_cause": "Missing estate_id in PUT /api/beneficiaries/:id payload - BeneficiaryCreate model requires estate_id as a required field",
+    "fix": "Added estate_id: beneficiary?.estate_id to the PUT payload in EditBeneficiaryPage.js handleSave function",
+    "file_modified": "/app/frontend/src/pages/EditBeneficiaryPage.js",
+    "line_changed": "185"
+  }
+}
