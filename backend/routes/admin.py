@@ -231,14 +231,22 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
     active_subs = await db.user_subscriptions.count_documents(
         {"status": "active", "user_id": {"$in": list(user_ids)}}
     )
-    # Count users in active trial (benefactors + beneficiaries only, exclude admins/operators)
+    # Count users in active trial (exclude admins/operators AND already-subscribed users)
     now_iso = datetime.now(timezone.utc).isoformat()
-    trial_periods = await db.users.count_documents(
+    trial_candidates = await db.users.find(
         {
             "role": {"$in": ["benefactor", "beneficiary"]},
             "trial_ends_at": {"$gt": now_iso},
-        }
-    )
+        },
+        {"_id": 0, "id": 1},
+    ).to_list(10000)
+    sub_ids = {
+        s["user_id"]
+        for s in await db.user_subscriptions.find(
+            {"status": "active"}, {"_id": 0, "user_id": 1}
+        ).to_list(10000)
+    }
+    trial_periods = sum(1 for u in trial_candidates if u["id"] not in sub_ids)
     pending_family = await db.family_plan_requests.count_documents(
         {"status": "pending"}
     )
@@ -739,7 +747,7 @@ async def get_trial_users(current_user: dict = Depends(get_current_user)):
     now = datetime.now(timezone.utc)
     now_iso = now.isoformat()
 
-    trial_users = (
+    trial_users_raw = (
         await db.users.find(
             {
                 "role": {"$in": ["benefactor", "beneficiary"]},
@@ -758,6 +766,16 @@ async def get_trial_users(current_user: dict = Depends(get_current_user)):
         .sort("trial_ends_at", 1)
         .to_list(500)
     )
+
+    # Exclude users who already have an active subscription
+    subscribed_ids = set()
+    subs = await db.user_subscriptions.find(
+        {"status": "active"}, {"_id": 0, "user_id": 1}
+    ).to_list(10000)
+    for s in subs:
+        subscribed_ids.add(s["user_id"])
+
+    trial_users = [u for u in trial_users_raw if u["id"] not in subscribed_ids]
 
     for u in trial_users:
         try:
