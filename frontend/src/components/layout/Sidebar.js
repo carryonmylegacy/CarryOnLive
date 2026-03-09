@@ -457,16 +457,8 @@ const Sidebar = () => {
         <OtpToggle collapsed={collapsed} />
       )}
 
-      {/* Beta Banner */}
-      {collapsed ? (
-        <div className="mx-auto my-2 w-9 h-9 rounded-lg flex items-center justify-center" 
-          style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}
-          title="BETA = FREE">
-          <span className="text-base font-bold text-[var(--gn2)]" style={{ fontFamily: 'serif' }}>&beta;</span>
-        </div>
-      ) : (
-        <BetaBanner />
-      )}
+      {/* Beta Banner — only shows when beta_mode is active */}
+      <BetaBanner collapsed={collapsed} />
 
       {/* Beneficiary Estate Switcher — removed from sidebar, now in page header */}
 
@@ -571,7 +563,7 @@ const Sidebar = () => {
 export default Sidebar;
 
 // Beta Banner Component
-const BetaBanner = () => {
+const BetaBanner = ({ collapsed }) => {
   const [isBeta, setIsBeta] = useState(null);
   
   useEffect(() => {
@@ -582,9 +574,22 @@ const BetaBanner = () => {
       } catch { setIsBeta(null); }
     };
     check();
+    // Poll every 15s so toggling beta in Founder tab reflects immediately
+    const interval = setInterval(check, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   if (!isBeta) return null;
+
+  if (collapsed) {
+    return (
+      <div className="mx-auto my-2 w-9 h-9 rounded-lg flex items-center justify-center" 
+        style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}
+        title="BETA = FREE">
+        <span className="text-base font-bold text-[var(--gn2)]" style={{ fontFamily: 'serif' }}>&beta;</span>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-3 mb-2 px-2.5 py-1.5 rounded-lg text-center" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }} data-testid="beta-banner">
