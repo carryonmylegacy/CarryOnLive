@@ -99,32 +99,24 @@ export const TransitionTab = ({ getAuthHeaders }) => {
   };
 
   const handleDeleteCert = async () => {
-    if (!deleteTarget) return;
-    // Founder with password = permanent delete (with transition reversal)
-    if (isFounder && deletePassword) {
-      setDeleteLoading(true);
-      try {
+    if (!deleteTarget || !deletePassword) return;
+    setDeleteLoading(true);
+    try {
+      // Always require password — founder gets hard delete (with reversal), operators get soft delete
+      if (isFounder) {
         await axios.delete(`${API_URL}/transition/certificates/${deleteTarget.id}?admin_password=${encodeURIComponent(deletePassword)}`, getAuthHeaders());
         toast.success('Certificate permanently deleted — transition reversed');
-        setDeleteTarget(null);
-        setDeletePassword('');
-        fetchCertificates();
-      } catch (err) {
-        toast.error(err.response?.data?.detail || 'Failed to delete');
-      } finally { setDeleteLoading(false); }
-    } else {
-      // Soft delete (operator or founder without password)
-      setDeleteLoading(true);
-      try {
-        await axios.post(`${API_URL}/transition/certificates/${deleteTarget.id}/soft-delete`, {}, getAuthHeaders());
+      } else {
+        // Operators: verify password then soft delete
+        await axios.post(`${API_URL}/transition/certificates/${deleteTarget.id}/soft-delete`, { admin_password: deletePassword }, getAuthHeaders());
         toast.success('Certificate deleted');
-        setDeleteTarget(null);
-        setDeletePassword('');
-        fetchCertificates();
-      } catch (err) {
-        toast.error(err.response?.data?.detail || 'Failed to delete');
-      } finally { setDeleteLoading(false); }
-    }
+      }
+      setDeleteTarget(null);
+      setDeletePassword('');
+      fetchCertificates();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to delete');
+    } finally { setDeleteLoading(false); }
   };
 
   const handleSoftDelete = async (certId) => {

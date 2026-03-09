@@ -542,11 +542,26 @@ async def get_all_certificates(
 @router.post("/transition/certificates/{certificate_id}/soft-delete")
 async def soft_delete_certificate(
     certificate_id: str,
+    data: dict = None,
     current_user: dict = Depends(get_current_user),
 ):
-    """Soft-delete a transition certificate (operator or admin)."""
+    """Soft-delete a transition certificate (operator or admin). Requires password."""
+    import bcrypt
+
     if current_user["role"] not in ("admin", "operator"):
         raise HTTPException(status_code=403, detail="Admin or operator only")
+
+    # Verify password
+    admin_password = (data or {}).get("admin_password", "")
+    if not admin_password:
+        raise HTTPException(status_code=400, detail="Password required to delete")
+    caller_doc = await db.users.find_one(
+        {"id": current_user["id"]}, {"_id": 0, "password": 1}
+    )
+    if not caller_doc or not bcrypt.checkpw(
+        admin_password.encode(), caller_doc["password"].encode()
+    ):
+        raise HTTPException(status_code=401, detail="Incorrect password")
 
     cert = await db.death_certificates.find_one({"id": certificate_id}, {"_id": 0})
     if not cert:
