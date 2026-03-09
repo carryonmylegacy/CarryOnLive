@@ -25,6 +25,7 @@ import {
   AlertTriangle,
   UserCheck,
   XCircle,
+  X,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -677,23 +678,28 @@ const BeneficiariesPage = () => {
         </div>
       )}
 
-      {/* Add/Edit Beneficiary Modal - Enhanced */}
-      <Dialog open={showAddModal} onOpenChange={(open) => {
-        setShowAddModal(open);
-        if (!open) {
-          setEditingBeneficiary(null);
-          resetForm();
-        }
-      }}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-2xl max-h-[90vh] overflow-y-auto !top-[5vh] !translate-y-0" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
-          <DialogHeader>
-            <DialogTitle className="text-[var(--t)] text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              {editingBeneficiary ? 'Edit Beneficiary' : 'Add Beneficiary'}
-            </DialogTitle>
-            <DialogDescription className="text-[#94a3b8]">
-              {editingBeneficiary ? 'Update the details for this beneficiary' : 'Add a family member or loved one to your estate plan'}
-            </DialogDescription>
-          </DialogHeader>
+      {/* Add/Edit Beneficiary Modal — custom overlay (no Radix scroll lock) */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50" data-testid="beneficiary-edit-modal">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/70" onClick={() => { setShowAddModal(false); setEditingBeneficiary(null); resetForm(); }} />
+          {/* Content */}
+          <div className="absolute inset-x-0 top-[3vh] bottom-0 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:top-[5vh] sm:bottom-auto sm:w-full sm:max-w-2xl sm:max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl glass-card border border-[var(--b)]"
+            style={{ WebkitOverflowScrolling: 'touch' }}>
+            {/* Close button */}
+            <button onClick={() => { setShowAddModal(false); setEditingBeneficiary(null); resetForm(); }}
+              className="absolute right-4 top-4 z-10 w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)]">
+              <X className="h-4 w-4" />
+            </button>
+            {/* Header */}
+            <div className="p-6 pb-0">
+              <h2 className="text-[var(--t)] text-xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                {editingBeneficiary ? 'Edit Beneficiary' : 'Add Beneficiary'}
+              </h2>
+              <p className="text-[#94a3b8] text-sm mt-1">
+                {editingBeneficiary ? 'Update the details for this beneficiary' : 'Add a family member or loved one to your estate plan'}
+              </p>
+            </div>
           
           <div className="space-y-6 py-4">
             {/* Avatar Preview — click to pick/crop photo */}
@@ -986,8 +992,9 @@ const BeneficiariesPage = () => {
               )}
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </div>
+      )}
 
       {/* Access Requests Section */}
       {accessRequests.length > 0 && (
