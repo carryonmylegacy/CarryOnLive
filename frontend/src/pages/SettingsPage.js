@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 import { Switch } from '../components/ui/switch';
 import { Separator } from '../components/ui/separator';
 import { toast } from '../utils/toast';
