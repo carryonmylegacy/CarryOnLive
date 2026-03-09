@@ -12,29 +12,28 @@ Multi-portal estate planning platform (CarryOn) with FastAPI backend, React/Capa
 
 ## What's Been Implemented
 
-### Session: Feb 2026 - UX Tweaks (Current)
-- **Edit Beneficiary Page**: Removed security encryption blurb, replaced Upload/Add Photo button with camera icon inside avatar circle, added slide-in-from-right animation on desktop, staggered bounce-in animations on form cards
-- **Edit Milestone Message Page**: Added slide-in-from-right animation on desktop, staggered bounce-in card animations, cleaned up old modal reference text
-- **Digital Access Vault (DAV)**: Replaced modal-based edit dialog with elegant slide-in panel from the right, matching the edit beneficiary/milestone page style, with bouncy card animations
-- **CSS Animations**: Added slideInRight, bounceIn, panelSlideIn/panelSlideOut keyframes with media query breakpoints (768px) for responsive behavior
+### Session: Feb 2026 - SlidePanel UX Overhaul (Current)
+- **Reusable SlidePanel component** (`/app/frontend/src/components/SlidePanel.js`): Replaces all Dialog modals for edit/create flows. Slides in from right. Desktop: fills content area (minus sidebar). Mobile: full screen, slides under floating nav bar (z-45 < nav z-50), respects safe areas.
+- **Beneficiaries page**: Add and Edit beneficiary now use SlidePanel instead of Dialog modal or route navigation
+- **Messages page**: Create and Edit milestone messages now use SlidePanel instead of Dialog modal or route navigation. Edit pencil opens panel inline (no page transition).
+- **Vault (SDV) page**: Upload Document and Edit Document now use SlidePanel instead of Dialog modal
+- **DAV page**: Fixed panel height (was too high in PWA), fixed "Getting Started" popup showing on every entry (now only first)
+- **Performance**: Core pages (Dashboard, Vault, Messages, Beneficiaries, DigitalWallet) eagerly imported instead of lazy-loaded — eliminates skeleton flash delay between sections
+- **CSS animations**: slideInRight, bounceIn, panelSlideIn/Out keyframes + SlidePanel structural CSS
 
 ### Previous Sessions
-- Full edit flow refactor: Replaced broken modal dialogs with dedicated route-based edit pages (/beneficiaries/:id/edit, /messages/:id/edit)
-- Housekeeping script enhanced with eslint and bandit checks
+- Edit flow refactor: Original modal-to-page refactor (now superseded by SlidePanel approach)
+- Camera icon in avatar circle for Edit Beneficiary photo upload
+- Housekeeping script with eslint and bandit checks
 - Multi-portal architecture (Benefactor, Beneficiary, Admin, Operations)
-- Stripe payment integration
-- xAI (Grok) AI integration
-- AWS S3 document storage
-- Resend email service
-- Google Places address autocomplete
-- Capgo live updates
-- CodeMagic CI/CD
+- Stripe, xAI (Grok), AWS S3, Resend, Google Places, Capgo, CodeMagic integrations
 
 ## Architecture
 - Backend: FastAPI + MongoDB (MONGO_URL from .env)
 - Frontend: React + Capacitor (REACT_APP_BACKEND_URL from .env)
 - Authentication: JWT-based
 - File storage: S3-compatible
+- UI Pattern: SlidePanel for all edit/create flows (no Dialog modals)
 
 ## Blocked / Awaiting User Action
 - P1: Twilio SMS OTP Integration (blocked on A2P 10DLC approval)
@@ -43,10 +42,9 @@ Multi-portal estate planning platform (CarryOn) with FastAPI backend, React/Capa
 ## Backlog
 - No additional tasks pending
 
-## Key Routes
-- /beneficiaries/:beneficiaryId/edit → EditBeneficiaryPage
-- /messages/:messageId/edit → EditMilestoneMessagePage
-- /digital-wallet → DigitalWalletPage (with slide-in edit panel)
+## Key Components
+- `/app/frontend/src/components/SlidePanel.js` — Reusable slide-in panel
+- Route-based edit pages still exist as deep-link fallbacks but are not primary UX
 
 ## Test Credentials
 - Founder: info@carryon.us / Demo1234!
