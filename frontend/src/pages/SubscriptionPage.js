@@ -33,6 +33,7 @@ const SubscriptionPage = () => {
         const res = await axios.get(`${API_URL}/subscriptions/checkout-status/${sessionId}`, { headers });
         if (res.data?.payment_status === 'paid' || res.data?.payment_status === 'complete') {
           setPaymentSuccess(true);
+          toast.success('Subscription activated! All premium features are now unlocked.');
           window.history.replaceState({}, '', window.location.pathname);
           if (refreshSubscription) await refreshSubscription();
           setTimeout(() => setPaymentSuccess(false), 5000);
@@ -42,6 +43,7 @@ const SubscriptionPage = () => {
           const retry = await axios.get(`${API_URL}/subscriptions/checkout-status/${sessionId}`, { headers });
           if (retry.data?.payment_status === 'paid' || retry.data?.payment_status === 'complete') {
             setPaymentSuccess(true);
+            toast.success('Subscription activated! All premium features are now unlocked.');
             window.history.replaceState({}, '', window.location.pathname);
             if (refreshSubscription) await refreshSubscription();
             setTimeout(() => setPaymentSuccess(false), 5000);
