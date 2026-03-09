@@ -260,23 +260,36 @@ export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
       {/* Per-User Overrides */}
       <Card className="glass-card">
         <CardContent className="p-5">
-          <h3 className="text-lg font-bold text-[var(--t)] flex items-center gap-2 mb-4">
+          <h3 className="text-lg font-bold text-[var(--t)] flex items-center gap-2 mb-2">
             <Users className="w-5 h-5 text-[var(--gold)]" />
             User Subscription Overrides
           </h3>
+          <p className="text-xs text-[var(--t5)] mb-4">Search for a user to manage their subscription discount or free access.</p>
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg mb-4" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
             <Search className="w-4 h-4 text-[var(--t5)]" />
-            <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by name, email, role, plan..." className="flex-1 bg-transparent border-none text-[var(--t)] text-sm outline-none placeholder:text-[var(--t5)]" data-testid="subscriptions-user-search" />
+            <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by name or email..." className="flex-1 bg-transparent border-none text-[var(--t)] text-sm outline-none placeholder:text-[var(--t5)]" data-testid="subscriptions-user-search" />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="text-[var(--t5)] hover:text-[var(--t)]">
+                <span className="text-xs">&times;</span>
+              </button>
+            )}
           </div>
           <div className="space-y-2">
-            {userSubs.filter(u => u.role !== 'admin').filter(u => {
-              if (!searchQuery) return true;
-              const q = searchQuery.toLowerCase();
-              return (u.name || '').toLowerCase().includes(q) ||
-                (u.email || '').toLowerCase().includes(q) ||
-                (u.role || '').toLowerCase().includes(q) ||
-                (u.subscription?.plan_name || '').toLowerCase().includes(q);
-            }).map(u => {
+            {!searchQuery ? (
+              <p className="text-sm text-[var(--t5)] text-center py-6">Type a name or email above to find a user</p>
+            ) : (
+              userSubs.filter(u => u.role !== 'admin').filter(u => {
+                const q = searchQuery.toLowerCase();
+                return (u.name || '').toLowerCase().includes(q) ||
+                  (u.email || '').toLowerCase().includes(q);
+              }).length === 0 ? (
+                <p className="text-sm text-[var(--t5)] text-center py-4">No users found matching "{searchQuery}"</p>
+              ) : (
+                userSubs.filter(u => u.role !== 'admin').filter(u => {
+                  const q = searchQuery.toLowerCase();
+                  return (u.name || '').toLowerCase().includes(q) ||
+                    (u.email || '').toLowerCase().includes(q);
+                }).map(u => {
               const override = u.override || {};
               const sub = u.subscription;
               return (
@@ -327,7 +340,8 @@ export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
                   )}
                 </div>
               );
-            })}
+            }))
+            )}
           </div>
         </CardContent>
       </Card>
