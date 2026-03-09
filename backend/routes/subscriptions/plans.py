@@ -329,9 +329,9 @@ BENEFICIARY_PLANS = [
         "id": "ben_new_adult",
         "name": "New Adult",
         "price": 1.99,
-        "quarterly_price": 1.79,
-        "annual_price": 1.59,
-        "allows_billing_toggle": True,
+        "quarterly_price": 1.99,
+        "annual_price": 1.99,
+        "allows_billing_toggle": False,
         "note": "Ages 18-25",
         "features": [
             "Full platform access",
