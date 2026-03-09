@@ -298,9 +298,21 @@ export const AmberAlertProvider = () => {
       const res = await axios.get(`${API_URL}/notifications?unread_only=true&limit=5`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const criticalAlerts = (res.data.notifications || []).filter(
-        n => n.priority === 'critical' && n.type === 'security_alert' && !dismissed.includes(n.id)
-      );
+      const now = Date.now();
+      const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+      const criticalAlerts = (res.data.notifications || []).filter(n => {
+        if (n.priority !== 'critical' || n.type !== 'security_alert') return false;
+        if (dismissed.includes(n.id)) return false;
+        // Skip alerts older than 24 hours — auto-mark as read
+        const age = now - new Date(n.created_at).getTime();
+        if (age > maxAge) {
+          axios.post(`${API_URL}/notifications/${n.id}/read`, {}, {
+            headers: { Authorization: `Bearer ${token}` },
+          }).catch(() => {});
+          return false;
+        }
+        return true;
+      });
       if (criticalAlerts.length > 0 && !activeAlert) {
         setActiveAlert(criticalAlerts[0]);
       }
