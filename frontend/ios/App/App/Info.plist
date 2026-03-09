@@ -57,16 +57,5 @@
         <false/>
         <key>NSSpeechRecognitionUsageDescription</key>
         <string>CarryOn uses speech recognition for voice-to-text input in the Estate Guardian AI and Milestone Messages.</string>
-        <key>CFBundleURLTypes</key>
-        <array>
-                <dict>
-                        <key>CFBundleURLName</key>
-                        <string>us.carryon.app</string>
-                        <key>CFBundleURLSchemes</key>
-                        <array>
-                                <string>carryon</string>
-                        </array>
-                </dict>
-        </array>
 </dict>
 </plist>
