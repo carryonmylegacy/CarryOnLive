@@ -1053,8 +1053,10 @@ const BeneficiariesPage = () => {
                 </h4>
                 <ul className="text-xs text-[var(--t4)] space-y-2 list-disc pl-4">
                   <li>This person will serve as the <strong>trustee</strong> of your estate after your transition.</li>
+                  <li>They will have the authority to <strong>add and remove</strong> other beneficiaries from your estate after your transition.</li>
+                  <li>They will have the authority to <strong>control what each beneficiary can see</strong> of your estate's documents, messages, and records.</li>
                   <li>They will have the <strong>sole authority</strong> to approve or deny new beneficiaries who request access to your estate after you have passed.</li>
-                  <li>No other beneficiary will have this power unless you change this designation.</li>
+                  <li>No other beneficiary will have these powers unless you change this designation.</li>
                   <li>You can change your primary beneficiary at any time while your estate is active.</li>
                 </ul>
               </div>

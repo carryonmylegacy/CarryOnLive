@@ -326,6 +326,19 @@ BENEFICIARY_PLANS = [
         ],
     },
     {
+        "id": "ben_new_adult",
+        "name": "New Adult",
+        "price": 1.99,
+        "quarterly_price": 1.79,
+        "annual_price": 1.59,
+        "allows_billing_toggle": True,
+        "note": "Ages 18-25",
+        "features": [
+            "Full platform access",
+            "Parents, grandparents, siblings, spouse, children",
+        ],
+    },
+    {
         "id": "ben_military",
         "name": "Military / First Responder",
         "price": 1.99,

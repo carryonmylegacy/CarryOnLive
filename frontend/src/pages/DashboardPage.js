@@ -280,7 +280,7 @@ const DashboardPage = () => {
     const STEP_LABELS = {
       create_message: { title: 'Leave a Message for Your Loved Ones', desc: 'Record a video, voice, or written message for your beneficiaries. You can edit or re-record anytime.', step: 1 },
       upload_document: { title: 'Upload Your First Estate Document', desc: 'Securely store a will, trust, insurance policy, or other important document in your encrypted vault.', step: 2 },
-      designate_primary: { title: 'Designate Your Primary Beneficiary', desc: 'Choose who will serve as trustee of your estate and have authority to manage beneficiary access after transition.', step: 3 },
+      designate_primary: { title: 'Designate Your Primary Beneficiary', desc: 'Choose who will serve as trustee of your estate. After transition, they can add/remove beneficiaries, control what each beneficiary sees, and approve access requests.', step: 3 },
       customize_checklist: { title: 'Review Your Action Checklist', desc: 'Customize the steps your loved ones will follow when they need it most.', step: 4 },
       add_credential: { title: 'Store a Digital Account Credential', desc: 'Add one account login and password to your Digital Access Vault so your beneficiaries can manage your accounts.', step: 5 },
       review_readiness: { title: 'Consult the Estate Guardian', desc: 'Get an AI analysis of your estate plan and your personalized readiness score.', step: 6 },
