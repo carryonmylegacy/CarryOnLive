@@ -401,6 +401,8 @@ const GuardianPage = () => {
     setShowQuestions(false);
     setShowActions(false);
 
+    const lastUserMessage = messageText;
+    const lastAction = action;
     const activeSessionId = overrideSessionId || sessionId;
 
     const displayText = action
@@ -444,7 +446,7 @@ const GuardianPage = () => {
       }
       const errDetail = error.response?.data?.detail || '';
       toast.error(errDetail || 'Failed to get response');
-      setMessages(prev => [...prev, { role: 'assistant', content: errDetail || 'I encountered a temporary issue connecting to the AI service. Please try again — it usually works on the second attempt.' }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: errDetail || 'I encountered a temporary issue connecting to the AI service. Please try again — it usually works on the second attempt.', isError: true, retryMessage: lastUserMessage }]);
     } finally {
       setLoading(false);
       setActionLoading(null);
@@ -470,7 +472,7 @@ const GuardianPage = () => {
   // ═══════════════════════════════════════════════
   if (view === 'landing') {
     return (
-      <div ref={guardianRef} className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10" style={{ top: headerHeight + 'px', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', left: 0, overscrollBehavior: 'none', touchAction: 'none' }} data-testid="estate-guardian">
+      <div ref={guardianRef} className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10" style={{ top: headerHeight + 'px', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', left: 0, overscrollBehavior: 'contain' }} data-testid="estate-guardian">
       <style>{`@media (min-width: 1024px) { [data-testid="estate-guardian"] { left: var(--sidebar-width, 260px) !important; bottom: 0 !important; } }`}</style>
 
         {/* Scrollable content */}
@@ -602,7 +604,7 @@ const GuardianPage = () => {
   // CHAT VIEW
   // ═══════════════════════════════════════════════
   return (
-    <div ref={guardianRef} className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10" style={{ top: headerHeight + 'px', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', left: 0, overscrollBehavior: 'none', touchAction: 'none' }} data-testid="estate-guardian">
+    <div ref={guardianRef} className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10" style={{ top: headerHeight + 'px', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', left: 0, overscrollBehavior: 'contain' }} data-testid="estate-guardian">
       <style>{`@media (min-width: 1024px) { [data-testid="estate-guardian"] { left: var(--sidebar-width, 260px) !important; bottom: 0 !important; } }`}</style>
 
       {/* Chat Header */}
@@ -666,6 +668,14 @@ const GuardianPage = () => {
                     className="mt-2 flex items-center gap-1.5 text-[10px] text-[var(--t5)] hover:text-[var(--gold)] transition-colors"
                     data-testid={`copy-message-${index}`}>
                     <Copy className="w-3 h-3" /> Copy
+                  </button>
+                )}
+                {msg.isError && msg.retryMessage && !loading && (
+                  <button onClick={() => sendMessage(msg.retryMessage)}
+                    className="mt-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95"
+                    style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
+                    data-testid={`retry-message-${index}`}>
+                    Try Again
                   </button>
                 )}
                 {msg.actionBadge && (
