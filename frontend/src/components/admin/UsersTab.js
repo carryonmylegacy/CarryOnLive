@@ -19,7 +19,7 @@ const statusColors = {
   draft: { bg: 'rgba(100,116,139,0.1)', color: '#94A3B8' },
 };
 
-export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders }) => {
+export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, operatorMode = false }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'tree'
@@ -35,6 +35,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders }) => 
   const [deleting, setDeleting] = useState(false);
 
   const filteredUsers = users
+    .filter(u => operatorMode ? (u.role !== 'admin' && u.role !== 'operator') : true)
     .filter(u => roleFilter === 'all' || u.role === roleFilter)
     .filter(u => !searchQuery || u.name?.toLowerCase().includes(searchQuery.toLowerCase()) || u.email?.toLowerCase().includes(searchQuery.toLowerCase()));
 
@@ -317,7 +318,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders }) => 
           <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search..." className="flex-1 bg-transparent border-none text-[var(--t)] text-sm outline-none placeholder:text-[var(--t5)]" data-testid="admin-users-search" />
         </div>
         <div className="flex gap-1 overflow-x-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
-          {['all', 'benefactor', 'beneficiary', 'admin'].map(r => (
+          {(operatorMode ? ['all', 'benefactor', 'beneficiary'] : ['all', 'benefactor', 'beneficiary', 'admin']).map(r => (
             <button key={r} onClick={() => setRoleFilter(r)} className={`px-3 py-2 rounded-lg text-xs font-bold capitalize whitespace-nowrap flex-shrink-0 ${roleFilter === r ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'}`} data-testid={`admin-role-filter-${r}`}>{r === 'all' ? 'All' : r}</button>
           ))}
           <div className="w-px bg-[var(--b)] mx-1" />

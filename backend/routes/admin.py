@@ -130,9 +130,9 @@ async def get_public_dev_switcher_config():
 
 @router.get("/admin/users")
 async def get_all_users(current_user: dict = Depends(get_current_user)):
-    """Get all users with subscription info and beneficiary tree — admin only"""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
+    """Get all users with subscription info and beneficiary tree — admin and operators"""
+    if current_user["role"] not in ("admin", "operator"):
+        raise HTTPException(status_code=403, detail="Staff access required")
     users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
 
     # Build estate owner → beneficiaries map
@@ -740,9 +740,9 @@ async def get_activity_log(current_user: dict = Depends(get_current_user)):
 
 @router.get("/admin/trial-users")
 async def get_trial_users(current_user: dict = Depends(get_current_user)):
-    """List all users currently in their trial period — admin only."""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
+    """List all users currently in their trial period — admin and operators."""
+    if current_user["role"] not in ("admin", "operator"):
+        raise HTTPException(status_code=403, detail="Staff access required")
 
     now = datetime.now(timezone.utc)
     now_iso = now.isoformat()

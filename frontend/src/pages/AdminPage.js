@@ -102,6 +102,8 @@ const PATH_TO_TAB = {
   '/ops/dashboard': 'ops-dashboard',
   '/ops/ops-dashboard': 'ops-dashboard',
   '/ops/milestones': 'milestones',
+  '/ops/users': 'users',
+  '/ops/trials': 'trials',
 };
 
 const AdminPage = ({ operatorMode = false }) => {
@@ -419,7 +421,7 @@ const AdminPage = ({ operatorMode = false }) => {
         {TAB_CONFIG.filter(t => {
           if (operatorMode) {
             // Operators: work queues + operator tools
-            const opsTabs = ['transition', 'dts', 'support', 'verifications', 'milestones', 'my-activity', 'search', 'ops-escalations', 'shift-notes', 'ops-kb'];
+            const opsTabs = ['transition', 'dts', 'support', 'verifications', 'milestones', 'users', 'trials', 'my-activity', 'search', 'ops-escalations', 'shift-notes', 'ops-kb'];
             // Managers also get team management + dashboard
             if (user?.operator_role === 'manager') opsTabs.push('operators', 'ops-dashboard');
             return opsTabs.includes(t.key);
@@ -437,7 +439,7 @@ const AdminPage = ({ operatorMode = false }) => {
       </div>
 
       {/* Tab Content */}
-      {tab === 'users' && <UsersTab users={users} setUsers={setUsers} currentUserId={user?.id} getAuthHeaders={getAuthHeaders} />}
+      {tab === 'users' && <UsersTab users={users} setUsers={setUsers} currentUserId={user?.id} getAuthHeaders={getAuthHeaders} operatorMode={operatorMode} />}
       {tab === 'transition' && <TransitionTab getAuthHeaders={getAuthHeaders} />}
       {tab === 'dts' && <DTSTab getAuthHeaders={getAuthHeaders} />}
       {tab === 'support' && <SupportTab getAuthHeaders={getAuthHeaders} />}
