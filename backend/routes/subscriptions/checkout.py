@@ -1,5 +1,6 @@
 """Checkout, plan changes, webhooks, and admin subscription settings."""
 
+import asyncio
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -438,6 +439,44 @@ async def stripe_webhook(request: Any):
                             "updated_at": datetime.now(timezone.utc).isoformat(),
                         }
                     },
+                )
+                # Also activate the subscription (critical fallback if checkout-status wasn't called)
+                now = datetime.now(timezone.utc)
+                cycle = txn.get("billing_cycle", "monthly")
+                if cycle == "annual":
+                    period_end = now + timedelta(days=365)
+                elif cycle == "quarterly":
+                    period_end = now + timedelta(days=90)
+                else:
+                    period_end = now + timedelta(days=30)
+                await db.user_subscriptions.update_one(
+                    {"user_id": txn["user_id"]},
+                    {
+                        "$set": {
+                            "user_id": txn["user_id"],
+                            "plan_id": txn.get("plan_id", ""),
+                            "plan_name": txn.get("plan_name", ""),
+                            "status": "active",
+                            "billing_cycle": cycle,
+                            "amount": txn.get("amount", 0),
+                            "stripe_session_id": event.session_id,
+                            "current_period_start": now.isoformat(),
+                            "current_period_end": period_end.isoformat(),
+                            "activated_at": now.isoformat(),
+                            "payment_provider": "stripe",
+                        }
+                    },
+                    upsert=True,
+                )
+                # Notification
+                from services.notifications import notify
+
+                asyncio.create_task(
+                    notify.founder(
+                        "Subscription Payment Received",
+                        f"Payment confirmed for {txn.get('plan_name', 'plan')} ({cycle})",
+                        url="/admin/subscriptions",
+                    )
                 )
 
         return {"received": True}

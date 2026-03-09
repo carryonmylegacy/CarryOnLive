@@ -92,7 +92,7 @@ class RouteErrorBoundary extends React.Component {
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading, isAuthenticated, subscriptionStatus } = useAuth();
-  const [showPaywall, setShowPaywall] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(() => sessionStorage.getItem('paywall_dismissed') === 'true');
 
   if (loading) {
     return (
@@ -139,7 +139,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     && !subscriptionStatus?.has_active_subscription;
 
   if (needsSubscription && !showPaywall) {
-    return <SubscriptionPaywall onDismiss={() => setShowPaywall(true)} />;
+    return <SubscriptionPaywall onDismiss={() => { setShowPaywall(true); sessionStorage.setItem('paywall_dismissed', 'true'); }} />;
   }
 
   return children;
