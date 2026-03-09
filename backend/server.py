@@ -47,7 +47,11 @@ from routes.staff_tools import router as staff_tools_router
 from routes.notifications import router as notifications_router
 from routes.ops_dashboard import router as ops_dashboard_router
 from routes.milestone_deliveries import router as milestone_deliveries_router
-from schedulers import daily_dob_check_scheduler, weekly_digest_scheduler
+from schedulers import (
+    daily_dob_check_scheduler,
+    weekly_digest_scheduler,
+    health_alert_scheduler,
+)
 
 
 # ===================== LIFECYCLE =====================
@@ -103,10 +107,12 @@ async def lifespan(app):
     digest_task = asyncio.create_task(weekly_digest_scheduler())
     reminder_task = asyncio.create_task(trial_reminder_scheduler())
     dob_task = asyncio.create_task(daily_dob_check_scheduler())
+    health_task = asyncio.create_task(health_alert_scheduler())
     yield
     digest_task.cancel()
     reminder_task.cancel()
     dob_task.cancel()
+    health_task.cancel()
     client.close()
     logger.info("CarryOn™ API shutting down")
 

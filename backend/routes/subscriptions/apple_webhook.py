@@ -243,6 +243,20 @@ async def _handle_expired(txn: dict, renewal: dict | None):
     )
     logger.info(f"Apple EXPIRED: user={app_account_token}")
 
+    # NOTIFICATION: Subscription expired → benefactor
+    from services.notifications import notify
+    import asyncio
+
+    asyncio.create_task(
+        notify.benefactor(
+            app_account_token,
+            "Subscription Expired",
+            "Your CarryOn subscription has expired. Your existing documents are safe, but you'll need to resubscribe to upload new documents or use premium features.",
+            url="/subscription",
+            priority="high",
+        )
+    )
+
 
 async def _handle_did_fail_to_renew(txn: dict, renewal: dict | None):
     """DID_FAIL_TO_RENEW — payment failed; enter billing-retry / grace period."""
@@ -263,6 +277,20 @@ async def _handle_did_fail_to_renew(txn: dict, renewal: dict | None):
         {"$set": update},
     )
     logger.info(f"Apple DID_FAIL_TO_RENEW: user={app_account_token}")
+
+    # NOTIFICATION: Payment failed → benefactor
+    from services.notifications import notify
+    import asyncio
+
+    asyncio.create_task(
+        notify.benefactor(
+            app_account_token,
+            "Payment Failed",
+            "Your subscription payment could not be processed. Please update your payment method to maintain access to your estate plan.",
+            url="/subscription",
+            priority="high",
+        )
+    )
 
 
 async def _handle_refund(txn: dict, renewal: dict | None):
