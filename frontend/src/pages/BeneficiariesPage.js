@@ -25,7 +25,6 @@ import {
   AlertTriangle,
   UserCheck,
   XCircle,
-  X,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -678,21 +677,23 @@ const BeneficiariesPage = () => {
         </div>
       )}
 
-      {/* Add/Edit Beneficiary — inline form (replaces list when active) */}
-      {showAddModal && (
-        <div className="space-y-6 pb-8" data-testid="beneficiary-edit-form">
-          {/* Back button */}
-          <button onClick={() => { setShowAddModal(false); setEditingBeneficiary(null); resetForm(); }}
-            className="flex items-center gap-2 text-sm text-[var(--t4)] hover:text-[var(--t)]">
-            <ChevronDown className="w-4 h-4 rotate-90" /> Back to Beneficiaries
-          </button>
-          <div className="glass-card p-5 rounded-2xl">
-            <h2 className="text-[var(--t)] text-xl font-bold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
+      {/* Add/Edit Beneficiary Modal - Enhanced */}
+      <Dialog open={showAddModal} onOpenChange={(open) => {
+        setShowAddModal(open);
+        if (!open) {
+          setEditingBeneficiary(null);
+          resetForm();
+        }
+      }}>
+        <DialogContent className="glass-card border-[var(--b)] sm:max-w-2xl max-h-[90vh] overflow-y-scroll !top-[5vh] !translate-y-0">
+          <DialogHeader>
+            <DialogTitle className="text-[var(--t)] text-xl" style={{ fontFamily: 'Outfit, sans-serif' }}>
               {editingBeneficiary ? 'Edit Beneficiary' : 'Add Beneficiary'}
-            </h2>
-            <p className="text-[#94a3b8] text-sm mb-6">
+            </DialogTitle>
+            <DialogDescription className="text-[#94a3b8]">
               {editingBeneficiary ? 'Update the details for this beneficiary' : 'Add a family member or loved one to your estate plan'}
-            </p>
+            </DialogDescription>
+          </DialogHeader>
           
           <div className="space-y-6 py-4">
             {/* Avatar Preview — click to pick/crop photo */}
@@ -702,12 +703,6 @@ const BeneficiariesPage = () => {
                 onPhotoSelected={(file, previewUrl) => {
                   setPhotoFile(file);
                   setPhotoPreview(previewUrl);
-                  // Fix iOS scroll lock after native file picker closes
-                  setTimeout(() => {
-                    document.body.style.overflow = '';
-                    document.body.style.position = '';
-                    document.body.style.touchAction = '';
-                  }, 300);
                 }}
                 onRemove={() => { setPhotoFile(null); setPhotoPreview(null); }}
               />
@@ -985,9 +980,8 @@ const BeneficiariesPage = () => {
               )}
             </Button>
           </div>
-          </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* Access Requests Section */}
       {accessRequests.length > 0 && (
@@ -1059,10 +1053,8 @@ const BeneficiariesPage = () => {
                 </h4>
                 <ul className="text-xs text-[var(--t4)] space-y-2 list-disc pl-4">
                   <li>This person will serve as the <strong>trustee</strong> of your estate after your transition.</li>
-                  <li>They will have the authority to <strong>add and remove</strong> other beneficiaries from your estate after your transition.</li>
-                  <li>They will have the authority to <strong>control what each beneficiary can see</strong> of your estate's documents, messages, and records.</li>
                   <li>They will have the <strong>sole authority</strong> to approve or deny new beneficiaries who request access to your estate after you have passed.</li>
-                  <li>No other beneficiary will have these powers unless you change this designation.</li>
+                  <li>No other beneficiary will have this power unless you change this designation.</li>
                   <li>You can change your primary beneficiary at any time while your estate is active.</li>
                 </ul>
               </div>

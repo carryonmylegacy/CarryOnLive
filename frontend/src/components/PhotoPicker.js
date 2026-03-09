@@ -125,12 +125,6 @@ export function PhotoPicker({ onPhotoSelected, currentPhoto, onRemove }) {
     onPhotoSelected(file, previewUrl);
     setShowCropper(false);
     setRawImage(null);
-    // Fix iOS scroll lock after native file picker / cropper closes
-    setTimeout(() => {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.touchAction = '';
-    }, 100);
   };
 
   return (

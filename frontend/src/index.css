@@ -996,41 +996,6 @@
     touch-action: pan-y;
     overscroll-behavior: contain;
   }
-
-  /* Prevent iOS body scroll lock from nested dialogs */
-  body[data-scroll-locked] {
-    overflow: auto !important;
-    touch-action: auto !important;
-    position: static !important;
-  }
-}
-
-/* Global: Prevent Radix dialog body scroll lock on all devices */
-body[data-scroll-locked] {
-  overflow: auto !important;
-  touch-action: auto !important;
-  position: static !important;
-  pointer-events: auto !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-/* Override react-remove-scroll inline styles */
-[data-radix-scroll-area-viewport],
-[data-remove-scroll-bar] {
-  touch-action: auto !important;
-}
-
-/* Ensure dialog content is always scrollable on touch devices */
-@media (pointer: coarse) {
-  [role="dialog"] {
-    -webkit-overflow-scrolling: touch !important;
-    touch-action: pan-y !important;
-    overscroll-behavior: contain !important;
-  }
-  [role="dialog"] * {
-    touch-action: auto;
-  }
 }
 
 /* Hide scrollbar utility */
