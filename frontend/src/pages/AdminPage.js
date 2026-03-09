@@ -35,6 +35,7 @@ import { KnowledgeBaseTab } from '../components/admin/KnowledgeBaseTab';
 import { P1ContactSettingsTab } from '../components/admin/P1ContactSettingsTab';
 import { OpsDashboardTab } from '../components/admin/OpsDashboardTab';
 import { MilestoneDeliveriesTab } from '../components/admin/MilestoneDeliveriesTab';
+import { TrialUsersTab } from '../components/admin/TrialUsersTab';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -91,6 +92,7 @@ const PATH_TO_TAB = {
   '/admin/p1-settings': 'p1-settings',
   '/admin/ops-dashboard': 'ops-dashboard',
   '/admin/milestones': 'milestones',
+  '/admin/trials': 'trials',
   '/ops/my-activity': 'my-activity',
   '/ops/search': 'search',
   '/ops/escalations': 'ops-escalations',
@@ -384,7 +386,7 @@ const AdminPage = ({ operatorMode = false }) => {
             { v: stats.users.total, l: 'Total Users', sub: `${stats.users.benefactors} benefactors · ${stats.users.beneficiaries} beneficiaries`, icon: Users, color: '#60A5FA', path: '/admin' },
             { v: stats.active_subscriptions, l: 'Active Subscriptions', icon: CreditCard, color: '#22C993', path: '/admin/subscriptions' },
             { v: stats.estates.active, l: 'Active Estates', sub: `${stats.estates.transitioned} transitioned`, icon: FolderLock, color: '#0EA5E9', path: '/admin/transition' },
-            { v: stats.grace_periods, l: 'Grace Periods', icon: Clock, color: '#F59E0B', path: '/admin/activity' },
+            { v: stats.grace_periods, l: 'Trial Periods', icon: Clock, color: '#F59E0B', path: '/admin/trials' },
           ].map(s => (
             <div key={s.l} className="glass-card p-3 text-center cursor-pointer active:scale-[0.96] transition-transform"
               onClick={() => navigate(s.path)}>
@@ -461,6 +463,7 @@ const AdminPage = ({ operatorMode = false }) => {
       {tab === 'ops-kb' && operatorMode && <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={false} />}
       {tab === 'ops-dashboard' && <OpsDashboardTab getAuthHeaders={getAuthHeaders} />}
       {tab === 'milestones' && <MilestoneDeliveriesTab getAuthHeaders={getAuthHeaders} />}
+      {tab === 'trials' && <TrialUsersTab getAuthHeaders={getAuthHeaders} />}
     </div>
   );
 };

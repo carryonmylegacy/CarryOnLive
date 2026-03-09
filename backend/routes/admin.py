@@ -231,7 +231,14 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
     active_subs = await db.user_subscriptions.count_documents(
         {"status": "active", "user_id": {"$in": list(user_ids)}}
     )
-    grace_periods = await db.beneficiary_grace_periods.count_documents({})
+    # Count users in active trial (benefactors + beneficiaries only, exclude admins/operators)
+    now_iso = datetime.now(timezone.utc).isoformat()
+    trial_periods = await db.users.count_documents(
+        {
+            "role": {"$in": ["benefactor", "beneficiary"]},
+            "trial_ends_at": {"$gt": now_iso},
+        }
+    )
     pending_family = await db.family_plan_requests.count_documents(
         {"status": "pending"}
     )
@@ -280,7 +287,7 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
         "pending_verifications": pending_verifications,
         "pending_dts": pending_dts,
         "active_subscriptions": active_subs,
-        "grace_periods": grace_periods,
+        "grace_periods": trial_periods,
         "pending_family_requests": pending_family,
         "pending_deletions": deletion_requests,
         "avg_beneficiaries_per_benefactor": avg_bens_per_benefactor,
@@ -721,6 +728,47 @@ async def get_activity_log(current_user: dict = Depends(get_current_user)):
 
 
 # ===================== PLATFORM SETTINGS =====================
+
+
+@router.get("/admin/trial-users")
+async def get_trial_users(current_user: dict = Depends(get_current_user)):
+    """List all users currently in their trial period — admin only."""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    now = datetime.now(timezone.utc)
+    now_iso = now.isoformat()
+
+    trial_users = (
+        await db.users.find(
+            {
+                "role": {"$in": ["benefactor", "beneficiary"]},
+                "trial_ends_at": {"$gt": now_iso},
+            },
+            {
+                "_id": 0,
+                "id": 1,
+                "name": 1,
+                "email": 1,
+                "role": 1,
+                "created_at": 1,
+                "trial_ends_at": 1,
+            },
+        )
+        .sort("trial_ends_at", 1)
+        .to_list(500)
+    )
+
+    for u in trial_users:
+        try:
+            ends = datetime.fromisoformat(u["trial_ends_at"].replace("Z", "+00:00"))
+            if ends.tzinfo is None:
+                ends = ends.replace(tzinfo=timezone.utc)
+            u["days_remaining"] = max(0, (ends - now).days)
+        except (ValueError, TypeError):
+            u["days_remaining"] = 0
+
+    return trial_users
 
 
 @router.get("/admin/platform-settings")
