@@ -1081,8 +1081,13 @@ const SignupPage = () => {
                               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a4a63]" />
                               <Input type={showPassword ? 'text' : 'password'} value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter"
-                                className={`${inputClass} pl-12`} data-testid="signup-confirm-password-input" />
+                                className={`${inputClass} pl-12 ${confirmPassword && password !== confirmPassword ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30' : ''}`} data-testid="signup-confirm-password-input" />
                             </div>
+                            {confirmPassword && password !== confirmPassword && (
+                              <p className="text-red-400 text-xs flex items-center gap-1">
+                                <span className="text-red-400">*</span> Passwords do not match
+                              </p>
+                            )}
                           </div>
                         </div>
 

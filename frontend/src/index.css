@@ -989,6 +989,13 @@
     white-space: normal;
     min-height: 2rem;
   }
+
+  /* Dialog scrolling fix — ensure modals can scroll on iOS */
+  [role="dialog"] {
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    overscroll-behavior: contain;
+  }
 }
 
 /* Hide scrollbar utility */
