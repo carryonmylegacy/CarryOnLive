@@ -678,28 +678,21 @@ const BeneficiariesPage = () => {
         </div>
       )}
 
-      {/* Add/Edit Beneficiary Modal — custom overlay (no Radix scroll lock) */}
+      {/* Add/Edit Beneficiary — inline form (replaces list when active) */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50" data-testid="beneficiary-edit-modal">
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/70" onClick={() => { setShowAddModal(false); setEditingBeneficiary(null); resetForm(); }} />
-          {/* Content */}
-          <div className="absolute inset-x-0 top-[3vh] bottom-0 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:top-[5vh] sm:bottom-auto sm:w-full sm:max-w-2xl sm:max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl glass-card border border-[var(--b)]"
-            style={{ WebkitOverflowScrolling: 'touch' }}>
-            {/* Close button */}
-            <button onClick={() => { setShowAddModal(false); setEditingBeneficiary(null); resetForm(); }}
-              className="absolute right-4 top-4 z-10 w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)]">
-              <X className="h-4 w-4" />
-            </button>
-            {/* Header */}
-            <div className="p-6 pb-0">
-              <h2 className="text-[var(--t)] text-xl font-bold" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                {editingBeneficiary ? 'Edit Beneficiary' : 'Add Beneficiary'}
-              </h2>
-              <p className="text-[#94a3b8] text-sm mt-1">
-                {editingBeneficiary ? 'Update the details for this beneficiary' : 'Add a family member or loved one to your estate plan'}
-              </p>
-            </div>
+        <div className="space-y-6 pb-8" data-testid="beneficiary-edit-form">
+          {/* Back button */}
+          <button onClick={() => { setShowAddModal(false); setEditingBeneficiary(null); resetForm(); }}
+            className="flex items-center gap-2 text-sm text-[var(--t4)] hover:text-[var(--t)]">
+            <ChevronDown className="w-4 h-4 rotate-90" /> Back to Beneficiaries
+          </button>
+          <div className="glass-card p-5 rounded-2xl">
+            <h2 className="text-[var(--t)] text-xl font-bold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              {editingBeneficiary ? 'Edit Beneficiary' : 'Add Beneficiary'}
+            </h2>
+            <p className="text-[#94a3b8] text-sm mb-6">
+              {editingBeneficiary ? 'Update the details for this beneficiary' : 'Add a family member or loved one to your estate plan'}
+            </p>
           
           <div className="space-y-6 py-4">
             {/* Avatar Preview — click to pick/crop photo */}
@@ -992,8 +985,8 @@ const BeneficiariesPage = () => {
               )}
             </Button>
           </div>
+          </div>
         </div>
-      </div>
       )}
 
       {/* Access Requests Section */}
