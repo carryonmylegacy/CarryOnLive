@@ -996,6 +996,13 @@
     touch-action: pan-y;
     overscroll-behavior: contain;
   }
+
+  /* Prevent iOS body scroll lock from nested dialogs */
+  body[data-scroll-locked] {
+    overflow: auto !important;
+    touch-action: auto !important;
+    position: static !important;
+  }
 }
 
 /* Hide scrollbar utility */
