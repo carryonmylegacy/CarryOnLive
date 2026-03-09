@@ -137,6 +137,37 @@ async def gather_estate_context(
     if not estate:
         return ""
 
+    # Get benefactor's address for state-specific legal advice
+    benefactor = await db.users.find_one(
+        {"id": estate.get("owner_id")},
+        {
+            "_id": 0,
+            "address_state": 1,
+            "address_city": 1,
+            "address_street": 1,
+            "address_zip": 1,
+            "marital_status": 1,
+            "date_of_birth": 1,
+            "special_status": 1,
+        },
+    )
+    # Use benefactor's registered state, falling back to estate.state
+    benefactor_state = (
+        (benefactor or {}).get("address_state")
+        or estate.get("state")
+        or "Not specified"
+    )
+    benefactor_city = (benefactor or {}).get("address_city", "")
+    benefactor_zip = (benefactor or {}).get("address_zip", "")
+    benefactor_marital = (benefactor or {}).get("marital_status", "")
+    benefactor_special = (benefactor or {}).get("special_status", [])
+
+    # Also update estate.state if it's missing but benefactor has it
+    if not estate.get("state") and benefactor_state != "Not specified":
+        await db.estates.update_one(
+            {"id": estate_id}, {"$set": {"state": benefactor_state}}
+        )
+
     # Fetch all estate data
     documents = await db.documents.find(
         {"estate_id": estate_id},
@@ -164,14 +195,19 @@ async def gather_estate_context(
     # Build context string
     context_parts = []
 
-    # Estate info
-    state_info = estate.get("state", "Not specified")
+    # Estate info with benefactor's residence for state-specific legal advice
     context_parts.append(f"""
 **CURRENT ESTATE INFORMATION:**
 - Estate Name: {estate["name"]}
-- State: {state_info}
-- Status: {estate.get("status", "pre-transition")}
+- Benefactor's State of Residence: {benefactor_state}
+- Benefactor's City: {benefactor_city or "Not specified"}
+- Benefactor's ZIP: {benefactor_zip or "Not specified"}
+- Marital Status: {benefactor_marital or "Not specified"}
+- Special Status: {", ".join(benefactor_special) if benefactor_special else "None"}
+- Estate Status: {estate.get("status", "pre-transition")}
 - Overall Readiness Score: {readiness["overall_score"]}%
+
+**IMPORTANT: All legal analysis and recommendations MUST be tailored to {benefactor_state} state law. Reference {benefactor_state}-specific statutes, probate rules, homestead exemptions, community/common property rules, estate/inheritance tax thresholds, and filing requirements. If the state is "Not specified", ask the user to confirm their state before providing state-specific advice.**
 """)
 
     # Readiness breakdown
