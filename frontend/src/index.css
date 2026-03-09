@@ -824,6 +824,61 @@
   .animate-slide-up {
     animation: slideUp 0.5s ease-out;
   }
+
+  /* Slide-in from right — used by edit pages on desktop */
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(60px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes bounceIn {
+    0%   { opacity: 0; transform: translateX(40px) scale(0.97); }
+    60%  { opacity: 1; transform: translateX(-6px) scale(1.01); }
+    80%  { transform: translateX(3px) scale(0.995); }
+    100% { transform: translateX(0) scale(1); }
+  }
+
+  @media (min-width: 768px) {
+    .animate-slide-in-right {
+      animation: slideInRight 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .animate-bounce-tile {
+      animation: bounceIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    .animate-bounce-tile:nth-child(1) { animation-delay: 0.04s; }
+    .animate-bounce-tile:nth-child(2) { animation-delay: 0.10s; }
+    .animate-bounce-tile:nth-child(3) { animation-delay: 0.16s; }
+    .animate-bounce-tile:nth-child(4) { animation-delay: 0.22s; }
+    .animate-bounce-tile:nth-child(5) { animation-delay: 0.28s; }
+    .animate-bounce-tile:nth-child(6) { animation-delay: 0.34s; }
+  }
+
+  /* On mobile, fall back to simpler animation */
+  @media (max-width: 767px) {
+    .animate-slide-in-right {
+      animation: fadeIn 0.35s ease-out both;
+    }
+    .animate-bounce-tile {
+      animation: slideUp 0.35s ease-out both;
+    }
+  }
+
+  /* Slide-in overlay panel (DAV edit pane) */
+  @keyframes panelSlideIn {
+    from { transform: translateX(100%); }
+    to   { transform: translateX(0); }
+  }
+  @keyframes panelSlideOut {
+    from { transform: translateX(0); }
+    to   { transform: translateX(100%); }
+  }
+  .slide-panel-enter {
+    animation: panelSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .slide-panel-exit {
+    animation: panelSlideOut 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
   
   /* Floating Orbs - Only in dark mode */
   .floating-orb {

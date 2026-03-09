@@ -486,7 +486,7 @@ export default function EditMilestoneMessagePage() {
 
   return (
     <div
-      className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in"
+      className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-slide-in-right"
       data-testid="edit-message-page"
       style={{
         background: 'radial-gradient(ellipse at top left, rgba(139,92,246,0.15), transparent 55%), radial-gradient(ellipse at bottom right, rgba(124,58,237,0.08), transparent 55%)',
@@ -507,7 +507,7 @@ export default function EditMilestoneMessagePage() {
                 Edit Milestone Message
               </h1>
               <p className="text-sm text-[var(--t5)]" data-testid="edit-message-subtitle">
-                Update content and delivery rules from a full-page editor instead of the old modal.
+                Update content and delivery rules
               </p>
             </div>
           </div>
@@ -522,7 +522,7 @@ export default function EditMilestoneMessagePage() {
 
       <SectionLockedOverlay sectionId="messages">
         <div className="grid gap-6 xl:grid-cols-[340px,minmax(0,1fr)]">
-          <Card className="glass-card h-fit" data-testid="edit-message-summary-card">
+          <Card className="glass-card h-fit animate-bounce-tile" data-testid="edit-message-summary-card">
             <CardContent className="space-y-5 p-6">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#d4af37]">Current Message</p>
@@ -575,7 +575,7 @@ export default function EditMilestoneMessagePage() {
           </Card>
 
           <div className="space-y-6">
-            <Card className="glass-card" data-testid="edit-message-content-card">
+            <Card className="glass-card animate-bounce-tile" data-testid="edit-message-content-card">
               <CardHeader>
                 <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Message Content</CardTitle>
               </CardHeader>
@@ -600,7 +600,7 @@ export default function EditMilestoneMessagePage() {
             </Card>
 
             {messageType === 'video' && (
-              <Card className="glass-card" data-testid="edit-message-video-card">
+              <Card className="glass-card animate-bounce-tile" data-testid="edit-message-video-card">
                 <CardHeader>
                   <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Video Recording</CardTitle>
                 </CardHeader>
@@ -685,7 +685,7 @@ export default function EditMilestoneMessagePage() {
             )}
 
             {messageType === 'voice' && (
-              <Card className="glass-card" data-testid="edit-message-voice-card">
+              <Card className="glass-card animate-bounce-tile" data-testid="edit-message-voice-card">
                 <CardHeader>
                   <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Voice Recording</CardTitle>
                 </CardHeader>
@@ -727,7 +727,7 @@ export default function EditMilestoneMessagePage() {
               </Card>
             )}
 
-            <Card className="glass-card" data-testid="edit-message-recipients-card">
+            <Card className="glass-card animate-bounce-tile" data-testid="edit-message-recipients-card">
               <CardHeader>
                 <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Recipients</CardTitle>
               </CardHeader>
@@ -765,7 +765,7 @@ export default function EditMilestoneMessagePage() {
               </CardContent>
             </Card>
 
-            <Card className="glass-card" data-testid="edit-message-trigger-card">
+            <Card className="glass-card animate-bounce-tile" data-testid="edit-message-trigger-card">
               <CardHeader>
                 <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Delivery Trigger</CardTitle>
               </CardHeader>
@@ -834,7 +834,7 @@ export default function EditMilestoneMessagePage() {
                     {triggerType === 'age_milestone' && <Calendar className="mt-0.5 h-4 w-4" />}
                     {triggerType === 'event' && <Star className="mt-0.5 h-4 w-4" />}
                     {triggerType === 'specific_date' && <CalendarDays className="mt-0.5 h-4 w-4" />}
-                    <span>This editor keeps the existing milestone logic intact and only swaps out the broken modal presentation.</span>
+                    <span>Delivery settings are preserved exactly as configured.</span>
                   </div>
                 </div>
               </CardContent>

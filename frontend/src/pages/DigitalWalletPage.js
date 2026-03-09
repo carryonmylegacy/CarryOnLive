@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { KeyRound, Plus, Trash2, Edit2, Eye, EyeOff, Shield, Loader2, User, Wallet, Globe, Mail, Cloud, CreditCard, MoreHorizontal, X, Check } from 'lucide-react';
+import { KeyRound, Plus, Trash2, Edit2, Eye, EyeOff, Shield, Loader2, User, Wallet, Globe, Mail, Cloud, CreditCard, X, Check, ArrowLeft, Save } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { ReturnPopup } from '../components/GuidedActivation';
@@ -203,7 +202,7 @@ const DigitalWalletPage = () => {
 
       {/* Add/Edit Modal */}
       {(showAdd || editEntry) && (
-        <WalletEntryModal
+        <WalletEntryPanel
           entry={editEntry}
           beneficiaries={beneficiaries}
           onClose={() => { setShowAdd(false); setEditEntry(null); }}
@@ -227,7 +226,7 @@ const DigitalWalletPage = () => {
   );
 };
 
-const WalletEntryModal = ({ entry, beneficiaries, onClose, onSaved, getAuthHeaders }) => {
+const WalletEntryPanel = ({ entry, beneficiaries, onClose, onSaved, getAuthHeaders }) => {
   const [name, setName] = useState(entry?.account_name || '');
   const [login, setLogin] = useState(entry?.login_username || '');
   const [password, setPassword] = useState(entry?.password || '');
@@ -237,6 +236,12 @@ const WalletEntryModal = ({ entry, beneficiaries, onClose, onSaved, getAuthHeade
   const [beneficiaryId, setBeneficiaryId] = useState(entry?.assigned_beneficiary_id || '');
   const [saving, setSaving] = useState(false);
   const [showPw, setShowPw] = useState(false);
+  const [closing, setClosing] = useState(false);
+
+  const handleClose = () => {
+    setClosing(true);
+    setTimeout(onClose, 260);
+  };
 
   const handleSave = async () => {
     if (!name || !login) { toast.error('Account name and login are required'); return; }
@@ -254,10 +259,8 @@ const WalletEntryModal = ({ entry, beneficiaries, onClose, onSaved, getAuthHeade
       const headers = getAuthHeaders();
       if (entry) {
         await axios.put(`${API_URL}/digital-wallet/${entry.id}`, data, headers);
-        // toast removed
       } else {
         await axios.post(`${API_URL}/digital-wallet`, data, headers);
-        // toast removed
       }
       onSaved();
     } catch (err) {
@@ -267,70 +270,115 @@ const WalletEntryModal = ({ entry, beneficiaries, onClose, onSaved, getAuthHeade
   };
 
   return (
-    <Dialog open onOpenChange={onClose}>
-      <DialogContent className="glass-card border-[var(--b2)] sm:max-w-lg !top-[5vh] !translate-y-0 max-h-[90vh] overflow-y-scroll" data-testid="wallet-entry-modal">
-        <DialogHeader>
-          <DialogTitle className="text-[var(--t)]">{entry ? 'Edit Account' : 'Add Digital Account'}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label className="text-[var(--t4)] text-xs">Account Name <span className="text-red-400">*</span></Label>
-              <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g., Coinbase" className="input-field mt-1" data-testid="wallet-name" />
+    <div className="fixed inset-0 z-[100]" data-testid="wallet-entry-panel">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleClose} />
+
+      {/* Slide-in panel */}
+      <div
+        className={`absolute top-0 right-0 h-full w-full sm:w-[480px] overflow-y-auto ${closing ? 'slide-panel-exit' : 'slide-panel-enter'}`}
+        style={{ background: 'var(--bg2, #0f1d35)', borderLeft: '1px solid var(--b)' }}
+      >
+        <div className="p-5 space-y-5">
+          {/* Panel header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleClose}
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-[var(--t3)] hover:bg-[var(--s)] transition-colors"
+                data-testid="wallet-panel-back"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+              <div>
+                <h2 className="text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                  {entry ? 'Edit Account' : 'Add Digital Account'}
+                </h2>
+                <p className="text-xs text-[var(--t5)]">
+                  {entry ? 'Update credentials and assignment' : 'Store a new set of credentials'}
+                </p>
+              </div>
             </div>
-            <div>
-              <Label className="text-[var(--t4)] text-xs">Category</Label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="input-field mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]" style={{ zIndex: 99999 }}>
-                  {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value} className="text-[var(--t2)]">{c.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
           </div>
-          <div>
-            <Label className="text-[var(--t4)] text-xs">Login / Username / Email <span className="text-red-400">*</span></Label>
-            <Input value={login} onChange={e => setLogin(e.target.value)} placeholder="username or email" className="input-field mt-1" data-testid="wallet-login" />
-          </div>
-          <div className="relative">
-            <Label className="text-[var(--t4)] text-xs">Password</Label>
-            <Input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className="input-field mt-1 pr-10" data-testid="wallet-password" />
-            <button onClick={() => setShowPw(p => !p)} className="absolute right-3 top-7 text-[var(--t5)]">
-              {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          </div>
-          <div>
-            <Label className="text-[var(--t4)] text-xs">Additional Access Info (2FA codes, PINs, security questions)</Label>
-            <Input value={access} onChange={e => setAccess(e.target.value)} placeholder="e.g., 2FA backup codes, PIN" className="input-field mt-1" data-testid="wallet-access" />
-          </div>
-          <div>
-            <Label className="text-[var(--t4)] text-xs">Notes</Label>
-            <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any additional notes" className="input-field mt-1" />
-          </div>
-          <div>
-            <Label className="text-[var(--t4)] text-xs">Assign to Beneficiary (who receives this upon transition)</Label>
-            <Select value={beneficiaryId || 'none'} onValueChange={(val) => setBeneficiaryId(val === 'none' ? '' : val)}>
-              <SelectTrigger className="input-field mt-1"><SelectValue placeholder="Select beneficiary..." /></SelectTrigger>
-              <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]" style={{ zIndex: 99999 }}>
-                <SelectItem value="none" className="text-[var(--t4)]">No one (keep private)</SelectItem>
-                {beneficiaries.map(b => (
-                  <SelectItem key={b.id} value={b.id} className="text-[var(--t2)]">
-                    {b.first_name} {b.last_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex gap-3 pt-2">
-            <Button variant="outline" onClick={onClose} className="flex-1 border-[var(--b)] text-[var(--t3)]">Cancel</Button>
+
+          {/* Form cards with staggered bounce */}
+          <Card className="glass-card animate-bounce-tile" data-testid="wallet-panel-basics">
+            <CardContent className="p-4 space-y-3">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--gold)]">Account Details</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-[var(--t4)] text-xs">Account Name <span className="text-red-400">*</span></Label>
+                  <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g., Coinbase" className="input-field mt-1" data-testid="wallet-name" />
+                </div>
+                <div>
+                  <Label className="text-[var(--t4)] text-xs">Category</Label>
+                  <Select value={category} onValueChange={setCategory}>
+                    <SelectTrigger className="input-field mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]" style={{ zIndex: 99999 }}>
+                      {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value} className="text-[var(--t2)]">{c.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card animate-bounce-tile" data-testid="wallet-panel-credentials">
+            <CardContent className="p-4 space-y-3">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--gold)]">Credentials</p>
+              <div>
+                <Label className="text-[var(--t4)] text-xs">Login / Username / Email <span className="text-red-400">*</span></Label>
+                <Input value={login} onChange={e => setLogin(e.target.value)} placeholder="username or email" className="input-field mt-1" data-testid="wallet-login" />
+              </div>
+              <div className="relative">
+                <Label className="text-[var(--t4)] text-xs">Password</Label>
+                <Input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="********" className="input-field mt-1 pr-10" data-testid="wallet-password" />
+                <button onClick={() => setShowPw(p => !p)} className="absolute right-3 top-7 text-[var(--t5)]">
+                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <div>
+                <Label className="text-[var(--t4)] text-xs">Additional Access Info (2FA codes, PINs, security questions)</Label>
+                <Input value={access} onChange={e => setAccess(e.target.value)} placeholder="e.g., 2FA backup codes, PIN" className="input-field mt-1" data-testid="wallet-access" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card animate-bounce-tile" data-testid="wallet-panel-assignment">
+            <CardContent className="p-4 space-y-3">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--gold)]">Assignment & Notes</p>
+              <div>
+                <Label className="text-[var(--t4)] text-xs">Notes</Label>
+                <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any additional notes" className="input-field mt-1" />
+              </div>
+              <div>
+                <Label className="text-[var(--t4)] text-xs">Assign to Beneficiary</Label>
+                <Select value={beneficiaryId || 'none'} onValueChange={(val) => setBeneficiaryId(val === 'none' ? '' : val)}>
+                  <SelectTrigger className="input-field mt-1"><SelectValue placeholder="Select beneficiary..." /></SelectTrigger>
+                  <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]" style={{ zIndex: 99999 }}>
+                    <SelectItem value="none" className="text-[var(--t4)]">No one (keep private)</SelectItem>
+                    {beneficiaries.map(b => (
+                      <SelectItem key={b.id} value={b.id} className="text-[var(--t2)]">
+                        {b.first_name} {b.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-1 animate-bounce-tile">
+            <Button variant="outline" onClick={handleClose} className="flex-1 border-[var(--b)] text-[var(--t3)]">Cancel</Button>
             <Button className="flex-1 gold-button" onClick={handleSave} disabled={saving || !name || !login} data-testid="wallet-save">
-              {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
+              {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
               {entry ? 'Update' : 'Save'} Account
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 };
 

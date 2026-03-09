@@ -55,7 +55,7 @@
   "seed_data_creation": "None - used existing test data",
   "retest_needed": false,
   "should_main_agent_self_test": false,
-  "context_for_next_testing_agent": "Estate Guardian page (GuardianPage.js) fully tested. All features working: compact header with bot icon/title/new-chat/export-pdf buttons, maximized scrollable chat area, inline welcome actions (Analyze Vault, Generate Checklist, Readiness Score) shown only before conversation starts, suggested questions as chips, popovers for actions/questions that appear once conversation is active, clean input bar with disclaimer. Mobile responsive design verified. App URL: https://ops-portal-overhaul.preview.emergentagent.com. Login with admin@carryon.com / admin123, navigate to /guardian.",
+  "context_for_next_testing_agent": "Estate Guardian page (GuardianPage.js) fully tested. All features working: compact header with bot icon/title/new-chat/export-pdf buttons, maximized scrollable chat area, inline welcome actions (Analyze Vault, Generate Checklist, Readiness Score) shown only before conversation starts, suggested questions as chips, popovers for actions/questions that appear once conversation is active, clean input bar with disclaimer. Mobile responsive design verified. App URL: https://beneficiary-edit.preview.emergentagent.com. Login with admin@carryon.com / admin123, navigate to /guardian.",
   "features_verified": {
     "guardian_header": {
       "status": "WORKING",

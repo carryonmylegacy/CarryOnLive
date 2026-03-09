@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowLeft, Loader2, Save, Shield, Upload, UserCircle } from 'lucide-react';
+import { ArrowLeft, Camera, Loader2, Save, UserCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -225,7 +225,7 @@ export default function EditBeneficiaryPage() {
 
   return (
     <div
-      className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in"
+      className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-slide-in-right"
       data-testid="edit-beneficiary-page"
       style={{
         background: 'radial-gradient(ellipse at top left, rgba(34,197,94,0.12), transparent 55%), radial-gradient(ellipse at bottom right, rgba(22,163,74,0.06), transparent 55%)',
@@ -251,7 +251,7 @@ export default function EditBeneficiaryPage() {
                 Edit Beneficiary
               </h1>
               <p className="text-sm text-[var(--t5)]" data-testid="edit-beneficiary-subtitle">
-                Update {displayName}'s details in a full-page editor that avoids the old modal lockup.
+                Update {displayName}'s details
               </p>
             </div>
           </div>
@@ -266,25 +266,40 @@ export default function EditBeneficiaryPage() {
 
       <SectionLockedOverlay sectionId="beneficiaries">
         <div className="grid gap-6 xl:grid-cols-[360px,minmax(0,1fr)]">
-          <Card className="glass-card h-fit" data-testid="edit-beneficiary-profile-card">
+          <Card className="glass-card h-fit animate-bounce-tile" data-testid="edit-beneficiary-profile-card">
             <CardContent className="space-y-6 p-6">
               <div className="flex flex-col items-center gap-4 text-center">
-                <div
-                  className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border"
-                  style={{
-                    backgroundColor: photoPreview ? 'transparent' : `${form.avatarColor}30`,
-                    borderColor: 'rgba(255,255,255,0.08)',
-                    color: form.avatarColor,
-                  }}
-                  data-testid="edit-beneficiary-photo-preview"
-                >
-                  {photoPreview ? (
-                    <img src={photoPreview} alt={displayName} className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="text-3xl font-bold">{displayName.split(' ').filter(Boolean).map((part) => part[0]).join('').slice(0, 2).toUpperCase() || 'B'}</span>
-                  )}
-                </div>
-                <div className="space-y-3 w-full">
+                <div className="relative group">
+                  <div
+                    className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border cursor-pointer transition-opacity"
+                    style={{
+                      backgroundColor: photoPreview ? 'transparent' : `${form.avatarColor}30`,
+                      borderColor: 'rgba(255,255,255,0.08)',
+                      color: form.avatarColor,
+                    }}
+                    onClick={() => fileInputRef.current?.click()}
+                    data-testid="edit-beneficiary-photo-preview"
+                  >
+                    {photoPreview ? (
+                      <img src={photoPreview} alt={displayName} className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-3xl font-bold">{displayName.split(' ').filter(Boolean).map((part) => part[0]).join('').slice(0, 2).toUpperCase() || 'B'}</span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    className="absolute bottom-0 right-0 flex h-9 w-9 items-center justify-center rounded-full border-2 transition-transform hover:scale-110"
+                    style={{
+                      background: 'linear-gradient(135deg, #d4af37, #b8962e)',
+                      borderColor: 'var(--bg2, #0f1d35)',
+                      color: '#080e1a',
+                    }}
+                    onClick={() => fileInputRef.current?.click()}
+                    data-testid="edit-beneficiary-photo-button"
+                    aria-label="Change photo"
+                  >
+                    <Camera className="h-4 w-4" />
+                  </button>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -293,19 +308,12 @@ export default function EditBeneficiaryPage() {
                     onChange={handlePhotoSelect}
                     data-testid="edit-beneficiary-photo-input"
                   />
-                  <Button type="button" variant="outline" className="w-full border-[var(--b)] text-[var(--t)]" onClick={() => fileInputRef.current?.click()} data-testid="edit-beneficiary-photo-button">
-                    <Upload className="mr-2 h-4 w-4" />
-                    {beneficiary?.photo_url || photoFile ? 'Change Photo' : 'Add Photo'}
-                  </Button>
-                  {photoFile && (
-                    <Button type="button" variant="ghost" className="w-full text-[var(--t5)] hover:text-[var(--t)]" onClick={resetSelectedPhoto} data-testid="edit-beneficiary-photo-reset-button">
-                      Reset selected photo
-                    </Button>
-                  )}
-                  <p className="text-xs text-[var(--t5)]" data-testid="edit-beneficiary-photo-help">
-                    Uses your device picker directly to avoid the old modal-on-modal workflow.
-                  </p>
                 </div>
+                {photoFile && (
+                  <button type="button" className="text-xs text-[var(--t5)] hover:text-[var(--t)] underline underline-offset-2" onClick={resetSelectedPhoto} data-testid="edit-beneficiary-photo-reset-button">
+                    Reset photo
+                  </button>
+                )}
               </div>
 
               <div className="space-y-3">
@@ -328,19 +336,11 @@ export default function EditBeneficiaryPage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border p-4" style={{ background: 'rgba(212,175,55,0.06)', borderColor: 'rgba(212,175,55,0.15)' }} data-testid="edit-beneficiary-security-note">
-                <div className="flex items-start gap-3">
-                  <Shield className="mt-0.5 h-4 w-4 text-[#d4af37]" />
-                  <p className="text-xs leading-relaxed text-[#d4af37]">
-                    Sensitive beneficiary details remain encrypted and stored exactly as before. This page only replaces the broken edit modal.
-                  </p>
-                </div>
-              </div>
             </CardContent>
           </Card>
 
           <div className="space-y-6">
-            <Card className="glass-card" data-testid="edit-beneficiary-personal-card">
+            <Card className="glass-card animate-bounce-tile" data-testid="edit-beneficiary-personal-card">
               <CardHeader>
                 <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Personal Information</CardTitle>
               </CardHeader>
@@ -393,7 +393,7 @@ export default function EditBeneficiaryPage() {
               </CardContent>
             </Card>
 
-            <Card className="glass-card" data-testid="edit-beneficiary-contact-card">
+            <Card className="glass-card animate-bounce-tile" data-testid="edit-beneficiary-contact-card">
               <CardHeader>
                 <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Contact Information</CardTitle>
               </CardHeader>
@@ -423,7 +423,7 @@ export default function EditBeneficiaryPage() {
               </CardContent>
             </Card>
 
-            <Card className="glass-card" data-testid="edit-beneficiary-address-card">
+            <Card className="glass-card animate-bounce-tile" data-testid="edit-beneficiary-address-card">
               <CardHeader>
                 <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Address</CardTitle>
               </CardHeader>
@@ -470,7 +470,7 @@ export default function EditBeneficiaryPage() {
               </CardContent>
             </Card>
 
-            <Card className="glass-card" data-testid="edit-beneficiary-extra-card">
+            <Card className="glass-card animate-bounce-tile" data-testid="edit-beneficiary-extra-card">
               <CardHeader>
                 <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Additional Information</CardTitle>
               </CardHeader>
