@@ -395,15 +395,13 @@ const DashboardPage = () => {
   };
 
   return (
-    <div className="p-4 lg:p-8 pt-4 lg:pt-8 pb-24 lg:pb-8" data-testid="benefactor-dashboard"
+    <div className="p-4 lg:p-8 pt-2 lg:pt-6 pb-24 lg:pb-8" data-testid="benefactor-dashboard"
       style={{
         opacity: dashboardReady ? 1 : 0,
         transition: 'opacity 0.5s ease',
       }}>
       {/* Trial Banner */}
-      <div className="mb-4">
-        <TrialBanner onUpgrade={() => navigate('/subscription')} />
-      </div>
+      <TrialBanner onUpgrade={() => navigate('/subscription')} />
 
       {/* Header + Estate Selector */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
