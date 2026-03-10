@@ -882,13 +882,27 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 
     photo = user_doc.get("photo_url", "")
 
-    # Fallback: if beneficiary has no user photo, check their beneficiary record
-    if not photo and current_user.get("role") == "beneficiary":
+    # Fallback: if beneficiary has missing profile fields, pull from their beneficiary record
+    ben_fallback = {}
+    if current_user.get("role") == "beneficiary":
         ben_rec = await db.beneficiaries.find_one(
-            {"user_id": current_user["id"]}, {"_id": 0, "photo_url": 1}
+            {"user_id": current_user["id"]}, {"_id": 0}
         )
         if ben_rec:
-            photo = ben_rec.get("photo_url", "")
+            if not photo:
+                photo = ben_rec.get("photo_url", "")
+            # Map beneficiary fields to user profile fields for fallback
+            for field in [
+                "date_of_birth",
+                "address_street",
+                "address_city",
+                "address_state",
+                "address_zip",
+                "gender",
+                "marital_status",
+            ]:
+                if not user_doc.get(field) and ben_rec.get(field):
+                    ben_fallback[field] = ben_rec[field]
 
     # Check if user owns any estates (for beneficiaries who created estates)
     owns_estate = await db.estates.find_one(
@@ -910,13 +924,19 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "last_name": user_doc.get("last_name", ""),
         "middle_name": user_doc.get("middle_name", ""),
         "suffix": user_doc.get("suffix", ""),
-        "gender": user_doc.get("gender", ""),
-        "date_of_birth": user_doc.get("date_of_birth", ""),
-        "marital_status": user_doc.get("marital_status", ""),
-        "address_street": user_doc.get("address_street", ""),
-        "address_city": user_doc.get("address_city", ""),
-        "address_state": user_doc.get("address_state", ""),
-        "address_zip": user_doc.get("address_zip", ""),
+        "gender": user_doc.get("gender", "") or ben_fallback.get("gender", ""),
+        "date_of_birth": user_doc.get("date_of_birth", "")
+        or ben_fallback.get("date_of_birth", ""),
+        "marital_status": user_doc.get("marital_status", "")
+        or ben_fallback.get("marital_status", ""),
+        "address_street": user_doc.get("address_street", "")
+        or ben_fallback.get("address_street", ""),
+        "address_city": user_doc.get("address_city", "")
+        or ben_fallback.get("address_city", ""),
+        "address_state": user_doc.get("address_state", "")
+        or ben_fallback.get("address_state", ""),
+        "address_zip": user_doc.get("address_zip", "")
+        or ben_fallback.get("address_zip", ""),
         "address_line2": user_doc.get("address_line2", ""),
     }
 
