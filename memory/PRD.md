@@ -11,6 +11,14 @@ Multi-portal estate planning platform (CarryOn) with FastAPI backend, React/Capa
 
 ## What's Been Implemented
 
+### Session: Mar 10, 2026 — Portal Navigation Refactor (Dropdown Removal)
+**Issue**: The estate selector dropdown was a persistent source of UI bugs and user frustration.
+**Fix**: Completely removed EstateSelector.js and ViewSwitcher.js dropdown components. Replaced with simple inline portal switching links:
+1. **Sidebar.js**: "Switch View" section with direct portal links (expanded + collapsed icon buttons)
+2. **MobileNav.js**: Inline portal switching buttons in hamburger menu, context-aware nav items (shows beneficiary items on /beneficiary routes)
+3. **Deleted files**: EstateSelector.js, ViewSwitcher.js
+4. **Testing**: 100% pass rate — multi-role switching, context-aware nav, admin exclusion all verified
+
 ### Session: Mar 10, 2026 — Portal-Aware Paywall Fix
 **Bug**: When a beneficiary creates a benefactor account (multi-role), the benefactor portal showed beneficiary plans instead of benefactor plans. Additionally, the beneficiary sidebar "Subscription" link navigated to the benefactor subscription page.
 **Root cause**: (1) `SubscriptionManagement.js` used `user.role === 'beneficiary'` to select plans. (2) Beneficiary sidebar linked to `/subscription` (benefactor page).
@@ -21,8 +29,7 @@ Multi-portal estate planning platform (CarryOn) with FastAPI backend, React/Capa
 4. **Sidebar.js + MobileNav.js**: Beneficiary nav links to `/beneficiary/subscription`
 5. **checkout.py**: Beta mode subscription save works for multi-role users
 6. **Housekeeping**: All 35 checks passed. CodeMagic build number: `$(date +%s)`
-7. **Eligibility Step in CreateEstatePage**: Added 'Special Eligibility' as the LAST step in the beneficiary-to-benefactor onboarding wizard (after all beneficiary steps). Shows 6 options (Military, Federal/State, First Responder, Veteran, Hospice, Employer/B2B). Saves special_status + eligible_tier to user profile. Feeds into subscription page for correct tier auto-selection.
-8. **Unified Estate Selector**: Merged ViewSwitcher + EstateSelector into a single dropdown button showing `⇄ 🏠 Estate Name ▼`. Dropdown shows "My Estates" + "Beneficiary Access" sections for multi-role users. Fixed mobile overflow where two separate buttons were off-screen.
+7. **Eligibility Step in CreateEstatePage**: Added 'Special Eligibility' as the LAST step in the beneficiary-to-benefactor onboarding wizard.
 
 ### Session: Mar 10, 2026 — ROOT CAUSE FIX: Login Redirect + Welcome Step
 **Root cause identified and fixed**: `PublicRoute` in App.js was racing against `navigateToHome` — for beneficiary-role users with `is_also_benefactor=true`, React's re-render of `PublicRoute` would redirect to `/beneficiary` BEFORE `navigateToHome` could fire `navigate('/dashboard')`.
