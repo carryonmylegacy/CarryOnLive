@@ -12,14 +12,15 @@ Multi-portal estate planning platform (CarryOn) with FastAPI backend, React/Capa
 ## What's Been Implemented
 
 ### Session: Mar 10, 2026 — Portal-Aware Paywall Fix
-**Bug**: When a beneficiary creates a benefactor account (multi-role), the benefactor portal showed beneficiary plans instead of benefactor plans.
-**Root cause**: `SubscriptionManagement.js` used `user.role === 'beneficiary'` to select plans. Multi-role users keep `role='beneficiary'`, so they always saw beneficiary plans.
-**Fix**: Made plan selection and paywall gating ROUTE-CONTEXT-AWARE (based on which portal the user is in):
-1. **SubscriptionManagement.js**: `isBeneficiary = window.location.pathname.startsWith('/beneficiary')` — benefactor portal shows benefactor plans, beneficiary portal shows beneficiary plans
-2. **App.js ProtectedRoute**: Paywall gating uses `!isOnBeneficiaryRoute` instead of `user.role !== 'beneficiary'`
-3. **checkout.py**: Beta mode subscription save no longer requires `role == 'benefactor'` — multi-role users can save plan preferences
-4. **Housekeeping script**: All 35 checks passed (lint, SOC 2 compliance, security, DB, etc.)
-5. **CodeMagic build number**: Uses `$(date +%s)` for unique, ever-increasing build numbers
+**Bug**: When a beneficiary creates a benefactor account (multi-role), the benefactor portal showed beneficiary plans instead of benefactor plans. Additionally, the beneficiary sidebar "Subscription" link navigated to the benefactor subscription page.
+**Root cause**: (1) `SubscriptionManagement.js` used `user.role === 'beneficiary'` to select plans. (2) Beneficiary sidebar linked to `/subscription` (benefactor page).
+**Fix**:
+1. **SubscriptionManagement.js**: Route-context-aware plan selection
+2. **App.js**: Paywall gating + added `/beneficiary/subscription` route
+3. **SubscriptionPage.js**: Portal-aware (different heading, hides benefactor-only elements)
+4. **Sidebar.js + MobileNav.js**: Beneficiary nav links to `/beneficiary/subscription`
+5. **checkout.py**: Beta mode subscription save works for multi-role users
+6. **Housekeeping**: All 35 checks passed. CodeMagic build number: `$(date +%s)`
 
 ### Session: Mar 10, 2026 — ROOT CAUSE FIX: Login Redirect + Welcome Step
 **Root cause identified and fixed**: `PublicRoute` in App.js was racing against `navigateToHome` — for beneficiary-role users with `is_also_benefactor=true`, React's re-render of `PublicRoute` would redirect to `/beneficiary` BEFORE `navigateToHome` could fire `navigate('/dashboard')`.
