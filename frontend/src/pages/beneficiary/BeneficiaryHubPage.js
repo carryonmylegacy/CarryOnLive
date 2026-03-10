@@ -49,7 +49,7 @@ const BeneficiaryHubPage = () => {
         axios.get(`${API_URL}/beneficiary/family-connections`, getAuthHeaders()).catch(() => ({ data: [] })),
         axios.get(`${API_URL}/auth/me`, getAuthHeaders()).catch(() => ({ data: {} })),
       ]);
-      setEstates(estatesRes.data);
+      setEstates(estatesRes.data.filter(e => e.user_role_in_estate !== 'owner'));
       setFamilyConnections(connectionsRes.data);
       if (meRes.data.photo_url) setMyPhoto(meRes.data.photo_url);
     } catch (err) { console.error('Fetch data error:', err); }
