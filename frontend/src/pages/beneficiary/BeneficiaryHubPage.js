@@ -16,13 +16,13 @@ const getOrbitLevel = (relation) => {
   if (['spouse', 'wife', 'husband', 'partner'].includes(r)) return 0;
   if (['parent', 'mother', 'father', 'mom', 'dad'].includes(r)) return 0;
   if (r.includes('son-in-law') || r.includes('son in law') || r.includes('daughter-in-law') || r.includes('daughter in law')) return 0;
-  if (['grandparent', 'grandmother', 'grandfather', 'grandma', 'grandpa'].includes(r)) return 0;
-  if (r.includes('great-grandparent') || r.includes('great grandparent')) return 0;
   if (['son', 'daughter', 'child', 'children'].includes(r)) return 1;
   if (['sibling', 'brother', 'sister'].includes(r)) return 1;
-  if (['grandchild', 'grandson', 'granddaughter'].includes(r)) return 1;
+  if (['grandparent', 'grandmother', 'grandfather', 'grandma', 'grandpa'].includes(r)) return 1;
   if (r.includes('father-in-law') || r.includes('father in law') || r.includes('mother-in-law') || r.includes('mother in law')) return 1;
+  if (['grandchild', 'grandson', 'granddaughter'].includes(r)) return 2;
   if (r.includes('great-grandchild') || r.includes('great grandchild')) return 3;
+  if (r.includes('great-grandparent') || r.includes('great grandparent')) return 0;
   return 1;
 };
 
