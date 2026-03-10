@@ -152,6 +152,9 @@ api_router.include_router(ops_dashboard_router)
 api_router.include_router(milestone_deliveries_router)
 
 
+BUILD_HASH = "2026-03-10T16:30:00Z-fix-multi-role"
+
+
 @api_router.get("/health")
 async def health_check():
     """Check API and database health."""
@@ -165,6 +168,36 @@ async def health_check():
         "database": db_status,
         "version": "1.0.0",
         "min_version": "1.0.0",
+        "build": BUILD_HASH,
+    }
+
+
+@api_router.get("/debug/user-state")
+async def debug_user_state(email: str):
+    """Diagnostic: check a user's multi-role state. No sensitive data exposed."""
+    user = await db.users.find_one(
+        {"email": email.lower().strip()},
+        {"_id": 0, "id": 1, "role": 1, "is_also_benefactor": 1, "is_also_beneficiary": 1},
+    )
+    if not user:
+        return {"error": "User not found", "build": BUILD_HASH}
+    estates = await db.estates.find(
+        {"owner_id": user["id"]}, {"_id": 0, "id": 1, "name": 1, "status": 1}
+    ).to_list(10)
+    ben_count = 0
+    if estates:
+        ben_count = await db.beneficiaries.count_documents(
+            {"estate_id": estates[0]["id"]}
+        )
+    return {
+        "build": BUILD_HASH,
+        "role": user.get("role"),
+        "db_is_also_benefactor": user.get("is_also_benefactor", False),
+        "db_is_also_beneficiary": user.get("is_also_beneficiary", False),
+        "owns_estates": len(estates),
+        "estate_names": [e.get("name") for e in estates],
+        "beneficiary_count_in_first_estate": ben_count,
+        "computed_is_also_benefactor": user.get("is_also_benefactor", False) or len(estates) > 0,
     }
 
 

@@ -15,6 +15,12 @@ import { AmberAlertProvider } from './components/AmberAlert';
 import { initErrorReporter, reportError } from './utils/errorReporter';
 import { Loader2 } from 'lucide-react';
 
+const CARRYON_BUILD = '2026-03-10T16:30:00Z-fix-multi-role';
+if (typeof window !== 'undefined') {
+  window.__CARRYON_BUILD = CARRYON_BUILD;
+  console.log(`%c[CarryOn] Build: ${CARRYON_BUILD}`, 'color: #d4af37; font-weight: bold');
+}
+
 // Eagerly loaded (needed immediately)
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';

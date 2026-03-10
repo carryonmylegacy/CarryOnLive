@@ -5,7 +5,7 @@ import pytest
 import requests
 
 BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://ghost-estate-cleanup.preview.emergentagent.com"
+    "REACT_APP_BACKEND_URL", "https://debug-live-env.preview.emergentagent.com"
 ).rstrip("/")
 
 # Test credentials
