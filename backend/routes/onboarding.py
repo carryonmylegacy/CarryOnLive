@@ -353,7 +353,7 @@ SCENARIO_TEMPLATES = {
             },
             {
                 "title": "Complete Family Care Plan (if single parent)",
-                "description": "Required for single parents and dual-military couples. Designate short-term and long-term caregivers for dependents.",
+                "description": "Required for single parents and dual-military couples. Designate short-term and long-term caregivers for beneficiaries.",
                 "category": "personal",
                 "priority": "critical",
                 "due_timeframe": "immediate",

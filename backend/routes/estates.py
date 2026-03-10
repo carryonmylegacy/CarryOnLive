@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from config import db
+from config import db, logger
 from models import Estate, EstateCreate, EstateUpdate
 from services.encryption import generate_estate_salt
 from services.readiness import calculate_estate_readiness, ensure_default_checklist
@@ -313,80 +313,84 @@ async def create_estate_for_existing_user(
         update_fields["benefactor_since"] = now.isoformat()
     await db.users.update_one({"id": current_user["id"]}, {"$set": update_fields})
 
-    # Process beneficiary enrollments
-    avatar_colors = [
-        "#d4af37",
-        "#3b82f6",
-        "#10b981",
-        "#8b5cf6",
-        "#ef4444",
-        "#f59e0b",
-        "#ec4899",
-        "#06b6d4",
-    ]
-    beneficiaries_to_insert = []
+    # Process beneficiary enrollments — wrapped so partial failures don't lose the estate
     auto_linked_users = []
+    try:
+        avatar_colors = [
+            "#d4af37",
+            "#3b82f6",
+            "#10b981",
+            "#8b5cf6",
+            "#ef4444",
+            "#f59e0b",
+            "#ec4899",
+            "#06b6d4",
+        ]
+        beneficiaries_to_insert = []
 
-    for i, ben in enumerate(data.beneficiary_enrollments):
-        first = ben.get("first_name", "").strip()
-        middle = ben.get("middle_name", "").strip()
-        last = ben.get("last_name", last_name).strip()
-        ben_email = (ben.get("email") or "").strip().lower()
-        initials = ((first[0] if first else "?") + (last[0] if last else "?")).upper()
-        full_name = " ".join(p for p in [first, middle, last] if p)
+        for i, ben in enumerate(data.beneficiary_enrollments):
+            first = ben.get("first_name", "").strip()
+            middle = ben.get("middle_name", "").strip()
+            last = ben.get("last_name", last_name).strip()
+            ben_email = (ben.get("email") or "").strip().lower()
+            initials = (
+                (first[0] if first else "?") + (last[0] if last else "?")
+            ).upper()
+            full_name = " ".join(p for p in [first, middle, last] if p)
 
-        # Check if this email already has an account — auto-link if so
-        existing_user = None
-        if ben_email:
-            existing_user = await db.users.find_one(
-                {"email": ben_email}, {"_id": 0, "id": 1, "name": 1, "role": 1}
-            )
+            # Check if this email already has an account — auto-link if so
+            existing_user = None
+            if ben_email:
+                existing_user = await db.users.find_one(
+                    {"email": ben_email}, {"_id": 0, "id": 1, "name": 1, "role": 1}
+                )
 
-        ben_record = {
-            "id": str(uuid.uuid4()),
-            "estate_id": estate_id,
-            "first_name": first,
-            "middle_name": middle,
-            "last_name": last,
-            "name": full_name,
-            "relation": ben.get("relation", ""),
-            "email": ben_email,
-            "date_of_birth": ben.get("dob"),
-            "gender": ben.get("gender"),
-            "initials": initials,
-            "avatar_color": avatar_colors[i % len(avatar_colors)],
-            "invitation_status": "accepted"
-            if existing_user
-            else ("pending" if ben_email else "draft"),
-            "is_stub": not bool(first),
-            "address_street": ben.get("address_street"),
-            "address_city": ben.get("address_city"),
-            "address_state": ben.get("address_state"),
-            "address_zip": ben.get("address_zip"),
-            "created_at": now.isoformat(),
-        }
+            ben_record = {
+                "id": str(uuid.uuid4()),
+                "estate_id": estate_id,
+                "first_name": first,
+                "middle_name": middle,
+                "last_name": last,
+                "name": full_name,
+                "relation": ben.get("relation", ""),
+                "email": ben_email,
+                "date_of_birth": ben.get("dob"),
+                "gender": ben.get("gender"),
+                "initials": initials,
+                "avatar_color": avatar_colors[i % len(avatar_colors)],
+                "invitation_status": "accepted"
+                if existing_user
+                else ("pending" if ben_email else "draft"),
+                "is_stub": not bool(first),
+                "address_street": ben.get("address_street"),
+                "address_city": ben.get("address_city"),
+                "address_state": ben.get("address_state"),
+                "address_zip": ben.get("address_zip"),
+                "created_at": now.isoformat(),
+            }
 
-        if existing_user:
-            ben_record["user_id"] = existing_user["id"]
-            # Add to estate's beneficiaries list
-            await db.estates.update_one(
-                {"id": estate_id},
-                {"$addToSet": {"beneficiaries": existing_user["id"]}},
-            )
-            auto_linked_users.append(
-                {
-                    "email": ben_email,
-                    "name": existing_user.get("name", full_name),
-                    "existing_role": existing_user.get("role", ""),
-                }
-            )
+            if existing_user:
+                ben_record["user_id"] = existing_user["id"]
+                await db.estates.update_one(
+                    {"id": estate_id},
+                    {"$addToSet": {"beneficiaries": existing_user["id"]}},
+                )
+                auto_linked_users.append(
+                    {
+                        "email": ben_email,
+                        "name": existing_user.get("name", full_name),
+                        "existing_role": existing_user.get("role", ""),
+                    }
+                )
 
-        beneficiaries_to_insert.append(ben_record)
+            beneficiaries_to_insert.append(ben_record)
 
-    if beneficiaries_to_insert:
-        await db.beneficiaries.insert_many(beneficiaries_to_insert)
+        if beneficiaries_to_insert:
+            await db.beneficiaries.insert_many(beneficiaries_to_insert)
+    except Exception as e:
+        logger.error(f"Error enrolling beneficiaries for estate {estate_id}: {e}")
 
-    # Seed default checklist
+    # Seed default checklist (non-critical — don't fail the estate creation)
     default_checklist = [
         {
             "id": str(uuid.uuid4()),
@@ -419,7 +423,10 @@ async def create_estate_for_existing_user(
             "created_at": now.isoformat(),
         },
     ]
-    await db.checklists.insert_many(default_checklist)
+    try:
+        await db.checklists.insert_many(default_checklist)
+    except Exception as e:
+        logger.error(f"Error seeding checklist for estate {estate_id}: {e}")
 
     return {
         "success": True,

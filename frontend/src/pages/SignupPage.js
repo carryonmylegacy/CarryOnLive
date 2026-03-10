@@ -653,7 +653,7 @@ const SignupPage = () => {
                         )}
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1.5">
-                            <Label className="text-[#7b879e] text-sm font-medium">Under 18</Label>
+                            <Label className="text-[#7b879e] text-sm font-medium">Beneficiaries Under 18</Label>
                             <Select value={String(dependentsUnder18)} onValueChange={(v) => setDependentsUnder18(parseInt(v))}>
                               <SelectTrigger className={selectClass} data-testid="signup-dependents-under"><SelectValue placeholder="0" /></SelectTrigger>
                               <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
@@ -662,7 +662,7 @@ const SignupPage = () => {
                             </Select>
                           </div>
                           <div className="space-y-1.5">
-                            <Label className="text-[#7b879e] text-sm font-medium">18+</Label>
+                            <Label className="text-[#7b879e] text-sm font-medium">Beneficiaries Over 18</Label>
                             <Select value={String(dependentsOver18)} onValueChange={(v) => setDependentsOver18(parseInt(v))}>
                               <SelectTrigger className={selectClass} data-testid="signup-dependents-over"><SelectValue placeholder="0" /></SelectTrigger>
                               <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">

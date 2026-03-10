@@ -442,6 +442,10 @@ const CreateEstatePage = () => {
                             placeholder="Street address" className={inputClass} data-testid="create-estate-address"
                           />
                         </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-[#7b879e] text-sm font-medium">Apt / Unit / Suite</Label>
+                          <Input value={addressLine2} onChange={(e) => setAddressLine2(e.target.value)} placeholder="Apartment, unit, suite, etc." className={inputClass} data-testid="create-estate-address-line2" />
+                        </div>
                         <div className="grid grid-cols-3 gap-2">
                           <Input value={addressCity} onChange={(e) => setAddressCity(e.target.value)} placeholder="City" className={inputClass} />
                           <Select value={addressState} onValueChange={setAddressState}>
@@ -545,7 +549,7 @@ const CreateEstatePage = () => {
                         )}
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1.5">
-                            <Label className="text-[#7b879e] text-sm font-medium">Dependents Under 18</Label>
+                            <Label className="text-[#7b879e] text-sm font-medium">Beneficiaries Under 18</Label>
                             <Select value={String(dependentsUnder18)} onValueChange={(v) => setDependentsUnder18(parseInt(v))}>
                               <SelectTrigger className={selectClass}><SelectValue placeholder="0" /></SelectTrigger>
                               <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
@@ -554,7 +558,7 @@ const CreateEstatePage = () => {
                             </Select>
                           </div>
                           <div className="space-y-1.5">
-                            <Label className="text-[#7b879e] text-sm font-medium">Dependents 18+</Label>
+                            <Label className="text-[#7b879e] text-sm font-medium">Beneficiaries Over 18</Label>
                             <Select value={String(dependentsOver18)} onValueChange={(v) => setDependentsOver18(parseInt(v))}>
                               <SelectTrigger className={selectClass}><SelectValue placeholder="0" /></SelectTrigger>
                               <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
