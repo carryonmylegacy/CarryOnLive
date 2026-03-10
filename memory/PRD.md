@@ -13,72 +13,52 @@ Multi-portal estate planning platform (CarryOn) with FastAPI backend, React/Capa
 
 ## What's Been Implemented
 
+### Session: Mar 10, 2026 — Production Debugging & Diagnostics
+- **Verified all multi-role features work in preview** (100% pass rate: 15/15 backend, 10/10 frontend)
+- **Added build verification system**: `/api/health` now returns `build` hash, `/api/debug/user-state?email=X` returns computed multi-role state for diagnosing production issues
+- **Added frontend build marker**: `window.__CARRYON_BUILD` console log on app load for verifying Vercel frontend deployment
+- **Confirmed features working**: Welcome tile, ViewSwitcher, beneficiary population, onboarding wizard all verified with testing agent
+
+### Session: Mar 10, 2026 — Ghost Estate Fix, SOC 2, Auth Refactor
+- **Recurring Ghost Estate Bug Fix**: Enhanced estate creation to auto-detect and delete old incomplete "ghost" estates
+- **SOC 2 Compliance**: Implemented soft-delete pattern across 7 routes, updated housekeeping audit script
+- **Core Auth Model Refactor**: Added `is_also_benefactor` and `is_also_beneficiary` to `UserResponse` Pydantic model, refactored all auth endpoints to consistently return these flags
+- **Multi-Role UI/UX**: Created ViewSwitcher component, fixed post-creation redirect, welcome tile for multi-role users
+- **API Cache Invalidation**: `clearCache()` after estate creation
+- **Admin Login Bug Fix**: Fixed regression preventing admin login
+
 ### Session: Mar 10, 2026 - Family Tree HTML/CSS + Admin Graph View + Estate Health
-- **Family Tree Component (P0 Fix)**: Rebuilt `FamilyTree.js` from broken SVG to robust HTML/CSS (divs + Flexbox). Shows benefactor at top (gold node), beneficiaries branching down (sorted by age), and estates where user is a beneficiary (blue nodes). Click-to-edit and click-to-navigate functionality. Responsive: tree-left + tiles-right on desktop, stacked on mobile.
-- **Admin Graph View (P1 Feature)**: Replaced SVG-based graph view in `UsersTab.js` with HTML/CSS family trees per estate. View mode toggle cycles Tree -> Graph -> List. Each estate card shows benefactor node at top with beneficiaries branching below, sorted by age.
-- **Estate Health Analytics (Enhancement)**: New `EstateHealthTab.js` in Admin with dedicated `GET /api/admin/estate-health` backend endpoint. Features: KPI cards (linking rate, completion rate, primary designation rate, invitation rate), health distribution bar (healthy/attention/critical), filter buttons, expandable estate cards with mini family trees showing health-status badges on each beneficiary node. Health score (0-100) calculated from: linking (30%), completion (30%), invitations (20%), primary designation (20%).
-- **Family Tree Color Bug Fix**: Fixed tree nodes ignoring beneficiary's `avatar_color` and always showing gold for primary beneficiaries. Now uses actual color with "P" badge for primary indicator.
-- **"Dependents" → "Beneficiaries" Rename**: Replaced all user-facing "Dependents" text with "Beneficiaries" across CreateEstatePage, SignupPage, and onboarding content. Labels now read "Beneficiaries Under 18" and "Beneficiaries Over 18".
-- **CreateEstatePage UX**: Added "Apt / Unit / Suite" secondary address line field. Address and marital status auto-populated from user profile.
-- **Create Estate Error Fix**: Wrapped beneficiary enrollment and checklist seeding in try/catch so estate creation always returns success even if post-creation steps fail partially.
-
-### Session: Mar 10, 2026 - Bug Fixes, Drag-Reorder, Admin Redesign
-- **Admin Delete Beneficiary Sync (P0 Bug)**: When admin deletes a user, the system now properly removes them from all estates' `beneficiaries` arrays and deletes their beneficiary records.
-- **Onboarding Re-trigger Fix (P0 Bug)**: Fixed the "Getting Started" guided flow from re-triggering after a primary beneficiary is deleted and re-added. Once `celebration_shown` is True (user graduated onboarding), the system NEVER un-dismisses or re-shows guided flows/popups.
-- **Drag-to-Reorder Beneficiary Tiles (P1 Feature)**: Added @dnd-kit integration for drag-and-drop sorting of beneficiary cards. Order persisted via `PUT /api/beneficiaries/reorder/{estate_id}`.
-- **Admin Users Tab Redesign (P1 Feature)**: "All Estates" tab shows estate-centric tree view with benefactors and beneficiaries grouped by estate, sorted by age.
-
-### Session: Mar 10, 2026 - Multi-Role Estate Creation Flow
-- **Multi-Role Architecture**: Users can be both benefactor and beneficiary under same email.
-- **CreateEstatePage wizard** (`/create-estate`): Multi-step wizard pre-populated from user profile.
-- **New endpoints**: `POST /api/accounts/create-estate`, `POST /api/accounts/add-beneficiary-link`.
-- **Sidebar & MobileNav role switching**: Context-aware navigation for multi-role users.
+- Family Tree Component rebuilt from SVG to HTML/CSS
+- Admin Graph View with HTML/CSS family trees per estate
+- Estate Health Analytics with KPI cards and health scores
+- "Dependents" renamed to "Beneficiaries" across UI
+- CreateEstatePage UX improvements (address line 2, auto-populate)
 
 ### Previous Sessions
-- SlidePanel UX overhaul, performance caching, unified notifications, voice recording fix
-- Multi-portal architecture (Benefactor, Beneficiary, Admin, Operations)
+- Drag-to-Reorder beneficiaries, Admin redesign
+- Multi-Role Estate Creation wizard
+- SlidePanel UX, performance caching, unified notifications
+- Multi-portal architecture
 - Stripe, xAI (Grok), AWS S3, Resend, Google Places, Capgo, CodeMagic integrations
 
 ## Architecture
 - Backend: FastAPI + MongoDB
 - Frontend: React + Capacitor
-- Authentication: JWT with multi-role flags
+- Authentication: JWT with multi-role flags (`is_also_benefactor`, `is_also_beneficiary`)
 - File storage: S3-compatible
 - UI Pattern: SlidePanel for edit/create, DnD Kit for drag-reorder
-- Multi-role: `is_also_benefactor` and `is_also_beneficiary` flags on user docs
 
-### Session: Mar 10, 2026 - P0 Bug Fix: Ghost Estates & Multi-Role Admin Visibility
-- **Admin Multi-Role User Visibility (P0 Fix)**: Fixed `GET /api/admin/users` to attach `linked_beneficiaries` for users with `is_also_benefactor=True`, not just `role='benefactor'`. This allows admins to see and manage beneficiaries who also own estates.
-- **Admin Estate Health Multi-Role Fix (P0 Fix)**: Updated `GET /api/admin/estate-health` to include estates owned by multi-role users. Added `is_also_benefactor` to the user projection query.
-- **Frontend Benefactors Filter Fix (P0 Fix)**: Updated `UsersTab.js` to include `is_also_benefactor` users in the Benefactors tab filter, tree view, and graph view.
-- **Ghost Estate Cleanup Workflow**: The existing `DELETE /api/admin/estates/{estate_id}` endpoint correctly deletes ghost estates and resets `is_also_benefactor` flag, allowing users to re-create their estate.
+## Known Issues
+- **P0 BLOCKED**: Production environment (Railway/Vercel) not reflecting code changes. Preview works perfectly. Diagnostic endpoints added to help debug.
 
-- **Ghost Estate Auto-Cleanup (Enhancement)**: Added automatic detection of ghost estates (orphaned, incomplete conversions, empty) in `GET /api/admin/estate-health`. New `POST /api/admin/cleanup-ghost-estates` endpoint for batch deletion with password confirmation. Frontend `GhostEstateAlert` component in Estate Health tab with expandable list, checkboxes, select all, and one-click "Clean Up" button.
+## Upcoming Tasks
+- P1: Finalize Share Extension Setup (per `/app/memory/SHARE_EXTENSION_SETUP.md`)
+- P1: Twilio SMS OTP Integration (blocked on user's A2P 10DLC approval)
 
-### Session: Mar 10, 2026 - Ghost Estate Auto-Cleanup & Multi-Role UX Fixes
-- **Ghost Estate Auto-Cleanup at Creation (P0 Fix)**: Modified `POST /api/accounts/create-estate` to auto-detect and delete ghost estates (empty, pre-transition, no beneficiaries or vault items) instead of blocking users with "You already have an estate plan" error. Users can now retry estate creation after a failed attempt.
-- **Post-Creation Auth Refresh (P0 Fix)**: Added `refreshUser()` to AuthContext. Called after estate creation in CreateEstatePage so `is_also_benefactor` flag is updated before navigating to `/dashboard`, preventing redirect back to beneficiary portal.
-- **Estate Photo for Multi-Role Users (P1 Fix)**: Settings page now shows Estate Photo upload for users with `is_also_benefactor=true`, not just `role='benefactor'`.
-- **ViewSwitcher Component (P1 Feature)**: New reusable `ViewSwitcher.js` with `dropdown` and `inline` variants for switching between benefactor/beneficiary views. Added to: Dashboard header (visible even with collapsed sidebar), Beneficiary Dashboard header, and MobileNav hamburger menu. Ensures multi-role users can always switch views regardless of sidebar state or device.
-
-## Blocked / Awaiting User Action
-- P1: Twilio SMS OTP Integration (blocked on A2P 10DLC approval)
-- P1: iOS Share Extension Setup (blocked on user Xcode/App Store Connect config)
-
-## Backlog
-- Subscription paywall logic for beneficiaries who create estates
-
-## Key Components
-- `/app/frontend/src/components/ViewSwitcher.js` -- Multi-role view switcher (dropdown/inline variants)
-- `/app/frontend/src/components/FamilyTree.js` -- HTML/CSS family tree visualization
-- `/app/frontend/src/components/admin/EstateHealthTab.js` -- Estate health analytics with mini family trees
-- `/app/frontend/src/pages/BeneficiariesPage.js` -- Drag-to-reorder beneficiary tiles + family tree layout
-- `/app/frontend/src/components/admin/UsersTab.js` -- Estate-centric tree view + HTML/CSS graph view
-- `/app/frontend/src/pages/CreateEstatePage.js` -- Multi-role estate creation wizard
-- `/app/backend/routes/admin.py` -- Estate health endpoint + clean delete + stats
-- `/app/backend/routes/beneficiaries.py` -- Sort order + reorder endpoint
-- `/app/backend/routes/onboarding.py` -- Graduation-aware guided flow
+## 3rd Party Integrations
+- xAI (Grok), Stripe, Apple In-App Purchase, AWS S3, Resend, Twilio (scaffolded), Google Places, Capgo, CodeMagic, @dnd-kit/core
+- **Deployment**: Railway (Backend) + Vercel (Frontend)
 
 ## Test Credentials
 - Founder: info@carryon.us / Demo1234!
-- Benefactor: fulltest@test.com / Password.123
+- Test Account: fulltest@test.com / Password.123
