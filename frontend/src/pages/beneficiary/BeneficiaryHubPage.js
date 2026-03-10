@@ -19,8 +19,10 @@ const getOrbitLevel = (relation) => {
   if (['son', 'daughter', 'child', 'children'].includes(r)) return 1;
   if (['sibling', 'brother', 'sister'].includes(r)) return 1;
   if (['grandparent', 'grandmother', 'grandfather', 'grandma', 'grandpa'].includes(r)) return 1;
+  if (['aunt', 'uncle'].includes(r)) return 1;
   if (r.includes('father-in-law') || r.includes('father in law') || r.includes('mother-in-law') || r.includes('mother in law')) return 1;
   if (['grandchild', 'grandson', 'granddaughter'].includes(r)) return 2;
+  if (['nephew', 'niece'].includes(r)) return 2;
   if (r.includes('great-grandchild') || r.includes('great grandchild')) return 3;
   if (r.includes('great-grandparent') || r.includes('great grandparent')) return 0;
   return 1;

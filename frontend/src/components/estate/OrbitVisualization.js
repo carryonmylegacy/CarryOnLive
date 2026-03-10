@@ -178,7 +178,7 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
   };
 
   // Orbit labels
-  const orbitLabels = ['Spouse & Children', 'Parents & Siblings', 'Grandparents', 'Great-Grandparents'];
+  const orbitLabels = ['Spouse & Children', 'Parents, Siblings & Extended', 'Grandparents', 'Great-Grandparents'];
 
   return (
     <div

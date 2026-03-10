@@ -80,7 +80,7 @@ const SortableCard = ({ id, children }) => {
 };
 
 const relations = [
-  'Spouse', 'Son', 'Daughter', 'Parent', 'Sibling', 'Grandchild', 'Friend', 'Other'
+  'Spouse', 'Son', 'Daughter', 'Son-in-law', 'Daughter-in-law', 'Parent', 'Brother', 'Sister', 'Aunt', 'Uncle', 'Grandchild', 'Grandson', 'Granddaughter', 'Father-in-law', 'Mother-in-law', 'Nephew', 'Niece', 'Great-Grandchild', 'Friend', 'Other'
 ];
 
 const avatarColors = [

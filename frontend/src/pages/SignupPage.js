@@ -57,7 +57,7 @@ const usStates = [
 ];
 
 // Steps are computed dynamically based on form state
-const beneficiaryRelations = ['Spouse', 'Son', 'Daughter', 'Parent', 'Sibling', 'Grandchild', 'Friend', 'Other'];
+const beneficiaryRelations = ['Spouse', 'Son', 'Daughter', 'Son-in-law', 'Daughter-in-law', 'Parent', 'Brother', 'Sister', 'Aunt', 'Uncle', 'Grandchild', 'Grandson', 'Granddaughter', 'Father-in-law', 'Mother-in-law', 'Nephew', 'Niece', 'Great-Grandchild', 'Friend', 'Other'];
 
 const inputClass = "h-14 px-4 bg-[#0b1322] border border-[#1a2a42] text-white text-base placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-1 focus:ring-inset focus:ring-[#d4af37]/30 focus:outline-none rounded-xl w-full";
 const selectClass = "h-14 bg-[#0b1322] border-[#1a2a42] text-white text-base rounded-xl [&>span]:text-white";
