@@ -188,13 +188,30 @@ async def debug_user_state(email: str):
     if not user:
         return {"error": "User not found", "build": BUILD_HASH}
     estates = await db.estates.find(
-        {"owner_id": user["id"]}, {"_id": 0, "id": 1, "name": 1, "status": 1}
+        {"owner_id": user["id"]},
+        {"_id": 0, "id": 1, "name": 1, "status": 1, "beneficiaries": 1},
     ).to_list(10)
     ben_count = 0
+    estate_detail = {}
     if estates:
-        ben_count = await db.beneficiaries.count_documents(
-            {"estate_id": estates[0]["id"]}
-        )
+        eid = estates[0]["id"]
+        ben_count = await db.beneficiaries.count_documents({"estate_id": eid})
+        doc_count = await db.documents.count_documents({"estate_id": eid})
+        msg_count = await db.messages.count_documents({"estate_id": eid})
+        vault_count = await db.vault_items.count_documents({"estate_id": eid})
+        checklist_count = await db.checklists.count_documents({"estate_id": eid})
+        estate_detail = {
+            "estate_id": eid,
+            "documents": doc_count,
+            "messages": msg_count,
+            "vault_items": vault_count,
+            "checklists": checklist_count,
+            "ben_user_ids": len(estates[0].get("beneficiaries", [])),
+            "is_ghost_eligible": ben_count == 0
+            and len(estates[0].get("beneficiaries", [])) == 0
+            and vault_count == 0
+            and estates[0].get("status") == "pre-transition",
+        }
     return {
         "build": BUILD_HASH,
         "role": user.get("role"),
@@ -205,6 +222,7 @@ async def debug_user_state(email: str):
         "beneficiary_count_in_first_estate": ben_count,
         "computed_is_also_benefactor": user.get("is_also_benefactor", False)
         or len(estates) > 0,
+        "estate_detail": estate_detail,
     }
 
 
