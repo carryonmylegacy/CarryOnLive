@@ -73,6 +73,15 @@ async def lifespan(app):
         await db.token_blacklist.create_index("jti")
         await db.otps.create_index("email")
         await db.failed_logins.create_index("email")
+        # Drop conflicting old indexes if they exist, then recreate with unique=True
+        try:
+            await db.otp_trust.drop_index("user_id_1_ip_address_1")
+        except Exception:
+            pass
+        try:
+            await db.otp_trust.drop_index("otp_trust_user_ip_unique")
+        except Exception:
+            pass
         await db.otp_trust.create_index(
             [("user_id", 1), ("ip_address", 1)], unique=True
         )

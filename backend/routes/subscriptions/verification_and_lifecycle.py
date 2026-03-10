@@ -744,7 +744,7 @@ async def check_dob_subscription_events():
     Called periodically (e.g., daily) to auto-detect turning 18, turning 26, etc."""
     now = datetime.now(timezone.utc)
     users = await db.users.find(
-        {"role": "beneficiary", "date_of_birth": {"$exists": True}},
+        {"role": "beneficiary", "date_of_birth": {"$exists": True, "$ne": None}},
         {"_id": 0, "id": 1, "email": 1, "name": 1, "date_of_birth": 1},
     ).to_list(5000)
 
