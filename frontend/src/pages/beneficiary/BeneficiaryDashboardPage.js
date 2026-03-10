@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from '../../utils/toast';
-import { Lock, FolderLock, MessageSquare, CheckSquare, ChevronRight, ChevronLeft, ChevronDown, Users, Settings } from 'lucide-react';
+import { Lock, FolderLock, MessageSquare, CheckSquare, ChevronRight, ChevronLeft, Users, Settings } from 'lucide-react';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Switch } from '../../components/ui/switch';
-import ViewSwitcher from '../../components/ViewSwitcher';
+import EstateSelector from '../../components/estate/EstateSelector';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -15,7 +15,6 @@ const BeneficiaryDashboardPage = () => {
   const navigate = useNavigate();
   const [estate, setEstate] = useState(null);
   const [allEstates, setAllEstates] = useState([]);
-  const [estateSwitcherOpen, setEstateSwitcherOpen] = useState(false);
   const [stats, setStats] = useState({ documents: 0, messages: 0, checklists: 0, checklistsDone: 0 });
   const [checklists, setChecklists] = useState([]);
   const [documents, setDocuments] = useState([]);
@@ -145,49 +144,21 @@ const BeneficiaryDashboardPage = () => {
           </p>
         </div>
 
-        {/* View Switcher — for multi-role users */}
-        <div className="flex items-center gap-2 sm:mt-1">
-          <ViewSwitcher variant="dropdown" />
-
-          {/* Estate Switcher — only when multiple estates */}
-          {allEstates.length > 1 && (
-          <div className="relative sm:mt-1" data-testid="beneficiary-estate-selector">
-            <button
-              onClick={() => setEstateSwitcherOpen(!estateSwitcherOpen)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
-              style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)' }}
-            >
-              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
-                style={{ background: estate?.status === 'transitioned' ? 'linear-gradient(135deg, #6D28D9, #A855F7)' : 'linear-gradient(135deg, #1E40AF, #3B82F6)' }}>
-                {estate?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?'}
-              </div>
-              <span className="truncate max-w-[140px]">{estate?.name || 'Estate'}'s Estate</span>
-              <ChevronDown className="w-4 h-4 flex-shrink-0" style={{ transform: estateSwitcherOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-            </button>
-            {estateSwitcherOpen && (
-              <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1 min-w-[220px] rounded-xl overflow-hidden z-50"
-                style={{ background: 'var(--bg3)', border: '1px solid var(--b)', boxShadow: '0 8px 30px rgba(0,0,0,0.4)' }}>
-                {allEstates.map(est => (
-                  <div key={est.id}
-                    onClick={() => {
-                      localStorage.setItem('beneficiary_estate_id', est.id);
-                      setEstateSwitcherOpen(false);
-                      window.location.reload();
-                    }}
-                    className="flex items-center gap-2 px-4 py-3 cursor-pointer transition-all hover:bg-[var(--s)]"
-                    style={{ background: estate?.id === est.id ? 'rgba(224,173,43,0.08)' : 'transparent', borderBottom: '1px solid var(--b)' }}>
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
-                      style={{ background: est.status === 'transitioned' ? 'linear-gradient(135deg, #6D28D9, #A855F7)' : 'linear-gradient(135deg, #1E40AF, #3B82F6)' }}>
-                      {est.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                    </div>
-                    <span className="text-sm font-bold" style={{ color: estate?.id === est.id ? 'var(--gold2)' : 'var(--t2)' }}>{est.name}'s Estate</span>
-                    {estate?.id === est.id && <span className="ml-auto text-xs text-[var(--gold2)]">Active</span>}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+        {/* Unified Estate & View Switcher */}
+        <div className="sm:mt-1">
+          <EstateSelector
+            currentEstate={estate}
+            estates={allEstates}
+            onEstateChange={(est) => {
+              localStorage.setItem('beneficiary_estate_id', est.id);
+              window.location.reload();
+            }}
+            onEstatesUpdate={() => {
+              axios.get(`${API_URL}/estates`, getAuthHeaders())
+                .then(res => setAllEstates((res.data || []).filter(e => e.user_role_in_estate === 'beneficiary' || e.is_beneficiary_estate)))
+                .catch(() => {});
+            }}
+          />
         </div>
       </div>
 
