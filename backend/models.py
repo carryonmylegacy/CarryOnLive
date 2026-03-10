@@ -62,6 +62,8 @@ class UserResponse(BaseModel):
     created_at: str
     photo_url: str = ""
     operator_role: str = ""
+    is_also_benefactor: bool = False
+    is_also_beneficiary: bool = False
 
 
 class TokenResponse(BaseModel):

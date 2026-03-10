@@ -22,6 +22,22 @@ from utils import (
 )
 from services.encryption import generate_estate_salt
 
+
+def _user_response(user: dict, owns_estate: bool = False) -> UserResponse:
+    """Build a UserResponse from a DB user dict, including multi-role flags."""
+    return UserResponse(
+        id=user["id"],
+        email=user["email"],
+        name=user["name"],
+        role=user["role"],
+        created_at=user["created_at"],
+        photo_url=user.get("photo_url", ""),
+        operator_role=user.get("operator_role", ""),
+        is_also_benefactor=user.get("is_also_benefactor", False) or owns_estate,
+        is_also_beneficiary=user.get("is_also_beneficiary", False) or False,
+    )
+
+
 router = APIRouter()
 
 TRIAL_DURATION_DAYS = 30
@@ -141,6 +157,7 @@ async def login(data: UserLogin, request: Request):
         estates = await db.estates.find(
             {"owner_id": user["id"]}, {"_id": 0, "status": 1, "transitioned_at": 1}
         ).to_list(10)
+        owns_estate = len(estates) > 0
         transitioned_estate = next(
             (e for e in estates if e.get("status") == "transitioned"), None
         )
@@ -173,14 +190,7 @@ async def login(data: UserLogin, request: Request):
             )
             return TokenResponse(
                 access_token=token,
-                user=UserResponse(
-                    id=user["id"],
-                    email=user["email"],
-                    name=user["name"],
-                    role=user["role"],
-                    created_at=user["created_at"],
-                    operator_role=user.get("operator_role", ""),
-                ),
+                user=_user_response(user, owns_estate=owns_estate),
             )
         # Has contact_email — use it for OTP (override the login email for OTP sending)
 
@@ -198,14 +208,7 @@ async def login(data: UserLogin, request: Request):
                 )
                 return TokenResponse(
                     access_token=token,
-                    user=UserResponse(
-                        id=user["id"],
-                        email=user["email"],
-                        name=user["name"],
-                        role=user["role"],
-                        created_at=user["created_at"],
-                        operator_role=user.get("operator_role", ""),
-                    ),
+                    user=_user_response(user, owns_estate=owns_estate),
                 )
         except (ValueError, TypeError):
             pass
@@ -224,14 +227,7 @@ async def login(data: UserLogin, request: Request):
         )
         return TokenResponse(
             access_token=token,
-            user=UserResponse(
-                id=user["id"],
-                email=user["email"],
-                name=user["name"],
-                role=user["role"],
-                created_at=user["created_at"],
-                operator_role=user.get("operator_role", ""),
-            ),
+            user=_user_response(user, owns_estate=owns_estate),
         )
 
     # Send OTP for verification
@@ -858,16 +854,12 @@ async def verify_otp(data: OTPVerifyWithTrust, request: Request):
             severity="info",
         )
 
+    _owns = bool(
+        await db.estates.find_one({"owner_id": user["id"]}, {"_id": 0, "id": 1})
+    )
     return TokenResponse(
         access_token=token,
-        user=UserResponse(
-            id=user["id"],
-            email=user["email"],
-            name=user["name"],
-            role=user["role"],
-            created_at=user["created_at"],
-            operator_role=user.get("operator_role", ""),
-        ),
+        user=_user_response(user, owns_estate=_owns),
     )
 
 
@@ -1153,16 +1145,12 @@ async def dev_login(data: UserLogin, request: Request):
             )
 
     token = await create_session_token(user["id"], user["email"], user["role"])
+    _owns = bool(
+        await db.estates.find_one({"owner_id": user["id"]}, {"_id": 0, "id": 1})
+    )
     return TokenResponse(
         access_token=token,
-        user=UserResponse(
-            id=user["id"],
-            email=user["email"],
-            name=user["name"],
-            role=user["role"],
-            created_at=user["created_at"],
-            operator_role=user.get("operator_role", ""),
-        ),
+        user=_user_response(user, owns_estate=_owns),
     )
 
 
@@ -1227,14 +1215,10 @@ async def dev_switch(data: DevSwitchRequest, request: Request):
         )
 
     token = await create_session_token(user["id"], user["email"], user["role"])
+    _owns = bool(
+        await db.estates.find_one({"owner_id": user["id"]}, {"_id": 0, "id": 1})
+    )
     return TokenResponse(
         access_token=token,
-        user=UserResponse(
-            id=user["id"],
-            email=user["email"],
-            name=user["name"],
-            role=user["role"],
-            created_at=user["created_at"],
-            operator_role=user.get("operator_role", ""),
-        ),
+        user=_user_response(user, owns_estate=_owns),
     )
