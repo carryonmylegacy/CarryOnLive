@@ -11,6 +11,16 @@ Multi-portal estate planning platform (CarryOn) with FastAPI backend, React/Capa
 
 ## What's Been Implemented
 
+### Session: Mar 10, 2026 — Portal-Aware Paywall Fix
+**Bug**: When a beneficiary creates a benefactor account (multi-role), the benefactor portal showed beneficiary plans instead of benefactor plans.
+**Root cause**: `SubscriptionManagement.js` used `user.role === 'beneficiary'` to select plans. Multi-role users keep `role='beneficiary'`, so they always saw beneficiary plans.
+**Fix**: Made plan selection and paywall gating ROUTE-CONTEXT-AWARE (based on which portal the user is in):
+1. **SubscriptionManagement.js**: `isBeneficiary = window.location.pathname.startsWith('/beneficiary')` — benefactor portal shows benefactor plans, beneficiary portal shows beneficiary plans
+2. **App.js ProtectedRoute**: Paywall gating uses `!isOnBeneficiaryRoute` instead of `user.role !== 'beneficiary'`
+3. **checkout.py**: Beta mode subscription save no longer requires `role == 'benefactor'` — multi-role users can save plan preferences
+4. **Housekeeping script**: All 35 checks passed (lint, SOC 2 compliance, security, DB, etc.)
+5. **CodeMagic build number**: Uses `$(date +%s)` for unique, ever-increasing build numbers
+
 ### Session: Mar 10, 2026 — ROOT CAUSE FIX: Login Redirect + Welcome Step
 **Root cause identified and fixed**: `PublicRoute` in App.js was racing against `navigateToHome` — for beneficiary-role users with `is_also_benefactor=true`, React's re-render of `PublicRoute` would redirect to `/beneficiary` BEFORE `navigateToHome` could fire `navigate('/dashboard')`.
 
@@ -40,11 +50,12 @@ Multi-portal estate planning platform (CarryOn) with FastAPI backend, React/Capa
 - Deployment: Railway (Backend) + Vercel (Frontend)
 
 ## Known Issues
-- Production user pieva2021@gmail.com has 0 beneficiaries (data issue, not code bug)
+- Production user pieva2021@gmail.com has 0 beneficiaries (data issue, not code bug — needs to re-create estate via /create-estate)
 
 ## Upcoming Tasks
-- P1: Finalize Share Extension Setup
+- P1: Finalize Share Extension Setup (re-add Share Extension target in Xcode per /app/memory/SHARE_EXTENSION_SETUP.md)
 - P1: Twilio SMS OTP Integration (blocked on A2P 10DLC approval)
+- CORS wildcard review (housekeeping warning — verify middleware.py)
 
 ## Test Credentials
 - Founder: info@carryon.us / Demo1234!
