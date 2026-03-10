@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { cachedGet } from '../utils/apiCache';
 import { useAuth } from '../contexts/AuthContext';
-import { ReturnPopup } from '../components/GuidedActivation';
 import {
   User,
   Users,
@@ -185,7 +184,6 @@ const GuardianPage = () => {
   const fromGettingStarted = location.state?.fromGettingStarted === true;
   const guardianRef = useRef(null);
   const [headerHeight, setHeaderHeight] = useState(48);
-  const [showReturnPopup, setShowReturnPopup] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [showOnboardingReturn, setShowOnboardingReturn] = useState(fromGettingStarted);
   const recognitionRef = useRef(null);
@@ -871,9 +869,6 @@ const GuardianPage = () => {
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
-      {showReturnPopup && (
-        <ReturnPopup step="guardian" onReturn={() => { setShowReturnPopup(false); navigate('/dashboard'); }} />
-      )}
     </div>
   );
 };

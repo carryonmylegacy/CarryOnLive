@@ -66,13 +66,14 @@ const DigitalWalletPage = () => {
     setShowAdd(false);
     setEditEntry(null);
     await fetchData();
-    // Show return popup only for the very first credential added
+    // Show return popup only for the very first credential added and if not already graduated
     if (wasFirstEntry && !sessionStorage.getItem('carryon_dav_popup_shown')) {
       sessionStorage.setItem('carryon_dav_popup_shown', 'true');
       try {
         await axios.post(`${API_URL}/onboarding/complete-step/add_credential`, {}, getAuthHeaders());
+        const prog = await axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
+        if (!prog.data?.already_graduated) setTimeout(() => setShowReturnPopup(true), 1000);
       } catch {}
-      setTimeout(() => setShowReturnPopup(true), 1000);
     }
   };
 

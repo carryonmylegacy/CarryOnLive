@@ -470,7 +470,10 @@ const MessagesPage = () => {
       resetForm();
       fetchData();
       if (wasFirstMessage) {
-        setTimeout(() => setShowReturnPopup(true), 500);
+        try {
+          const prog = await axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
+          if (!prog.data?.already_graduated) setTimeout(() => setShowReturnPopup(true), 500);
+        } catch { /* skip popup */ }
       }
     } catch (error) {
       console.error('Save error:', error);

@@ -231,7 +231,11 @@ const ChecklistPage = () => {
   const defaultItems = checklists.filter(c => c.is_default);
   const allDefaultsResolved = defaultItems.length === 0 || defaultItems.every(c => c.activation_status);
   
-  const handleCompleteChecklist = () => {
+  const handleCompleteChecklist = async () => {
+    try {
+      const prog = await axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
+      if (prog.data?.already_graduated) return;
+    } catch { /* proceed */ }
     setShowReturnPopup(true);
   };
 

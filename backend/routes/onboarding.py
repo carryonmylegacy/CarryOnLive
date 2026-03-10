@@ -118,13 +118,19 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
     all_complete = done == total
 
     # Auto-dismiss if all complete, auto-restore if steps become incomplete again
+    # BUT: once celebration_shown is True, the user finished onboarding once — never re-show
+    already_graduated = progress.get("celebration_shown", False)
     if all_complete:
+        update_set = {"dismissed": True}
+        if not already_graduated:
+            update_set["completed_once"] = True
         await db.onboarding_progress.update_one(
             {"user_id": current_user["id"]},
-            {"$set": {"dismissed": True}},
+            {"$set": update_set},
         )
-    elif progress.get("dismissed") and not all_complete:
+    elif progress.get("dismissed") and not all_complete and not already_graduated:
         # Steps went back to incomplete — un-dismiss so the guide reappears
+        # ONLY if user hasn't already graduated (celebration_shown=True)
         await db.onboarding_progress.update_one(
             {"user_id": current_user["id"]},
             {"$set": {"dismissed": False}},
@@ -149,8 +155,9 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
         "total_steps": total,
         "progress_pct": int((done / total) * 100) if total else 0,
         "all_complete": all_complete,
-        "dismissed": all_complete,
-        "celebration_shown": progress.get("celebration_shown", False),
+        "dismissed": all_complete or already_graduated,
+        "celebration_shown": already_graduated,
+        "already_graduated": already_graduated,
         "beneficiary_names": ben_names[:3],
     }
 

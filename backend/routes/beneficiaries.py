@@ -31,7 +31,7 @@ router = APIRouter()
 async def get_beneficiaries(
     estate_id: str, current_user: dict = Depends(get_current_user)
 ):
-    """List all beneficiaries for an estate."""
+    """List all beneficiaries for an estate, sorted by sort_order."""
     beneficiaries = await db.beneficiaries.find(
         {"estate_id": estate_id}, {"_id": 0}
     ).to_list(100)
@@ -39,6 +39,8 @@ async def get_beneficiaries(
     for b in beneficiaries:
         if "dob" in b and "date_of_birth" not in b:
             b["date_of_birth"] = b.pop("dob")
+    # Sort by sort_order (fallback to created_at for records without sort_order)
+    beneficiaries.sort(key=lambda b: (b.get("sort_order", 999), b.get("created_at", "")))
     return beneficiaries
 
 
@@ -904,3 +906,29 @@ async def accept_invitation(data: AcceptInvitationRequest):
             "created_at": new_user["created_at"],
         },
     }
+
+
+
+class ReorderRequest(BaseModel):
+    ordered_ids: list[str]
+
+
+@router.put("/beneficiaries/reorder/{estate_id}")
+async def reorder_beneficiaries(
+    estate_id: str,
+    data: ReorderRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Persist drag-and-drop beneficiary sort order."""
+    if current_user["role"] not in ("benefactor", "admin") and not (
+        current_user["role"] == "beneficiary"
+        and (await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "is_also_benefactor": 1}) or {}).get("is_also_benefactor")
+    ):
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    for idx, ben_id in enumerate(data.ordered_ids):
+        await db.beneficiaries.update_one(
+            {"id": ben_id, "estate_id": estate_id},
+            {"$set": {"sort_order": idx}},
+        )
+    return {"success": True}

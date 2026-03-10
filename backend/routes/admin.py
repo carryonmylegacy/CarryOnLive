@@ -574,6 +574,14 @@ async def delete_user(
     await db.client_errors.delete_many({"user_id": user_id})
     await db.webauthn_credentials.delete_many({"user_id": user_id})
 
+    # Remove this user from all estates' beneficiaries arrays (they may be a beneficiary of other estates)
+    await db.estates.update_many(
+        {"beneficiaries": user_id},
+        {"$pull": {"beneficiaries": user_id}},
+    )
+    # Delete beneficiary records that link this user to other estates
+    await db.beneficiaries.delete_many({"user_id": user_id})
+
     # Finally delete the user
     await db.users.delete_one({"id": user_id})
     return {"message": "User and all associated data deleted"}

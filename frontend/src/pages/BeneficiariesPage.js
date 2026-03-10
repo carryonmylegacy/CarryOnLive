@@ -1,9 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { cachedGet } from '../utils/apiCache';
 import { ReturnPopup } from '../components/GuidedActivation';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  rectSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import {
   Users,
   Plus,
@@ -26,6 +41,7 @@ import {
   AlertTriangle,
   UserCheck,
   XCircle,
+  GripVertical,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -44,6 +60,23 @@ import DateMaskInput from '../components/DateMaskInput';
 import SlidePanel from '../components/SlidePanel';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+// Sortable wrapper for beneficiary cards
+const SortableCard = ({ id, children }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : 'auto',
+    position: 'relative',
+  };
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      {children}
+    </div>
+  );
+};
 
 const relations = [
   'Spouse', 'Son', 'Daughter', 'Parent', 'Sibling', 'Grandchild', 'Friend', 'Other'
@@ -322,7 +355,11 @@ const BeneficiariesPage = () => {
       setShowPrimaryDisclaimer(null);
       setChangingPrimary(false);
       fetchData();
-      setShowPrimaryPopup(true);
+      // Only show the getting-started popup if user hasn't already graduated onboarding
+      try {
+        const prog = await axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
+        if (!prog.data?.already_graduated) setShowPrimaryPopup(true);
+      } catch { /* skip popup on error */ }
     } catch (error) {
       console.error('Set primary error:', error);
       toast.error(error.response?.data?.detail || 'Failed to designate primary beneficiary');
@@ -398,6 +435,27 @@ const BeneficiariesPage = () => {
 
   const primaryBeneficiary = beneficiaries.find(b => b.is_primary);
 
+  // Drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+  );
+
+  const handleDragEnd = useCallback(async (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = beneficiaries.findIndex(b => b.id === active.id);
+    const newIdx = beneficiaries.findIndex(b => b.id === over.id);
+    if (oldIdx === -1 || newIdx === -1) return;
+    const reordered = arrayMove(beneficiaries, oldIdx, newIdx);
+    setBeneficiaries(reordered);
+    try {
+      await axios.put(`${API_URL}/beneficiaries/reorder/${estate?.id}`, {
+        ordered_ids: reordered.map(b => b.id),
+      }, getAuthHeaders());
+    } catch { toast.error('Failed to save order'); }
+  }, [beneficiaries, estate?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (loading) {
     return (
       <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6">
@@ -467,12 +525,18 @@ const BeneficiariesPage = () => {
           </CardContent>
         </Card>
       ) : (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={beneficiaries.map(b => b.id)} strategy={rectSortingStrategy}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {beneficiaries.map((ben) => (
-            <Card key={ben.id} className="glass-card group" data-testid={`beneficiary-${ben.id}`}>
+            <SortableCard key={ben.id} id={ben.id}>
+            <Card className="glass-card group" data-testid={`beneficiary-${ben.id}`}>
               <CardContent className="p-5">
                 <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="drag-handle cursor-grab active:cursor-grabbing flex items-center text-[var(--t5)] hover:text-[var(--t3)] transition-colors touch-none" data-testid={`drag-handle-${ben.id}`}>
+                      <GripVertical className="w-4 h-4" />
+                    </div>
                     <div
                       className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold overflow-hidden"
                       style={{
@@ -676,8 +740,11 @@ const BeneficiariesPage = () => {
                 </div>
               </CardContent>
             </Card>
+            </SortableCard>
           ))}
         </div>
+        </SortableContext>
+        </DndContext>
       )}
 
       {/* Add/Edit Beneficiary Panel */}

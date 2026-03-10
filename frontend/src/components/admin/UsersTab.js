@@ -22,7 +22,7 @@ const statusColors = {
 export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, operatorMode = false }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
-  const [viewMode, setViewMode] = useState('list'); // 'list' | 'tree'
+  const [viewMode, setViewMode] = useState('tree'); // 'list' | 'tree'
   const [actionLoading, setActionLoading] = useState(null);
   const [roleChanging, setRoleChanging] = useState(null);
   const [unlockUserId, setUnlockUserId] = useState(null);
@@ -37,7 +37,12 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
   const filteredUsers = users
     .filter(u => operatorMode ? (u.role !== 'admin' && u.role !== 'operator') : true)
     .filter(u => roleFilter === 'all' || u.role === roleFilter)
-    .filter(u => !searchQuery || u.name?.toLowerCase().includes(searchQuery.toLowerCase()) || u.email?.toLowerCase().includes(searchQuery.toLowerCase()));
+    .filter(u => !searchQuery || u.name?.toLowerCase().includes(searchQuery.toLowerCase()) || u.email?.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => {
+      // When viewing a specific role tab, sort alphabetically by name
+      if (roleFilter !== 'all') return (a.name || '').localeCompare(b.name || '');
+      return 0;
+    });
 
   const toggleExpand = (userId) => {
     setExpandedUsers(prev => {
@@ -154,7 +159,15 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                 className="text-xs px-2 py-1 rounded-md font-bold"
                 style={{ background: 'rgba(139,92,246,0.1)', color: '#B794F6' }}
               >
-                beneficiary
+                + beneficiary
+              </span>
+            )}
+            {u.is_also_benefactor && u.role === 'beneficiary' && (
+              <span
+                className="text-xs px-2 py-1 rounded-md font-bold"
+                style={{ background: 'rgba(37,99,235,0.1)', color: '#60A5FA' }}
+              >
+                + benefactor
               </span>
             )}
             {u.created_at && (
@@ -220,19 +233,57 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     );
   };
 
-  // Tree view: group benefactors at top, show their beneficiaries underneath
+  // Helper: calculate age from DOB
+  const getAge = (dob) => {
+    if (!dob) return 999;
+    const d = new Date(dob);
+    const now = new Date();
+    let age = now.getFullYear() - d.getFullYear();
+    if (now.getMonth() < d.getMonth() || (now.getMonth() === d.getMonth() && now.getDate() < d.getDate())) age--;
+    return age;
+  };
+
+  // Tree view: group by ESTATE, benefactors at top sorted by age, beneficiaries indented below sorted by age
   const renderTreeView = () => {
     const benefactors = filteredUsers.filter(u => u.role === 'benefactor');
     const beneficiaryUsers = filteredUsers.filter(u => u.role === 'beneficiary');
     const admins = filteredUsers.filter(u => u.role === 'admin');
 
-    // Track beneficiary user emails for matching to linked records
-    const benUserEmails = new Set(beneficiaryUsers.map(u => u.email?.toLowerCase()));
+    // Build estate map: estate -> { owner, beneficiaries[] }
+    const estateMap = new Map();
+    const benUserByEmail = new Map();
+    beneficiaryUsers.forEach(u => { if (u.email) benUserByEmail.set(u.email.toLowerCase(), u); });
+
+    benefactors.forEach(owner => {
+      const bens = owner.linked_beneficiaries || [];
+      estateMap.set(owner.id, {
+        owner,
+        estateName: `${owner.name || 'Unknown'}'s Estate`,
+        beneficiaries: bens,
+        linkedUsers: bens
+          .map(b => b.email ? benUserByEmail.get(b.email.toLowerCase()) : null)
+          .filter(Boolean),
+      });
+    });
+
+    // Track shown beneficiary user IDs so we can show orphans
+    const shownBenIds = new Set();
+    estateMap.forEach(estate => {
+      estate.linkedUsers.forEach(u => shownBenIds.add(u.id));
+    });
+    const orphans = beneficiaryUsers.filter(u => !shownBenIds.has(u.id));
+
+    // Sort benefactors by age (youngest first)
+    const sortedEstates = [...estateMap.values()].sort((a, b) => {
+      const ageA = getAge(a.owner.date_of_birth);
+      const ageB = getAge(b.owner.date_of_birth);
+      return ageA - ageB;
+    });
 
     return (
-      <div className="space-y-1">
+      <div className="space-y-3">
         {admins.length > 0 && (
-          <div className="mb-3">
+          <div className="mb-4">
             <p className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2">Administrators</p>
             <div className="space-y-2">
               {admins.map(u => <UserRow key={u.id} u={u} />)}
@@ -240,72 +291,113 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
           </div>
         )}
 
-        {benefactors.length > 0 && (
-          <div className="mb-3">
-            <p className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2">
-              Benefactors & Their Beneficiaries ({benefactors.length})
-            </p>
-            <div className="space-y-1">
-              {benefactors.map(u => {
-                const isExpanded = expandedUsers.has(u.id);
-                const bens = u.linked_beneficiaries || [];
-                // Find beneficiary *users* that match linked records by email
-                const linkedBenUsers = bens
-                  .filter(b => b.email && benUserEmails.has(b.email.toLowerCase()))
-                  .map(b => beneficiaryUsers.find(bu => bu.email?.toLowerCase() === b.email.toLowerCase()))
-                  .filter(Boolean);
-                const linkedBenUserIds = new Set(linkedBenUsers.map(b => b.id));
-                // Non-user beneficiaries (stub/pending)
-                const nonUserBens = bens.filter(b => !b.email || !benUserEmails.has(b.email.toLowerCase()));
+        {sortedEstates.map(({ owner, estateName, beneficiaries: bens, linkedUsers }) => {
+          const isExpanded = expandedUsers.has(owner.id);
+          const hasBens = bens.length > 0;
 
-                return (
-                  <div key={u.id}>
-                    <UserRow u={u} />
-                    {isExpanded && (
-                      <div className="mb-2">
-                        {linkedBenUsers.map(bu => (
-                          <UserRow key={bu.id} u={bu} indent />
-                        ))}
-                        {nonUserBens.map(b => (
-                          <BeneficiaryLeaf key={b.id} ben={b} />
-                        ))}
-                        {bens.length === 0 && (
-                          <div className="ml-8 pl-4 py-2 text-xs text-[var(--t5)] italic border-l-2" style={{ borderColor: 'var(--b)' }}>
-                            No beneficiaries enrolled yet
-                          </div>
+          // Sort linked beneficiaries by age
+          const sortedLinkedUsers = [...linkedUsers].sort((a, b) => getAge(a.date_of_birth) - getAge(b.date_of_birth));
+          const linkedEmails = new Set(linkedUsers.map(u => u.email?.toLowerCase()));
+          const nonUserBens = bens
+            .filter(b => !b.email || !linkedEmails.has(b.email.toLowerCase()))
+            .sort((a, b) => getAge(a.date_of_birth || a.dob) - getAge(b.date_of_birth || b.dob));
+
+          return (
+            <div key={owner.id} className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--b)', background: 'rgba(255,255,255,0.01)' }}>
+              {/* Estate header */}
+              <button
+                onClick={() => toggleExpand(owner.id)}
+                className="w-full flex items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-[var(--s)]"
+                data-testid={`estate-header-${owner.id}`}
+              >
+                <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                  {isExpanded ? <ChevronDown className="w-4 h-4 text-[var(--gold)]" /> : <ChevronRight className="w-4 h-4 text-[var(--t5)]" />}
+                </div>
+                <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.1)' }}>
+                  <Users className="w-3.5 h-3.5 text-[var(--gold)]" />
+                </div>
+                <span className="text-xs font-bold text-[var(--gold)] flex-1">{estateName}</span>
+                <span className="text-[10px] text-[var(--t5)] px-2 py-0.5 rounded-full" style={{ background: 'var(--s)' }}>
+                  {bens.length} beneficiar{bens.length === 1 ? 'y' : 'ies'}
+                </span>
+              </button>
+
+              {/* Always show the benefactor row */}
+              <div className="px-2 pb-1">
+                <UserRow u={owner} />
+              </div>
+
+              {/* Expanded: show beneficiaries indented with tree connectors */}
+              {isExpanded && (
+                <div className="px-2 pb-2">
+                  {sortedLinkedUsers.map((bu, idx) => (
+                    <div key={bu.id} className="flex" data-testid={`tree-child-${bu.id}`}>
+                      {/* Tree connector */}
+                      <div className="flex flex-col items-center ml-6 mr-1 flex-shrink-0" style={{ width: 20 }}>
+                        <div style={{ width: 1, height: '50%', background: 'var(--b)' }} />
+                        <div style={{ width: 12, height: 1, background: 'var(--b)', alignSelf: 'flex-start', marginLeft: 1 }} />
+                        {idx < sortedLinkedUsers.length + nonUserBens.length - 1 && (
+                          <div style={{ width: 1, height: '50%', background: 'var(--b)' }} />
                         )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
+                      <div className="flex-1 min-w-0">
+                        <div className="glass-card p-2.5 flex items-center gap-2.5 mb-1" style={{ fontSize: '0.85em' }}>
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                            style={{ background: roleColors.beneficiary.bg, color: roleColors.beneficiary.color }}>
+                            {bu.name ? bu.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-[var(--t)] text-xs truncate">{bu.name || 'No name'}</div>
+                            <div className="text-[10px] text-[var(--t5)] truncate">{bu.email}</div>
+                          </div>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold" style={{ background: roleColors.beneficiary.bg, color: roleColors.beneficiary.color }}>
+                            beneficiary
+                          </span>
+                          {bu.id !== currentUserId && (
+                            <Button variant="ghost" size="sm" className="text-[var(--rd)] hover:bg-[var(--rdbg)] h-6 w-6 p-0" onClick={() => { setDeleteTarget({ id: bu.id, name: bu.name, role: bu.role }); setDeletePassword(''); setShowDeletePw(false); }}>
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {nonUserBens.map((ben, idx) => (
+                    <div key={ben.id} className="flex" data-testid={`tree-stub-${ben.id}`}>
+                      <div className="flex flex-col items-center ml-6 mr-1 flex-shrink-0" style={{ width: 20 }}>
+                        <div style={{ width: 1, height: '50%', background: 'var(--b)' }} />
+                        <div style={{ width: 12, height: 1, background: 'var(--b)', alignSelf: 'flex-start', marginLeft: 1 }} />
+                        {idx < nonUserBens.length - 1 && (
+                          <div style={{ width: 1, height: '50%', background: 'var(--b)' }} />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <BeneficiaryLeaf ben={ben} />
+                      </div>
+                    </div>
+                  ))}
+                  {bens.length === 0 && (
+                    <div className="ml-8 pl-4 py-2 text-xs text-[var(--t5)] italic">
+                      No beneficiaries enrolled yet
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Orphan beneficiary users */}
+        {orphans.length > 0 && (
+          <div>
+            <p className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2 mt-4">
+              Unlinked Beneficiaries ({orphans.length})
+            </p>
+            <div className="space-y-2">
+              {orphans.sort((a, b) => (a.name || '').localeCompare(b.name || '')).map(u => <UserRow key={u.id} u={u} />)}
             </div>
           </div>
         )}
-
-        {/* Orphan beneficiary users (not linked to any benefactor in tree) */}
-        {(() => {
-          // Collect all beneficiary user IDs that were shown under a benefactor
-          const shownBenIds = new Set();
-          filteredUsers.filter(u => u.role === 'benefactor').forEach(u => {
-            (u.linked_beneficiaries || []).forEach(b => {
-              const match = beneficiaryUsers.find(bu => bu.email?.toLowerCase() === b.email?.toLowerCase());
-              if (match) shownBenIds.add(match.id);
-            });
-          });
-          const orphans = beneficiaryUsers.filter(u => !shownBenIds.has(u.id));
-          if (orphans.length === 0) return null;
-          return (
-            <div>
-              <p className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2">
-                Unlinked Beneficiaries ({orphans.length})
-              </p>
-              <div className="space-y-2">
-                {orphans.map(u => <UserRow key={u.id} u={u} />)}
-              </div>
-            </div>
-          );
-        })()}
       </div>
     );
   };
@@ -319,7 +411,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
         </div>
         <div className="flex gap-1 overflow-x-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
           {(operatorMode ? ['all', 'benefactor', 'beneficiary'] : ['all', 'benefactor', 'beneficiary', 'admin']).map(r => (
-            <button key={r} onClick={() => setRoleFilter(r)} className={`px-3 py-2 rounded-lg text-xs font-bold capitalize whitespace-nowrap flex-shrink-0 ${roleFilter === r ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'}`} data-testid={`admin-role-filter-${r}`}>{r === 'all' ? 'All' : r}</button>
+            <button key={r} onClick={() => { setRoleFilter(r); setViewMode(r === 'all' ? 'tree' : 'list'); }} className={`px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap flex-shrink-0 ${roleFilter === r ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'}`} data-testid={`admin-role-filter-${r}`}>{r === 'all' ? 'All Estates' : r === 'beneficiary' ? 'Beneficiaries' : r === 'benefactor' ? 'Benefactors' : r === 'admin' ? 'Admins' : r}</button>
           ))}
           <div className="w-px bg-[var(--b)] mx-1" />
           <button

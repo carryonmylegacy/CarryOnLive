@@ -91,16 +91,21 @@ const DashboardPage = () => {
 
       // Show guided flow overlay if there are incomplete steps and user hasn't dismissed this visit
       if (!guidedDismissedRef.current && progressRes?.data) {
-        const steps = progressRes.data?.steps || [];
-        const nextIncomplete = steps.find(s => !s.completed);
-        if (nextIncomplete && !progressRes.data?.all_complete) {
-          setGuidedStep({ ...nextIncomplete, beneficiary_names: progressRes.data?.beneficiary_names || [] });
-          setShowGuidedFlow(true);
-        } else if (progressRes.data?.all_complete && !progressRes.data?.celebration_shown) {
-          // All steps complete — show celebration (one-time, persisted on backend)
+        // If user already graduated (celebration shown before), skip all guided flow
+        if (progressRes.data?.already_graduated) {
           guidedDismissedRef.current = true;
-          try { axios.post(`${API_URL}/onboarding/celebration-shown`, {}, getAuthHeaders()); } catch {}
-          setTimeout(() => setShowCelebration(true), 600);
+        } else {
+          const steps = progressRes.data?.steps || [];
+          const nextIncomplete = steps.find(s => !s.completed);
+          if (nextIncomplete && !progressRes.data?.all_complete) {
+            setGuidedStep({ ...nextIncomplete, beneficiary_names: progressRes.data?.beneficiary_names || [] });
+            setShowGuidedFlow(true);
+          } else if (progressRes.data?.all_complete && !progressRes.data?.celebration_shown) {
+            // All steps complete — show celebration (one-time, persisted on backend)
+            guidedDismissedRef.current = true;
+            try { axios.post(`${API_URL}/onboarding/celebration-shown`, {}, getAuthHeaders()); } catch {}
+            setTimeout(() => setShowCelebration(true), 600);
+          }
         }
       }
     } catch (error) { console.error('Fetch estate data error:', error); }
