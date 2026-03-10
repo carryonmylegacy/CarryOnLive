@@ -479,8 +479,46 @@ const Sidebar = () => {
       <BetaBanner collapsed={collapsed} />
 
       {/* Multi-Role Portal Switcher — for users with both benefactor + beneficiary access */}
-      {!collapsed && (user?.is_also_benefactor || user?.is_also_beneficiary || 
+      {(user?.is_also_benefactor || user?.is_also_beneficiary || 
         (user?.role === 'benefactor' && benEstates.some(e => e.user_role_in_estate === 'beneficiary'))) && (
+        collapsed ? (
+          /* Collapsed: compact icon buttons for portal switching */
+          <div style={{ padding: '4px 6px', display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <button onClick={() => {
+              const ownedEstate = benEstates.find(e => e.user_role_in_estate === 'owner');
+              if (ownedEstate) localStorage.setItem('selected_estate_id', ownedEstate.id);
+              localStorage.removeItem('beneficiary_estate_id');
+              navigate('/dashboard');
+            }}
+            title="My Estate (Benefactor)"
+            data-testid="switch-benefactor-collapsed"
+            style={{
+              width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto', cursor: 'pointer', transition: 'all .15s',
+              background: !window.location.pathname.startsWith('/beneficiary') ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.03)',
+              border: !window.location.pathname.startsWith('/beneficiary') ? '1px solid rgba(212,175,55,0.3)' : '1px solid rgba(255,255,255,0.06)',
+            }}>
+              <Shield className="w-4 h-4" style={{ color: '#d4af37' }} />
+            </button>
+            <button onClick={() => {
+              const benEstate = benEstates.find(e => e.user_role_in_estate === 'beneficiary' || e.is_beneficiary_estate);
+              if (benEstate) localStorage.setItem('beneficiary_estate_id', benEstate.id);
+              localStorage.removeItem('selected_estate_id');
+              navigate('/beneficiary');
+              window.location.reload();
+            }}
+            title="Beneficiary Portal"
+            data-testid="switch-beneficiary-collapsed"
+            style={{
+              width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto', cursor: 'pointer', transition: 'all .15s',
+              background: window.location.pathname.startsWith('/beneficiary') ? 'rgba(96,165,250,0.15)' : 'rgba(255,255,255,0.03)',
+              border: window.location.pathname.startsWith('/beneficiary') ? '1px solid rgba(96,165,250,0.3)' : '1px solid rgba(255,255,255,0.06)',
+            }}>
+              <Users className="w-4 h-4" style={{ color: '#60A5FA' }} />
+            </button>
+          </div>
+        ) : (
         <div style={{ padding: '6px 12px' }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: '#525C72', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 4, paddingLeft: 4 }}>
             Switch View
@@ -539,6 +577,7 @@ const Sidebar = () => {
             ))}
           </div>
         </div>
+        )
       )}
 
       {/* Beneficiary Estate Switcher — removed from sidebar, now in page header */}

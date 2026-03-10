@@ -17,7 +17,6 @@ import {
   KeyRound,
   ArrowLeftRight
 } from 'lucide-react';
-import EstateSelector from '../components/estate/EstateSelector';
 import TrialBanner from '../components/TrialBanner';
 import OnboardingWizard from '../components/OnboardingWizard';
 import { ActivationCelebration } from '../components/GuidedActivation';
@@ -253,10 +252,7 @@ const DashboardPage = () => {
           </div>
           <h2 className="text-xl lg:text-2xl font-bold text-[var(--t)] mb-3">Create Your First Estate</h2>
           <p className="text-[var(--t4)] mb-6 text-sm lg:text-base">Start organizing your legacy by creating an estate.</p>
-          <EstateSelector 
-            currentEstate={null} 
-            onEstateChange={handleEstateChange} 
-          />
+          <button onClick={() => navigate('/create-estate')} className="gold-button px-6 py-3 rounded-xl font-bold" data-testid="create-first-estate">Create Estate</button>
         </div>
       </div>
     );
@@ -460,10 +456,6 @@ const DashboardPage = () => {
           </p>
         </div>
         <div className="sm:mt-1">
-          <EstateSelector 
-            currentEstate={estate} 
-            onEstateChange={handleEstateChange} 
-          />
         </div>
       </div>
 

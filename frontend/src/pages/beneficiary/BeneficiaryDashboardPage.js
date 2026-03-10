@@ -5,8 +5,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { toast } from '../../utils/toast';
 import { Lock, FolderLock, MessageSquare, CheckSquare, ChevronRight, ChevronLeft, Users, Settings } from 'lucide-react';
 import { Skeleton } from '../../components/ui/skeleton';
-import { Switch } from '../../components/ui/switch';
-import EstateSelector from '../../components/estate/EstateSelector';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -144,16 +142,6 @@ const BeneficiaryDashboardPage = () => {
           </p>
         </div>
 
-        {/* Unified Estate & View Switcher */}
-        <div className="sm:mt-1">
-          <EstateSelector
-            currentEstate={estate}
-            onEstateChange={(est) => {
-              localStorage.setItem('beneficiary_estate_id', est.id);
-              window.location.reload();
-            }}
-          />
-        </div>
       </div>
 
       {/* Stat Cards */}

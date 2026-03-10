@@ -31,11 +31,11 @@ import {
   AlertTriangle,
   BookOpen,
   Search,
-  StickyNote
+  StickyNote,
+  Gift
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import { toast } from '../../utils/toast';
-import ViewSwitcher from '../ViewSwitcher';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const BASE_URL = process.env.REACT_APP_BACKEND_URL;
@@ -313,6 +313,15 @@ const MobileNav = () => {
     { to: '/timeline', icon: Clock, label: 'Legacy Timeline' },
   ];
 
+  const beneficiaryLegacyItems = [
+    { to: '/beneficiary/dashboard', icon: Home, label: 'Dashboard' },
+    { to: '/beneficiary/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
+    { to: '/beneficiary/guardian', icon: Sparkles, label: 'Estate Guardian (EGA)' },
+    { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
+    { to: '/beneficiary/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
+    { to: '/beneficiary/milestone', icon: Gift, label: 'Report Milestone' },
+  ];
+
   // Staff portals — tool shortcuts in hamburger menu
   const adminMenuItems = [
     { to: '/admin/announcements', icon: Megaphone, label: 'Announcements' },
@@ -331,7 +340,18 @@ const MobileNav = () => {
   const getAccountItems = () => {
     if (user?.role === 'admin') return [];
     if (user?.role === 'operator') return [];
-    if (user?.role === 'beneficiary') {
+    // If user is on beneficiary routes, show beneficiary account items
+    const isOnBeneficiary = window.location.pathname.startsWith('/beneficiary');
+    if (user?.role === 'beneficiary' && !isOnBeneficiary && user?.is_also_benefactor) {
+      // Beneficiary viewing their own estate (benefactor context)
+      return [
+        { to: '/settings', icon: Settings, label: 'Settings' },
+        { to: '/subscription', icon: CreditCard, label: 'Subscription' },
+        { to: '/security-settings', icon: ShieldCheck, label: 'Security Settings' },
+        { to: '/support', icon: Headphones, label: 'Customer Support' },
+      ];
+    }
+    if (user?.role === 'beneficiary' || isOnBeneficiary) {
       return [
         { to: '/beneficiary/settings', icon: Settings, label: 'Settings' },
         { to: '/beneficiary/subscription', icon: CreditCard, label: 'Subscription' },
@@ -505,8 +525,32 @@ const MobileNav = () => {
                 {/* Main nav items — path-aware for admin viewing ops */}
                 {(() => {
                   const isOpsView = user?.role === 'admin' && window.location.pathname.startsWith('/ops');
-                  const menuItems = isOpsView ? operatorMenuItems : (user?.role === 'admin' ? adminMenuItems : user?.role === 'operator' ? operatorMenuItems : myLegacyItems);
-                  const sectionTitle = isOpsView ? 'TOOLS' : (user?.role === 'admin' ? 'TOOLS' : user?.role === 'operator' ? 'TOOLS' : '');
+                  const isOnBeneficiary = window.location.pathname.startsWith('/beneficiary');
+                  // Determine the right menu items based on role and current path context
+                  let menuItems;
+                  let sectionTitle;
+                  if (isOpsView) {
+                    menuItems = operatorMenuItems;
+                    sectionTitle = 'TOOLS';
+                  } else if (user?.role === 'admin') {
+                    menuItems = adminMenuItems;
+                    sectionTitle = 'TOOLS';
+                  } else if (user?.role === 'operator') {
+                    menuItems = operatorMenuItems;
+                    sectionTitle = 'TOOLS';
+                  } else if (isOnBeneficiary || (user?.role === 'beneficiary' && !user?.is_also_benefactor)) {
+                    menuItems = beneficiaryLegacyItems;
+                    sectionTitle = 'LEGACY ACCESS';
+                  } else if (user?.role === 'beneficiary' && user?.is_also_benefactor && !isOnBeneficiary) {
+                    menuItems = myLegacyItems;
+                    sectionTitle = '';
+                  } else if (user?.role === 'benefactor' && isOnBeneficiary) {
+                    menuItems = beneficiaryLegacyItems;
+                    sectionTitle = 'LEGACY ACCESS';
+                  } else {
+                    menuItems = myLegacyItems;
+                    sectionTitle = '';
+                  }
                   return menuItems.length > 0 && (
                 <div className="mb-6">
                   <h3 
@@ -594,17 +638,67 @@ const MobileNav = () => {
                 )}
               </nav>
 
-              {/* Multi-Role View Switcher */}
-              {(user?.is_also_benefactor || user?.is_also_beneficiary ||
-                (user?.role === 'benefactor' && user?.role !== 'admin')) && (
-                <div className="px-4 pb-3">
-                  <h3 className="text-xs font-semibold tracking-wider uppercase mb-2 px-2"
-                    style={{ color: theme === 'dark' ? '#525C72' : '#64748B' }}>
-                    SWITCH VIEW
-                  </h3>
-                  <ViewSwitcher variant="inline" />
-                </div>
-              )}
+              {/* Multi-Role Portal Links — inline buttons for switching between portals */}
+              {(() => {
+                const isMultiRole = user?.is_also_benefactor || user?.is_also_beneficiary ||
+                  (user?.role === 'benefactor' && user?.role !== 'admin');
+                if (!isMultiRole || user?.role === 'admin' || user?.role === 'operator') return null;
+                const isOnBeneficiary = window.location.pathname.startsWith('/beneficiary');
+                return (
+                  <div className="px-4 pb-3">
+                    <h3 className="text-xs font-semibold tracking-wider uppercase mb-2 px-2"
+                      style={{ color: theme === 'dark' ? '#525C72' : '#64748B' }}>
+                      SWITCH VIEW
+                    </h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                      {/* My Estate (benefactor) link */}
+                      <button onClick={() => {
+                        setOpen(false);
+                        navigate('/dashboard');
+                        if (isOnBeneficiary) window.location.reload();
+                      }}
+                      data-testid="mobile-switch-benefactor"
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
+                        background: !isOnBeneficiary ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.02)',
+                        border: !isOnBeneficiary ? '1px solid rgba(212,175,55,0.3)' : '1px solid rgba(255,255,255,0.06)',
+                        borderRadius: 8, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'all .15s',
+                      }}>
+                        <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#d4af37', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <Shield className="w-3 h-3" style={{ color: '#080e1a' }} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: theme === 'dark' ? '#E2E8F0' : '#1e293b' }}>My Estate</div>
+                          <div style={{ fontSize: 9, color: '#64748B' }}>Benefactor</div>
+                        </div>
+                        {!isOnBeneficiary && <span style={{ fontSize: 10, color: 'var(--gold2, #d4af37)' }}>Active</span>}
+                      </button>
+                      {/* Beneficiary portal link */}
+                      <button onClick={() => {
+                        setOpen(false);
+                        navigate('/beneficiary');
+                        if (!isOnBeneficiary) window.location.reload();
+                      }}
+                      data-testid="mobile-switch-beneficiary"
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
+                        background: isOnBeneficiary ? 'rgba(96,165,250,0.1)' : 'rgba(255,255,255,0.02)',
+                        border: isOnBeneficiary ? '1px solid rgba(96,165,250,0.3)' : '1px solid rgba(255,255,255,0.06)',
+                        borderRadius: 8, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'all .15s',
+                      }}>
+                        <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#60A5FA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <Users className="w-3 h-3" style={{ color: '#080e1a' }} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: theme === 'dark' ? '#E2E8F0' : '#1e293b' }}>Beneficiary</div>
+                          <div style={{ fontSize: 9, color: '#64748B' }}>View estates I'm named in</div>
+                        </div>
+                        {isOnBeneficiary && <span style={{ fontSize: 10, color: '#60A5FA' }}>Active</span>}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Admin OTP Toggle — Founder only */}
               {user?.role === 'admin' && !window.location.pathname.startsWith('/ops') && (

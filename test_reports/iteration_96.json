@@ -1,0 +1,60 @@
+{
+  "summary": "Verified estate selector dropdown removal and replacement with simple portal switching links in sidebar and mobile hamburger menu. All tests PASSED for multi-role and single-role users.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    ".screenshots/05_dashboard_sidebar.png",
+    ".screenshots/07_beneficiary_portal.png",
+    ".screenshots/10_admin_sidebar.png",
+    ".screenshots/11_mobile_dashboard.png",
+    ".screenshots/12_mobile_hamburger_open.png"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "EstateSelector.js confirmed DELETED - file not found at /app/frontend/src/components/estate/EstateSelector.js",
+    "ViewSwitcher.js confirmed DELETED - file not found at /app/frontend/src/components/ViewSwitcher.js",
+    "No import references to EstateSelector or ViewSwitcher anywhere in codebase - grep returned empty",
+    "Frontend compiles successfully with no module not found errors",
+    "Sidebar.js: Switch View section correctly implemented with data-testid attributes (switch-estate-owner-*, switch-estate-ben-*, switch-benefactor-collapsed, switch-beneficiary-collapsed)",
+    "MobileNav.js: Switch View section in hamburger menu with data-testid attributes (mobile-switch-benefactor, mobile-switch-beneficiary)",
+    "Context-aware nav items: Sidebar and MobileNav both show beneficiary-specific nav when on /beneficiary routes"
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A - Frontend only testing",
+    "frontend": "100% - All portal switching features working correctly"
+  },
+  "test_credentials": {
+    "multi_role_user": "fulltest@test.com / Password.123",
+    "admin_single_role": "info@carryon.us / Demo1234!"
+  },
+  "seed_data_creation": "",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "The buggy estate selector dropdown has been completely removed and replaced with simple inline portal switching links. The 'Switch View' section appears in the sidebar (both expanded and collapsed states) and in the mobile hamburger menu ONLY for multi-role users (users with both benefactor and beneficiary access). Single-role users like admin (info@carryon.us) do NOT see the Switch View section. The navigation items change context-appropriately when on /beneficiary routes.",
+  "verified_features": {
+    "multi_role_sidebar_switch_view": "PASS - fulltest@test.com shows 'SWITCH VIEW' section with 'My Estate / Benefactor' link",
+    "beneficiary_portal_navigation": "PASS - Direct navigation to /beneficiary works, nav items change to beneficiary-specific",
+    "sidebar_context_switch": "PASS - Sidebar label changes from 'BENEFACTOR PORTAL' to 'BENEFICIARY' when on /beneficiary routes",
+    "admin_no_switch_view": "PASS - info@carryon.us (admin) does NOT see 'Switch View' section - correct for single-role",
+    "admin_founder_portal_label": "PASS - Admin sidebar shows 'FOUNDER PORTAL' label",
+    "mobile_hamburger_switch_view": "PASS - 'SWITCH VIEW' section with both portal links visible in mobile hamburger menu",
+    "mobile_benefactor_button": "PASS - data-testid='mobile-switch-benefactor' button found and functional",
+    "mobile_beneficiary_button": "PASS - data-testid='mobile-switch-beneficiary' button found and functional",
+    "mobile_navigation_closes_menu": "PASS - Clicking portal link in hamburger navigates and closes menu",
+    "estate_selector_deleted": "PASS - EstateSelector.js file confirmed deleted",
+    "view_switcher_deleted": "PASS - ViewSwitcher.js file confirmed deleted",
+    "no_import_errors": "PASS - Frontend compiles successfully with no module not found errors",
+    "app_loads_correctly": "PASS - Application loads correctly on both desktop and mobile"
+  },
+  "mocked_apis": {
+    "note": "No APIs mocked for this feature test"
+  }
+}
