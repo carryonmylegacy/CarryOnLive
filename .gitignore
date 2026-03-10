@@ -76,6 +76,10 @@ agenthub/agents/youtube/db
 
 # Mobile development
 android-sdk/
+
+# Environment files — contain secrets, never commit
+*.env
+*.env.*
 -e 
 # Environment files
 *.env
