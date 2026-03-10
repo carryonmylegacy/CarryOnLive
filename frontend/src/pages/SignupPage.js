@@ -707,7 +707,7 @@ const SignupPage = () => {
                                 onFocus={handleFieldFocus} placeholder="First name" className={inputClass} />
                             </div>
                             <div className="space-y-1.5">
-                              <Label className="text-[#7b879e] text-sm font-medium">Middle Name</Label>
+                              <Label className="text-[#7b879e] text-sm font-medium">Middle Name <span className="text-[#525c72] text-xs font-normal">(optional)</span></Label>
                               <Input value={ben.middle_name || ''} onChange={(e) => updateBen('middle_name', e.target.value)}
                                 onFocus={handleFieldFocus} placeholder="Middle name" className={inputClass} />
                             </div>

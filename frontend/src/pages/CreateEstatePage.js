@@ -609,6 +609,10 @@ const CreateEstatePage = () => {
                             </div>
                           </div>
                           <div className="space-y-1.5">
+                            <Label className="text-[#7b879e] text-sm font-medium">Middle Name <span className="text-[#525c72] text-xs font-normal">(optional)</span></Label>
+                            <Input value={ben.middle_name} onChange={(e) => updateBen('middle_name', e.target.value)} placeholder="Middle name" className={inputClass} />
+                          </div>
+                          <div className="space-y-1.5">
                             <Label className="text-[#7b879e] text-sm font-medium">Email {ben.requireEmail ? <span className="text-red-400">*</span> : '(optional)'}</Label>
                             <Input type="email" value={ben.email} onChange={(e) => { updateBen('email', e.target.value); if (emailErrors[idx]) setEmailErrors(prev => { const n = { ...prev }; delete n[idx]; return n; }); }}
                               onBlur={() => validateBenEmail(ben.email, idx)}
