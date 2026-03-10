@@ -152,14 +152,16 @@ async def login(data: UserLogin, request: Request):
     # Clear failed attempts on successful login
     await db.failed_logins.delete_many({"email": data.email})
 
+    # Check estate ownership for multi-role flag (used in all response paths)
+    _estate_list = await db.estates.find(
+        {"owner_id": user["id"]}, {"_id": 0, "id": 1, "status": 1, "transitioned_at": 1}
+    ).to_list(10)
+    owns_estate = len(_estate_list) > 0
+
     # Check for transitioned benefactor accounts (sealed)
     if user.get("role") == "benefactor":
-        estates = await db.estates.find(
-            {"owner_id": user["id"]}, {"_id": 0, "status": 1, "transitioned_at": 1}
-        ).to_list(10)
-        owns_estate = len(estates) > 0
         transitioned_estate = next(
-            (e for e in estates if e.get("status") == "transitioned"), None
+            (e for e in _estate_list if e.get("status") == "transitioned"), None
         )
         if transitioned_estate:
             # Return sealed flag — frontend shows locked screen
