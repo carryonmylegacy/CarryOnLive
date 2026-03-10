@@ -115,7 +115,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                 {/* Children */}
                 <div className="flex gap-3 justify-center pt-1">
                   {sortedBens.map(ben => {
-                    const color = ben.is_primary ? '#d4af37' : (ben.avatar_color || '#60A5FA');
+                    const color = ben.avatar_color || '#60A5FA';
                     const age = getAge(ben.date_of_birth || ben.dob);
                     const relation = ben.relation || '';
                     return (
@@ -141,7 +141,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
             ) : (
               /* Single child — just vertical */
               sortedBens.map(ben => {
-                const color = ben.is_primary ? '#d4af37' : (ben.avatar_color || '#60A5FA');
+                const color = ben.avatar_color || '#60A5FA';
                 const age = getAge(ben.date_of_birth || ben.dob);
                 return (
                   <div key={ben.id} className="flex flex-col items-center">
