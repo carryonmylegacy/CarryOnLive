@@ -29,11 +29,9 @@ const EstateSelector = ({ currentEstate, onEstateChange }) => {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Build portal list — deduplicate aggressively by estate ID AND name
-  // If user owns an estate, never show it again as beneficiary
+  // Build portal list — deduplicate by estate ID only (same estate can't appear twice)
   const portals = [];
   const seenIds = new Set();
-  const seenNames = new Set();
 
   // Add owned estates first (they take priority)
   allEstates
@@ -42,18 +40,16 @@ const EstateSelector = ({ currentEstate, onEstateChange }) => {
       if (!seenIds.has(e.id)) {
         portals.push({ key: `own-${e.id}`, name: e.name, type: 'benefactor', estate: e });
         seenIds.add(e.id);
-        seenNames.add(e.name);
       }
     });
 
-  // Then add beneficiary estates — skip if same ID or same name as an owned estate
+  // Then add beneficiary estates — skip if same ID as an owned estate
   allEstates
     .filter(e => e.user_role_in_estate === 'beneficiary' || e.is_beneficiary_estate)
     .forEach(e => {
-      if (!seenIds.has(e.id) && !seenNames.has(e.name)) {
+      if (!seenIds.has(e.id)) {
         portals.push({ key: `ben-${e.id}`, name: e.name, type: 'beneficiary', estate: e });
         seenIds.add(e.id);
-        seenNames.add(e.name);
       }
     });
 
@@ -68,10 +64,11 @@ const EstateSelector = ({ currentEstate, onEstateChange }) => {
   const otherPortals = portals.filter(p => p.key !== activeKey).sort((a, b) => a.name.localeCompare(b.name));
 
   const displayName = activePortal?.name || currentEstate?.name || 'My Estate';
-  const hasMultiplePortals = portals.length > 1;
+  const isMultiRole = user?.is_also_benefactor || user?.is_also_beneficiary;
+  const showDropdown = portals.length > 1 || isMultiRole;
 
-  // Single portal — static pill
-  if (!hasMultiplePortals) {
+  // Single portal AND not multi-role — static pill
+  if (!showDropdown) {
     return (
       <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-[var(--t)]"
         style={{ background: '#111827', border: '1px solid #1e293b' }} data-testid="estate-selector">
