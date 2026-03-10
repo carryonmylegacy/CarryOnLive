@@ -242,9 +242,13 @@ const CreateEstatePage = () => {
           address_zip: b.same_address ? addressZip : b.address_zip,
         }));
 
+        console.log('[CarryOn] Estate creation — beneficiaries state:', beneficiaries.length, 'filtered enrollments:', enrollments.length, enrollments.map(e => e.first_name));
+
         const res = await axios.post(`${API_URL}/accounts/create-estate`, {
           beneficiary_enrollments: enrollments,
         }, getAuthHeaders());
+
+        console.log('[CarryOn] Estate creation response:', res.data);
 
         if (res.data.auto_linked?.length > 0) {
           const names = res.data.auto_linked.map(u => u.name).join(', ');

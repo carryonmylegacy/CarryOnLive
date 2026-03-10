@@ -335,6 +335,10 @@ async def create_estate_for_existing_user(
 
     # Process beneficiary enrollments — wrapped so partial failures don't lose the estate
     auto_linked_users = []
+    logger.info(
+        f"Estate {estate_id}: received {len(data.beneficiary_enrollments)} enrollment(s): "
+        f"{[b.get('first_name', '?') for b in data.beneficiary_enrollments]}"
+    )
     try:
         avatar_colors = [
             "#d4af37",
