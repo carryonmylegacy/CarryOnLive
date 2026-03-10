@@ -15,7 +15,7 @@ import { AmberAlertProvider } from './components/AmberAlert';
 import { initErrorReporter, reportError } from './utils/errorReporter';
 import { Loader2 } from 'lucide-react';
 
-const CARRYON_BUILD = '2026-03-10T16:30:00Z-fix-multi-role';
+const CARRYON_BUILD = '2026-03-10T17:05:00Z-fix-welcome-redirect';
 if (typeof window !== 'undefined') {
   window.__CARRYON_BUILD = CARRYON_BUILD;
   console.log(`%c[CarryOn] Build: ${CARRYON_BUILD}`, 'color: #d4af37; font-weight: bold');
@@ -174,6 +174,9 @@ const PublicRoute = ({ children }) => {
   }
 
   if (isAuthenticated) {
+    if (user?.role === 'beneficiary' && user?.is_also_benefactor) {
+      return <Navigate to="/dashboard" replace />;
+    }
     if (user?.role === 'beneficiary') {
       return <Navigate to="/beneficiary" replace />;
     } else if (user?.role === 'admin') {

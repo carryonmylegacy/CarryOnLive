@@ -132,6 +132,7 @@ const LoginPage = () => {
     haptics.success();
     if (result.user?.role === 'admin') navigate('/admin');
     else if (result.user?.role === 'operator') navigate('/ops');
+    else if (result.user?.role === 'beneficiary' && result.user?.is_also_benefactor) navigate('/dashboard');
     else if (result.user?.role === 'beneficiary') navigate('/beneficiary');
     else navigate('/dashboard');
   };
@@ -198,7 +199,7 @@ const LoginPage = () => {
       const result = await authenticateWithPasskey(email || '');
       if (result.access_token) {
         localStorage.setItem('carryon_token', result.access_token);
-        const dest = result.user?.role === 'admin' ? '/admin' : result.user?.role === 'beneficiary' ? '/beneficiary' : '/dashboard';
+        const dest = result.user?.role === 'admin' ? '/admin' : (result.user?.role === 'beneficiary' && result.user?.is_also_benefactor) ? '/dashboard' : result.user?.role === 'beneficiary' ? '/beneficiary' : '/dashboard';
         navigate(dest);
       }
     } catch (err) {

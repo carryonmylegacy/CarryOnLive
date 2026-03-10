@@ -14,7 +14,8 @@ import {
   Circle,
   X,
   Sparkles,
-  KeyRound
+  KeyRound,
+  ArrowLeftRight
 } from 'lucide-react';
 import EstateSelector from '../components/estate/EstateSelector';
 import ViewSwitcher from '../components/ViewSwitcher';
@@ -38,6 +39,7 @@ const DashboardPage = () => {
   const [justCompletedActivation, setJustCompletedActivation] = useState(false);
   const [showGuidedFlow, setShowGuidedFlow] = useState(false);
   const [guidedStep, setGuidedStep] = useState(null);
+  const [showWelcomeStep, setShowWelcomeStep] = useState(false);
   const [dashboardReady, setDashboardReady] = useState(false);
   const guidedDismissedRef = useRef(false);
 
@@ -100,6 +102,10 @@ const DashboardPage = () => {
           const nextIncomplete = steps.find(s => !s.completed);
           if (nextIncomplete && !progressRes.data?.all_complete) {
             setGuidedStep({ ...nextIncomplete, beneficiary_names: progressRes.data?.beneficiary_names || [] });
+            // Show welcome step for multi-role users (beneficiary who also has own estate)
+            if (user?.is_also_benefactor && user?.role === 'beneficiary' && !localStorage.getItem('carryon_welcome_guided_shown')) {
+              setShowWelcomeStep(true);
+            }
             setShowGuidedFlow(true);
           } else if (progressRes.data?.all_complete && !progressRes.data?.celebration_shown) {
             // All steps complete — show celebration (one-time, persisted on backend)
@@ -354,7 +360,35 @@ const DashboardPage = () => {
           <X className="w-5 h-5" />
         </button>
 
-        {/* Center bubble */}
+        {/* Welcome step for multi-role users — shown before Step 1 */}
+        {showWelcomeStep ? (
+          <div className="relative max-w-md w-full mx-6 text-center"
+            data-testid="welcome-step"
+            style={{ animation: 'bubbleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both' }}>
+            <div className="w-28 h-28 rounded-full flex items-center justify-center mx-auto mb-6"
+              style={{
+                background: 'radial-gradient(circle, rgba(212,175,55,0.2) 0%, rgba(96,165,250,0.08) 70%)',
+                border: '2px solid rgba(212,175,55,0.35)',
+                animation: 'pulseRing 2.5s ease-in-out infinite',
+              }}>
+              <ArrowLeftRight className="w-14 h-14 text-[#d4af37]" />
+            </div>
+            <h1 className="text-2xl lg:text-3xl font-bold mb-3"
+              style={{ fontFamily: 'Outfit, sans-serif', color: '#ffffff' }}>
+              Welcome to Your Estate
+            </h1>
+            <p className="text-sm lg:text-base mb-8 max-w-sm mx-auto leading-relaxed" style={{ color: '#94a3b8' }}>
+              You now have both views — switch between your <strong style={{ color: '#d4af37' }}>Benefactor</strong> estate and your <strong style={{ color: '#60A5FA' }}>Beneficiary</strong> access anytime using the switcher in the sidebar.
+            </p>
+            <button onClick={() => { localStorage.setItem('carryon_welcome_guided_shown', 'true'); setShowWelcomeStep(false); }}
+              className="w-full max-w-xs mx-auto py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
+              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}
+              data-testid="welcome-step-continue">
+              Let's Get Started <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        ) : (
+        /* Center bubble — regular step */
         <div className="relative max-w-md w-full mx-6 text-center"
           style={{ animation: 'bubbleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both' }}>
 
@@ -400,6 +434,7 @@ const DashboardPage = () => {
             Skip this step for now
           </button>
         </div>
+        )}
       </div>
     );
   };

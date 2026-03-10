@@ -152,7 +152,7 @@ api_router.include_router(ops_dashboard_router)
 api_router.include_router(milestone_deliveries_router)
 
 
-BUILD_HASH = "2026-03-10T16:30:00Z-fix-multi-role"
+BUILD_HASH = "2026-03-10T17:05:00Z-fix-welcome-redirect"
 
 
 @api_router.get("/health")
