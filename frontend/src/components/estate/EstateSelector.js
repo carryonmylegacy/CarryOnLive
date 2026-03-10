@@ -29,13 +29,15 @@ const EstateSelector = ({ currentEstate, onEstateChange }) => {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Build portal list: each entry is { id, name, type: 'benefactor'|'beneficiary', estateId }
+  // Build portal list, deduplicating by estate ID (prefer owner over beneficiary)
   const ownedEstates = allEstates.filter(e => e.user_role_in_estate === 'owner');
   const benEstates = allEstates.filter(e => e.user_role_in_estate === 'beneficiary' || e.is_beneficiary_estate);
+  const ownedIds = new Set(ownedEstates.map(e => e.id));
 
   const portals = [];
   ownedEstates.forEach(e => portals.push({ key: `own-${e.id}`, name: e.name, type: 'benefactor', estate: e }));
-  benEstates.forEach(e => portals.push({ key: `ben-${e.id}`, name: e.name, type: 'beneficiary', estate: e }));
+  // Only add beneficiary entries for estates NOT already owned
+  benEstates.filter(e => !ownedIds.has(e.id)).forEach(e => portals.push({ key: `ben-${e.id}`, name: e.name, type: 'beneficiary', estate: e }));
 
   // Determine which portal is currently active
   const activeKey = isOnBeneficiary
