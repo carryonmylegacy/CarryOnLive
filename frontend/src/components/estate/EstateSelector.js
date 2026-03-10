@@ -54,8 +54,14 @@ const EstateSelector = ({ currentEstate, onEstateChange, estates, onEstatesUpdat
       {/* Trigger */}
       <button
         onClick={() => setOpen(!open)}
-        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-all"
-        style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)' }}
+        className="inline-flex items-center gap-2 px-3 py-2 text-sm font-bold transition-all"
+        style={{
+          background: '#111827',
+          border: '1px solid #1e293b',
+          borderRadius: open ? '12px 12px 0 0' : '12px',
+          borderBottom: open ? 'none' : '1px solid #1e293b',
+          color: 'var(--t)',
+        }}
         data-testid="estate-selector-trigger"
       >
         {isMultiRole && <ArrowLeftRight className="w-3.5 h-3.5 text-[var(--gold)] flex-shrink-0" />}
@@ -67,8 +73,8 @@ const EstateSelector = ({ currentEstate, onEstateChange, estates, onEstatesUpdat
       {/* Dropdown — rendered inline, not in a portal */}
       {open && (
         <div
-          className="absolute left-0 top-full mt-1 w-60 rounded-xl overflow-hidden z-50 py-1"
-          style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+          className="absolute left-0 top-full w-60 rounded-b-xl overflow-hidden z-50 py-1"
+          style={{ background: '#111827', border: '1px solid #1e293b', borderTop: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
         >
           {ownedEstates.map(estate => {
             const isActive = !isOnBeneficiary && currentEstate?.id === estate.id;
@@ -81,7 +87,7 @@ const EstateSelector = ({ currentEstate, onEstateChange, estates, onEstatesUpdat
                   if (isOnBeneficiary) { navigate('/dashboard'); window.location.reload(); }
                   else if (onEstateChange) onEstateChange(estate);
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--b)]"
+                className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-[#1e293b]"
                 data-testid={`estate-switch-owner-${estate.id}`}
               >
                 <Shield className="w-3.5 h-3.5 text-[var(--gold)] flex-shrink-0" />
@@ -93,7 +99,7 @@ const EstateSelector = ({ currentEstate, onEstateChange, estates, onEstatesUpdat
 
           {benEstates.length > 0 && (
             <>
-              <div className="h-px mx-2 my-1" style={{ background: 'var(--b)' }} />
+              <div className="h-px mx-2 my-1 bg-[#1e293b]" />
               {benEstates.map(estate => {
                 const isActive = isOnBeneficiary && localStorage.getItem('beneficiary_estate_id') === estate.id;
                 return (
@@ -105,7 +111,7 @@ const EstateSelector = ({ currentEstate, onEstateChange, estates, onEstatesUpdat
                       navigate('/beneficiary');
                       if (!isOnBeneficiary) window.location.reload();
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--b)]"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-[#1e293b]"
                     data-testid={`estate-switch-ben-${estate.id}`}
                   >
                     <Users className="w-3.5 h-3.5 text-[#60A5FA] flex-shrink-0" />
@@ -119,10 +125,10 @@ const EstateSelector = ({ currentEstate, onEstateChange, estates, onEstatesUpdat
 
           {!isOnBeneficiary && (
             <>
-              <div className="h-px mx-2 my-1" style={{ background: 'var(--b)' }} />
+              <div className="h-px mx-2 my-1 bg-[#1e293b]" />
               <button
                 onClick={() => { setOpen(false); navigate('/create-estate'); }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm font-semibold transition-colors hover:bg-[var(--b)]"
+                className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm font-semibold transition-colors hover:bg-[#1e293b]"
                 style={{ color: 'var(--gold)' }}
                 data-testid="estate-create-new"
               >
