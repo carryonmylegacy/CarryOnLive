@@ -169,6 +169,23 @@ export const AuthProvider = ({ children }) => {
     if (token) await fetchSubscriptionStatus(token);
   };
 
+  const refreshUser = async () => {
+    if (!token) return;
+    try {
+      const response = await axios.get(`${API_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const userData = response.data;
+      setUser({
+        ...userData,
+        is_also_benefactor: userData.is_also_benefactor || false,
+        is_also_beneficiary: userData.is_also_beneficiary || false,
+      });
+    } catch (error) {
+      console.error('Refresh user error:', error);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -183,6 +200,7 @@ export const AuthProvider = ({ children }) => {
       logout,
       getAuthHeaders,
       refreshSubscription,
+      refreshUser,
       isAuthenticated: !!user
     }}>
       {children}

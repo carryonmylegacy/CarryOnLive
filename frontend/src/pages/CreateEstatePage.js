@@ -57,7 +57,7 @@ const selectClass = "h-14 bg-[#0b1322] border-[#1a2a42] text-white text-base rou
 
 const CreateEstatePage = () => {
   const navigate = useNavigate();
-  const { user, getAuthHeaders } = useAuth();
+  const { user, getAuthHeaders, refreshUser } = useAuth();
   const scrollRef = useRef(null);
 
   const [step, setStep] = useState(0);
@@ -251,6 +251,9 @@ const CreateEstatePage = () => {
         } else {
           toast.success('Your estate has been created successfully!');
         }
+
+        // Refresh user data so is_also_benefactor is updated in auth state
+        await refreshUser();
 
         // Navigate to the benefactor dashboard for this new estate
         localStorage.setItem('selected_estate_id', res.data.estate_id);
