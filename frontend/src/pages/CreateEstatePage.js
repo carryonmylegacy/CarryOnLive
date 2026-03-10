@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { clearCache } from '../utils/apiCache';
 import {
   ArrowLeft, ArrowRight, Loader2, Check, Shield, Users,
   User, Heart, MapPin, UserPlus, Mail, AlertCircle
@@ -254,6 +255,9 @@ const CreateEstatePage = () => {
 
         // Refresh user data so is_also_benefactor is updated in auth state
         await refreshUser();
+
+        // Clear API cache so dashboard fetches fresh estate/beneficiary data
+        clearCache();
 
         // Navigate to the benefactor dashboard for this new estate
         localStorage.setItem('selected_estate_id', res.data.estate_id);
