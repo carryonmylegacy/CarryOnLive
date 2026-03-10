@@ -29,20 +29,40 @@ const EstateSelector = ({ currentEstate, onEstateChange }) => {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Build portal list, deduplicating by estate ID (prefer owner over beneficiary)
-  const ownedEstates = allEstates.filter(e => e.user_role_in_estate === 'owner');
-  const benEstates = allEstates.filter(e => e.user_role_in_estate === 'beneficiary' || e.is_beneficiary_estate);
-  const ownedIds = new Set(ownedEstates.map(e => e.id));
-
+  // Build portal list — deduplicate aggressively by estate ID AND name
+  // If user owns an estate, never show it again as beneficiary
   const portals = [];
-  ownedEstates.forEach(e => portals.push({ key: `own-${e.id}`, name: e.name, type: 'benefactor', estate: e }));
-  // Only add beneficiary entries for estates NOT already owned
-  benEstates.filter(e => !ownedIds.has(e.id)).forEach(e => portals.push({ key: `ben-${e.id}`, name: e.name, type: 'beneficiary', estate: e }));
+  const seenIds = new Set();
+  const seenNames = new Set();
+
+  // Add owned estates first (they take priority)
+  allEstates
+    .filter(e => e.user_role_in_estate === 'owner')
+    .forEach(e => {
+      if (!seenIds.has(e.id)) {
+        portals.push({ key: `own-${e.id}`, name: e.name, type: 'benefactor', estate: e });
+        seenIds.add(e.id);
+        seenNames.add(e.name);
+      }
+    });
+
+  // Then add beneficiary estates — skip if same ID or same name as an owned estate
+  allEstates
+    .filter(e => e.user_role_in_estate === 'beneficiary' || e.is_beneficiary_estate)
+    .forEach(e => {
+      if (!seenIds.has(e.id) && !seenNames.has(e.name)) {
+        portals.push({ key: `ben-${e.id}`, name: e.name, type: 'beneficiary', estate: e });
+        seenIds.add(e.id);
+        seenNames.add(e.name);
+      }
+    });
 
   // Determine which portal is currently active
+  const benPortals = portals.filter(p => p.type === 'beneficiary');
+  const ownPortals = portals.filter(p => p.type === 'benefactor');
   const activeKey = isOnBeneficiary
-    ? `ben-${localStorage.getItem('beneficiary_estate_id') || benEstates[0]?.id}`
-    : `own-${currentEstate?.id || ownedEstates[0]?.id}`;
+    ? `ben-${localStorage.getItem('beneficiary_estate_id') || benPortals[0]?.estate?.id}`
+    : `own-${currentEstate?.id || ownPortals[0]?.estate?.id}`;
 
   const activePortal = portals.find(p => p.key === activeKey);
   const otherPortals = portals.filter(p => p.key !== activeKey).sort((a, b) => a.name.localeCompare(b.name));
