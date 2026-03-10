@@ -258,6 +258,8 @@ class CreateEstateRequest(BaseModel):
     """Request to create an estate for an existing authenticated user."""
 
     beneficiary_enrollments: list = []  # [{first_name, last_name, email, dob, relation, ...}]
+    special_status: list = None  # ['military', 'veteran', 'hospice', 'enterprise', ...]
+    b2b_code: str = None
 
 
 @router.post("/accounts/create-estate")
@@ -331,6 +333,38 @@ async def create_estate_for_existing_user(
     update_fields = {"is_also_benefactor": True}
     if current_user["role"] == "beneficiary":
         update_fields["benefactor_since"] = now.isoformat()
+
+    # Save special eligibility status if provided
+    special_statuses = data.special_status or []
+    if special_statuses:
+        eligible_tier = None
+        if user.get("date_of_birth"):
+            try:
+                dob = datetime.fromisoformat(user["date_of_birth"])
+                age = (now - dob.replace(tzinfo=timezone.utc)).days // 365
+                if 18 <= age <= 25:
+                    eligible_tier = "new_adult"
+            except (ValueError, TypeError):
+                pass
+        if any(
+            s in special_statuses
+            for s in ["military", "first_responder", "federal_agent"]
+        ):
+            eligible_tier = "military"
+        elif "veteran" in special_statuses:
+            eligible_tier = "veteran"
+        elif "hospice" in special_statuses:
+            eligible_tier = "hospice"
+        elif "enterprise" in special_statuses:
+            eligible_tier = "enterprise"
+        update_fields["special_status"] = special_statuses
+        if eligible_tier:
+            update_fields["eligible_tier"] = eligible_tier
+
+    # Handle B2B enterprise code verification
+    if data.b2b_code and "enterprise" in special_statuses:
+        update_fields["b2b_code"] = data.b2b_code
+
     await db.users.update_one({"id": current_user["id"]}, {"$set": update_fields})
 
     # Process beneficiary enrollments — wrapped so partial failures don't lose the estate

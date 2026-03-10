@@ -1,0 +1,72 @@
+{
+  "summary": "Verified the new 'Eligibility' step in CreateEstatePage wizard. All 6 eligibility options display correctly (Active Duty Military, Federal/State Operator, First Responder, Veteran, Hospice Patient, Employer/B2B). Backend POST /api/accounts/create-estate correctly accepts and saves special_status and b2b_code. Subscription status endpoint returns eligible_tiers and special_status from user profile.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/pytest/eligibility_estate_creation_results.xml",
+    "/app/backend/tests/test_eligibility_estate_creation.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "CreateEstatePage.js: Eligibility step correctly added as LAST step in computeSteps() for benefactors (Line 168) - VERIFIED",
+    "CreateEstatePage.js: All 6 special status options present in eligibility step UI (Lines 683-720) - VERIFIED",
+    "CreateEstatePage.js: B2B code input shows conditionally when 'enterprise' selected (Lines 723-734) - VERIFIED",
+    "CreateEstatePage.js: canAdvance() correctly requires b2b_code when enterprise selected (Lines 207-209) - VERIFIED",
+    "estates.py: CreateEstateRequest model accepts special_status (list) and b2b_code (str) fields (Lines 261-262) - VERIFIED",
+    "estates.py: create_estate_for_existing_user computes eligible_tier from special_status and saves to user doc (Lines 339-368) - VERIFIED",
+    "checkout.py: Status endpoint returns eligible_tiers and special_status from user profile (Lines 94-98) - VERIFIED",
+    "SubscriptionManagement.js: autoTier logic correctly uses eligible_tiers and special_status to auto-select plans (Lines 178-184) - VERIFIED"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_eligibility_estate_creation.py"
+  ],
+  "success_rate": {
+    "backend": "100% - All eligibility flows work correctly",
+    "frontend": "100% - Eligibility step UI verified with all 6 options and B2B code input"
+  },
+  "test_credentials": {
+    "benefactor": "fulltest@test.com / Password.123",
+    "admin": "info@carryon.us / Demo1234!"
+  },
+  "seed_data_creation": "Multiple test users created during backend testing (test_eligibility_*, test_enterprise_*, test_final_*)",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "The CreateEstatePage now includes an Eligibility step as the LAST step for benefactors. This step allows users to select special eligibility (military, veteran, hospice, enterprise, etc.) for discounted pricing. The backend saves these selections to the user profile (special_status, eligible_tier), and the subscription status endpoint returns them for the frontend to auto-select appropriate plans.",
+  "verified_features": {
+    "eligibility_step_is_last": "PASS - Step order: Confirm -> Role -> Family -> [Beneficiaries] -> Eligibility",
+    "all_6_options_visible": "PASS - Active Duty Military, Federal/State Operator, First Responder, Veteran, Hospice Patient, Employer/B2B",
+    "b2b_code_input_on_enterprise": "PASS - Partner Access Code input appears when Employer/B2B selected",
+    "step_is_skippable": "PASS - User can proceed without selecting any option (Skip if none apply)",
+    "backend_accepts_special_status": "PASS - POST /api/accounts/create-estate accepts special_status field",
+    "backend_accepts_b2b_code": "PASS - POST /api/accounts/create-estate accepts b2b_code field",
+    "backend_saves_eligible_tier": "PASS - Computes and saves eligible_tier from special_status (military/veteran/hospice/enterprise)",
+    "subscription_status_returns_fields": "PASS - Returns eligible_tiers and special_status arrays",
+    "subscription_auto_select_tier": "PASS - SubscriptionManagement uses autoTier logic from eligible_tiers/special_status"
+  },
+  "special_status_to_tier_mapping": {
+    "military": "military",
+    "first_responder": "military",
+    "federal_agent": "military",
+    "veteran": "veteran",
+    "hospice": "hospice",
+    "enterprise": "enterprise"
+  },
+  "mocked_apis": {
+    "Twilio SMS OTP": "MOCKED - OTP globally disabled via platform_settings.otp_disabled=true"
+  },
+  "screenshots": [
+    ".screenshots/04_create_estate_step1.png - Initial confirm step",
+    ".screenshots/05_create_estate_step2.png - Role selection step",
+    ".screenshots/06_create_estate_family.png - Family step",
+    ".screenshots/07_eligibility_or_next.png - Eligibility step with all 6 options",
+    ".screenshots/11_eligibility_b2b_option.png - Employer/B2B selected with Partner Access Code input",
+    ".screenshots/12_b2b_code_filled.png - B2B code filled in"
+  ]
+}
