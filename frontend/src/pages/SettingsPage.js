@@ -299,7 +299,7 @@ const SettingsPage = () => {
       )}
 
       {/* Estate Photo — benefactor only */}
-      {user?.role === 'benefactor' && estateId && (
+      {(user?.role === 'benefactor' || user?.is_also_benefactor) && estateId && (
       <Card className="glass-card">
         <CardHeader>
           <CardTitle className="text-[var(--t)] flex items-center gap-2">

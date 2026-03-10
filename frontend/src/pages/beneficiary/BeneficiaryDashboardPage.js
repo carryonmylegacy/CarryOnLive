@@ -6,6 +6,7 @@ import { toast } from '../../utils/toast';
 import { Lock, FolderLock, MessageSquare, CheckSquare, ChevronRight, ChevronLeft, ChevronDown, Users, Settings } from 'lucide-react';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Switch } from '../../components/ui/switch';
+import ViewSwitcher from '../../components/ViewSwitcher';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -144,8 +145,12 @@ const BeneficiaryDashboardPage = () => {
           </p>
         </div>
 
-        {/* Estate Switcher — only when multiple estates */}
-        {allEstates.length > 1 && (
+        {/* View Switcher — for multi-role users */}
+        <div className="flex items-center gap-2 sm:mt-1">
+          <ViewSwitcher variant="dropdown" />
+
+          {/* Estate Switcher — only when multiple estates */}
+          {allEstates.length > 1 && (
           <div className="relative sm:mt-1" data-testid="beneficiary-estate-selector">
             <button
               onClick={() => setEstateSwitcherOpen(!estateSwitcherOpen)}
@@ -183,6 +188,7 @@ const BeneficiaryDashboardPage = () => {
             )}
           </div>
         )}
+        </div>
       </div>
 
       {/* Stat Cards */}

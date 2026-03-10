@@ -17,6 +17,7 @@ import {
   KeyRound
 } from 'lucide-react';
 import EstateSelector from '../components/estate/EstateSelector';
+import ViewSwitcher from '../components/ViewSwitcher';
 import TrialBanner from '../components/TrialBanner';
 import OnboardingWizard from '../components/OnboardingWizard';
 import { ActivationCelebration } from '../components/GuidedActivation';
@@ -426,7 +427,8 @@ const DashboardPage = () => {
               : 'Your legacy is taking shape. Here\'s your overview.'}
           </p>
         </div>
-        <div className="sm:mt-1">
+        <div className="sm:mt-1 flex items-center gap-2">
+          <ViewSwitcher variant="dropdown" />
           <EstateSelector 
             currentEstate={estate} 
             estates={estates} 

@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import { toast } from '../../utils/toast';
+import ViewSwitcher from '../ViewSwitcher';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const BASE_URL = process.env.REACT_APP_BACKEND_URL;
@@ -591,6 +592,18 @@ const MobileNav = () => {
                 </div>
                 )}
               </nav>
+
+              {/* Multi-Role View Switcher */}
+              {(user?.is_also_benefactor || user?.is_also_beneficiary ||
+                (user?.role === 'benefactor' && user?.role !== 'admin')) && (
+                <div className="px-4 pb-3">
+                  <h3 className="text-xs font-semibold tracking-wider uppercase mb-2 px-2"
+                    style={{ color: theme === 'dark' ? '#525C72' : '#64748B' }}>
+                    SWITCH VIEW
+                  </h3>
+                  <ViewSwitcher variant="inline" />
+                </div>
+              )}
 
               {/* Admin OTP Toggle — Founder only */}
               {user?.role === 'admin' && !window.location.pathname.startsWith('/ops') && (
