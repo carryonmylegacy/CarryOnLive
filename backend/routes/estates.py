@@ -411,9 +411,7 @@ async def create_estate_for_existing_user(
                 f"Estate {estate_id}: enrolled {len(beneficiaries_to_insert)} beneficiaries"
             )
     except Exception as e:
-        logger.error(
-            f"Error enrolling beneficiaries for estate {estate_id}: {e}"
-        )
+        logger.error(f"Error enrolling beneficiaries for estate {estate_id}: {e}")
 
     # Seed default checklist (non-critical — don't fail the estate creation)
     default_checklist = [
