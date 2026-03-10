@@ -177,7 +177,13 @@ async def debug_user_state(email: str):
     """Diagnostic: check a user's multi-role state. No sensitive data exposed."""
     user = await db.users.find_one(
         {"email": email.lower().strip()},
-        {"_id": 0, "id": 1, "role": 1, "is_also_benefactor": 1, "is_also_beneficiary": 1},
+        {
+            "_id": 0,
+            "id": 1,
+            "role": 1,
+            "is_also_benefactor": 1,
+            "is_also_beneficiary": 1,
+        },
     )
     if not user:
         return {"error": "User not found", "build": BUILD_HASH}
@@ -197,7 +203,8 @@ async def debug_user_state(email: str):
         "owns_estates": len(estates),
         "estate_names": [e.get("name") for e in estates],
         "beneficiary_count_in_first_estate": ben_count,
-        "computed_is_also_benefactor": user.get("is_also_benefactor", False) or len(estates) > 0,
+        "computed_is_also_benefactor": user.get("is_also_benefactor", False)
+        or len(estates) > 0,
     }
 
 
