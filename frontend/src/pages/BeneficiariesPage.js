@@ -58,6 +58,7 @@ import { PhotoPicker } from '../components/PhotoPicker';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import DateMaskInput from '../components/DateMaskInput';
 import SlidePanel from '../components/SlidePanel';
+import FamilyTree from '../components/FamilyTree';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -95,7 +96,7 @@ const usStates = [
 ];
 
 const BeneficiariesPage = () => {
-  const { getAuthHeaders } = useAuth();
+  const { user, getAuthHeaders } = useAuth();
   const navigate = useNavigate();
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [estate, setEstate] = useState(null);
@@ -136,6 +137,7 @@ const BeneficiariesPage = () => {
   const [changingPrimary, setChangingPrimary] = useState(false);
   const [sectionPerms, setSectionPerms] = useState({});
   const [savingPerms, setSavingPerms] = useState(null);
+  const [benEstates, setBenEstates] = useState([]);
 
   const SECTION_LABELS = {
     vault: 'Secure Document Vault (SDV)',
@@ -153,12 +155,18 @@ const BeneficiariesPage = () => {
   const fetchData = async () => {
     try {
       const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
-      if (estatesRes.data.length > 0) {
-        setEstate(estatesRes.data[0]);
+      const allEstates = estatesRes.data;
+      // Find the owned estate (benefactor context)
+      const ownedEstate = allEstates.find(e => e.user_role_in_estate === 'owner' || (!e.user_role_in_estate && !e.is_beneficiary_estate));
+      // Beneficiary estates (for family tree)
+      const bEstates = allEstates.filter(e => e.user_role_in_estate === 'beneficiary' || e.is_beneficiary_estate);
+      setBenEstates(bEstates);
+      if (ownedEstate) {
+        setEstate(ownedEstate);
         const [bensRes, requestsRes, permsRes] = await Promise.all([
-          axios.get(`${API_URL}/beneficiaries/${estatesRes.data[0].id}`, getAuthHeaders()),
-          axios.get(`${API_URL}/beneficiaries/access-requests/${estatesRes.data[0].id}`, getAuthHeaders()).catch(() => ({ data: [] })),
-          axios.get(`${API_URL}/estate/${estatesRes.data[0].id}/section-permissions`, getAuthHeaders()).catch(() => ({ data: [] })),
+          axios.get(`${API_URL}/beneficiaries/${ownedEstate.id}`, getAuthHeaders()),
+          axios.get(`${API_URL}/beneficiaries/access-requests/${ownedEstate.id}`, getAuthHeaders()).catch(() => ({ data: [] })),
+          axios.get(`${API_URL}/estate/${ownedEstate.id}/section-permissions`, getAuthHeaders()).catch(() => ({ data: [] })),
         ]);
         setBeneficiaries(bensRes.data);
         setAccessRequests(requestsRes.data || []);
@@ -501,15 +509,8 @@ const BeneficiariesPage = () => {
       <SectionLockBanner sectionId="beneficiaries" />
 
       <SectionLockedOverlay sectionId="beneficiaries">
-      {/* Invitation info */}
-      <div className="rounded-xl p-3" style={{ background: 'rgba(37,99,235,0.04)', border: '1px solid rgba(37,99,235,0.1)' }}>
-        <p className="text-xs text-[var(--bl3)] leading-relaxed">
-          When you send an invitation, the beneficiary will receive an email with a link to create their CarryOn™ account. 
-          They will NOT be told any details about your estate, documents, or messages until the appropriate time.
-        </p>
-      </div>
 
-      {/* Beneficiaries Grid */}
+      {/* Desktop: Tree Left + Tiles Right / Mobile: Tree Top + Tiles Below */}
       {beneficiaries.length === 0 ? (
         <Card className="glass-card">
           <CardContent className="p-12 text-center">
@@ -525,25 +526,51 @@ const BeneficiariesPage = () => {
           </CardContent>
         </Card>
       ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={beneficiaries.map(b => b.id)} strategy={rectSortingStrategy}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {beneficiaries.map((ben) => (
-            <SortableCard key={ben.id} id={ben.id}>
-            <Card className="glass-card group" data-testid={`beneficiary-${ben.id}`}>
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="drag-handle cursor-grab active:cursor-grabbing flex items-center text-[var(--t5)] hover:text-[var(--t3)] transition-colors touch-none" data-testid={`drag-handle-${ben.id}`}>
-                      <GripVertical className="w-4 h-4" />
-                    </div>
-                    <div
-                      className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold overflow-hidden"
-                      style={{
-                        backgroundColor: ben.photo_url ? 'transparent' : ben.avatar_color + '30',
-                        color: ben.avatar_color
-                      }}
-                    >
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(280px,2fr)_3fr] gap-5">
+          {/* LEFT: Family Tree */}
+          <div className="glass-card p-4 rounded-2xl" data-testid="family-tree-panel">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.12)' }}>
+                <Users className="w-3.5 h-3.5 text-[#d4af37]" />
+              </div>
+              <h3 className="text-sm font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Family Tree</h3>
+            </div>
+            <FamilyTree
+              user={user}
+              beneficiaries={beneficiaries}
+              beneficiaryEstates={benEstates}
+              onSelectBeneficiary={(ben) => {
+                openEditModal(ben);
+              }}
+            />
+            {benEstates.length > 0 && (
+              <p className="text-[9px] text-[var(--t5)] text-center mt-1">
+                Blue nodes = estates where you're a beneficiary (click to view)
+              </p>
+            )}
+          </div>
+
+          {/* RIGHT: Tile Stack (primary first, then age-sorted) */}
+          <div>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={beneficiaries.map(b => b.id)} strategy={rectSortingStrategy}>
+            <div className="space-y-3" data-testid="beneficiary-tiles">
+              {beneficiaries.map((ben) => (
+                <SortableCard key={ben.id} id={ben.id}>
+                <Card className="glass-card group" data-testid={`beneficiary-${ben.id}`}>
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="drag-handle cursor-grab active:cursor-grabbing flex items-center text-[var(--t5)] hover:text-[var(--t3)] transition-colors touch-none" data-testid={`drag-handle-${ben.id}`}>
+                          <GripVertical className="w-4 h-4" />
+                        </div>
+                        <div
+                          className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold overflow-hidden"
+                          style={{
+                            backgroundColor: ben.photo_url ? 'transparent' : ben.avatar_color + '30',
+                            color: ben.avatar_color
+                          }}
+                        >
                       {ben.photo_url ? (
                         <img src={ben.photo_url} alt={ben.name} className="w-full h-full object-cover" />
                       ) : (
@@ -745,6 +772,8 @@ const BeneficiariesPage = () => {
         </div>
         </SortableContext>
         </DndContext>
+          </div>
+        </div>
       )}
 
       {/* Add/Edit Beneficiary Panel */}

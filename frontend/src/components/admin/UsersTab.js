@@ -402,6 +402,95 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     );
   };
 
+  // Graph view: SVG-based visual family tree per estate
+  const renderGraphView = () => {
+    const benefactors = filteredUsers.filter(u => u.role === 'benefactor');
+    const beneficiaryUsers = filteredUsers.filter(u => u.role === 'beneficiary');
+    const benUserByEmail = new Map();
+    beneficiaryUsers.forEach(u => { if (u.email) benUserByEmail.set(u.email.toLowerCase(), u); });
+
+    const estates = benefactors.map(owner => {
+      const bens = owner.linked_beneficiaries || [];
+      return { owner, bens };
+    }).sort((a, b) => getAge(a.owner.date_of_birth) - getAge(b.owner.date_of_birth));
+
+    const NODE_R = 22;
+    const COL_W = 64;
+
+    return (
+      <div className="space-y-4">
+        {estates.map(({ owner, bens }) => {
+          const sortedBens = [...bens].sort((a, b) => getAge(a.date_of_birth || a.dob) - getAge(b.date_of_birth || b.dob));
+          const w = Math.max(200, (sortedBens.length + 1) * COL_W);
+          const rootX = w / 2;
+          const rootY = 40;
+          const childY = 115;
+          const childNodes = sortedBens.map((ben, idx) => {
+            const totalW = sortedBens.length * COL_W;
+            const startX = (w - totalW) / 2 + COL_W / 2;
+            return { x: startX + idx * COL_W, y: childY, ben };
+          });
+          const h = sortedBens.length > 0 ? 170 : 80;
+          const getInit = (n) => n?.name ? n.name.split(' ').map(x => x[0]).join('').toUpperCase().slice(0,2) : '??';
+          const benAge = (b) => { const a = getAge(b.date_of_birth || b.dob); return a < 999 ? a : null; };
+
+          return (
+            <div key={owner.id} className="glass-card p-3 rounded-xl" data-testid={`graph-estate-${owner.id}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-5 h-5 rounded flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.1)' }}>
+                  <Users className="w-3 h-3 text-[var(--gold)]" />
+                </div>
+                <span className="text-xs font-bold text-[var(--gold)]">{owner.name}'s Estate</span>
+                <span className="text-[10px] text-[var(--t5)] ml-auto">{bens.length} beneficiar{bens.length === 1 ? 'y' : 'ies'}</span>
+              </div>
+              <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: 'block', maxWidth: '100%' }}>
+                {/* Lines */}
+                {childNodes.length > 0 && (
+                  <>
+                    <line x1={rootX} y1={rootY + NODE_R} x2={rootX} y2={rootY + NODE_R + 14} stroke="#d4af37" strokeWidth={1.5} opacity={0.4} />
+                    {childNodes.length > 1 && (
+                      <line x1={Math.min(...childNodes.map(c => c.x))} y1={rootY + NODE_R + 14} x2={Math.max(...childNodes.map(c => c.x))} y2={rootY + NODE_R + 14} stroke="#d4af37" strokeWidth={1.5} opacity={0.3} />
+                    )}
+                    {childNodes.map((cn, i) => (
+                      <line key={i} x1={cn.x} y1={rootY + NODE_R + 14} x2={cn.x} y2={cn.y - NODE_R} stroke="#4b5563" strokeWidth={1} opacity={0.4} />
+                    ))}
+                  </>
+                )}
+                {/* Root */}
+                <circle cx={rootX} cy={rootY} r={NODE_R} fill="#d4af37" />
+                <text x={rootX} y={rootY + 1} textAnchor="middle" dominantBaseline="central" fill="#080e1a" fontSize={10} fontWeight={800}>{getInit(owner)}</text>
+                <text x={rootX} y={rootY + NODE_R + 10} textAnchor="middle" fill="#d4af37" fontSize={8} fontWeight={600} opacity={0}>{''}</text>
+                {/* Children */}
+                {childNodes.map((cn, i) => {
+                  const b = cn.ben;
+                  const linked = b.email && benUserByEmail.has(b.email.toLowerCase());
+                  const age = benAge(b);
+                  return (
+                    <g key={i}>
+                      <circle cx={cn.x} cy={cn.y} r={NODE_R - 4} fill={linked ? 'rgba(139,92,246,0.15)' : 'rgba(100,116,139,0.15)'} stroke={linked ? '#B794F6' : '#64748B'} strokeWidth={1.5} />
+                      <text x={cn.x} y={cn.y + 1} textAnchor="middle" dominantBaseline="central" fill={linked ? '#B794F6' : '#94A3B8'} fontSize={9} fontWeight={700}>
+                        {(b.first_name?.[0] || '?') + (b.last_name?.[0] || '?')}
+                      </text>
+                      <text x={cn.x} y={cn.y + NODE_R + 2} textAnchor="middle" fill="var(--t, #E2E8F0)" fontSize={7} fontWeight={600}>
+                        {b.first_name || b.name?.split(' ')[0] || ''}
+                      </text>
+                      {age !== null && (
+                        <text x={cn.x} y={cn.y + NODE_R + 10} textAnchor="middle" fill="#64748B" fontSize={6}>
+                          Age {age}
+                        </text>
+                      )}
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+
   return (
     <div className="space-y-4" data-testid="admin-users-tab">
       <div className="flex flex-col sm:flex-row gap-3">
@@ -415,17 +504,17 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
           ))}
           <div className="w-px bg-[var(--b)] mx-1" />
           <button
-            onClick={() => setViewMode(viewMode === 'list' ? 'tree' : 'list')}
-            className={`px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap flex-shrink-0 flex items-center gap-1.5 ${viewMode === 'tree' ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'}`}
+            onClick={() => setViewMode(viewMode === 'list' ? 'tree' : viewMode === 'tree' ? 'graph' : 'list')}
+            className={`px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap flex-shrink-0 flex items-center gap-1.5 ${viewMode !== 'list' ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'}`}
             data-testid="toggle-tree-view"
           >
-            <GitBranch className="w-3.5 h-3.5" /> Tree
+            <GitBranch className="w-3.5 h-3.5" /> {viewMode === 'tree' ? 'Tree' : viewMode === 'graph' ? 'Graph' : 'Tree'}
           </button>
         </div>
       </div>
       <p className="text-xs text-[var(--t5)]">{filteredUsers.length} users</p>
 
-      {viewMode === 'tree' ? renderTreeView() : (
+      {viewMode === 'tree' ? renderTreeView() : viewMode === 'graph' ? renderGraphView() : (
         <div className="space-y-2">
           {filteredUsers.map(u => <UserRow key={u.id} u={u} />)}
         </div>
