@@ -13,9 +13,10 @@ Multi-portal estate planning platform (CarryOn) with FastAPI backend, React/Capa
 
 ## What's Been Implemented
 
-### Session: Mar 10, 2026 - Family Tree HTML/CSS + Admin Graph View
+### Session: Mar 10, 2026 - Family Tree HTML/CSS + Admin Graph View + Estate Health
 - **Family Tree Component (P0 Fix)**: Rebuilt `FamilyTree.js` from broken SVG to robust HTML/CSS (divs + Flexbox). Shows benefactor at top (gold node), beneficiaries branching down (sorted by age), and estates where user is a beneficiary (blue nodes). Click-to-edit and click-to-navigate functionality. Responsive: tree-left + tiles-right on desktop, stacked on mobile.
 - **Admin Graph View (P1 Feature)**: Replaced SVG-based graph view in `UsersTab.js` with HTML/CSS family trees per estate. View mode toggle cycles Tree -> Graph -> List. Each estate card shows benefactor node at top with beneficiaries branching below, sorted by age.
+- **Estate Health Analytics (Enhancement)**: New `EstateHealthTab.js` in Admin with dedicated `GET /api/admin/estate-health` backend endpoint. Features: KPI cards (linking rate, completion rate, primary designation rate, invitation rate), health distribution bar (healthy/attention/critical), filter buttons, expandable estate cards with mini family trees showing health-status badges on each beneficiary node. Health score (0-100) calculated from: linking (30%), completion (30%), invitations (20%), primary designation (20%).
 
 ### Session: Mar 10, 2026 - Bug Fixes, Drag-Reorder, Admin Redesign
 - **Admin Delete Beneficiary Sync (P0 Bug)**: When admin deletes a user, the system now properly removes them from all estates' `beneficiaries` arrays and deletes their beneficiary records.
@@ -51,12 +52,13 @@ Multi-portal estate planning platform (CarryOn) with FastAPI backend, React/Capa
 
 ## Key Components
 - `/app/frontend/src/components/FamilyTree.js` -- HTML/CSS family tree visualization
+- `/app/frontend/src/components/admin/EstateHealthTab.js` -- Estate health analytics with mini family trees
 - `/app/frontend/src/pages/BeneficiariesPage.js` -- Drag-to-reorder beneficiary tiles + family tree layout
 - `/app/frontend/src/components/admin/UsersTab.js` -- Estate-centric tree view + HTML/CSS graph view
 - `/app/frontend/src/pages/CreateEstatePage.js` -- Multi-role estate creation wizard
+- `/app/backend/routes/admin.py` -- Estate health endpoint + clean delete + stats
 - `/app/backend/routes/beneficiaries.py` -- Sort order + reorder endpoint
 - `/app/backend/routes/onboarding.py` -- Graduation-aware guided flow
-- `/app/backend/routes/admin.py` -- Clean delete with estate link cleanup
 
 ## Test Credentials
 - Founder: info@carryon.us / Demo1234!
