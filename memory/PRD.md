@@ -21,6 +21,7 @@ Multi-portal estate planning platform (CarryOn) with FastAPI backend, React/Capa
 4. **Sidebar.js + MobileNav.js**: Beneficiary nav links to `/beneficiary/subscription`
 5. **checkout.py**: Beta mode subscription save works for multi-role users
 6. **Housekeeping**: All 35 checks passed. CodeMagic build number: `$(date +%s)`
+7. **Eligibility Step in CreateEstatePage**: Added 'Special Eligibility' as the LAST step in the beneficiary-to-benefactor onboarding wizard (after all beneficiary steps). Shows 6 options (Military, Federal/State, First Responder, Veteran, Hospice, Employer/B2B). Saves special_status + eligible_tier to user profile. Feeds into subscription page for correct tier auto-selection.
 
 ### Session: Mar 10, 2026 — ROOT CAUSE FIX: Login Redirect + Welcome Step
 **Root cause identified and fixed**: `PublicRoute` in App.js was racing against `navigateToHome` — for beneficiary-role users with `is_also_benefactor=true`, React's re-render of `PublicRoute` would redirect to `/beneficiary` BEFORE `navigateToHome` could fire `navigate('/dashboard')`.
