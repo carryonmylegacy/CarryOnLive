@@ -326,10 +326,11 @@ const CreateEstatePage = () => {
       </nav>
 
       {/* Background */}
-      <div className="absolute inset-0 z-0" style={{ opacity: 0.25 }}>
+      <div className="absolute inset-0 z-0" style={{ opacity: 0.5 }}>
         <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" />
       </div>
-      <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(135deg, rgba(8,14,26,0.55) 0%, rgba(8,14,26,0.88) 50%, #080e1a 100%)' }} />
+      <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.4) 0%, rgba(11,18,33,0.85) 70%, #0B1221 100%)' }} />
+      <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 70% 50% at 35% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
 
       {/* MAIN */}
       <div className="relative z-10 min-h-screen flex items-start lg:items-center" style={{ paddingTop: 'calc(4rem + env(safe-area-inset-top, 0px))' }}>
