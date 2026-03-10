@@ -275,6 +275,7 @@ function AppRoutes() {
         <Route path="/beneficiary/guardian" element={<TransitionGate section="guardian"><BeneficiaryGuardianPage /></TransitionGate>} />
         <Route path="/beneficiary/milestone" element={<TransitionGate><MilestoneReportPage /></TransitionGate>} />
         <Route path="/beneficiary/settings" element={<BeneficiarySettingsPage />} />
+        <Route path="/beneficiary/subscription" element={<SubscriptionPage />} />
       </Route>
 
       {/* Beneficiary Full-Screen Routes (no sidebar) */}

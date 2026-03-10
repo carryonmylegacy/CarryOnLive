@@ -10,10 +10,13 @@ import { toast } from '../utils/toast';
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const SubscriptionPage = () => {
-  const { subscriptionStatus, refreshSubscription, token } = useAuth();
+  const { user, subscriptionStatus, refreshSubscription, token } = useAuth();
   const [showPaywall, setShowPaywall] = useState(false);
   const [confirmingPayment, setConfirmingPayment] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+
+  // Portal-aware: beneficiary subscription page only shows their locked tier
+  const isInBeneficiaryPortal = window.location.pathname.startsWith('/beneficiary');
 
   const getAuthHeaders = () => ({
     headers: { Authorization: `Bearer ${token}` },
@@ -82,10 +85,12 @@ const SubscriptionPage = () => {
 
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
-          Subscription
+          {isInBeneficiaryPortal ? 'Your Plan' : 'Subscription'}
         </h1>
         <p className="text-[var(--t4)] mt-1 text-sm sm:text-base">
-          Manage your plan, billing, and family sharing
+          {isInBeneficiaryPortal
+            ? 'Your tier is determined by your benefactor\'s plan'
+            : 'Manage your plan, billing, and family sharing'}
         </p>
       </div>
 
@@ -93,12 +98,12 @@ const SubscriptionPage = () => {
         subscriptionStatus={subscriptionStatus}
         refreshSubscription={refreshSubscription}
         getAuthHeaders={() => getAuthHeaders()}
-        onShowPaywall={() => setShowPaywall(true)}
+        onShowPaywall={() => !isInBeneficiaryPortal && setShowPaywall(true)}
       />
 
-      <FamilyPlanSettings getAuthHeaders={() => getAuthHeaders()} />
+      {!isInBeneficiaryPortal && <FamilyPlanSettings getAuthHeaders={() => getAuthHeaders()} />}
 
-      {showPaywall && (
+      {showPaywall && !isInBeneficiaryPortal && (
         <SubscriptionPaywall onDismiss={() => setShowPaywall(false)} />
       )}
     </div>

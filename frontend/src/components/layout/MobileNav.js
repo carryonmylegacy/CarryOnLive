@@ -334,6 +334,7 @@ const MobileNav = () => {
     if (user?.role === 'beneficiary') {
       return [
         { to: '/beneficiary/settings', icon: Settings, label: 'Settings' },
+        { to: '/beneficiary/subscription', icon: CreditCard, label: 'Subscription' },
         { to: '/support', icon: Headphones, label: 'Customer Support' },
       ];
     }

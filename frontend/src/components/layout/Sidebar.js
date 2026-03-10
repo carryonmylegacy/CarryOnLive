@@ -281,7 +281,7 @@ const Sidebar = () => {
       title: 'ACCOUNT',
       items: [
         { to: '/beneficiary/settings', icon: Settings, label: 'Settings' },
-        { to: '/subscription', icon: CreditCard, label: 'Subscription' },
+        { to: '/beneficiary/subscription', icon: CreditCard, label: 'Subscription' },
         { to: '/support', icon: Headphones, label: 'Customer Support' },
       ]
     }
