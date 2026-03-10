@@ -533,7 +533,7 @@ const BeneficiariesPage = () => {
               <div className="w-6 h-6 rounded flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.12)' }}>
                 <Users className="w-3.5 h-3.5 text-[#d4af37]" />
               </div>
-              <h3 className="text-sm font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Family Tree</h3>
+              <h3 className="text-sm font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>{user?.first_name || user?.name?.split(' ')[0] || 'My'}'s Estate Tree</h3>
             </div>
             <FamilyTree
               user={user}
