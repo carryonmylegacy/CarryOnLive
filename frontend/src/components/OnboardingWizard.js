@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Users, FileUp, MessageSquare, CheckSquare,
-  ChevronRight, X, Sparkles, Check, KeyRound
+  ChevronRight, X, Sparkles, Check, KeyRound, ArrowLeftRight
 } from 'lucide-react';
 import { Progress } from '../components/ui/progress';
 
@@ -27,13 +27,16 @@ const OnboardingWizard = ({ onAllComplete }) => {
   const [manuallyDismissed, setManuallyDismissed] = useState(() => {
     return localStorage.getItem('carryon_onboarding_dismissed') === 'true';
   });
+  const [welcomeDismissed, setWelcomeDismissed] = useState(() => {
+    return localStorage.getItem('carryon_welcome_tile_dismissed') === 'true';
+  });
   const [showAll, setShowAll] = useState(false);
   const [popping, setPopping] = useState({});
   const prevCompleted = useRef({});
   const initialLoadDone = useRef(false);
 
   useEffect(() => {
-    if (user?.role === 'benefactor') fetchProgress();
+    if (user?.role === 'benefactor' || user?.is_also_benefactor) fetchProgress();
     else setLoading(false);
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -183,6 +186,25 @@ const OnboardingWizard = ({ onAllComplete }) => {
 
       {/* Step Tiles */}
       <div className="space-y-3">
+        {/* Welcome tile for beneficiaries who just created their own estate */}
+        {user?.role === 'beneficiary' && user?.is_also_benefactor && !welcomeDismissed && (
+          <div className="rounded-2xl p-5 flex items-center gap-4 text-left"
+            style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.08), rgba(96,165,250,0.08))', border: '1px solid rgba(212,175,55,0.2)' }}>
+            <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.25)' }}>
+              <ArrowLeftRight className="w-7 h-7 text-[#d4af37]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-lg font-bold text-[var(--t)]">Welcome to Your Estate</p>
+              <p className="text-base text-[var(--t4)]">You now have both views — switch between your <strong style={{ color: '#d4af37' }}>Benefactor</strong> estate and your <strong style={{ color: '#60A5FA' }}>Beneficiary</strong> access anytime using the switcher above.</p>
+            </div>
+            <button onClick={() => { localStorage.setItem('carryon_welcome_tile_dismissed', 'true'); setWelcomeDismissed(true); }}
+              className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform flex-shrink-0"
+              data-testid="welcome-tile-dismiss">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
         {stepsToShow.map((step) => {
           const config = STEP_CONFIG[step.key];
           if (!config) return null;
