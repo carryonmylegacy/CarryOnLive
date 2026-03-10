@@ -47,6 +47,12 @@ Multi-portal estate planning platform (CarryOn) with FastAPI backend, React/Capa
 - UI Pattern: SlidePanel for edit/create, DnD Kit for drag-reorder
 - Multi-role: `is_also_benefactor` and `is_also_beneficiary` flags on user docs
 
+### Session: Mar 10, 2026 - P0 Bug Fix: Ghost Estates & Multi-Role Admin Visibility
+- **Admin Multi-Role User Visibility (P0 Fix)**: Fixed `GET /api/admin/users` to attach `linked_beneficiaries` for users with `is_also_benefactor=True`, not just `role='benefactor'`. This allows admins to see and manage beneficiaries who also own estates.
+- **Admin Estate Health Multi-Role Fix (P0 Fix)**: Updated `GET /api/admin/estate-health` to include estates owned by multi-role users. Added `is_also_benefactor` to the user projection query.
+- **Frontend Benefactors Filter Fix (P0 Fix)**: Updated `UsersTab.js` to include `is_also_benefactor` users in the Benefactors tab filter, tree view, and graph view.
+- **Ghost Estate Cleanup Workflow**: The existing `DELETE /api/admin/estates/{estate_id}` endpoint correctly deletes ghost estates and resets `is_also_benefactor` flag, allowing users to re-create their estate.
+
 ## Blocked / Awaiting User Action
 - P1: Twilio SMS OTP Integration (blocked on A2P 10DLC approval)
 - P1: iOS Share Extension Setup (blocked on user Xcode/App Store Connect config)
