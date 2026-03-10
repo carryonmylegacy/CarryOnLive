@@ -407,8 +407,13 @@ async def create_estate_for_existing_user(
 
         if beneficiaries_to_insert:
             await db.beneficiaries.insert_many(beneficiaries_to_insert)
+            logger.info(
+                f"Estate {estate_id}: enrolled {len(beneficiaries_to_insert)} beneficiaries"
+            )
     except Exception as e:
-        logger.error(f"Error enrolling beneficiaries for estate {estate_id}: {e}")
+        logger.error(
+            f"Error enrolling beneficiaries for estate {estate_id}: {e}"
+        )
 
     # Seed default checklist (non-critical — don't fail the estate creation)
     default_checklist = [
@@ -478,10 +483,12 @@ async def create_estate_for_existing_user(
     except Exception as e:
         logger.error(f"Error seeding checklist for estate {estate_id}: {e}")
 
+    ben_count = await db.beneficiaries.count_documents({"estate_id": estate_id})
     return {
         "success": True,
         "estate_id": estate_id,
         "auto_linked": auto_linked_users,
+        "beneficiaries_enrolled": ben_count,
         "message": "Your estate has been created successfully.",
     }
 

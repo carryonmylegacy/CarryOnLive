@@ -763,7 +763,7 @@ const SignupPage = () => {
                             <div className="space-y-1.5">
                               <Label className="text-[#7b879e] text-sm font-medium">Relationship</Label>
                               <Select value={ben.relation} onValueChange={(v) => updateBen('relation', v)}>
-                                <SelectTrigger className={selectClass} data-testid={`ben-relation-select-${idx}`}><SelectValue placeholder="Select..." /></SelectTrigger>
+                                <SelectTrigger className={selectClass} tabIndex={0} data-testid={`ben-relation-select-${idx}`}><SelectValue placeholder="Select..." /></SelectTrigger>
                                 <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
                                   {beneficiaryRelations.map(rel => (
                                     <SelectItem key={rel} value={rel}>{rel}</SelectItem>

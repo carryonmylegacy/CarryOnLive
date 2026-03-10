@@ -249,6 +249,8 @@ const CreateEstatePage = () => {
         if (res.data.auto_linked?.length > 0) {
           const names = res.data.auto_linked.map(u => u.name).join(', ');
           toast.success(`Estate created! ${names} already had accounts and were auto-linked.`);
+        } else if (res.data.beneficiaries_enrolled > 0) {
+          toast.success(`Estate created with ${res.data.beneficiaries_enrolled} beneficiar${res.data.beneficiaries_enrolled === 1 ? 'y' : 'ies'}!`);
         } else {
           toast.success('Your estate has been created successfully!');
         }
@@ -618,7 +620,7 @@ const CreateEstatePage = () => {
                             <div className="space-y-1.5">
                               <Label className="text-[#7b879e] text-sm font-medium">Relationship</Label>
                               <Select value={ben.relation} onValueChange={(v) => updateBen('relation', v)}>
-                                <SelectTrigger className={selectClass}><SelectValue placeholder="Select..." /></SelectTrigger>
+                                <SelectTrigger className={selectClass} tabIndex={0}><SelectValue placeholder="Select..." /></SelectTrigger>
                                 <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
                                   {beneficiaryRelations.map(rel => <SelectItem key={rel} value={rel}>{rel}</SelectItem>)}
                                 </SelectContent>
