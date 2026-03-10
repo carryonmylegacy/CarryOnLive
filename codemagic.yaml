@@ -89,7 +89,7 @@ workflows:
       - name: Set build number
         script: |
           cd frontend/ios/App
-          BUILD_NUMBER=$(($(date +%s) / 60))
+          BUILD_NUMBER=$(date +%s)
           echo "Setting build number to $BUILD_NUMBER"
           agvtool new-version -all $BUILD_NUMBER
       - name: Clean derived data
