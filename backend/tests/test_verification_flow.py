@@ -14,7 +14,7 @@ import os
 import base64
 
 BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://slide-panel-polish.preview.emergentagent.com"
+    "REACT_APP_BACKEND_URL", "https://tree-viz-1.preview.emergentagent.com"
 )
 
 # Test credentials provided

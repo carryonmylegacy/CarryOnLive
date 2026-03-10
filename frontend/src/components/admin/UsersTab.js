@@ -402,7 +402,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     );
   };
 
-  // Graph view: SVG-based visual family tree per estate
+  // Graph view: HTML/CSS-based visual family tree per estate
   const renderGraphView = () => {
     const benefactors = filteredUsers.filter(u => u.role === 'benefactor');
     const beneficiaryUsers = filteredUsers.filter(u => u.role === 'beneficiary');
@@ -414,75 +414,113 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
       return { owner, bens };
     }).sort((a, b) => getAge(a.owner.date_of_birth) - getAge(b.owner.date_of_birth));
 
-    const NODE_R = 22;
-    const COL_W = 64;
+    const getInit = (n) => n?.name ? n.name.split(' ').map(x => x[0]).join('').toUpperCase().slice(0, 2) : '??';
+    const benAge = (b) => { const a = getAge(b.date_of_birth || b.dob); return a < 999 ? a : null; };
+
+    // Reusable node component
+    const GraphNode = ({ initials, color, size = 44, label, sublabel, linked }) => (
+      <div className="flex flex-col items-center gap-1">
+        <div
+          className="rounded-full flex items-center justify-center font-bold"
+          style={{
+            width: size, height: size,
+            background: color,
+            fontSize: size * 0.3,
+            color: '#080e1a',
+            border: `2px solid ${color}`,
+            boxShadow: `0 0 10px ${color}40`,
+          }}
+        >
+          {initials}
+        </div>
+        {label && <span className="text-[10px] font-semibold text-[var(--t)] text-center leading-tight">{label}</span>}
+        {sublabel && <span className="text-[8px] text-[#64748B] text-center leading-tight">{sublabel}</span>}
+      </div>
+    );
 
     return (
       <div className="space-y-4">
         {estates.map(({ owner, bens }) => {
           const sortedBens = [...bens].sort((a, b) => getAge(a.date_of_birth || a.dob) - getAge(b.date_of_birth || b.dob));
-          const w = Math.max(200, (sortedBens.length + 1) * COL_W);
-          const rootX = w / 2;
-          const rootY = 40;
-          const childY = 115;
-          const childNodes = sortedBens.map((ben, idx) => {
-            const totalW = sortedBens.length * COL_W;
-            const startX = (w - totalW) / 2 + COL_W / 2;
-            return { x: startX + idx * COL_W, y: childY, ben };
-          });
-          const h = sortedBens.length > 0 ? 170 : 80;
-          const getInit = (n) => n?.name ? n.name.split(' ').map(x => x[0]).join('').toUpperCase().slice(0,2) : '??';
-          const benAge = (b) => { const a = getAge(b.date_of_birth || b.dob); return a < 999 ? a : null; };
 
           return (
-            <div key={owner.id} className="glass-card p-3 rounded-xl" data-testid={`graph-estate-${owner.id}`}>
-              <div className="flex items-center gap-2 mb-2">
+            <div key={owner.id} className="glass-card p-4 rounded-xl" data-testid={`graph-estate-${owner.id}`}>
+              <div className="flex items-center gap-2 mb-3">
                 <div className="w-5 h-5 rounded flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.1)' }}>
                   <Users className="w-3 h-3 text-[var(--gold)]" />
                 </div>
                 <span className="text-xs font-bold text-[var(--gold)]">{owner.name}'s Estate</span>
                 <span className="text-[10px] text-[var(--t5)] ml-auto">{bens.length} beneficiar{bens.length === 1 ? 'y' : 'ies'}</span>
               </div>
-              <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: 'block', maxWidth: '100%' }}>
-                {/* Lines */}
-                {childNodes.length > 0 && (
-                  <>
-                    <line x1={rootX} y1={rootY + NODE_R} x2={rootX} y2={rootY + NODE_R + 14} stroke="#d4af37" strokeWidth={1.5} opacity={0.4} />
-                    {childNodes.length > 1 && (
-                      <line x1={Math.min(...childNodes.map(c => c.x))} y1={rootY + NODE_R + 14} x2={Math.max(...childNodes.map(c => c.x))} y2={rootY + NODE_R + 14} stroke="#d4af37" strokeWidth={1.5} opacity={0.3} />
+
+              {/* Tree visualization using HTML/CSS */}
+              <div className="flex flex-col items-center">
+                {/* Root node (benefactor) */}
+                <GraphNode
+                  initials={getInit(owner)}
+                  color="#d4af37"
+                  size={52}
+                  label={owner.name?.split(' ')[0] || 'Owner'}
+                  sublabel="Benefactor"
+                />
+
+                {/* Connector trunk + children */}
+                {sortedBens.length > 0 && (
+                  <div className="flex flex-col items-center">
+                    {/* Vertical trunk */}
+                    <div style={{ width: 2, height: 18, background: '#d4af37', opacity: 0.5 }} />
+
+                    {sortedBens.length > 1 ? (
+                      <div className="relative w-full flex justify-center" style={{ minWidth: sortedBens.length * 72 }}>
+                        {/* Horizontal line */}
+                        <div className="absolute top-0 left-[10%] right-[10%]" style={{ height: 2, background: '#d4af37', opacity: 0.25 }} />
+                        {/* Children row */}
+                        <div className="flex gap-3 justify-center pt-1">
+                          {sortedBens.map(ben => {
+                            const linked = ben.email && benUserByEmail.has(ben.email.toLowerCase());
+                            const color = linked ? '#B794F6' : '#64748B';
+                            const age = benAge(ben);
+                            return (
+                              <div key={ben.id} className="flex flex-col items-center">
+                                <div style={{ width: 2, height: 12, background: color, opacity: 0.4 }} />
+                                <GraphNode
+                                  initials={(ben.first_name?.[0] || '?') + (ben.last_name?.[0] || '?')}
+                                  color={linked ? 'rgba(139,92,246,0.3)' : 'rgba(100,116,139,0.3)'}
+                                  size={38}
+                                  label={ben.first_name || ben.name?.split(' ')[0] || ''}
+                                  sublabel={age !== null ? `Age ${age}` : (ben.relation || '')}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      sortedBens.map(ben => {
+                        const linked = ben.email && benUserByEmail.has(ben.email.toLowerCase());
+                        const color = linked ? '#B794F6' : '#64748B';
+                        const age = benAge(ben);
+                        return (
+                          <div key={ben.id} className="flex flex-col items-center">
+                            <div style={{ width: 2, height: 12, background: color, opacity: 0.4 }} />
+                            <GraphNode
+                              initials={(ben.first_name?.[0] || '?') + (ben.last_name?.[0] || '?')}
+                              color={linked ? 'rgba(139,92,246,0.3)' : 'rgba(100,116,139,0.3)'}
+                              size={38}
+                              label={ben.first_name || ben.name?.split(' ')[0] || ''}
+                              sublabel={age !== null ? `Age ${age}` : (ben.relation || '')}
+                            />
+                          </div>
+                        );
+                      })
                     )}
-                    {childNodes.map((cn, i) => (
-                      <line key={i} x1={cn.x} y1={rootY + NODE_R + 14} x2={cn.x} y2={cn.y - NODE_R} stroke="#4b5563" strokeWidth={1} opacity={0.4} />
-                    ))}
-                  </>
+                  </div>
                 )}
-                {/* Root */}
-                <circle cx={rootX} cy={rootY} r={NODE_R} fill="#d4af37" />
-                <text x={rootX} y={rootY + 1} textAnchor="middle" dominantBaseline="central" fill="#080e1a" fontSize={10} fontWeight={800}>{getInit(owner)}</text>
-                <text x={rootX} y={rootY + NODE_R + 10} textAnchor="middle" fill="#d4af37" fontSize={8} fontWeight={600} opacity={0}>{''}</text>
-                {/* Children */}
-                {childNodes.map((cn, i) => {
-                  const b = cn.ben;
-                  const linked = b.email && benUserByEmail.has(b.email.toLowerCase());
-                  const age = benAge(b);
-                  return (
-                    <g key={i}>
-                      <circle cx={cn.x} cy={cn.y} r={NODE_R - 4} fill={linked ? 'rgba(139,92,246,0.15)' : 'rgba(100,116,139,0.15)'} stroke={linked ? '#B794F6' : '#64748B'} strokeWidth={1.5} />
-                      <text x={cn.x} y={cn.y + 1} textAnchor="middle" dominantBaseline="central" fill={linked ? '#B794F6' : '#94A3B8'} fontSize={9} fontWeight={700}>
-                        {(b.first_name?.[0] || '?') + (b.last_name?.[0] || '?')}
-                      </text>
-                      <text x={cn.x} y={cn.y + NODE_R + 2} textAnchor="middle" fill="var(--t, #E2E8F0)" fontSize={7} fontWeight={600}>
-                        {b.first_name || b.name?.split(' ')[0] || ''}
-                      </text>
-                      {age !== null && (
-                        <text x={cn.x} y={cn.y + NODE_R + 10} textAnchor="middle" fill="#64748B" fontSize={6}>
-                          Age {age}
-                        </text>
-                      )}
-                    </g>
-                  );
-                })}
-              </svg>
+
+                {sortedBens.length === 0 && (
+                  <p className="text-[10px] text-[var(--t5)] mt-2 italic">No beneficiaries</p>
+                )}
+              </div>
             </div>
           );
         })}
