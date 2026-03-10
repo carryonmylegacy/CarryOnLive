@@ -23,7 +23,7 @@ const getInitials = (name, firstName, lastName) => {
   return '??';
 };
 
-const TreeNode = ({ initials, photo, color, label, sublabel, size = 56, badge, onClick, testId }) => (
+const TreeNode = ({ initials, photo, color, label, sublabel, size = 56, badge, isPrimary, onClick, testId }) => (
   <div className="flex flex-col items-center gap-1 cursor-pointer group" onClick={onClick} data-testid={testId}>
     <div className="relative">
       <div
@@ -43,13 +43,17 @@ const TreeNode = ({ initials, photo, color, label, sublabel, size = 56, badge, o
           initials
         )}
       </div>
-      {badge && (
+      {badge && !isPrimary && (
         <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black" style={{ background: '#d4af37', color: '#080e1a' }}>
           {badge}
         </div>
       )}
     </div>
-    {label && <span className="text-[10px] font-semibold text-[var(--t)] text-center leading-tight">{label}</span>}
+    {label && isPrimary ? (
+      <span className="text-[9px] font-bold whitespace-nowrap px-2 py-0.5 rounded-md text-center leading-tight" style={{ background: 'rgba(34,201,147,0.15)', color: '#22C993', border: '1px solid rgba(34,201,147,0.3)' }}>{label}</span>
+    ) : label ? (
+      <span className="text-[10px] font-semibold text-[var(--t)] text-center leading-tight">{label}</span>
+    ) : null}
     {sublabel && <span className="text-[8px] text-[#64748B] text-center leading-tight">{sublabel}</span>}
   </div>
 );
@@ -130,6 +134,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                           label={ben.first_name || ben.name?.split(' ')[0] || ''}
                           sublabel={`${relation}${age < 999 ? ` · ${age}` : ''}`}
                           badge={ben.is_primary ? 'P' : null}
+                          isPrimary={ben.is_primary}
                           testId={`tree-node-${ben.id}`}
                           onClick={() => onSelectBeneficiary?.(ben)}
                         />
@@ -154,6 +159,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                       label={ben.first_name || ben.name?.split(' ')[0] || ''}
                       sublabel={`${ben.relation || ''}${age < 999 ? ` · ${age}` : ''}`}
                       badge={ben.is_primary ? 'P' : null}
+                      isPrimary={ben.is_primary}
                       testId={`tree-node-${ben.id}`}
                       onClick={() => onSelectBeneficiary?.(ben)}
                     />
