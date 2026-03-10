@@ -46,7 +46,9 @@ class TestGhostEstateDetection:
         # Must have ghost_estates key
         assert "ghost_estates" in data, "Response must contain 'ghost_estates' key"
         assert isinstance(data["ghost_estates"], list), "ghost_estates must be an array"
-        print(f"PASS: ghost_estates array found with {len(data['ghost_estates'])} items")
+        print(
+            f"PASS: ghost_estates array found with {len(data['ghost_estates'])} items"
+        )
 
     def test_estate_health_summary_includes_ghost_count(self, admin_token):
         """Test that summary includes ghost_estates count"""
@@ -59,8 +61,10 @@ class TestGhostEstateDetection:
 
         summary = data.get("summary", {})
         assert "ghost_estates" in summary, "Summary must contain 'ghost_estates' count"
-        assert isinstance(summary["ghost_estates"], int), "ghost_estates count must be int"
-        
+        assert isinstance(summary["ghost_estates"], int), (
+            "ghost_estates count must be int"
+        )
+
         # Verify count matches array length
         assert summary["ghost_estates"] == len(data["ghost_estates"]), (
             f"Summary count ({summary['ghost_estates']}) must match array length ({len(data['ghost_estates'])})"
@@ -82,14 +86,20 @@ class TestGhostEstateDetection:
         ghost = data["ghost_estates"][0]
 
         # Check required fields
-        required_fields = ["estate_id", "estate_name", "owner_id", "owner_name", "reason"]
+        required_fields = [
+            "estate_id",
+            "estate_name",
+            "owner_id",
+            "owner_name",
+            "reason",
+        ]
         for field in required_fields:
             assert field in ghost, f"Ghost estate must have '{field}' field"
             print(f"  - {field}: {ghost[field]}")
 
         # Reason should explain why this is a ghost estate
         assert len(ghost["reason"]) > 0, "Ghost estate must have a non-empty reason"
-        print(f"PASS: Ghost estate structure valid")
+        print("PASS: Ghost estate structure valid")
 
     def test_ghost_estate_reason_is_descriptive(self, admin_token):
         """Test that ghost estate reasons are meaningful"""
@@ -113,7 +123,7 @@ class TestGhostEstateDetection:
             assert any(r in ghost["reason"] for r in valid_reasons), (
                 f"Ghost reason '{ghost['reason']}' is not a known valid reason"
             )
-        print(f"PASS: All ghost estate reasons are valid")
+        print("PASS: All ghost estate reasons are valid")
 
 
 class TestGhostEstateCleanup:
@@ -150,15 +160,21 @@ class TestGhostEstateCleanup:
         """Test that cleanup rejects incorrect admin password"""
         response = requests.post(
             f"{BASE_URL}/api/admin/cleanup-ghost-estates",
-            json={"estate_ids": ["test-estate-id"], "admin_password": "WrongPassword123"},
+            json={
+                "estate_ids": ["test-estate-id"],
+                "admin_password": "WrongPassword123",
+            },
             headers={"Authorization": f"Bearer {admin_token}"},
         )
-        assert response.status_code == 401, f"Expected 401 for wrong password, got {response.status_code}"
-        
-        data = response.json()
-        assert "incorrect" in data.get("detail", "").lower() or "password" in data.get("detail", "").lower(), (
-            f"Expected password error message, got: {data}"
+        assert response.status_code == 401, (
+            f"Expected 401 for wrong password, got {response.status_code}"
         )
+
+        data = response.json()
+        assert (
+            "incorrect" in data.get("detail", "").lower()
+            or "password" in data.get("detail", "").lower()
+        ), f"Expected password error message, got: {data}"
         print("PASS: Cleanup correctly rejects wrong password")
 
     def test_cleanup_empty_array_returns_success(self, admin_token):
@@ -168,8 +184,10 @@ class TestGhostEstateCleanup:
             json={"estate_ids": [], "admin_password": "Demo1234!"},
             headers={"Authorization": f"Bearer {admin_token}"},
         )
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
-        
+        assert response.status_code == 200, (
+            f"Expected 200, got {response.status_code}: {response.text}"
+        )
+
         data = response.json()
         assert "deleted_count" in data, "Response must have deleted_count"
         assert data["deleted_count"] == 0, "Should delete 0 estates with empty array"
@@ -183,8 +201,10 @@ class TestGhostEstateCleanup:
             json={"estate_ids": [fake_id], "admin_password": "Demo1234!"},
             headers={"Authorization": f"Bearer {admin_token}"},
         )
-        assert response.status_code == 200, f"Expected 200 even with non-existent ID, got {response.status_code}"
-        
+        assert response.status_code == 200, (
+            f"Expected 200 even with non-existent ID, got {response.status_code}"
+        )
+
         data = response.json()
         assert "deleted_count" in data, "Response must have deleted_count"
         # Non-existent estate should be skipped, not error
@@ -199,15 +219,15 @@ class TestGhostEstateCleanup:
             headers={"Authorization": f"Bearer {admin_token}"},
         )
         assert response.status_code == 200
-        
+
         data = response.json()
-        
+
         # Check required response fields
         assert "message" in data, "Response must have 'message'"
         assert "deleted_count" in data, "Response must have 'deleted_count'"
         assert "users_reset" in data, "Response must have 'users_reset'"
-        
-        print(f"PASS: Cleanup response structure valid")
+
+        print("PASS: Cleanup response structure valid")
         print(f"  - message: {data['message']}")
         print(f"  - deleted_count: {data['deleted_count']}")
         print(f"  - users_reset: {data['users_reset']}")
@@ -251,7 +271,9 @@ class TestGhostEstateCleanupIntegration:
         estate_id = target_ghost["estate_id"]
         original_count = len(ghost_estates)
 
-        print(f"Found {original_count} ghost estates, cleaning up: {target_ghost['estate_name']}")
+        print(
+            f"Found {original_count} ghost estates, cleaning up: {target_ghost['estate_name']}"
+        )
         print(f"  Reason: {target_ghost['reason']}")
 
         # Attempt cleanup
@@ -260,11 +282,17 @@ class TestGhostEstateCleanupIntegration:
             json={"estate_ids": [estate_id], "admin_password": "Demo1234!"},
             headers={"Authorization": f"Bearer {admin_token}"},
         )
-        assert cleanup_response.status_code == 200, f"Cleanup failed: {cleanup_response.text}"
-        
+        assert cleanup_response.status_code == 200, (
+            f"Cleanup failed: {cleanup_response.text}"
+        )
+
         cleanup_data = cleanup_response.json()
-        assert cleanup_data["deleted_count"] == 1, f"Expected 1 deleted, got {cleanup_data['deleted_count']}"
-        print(f"PASS: Successfully cleaned up ghost estate '{target_ghost['estate_name']}'")
+        assert cleanup_data["deleted_count"] == 1, (
+            f"Expected 1 deleted, got {cleanup_data['deleted_count']}"
+        )
+        print(
+            f"PASS: Successfully cleaned up ghost estate '{target_ghost['estate_name']}'"
+        )
         print(f"  - users_reset: {cleanup_data['users_reset']}")
 
         # Verify ghost estate is removed from list
@@ -279,7 +307,9 @@ class TestGhostEstateCleanupIntegration:
         assert new_ghost_count == original_count - 1, (
             f"Expected {original_count - 1} ghost estates after cleanup, got {new_ghost_count}"
         )
-        print(f"PASS: Ghost estate list updated correctly ({original_count} -> {new_ghost_count})")
+        print(
+            f"PASS: Ghost estate list updated correctly ({original_count} -> {new_ghost_count})"
+        )
 
 
 class TestGhostEstateValidation:
@@ -308,7 +338,9 @@ class TestGhostEstateValidation:
             json={"estate_ids": []},  # Missing admin_password
             headers={"Authorization": f"Bearer {admin_token}"},
         )
-        assert response.status_code == 422, f"Expected 422 for missing password, got {response.status_code}"
+        assert response.status_code == 422, (
+            f"Expected 422 for missing password, got {response.status_code}"
+        )
         print("PASS: Cleanup requires admin_password field")
 
     def test_cleanup_requires_estate_ids_field(self, admin_token):
@@ -318,7 +350,9 @@ class TestGhostEstateValidation:
             json={"admin_password": "Demo1234!"},  # Missing estate_ids
             headers={"Authorization": f"Bearer {admin_token}"},
         )
-        assert response.status_code == 422, f"Expected 422 for missing estate_ids, got {response.status_code}"
+        assert response.status_code == 422, (
+            f"Expected 422 for missing estate_ids, got {response.status_code}"
+        )
         print("PASS: Cleanup requires estate_ids field")
 
 

@@ -651,7 +651,6 @@ async def delete_estate_only(
     }
 
 
-
 class CleanupGhostEstatesRequest(BaseModel):
     estate_ids: list[str]
     admin_password: str
@@ -1400,7 +1399,9 @@ async def get_estate_health(current_user: dict = Depends(get_current_user)):
 
     for estate in all_estates:
         owner = user_by_id.get(estate.get("owner_id"))
-        if not owner or (owner.get("role") != "benefactor" and not owner.get("is_also_benefactor")):
+        if not owner or (
+            owner.get("role") != "benefactor" and not owner.get("is_also_benefactor")
+        ):
             continue
 
         bens = bens_by_estate.get(estate["id"], [])
@@ -1505,21 +1506,29 @@ async def get_estate_health(current_user: dict = Depends(get_current_user)):
         reason = None
         if not owner:
             reason = "Owner account no longer exists"
-        elif len(bens) == 0 and owner.get("role") == "beneficiary" and owner.get("is_also_benefactor"):
+        elif (
+            len(bens) == 0
+            and owner.get("role") == "beneficiary"
+            and owner.get("is_also_benefactor")
+        ):
             reason = "Incomplete estate from beneficiary conversion"
         elif len(bens) == 0 and estate.get("status") == "pre-transition":
             reason = "Empty estate with no beneficiaries"
 
         if reason:
-            ghost_estates.append({
-                "estate_id": estate["id"],
-                "estate_name": estate.get("name", "Unknown"),
-                "owner_id": estate.get("owner_id"),
-                "owner_name": owner.get("name", "Deleted User") if owner else "Deleted User",
-                "owner_email": owner.get("email", "") if owner else "",
-                "created_at": estate.get("created_at", ""),
-                "reason": reason,
-            })
+            ghost_estates.append(
+                {
+                    "estate_id": estate["id"],
+                    "estate_name": estate.get("name", "Unknown"),
+                    "owner_id": estate.get("owner_id"),
+                    "owner_name": owner.get("name", "Deleted User")
+                    if owner
+                    else "Deleted User",
+                    "owner_email": owner.get("email", "") if owner else "",
+                    "created_at": estate.get("created_at", ""),
+                    "reason": reason,
+                }
+            )
 
     tb = totals["beneficiaries"]
     return {

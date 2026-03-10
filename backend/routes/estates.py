@@ -277,15 +277,20 @@ async def create_estate_for_existing_user(
 
     # Check if they already own an estate
     existing = await db.estates.find_one(
-        {"owner_id": current_user["id"]}, {"_id": 0, "id": 1, "status": 1, "beneficiaries": 1, "created_at": 1}
+        {"owner_id": current_user["id"]},
+        {"_id": 0, "id": 1, "status": 1, "beneficiaries": 1, "created_at": 1},
     )
     if existing:
         # Auto-clean ghost estates: if the estate has no beneficiaries, no vault
         # items, is still in pre-transition, and was created >2 minutes ago, it's
         # an orphaned/failed creation.  Delete it so the user can start fresh.
         bens_in_estate = existing.get("beneficiaries") or []
-        ben_docs_count = await db.beneficiaries.count_documents({"estate_id": existing["id"]})
-        vault_count = await db.vault_items.count_documents({"estate_id": existing["id"]})
+        ben_docs_count = await db.beneficiaries.count_documents(
+            {"estate_id": existing["id"]}
+        )
+        vault_count = await db.vault_items.count_documents(
+            {"estate_id": existing["id"]}
+        )
         is_empty = len(bens_in_estate) == 0 and ben_docs_count == 0 and vault_count == 0
         is_ghost = is_empty and existing.get("status") == "pre-transition"
 

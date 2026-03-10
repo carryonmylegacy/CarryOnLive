@@ -13,8 +13,6 @@ Tests:
 import pytest
 import requests
 import os
-import uuid
-from datetime import datetime, timezone
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 
@@ -117,10 +115,12 @@ class TestMultiRoleBenefactorFix:
         multi_role_users = [
             u
             for u in users
-            if u.get("role") == "beneficiary" and u.get("is_also_benefactor") == True
+            if u.get("role") == "beneficiary" and u.get("is_also_benefactor")
         ]
 
-        print(f"Found {len(multi_role_users)} multi-role users (beneficiary + is_also_benefactor)")
+        print(
+            f"Found {len(multi_role_users)} multi-role users (beneficiary + is_also_benefactor)"
+        )
 
         # If any exist, they should have linked_beneficiaries
         for user in multi_role_users:
@@ -143,7 +143,9 @@ class TestMultiRoleBenefactorFix:
 
         users = response.json()
         for user in users[:10]:  # Check first 10 users
-            assert "subscription" in user, f"User {user.get('email')} missing subscription field"
+            assert "subscription" in user, (
+                f"User {user.get('email')} missing subscription field"
+            )
 
         print("All sampled users have subscription field")
 
@@ -177,7 +179,7 @@ class TestMultiRoleBenefactorFix:
         multi_role_user_ids = {
             u["id"]
             for u in users
-            if u.get("role") == "beneficiary" and u.get("is_also_benefactor") == True
+            if u.get("role") == "beneficiary" and u.get("is_also_benefactor")
         }
 
         # Get estate health
@@ -194,7 +196,9 @@ class TestMultiRoleBenefactorFix:
             e for e in estates if e.get("owner", {}).get("id") in multi_role_user_ids
         ]
 
-        print(f"Found {len(multi_role_estates)} estates owned by multi-role users in estate-health")
+        print(
+            f"Found {len(multi_role_estates)} estates owned by multi-role users in estate-health"
+        )
 
         # If multi-role users have estates, they should appear in estate-health
         if multi_role_user_ids:
@@ -296,9 +300,10 @@ class TestMultiRoleBenefactorFix:
 
         if response.status_code == 400:
             data = response.json()
-            assert "staff" in data.get("detail", "").lower() or "cannot" in data.get("detail", "").lower(), (
-                f"Expected staff restriction message, got: {data.get('detail')}"
-            )
+            assert (
+                "staff" in data.get("detail", "").lower()
+                or "cannot" in data.get("detail", "").lower()
+            ), f"Expected staff restriction message, got: {data.get('detail')}"
         print(f"Create-estate endpoint exists, returned: {response.status_code}")
 
     # ===================== INTEGRATION TEST: GHOST ESTATE CLEANUP =====================
@@ -318,12 +323,10 @@ class TestMultiRoleBenefactorFix:
         # Count different user types
         benefactors = [u for u in users if u.get("role") == "benefactor"]
         beneficiaries = [u for u in users if u.get("role") == "beneficiary"]
-        multi_role = [
-            u for u in users if u.get("is_also_benefactor") == True
-        ]
+        multi_role = [u for u in users if u.get("is_also_benefactor")]
         admins = [u for u in users if u.get("role") == "admin"]
 
-        print(f"User breakdown:")
+        print("User breakdown:")
         print(f"  - Benefactors: {len(benefactors)}")
         print(f"  - Beneficiaries: {len(beneficiaries)}")
         print(f"  - Multi-role (is_also_benefactor=True): {len(multi_role)}")
@@ -344,7 +347,9 @@ class TestHealthCheck:
     def test_api_health(self):
         """Test that API is reachable"""
         response = requests.get(f"{BASE_URL}/api/health")
-        assert response.status_code == 200, f"Health check failed: {response.status_code}"
+        assert response.status_code == 200, (
+            f"Health check failed: {response.status_code}"
+        )
         print("API health check passed")
 
     def test_base_url_valid(self):
