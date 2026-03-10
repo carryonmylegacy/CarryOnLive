@@ -60,11 +60,15 @@ const DashboardPage = () => {
   const fetchEstates = async () => {
     try {
       const response = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
-      setEstates(response.data);
-      if (response.data.length > 0) {
+      // In dashboard (benefactor) view, only show estates the user OWNS
+      const ownedEstates = response.data.filter(
+        e => e.user_role_in_estate === 'owner' || (!e.user_role_in_estate && !e.is_beneficiary_estate)
+      );
+      setEstates(ownedEstates);
+      if (ownedEstates.length > 0) {
         const savedEstateId = localStorage.getItem('selected_estate_id');
-        const savedEstate = response.data.find(e => e.id === savedEstateId);
-        setEstate(savedEstate || response.data[0]);
+        const savedEstate = ownedEstates.find(e => e.id === savedEstateId);
+        setEstate(savedEstate || ownedEstates[0]);
       }
     } catch (error) { console.error('Fetch estates error:', error); setLoading(false); }
   };

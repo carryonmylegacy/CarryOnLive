@@ -480,7 +480,7 @@ class BackendAPITest:
 def main():
     """Run the backend smoke tests"""
     # Test credentials from review request
-    BASE_URL = "https://beneficiary-edit.preview.emergentagent.com"
+    BASE_URL = "https://slide-panel-polish.preview.emergentagent.com"
     EMAIL = "fulltest@test.com"
     PASSWORD = "Password.123"
     

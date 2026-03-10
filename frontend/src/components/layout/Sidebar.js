@@ -200,9 +200,9 @@ const Sidebar = () => {
     window.dispatchEvent(new Event('sidebar-toggle'));
   };
 
-  // Fetch estates for beneficiary sidebar switcher
+  // Fetch estates for sidebar switcher (beneficiary view + multi-role users)
   useEffect(() => {
-    if (user?.role === 'beneficiary') {
+    if (user?.role === 'beneficiary' || user?.is_also_beneficiary || user?.is_also_benefactor) {
       const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
       const token = localStorage.getItem('carryon_token');
       if (token) {
@@ -320,12 +320,28 @@ const Sidebar = () => {
     }
   ];
 
+  // Determine if the user is currently viewing in a "benefactor context"
+  // (a beneficiary who also owns an estate, viewing their estate dashboard)
+  const isBenefactorContext = (() => {
+    const path = window.location.pathname;
+    // If user is a beneficiary with is_also_benefactor, check current path context
+    if (user?.role === 'beneficiary' && user?.is_also_benefactor) {
+      // On benefactor routes = benefactor context
+      return !path.startsWith('/beneficiary');
+    }
+    return false;
+  })();
+
   const getNavSections = () => {
     // Admin viewing ops portal should see operator nav
     if (user?.role === 'admin' && window.location.pathname.startsWith('/ops')) return operatorNavSections;
     if (user?.role === 'admin') return adminNavSections;
     if (user?.role === 'operator') return operatorNavSections;
+    // Multi-role: beneficiary who is also a benefactor
+    if (user?.role === 'beneficiary' && isBenefactorContext) return benefactorNavSections;
     if (user?.role === 'beneficiary') return beneficiaryNavSections;
+    // Benefactor who is also a beneficiary — check path
+    if (user?.role === 'benefactor' && window.location.pathname.startsWith('/beneficiary')) return beneficiaryNavSections;
     return benefactorNavSections;
   };
 
@@ -347,11 +363,13 @@ const Sidebar = () => {
   };
 
   const getRoleLabel = () => {
+    if (user?.role === 'beneficiary' && isBenefactorContext) return 'MY ESTATE';
     if (user?.role === 'beneficiary') return 'BENEFICIARY';
     if (user?.role === 'admin' && window.location.pathname.startsWith('/ops')) return 'OPERATIONS';
     if (user?.role === 'admin') return 'FOUNDER PORTAL';
     if (user?.role === 'operator' && user?.operator_role === 'manager') return 'OPS MANAGER';
     if (user?.role === 'operator') return 'OPERATIONS';
+    if (user?.role === 'benefactor' && window.location.pathname.startsWith('/beneficiary')) return 'BENEFICIARY';
     return 'BENEFACTOR PORTAL';
   };
 
@@ -459,6 +477,69 @@ const Sidebar = () => {
 
       {/* Beta Banner — only shows when beta_mode is active */}
       <BetaBanner collapsed={collapsed} />
+
+      {/* Multi-Role Portal Switcher — for users with both benefactor + beneficiary access */}
+      {!collapsed && (user?.is_also_benefactor || user?.is_also_beneficiary || 
+        (user?.role === 'benefactor' && benEstates.some(e => e.user_role_in_estate === 'beneficiary'))) && (
+        <div style={{ padding: '6px 12px' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#525C72', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 4, paddingLeft: 4 }}>
+            Switch View
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {/* Owned estates (benefactor view) */}
+            {benEstates.filter(e => e.user_role_in_estate === 'owner').map(estate => (
+              <button key={`own-${estate.id}`} onClick={() => {
+                localStorage.setItem('selected_estate_id', estate.id);
+                localStorage.removeItem('beneficiary_estate_id');
+                navigate('/dashboard');
+              }}
+              data-testid={`switch-estate-owner-${estate.id}`}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
+                background: (!window.location.pathname.startsWith('/beneficiary') && localStorage.getItem('selected_estate_id') === estate.id)
+                  ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.02)',
+                border: (!window.location.pathname.startsWith('/beneficiary') && localStorage.getItem('selected_estate_id') === estate.id)
+                  ? '1px solid rgba(212,175,55,0.3)' : '1px solid rgba(255,255,255,0.06)',
+                borderRadius: 8, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'all .15s',
+              }}>
+                <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#d4af37', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#080e1a', flexShrink: 0 }}>
+                  <Shield className="w-3 h-3" />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#E2E8F0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>My Estate</div>
+                  <div style={{ fontSize: 9, color: '#64748B' }}>Benefactor</div>
+                </div>
+              </button>
+            ))}
+            {/* Beneficiary estates */}
+            {benEstates.filter(e => e.user_role_in_estate === 'beneficiary' || e.is_beneficiary_estate).map(estate => (
+              <button key={`ben-${estate.id}`} onClick={() => {
+                localStorage.setItem('beneficiary_estate_id', estate.id);
+                localStorage.removeItem('selected_estate_id');
+                navigate('/beneficiary');
+                window.location.reload();
+              }}
+              data-testid={`switch-estate-ben-${estate.id}`}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
+                background: (window.location.pathname.startsWith('/beneficiary') && localStorage.getItem('beneficiary_estate_id') === estate.id)
+                  ? 'rgba(96,165,250,0.1)' : 'rgba(255,255,255,0.02)',
+                border: (window.location.pathname.startsWith('/beneficiary') && localStorage.getItem('beneficiary_estate_id') === estate.id)
+                  ? '1px solid rgba(96,165,250,0.3)' : '1px solid rgba(255,255,255,0.06)',
+                borderRadius: 8, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'all .15s',
+              }}>
+                <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#60A5FA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#080e1a', flexShrink: 0 }}>
+                  <Users className="w-3 h-3" />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#E2E8F0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{estate.name || 'Estate'}</div>
+                  <div style={{ fontSize: 9, color: '#64748B' }}>Beneficiary</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Beneficiary Estate Switcher — removed from sidebar, now in page header */}
 

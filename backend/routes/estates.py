@@ -16,47 +16,71 @@ router = APIRouter()
 
 @router.get("/estates")
 async def get_estates(current_user: dict = Depends(get_current_user)):
-    """List all estates for the current user."""
-    if current_user["role"] == "benefactor":
-        # Return estates they OWN
-        estates = await db.estates.find(
+    """List all estates for the current user. Annotates each with `user_role_in_estate`
+    so the frontend knows whether the user is 'owner' or 'beneficiary' in each estate."""
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    is_also_benefactor = (user or {}).get("is_also_benefactor", False)
+    is_also_beneficiary = (user or {}).get("is_also_beneficiary", False)
+
+    if current_user["role"] == "admin":
+        estates = await db.estates.find({}, {"_id": 0}).to_list(100)
+        return estates
+
+    estates = []
+    seen_ids = set()
+
+    # Always fetch estates the user OWNS (regardless of primary role)
+    if current_user["role"] == "benefactor" or is_also_benefactor:
+        owned = await db.estates.find(
             {"owner_id": current_user["id"]}, {"_id": 0}
         ).to_list(100)
-        # Also return estates they're a BENEFICIARY of (upgraded users)
+        for e in owned:
+            e["user_role_in_estate"] = "owner"
+            estates.append(e)
+            seen_ids.add(e["id"])
+
+    # Always fetch estates they're a BENEFICIARY of (regardless of primary role)
+    if current_user["role"] == "beneficiary" or is_also_beneficiary:
         ben_estates = await db.estates.find(
             {"beneficiaries": current_user["id"]}, {"_id": 0}
         ).to_list(100)
-        owned_ids = {e["id"] for e in estates}
         for be in ben_estates:
-            if be["id"] not in owned_ids:
+            if be["id"] not in seen_ids:
                 # Enrich with benefactor photo
+                override = await db.beneficiary_display_overrides.find_one(
+                    {"user_id": current_user["id"], "estate_id": be["id"]},
+                    {"_id": 0, "owner_photo_url": 1},
+                )
+                if override and override.get("owner_photo_url"):
+                    be["owner_photo_url"] = override["owner_photo_url"]
+                else:
+                    owner = await db.users.find_one(
+                        {"id": be.get("owner_id")}, {"_id": 0, "photo_url": 1}
+                    )
+                    if owner and owner.get("photo_url"):
+                        be["owner_photo_url"] = owner["photo_url"]
+                be["user_role_in_estate"] = "beneficiary"
+                be["is_beneficiary_estate"] = True
+                estates.append(be)
+                seen_ids.add(be["id"])
+
+    # Fallback for benefactors without is_also_beneficiary flag but still linked
+    if current_user["role"] == "benefactor" and not is_also_beneficiary:
+        ben_estates = await db.estates.find(
+            {"beneficiaries": current_user["id"]}, {"_id": 0}
+        ).to_list(100)
+        for be in ben_estates:
+            if be["id"] not in seen_ids:
                 owner = await db.users.find_one(
                     {"id": be.get("owner_id")}, {"_id": 0, "photo_url": 1}
                 )
                 if owner and owner.get("photo_url"):
                     be["owner_photo_url"] = owner["photo_url"]
+                be["user_role_in_estate"] = "beneficiary"
                 be["is_beneficiary_estate"] = True
                 estates.append(be)
-    elif current_user["role"] == "beneficiary":
-        estates = await db.estates.find(
-            {"beneficiaries": current_user["id"]}, {"_id": 0}
-        ).to_list(100)
-        # Enrich with benefactor photo for display (check for beneficiary override first)
-        for estate in estates:
-            override = await db.beneficiary_display_overrides.find_one(
-                {"user_id": current_user["id"], "estate_id": estate["id"]},
-                {"_id": 0, "owner_photo_url": 1},
-            )
-            if override and override.get("owner_photo_url"):
-                estate["owner_photo_url"] = override["owner_photo_url"]
-            else:
-                owner = await db.users.find_one(
-                    {"id": estate.get("owner_id")}, {"_id": 0, "photo_url": 1}
-                )
-                if owner and owner.get("photo_url"):
-                    estate["owner_photo_url"] = owner["photo_url"]
-    else:  # admin
-        estates = await db.estates.find({}, {"_id": 0}).to_list(100)
+                seen_ids.add(be["id"])
+
     return estates
 
 
@@ -222,29 +246,42 @@ async def get_estate(estate_id: str, current_user: dict = Depends(get_current_us
 
 @router.post("/beneficiary/become-benefactor")
 async def beneficiary_become_benefactor(current_user: dict = Depends(get_current_user)):
-    """Upgrade a beneficiary account to also function as a benefactor.
-    Creates their estate and updates their role. They retain all beneficiary access."""
+    """Legacy endpoint — redirects to the new create-estate flow.
+    Kept for backwards compatibility but the frontend should use /accounts/create-estate."""
+    raise HTTPException(
+        status_code=400,
+        detail="Please use the Create Estate wizard to set up your estate plan.",
+    )
+
+
+class CreateEstateRequest(BaseModel):
+    """Request to create an estate for an existing authenticated user."""
+    beneficiary_enrollments: list = []  # [{first_name, last_name, email, dob, relation, ...}]
+
+
+@router.post("/accounts/create-estate")
+async def create_estate_for_existing_user(
+    data: CreateEstateRequest, current_user: dict = Depends(get_current_user)
+):
+    """Create a new estate for an existing user WITHOUT changing their primary role.
+    Works for both beneficiaries wanting to become benefactors AND benefactors creating additional estates.
+    Sets is_also_benefactor=True so the user retains their original role but gains estate ownership."""
     import uuid
     from datetime import datetime, timezone
 
-    if current_user["role"] == "benefactor":
-        # Already a benefactor — check if they have an estate
-        existing = await db.estates.find_one(
-            {"owner_id": current_user["id"]}, {"_id": 0, "id": 1}
-        )
-        if existing:
-            raise HTTPException(
-                status_code=400,
-                detail="You already have an estate plan. Go to your Dashboard to manage it.",
-            )
-        # Role is benefactor but no estate exists — create one
-    elif current_user["role"] == "admin" or current_user["role"] == "operator":
+    if current_user["role"] in ("admin", "operator"):
         raise HTTPException(
             status_code=400, detail="Staff accounts cannot create estate plans"
         )
-    elif current_user["role"] != "beneficiary":
+
+    # Check if they already own an estate
+    existing = await db.estates.find_one(
+        {"owner_id": current_user["id"]}, {"_id": 0, "id": 1}
+    )
+    if existing:
         raise HTTPException(
-            status_code=400, detail="Unable to create estate plan for this account type"
+            status_code=400,
+            detail="You already have an estate plan. Go to your Dashboard to manage it.",
         )
 
     user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
@@ -269,18 +306,76 @@ async def beneficiary_become_benefactor(current_user: dict = Depends(get_current
     }
     await db.estates.insert_one(estate)
 
-    # Add benefactor role — user retains beneficiary access through estate.beneficiaries links
-    # Store both roles so admin can see they are both beneficiary AND benefactor
-    await db.users.update_one(
-        {"id": current_user["id"]},
-        {
-            "$set": {
-                "role": "benefactor",
-                "is_also_beneficiary": True,
-                "beneficiary_since": current_user.get("created_at"),
-            }
-        },
-    )
+    # Mark user as also being a benefactor — DO NOT change their primary role
+    update_fields = {"is_also_benefactor": True}
+    if current_user["role"] == "beneficiary":
+        update_fields["benefactor_since"] = now.isoformat()
+    await db.users.update_one({"id": current_user["id"]}, {"$set": update_fields})
+
+    # Process beneficiary enrollments
+    avatar_colors = [
+        "#d4af37", "#3b82f6", "#10b981", "#8b5cf6",
+        "#ef4444", "#f59e0b", "#ec4899", "#06b6d4",
+    ]
+    beneficiaries_to_insert = []
+    auto_linked_users = []
+
+    for i, ben in enumerate(data.beneficiary_enrollments):
+        first = ben.get("first_name", "").strip()
+        middle = ben.get("middle_name", "").strip()
+        last = ben.get("last_name", last_name).strip()
+        ben_email = (ben.get("email") or "").strip().lower()
+        initials = (
+            (first[0] if first else "?") + (last[0] if last else "?")
+        ).upper()
+        full_name = " ".join(p for p in [first, middle, last] if p)
+
+        # Check if this email already has an account — auto-link if so
+        existing_user = None
+        if ben_email:
+            existing_user = await db.users.find_one(
+                {"email": ben_email}, {"_id": 0, "id": 1, "name": 1, "role": 1}
+            )
+
+        ben_record = {
+            "id": str(uuid.uuid4()),
+            "estate_id": estate_id,
+            "first_name": first,
+            "middle_name": middle,
+            "last_name": last,
+            "name": full_name,
+            "relation": ben.get("relation", ""),
+            "email": ben_email,
+            "date_of_birth": ben.get("dob"),
+            "gender": ben.get("gender"),
+            "initials": initials,
+            "avatar_color": avatar_colors[i % len(avatar_colors)],
+            "invitation_status": "accepted" if existing_user else ("pending" if ben_email else "draft"),
+            "is_stub": not bool(first),
+            "address_street": ben.get("address_street"),
+            "address_city": ben.get("address_city"),
+            "address_state": ben.get("address_state"),
+            "address_zip": ben.get("address_zip"),
+            "created_at": now.isoformat(),
+        }
+
+        if existing_user:
+            ben_record["user_id"] = existing_user["id"]
+            # Add to estate's beneficiaries list
+            await db.estates.update_one(
+                {"id": estate_id},
+                {"$addToSet": {"beneficiaries": existing_user["id"]}},
+            )
+            auto_linked_users.append({
+                "email": ben_email,
+                "name": existing_user.get("name", full_name),
+                "existing_role": existing_user.get("role", ""),
+            })
+
+        beneficiaries_to_insert.append(ben_record)
+
+    if beneficiaries_to_insert:
+        await db.beneficiaries.insert_many(beneficiaries_to_insert)
 
     # Seed default checklist
     default_checklist = [
@@ -320,7 +415,104 @@ async def beneficiary_become_benefactor(current_user: dict = Depends(get_current
     return {
         "success": True,
         "estate_id": estate_id,
-        "message": "Your estate has been created. You are now a benefactor.",
+        "auto_linked": auto_linked_users,
+        "message": "Your estate has been created successfully.",
+    }
+
+
+class AddBeneficiaryLinkRequest(BaseModel):
+    """Request to link self as beneficiary to another estate."""
+    benefactor_email: str
+
+
+@router.post("/accounts/add-beneficiary-link")
+async def add_beneficiary_link(
+    data: AddBeneficiaryLinkRequest, current_user: dict = Depends(get_current_user)
+):
+    """Link authenticated user as beneficiary to another estate by benefactor email.
+    Does NOT change user role. Sets is_also_beneficiary flag if they're a benefactor."""
+    import uuid
+    from datetime import datetime, timezone
+
+    benefactor_email = data.benefactor_email.lower().strip()
+
+    # Find the benefactor
+    benefactor = await db.users.find_one(
+        {"email": benefactor_email}, {"_id": 0, "id": 1, "name": 1}
+    )
+    if not benefactor:
+        raise HTTPException(status_code=404, detail="No benefactor found with that email address.")
+
+    # Find their estate
+    estate = await db.estates.find_one(
+        {"owner_id": benefactor["id"]}, {"_id": 0, "id": 1, "beneficiaries": 1, "name": 1}
+    )
+    if not estate:
+        raise HTTPException(status_code=404, detail="No estate found for that benefactor.")
+
+    # Check if already linked
+    if current_user["id"] in estate.get("beneficiaries", []):
+        raise HTTPException(
+            status_code=400,
+            detail=f"You are already a beneficiary of {estate.get('name', 'this estate')}.",
+        )
+
+    now = datetime.now(timezone.utc)
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    full_name = user.get("name", "")
+    first_name = user.get("first_name", "")
+    last_name = user.get("last_name", "")
+
+    # Add to estate's beneficiaries list
+    await db.estates.update_one(
+        {"id": estate["id"]},
+        {"$addToSet": {"beneficiaries": current_user["id"]}},
+    )
+
+    # Link to existing beneficiary record or create one
+    existing_ben = await db.beneficiaries.find_one(
+        {"estate_id": estate["id"], "email": user.get("email", "")}, {"_id": 0}
+    )
+    if existing_ben:
+        await db.beneficiaries.update_one(
+            {"id": existing_ben["id"]},
+            {"$set": {
+                "user_id": current_user["id"],
+                "invitation_status": "accepted",
+                "name": full_name,
+                "first_name": first_name,
+                "last_name": last_name,
+                "is_stub": False,
+            }},
+        )
+    else:
+        await db.beneficiaries.insert_one({
+            "id": str(uuid.uuid4()),
+            "estate_id": estate["id"],
+            "user_id": current_user["id"],
+            "first_name": first_name,
+            "last_name": last_name,
+            "name": full_name,
+            "email": user.get("email", ""),
+            "relation": "",
+            "initials": ((first_name[0] if first_name else "?") + (last_name[0] if last_name else "?")).upper(),
+            "avatar_color": "#60A5FA",
+            "invitation_status": "accepted",
+            "is_stub": False,
+            "created_at": now.isoformat(),
+        })
+
+    # Mark user as also being a beneficiary if they're a benefactor
+    if current_user["role"] == "benefactor":
+        await db.users.update_one(
+            {"id": current_user["id"]},
+            {"$set": {"is_also_beneficiary": True}},
+        )
+
+    return {
+        "success": True,
+        "estate_name": estate.get("name", ""),
+        "message": f"You have been linked as a beneficiary to {estate.get('name', 'the estate')}.",
     }
 
 

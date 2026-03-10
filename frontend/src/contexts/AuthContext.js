@@ -49,7 +49,13 @@ export const AuthProvider = ({ children }) => {
           const response = await axios.get(`${API_URL}/auth/me`, {
             headers: { Authorization: `Bearer ${token}` }
           });
-          setUser(response.data);
+          // Include multi-role flags in user object
+          const userData = response.data;
+          setUser({
+            ...userData,
+            is_also_benefactor: userData.is_also_benefactor || false,
+            is_also_beneficiary: userData.is_also_beneficiary || false,
+          });
           await fetchSubscriptionStatus(token);
         } catch (error) {
           console.error('Auth init error:', error);

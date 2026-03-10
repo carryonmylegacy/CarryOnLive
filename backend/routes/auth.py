@@ -68,16 +68,27 @@ async def check_email_exists(data: EmailCheckRequest):
 
 @router.post("/auth/check-benefactor-email")
 async def check_benefactor_email(data: EmailCheckRequest):
-    """Check if an email belongs to a benefactor with an active estate."""
+    """Check if an email belongs to a user who owns an active estate."""
     email = data.email.lower().strip()
     user = await db.users.find_one(
-        {"email": email, "role": "benefactor"}, {"_id": 0, "id": 1}
+        {"email": email}, {"_id": 0, "id": 1, "role": 1, "is_also_benefactor": 1}
     )
     if not user:
         return {
             "valid": False,
             "message": "No benefactor estates are associated with that email address.",
         }
+    # User must either be a benefactor or have is_also_benefactor flag
+    is_benefactor = user.get("role") == "benefactor" or user.get("is_also_benefactor", False)
+    if not is_benefactor:
+        # Also check if they own any estate directly
+        estate = await db.estates.find_one({"owner_id": user["id"]}, {"_id": 0, "id": 1})
+        if not estate:
+            return {
+                "valid": False,
+                "message": "No benefactor estates are associated with that email address.",
+            }
+        return {"valid": True}
     estate = await db.estates.find_one({"owner_id": user["id"]}, {"_id": 0, "id": 1})
     if not estate:
         return {
@@ -833,13 +844,16 @@ async def verify_otp(data: OTPVerifyWithTrust, request: Request):
     )
 
 
-@router.get("/auth/me", response_model=UserResponse)
+@router.get("/auth/me")
 async def get_me(current_user: dict = Depends(get_current_user)):
-    """Get the current authenticated user's profile."""
+    """Get the current authenticated user's profile with multi-role flags."""
     user_doc = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "photo_url": 1}
+        {"id": current_user["id"]}, {"_id": 0, "password": 0}
     )
-    photo = (user_doc or {}).get("photo_url", "")
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    photo = user_doc.get("photo_url", "")
 
     # Fallback: if beneficiary has no user photo, check their beneficiary record
     if not photo and current_user.get("role") == "beneficiary":
@@ -849,15 +863,34 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         if ben_rec:
             photo = ben_rec.get("photo_url", "")
 
-    return UserResponse(
-        id=current_user["id"],
-        email=current_user["email"],
-        name=current_user["name"],
-        role=current_user["role"],
-        created_at=current_user["created_at"],
-        photo_url=photo or "",
-        operator_role=current_user.get("operator_role", ""),
+    # Check if user owns any estates (for beneficiaries who created estates)
+    owns_estate = await db.estates.find_one(
+        {"owner_id": current_user["id"]}, {"_id": 0, "id": 1}
     )
+
+    return {
+        "id": current_user["id"],
+        "email": current_user["email"],
+        "name": current_user["name"],
+        "role": current_user["role"],
+        "created_at": current_user["created_at"],
+        "photo_url": photo or "",
+        "operator_role": current_user.get("operator_role", ""),
+        "is_also_benefactor": user_doc.get("is_also_benefactor", False) or bool(owns_estate),
+        "is_also_beneficiary": user_doc.get("is_also_beneficiary", False),
+        "first_name": user_doc.get("first_name", ""),
+        "last_name": user_doc.get("last_name", ""),
+        "middle_name": user_doc.get("middle_name", ""),
+        "suffix": user_doc.get("suffix", ""),
+        "gender": user_doc.get("gender", ""),
+        "date_of_birth": user_doc.get("date_of_birth", ""),
+        "marital_status": user_doc.get("marital_status", ""),
+        "address_street": user_doc.get("address_street", ""),
+        "address_city": user_doc.get("address_city", ""),
+        "address_state": user_doc.get("address_state", ""),
+        "address_zip": user_doc.get("address_zip", ""),
+        "address_line2": user_doc.get("address_line2", ""),
+    }
 
 
 class ProfilePhotoUpdate(BaseModel):

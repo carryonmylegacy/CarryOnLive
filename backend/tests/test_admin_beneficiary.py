@@ -10,7 +10,7 @@ import requests
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 if not BASE_URL:
-    BASE_URL = "https://beneficiary-edit.preview.emergentagent.com"
+    BASE_URL = "https://slide-panel-polish.preview.emergentagent.com"
 
 
 class TestAdminEndpoints:

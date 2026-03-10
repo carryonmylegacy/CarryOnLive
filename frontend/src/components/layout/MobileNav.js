@@ -385,7 +385,11 @@ const MobileNav = () => {
     if (user?.role === 'admin' && window.location.pathname.startsWith('/ops')) return operatorBottomNav;
     if (user?.role === 'admin') return adminBottomNav;
     if (user?.role === 'operator') return operatorBottomNav;
+    // Multi-role: beneficiary on benefactor routes
+    if (user?.role === 'beneficiary' && user?.is_also_benefactor && !window.location.pathname.startsWith('/beneficiary')) return benefactorBottomNav;
     if (user?.role === 'beneficiary') return beneficiaryBottomNav;
+    // Benefactor on beneficiary routes
+    if (user?.role === 'benefactor' && window.location.pathname.startsWith('/beneficiary')) return beneficiaryBottomNav;
     return benefactorBottomNav;
   };
 

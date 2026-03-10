@@ -29,7 +29,7 @@ import DigitalWalletPage from './pages/DigitalWalletPage';
 // Lazy-loaded pages — only downloaded when navigated to
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const AcceptInvitationPage = lazy(() => import('./pages/AcceptInvitationPage'));
-const EditBeneficiaryPage = lazy(() => import('./pages/EditBeneficiaryPage'));
+// EditBeneficiaryPage removed — editing now handled by SlidePanel in BeneficiariesPage
 const EditMilestoneMessagePage = lazy(() => import('./pages/EditMilestoneMessagePage'));
 const GuardianPage = lazy(() => import('./pages/GuardianPage'));
 const ChecklistPage = lazy(() => import('./pages/ChecklistPage'));
@@ -59,6 +59,8 @@ const MilestoneReportPage = lazy(() => import('./pages/beneficiary/MilestoneRepo
 const UploadCertificatePage = lazy(() => import('./pages/beneficiary/UploadCertificatePage'));
 const CondolencePage = lazy(() => import('./pages/beneficiary/CondolencePage'));
 const BeneficiarySettingsPage = lazy(() => import('./pages/beneficiary/BeneficiarySettingsPage'));
+
+const CreateEstatePage = lazy(() => import('./pages/CreateEstatePage'));
 
 const AboutPage = lazy(() => import('./pages/AboutPage'));
 
@@ -121,6 +123,10 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     }
     // Benefactors can also access beneficiary routes (they may have been a beneficiary first)
     if (user?.role === 'benefactor' && allowedRoles.includes('beneficiary')) {
+      return children;
+    }
+    // Beneficiaries who also own estates can access benefactor routes
+    if (user?.role === 'beneficiary' && allowedRoles.includes('benefactor') && user?.is_also_benefactor) {
       return children;
     }
     // Redirect based on role
@@ -214,6 +220,13 @@ function AppRoutes() {
       {/* Invitation Accept Route - Public */}
       <Route path="/accept-invitation/:token" element={<AcceptInvitationPage />} />
 
+      {/* Create Estate Wizard - accessible by both beneficiaries and benefactors */}
+      <Route path="/create-estate" element={
+        <ProtectedRoute allowedRoles={['beneficiary', 'benefactor']}>
+          <CreateEstatePage />
+        </ProtectedRoute>
+      } />
+
       {/* Benefactor Routes */}
       <Route element={
         <ProtectedRoute allowedRoles={['benefactor']}>
@@ -226,7 +239,7 @@ function AppRoutes() {
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/messages/:messageId/edit" element={<EditMilestoneMessagePage />} />
         <Route path="/beneficiaries" element={<BeneficiariesPage />} />
-        <Route path="/beneficiaries/:beneficiaryId/edit" element={<EditBeneficiaryPage />} />
+        {/* Beneficiary edit now handled by SlidePanel */}
         <Route path="/guardian" element={<GuardianPage />} />
         <Route path="/checklist" element={<ChecklistPage />} />
         <Route path="/trustee" element={<TrusteePage />} />

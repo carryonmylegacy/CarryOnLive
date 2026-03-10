@@ -344,19 +344,11 @@ const BeneficiaryDashboardPage = () => {
         </div>
       )}
 
-      {/* Beneficiary → Benefactor conversion */}
+      {/* Beneficiary → Create Estate / Join Another Estate */}
       <div className="glass-card p-5 text-center" style={{ borderColor: 'rgba(212,175,55,0.15)' }}>
         <h3 className="text-base font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Protect Your Own Family</h3>
-        <p className="text-xs text-[var(--t4)] mb-4">You can start your own estate plan using this same account — no second email needed.</p>
-        <button onClick={async () => {
-          try {
-            await axios.post(`${API_URL}/beneficiary/become-benefactor`, {}, getAuthHeaders());
-            window.location.href = '/dashboard';
-          } catch (err) {
-            const msg = err.response?.data?.detail || 'Could not create estate';
-            toast.error(msg);
-          }
-        }} className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-transform active:scale-95" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}>
+        <p className="text-xs text-[var(--t4)] mb-4">You can start your own estate plan or join another estate — using this same account.</p>
+        <button onClick={() => navigate('/create-estate')} className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-transform active:scale-95" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }} data-testid="create-estate-cta">
           Start Your Own Estate Plan
         </button>
       </div>
