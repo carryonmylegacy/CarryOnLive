@@ -55,6 +55,12 @@ Multi-portal estate planning platform (CarryOn) with FastAPI backend, React/Capa
 
 - **Ghost Estate Auto-Cleanup (Enhancement)**: Added automatic detection of ghost estates (orphaned, incomplete conversions, empty) in `GET /api/admin/estate-health`. New `POST /api/admin/cleanup-ghost-estates` endpoint for batch deletion with password confirmation. Frontend `GhostEstateAlert` component in Estate Health tab with expandable list, checkboxes, select all, and one-click "Clean Up" button.
 
+### Session: Mar 10, 2026 - Ghost Estate Auto-Cleanup & Multi-Role UX Fixes
+- **Ghost Estate Auto-Cleanup at Creation (P0 Fix)**: Modified `POST /api/accounts/create-estate` to auto-detect and delete ghost estates (empty, pre-transition, no beneficiaries or vault items) instead of blocking users with "You already have an estate plan" error. Users can now retry estate creation after a failed attempt.
+- **Post-Creation Auth Refresh (P0 Fix)**: Added `refreshUser()` to AuthContext. Called after estate creation in CreateEstatePage so `is_also_benefactor` flag is updated before navigating to `/dashboard`, preventing redirect back to beneficiary portal.
+- **Estate Photo for Multi-Role Users (P1 Fix)**: Settings page now shows Estate Photo upload for users with `is_also_benefactor=true`, not just `role='benefactor'`.
+- **ViewSwitcher Component (P1 Feature)**: New reusable `ViewSwitcher.js` with `dropdown` and `inline` variants for switching between benefactor/beneficiary views. Added to: Dashboard header (visible even with collapsed sidebar), Beneficiary Dashboard header, and MobileNav hamburger menu. Ensures multi-role users can always switch views regardless of sidebar state or device.
+
 ## Blocked / Awaiting User Action
 - P1: Twilio SMS OTP Integration (blocked on A2P 10DLC approval)
 - P1: iOS Share Extension Setup (blocked on user Xcode/App Store Connect config)
@@ -63,6 +69,7 @@ Multi-portal estate planning platform (CarryOn) with FastAPI backend, React/Capa
 - Subscription paywall logic for beneficiaries who create estates
 
 ## Key Components
+- `/app/frontend/src/components/ViewSwitcher.js` -- Multi-role view switcher (dropdown/inline variants)
 - `/app/frontend/src/components/FamilyTree.js` -- HTML/CSS family tree visualization
 - `/app/frontend/src/components/admin/EstateHealthTab.js` -- Estate health analytics with mini family trees
 - `/app/frontend/src/pages/BeneficiariesPage.js` -- Drag-to-reorder beneficiary tiles + family tree layout
