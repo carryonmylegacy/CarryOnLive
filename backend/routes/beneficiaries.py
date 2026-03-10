@@ -806,6 +806,21 @@ async def accept_invitation(data: AcceptInvitationRequest):
             {"id": beneficiary["estate_id"]},
             {"$addToSet": {"beneficiaries": existing_user["id"]}},
         )
+        # Copy DOB and address from beneficiary record to user if not already set
+        copy_fields = {}
+        if beneficiary.get("date_of_birth") and not existing_user.get("date_of_birth"):
+            copy_fields["date_of_birth"] = beneficiary["date_of_birth"]
+        if beneficiary.get("address_street") and not existing_user.get(
+            "address_street"
+        ):
+            copy_fields["address_street"] = beneficiary.get("address_street", "")
+            copy_fields["address_city"] = beneficiary.get("address_city", "")
+            copy_fields["address_state"] = beneficiary.get("address_state", "")
+            copy_fields["address_zip"] = beneficiary.get("address_zip", "")
+        if copy_fields:
+            await db.users.update_one(
+                {"id": existing_user["id"]}, {"$set": copy_fields}
+            )
 
         # Generate token for auto-login
         token = create_token(
@@ -848,6 +863,7 @@ async def accept_invitation(data: AcceptInvitationRequest):
         "last_name": beneficiary["last_name"],
         "suffix": beneficiary.get("suffix"),
         "gender": beneficiary.get("gender"),
+        "date_of_birth": beneficiary.get("date_of_birth"),
         "phone": data.phone or beneficiary.get("phone"),
         "role": "beneficiary",
         "created_at": datetime.now(timezone.utc).isoformat(),

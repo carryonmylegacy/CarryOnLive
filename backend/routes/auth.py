@@ -589,6 +589,29 @@ async def register(data: UserCreate):
                             }
                         },
                     )
+                    # Copy fields from beneficiary record to user if not already set
+                    ben_fields_to_copy = {}
+                    if existing_ben.get("date_of_birth") and not data.date_of_birth:
+                        ben_fields_to_copy["date_of_birth"] = existing_ben[
+                            "date_of_birth"
+                        ]
+                    if existing_ben.get("address_street"):
+                        ben_fields_to_copy["address_street"] = existing_ben[
+                            "address_street"
+                        ]
+                        ben_fields_to_copy["address_city"] = existing_ben.get(
+                            "address_city", ""
+                        )
+                        ben_fields_to_copy["address_state"] = existing_ben.get(
+                            "address_state", ""
+                        )
+                        ben_fields_to_copy["address_zip"] = existing_ben.get(
+                            "address_zip", ""
+                        )
+                    if ben_fields_to_copy:
+                        await db.users.update_one(
+                            {"id": user_id}, {"$set": ben_fields_to_copy}
+                        )
                 else:
                     await db.beneficiaries.insert_one(
                         {
