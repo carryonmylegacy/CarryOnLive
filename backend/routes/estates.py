@@ -353,9 +353,9 @@ async def create_estate_for_existing_user(
         beneficiaries_to_insert = []
 
         for i, ben in enumerate(data.beneficiary_enrollments):
-            first = ben.get("first_name", "").strip()
-            middle = ben.get("middle_name", "").strip()
-            last = ben.get("last_name", last_name).strip()
+            first = (ben.get("first_name") or "").strip()
+            middle = (ben.get("middle_name") or "").strip()
+            last = (ben.get("last_name") or last_name).strip()
             ben_email = (ben.get("email") or "").strip().lower()
             initials = (
                 (first[0] if first else "?") + (last[0] if last else "?")

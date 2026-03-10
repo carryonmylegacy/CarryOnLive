@@ -394,9 +394,9 @@ async def register(data: UserCreate):
         # Use enrolled beneficiaries from signup if provided
         enrollments = data.beneficiary_enrollments or []
         for i, ben in enumerate(enrollments):
-            first = ben.get("first_name", "").strip()
-            middle = ben.get("middle_name", "").strip()
-            last = ben.get("last_name", data.last_name).strip()
+            first = (ben.get("first_name") or "").strip()
+            middle = (ben.get("middle_name") or "").strip()
+            last = (ben.get("last_name") or data.last_name).strip()
             initials = (
                 (first[0] if first else "?") + (last[0] if last else "?")
             ).upper()
