@@ -149,11 +149,15 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   // Paywall logic is PORTAL-AWARE, not role-based:
   //   - Benefactor portal → benefactor paywall (even for multi-role users whose role is 'beneficiary')
   //   - Beneficiary portal → no paywall here (handled separately in beneficiary settings)
-  const isOnBeneficiaryRoute = window.location.pathname.startsWith('/beneficiary');
+  //   - /create-estate → no paywall (onboarding must complete first)
+  const currentPath = window.location.pathname;
+  const isOnBeneficiaryRoute = currentPath.startsWith('/beneficiary');
+  const isOnCreateEstate = currentPath === '/create-estate';
   const needsSubscription = subscriptionStatus?.needs_subscription === true
     && subscriptionStatus?.trial?.trial_active !== true
     && user?.role !== 'admin'
     && !isOnBeneficiaryRoute
+    && !isOnCreateEstate
     && !subscriptionStatus?.beta_mode
     && !subscriptionStatus?.has_active_subscription;
 
