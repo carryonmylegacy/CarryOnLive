@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { toast } from '../../utils/toast';
 import { Lock, FolderLock, MessageSquare, CheckSquare, ChevronRight, ChevronLeft, Users, Settings } from 'lucide-react';
 import { Skeleton } from '../../components/ui/skeleton';
+import { Switch } from '../../components/ui/switch';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
