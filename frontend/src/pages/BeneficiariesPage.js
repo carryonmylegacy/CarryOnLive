@@ -590,8 +590,8 @@ const BeneficiariesPage = () => {
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--ywbg)] text-[var(--yw)] mr-1">NEEDS INFO</span>
                     )}
                     {ben.is_primary && (
-                      <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full mr-1" style={{ background: 'rgba(34,201,147,0.15)', color: '#22C993' }} data-testid={`primary-badge-${ben.id}`}>
-                        <Shield className="w-3 h-3" /> PRIMARY
+                      <span className="flex items-center gap-1 text-[9px] font-bold whitespace-nowrap px-2 py-1 rounded-md" style={{ background: 'rgba(34,201,147,0.15)', color: '#22C993', border: '1px solid rgba(34,201,147,0.3)' }} data-testid={`primary-badge-${ben.id}`}>
+                        <Shield className="w-3 h-3 flex-shrink-0" /> PRIMARY
                       </span>
                     )}
                     <Button
