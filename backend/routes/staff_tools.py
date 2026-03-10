@@ -550,7 +550,7 @@ async def list_kb_articles(
     current_user: dict = Depends(get_current_user),
 ):
     require_staff(current_user)
-    query = {}
+    query = {"deleted_at": None}
     if category:
         query["category"] = category
     items = (
@@ -593,8 +593,11 @@ async def delete_kb_article(
     current_user: dict = Depends(get_current_user),
 ):
     require_founder(current_user)
-    result = await db.knowledge_base.delete_one({"id": article_id})
-    if result.deleted_count == 0:
+    result = await db.knowledge_base.update_one(
+        {"id": article_id},
+        {"$set": {"deleted_at": datetime.now(timezone.utc).isoformat()}},
+    )  # soft_delete
+    if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Article not found")
     await log_audit_event(
         actor_id=current_user["id"],

@@ -19,7 +19,9 @@ async def get_checklists(
 ):
     """Get all checklist items for an estate."""
     checklists = (
-        await db.checklists.find({"estate_id": estate_id}, {"_id": 0})
+        await db.checklists.find(
+            {"estate_id": estate_id, "deleted_at": None}, {"_id": 0}
+        )
         .sort("order", 1)
         .to_list(200)
     )
@@ -113,7 +115,10 @@ async def delete_checklist_item(
     if not item:
         raise HTTPException(status_code=404, detail="Checklist item not found")
 
-    await db.checklists.delete_one({"id": item_id})
+    await db.checklists.update_one(
+        {"id": item_id},
+        {"$set": {"deleted_at": datetime.now(timezone.utc).isoformat()}},
+    )  # soft_delete
     await update_estate_readiness(item["estate_id"])
     return {"success": True, "message": "Checklist item deleted"}
 
@@ -233,5 +238,8 @@ async def reject_ai_item_with_feedback(
         }
     )
     # Delete the rejected item
-    await db.checklists.delete_one({"id": item_id})
+    await db.checklists.update_one(
+        {"id": item_id},
+        {"$set": {"deleted_at": datetime.now(timezone.utc).isoformat()}},
+    )  # soft_delete
     return {"success": True}

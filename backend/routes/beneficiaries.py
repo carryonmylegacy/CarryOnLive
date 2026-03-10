@@ -33,7 +33,7 @@ async def get_beneficiaries(
 ):
     """List all beneficiaries for an estate, sorted by sort_order."""
     beneficiaries = await db.beneficiaries.find(
-        {"estate_id": estate_id}, {"_id": 0}
+        {"estate_id": estate_id, "deleted_at": None}, {"_id": 0}
     ).to_list(100)
     # Normalize dob → date_of_birth for legacy records
     for b in beneficiaries:
@@ -137,8 +137,11 @@ async def delete_beneficiary(
             status_code=403, detail="Only benefactors can remove beneficiaries"
         )
 
-    result = await db.beneficiaries.delete_one({"id": beneficiary_id})
-    if result.deleted_count == 0:
+    result = await db.beneficiaries.update_one(
+        {"id": beneficiary_id},
+        {"$set": {"deleted_at": datetime.now(timezone.utc).isoformat()}},
+    )  # soft_delete
+    if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Beneficiary not found")
 
     return {"message": "Beneficiary removed"}

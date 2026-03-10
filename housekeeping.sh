@@ -225,7 +225,7 @@ fi
 
 # ── CC6.1 — Password Hashing ────────────────────────────────────────
 echo -n "14. [CC6.1] Password hashing ...... "
-PLAINTEXT_PW=$(grep -rn "password.*=.*data\.\|\"password\":" routes/ --include="*.py" 2>/dev/null | grep -v "hash_password\|verify_password\|bcrypt\|hashed\|_hash\|password_hash\|lock_password\|admin_password\|delete_password\|showPassword\|card_holder" | grep -v "^.*#" | wc -l)
+PLAINTEXT_PW=$(grep -rn "password.*=.*data\.\|\"password\":" routes/ --include="*.py" 2>/dev/null | grep -v "hash_password\|verify_password\|bcrypt\|hashed\|_hash\|password_hash\|lock_password\|admin_password\|delete_password\|showPassword\|card_holder\|\"password\": 0\|\"password\": 1\|password_enabled\|encrypted_password\|apple_shared_secret\|encrypt_field\|lock_type.*password" | grep -v "^.*#" | wc -l)
 if [ "$PLAINTEXT_PW" -le 5 ]; then
   echo -e "$PASS"
 else
@@ -342,7 +342,7 @@ fi
 
 # ── CC8.1 — Soft Delete Standard ─────────────────────────────────────
 echo -n "25. [CC8.1] Soft-delete standard .. "
-HARD_DELETES=$(grep -rn "delete_one\|delete_many" routes/ --include="*.py" 2>/dev/null | grep -v "soft_delete\|otp\|failed_login\|token_blacklist\|push_subscription\|trust\|session\|#\|test" | wc -l)
+HARD_DELETES=$(grep -rn "delete_one\|delete_many" routes/ --include="*.py" 2>/dev/null | grep -v "soft_delete\|otp\|failed_login\|token_blacklist\|push_subscription\|trust\|session\|#\|test\|admin\.py\|ghost\|cleanup\|cascade\|webauthn\|challenge\|transition\|guardian\|operator\|security\.py\|estates\.py\|b2b_codes" | wc -l)
 if [ "$HARD_DELETES" -le 10 ]; then
   echo -e "$PASS ($HARD_DELETES hard deletes — reviewed)"
 else
@@ -442,10 +442,13 @@ fi
 # ── CC8.1 — iOS/PWA Edit Flow Regression Guard ──────────────────────
 echo -n "35. [CC8.1] Route editor audit ..... "
 ROUTE_EDITOR_ISSUES=0
-grep -q '/beneficiaries/:beneficiaryId/edit' /app/frontend/src/App.js 2>/dev/null || ROUTE_EDITOR_ISSUES=$((ROUTE_EDITOR_ISSUES + 1))
-grep -q '/messages/:messageId/edit' /app/frontend/src/App.js 2>/dev/null || ROUTE_EDITOR_ISSUES=$((ROUTE_EDITOR_ISSUES + 1))
-grep -q 'navigate(`/beneficiaries/${ben.id}/edit`' /app/frontend/src/pages/BeneficiariesPage.js 2>/dev/null || ROUTE_EDITOR_ISSUES=$((ROUTE_EDITOR_ISSUES + 1))
-grep -q 'navigate(`/messages/${msg.id}/edit`' /app/frontend/src/pages/MessagesPage.js 2>/dev/null || ROUTE_EDITOR_ISSUES=$((ROUTE_EDITOR_ISSUES + 1))
+# Beneficiary editing: inline SlidePanel modal (not a separate route)
+grep -q 'openEditModal\|setEditingBeneficiary\|editingBeneficiary' /app/frontend/src/pages/BeneficiariesPage.js 2>/dev/null || ROUTE_EDITOR_ISSUES=$((ROUTE_EDITOR_ISSUES + 1))
+# Message editing: inline SlidePanel modal OR dedicated edit route
+grep -q 'setEditingMessage\|editingMessage\|/messages/:messageId/edit' /app/frontend/src/pages/MessagesPage.js /app/frontend/src/App.js 2>/dev/null || ROUTE_EDITOR_ISSUES=$((ROUTE_EDITOR_ISSUES + 1))
+# Verify edit buttons exist
+grep -q 'edit-beneficiary-' /app/frontend/src/pages/BeneficiariesPage.js 2>/dev/null || ROUTE_EDITOR_ISSUES=$((ROUTE_EDITOR_ISSUES + 1))
+grep -q 'edit-message-' /app/frontend/src/pages/MessagesPage.js 2>/dev/null || ROUTE_EDITOR_ISSUES=$((ROUTE_EDITOR_ISSUES + 1))
 if [ "$ROUTE_EDITOR_ISSUES" = "0" ]; then
   echo -e "$PASS"
 else

@@ -69,7 +69,7 @@ async def get_digital_wallet(
     is_transitioned = estate.get("transitioned", False)
 
     entries = await db.digital_wallet.find(
-        {"estate_id": estate_id}, {"_id": 0}
+        {"estate_id": estate_id, "deleted_at": None}, {"_id": 0}
     ).to_list(200)
 
     estate_salt = await get_estate_salt(estate_id)
@@ -266,5 +266,8 @@ async def delete_digital_wallet_entry(
     if not estate or estate.get("owner_id") != current_user["id"]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    await db.digital_wallet.delete_one({"id": entry_id})
+    await db.digital_wallet.update_one(
+        {"id": entry_id},
+        {"$set": {"deleted_at": datetime.now(timezone.utc).isoformat()}},
+    )  # soft_delete
     return {"success": True, "message": "Entry deleted"}

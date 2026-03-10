@@ -122,7 +122,7 @@ async def get_documents(estate_id: str, current_user: dict = Depends(get_current
         raise HTTPException(status_code=403, detail="Access denied")
 
     documents = await db.documents.find(
-        {"estate_id": estate_id},
+        {"estate_id": estate_id, "deleted_at": None},
         {"_id": 0, "file_data": 0, "lock_password_hash": 0, "backup_code": 0},
     ).to_list(100)
 
@@ -516,7 +516,7 @@ async def get_vault_security_info(
 ):
     """Get encryption and security metadata for the vault."""
     documents = await db.documents.find(
-        {"estate_id": estate_id},
+        {"estate_id": estate_id, "deleted_at": None},
         {
             "_id": 0,
             "id": 1,
@@ -1003,8 +1003,11 @@ async def delete_document(
     if document.get("storage_key"):
         await storage.delete(document["storage_key"])
 
-    result = await db.documents.delete_one({"id": document_id})
-    if result.deleted_count == 0:
+    result = await db.documents.update_one(
+        {"id": document_id},
+        {"$set": {"deleted_at": datetime.now(timezone.utc).isoformat()}},
+    )  # soft_delete
+    if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Document not found")
 
     await audit_log(

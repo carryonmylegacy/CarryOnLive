@@ -87,14 +87,15 @@ async def get_messages(estate_id: str, current_user: dict = Depends(get_current_
                 "estate_id": estate_id,
                 "recipients": {"$in": recipient_ids},
                 "is_delivered": True,
+                "deleted_at": None,
             },
             {"_id": 0},
         ).to_list(100)
     else:
         # Owner or admin: see all messages
-        messages = await db.messages.find({"estate_id": estate_id}, {"_id": 0}).to_list(
-            100
-        )
+        messages = await db.messages.find(
+            {"estate_id": estate_id, "deleted_at": None}, {"_id": 0}
+        ).to_list(100)
 
     # Decrypt message fields
     decrypted = []
@@ -509,8 +510,11 @@ async def delete_message(
         video_key = f"videos/{message['video_url']}"
         await storage.delete(video_key)
 
-    result = await db.messages.delete_one({"id": message_id})
-    if result.deleted_count == 0:
+    result = await db.messages.update_one(
+        {"id": message_id},
+        {"$set": {"deleted_at": datetime.now(timezone.utc).isoformat()}},
+    )  # soft_delete
+    if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Message not found")
 
     await audit_log(
