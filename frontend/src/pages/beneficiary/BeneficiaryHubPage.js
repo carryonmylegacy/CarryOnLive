@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
+import { toast } from '../../utils/toast';
 import { ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/card';
 import { Skeleton } from '../../components/ui/skeleton';
@@ -232,7 +233,7 @@ const BeneficiaryHubPage = () => {
               window.location.href = '/dashboard';
             } catch (err) {
               const msg = err.response?.data?.detail || 'Could not create estate';
-              alert(msg);
+              toast.error(msg);
             }
           }} className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-transform active:scale-95" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}>
             Start Your Own Estate Plan

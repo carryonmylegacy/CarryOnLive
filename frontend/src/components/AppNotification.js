@@ -58,48 +58,41 @@ function dispatch(type, message, options = {}) {
 }
 
 // ── Type Configurations ──────────────────────────────────────────────
+// Unified CarryOn brand:
+//   Dark mode → gold border, navy bg, green/red/gold text
+//   Light mode → navy border, warm gold bg, green/red/navy text
+const getTheme = () => document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+
 const TYPE_CONFIG = {
   error: {
     icon: XCircle,
     label: 'Error',
-    accent: '#EF4444',
-    bg: 'rgba(239, 68, 68, 0.08)',
-    border: 'rgba(239, 68, 68, 0.2)',
+    textColor: { dark: '#EF4444', light: '#DC2626' },
   },
   success: {
     icon: CheckCircle2,
     label: 'Success',
-    accent: '#10B981',
-    bg: 'rgba(16, 185, 129, 0.08)',
-    border: 'rgba(16, 185, 129, 0.2)',
+    textColor: { dark: '#10B981', light: '#059669' },
   },
   info: {
     icon: Info,
     label: 'Info',
-    accent: '#3B82F6',
-    bg: 'rgba(59, 130, 246, 0.08)',
-    border: 'rgba(59, 130, 246, 0.2)',
+    textColor: { dark: '#d4af37', light: '#0f1629' },
   },
   warning: {
     icon: AlertTriangle,
     label: 'Attention',
-    accent: '#F59E0B',
-    bg: 'rgba(245, 158, 11, 0.08)',
-    border: 'rgba(245, 158, 11, 0.2)',
+    textColor: { dark: '#F59E0B', light: '#B45309' },
   },
   push: {
     icon: Bell,
     label: 'CarryOn',
-    accent: '#d4af37',
-    bg: 'rgba(212, 175, 55, 0.08)',
-    border: 'rgba(212, 175, 55, 0.2)',
+    textColor: { dark: '#d4af37', light: '#0f1629' },
   },
   critical: {
     icon: AlertTriangle,
     label: 'Urgent',
-    accent: '#DC2626',
-    bg: 'rgba(220, 38, 38, 0.12)',
-    border: 'rgba(220, 38, 38, 0.35)',
+    textColor: { dark: '#EF4444', light: '#DC2626' },
   },
 };
 
@@ -114,6 +107,21 @@ const NotificationCard = ({ notification, onDismiss }) => {
 
   const config = TYPE_CONFIG[notification.type] || TYPE_CONFIG.info;
   const Icon = config.icon;
+  const theme = getTheme();
+  const textColor = config.textColor[theme];
+
+  // Unified brand colors per theme
+  const isDark = theme === 'dark';
+  const cardBg = isDark ? 'rgba(12, 19, 38, 0.95)' : 'rgba(255, 248, 230, 0.97)';
+  const cardBorder = isDark ? '#d4af37' : '#0f1629';
+  const labelColor = isDark ? '#d4af37' : '#0f1629';
+  const timeColor = isDark ? 'rgba(212,175,55,0.5)' : 'rgba(15,22,41,0.45)';
+  const msgColor = textColor;
+  const iconBg = isDark ? 'rgba(212,175,55,0.1)' : 'rgba(15,22,41,0.08)';
+  const pillColor = isDark ? 'rgba(212,175,55,0.25)' : 'rgba(15,22,41,0.15)';
+  const shadow = isDark
+    ? '0 8px 32px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(212,175,55,0.15)'
+    : '0 8px 32px rgba(0,0,0,0.12), 0 0 0 0.5px rgba(15,22,41,0.1)';
 
   const dismiss = useCallback(() => {
     if (state === 'exiting') return;
@@ -139,7 +147,6 @@ const NotificationCard = ({ notification, onDismiss }) => {
     if (notification.type === 'critical') {
       haptics.error();
     } else {
-      // Quick double vibrate — distinct pattern
       if (navigator.vibrate) navigator.vibrate([20, 60, 20]);
     }
   }, [notification.type]);
@@ -148,27 +155,21 @@ const NotificationCard = ({ notification, onDismiss }) => {
   const onTouchStart = (e) => {
     startY.current = e.touches[0].clientY;
     dragging.current = true;
-    clearTimeout(timerRef.current); // Pause auto-dismiss while dragging
+    clearTimeout(timerRef.current);
   };
 
   const onTouchMove = (e) => {
     if (!dragging.current) return;
     const delta = e.touches[0].clientY - startY.current;
-    // Only allow upward swipe
-    if (delta < 0) {
-      setDragY(delta);
-    }
+    if (delta < 0) setDragY(delta);
   };
 
   const onTouchEnd = () => {
     dragging.current = false;
     if (dragY < -40) {
-      // Swiped far enough — dismiss
       dismiss();
     } else {
-      // Snap back
       setDragY(0);
-      // Resume auto-dismiss
       timerRef.current = setTimeout(dismiss, 2000);
     }
   };
@@ -200,15 +201,15 @@ const NotificationCard = ({ notification, onDismiss }) => {
     >
       <div
         style={{
-          background: 'var(--notification-bg, rgba(20, 28, 51, 0.92))',
+          background: cardBg,
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
           borderRadius: '16px',
-          border: `1px solid ${config.border}`,
+          border: `1.5px solid ${cardBorder}`,
           padding: '14px 16px',
           maxWidth: '420px',
           margin: '0 auto',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.2)',
+          boxShadow: shadow,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
@@ -218,7 +219,7 @@ const NotificationCard = ({ notification, onDismiss }) => {
               width: '32px',
               height: '32px',
               borderRadius: '8px',
-              background: config.bg,
+              background: iconBg,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -226,7 +227,7 @@ const NotificationCard = ({ notification, onDismiss }) => {
               marginTop: '1px',
             }}
           >
-            <Icon style={{ width: '16px', height: '16px', color: config.accent }} />
+            <Icon style={{ width: '16px', height: '16px', color: msgColor }} />
           </div>
 
           {/* Content */}
@@ -235,14 +236,14 @@ const NotificationCard = ({ notification, onDismiss }) => {
               <span style={{
                 fontSize: '13px',
                 fontWeight: 700,
-                color: config.accent,
+                color: labelColor,
                 letterSpacing: '0.01em',
               }}>
                 {notification.title || config.label}
               </span>
               <span style={{
                 fontSize: '11px',
-                color: 'var(--t4, #64748b)',
+                color: timeColor,
                 fontWeight: 500,
               }}>
                 now
@@ -251,7 +252,8 @@ const NotificationCard = ({ notification, onDismiss }) => {
             <div style={{
               fontSize: '13px',
               lineHeight: '1.45',
-              color: 'var(--t, #e2e8f0)',
+              color: msgColor,
+              fontWeight: 600,
               wordBreak: 'break-word',
             }}>
               {notification.message}
@@ -271,9 +273,9 @@ const NotificationCard = ({ notification, onDismiss }) => {
                   borderRadius: '8px',
                   fontSize: '12px',
                   fontWeight: 700,
-                  border: `1px solid ${config.accent}`,
-                  background: config.bg,
-                  color: config.accent,
+                  border: `1px solid ${cardBorder}`,
+                  background: iconBg,
+                  color: labelColor,
                   cursor: 'pointer',
                   transition: 'opacity 0.2s',
                 }}
@@ -290,7 +292,7 @@ const NotificationCard = ({ notification, onDismiss }) => {
           width: '36px',
           height: '4px',
           borderRadius: '2px',
-          background: 'var(--t5, rgba(255,255,255,0.15))',
+          background: pillColor,
           margin: '8px auto 0',
         }} />
       </div>
