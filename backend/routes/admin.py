@@ -651,6 +651,76 @@ async def delete_estate_only(
     }
 
 
+
+class CleanupGhostEstatesRequest(BaseModel):
+    estate_ids: list[str]
+    admin_password: str
+
+
+@router.post("/admin/cleanup-ghost-estates")
+async def cleanup_ghost_estates(
+    data: CleanupGhostEstatesRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Batch-delete ghost estates — admin only, requires password confirmation."""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    admin_doc = await db.users.find_one(
+        {"id": current_user["id"]}, {"_id": 0, "password": 1}
+    )
+    if not admin_doc or not bcrypt.checkpw(
+        data.admin_password.encode(), admin_doc["password"].encode()
+    ):
+        raise HTTPException(status_code=401, detail="Incorrect admin password")
+
+    deleted_count = 0
+    reset_users = []
+
+    for estate_id in data.estate_ids:
+        estate = await db.estates.find_one(
+            {"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1, "name": 1}
+        )
+        if not estate:
+            continue
+
+        owner_id = estate["owner_id"]
+
+        # Delete all estate-linked data
+        await db.beneficiaries.delete_many({"estate_id": estate_id})
+        await db.documents.delete_many({"estate_id": estate_id})
+        await db.messages.delete_many({"estate_id": estate_id})
+        await db.checklists.delete_many({"estate_id": estate_id})
+        await db.death_certificates.delete_many({"estate_id": estate_id})
+        await db.chat_history.delete_many({"estate_id": estate_id})
+        await db.milestone_reports.delete_many({"estate_id": estate_id})
+        await db.digital_credentials.delete_many({"estate_id": estate_id})
+        await db.section_permissions.delete_many({"estate_id": estate_id})
+        await db.beneficiary_display_overrides.delete_many({"estate_id": estate_id})
+        await db.beneficiary_grace_periods.delete_many({"estate_id": estate_id})
+        await db.estates.delete_one({"id": estate_id})
+        deleted_count += 1
+
+        # Reset benefactor flags if no other estates remain
+        other_estates = await db.estates.count_documents({"owner_id": owner_id})
+        if other_estates == 0:
+            await db.users.update_one(
+                {"id": owner_id},
+                {
+                    "$set": {"is_also_benefactor": False},
+                    "$unset": {"benefactor_since": "", "guided_activation": ""},
+                },
+            )
+            await db.onboarding_progress.delete_many({"user_id": owner_id})
+            reset_users.append(owner_id)
+
+    return {
+        "message": f"Cleaned up {deleted_count} ghost estate(s)",
+        "deleted_count": deleted_count,
+        "users_reset": len(reset_users),
+    }
+
+
 @router.post("/admin/cleanup-orphans")
 async def cleanup_orphans(current_user: dict = Depends(get_current_user)):
     """Remove orphaned records not linked to any existing user — admin only"""
@@ -1287,7 +1357,7 @@ async def get_estate_health(current_user: dict = Depends(get_current_user)):
     user_by_id = {u["id"]: u for u in all_users}
 
     all_estates = await db.estates.find(
-        {}, {"_id": 0, "id": 1, "owner_id": 1, "name": 1, "status": 1}
+        {}, {"_id": 0, "id": 1, "owner_id": 1, "name": 1, "status": 1, "created_at": 1}
     ).to_list(100000)
 
     all_bens = await db.beneficiaries.find(
@@ -1427,6 +1497,30 @@ async def get_estate_health(current_user: dict = Depends(get_current_user)):
         )
     )
 
+    # Detect ghost estates: orphaned (no owner) or empty (0 beneficiaries) with incomplete setup
+    ghost_estates = []
+    for estate in all_estates:
+        owner = user_by_id.get(estate.get("owner_id"))
+        bens = bens_by_estate.get(estate["id"], [])
+        reason = None
+        if not owner:
+            reason = "Owner account no longer exists"
+        elif len(bens) == 0 and owner.get("role") == "beneficiary" and owner.get("is_also_benefactor"):
+            reason = "Incomplete estate from beneficiary conversion"
+        elif len(bens) == 0 and estate.get("status") == "pre-transition":
+            reason = "Empty estate with no beneficiaries"
+
+        if reason:
+            ghost_estates.append({
+                "estate_id": estate["id"],
+                "estate_name": estate.get("name", "Unknown"),
+                "owner_id": estate.get("owner_id"),
+                "owner_name": owner.get("name", "Deleted User") if owner else "Deleted User",
+                "owner_email": owner.get("email", "") if owner else "",
+                "created_at": estate.get("created_at", ""),
+                "reason": reason,
+            })
+
     tb = totals["beneficiaries"]
     return {
         "summary": {
@@ -1454,6 +1548,8 @@ async def get_estate_health(current_user: dict = Depends(get_current_user)):
             "critical_estates": sum(
                 1 for e in estate_health if e["metrics"]["health_status"] == "critical"
             ),
+            "ghost_estates": len(ghost_estates),
         },
         "estates": estate_health,
+        "ghost_estates": ghost_estates,
     }

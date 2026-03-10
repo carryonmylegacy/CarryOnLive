@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Users, Shield, Link2, FileCheck, UserCheck, AlertTriangle,
-  Loader2, Heart, ChevronDown, ChevronUp, CheckCircle, Clock, Mail
+  Loader2, Heart, ChevronDown, ChevronUp, CheckCircle, Clock, Mail,
+  Ghost, Trash2, Eye, EyeOff
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 import { toast } from '../../utils/toast';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -249,6 +252,139 @@ const EstateHealthCard = ({ estate }) => {
   );
 };
 
+// Ghost estate alert with one-click cleanup
+const GhostEstateAlert = ({ ghostEstates, getAuthHeaders, onCleanupDone }) => {
+  const [expanded, setExpanded] = useState(false);
+  const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
+  const [selected, setSelected] = useState(new Set(ghostEstates.map(g => g.estate_id)));
+
+  const toggleSelect = (id) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selected.size === ghostEstates.length) setSelected(new Set());
+    else setSelected(new Set(ghostEstates.map(g => g.estate_id)));
+  };
+
+  const handleCleanup = async () => {
+    if (!password.trim() || selected.size === 0) return;
+    setCleaning(true);
+    try {
+      const res = await axios.post(`${API_URL}/admin/cleanup-ghost-estates`, {
+        estate_ids: [...selected],
+        admin_password: password,
+      }, getAuthHeaders());
+      toast.success(res.data.message);
+      setPassword('');
+      onCleanupDone();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Cleanup failed');
+    }
+    setCleaning(false);
+  };
+
+  if (ghostEstates.length === 0) return null;
+
+  const formatDate = (iso) => {
+    if (!iso) return '';
+    try { return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+    catch { return ''; }
+  };
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(240,82,82,0.3)', background: 'rgba(240,82,82,0.05)' }} data-testid="ghost-estate-alert">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/[0.02] transition-colors"
+        data-testid="ghost-estate-toggle"
+      >
+        <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: 'rgba(240,82,82,0.15)' }}>
+          <Ghost className="w-4 h-4 text-[#F05252]" />
+        </div>
+        <div className="flex-1">
+          <span className="text-sm font-bold text-[#F05252]">{ghostEstates.length} Ghost Estate{ghostEstates.length > 1 ? 's' : ''} Detected</span>
+          <p className="text-[10px] text-[var(--t5)] mt-0.5">Orphaned or incomplete estates blocking user workflows</p>
+        </div>
+        {expanded ? <ChevronUp className="w-4 h-4 text-[var(--t5)]" /> : <ChevronDown className="w-4 h-4 text-[var(--t5)]" />}
+      </button>
+
+      {expanded && (
+        <div className="px-4 pb-4 space-y-3" style={{ borderTop: '1px solid rgba(240,82,82,0.15)' }}>
+          {/* Select all toggle */}
+          <div className="flex items-center justify-between pt-2">
+            <button onClick={toggleAll} className="text-[10px] font-bold text-[var(--t4)] hover:text-[var(--t)]" data-testid="ghost-select-all">
+              {selected.size === ghostEstates.length ? 'Deselect All' : 'Select All'}
+            </button>
+            <span className="text-[10px] text-[var(--t5)]">{selected.size} selected</span>
+          </div>
+
+          {/* Ghost estate list */}
+          {ghostEstates.map(g => (
+            <label
+              key={g.estate_id}
+              className="flex items-start gap-3 p-2.5 rounded-lg cursor-pointer transition-colors"
+              style={{ background: selected.has(g.estate_id) ? 'rgba(240,82,82,0.08)' : 'transparent', border: `1px solid ${selected.has(g.estate_id) ? 'rgba(240,82,82,0.2)' : 'rgba(255,255,255,0.04)'}` }}
+              data-testid={`ghost-estate-${g.estate_id}`}
+            >
+              <input
+                type="checkbox"
+                checked={selected.has(g.estate_id)}
+                onChange={() => toggleSelect(g.estate_id)}
+                className="mt-0.5 accent-[#F05252]"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-[var(--t)] truncate">{g.estate_name}</span>
+                  <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: 'rgba(240,82,82,0.12)', color: '#F05252' }}>Ghost</span>
+                </div>
+                <p className="text-[10px] text-[var(--t5)] mt-0.5">{g.owner_name} ({g.owner_email || 'no email'})</p>
+                <div className="flex items-center gap-3 mt-0.5">
+                  <span className="text-[9px] text-[var(--t5)]">{formatDate(g.created_at)}</span>
+                  <span className="text-[9px] text-[#F05252]">{g.reason}</span>
+                </div>
+              </div>
+            </label>
+          ))}
+
+          {/* Cleanup action */}
+          <div className="flex items-center gap-2 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+            <div className="relative flex-1">
+              <Input
+                type={showPw ? 'text' : 'password'}
+                placeholder="Admin password to confirm"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="text-xs pr-8"
+                data-testid="ghost-cleanup-password"
+              />
+              <button onClick={() => setShowPw(!showPw)} className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--t5)]">
+                {showPw ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+            <Button
+              onClick={handleCleanup}
+              disabled={cleaning || !password.trim() || selected.size === 0}
+              className="text-xs font-bold gap-1.5 px-4"
+              style={{ background: '#F05252', color: '#fff' }}
+              data-testid="ghost-cleanup-button"
+            >
+              {cleaning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+              Clean Up {selected.size > 0 ? `(${selected.size})` : ''}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const EstateHealthTab = ({ getAuthHeaders }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -269,11 +405,16 @@ export const EstateHealthTab = ({ getAuthHeaders }) => {
   if (loading) return <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-[var(--gold)]" /></div>;
   if (!data) return null;
 
-  const { summary, estates } = data;
+  const { summary, estates, ghost_estates: ghostEstates } = data;
   const filtered = filter === 'all' ? estates : estates.filter(e => e.metrics.health_status === filter);
 
   return (
     <div className="space-y-5" data-testid="estate-health-tab">
+      {/* Ghost Estate Alert */}
+      {ghostEstates && ghostEstates.length > 0 && (
+        <GhostEstateAlert ghostEstates={ghostEstates} getAuthHeaders={getAuthHeaders} onCleanupDone={fetchHealth} />
+      )}
+
       {/* KPI Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
