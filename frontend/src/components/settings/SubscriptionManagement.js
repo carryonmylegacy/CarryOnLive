@@ -129,9 +129,17 @@ export const SubscriptionManagement = ({
   const [verificationStatus, setVerificationStatus] = useState(null);
   const [changingBilling, setChangingBilling] = useState(false);
 
-  const isBeneficiary = user?.role === 'beneficiary';
+  // Portal-aware: show beneficiary plans only when in the beneficiary portal,
+  // show benefactor plans when in the benefactor portal (even for multi-role users)
+  const isInBeneficiaryPortal = window.location.pathname.startsWith('/beneficiary');
+  const isBeneficiary = isInBeneficiaryPortal;
   const currentSub = subscriptionStatus?.subscription;
-  const currentPlanId = currentSub?.plan_id;
+  // Only recognize a subscription as "active" if it matches the current portal context
+  // (e.g., a ben_* plan shouldn't grey out benefactor plans, and vice versa)
+  const rawPlanId = currentSub?.plan_id;
+  const currentPlanId = isBeneficiary
+    ? (rawPlanId?.startsWith('ben_') ? rawPlanId : null)
+    : (rawPlanId && !rawPlanId.startsWith('ben_') ? rawPlanId : null);
   const currentBilling = currentSub?.billing_cycle;
   const isBeta = subscriptionStatus?.beta_mode;
   const lockedTier = subscriptionStatus?.beneficiary_locked_tier;

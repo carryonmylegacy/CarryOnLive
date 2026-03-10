@@ -223,10 +223,10 @@ async def create_subscription_checkout(
     settings = await get_subscription_settings()
 
     if settings.get("beta_mode", True):
-        # During beta, still record the benefactor's chosen plan so beneficiaries can see it
+        # During beta, still record the user's chosen plan preference
         plans_lookup = {p["id"]: p for p in settings.get("plans", DEFAULT_PLANS)}
         plan = plans_lookup.get(data.plan_id)
-        if plan and current_user.get("role") == "benefactor":
+        if plan:
             now = datetime.now(timezone.utc)
             await db.user_subscriptions.update_one(
                 {"user_id": current_user["id"]},

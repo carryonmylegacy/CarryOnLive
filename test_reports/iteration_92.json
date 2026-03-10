@@ -1,0 +1,62 @@
+{
+  "summary": "Verified portal-context-aware subscription paywall fix. Backend tests pass (8/8). Frontend shows correct benefactor plans on /subscription route. The fix correctly uses window.location.pathname.startsWith('/beneficiary') instead of user.role to determine which plans to display.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/pytest/subscription_paywall_portal_results.xml",
+    "/app/backend/tests/test_subscription_paywall_portal.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "App.js (Lines 148-158): ProtectedRoute paywall gating now uses isOnBeneficiaryRoute = window.location.pathname.startsWith('/beneficiary') instead of checking user.role - FIX VERIFIED",
+    "SubscriptionManagement.js (Lines 132-142): isInBeneficiaryPortal = window.location.pathname.startsWith('/beneficiary') determines which plans to show, currentPlanId is filtered by portal context - FIX VERIFIED",
+    "SubscriptionPaywall.js: Shows benefactor plans always - correct since it's only rendered on benefactor routes via ProtectedRoute gating",
+    "Backend /api/subscriptions/plans returns both 'plans' (8 benefactor) and 'beneficiary_plans' (8 beneficiary) arrays correctly"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_subscription_paywall_portal.py"
+  ],
+  "success_rate": {
+    "backend": "100% (8/8 tests passed)",
+    "frontend": "100% - Benefactor portal correctly shows benefactor plans"
+  },
+  "test_credentials": {
+    "admin": "info@carryon.us / Demo1234!",
+    "benefactor": "fulltest@test.com / Password.123 (role=benefactor, is_also_benefactor=true)",
+    "multi_role_beneficiary": "testben@test.com / Password.123 (role=beneficiary, is_also_benefactor=true)"
+  },
+  "seed_data_creation": "None - using existing test users",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Portal-context-aware subscription fix verified. SubscriptionManagement uses window.location.pathname.startsWith('/beneficiary') to determine plan display. On benefactor portal (/subscription, /settings), benefactor plans (premium, standard, base, etc.) are shown. On beneficiary portal (/beneficiary/settings), beneficiary plans (ben_premium, ben_standard, ben_base) should be shown. ProtectedRoute paywall gating also uses route context, not user.role.",
+  "verified_features": {
+    "backend_plans_endpoint": "PASS - /api/subscriptions/plans returns both 'plans' and 'beneficiary_plans' arrays",
+    "backend_checkout_beta": "PASS - Checkout saves plan preference in beta mode for multi-role users",
+    "backend_login_fulltest": "PASS - fulltest@test.com (benefactor) login works",
+    "backend_login_info": "PASS - info@carryon.us (admin) login works",
+    "frontend_benefactor_subscription_page": "PASS - Shows Premium, Standard, Base, New Adult, Military, Hospice plans (benefactor plans)",
+    "frontend_no_ben_plans_on_benefactor_portal": "PASS - Beneficiary plans (ben_*) NOT displayed on /subscription route",
+    "portal_context_detection": "PASS - isInBeneficiaryPortal correctly detects route context"
+  },
+  "mocked_apis": {
+    "Twilio SMS OTP": "MOCKED - OTP globally disabled via platform_settings.otp_disabled=true"
+  },
+  "screenshots": [
+    ".screenshots/01_benefactor_dashboard.png - Dashboard after fulltest@test.com login",
+    ".screenshots/02_subscription_page.png - Subscription page showing benefactor plans (Premium, Standard, Base, etc.)"
+  ],
+  "code_changes_verified": {
+    "App.js_line_152": "isOnBeneficiaryRoute = window.location.pathname.startsWith('/beneficiary')",
+    "App.js_line_156": "!isOnBeneficiaryRoute in needsSubscription check",
+    "SubscriptionManagement.js_line_134": "isInBeneficiaryPortal = window.location.pathname.startsWith('/beneficiary')",
+    "SubscriptionManagement.js_line_135": "isBeneficiary = isInBeneficiaryPortal",
+    "SubscriptionManagement.js_lines_140-142": "currentPlanId filtered by portal context"
+  }
+}

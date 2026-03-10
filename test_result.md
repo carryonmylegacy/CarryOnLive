@@ -89,7 +89,7 @@ Backend smoke test of route-based edit flows for benefactor portal:
 - **Priority**: high
 - **Status History**:
   - **Agent**: testing
-  - **Comment**: ✅ VERIFIED - Edit beneficiary opens as dedicated full-page route (not modal). URL: https://debug-live-env.preview.emergentagent.com/beneficiaries/289d691d-7d88-4e49-a4da-01179882c40b/edit. Back button navigates correctly to /beneficiaries. Save buttons visible (top and bottom). All form fields render correctly (first name, last name, email, phone, relationship, etc.). Navigation is clean with no blank screens.
+  - **Comment**: ✅ VERIFIED - Edit beneficiary opens as dedicated full-page route (not modal). URL: https://beneficiary-fix.preview.emergentagent.com/beneficiaries/289d691d-7d88-4e49-a4da-01179882c40b/edit. Back button navigates correctly to /beneficiaries. Save buttons visible (top and bottom). All form fields render correctly (first name, last name, email, phone, relationship, etc.). Navigation is clean with no blank screens.
 
 ### 2. Milestone Message Edit Flow
 - **Task**: Verify milestone message edit opens as full-page route instead of modal
@@ -100,7 +100,7 @@ Backend smoke test of route-based edit flows for benefactor portal:
 - **Priority**: high
 - **Status History**:
   - **Agent**: testing
-  - **Comment**: ✅ VERIFIED - Edit milestone message opens as dedicated full-page route (not modal). URL: https://debug-live-env.preview.emergentagent.com/messages/seed-msg-2/edit. Back button navigates correctly to /messages. Save buttons visible (top and bottom). All form fields render correctly (message title, content, recipients, delivery trigger). Navigation is clean with no blank screens.
+  - **Comment**: ✅ VERIFIED - Edit milestone message opens as dedicated full-page route (not modal). URL: https://beneficiary-fix.preview.emergentagent.com/messages/seed-msg-2/edit. Back button navigates correctly to /messages. Save buttons visible (top and bottom). All form fields render correctly (message title, content, recipients, delivery trigger). Navigation is clean with no blank screens.
 
 ## Minor Issues Found (Non-Blocking)
 
@@ -168,6 +168,6 @@ Backend smoke test of route-based edit flows for benefactor portal:
 - **Created By**: testing_agent
 - **Version**: 1.1
 - **Test Sequence**: 2
-- **Test Environment**: https://debug-live-env.preview.emergentagent.com
+- **Test Environment**: https://beneficiary-fix.preview.emergentagent.com
 - **Backend Tests**: Complete
 - **Frontend Tests**: Complete
