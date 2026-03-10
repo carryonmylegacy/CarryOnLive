@@ -14,7 +14,7 @@ import os
 import base64
 
 BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://benefactor-blocker.preview.emergentagent.com"
+    "REACT_APP_BACKEND_URL", "https://ghost-estate-cleanup.preview.emergentagent.com"
 )
 
 # Test credentials provided

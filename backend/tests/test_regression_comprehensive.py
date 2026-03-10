@@ -18,7 +18,7 @@ import requests
 import os
 
 BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://benefactor-blocker.preview.emergentagent.com"
+    "REACT_APP_BACKEND_URL", "https://ghost-estate-cleanup.preview.emergentagent.com"
 ).rstrip("/")
 
 # Test credentials
