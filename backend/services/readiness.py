@@ -454,13 +454,47 @@ async def calculate_estate_readiness(estate_id: str) -> dict:
     }
 
 
+GETTING_STARTED_CHECKLIST = [
+    {
+        "title": "Call your designated executor — they have instructions",
+        "description": "Your first call should be to the person you've designated to handle your estate. Edit this item to add their name and phone number.",
+        "category": "immediate",
+        "order": 1,
+    },
+    {
+        "title": "Contact employer HR to report the death and ask about benefits",
+        "description": "Life insurance through work, final paycheck, COBRA health coverage, and any survivor benefits.",
+        "category": "immediate",
+        "order": 2,
+    },
+    {
+        "title": "Request 10 certified copies of the death certificate",
+        "description": "Banks, insurance companies, and government agencies each require an original. Most families don't request enough.",
+        "category": "immediate",
+        "order": 3,
+    },
+    {
+        "title": "Freeze or monitor all joint financial accounts",
+        "description": "Notify banks of the death. Prevent unauthorized transactions. Do not close accounts until the executor advises.",
+        "category": "immediate",
+        "order": 4,
+    },
+    {
+        "title": "Do NOT make any major financial decisions for 30 days",
+        "description": "Grief impairs judgment. Avoid selling property, changing investments, or lending money during the initial period.",
+        "category": "immediate",
+        "order": 5,
+    },
+]
+
+
 async def ensure_default_checklist(estate_id: str):
-    """Ensure estate has default checklist items"""
+    """Ensure estate has the 5 getting-started checklist items (not the full 25)"""
     from models import ChecklistItem
 
     existing = await db.checklists.count_documents({"estate_id": estate_id})
     if existing == 0:
-        for item in DEFAULT_CHECKLIST_ITEMS:
+        for item in GETTING_STARTED_CHECKLIST:
             checklist_item = ChecklistItem(
                 estate_id=estate_id,
                 title=item["title"],
