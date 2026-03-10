@@ -587,6 +587,69 @@ async def delete_user(
     return {"message": "User and all associated data deleted"}
 
 
+@router.delete("/admin/estates/{estate_id}")
+async def delete_estate_only(
+    estate_id: str,
+    admin_password: str = Query(..., description="Admin password for confirmation"),
+    current_user: dict = Depends(get_current_user),
+):
+    """Delete an estate and all associated data WITHOUT deleting the user.
+    Resets benefactor flags and onboarding so the user can re-create their estate."""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    admin_doc = await db.users.find_one(
+        {"id": current_user["id"]}, {"_id": 0, "password": 1}
+    )
+    if not admin_doc or not bcrypt.checkpw(
+        admin_password.encode(), admin_doc["password"].encode()
+    ):
+        raise HTTPException(status_code=401, detail="Incorrect admin password")
+
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1, "name": 1})
+    if not estate:
+        raise HTTPException(status_code=404, detail="Estate not found")
+
+    owner_id = estate["owner_id"]
+
+    # Delete all estate-linked data
+    await db.beneficiaries.delete_many({"estate_id": estate_id})
+    await db.documents.delete_many({"estate_id": estate_id})
+    await db.messages.delete_many({"estate_id": estate_id})
+    await db.checklists.delete_many({"estate_id": estate_id})
+    await db.death_certificates.delete_many({"estate_id": estate_id})
+    await db.chat_history.delete_many({"estate_id": estate_id})
+    await db.milestone_reports.delete_many({"estate_id": estate_id})
+    await db.digital_credentials.delete_many({"estate_id": estate_id})
+    await db.section_permissions.delete_many({"estate_id": estate_id})
+    await db.beneficiary_display_overrides.delete_many({"estate_id": estate_id})
+    await db.beneficiary_grace_periods.delete_many({"estate_id": estate_id})
+    await db.estates.delete_one({"id": estate_id})
+
+    # Check if owner has any other estates
+    other_estates = await db.estates.count_documents({"owner_id": owner_id})
+    if other_estates == 0:
+        # Reset benefactor flags and onboarding so they can start fresh
+        await db.users.update_one(
+            {"id": owner_id},
+            {
+                "$set": {"is_also_benefactor": False},
+                "$unset": {
+                    "benefactor_since": "",
+                    "guided_activation": "",
+                },
+            },
+        )
+        await db.onboarding_progress.delete_many({"user_id": owner_id})
+
+    return {
+        "message": f"Estate '{estate.get('name', estate_id)}' and all associated data deleted. User account preserved.",
+        "owner_id": owner_id,
+        "other_estates_remaining": other_estates,
+    }
+
+
+
 @router.post("/admin/cleanup-orphans")
 async def cleanup_orphans(current_user: dict = Depends(get_current_user)):
     """Remove orphaned records not linked to any existing user — admin only"""
