@@ -148,15 +148,9 @@ const BeneficiaryDashboardPage = () => {
         <div className="sm:mt-1">
           <EstateSelector
             currentEstate={estate}
-            estates={allEstates}
             onEstateChange={(est) => {
               localStorage.setItem('beneficiary_estate_id', est.id);
               window.location.reload();
-            }}
-            onEstatesUpdate={() => {
-              axios.get(`${API_URL}/estates`, getAuthHeaders())
-                .then(res => setAllEstates((res.data || []).filter(e => e.user_role_in_estate === 'beneficiary' || e.is_beneficiary_estate)))
-                .catch(() => {});
             }}
           />
         </div>

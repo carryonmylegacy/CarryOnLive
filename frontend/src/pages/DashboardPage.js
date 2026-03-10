@@ -255,9 +255,7 @@ const DashboardPage = () => {
           <p className="text-[var(--t4)] mb-6 text-sm lg:text-base">Start organizing your legacy by creating an estate.</p>
           <EstateSelector 
             currentEstate={null} 
-            estates={[]} 
             onEstateChange={handleEstateChange} 
-            onEstatesUpdate={fetchEstates} 
           />
         </div>
       </div>
@@ -464,9 +462,7 @@ const DashboardPage = () => {
         <div className="sm:mt-1">
           <EstateSelector 
             currentEstate={estate} 
-            estates={estates} 
             onEstateChange={handleEstateChange} 
-            onEstatesUpdate={fetchEstates} 
           />
         </div>
       </div>
