@@ -1206,7 +1206,18 @@ async def get_estate_health(current_user: dict = Depends(get_current_user)):
 
     # Fetch all users, estates, and beneficiaries
     all_users = await db.users.find(
-        {}, {"_id": 0, "id": 1, "role": 1, "name": 1, "email": 1, "first_name": 1, "last_name": 1, "date_of_birth": 1, "photo_url": 1}
+        {},
+        {
+            "_id": 0,
+            "id": 1,
+            "role": 1,
+            "name": 1,
+            "email": 1,
+            "first_name": 1,
+            "last_name": 1,
+            "date_of_birth": 1,
+            "photo_url": 1,
+        },
     ).to_list(100000)
     user_by_id = {u["id"]: u for u in all_users}
 
@@ -1217,9 +1228,21 @@ async def get_estate_health(current_user: dict = Depends(get_current_user)):
     all_bens = await db.beneficiaries.find(
         {},
         {
-            "_id": 0, "id": 1, "estate_id": 1, "name": 1, "first_name": 1, "last_name": 1,
-            "email": 1, "relation": 1, "user_id": 1, "is_stub": 1, "is_primary": 1,
-            "invitation_status": 1, "date_of_birth": 1, "avatar_color": 1, "photo_url": 1,
+            "_id": 0,
+            "id": 1,
+            "estate_id": 1,
+            "name": 1,
+            "first_name": 1,
+            "last_name": 1,
+            "email": 1,
+            "relation": 1,
+            "user_id": 1,
+            "is_stub": 1,
+            "is_primary": 1,
+            "invitation_status": 1,
+            "date_of_birth": 1,
+            "avatar_color": 1,
+            "photo_url": 1,
         },
     ).to_list(100000)
 
@@ -1231,7 +1254,14 @@ async def get_estate_health(current_user: dict = Depends(get_current_user)):
 
     # Build per-estate health
     estate_health = []
-    totals = {"estates": 0, "beneficiaries": 0, "linked": 0, "complete": 0, "invited": 0, "has_primary": 0}
+    totals = {
+        "estates": 0,
+        "beneficiaries": 0,
+        "linked": 0,
+        "complete": 0,
+        "invited": 0,
+        "has_primary": 0,
+    }
 
     for estate in all_estates:
         owner = user_by_id.get(estate.get("owner_id"))
@@ -1240,9 +1270,15 @@ async def get_estate_health(current_user: dict = Depends(get_current_user)):
 
         bens = bens_by_estate.get(estate["id"], [])
         total = len(bens)
-        linked = sum(1 for b in bens if b.get("user_id") or b.get("invitation_status") == "accepted")
+        linked = sum(
+            1
+            for b in bens
+            if b.get("user_id") or b.get("invitation_status") == "accepted"
+        )
         complete = sum(1 for b in bens if not b.get("is_stub"))
-        invited = sum(1 for b in bens if b.get("invitation_status") in ("sent", "accepted"))
+        invited = sum(
+            1 for b in bens if b.get("invitation_status") in ("sent", "accepted")
+        )
         has_primary = any(b.get("is_primary") for b in bens)
 
         # Health score: 0-100
@@ -1263,45 +1299,51 @@ async def get_estate_health(current_user: dict = Depends(get_current_user)):
         else:
             status = "critical"
 
-        estate_health.append({
-            "estate_id": estate["id"],
-            "estate_name": estate.get("name", f"{owner.get('name', 'Unknown')}'s Estate"),
-            "estate_status": estate.get("status", "active"),
-            "owner": {
-                "id": owner["id"],
-                "name": owner.get("name", "Unknown"),
-                "first_name": owner.get("first_name", ""),
-                "last_name": owner.get("last_name", ""),
-                "email": owner.get("email", ""),
-                "date_of_birth": owner.get("date_of_birth"),
-            },
-            "beneficiaries": [
-                {
-                    "id": b["id"],
-                    "name": b.get("name", ""),
-                    "first_name": b.get("first_name", ""),
-                    "last_name": b.get("last_name", ""),
-                    "email": b.get("email", ""),
-                    "relation": b.get("relation", ""),
-                    "is_primary": b.get("is_primary", False),
-                    "is_stub": b.get("is_stub", False),
-                    "is_linked": bool(b.get("user_id") or b.get("invitation_status") == "accepted"),
-                    "invitation_status": b.get("invitation_status", "none"),
-                    "date_of_birth": b.get("date_of_birth"),
-                    "avatar_color": b.get("avatar_color", "#60A5FA"),
-                }
-                for b in bens
-            ],
-            "metrics": {
-                "total": total,
-                "linked": linked,
-                "complete": complete,
-                "invited": invited,
-                "has_primary": has_primary,
-                "health_score": score,
-                "health_status": status,
-            },
-        })
+        estate_health.append(
+            {
+                "estate_id": estate["id"],
+                "estate_name": estate.get(
+                    "name", f"{owner.get('name', 'Unknown')}'s Estate"
+                ),
+                "estate_status": estate.get("status", "active"),
+                "owner": {
+                    "id": owner["id"],
+                    "name": owner.get("name", "Unknown"),
+                    "first_name": owner.get("first_name", ""),
+                    "last_name": owner.get("last_name", ""),
+                    "email": owner.get("email", ""),
+                    "date_of_birth": owner.get("date_of_birth"),
+                },
+                "beneficiaries": [
+                    {
+                        "id": b["id"],
+                        "name": b.get("name", ""),
+                        "first_name": b.get("first_name", ""),
+                        "last_name": b.get("last_name", ""),
+                        "email": b.get("email", ""),
+                        "relation": b.get("relation", ""),
+                        "is_primary": b.get("is_primary", False),
+                        "is_stub": b.get("is_stub", False),
+                        "is_linked": bool(
+                            b.get("user_id") or b.get("invitation_status") == "accepted"
+                        ),
+                        "invitation_status": b.get("invitation_status", "none"),
+                        "date_of_birth": b.get("date_of_birth"),
+                        "avatar_color": b.get("avatar_color", "#60A5FA"),
+                    }
+                    for b in bens
+                ],
+                "metrics": {
+                    "total": total,
+                    "linked": linked,
+                    "complete": complete,
+                    "invited": invited,
+                    "has_primary": has_primary,
+                    "health_score": score,
+                    "health_status": status,
+                },
+            }
+        )
 
         totals["estates"] += 1
         totals["beneficiaries"] += total
@@ -1313,7 +1355,12 @@ async def get_estate_health(current_user: dict = Depends(get_current_user)):
 
     # Sort: critical first, then attention, then healthy
     order = {"critical": 0, "attention": 1, "healthy": 2}
-    estate_health.sort(key=lambda e: (order.get(e["metrics"]["health_status"], 3), -e["metrics"]["total"]))
+    estate_health.sort(
+        key=lambda e: (
+            order.get(e["metrics"]["health_status"], 3),
+            -e["metrics"]["total"],
+        )
+    )
 
     tb = totals["beneficiaries"]
     return {
@@ -1321,12 +1368,27 @@ async def get_estate_health(current_user: dict = Depends(get_current_user)):
             "total_estates": totals["estates"],
             "total_beneficiaries": tb,
             "linking_rate": round((totals["linked"] / tb * 100) if tb > 0 else 0, 1),
-            "completion_rate": round((totals["complete"] / tb * 100) if tb > 0 else 0, 1),
-            "invitation_rate": round((totals["invited"] / tb * 100) if tb > 0 else 0, 1),
-            "primary_designated_rate": round((totals["has_primary"] / totals["estates"] * 100) if totals["estates"] > 0 else 0, 1),
-            "healthy_estates": sum(1 for e in estate_health if e["metrics"]["health_status"] == "healthy"),
-            "attention_estates": sum(1 for e in estate_health if e["metrics"]["health_status"] == "attention"),
-            "critical_estates": sum(1 for e in estate_health if e["metrics"]["health_status"] == "critical"),
+            "completion_rate": round(
+                (totals["complete"] / tb * 100) if tb > 0 else 0, 1
+            ),
+            "invitation_rate": round(
+                (totals["invited"] / tb * 100) if tb > 0 else 0, 1
+            ),
+            "primary_designated_rate": round(
+                (totals["has_primary"] / totals["estates"] * 100)
+                if totals["estates"] > 0
+                else 0,
+                1,
+            ),
+            "healthy_estates": sum(
+                1 for e in estate_health if e["metrics"]["health_status"] == "healthy"
+            ),
+            "attention_estates": sum(
+                1 for e in estate_health if e["metrics"]["health_status"] == "attention"
+            ),
+            "critical_estates": sum(
+                1 for e in estate_health if e["metrics"]["health_status"] == "critical"
+            ),
         },
         "estates": estate_health,
     }

@@ -40,7 +40,9 @@ async def get_beneficiaries(
         if "dob" in b and "date_of_birth" not in b:
             b["date_of_birth"] = b.pop("dob")
     # Sort by sort_order (fallback to created_at for records without sort_order)
-    beneficiaries.sort(key=lambda b: (b.get("sort_order", 999), b.get("created_at", "")))
+    beneficiaries.sort(
+        key=lambda b: (b.get("sort_order", 999), b.get("created_at", ""))
+    )
     return beneficiaries
 
 
@@ -908,7 +910,6 @@ async def accept_invitation(data: AcceptInvitationRequest):
     }
 
 
-
 class ReorderRequest(BaseModel):
     ordered_ids: list[str]
 
@@ -922,7 +923,12 @@ async def reorder_beneficiaries(
     """Persist drag-and-drop beneficiary sort order."""
     if current_user["role"] not in ("benefactor", "admin") and not (
         current_user["role"] == "beneficiary"
-        and (await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "is_also_benefactor": 1}) or {}).get("is_also_benefactor")
+        and (
+            await db.users.find_one(
+                {"id": current_user["id"]}, {"_id": 0, "is_also_benefactor": 1}
+            )
+            or {}
+        ).get("is_also_benefactor")
     ):
         raise HTTPException(status_code=403, detail="Not authorized")
 

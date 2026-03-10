@@ -256,6 +256,7 @@ async def beneficiary_become_benefactor(current_user: dict = Depends(get_current
 
 class CreateEstateRequest(BaseModel):
     """Request to create an estate for an existing authenticated user."""
+
     beneficiary_enrollments: list = []  # [{first_name, last_name, email, dob, relation, ...}]
 
 
@@ -314,8 +315,14 @@ async def create_estate_for_existing_user(
 
     # Process beneficiary enrollments
     avatar_colors = [
-        "#d4af37", "#3b82f6", "#10b981", "#8b5cf6",
-        "#ef4444", "#f59e0b", "#ec4899", "#06b6d4",
+        "#d4af37",
+        "#3b82f6",
+        "#10b981",
+        "#8b5cf6",
+        "#ef4444",
+        "#f59e0b",
+        "#ec4899",
+        "#06b6d4",
     ]
     beneficiaries_to_insert = []
     auto_linked_users = []
@@ -325,9 +332,7 @@ async def create_estate_for_existing_user(
         middle = ben.get("middle_name", "").strip()
         last = ben.get("last_name", last_name).strip()
         ben_email = (ben.get("email") or "").strip().lower()
-        initials = (
-            (first[0] if first else "?") + (last[0] if last else "?")
-        ).upper()
+        initials = ((first[0] if first else "?") + (last[0] if last else "?")).upper()
         full_name = " ".join(p for p in [first, middle, last] if p)
 
         # Check if this email already has an account — auto-link if so
@@ -350,7 +355,9 @@ async def create_estate_for_existing_user(
             "gender": ben.get("gender"),
             "initials": initials,
             "avatar_color": avatar_colors[i % len(avatar_colors)],
-            "invitation_status": "accepted" if existing_user else ("pending" if ben_email else "draft"),
+            "invitation_status": "accepted"
+            if existing_user
+            else ("pending" if ben_email else "draft"),
             "is_stub": not bool(first),
             "address_street": ben.get("address_street"),
             "address_city": ben.get("address_city"),
@@ -366,11 +373,13 @@ async def create_estate_for_existing_user(
                 {"id": estate_id},
                 {"$addToSet": {"beneficiaries": existing_user["id"]}},
             )
-            auto_linked_users.append({
-                "email": ben_email,
-                "name": existing_user.get("name", full_name),
-                "existing_role": existing_user.get("role", ""),
-            })
+            auto_linked_users.append(
+                {
+                    "email": ben_email,
+                    "name": existing_user.get("name", full_name),
+                    "existing_role": existing_user.get("role", ""),
+                }
+            )
 
         beneficiaries_to_insert.append(ben_record)
 
@@ -422,6 +431,7 @@ async def create_estate_for_existing_user(
 
 class AddBeneficiaryLinkRequest(BaseModel):
     """Request to link self as beneficiary to another estate."""
+
     benefactor_email: str
 
 
@@ -441,14 +451,19 @@ async def add_beneficiary_link(
         {"email": benefactor_email}, {"_id": 0, "id": 1, "name": 1}
     )
     if not benefactor:
-        raise HTTPException(status_code=404, detail="No benefactor found with that email address.")
+        raise HTTPException(
+            status_code=404, detail="No benefactor found with that email address."
+        )
 
     # Find their estate
     estate = await db.estates.find_one(
-        {"owner_id": benefactor["id"]}, {"_id": 0, "id": 1, "beneficiaries": 1, "name": 1}
+        {"owner_id": benefactor["id"]},
+        {"_id": 0, "id": 1, "beneficiaries": 1, "name": 1},
     )
     if not estate:
-        raise HTTPException(status_code=404, detail="No estate found for that benefactor.")
+        raise HTTPException(
+            status_code=404, detail="No estate found for that benefactor."
+        )
 
     # Check if already linked
     if current_user["id"] in estate.get("beneficiaries", []):
@@ -476,31 +491,38 @@ async def add_beneficiary_link(
     if existing_ben:
         await db.beneficiaries.update_one(
             {"id": existing_ben["id"]},
-            {"$set": {
-                "user_id": current_user["id"],
-                "invitation_status": "accepted",
-                "name": full_name,
-                "first_name": first_name,
-                "last_name": last_name,
-                "is_stub": False,
-            }},
+            {
+                "$set": {
+                    "user_id": current_user["id"],
+                    "invitation_status": "accepted",
+                    "name": full_name,
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "is_stub": False,
+                }
+            },
         )
     else:
-        await db.beneficiaries.insert_one({
-            "id": str(uuid.uuid4()),
-            "estate_id": estate["id"],
-            "user_id": current_user["id"],
-            "first_name": first_name,
-            "last_name": last_name,
-            "name": full_name,
-            "email": user.get("email", ""),
-            "relation": "",
-            "initials": ((first_name[0] if first_name else "?") + (last_name[0] if last_name else "?")).upper(),
-            "avatar_color": "#60A5FA",
-            "invitation_status": "accepted",
-            "is_stub": False,
-            "created_at": now.isoformat(),
-        })
+        await db.beneficiaries.insert_one(
+            {
+                "id": str(uuid.uuid4()),
+                "estate_id": estate["id"],
+                "user_id": current_user["id"],
+                "first_name": first_name,
+                "last_name": last_name,
+                "name": full_name,
+                "email": user.get("email", ""),
+                "relation": "",
+                "initials": (
+                    (first_name[0] if first_name else "?")
+                    + (last_name[0] if last_name else "?")
+                ).upper(),
+                "avatar_color": "#60A5FA",
+                "invitation_status": "accepted",
+                "is_stub": False,
+                "created_at": now.isoformat(),
+            }
+        )
 
     # Mark user as also being a beneficiary if they're a benefactor
     if current_user["role"] == "benefactor":

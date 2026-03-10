@@ -79,10 +79,14 @@ async def check_benefactor_email(data: EmailCheckRequest):
             "message": "No benefactor estates are associated with that email address.",
         }
     # User must either be a benefactor or have is_also_benefactor flag
-    is_benefactor = user.get("role") == "benefactor" or user.get("is_also_benefactor", False)
+    is_benefactor = user.get("role") == "benefactor" or user.get(
+        "is_also_benefactor", False
+    )
     if not is_benefactor:
         # Also check if they own any estate directly
-        estate = await db.estates.find_one({"owner_id": user["id"]}, {"_id": 0, "id": 1})
+        estate = await db.estates.find_one(
+            {"owner_id": user["id"]}, {"_id": 0, "id": 1}
+        )
         if not estate:
             return {
                 "valid": False,
@@ -876,7 +880,8 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "created_at": current_user["created_at"],
         "photo_url": photo or "",
         "operator_role": current_user.get("operator_role", ""),
-        "is_also_benefactor": user_doc.get("is_also_benefactor", False) or bool(owns_estate),
+        "is_also_benefactor": user_doc.get("is_also_benefactor", False)
+        or bool(owns_estate),
         "is_also_beneficiary": user_doc.get("is_also_beneficiary", False),
         "first_name": user_doc.get("first_name", ""),
         "last_name": user_doc.get("last_name", ""),
