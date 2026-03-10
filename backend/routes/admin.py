@@ -606,7 +606,9 @@ async def delete_estate_only(
     ):
         raise HTTPException(status_code=401, detail="Incorrect admin password")
 
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1, "name": 1})
+    estate = await db.estates.find_one(
+        {"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1, "name": 1}
+    )
     if not estate:
         raise HTTPException(status_code=404, detail="Estate not found")
 
@@ -647,7 +649,6 @@ async def delete_estate_only(
         "owner_id": owner_id,
         "other_estates_remaining": other_estates,
     }
-
 
 
 @router.post("/admin/cleanup-orphans")
