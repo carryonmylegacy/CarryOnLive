@@ -177,8 +177,8 @@ async def get_all_users(current_user: dict = Depends(get_current_user)):
         )
         u["subscription"] = sub
 
-        # For benefactors, attach their beneficiary list
-        if u.get("role") == "benefactor":
+        # For benefactors (including multi-role users), attach their beneficiary list
+        if u.get("role") == "benefactor" or u.get("is_also_benefactor"):
             estate_id = estate_by_owner.get(u["id"])
             u["linked_beneficiaries"] = bens_by_estate.get(estate_id, [])
 
@@ -1281,6 +1281,7 @@ async def get_estate_health(current_user: dict = Depends(get_current_user)):
             "last_name": 1,
             "date_of_birth": 1,
             "photo_url": 1,
+            "is_also_benefactor": 1,
         },
     ).to_list(100000)
     user_by_id = {u["id"]: u for u in all_users}
@@ -1329,7 +1330,7 @@ async def get_estate_health(current_user: dict = Depends(get_current_user)):
 
     for estate in all_estates:
         owner = user_by_id.get(estate.get("owner_id"))
-        if not owner or owner.get("role") != "benefactor":
+        if not owner or (owner.get("role") != "benefactor" and not owner.get("is_also_benefactor")):
             continue
 
         bens = bens_by_estate.get(estate["id"], [])

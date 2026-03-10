@@ -36,7 +36,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
 
   const filteredUsers = users
     .filter(u => operatorMode ? (u.role !== 'admin' && u.role !== 'operator') : true)
-    .filter(u => roleFilter === 'all' || u.role === roleFilter)
+    .filter(u => roleFilter === 'all' || u.role === roleFilter || (roleFilter === 'benefactor' && u.is_also_benefactor))
     .filter(u => !searchQuery || u.name?.toLowerCase().includes(searchQuery.toLowerCase()) || u.email?.toLowerCase().includes(searchQuery.toLowerCase()))
     .sort((a, b) => {
       // When viewing a specific role tab, sort alphabetically by name
@@ -109,7 +109,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
       <React.Fragment key={u.id}>
         <div className={`glass-card p-3 flex items-center gap-3 ${indent ? 'ml-8 border-l-2 border-[var(--b)]' : ''}`} data-testid={`admin-user-${u.id}`}>
           {/* Tree toggle for benefactors with beneficiaries (tree mode only) */}
-          {viewMode === 'tree' && !indent && u.role === 'benefactor' && (
+          {viewMode === 'tree' && !indent && (u.role === 'benefactor' || u.is_also_benefactor) && (
             <button
               onClick={() => hasBens && toggleExpand(u.id)}
               className="w-5 h-5 flex items-center justify-center flex-shrink-0"
@@ -245,8 +245,8 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
 
   // Tree view: group by ESTATE, benefactors at top sorted by age, beneficiaries indented below sorted by age
   const renderTreeView = () => {
-    const benefactors = filteredUsers.filter(u => u.role === 'benefactor');
-    const beneficiaryUsers = filteredUsers.filter(u => u.role === 'beneficiary');
+    const benefactors = filteredUsers.filter(u => u.role === 'benefactor' || u.is_also_benefactor);
+    const beneficiaryUsers = filteredUsers.filter(u => u.role === 'beneficiary' && !u.is_also_benefactor);
     const admins = filteredUsers.filter(u => u.role === 'admin');
 
     // Build estate map: estate -> { owner, beneficiaries[] }
@@ -404,8 +404,8 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
 
   // Graph view: HTML/CSS-based visual family tree per estate
   const renderGraphView = () => {
-    const benefactors = filteredUsers.filter(u => u.role === 'benefactor');
-    const beneficiaryUsers = filteredUsers.filter(u => u.role === 'beneficiary');
+    const benefactors = filteredUsers.filter(u => u.role === 'benefactor' || u.is_also_benefactor);
+    const beneficiaryUsers = filteredUsers.filter(u => u.role === 'beneficiary' && !u.is_also_benefactor);
     const benUserByEmail = new Map();
     beneficiaryUsers.forEach(u => { if (u.email) benUserByEmail.set(u.email.toLowerCase(), u); });
 
