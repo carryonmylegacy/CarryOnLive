@@ -13,50 +13,47 @@ Multi-portal estate planning platform (CarryOn) with FastAPI backend, React/Capa
 
 ## What's Been Implemented
 
-### Session: Mar 2026 - Multi-Role Estate Creation Flow
-- **Multi-Role Architecture**: Users can now be both benefactor and beneficiary under the same email. Primary role preserved, secondary access added via `is_also_benefactor` / `is_also_beneficiary` flags.
-- **CreateEstatePage wizard** (`/app/frontend/src/pages/CreateEstatePage.js`): Multi-step wizard pre-populated from user profile. Step 1: Confirm personal info. Step 2: Choose role (Create My Own Estate as Benefactor OR Join Another Estate as Beneficiary). Step 3+: Family/beneficiary enrollment for benefactors.
-- **New backend endpoints**: `POST /api/accounts/create-estate` creates estate without changing user role; `POST /api/accounts/add-beneficiary-link` links user as beneficiary to another estate by benefactor email. Auto-detection of existing accounts during beneficiary enrollment.
-- **Updated `GET /api/estates`**: Now annotates each estate with `user_role_in_estate` (owner/beneficiary) for proper frontend role context.
-- **Updated `GET /api/auth/me`**: Returns full profile (first_name, last_name, gender, DOB, address, marital_status) plus multi-role flags.
-- **Sidebar & MobileNav role switching**: Context-aware navigation that adapts based on current path (benefactor routes show benefactor nav, beneficiary routes show beneficiary nav). "Switch View" section shows all accessible estates with role labels.
-- **Disabled old `become-benefactor` endpoint**: Returns error directing users to the Create Estate wizard.
-- **Refactoring**: Removed obsolete `EditBeneficiaryPage` import and route from App.js.
-- **DashboardPage**: Filters to only show owned estates (not beneficiary estates).
+### Session: Mar 10, 2026 - Bug Fixes, Drag-Reorder, Admin Redesign
+- **Admin Delete Beneficiary Sync (P0 Bug)**: When admin deletes a user, the system now properly removes them from all estates' `beneficiaries` arrays and deletes their beneficiary records. Previously, deleted users would remain as ghost entries in benefactor estates.
+- **Onboarding Re-trigger Fix (P0 Bug)**: Fixed the "Getting Started" guided flow from re-triggering after a primary beneficiary is deleted and re-added. Once `celebration_shown` is True (user graduated onboarding), the system NEVER un-dismisses or re-shows guided flows/popups. Applied across ALL pages: DashboardPage, BeneficiariesPage, MessagesPage, DigitalWalletPage, ChecklistPage. Removed dead ReturnPopup code from GuardianPage.
+- **Drag-to-Reorder Beneficiary Tiles (P1 Feature)**: Added @dnd-kit integration for drag-and-drop sorting of beneficiary cards on the Beneficiaries page. Order is persisted via `PUT /api/beneficiaries/reorder/{estate_id}` and returned sorted by `sort_order` field. Includes drag handle (GripVertical icon) on each card, pointer and touch sensor support.
+- **Admin Users Tab Redesign (P1 Feature)**: "All Estates" tab (default) shows estate-centric tree view — estates as collapsible groups with benefactor at top (sorted by age), beneficiaries indented below with tree connectors (sorted by age). "Benefactors" and "Beneficiaries" tabs list alphabetically. Unlinked beneficiaries shown separately. Multi-role badges (+benefactor, +beneficiary).
+- **Refactoring**: Removed obsolete EditBeneficiaryPage import/route from App.js. Fixed tab labels (Beneficiaries not Beneficiarys).
 
-### Session: Feb-Mar 2026 - SlidePanel UX Overhaul
-- **Reusable SlidePanel component**: Replaces all Dialog modals for edit/create flows
-- **Performance**: Client-side caching (`cachedGet.js`) for `/api/estates`, eager core page imports
-- **Unified notifications**: Branded toast system via `AppNotification.js`
-- **Voice recording fix**: iOS media permissions + MIME type fix
-- **Railway deployment fix**: Pinned grpcio to stable version
-- **PWA layout fix**: SlidePanel mobile positioning under header
+### Session: Mar 10, 2026 - Multi-Role Estate Creation Flow
+- **Multi-Role Architecture**: Users can be both benefactor and beneficiary under same email. Primary role preserved, secondary access via `is_also_benefactor`/`is_also_beneficiary` flags.
+- **CreateEstatePage wizard** (`/create-estate`): Multi-step wizard pre-populated from user profile. Role selection (Benefactor/Beneficiary). Auto-detection of existing accounts during beneficiary enrollment.
+- **New endpoints**: `POST /api/accounts/create-estate`, `POST /api/accounts/add-beneficiary-link`. Updated `GET /api/estates` with `user_role_in_estate` annotation. Updated `GET /api/auth/me` with full profile + multi-role flags.
+- **Sidebar & MobileNav role switching**: Context-aware navigation. "Switch View" section for multi-role users.
 
 ### Previous Sessions
+- SlidePanel UX overhaul, performance caching, unified notifications, voice recording fix, Railway deployment fix, PWA layout fix
 - Multi-portal architecture (Benefactor, Beneficiary, Admin, Operations)
 - Stripe, xAI (Grok), AWS S3, Resend, Google Places, Capgo, CodeMagic integrations
 
 ## Architecture
-- Backend: FastAPI + MongoDB (MONGO_URL from .env)
-- Frontend: React + Capacitor (REACT_APP_BACKEND_URL from .env)
-- Authentication: JWT-based with multi-role flags
+- Backend: FastAPI + MongoDB
+- Frontend: React + Capacitor
+- Authentication: JWT with multi-role flags
 - File storage: S3-compatible
-- UI Pattern: SlidePanel for all edit/create flows
-- Multi-role: `is_also_benefactor` and `is_also_beneficiary` flags on user docs; `user_role_in_estate` annotation on estate responses
+- UI Pattern: SlidePanel for edit/create, DnD Kit for drag-reorder
+- Multi-role: `is_also_benefactor` and `is_also_beneficiary` flags on user docs
 
 ## Blocked / Awaiting User Action
 - P1: Twilio SMS OTP Integration (blocked on A2P 10DLC approval)
 - P1: iOS Share Extension Setup (blocked on user Xcode/App Store Connect config)
 
 ## Backlog
-- Delete obsolete `EditBeneficiaryPage.js` and `EditMilestonePage.js` files (routes already removed)
-- Subscription paywall logic for beneficiaries who create estates (currently skipped for all beneficiaries)
+- Delete obsolete `EditBeneficiaryPage.js` and `EditMilestonePage.js` files
+- Subscription paywall logic for beneficiaries who create estates
 
 ## Key Components
 - `/app/frontend/src/pages/CreateEstatePage.js` — Multi-role estate creation wizard
-- `/app/frontend/src/components/SlidePanel.js` — Reusable slide-in panel
-- `/app/frontend/src/components/layout/Sidebar.js` — Context-aware multi-role sidebar
-- `/app/backend/routes/estates.py` — Estate management + multi-role endpoints
+- `/app/frontend/src/pages/BeneficiariesPage.js` — Drag-to-reorder beneficiary tiles
+- `/app/frontend/src/components/admin/UsersTab.js` — Estate-centric tree view
+- `/app/backend/routes/beneficiaries.py` — Sort order + reorder endpoint
+- `/app/backend/routes/onboarding.py` — Graduation-aware guided flow
+- `/app/backend/routes/admin.py` — Clean delete with estate link cleanup
 
 ## Test Credentials
 - Founder: info@carryon.us / Demo1234!
