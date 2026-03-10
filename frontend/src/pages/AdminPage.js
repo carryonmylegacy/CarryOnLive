@@ -36,6 +36,7 @@ import { P1ContactSettingsTab } from '../components/admin/P1ContactSettingsTab';
 import { OpsDashboardTab } from '../components/admin/OpsDashboardTab';
 import { MilestoneDeliveriesTab } from '../components/admin/MilestoneDeliveriesTab';
 import { TrialUsersTab } from '../components/admin/TrialUsersTab';
+import { EstateHealthTab } from '../components/admin/EstateHealthTab';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -57,6 +58,7 @@ const TAB_CONFIG = [
   { key: 'system-health', label: 'System Health', icon: HeartPulse, path: '/admin/system-health' },
   { key: 'escalations', label: 'Escalations', icon: AlertTriangle, path: '/admin/escalations' },
   { key: 'knowledge-base', label: 'Knowledge Base', icon: BookOpen, path: '/admin/knowledge-base' },
+  { key: 'estate-health', label: 'Estate Health', icon: HeartPulse, path: '/admin/estate-health' },
   { key: 'p1-settings', label: 'P1 Contact', icon: AlertTriangle, path: '/admin/p1-settings' },
   { key: 'ops-dashboard', label: 'Ops Dashboard', icon: Activity, path: '/admin/ops-dashboard' },
   { key: 'milestones', label: 'Milestones', icon: CheckSquare, path: '/admin/milestones' },
@@ -90,6 +92,7 @@ const PATH_TO_TAB = {
   '/admin/escalations': 'escalations',
   '/admin/knowledge-base': 'knowledge-base',
   '/admin/p1-settings': 'p1-settings',
+  '/admin/estate-health': 'estate-health',
   '/admin/ops-dashboard': 'ops-dashboard',
   '/admin/milestones': 'milestones',
   '/admin/trials': 'trials',
@@ -464,6 +467,7 @@ const AdminPage = ({ operatorMode = false }) => {
       {tab === 'escalations' && !operatorMode && <EscalationsTab getAuthHeaders={getAuthHeaders} isFounder={true} />}
       {tab === 'knowledge-base' && !operatorMode && <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={true} />}
       {tab === 'p1-settings' && !operatorMode && <P1ContactSettingsTab getAuthHeaders={getAuthHeaders} />}
+      {tab === 'estate-health' && !operatorMode && <EstateHealthTab getAuthHeaders={getAuthHeaders} />}
       {/* New Operator features */}
       {tab === 'my-activity' && operatorMode && <MyActivityTab getAuthHeaders={getAuthHeaders} />}
       {tab === 'search' && operatorMode && <QuickSearchTab getAuthHeaders={getAuthHeaders} />}
