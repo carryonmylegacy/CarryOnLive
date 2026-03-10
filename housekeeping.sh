@@ -388,7 +388,7 @@ fi
 # ── CC6.1 — CORS Configuration ──────────────────────────────────────
 echo -n "30. [CC6.1] CORS configuration .... "
 if grep -q "CORS_ORIGINS\|configure_cors" /app/backend/server.py 2>/dev/null; then
-  CORS_WILDCARD=$(grep -c "\*" /app/backend/middleware.py 2>/dev/null | head -1)
+  CORS_WILDCARD=$(grep -E "allow_origins.*\*|ALLOWED_ORIGINS.*=.*\[.*\*" /app/backend/middleware.py 2>/dev/null | wc -l)
   if [ "$CORS_WILDCARD" = "0" ]; then
     echo -e "$PASS (CORS configured, no wildcard)"
   else
