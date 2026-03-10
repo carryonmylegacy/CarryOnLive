@@ -187,7 +187,7 @@ const OnboardingWizard = ({ onAllComplete }) => {
       {/* Step Tiles */}
       <div className="space-y-3">
         {/* Welcome tile for beneficiaries who just created their own estate */}
-        {user?.role === 'beneficiary' && user?.is_also_benefactor && !welcomeDismissed && (
+        {user?.is_also_benefactor && !welcomeDismissed && (
           <div className="rounded-2xl p-5 flex items-center gap-4 text-left"
             style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.08), rgba(96,165,250,0.08))', border: '1px solid rgba(212,175,55,0.2)' }}>
             <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
