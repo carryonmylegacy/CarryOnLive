@@ -20,7 +20,7 @@ import AddressAutocomplete from '../components/AddressAutocomplete';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-const relations = ['Spouse', 'Son', 'Daughter', 'Son-in-law', 'Daughter-in-law', 'Parent', 'Brother', 'Sister', 'Aunt', 'Uncle', 'Grandchild', 'Grandson', 'Granddaughter', 'Father-in-law', 'Mother-in-law', 'Nephew', 'Niece', 'Great-Grandchild', 'Friend', 'Other'];
+const relations = ['Spouse', 'Son', 'Daughter', 'Son-in-law', 'Daughter-in-law', 'Mother', 'Father', 'Mother-in-law', 'Father-in-law', 'Brother', 'Sister', 'Aunt', 'Uncle', 'Grandson', 'Granddaughter', 'Grandmother', 'Grandfather', 'Nephew', 'Niece', 'Great-Grandson', 'Great-Granddaughter', 'Great-Grandmother', 'Great-Grandfather', 'Friend', 'Other'];
 const avatarColors = ['#d4af37', '#3b82f6', '#10b981', '#8b5cf6', '#ef4444', '#f59e0b', '#ec4899', '#06b6d4'];
 const usStates = [
   'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',

@@ -13,18 +13,22 @@ const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const getOrbitLevel = (relation) => {
   const r = (relation || '').toLowerCase();
+  // Ring 1 (closest): Spouse, Children, In-law children, Great-grandparents (looking down)
   if (['spouse', 'wife', 'husband', 'partner'].includes(r)) return 0;
-  if (['parent', 'mother', 'father', 'mom', 'dad'].includes(r)) return 0;
+  if (['mother', 'father', 'parent', 'mom', 'dad'].includes(r)) return 0;
   if (r.includes('son-in-law') || r.includes('son in law') || r.includes('daughter-in-law') || r.includes('daughter in law')) return 0;
+  if (r.includes('great-grandmother') || r.includes('great-grandfather') || r.includes('great-grandparent') || r.includes('great grandparent')) return 0;
+  // Ring 2: Parents, Siblings, Grandchildren, In-law parents, Aunt, Uncle
   if (['son', 'daughter', 'child', 'children'].includes(r)) return 1;
-  if (['sibling', 'brother', 'sister'].includes(r)) return 1;
-  if (['grandparent', 'grandmother', 'grandfather', 'grandma', 'grandpa'].includes(r)) return 1;
+  if (['brother', 'sister', 'sibling'].includes(r)) return 1;
+  if (['grandmother', 'grandfather', 'grandparent', 'grandma', 'grandpa'].includes(r)) return 1;
   if (['aunt', 'uncle'].includes(r)) return 1;
-  if (r.includes('father-in-law') || r.includes('father in law') || r.includes('mother-in-law') || r.includes('mother in law')) return 1;
-  if (['grandchild', 'grandson', 'granddaughter'].includes(r)) return 2;
-  if (['nephew', 'niece'].includes(r)) return 2;
-  if (r.includes('great-grandchild') || r.includes('great grandchild')) return 3;
-  if (r.includes('great-grandparent') || r.includes('great grandparent')) return 0;
+  if (['nephew', 'niece'].includes(r)) return 1;
+  if (r.includes('mother-in-law') || r.includes('mother in law') || r.includes('father-in-law') || r.includes('father in law')) return 1;
+  // Ring 3: Grandparents
+  if (['grandson', 'granddaughter', 'grandchild'].includes(r)) return 2;
+  // Ring 4: Great-grandparents
+  if (r.includes('great-grandson') || r.includes('great-granddaughter') || r.includes('great-grandchild') || r.includes('great grandchild')) return 3;
   return 1;
 };
 
