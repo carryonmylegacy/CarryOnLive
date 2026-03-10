@@ -53,6 +53,8 @@ Multi-portal estate planning platform (CarryOn) with FastAPI backend, React/Capa
 - **Frontend Benefactors Filter Fix (P0 Fix)**: Updated `UsersTab.js` to include `is_also_benefactor` users in the Benefactors tab filter, tree view, and graph view.
 - **Ghost Estate Cleanup Workflow**: The existing `DELETE /api/admin/estates/{estate_id}` endpoint correctly deletes ghost estates and resets `is_also_benefactor` flag, allowing users to re-create their estate.
 
+- **Ghost Estate Auto-Cleanup (Enhancement)**: Added automatic detection of ghost estates (orphaned, incomplete conversions, empty) in `GET /api/admin/estate-health`. New `POST /api/admin/cleanup-ghost-estates` endpoint for batch deletion with password confirmation. Frontend `GhostEstateAlert` component in Estate Health tab with expandable list, checkboxes, select all, and one-click "Clean Up" button.
+
 ## Blocked / Awaiting User Action
 - P1: Twilio SMS OTP Integration (blocked on A2P 10DLC approval)
 - P1: iOS Share Extension Setup (blocked on user Xcode/App Store Connect config)
