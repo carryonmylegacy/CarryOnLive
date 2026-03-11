@@ -85,7 +85,7 @@ const BeneficiaryHubPage = () => {
         <h1 className="text-3xl font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
           Welcome back, {firstName}!
         </h1>
-        <p className="text-lg font-bold text-[var(--t3)] mb-1">This Is Your Legacy Network</p>
+        <p className="text-lg font-bold text-[var(--t3)] mb-1">This Is Your Estate Plan Network</p>
         <p className="text-sm text-[var(--t4)]">
           You are connected to {estates.length} benefactor estate{estates.length !== 1 ? 's' : ''}.
         </p>

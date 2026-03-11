@@ -196,7 +196,7 @@ const OnboardingWizard = ({ onAllComplete }) => {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-lg font-bold text-[var(--t)]">Welcome to Your Estate</p>
-              <p className="text-base text-[var(--t4)]">You now have both views — switch between your <strong style={{ color: '#d4af37' }}>Benefactor</strong> estate and your <strong style={{ color: '#60A5FA' }}>Beneficiary</strong> access anytime using the switcher above.</p>
+              <p className="text-base text-[var(--t4)]">You now have both views — switch between your <strong style={{ color: '#d4af37' }}>Benefactor</strong> estate and your <strong style={{ color: '#60A5FA' }}>Beneficiary</strong> access anytime using the <strong>Switch View</strong> section {window.innerWidth >= 1024 ? 'in the menu on the left' : 'in the hamburger menu'}.</p>
             </div>
             <button onClick={() => { localStorage.setItem('carryon_welcome_tile_dismissed', 'true'); setWelcomeDismissed(true); }}
               className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform flex-shrink-0"

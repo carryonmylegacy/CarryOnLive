@@ -160,7 +160,6 @@ DEFAULT_PLANS = [
             "Everything in Standard",
             "Unlimited beneficiaries",
             "Priority human support (CST)",
-            "Future: Will/Trust Wizard & Eternal Echo",
         ],
     },
     {
@@ -296,7 +295,6 @@ BENEFICIARY_PLANS = [
         "features": [
             "Everything in Standard",
             "Priority human support",
-            "Future: Will/Trust Wizard & Eternal Echo",
         ],
     },
     {
@@ -433,6 +431,7 @@ async def get_subscription_settings():
     else:
         # Ensure any new plans from code are added to stored settings
         # and merge new fields from DEFAULT_PLANS into existing stored plans
+        # Also sync 'features' field to ensure code-defined features take precedence
         stored_ids = {p["id"] for p in settings.get("plans", [])}
         needs_update = False
         for plan in DEFAULT_PLANS:
@@ -447,6 +446,10 @@ async def get_subscription_settings():
                             if key not in stored_plan:
                                 stored_plan[key] = plan[key]
                                 needs_update = True
+                        # Always sync features from code to ensure they're up-to-date
+                        if stored_plan.get("features") != plan.get("features"):
+                            stored_plan["features"] = plan["features"]
+                            needs_update = True
                         break
         if needs_update:
             await db.subscription_settings.update_one(

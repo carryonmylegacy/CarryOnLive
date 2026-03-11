@@ -351,7 +351,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
                 Your Free Trial Has Ended
               </h1>
               <p className="text-[var(--t4)] text-sm">
-                Choose a plan to continue protecting your family's legacy with CarryOn.
+                Choose a plan to continue protecting your family's estate plan with CarryOn.
               </p>
             </>
           ) : trial.trial_active ? (

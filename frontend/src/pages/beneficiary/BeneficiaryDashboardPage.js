@@ -31,7 +31,7 @@ const BeneficiaryDashboardPage = () => {
     checklist: 'Immediate Action Checklist',
     guardian: 'Estate Guardian AI',
     digital_wallet: 'Digital Access Vault',
-    timeline: 'Legacy Timeline',
+    timeline: 'Estate Plan Timeline',
   };
 
   useEffect(() => { fetchData();

@@ -185,9 +185,11 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                   <KeyRound className="w-4 h-4" />
                 </Button>
               )}
+              {!operatorMode && (
               <Button variant="ghost" size="sm" className="text-[var(--rd)] hover:bg-[var(--rdbg)]" onClick={() => { setDeleteTarget({ id: u.id, name: u.name, role: u.role }); setDeletePassword(''); setShowDeletePw(false); }} data-testid={`admin-delete-user-${u.id}`}>
                 <Trash2 className="w-4 h-4" />
               </Button>
+              )}
             </div>
           )}
         </div>
@@ -353,7 +355,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                           <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold" style={{ background: roleColors.beneficiary.bg, color: roleColors.beneficiary.color }}>
                             beneficiary
                           </span>
-                          {bu.id !== currentUserId && (
+                          {bu.id !== currentUserId && !operatorMode && (
                             <Button variant="ghost" size="sm" className="text-[var(--rd)] hover:bg-[var(--rdbg)] h-6 w-6 p-0" onClick={() => { setDeleteTarget({ id: bu.id, name: bu.name, role: bu.role }); setDeletePassword(''); setShowDeletePw(false); }}>
                               <Trash2 className="w-3 h-3" />
                             </Button>
@@ -558,8 +560,8 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deleteTarget && (
+      {/* Delete Confirmation Modal — Founder only */}
+      {deleteTarget && !operatorMode && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
           <div
             className="w-full max-w-sm rounded-2xl p-6 space-y-4 animate-fade-in"

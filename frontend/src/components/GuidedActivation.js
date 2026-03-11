@@ -26,7 +26,7 @@ export const ReturnPopup = ({ step, beneficiaryNames, onReturn, onAlternate }) =
     },
     primary: {
       title: 'Congratulations — you made a huge step!',
-      subtitle: 'You\'ve identified who your primary beneficiary is. Let\'s go back to the dashboard to continue creating your estate legacy!',
+      subtitle: 'You\'ve identified who your primary beneficiary is. Let\'s go back to the dashboard to continue creating your estate plan!',
       returnText: 'Return to Dashboard',
       alternateText: null,
       icon: UserCheck,

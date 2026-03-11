@@ -207,7 +207,7 @@ const OnboardingPage = () => {
                 <h2 className="text-lg font-bold text-white">Your Beneficiaries</h2>
                 <p className="text-sm text-[#94a3b8]">
                   {beneficiaries.length === 0 
-                    ? 'Add the people who will inherit your legacy'
+                    ? 'Add the people who will inherit your estate plan'
                     : `${beneficiaries.length} beneficiar${beneficiaries.length === 1 ? 'y' : 'ies'} added`
                   }
                 </p>

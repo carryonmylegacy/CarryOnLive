@@ -364,7 +364,7 @@ const CreateEstatePage = () => {
             <div className="hidden lg:block">
               <h1 className="text-4xl font-bold text-white leading-tight mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>
                 Expand Your
-                <span className="block text-[#d4af37] mt-1">Legacy Network.</span>
+                <span className="block text-[#d4af37] mt-1">Estate Plan Network.</span>
               </h1>
               <p className="text-[#7b879e] text-base max-w-sm leading-relaxed mb-6">
                 Use your existing account to create a new estate plan or connect to another family member's estate.
@@ -382,7 +382,7 @@ const CreateEstatePage = () => {
             {/* MOBILE header */}
             <div className="lg:hidden text-center mb-2">
               <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight mb-0.5" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                Expand Your <span className="text-[#d4af37]">Legacy Network</span>
+                Expand Your <span className="text-[#d4af37]">Estate Plan Network</span>
               </h1>
               <p className="text-[#6b7a90] text-xs">Add a new estate or connect to a family member</p>
             </div>

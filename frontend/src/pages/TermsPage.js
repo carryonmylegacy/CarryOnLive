@@ -34,7 +34,7 @@ const TermsPage = () => {
             <section>
               <h2 className="text-lg font-semibold text-[#F1F3F8] mb-3">2. Description of Service</h2>
               <p>
-                CarryOn&trade; is an estate planning and legacy management platform that enables users to organize, secure, and communicate their estate plans to designated beneficiaries. The Service includes document storage, beneficiary management, checklist tools, AI-powered estate analysis, voice biometric verification, and related features.
+                CarryOn&trade; is an estate planning and estate plan management platform that enables users to organize, secure, and communicate their estate plans to designated beneficiaries. The Service includes document storage, beneficiary management, checklist tools, AI-powered estate analysis, voice biometric verification, and related features.
               </p>
             </section>
 

@@ -471,7 +471,7 @@ const SignupPage = () => {
                 <div className="flex-1 pt-2">
                   <h1 className="text-5xl font-bold text-white leading-[1.08] mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>
                     Join CarryOn.
-                    <span className="block text-[#d4af37] mt-1">Protect Your Legacy.</span>
+                    <span className="block text-[#d4af37] mt-1">Protect Your Estate Plan.</span>
                   </h1>
                   <p className="text-[#7b879e] text-base max-w-sm leading-relaxed mb-6">
                     Create your account in seconds. Your family's readiness starts here.
@@ -504,7 +504,7 @@ const SignupPage = () => {
               transition: 'opacity 0.6s ease 0.1s',
             }}>
               <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight mb-0.5" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                Join CarryOn. <span className="text-[#d4af37]">Protect Your Legacy.</span>
+                Join CarryOn. <span className="text-[#d4af37]">Protect Your Estate Plan.</span>
               </h1>
               <p className="text-[#6b7a90] text-xs">Create your account in seconds</p>
             </div>
@@ -1050,7 +1050,7 @@ const SignupPage = () => {
                       <div className="space-y-4 sm:space-y-5">
                         <div>
                           <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Secure your account</h2>
-                          <p className="text-[#6b7a90] text-sm">Choose a strong password to protect your legacy.</p>
+                          <p className="text-[#6b7a90] text-sm">Choose a strong password to protect your estate plan.</p>
                         </div>
                         <div className="space-y-2">
                           <Label className="text-[#7b879e] text-sm font-medium">Email <span className="text-red-400">*</span></Label>

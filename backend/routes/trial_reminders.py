@@ -69,7 +69,7 @@ def build_trial_reminder_email(user_name, days_remaining, app_url):
           AES-256 Encrypted · Zero-Knowledge Architecture · Cancel anytime
         </p>
         <p style="color: #525C72; font-size: 11px; margin: 4px 0 0;">
-          CarryOn™ · Secure Your Legacy
+          CarryOn™ · Secure Your Estate Plan
         </p>
       </div>
     </div>

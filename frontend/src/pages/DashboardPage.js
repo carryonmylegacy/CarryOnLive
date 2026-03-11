@@ -251,7 +251,7 @@ const DashboardPage = () => {
             <FolderLock className="w-8 h-8 text-[var(--gold)]" />
           </div>
           <h2 className="text-xl lg:text-2xl font-bold text-[var(--t)] mb-3">Create Your First Estate</h2>
-          <p className="text-[var(--t4)] mb-6 text-sm lg:text-base">Start organizing your legacy by creating an estate.</p>
+          <p className="text-[var(--t4)] mb-6 text-sm lg:text-base">Start organizing your estate plan by creating an estate.</p>
           <button onClick={() => navigate('/create-estate')} className="gold-button px-6 py-3 rounded-xl font-bold" data-testid="create-first-estate">Create Estate</button>
         </div>
       </div>
@@ -452,7 +452,7 @@ const DashboardPage = () => {
           <p className="text-[var(--t4)] text-base lg:text-xl">
             {justCompletedActivation
               ? 'Click anywhere and have fun securing your family\'s future!'
-              : 'Your legacy is taking shape. Here\'s your overview.'}
+              : 'Your estate plan is taking shape. Here\'s your overview.'}
           </p>
         </div>
         <div className="sm:mt-1">
@@ -475,15 +475,15 @@ const DashboardPage = () => {
         <div className="flex justify-center gap-3 lg:gap-8 mt-16 lg:mt-28">
           <div className="flex items-center gap-1.5 lg:gap-2">
             <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#2563eb]" />
-            <span className="text-[var(--t3)] text-xs lg:text-sm">{docsPercent}% Docs</span>
+            <span className="text-[var(--t3)] text-xs lg:text-base font-semibold">{docsPercent}% Docs</span>
           </div>
           <div className="flex items-center gap-1.5 lg:gap-2">
             <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#8b5cf6]" />
-            <span className="text-[var(--t3)] text-xs lg:text-sm">{msgsPercent}% Messages</span>
+            <span className="text-[var(--t3)] text-xs lg:text-base font-semibold">{msgsPercent}% Messages</span>
           </div>
           <div className="flex items-center gap-1.5 lg:gap-2">
             <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#f97316]" />
-            <span className="text-[var(--t3)] text-xs lg:text-sm">{checklistPercent}% Checklist</span>
+            <span className="text-[var(--t3)] text-xs lg:text-base font-semibold">{checklistPercent}% Checklist</span>
           </div>
         </div>
       </div>

@@ -245,7 +245,7 @@ const Sidebar = () => {
         { to: '/guardian', icon: Sparkles, label: 'Estate Guardian (EGA)' },
         { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
         { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
-        { to: '/timeline', icon: Clock, label: 'Legacy Timeline' },
+        { to: '/timeline', icon: Clock, label: 'Estate Plan Timeline' },
       ]
     },
     {
@@ -261,7 +261,7 @@ const Sidebar = () => {
 
   const beneficiaryNavSections = [
     {
-      title: 'LEGACY ACCESS',
+      title: 'ESTATE PLAN ACCESS',
       items: [
         { to: '/beneficiary/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
         { to: '/beneficiary/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
@@ -363,13 +363,13 @@ const Sidebar = () => {
   };
 
   const getRoleLabel = () => {
-    if (user?.role === 'beneficiary' && isBenefactorContext) return 'MY ESTATE';
-    if (user?.role === 'beneficiary') return 'BENEFICIARY';
+    if (user?.role === 'beneficiary' && isBenefactorContext) return 'BENEFACTOR PORTAL';
+    if (user?.role === 'beneficiary') return 'BENEFICIARY PORTAL';
     if (user?.role === 'admin' && window.location.pathname.startsWith('/ops')) return 'OPERATIONS';
     if (user?.role === 'admin') return 'FOUNDER PORTAL';
     if (user?.role === 'operator' && user?.operator_role === 'manager') return 'OPS MANAGER';
     if (user?.role === 'operator') return 'OPERATIONS';
-    if (user?.role === 'benefactor' && window.location.pathname.startsWith('/beneficiary')) return 'BENEFICIARY';
+    if (user?.role === 'benefactor' && window.location.pathname.startsWith('/beneficiary')) return 'BENEFICIARY PORTAL';
     return 'BENEFACTOR PORTAL';
   };
 
@@ -478,120 +478,18 @@ const Sidebar = () => {
       {/* Beta Banner — only shows when beta_mode is active */}
       <BetaBanner collapsed={collapsed} />
 
-      {/* Multi-Role Portal Switcher — for users with both benefactor + beneficiary access */}
-      {(user?.is_also_benefactor || user?.is_also_beneficiary || 
-        (user?.role === 'benefactor' && benEstates.some(e => e.user_role_in_estate === 'beneficiary'))) && (
-        collapsed ? (
-          /* Collapsed: compact icon buttons for portal switching */
-          <div style={{ padding: '4px 6px', display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <button onClick={() => {
-              const ownedEstate = benEstates.find(e => e.user_role_in_estate === 'owner');
-              if (ownedEstate) localStorage.setItem('selected_estate_id', ownedEstate.id);
-              localStorage.removeItem('beneficiary_estate_id');
-              navigate('/dashboard');
-            }}
-            title="My Estate (Benefactor)"
-            data-testid="switch-benefactor-collapsed"
-            style={{
-              width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto', cursor: 'pointer', transition: 'all .15s',
-              background: !window.location.pathname.startsWith('/beneficiary') ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.03)',
-              border: !window.location.pathname.startsWith('/beneficiary') ? '1px solid rgba(212,175,55,0.3)' : '1px solid rgba(255,255,255,0.06)',
-            }}>
-              <Shield className="w-4 h-4" style={{ color: '#d4af37' }} />
-            </button>
-            <button onClick={() => {
-              const benEstate = benEstates.find(e => e.user_role_in_estate === 'beneficiary' || e.is_beneficiary_estate);
-              if (benEstate) localStorage.setItem('beneficiary_estate_id', benEstate.id);
-              localStorage.removeItem('selected_estate_id');
-              navigate('/beneficiary');
-              window.location.reload();
-            }}
-            title="Beneficiary Portal"
-            data-testid="switch-beneficiary-collapsed"
-            style={{
-              width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto', cursor: 'pointer', transition: 'all .15s',
-              background: window.location.pathname.startsWith('/beneficiary') ? 'rgba(96,165,250,0.15)' : 'rgba(255,255,255,0.03)',
-              border: window.location.pathname.startsWith('/beneficiary') ? '1px solid rgba(96,165,250,0.3)' : '1px solid rgba(255,255,255,0.06)',
-            }}>
-              <Users className="w-4 h-4" style={{ color: '#60A5FA' }} />
-            </button>
-          </div>
-        ) : (
-        <div style={{ padding: '6px 12px' }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#525C72', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 4, paddingLeft: 4 }}>
-            Switch View
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {/* Owned estates (benefactor view) */}
-            {benEstates.filter(e => e.user_role_in_estate === 'owner').map(estate => (
-              <button key={`own-${estate.id}`} onClick={() => {
-                localStorage.setItem('selected_estate_id', estate.id);
-                localStorage.removeItem('beneficiary_estate_id');
-                navigate('/dashboard');
-              }}
-              data-testid={`switch-estate-owner-${estate.id}`}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
-                background: (!window.location.pathname.startsWith('/beneficiary') && localStorage.getItem('selected_estate_id') === estate.id)
-                  ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.02)',
-                border: (!window.location.pathname.startsWith('/beneficiary') && localStorage.getItem('selected_estate_id') === estate.id)
-                  ? '1px solid rgba(212,175,55,0.3)' : '1px solid rgba(255,255,255,0.06)',
-                borderRadius: 8, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'all .15s',
-              }}>
-                <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#d4af37', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#080e1a', flexShrink: 0 }}>
-                  <Shield className="w-3 h-3" />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: '#E2E8F0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>My Estate</div>
-                  <div style={{ fontSize: 9, color: '#64748B' }}>Benefactor</div>
-                </div>
-              </button>
-            ))}
-            {/* Beneficiary estates */}
-            {benEstates.filter(e => e.user_role_in_estate === 'beneficiary' || e.is_beneficiary_estate).map(estate => (
-              <button key={`ben-${estate.id}`} onClick={() => {
-                localStorage.setItem('beneficiary_estate_id', estate.id);
-                localStorage.removeItem('selected_estate_id');
-                navigate('/beneficiary');
-                window.location.reload();
-              }}
-              data-testid={`switch-estate-ben-${estate.id}`}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
-                background: (window.location.pathname.startsWith('/beneficiary') && localStorage.getItem('beneficiary_estate_id') === estate.id)
-                  ? 'rgba(96,165,250,0.1)' : 'rgba(255,255,255,0.02)',
-                border: (window.location.pathname.startsWith('/beneficiary') && localStorage.getItem('beneficiary_estate_id') === estate.id)
-                  ? '1px solid rgba(96,165,250,0.3)' : '1px solid rgba(255,255,255,0.06)',
-                borderRadius: 8, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'all .15s',
-              }}>
-                <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#60A5FA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#080e1a', flexShrink: 0 }}>
-                  <Users className="w-3 h-3" />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: '#E2E8F0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{estate.name || 'Estate'}</div>
-                  <div style={{ fontSize: 9, color: '#64748B' }}>Beneficiary</div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-        )
-      )}
-
-      {/* Beneficiary Estate Switcher — removed from sidebar, now in page header */}
-
       {/* Navigation Sections */}
       <nav className="flex-1 overflow-y-auto py-4">
-        {getNavSections().map((section, idx) => (
+        {getNavSections().map((section, idx) => {
+          const isAccountSection = section.title === 'ACCOUNT';
+          return (
           <div key={idx} className="nav-section">
             {section.title && !collapsed && <div className="nav-section-title">{section.title}</div>}
             {section.items.map((item, itemIdx) => (
               <React.Fragment key={item.to}>
                 <NavLink
                   to={item.to}
-                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                  className={({ isActive }) => `${isAccountSection ? 'nav-item-sm' : 'nav-item'} ${isActive ? 'active' : ''}`}
                   data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
                   title={collapsed ? item.label : undefined}
                 >
@@ -604,76 +502,103 @@ const Sidebar = () => {
               </React.Fragment>
             ))}
           </div>
-        ))}
+          );
+        })}
       </nav>
 
-      {/* Footer - Notifications, Theme Toggle & User */}
+      {/* Bottom Pinned Section */}
       <div className="sb-user">
-        {/* Notification Bell */}
+        {/* Notifications */}
         <NotificationBell collapsed={collapsed} />
 
-        {/* Theme Toggle */}
-        {collapsed ? (
-          <button
-            onClick={toggleTheme}
-            className="nav-item w-full justify-center mb-3"
-            title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-            data-testid="theme-toggle"
-          >
-            {theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
-          </button>
-        ) : (
-          <div className="theme-toggle mb-4" data-testid="theme-toggle">
-            <div className="theme-toggle-label" onClick={toggleTheme}>
-              {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-              <span>{theme === 'dark' ? 'Dark' : 'Light'} Mode</span>
-            </div>
-            <Switch
-              checked={theme === 'dark'}
-              onCheckedChange={toggleTheme}
-            />
-          </div>
-        )}
-
-        {/* User Info */}
-        {collapsed ? (
-          <div className="sb-user-info justify-center" title={getUserDisplayName()}>
-            <div className="sb-avatar">
-              {getUserInitials()}
-            </div>
-          </div>
-        ) : (
-          <div className="sb-user-info">
-            <div className="sb-avatar">
-              {getUserInitials()}
-            </div>
-            <div className="sb-user-details">
-              <div className="sb-user-name">{getUserDisplayName()}</div>
-              <div className="sb-user-email">{user?.email || ''}</div>
-            </div>
-          </div>
-        )}
-
-        {/* Logout Button */}
+        {/* Light/Dark Mode — pill button */}
         <button
-          onClick={handleLogout}
-          className={`nav-item w-full mt-3 text-[var(--rd)] hover:bg-[var(--rdbg)] ${collapsed ? 'justify-center' : ''}`}
-          data-testid="logout-button"
-          title={collapsed ? 'Sign Out' : undefined}
+          onClick={toggleTheme}
+          className={`sb-pill w-full ${collapsed ? 'justify-center' : ''}`}
+          data-testid="theme-toggle"
+          title={collapsed ? (theme === 'dark' ? 'Light Mode' : 'Dark Mode') : undefined}
         >
-          <LogOut className="w-5 h-5" />
-          {!collapsed && <span>Sign Out</span>}
+          {theme === 'dark' ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
+          {!collapsed && <span>{theme === 'dark' ? 'Light' : 'Dark'} Mode</span>}
         </button>
 
-        {/* Collapse Toggle */}
+        {/* Collapse — pill button */}
         <button
           onClick={toggleCollapsed}
-          className={`nav-item w-full mt-2 ${collapsed ? 'justify-center' : ''}`}
+          className={`sb-pill w-full mt-2 ${collapsed ? 'justify-center' : ''}`}
           data-testid="sidebar-collapse-toggle"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {collapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
+          {collapsed ? <PanelLeftOpen className="w-[18px] h-[18px]" /> : <PanelLeftClose className="w-[18px] h-[18px]" />}
           {!collapsed && <span>Collapse</span>}
+        </button>
+
+        {/* ── Separator ── */}
+        <div style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.08)', margin: '10px 0' }} />
+
+        {/* Switch View — Portal Pills */}
+        {(user?.is_also_benefactor || user?.is_also_beneficiary || 
+          (user?.role === 'benefactor' && benEstates.some(e => e.user_role_in_estate === 'beneficiary'))) && (
+          <>
+            {!collapsed && (
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#525C72', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 6, paddingLeft: 4 }}>
+                Switch View
+              </div>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {benEstates.filter(e => e.user_role_in_estate === 'owner').map(estate => (
+                <button key={`own-${estate.id}`} onClick={() => {
+                  localStorage.setItem('selected_estate_id', estate.id);
+                  localStorage.removeItem('beneficiary_estate_id');
+                  localStorage.setItem('carryon_last_portal', 'benefactor');
+                  navigate('/dashboard');
+                }}
+                data-testid={`switch-estate-owner-${estate.id}`}
+                className={`sb-pill w-full ${collapsed ? 'justify-center' : ''}`}
+                style={{
+                  background: !window.location.pathname.startsWith('/beneficiary') ? 'rgba(212,175,55,0.1)' : undefined,
+                  borderColor: !window.location.pathname.startsWith('/beneficiary') ? 'rgba(212,175,55,0.3)' : undefined,
+                  color: !window.location.pathname.startsWith('/beneficiary') ? '#d4af37' : undefined,
+                }}>
+                  <Shield className="w-[18px] h-[18px]" style={{ color: '#d4af37' }} />
+                  {!collapsed && <span>My Estate</span>}
+                </button>
+              ))}
+              {benEstates.filter(e => e.user_role_in_estate === 'beneficiary' || e.is_beneficiary_estate).map(estate => (
+                <button key={`ben-${estate.id}`} onClick={() => {
+                  localStorage.setItem('beneficiary_estate_id', estate.id);
+                  localStorage.removeItem('selected_estate_id');
+                  localStorage.setItem('carryon_last_portal', 'beneficiary');
+                  navigate('/beneficiary');
+                  window.location.reload();
+                }}
+                data-testid={`switch-estate-ben-${estate.id}`}
+                className={`sb-pill w-full ${collapsed ? 'justify-center' : ''}`}
+                style={{
+                  background: window.location.pathname.startsWith('/beneficiary') ? 'rgba(96,165,250,0.1)' : undefined,
+                  borderColor: window.location.pathname.startsWith('/beneficiary') ? 'rgba(96,165,250,0.3)' : undefined,
+                  color: window.location.pathname.startsWith('/beneficiary') ? '#60A5FA' : undefined,
+                }}>
+                  <Users className="w-[18px] h-[18px]" style={{ color: '#60A5FA' }} />
+                  {!collapsed && <span>{estate.name || 'Beneficiary'}</span>}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* ── Separator ── */}
+        <div style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.08)', margin: '10px 0' }} />
+
+        {/* Sign Out — pill button, danger style */}
+        <button
+          onClick={handleLogout}
+          className={`sb-pill danger w-full ${collapsed ? 'justify-center' : ''}`}
+          data-testid="logout-button"
+          title={collapsed ? 'Sign Out' : undefined}
+        >
+          <LogOut className="w-[18px] h-[18px]" />
+          {!collapsed && <span>Sign Out</span>}
         </button>
       </div>
     </aside>

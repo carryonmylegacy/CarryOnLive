@@ -1,0 +1,82 @@
+{
+  "summary": "Comprehensive UI/UX batch testing for iteration 97 - Desktop sidebar redesign, mobile hamburger menu, portal labels, theme toggle, Users tab delete buttons, and subscription plans verified",
+  "backend_issues": {
+    "critical": [],
+    "minor": [],
+    "fixed": [
+      {
+        "endpoint": "GET /api/subscriptions/plans",
+        "issue": "Premium plan features contained 'Future: Will/Trust Wizard & Eternal Echo' from stale database data",
+        "fix": "Updated get_subscription_settings() to sync features from DEFAULT_PLANS to database, removing stale feature text",
+        "file_updated": "/app/backend/routes/subscriptions/plans.py"
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_results": {
+    "desktop_sidebar": {
+      "BENEFACTOR_PORTAL_label": "✅ Verified",
+      "nav_items_clean_text_links": "✅ Verified - no button boxes",
+      "nav_item_sm_smaller_account_items": "✅ 4 smaller account items found",
+      "sb_pill_buttons": "✅ 4 pill-style buttons found",
+      "user_info_pill_removed": "✅ Verified - not present in sidebar",
+      "notifications_bell": "✅ Found in bottom stack",
+      "theme_toggle": "✅ Found - toggles between Light/Dark Mode correctly",
+      "collapse_toggle": "✅ Found in bottom stack",
+      "switch_view_section": "✅ Found with portal pills",
+      "sign_out_button": "✅ Found in bottom stack",
+      "nav_dividers": "✅ 11 separators found"
+    },
+    "beneficiary_portal": {
+      "BENEFICIARY_PORTAL_label": "✅ Verified at /beneficiary path"
+    },
+    "mobile_hamburger": {
+      "notifications": "✅ Found in hamburger menu",
+      "light_dark_toggle": "✅ Found in hamburger menu",
+      "switch_view": "✅ Found in hamburger menu",
+      "sign_out": "✅ Found in hamburger menu"
+    },
+    "founder_portal": {
+      "FOUNDER_PORTAL_label": "✅ Verified at /admin path",
+      "users_tab_delete_buttons": "✅ 86 delete buttons visible (correct - not operatorMode)"
+    },
+    "ops_portal": {
+      "OPERATIONS_label": "✅ Verified at /ops path",
+      "users_tab_delete_buttons": "✅ 0 delete buttons (correct - operatorMode hides them)"
+    },
+    "dashboard": {
+      "estate_plan_text": "✅ 'estate plan' text found (not 'legacy')",
+      "estate_readiness_score": "✅ Card found with Docs, Messages, Checklist labels"
+    },
+    "subscription_plans_api": {
+      "premium_no_wizard_echo": "✅ NO 'Will/Trust Wizard' or 'Eternal Echo' text",
+      "all_plans_clean": "✅ All 8 plans verified clean"
+    }
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_97.py",
+    "/app/test_reports/pytest/pytest_results_97.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/routes/subscriptions/plans.py"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "100%"
+  },
+  "test_credentials": {
+    "multi_role_user": "fulltest@test.com / Password.123",
+    "admin_user": "info@carryon.us / Demo1234!"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration 97 tested major UI/UX batch changes. All sidebar redesign features verified working. Backend fix applied to sync subscription plan features from code to database, removing stale 'Will/Trust Wizard & Eternal Echo' text. All tests passed.",
+  "rca_of_the_issue": "The 'Will/Trust Wizard & Eternal Echo' text persisted in the API response because get_subscription_settings() only merged new fields into existing database records but didn't update the 'features' array. Fixed by adding logic to sync features from DEFAULT_PLANS to database whenever they differ."
+}

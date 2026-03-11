@@ -132,9 +132,16 @@ const LoginPage = () => {
     haptics.success();
     if (result.user?.role === 'admin') navigate('/admin');
     else if (result.user?.role === 'operator') navigate('/ops');
-    else if (result.user?.role === 'beneficiary' && result.user?.is_also_benefactor) navigate('/dashboard');
-    else if (result.user?.role === 'beneficiary') navigate('/beneficiary');
-    else navigate('/dashboard');
+    else {
+      // For multi-role users, restore last-viewed portal
+      const lastPortal = localStorage.getItem('carryon_last_portal');
+      const isMultiRole = result.user?.is_also_benefactor || result.user?.is_also_beneficiary;
+      if (isMultiRole && lastPortal === 'beneficiary') navigate('/beneficiary');
+      else if (isMultiRole && lastPortal === 'benefactor') navigate('/dashboard');
+      else if (result.user?.role === 'beneficiary' && result.user?.is_also_benefactor) navigate('/dashboard');
+      else if (result.user?.role === 'beneficiary') navigate('/beneficiary');
+      else navigate('/dashboard');
+    }
   };
 
   const handleLogin = async (e) => {
@@ -354,7 +361,7 @@ const LoginPage = () => {
                     <span className="block text-[#d4af37] mt-1">Ready.</span>
                   </h1>
                   <p className="text-[#7b879e] text-sm lg:text-base max-w-sm leading-relaxed mb-5">
-                    Secure your legacy with AI-powered estate planning. Protect what matters, guide who you love.
+                    Secure your estate plan with AI-powered estate planning. Protect what matters, guide who you love.
                   </p>
                   <div className="flex items-center gap-4 justify-center sm:justify-start mb-4">
                     {['AES-256 Encrypted', 'Zero-Knowledge', '2FA Protected'].map(badge => (
@@ -448,7 +455,7 @@ const LoginPage = () => {
                     <span className="block text-[#d4af37] mt-1">Ready.</span>
                   </h2>
                   <p className="text-[#7b879e] text-sm max-w-xs leading-relaxed mb-4">
-                    Secure your legacy with AI-powered estate planning. Protect what matters, guide who you love.
+                    Secure your estate plan with AI-powered estate planning. Protect what matters, guide who you love.
                   </p>
                   <div className="flex items-center gap-3 justify-center mb-3">
                     {['AES-256 Encrypted', 'Zero-Knowledge', '2FA Protected'].map(badge => (

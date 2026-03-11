@@ -469,7 +469,7 @@ export const SubscriptionManagement = ({
                     ? `${currentSub.plan_name} · ${currentSub.billing_cycle}`
                     : subscriptionStatus.trial?.trial_active
                       ? `Free Trial · ${subscriptionStatus.trial.days_remaining} days left`
-                      : 'Choose a plan to get started'}
+                      : 'Choose a payment option that best suits you. (Monthly/Quarterly/Annual)'}
                 </span>
                 {isBeta && (
                   <p className="text-[10px] text-[var(--t5)] mt-0.5">No payment required during beta period</p>

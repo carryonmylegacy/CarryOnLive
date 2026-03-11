@@ -88,7 +88,7 @@ const CondolencePage = () => {
               We are deeply sorry for your loss.
             </p>
             <p className="text-sm text-[var(--t3)] leading-relaxed mb-3 max-w-md mx-auto">
-              Your benefactor entrusted CarryOn with their legacy because they wanted to make this time as manageable as possible for you and your family.
+              Your benefactor entrusted CarryOn with their estate plan because they wanted to make this time as manageable as possible for you and your family.
             </p>
             <p className="text-sm text-[var(--t4)] leading-relaxed mb-8 max-w-md mx-auto">
               Your submission has been received. A member of our Transition Verification Team will review it shortly.

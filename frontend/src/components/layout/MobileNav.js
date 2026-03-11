@@ -32,9 +32,11 @@ import {
   BookOpen,
   Search,
   StickyNote,
-  Gift
+  Gift,
+  Bell
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
+import NotificationBell from '../NotificationBell';
 import { toast } from '../../utils/toast';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -310,7 +312,7 @@ const MobileNav = () => {
     { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
     { to: '/guardian', icon: Sparkles, label: 'Estate Guardian (EGA)' },
     { to: '/digital-wallet', icon: KeyRound, label: 'Digital Access Vault (DAV)' },
-    { to: '/timeline', icon: Clock, label: 'Legacy Timeline' },
+    { to: '/timeline', icon: Clock, label: 'Estate Plan Timeline' },
   ];
 
   const beneficiaryLegacyItems = [
@@ -520,7 +522,7 @@ const MobileNav = () => {
               {/* Spacer for built-in close button */}
               <div className="h-12" />
 
-              {/* MY LEGACY Section */}
+              {/* MY ESTATE PLAN Section */}
               <nav className="flex-1 px-4 overflow-y-auto" role="navigation" aria-label="Main menu">
                 {/* Main nav items — path-aware for admin viewing ops */}
                 {(() => {
@@ -540,13 +542,13 @@ const MobileNav = () => {
                     sectionTitle = 'TOOLS';
                   } else if (isOnBeneficiary || (user?.role === 'beneficiary' && !user?.is_also_benefactor)) {
                     menuItems = beneficiaryLegacyItems;
-                    sectionTitle = 'LEGACY ACCESS';
+                    sectionTitle = 'ESTATE PLAN ACCESS';
                   } else if (user?.role === 'beneficiary' && user?.is_also_benefactor && !isOnBeneficiary) {
                     menuItems = myLegacyItems;
                     sectionTitle = '';
                   } else if (user?.role === 'benefactor' && isOnBeneficiary) {
                     menuItems = beneficiaryLegacyItems;
-                    sectionTitle = 'LEGACY ACCESS';
+                    sectionTitle = 'ESTATE PLAN ACCESS';
                   } else {
                     menuItems = myLegacyItems;
                     sectionTitle = '';
@@ -638,68 +640,6 @@ const MobileNav = () => {
                 )}
               </nav>
 
-              {/* Multi-Role Portal Links — inline buttons for switching between portals */}
-              {(() => {
-                const isMultiRole = user?.is_also_benefactor || user?.is_also_beneficiary ||
-                  (user?.role === 'benefactor' && user?.role !== 'admin');
-                if (!isMultiRole || user?.role === 'admin' || user?.role === 'operator') return null;
-                const isOnBeneficiary = window.location.pathname.startsWith('/beneficiary');
-                return (
-                  <div className="px-4 pb-3">
-                    <h3 className="text-xs font-semibold tracking-wider uppercase mb-2 px-2"
-                      style={{ color: theme === 'dark' ? '#525C72' : '#64748B' }}>
-                      SWITCH VIEW
-                    </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                      {/* My Estate (benefactor) link */}
-                      <button onClick={() => {
-                        setOpen(false);
-                        navigate('/dashboard');
-                        if (isOnBeneficiary) window.location.reload();
-                      }}
-                      data-testid="mobile-switch-benefactor"
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
-                        background: !isOnBeneficiary ? 'rgba(212,175,55,0.1)' : 'rgba(255,255,255,0.02)',
-                        border: !isOnBeneficiary ? '1px solid rgba(212,175,55,0.3)' : '1px solid rgba(255,255,255,0.06)',
-                        borderRadius: 8, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'all .15s',
-                      }}>
-                        <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#d4af37', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <Shield className="w-3 h-3" style={{ color: '#080e1a' }} />
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 11, fontWeight: 600, color: theme === 'dark' ? '#E2E8F0' : '#1e293b' }}>My Estate</div>
-                          <div style={{ fontSize: 9, color: '#64748B' }}>Benefactor</div>
-                        </div>
-                        {!isOnBeneficiary && <span style={{ fontSize: 10, color: 'var(--gold2, #d4af37)' }}>Active</span>}
-                      </button>
-                      {/* Beneficiary portal link */}
-                      <button onClick={() => {
-                        setOpen(false);
-                        navigate('/beneficiary');
-                        if (!isOnBeneficiary) window.location.reload();
-                      }}
-                      data-testid="mobile-switch-beneficiary"
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
-                        background: isOnBeneficiary ? 'rgba(96,165,250,0.1)' : 'rgba(255,255,255,0.02)',
-                        border: isOnBeneficiary ? '1px solid rgba(96,165,250,0.3)' : '1px solid rgba(255,255,255,0.06)',
-                        borderRadius: 8, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'all .15s',
-                      }}>
-                        <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#60A5FA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <Users className="w-3 h-3" style={{ color: '#080e1a' }} />
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 11, fontWeight: 600, color: theme === 'dark' ? '#E2E8F0' : '#1e293b' }}>Beneficiary</div>
-                          <div style={{ fontSize: 9, color: '#64748B' }}>View estates I'm named in</div>
-                        </div>
-                        {isOnBeneficiary && <span style={{ fontSize: 10, color: '#60A5FA' }}>Active</span>}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })()}
-
               {/* Admin OTP Toggle — Founder only */}
               {user?.role === 'admin' && !window.location.pathname.startsWith('/ops') && (
                 <div className="px-4 pb-2">
@@ -707,36 +647,87 @@ const MobileNav = () => {
                 </div>
               )}
 
-              {/* Theme Toggle Button */}
-              <div className="px-4 pb-3">
+              {/* ═══ Bottom Pinned Section ═══ */}
+              <div className="px-4 pt-4" style={{ borderTop: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`, marginTop: 8 }}>
+                {/* Notifications — pill */}
+                <div className="mb-2">
+                  <NotificationBell collapsed={false} />
+                </div>
+
+                {/* Light/Dark Mode — pill */}
                 <button
                   onClick={toggleTheme}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all"
+                  data-testid="mobile-theme-toggle"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all mb-2"
                   style={{
                     backgroundColor: theme === 'dark' ? 'var(--b)' : 'rgba(0,0,0,0.05)',
                     border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
                     color: theme === 'dark' ? '#A0AABF' : '#475569'
                   }}
                 >
-                  {theme === 'dark' ? (
-                    <>
-                      <Sun className="w-5 h-5" />
-                      <span className="font-medium">Light Mode</span>
-                    </>
-                  ) : (
-                    <>
-                      <Moon className="w-5 h-5" />
-                      <span className="font-medium">Dark Mode</span>
-                    </>
-                  )}
+                  {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                  <span className="font-medium">{theme === 'dark' ? 'Light' : 'Dark'} Mode</span>
                 </button>
-              </div>
 
-              {/* Sign Out */}
-              <div className="px-4 pb-6">
+                {/* ── Separator ── */}
+                <div style={{ width: '100%', height: 1, background: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)', margin: '8px 0' }} />
+
+                {/* Switch View — Portal Pills */}
+                {(() => {
+                  const isMultiRole = user?.is_also_benefactor || user?.is_also_beneficiary ||
+                    (user?.role === 'benefactor' && user?.role !== 'admin');
+                  if (!isMultiRole || user?.role === 'admin' || user?.role === 'operator') return null;
+                  const isOnBeneficiary = window.location.pathname.startsWith('/beneficiary');
+                  return (
+                    <div className="mb-2">
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#525C72', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 8, paddingLeft: 4 }}>
+                        Switch View
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <button onClick={() => {
+                          setOpen(false);
+                          localStorage.setItem('carryon_last_portal', 'benefactor');
+                          navigate('/dashboard');
+                          if (isOnBeneficiary) window.location.reload();
+                        }}
+                        data-testid="mobile-switch-benefactor"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all"
+                        style={{
+                          border: `1px solid ${!isOnBeneficiary ? 'rgba(212,175,55,0.3)' : theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                          color: !isOnBeneficiary ? '#d4af37' : theme === 'dark' ? '#A0AABF' : '#475569',
+                          backgroundColor: !isOnBeneficiary ? 'rgba(212,175,55,0.08)' : theme === 'dark' ? 'var(--b)' : 'rgba(0,0,0,0.05)',
+                        }}>
+                          <Shield className="w-5 h-5" />
+                          <span className="font-medium">My Estate</span>
+                        </button>
+                        <button onClick={() => {
+                          setOpen(false);
+                          localStorage.setItem('carryon_last_portal', 'beneficiary');
+                          navigate('/beneficiary');
+                          if (!isOnBeneficiary) window.location.reload();
+                        }}
+                        data-testid="mobile-switch-beneficiary"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all"
+                        style={{
+                          border: `1px solid ${isOnBeneficiary ? 'rgba(96,165,250,0.3)' : theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                          color: isOnBeneficiary ? '#60A5FA' : theme === 'dark' ? '#A0AABF' : '#475569',
+                          backgroundColor: isOnBeneficiary ? 'rgba(96,165,250,0.08)' : theme === 'dark' ? 'var(--b)' : 'rgba(0,0,0,0.05)',
+                        }}>
+                          <Users className="w-5 h-5" />
+                          <span className="font-medium">Beneficiary</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* ── Separator ── */}
+                <div style={{ width: '100%', height: 1, background: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)', margin: '8px 0' }} />
+
+                {/* Sign Out — pill, danger style */}
                 <button
                   onClick={() => { setOpen(false); handleLogout(); }}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all mb-6"
                   style={{
                     border: '1px solid rgba(244,63,94,0.25)',
                     color: '#F43F5E',

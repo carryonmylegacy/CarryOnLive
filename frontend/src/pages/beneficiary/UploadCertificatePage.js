@@ -182,7 +182,7 @@ const UploadCertificatePage = () => {
             </div>
             <h2 className="text-xl font-bold text-center text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Before You Begin</h2>
             <p className="text-sm text-[var(--t4)] text-center leading-relaxed mb-7">
-              To verify a transition and unlock access to your benefactor's legacy, we need an official copy of their death certificate.
+              To verify a transition and unlock access to your benefactor's estate plan, we need an official copy of their death certificate.
             </p>
 
             <div className="rounded-xl p-5 mb-5" style={{ background: 'rgba(37,99,235,0.04)', border: '1px solid rgba(37,99,235,0.1)' }}>

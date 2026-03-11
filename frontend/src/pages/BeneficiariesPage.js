@@ -145,7 +145,7 @@ const BeneficiariesPage = () => {
     checklist: 'Immediate Action Checklist (IAC)',
     guardian: 'Estate Guardian AI (EGA)',
     digital_wallet: 'Digital Access Vault (DAV)',
-    timeline: 'Legacy Timeline',
+    timeline: 'Estate Plan Timeline',
   };
 
   useEffect(() => {

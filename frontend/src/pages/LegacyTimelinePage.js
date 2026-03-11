@@ -177,7 +177,7 @@ const LegacyTimelinePage = () => {
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
-          Legacy Timeline
+          Estate Plan Timeline
         </h1>
         <p className="text-[var(--t4)] mt-1 text-sm sm:text-base">
           A chronological story of your estate — every document, message, and milestone.
@@ -239,7 +239,7 @@ const LegacyTimelinePage = () => {
             <Clock className="w-12 h-12 text-[var(--t5)] mx-auto mb-3" />
             <h3 className="text-[var(--t)] font-semibold text-lg mb-1">No Events Yet</h3>
             <p className="text-[var(--t4)] text-sm">
-              Your legacy timeline will grow as you add documents, messages, and beneficiaries.
+              Your estate plan timeline will grow as you add documents, messages, and beneficiaries.
             </p>
           </CardContent>
         </Card>
