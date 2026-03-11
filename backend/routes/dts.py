@@ -297,7 +297,9 @@ async def update_dts_status(
     # Notify operators of DTS status change
     from services.notifications import notify
 
-    task = await db.dts_tasks.find_one({"id": task_id}, {"_id": 0, "title": 1, "owner_id": 1})
+    task = await db.dts_tasks.find_one(
+        {"id": task_id}, {"_id": 0, "title": 1, "owner_id": 1}
+    )
     task_title = (task or {}).get("title", "DTS Task")
     asyncio.create_task(
         notify.p4_alert(

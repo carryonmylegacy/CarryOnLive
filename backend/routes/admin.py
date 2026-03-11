@@ -260,9 +260,7 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
     )
 
     # Emergency access requests pending
-    pending_emergency = await db.emergency_access.count_documents(
-        {"status": "pending"}
-    )
+    pending_emergency = await db.emergency_access.count_documents({"status": "pending"})
 
     # P1 emergency conversations
     p1_emergencies = await db.support_conversations.count_documents(

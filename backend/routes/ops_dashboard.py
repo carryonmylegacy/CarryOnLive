@@ -222,7 +222,6 @@ async def get_ops_dashboard(current_user: dict = Depends(get_current_user)):
     }
 
 
-
 @router.get("/ops/dashboard-events")
 async def get_dashboard_events(current_user: dict = Depends(get_current_user)):
     """Get actionable event counts for each dashboard tile.
@@ -233,9 +232,7 @@ async def get_dashboard_events(current_user: dict = Depends(get_current_user)):
 
     # 1. TVT: Death certificates pending or reviewing
     tvt_pending = await db.death_certificates.count_documents({"status": "pending"})
-    tvt_reviewing = await db.death_certificates.count_documents(
-        {"status": "reviewing"}
-    )
+    tvt_reviewing = await db.death_certificates.count_documents({"status": "reviewing"})
 
     # 2. Milestone Notifications: Pending review
     milestones_pending = await db.milestone_deliveries.count_documents(
@@ -251,9 +248,7 @@ async def get_dashboard_events(current_user: dict = Depends(get_current_user)):
     )
 
     # 4. Emergency Messages: Pending emergency access requests
-    emergency_pending = await db.emergency_access.count_documents(
-        {"status": "pending"}
-    )
+    emergency_pending = await db.emergency_access.count_documents({"status": "pending"})
 
     # 5. P1 Emergency: Open P1 conversations (benefactor alive alerts)
     p1_open = await db.support_conversations.count_documents(
@@ -451,7 +446,10 @@ async def get_team_tasks(current_user: dict = Depends(get_current_user)):
     team_data = []
     for op in operators:
         op_id = op["id"]
-        op_name = op.get("name") or f"{op.get('first_name', '')} {op.get('last_name', '')}".strip()
+        op_name = (
+            op.get("name")
+            or f"{op.get('first_name', '')} {op.get('last_name', '')}".strip()
+        )
 
         tasks = []
 
