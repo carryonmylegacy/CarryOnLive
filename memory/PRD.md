@@ -16,7 +16,28 @@ AI-powered estate planning platform (CarryOn) with multi-portal architecture: Be
 
 ## What's Been Implemented
 
-### Session: March 11, 2026
+### Session: March 11, 2026 (Current)
+
+**Operator Portal Enhancements - Dynamic Dashboard & Permissions:**
+- New `/api/ops/dashboard-events` endpoint: Aggregates 6 event types (TVT, Milestones, DTS, Emergency, P1 Emergency, Support)
+- New `/api/ops/team-tasks` endpoint: Returns active tasks per operator for manager team overview
+- Updated `/api/admin/stats` with new fields: pending_milestones, pending_emergency, p1_emergencies, open_escalations
+- 6 dynamic "light-up" dashboard tiles on operator portal:
+  - TVT (death certificate submissions)
+  - Milestone Notifications
+  - DTS Requests
+  - Emergency Messages (beneficiary emergency access)
+  - P1 Alert (benefactor still alive alerts)
+  - Customer Service replies
+- Tiles glow and pulse when items need attention, with click-to-navigate
+- P1 and Emergency tiles have enhanced urgency styling (larger glow, pulse animation)
+- Manager Team Activity section: Shows each operator's assigned tasks with type, title, status
+- Clicking a task navigates to the relevant tab
+- Subs tab: Only visible to Managers (not Workers)
+- Delete permissions enforced: Founders delete anyone, Managers delete workers only, Workers cannot delete
+- Backend enforces all permission checks (not just UI hiding)
+
+### Previous Session: March 11, 2026
 
 **Batch 1 - UI Tweaks:**
 - Notification panel repositioned to grow upward from bell button
@@ -29,12 +50,11 @@ AI-powered estate planning platform (CarryOn) with multi-portal architecture: Be
 - Fixed case-sensitivity bug in operator creation (username now lowercased)
 
 **Batch 3 - DEV Session Isolation:**
-- Created `create_dev_session_token` — generates tokens that do NOT invalidate real user sessions
-- Added `dev_session` flag to JWT tokens; session validation skips single-session check for dev tokens
+- Created `create_dev_session_token` for impersonation without invalidating real sessions
+- Added `dev_session` flag to JWT tokens
 - Updated all DEV pathways: `dev-switch`, `dev-login`, `operator-dev-login`
-- Founder can now impersonate any account without kicking out the real user
 
-### Previous Sessions
+### Earlier Sessions
 - Major sidebar & navigation redesign (desktop + mobile unified)
 - Ops Portal Users tab bug fix
 - Portal pill labels/colors fix
@@ -45,6 +65,9 @@ AI-powered estate planning platform (CarryOn) with multi-portal architecture: Be
 
 ## Prioritized Backlog
 
+### P0
+- User verification of operator dashboard features (tiles, team activity, permissions)
+
 ### P1
 - Finalize Share Extension Setup (Xcode, see /app/memory/SHARE_EXTENSION_SETUP.md)
 - Twilio SMS OTP Integration (blocked on A2P 10DLC approval)
@@ -52,19 +75,20 @@ AI-powered estate planning platform (CarryOn) with multi-portal architecture: Be
 ### P2
 - ESLint code cleanup (non-critical warnings)
 - Review beneficiary settings page for race condition (one-time flash glitch)
+- AdminPage.js refactoring (growing complexity)
 
 ## Key Accounts
 - Founder/Admin: info@carryon.us / Demo1234!
 - Test Benefactor: fulltest@test.com / Password.123
 
 ## Key Files
-- backend/utils.py (create_token with dev_session flag, session validation)
-- backend/routes/auth.py (create_dev_session_token, dev-switch, dev-login)
-- backend/routes/operators.py (operator-dev-login, operator CRUD with username support)
-- frontend/src/components/admin/OperatorsTab.js (edit dialog with credentials)
-- frontend/src/components/NotificationBell.js
-- frontend/src/components/layout/Sidebar.js
-- frontend/src/components/layout/MobileNav.js
+- backend/routes/ops_dashboard.py (dashboard-events, team-tasks, ops dashboard endpoints)
+- backend/routes/admin.py (stats with milestone/emergency/p1/escalation counts)
+- backend/routes/operators.py (operator CRUD with role-based permissions)
+- frontend/src/pages/AdminPage.js (operator tiles, team activity, tab filtering)
+- frontend/src/components/admin/OperatorsTab.js (delete/edit with permission controls)
+- frontend/src/components/admin/SubscriptionsTab.js (operatorMode hides pricing)
+- frontend/src/components/layout/Sidebar.js (nav structure per role)
 
 ## Deployment Notes
 - Backend changes deploy immediately via Railway (affects live app + TestFlight)

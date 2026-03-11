@@ -601,8 +601,8 @@ const AdminPage = ({ operatorMode = false }) => {
           if (operatorMode) {
             // Operators: work queues + operator tools
             const opsTabs = ['transition', 'dts', 'support', 'verifications', 'milestones', 'users', 'trials', 'system-health', 'estate-health', 'my-activity', 'search', 'ops-escalations', 'shift-notes', 'ops-kb'];
-            // Managers also get team management + dashboard + subscriptions
-            if (user?.operator_role === 'manager') opsTabs.push('operators', 'ops-dashboard', 'subscriptions');
+            // Managers and Founders also get team management + dashboard + subscriptions
+            if (user?.operator_role === 'manager' || user?.role === 'admin') opsTabs.push('operators', 'ops-dashboard', 'subscriptions');
             return opsTabs.includes(t.key);
           }
           // Founder: all except operator-specific tabs
