@@ -305,6 +305,61 @@ const LoginPage = () => {
             <span className="text-[#475569] text-xs">Bank-grade security · 256-bit SSL</span>
           </div>
         </div>
+        {forgotMode && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
+            <div className="w-full max-w-sm rounded-2xl p-6" style={{ background: '#152238', border: '1px solid rgba(212,175,55,0.5)', boxShadow: '0 0 60px rgba(212,175,55,0.08), 0 8px 40px rgba(0,0,0,0.6)' }}>
+              <h2 className="text-lg font-bold text-white mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Reset Password</h2>
+              {forgotStep === 1 ? (
+                <>
+                  <p className="text-xs text-[#94A3B8] mb-4">Enter your email and we'll send you a reset code.</p>
+                  <input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
+                    placeholder="Email address" className="w-full px-4 py-3 rounded-xl text-sm mb-3 bg-[#0a1128] border border-[#1e293b] text-white" data-testid="forgot-email-native" />
+                  {forgotMsg && <p className={`text-xs mb-3 ${forgotError ? 'text-red-400' : 'text-[#22C993]'}`}>{forgotMsg}</p>}
+                  <button disabled={!forgotEmail || forgotLoading} onClick={async () => {
+                    setForgotLoading(true);
+                    try {
+                      const res = await axios.post(`${API_URL}/auth/forgot-password`, { email: forgotEmail });
+                      setForgotMsg(res.data.message);
+                      setForgotError(false);
+                      setForgotStep(2);
+                    } catch (err) { setForgotMsg(err.response?.data?.detail || 'Failed to send code. Please try again.'); setForgotError(true); }
+                    finally { setForgotLoading(false); }
+                  }} className="w-full py-3 rounded-xl text-sm font-bold mb-3" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', opacity: !forgotEmail || forgotLoading ? 0.5 : 1 }}>
+                    {forgotLoading ? 'Sending...' : 'Send Reset Code'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-[#94A3B8] mb-4">Enter the code sent to {forgotEmail} and your new password.</p>
+                  <input type="text" value={forgotOtp} onChange={e => setForgotOtp(e.target.value)}
+                    placeholder="6-digit code" maxLength={6} className="w-full px-4 py-3 rounded-xl text-sm mb-3 bg-[#0a1128] border border-[#1e293b] text-white text-center tracking-[0.3em]" data-testid="forgot-otp-native" />
+                  <input type="password" value={forgotNewPw} onChange={e => setForgotNewPw(e.target.value)}
+                    placeholder="New password (8+ characters)" className="w-full px-4 py-3 rounded-xl text-sm mb-3 bg-[#0a1128] border border-[#1e293b] text-white" data-testid="forgot-newpw-native" />
+                  <input type="password" value={forgotConfirmPw} onChange={e => setForgotConfirmPw(e.target.value)}
+                    placeholder="Confirm new password" className={`w-full px-4 py-3 rounded-xl text-sm mb-1 bg-[#0a1128] border text-white ${forgotConfirmPw && forgotNewPw !== forgotConfirmPw ? 'border-red-500' : 'border-[#1e293b]'}`} data-testid="forgot-confirmpw-native" />
+                  {forgotConfirmPw && forgotNewPw !== forgotConfirmPw && (
+                    <p className="text-red-400 text-xs mb-2">* Passwords do not match</p>
+                  )}
+                  {forgotMsg && <p className={`text-xs mb-3 ${forgotError ? 'text-red-400' : 'text-[#22C993]'}`}>{forgotMsg}</p>}
+                  <button disabled={!forgotOtp || !forgotNewPw || forgotNewPw !== forgotConfirmPw || forgotLoading} onClick={async () => {
+                    setForgotLoading(true);
+                    try {
+                      const res = await axios.post(`${API_URL}/auth/reset-password`, { email: forgotEmail, otp: forgotOtp, new_password: forgotNewPw });
+                      setForgotMsg(res.data.message);
+                      setForgotError(false);
+                      setTimeout(() => { setForgotMode(false); setForgotStep(1); setForgotOtp(''); setForgotNewPw(''); setForgotConfirmPw(''); setForgotMsg(''); setForgotError(false); }, 2000);
+                    } catch (err) { setForgotMsg(err.response?.data?.detail || 'Reset failed. Please try again.'); setForgotError(true); }
+                    finally { setForgotLoading(false); }
+                  }} className="w-full py-3 rounded-xl text-sm font-bold mb-3 mt-2" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', opacity: !forgotOtp || !forgotNewPw || forgotNewPw !== forgotConfirmPw || forgotLoading ? 0.5 : 1 }}>
+                    {forgotLoading ? 'Resetting...' : 'Reset Password'}
+                  </button>
+                </>
+              )}
+              <button onClick={() => { setForgotMode(false); setForgotStep(1); setForgotMsg(''); setForgotError(false); }}
+                className="w-full text-center text-xs text-[#475569] hover:text-[#94a3b8]">Cancel</button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -313,7 +368,7 @@ const LoginPage = () => {
     <div className="min-h-screen" style={{
       background: '#0B1221',
       opacity: exiting ? 0 : 1,
-      transform: exiting ? 'scale(0.98)' : 'scale(1)',
+      ...(exiting ? { transform: 'scale(0.98)' } : {}),
       transition: 'opacity 0.45s ease, transform 0.45s ease',
     }}>
 
@@ -792,8 +847,8 @@ const LoginPage = () => {
 
       {/* Forgot Password Modal */}
       {forgotMode && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.85)' }}>
-          <div className="w-full max-w-sm rounded-2xl p-6" style={{ background: '#0F1629', border: '1px solid rgba(212,175,55,0.15)' }}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
+          <div className="w-full max-w-sm rounded-2xl p-6" style={{ background: '#152238', border: '1px solid rgba(212,175,55,0.5)', boxShadow: '0 0 60px rgba(212,175,55,0.08), 0 8px 40px rgba(0,0,0,0.6)' }}>
             <h2 className="text-lg font-bold text-white mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Reset Password</h2>
             {forgotStep === 1 ? (
               <>
