@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
@@ -121,6 +121,28 @@ const AdminPage = ({ operatorMode = false }) => {
   const tab = PATH_TO_TAB[location.pathname] || (operatorMode ? defaultOpsTab : 'users');
   // If founder lands on /admin with no specific tab, default to users
   const effectiveTab = (!operatorMode && location.pathname === '/admin') ? 'users' : tab;
+
+  // When tab changes, keep the tab bar visible (don't scroll to top)
+  const isFirstRender = useRef(true);
+  const savedTabBarPos = useRef(null);
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    // Use saved position from before navigation, or find tab bar position
+    const restoreScroll = () => {
+      const mainEl = document.getElementById('main-content') || document.querySelector('.main-content');
+      if (!mainEl) return;
+      const pos = savedTabBarPos.current;
+      if (pos !== null) {
+        mainEl.scrollTop = pos;
+        savedTabBarPos.current = null;
+      } else {
+        const tabBar = document.querySelector('[data-testid="admin-tab-bar"]');
+        if (tabBar) mainEl.scrollTop = tabBar.offsetTop - 8;
+      }
+    };
+    // Use setTimeout to ensure DOM + layout are fully settled
+    setTimeout(restoreScroll, 60);
+  }, [effectiveTab]);
 
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState(null);
@@ -596,7 +618,7 @@ const AdminPage = ({ operatorMode = false }) => {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide" data-testid="admin-tab-bar" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         {TAB_CONFIG.filter(t => {
           if (operatorMode) {
             // Operators: work queues + operator tools
@@ -608,7 +630,11 @@ const AdminPage = ({ operatorMode = false }) => {
           // Founder: all except operator-specific tabs
           return !['my-activity', 'search', 'ops-escalations', 'shift-notes', 'ops-kb'].includes(t.key);
         }).map(t => (
-          <button key={t.key} onClick={() => navigate(operatorMode ? t.path.replace('/admin', '/ops') : t.path)}
+          <button key={t.key} onClick={() => {
+            const mainEl = document.getElementById('main-content') || document.querySelector('.main-content');
+            if (mainEl) savedTabBarPos.current = mainEl.scrollTop;
+            navigate(operatorMode ? t.path.replace('/admin', '/ops') : t.path);
+          }}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
               effectiveTab === t.key ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'
             }`} data-testid={`admin-tab-${t.key}`}>

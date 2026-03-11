@@ -40,6 +40,11 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     .filter(u => roleFilter === 'all' || u.role === roleFilter || (roleFilter === 'benefactor' && u.is_also_benefactor))
     .filter(u => !searchQuery || u.name?.toLowerCase().includes(searchQuery.toLowerCase()) || u.email?.toLowerCase().includes(searchQuery.toLowerCase()))
     .sort((a, b) => {
+      // Admins always on top in the All Estates view
+      if (roleFilter === 'all') {
+        if (a.role === 'admin' && b.role !== 'admin') return -1;
+        if (b.role === 'admin' && a.role !== 'admin') return 1;
+      }
       // When viewing a specific role tab, sort alphabetically by name
       if (roleFilter !== 'all') return (a.name || '').localeCompare(b.name || '');
       return 0;
@@ -612,8 +617,8 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
           <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search..." className="flex-1 bg-transparent border-none text-[var(--t)] text-sm outline-none placeholder:text-[var(--t5)]" data-testid="admin-users-search" />
         </div>
         <div className="flex gap-1 overflow-x-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
-          {(operatorMode ? ['all', 'benefactor', 'beneficiary'] : ['all', 'benefactor', 'beneficiary', 'admin']).map(r => (
-            <button key={r} onClick={() => { setRoleFilter(r); setViewMode(r === 'all' ? 'tree' : 'list'); }} className={`px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap flex-shrink-0 ${roleFilter === r ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'}`} data-testid={`admin-role-filter-${r}`}>{r === 'all' ? 'All Estates' : r === 'beneficiary' ? 'Beneficiaries' : r === 'benefactor' ? 'Benefactors' : r === 'admin' ? 'Admins' : r}</button>
+          {['all', 'benefactor', 'beneficiary'].map(r => (
+            <button key={r} onClick={() => { setRoleFilter(r); setViewMode(r === 'all' ? 'tree' : 'list'); }} className={`px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap flex-shrink-0 ${roleFilter === r ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'}`} data-testid={`admin-role-filter-${r}`}>{r === 'all' ? 'All Estates' : r === 'beneficiary' ? 'Beneficiaries' : 'Benefactors'}</button>
           ))}
           <div className="w-px bg-[var(--b)] mx-1" />
           <button
@@ -621,7 +626,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
             className={`px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap flex-shrink-0 flex items-center gap-1.5 ${viewMode !== 'list' ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'}`}
             data-testid="toggle-tree-view"
           >
-            <GitBranch className="w-3.5 h-3.5" /> {viewMode === 'tree' ? 'Tree' : viewMode === 'graph' ? 'Graph' : 'Tree'}
+            <GitBranch className="w-3.5 h-3.5" /> {viewMode === 'tree' ? 'Tree' : viewMode === 'graph' ? 'Graph' : 'List'}
           </button>
         </div>
       </div>
