@@ -525,7 +525,7 @@ const Sidebar = () => {
         {/* Collapse — pill button */}
         <button
           onClick={toggleCollapsed}
-          className={`sb-pill w-full mt-2 ${collapsed ? 'justify-center' : ''}`}
+          className={`sb-pill w-full ${collapsed ? 'justify-center' : ''}`}
           data-testid="sidebar-collapse-toggle"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
@@ -534,7 +534,7 @@ const Sidebar = () => {
         </button>
 
         {/* ── Separator ── */}
-        <div style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.08)', margin: '10px 0' }} />
+        <div style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.08)', margin: '2px 0' }} />
 
         {/* Switch View — Portal Pills */}
         {(user?.is_also_benefactor || user?.is_also_beneficiary || 
@@ -615,7 +615,7 @@ const Sidebar = () => {
         )}
 
         {/* ── Separator ── */}
-        <div style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.08)', margin: '10px 0' }} />
+        <div style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.08)', margin: '2px 0' }} />
 
         {/* Sign Out — pill button, danger style */}
         <button
