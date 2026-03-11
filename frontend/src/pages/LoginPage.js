@@ -69,6 +69,7 @@ const LoginPage = () => {
   const [forgotStep, setForgotStep] = useState(1); // 1=email, 2=otp+newpw
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotMsg, setForgotMsg] = useState('');
+  const [forgotError, setForgotError] = useState(false);
 
   const navigateWithFade = (path) => {
     setExiting(true);
@@ -295,8 +296,9 @@ const LoginPage = () => {
           )}
           <div className="mt-5 flex items-center justify-between">
             <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-medium">Create Account</button>
-            <span className="text-[#334155] text-xs cursor-pointer hover:text-[#7b879e] transition-colors"
-              onClick={() => { setForgotMode(true); setForgotEmail(email); setForgotStep(1); setForgotMsg(''); }}>Forgot Password?</span>
+            <span className="text-[#94A3B8] text-xs cursor-pointer hover:text-[#d4af37] transition-colors"
+              data-testid="forgot-password-link"
+              onClick={() => { setForgotMode(true); setForgotEmail(email); setForgotStep(1); setForgotMsg(''); setForgotError(false); }}>Forgot Password?</span>
           </div>
           <div className="mt-5 pt-4 border-t flex items-center justify-center gap-2" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
             <Shield className="w-3.5 h-3.5 text-[#10b981]" />
@@ -432,8 +434,9 @@ const LoginPage = () => {
                   )}
                   <div className="mt-5 flex items-center justify-between">
                     <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-medium hover:text-[#fcd34d] transition-colors">Create Account</button>
-                    <span className="text-[#334155] text-xs cursor-pointer hover:text-[#7b879e] transition-colors"
-                      onClick={() => { setForgotMode(true); setForgotEmail(email); setForgotStep(1); setForgotMsg(''); }}>Forgot Password?</span>
+                    <span className="text-[#94A3B8] text-xs cursor-pointer hover:text-[#d4af37] transition-colors"
+                      data-testid="forgot-password-link-web"
+                      onClick={() => { setForgotMode(true); setForgotEmail(email); setForgotStep(1); setForgotMsg(''); setForgotError(false); }}>Forgot Password?</span>
                   </div>
                   <div className="mt-6 pt-5 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
                     <div className="flex items-center justify-center gap-2">
@@ -797,14 +800,15 @@ const LoginPage = () => {
                 <p className="text-xs text-[#94A3B8] mb-4">Enter your email and we'll send you a reset code.</p>
                 <input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
                   placeholder="Email address" className="w-full px-4 py-3 rounded-xl text-sm mb-3 bg-[#0a1128] border border-[#1e293b] text-white" />
-                {forgotMsg && <p className="text-xs text-[#22C993] mb-3">{forgotMsg}</p>}
+                {forgotMsg && <p className={`text-xs mb-3 ${forgotError ? 'text-red-400' : 'text-[#22C993]'}`}>{forgotMsg}</p>}
                 <button disabled={!forgotEmail || forgotLoading} onClick={async () => {
                   setForgotLoading(true);
                   try {
                     const res = await axios.post(`${API_URL}/auth/forgot-password`, { email: forgotEmail });
                     setForgotMsg(res.data.message);
+                    setForgotError(false);
                     setForgotStep(2);
-                  } catch (err) { setForgotMsg(err.response?.data?.detail || 'Failed'); }
+                  } catch (err) { setForgotMsg(err.response?.data?.detail || 'Failed to send code. Please try again.'); setForgotError(true); }
                   finally { setForgotLoading(false); }
                 }} className="w-full py-3 rounded-xl text-sm font-bold mb-3" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', opacity: !forgotEmail || forgotLoading ? 0.5 : 1 }}>
                   {forgotLoading ? 'Sending...' : 'Send Reset Code'}
@@ -822,21 +826,22 @@ const LoginPage = () => {
                 {forgotConfirmPw && forgotNewPw !== forgotConfirmPw && (
                   <p className="text-red-400 text-xs mb-2">* Passwords do not match</p>
                 )}
-                {forgotMsg && <p className="text-xs text-[#22C993] mb-3">{forgotMsg}</p>}
+                {forgotMsg && <p className={`text-xs mb-3 ${forgotError ? 'text-red-400' : 'text-[#22C993]'}`}>{forgotMsg}</p>}
                 <button disabled={!forgotOtp || !forgotNewPw || forgotNewPw !== forgotConfirmPw || forgotLoading} onClick={async () => {
                   setForgotLoading(true);
                   try {
                     const res = await axios.post(`${API_URL}/auth/reset-password`, { email: forgotEmail, otp: forgotOtp, new_password: forgotNewPw });
                     setForgotMsg(res.data.message);
-                    setTimeout(() => { setForgotMode(false); setForgotStep(1); setForgotOtp(''); setForgotNewPw(''); setForgotConfirmPw(''); setForgotMsg(''); }, 2000);
-                  } catch (err) { setForgotMsg(err.response?.data?.detail || 'Failed'); }
+                    setForgotError(false);
+                    setTimeout(() => { setForgotMode(false); setForgotStep(1); setForgotOtp(''); setForgotNewPw(''); setForgotConfirmPw(''); setForgotMsg(''); setForgotError(false); }, 2000);
+                  } catch (err) { setForgotMsg(err.response?.data?.detail || 'Reset failed. Please try again.'); setForgotError(true); }
                   finally { setForgotLoading(false); }
                 }} className="w-full py-3 rounded-xl text-sm font-bold mb-3 mt-2" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', opacity: !forgotOtp || !forgotNewPw || forgotNewPw !== forgotConfirmPw || forgotLoading ? 0.5 : 1 }}>
                   {forgotLoading ? 'Resetting...' : 'Reset Password'}
                 </button>
               </>
             )}
-            <button onClick={() => { setForgotMode(false); setForgotStep(1); setForgotMsg(''); }}
+            <button onClick={() => { setForgotMode(false); setForgotStep(1); setForgotMsg(''); setForgotError(false); }}
               className="w-full text-center text-xs text-[#475569] hover:text-[#94a3b8]">Cancel</button>
           </div>
         </div>
