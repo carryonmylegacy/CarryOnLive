@@ -122,26 +122,64 @@ const AdminPage = ({ operatorMode = false }) => {
   // If founder lands on /admin with no specific tab, default to users
   const effectiveTab = (!operatorMode && location.pathname === '/admin') ? 'users' : tab;
 
-  // When tab changes, keep the tab bar visible (don't scroll to top)
-  const isFirstRender = useRef(true);
-  const savedTabBarPos = useRef(null);
+  // ── Scroll lock: prevent scroll reset during tab transitions ──
+  const scrollLockRef = useRef({ pos: 0, locked: false });
+
+  // Continuously track scroll position when not locked
   useEffect(() => {
-    if (isFirstRender.current) { isFirstRender.current = false; return; }
-    // Use saved position from before navigation, or find tab bar position
-    const restoreScroll = () => {
-      const mainEl = document.getElementById('main-content') || document.querySelector('.main-content');
-      if (!mainEl) return;
-      const pos = savedTabBarPos.current;
-      if (pos !== null) {
-        mainEl.scrollTop = pos;
-        savedTabBarPos.current = null;
-      } else {
-        const tabBar = document.querySelector('[data-testid="admin-tab-bar"]');
-        if (tabBar) mainEl.scrollTop = tabBar.offsetTop - 8;
+    const mainEl = document.querySelector('.main-content');
+    if (!mainEl) return;
+    const onScroll = () => {
+      if (!scrollLockRef.current.locked) {
+        scrollLockRef.current.pos = mainEl.scrollTop;
       }
     };
-    // Use setTimeout to ensure DOM + layout are fully settled
-    setTimeout(restoreScroll, 60);
+    mainEl.addEventListener('scroll', onScroll, { passive: true });
+    return () => mainEl.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Lock scroll during tab transition — aggressively prevent any scroll changes
+  const prevTab = useRef(effectiveTab);
+  useEffect(() => {
+    if (prevTab.current === effectiveTab) return;
+    prevTab.current = effectiveTab;
+
+    const mainEl = document.querySelector('.main-content');
+    if (!mainEl) return;
+
+    const target = scrollLockRef.current.pos;
+    scrollLockRef.current.locked = true;
+
+    // Disable smooth scrolling during transition to prevent visible animation
+    const html = document.documentElement;
+    html.style.scrollBehavior = 'auto';
+    mainEl.style.scrollBehavior = 'auto';
+
+    // Force scroll position on every scroll event during transition
+    const forceScroll = () => { mainEl.scrollTop = target; };
+    mainEl.addEventListener('scroll', forceScroll);
+    forceScroll();
+    requestAnimationFrame(forceScroll);
+    requestAnimationFrame(() => requestAnimationFrame(forceScroll));
+    const t1 = setTimeout(forceScroll, 0);
+    const t2 = setTimeout(forceScroll, 30);
+    const t3 = setTimeout(forceScroll, 60);
+    const t4 = setTimeout(forceScroll, 100);
+    // Release lock and restore smooth scrolling after transition settles
+    const t5 = setTimeout(() => {
+      mainEl.removeEventListener('scroll', forceScroll);
+      scrollLockRef.current.locked = false;
+      html.style.scrollBehavior = '';
+      mainEl.style.scrollBehavior = '';
+    }, 250);
+
+    return () => {
+      mainEl.removeEventListener('scroll', forceScroll);
+      scrollLockRef.current.locked = false;
+      html.style.scrollBehavior = '';
+      mainEl.style.scrollBehavior = '';
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5);
+    };
   }, [effectiveTab]);
 
   const [users, setUsers] = useState([]);
@@ -630,11 +668,7 @@ const AdminPage = ({ operatorMode = false }) => {
           // Founder: all except operator-specific tabs
           return !['my-activity', 'search', 'ops-escalations', 'shift-notes', 'ops-kb'].includes(t.key);
         }).map(t => (
-          <button key={t.key} onClick={() => {
-            const mainEl = document.getElementById('main-content') || document.querySelector('.main-content');
-            if (mainEl) savedTabBarPos.current = mainEl.scrollTop;
-            navigate(operatorMode ? t.path.replace('/admin', '/ops') : t.path);
-          }}
+          <button key={t.key} onClick={() => navigate(operatorMode ? t.path.replace('/admin', '/ops') : t.path)}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
               effectiveTab === t.key ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'
             }`} data-testid={`admin-tab-${t.key}`}>
@@ -643,7 +677,8 @@ const AdminPage = ({ operatorMode = false }) => {
         ))}
       </div>
 
-      {/* Tab Content */}
+      {/* Tab Content — min-height ensures scroll position is preserved when switching tabs */}
+      <div style={{ minHeight: '100vh' }}>
       {effectiveTab === 'users' && <UsersTab users={users} setUsers={setUsers} currentUserId={user?.id} getAuthHeaders={getAuthHeaders} operatorMode={operatorMode} />}
       {effectiveTab === 'transition' && <TransitionTab getAuthHeaders={getAuthHeaders} onStatsChange={refreshStats} />}
       {effectiveTab === 'dts' && <DTSTab getAuthHeaders={getAuthHeaders} />}
@@ -672,6 +707,7 @@ const AdminPage = ({ operatorMode = false }) => {
       {effectiveTab === 'ops-dashboard' && <OpsDashboardTab getAuthHeaders={getAuthHeaders} />}
       {effectiveTab === 'milestones' && <MilestoneDeliveriesTab getAuthHeaders={getAuthHeaders} />}
       {effectiveTab === 'trials' && <TrialUsersTab getAuthHeaders={getAuthHeaders} />}
+      </div>
     </div>
   );
 };

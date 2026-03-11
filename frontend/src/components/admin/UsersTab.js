@@ -618,11 +618,52 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
         </div>
         <div className="flex gap-1 overflow-x-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
           {['all', 'benefactor', 'beneficiary'].map(r => (
-            <button key={r} onClick={() => { setRoleFilter(r); setViewMode(r === 'all' ? 'tree' : 'list'); }} className={`px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap flex-shrink-0 ${roleFilter === r ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'}`} data-testid={`admin-role-filter-${r}`}>{r === 'all' ? 'All Estates' : r === 'beneficiary' ? 'Beneficiaries' : 'Benefactors'}</button>
+            <button key={r} onClick={() => {
+              const mainEl = document.querySelector('.main-content');
+              const savedPos = mainEl ? mainEl.scrollTop : 0;
+              // Disable smooth scroll to prevent flash
+              const html = document.documentElement;
+              if (mainEl) { mainEl.style.scrollBehavior = 'auto'; html.style.scrollBehavior = 'auto'; }
+              setRoleFilter(r);
+              setViewMode(r === 'all' ? 'tree' : 'list');
+              if (mainEl) {
+                const force = () => { mainEl.scrollTop = savedPos; };
+                mainEl.addEventListener('scroll', force);
+                force();
+                requestAnimationFrame(force);
+                requestAnimationFrame(() => requestAnimationFrame(force));
+                setTimeout(force, 0);
+                setTimeout(force, 50);
+                setTimeout(() => {
+                  mainEl.removeEventListener('scroll', force);
+                  mainEl.style.scrollBehavior = '';
+                  html.style.scrollBehavior = '';
+                }, 200);
+              }
+            }} className={`px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap flex-shrink-0 ${roleFilter === r ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'}`} data-testid={`admin-role-filter-${r}`}>{r === 'all' ? 'All Estates' : r === 'beneficiary' ? 'Beneficiaries' : 'Benefactors'}</button>
           ))}
           <div className="w-px bg-[var(--b)] mx-1" />
           <button
-            onClick={() => setViewMode(viewMode === 'list' ? 'tree' : viewMode === 'tree' ? 'graph' : 'list')}
+            onClick={() => {
+              const mainEl = document.querySelector('.main-content');
+              const savedPos = mainEl ? mainEl.scrollTop : 0;
+              const html = document.documentElement;
+              if (mainEl) { mainEl.style.scrollBehavior = 'auto'; html.style.scrollBehavior = 'auto'; }
+              setViewMode(viewMode === 'list' ? 'tree' : viewMode === 'tree' ? 'graph' : 'list');
+              if (mainEl) {
+                const force = () => { mainEl.scrollTop = savedPos; };
+                mainEl.addEventListener('scroll', force);
+                force();
+                requestAnimationFrame(force);
+                setTimeout(force, 0);
+                setTimeout(force, 50);
+                setTimeout(() => {
+                  mainEl.removeEventListener('scroll', force);
+                  mainEl.style.scrollBehavior = '';
+                  html.style.scrollBehavior = '';
+                }, 200);
+              }
+            }}
             className={`px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap flex-shrink-0 flex items-center gap-1.5 ${viewMode !== 'list' ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'}`}
             data-testid="toggle-tree-view"
           >
