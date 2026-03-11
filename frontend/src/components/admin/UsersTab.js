@@ -405,10 +405,11 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     );
   };
 
-  // Graph view: HTML/CSS-based visual family tree per estate
+  // Graph view: HTML/CSS-based visual family tree per estate (matches Estate Health style)
   const renderGraphView = () => {
     const benefactors = filteredUsers.filter(u => u.role === 'benefactor' || u.is_also_benefactor);
     const beneficiaryUsers = filteredUsers.filter(u => u.role === 'beneficiary' && !u.is_also_benefactor);
+    const admins = filteredUsers.filter(u => u.role === 'admin');
     const benUserByEmail = new Map();
     beneficiaryUsers.forEach(u => { if (u.email) benUserByEmail.set(u.email.toLowerCase(), u); });
 
@@ -420,78 +421,125 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     const getInit = (n) => n?.name ? n.name.split(' ').map(x => x[0]).join('').toUpperCase().slice(0, 2) : '??';
     const benAge = (b) => { const a = getAge(b.date_of_birth || b.dob); return a < 999 ? a : null; };
 
-    // Reusable node component
-    const GraphNode = ({ initials, color, size = 44, label, sublabel, linked }) => (
-      <div className="flex flex-col items-center gap-1">
-        <div
-          className="rounded-full flex items-center justify-center font-bold"
-          style={{
-            width: size, height: size,
-            background: color,
-            fontSize: size * 0.3,
-            color: '#080e1a',
-            border: `2px solid ${color}`,
-            boxShadow: `0 0 10px ${color}40`,
-          }}
-        >
-          {initials}
+    // Status badge overlay for beneficiary nodes
+    const getBenStatusBadge = (ben) => {
+      const linked = ben.email && benUserByEmail.has(ben.email.toLowerCase());
+      if (linked) return { bg: statusColors.accepted.color, label: 'accepted' };
+      const s = ben.invitation_status || 'draft';
+      const sc = statusColors[s] || statusColors.draft;
+      return { bg: sc.color, label: s };
+    };
+
+    const getBenNodeColor = (ben) => {
+      const linked = ben.email && benUserByEmail.has(ben.email.toLowerCase());
+      if (linked) return statusColors.accepted.color;
+      const s = ben.invitation_status || 'draft';
+      return (statusColors[s] || statusColors.draft).color;
+    };
+
+    // Graph node with status badge
+    const GraphNode = ({ initials, color, size = 44, label, sublabel, statusBadge, extra }) => (
+      <div className="flex flex-col items-center gap-0.5">
+        <div className="relative">
+          <div
+            className="rounded-full flex items-center justify-center font-bold"
+            style={{
+              width: size, height: size,
+              background: `${color}20`,
+              fontSize: size * 0.3,
+              color: color,
+              border: `2px solid ${color}`,
+              boxShadow: `0 0 10px ${color}30`,
+            }}
+          >
+            {initials}
+          </div>
+          {statusBadge && (
+            <div className="absolute -bottom-0.5 -right-0.5 px-1 py-px rounded-full text-[7px] font-black uppercase"
+              style={{ background: statusBadge.bg, color: '#080e1a', lineHeight: '1.1' }}>
+              {statusBadge.label === 'accepted' ? '✓' : statusBadge.label[0].toUpperCase()}
+            </div>
+          )}
         </div>
         {label && <span className="text-[10px] font-semibold text-[var(--t)] text-center leading-tight">{label}</span>}
         {sublabel && <span className="text-[8px] text-[#64748B] text-center leading-tight">{sublabel}</span>}
+        {extra && <span className="text-[8px] text-center leading-tight" style={{ color: statusBadge?.bg || '#64748B' }}>{extra}</span>}
       </div>
     );
 
     return (
       <div className="space-y-4">
+        {admins.length > 0 && (
+          <div className="mb-4">
+            <p className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2">Administrators</p>
+            <div className="space-y-2">
+              {admins.map(u => <UserRow key={u.id} u={u} />)}
+            </div>
+          </div>
+        )}
+
         {estates.map(({ owner, bens }) => {
           const sortedBens = [...bens].sort((a, b) => getAge(a.date_of_birth || a.dob) - getAge(b.date_of_birth || b.dob));
+          const linked = sortedBens.filter(b => b.email && benUserByEmail.has(b.email.toLowerCase())).length;
+          const invited = sortedBens.filter(b => b.invitation_status === 'sent' || b.invitation_status === 'accepted').length;
 
           return (
             <div key={owner.id} className="glass-card p-4 rounded-xl" data-testid={`graph-estate-${owner.id}`}>
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-1">
                 <div className="w-5 h-5 rounded flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.1)' }}>
                   <Users className="w-3 h-3 text-[var(--gold)]" />
                 </div>
-                <span className="text-xs font-bold text-[var(--gold)]">{owner.name}'s Estate</span>
-                <span className="text-[10px] text-[var(--t5)] ml-auto">{bens.length} beneficiar{bens.length === 1 ? 'y' : 'ies'}</span>
+                <span className="text-xs font-bold text-[var(--gold)] flex-1">{owner.name}'s Estate</span>
+                <span className="text-[10px] text-[var(--t5)]">{bens.length} beneficiar{bens.length === 1 ? 'y' : 'ies'}</span>
               </div>
 
-              {/* Tree visualization using HTML/CSS */}
+              {/* Summary stats */}
+              <div className="flex items-center gap-3 mb-3 ml-7">
+                <span className="text-[10px]" style={{ color: linked === bens.length && bens.length > 0 ? '#22C993' : '#F5A623' }}>
+                  {linked}/{bens.length} linked
+                </span>
+                <span className="text-[10px]" style={{ color: invited > 0 ? '#8B5CF6' : '#64748B' }}>
+                  {invited} invited
+                </span>
+                {owner.subscription?.plan_id && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded font-bold" style={{ background: 'rgba(212,175,55,0.1)', color: '#d4af37' }}>
+                    {owner.subscription.plan_name || owner.subscription.plan_id}
+                  </span>
+                )}
+              </div>
+
+              {/* Tree visualization */}
               <div className="flex flex-col items-center">
-                {/* Root node (benefactor) */}
                 <GraphNode
                   initials={getInit(owner)}
                   color="#d4af37"
                   size={52}
                   label={owner.name?.split(' ')[0] || 'Owner'}
-                  sublabel="Benefactor"
+                  sublabel={owner.email}
                 />
 
-                {/* Connector trunk + children */}
                 {sortedBens.length > 0 && (
                   <div className="flex flex-col items-center">
-                    {/* Vertical trunk */}
                     <div style={{ width: 2, height: 18, background: '#d4af37', opacity: 0.5 }} />
-
                     {sortedBens.length > 1 ? (
-                      <div className="relative w-full flex justify-center" style={{ minWidth: sortedBens.length * 72 }}>
-                        {/* Horizontal line */}
+                      <div className="relative w-full flex justify-center" style={{ minWidth: sortedBens.length * 80 }}>
                         <div className="absolute top-0 left-[10%] right-[10%]" style={{ height: 2, background: '#d4af37', opacity: 0.25 }} />
-                        {/* Children row */}
-                        <div className="flex gap-3 justify-center pt-1">
+                        <div className="flex gap-4 justify-center pt-1 flex-wrap">
                           {sortedBens.map(ben => {
-                            const linked = ben.email && benUserByEmail.has(ben.email.toLowerCase());
-                            const color = linked ? '#B794F6' : '#64748B';
+                            const color = getBenNodeColor(ben);
                             const age = benAge(ben);
+                            const badge = getBenStatusBadge(ben);
                             return (
                               <div key={ben.id} className="flex flex-col items-center">
                                 <div style={{ width: 2, height: 12, background: color, opacity: 0.4 }} />
                                 <GraphNode
                                   initials={(ben.first_name?.[0] || '?') + (ben.last_name?.[0] || '?')}
-                                  color={linked ? 'rgba(139,92,246,0.3)' : 'rgba(100,116,139,0.3)'}
-                                  size={38}
+                                  color={color}
+                                  size={40}
                                   label={ben.first_name || ben.name?.split(' ')[0] || ''}
-                                  sublabel={age !== null ? `Age ${age}` : (ben.relation || '')}
+                                  sublabel={`${ben.relation || ''}${age !== null ? ` · ${age}` : ''}`}
+                                  statusBadge={badge}
+                                  extra={ben.email || 'No email'}
                                 />
                               </div>
                             );
@@ -500,18 +548,20 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                       </div>
                     ) : (
                       sortedBens.map(ben => {
-                        const linked = ben.email && benUserByEmail.has(ben.email.toLowerCase());
-                        const color = linked ? '#B794F6' : '#64748B';
+                        const color = getBenNodeColor(ben);
                         const age = benAge(ben);
+                        const badge = getBenStatusBadge(ben);
                         return (
                           <div key={ben.id} className="flex flex-col items-center">
                             <div style={{ width: 2, height: 12, background: color, opacity: 0.4 }} />
                             <GraphNode
                               initials={(ben.first_name?.[0] || '?') + (ben.last_name?.[0] || '?')}
-                              color={linked ? 'rgba(139,92,246,0.3)' : 'rgba(100,116,139,0.3)'}
-                              size={38}
+                              color={color}
+                              size={40}
                               label={ben.first_name || ben.name?.split(' ')[0] || ''}
-                              sublabel={age !== null ? `Age ${age}` : (ben.relation || '')}
+                              sublabel={`${ben.relation || ''}${age !== null ? ` · ${age}` : ''}`}
+                              statusBadge={badge}
+                              extra={ben.email || 'No email'}
                             />
                           </div>
                         );
@@ -527,6 +577,22 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
             </div>
           );
         })}
+
+        {/* Orphan beneficiary users (no estate link) */}
+        {(() => {
+          const shownBenIds = new Set();
+          estates.forEach(({ bens }) => {
+            bens.forEach(b => { if (b.email) { const u = benUserByEmail.get(b.email.toLowerCase()); if (u) shownBenIds.add(u.id); }});
+          });
+          const orphans = beneficiaryUsers.filter(u => !shownBenIds.has(u.id));
+          if (orphans.length === 0) return null;
+          return (
+            <div>
+              <p className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2 mt-4">Unlinked Beneficiaries ({orphans.length})</p>
+              <div className="space-y-2">{orphans.map(u => <UserRow key={u.id} u={u} />)}</div>
+            </div>
+          );
+        })()}
       </div>
     );
   };
