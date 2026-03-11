@@ -101,16 +101,16 @@ const NotificationBell = ({ collapsed }) => {
         )}
       </button>
 
-      {/* Notification Panel */}
+      {/* Notification Panel — grows upward from button */}
       {open && (
         <div
-          className="fixed lg:absolute z-[200] rounded-xl overflow-hidden"
+          className="absolute z-[200] rounded-xl overflow-hidden right-0 lg:right-auto lg:left-0"
           style={{
             width: 340,
-            maxHeight: 420,
-            top: collapsed ? 'auto' : 'auto',
-            left: collapsed ? 56 : 4,
-            bottom: collapsed ? 'auto' : 'auto',
+            maxWidth: 'calc(100vw - 32px)',
+            maxHeight: 'min(420px, 60vh)',
+            bottom: 'calc(100% + 8px)',
+            ...(collapsed ? { left: 48, right: 'auto' } : {}),
             background: 'var(--bg2, #0F1629)',
             border: '1px solid var(--b)',
             boxShadow: '0 12px 40px rgba(0,0,0,0.5)',

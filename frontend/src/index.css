@@ -1216,11 +1216,23 @@
     min-height: 2rem;
   }
 
-  /* Dialog scrolling fix — ensure modals can scroll on iOS */
+  /* Dialog scrolling fix — ensure modals can scroll on iOS / PWA */
   [role="dialog"] {
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
     overscroll-behavior: contain;
+  }
+  [role="dialog"] .overflow-y-auto,
+  [role="dialog"][class*="overflow-y-auto"] {
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    overscroll-behavior: contain;
+  }
+  /* Prevent Radix scroll-lock from blocking dialog inner scroll */
+  [data-radix-scroll-area-viewport],
+  [data-scroll-locked] [role="dialog"] {
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
   }
 }
 

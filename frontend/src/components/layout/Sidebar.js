@@ -434,7 +434,7 @@ const Sidebar = () => {
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 {devAccounts.map(acc => {
-                  const isActive = acc.role === 'admin' ? (user?.role === 'admin' && !window.location.pathname.startsWith('/ops')) : acc.role === 'ops_view' ? window.location.pathname.startsWith('/ops') : user?.email === acc.email;
+                  const isActive = acc.role === 'admin' ? (user?.role === 'admin' && !window.location.pathname.startsWith('/ops')) : acc.role === 'ops_view' ? (user?.role === 'admin' && window.location.pathname.startsWith('/ops')) : user?.email === acc.email;
                   return (
                     <div key={acc.role}
                       onClick={(e) => { e.stopPropagation(); if (!isActive && !devSwitching) handleDevSwitch(acc); }}
