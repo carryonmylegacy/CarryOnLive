@@ -11,6 +11,20 @@ Multi-portal estate planning platform (CarryOn) with FastAPI backend, React/Capa
 
 ## What's Been Implemented
 
+### Session: Mar 11, 2026 — Major UI/UX Unification & Text Cleanup
+**Changes implemented:**
+1. **Desktop Sidebar Redesign**: Matched PWA hamburger style — clean text links (no button boxes), nav-dividers between items, ACCOUNT items (Settings, Subscriptions, Security, Support) rendered smaller with `nav-item-sm` class. Bottom pinned stack: Notifications → Light/Dark → Collapse → separator → Switch View portal pills → separator → Sign Out. User info pill removed.
+2. **MobileNav Hamburger Redesign**: Same bottom stack order (without Collapse). Notifications added via NotificationBell component. Portal pills styled as rounded pill buttons with separators.
+3. **Ops Portal Users**: Delete buttons hidden in operatorMode — operators see full user tree/details but cannot delete.
+4. **"legacy" → "estate plan"**: All user-facing text across frontend + backend updated (Dashboard, Login, Signup, Terms, Onboarding, Vault, Timeline, Guided Activation, Trial Reminders, etc.)
+5. **"Future: Will/Trust Wizard & Eternal Echo"**: Removed from subscription plans (code + database sync).
+6. **BENEFICIARY PORTAL label**: Shows under logo when on beneficiary routes.
+7. **Estate Readiness Score**: Font increased to `text-base` on desktop for Docs/Messages/Checklist labels.
+8. **Subscription text**: Changed to "Choose a payment option that best suits you. (Monthly/Quarterly/Annual)".
+9. **Last-viewed estate default**: `carryon_last_portal` persisted in localStorage, restored on login for multi-role users.
+10. **Switcher text**: Context-aware — "in the menu on the left" (desktop) vs "in the hamburger menu" (mobile).
+11. **Testing**: 100% pass rate on both backend and frontend.
+
 ### Session: Mar 10, 2026 — Portal Navigation Refactor (Dropdown Removal)
 **Issue**: The estate selector dropdown was a persistent source of UI bugs and user frustration.
 **Fix**: Completely removed EstateSelector.js and ViewSwitcher.js dropdown components. Replaced with simple inline portal switching links:
