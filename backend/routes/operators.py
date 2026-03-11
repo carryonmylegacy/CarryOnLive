@@ -55,6 +55,7 @@ class CreateOperatorRequest(BaseModel):
 
 
 class EditOperatorRequest(BaseModel):
+    username: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     email: Optional[str] = None
@@ -221,6 +222,13 @@ async def edit_operator(
         raise HTTPException(status_code=403, detail="Access denied")
 
     update_fields = {}
+    if data.username is not None and data.username.strip():
+        normalized = data.username.lower().strip()
+        if normalized != op.get("email", ""):
+            existing = await db.users.find_one({"email": normalized, "id": {"$ne": operator_id}}, {"_id": 0, "id": 1})
+            if existing:
+                raise HTTPException(status_code=400, detail="Username already in use")
+            update_fields["email"] = normalized
     if data.first_name is not None:
         update_fields["first_name"] = data.first_name
     if data.last_name is not None:

@@ -121,6 +121,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
   const openEdit = (op) => {
     setEditTarget(op);
     setEditForm({
+      username: op.email || '',
       first_name: op.first_name || '',
       last_name: op.last_name || '',
       email: op.contact_email || '',
@@ -273,23 +274,40 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
               <Input placeholder="Last name" value={editForm.last_name || ''} onChange={ef('last_name')}
                 className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" data-testid="edit-last-name" />
             </div>
-            <Input placeholder="Email" type="email" value={editForm.email || ''} onChange={ef('email')}
-              className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" />
-            <Input placeholder="Phone" type="tel" value={editForm.phone || ''} onChange={ef('phone')}
-              className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" />
-            <Input placeholder="Title" value={editForm.title || ''} onChange={ef('title')}
-              className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" />
-            <textarea placeholder="Notes" value={editForm.notes || ''} onChange={ef('notes')}
-              className="w-full h-16 px-3 py-2 rounded-lg text-sm bg-[var(--s)] border border-[var(--b)] text-[var(--t)] resize-none" />
+
+            {/* Login Credentials Section */}
+            <div className="pt-1 pb-1">
+              <p className="text-[10px] text-[var(--t5)] uppercase tracking-wider font-bold mb-2">Login Credentials</p>
+            </div>
+            <Input placeholder="Username (login credential)" value={editForm.username || ''} onChange={ef('username')}
+              className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" data-testid="edit-username" />
             <div className="relative">
               <Input placeholder="New password (leave blank to keep)" type={showEditPassword ? 'text' : 'password'}
                 value={editForm.password || ''} onChange={ef('password')}
-                className="bg-[var(--s)] border-[var(--b)] text-[var(--t)] pr-10" />
+                className="bg-[var(--s)] border-[var(--b)] text-[var(--t)] pr-10" data-testid="edit-password" />
               <button type="button" onClick={() => setShowEditPassword(!showEditPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
                 {showEditPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+
+            {/* Contact Information Section */}
+            <div className="pt-1 pb-1">
+              <p className="text-[10px] text-[var(--t5)] uppercase tracking-wider font-bold mb-2">Contact Information</p>
+            </div>
+            <Input placeholder="Email (for OTP verification)" type="email" value={editForm.email || ''} onChange={ef('email')}
+              className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" data-testid="edit-email" />
+            <Input placeholder="Phone" type="tel" value={editForm.phone || ''} onChange={ef('phone')}
+              className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" data-testid="edit-phone" />
+
+            {/* Role Details Section */}
+            <div className="pt-1 pb-1">
+              <p className="text-[10px] text-[var(--t5)] uppercase tracking-wider font-bold mb-2">Role Details</p>
+            </div>
+            <Input placeholder="Title" value={editForm.title || ''} onChange={ef('title')}
+              className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" data-testid="edit-title" />
+            <textarea placeholder="Notes" value={editForm.notes || ''} onChange={ef('notes')}
+              className="w-full h-16 px-3 py-2 rounded-lg text-sm bg-[var(--s)] border border-[var(--b)] text-[var(--t)] resize-none" />
             <div className="flex gap-3 mt-2">
               <Button variant="outline" className="flex-1 border-[var(--b)] text-[var(--t)]"
                 onClick={() => setEditTarget(null)}>Cancel</Button>
