@@ -306,7 +306,7 @@ const LoginPage = () => {
           </div>
         </div>
         {forgotMode && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
+          <div className="fixed inset-0 z-[200] flex items-start justify-center p-4 pt-24" style={{ background: 'rgba(0,0,0,0.7)' }}>
             <div className="w-full max-w-sm rounded-2xl p-6" style={{ background: '#152238', border: '1px solid rgba(212,175,55,0.5)', boxShadow: '0 0 60px rgba(212,175,55,0.08), 0 8px 40px rgba(0,0,0,0.6)' }}>
               <h2 className="text-lg font-bold text-white mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Reset Password</h2>
               {forgotStep === 1 ? (
@@ -847,7 +847,7 @@ const LoginPage = () => {
 
       {/* Forgot Password Modal */}
       {forgotMode && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
+        <div className="fixed inset-0 z-[9999] flex items-start sm:items-center justify-center p-4 pt-24 sm:pt-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
           <div className="w-full max-w-sm rounded-2xl p-6" style={{ background: '#152238', border: '1px solid rgba(212,175,55,0.5)', boxShadow: '0 0 60px rgba(212,175,55,0.08), 0 8px 40px rgba(0,0,0,0.6)' }}>
             <h2 className="text-lg font-bold text-white mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Reset Password</h2>
             {forgotStep === 1 ? (
