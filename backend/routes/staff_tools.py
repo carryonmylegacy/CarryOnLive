@@ -129,7 +129,7 @@ async def delete_announcement(
 
 @router.get("/admin/system-health")
 async def get_system_health(current_user: dict = Depends(get_current_user)):
-    require_founder(current_user)
+    require_staff(current_user)
     now = datetime.now(timezone.utc)
 
     # Collection stats

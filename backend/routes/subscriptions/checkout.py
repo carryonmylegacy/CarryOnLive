@@ -904,9 +904,9 @@ async def cancel_subscription(current_user: dict = Depends(get_current_user)):
 async def get_admin_subscription_settings(
     current_user: dict = Depends(get_current_user),
 ):
-    """Get platform-wide subscription settings (admin only)"""
-    if current_user.get("role") != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
+    """Get platform-wide subscription settings (admin and operators)"""
+    if current_user.get("role") not in ("admin", "operator"):
+        raise HTTPException(status_code=403, detail="Staff access required")
 
     settings = await get_subscription_settings()
 
@@ -955,9 +955,9 @@ async def update_admin_subscription_settings(
 
 @router.get("/admin/user-subscriptions")
 async def get_admin_user_subscriptions(current_user: dict = Depends(get_current_user)):
-    """Get all users with subscription info (admin only)"""
-    if current_user.get("role") != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
+    """Get all users with subscription info (admin and operators)"""
+    if current_user.get("role") not in ("admin", "operator"):
+        raise HTTPException(status_code=403, detail="Staff access required")
 
     users = await db.users.find({}, {"_id": 0, "password_hash": 0}).to_list(500)
 

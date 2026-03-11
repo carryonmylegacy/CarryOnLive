@@ -109,6 +109,8 @@ const PATH_TO_TAB = {
   '/ops/users': 'users',
   '/ops/trials': 'trials',
   '/ops/estate-health': 'estate-health',
+  '/ops/subscriptions': 'subscriptions',
+  '/ops/system-health': 'system-health',
 };
 
 const AdminPage = ({ operatorMode = false }) => {
@@ -439,7 +441,7 @@ const AdminPage = ({ operatorMode = false }) => {
         {TAB_CONFIG.filter(t => {
           if (operatorMode) {
             // Operators: work queues + operator tools
-            const opsTabs = ['transition', 'dts', 'support', 'verifications', 'milestones', 'users', 'trials', 'my-activity', 'search', 'ops-escalations', 'shift-notes', 'ops-kb'];
+            const opsTabs = ['transition', 'dts', 'support', 'verifications', 'milestones', 'users', 'trials', 'subscriptions', 'system-health', 'estate-health', 'my-activity', 'search', 'ops-escalations', 'shift-notes', 'ops-kb'];
             // Managers also get team management + dashboard
             if (user?.operator_role === 'manager') opsTabs.push('operators', 'ops-dashboard');
             return opsTabs.includes(t.key);
@@ -471,7 +473,7 @@ const AdminPage = ({ operatorMode = false }) => {
       {effectiveTab === 'dev-switcher' && !operatorMode && <DevSwitcherTab users={users} getAuthHeaders={getAuthHeaders} />}
       {/* New Founder features */}
       {effectiveTab === 'announcements' && !operatorMode && <AnnouncementsTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'system-health' && !operatorMode && <SystemHealthTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'system-health' && <SystemHealthTab getAuthHeaders={getAuthHeaders} />}
       {effectiveTab === 'escalations' && !operatorMode && <EscalationsTab getAuthHeaders={getAuthHeaders} isFounder={true} />}
       {effectiveTab === 'knowledge-base' && !operatorMode && <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={true} />}
       {effectiveTab === 'p1-settings' && !operatorMode && <P1ContactSettingsTab getAuthHeaders={getAuthHeaders} />}
