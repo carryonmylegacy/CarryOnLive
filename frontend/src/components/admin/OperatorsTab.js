@@ -157,8 +157,8 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
         </CardContent></Card>
       ) : (
         <div className="space-y-5">
-          {/* Managers Section — Founder only */}
-          {isFounder && managers.length > 0 && (
+          {/* Managers Section — visible to Founder and Managers */}
+          {(isFounder || isManager) && managers.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Crown className="w-4 h-4 text-[#F59E0B]" />
@@ -168,7 +168,8 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
               <div className="space-y-2">
                 {managers.map(op => (
                   <OperatorCard key={op.id} op={op} expandedId={expandedId} setExpandedId={setExpandedId}
-                    onEdit={() => openEdit(op)} onDelete={() => setDeleteTarget(op)} />
+                    onEdit={() => openEdit(op)} onDelete={() => setDeleteTarget(op)}
+                    canDelete={isFounder} canEdit={isFounder} />
                 ))}
               </div>
             </div>
@@ -189,7 +190,8 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
               <div className="space-y-2">
                 {workers.map(op => (
                   <OperatorCard key={op.id} op={op} expandedId={expandedId} setExpandedId={setExpandedId}
-                    onEdit={() => openEdit(op)} onDelete={() => setDeleteTarget(op)} />
+                    onEdit={() => openEdit(op)} onDelete={() => setDeleteTarget(op)}
+                    canDelete={isFounder || isManager} canEdit={isFounder || isManager} />
                 ))}
               </div>
             )}
@@ -353,7 +355,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
 };
 
 // Individual operator card
-const OperatorCard = ({ op, expandedId, setExpandedId, onEdit, onDelete }) => {
+const OperatorCard = ({ op, expandedId, setExpandedId, onEdit, onDelete, canDelete = true, canEdit = true }) => {
   const isExpanded = expandedId === op.id;
   const isManager = op.operator_role === 'manager';
 
@@ -384,14 +386,18 @@ const OperatorCard = ({ op, expandedId, setExpandedId, onEdit, onDelete }) => {
             {isExpanded ? <ChevronDown className="w-4 h-4 text-[var(--t5)]" /> : <ChevronRight className="w-4 h-4 text-[var(--t5)]" />}
           </div>
           <div className="flex gap-1.5 ml-2 flex-shrink-0">
+            {canEdit && (
             <Button size="sm" variant="outline" className="text-xs border-[var(--b)] text-[var(--t4)]"
               onClick={onEdit} data-testid={`edit-op-${op.id}`}>
               <Pencil className="w-3 h-3" />
             </Button>
+            )}
+            {canDelete && (
             <Button size="sm" variant="outline" className="text-xs border-[var(--rd)]/30 text-[var(--rd)]"
               onClick={onDelete} data-testid={`delete-op-${op.id}`}>
               <Trash2 className="w-3 h-3" />
             </Button>
+            )}
           </div>
         </div>
         {isExpanded && (

@@ -315,7 +315,9 @@ const Sidebar = () => {
         { to: '/ops/shift-notes', icon: StickyNote, label: 'Shift Notes' },
         { to: '/ops/milestones', icon: Gift, label: 'Milestones' },
         { to: '/ops/users', icon: Users, label: 'Users' },
-        { to: '/ops/subscriptions', icon: CreditCard, label: 'Subs' },
+        ...(user?.operator_role === 'manager' ? [
+          { to: '/ops/subscriptions', icon: CreditCard, label: 'Subs' },
+        ] : []),
         { to: '/ops/system-health', icon: HeartPulse, label: 'System Health' },
         { to: '/ops/estate-health', icon: HeartPulse, label: 'Estate Health' },
         { to: '/ops/knowledge-base', icon: BookOpen, label: 'SOPs' },

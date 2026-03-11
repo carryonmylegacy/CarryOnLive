@@ -16,7 +16,7 @@ import requests
 from pymongo import MongoClient
 
 BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://estate-plan-ui.preview.emergentagent.com"
+    "REACT_APP_BACKEND_URL", "https://dynamic-ops-tiles.preview.emergentagent.com"
 ).rstrip("/")
 
 

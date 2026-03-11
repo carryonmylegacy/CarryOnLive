@@ -1,0 +1,159 @@
+<analysis>**original_problem_statement:**
+The user has requested a comprehensive update to the Operator Portals (Manager and Team Member) to achieve functional and visual parity with the Founder Portal, but with specific, role-based exceptions. The core requirements are:
+1.  **Tab Parity:** All tabs viewable in the Operator Portals must match the exact functionality and look of their Founder Portal counterparts.
+2.  **Subscription Tab Restrictions:** The Subs tab should only be visible to Operations Managers (not Team Members). Within this tab, the ability to change subscription tier prices must be disabled; only individual user subscription management via search is allowed.
+3.  **Granular Delete Permissions:**
+    *   Founders can delete any user (Admins, Operators, etc.).
+    *   Operations Managers can only delete Operations Team Members.
+    *   Operations Team Members cannot delete anyone.
+4.  **Dynamic Dashboard Tiles:** Dashboard tiles for operators should light up to indicate a new user input or an escalation from a team member. Clicking a lit-up tile must navigate the user directly to the corresponding task or item needing action.
+5.  **Manager's Team Overview:** The Operations Manager's dashboard must include a view showing tasks in progress across their team. Clicking on a task tile should reveal which team member is assigned to it.
+
+**User's preferred language**: English
+
+**what currently exists?**
+The agent has partially implemented the user's large feature request. It has successfully added the Subs, System Health, and Estate Health tabs to the operator portals. Work has begun on enforcing the role-based permissions: the Subs tab is correctly hidden from Team Members, and the UI for changing subscription prices is hidden from Managers. The agent has also started modifying the frontend components (, ) to handle the new granular delete permissions. Finally, a placeholder component () has been created for the manager's new dashboard view, but the backend and frontend logic for the dynamic tiles and team activity feed are not yet implemented.
+
+**Last working item**:
+-   **Last item agent was working:** The agent was scaffolding the major feature request for Operator Portal enhancements. The very last action was creating a placeholder component  and adding it to the  to be rendered for Operations Managers. This is the first step towards building the team member tasks view.
+-   **Status:** IN PROGRESS
+-   **Agent Testing Done:** N
+-   **Which testing method agent to use?** both. This is a complex feature involving new API endpoints, significant frontend UI changes, and nuanced, role-based permissions. Both backend (curl tests for new endpoints) and frontend (testing agent for UI/UX across roles) will be required.
+-   **User Testing Done:** N
+
+**All Pending/In progress Issue list**:
+-   None. The current work is a new feature implementation, not a bug fix.
+
+**In progress Task List**:
+-   **Task 1: Implement Ops Portal Parity and New Dashboard Features (Priority: P0)**
+    -   **Description:** This is a large, multi-part task to enhance the operator portals.
+    -   **Where to resume:** The agent has laid the groundwork but now needs to build out the core functionality. The next steps are:
+        1.  **Backend for Dashboard:** Design and implement new backend endpoints in  or a new  route file:
+            *   An endpoint to track and retrieve events or escalations that will cause dashboard tiles to light up.
+            *   An endpoint to aggregate and return team member tasks for the manager's activity feed.
+        2.  **Frontend for Dashboard:**
+            *   Build out the  component to fetch and display team task data.
+            *   Implement the light-up logic in the  component by fetching event data from the new backend endpoint. This includes applying a visual style (e.g., glow, border) and adding  handlers for navigation.
+        3.  **Finalize Permissions:**
+            *   Complete and test the delete permission logic in  to ensure managers can only delete team members.
+            *   Verify that the Subs tab APIs are not directly callable by team members, even though the UI is hidden.
+    -   **What will be achieved with this?** The Operations Manager will gain a powerful, actionable dashboard for overseeing team activities, and platform permissions will be properly secured for a multi-level operations team.
+    -   **Status:** IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?** Both
+    -   **Blocked on something:** No.
+
+**Upcoming and Future Tasks**
+-   **P1: User Verification of Completed Tasks:** The user needs to verify the fixes for the Forgot Password flow, the PWA scroll-locking issue, and the redesigned User Graph view.
+-   **P1: Finalize Share Extension Setup:** Re-add the Share Extension target in Xcode using the instructions in .
+-   **P1: Twilio SMS OTP Integration:** Blocked, awaiting the user's A2P 10DLC approval from Twilio.
+-   **P2: Code Cleanup (ESLint):** Address the remaining non-critical ESLint warnings throughout the frontend codebase.
+
+**Completed work in this session**
+-   **Forgot Password Flow:** Fixed multiple critical bugs, including an invisible link, incorrect success/error message colors, and a modal that was hidden behind other elements or misplaced on mobile devices.
+-   **PWA/Mobile UX:** Resolved a scroll-locking bug on the Users search page and adjusted the Forgot Password modal position for better visibility on mobile.
+-   **Operator Portal Enhancements (Phase 1):**
+    -   Added Estate Health, System Health, and Subs tabs to the operator portals.
+-   **User Tree/Graph Redesign:**
+    -   Clarified beneficiary statuses (, , , ) with a color-coded legend in the .
+    -   Redesigned the Graph view to use the same color-coded, info-rich style as the .
+-   **Dev/Admin Experience:**
+    -   Added Username and Password fields to the Operator edit dialog for clear credential management.
+    -   Fixed a case-sensitivity bug in operator login.
+    -   Implemented a dev session token to allow founders to impersonate users without logging out the original user.
+-   **Code Hygiene:** Ran the  script and fixed all identified formatting issues.
+
+**Earlier issues found/mentioned but not fixed**
+-   **Settings Page Glitch:** A one-time flash of an old subscription page was reported by a user. This was noted as a likely non-reproducible race condition and has not been investigated.
+
+**Known issue recurrence from previous fork**
+-   **UI/UX Iteration:** The user is highly attentive to visual detail, which often requires multiple iterations on UI elements like spacing and positioning to meet their exact requirements.
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+-   **Granular Role-Based Access Control (RBAC):** The system now distinguishes between  (Founder), , and , using these roles to conditionally render UI and control API access.
+-   **Dynamic & Actionable Dashboards:** The current task introduces the concept of a stateful dashboard where UI elements (light up) based on real-time events, requiring new backend logic for event tracking and new frontend logic for fetching and displaying these states.
+-   **CSS Stacking Context:** Successfully debugged a complex z-index issue where a  property on a parent element was trapping a  modal, making it invisible.
+-   **Mobile Viewport Handling:** Addressed PWA/mobile-specific bugs related to the virtual keyboard and scrolling by using  and  event listeners.
+
+**key DB schema**
+-   **users:** The  field is now critical for distinguishing between , , and  to enforce the new permission structure.
+-   **(Needs creation):** A new collection or new fields in existing collections will likely be needed to track events, escalations, and tasks for the new dynamic dashboard features.
+
+**changes in tech stack**
+-   None.
+
+**All files of reference**
+-    (The central hub for all operator-related UI logic).
+-    (Will contain the new light-up tiles).
+-    (The new component for the manager's team view).
+-    (Contains the delete permission logic).
+-    (Contains the role-based view for subscriptions).
+-    (Will need new endpoints for the dashboard features).
+
+**Areas that need refactoring**:
+-    is growing increasingly complex. It handles state, data fetching, and routing for three different user roles and numerous tabs. It is a candidate for being broken down into smaller, more focused components or using a more robust state management pattern.
+
+**key api endpoints**
+-   **Modified:**
+    -   : Now uses a dev token to prevent logging out the impersonated user.
+    -   : Updated to allow changing an operator's .
+    -   : Multiple endpoints had their permissions updated to allow access for operator roles.
+-   **To Be Created:**
+    -   : To provide data for the light-up dashboard tiles.
+    -   : To provide aggregated task data for the manager's view.
+
+**Critical Info for New Agent**
+-   The current task is large, complex, and only partially finished. The user's request in message #469 is the blueprint for what needs to be completed.
+-   **Role-based logic is paramount.** You must differentiate between the Founder (), Manager (), and Team Member () to implement permissions correctly.
+-   **The dynamic dashboard features require new backend infrastructure.** The logic to track events/escalations and aggregate team tasks does not exist yet. You will need to design and build these API endpoints and any necessary database changes from scratch.
+-   After implementation, test thoroughly across all three roles (Founder, Manager, Worker) to ensure permissions are correctly enforced and the UI appears as expected for each.
+
+**documents and test reports created in this job**
+-    (updated multiple times).
+
+**Last 10 User Messages and any pending HUMAN messages**
+1.  **User:** Reports the forgot password function on the login page is broken.
+2.  **Agent:** Investigates and fixes UI visibility issues.
+3.  **User:** Reports clicking forgot password now shows a blank dark screen.
+4.  **Agent:** Fixes a CSS stacking context bug causing the modal to be hidden.
+5.  **User:** Reports the modal appears too low on the screen in PWA mode.
+6.  **Agent:** Adjusts the modal's vertical alignment for mobile viewports.
+7.  **User:** Reports PWA scroll-locking and keyboard-obstructing issues in the Users search page.
+8.  **Agent:** Implements CSS and JavaScript fixes for mobile viewport and keyboard behavior.
+9.  **User:** Requests that the Graph view in the Users tab be styled to match the Estate Health tab, with color-coded statuses.
+10. **Agent:** Redesigns the graph view to meet the user's request.
+11. **User (PENDING):** Delivers the current large feature request: align all Ops tabs with the Founder portal, establish granular delete permissions, restrict the Subs tab, and create a new dynamic, actionable dashboard for managers with a team activity view.
+
+**Project Health Check:**
+-   **Broken:** None.
+-   **Mocked:**
+    -   Twilio SMS OTP integration.
+    -   The new  component is a placeholder with no functionality.
+
+**3rd Party Integrations**
+-   xAI (Grok)
+-   Stripe
+-   Apple In-App Purchase
+-   AWS S3 (compatible)
+-   Resend
+-   Twilio (scaffolded)
+-   Google Places
+-   Capgo
+-   CodeMagic (CI/CD)
+-   Railway (Backend Deployment)
+-   Vercel (Frontend Deployment)
+
+**Testing status**
+-   **Testing agent used after significant changes:** YES (but for tasks completed *before* the current large feature request).
+-   **Troubleshoot agent used after agent stuck in loop:** NO
+-   **Test files created:** None.
+-   **Known regressions:** None.
+
+**Credentials to test flow:**
+-   **Founder/Admin:**  / 
+-   **Operations Manager/Worker:** You will need to log in as the Founder and create new operator accounts with the Operations Manager and Operations Team Member roles to test the new permission-based features.
+
+**What agent forgot to execute**
+The agent is in the middle of a large, complex task. It has not forgotten anything, but the most substantial parts of the user's latest request are yet to be implemented. Specifically, the entire backend and frontend logic for the dynamic light-up dashboard tiles and the manager's team activity feed still need to be built.</analysis>

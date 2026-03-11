@@ -22,6 +22,12 @@ def require_manager_or_founder(user: dict):
     raise HTTPException(status_code=403, detail="Founder or Manager access required")
 
 
+def require_staff(user: dict):
+    if user.get("role") in ("admin", "operator"):
+        return
+    raise HTTPException(status_code=403, detail="Staff access required")
+
+
 @router.get("/ops/dashboard")
 async def get_ops_dashboard(current_user: dict = Depends(get_current_user)):
     """Operator Activity Dashboard — real-time metrics."""
@@ -213,4 +219,314 @@ async def get_ops_dashboard(current_user: dict = Depends(get_current_user)):
             "escalations_open": open_escalations,
         },
         "recent_shift_notes": recent_shift_notes,
+    }
+
+
+
+@router.get("/ops/dashboard-events")
+async def get_dashboard_events(current_user: dict = Depends(get_current_user)):
+    """Get actionable event counts for each dashboard tile.
+    Returns new/unprocessed items that need operator attention."""
+    require_staff(current_user)
+
+    now = datetime.now(timezone.utc)
+
+    # 1. TVT: Death certificates pending or reviewing
+    tvt_pending = await db.death_certificates.count_documents({"status": "pending"})
+    tvt_reviewing = await db.death_certificates.count_documents(
+        {"status": "reviewing"}
+    )
+
+    # 2. Milestone Notifications: Pending review
+    milestones_pending = await db.milestone_deliveries.count_documents(
+        {"status": "pending_review"}
+    )
+
+    # 3. DTS: Active requests (submitted, quoted, approved)
+    dts_active = await db.dts_tasks.count_documents(
+        {
+            "soft_deleted": {"$ne": True},
+            "status": {"$in": ["submitted", "quoted", "approved", "ready"]},
+        }
+    )
+
+    # 4. Emergency Messages: Pending emergency access requests
+    emergency_pending = await db.emergency_access.count_documents(
+        {"status": "pending"}
+    )
+
+    # 5. P1 Emergency: Open P1 conversations (benefactor alive alerts)
+    p1_open = await db.support_conversations.count_documents(
+        {"priority": "p1", "status": {"$in": ["open", "active"]}}
+    )
+
+    # 6. Customer Service: Unread messages from users
+    support_unread = await db.support_messages.count_documents(
+        {"sender_role": {"$nin": ["admin", "operator"]}, "read": False}
+    )
+
+    # Recent events (last 24h) for timeline
+    day_ago = (now - timedelta(hours=24)).isoformat()
+
+    recent_tvt = (
+        await db.death_certificates.find(
+            {"created_at": {"$gte": day_ago}},
+            {"_id": 0, "id": 1, "estate_id": 1, "status": 1, "created_at": 1},
+        )
+        .sort("created_at", -1)
+        .to_list(10)
+    )
+
+    recent_milestones = (
+        await db.milestone_deliveries.find(
+            {"created_at": {"$gte": day_ago}},
+            {
+                "_id": 0,
+                "id": 1,
+                "estate_id": 1,
+                "status": 1,
+                "milestone_type": 1,
+                "created_at": 1,
+            },
+        )
+        .sort("created_at", -1)
+        .to_list(10)
+    )
+
+    recent_dts = (
+        await db.dts_tasks.find(
+            {"created_at": {"$gte": day_ago}, "soft_deleted": {"$ne": True}},
+            {
+                "_id": 0,
+                "id": 1,
+                "title": 1,
+                "status": 1,
+                "task_type": 1,
+                "created_at": 1,
+            },
+        )
+        .sort("created_at", -1)
+        .to_list(10)
+    )
+
+    recent_emergency = (
+        await db.emergency_access.find(
+            {"created_at": {"$gte": day_ago}},
+            {
+                "_id": 0,
+                "id": 1,
+                "estate_id": 1,
+                "status": 1,
+                "urgency": 1,
+                "created_at": 1,
+            },
+        )
+        .sort("created_at", -1)
+        .to_list(10)
+    )
+
+    return {
+        "timestamp": now.isoformat(),
+        "events": {
+            "tvt": {
+                "count": tvt_pending + tvt_reviewing,
+                "pending": tvt_pending,
+                "reviewing": tvt_reviewing,
+                "label": "TVT - Transition Verification",
+                "path": "/ops/transition",
+            },
+            "milestones": {
+                "count": milestones_pending,
+                "label": "Milestone Notifications",
+                "path": "/ops/milestones",
+            },
+            "dts": {
+                "count": dts_active,
+                "label": "DTS Requests",
+                "path": "/ops/dts",
+            },
+            "emergency": {
+                "count": emergency_pending,
+                "label": "Emergency Access",
+                "path": "/ops/escalations",
+            },
+            "p1": {
+                "count": p1_open,
+                "label": "P1 Emergency - Still Alive",
+                "path": "/ops/support",
+            },
+            "support": {
+                "count": support_unread,
+                "label": "Customer Service",
+                "path": "/ops/support",
+            },
+        },
+        "recent_activity": {
+            "tvt": recent_tvt,
+            "milestones": recent_milestones,
+            "dts": recent_dts,
+            "emergency": recent_emergency,
+        },
+    }
+
+
+@router.get("/ops/team-tasks")
+async def get_team_tasks(current_user: dict = Depends(get_current_user)):
+    """Get active tasks per operator for the manager's team overview.
+    Shows what each team member is working on across all task types."""
+    require_manager_or_founder(current_user)
+
+    now = datetime.now(timezone.utc)
+
+    # Get all operators
+    operators = await db.users.find(
+        {"role": "operator"},
+        {
+            "_id": 0,
+            "id": 1,
+            "name": 1,
+            "first_name": 1,
+            "last_name": 1,
+            "operator_role": 1,
+            "title": 1,
+            "last_login_at": 1,
+        },
+    ).to_list(100)
+
+    op_ids = [op["id"] for op in operators]
+
+    # DTS tasks assigned to operators
+    dts_tasks = await db.dts_tasks.find(
+        {
+            "assigned_to": {"$in": op_ids},
+            "soft_deleted": {"$ne": True},
+            "status": {"$in": ["submitted", "quoted", "approved", "ready"]},
+        },
+        {
+            "_id": 0,
+            "id": 1,
+            "title": 1,
+            "status": 1,
+            "task_type": 1,
+            "assigned_to": 1,
+            "created_at": 1,
+            "updated_at": 1,
+        },
+    ).to_list(500)
+
+    # Death certificates being reviewed by operators
+    tvt_tasks = await db.death_certificates.find(
+        {
+            "reviewer_id": {"$in": op_ids},
+            "status": {"$in": ["pending", "reviewing"]},
+        },
+        {
+            "_id": 0,
+            "id": 1,
+            "estate_id": 1,
+            "status": 1,
+            "reviewer_id": 1,
+            "created_at": 1,
+        },
+    ).to_list(500)
+
+    # Milestone deliveries being reviewed
+    milestone_tasks = await db.milestone_deliveries.find(
+        {
+            "reviewer_id": {"$in": op_ids},
+            "status": "pending_review",
+        },
+        {
+            "_id": 0,
+            "id": 1,
+            "estate_id": 1,
+            "milestone_type": 1,
+            "status": 1,
+            "reviewer_id": 1,
+            "created_at": 1,
+        },
+    ).to_list(500)
+
+    # Build per-operator task list
+    team_data = []
+    for op in operators:
+        op_id = op["id"]
+        op_name = op.get("name") or f"{op.get('first_name', '')} {op.get('last_name', '')}".strip()
+
+        tasks = []
+
+        # DTS tasks
+        for t in dts_tasks:
+            if t.get("assigned_to") == op_id:
+                tasks.append(
+                    {
+                        "id": t["id"],
+                        "type": "dts",
+                        "type_label": "DTS Request",
+                        "title": t.get("title", "Untitled"),
+                        "status": t.get("status", ""),
+                        "created_at": t.get("created_at", ""),
+                        "path": "/ops/dts",
+                    }
+                )
+
+        # TVT tasks
+        for t in tvt_tasks:
+            if t.get("reviewer_id") == op_id:
+                tasks.append(
+                    {
+                        "id": t["id"],
+                        "type": "tvt",
+                        "type_label": "Death Certificate Review",
+                        "title": f"TVT Review - Estate {t.get('estate_id', '')[:8]}",
+                        "status": t.get("status", ""),
+                        "created_at": t.get("created_at", ""),
+                        "path": "/ops/transition",
+                    }
+                )
+
+        # Milestone tasks
+        for t in milestone_tasks:
+            if t.get("reviewer_id") == op_id:
+                tasks.append(
+                    {
+                        "id": t["id"],
+                        "type": "milestone",
+                        "type_label": "Milestone Review",
+                        "title": f"Milestone - {t.get('milestone_type', 'Unknown')}",
+                        "status": t.get("status", ""),
+                        "created_at": t.get("created_at", ""),
+                        "path": "/ops/milestones",
+                    }
+                )
+
+        # Determine online status
+        last_login = op.get("last_login_at", "")
+        is_online = False
+        if last_login:
+            try:
+                ll = datetime.fromisoformat(last_login.replace("Z", "+00:00"))
+                is_online = (now - ll).total_seconds() < 3600
+            except (ValueError, TypeError):
+                pass
+
+        team_data.append(
+            {
+                "id": op_id,
+                "name": op_name,
+                "operator_role": op.get("operator_role", "worker"),
+                "title": op.get("title", ""),
+                "is_online": is_online,
+                "tasks": tasks,
+                "task_count": len(tasks),
+            }
+        )
+
+    # Sort: operators with active tasks first, then by name
+    team_data.sort(key=lambda x: (-x["task_count"], x["name"]))
+
+    return {
+        "timestamp": now.isoformat(),
+        "team": team_data,
+        "total_active_tasks": sum(t["task_count"] for t in team_data),
     }

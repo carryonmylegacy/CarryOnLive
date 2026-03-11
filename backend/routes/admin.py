@@ -254,6 +254,24 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
         {"status": "pending"}
     )
 
+    # Milestone deliveries pending review
+    pending_milestones = await db.milestone_deliveries.count_documents(
+        {"status": "pending_review"}
+    )
+
+    # Emergency access requests pending
+    pending_emergency = await db.emergency_access.count_documents(
+        {"status": "pending"}
+    )
+
+    # P1 emergency conversations
+    p1_emergencies = await db.support_conversations.count_documents(
+        {"priority": "p1", "status": {"$in": ["open", "active"]}}
+    )
+
+    # Open escalations
+    open_escalations = await db.escalations.count_documents({"status": "open"})
+
     # Viral metrics — only count beneficiaries linked to existing benefactors' estates
     benefactor_ids = [u["id"] for u in all_users if u.get("role") == "benefactor"]
     estates_for_benefactors = await db.estates.find(
@@ -298,6 +316,10 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
         "grace_periods": trial_periods,
         "pending_family_requests": pending_family,
         "pending_deletions": deletion_requests,
+        "pending_milestones": pending_milestones,
+        "pending_emergency": pending_emergency,
+        "p1_emergencies": p1_emergencies,
+        "open_escalations": open_escalations,
         "avg_beneficiaries_per_benefactor": avg_bens_per_benefactor,
         "beneficiaries_converted": ben_to_benefactor_count,
     }

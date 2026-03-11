@@ -10,7 +10,7 @@ import { toast } from '../../utils/toast';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
+export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }) => {
   const [settings, setSettings] = useState(null);
   const [userSubs, setUserSubs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -104,7 +104,8 @@ export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
 
   return (
     <div className="space-y-6" data-testid="subscriptions-admin">
-      {/* Beta Mode Toggle */}
+      {/* Beta Mode Toggle — Founder only */}
+      {!operatorMode && (
       <Card className="glass-card">
         <CardContent className="p-5">
           <div className="flex items-center justify-between">
@@ -141,8 +142,10 @@ export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
           </div>
         </CardContent>
       </Card>
+      )}
 
-      {/* Family Plan Toggle */}
+      {/* Family Plan Toggle — Founder only */}
+      {!operatorMode && (
       <Card className="glass-card">
         <CardContent className="p-5">
           <div className="flex items-center justify-between">
@@ -166,7 +169,6 @@ export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
                 onCheckedChange={async () => {
                   try {
                     await axios.put(`${API_URL}/admin/family-plan-settings`, {}, { headers });
-                    // toast removed
                     fetchData();
                   } catch (err) { toast.error('Failed to update'); }
                 }}
@@ -176,8 +178,10 @@ export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
           </div>
         </CardContent>
       </Card>
+      )}
 
-      {/* Benefactor Pricing */}
+      {/* Benefactor Pricing — Founder only */}
+      {!operatorMode && (
       <Card className="glass-card">
         <CardContent className="p-5">
           <h3 className="text-lg font-bold text-[var(--t)] flex items-center gap-2 mb-4">
@@ -212,8 +216,10 @@ export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
           </div>
         </CardContent>
       </Card>
+      )}
 
-      {/* Beneficiary Pricing */}
+      {/* Beneficiary Pricing — Founder only */}
+      {!operatorMode && (
       <Card className="glass-card">
         <CardContent className="p-5">
           <h3 className="text-lg font-bold text-[var(--t)] flex items-center gap-2 mb-4">
@@ -256,6 +262,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users }) => {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Per-User Overrides */}
       <Card className="glass-card">
