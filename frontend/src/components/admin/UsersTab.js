@@ -529,11 +529,14 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                             const color = getBenNodeColor(ben);
                             const age = benAge(ben);
                             const badge = getBenStatusBadge(ben);
+                            const benInitials = ben.first_name && ben.last_name
+                              ? ben.first_name[0] + ben.last_name[0]
+                              : ben.name ? ben.name.split(' ').map(x => x[0]).join('').toUpperCase().slice(0, 2) : '??';
                             return (
                               <div key={ben.id} className="flex flex-col items-center">
                                 <div style={{ width: 2, height: 12, background: color, opacity: 0.4 }} />
                                 <GraphNode
-                                  initials={(ben.first_name?.[0] || '?') + (ben.last_name?.[0] || '?')}
+                                  initials={benInitials}
                                   color={color}
                                   size={40}
                                   label={ben.first_name || ben.name?.split(' ')[0] || ''}
@@ -551,11 +554,14 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                         const color = getBenNodeColor(ben);
                         const age = benAge(ben);
                         const badge = getBenStatusBadge(ben);
+                        const benInitials = ben.first_name && ben.last_name
+                          ? ben.first_name[0] + ben.last_name[0]
+                          : ben.name ? ben.name.split(' ').map(x => x[0]).join('').toUpperCase().slice(0, 2) : '??';
                         return (
                           <div key={ben.id} className="flex flex-col items-center">
                             <div style={{ width: 2, height: 12, background: color, opacity: 0.4 }} />
                             <GraphNode
-                              initials={(ben.first_name?.[0] || '?') + (ben.last_name?.[0] || '?')}
+                              initials={benInitials}
                               color={color}
                               size={40}
                               label={ben.first_name || ben.name?.split(' ')[0] || ''}
