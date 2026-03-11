@@ -1333,9 +1333,9 @@ async def run_security_scan(current_user: dict = Depends(get_current_user)):
 
 @router.get("/admin/estate-health")
 async def get_estate_health(current_user: dict = Depends(get_current_user)):
-    """Estate health analytics — admin only"""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
+    """Estate health analytics — admin and operators"""
+    if current_user["role"] not in ("admin", "operator"):
+        raise HTTPException(status_code=403, detail="Staff access required")
 
     # Fetch all users, estates, and beneficiaries
     all_users = await db.users.find(

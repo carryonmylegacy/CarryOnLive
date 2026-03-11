@@ -336,6 +336,7 @@ const MobileNav = () => {
     { to: '/ops/search', icon: Search, label: 'Quick Search' },
     { to: '/ops/escalations', icon: AlertTriangle, label: 'Escalate' },
     { to: '/ops/shift-notes', icon: StickyNote, label: 'Shift Notes' },
+    { to: '/ops/estate-health', icon: HeartPulse, label: 'Estate Health' },
     { to: '/ops/knowledge-base', icon: BookOpen, label: 'SOPs' },
   ];
 

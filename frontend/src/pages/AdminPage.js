@@ -108,6 +108,7 @@ const PATH_TO_TAB = {
   '/ops/milestones': 'milestones',
   '/ops/users': 'users',
   '/ops/trials': 'trials',
+  '/ops/estate-health': 'estate-health',
 };
 
 const AdminPage = ({ operatorMode = false }) => {
@@ -474,7 +475,7 @@ const AdminPage = ({ operatorMode = false }) => {
       {effectiveTab === 'escalations' && !operatorMode && <EscalationsTab getAuthHeaders={getAuthHeaders} isFounder={true} />}
       {effectiveTab === 'knowledge-base' && !operatorMode && <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={true} />}
       {effectiveTab === 'p1-settings' && !operatorMode && <P1ContactSettingsTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'estate-health' && !operatorMode && <EstateHealthTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'estate-health' && <EstateHealthTab getAuthHeaders={getAuthHeaders} />}
       {/* New Operator features */}
       {effectiveTab === 'my-activity' && operatorMode && <MyActivityTab getAuthHeaders={getAuthHeaders} />}
       {effectiveTab === 'search' && operatorMode && <QuickSearchTab getAuthHeaders={getAuthHeaders} />}
