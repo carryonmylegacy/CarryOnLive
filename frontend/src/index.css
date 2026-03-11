@@ -1101,17 +1101,16 @@
     margin-left: 0;
     max-width: 100vw;
     overflow-x: hidden;
-    /* Make this the scroll container instead of body */
+    /* Use dvh to account for virtual keyboard on iOS PWA */
     height: 100vh;
+    height: 100dvh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior: none;
-    overscroll-behavior-y: none;
+    overscroll-behavior-x: none;
     padding-bottom: calc(56px + env(safe-area-inset-bottom, 8px));
     /* 48px = mobile header bar height (h-12), plus safe-area for the notch/status bar */
     padding-top: calc(48px + env(safe-area-inset-top, 0px));
     touch-action: pan-x pan-y;
-    contain: style;
   }
   
   .main-content::before {

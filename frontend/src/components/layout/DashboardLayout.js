@@ -29,6 +29,19 @@ const DashboardLayout = () => {
 
   const { pullProgress, refreshing } = usePullToRefresh(handleRefresh);
 
+  // iOS PWA: scroll focused input into view when virtual keyboard opens
+  useEffect(() => {
+    if (!window.visualViewport) return;
+    const onResize = () => {
+      const el = document.activeElement;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) {
+        setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 100);
+      }
+    };
+    window.visualViewport.addEventListener('resize', onResize);
+    return () => window.visualViewport.removeEventListener('resize', onResize);
+  }, []);
+
   return (
     <div className="app">
       {/* Pull-to-refresh indicator */}
