@@ -89,7 +89,9 @@ async def create_operator(
 
     # Check username uniqueness (normalize to lowercase for consistent login)
     normalized_username = data.username.lower().strip()
-    existing = await db.users.find_one({"email": normalized_username}, {"_id": 0, "id": 1})
+    existing = await db.users.find_one(
+        {"email": normalized_username}, {"_id": 0, "id": 1}
+    )
     if existing:
         raise HTTPException(status_code=400, detail="Username already in use")
 
@@ -225,7 +227,9 @@ async def edit_operator(
     if data.username is not None and data.username.strip():
         normalized = data.username.lower().strip()
         if normalized != op.get("email", ""):
-            existing = await db.users.find_one({"email": normalized, "id": {"$ne": operator_id}}, {"_id": 0, "id": 1})
+            existing = await db.users.find_one(
+                {"email": normalized, "id": {"$ne": operator_id}}, {"_id": 0, "id": 1}
+            )
             if existing:
                 raise HTTPException(status_code=400, detail="Username already in use")
             update_fields["email"] = normalized
