@@ -41,7 +41,7 @@ import { EstateHealthTab } from '../components/admin/EstateHealthTab';
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const TAB_CONFIG = [
-  { key: 'users', label: 'Users', icon: Users, path: '/admin' },
+  { key: 'users', label: 'Users', icon: Users, path: '/admin/users' },
   { key: 'transition', label: 'TVT', icon: FileKey, path: '/admin/transition' },
   { key: 'dts', label: 'DTS', icon: Shield, path: '/admin/dts' },
   { key: 'support', label: 'Support', icon: Headphones, path: '/admin/support' },
@@ -72,6 +72,7 @@ const TAB_CONFIG = [
 
 const PATH_TO_TAB = {
   '/admin/transition': 'transition',
+  '/admin/users': 'users',
   '/admin/dts': 'dts',
   '/admin/dev-switcher': 'dev-switcher',
   '/admin/support': 'support',
@@ -115,6 +116,8 @@ const AdminPage = ({ operatorMode = false }) => {
   const navigate = useNavigate();
   const defaultOpsTab = user?.operator_role === 'manager' ? 'ops-dashboard' : 'transition';
   const tab = PATH_TO_TAB[location.pathname] || (operatorMode ? defaultOpsTab : 'users');
+  // If founder lands on /admin with no specific tab, default to users
+  const effectiveTab = (!operatorMode && location.pathname === '/admin') ? 'users' : tab;
 
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState(null);
@@ -445,7 +448,7 @@ const AdminPage = ({ operatorMode = false }) => {
         }).map(t => (
           <button key={t.key} onClick={() => navigate(operatorMode ? t.path.replace('/admin', '/ops') : t.path)}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
-              tab === t.key ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'
+              effectiveTab === t.key ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'
             }`} data-testid={`admin-tab-${t.key}`}>
             <t.icon className="w-3.5 h-3.5" /> {t.label}
           </button>
@@ -453,34 +456,34 @@ const AdminPage = ({ operatorMode = false }) => {
       </div>
 
       {/* Tab Content */}
-      {tab === 'users' && <UsersTab users={users} setUsers={setUsers} currentUserId={user?.id} getAuthHeaders={getAuthHeaders} operatorMode={operatorMode} />}
-      {tab === 'transition' && <TransitionTab getAuthHeaders={getAuthHeaders} onStatsChange={refreshStats} />}
-      {tab === 'dts' && <DTSTab getAuthHeaders={getAuthHeaders} />}
-      {tab === 'support' && <SupportTab getAuthHeaders={getAuthHeaders} />}
-      {tab === 'subscriptions' && <SubscriptionsTab getAuthHeaders={getAuthHeaders} users={users} />}
-      {tab === 'verifications' && <VerificationsTab getAuthHeaders={getAuthHeaders} />}
-      {tab === 'analytics' && <AnalyticsTab getAuthHeaders={getAuthHeaders} />}
-      {tab === 'launch' && <LaunchMetricsTab getAuthHeaders={getAuthHeaders} />}
-      {tab === 'activity' && <ActivityTab getAuthHeaders={getAuthHeaders} />}
-      {tab === 'operators' && (!operatorMode || user?.operator_role === 'manager') && <OperatorsTab getAuthHeaders={getAuthHeaders} />}
-      {tab === 'audit' && !operatorMode && <AuditTrailTab getAuthHeaders={getAuthHeaders} />}
-      {tab === 'dev-switcher' && !operatorMode && <DevSwitcherTab users={users} getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'users' && <UsersTab users={users} setUsers={setUsers} currentUserId={user?.id} getAuthHeaders={getAuthHeaders} operatorMode={operatorMode} />}
+      {effectiveTab === 'transition' && <TransitionTab getAuthHeaders={getAuthHeaders} onStatsChange={refreshStats} />}
+      {effectiveTab === 'dts' && <DTSTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'support' && <SupportTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'subscriptions' && <SubscriptionsTab getAuthHeaders={getAuthHeaders} users={users} />}
+      {effectiveTab === 'verifications' && <VerificationsTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'analytics' && <AnalyticsTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'launch' && <LaunchMetricsTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'activity' && <ActivityTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'operators' && (!operatorMode || user?.operator_role === 'manager') && <OperatorsTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'audit' && !operatorMode && <AuditTrailTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'dev-switcher' && !operatorMode && <DevSwitcherTab users={users} getAuthHeaders={getAuthHeaders} />}
       {/* New Founder features */}
-      {tab === 'announcements' && !operatorMode && <AnnouncementsTab getAuthHeaders={getAuthHeaders} />}
-      {tab === 'system-health' && !operatorMode && <SystemHealthTab getAuthHeaders={getAuthHeaders} />}
-      {tab === 'escalations' && !operatorMode && <EscalationsTab getAuthHeaders={getAuthHeaders} isFounder={true} />}
-      {tab === 'knowledge-base' && !operatorMode && <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={true} />}
-      {tab === 'p1-settings' && !operatorMode && <P1ContactSettingsTab getAuthHeaders={getAuthHeaders} />}
-      {tab === 'estate-health' && !operatorMode && <EstateHealthTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'announcements' && !operatorMode && <AnnouncementsTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'system-health' && !operatorMode && <SystemHealthTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'escalations' && !operatorMode && <EscalationsTab getAuthHeaders={getAuthHeaders} isFounder={true} />}
+      {effectiveTab === 'knowledge-base' && !operatorMode && <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={true} />}
+      {effectiveTab === 'p1-settings' && !operatorMode && <P1ContactSettingsTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'estate-health' && !operatorMode && <EstateHealthTab getAuthHeaders={getAuthHeaders} />}
       {/* New Operator features */}
-      {tab === 'my-activity' && operatorMode && <MyActivityTab getAuthHeaders={getAuthHeaders} />}
-      {tab === 'search' && operatorMode && <QuickSearchTab getAuthHeaders={getAuthHeaders} />}
-      {tab === 'ops-escalations' && operatorMode && <EscalationsTab getAuthHeaders={getAuthHeaders} isFounder={false} />}
-      {tab === 'shift-notes' && operatorMode && <ShiftNotesTab getAuthHeaders={getAuthHeaders} />}
-      {tab === 'ops-kb' && operatorMode && <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={false} />}
-      {tab === 'ops-dashboard' && <OpsDashboardTab getAuthHeaders={getAuthHeaders} />}
-      {tab === 'milestones' && <MilestoneDeliveriesTab getAuthHeaders={getAuthHeaders} />}
-      {tab === 'trials' && <TrialUsersTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'my-activity' && operatorMode && <MyActivityTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'search' && operatorMode && <QuickSearchTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'ops-escalations' && operatorMode && <EscalationsTab getAuthHeaders={getAuthHeaders} isFounder={false} />}
+      {effectiveTab === 'shift-notes' && operatorMode && <ShiftNotesTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'ops-kb' && operatorMode && <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={false} />}
+      {effectiveTab === 'ops-dashboard' && <OpsDashboardTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'milestones' && <MilestoneDeliveriesTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'trials' && <TrialUsersTab getAuthHeaders={getAuthHeaders} />}
     </div>
   );
 };
