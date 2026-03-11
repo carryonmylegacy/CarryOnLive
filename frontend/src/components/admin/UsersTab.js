@@ -14,9 +14,10 @@ const roleColors = {
 };
 
 const statusColors = {
-  pending: { bg: 'rgba(245,158,11,0.1)', color: '#F59E0B' },
-  accepted: { bg: 'rgba(34,201,147,0.1)', color: '#22C993' },
-  draft: { bg: 'rgba(100,116,139,0.1)', color: '#94A3B8' },
+  draft: { bg: 'rgba(239,68,68,0.12)', color: '#EF4444' },
+  pending: { bg: 'rgba(245,158,11,0.12)', color: '#F59E0B' },
+  sent: { bg: 'rgba(139,92,246,0.12)', color: '#8B5CF6' },
+  accepted: { bg: 'rgba(34,201,147,0.12)', color: '#22C993' },
 };
 
 export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, operatorMode = false }) => {
@@ -229,7 +230,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
           <div className="text-[10px] text-[var(--t5)] truncate">{ben.email || 'No email'} · {ben.relation || 'beneficiary'}</div>
         </div>
         <span className="text-[9px] px-2 py-0.5 rounded-full font-bold capitalize" style={{ background: sc.bg, color: sc.color }}>
-          {ben.is_stub ? 'stub' : ben.invitation_status || 'draft'}
+          {ben.invitation_status || 'draft'}
         </span>
       </div>
     );
@@ -552,7 +553,23 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
           </button>
         </div>
       </div>
-      <p className="text-xs text-[var(--t5)]">{filteredUsers.length} users</p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-[var(--t5)]">{filteredUsers.length} users</p>
+        <div className="flex items-center gap-3" data-testid="status-key">
+          {[
+            { label: 'Draft', desc: 'No email', color: statusColors.draft },
+            { label: 'Pending', desc: 'Has email', color: statusColors.pending },
+            { label: 'Sent', desc: 'Invite sent', color: statusColors.sent },
+            { label: 'Accepted', desc: 'Portal active', color: statusColors.accepted },
+          ].map(s => (
+            <div key={s.label} className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.color.color }} />
+              <span className="text-[10px] font-semibold" style={{ color: s.color.color }}>{s.label}</span>
+              <span className="text-[10px] text-[var(--t5)] hidden sm:inline">— {s.desc}</span>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {viewMode === 'tree' ? renderTreeView() : viewMode === 'graph' ? renderGraphView() : (
         <div className="space-y-2">

@@ -97,7 +97,7 @@ const EstateHealthCard = ({ estate }) => {
 
   const getBenBadge = (ben) => {
     if (ben.is_linked) return { bg: '#22C993', border: '#22C99350', icon: <CheckCircle className="w-2.5 h-2.5 text-white" /> };
-    if (ben.invitation_status === 'sent') return { bg: '#3B82F6', border: '#3B82F650', icon: <Mail className="w-2.5 h-2.5 text-white" /> };
+    if (ben.invitation_status === 'sent') return { bg: '#8B5CF6', border: '#8B5CF650', icon: <Mail className="w-2.5 h-2.5 text-white" /> };
     if (ben.is_stub) return { bg: '#F05252', border: '#F0525250', icon: <AlertTriangle className="w-2.5 h-2.5 text-white" /> };
     return { bg: '#F5A623', border: '#F5A62350', icon: <Clock className="w-2.5 h-2.5 text-white" /> };
   };
