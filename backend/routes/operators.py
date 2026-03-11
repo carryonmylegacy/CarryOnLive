@@ -86,8 +86,9 @@ async def create_operator(
     else:
         require_founder_or_manager(current_user)
 
-    # Check username uniqueness
-    existing = await db.users.find_one({"email": data.username}, {"_id": 0, "id": 1})
+    # Check username uniqueness (normalize to lowercase for consistent login)
+    normalized_username = data.username.lower().strip()
+    existing = await db.users.find_one({"email": normalized_username}, {"_id": 0, "id": 1})
     if existing:
         raise HTTPException(status_code=400, detail="Username already in use")
 
@@ -96,7 +97,7 @@ async def create_operator(
     full_name = f"{data.first_name} {data.last_name}".strip()
     operator = {
         "id": str(uuid.uuid4()),
-        "email": data.username,
+        "email": normalized_username,
         "name": full_name,
         "first_name": data.first_name,
         "last_name": data.last_name,
