@@ -12,14 +12,27 @@ AI-powered estate planning platform (CarryOn) with multi-portal architecture: Be
 - **Storage:** AWS S3-compatible
 - **Email:** Resend
 - **SMS:** Twilio (scaffolded, pending A2P 10DLC)
-- **Auth:** JWT-based with OTP verification
+- **Auth:** JWT-based with OTP verification, single-session enforcement
 
 ## What's Been Implemented
 
 ### Session: March 11, 2026
-- **Notification Panel Positioning:** Panel now opens upward from the notification bell button instead of downward. Uses `bottom: calc(100% + 8px)` absolute positioning. Responsive: aligns right on mobile (Sheet), left on desktop (sidebar).
-- **DEV Portal Switcher Fix:** Fixed `isActive` logic for `ops_view` to require `user?.role === 'admin'`, preventing Operations Portal from being highlighted when logged in as an operator. Fixed in both Sidebar.js and MobileNav.js.
-- **Mobile Dialog Scroll Fix:** Enhanced CSS rules for Radix Dialog on mobile/PWA to enable touch scrolling inside modals. Added `touch-action: pan-y`, `-webkit-overflow-scrolling: touch`, and `overscroll-behavior: contain` rules.
+
+**Batch 1 - UI Tweaks:**
+- Notification panel repositioned to grow upward from bell button
+- DEV switcher fix: Operations Portal no longer highlights when logged as operator
+- Mobile dialog scroll CSS fix for PWA
+
+**Batch 2 - Operator Credentials:**
+- Added Login Credentials section (username + password) to operator edit dialog
+- Backend supports username update with uniqueness validation
+- Fixed case-sensitivity bug in operator creation (username now lowercased)
+
+**Batch 3 - DEV Session Isolation:**
+- Created `create_dev_session_token` — generates tokens that do NOT invalidate real user sessions
+- Added `dev_session` flag to JWT tokens; session validation skips single-session check for dev tokens
+- Updated all DEV pathways: `dev-switch`, `dev-login`, `operator-dev-login`
+- Founder can now impersonate any account without kicking out the real user
 
 ### Previous Sessions
 - Major sidebar & navigation redesign (desktop + mobile unified)
@@ -29,7 +42,6 @@ AI-powered estate planning platform (CarryOn) with multi-portal architecture: Be
 - Deprecated services removal (Will/Trust Wizard & Eternal Echo)
 - Default last-viewed portal feature (localStorage)
 - Backend housekeeping (MongoDB index fix, null DOB fix)
-- Content overhaul across frontend and backend
 
 ## Prioritized Backlog
 
@@ -39,20 +51,20 @@ AI-powered estate planning platform (CarryOn) with multi-portal architecture: Be
 
 ### P2
 - ESLint code cleanup (non-critical warnings)
-- Review beneficiary settings page for race condition (one-time flash glitch reported)
+- Review beneficiary settings page for race condition (one-time flash glitch)
 
 ## Key Accounts
 - Founder/Admin: info@carryon.us / Demo1234!
 - Test Benefactor: fulltest@test.com / Password.123
 
 ## Key Files
+- backend/utils.py (create_token with dev_session flag, session validation)
+- backend/routes/auth.py (create_dev_session_token, dev-switch, dev-login)
+- backend/routes/operators.py (operator-dev-login, operator CRUD with username support)
+- frontend/src/components/admin/OperatorsTab.js (edit dialog with credentials)
 - frontend/src/components/NotificationBell.js
 - frontend/src/components/layout/Sidebar.js
 - frontend/src/components/layout/MobileNav.js
-- frontend/src/components/admin/OperatorsTab.js
-- frontend/src/index.css
-- frontend/src/components/ui/dialog.jsx
-- frontend/src/components/ui/sheet.jsx
 
 ## Deployment Notes
 - Backend changes deploy immediately via Railway (affects live app + TestFlight)

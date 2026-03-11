@@ -369,10 +369,10 @@ async def operator_dev_login(
     if not operator:
         raise HTTPException(status_code=404, detail="Operator not found")
 
-    from routes.auth import create_session_token
+    from routes.auth import create_dev_session_token
     from models import UserResponse, TokenResponse
 
-    token = await create_session_token(
+    token = await create_dev_session_token(
         operator["id"], operator["email"], operator["role"]
     )
 

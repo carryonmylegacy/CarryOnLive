@@ -58,6 +58,14 @@ async def create_session_token(user_id, email, role):
     return token
 
 
+async def create_dev_session_token(user_id, email, role):
+    """Create a dev-impersonation token that does NOT invalidate the real user's session."""
+    import uuid as _uuid
+
+    session_id = str(_uuid.uuid4())
+    return create_token(user_id, email, role, session_id, dev_session=True)
+
+
 def get_client_ip(request: Request) -> str:
     """Get real client IP, accounting for reverse proxies."""
     forwarded = request.headers.get("x-forwarded-for", "")
@@ -1146,7 +1154,7 @@ async def dev_login(data: UserLogin, request: Request):
                 status_code=403, detail="Invalid admin token for impersonation"
             )
 
-    token = await create_session_token(user["id"], user["email"], user["role"])
+    token = await create_dev_session_token(user["id"], user["email"], user["role"])
     _owns = bool(
         await db.estates.find_one({"owner_id": user["id"]}, {"_id": 0, "id": 1})
     )
@@ -1216,7 +1224,7 @@ async def dev_switch(data: DevSwitchRequest, request: Request):
             detail="Stored password is incorrect. Update it in Admin → Dev Switcher.",
         )
 
-    token = await create_session_token(user["id"], user["email"], user["role"])
+    token = await create_dev_session_token(user["id"], user["email"], user["role"])
     _owns = bool(
         await db.estates.find_one({"owner_id": user["id"]}, {"_id": 0, "id": 1})
     )
