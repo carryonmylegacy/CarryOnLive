@@ -691,14 +691,15 @@ const MobileNav = () => {
                           if (isOnBeneficiary) window.location.reload();
                         }}
                         data-testid="mobile-switch-benefactor"
-                        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all"
+                        className="w-full flex flex-col items-center px-4 py-3 rounded-xl transition-all"
                         style={{
                           border: `1px solid ${!isOnBeneficiary ? 'rgba(212,175,55,0.3)' : theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
                           color: !isOnBeneficiary ? '#d4af37' : theme === 'dark' ? '#A0AABF' : '#475569',
                           backgroundColor: !isOnBeneficiary ? 'rgba(212,175,55,0.08)' : theme === 'dark' ? 'var(--b)' : 'rgba(0,0,0,0.05)',
+                          gap: 2,
                         }}>
-                          <Shield className="w-5 h-5" />
-                          <span className="font-medium">My Estate</span>
+                          <span className="font-semibold text-sm">My Benefactor Portal</span>
+                          <span style={{ fontSize: 11, opacity: 0.6 }}>Benefactor = Me</span>
                         </button>
                         <button onClick={() => {
                           setOpen(false);
@@ -707,14 +708,15 @@ const MobileNav = () => {
                           if (!isOnBeneficiary) window.location.reload();
                         }}
                         data-testid="mobile-switch-beneficiary"
-                        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all"
+                        className="w-full flex flex-col items-center px-4 py-3 rounded-xl transition-all"
                         style={{
-                          border: `1px solid ${isOnBeneficiary ? 'rgba(96,165,250,0.3)' : theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                          color: isOnBeneficiary ? '#60A5FA' : theme === 'dark' ? '#A0AABF' : '#475569',
-                          backgroundColor: isOnBeneficiary ? 'rgba(96,165,250,0.08)' : theme === 'dark' ? 'var(--b)' : 'rgba(0,0,0,0.05)',
+                          border: `1px solid ${isOnBeneficiary ? 'rgba(212,175,55,0.3)' : theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                          color: isOnBeneficiary ? '#d4af37' : theme === 'dark' ? '#A0AABF' : '#475569',
+                          backgroundColor: isOnBeneficiary ? 'rgba(212,175,55,0.08)' : theme === 'dark' ? 'var(--b)' : 'rgba(0,0,0,0.05)',
+                          gap: 2,
                         }}>
-                          <Users className="w-5 h-5" />
-                          <span className="font-medium">Beneficiary</span>
+                          <span className="font-semibold text-sm">My Beneficiary Portal</span>
+                          <span style={{ fontSize: 11, opacity: 0.6 }}>Benefactor = {user?.name?.split(' ')[0] || 'Unknown'}</span>
                         </button>
                       </div>
                     </div>

@@ -149,9 +149,13 @@ const AdminPage = ({ operatorMode = false }) => {
     const fetchData = async () => {
       try {
         if (operatorMode) {
-          // Operators only need stats for the work queue tiles
-          const statsRes = await axios.get(`${API_URL}/admin/stats`, getAuthHeaders());
+          // Operators need stats + users (for Users tab)
+          const [statsRes, usersRes] = await Promise.all([
+            axios.get(`${API_URL}/admin/stats`, getAuthHeaders()),
+            axios.get(`${API_URL}/admin/users`, getAuthHeaders()),
+          ]);
           setStats(statsRes.data);
+          setUsers(usersRes.data);
         } else {
           const [usersRes, statsRes, settingsRes, revenueRes] = await Promise.all([
             axios.get(`${API_URL}/admin/users`, getAuthHeaders()),

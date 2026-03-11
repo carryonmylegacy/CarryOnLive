@@ -546,7 +546,9 @@ const Sidebar = () => {
               </div>
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {benEstates.filter(e => e.user_role_in_estate === 'owner').map(estate => (
+              {benEstates.filter(e => e.user_role_in_estate === 'owner').map(estate => {
+                const isActive = !window.location.pathname.startsWith('/beneficiary');
+                return (
                 <button key={`own-${estate.id}`} onClick={() => {
                   localStorage.setItem('selected_estate_id', estate.id);
                   localStorage.removeItem('beneficiary_estate_id');
@@ -556,15 +558,29 @@ const Sidebar = () => {
                 data-testid={`switch-estate-owner-${estate.id}`}
                 className={`sb-pill w-full ${collapsed ? 'justify-center' : ''}`}
                 style={{
-                  background: !window.location.pathname.startsWith('/beneficiary') ? 'rgba(212,175,55,0.1)' : undefined,
-                  borderColor: !window.location.pathname.startsWith('/beneficiary') ? 'rgba(212,175,55,0.3)' : undefined,
-                  color: !window.location.pathname.startsWith('/beneficiary') ? '#d4af37' : undefined,
+                  background: isActive ? 'rgba(212,175,55,0.1)' : undefined,
+                  borderColor: isActive ? 'rgba(212,175,55,0.3)' : undefined,
+                  color: isActive ? '#d4af37' : undefined,
+                  padding: collapsed ? undefined : '10px 16px',
+                  flexDirection: collapsed ? undefined : 'column',
+                  alignItems: collapsed ? undefined : 'center',
+                  gap: collapsed ? undefined : 2,
                 }}>
-                  <Shield className="w-[18px] h-[18px]" style={{ color: '#d4af37' }} />
-                  {!collapsed && <span>My Estate</span>}
+                  {collapsed ? (
+                    <Shield className="w-[18px] h-[18px]" style={{ color: isActive ? '#d4af37' : undefined }} />
+                  ) : (
+                    <>
+                      <span style={{ fontWeight: 600, fontSize: 14 }}>My Benefactor Portal</span>
+                      <span style={{ fontSize: 11, opacity: 0.6 }}>Benefactor = Me</span>
+                    </>
+                  )}
                 </button>
-              ))}
-              {benEstates.filter(e => e.user_role_in_estate === 'beneficiary' || e.is_beneficiary_estate).map(estate => (
+                );
+              })}
+              {benEstates.filter(e => e.user_role_in_estate === 'beneficiary' || e.is_beneficiary_estate).map(estate => {
+                const isActive = window.location.pathname.startsWith('/beneficiary');
+                const benefactorFirst = (estate.benefactor_name || '').split(' ')[0] || 'Unknown';
+                return (
                 <button key={`ben-${estate.id}`} onClick={() => {
                   localStorage.setItem('beneficiary_estate_id', estate.id);
                   localStorage.removeItem('selected_estate_id');
@@ -575,14 +591,25 @@ const Sidebar = () => {
                 data-testid={`switch-estate-ben-${estate.id}`}
                 className={`sb-pill w-full ${collapsed ? 'justify-center' : ''}`}
                 style={{
-                  background: window.location.pathname.startsWith('/beneficiary') ? 'rgba(96,165,250,0.1)' : undefined,
-                  borderColor: window.location.pathname.startsWith('/beneficiary') ? 'rgba(96,165,250,0.3)' : undefined,
-                  color: window.location.pathname.startsWith('/beneficiary') ? '#60A5FA' : undefined,
+                  background: isActive ? 'rgba(212,175,55,0.1)' : undefined,
+                  borderColor: isActive ? 'rgba(212,175,55,0.3)' : undefined,
+                  color: isActive ? '#d4af37' : undefined,
+                  padding: collapsed ? undefined : '10px 16px',
+                  flexDirection: collapsed ? undefined : 'column',
+                  alignItems: collapsed ? undefined : 'center',
+                  gap: collapsed ? undefined : 2,
                 }}>
-                  <Users className="w-[18px] h-[18px]" style={{ color: '#60A5FA' }} />
-                  {!collapsed && <span>{estate.name || 'Beneficiary'}</span>}
+                  {collapsed ? (
+                    <Users className="w-[18px] h-[18px]" style={{ color: isActive ? '#d4af37' : undefined }} />
+                  ) : (
+                    <>
+                      <span style={{ fontWeight: 600, fontSize: 14 }}>My Beneficiary Portal</span>
+                      <span style={{ fontSize: 11, opacity: 0.6 }}>Benefactor = {benefactorFirst}</span>
+                    </>
+                  )}
                 </button>
-              ))}
+                );
+              })}
             </div>
           </>
         )}

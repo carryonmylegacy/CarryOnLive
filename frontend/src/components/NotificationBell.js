@@ -78,11 +78,11 @@ const NotificationBell = ({ collapsed }) => {
     <div className="relative" ref={panelRef}>
       <button
         onClick={handleOpen}
-        className={`nav-item w-full ${collapsed ? 'justify-center' : ''} relative`}
+        className={`sb-pill w-full ${collapsed ? 'justify-center' : ''} relative`}
         title={collapsed ? `Notifications${unreadCount > 0 ? ` (${unreadCount})` : ''}` : undefined}
         data-testid="notification-bell"
       >
-        <Bell className="w-5 h-5" />
+        <Bell className="w-[18px] h-[18px]" />
         {!collapsed && <span>Notifications</span>}
         {unreadCount > 0 && (
           <span

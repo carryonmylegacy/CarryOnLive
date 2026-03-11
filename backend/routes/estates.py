@@ -55,10 +55,12 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
                     be["owner_photo_url"] = override["owner_photo_url"]
                 else:
                     owner = await db.users.find_one(
-                        {"id": be.get("owner_id")}, {"_id": 0, "photo_url": 1}
+                        {"id": be.get("owner_id")}, {"_id": 0, "photo_url": 1, "name": 1}
                     )
                     if owner and owner.get("photo_url"):
                         be["owner_photo_url"] = owner["photo_url"]
+                    if owner and owner.get("name"):
+                        be["benefactor_name"] = owner["name"]
                 be["user_role_in_estate"] = "beneficiary"
                 be["is_beneficiary_estate"] = True
                 estates.append(be)
@@ -72,10 +74,12 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
         for be in ben_estates:
             if be["id"] not in seen_ids:
                 owner = await db.users.find_one(
-                    {"id": be.get("owner_id")}, {"_id": 0, "photo_url": 1}
+                    {"id": be.get("owner_id")}, {"_id": 0, "photo_url": 1, "name": 1}
                 )
                 if owner and owner.get("photo_url"):
                     be["owner_photo_url"] = owner["photo_url"]
+                if owner and owner.get("name"):
+                    be["benefactor_name"] = owner["name"]
                 be["user_role_in_estate"] = "beneficiary"
                 be["is_beneficiary_estate"] = True
                 estates.append(be)
