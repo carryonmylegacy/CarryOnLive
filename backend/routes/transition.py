@@ -525,11 +525,11 @@ async def report_milestone(
         await db.milestone_deliveries.insert_one(delivery)
         deliveries_created.append(delivery["id"])
 
-    # NOTIFICATION: Notify all staff about pending milestone review
-    if unique_messages:
-        from services.notifications import notify
-        import asyncio
+    # NOTIFICATION: Notify all staff about milestone report
+    from services.notifications import notify
+    import asyncio
 
+    if unique_messages:
         asyncio.create_task(
             notify.p3_alert(
                 "Milestone Review Required",
@@ -540,6 +540,19 @@ async def report_milestone(
                     "report_id": report.id,
                     "event_type": data.event_type,
                     "matches": len(unique_messages),
+                },
+            )
+        )
+    else:
+        asyncio.create_task(
+            notify.p4_alert(
+                "Milestone Reported",
+                f"{current_user.get('name', 'Beneficiary')} reported a milestone: {data.event_type}. No matching messages at this time.",
+                url="/ops/milestones",
+                metadata={
+                    "report_id": report.id,
+                    "event_type": data.event_type,
+                    "matches": 0,
                 },
             )
         )

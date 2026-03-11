@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 from config import db
 from services.audit import audit_log
-from utils import get_current_user, send_push_notification, send_push_to_all_admins
+from utils import get_current_user, send_push_notification
 
 router = APIRouter()
 
@@ -113,15 +113,20 @@ async def request_emergency_access(
         },
     )
 
-    # Notify admins
+    # Notify all staff (Founder + Operators) of emergency access request
     import asyncio
+    from services.notifications import notify
 
     asyncio.create_task(
-        send_push_to_all_admins(
+        notify.p2_alert(
             "Emergency Access Request",
-            f"{current_user.get('name', 'A beneficiary')} requests emergency access to {estate.get('name', 'an estate')}",
-            "/admin",
-            "emergency-access",
+            f"{current_user.get('name', 'A beneficiary')} requests emergency access to estate '{estate.get('name', 'Unknown')}'.",
+            url="/ops/escalations",
+            metadata={
+                "request_id": request_id,
+                "estate_id": data.estate_id,
+                "urgency": data.urgency,
+            },
         )
     )
 

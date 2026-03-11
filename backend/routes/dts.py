@@ -191,6 +191,18 @@ async def submit_dts_quote(
             )
         )
 
+    # Also notify from services.notifications for consistency
+    from services.notifications import notify
+
+    asyncio.create_task(
+        notify.p4_alert(
+            "DTS Quote Submitted",
+            f"Quote of ${total_cost:,.2f} submitted for '{task['title']}'. Awaiting benefactor approval.",
+            url="/ops/dts",
+            metadata={"task_id": task_id, "total": total_cost},
+        )
+    )
+
     return {"message": "Quote submitted", "line_items": len(line_items)}
 
 
@@ -244,6 +256,19 @@ async def approve_dts_task(
             }
         },
     )
+
+    # Notify staff that benefactor approved the DTS task
+    from services.notifications import notify
+
+    asyncio.create_task(
+        notify.p4_alert(
+            "DTS Task Approved",
+            f"Benefactor approved DTS task '{task.get('title', 'Untitled')}'. Ready for execution.",
+            url="/ops/dts",
+            metadata={"task_id": task_id},
+        )
+    )
+
     return {"message": "Task approved"}
 
 
@@ -268,6 +293,21 @@ async def update_dts_status(
             }
         },
     )
+
+    # Notify operators of DTS status change
+    from services.notifications import notify
+
+    task = await db.dts_tasks.find_one({"id": task_id}, {"_id": 0, "title": 1, "owner_id": 1})
+    task_title = (task or {}).get("title", "DTS Task")
+    asyncio.create_task(
+        notify.p4_alert(
+            "DTS Status Updated",
+            f"'{task_title}' status changed to '{task_status}'.",
+            url="/ops/dts",
+            metadata={"task_id": task_id, "new_status": task_status},
+        )
+    )
+
     return {"message": f"Status updated to {task_status}"}
 
 

@@ -37,6 +37,18 @@ AI-powered estate planning platform (CarryOn) with multi-portal architecture: Be
 - Delete permissions enforced: Founders delete anyone, Managers delete workers only, Workers cannot delete
 - Backend enforces all permission checks (not just UI hiding)
 
+**Push Notification Audit & Fixes:**
+- Verified all 6 event types have staff push notifications:
+  - TVT: P2 alert to all staff + security alert to benefactor ✅
+  - Milestones: P3 alert (with matches) + P4 alert (no matches) to operators ✅ FIXED
+  - DTS Creation: P4 alert to operators ✅
+  - DTS Quote: P4 alert to operators ✅ ADDED
+  - DTS Approval: P4 alert to operators ✅ ADDED
+  - DTS Status Change: P4 alert to operators ✅ ADDED
+  - Emergency Access: P2 alert to all staff ✅ FIXED (was using old send_push_to_all_admins)
+  - P1 Emergency: Amber Alert (all_staff_security) to ALL staff ✅
+  - Customer Service Reply: P4 alert to operators ✅
+
 ### Previous Session: March 11, 2026
 
 **Batch 1 - UI Tweaks:**
