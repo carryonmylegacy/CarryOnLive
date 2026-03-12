@@ -51,7 +51,9 @@ async def create_beneficiary(
     data: BeneficiaryCreate, current_user: dict = Depends(get_current_user)
 ):
     """Add a new beneficiary to the estate."""
-    if current_user["role"] != "benefactor" and not current_user.get("is_also_benefactor"):
+    if current_user["role"] != "benefactor" and not current_user.get(
+        "is_also_benefactor"
+    ):
         raise HTTPException(
             status_code=403, detail="Only benefactors can add beneficiaries"
         )
@@ -132,7 +134,9 @@ async def delete_beneficiary(
     beneficiary_id: str, current_user: dict = Depends(get_current_user)
 ):
     """Remove a beneficiary from the estate."""
-    if current_user["role"] != "benefactor" and not current_user.get("is_also_benefactor"):
+    if current_user["role"] != "benefactor" and not current_user.get(
+        "is_also_benefactor"
+    ):
         raise HTTPException(
             status_code=403, detail="Only benefactors can remove beneficiaries"
         )
@@ -152,7 +156,9 @@ async def set_primary_beneficiary(
     beneficiary_id: str, current_user: dict = Depends(get_current_user)
 ):
     """Designate a beneficiary as the primary beneficiary (trustee) of the estate."""
-    if current_user["role"] != "benefactor" and not current_user.get("is_also_benefactor"):
+    if current_user["role"] != "benefactor" and not current_user.get(
+        "is_also_benefactor"
+    ):
         raise HTTPException(
             status_code=403,
             detail="Only benefactors can designate a primary beneficiary",
@@ -437,7 +443,9 @@ async def update_beneficiary(
     current_user: dict = Depends(get_current_user),
 ):
     """Update an existing beneficiary"""
-    if current_user["role"] != "benefactor" and not current_user.get("is_also_benefactor"):
+    if current_user["role"] != "benefactor" and not current_user.get(
+        "is_also_benefactor"
+    ):
         raise HTTPException(
             status_code=403, detail="Only benefactors can update beneficiaries"
         )
@@ -516,7 +524,9 @@ async def upload_beneficiary_photo(
     current_user: dict = Depends(get_current_user),
 ):
     """Upload a profile photo for a beneficiary. Resizes to 200x200 and stores as base64."""
-    if current_user["role"] not in ("benefactor", "admin") and not current_user.get("is_also_benefactor"):
+    if current_user["role"] not in ("benefactor", "admin") and not current_user.get(
+        "is_also_benefactor"
+    ):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     beneficiary = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0})
@@ -589,7 +599,9 @@ async def delete_beneficiary_photo(
     beneficiary_id: str, current_user: dict = Depends(get_current_user)
 ):
     """Remove the profile photo for a beneficiary."""
-    if current_user["role"] not in ("benefactor", "admin") and not current_user.get("is_also_benefactor"):
+    if current_user["role"] not in ("benefactor", "admin") and not current_user.get(
+        "is_also_benefactor"
+    ):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     await db.beneficiaries.update_one(
@@ -609,7 +621,9 @@ async def send_beneficiary_invitation(
     beneficiary_id: str, current_user: dict = Depends(get_current_user)
 ):
     """Send invitation email to a beneficiary"""
-    if current_user["role"] != "benefactor" and not current_user.get("is_also_benefactor"):
+    if current_user["role"] != "benefactor" and not current_user.get(
+        "is_also_benefactor"
+    ):
         raise HTTPException(
             status_code=403, detail="Only benefactors can send invitations"
         )
