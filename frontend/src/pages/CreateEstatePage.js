@@ -288,7 +288,10 @@ const CreateEstatePage = () => {
         navigate('/beneficiary');
       }
     } catch (err) {
-      const msg = err.response?.data?.detail || 'Failed to create estate';
+      const detail = err.response?.data?.detail;
+      const msg = typeof detail === 'string' ? detail
+        : Array.isArray(detail) ? detail.map(e => e.msg || e.message || JSON.stringify(e)).join(', ')
+        : 'Failed to create estate';
       toast.error(msg);
     } finally {
       setSubmitting(false);
