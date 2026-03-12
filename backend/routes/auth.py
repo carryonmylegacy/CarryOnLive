@@ -978,17 +978,6 @@ async def update_profile_photo(
         {"$set": {"photo_url": data_url}},
     )
 
-    # Sync photo to all beneficiary records linked to this user
-    await db.beneficiaries.update_many(
-        {"user_id": current_user["id"]},
-        {
-            "$set": {
-                "photo_url": data_url,
-                "updated_at": datetime.now(timezone.utc).isoformat(),
-            }
-        },
-    )
-
     return {"photo_url": data_url}
 
 

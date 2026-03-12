@@ -574,18 +574,6 @@ async def upload_beneficiary_photo(
             },
         )
 
-        # Sync photo to the beneficiary's user profile if they have a linked account
-        # and haven't set their own photo yet
-        if beneficiary.get("user_id"):
-            linked_user = await db.users.find_one(
-                {"id": beneficiary["user_id"]}, {"_id": 0, "photo_url": 1}
-            )
-            if linked_user and not linked_user.get("photo_url"):
-                await db.users.update_one(
-                    {"id": beneficiary["user_id"]},
-                    {"$set": {"photo_url": photo_url}},
-                )
-
         return {"success": True, "photo_url": photo_url}
 
     except Exception as e:
