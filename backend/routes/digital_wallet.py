@@ -122,7 +122,9 @@ async def create_digital_wallet_entry(
     data: DigitalWalletCreate, current_user: dict = Depends(get_current_user)
 ):
     """Create a new digital wallet entry."""
-    if current_user.get("role") != "benefactor":
+    if current_user.get("role") != "benefactor" and not current_user.get(
+        "is_also_benefactor"
+    ):
         raise HTTPException(
             status_code=403, detail="Only benefactors can add digital wallet entries"
         )

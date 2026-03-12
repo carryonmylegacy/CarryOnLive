@@ -246,7 +246,9 @@ async def create_message(
     data: MessageCreate, current_user: dict = Depends(get_current_user)
 ):
     """Create a new milestone message with encrypted content."""
-    if current_user["role"] != "benefactor":
+    if current_user["role"] != "benefactor" and not current_user.get(
+        "is_also_benefactor"
+    ):
         raise HTTPException(
             status_code=403, detail="Only benefactors can create messages"
         )
@@ -399,7 +401,9 @@ async def update_message(
     message_id: str, data: MessageUpdate, current_user: dict = Depends(get_current_user)
 ):
     """Edit an existing message (benefactor only, before transition)"""
-    if current_user["role"] != "benefactor":
+    if current_user["role"] != "benefactor" and not current_user.get(
+        "is_also_benefactor"
+    ):
         raise HTTPException(
             status_code=403, detail="Only benefactors can edit messages"
         )
@@ -496,7 +500,9 @@ async def delete_message(
     message_id: str, current_user: dict = Depends(get_current_user)
 ):
     """Delete a milestone message."""
-    if current_user["role"] != "benefactor":
+    if current_user["role"] != "benefactor" and not current_user.get(
+        "is_also_benefactor"
+    ):
         raise HTTPException(
             status_code=403, detail="Only benefactors can delete messages"
         )

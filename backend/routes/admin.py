@@ -67,7 +67,7 @@ async def update_dev_switcher_config(
                 status_code=400,
                 detail=f"Benefactor account not found: {data.benefactor_email}",
             )
-        if user["role"] != "benefactor":
+        if user["role"] != "benefactor" and not user.get("is_also_benefactor"):
             raise HTTPException(
                 status_code=400,
                 detail=f"Account is not a benefactor: {data.benefactor_email}",

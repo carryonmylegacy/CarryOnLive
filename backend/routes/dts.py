@@ -48,7 +48,9 @@ async def create_dts_task(
     data: DTSTaskCreate, current_user: dict = Depends(get_current_user)
 ):
     """Benefactor creates a DTS request"""
-    if current_user["role"] != "benefactor":
+    if current_user["role"] != "benefactor" and not current_user.get(
+        "is_also_benefactor"
+    ):
         raise HTTPException(
             status_code=403, detail="Only benefactors can create DTS tasks"
         )

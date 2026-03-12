@@ -657,7 +657,9 @@ async def create_estate(
     data: EstateCreate, current_user: dict = Depends(get_current_user)
 ):
     """Create a new estate."""
-    if current_user["role"] != "benefactor":
+    if current_user["role"] != "benefactor" and not current_user.get(
+        "is_also_benefactor"
+    ):
         raise HTTPException(
             status_code=403, detail="Only benefactors can create estates"
         )
@@ -688,7 +690,9 @@ async def update_estate(
     estate_id: str, data: EstateUpdate, current_user: dict = Depends(get_current_user)
 ):
     """Update an existing estate."""
-    if current_user["role"] != "benefactor":
+    if current_user["role"] != "benefactor" and not current_user.get(
+        "is_also_benefactor"
+    ):
         raise HTTPException(
             status_code=403, detail="Only benefactors can update estates"
         )
@@ -724,7 +728,9 @@ async def update_estate(
 @router.delete("/estates/{estate_id}")
 async def delete_estate(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Delete an estate and all associated data."""
-    if current_user["role"] != "benefactor":
+    if current_user["role"] != "benefactor" and not current_user.get(
+        "is_also_benefactor"
+    ):
         raise HTTPException(
             status_code=403, detail="Only benefactors can delete estates"
         )

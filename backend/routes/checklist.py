@@ -186,7 +186,9 @@ async def reorder_checklists(
 @router.post("/checklists/{item_id}/accept")
 async def accept_ai_item(item_id: str, current_user: dict = Depends(get_current_user)):
     """Accept an AI-suggested checklist item."""
-    if current_user["role"] != "benefactor":
+    if current_user["role"] != "benefactor" and not current_user.get(
+        "is_also_benefactor"
+    ):
         raise HTTPException(status_code=403, detail="Only benefactors can accept items")
     await db.checklists.update_one(
         {"id": item_id},
@@ -203,7 +205,9 @@ async def accept_ai_item(item_id: str, current_user: dict = Depends(get_current_
 @router.post("/checklists/{item_id}/reject")
 async def reject_ai_item(item_id: str, current_user: dict = Depends(get_current_user)):
     """Reject an AI-suggested checklist item with optional feedback."""
-    if current_user["role"] != "benefactor":
+    if current_user["role"] != "benefactor" and not current_user.get(
+        "is_also_benefactor"
+    ):
         raise HTTPException(status_code=403, detail="Only benefactors can reject items")
     return {"success": True}
 
@@ -213,7 +217,9 @@ async def reject_ai_item_with_feedback(
     item_id: str, request: Request, current_user: dict = Depends(get_current_user)
 ):
     """Reject an AI-suggested checklist item with feedback."""
-    if current_user["role"] != "benefactor":
+    if current_user["role"] != "benefactor" and not current_user.get(
+        "is_also_benefactor"
+    ):
         raise HTTPException(status_code=403, detail="Only benefactors can reject items")
     data = await request.json()
     feedback = data.get("feedback", "")
