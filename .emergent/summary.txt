@@ -1,159 +1,152 @@
 <analysis>**original_problem_statement:**
 The user has requested a comprehensive update to the Operator Portals (Manager and Team Member) to achieve functional and visual parity with the Founder Portal, but with specific, role-based exceptions. The core requirements are:
 1.  **Tab Parity:** All tabs viewable in the Operator Portals must match the exact functionality and look of their Founder Portal counterparts.
-2.  **Subscription Tab Restrictions:** The Subs tab should only be visible to Operations Managers (not Team Members). Within this tab, the ability to change subscription tier prices must be disabled; only individual user subscription management via search is allowed.
-3.  **Granular Delete Permissions:**
-    *   Founders can delete any user (Admins, Operators, etc.).
-    *   Operations Managers can only delete Operations Team Members.
-    *   Operations Team Members cannot delete anyone.
-4.  **Dynamic Dashboard Tiles:** Dashboard tiles for operators should light up to indicate a new user input or an escalation from a team member. Clicking a lit-up tile must navigate the user directly to the corresponding task or item needing action.
-5.  **Manager's Team Overview:** The Operations Manager's dashboard must include a view showing tasks in progress across their team. Clicking on a task tile should reveal which team member is assigned to it.
+2.  **Subscription Tab Restrictions:** The Subs tab should only be visible to Operations Managers (not Team Members). Within this tab, the ability to change subscription tier prices must be disabled.
+3.  **Granular Delete Permissions:** Founders can delete any user, Operations Managers can only delete Operations Team Members, and Team Members cannot delete anyone.
+4.  **Dynamic Dashboard Tiles:** Dashboard tiles for operators should light up to indicate a new user input or an escalation from a team member. The specific events are: TVT submission, Milestone Notification, DTS request, Emergency Message, P1 Emergency Notification, and new Customer Service replies.
+5.  **Manager's Team Overview:** The Operations Manager's dashboard must include a view showing tasks in progress across their team.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The agent has partially implemented the user's large feature request. It has successfully added the Subs, System Health, and Estate Health tabs to the operator portals. Work has begun on enforcing the role-based permissions: the Subs tab is correctly hidden from Team Members, and the UI for changing subscription prices is hidden from Managers. The agent has also started modifying the frontend components (, ) to handle the new granular delete permissions. Finally, a placeholder component () has been created for the manager's new dashboard view, but the backend and frontend logic for the dynamic tiles and team activity feed are not yet implemented.
+The application has fully implemented the Operator Portal parity features, including dynamic light-up dashboard tiles based on 6 key event types, a team activity feed for managers, and granular role-based permissions. A comprehensive push notification system now alerts staff for each of these events.
+
+Additionally, several significant UI/UX and bug-fixing tasks have been completed:
+-   A major PWA bug that caused the page to scroll to the top when switching tabs has been resolved.
+-   The Founder's Users tab has been streamlined for mobile by removing the Admin sub-tab and pinning admins to the top of the main list.
+-   A complex series of bugs related to users who are both beneficiaries and later become benefactors () has been fixed, ensuring they have correct permissions on their own estates.
+-   The data flow and display logic for user/beneficiary photos has been corrected to enforce benefactor-controlled, estate-specific photo assignments.
+-   A Pydantic v2 validation error blocking the beneficiary-to-benefactor onboarding flow has been fixed.
+
+The codebase has also been formatted and linted via the  script.
 
 **Last working item**:
--   **Last item agent was working:** The agent was scaffolding the major feature request for Operator Portal enhancements. The very last action was creating a placeholder component  and adding it to the  to be rendered for Operations Managers. This is the first step towards building the team member tasks view.
--   **Status:** IN PROGRESS
+-   **Last item agent was working:** The agent was about to begin investigating a bug reported by the user. The bug is: When a benefactor (who was previously a beneficiary for another user) views their own beneficiary portal, they see their benefactor's initials in the dashboard's orbiting circle and tile, instead of their benefactor's uploaded picture.
+-   **Status:** NOT STARTED
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** both. This is a complex feature involving new API endpoints, significant frontend UI changes, and nuanced, role-based permissions. Both backend (curl tests for new endpoints) and frontend (testing agent for UI/UX across roles) will be required.
+-   **Which testing method agent to use?** frontend testing agent. The fix will involve checking frontend data rendering and possibly a backend API response. A screenshot can be used for a quick verification, followed by the testing agent to ensure no regressions across different user roles.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   None. The current work is a new feature implementation, not a bug fix.
+-   **Issue 1: Benefactor's photo not appearing in beneficiary portal (Priority: P0)**
+    -   **Description:** When a user is a benefactor in their own right but is also a beneficiary of another estate, viewing their beneficiary dashboard shows their benefactor's initials instead of their photo.
+    -   **Attempted fixes:** None.
+    -   **Next debug checklist:**
+        1.  Examine  to see how the benefactor's photo is being rendered in the main dashboard circle and tile.
+        2.  Trace the data for the benefactor from the  endpoint response when a user logs in as a beneficiary.
+        3.  Check the backend implementation in  to ensure the benefactor's  from the  collection is being correctly retrieved and included in the payload sent to the beneficiary's frontend. The current implementation might only be sending name/initials.
+    -   **Why fix this issue and what will be achieved with the fix?** To ensure visual consistency and correct data representation across all portals.
+    -   **Status:** NOT STARTED
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** Both
+    -   **Blocked on other issue:** None
 
 **In progress Task List**:
--   **Task 1: Implement Ops Portal Parity and New Dashboard Features (Priority: P0)**
-    -   **Description:** This is a large, multi-part task to enhance the operator portals.
-    -   **Where to resume:** The agent has laid the groundwork but now needs to build out the core functionality. The next steps are:
-        1.  **Backend for Dashboard:** Design and implement new backend endpoints in  or a new  route file:
-            *   An endpoint to track and retrieve events or escalations that will cause dashboard tiles to light up.
-            *   An endpoint to aggregate and return team member tasks for the manager's activity feed.
-        2.  **Frontend for Dashboard:**
-            *   Build out the  component to fetch and display team task data.
-            *   Implement the light-up logic in the  component by fetching event data from the new backend endpoint. This includes applying a visual style (e.g., glow, border) and adding  handlers for navigation.
-        3.  **Finalize Permissions:**
-            *   Complete and test the delete permission logic in  to ensure managers can only delete team members.
-            *   Verify that the Subs tab APIs are not directly callable by team members, even though the UI is hidden.
-    -   **What will be achieved with this?** The Operations Manager will gain a powerful, actionable dashboard for overseeing team activities, and platform permissions will be properly secured for a multi-level operations team.
-    -   **Status:** IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?** Both
-    -   **Blocked on something:** No.
+-   None.
 
 **Upcoming and Future Tasks**
--   **P1: User Verification of Completed Tasks:** The user needs to verify the fixes for the Forgot Password flow, the PWA scroll-locking issue, and the redesigned User Graph view.
 -   **P1: Finalize Share Extension Setup:** Re-add the Share Extension target in Xcode using the instructions in .
 -   **P1: Twilio SMS OTP Integration:** Blocked, awaiting the user's A2P 10DLC approval from Twilio.
--   **P2: Code Cleanup (ESLint):** Address the remaining non-critical ESLint warnings throughout the frontend codebase.
+-   **P2: Code Cleanup (ESLint):** Address any remaining non-critical ESLint warnings throughout the frontend codebase.
 
 **Completed work in this session**
--   **Forgot Password Flow:** Fixed multiple critical bugs, including an invisible link, incorrect success/error message colors, and a modal that was hidden behind other elements or misplaced on mobile devices.
--   **PWA/Mobile UX:** Resolved a scroll-locking bug on the Users search page and adjusted the Forgot Password modal position for better visibility on mobile.
--   **Operator Portal Enhancements (Phase 1):**
-    -   Added Estate Health, System Health, and Subs tabs to the operator portals.
--   **User Tree/Graph Redesign:**
-    -   Clarified beneficiary statuses (, , , ) with a color-coded legend in the .
-    -   Redesigned the Graph view to use the same color-coded, info-rich style as the .
--   **Dev/Admin Experience:**
-    -   Added Username and Password fields to the Operator edit dialog for clear credential management.
-    -   Fixed a case-sensitivity bug in operator login.
-    -   Implemented a dev session token to allow founders to impersonate users without logging out the original user.
--   **Code Hygiene:** Ran the  script and fixed all identified formatting issues.
+-   **Operator Portal Parity:** Fully implemented dynamic light-up dashboard tiles, a team activity feed, and granular role-based permissions (, ).
+-   **Push Notification System:** Audited and implemented push notifications for all 6 key dashboard events (, , ).
+-   **PWA Scroll Preservation:** Fixed a critical bug causing scroll reset on tab navigation in admin portals (, , ).
+-   **Founder's User Tab Redesign:** Removed the Admins sub-tab and pinned admins to the top of the All Estates list for better mobile UX ().
+-   ** Role Fixes:** Resolved numerous permission errors blocking beneficiary-turned-benefactor users from managing their own estates ().
+-   **Onboarding Bug Fix:** Fixed a Pydantic v2 validation error that blocked account creation for beneficiaries (, ).
+-   **Photo Logic Implementation:** Corrected multiple issues with photo display and saving, ensuring data isolation between benefactor and beneficiary accounts (, , , ).
+-   **Settings Page Glitch:** Fixed a UI flash where the subscription paywall would briefly appear on the settings page ().
+-   **Code Hygiene:** Ran  script to format and lint the codebase.
 
 **Earlier issues found/mentioned but not fixed**
--   **Settings Page Glitch:** A one-time flash of an old subscription page was reported by a user. This was noted as a likely non-reproducible race condition and has not been investigated.
+-   **Settings Page Glitch:** A user previously reported a one-time flash of an old subscription page. While a similar paywall-related flash was fixed in this session, the original report might have been a different, non-reproducible race condition that has not been specifically investigated.
 
 **Known issue recurrence from previous fork**
--   **UI/UX Iteration:** The user is highly attentive to visual detail, which often requires multiple iterations on UI elements like spacing and positioning to meet their exact requirements.
+-   **UI/UX Iteration:** The user is highly attentive to visual details. This was demonstrated by the multi-step, iterative process required to fix the PWA scroll preservation issue to the user's satisfaction.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Granular Role-Based Access Control (RBAC):** The system now distinguishes between  (Founder), , and , using these roles to conditionally render UI and control API access.
--   **Dynamic & Actionable Dashboards:** The current task introduces the concept of a stateful dashboard where UI elements (light up) based on real-time events, requiring new backend logic for event tracking and new frontend logic for fetching and displaying these states.
--   **CSS Stacking Context:** Successfully debugged a complex z-index issue where a  property on a parent element was trapping a  modal, making it invisible.
--   **Mobile Viewport Handling:** Addressed PWA/mobile-specific bugs related to the virtual keyboard and scrolling by using  and  event listeners.
+-   **Complex Role-Based Access Control (RBAC):** The system now handles nuanced permissions for a  user who is also a benefactor ().
+-   **Dynamic & Actionable Dashboards:** A full implementation exists for a stateful dashboard where UI elements light up based on real-time events fetched from the backend.
+-   **Advanced Frontend Scroll Management:** Implemented a robust solution to prevent scroll resets during client-side navigation by locking scroll position, temporarily disabling CSS , and ensuring minimum content height.
+-   **One-Way Data Binding for Photos:** A specific data flow was implemented to ensure photos set by a benefactor for their beneficiaries act as defaults, but any changes made by the beneficiary to their own profile do not flow back to the benefactor's view.
+-   **Pydantic v2 Type Handling:** Addressed breaking changes in Pydantic v2 related to optional fields, changing  to .
 
 **key DB schema**
--   **users:** The  field is now critical for distinguishing between , , and  to enforce the new permission structure.
--   **(Needs creation):** A new collection or new fields in existing collections will likely be needed to track events, escalations, and tasks for the new dynamic dashboard features.
+-   **users:** Contains  (, , , 'benefactor', 'beneficiary'),  (boolean), and  (user's own profile photo).
+-   **beneficiaries:** Contains  (photo set by the estate's benefactor) and  (a foreign key linking to the  collection).
+-   **estates:** Contains  and .
+-   **notifications_events:** This collection is used to track events that trigger the light-up tiles on the operator dashboard.
 
 **changes in tech stack**
 -   None.
 
 **All files of reference**
--    (The central hub for all operator-related UI logic).
--    (Will contain the new light-up tiles).
--    (The new component for the manager's team view).
--    (Contains the delete permission logic).
--    (Contains the role-based view for subscriptions).
--    (Will need new endpoints for the dashboard features).
+-   : Contains critical role-checking logic for  users.
+-   : Central component for admin portals, contains the complex scroll-preservation logic.
+-   : Implements the redesigned user list and graph views.
+-   : The beneficiary dashboard, and the location of the current bug.
+-   : The API route that provides data to the .
+-   : Contains the new endpoints for the operator dashboard.
+-   : Where the Pydantic v2 fix was implemented.
+-   : Where the settings page flash was fixed.
 
 **Areas that need refactoring**:
--    is growing increasingly complex. It handles state, data fetching, and routing for three different user roles and numerous tabs. It is a candidate for being broken down into smaller, more focused components or using a more robust state management pattern.
+-   ****: The file has numerous repetitive role checks (e.g., ). This logic could be abstracted into a shared utility function or a decorator to improve maintainability.
+-   ****: This component's complexity has increased with the addition of stateful scroll-preservation logic. It would benefit from being broken down into smaller hooks or components.
+-   ****: This is a very large component managing multiple views, filters, and sorting logic. It should be refactored into smaller, more focused components.
 
 **key api endpoints**
+-   **Created:**
+    -   : Provides event counts for the dynamic operator dashboard.
+    -   : Fetches aggregated task data for the Ops Manager view.
 -   **Modified:**
-    -   : Now uses a dev token to prevent logging out the impersonated user.
-    -   : Updated to allow changing an operator's .
-    -   : Multiple endpoints had their permissions updated to allow access for operator roles.
--   **To Be Created:**
-    -   : To provide data for the light-up dashboard tiles.
-    -   : To provide aggregated task data for the manager's view.
+    -   All CRUD endpoints in : Permissions were updated to correctly authorize  users.
+    -   : Fixed a Pydantic v2 validation issue preventing account creation.
+    -   : Logic was added to provide beneficiary-specific photo information.
+    -   Multiple routes (, , ) were updated to dispatch push notifications.
 
 **Critical Info for New Agent**
--   The current task is large, complex, and only partially finished. The user's request in message #469 is the blueprint for what needs to be completed.
--   **Role-based logic is paramount.** You must differentiate between the Founder (), Manager (), and Team Member () to implement permissions correctly.
--   **The dynamic dashboard features require new backend infrastructure.** The logic to track events/escalations and aggregate team tasks does not exist yet. You will need to design and build these API endpoints and any necessary database changes from scratch.
--   After implementation, test thoroughly across all three roles (Founder, Manager, Worker) to ensure permissions are correctly enforced and the UI appears as expected for each.
+-   ** is Key:** The most critical and error-prone logic in the recent session revolves around the  state. A user with  and this flag must be treated as a benefactor *only* for their own estate. When debugging permission issues, always check for this condition.
+-   **Scroll Preservation is Fragile:** The fix for preventing scroll resets in  is complex. It involves coordinating , , refs, and direct DOM manipulation. Be very cautious when editing this component or its children.
+-   **Photo Logic is One-Way:** Remember that photo data flows from benefactor to beneficiary (as a default), but never back. A beneficiary changing their profile picture updates their  record only and does not affect what any benefactor sees.
 
 **documents and test reports created in this job**
--    (updated multiple times).
+-   
+-   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Reports the forgot password function on the login page is broken.
-2.  **Agent:** Investigates and fixes UI visibility issues.
-3.  **User:** Reports clicking forgot password now shows a blank dark screen.
-4.  **Agent:** Fixes a CSS stacking context bug causing the modal to be hidden.
-5.  **User:** Reports the modal appears too low on the screen in PWA mode.
-6.  **Agent:** Adjusts the modal's vertical alignment for mobile viewports.
-7.  **User:** Reports PWA scroll-locking and keyboard-obstructing issues in the Users search page.
-8.  **Agent:** Implements CSS and JavaScript fixes for mobile viewport and keyboard behavior.
-9.  **User:** Requests that the Graph view in the Users tab be styled to match the Estate Health tab, with color-coded statuses.
-10. **Agent:** Redesigns the graph view to meet the user's request.
-11. **User (PENDING):** Delivers the current large feature request: align all Ops tabs with the Founder portal, establish granular delete permissions, restrict the Subs tab, and create a new dynamic, actionable dashboard for managers with a team activity view.
+1.  **User (Pending):** Reports that when viewing their beneficiary portal, their benefactor's profile shows up as initials instead of their picture. This is the current active issue.
+2.  **User:** Reports that the estate photo doesn't save and the settings page flashes with a paywall when logged in as a beneficiary-turned-benefactor. **Status: Completed.**
+3.  **User:** Reports still getting an error (Only benefactors can update beneficiaries) after a previous fix. **Status: Completed** (led to a more comprehensive fix of all role checks).
+4.  **User:** Reports an error (Only benefactors can upload photos) when trying to manage their estate as a beneficiary-turned-benefactor. **Status: Completed.**
+5.  **User:** Provides a very detailed clarification of the desired one-way photo logic between benefactors and beneficiaries. **Status: Information Used, Completed.**
+6.  **User:** Corrects the agent's proposal for photo logic, emphasizing that data must not flow from beneficiary back to benefactor. **Status: Information Used, Completed.**
+7.  **User:** Asks to run the  script. **Status: Completed.**
+8.  **User:** Reports two issues: PWA tab-switching resets scroll to top, and the Founder's Users tab needs UI changes for mobile. **Status: Completed.**
+9.  **User:** Confirms that the beneficiary profile initials should be derived from the full name if first/last names are missing. **Status: Completed.**
+10. **User:** Asks about the  appearing in the user graph view. **Status: Completed.**
 
 **Project Health Check:**
--   **Broken:** None.
--   **Mocked:**
-    -   Twilio SMS OTP integration.
-    -   The new  component is a placeholder with no functionality.
+-   **Broken:** None
+-   **Mocked:** Twilio SMS OTP integration is scaffolded but not functional pending user credentials.
 
 **3rd Party Integrations**
--   xAI (Grok)
--   Stripe
--   Apple In-App Purchase
--   AWS S3 (compatible)
--   Resend
--   Twilio (scaffolded)
--   Google Places
--   Capgo
--   CodeMagic (CI/CD)
--   Railway (Backend Deployment)
--   Vercel (Frontend Deployment)
+-   xAI (Grok), Stripe, Apple In-App Purchase, AWS S3, Resend, Twilio (scaffolded), Google Places, Capgo, CodeMagic (CI/CD), Railway (Backend Deployment), Vercel (Frontend Deployment).
 
 **Testing status**
--   **Testing agent used after significant changes:** YES (but for tasks completed *before* the current large feature request).
+-   **Testing agent used after significant changes:** YES (for the Operator Portal feature).
 -   **Troubleshoot agent used after agent stuck in loop:** NO
 -   **Test files created:** None.
 -   **Known regressions:** None.
 
 **Credentials to test flow:**
 -   **Founder/Admin:**  / 
--   **Operations Manager/Worker:** You will need to log in as the Founder and create new operator accounts with the Operations Manager and Operations Team Member roles to test the new permission-based features.
+-   **Operations/Beneficiary Roles:** To test role-specific features, log in as the Founder and create new users with the appropriate roles (Operations Manager, Operations Team Member, Beneficiary). To test the  flow, create a beneficiary, log in as them, and use the link on their dashboard to create their own benefactor account.
 
 **What agent forgot to execute**
-The agent is in the middle of a large, complex task. It has not forgotten anything, but the most substantial parts of the user's latest request are yet to be implemented. Specifically, the entire backend and frontend logic for the dynamic light-up dashboard tiles and the manager's team activity feed still need to be built.</analysis>
+-   The agent has been responsive to user requests and has not forgotten any tasks. The current work was interrupted while the agent was beginning to investigate the latest user-reported bug.</analysis>

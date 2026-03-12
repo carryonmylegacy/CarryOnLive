@@ -441,6 +441,12 @@ async def create_estate_for_existing_user(
                     {"id": estate_id},
                     {"$addToSet": {"beneficiaries": existing_user["id"]}},
                 )
+                # Mark existing benefactors as also being beneficiaries
+                if existing_user.get("role") == "benefactor":
+                    await db.users.update_one(
+                        {"id": existing_user["id"]},
+                        {"$set": {"is_also_beneficiary": True}},
+                    )
                 auto_linked_users.append(
                     {
                         "email": ben_email,

@@ -345,8 +345,8 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
                           : '0 2px 8px rgba(0,0,0,0.3)';
                       }}
                     >
-                      {member.photo_url ? (
-                        <img src={member.photo_url} alt={member.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                      {(member.photo_url || member.owner_photo_url) ? (
+                        <img src={member.photo_url || member.owner_photo_url} alt={member.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
                       ) : initials}
                     </div>
                   </div>

@@ -101,7 +101,12 @@ const BeneficiaryHubPage = () => {
       {(familyConnections.length > 0 || estates.length > 0) && (
         <OrbitVisualization
           estates={estates}
-          benefactors={familyConnections.length > 0 ? familyConnections : estates}
+          benefactors={familyConnections.length > 0 ? familyConnections : estates.map(e => ({
+            ...e,
+            name: e.benefactor_name || e.name,
+            photo_url: e.owner_photo_url || e.estate_photo_url || '',
+            relation: 'Benefactor',
+          }))}
           userInitials={user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
           userPhoto={myPhoto}
           onEstateClick={async (member) => {
@@ -185,12 +190,13 @@ const BeneficiaryHubPage = () => {
 
             {/* Family members */}
             {(familyConnections.length > 0 ? familyConnections : estates).map((member, i) => {
-              const name = member.name || `${member.first_name || ''} ${member.last_name || ''}`.trim();
+              const name = member.benefactor_name || member.name || `${member.first_name || ''} ${member.last_name || ''}`.trim();
               const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??';
               const relation = member.relation || 'Benefactor';
               const level = typeof member.relation === 'string' ? getOrbitLevel(member.relation) : 1;
               const [gradient] = orbitColors[level] || orbitColors[0];
               const isTransitioned = member.status === 'transitioned';
+              const memberPhoto = member.photo_url || member.owner_photo_url || member.estate_photo_url || '';
 
               return (
                 <div
@@ -206,12 +212,12 @@ const BeneficiaryHubPage = () => {
                 >
                   <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 overflow-hidden"
                     style={{
-                      background: member.photo_url ? 'transparent' : gradient,
+                      background: memberPhoto ? 'transparent' : gradient,
                       color: level === 0 ? '#1a1a2e' : 'white',
                       border: isTransitioned ? '2px solid rgba(212,175,55,0.5)' : '2px solid rgba(255,255,255,0.15)',
                     }}>
-                    {member.photo_url ? (
-                      <img src={member.photo_url} alt={name} className="w-full h-full object-cover" />
+                    {memberPhoto ? (
+                      <img src={memberPhoto} alt={name} className="w-full h-full object-cover" />
                     ) : initials}
                   </div>
                   <div className="flex-1 min-w-0">

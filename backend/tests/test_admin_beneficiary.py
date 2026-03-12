@@ -10,7 +10,7 @@ import requests
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 if not BASE_URL:
-    BASE_URL = "https://dynamic-ops-tiles.preview.emergentagent.com"
+    BASE_URL = "https://portal-photo-parity.preview.emergentagent.com"
 
 
 class TestAdminEndpoints:
