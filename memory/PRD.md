@@ -26,6 +26,13 @@ AI-powered estate planning platform (CarryOn) with multi-portal architecture: Be
 - Backend fix in `estates.py`: `create-estate` endpoint now sets `is_also_beneficiary: true` on existing users enrolled as beneficiaries
 - Testing: 100% pass rate (8/8 backend, all frontend photo rendering verified)
 
+**Cross-Pollination Role Fix: is_also_benefactor Permission Grants**
+- Fixed 16 backend endpoints across 7 route files that blocked beneficiary-turned-benefactors from managing their own estates
+- Pattern changed: `role != 'benefactor'` → `role != 'benefactor' and not is_also_benefactor`
+- Files fixed: `messages.py` (3), `documents.py` (4), `checklist.py` (3), `digital_wallet.py` (1), `dts.py` (1), `estates.py` (3), `admin.py` (1)
+- Enables full family cross-pollination: everyone can be both benefactor and beneficiary of each other
+- Testing: 100% pass rate (17/17 tests, including regression and ownership enforcement)
+
 ### Session: March 11, 2026
 
 **Operator Portal Enhancements - Dynamic Dashboard & Permissions:**
