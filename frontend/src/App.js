@@ -153,11 +153,13 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   const currentPath = window.location.pathname;
   const isOnBeneficiaryRoute = currentPath.startsWith('/beneficiary');
   const isOnCreateEstate = currentPath === '/create-estate';
+  const isOnSettings = currentPath === '/settings' || currentPath === '/security-settings';
   const needsSubscription = subscriptionStatus?.needs_subscription === true
     && subscriptionStatus?.trial?.trial_active !== true
     && user?.role !== 'admin'
     && !isOnBeneficiaryRoute
     && !isOnCreateEstate
+    && !isOnSettings
     && !subscriptionStatus?.beta_mode
     && !subscriptionStatus?.has_active_subscription;
 

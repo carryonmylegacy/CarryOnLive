@@ -317,13 +317,17 @@ const SettingsPage = () => {
               onPhotoSelected={async (file, previewUrl) => {
                 setEstatePhoto(previewUrl);
                 try {
-                  const reader = new FileReader();
-                  reader.onload = async () => {
-                    const base64 = reader.result.split(',')[1];
-                    await axios.put(`${API_URL}/estates/${estateId}/photo`, { photo_data: base64, file_name: file.name }, getAuthHeaders());
-                  };
-                  reader.readAsDataURL(file);
-                } catch { /* silent */ }
+                  const base64 = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                  });
+                  await axios.put(`${API_URL}/estates/${estateId}/photo`, { photo_data: base64, file_name: file.name }, getAuthHeaders());
+                } catch (err) {
+                  setEstatePhoto(null);
+                  toast.error(err?.response?.data?.detail || 'Failed to save estate photo');
+                }
               }}
               onRemove={async () => {
                 setEstatePhoto(null);
