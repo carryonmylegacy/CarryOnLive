@@ -59,7 +59,13 @@ const BeneficiaryHubPage = () => {
       ]);
       setEstates(estatesRes.data.filter(e => e.user_role_in_estate !== 'owner'));
       setFamilyConnections(connectionsRes.data);
-      if (meRes.data.photo_url) setMyPhoto(meRes.data.photo_url);
+      // Photo priority: user's own profile photo > benefactor-uploaded photo for me
+      if (meRes.data.photo_url) {
+        setMyPhoto(meRes.data.photo_url);
+      } else {
+        const benefactorSetPhoto = (connectionsRes.data || []).find(c => c.my_photo_in_estate)?.my_photo_in_estate;
+        if (benefactorSetPhoto) setMyPhoto(benefactorSetPhoto);
+      }
     } catch (err) { console.error('Fetch data error:', err); }
     finally { setLoading(false); }
   };

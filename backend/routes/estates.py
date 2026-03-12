@@ -137,6 +137,7 @@ async def get_family_connections(current_user: dict = Depends(get_current_user))
                 "readiness_score": estate.get("readiness_score", 0),
                 "benefactor_id": benefactor.get("id"),
                 "photo_url": display_photo,
+                "my_photo_in_estate": ben_record.get("photo_url", ""),
             }
         )
 

@@ -32,9 +32,18 @@ const BeneficiarySettingsPage = () => {
       }
     };
     fetchEstate();
-    axios.get(`${API_URL}/auth/me`, getAuthHeaders()).then(res => {
-      if (res.data.photo_url) setProfilePhoto(res.data.photo_url);
-    }).catch(() => {});
+    // Photo priority: user's own profile photo > benefactor-uploaded photo for me
+    Promise.all([
+      axios.get(`${API_URL}/auth/me`, getAuthHeaders()).catch(() => ({ data: {} })),
+      axios.get(`${API_URL}/beneficiary/family-connections`, getAuthHeaders()).catch(() => ({ data: [] })),
+    ]).then(([meRes, connRes]) => {
+      if (meRes.data.photo_url) {
+        setProfilePhoto(meRes.data.photo_url);
+      } else {
+        const benefactorSetPhoto = (connRes.data || []).find(c => c.my_photo_in_estate)?.my_photo_in_estate;
+        if (benefactorSetPhoto) setProfilePhoto(benefactorSetPhoto);
+      }
+    });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLogout = () => { logout(); navigate('/login'); };
