@@ -120,7 +120,7 @@ class TestSubscriptionCheckout:
             json={
                 "plan_id": "premium",
                 "billing_cycle": "monthly",
-                "origin_url": "https://portal-photo-parity.preview.emergentagent.com",
+                "origin_url": "https://benefactor-portal.preview.emergentagent.com",
             },
             headers=auth_headers,
         )
@@ -134,7 +134,7 @@ class TestSubscriptionCheckout:
             json={
                 "plan_id": "premium",
                 "billing_cycle": "monthly",
-                "origin_url": "https://portal-photo-parity.preview.emergentagent.com",
+                "origin_url": "https://benefactor-portal.preview.emergentagent.com",
             },
         )
         assert response.status_code in [401, 403], (

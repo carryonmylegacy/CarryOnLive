@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
 import {
-  Users, Trash2, Loader2, Plus, Eye, EyeOff, Phone, Mail, Briefcase,
-  Crown, Wrench, Pencil, Shield, ChevronDown, ChevronRight
+  Trash2, Loader2, Plus, Eye, EyeOff, Phone, Mail, Briefcase,
+  Crown, Wrench, Pencil, ChevronDown, ChevronRight
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';

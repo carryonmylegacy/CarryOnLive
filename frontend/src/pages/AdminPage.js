@@ -1,16 +1,21 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  Shield, Users, FileKey, FolderLock, Loader2,
+  Shield, Users, FileKey, Loader2,
   Headphones, CreditCard, Activity, Settings,
-  MessageSquare, CheckSquare, AlertTriangle, Clock, ShieldCheck, TrendingUp, Trash2,
-  Megaphone, HeartPulse, Search, StickyNote, BookOpen, Siren, Gift, Zap
+  MessageSquare, CheckSquare, AlertTriangle, Clock, TrendingUp, Trash2,
+  Megaphone, HeartPulse, Search, StickyNote, BookOpen, Gift, Zap
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { toast } from '../utils/toast';
 import { Skeleton } from '../components/ui/skeleton';
+import { useScrollLock } from '../hooks/useScrollLock';
+import { RevenuePanel } from '../components/admin/RevenuePanel';
+import { OpsWorkTiles } from '../components/admin/OpsWorkTiles';
+import { TeamActivitySection } from '../components/admin/TeamActivitySection';
+import { ActionRequired, PlatformOverview } from '../components/admin/PlatformOverview';
 
 
 import { UsersTab } from '../components/admin/UsersTab';
@@ -122,65 +127,7 @@ const AdminPage = ({ operatorMode = false }) => {
   // If founder lands on /admin with no specific tab, default to users
   const effectiveTab = (!operatorMode && location.pathname === '/admin') ? 'users' : tab;
 
-  // ── Scroll lock: prevent scroll reset during tab transitions ──
-  const scrollLockRef = useRef({ pos: 0, locked: false });
-
-  // Continuously track scroll position when not locked
-  useEffect(() => {
-    const mainEl = document.querySelector('.main-content');
-    if (!mainEl) return;
-    const onScroll = () => {
-      if (!scrollLockRef.current.locked) {
-        scrollLockRef.current.pos = mainEl.scrollTop;
-      }
-    };
-    mainEl.addEventListener('scroll', onScroll, { passive: true });
-    return () => mainEl.removeEventListener('scroll', onScroll);
-  }, []);
-
-  // Lock scroll during tab transition — aggressively prevent any scroll changes
-  const prevTab = useRef(effectiveTab);
-  useEffect(() => {
-    if (prevTab.current === effectiveTab) return;
-    prevTab.current = effectiveTab;
-
-    const mainEl = document.querySelector('.main-content');
-    if (!mainEl) return;
-
-    const target = scrollLockRef.current.pos;
-    scrollLockRef.current.locked = true;
-
-    // Disable smooth scrolling during transition to prevent visible animation
-    const html = document.documentElement;
-    html.style.scrollBehavior = 'auto';
-    mainEl.style.scrollBehavior = 'auto';
-
-    // Force scroll position on every scroll event during transition
-    const forceScroll = () => { mainEl.scrollTop = target; };
-    mainEl.addEventListener('scroll', forceScroll);
-    forceScroll();
-    requestAnimationFrame(forceScroll);
-    requestAnimationFrame(() => requestAnimationFrame(forceScroll));
-    const t1 = setTimeout(forceScroll, 0);
-    const t2 = setTimeout(forceScroll, 30);
-    const t3 = setTimeout(forceScroll, 60);
-    const t4 = setTimeout(forceScroll, 100);
-    // Release lock and restore smooth scrolling after transition settles
-    const t5 = setTimeout(() => {
-      mainEl.removeEventListener('scroll', forceScroll);
-      scrollLockRef.current.locked = false;
-      html.style.scrollBehavior = '';
-      mainEl.style.scrollBehavior = '';
-    }, 250);
-
-    return () => {
-      mainEl.removeEventListener('scroll', forceScroll);
-      scrollLockRef.current.locked = false;
-      html.style.scrollBehavior = '';
-      mainEl.style.scrollBehavior = '';
-      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5);
-    };
-  }, [effectiveTab]);
+  useScrollLock(effectiveTab);
 
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState(null);
@@ -189,7 +136,7 @@ const AdminPage = ({ operatorMode = false }) => {
   const [teamTasks, setTeamTasks] = useState(null);
   const [revenue, setRevenue] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [otpDisabled, setOtpDisabled] = useState(false);
+  const [, setOtpDisabled] = useState(false);
   const [cleaning, setCleaning] = useState(false);
 
   const handleCleanup = async () => {
@@ -260,14 +207,6 @@ const AdminPage = ({ operatorMode = false }) => {
     } catch {}
   };
 
-  const toggleOtp = async () => {
-    const newVal = !otpDisabled;
-    setOtpDisabled(newVal);
-    try {
-      await axios.put(`${API_URL}/admin/platform-settings`, { otp_disabled: newVal }, getAuthHeaders());
-    } catch { setOtpDisabled(!newVal); }
-  };
-
   // Poll stats every 30s so new requests "pop in" for operators
   useEffect(() => {
     if (!operatorMode) return;
@@ -329,331 +268,21 @@ const AdminPage = ({ operatorMode = false }) => {
       </div>
 
       {/* Revenue Analytics — founder only */}
-      {!operatorMode && revenue && (
-        <div className="mb-4">
-          <p className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2">Revenue</p>
-          <div className="grid grid-cols-3 gap-2 mb-2">
-            <div className="glass-card p-3 text-center">
-              <div className="text-xl font-bold text-[#22C993]">${revenue.mrr.toLocaleString()}</div>
-              <div className="text-[10px] text-[var(--t4)] font-bold">MRR</div>
-              <div className="text-[9px] text-[var(--t5)]">${revenue.arr.toLocaleString()}/yr ARR</div>
-            </div>
-            <div className="glass-card p-3 text-center">
-              <div className="text-xl font-bold text-[#d4af37]">${revenue.total_revenue.toLocaleString()}</div>
-              <div className="text-[10px] text-[var(--t4)] font-bold">Total Revenue</div>
-              <div className="text-[9px] text-[var(--t5)]">${revenue.revenue_this_month.toLocaleString()} this month</div>
-            </div>
-            <div className="glass-card p-3 text-center">
-              <div className="text-xl font-bold" style={{ color: revenue.mom_growth >= 0 ? '#22C993' : '#EF4444' }}>
-                {revenue.mom_growth >= 0 ? '+' : ''}{revenue.mom_growth}%
-              </div>
-              <div className="text-[10px] text-[var(--t4)] font-bold">MoM Growth</div>
-              <div className="text-[9px] text-[var(--t5)]">${revenue.revenue_last_month.toLocaleString()} last month</div>
-            </div>
-          </div>
-          <div className="grid grid-cols-4 gap-2">
-            <div className="glass-card p-2.5 text-center">
-              <div className="text-lg font-bold text-[var(--t)]">{revenue.paying_subscribers}</div>
-              <div className="text-[9px] text-[var(--t5)]">Paying</div>
-            </div>
-            <div className="glass-card p-2.5 text-center">
-              <div className="text-lg font-bold text-[#3B82F6]">${revenue.arpu_monthly}</div>
-              <div className="text-[9px] text-[var(--t5)]">ARPU/mo</div>
-            </div>
-            <div className="glass-card p-2.5 text-center">
-              <div className="text-lg font-bold" style={{ color: revenue.churn_rate > 5 ? '#EF4444' : '#22C993' }}>{revenue.churn_rate}%</div>
-              <div className="text-[9px] text-[var(--t5)]">Churn</div>
-            </div>
-            <div className="glass-card p-2.5 text-center">
-              <div className="text-lg font-bold text-[#d4af37]">${revenue.ltv}</div>
-              <div className="text-[9px] text-[var(--t5)]">LTV</div>
-            </div>
-          </div>
-        </div>
+      {!operatorMode && <RevenuePanel revenue={revenue} />}
+
+      {/* Operator Work Queue Tiles */}
+      {operatorMode && <OpsWorkTiles stats={stats} dashEvents={dashEvents} />}
+
+      {/* Manager: Team Activity Overview */}
+      {operatorMode && user?.operator_role === 'manager' && (
+        <TeamActivitySection teamTasks={teamTasks} opsDash={opsDash} />
       )}
 
-      {/* Operator Work Queue Tiles — light up when a user submits a new request */}
-      {operatorMode && stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3" data-testid="ops-work-tiles">
-          {[
-            {
-              key: 'tvt',
-              label: 'TVT',
-              sub: 'Death certificates to review',
-              icon: FileKey,
-              count: dashEvents?.events?.tvt?.count ?? ((stats.pending_certificates || 0) + (stats.reviewing_certificates || 0)),
-              color: '#F59E0B',
-              path: '/ops/transition',
-            },
-            {
-              key: 'milestones',
-              label: 'Milestones',
-              sub: 'Milestone notifications to review',
-              icon: Gift,
-              count: dashEvents?.events?.milestones?.count ?? (stats.pending_milestones || 0),
-              color: '#8B5CF6',
-              path: '/ops/milestones',
-            },
-            {
-              key: 'dts',
-              label: 'DTS',
-              sub: 'Trustee requests to process',
-              icon: Shield,
-              count: dashEvents?.events?.dts?.count ?? (stats.pending_dts || 0),
-              color: '#3B82F6',
-              path: '/ops/dts',
-            },
-            {
-              key: 'emergency',
-              label: 'Emergency',
-              sub: 'Beneficiary emergency access',
-              icon: Siren,
-              count: dashEvents?.events?.emergency?.count ?? (stats.pending_emergency || 0),
-              color: '#EF4444',
-              path: '/ops/escalations',
-            },
-            {
-              key: 'p1',
-              label: 'P1 Alert',
-              sub: 'Benefactor still alive alerts',
-              icon: Zap,
-              count: dashEvents?.events?.p1?.count ?? (stats.p1_emergencies || 0),
-              color: '#DC2626',
-              path: '/ops/support',
-            },
-            {
-              key: 'support',
-              label: 'Support',
-              sub: 'Customer service replies',
-              icon: MessageSquare,
-              count: dashEvents?.events?.support?.count ?? (stats.unanswered_support || 0),
-              color: '#F43F5E',
-              path: '/ops/support',
-            },
-          ].map(tile => {
-            const hasWork = tile.count > 0;
-            const isUrgent = tile.key === 'p1' || tile.key === 'emergency';
-            return (
-              <div
-                key={tile.key}
-                onClick={() => navigate(tile.path)}
-                className={`rounded-xl p-4 cursor-pointer active:scale-[0.97] transition-all relative overflow-hidden ${hasWork && isUrgent ? 'animate-pulse-subtle' : ''}`}
-                style={{
-                  background: hasWork ? `${tile.color}12` : 'var(--s)',
-                  border: `2px solid ${hasWork ? `${tile.color}40` : 'var(--b)'}`,
-                  boxShadow: hasWork
-                    ? isUrgent
-                      ? `0 0 30px ${tile.color}30, 0 0 60px ${tile.color}10`
-                      : `0 0 20px ${tile.color}15`
-                    : 'none',
-                }}
-                data-testid={`ops-tile-${tile.key}`}
-              >
-                {/* Glow effect for active tiles */}
-                {hasWork && (
-                  <div className="absolute inset-0 rounded-xl pointer-events-none"
-                    style={{
-                      background: `radial-gradient(ellipse at center, ${tile.color}08 0%, transparent 70%)`,
-                    }} />
-                )}
-                <div className="flex items-center gap-3 relative z-10">
-                  <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all ${hasWork && isUrgent ? 'animate-pulse' : ''}`}
-                    style={{
-                      background: hasWork ? `${tile.color}20` : 'var(--bg2)',
-                      border: `1px solid ${hasWork ? `${tile.color}30` : 'var(--b)'}`,
-                    }}
-                  >
-                    <tile.icon className="w-5 h-5" style={{ color: hasWork ? tile.color : 'var(--t5)' }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-[var(--t)] truncate">{tile.label}</span>
-                      {hasWork && (
-                        <span
-                          className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${isUrgent ? 'animate-pulse' : 'animate-pulse'}`}
-                          style={{ background: `${tile.color}25`, color: tile.color }}
-                        >
-                          {tile.count}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[10px] text-[var(--t5)] truncate mt-0.5">
-                      {hasWork ? `${tile.count} ${tile.sub}` : 'All clear'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Manager: Team Activity Overview — shows each operator's active tasks */}
-      {operatorMode && user?.operator_role === 'manager' && (teamTasks?.team?.length > 0 || opsDash?.operators?.length > 0) && (
-        <div className="glass-card p-4" data-testid="team-activity-section">
-          <h3 className="text-sm font-bold text-[var(--t)] mb-3 uppercase tracking-wider flex items-center gap-2">
-            <Users className="w-4 h-4 text-[var(--gold)]" />
-            Team Activity
-            {teamTasks?.total_active_tasks > 0 && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                style={{ background: 'rgba(139,92,246,0.15)', color: '#8B5CF6' }}>
-                {teamTasks.total_active_tasks} active
-              </span>
-            )}
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {(teamTasks?.team || opsDash?.operators || []).map(op => {
-              const tasks = op.tasks || [];
-              const hasTasks = tasks.length > 0 || op.tasks_active > 0;
-              return (
-                <div
-                  key={op.id}
-                  className="rounded-xl p-3 transition-all"
-                  style={{
-                    background: hasTasks ? 'rgba(212,175,55,0.06)' : 'var(--s)',
-                    border: `1px solid ${hasTasks ? 'rgba(212,175,55,0.2)' : 'var(--b)'}`,
-                  }}
-                  data-testid={`team-op-${op.id}`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="relative">
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold"
-                        style={{ background: op.operator_role === 'manager' ? 'rgba(245,158,11,0.15)' : 'rgba(59,130,246,0.15)', color: op.operator_role === 'manager' ? '#F59E0B' : '#3B82F6' }}>
-                        {(op.name || '??').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                      </div>
-                      <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[var(--bg)]`}
-                        style={{ background: op.is_online ? '#22C993' : '#64748B' }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-bold text-[var(--t)] truncate">{op.name}</div>
-                      <div className="text-[10px] text-[var(--t5)] capitalize">{op.operator_role} · {op.title || 'Staff'}</div>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      {tasks.length > 0 ? (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse"
-                          style={{ background: 'rgba(139,92,246,0.15)', color: '#8B5CF6' }}>
-                          {tasks.length} active
-                        </span>
-                      ) : op.tasks_active > 0 ? (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse"
-                          style={{ background: 'rgba(139,92,246,0.15)', color: '#8B5CF6' }}>
-                          {op.tasks_active} active
-                        </span>
-                      ) : (
-                        <span className="text-[10px] text-[var(--t5)]">{op.actions_24h || 0} actions today</span>
-                      )}
-                    </div>
-                  </div>
-                  {/* Task breakdown — clicking navigates to the task tab */}
-                  {tasks.length > 0 && (
-                    <div className="mt-2 ml-10 space-y-1">
-                      {tasks.slice(0, 3).map(task => {
-                        const typeColors = {
-                          dts: '#3B82F6', tvt: '#F59E0B', milestone: '#8B5CF6',
-                          support: '#F43F5E', emergency: '#EF4444', p1: '#DC2626',
-                        };
-                        return (
-                          <div key={task.id}
-                            className="flex items-center gap-1.5 text-[9px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-80 transition-opacity"
-                            style={{ background: `${typeColors[task.type] || '#6366F1'}10` }}
-                            onClick={() => navigate(task.path)}
-                            data-testid={`team-task-${task.id}`}>
-                            <span className="font-bold" style={{ color: typeColors[task.type] || '#6366F1' }}>
-                              {task.type_label}
-                            </span>
-                            <span className="text-[var(--t5)] truncate flex-1">{task.title}</span>
-                            <span className="text-[var(--t5)] capitalize">{task.status}</span>
-                          </div>
-                        );
-                      })}
-                      {tasks.length > 3 && (
-                        <div className="text-[9px] text-[var(--t5)] pl-1.5">+{tasks.length - 3} more</div>
-                      )}
-                    </div>
-                  )}
-                  {/* Fallback: show basic metrics if no task details */}
-                  {tasks.length === 0 && (op.tasks_assigned > 0) && (
-                    <div className="flex gap-2 mt-2 ml-10">
-                      <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(139,92,246,0.1)', color: '#8B5CF6' }}>
-                        {op.tasks_active || 0} in progress
-                      </span>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(34,201,147,0.1)', color: '#22C993' }}>
-                        {op.tasks_completed || 0} done
-                      </span>
-                      <span className="text-[9px] text-[var(--t5)]">
-                        {op.completion_rate || 0}% rate
-                      </span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Action Required — Founder only (items needing admin attention) */}
-      {!operatorMode && stats && (stats.unanswered_support > 0 || stats.pending_certificates > 0 || stats.reviewing_certificates > 0 || stats.pending_verifications > 0 || stats.pending_dts > 0 || stats.pending_family_requests > 0 || stats.pending_deletions > 0) && (
-        <div className="glass-card p-4" style={{ borderLeft: '3px solid #F43F5E' }}>
-          <h3 className="text-sm font-bold text-[#F43F5E] mb-3 uppercase tracking-wider">Needs Your Attention</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-            {[
-              stats.unanswered_support > 0 && { v: stats.unanswered_support, l: 'Unanswered Messages', icon: MessageSquare, color: '#F43F5E', path: '/admin/support' },
-              stats.pending_certificates > 0 && { v: stats.pending_certificates, l: 'Pending Transitions', icon: FileKey, color: '#F59E0B', path: '/admin/transition' },
-              stats.reviewing_certificates > 0 && { v: stats.reviewing_certificates, l: 'Reviewing Certs', icon: FileKey, color: '#FBBF24', path: '/admin/transition' },
-              stats.pending_verifications > 0 && { v: stats.pending_verifications, l: 'Pending Verifications', icon: ShieldCheck, color: '#F97316', path: '/admin/verifications' },
-              stats.pending_dts > 0 && { v: stats.pending_dts, l: 'Pending DTS Tasks', icon: CheckSquare, color: '#8B5CF6', path: '/admin/dts' },
-              stats.pending_family_requests > 0 && { v: stats.pending_family_requests, l: 'Family Plan Requests', icon: Users, color: '#0EA5E9', path: '/admin/subscriptions' },
-              stats.pending_deletions > 0 && { v: stats.pending_deletions, l: 'Deletion Requests', icon: AlertTriangle, color: '#EF4444', path: '/admin/activity' },
-            ].filter(Boolean).map(s => (
-              <div key={s.l} className="rounded-xl p-3 text-center cursor-pointer active:scale-[0.96] transition-transform"
-                style={{ background: `${s.color}10`, border: `1px solid ${s.color}20` }}
-                onClick={() => navigate(s.path)}>
-                <s.icon className="w-4 h-4 mx-auto mb-1" style={{ color: s.color }} />
-                <div className="text-2xl font-bold text-[var(--t)]">{s.v}</div>
-                <div className="text-xs text-[var(--t4)]">{s.l}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Action Required — Founder only */}
+      {!operatorMode && <ActionRequired stats={stats} navigate={navigate} />}
 
       {/* Platform Overview — founder only */}
-      {!operatorMode && stats && (
-        <>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-          {[
-            { v: stats.users.total, l: 'Total Users', sub: `${stats.users.benefactors} benefactors · ${stats.users.beneficiaries} beneficiaries`, icon: Users, color: '#60A5FA', path: '/admin' },
-            { v: stats.active_subscriptions, l: 'Active Subscriptions', icon: CreditCard, color: '#22C993', path: '/admin/subscriptions' },
-            { v: stats.estates.active, l: 'Active Estates', sub: `${stats.estates.transitioned} transitioned`, icon: FolderLock, color: '#0EA5E9', path: '/admin/transition' },
-            { v: stats.grace_periods, l: 'Trial Periods', icon: Clock, color: '#F59E0B', path: '/admin/trials' },
-          ].map(s => (
-            <div key={s.l} className="glass-card p-3 text-center cursor-pointer active:scale-[0.96] transition-transform"
-              onClick={() => navigate(s.path)}>
-              <s.icon className="w-4 h-4 mx-auto mb-1" style={{ color: s.color }} />
-              <div className="text-2xl font-bold text-[var(--t)]">{s.v}</div>
-              <div className="text-xs text-[var(--t4)]">{s.l}</div>
-              {s.sub && <div className="text-[10px] text-[var(--t5)] mt-0.5">{s.sub}</div>}
-            </div>
-          ))}
-        </div>
-
-        {/* Viral Growth Metrics */}
-        <div className="grid grid-cols-2 gap-3 mt-3">
-          <div className="glass-card p-3 text-center">
-            <Users className="w-4 h-4 mx-auto mb-1 text-[#d4af37]" />
-            <div className="text-2xl font-bold text-[var(--t)]">{stats.avg_beneficiaries_per_benefactor || 0}</div>
-            <div className="text-xs text-[var(--t4)]">Avg Beneficiaries / Benefactor</div>
-          </div>
-          <div className="glass-card p-3 text-center cursor-pointer active:scale-[0.96] transition-transform" onClick={() => navigate('/admin')}>
-            <TrendingUp className="w-4 h-4 mx-auto mb-1 text-[#22C993]" />
-            <div className="text-2xl font-bold text-[var(--t)]">{stats.beneficiaries_converted || 0}</div>
-            <div className="text-xs text-[var(--t4)]">Beneficiaries → Benefactors</div>
-          </div>
-        </div>
-        </>
-      )}
+      {!operatorMode && stats && <PlatformOverview stats={stats} />}
 
       {/* Tabs */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide" data-testid="admin-tab-bar" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>

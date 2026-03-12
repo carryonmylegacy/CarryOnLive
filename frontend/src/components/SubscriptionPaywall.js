@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Crown, Shield, Check, Star, ChevronRight, Loader2,
-  Upload, Clock, AlertTriangle, Users, X, Heart, Award, RotateCcw
+  Upload, Clock, Users, X, Heart, Award, RotateCcw
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from '../utils/toast';
@@ -213,7 +213,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
         formData.append('file_name', verificationFile.name);
 
         try {
-          const res = await axios.post(`${API_URL}/verification/upload`, formData, { headers });
+          await axios.post(`${API_URL}/verification/upload`, formData, { headers });
           // toast removed
           setShowVerification(false);
           setVerificationFile(null);

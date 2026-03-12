@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from config import db, logger
+from guards import require_benefactor_role
 from models import Estate, EstateCreate, EstateUpdate
 from services.encryption import generate_estate_salt
 from services.readiness import calculate_estate_readiness, ensure_default_checklist
@@ -657,12 +658,7 @@ async def create_estate(
     data: EstateCreate, current_user: dict = Depends(get_current_user)
 ):
     """Create a new estate."""
-    if current_user["role"] != "benefactor" and not current_user.get(
-        "is_also_benefactor"
-    ):
-        raise HTTPException(
-            status_code=403, detail="Only benefactors can create estates"
-        )
+    require_benefactor_role(current_user, "create estates")
 
     estate = Estate(owner_id=current_user["id"], name=data.name)
     estate_dict = estate.model_dump()
@@ -690,12 +686,7 @@ async def update_estate(
     estate_id: str, data: EstateUpdate, current_user: dict = Depends(get_current_user)
 ):
     """Update an existing estate."""
-    if current_user["role"] != "benefactor" and not current_user.get(
-        "is_also_benefactor"
-    ):
-        raise HTTPException(
-            status_code=403, detail="Only benefactors can update estates"
-        )
+    require_benefactor_role(current_user, "update estates")
 
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
     if not estate:
@@ -728,12 +719,7 @@ async def update_estate(
 @router.delete("/estates/{estate_id}")
 async def delete_estate(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Delete an estate and all associated data."""
-    if current_user["role"] != "benefactor" and not current_user.get(
-        "is_also_benefactor"
-    ):
-        raise HTTPException(
-            status_code=403, detail="Only benefactors can delete estates"
-        )
+    require_benefactor_role(current_user, "delete estates")
 
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
     if not estate:

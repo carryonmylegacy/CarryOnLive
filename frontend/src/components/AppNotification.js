@@ -18,7 +18,6 @@ import { haptics } from '../utils/haptics';
 
 // ── Notification Store (pub/sub) ─────────────────────────────────────
 let listeners = [];
-let notificationQueue = [];
 let idCounter = 0;
 
 function subscribe(fn) {

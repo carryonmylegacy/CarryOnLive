@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
-import { AlertTriangle, Shield, X, Volume2 } from 'lucide-react';
+import { AlertTriangle, Shield, Volume2 } from 'lucide-react';
 import { Button } from './ui/button';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;

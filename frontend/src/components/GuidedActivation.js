@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Sparkles, FileText, Upload, MessageSquare, CheckSquare, ChevronRight, X, UserCheck, KeyRound } from 'lucide-react';
+import React from 'react';
+import { Sparkles, Upload, MessageSquare, CheckSquare, ChevronRight, UserCheck, KeyRound } from 'lucide-react';
 
 /**
  * Bouncing "Return to Dashboard" popup — appears after completing an activation step.

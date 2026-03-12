@@ -3,7 +3,6 @@ import axios from 'axios';
 import { MessageCircle, Headphones, UserCircle, Loader2, Send, Search, Trash2, KeyRound, Unlock, RotateCcw } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Label } from '../ui/label';
 import { toast } from '../../utils/toast';
 import { useAuth } from '../../contexts/AuthContext';
 

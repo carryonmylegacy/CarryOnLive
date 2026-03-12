@@ -6,12 +6,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { ReturnPopup } from '../components/GuidedActivation';
 import {
   CheckSquare, Plus, Trash2, Edit2, Phone, Mail, MapPin, FileText,
-  Briefcase, Users, Heart, Shield, Building, Stethoscope, ChevronDown,
-  ChevronUp, GripVertical, Sparkles, Save, X, AlertTriangle, Clock,
-  CalendarClock, ArrowUpDown, Check, XCircle, Loader2
+  Briefcase, Users, Heart, Shield, Building, Stethoscope,
+  Sparkles, Save, X,
+  Check, XCircle
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Progress } from '../components/ui/progress';
 import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
@@ -549,8 +547,6 @@ const ChecklistPage = () => {
             const priColor = priColors[item.priority] || priColors.medium;
             const catInfo = getCatInfo(item.category);
             const CatIcon = catInfo.icon;
-            const actionInfo = ACTION_TYPES.find(a => a.value === item.action_type) || ACTION_TYPES[5];
-            const ActionIcon = actionInfo.icon;
 
             return (
               <div

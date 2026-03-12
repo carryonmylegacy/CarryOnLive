@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  FileText, Shield, Heart, Stethoscope, Loader2, Check, ChevronRight, X
+  FileText, Shield, Heart, Loader2, ChevronRight
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
-import { Button } from '../components/ui/button';
 import { toast } from '../utils/toast';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -48,7 +47,7 @@ const QuickStartTemplates = ({ estateId, onApplied }) => {
     }
     setApplying(templateId);
     try {
-      const res = await axios.post(`${API_URL}/templates/apply`, {
+      await axios.post(`${API_URL}/templates/apply`, {
         estate_id: estateId,
         template_id: templateId,
       }, getAuthHeaders());

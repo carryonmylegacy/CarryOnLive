@@ -11,7 +11,6 @@ import {
   Trash2,
   Play,
   Pause,
-  Clock,
   Users,
   Calendar,
   Send,
@@ -29,7 +28,7 @@ import {
   CalendarDays,
   SwitchCamera
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';

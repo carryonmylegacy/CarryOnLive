@@ -35,7 +35,7 @@ const CATEGORY_OPTIONS = [
 ];
 
 export const useShareTarget = () => {
-  const { token, user } = useAuth();
+  const { token } = useAuth();
   const navigate = useNavigate();
   const [pendingShare, setPendingShare] = useState(null);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);

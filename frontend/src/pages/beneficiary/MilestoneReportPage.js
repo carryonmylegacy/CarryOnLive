@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
-import { Heart, CheckCircle2, ChevronLeft } from 'lucide-react';
+import { CheckCircle2, ChevronLeft } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -17,7 +17,7 @@ const milestoneTypes = [
 ];
 
 const MilestoneReportPage = () => {
-  const { user, getAuthHeaders } = useAuth();
+  const { getAuthHeaders } = useAuth();
   const navigate = useNavigate();
   const [type, setType] = useState('');
   const [date, setDate] = useState('');

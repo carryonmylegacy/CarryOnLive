@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
-import { Lock, Shield, FileText, Upload, ChevronLeft, AlertTriangle, MessageCircle } from 'lucide-react';
+import { Lock, Shield, FileText, Upload, ChevronLeft, MessageCircle } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Skeleton } from '../../components/ui/skeleton';
@@ -10,7 +10,7 @@ import { Skeleton } from '../../components/ui/skeleton';
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const PreTransitionPage = () => {
-  const { user, getAuthHeaders } = useAuth();
+  const { getAuthHeaders } = useAuth();
   const navigate = useNavigate();
   const [estate, setEstate] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -41,9 +41,6 @@ const PreTransitionPage = () => {
     };
     fetchEstate();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const firstName = user?.name?.split(' ')[0] || 'there';
-  const benefactorName = estate?.name?.split(' ')[0] || 'your benefactor';
 
   if (loading) {
     return (

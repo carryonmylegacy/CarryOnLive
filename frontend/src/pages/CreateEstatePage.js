@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { clearCache } from '../utils/apiCache';
 import {
   ArrowLeft, ArrowRight, Loader2, Check, Shield, Users,
-  User, Heart, MapPin, UserPlus, Mail, AlertCircle, Award
+  User, Heart, UserPlus, Mail, AlertCircle, Award
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -16,15 +16,6 @@ import DateMaskInput from '../components/DateMaskInput';
 import axios from 'axios';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
-
-const suffixOptions = [
-  { value: 'none', label: 'None' },
-  { value: 'Jr.', label: 'Jr.' },
-  { value: 'Sr.', label: 'Sr.' },
-  { value: 'II', label: 'II' },
-  { value: 'III', label: 'III' },
-  { value: 'IV', label: 'IV' },
-];
 
 const genderOptions = [
   { value: 'not_selected', label: 'Select...' },
@@ -58,7 +49,7 @@ const selectClass = "h-14 bg-[#0b1322] border-[#1a2a42] text-white text-base rou
 
 const CreateEstatePage = () => {
   const navigate = useNavigate();
-  const { user, getAuthHeaders, refreshUser } = useAuth();
+  const { getAuthHeaders, refreshUser } = useAuth();
   const scrollRef = useRef(null);
 
   const [step, setStep] = useState(0);
@@ -69,9 +60,9 @@ const CreateEstatePage = () => {
 
   // Pre-populated from user profile
   const [firstName, setFirstName] = useState('');
-  const [middleName, setMiddleName] = useState('');
+  const [, setMiddleName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [suffix, setSuffix] = useState('none');
+  const [, setSuffix] = useState('none');
   const [gender, setGender] = useState('not_selected');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [maritalStatus, setMaritalStatus] = useState('not_selected');

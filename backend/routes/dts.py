@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel, Field
 
 from config import db
+from guards import require_benefactor_role
 from services.audit import audit_log
 from services.encryption import decrypt_aes256, get_estate_salt
 from utils import get_current_user, log_activity, send_push_notification
@@ -48,12 +49,7 @@ async def create_dts_task(
     data: DTSTaskCreate, current_user: dict = Depends(get_current_user)
 ):
     """Benefactor creates a DTS request"""
-    if current_user["role"] != "benefactor" and not current_user.get(
-        "is_also_benefactor"
-    ):
-        raise HTTPException(
-            status_code=403, detail="Only benefactors can create DTS tasks"
-        )
+    require_benefactor_role(current_user, "create DTS tasks")
     task = {
         "id": str(uuid.uuid4()),
         "estate_id": data.estate_id,

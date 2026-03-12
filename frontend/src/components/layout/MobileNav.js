@@ -4,14 +4,11 @@ import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { haptics } from '../../utils/haptics';
-import { Switch } from '../ui/switch';
 import {
-  LayoutDashboard,
   FolderLock,
   MessageSquare,
   Users,
   Menu,
-  X,
   Shield,
   Sparkles,
   CheckSquare,
@@ -33,7 +30,6 @@ import {
   Search,
   StickyNote,
   Gift,
-  Bell
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import NotificationBell from '../NotificationBell';
@@ -786,7 +782,6 @@ const MobileNav = () => {
         <div className="mx-2 mb-1 mobile-bottom-nav rounded-[22px] overflow-hidden">
           <div className="flex items-end min-h-[3.5rem] px-2">
           {getBottomNav().map((item, index) => {
-            const isCenter = item.isCenter;
             const showDivider = index < getBottomNav().length - 1;
             
             return (
@@ -798,14 +793,12 @@ const MobileNav = () => {
                     return `mobile-nav-item flex flex-col items-center gap-1 py-2 flex-1 ${isActive ? 'active' : ''}`;
                   }}
                   style={({ isActive: routeActive }) => {
-                    const isActive = routeActive && !item.forceInactive;
-                    return (!isActive ? { color: theme === 'dark' ? 'rgba(255,255,255,0.7)' : '#1e3a5f' } : {});
+                    return (!(routeActive && !item.forceInactive) ? { color: theme === 'dark' ? 'rgba(255,255,255,0.7)' : '#1e3a5f' } : {});
                   }}
                   data-testid={`mobile-nav-${item.label.toLowerCase()}`}
                   aria-label={item.label}
                 >
                   {({ isActive: routeActive }) => {
-                    const isActive = routeActive && !item.forceInactive;
                     return (
                       <>
                         <item.icon className="w-5 h-5" />

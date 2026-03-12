@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Megaphone, Plus, Trash2, Users, AlertTriangle, Info, Loader2 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Megaphone, Plus, Trash2, Loader2 } from 'lucide-react';
+import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;

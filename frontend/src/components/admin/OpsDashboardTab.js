@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
-  Users, Activity, Clock, CheckCircle2, AlertTriangle,
+  CheckCircle2, AlertTriangle,
   MessageSquare, Shield, FileKey, Loader2, Crown, Wrench,
-  StickyNote, Zap, BarChart3, CircleDot
+  StickyNote
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';

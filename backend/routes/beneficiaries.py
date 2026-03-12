@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from config import RESEND_API_KEY, SENDER_EMAIL, db, logger
+from guards import is_benefactor_or_admin, require_benefactor_role
 from models import Beneficiary, BeneficiaryCreate
 from utils import (
     create_token,
@@ -51,12 +52,7 @@ async def create_beneficiary(
     data: BeneficiaryCreate, current_user: dict = Depends(get_current_user)
 ):
     """Add a new beneficiary to the estate."""
-    if current_user["role"] != "benefactor" and not current_user.get(
-        "is_also_benefactor"
-    ):
-        raise HTTPException(
-            status_code=403, detail="Only benefactors can add beneficiaries"
-        )
+    require_benefactor_role(current_user, "add beneficiaries")
 
     # Build full name from parts
     name_parts = [data.first_name]
@@ -134,12 +130,7 @@ async def delete_beneficiary(
     beneficiary_id: str, current_user: dict = Depends(get_current_user)
 ):
     """Remove a beneficiary from the estate."""
-    if current_user["role"] != "benefactor" and not current_user.get(
-        "is_also_benefactor"
-    ):
-        raise HTTPException(
-            status_code=403, detail="Only benefactors can remove beneficiaries"
-        )
+    require_benefactor_role(current_user, "remove beneficiaries")
 
     result = await db.beneficiaries.update_one(
         {"id": beneficiary_id},
@@ -156,13 +147,7 @@ async def set_primary_beneficiary(
     beneficiary_id: str, current_user: dict = Depends(get_current_user)
 ):
     """Designate a beneficiary as the primary beneficiary (trustee) of the estate."""
-    if current_user["role"] != "benefactor" and not current_user.get(
-        "is_also_benefactor"
-    ):
-        raise HTTPException(
-            status_code=403,
-            detail="Only benefactors can designate a primary beneficiary",
-        )
+    require_benefactor_role(current_user, "designate a primary beneficiary")
 
     # Find the beneficiary to get their estate_id
     ben = await db.beneficiaries.find_one(
@@ -443,12 +428,7 @@ async def update_beneficiary(
     current_user: dict = Depends(get_current_user),
 ):
     """Update an existing beneficiary"""
-    if current_user["role"] != "benefactor" and not current_user.get(
-        "is_also_benefactor"
-    ):
-        raise HTTPException(
-            status_code=403, detail="Only benefactors can update beneficiaries"
-        )
+    require_benefactor_role(current_user, "update beneficiaries")
 
     beneficiary = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0})
     if not beneficiary:
@@ -524,9 +504,7 @@ async def upload_beneficiary_photo(
     current_user: dict = Depends(get_current_user),
 ):
     """Upload a profile photo for a beneficiary. Resizes to 200x200 and stores as base64."""
-    if current_user["role"] not in ("benefactor", "admin") and not current_user.get(
-        "is_also_benefactor"
-    ):
+    if not is_benefactor_or_admin(current_user):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     beneficiary = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0})
@@ -599,9 +577,7 @@ async def delete_beneficiary_photo(
     beneficiary_id: str, current_user: dict = Depends(get_current_user)
 ):
     """Remove the profile photo for a beneficiary."""
-    if current_user["role"] not in ("benefactor", "admin") and not current_user.get(
-        "is_also_benefactor"
-    ):
+    if not is_benefactor_or_admin(current_user):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     await db.beneficiaries.update_one(
@@ -621,12 +597,7 @@ async def send_beneficiary_invitation(
     beneficiary_id: str, current_user: dict = Depends(get_current_user)
 ):
     """Send invitation email to a beneficiary"""
-    if current_user["role"] != "benefactor" and not current_user.get(
-        "is_also_benefactor"
-    ):
-        raise HTTPException(
-            status_code=403, detail="Only benefactors can send invitations"
-        )
+    require_benefactor_role(current_user, "send invitations")
 
     beneficiary = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0})
     if not beneficiary:

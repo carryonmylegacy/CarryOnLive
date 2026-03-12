@@ -2,15 +2,14 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   CreditCard, Loader2, Clock, ChevronRight, Zap, Shield, X, Check,
-  Crown, Star, Heart, Award, ArrowRight, Users, Mail, Sparkles, Upload
+  Crown, Star, Heart, Award, ArrowRight, Users, Mail, Sparkles
 } from 'lucide-react';
 import { isNative } from '../../services/native';
-import { purchaseIAP, IAP_PRODUCTS, isIAPAvailable, restoreIAPPurchases } from '../../services/iap';
+import { purchaseIAP, isIAPAvailable, restoreIAPPurchases } from '../../services/iap';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from '../../utils/toast';
-import { useAuth } from '../../contexts/AuthContext';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -110,7 +109,6 @@ export const SubscriptionManagement = ({
   getAuthHeaders,
   onShowPaywall,
 }) => {
-  const { user } = useAuth();
   const [plans, setPlans] = useState([]);
   const [beneficiaryPlans, setBeneficiaryPlans] = useState([]);
   const [billing, setBilling] = useState('annual');
@@ -259,7 +257,7 @@ export const SubscriptionManagement = ({
         formData.append('file_data', base64);
         formData.append('file_name', verificationFile.name);
         try {
-          const res = await axios.post(`${API_URL}/verification/upload`, formData, getAuthHeaders());
+          await axios.post(`${API_URL}/verification/upload`, formData, getAuthHeaders());
           // toast removed
           setShowVerification(false);
           setVerificationFile(null);

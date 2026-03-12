@@ -25,7 +25,6 @@ import {
   Trash2,
   Mail,
   Phone,
-  UserCircle,
   Loader2,
   Send,
   CheckCircle,
@@ -43,12 +42,12 @@ import {
   XCircle,
   GripVertical,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Textarea } from '../components/ui/textarea';
 import { toast } from '../utils/toast';
 import { Switch } from '../components/ui/switch';
@@ -129,7 +128,7 @@ const BeneficiariesPage = () => {
   const [avatarColor, setAvatarColor] = useState(avatarColors[0]);
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
-  const [uploadingPhoto, setUploadingPhoto] = useState(null);
+  const [, setUploadingPhoto] = useState(null);
   const [settingPrimary, setSettingPrimary] = useState(null);
   const [showPrimaryDisclaimer, setShowPrimaryDisclaimer] = useState(null);
   const [accessRequests, setAccessRequests] = useState([]);
@@ -182,23 +181,6 @@ const BeneficiariesPage = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handlePhotoSelect = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('Photo must be under 10MB');
-      return;
-    }
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
-      return;
-    }
-    setPhotoFile(file);
-    const reader = new FileReader();
-    reader.onload = (ev) => setPhotoPreview(ev.target.result);
-    reader.readAsDataURL(file);
   };
 
   const uploadPhoto = async (beneficiaryId) => {
@@ -436,10 +418,6 @@ const BeneficiariesPage = () => {
       </span>
     );
   };
-
-  const displayName = firstName && lastName 
-    ? `${firstName}${middleName ? ' ' + middleName : ''} ${lastName}${suffix ? ' ' + suffix : ''}`
-    : '';
 
   const primaryBeneficiary = beneficiaries.find(b => b.is_primary);
 

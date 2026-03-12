@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ChevronRight, ChevronLeft, Shield } from 'lucide-react';
+import { ChevronRight, ChevronLeft } from 'lucide-react';
 
 /* ─── scroll-reveal hook ─── */
 const useReveal = (threshold = 0.15) => {
@@ -31,7 +30,6 @@ const RevealSection = ({ children, className = '', delay = 0, direction = 'up', 
 };
 
 const AboutPage = () => {
-  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen" style={{ background: '#0B1221' }}>

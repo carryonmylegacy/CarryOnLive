@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { KeyRound, Plus, Trash2, Edit2, Eye, EyeOff, Shield, Loader2, User, Wallet, Globe, Mail, Cloud, CreditCard, X, Check, Save } from 'lucide-react';
+import { KeyRound, Plus, Trash2, Edit2, Eye, EyeOff, Shield, Loader2, User, Wallet, Globe, Mail, Cloud, CreditCard, Save } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -27,7 +27,7 @@ const CATEGORIES = [
 ];
 
 const DigitalWalletPage = () => {
-  const { user, getAuthHeaders } = useAuth();
+  const { getAuthHeaders } = useAuth();
   const navigate = useNavigate();
   const [entries, setEntries] = useState([]);
   const [beneficiaries, setBeneficiaries] = useState([]);
@@ -35,7 +35,6 @@ const DigitalWalletPage = () => {
   const [showAdd, setShowAdd] = useState(false);
   const [editEntry, setEditEntry] = useState(null);
   const [visiblePasswords, setVisiblePasswords] = useState({});
-  const [estateId, setEstateId] = useState(null);
   const [showReturnPopup, setShowReturnPopup] = useState(false);
 
   useEffect(() => { fetchData(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -91,8 +90,6 @@ const DigitalWalletPage = () => {
   const togglePassword = (id) => {
     setVisiblePasswords(prev => ({ ...prev, [id]: !prev[id] }));
   };
-
-  const getCategoryInfo = (cat) => CATEGORIES.find(c => c.value === cat) || CATEGORIES[6];
 
   if (loading) {
     return (

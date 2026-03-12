@@ -14,7 +14,6 @@ import {
   Mic,
   MicOff,
   Pencil,
-  Plus,
   Save,
   Send,
   Star,

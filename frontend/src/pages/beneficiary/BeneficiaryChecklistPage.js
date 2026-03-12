@@ -4,24 +4,13 @@ import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   CheckSquare, CheckCircle2, ChevronLeft, Lock, Phone, Mail, MapPin,
-  FileText, Briefcase, Users, Heart, Shield, Building, Stethoscope
+  Users
 } from 'lucide-react';
 import { Progress } from '../../components/ui/progress';
 import { toast } from '../../utils/toast';
 import { Skeleton } from '../../components/ui/skeleton';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
-
-const CATEGORIES = {
-  legal: { icon: FileText, color: '#3b82f6' },
-  financial: { icon: Briefcase, color: '#8b5cf6' },
-  insurance: { icon: Shield, color: '#06b6d4' },
-  property: { icon: Building, color: '#f59e0b' },
-  medical: { icon: Stethoscope, color: '#ef4444' },
-  personal: { icon: Heart, color: '#ec4899' },
-  government: { icon: Users, color: '#14b8a6' },
-  general: { icon: CheckSquare, color: '#6b7280' },
-};
 
 const priColors = { critical: '#ef4444', high: '#f97316', medium: '#eab308', low: '#22c55e' };
 
@@ -98,8 +87,6 @@ const BeneficiaryChecklistPage = () => {
       <div className="space-y-2">
         {checklists.sort((a, b) => a.order - b.order).map(item => {
           const color = priColors[item.priority] || priColors.medium;
-          const catDef = CATEGORIES[item.category] || CATEGORIES.general;
-          const CatIcon = catDef.icon;
 
           return (
             <div

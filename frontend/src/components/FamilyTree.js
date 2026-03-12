@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 
 /**
  * Static family tree — HTML/CSS based for reliable rendering.

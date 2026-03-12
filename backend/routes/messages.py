@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
 
 from config import db, logger
+from guards import require_benefactor_role
 from models import Message, MessageCreate, MessageUpdate
 from services.audit import audit_log
 from services.encryption import (
@@ -246,12 +247,7 @@ async def create_message(
     data: MessageCreate, current_user: dict = Depends(get_current_user)
 ):
     """Create a new milestone message with encrypted content."""
-    if current_user["role"] != "benefactor" and not current_user.get(
-        "is_also_benefactor"
-    ):
-        raise HTTPException(
-            status_code=403, detail="Only benefactors can create messages"
-        )
+    require_benefactor_role(current_user, "create messages")
 
     # Enforce subscription requirement
     from guards import get_subscription_access
@@ -401,12 +397,7 @@ async def update_message(
     message_id: str, data: MessageUpdate, current_user: dict = Depends(get_current_user)
 ):
     """Edit an existing message (benefactor only, before transition)"""
-    if current_user["role"] != "benefactor" and not current_user.get(
-        "is_also_benefactor"
-    ):
-        raise HTTPException(
-            status_code=403, detail="Only benefactors can edit messages"
-        )
+    require_benefactor_role(current_user, "edit messages")
 
     existing = await db.messages.find_one({"id": message_id}, {"_id": 0})
     if not existing:
@@ -500,12 +491,7 @@ async def delete_message(
     message_id: str, current_user: dict = Depends(get_current_user)
 ):
     """Delete a milestone message."""
-    if current_user["role"] != "benefactor" and not current_user.get(
-        "is_also_benefactor"
-    ):
-        raise HTTPException(
-            status_code=403, detail="Only benefactors can delete messages"
-        )
+    require_benefactor_role(current_user, "delete messages")
 
     message = await db.messages.find_one({"id": message_id}, {"_id": 0})
     if not message:

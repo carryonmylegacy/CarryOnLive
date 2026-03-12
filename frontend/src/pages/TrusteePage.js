@@ -71,53 +71,6 @@ const statusConfig = {
   ready: { label: 'Ready for Execution', color: 'var(--gn2)', bg: 'var(--gnbg)' },
 };
 
-const INITIAL_TASKS = [
-  {
-    id: 'dt1', title: 'Deliver Sealed Envelope & Funds to Maria Vasquez', type: 'delivery', status: 'approved', confidential: 'full', created: '2025-10-08',
-    desc: 'After verified transition, deliver the sealed envelope in Safe Deposit Box #214 (First National, Fairfax branch) and $15,000 cashier\'s check to Maria Vasquez at 1847 Elm Court, Arlington, VA 22201. No return address. Do not identify sender.',
-    lineItems: [
-      { id: 'li1', desc: 'Safe deposit box retrieval & notarized access', cost: 350, approved: true },
-      { id: 'li2', desc: "Cashier's check preparation ($15,000 face value)", cost: 15000, approved: true },
-      { id: 'li3', desc: 'Bonded courier delivery with signature confirmation', cost: 275, approved: true },
-      { id: 'li4', desc: 'Record sanitization & destruction', cost: 150, approved: true },
-    ],
-    paymentMethod: { last4: '6411', exp: '12/27', name: 'Pete Mitchell' },
-  },
-  {
-    id: 'dt2', title: 'Close 7 Personal Online Accounts', type: 'account_closure', status: 'quoted', confidential: 'full', created: '2025-10-15',
-    desc: 'Close the following accounts and delete all associated data, terminate billing, request data erasure (CCPA/GDPR). Credentials will be provided upon quote approval.',
-    lineItems: [
-      { id: 'li5', desc: 'Account closure — subscription services (3 accounts)', cost: 225, approved: null },
-      { id: 'li6', desc: 'Account closure — social/dating platforms (2 accounts)', cost: 300, approved: null },
-      { id: 'li7', desc: 'Account closure — messaging & email (2 accounts)', cost: 250, approved: null },
-      { id: 'li8', desc: 'CCPA/GDPR data erasure requests (all 7)', cost: 175, approved: null },
-      { id: 'li9', desc: 'Billing termination verification & documentation', cost: 100, approved: null },
-      { id: 'li10', desc: 'Record sanitization & destruction', cost: 150, approved: null },
-    ],
-    paymentMethod: null,
-  },
-  {
-    id: 'dt3', title: 'Wire Transfer to Offshore Trust Account', type: 'financial', status: 'ready', confidential: 'partial', created: '2025-11-01',
-    desc: 'Transfer $50,000 from Schwab Brokerage (Acct #7842-3319) to First Caribbean International Bank, Nassau, Bahamas. Account: Mitchell Family Irrevocable Trust (2019). Notify Robert Mitchell Sr. upon completion.',
-    lineItems: [
-      { id: 'li11', desc: 'Schwab liquidation coordination', cost: 200, approved: true },
-      { id: 'li12', desc: 'International wire transfer processing', cost: 75, approved: true },
-      { id: 'li13', desc: 'Transfer verification & receipt confirmation', cost: 125, approved: true },
-      { id: 'li14', desc: 'Designated party notification (Robert Mitchell Sr.)', cost: 50, approved: true },
-    ],
-    paymentMethod: { last4: '6411', exp: '12/27', name: 'Pete Mitchell' },
-    discloseTo: ['Robert Mitchell Sr.'],
-  },
-  {
-    id: 'dt4', title: 'Time-Delayed Letter to Children', type: 'delivery', status: 'submitted', confidential: 'timed', created: '2025-11-20',
-    desc: 'Five years after verified transition, mail the sealed letter (Trustee Vault #TV-009) to Jake and Sophie Mitchell at their current addresses. Letter contains personal disclosures to be shared only after sufficient time.',
-    lineItems: [],
-    paymentMethod: null,
-    timedRelease: '5 years post-transition',
-    discloseTo: ['Jake Mitchell', 'Sophie Mitchell'],
-  },
-];
-
 const HOW_IT_WORKS = [
   '1. Submit a request describing your task',
   '2. DTS team reviews & sends itemized quote',

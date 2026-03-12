@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import TrialBanner from '../components/TrialBanner';
 import OnboardingWizard from '../components/OnboardingWizard';
-import { ActivationCelebration } from '../components/GuidedActivation';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -32,8 +31,7 @@ const DashboardPage = () => {
   const [stats, setStats] = useState({ documents: 0, messages: 0, beneficiaries: 0 });
   const [readiness, setReadiness] = useState({ documents: { score: 0 }, messages: { score: 0 }, checklist: { score: 0 } });
   const [loading, setLoading] = useState(true);
-  const [showPaywall, setShowPaywall] = useState(false);
-  const [showCelebration, setShowCelebration] = useState(false);
+  const [, setShowCelebration] = useState(false);
   const [justCompletedActivation, setJustCompletedActivation] = useState(false);
   const [showGuidedFlow, setShowGuidedFlow] = useState(false);
   const [guidedStep, setGuidedStep] = useState(null);
@@ -121,11 +119,6 @@ const DashboardPage = () => {
         requestAnimationFrame(() => setDashboardReady(true));
       });
     }
-  };
-
-  const handleEstateChange = (newEstate) => { 
-    setEstate(newEstate); 
-    localStorage.setItem('selected_estate_id', newEstate.id); 
   };
 
   const completedTasks = checklists.filter(c => c.is_completed).length;

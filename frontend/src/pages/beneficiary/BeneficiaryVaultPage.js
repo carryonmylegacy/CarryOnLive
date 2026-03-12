@@ -2,15 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
-import { FolderLock, Lock, FileText, Search, ChevronLeft, Download, Eye, Loader2, X } from 'lucide-react';
-import { Button } from '../../components/ui/button';
+import { FolderLock, Lock, FileText, Search, ChevronLeft, Download, Eye, Loader2 } from 'lucide-react';
 import { Skeleton } from '../../components/ui/skeleton';
 import PDFViewerModal from '../../components/PDFViewerModal';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const BeneficiaryVaultPage = () => {
-  const { getAuthHeaders, token } = useAuth();
+  const { getAuthHeaders } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [documents, setDocuments] = useState([]);
@@ -21,7 +20,6 @@ const BeneficiaryVaultPage = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [downloading, setDownloading] = useState(null);
-  const [isTransitioned, setIsTransitioned] = useState(true);
 
   const PRE_TRANSITION_CATEGORIES = ['living_will', 'poa'];
 

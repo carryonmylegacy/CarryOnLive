@@ -145,7 +145,6 @@ const SupportChatPage = () => {
           <>
             {messages.map((msg, idx) => {
               const isMe = msg.sender_id === user?.id;
-              const isSupport = msg.sender_role === 'admin';
               
               return (
                 <div

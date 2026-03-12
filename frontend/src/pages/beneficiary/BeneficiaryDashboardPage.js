@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
-import { toast } from '../../utils/toast';
 import { Lock, FolderLock, MessageSquare, CheckSquare, ChevronRight, ChevronLeft, Users, Settings } from 'lucide-react';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Switch } from '../../components/ui/switch';

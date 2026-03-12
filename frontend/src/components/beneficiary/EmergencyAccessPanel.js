@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
 import {
-  AlertTriangle, Clock, CheckCircle, XCircle, Phone,
-  Send, Loader2, Shield, FileText, Info
+  AlertTriangle, Clock, CheckCircle, XCircle,
+  Send, Loader2, Shield, Info
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -21,7 +21,7 @@ const STATUS_CONFIG = {
 };
 
 const EmergencyAccessPanel = ({ estates }) => {
-  const { user, getAuthHeaders } = useAuth();
+  const { getAuthHeaders } = useAuth();
   const [requests, setRequests] = useState([]);
   const [activeAccess, setActiveAccess] = useState([]);
   const [loading, setLoading] = useState(true);

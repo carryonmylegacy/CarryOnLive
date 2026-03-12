@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
-import { Heart, CheckCircle2, Clock, Shield, Loader2, Eye, Lock, Users } from 'lucide-react';
+import { Heart, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;

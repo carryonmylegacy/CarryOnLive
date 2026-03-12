@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Shield, Loader2, Search, AlertTriangle, Info, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Shield, Loader2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';

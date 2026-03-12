@@ -16,7 +16,6 @@ import {
   LogOut,
   Moon,
   Sun,
-  FileKey,
   Home,
   Headphones,
   ShieldCheck,
@@ -79,7 +78,6 @@ const Sidebar = () => {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [benEstates, setBenEstates] = useState([]);
-  const [switcherOpen, setSwitcherOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('carryon_sidebar_collapsed') === 'true');
   // Dev portal switcher (founder only)
   const [devOpen, setDevOpen] = useState(false);
@@ -213,20 +211,6 @@ const Sidebar = () => {
     }
   }, [user]);
 
-  const activeEstateId = localStorage.getItem('beneficiary_estate_id');
-  const activeEstate = benEstates.find(e => e.id === activeEstateId);
-
-  const switchEstate = (estate) => {
-    localStorage.setItem('beneficiary_estate_id', estate.id);
-    setSwitcherOpen(false);
-    if (estate.status === 'transitioned') {
-      navigate('/beneficiary/dashboard');
-    } else {
-      navigate('/beneficiary/pre');
-    }
-    window.location.reload();
-  };
-
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -348,23 +332,6 @@ const Sidebar = () => {
     // Benefactor who is also a beneficiary — check path
     if (user?.role === 'benefactor' && window.location.pathname.startsWith('/beneficiary')) return beneficiaryNavSections;
     return benefactorNavSections;
-  };
-
-  const getUserInitials = () => {
-    if (user?.first_name && user?.last_name) {
-      return `${user.first_name[0]}${user.last_name[0]}`.toUpperCase();
-    }
-    if (user?.name) {
-      return user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-    }
-    return 'U';
-  };
-
-  const getUserDisplayName = () => {
-    if (user?.first_name && user?.last_name) {
-      return `${user.first_name} ${user.last_name}`;
-    }
-    return user?.name || 'User';
   };
 
   const getRoleLabel = () => {

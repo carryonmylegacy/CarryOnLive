@@ -22,7 +22,7 @@ import { Skeleton } from '../components/ui/skeleton';
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const TransitionPage = () => {
-  const { user, getAuthHeaders } = useAuth();
+  const { getAuthHeaders } = useAuth();
   const [estate, setEstate] = useState(null);
   const [transitionStatus, setTransitionStatus] = useState(null);
   const [loading, setLoading] = useState(true);

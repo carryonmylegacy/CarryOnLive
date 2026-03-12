@@ -1,10 +1,9 @@
 import React, { useState, createContext, useContext, useEffect, useCallback } from 'react';
-import { Lock, Unlock, Shield, Eye, EyeOff, Mic, MicOff, KeyRound, CheckCircle2, AlertTriangle, Loader2, HelpCircle, Square } from 'lucide-react';
+import { Lock, Unlock, Eye, EyeOff, Mic, KeyRound, CheckCircle2, Loader2, HelpCircle, Square } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from '../../utils/toast';
 import axios from 'axios';
 

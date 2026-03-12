@@ -82,3 +82,25 @@ async def require_account_not_locked(
             detail="This estate has been sealed following transition. No further changes are permitted.",
         )
     return current_user
+
+
+def require_benefactor_role(current_user: dict, action: str = "perform this action"):
+    """Verify user is a benefactor or has is_also_benefactor flag.
+
+    Used across all endpoints that restrict write access to benefactors.
+    Supports the cross-pollination model where beneficiaries can also be benefactors.
+    """
+    if current_user["role"] != "benefactor" and not current_user.get(
+        "is_also_benefactor"
+    ):
+        raise HTTPException(
+            status_code=403, detail=f"Only benefactors can {action}"
+        )
+
+
+def is_benefactor_or_admin(current_user: dict):
+    """Check if user is a benefactor, is_also_benefactor, or admin. Returns bool."""
+    return (
+        current_user["role"] in ("benefactor", "admin")
+        or current_user.get("is_also_benefactor")
+    )

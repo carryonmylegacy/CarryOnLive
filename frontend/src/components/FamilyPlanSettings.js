@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Crown, UserPlus, Shield, Trash2, Loader2, Star, ArrowRight } from 'lucide-react';
+import { Users, Crown, UserPlus, Trash2, Loader2, Star, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { toast } from '../utils/toast';
 import axios from 'axios';

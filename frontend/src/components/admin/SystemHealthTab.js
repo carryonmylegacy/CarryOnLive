@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Activity, Database, Shield, Users, AlertTriangle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
+import { Activity, Database, Shield, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { toast } from '../../utils/toast';
 

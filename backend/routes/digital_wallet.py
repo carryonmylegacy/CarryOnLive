@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from config import db
+from guards import require_benefactor_role
 from services.encryption import decrypt_field, encrypt_field, get_estate_salt
 from services.audit import audit_log
 from utils import get_current_user
@@ -122,12 +123,7 @@ async def create_digital_wallet_entry(
     data: DigitalWalletCreate, current_user: dict = Depends(get_current_user)
 ):
     """Create a new digital wallet entry."""
-    if current_user.get("role") != "benefactor" and not current_user.get(
-        "is_also_benefactor"
-    ):
-        raise HTTPException(
-            status_code=403, detail="Only benefactors can add digital wallet entries"
-        )
+    require_benefactor_role(current_user, "add digital wallet entries")
 
     estates = await db.estates.find(
         {"owner_id": current_user["id"]}, {"_id": 0}

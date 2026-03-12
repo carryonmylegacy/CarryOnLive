@@ -10,7 +10,7 @@ import { toast } from '../utils/toast';
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const SubscriptionPage = () => {
-  const { user, subscriptionStatus, refreshSubscription, token } = useAuth();
+  const { subscriptionStatus, refreshSubscription, token } = useAuth();
   const [showPaywall, setShowPaywall] = useState(false);
   const [confirmingPayment, setConfirmingPayment] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);

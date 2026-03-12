@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { cachedGet } from '../utils/apiCache';
 import { useAuth } from '../contexts/AuthContext';
@@ -45,7 +45,6 @@ const suggestedQuestions = [
 const MarkdownText = ({ content }) => {
   const lines = content.split('\n');
   const elements = [];
-  let inList = false;
   let listItems = [];
 
   const flushList = (key) => {
@@ -180,12 +179,9 @@ const actionButtons = [
 const GuardianPage = () => {
   const { user, getAuthHeaders } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const fromGettingStarted = location.state?.fromGettingStarted === true;
   const guardianRef = useRef(null);
   const [headerHeight, setHeaderHeight] = useState(48);
   const [isListening, setIsListening] = useState(false);
-  const [showOnboardingReturn, setShowOnboardingReturn] = useState(fromGettingStarted);
   const recognitionRef = useRef(null);
   const [guidedFlowDone, setGuidedFlowDone] = useState(true);
 
@@ -401,7 +397,6 @@ const GuardianPage = () => {
     setShowActions(false);
 
     const lastUserMessage = messageText;
-    const lastAction = action;
     const activeSessionId = overrideSessionId || sessionId;
 
     const displayText = action

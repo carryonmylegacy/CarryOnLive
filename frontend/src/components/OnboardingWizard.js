@@ -111,7 +111,6 @@ const OnboardingWizard = ({ onAllComplete }) => {
   // Determine which steps to show
   const allSteps = progress.steps || [];
   const incompleteSteps = allSteps.filter(s => !s.completed || popping[s.key]);
-  const completedSteps = allSteps.filter(s => s.completed);
   const allComplete = incompleteSteps.length === 0 && allSteps.length > 0;
 
   // Always show ONE step at a time until all are complete

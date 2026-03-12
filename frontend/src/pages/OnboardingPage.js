@@ -5,7 +5,7 @@ import axios from 'axios';
 import { cachedGet } from '../utils/apiCache';
 import {
   Users, Plus, ArrowRight, Loader2, CheckCircle, UserPlus,
-  Mail, Phone, Calendar, MapPin, ChevronDown, ChevronUp, X
+  ChevronDown, ChevronUp
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';

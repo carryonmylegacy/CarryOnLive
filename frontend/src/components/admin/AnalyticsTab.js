@@ -221,7 +221,7 @@ export const AnalyticsTab = ({ getAuthHeaders }) => {
           onClick={async () => {
             setSendingDigest(true);
             try {
-              const res = await axios.post(`${API_URL}/admin/analytics-digest/send`, {}, { headers });
+              await axios.post(`${API_URL}/admin/analytics-digest/send`, {}, { headers });
               // toast removed
             } catch (err) { toast.error(err.response?.data?.detail || 'Failed to send digest'); }
             setSendingDigest(false);

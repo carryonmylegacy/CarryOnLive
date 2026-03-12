@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Bell, BellOff, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Switch } from '../components/ui/switch';
 import { toast } from '../utils/toast';

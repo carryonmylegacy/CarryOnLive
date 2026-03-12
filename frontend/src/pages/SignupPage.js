@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Mail, Lock, Eye, EyeOff, Loader2, ArrowLeft, ArrowRight,
-  AlertCircle, CheckSquare, Shield, ChevronRight, User, Calendar,
+  AlertCircle, CheckSquare, Shield, ChevronRight, User,
   Users, Check, MapPin, Heart, Award
 } from 'lucide-react';
 import { Button } from '../components/ui/button';

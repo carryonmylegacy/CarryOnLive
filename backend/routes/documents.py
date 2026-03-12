@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, Upl
 from pydantic import BaseModel
 
 from config import db, logger
+from guards import require_benefactor_role
 from models import Document, DocumentUnlockRequest
 from services.audit import audit_log
 from services.encryption import (
@@ -158,12 +159,7 @@ async def upload_document(
             status_code=403,
             detail="Your free trial has ended. Subscribe to continue uploading documents. Your existing documents are still accessible.",
         )
-    if current_user["role"] != "benefactor" and not current_user.get(
-        "is_also_benefactor"
-    ):
-        raise HTTPException(
-            status_code=403, detail="Only benefactors can upload documents"
-        )
+    require_benefactor_role(current_user, "upload documents")
 
     # Verify user owns this estate
     estate = await db.estates.find_one(
@@ -908,12 +904,7 @@ async def setup_voice_passphrase(
     document_id: str, passphrase: str, current_user: dict = Depends(get_current_user)
 ):
     """Set up voice verification passphrase for a document"""
-    if current_user["role"] != "benefactor" and not current_user.get(
-        "is_also_benefactor"
-    ):
-        raise HTTPException(
-            status_code=403, detail="Only benefactors can set up voice verification"
-        )
+    require_benefactor_role(current_user, "set up voice verification")
 
     document = await db.documents.find_one({"id": document_id}, {"_id": 0})
     if not document:
@@ -985,12 +976,7 @@ async def delete_document(
     document_id: str, current_user: dict = Depends(get_current_user)
 ):
     """Delete a document from the vault."""
-    if current_user["role"] != "benefactor" and not current_user.get(
-        "is_also_benefactor"
-    ):
-        raise HTTPException(
-            status_code=403, detail="Only benefactors can delete documents"
-        )
+    require_benefactor_role(current_user, "delete documents")
 
     document = await db.documents.find_one({"id": document_id}, {"_id": 0})
     if not document:
@@ -1036,12 +1022,7 @@ async def update_document(
     notes: str = Form(None),
 ):
     """Update document metadata (name, category, notes)"""
-    if current_user["role"] != "benefactor" and not current_user.get(
-        "is_also_benefactor"
-    ):
-        raise HTTPException(
-            status_code=403, detail="Only benefactors can update documents"
-        )
+    require_benefactor_role(current_user, "update documents")
 
     doc = await db.documents.find_one({"id": document_id}, {"_id": 0})
     if not doc:

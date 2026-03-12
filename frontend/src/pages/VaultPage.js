@@ -17,7 +17,6 @@ import {
   Shield,
   File,
   FileImage,
-  FileVideo,
   FileArchive,
   Key,
   Copy,
@@ -32,7 +31,7 @@ import {
   Edit2,
   Heart
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -65,7 +64,7 @@ const categories = [
 ];
 
 const VaultPage = () => {
-  const { user, getAuthHeaders, token } = useAuth();
+  const { user, getAuthHeaders } = useAuth();
   const navigate = useNavigate();
   const [documents, setDocuments] = useState([]);
   const [estate, setEstate] = useState(null);
@@ -79,7 +78,6 @@ const VaultPage = () => {
   const [showLockModal, setShowLockModal] = useState(false);
   const [showBackupCodeModal, setShowBackupCodeModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [showVoiceSetupModal, setShowVoiceSetupModal] = useState(false);
   const [showSetLockModal, setShowSetLockModal] = useState(false);
   const [showRemoveLockConfirm, setShowRemoveLockConfirm] = useState(false);
   const [newLockPassword, setNewLockPassword] = useState('');
@@ -100,7 +98,6 @@ const VaultPage = () => {
   
   // Voice verification state
   const [isListening, setIsListening] = useState(false);
-  const [voicePassphrase, setVoicePassphrase] = useState('');
   const [spokenText, setSpokenText] = useState('');
   const [voiceHint, setVoiceHint] = useState('');
   const recognitionRef = useRef(null);
@@ -610,13 +607,6 @@ const VaultPage = () => {
     } finally {
       setUnlocking(false);
     }
-  };
-
-  const getFileIcon = (fileType) => {
-    if (fileType?.includes('image')) return FileImage;
-    if (fileType?.includes('video')) return FileVideo;
-    if (fileType?.includes('zip') || fileType?.includes('archive')) return FileArchive;
-    return FileText;
   };
 
   const formatFileSize = (bytes) => {

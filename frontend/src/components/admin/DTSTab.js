@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Shield, Clock, CheckCircle2, XCircle, Loader2, Package, Lock,
-  DollarSign, Mail, Flame, ChevronRight, Search, Trash2, AlertTriangle, Eye, EyeOff, RotateCcw, UserPlus
+  DollarSign, Mail, Flame, ChevronRight, Search, Trash2, AlertTriangle, Eye, EyeOff, RotateCcw
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
