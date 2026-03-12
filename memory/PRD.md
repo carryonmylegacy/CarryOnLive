@@ -16,7 +16,17 @@ AI-powered estate planning platform (CarryOn) with multi-portal architecture: Be
 
 ## What's Been Implemented
 
-### Session: March 11, 2026 (Current)
+### Session: March 12, 2026 (Current)
+
+**Bug Fix: Benefactor Photo Not Showing in Beneficiary Portal**
+- Fixed photo display in beneficiary hub when benefactor's photo wasn't rendering (showed initials instead)
+- Root cause: Field name mismatch between `family-connections` API (`photo_url`) and `estates` API (`owner_photo_url`). When `family-connections` returned empty, the fallback to estates data failed to render photos because OrbitVisualization and family list only checked `photo_url`.
+- Frontend fixes in `BeneficiaryHubPage.js`: Normalized `owner_photo_url` → `photo_url` in estates fallback mapping; preferred `benefactor_name` over estate name in family list
+- Frontend fix in `OrbitVisualization.js`: Added `owner_photo_url` fallback check for photo rendering
+- Backend fix in `estates.py`: `create-estate` endpoint now sets `is_also_beneficiary: true` on existing users enrolled as beneficiaries
+- Testing: 100% pass rate (8/8 backend, all frontend photo rendering verified)
+
+### Session: March 11, 2026
 
 **Operator Portal Enhancements - Dynamic Dashboard & Permissions:**
 - New `/api/ops/dashboard-events` endpoint: Aggregates 6 event types (TVT, Milestones, DTS, Emergency, P1 Emergency, Support)
@@ -78,7 +88,7 @@ AI-powered estate planning platform (CarryOn) with multi-portal architecture: Be
 ## Prioritized Backlog
 
 ### P0
-- User verification of operator dashboard features (tiles, team activity, permissions)
+- None
 
 ### P1
 - Finalize Share Extension Setup (Xcode, see /app/memory/SHARE_EXTENSION_SETUP.md)
@@ -88,10 +98,13 @@ AI-powered estate planning platform (CarryOn) with multi-portal architecture: Be
 - ESLint code cleanup (non-critical warnings)
 - Review beneficiary settings page for race condition (one-time flash glitch)
 - AdminPage.js refactoring (growing complexity)
+- beneficiaries.py: Abstract repeated role checks into utility
+- UsersTab.js: Split into smaller components
 
 ## Key Accounts
 - Founder/Admin: info@carryon.us / Demo1234!
 - Test Benefactor: fulltest@test.com / Password.123
+- Test Spouse Benefactor: spouse@test.com / Password.123
 
 ## Key Files
 - backend/routes/ops_dashboard.py (dashboard-events, team-tasks, ops dashboard endpoints)
