@@ -516,7 +516,7 @@ async def upload_beneficiary_photo(
     current_user: dict = Depends(get_current_user),
 ):
     """Upload a profile photo for a beneficiary. Resizes to 200x200 and stores as base64."""
-    if current_user["role"] not in ("benefactor", "admin"):
+    if current_user["role"] not in ("benefactor", "admin") and not current_user.get("is_also_benefactor"):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     beneficiary = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0})
@@ -589,7 +589,7 @@ async def delete_beneficiary_photo(
     beneficiary_id: str, current_user: dict = Depends(get_current_user)
 ):
     """Remove the profile photo for a beneficiary."""
-    if current_user["role"] not in ("benefactor", "admin"):
+    if current_user["role"] not in ("benefactor", "admin") and not current_user.get("is_also_benefactor"):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     await db.beneficiaries.update_one(
