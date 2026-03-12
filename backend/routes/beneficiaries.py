@@ -47,7 +47,7 @@ async def get_beneficiaries(
     if user_ids:
         users_with_photos = {}
         async for u in db.users.find(
-            {"id": {"$in": user_ids}, "photo_url": {"$exists": True, "$ne": ""}},
+            {"id": {"$in": user_ids}, "photo_url": {"$exists": True, "$nin": [None, ""]}},
             {"_id": 0, "id": 1, "photo_url": 1},
         ):
             users_with_photos[u["id"]] = u["photo_url"]
