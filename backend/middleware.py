@@ -5,7 +5,8 @@ Rate limiting, security headers, request tracing, and CORS configuration.
 import os
 import time
 import uuid
-from collections import defaultdict
+from collections import defaultdict, deque
+from datetime import datetime, timezone
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -14,8 +15,79 @@ from starlette.middleware.cors import CORSMiddleware
 from config import logger
 
 
+# ── API Metrics Tracker ──────────────────────────────────────────────
+class APIMetrics:
+    """In-memory API performance metrics tracker."""
+
+    def __init__(self, window_size=1000):
+        self.start_time = datetime.now(timezone.utc)
+        self.total_requests = 0
+        self.error_4xx = 0
+        self.error_5xx = 0
+        self.response_times = deque(maxlen=window_size)  # last N response times
+        self.endpoint_times = defaultdict(lambda: deque(maxlen=100))  # per-endpoint
+
+    def record(self, path, status_code, elapsed_ms):
+        self.total_requests += 1
+        self.response_times.append(elapsed_ms)
+        if 400 <= status_code < 500:
+            self.error_4xx += 1
+        elif status_code >= 500:
+            self.error_5xx += 1
+        # Track top endpoints
+        clean_path = path.split("?")[0]
+        self.endpoint_times[clean_path].append(elapsed_ms)
+
+    def get_summary(self):
+        times = list(self.response_times)
+        uptime_seconds = (datetime.now(timezone.utc) - self.start_time).total_seconds()
+        avg_ms = round(sum(times) / len(times), 1) if times else 0
+        p95_ms = round(sorted(times)[int(len(times) * 0.95)] if len(times) >= 20 else max(times, default=0), 1)
+        p99_ms = round(sorted(times)[int(len(times) * 0.99)] if len(times) >= 100 else max(times, default=0), 1)
+
+        # Top 5 slowest endpoints
+        slowest = []
+        for path, etimes in self.endpoint_times.items():
+            if len(etimes) >= 3:
+                avg = round(sum(etimes) / len(etimes), 1)
+                slowest.append({"path": path, "avg_ms": avg, "calls": len(etimes)})
+        slowest.sort(key=lambda x: x["avg_ms"], reverse=True)
+
+        return {
+            "uptime_seconds": int(uptime_seconds),
+            "uptime_formatted": self._format_uptime(uptime_seconds),
+            "total_requests": self.total_requests,
+            "error_4xx": self.error_4xx,
+            "error_5xx": self.error_5xx,
+            "error_rate_pct": round((self.error_5xx / max(self.total_requests, 1)) * 100, 2),
+            "avg_response_ms": avg_ms,
+            "p95_response_ms": p95_ms,
+            "p99_response_ms": p99_ms,
+            "sample_size": len(times),
+            "slowest_endpoints": slowest[:5],
+            "started_at": self.start_time.isoformat(),
+        }
+
+    @staticmethod
+    def _format_uptime(seconds):
+        days = int(seconds // 86400)
+        hours = int((seconds % 86400) // 3600)
+        minutes = int((seconds % 3600) // 60)
+        parts = []
+        if days > 0:
+            parts.append(f"{days}d")
+        if hours > 0:
+            parts.append(f"{hours}h")
+        parts.append(f"{minutes}m")
+        return " ".join(parts)
+
+
+# Global metrics instance
+api_metrics = APIMetrics()
+
+
 class RequestTraceMiddleware(BaseHTTPMiddleware):
-    """Attach a unique request ID and log structured request/response info."""
+    """Attach a unique request ID, log structured info, and track API metrics."""
 
     async def dispatch(self, request: Request, call_next):
         request_id = request.headers.get("x-request-id", str(uuid.uuid4())[:8])
@@ -35,6 +107,8 @@ class RequestTraceMiddleware(BaseHTTPMiddleware):
                 response.status_code,
                 elapsed_ms,
             )
+            # Track metrics
+            api_metrics.record(path, response.status_code, elapsed_ms)
 
         response.headers["X-Request-Id"] = request_id
         return response

@@ -36,11 +36,17 @@ AI-powered estate planning platform (CarryOn) with multi-portal architecture: Be
 - Extracted `OpsWorkTiles` → `components/admin/OpsWorkTiles.js`
 - Extracted `TeamActivitySection` → `components/admin/TeamActivitySection.js`
 - Extracted `ActionRequired` + `PlatformOverview` → `components/admin/PlatformOverview.js`
+- Added `CodeHealthTile` → `components/admin/CodeHealthTile.js` (new feature)
 - 51% line reduction, all behavior preserved
 
 **P2: UsersTab.js Refactoring (775 → 699 lines)**
 - Extracted `DeleteUserModal` → `components/admin/DeleteUserModal.js`
 - Removed unused `handleRoleChange` function and state variables
+
+**New Feature: Code Health Dashboard Tile**
+- Added API metrics tracking middleware (`middleware.py` → `APIMetrics` class)
+- New endpoint `GET /api/admin/code-health` — returns grade (A-D), score, API performance (avg/p95/p99), error rates, uptime, database stats, slowest endpoints
+- Frontend `CodeHealthTile` on Founder Dashboard — expandable card showing health grade, response times, error rate, DB status, test pass rate
 
 **Testing: 100% pass rate** (13/14 backend, 1 skipped; all frontend UI tests pass)
 

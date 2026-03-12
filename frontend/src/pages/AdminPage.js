@@ -16,6 +16,7 @@ import { RevenuePanel } from '../components/admin/RevenuePanel';
 import { OpsWorkTiles } from '../components/admin/OpsWorkTiles';
 import { TeamActivitySection } from '../components/admin/TeamActivitySection';
 import { ActionRequired, PlatformOverview } from '../components/admin/PlatformOverview';
+import { CodeHealthTile } from '../components/admin/CodeHealthTile';
 
 
 import { UsersTab } from '../components/admin/UsersTab';
@@ -283,6 +284,9 @@ const AdminPage = ({ operatorMode = false }) => {
 
       {/* Platform Overview — founder only */}
       {!operatorMode && stats && <PlatformOverview stats={stats} />}
+
+      {/* Code Health — founder only */}
+      {!operatorMode && <CodeHealthTile getAuthHeaders={getAuthHeaders} />}
 
       {/* Tabs */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide" data-testid="admin-tab-bar" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
