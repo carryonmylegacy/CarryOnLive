@@ -263,7 +263,9 @@ class CreateEstateRequest(BaseModel):
     """Request to create an estate for an existing authenticated user."""
 
     beneficiary_enrollments: list = []  # [{first_name, last_name, email, dob, relation, ...}]
-    special_status: list | None = None  # ['military', 'veteran', 'hospice', 'enterprise', ...]
+    special_status: list | None = (
+        None  # ['military', 'veteran', 'hospice', 'enterprise', ...]
+    )
     b2b_code: str | None = None
 
 
