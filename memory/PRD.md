@@ -18,6 +18,34 @@ AI-powered estate planning platform (CarryOn) with multi-portal architecture: Be
 
 ### Session: March 12, 2026 (Current)
 
+**P2: Backend RBAC Refactoring**
+- Extracted repetitive role checks into shared utility functions in `guards.py`:
+  - `require_benefactor_role(current_user, action)` — raises 403 if not benefactor/is_also_benefactor
+  - `is_benefactor_or_admin(current_user)` — returns bool for compound checks
+- Refactored 7 route files (beneficiaries.py, messages.py, documents.py, checklist.py, digital_wallet.py, dts.py, estates.py) to use these utilities
+- All inline role checks replaced with single-function calls — DRY, consistent, maintainable
+
+**P2: ESLint Code Cleanup**
+- Reduced ESLint warnings from 186 to ~17 across the entire frontend codebase
+- Removed unused imports, variables, functions across 30+ files
+- Remaining warnings are framework-level (import order in App.js, Shadcn UI a11y, hook dependencies)
+
+**P2: AdminPage.js Refactoring (708 → 344 lines)**
+- Extracted `useScrollLock` custom hook → `hooks/useScrollLock.js`
+- Extracted `RevenuePanel` → `components/admin/RevenuePanel.js`
+- Extracted `OpsWorkTiles` → `components/admin/OpsWorkTiles.js`
+- Extracted `TeamActivitySection` → `components/admin/TeamActivitySection.js`
+- Extracted `ActionRequired` + `PlatformOverview` → `components/admin/PlatformOverview.js`
+- 51% line reduction, all behavior preserved
+
+**P2: UsersTab.js Refactoring (775 → 699 lines)**
+- Extracted `DeleteUserModal` → `components/admin/DeleteUserModal.js`
+- Removed unused `handleRoleChange` function and state variables
+
+**Testing: 100% pass rate** (13/14 backend, 1 skipped; all frontend UI tests pass)
+
+### Previous Session: March 12, 2026
+
 **Bug Fix: Benefactor Photo Not Showing in Beneficiary Portal**
 - Fixed photo display in beneficiary hub when benefactor's photo wasn't rendering (showed initials instead)
 - Root cause: Field name mismatch between `family-connections` API (`photo_url`) and `estates` API (`owner_photo_url`). When `family-connections` returned empty, the fallback to estates data failed to render photos because OrbitVisualization and family list only checked `photo_url`.
@@ -102,11 +130,8 @@ AI-powered estate planning platform (CarryOn) with multi-portal architecture: Be
 - Twilio SMS OTP Integration (blocked on A2P 10DLC approval)
 
 ### P2
-- ESLint code cleanup (non-critical warnings)
 - Review beneficiary settings page for race condition (one-time flash glitch)
-- AdminPage.js refactoring (growing complexity)
-- beneficiaries.py: Abstract repeated role checks into utility
-- UsersTab.js: Split into smaller components
+- Scalability enhancements (horizontal scaling prep, background workers, CDN)
 
 ## Key Accounts
 - Founder/Admin: info@carryon.us / Demo1234!
@@ -114,10 +139,17 @@ AI-powered estate planning platform (CarryOn) with multi-portal architecture: Be
 - Test Spouse Benefactor: spouse@test.com / Password.123
 
 ## Key Files
+- backend/guards.py (require_benefactor_role, is_benefactor_or_admin utilities)
 - backend/routes/ops_dashboard.py (dashboard-events, team-tasks, ops dashboard endpoints)
 - backend/routes/admin.py (stats with milestone/emergency/p1/escalation counts)
 - backend/routes/operators.py (operator CRUD with role-based permissions)
-- frontend/src/pages/AdminPage.js (operator tiles, team activity, tab filtering)
+- frontend/src/pages/AdminPage.js (refactored — uses extracted components)
+- frontend/src/components/admin/RevenuePanel.js (revenue analytics display)
+- frontend/src/components/admin/OpsWorkTiles.js (operator work queue tiles)
+- frontend/src/components/admin/TeamActivitySection.js (manager team overview)
+- frontend/src/components/admin/PlatformOverview.js (ActionRequired + PlatformOverview)
+- frontend/src/components/admin/DeleteUserModal.js (extracted from UsersTab)
+- frontend/src/hooks/useScrollLock.js (tab scroll position preservation)
 - frontend/src/components/admin/OperatorsTab.js (delete/edit with permission controls)
 - frontend/src/components/admin/SubscriptionsTab.js (operatorMode hides pricing)
 - frontend/src/components/layout/Sidebar.js (nav structure per role)
