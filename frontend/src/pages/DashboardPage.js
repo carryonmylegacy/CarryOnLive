@@ -31,7 +31,7 @@ const DashboardPage = () => {
   const [stats, setStats] = useState({ documents: 0, messages: 0, beneficiaries: 0 });
   const [readiness, setReadiness] = useState({ documents: { score: 0 }, messages: { score: 0 }, checklist: { score: 0 } });
   const [loading, setLoading] = useState(true);
-  const [, setShowCelebration] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
   const [justCompletedActivation, setJustCompletedActivation] = useState(false);
   const [showGuidedFlow, setShowGuidedFlow] = useState(false);
   const [guidedStep, setGuidedStep] = useState(null);

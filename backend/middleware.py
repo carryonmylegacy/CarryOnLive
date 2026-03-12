@@ -42,8 +42,18 @@ class APIMetrics:
         times = list(self.response_times)
         uptime_seconds = (datetime.now(timezone.utc) - self.start_time).total_seconds()
         avg_ms = round(sum(times) / len(times), 1) if times else 0
-        p95_ms = round(sorted(times)[int(len(times) * 0.95)] if len(times) >= 20 else max(times, default=0), 1)
-        p99_ms = round(sorted(times)[int(len(times) * 0.99)] if len(times) >= 100 else max(times, default=0), 1)
+        p95_ms = round(
+            sorted(times)[int(len(times) * 0.95)]
+            if len(times) >= 20
+            else max(times, default=0),
+            1,
+        )
+        p99_ms = round(
+            sorted(times)[int(len(times) * 0.99)]
+            if len(times) >= 100
+            else max(times, default=0),
+            1,
+        )
 
         # Top 5 slowest endpoints
         slowest = []
@@ -59,7 +69,9 @@ class APIMetrics:
             "total_requests": self.total_requests,
             "error_4xx": self.error_4xx,
             "error_5xx": self.error_5xx,
-            "error_rate_pct": round((self.error_5xx / max(self.total_requests, 1)) * 100, 2),
+            "error_rate_pct": round(
+                (self.error_5xx / max(self.total_requests, 1)) * 100, 2
+            ),
             "avg_response_ms": avg_ms,
             "p95_response_ms": p95_ms,
             "p99_response_ms": p99_ms,

@@ -35,6 +35,7 @@ const DigitalWalletPage = () => {
   const [showAdd, setShowAdd] = useState(false);
   const [editEntry, setEditEntry] = useState(null);
   const [visiblePasswords, setVisiblePasswords] = useState({});
+  const [estateId, setEstateId] = useState(null);
   const [showReturnPopup, setShowReturnPopup] = useState(false);
 
   useEffect(() => { fetchData(); }, []); // eslint-disable-line react-hooks/exhaustive-deps

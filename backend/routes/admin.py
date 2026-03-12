@@ -1608,7 +1608,13 @@ async def get_code_health(current_user: dict = Depends(get_current_user)):
             "indexes": db_stats.get("indexes", 0),
         }
     except Exception:
-        db_health = {"status": "error", "collections": 0, "data_size_mb": 0, "storage_size_mb": 0, "indexes": 0}
+        db_health = {
+            "status": "error",
+            "collections": 0,
+            "data_size_mb": 0,
+            "storage_size_mb": 0,
+            "indexes": 0,
+        }
 
     # Compute health scores
     error_rate = metrics["error_rate_pct"]

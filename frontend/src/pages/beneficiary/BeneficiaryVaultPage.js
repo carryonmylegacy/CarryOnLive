@@ -20,6 +20,7 @@ const BeneficiaryVaultPage = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [downloading, setDownloading] = useState(null);
+  const [isTransitioned, setIsTransitioned] = useState(true);
 
   const PRE_TRANSITION_CATEGORIES = ['living_will', 'poa'];
 
