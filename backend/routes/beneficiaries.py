@@ -40,6 +40,21 @@ async def get_beneficiaries(
     for b in beneficiaries:
         if "dob" in b and "date_of_birth" not in b:
             b["date_of_birth"] = b.pop("dob")
+
+    # Enrich photo_url: if the beneficiary has a linked user account with a profile
+    # photo but no photo on the beneficiary record, use the user's photo as fallback
+    user_ids = [b["user_id"] for b in beneficiaries if b.get("user_id") and not b.get("photo_url")]
+    if user_ids:
+        users_with_photos = {}
+        async for u in db.users.find(
+            {"id": {"$in": user_ids}, "photo_url": {"$exists": True, "$ne": ""}},
+            {"_id": 0, "id": 1, "photo_url": 1},
+        ):
+            users_with_photos[u["id"]] = u["photo_url"]
+        for b in beneficiaries:
+            if not b.get("photo_url") and b.get("user_id") in users_with_photos:
+                b["photo_url"] = users_with_photos[b["user_id"]]
+
     # Sort by sort_order (fallback to created_at for records without sort_order)
     beneficiaries.sort(
         key=lambda b: (b.get("sort_order", 999), b.get("created_at", ""))
@@ -94,20 +109,17 @@ async def create_beneficiary(
     )
     await db.beneficiaries.insert_one(beneficiary.model_dump())
 
-    # Add to estate's beneficiary list if user exists
-    existing_user = await db.users.find_one({"email": data.email}, {"_id": 0})
+    # If a user with this email already exists, pre-link user_id
+    # but do NOT auto-accept the invitation — let the benefactor manage it normally
+    existing_user = await db.users.find_one(
+        {"email": data.email.lower().strip()}, {"_id": 0}
+    )
     if existing_user:
-        await db.estates.update_one(
-            {"id": data.estate_id},
-            {"$addToSet": {"beneficiaries": existing_user["id"]}},
-        )
-        # Mark as accepted if they already have an account
         await db.beneficiaries.update_one(
             {"id": beneficiary.id},
-            {"$set": {"user_id": existing_user["id"], "invitation_status": "accepted"}},
+            {"$set": {"user_id": existing_user["id"]}},
         )
         beneficiary.user_id = existing_user["id"]
-        beneficiary.invitation_status = "accepted"
 
     # Log activity
     await log_activity(

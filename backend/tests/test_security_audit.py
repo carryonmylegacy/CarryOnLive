@@ -10,7 +10,7 @@ import os
 import uuid
 
 BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://benefactor-portal.preview.emergentagent.com"
+    "REACT_APP_BACKEND_URL", "https://photo-lockout-fix.preview.emergentagent.com"
 ).rstrip("/")
 
 # Test credentials from problem statement
