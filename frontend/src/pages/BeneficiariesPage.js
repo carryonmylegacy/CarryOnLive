@@ -54,11 +54,11 @@ import { Switch } from '../components/ui/switch';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
 import { PhotoPicker } from '../components/PhotoPicker';
+import { AvatarCircle } from '../components/AvatarCircle';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import DateMaskInput from '../components/DateMaskInput';
 import SlidePanel from '../components/SlidePanel';
 import FamilyTree from '../components/FamilyTree';
-import { resolvePhotoUrl } from '../utils/photoUrl';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -138,6 +138,8 @@ const BeneficiariesPage = () => {
   const [sectionPerms, setSectionPerms] = useState({});
   const [savingPerms, setSavingPerms] = useState(null);
   const [benEstates, setBenEstates] = useState([]);
+  const [quickUploadBenId, setQuickUploadBenId] = useState(null);
+  const quickFileRef = React.useRef(null);
 
   const SECTION_LABELS = {
     vault: 'Secure Document Vault (SDV)',
@@ -199,6 +201,20 @@ const BeneficiariesPage = () => {
       toast.error('Photo saved but face upload failed — you can retry from edit');
     } finally {
       setUploadingPhoto(null);
+    }
+  };
+
+  const handleQuickPhotoUpload = async (file, benId) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      await axios.post(`${API_URL}/beneficiaries/${benId}/photo`, formData, {
+        ...getAuthHeaders(),
+        headers: { ...getAuthHeaders().headers, 'Content-Type': 'multipart/form-data' }
+      });
+      fetchData();
+    } catch {
+      toast.error('Photo upload failed — try again from edit');
     }
   };
 
@@ -521,6 +537,10 @@ const BeneficiariesPage = () => {
               onSelectBeneficiary={(ben) => {
                 openEditModal(ben);
               }}
+              onUploadPhoto={(benId) => {
+                setQuickUploadBenId(benId);
+                setTimeout(() => quickFileRef.current?.click(), 50);
+              }}
             />
             {benEstates.length > 0 && (
               <p className="text-[9px] text-[var(--t5)] text-center mt-1">
@@ -543,21 +563,20 @@ const BeneficiariesPage = () => {
                         <div className="drag-handle cursor-grab active:cursor-grabbing flex items-center text-[var(--t5)] hover:text-[var(--t3)] transition-colors touch-none" data-testid={`drag-handle-${ben.id}`}>
                           <GripVertical className="w-4 h-4" />
                         </div>
-                        <div
-                          className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold overflow-hidden"
-                          style={{
-                            backgroundColor: ben.photo_url ? 'transparent' : ben.avatar_color + '30',
-                            color: ben.avatar_color
+                        <AvatarCircle
+                          photo={ben.photo_url}
+                          initials={ben.initials || (ben.first_name && ben.last_name 
+                            ? (ben.first_name[0] + ben.last_name[0]).toUpperCase()
+                            : ben.name?.split(' ').map(n => n[0]).join('').toUpperCase())}
+                          color={ben.avatar_color}
+                          size={60}
+                          isPrimary={ben.is_primary}
+                          onUpload={() => {
+                            setQuickUploadBenId(ben.id);
+                            setTimeout(() => quickFileRef.current?.click(), 50);
                           }}
-                        >
-                      {ben.photo_url ? (
-                        <img src={resolvePhotoUrl(ben.photo_url)} alt={ben.name} className="w-full h-full object-cover" />
-                      ) : (
-                        ben.initials || (ben.first_name && ben.last_name 
-                          ? (ben.first_name[0] + ben.last_name[0]).toUpperCase()
-                          : ben.name?.split(' ').map(n => n[0]).join('').toUpperCase())
-                      )}
-                    </div>
+                          testId={`ben-avatar-${ben.id}`}
+                        />
                     <div>
                       <h3 className="text-[var(--t)] font-semibold text-lg">{ben.name}</h3>
                       <p className="text-[#d4af37] text-sm">{ben.relation}</p>
@@ -1157,6 +1176,21 @@ const BeneficiariesPage = () => {
       {showPrimaryPopup && (
         <ReturnPopup step="primary" onReturn={() => { setShowPrimaryPopup(false); navigate('/dashboard'); }} />
       )}
+      {/* Hidden file input for quick avatar photo upload */}
+      <input
+        ref={quickFileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file && quickUploadBenId) {
+            handleQuickPhotoUpload(file, quickUploadBenId);
+            setQuickUploadBenId(null);
+          }
+          e.target.value = '';
+        }}
+      />
     </div>
   );
 };

@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
-import { ChevronRight } from 'lucide-react';
+import { Camera, ChevronRight, Pencil, X } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
 import OrbitVisualization from '../../components/estate/OrbitVisualization';
 import EmergencyAccessPanel from '../../components/beneficiary/EmergencyAccessPanel';
@@ -46,6 +47,9 @@ const BeneficiaryHubPage = () => {
   const [familyConnections, setFamilyConnections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [myPhoto, setMyPhoto] = useState(null);
+  const [showPhotoEditor, setShowPhotoEditor] = useState(false);
+  const [editingConnectionId, setEditingConnectionId] = useState(null);
+  const photoEditorFileRef = React.useRef(null);
 
   useEffect(() => { fetchData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -71,6 +75,24 @@ const BeneficiaryHubPage = () => {
   };
 
   const firstName = user?.name?.split(' ')[0] || 'there';
+
+  const handleBenefactorPhotoChange = async (file, estateId) => {
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result.split(',')[1];
+        await axios.put(`${API_URL}/beneficiary/display-override`, {
+          estate_id: estateId,
+          owner_photo_url: `data:image/jpeg;base64,${base64}`,
+        }, getAuthHeaders());
+        fetchData();
+        setShowPhotoEditor(false);
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      // silent
+    }
+  };
 
   if (loading) {
     return (
@@ -118,7 +140,81 @@ const BeneficiaryHubPage = () => {
         />
       )}
 
-      {/* Estate Cards */}
+      {/* Change Benefactor Photos button */}
+      {(familyConnections.length > 0 || estates.length > 0) && (
+        <div className="text-center mb-6">
+          <button
+            onClick={() => setShowPhotoEditor(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors"
+            style={{ background: 'var(--s)', border: '1px solid var(--b2)', color: 'var(--t3)' }}
+            data-testid="change-benefactor-photos-btn"
+          >
+            <Camera className="w-3.5 h-3.5" />
+            Change Benefactor Photos
+          </button>
+        </div>
+      )}
+
+      {/* Benefactor Photo Editor Panel */}
+      {showPhotoEditor && (
+        <div className="max-w-md mx-auto mb-6 rounded-xl p-4" style={{ background: 'var(--bg2)', border: '1px solid var(--b2)' }} data-testid="benefactor-photo-editor">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-[var(--t)]">Change Benefactor Photos</h3>
+            <button onClick={() => setShowPhotoEditor(false)} className="p-1 rounded-lg hover:bg-[var(--s)]">
+              <X className="w-4 h-4 text-[var(--t4)]" />
+            </button>
+          </div>
+          <p className="text-xs text-[var(--t4)] mb-4">These changes only affect how benefactors appear on your dashboard.</p>
+          <div className="space-y-3">
+            {(familyConnections.length > 0 ? familyConnections : estates).map((conn) => {
+              const name = conn.benefactor_name || conn.name || 'Unknown';
+              const photo = conn.photo_url || conn.owner_photo_url || conn.estate_photo_url || '';
+              const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+              const estateId = conn.estate_id || conn.id;
+              return (
+                <div key={estateId} className="flex items-center gap-3 p-2 rounded-lg" style={{ background: 'var(--s)' }}>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0"
+                    style={{ background: photo ? 'transparent' : 'var(--b2)', border: '2px solid var(--b2)' }}>
+                    {photo ? (
+                      <img src={resolvePhotoUrl(photo)} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xs font-bold text-[var(--t3)]">{initials}</span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-[var(--t)] truncate">{name}</p>
+                    <p className="text-[10px] text-[var(--t4)]">{conn.relation || 'Benefactor'}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setEditingConnectionId(estateId);
+                      setTimeout(() => photoEditorFileRef.current?.click(), 50);
+                    }}
+                    className="p-2 rounded-lg hover:bg-[var(--b)]"
+                    data-testid={`edit-benefactor-photo-${estateId}`}
+                  >
+                    <Pencil className="w-4 h-4 text-[var(--t4)]" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          <input
+            ref={photoEditorFileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file && editingConnectionId) {
+                handleBenefactorPhotoChange(file, editingConnectionId);
+                setEditingConnectionId(null);
+              }
+              e.target.value = '';
+            }}
+          />
+        </div>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto mb-6">
         {estates.map(estate => {
           const isTransitioned = estate.status === 'transitioned';

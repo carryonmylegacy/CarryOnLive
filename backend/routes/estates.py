@@ -330,6 +330,7 @@ async def beneficiary_become_benefactor(current_user: dict = Depends(get_current
 class CreateEstateRequest(BaseModel):
     """Request to create an estate for an existing authenticated user."""
 
+    name: str | None = None  # Optional custom estate name
     beneficiary_enrollments: list = []  # [{first_name, last_name, email, dob, relation, ...}]
     special_status: list | None = (
         None  # ['military', 'veteran', 'hospice', 'enterprise', ...]
@@ -388,10 +389,11 @@ async def create_estate_for_existing_user(
 
     # Create estate
     estate_id = str(uuid.uuid4())
+    estate_name = (data.name or "").strip() or f"{last_name} Family Estate"
     estate = {
         "id": estate_id,
         "owner_id": current_user["id"],
-        "name": f"{last_name} Family Estate",
+        "name": estate_name,
         "status": "pre-transition",
         "beneficiaries": [],
         "encryption_salt": generate_estate_salt().hex(),

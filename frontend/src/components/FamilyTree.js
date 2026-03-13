@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users } from 'lucide-react';
+import { Camera, Users } from 'lucide-react';
 import { resolvePhotoUrl } from '../utils/photoUrl';
 
 /**
@@ -24,32 +24,48 @@ const getInitials = (name, firstName, lastName) => {
   return '??';
 };
 
-const TreeNode = ({ initials, photo, color, label, sublabel, size = 56, badge, isPrimary, onClick, testId }) => (
-  <div className="flex flex-col items-center gap-1 cursor-pointer group" onClick={onClick} data-testid={testId}>
-    <div className="relative">
-      <div
-        className="rounded-full flex items-center justify-center font-bold transition-transform group-hover:scale-110 overflow-hidden"
-        style={{
-          width: size, height: size,
-          background: photo ? 'transparent' : color,
-          fontSize: size * 0.32,
-          color: '#080e1a',
-          border: `2.5px solid ${color}`,
-          boxShadow: `0 0 12px ${color}40`,
-        }}
-      >
-        {photo ? (
-          <img src={resolvePhotoUrl(photo)} alt="" className="w-full h-full object-cover" />
-        ) : (
-          initials
+const TreeNode = ({ initials, photo, color, label, sublabel, size = 60, badge, isPrimary, onClick, onUpload, testId }) => {
+  const hasPhoto = !!photo;
+  const handleClick = () => {
+    if (hasPhoto && onClick) onClick();
+    else if (!hasPhoto && onUpload) onUpload();
+    else if (onClick) onClick();
+  };
+  const isClickable = onClick || onUpload;
+  return (
+    <div className="flex flex-col items-center gap-1" data-testid={testId}>
+      <div className="relative">
+        <div
+          onClick={isClickable ? handleClick : undefined}
+          role={isClickable ? 'button' : undefined}
+          className="rounded-full flex items-center justify-center font-bold transition-transform hover:scale-110 overflow-hidden cursor-pointer"
+          style={{
+            width: size, height: size,
+            background: hasPhoto ? 'transparent' : (color + '25'),
+            fontSize: size * 0.32,
+            color: color,
+            border: isPrimary ? '2.5px solid var(--gold)' : `2.5px solid ${color}`,
+            boxShadow: `0 0 12px ${color}40`,
+            position: 'relative',
+          }}
+        >
+          {hasPhoto ? (
+            <img src={resolvePhotoUrl(photo)} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <>
+              {onUpload && (
+                <Camera className="absolute" style={{ width: size * 0.45, height: size * 0.45, color: color, opacity: 0.15 }} />
+              )}
+              <span className="relative z-10" style={{ fontWeight: 700 }}>{initials}</span>
+            </>
+          )}
+        </div>
+        {badge && !isPrimary && (
+          <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black" style={{ background: '#d4af37', color: '#080e1a' }}>
+            {badge}
+          </div>
         )}
       </div>
-      {badge && !isPrimary && (
-        <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black" style={{ background: '#d4af37', color: '#080e1a' }}>
-          {badge}
-        </div>
-      )}
-    </div>
     {label && isPrimary ? (
       <span className="text-[9px] font-bold whitespace-nowrap px-2 py-0.5 rounded-md text-center leading-tight" style={{ background: 'rgba(34,201,147,0.15)', color: '#22C993', border: '1px solid rgba(34,201,147,0.3)' }}>{label}</span>
     ) : label ? (
@@ -57,9 +73,10 @@ const TreeNode = ({ initials, photo, color, label, sublabel, size = 56, badge, i
     ) : null}
     {sublabel && <span className="text-[8px] text-[#64748B] text-center leading-tight">{sublabel}</span>}
   </div>
-);
+  );
+};
 
-const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficiary, className }) => {
+const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficiary, onUploadPhoto, className }) => {
   const navigate = useNavigate();
 
   const sortedBens = [...beneficiaries].sort((a, b) => {
@@ -132,13 +149,14 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                           initials={getInitials(ben.name, ben.first_name, ben.last_name)}
                           photo={ben.photo_url}
                           color={color}
-                          size={48}
+                          size={54}
                           label={ben.first_name || ben.name?.split(' ')[0] || ''}
                           sublabel={`${relation}${age < 999 ? ` · ${age}` : ''}`}
                           badge={ben.is_primary ? 'P' : null}
                           isPrimary={ben.is_primary}
                           testId={`tree-node-${ben.id}`}
                           onClick={() => onSelectBeneficiary?.(ben)}
+                          onUpload={onUploadPhoto ? () => onUploadPhoto(ben.id) : undefined}
                         />
                       </div>
                     );
@@ -157,13 +175,14 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                       initials={getInitials(ben.name, ben.first_name, ben.last_name)}
                       photo={ben.photo_url}
                       color={color}
-                      size={48}
+                      size={54}
                       label={ben.first_name || ben.name?.split(' ')[0] || ''}
                       sublabel={`${ben.relation || ''}${age < 999 ? ` · ${age}` : ''}`}
                       badge={ben.is_primary ? 'P' : null}
                       isPrimary={ben.is_primary}
                       testId={`tree-node-${ben.id}`}
                       onClick={() => onSelectBeneficiary?.(ben)}
+                      onUpload={onUploadPhoto ? () => onUploadPhoto(ben.id) : undefined}
                     />
                   </div>
                 );
