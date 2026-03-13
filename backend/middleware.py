@@ -110,7 +110,21 @@ class RequestTraceMiddleware(BaseHTTPMiddleware):
         elapsed_ms = round((time.monotonic() - start) * 1000)
 
         path = request.url.path
-        if path.startswith("/api/") and path != "/api/health":
+        status = response.status_code
+
+        # Skip logging for: health checks, and expected 401s from frontend
+        # polling endpoints before user is authenticated
+        skip_log = path == "/api/health" or (
+            status == 401
+            and path
+            in (
+                "/api/notifications",
+                "/api/notifications/unread-count",
+                "/api/support/messages",
+            )
+        )
+
+        if path.startswith("/api/") and not skip_log:
             logger.info(
                 "req=%s method=%s path=%s status=%d ms=%d",
                 request_id,
