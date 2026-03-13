@@ -25,7 +25,9 @@ if _s3_bucket and os.environ.get("AWS_ACCESS_KEY_ID"):
         )
         logger.info("Photo URL resolver: using S3 presigned URLs")
     except Exception as e:
-        logger.warning(f"Photo URL resolver: S3 client init failed ({e}), using fallback")
+        logger.warning(
+            f"Photo URL resolver: S3 client init failed ({e}), using fallback"
+        )
 
 # Fallback base URL for non-S3 environments
 _FALLBACK_URL = (
@@ -43,7 +45,7 @@ _PRESIGN_EXPIRY = 7 * 24 * 3600  # 7 days
 def _to_s3_key(stored_value: str) -> str:
     """Convert a stored photo path to an S3 object key."""
     if stored_value.startswith("/api/photos/"):
-        return "photos/" + stored_value[len("/api/photos/"):]
+        return "photos/" + stored_value[len("/api/photos/") :]
     if stored_value.startswith("photos/"):
         return stored_value
     return ""
