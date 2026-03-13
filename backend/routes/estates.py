@@ -297,7 +297,7 @@ async def update_estate_photo(
     await db.estates.update_one(
         {"id": estate_id}, {"$set": {"estate_photo_url": photo_url}}
     )
-    return {"estate_photo_url": photo_url}
+    return {"estate_photo_url": resolve_photo_url(photo_url)}
 
 
 @router.get("/estates/{estate_id}")

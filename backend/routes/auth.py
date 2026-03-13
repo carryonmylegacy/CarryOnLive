@@ -995,7 +995,7 @@ async def update_profile_photo(
         {"$set": {"photo_url": photo_url}},
     )
 
-    return {"photo_url": photo_url}
+    return {"photo_url": resolve_photo_url(photo_url)}
 
 
 @router.post("/auth/logout")

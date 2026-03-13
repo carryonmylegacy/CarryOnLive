@@ -567,7 +567,7 @@ async def upload_beneficiary_photo(
             },
         )
 
-        return {"success": True, "photo_url": photo_url}
+        return {"success": True, "photo_url": resolve_photo_url(photo_url)}
 
     except Exception as e:
         logger.error(f"Photo upload failed: {e}")
