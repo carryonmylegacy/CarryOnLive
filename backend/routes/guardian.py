@@ -1,5 +1,6 @@
 """CarryOn™ Backend — Estate Guardian AI & PDF Export"""
 
+import asyncio
 import io
 import json as json_module
 import uuid
@@ -485,7 +486,8 @@ Provide a clear, organized analysis with specific findings and recommendations."
         )
         selected_model = XAI_MODEL if use_heavy_model else XAI_MODEL_LIGHT
 
-        completion = xai_client.chat.completions.create(
+        completion = await asyncio.to_thread(
+            xai_client.chat.completions.create,
             model=selected_model,
             messages=history_messages,
             temperature=0.7,
