@@ -282,6 +282,18 @@ const GuardianPage = () => {
     axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders())
       .then(res => { if (!res.data?.celebration_shown && !res.data?.all_complete) setGuidedFlowDone(false); })
       .catch(() => {});
+    // Auto-resume active session if returning from another page
+    try {
+      const saved = sessionStorage.getItem('ega_active_session');
+      if (saved) {
+        resumeSession(saved).catch(() => {
+          // Session no longer valid — clear and stay on landing
+          try { sessionStorage.removeItem('ega_active_session'); } catch (e) { /* silent */ }
+          setView('landing');
+          setLoading(false);
+        });
+      }
+    } catch (e) { /* sessionStorage unavailable — stay on landing */ }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -299,6 +311,7 @@ const GuardianPage = () => {
     }]);
     setView('chat');
     setLandingInput('');
+    try { sessionStorage.setItem('ega_active_session', newId); } catch (e) { /* silent */ }
     if (initialMessage) {
       setTimeout(() => sendMessage(initialMessage, null, newId), 100);
     }
@@ -308,6 +321,7 @@ const GuardianPage = () => {
     setSessionId(sid);
     setView('chat');
     setLoading(true);
+    try { sessionStorage.setItem('ega_active_session', sid); } catch (e) { /* silent */ }
     try {
       const res = await axios.get(`${API_URL}/chat/history/${sid}`, getAuthHeaders());
       const history = res.data.map(m => {
@@ -345,6 +359,7 @@ const GuardianPage = () => {
     setMessages([]);
     setShowQuestions(false);
     setShowActions(false);
+    try { sessionStorage.removeItem('ega_active_session'); } catch (e) { /* silent */ }
     fetchSessions();
   };
 
