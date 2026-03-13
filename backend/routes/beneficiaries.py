@@ -834,6 +834,13 @@ async def accept_invitation(data: AcceptInvitationRequest):
                 {"$set": {"photo_url": beneficiary["photo_url"]}},
             )
 
+        # Mark benefactor users as also being beneficiaries
+        if existing_user.get("role") == "benefactor":
+            await db.users.update_one(
+                {"id": existing_user["id"]},
+                {"$set": {"is_also_beneficiary": True}},
+            )
+
         # Generate token for auto-login
         token = create_token(
             existing_user["id"], existing_user["email"], existing_user["role"]
