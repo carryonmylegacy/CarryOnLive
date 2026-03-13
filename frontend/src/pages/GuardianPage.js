@@ -43,7 +43,6 @@ const suggestedQuestions = [
 
 // ─── Markdown Renderer ───
 const MarkdownText = ({ content }) => {
-  if (!content) return null;
   const lines = content.split('\n');
   const elements = [];
   let inList = false;
@@ -219,32 +218,6 @@ const GuardianPage = () => {
   const inputRef = useRef(null);
   const landingInputRef = useRef(null);
   const abortControllerRef = useRef(null);
-  const pendingTimeoutRef = useRef(null);
-  const isMountedRef = useRef(true);
-
-  // Cleanup on unmount — abort HTTP connections to free browser resources,
-  // clear pending timeouts, stop speech recognition.
-  // NOTE: Aborting the HTTP connection does NOT stop the backend — the AI
-  // query keeps running and saves its response. When you return to Guardian,
-  // the completed response loads from session history.
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-        abortControllerRef.current = null;
-      }
-      if (pendingTimeoutRef.current) {
-        clearTimeout(pendingTimeoutRef.current);
-        pendingTimeoutRef.current = null;
-      }
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-        recognitionRef.current = null;
-      }
-    };
-  }, []);
 
   // Voice-to-text using Web Speech API
   const toggleVoiceInput = useCallback((setter, currentValue) => {
@@ -286,16 +259,14 @@ const GuardianPage = () => {
     setSessionsLoading(true);
     try {
       const res = await axios.get(`${API_URL}/chat/sessions`, getAuthHeaders());
-      if (!isMountedRef.current) return;
       setSessions(res.data);
     } catch (err) { /* silent */ }
-    finally { if (isMountedRef.current) setSessionsLoading(false); }
+    finally { setSessionsLoading(false); }
   }, [getAuthHeaders]);
 
   const fetchEstate = useCallback(async () => {
     try {
       const res = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
-      if (!isMountedRef.current) return;
       if (res.data.length > 0) {
         const savedId = localStorage.getItem('selected_estate_id');
         const estate = res.data.find(e => e.id === savedId) || res.data[0];
@@ -309,7 +280,7 @@ const GuardianPage = () => {
     fetchEstate();
     // Check if onboarding is complete to control pulse animation
     axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders())
-      .then(res => { if (isMountedRef.current && !res.data?.celebration_shown && !res.data?.all_complete) setGuidedFlowDone(false); })
+      .then(res => { if (!res.data?.celebration_shown && !res.data?.all_complete) setGuidedFlowDone(false); })
       .catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -329,10 +300,7 @@ const GuardianPage = () => {
     setView('chat');
     setLandingInput('');
     if (initialMessage) {
-      pendingTimeoutRef.current = setTimeout(() => {
-        pendingTimeoutRef.current = null;
-        sendMessage(initialMessage, null, newId);
-      }, 100);
+      setTimeout(() => sendMessage(initialMessage, null, newId), 100);
     }
   };
 
@@ -342,7 +310,6 @@ const GuardianPage = () => {
     setLoading(true);
     try {
       const res = await axios.get(`${API_URL}/chat/history/${sid}`, getAuthHeaders());
-      if (!isMountedRef.current) return;
       const history = res.data.map(m => {
         const msg = { role: m.role, content: m.content };
         if (m.action_result?.action === 'readiness_analyzed' && m.action_result?.readiness) {
@@ -358,19 +325,18 @@ const GuardianPage = () => {
         content: `Hello ${user?.name?.split(' ')[0] || 'there'}! Resuming our conversation...`
       }]);
     } catch (err) {
-      if (!isMountedRef.current) return;
       setMessages([{ role: 'assistant', content: 'Could not load conversation history.' }]);
     }
-    finally { if (isMountedRef.current) setLoading(false); }
+    finally { setLoading(false); }
   };
 
   const deleteSession = async (e, sid) => {
     e.stopPropagation();
     try {
       await axios.delete(`${API_URL}/chat/sessions/${sid}`, getAuthHeaders());
-      if (!isMountedRef.current) return;
       setSessions(prev => prev.filter(s => s.session_id !== sid));
-    } catch (err) { if (isMountedRef.current) toast.error('Failed to delete'); }
+      // toast removed
+    } catch (err) { toast.error('Failed to delete'); }
   };
 
   const goBackToLanding = () => {
@@ -387,17 +353,17 @@ const GuardianPage = () => {
     try {
       const headers = getAuthHeaders()?.headers;
       const res = await axios.post(`${API_URL}/guardian/export-checklist`, {}, { headers, responseType: 'blob' });
-      if (!isMountedRef.current) return;
       const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       const a = document.createElement('a');
       a.href = url;
       a.download = `CarryOn_Checklist_${new Date().toISOString().split('T')[0]}.pdf`;
       a.click();
       window.URL.revokeObjectURL(url);
+      // toast removed
     } catch (err) {
-      if (isMountedRef.current) toast.error(err.response?.status === 404 ? 'No checklist items found — generate one first' : 'Failed to export checklist');
+      toast.error(err.response?.status === 404 ? 'No checklist items found — generate one first' : 'Failed to export checklist');
     }
-    if (isMountedRef.current) setChecklistExporting(false);
+    setChecklistExporting(false);
   };
 
   const handleExport = async () => {
@@ -405,19 +371,18 @@ const GuardianPage = () => {
     try {
       const headers = getAuthHeaders()?.headers;
       const estatesRes = await cachedGet(axios, `${API_URL}/estates`, { headers });
-      if (!isMountedRef.current) return;
       if (!estatesRes.data.length) { toast.error('No estate found'); setExporting(false); return; }
       const eId = estatesRes.data[0].id;
       const res = await axios.get(`${API_URL}/estate/${eId}/export-pdf`, { headers, responseType: 'blob' });
-      if (!isMountedRef.current) return;
       const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       const a = document.createElement('a');
       a.href = url;
       a.download = `CarryOn_Estate_Plan_${new Date().toISOString().split('T')[0]}.pdf`;
       a.click();
       window.URL.revokeObjectURL(url);
-    } catch (err) { if (isMountedRef.current) toast.error('Failed to export PDF'); }
-    if (isMountedRef.current) setExporting(false);
+      // toast removed
+    } catch (err) { toast.error('Failed to export PDF'); }
+    setExporting(false);
   };
 
   const stopAnalysis = () => {
@@ -425,7 +390,6 @@ const GuardianPage = () => {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
-    if (!isMountedRef.current) return;
     setLoading(false);
     setActionLoading(null);
     setMessages(prev => [...prev, { role: 'assistant', content: 'Analysis stopped by user.' }]);
@@ -459,7 +423,6 @@ const GuardianPage = () => {
         action
       }, { ...getAuthHeaders(), timeout: 120000, signal: controller.signal });
 
-      if (!isMountedRef.current) return;
       if (!overrideSessionId) setSessionId(response.data.session_id);
       const assistantMsg = { role: 'assistant', content: response.data.response };
 
@@ -476,17 +439,15 @@ const GuardianPage = () => {
       if (navigator.vibrate) navigator.vibrate(50);
     } catch (error) {
       if (axios.isCancel(error) || error.name === 'AbortError' || error.code === 'ERR_CANCELED') {
+        // Already handled by stopAnalysis
         return;
       }
-      if (!isMountedRef.current) return;
       const errDetail = error.response?.data?.detail || '';
       toast.error(errDetail || 'Failed to get response');
       setMessages(prev => [...prev, { role: 'assistant', content: errDetail || 'I encountered a temporary issue connecting to the AI service. Please try again — it usually works on the second attempt.', isError: true, retryMessage: lastUserMessage }]);
     } finally {
-      if (isMountedRef.current) {
-        setLoading(false);
-        setActionLoading(null);
-      }
+      setLoading(false);
+      setActionLoading(null);
       abortControllerRef.current = null;
     }
   };
@@ -584,7 +545,7 @@ const GuardianPage = () => {
                   const isReadiness = key === 'analyze_readiness';
                   const shouldBounce = isReadiness && !guidedFlowDone;
                   return (
-                  <button key={key} onClick={() => { startNewChat(); pendingTimeoutRef.current = setTimeout(() => { pendingTimeoutRef.current = null; sendMessage('', key, `chat_${user?.id || 'anon'}_${Date.now().toString(36)}`); }, 200); }}
+                  <button key={key} onClick={() => { startNewChat(); setTimeout(() => sendMessage('', key, `chat_${user?.id || 'anon'}_${Date.now().toString(36)}`), 200); }}
                     className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-transform duration-150 active:scale-[0.96] w-full"
                     style={{
                       background: `${color}12`, border: `1px solid ${color}25`, color,
