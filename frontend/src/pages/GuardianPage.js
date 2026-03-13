@@ -199,6 +199,15 @@ const GuardianPage = () => {
   // View state: 'landing' or 'chat'
   const [view, setView] = useState('landing');
 
+  // Persist active session across navigation
+  useEffect(() => {
+    if (view === 'chat' && sessionId) {
+      sessionStorage.setItem('ega_active_session', sessionId);
+    } else if (view === 'landing') {
+      sessionStorage.removeItem('ega_active_session');
+    }
+  }, [view, sessionId]);
+
   // Landing state
   const [sessions, setSessions] = useState([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
@@ -224,9 +233,7 @@ const GuardianPage = () => {
 
   // Cleanup on unmount — abort HTTP connections to free browser resources,
   // clear pending timeouts, stop speech recognition.
-  // NOTE: Aborting the HTTP connection does NOT stop the backend — the AI
-  // query keeps running and saves its response. When you return to Guardian,
-  // the completed response loads from session history.
+  // Persist active session so it auto-resumes on return.
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
@@ -311,6 +318,11 @@ const GuardianPage = () => {
     axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders())
       .then(res => { if (isMountedRef.current && !res.data?.celebration_shown && !res.data?.all_complete) setGuidedFlowDone(false); })
       .catch(() => {});
+    // Auto-resume active session if returning to Guardian
+    const activeSession = sessionStorage.getItem('ega_active_session');
+    if (activeSession) {
+      resumeSession(activeSession);
+    }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
