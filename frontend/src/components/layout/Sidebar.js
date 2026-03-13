@@ -287,6 +287,7 @@ const Sidebar = () => {
         { to: '/admin/escalations', icon: AlertTriangle, label: 'Escalations' },
         { to: '/admin/knowledge-base', icon: BookOpen, label: 'Knowledge Base' },
         { to: '/admin/p1-settings', icon: Shield, label: 'P1 Contact Settings' },
+        { to: '/settings', icon: Settings, label: 'Settings' },
       ]
     }
   ];
@@ -312,6 +313,7 @@ const Sidebar = () => {
         { to: '/ops/system-health', icon: HeartPulse, label: 'System Health' },
         { to: '/ops/estate-health', icon: HeartPulse, label: 'Estate Health' },
         { to: '/ops/knowledge-base', icon: BookOpen, label: 'SOPs' },
+        { to: '/settings', icon: Settings, label: 'Settings' },
       ]
     }
   ];

@@ -349,6 +349,7 @@ const MobileNav = () => {
     { to: '/admin/system-health', icon: HeartPulse, label: 'System Health' },
     { to: '/admin/escalations', icon: AlertTriangle, label: 'Escalations' },
     { to: '/admin/knowledge-base', icon: BookOpen, label: 'Knowledge Base' },
+    { to: '/settings', icon: Settings, label: 'Settings' },
   ];
   const operatorMenuItems = [
     { to: '/ops/my-activity', icon: Clock, label: 'My Activity' },
@@ -361,6 +362,7 @@ const MobileNav = () => {
     { to: '/ops/system-health', icon: HeartPulse, label: 'System Health' },
     { to: '/ops/estate-health', icon: HeartPulse, label: 'Estate Health' },
     { to: '/ops/knowledge-base', icon: BookOpen, label: 'SOPs' },
+    { to: '/settings', icon: Settings, label: 'Settings' },
   ];
 
   const getAccountItems = () => {
