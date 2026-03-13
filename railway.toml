@@ -5,4 +5,4 @@ builder = "nixpacks"
 plan_path = "backend"
 
 [deploy]
-startCommand = "cd backend && uvicorn server:app --host 0.0.0.0 --port ${PORT:-8000}"
+startCommand = "uvicorn server:app --host 0.0.0.0 --port ${PORT:-8000}"
