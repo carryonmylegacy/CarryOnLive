@@ -1654,3 +1654,102 @@ async def get_code_health(current_user: dict = Depends(get_current_user)):
         "eslint_warnings": 17,
         "last_test_pass_rate": "100%",
     }
+
+
+# ===================== PHOTO MIGRATION (BASE64 → S3) =====================
+
+
+@router.post("/admin/migrate-photos")
+async def migrate_photos_to_s3(current_user: dict = Depends(get_current_user)):
+    """One-time migration: convert all base64 photo_url values in the database
+    to S3-backed URLs served via /api/photos/. Idempotent — skips already-migrated
+    photos and data: URLs that fail to decode.
+
+    Admin-only endpoint. Returns a summary of what was migrated."""
+    import base64
+
+    from config import logger
+    from services.photo_storage import upload_photo
+
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    results = {"users": 0, "beneficiaries": 0, "estates": 0, "overrides": 0, "errors": []}
+
+    async def _migrate_field(collection, query_field, category, id_field="id"):
+        """Migrate a single photo field across a collection."""
+        count = 0
+        cursor = collection.find(
+            {query_field: {"$regex": "^data:"}},
+            {"_id": 0, id_field: 1, query_field: 1},
+        )
+        async for doc in cursor:
+            entity_id = doc.get(id_field, "unknown")
+            data_url = doc[query_field]
+            try:
+                # Parse data URL: "data:image/jpeg;base64,/9j/4AAQ..."
+                header, b64_data = data_url.split(",", 1)
+                raw = base64.b64decode(b64_data)
+                photo_url = await upload_photo(raw, category, entity_id)
+                await collection.update_one(
+                    {id_field: entity_id},
+                    {"$set": {query_field: photo_url}},
+                )
+                count += 1
+            except Exception as e:
+                err_msg = f"{category}/{entity_id}: {str(e)[:80]}"
+                logger.warning(f"Photo migration failed: {err_msg}")
+                results["errors"].append(err_msg)
+        return count
+
+    # 1. Users — photo_url
+    results["users"] = await _migrate_field(db.users, "photo_url", "users")
+
+    # 2. Beneficiaries — photo_url
+    results["beneficiaries"] = await _migrate_field(
+        db.beneficiaries, "photo_url", "beneficiaries"
+    )
+
+    # 3. Estates — estate_photo_url
+    results["estates"] = await _migrate_field(
+        db.estates, "estate_photo_url", "estates"
+    )
+
+    # 4. Display overrides — owner_photo_url (keyed by user_id + estate_id)
+    override_count = 0
+    async for ov in db.beneficiary_display_overrides.find(
+        {"owner_photo_url": {"$regex": "^data:"}},
+        {"_id": 0, "user_id": 1, "estate_id": 1, "owner_photo_url": 1},
+    ):
+        try:
+            header, b64_data = ov["owner_photo_url"].split(",", 1)
+            raw = base64.b64decode(b64_data)
+            photo_url = await upload_photo(
+                raw, "overrides", f"{ov['user_id']}_{ov['estate_id']}"
+            )
+            await db.beneficiary_display_overrides.update_one(
+                {"user_id": ov["user_id"], "estate_id": ov["estate_id"]},
+                {"$set": {"owner_photo_url": photo_url}},
+            )
+            override_count += 1
+        except Exception as e:
+            err_msg = f"override/{ov.get('user_id')}: {str(e)[:80]}"
+            logger.warning(f"Photo migration failed: {err_msg}")
+            results["errors"].append(err_msg)
+    results["overrides"] = override_count
+
+    total = sum(results[k] for k in ["users", "beneficiaries", "estates", "overrides"])
+    return {
+        "success": True,
+        "migrated": total,
+        "breakdown": {
+            "users": results["users"],
+            "beneficiaries": results["beneficiaries"],
+            "estates": results["estates"],
+            "display_overrides": results["overrides"],
+        },
+        "errors": results["errors"][:20],
+        "message": f"Migrated {total} photos from base64 to S3."
+        if total > 0
+        else "No base64 photos found — all already migrated or none exist.",
+    }

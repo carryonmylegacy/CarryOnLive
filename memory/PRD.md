@@ -52,6 +52,12 @@ A full-stack estate planning application allowing benefactors to manage digital 
   - Frontend: `utils/photoUrl.js` - `resolvePhotoUrl()` utility for URL resolution in all components
   - Updated all frontend components displaying photos: PhotoPicker, BeneficiariesPage, OrbitVisualization, FamilyTree, MessagesPage, BeneficiaryHubPage, TrusteePage, EditMilestoneMessagePage, EditBeneficiaryPage, OnboardingPage
 
+- **P0: Base64-to-S3 Migration Endpoint** - `POST /api/admin/migrate-photos`
+  - Scans users, beneficiaries, estates, and display_overrides for base64 photo_url values
+  - Decodes, processes, and uploads each to S3 via photo_storage service
+  - Idempotent: safely re-runnable, skips already-migrated photos
+  - Successfully migrated 6 photos in preview environment (3 test accounts had fake data)
+
 - **P0: GZip Compression** - Added `GZipMiddleware` to FastAPI (minimum_size=500 bytes)
   - All API responses >500 bytes are compressed, reducing network payload
 
@@ -60,7 +66,6 @@ A full-stack estate planning application allowing benefactors to manage digital 
 ### P1 - Upcoming
 - Finalize Share Extension Setup (instructions in /app/memory/SHARE_EXTENSION_SETUP.md)
 - Twilio SMS OTP Integration (blocked on user's A2P 10DLC approval)
-- Migration script: Convert existing base64 photos in production DB to S3 (one-time admin tool)
 
 ### P2 - Future
 - Remaining ~18 ESLint warnings cleanup (mostly hook dependencies, Shadcn)
