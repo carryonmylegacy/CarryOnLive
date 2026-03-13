@@ -6,7 +6,7 @@ import {
   Shield, Users, FileKey, Loader2,
   Headphones, CreditCard, Activity, Settings,
   MessageSquare, CheckSquare, AlertTriangle, Clock, TrendingUp, Trash2,
-  Megaphone, HeartPulse, Search, StickyNote, BookOpen, Gift, Zap
+  Megaphone, HeartPulse, Search, StickyNote, BookOpen, Gift, Zap, ImageIcon
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { toast } from '../utils/toast';
@@ -139,6 +139,7 @@ const AdminPage = ({ operatorMode = false }) => {
   const [loading, setLoading] = useState(true);
   const [, setOtpDisabled] = useState(false);
   const [cleaning, setCleaning] = useState(false);
+  const [migrating, setMigrating] = useState(false);
 
   const handleCleanup = async () => {
     setCleaning(true);
@@ -160,6 +161,28 @@ const AdminPage = ({ operatorMode = false }) => {
       }
     } catch (err) { toast.error('Cleanup failed'); }
     finally { setCleaning(false); }
+  };
+
+  const handleMigratePhotos = async () => {
+    setMigrating(true);
+    try {
+      const res = await axios.post(`${API_URL}/admin/migrate-photos`, {}, getAuthHeaders());
+      const d = res.data;
+      if (d.migrated > 0) {
+        const parts = [];
+        if (d.breakdown.users) parts.push(`${d.breakdown.users} user`);
+        if (d.breakdown.beneficiaries) parts.push(`${d.breakdown.beneficiaries} beneficiary`);
+        if (d.breakdown.estates) parts.push(`${d.breakdown.estates} estate`);
+        if (d.breakdown.display_overrides) parts.push(`${d.breakdown.display_overrides} override`);
+        toast.success(`Migrated ${d.migrated} photos to S3: ${parts.join(', ')}`);
+      } else {
+        toast.success('All photos already on S3 — nothing to migrate');
+      }
+      if (d.errors?.length > 0) {
+        toast(`${d.errors.length} photo(s) skipped (invalid data)`);
+      }
+    } catch (err) { toast.error('Migration failed'); }
+    finally { setMigrating(false); }
   };
 
   useEffect(() => {
@@ -254,17 +277,30 @@ const AdminPage = ({ operatorMode = false }) => {
           <p className="text-xs sm:text-sm text-[var(--t5)]">{operatorMode ? 'Transition Verification · Customer Service · Trustee Services' : 'Platform Management · Transition Verification · Trustee Services'}</p>
         </div>
         {!operatorMode && (
-        <button
-          onClick={handleCleanup}
-          disabled={cleaning}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold text-[var(--t5)] hover:text-[var(--t3)] transition-colors"
-          style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
-          title="Remove orphaned records from deleted users"
-          data-testid="admin-cleanup-btn"
-        >
-          {cleaning ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-          Clean Up
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleMigratePhotos}
+            disabled={migrating}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold text-[var(--t5)] hover:text-[var(--t3)] transition-colors"
+            style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+            title="Migrate remaining base64 photos to S3"
+            data-testid="admin-migrate-photos-btn"
+          >
+            {migrating ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImageIcon className="w-3 h-3" />}
+            Migrate Photos
+          </button>
+          <button
+            onClick={handleCleanup}
+            disabled={cleaning}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold text-[var(--t5)] hover:text-[var(--t3)] transition-colors"
+            style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+            title="Remove orphaned records from deleted users"
+            data-testid="admin-cleanup-btn"
+          >
+            {cleaning ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+            Clean Up
+          </button>
+        </div>
         )}
       </div>
 
