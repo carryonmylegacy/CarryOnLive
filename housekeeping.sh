@@ -456,6 +456,32 @@ else
   SOC2_ISSUES=$((SOC2_ISSUES + 1))
 fi
 
+# ── A1.2 — Deployment Readiness: Start Commands ─────────────────────
+echo -n "36. [A1.2]  Deploy start commands .. "
+DEPLOY_ISSUES=0
+DEPLOY_DETAILS=""
+# Check Procfile, railway.toml, and Dockerfile for shell built-ins used as executables
+# 'cd' is a shell built-in and will fail in container runtimes that exec without a shell
+for f in /app/Procfile /app/railway.toml /app/backend/Procfile /app/backend/railway.toml; do
+  [ ! -f "$f" ] && continue
+  fname=$(basename "$(dirname "$f")")/$(basename "$f")
+  # Match start/CMD lines that begin with 'cd ' (not wrapped in sh -c)
+  if grep -Eq '(startCommand|CMD|web:).*[" ]cd ' "$f" 2>/dev/null; then
+    if ! grep -Eq 'sh -c|bash -c|/bin/sh|/bin/bash' "$f" 2>/dev/null; then
+      DEPLOY_ISSUES=$((DEPLOY_ISSUES + 1))
+      DEPLOY_DETAILS="${DEPLOY_DETAILS}  ${fname}: uses 'cd' without shell wrapper\n"
+    fi
+  fi
+done
+if [ "$DEPLOY_ISSUES" = "0" ]; then
+  echo -e "$PASS (no shell built-ins in start commands)"
+else
+  echo -e "$FAIL ($DEPLOY_ISSUES start command(s) use shell built-ins without wrapper)"
+  echo -e "$DEPLOY_DETAILS"
+  echo "    Fix: remove 'cd dir &&' or wrap in 'sh -c \"...\"'"
+  SOC2_ISSUES=$((SOC2_ISSUES + 1))
+fi
+
 echo ""
 
 # ══════════════════════════════════════════════════════════════
