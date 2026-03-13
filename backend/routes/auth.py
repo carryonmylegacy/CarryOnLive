@@ -152,9 +152,7 @@ async def login(data: UserLogin, request: Request):
     user = await db.users.find_one({"email": login_lower}, {"_id": 0})
     if not user:
         # Try username lookup (case-insensitive)
-        user = await db.users.find_one(
-            {"username_lower": login_lower}, {"_id": 0}
-        )
+        user = await db.users.find_one({"username_lower": login_lower}, {"_id": 0})
     if not user or not verify_password(data.password, user["password"]):
         # Record failed attempt
         await db.failed_logins.insert_one(
@@ -1266,7 +1264,6 @@ async def dev_switch(data: DevSwitchRequest, request: Request):
     )
 
 
-
 class UsernameUpdate(BaseModel):
     username: str
 
@@ -1275,7 +1272,7 @@ class UsernameUpdate(BaseModel):
 async def get_username(current_user: dict = Depends(get_current_user)):
     """Get the current user's username."""
     user_doc = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "username": 1}
+        {"id": current_user["id"]}, {"_id": 0, "id": 1, "username": 1}
     )
     return {"username": (user_doc or {}).get("username", "")}
 
@@ -1297,9 +1294,7 @@ async def set_username(
         {"_id": 0, "id": 1},
     )
     if existing:
-        raise HTTPException(
-            status_code=400, detail="That username is already taken"
-        )
+        raise HTTPException(status_code=400, detail="That username is already taken")
 
     await db.users.update_one(
         {"id": current_user["id"]},

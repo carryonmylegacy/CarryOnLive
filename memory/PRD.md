@@ -6,12 +6,12 @@ A full-stack estate planning application allowing benefactors to manage digital 
 ## Core Architecture
 - **Frontend**: React (CRA) + Shadcn/UI + TailwindCSS + Capacitor (iOS/Android)
 - **Backend**: FastAPI + MongoDB (motor async)
-- **Auth**: JWT-based with optional OTP
+- **Auth**: JWT-based with optional OTP, supports login via username or email
 - **Storage**: AWS S3 for documents AND photos (presigned URLs)
 - **Integrations**: xAI (Grok), Stripe, Apple IAP, AWS S3, Resend, Google Places, Capgo, CodeMagic, Railway, Vercel
 
 ## Key Data Models
-- **users**: email, password, role, is_also_benefactor, is_also_beneficiary, photo_url (S3 key)
+- **users**: email, password, username, username_lower, role, is_also_benefactor, is_also_beneficiary, photo_url (S3 key)
 - **estates**: owner_id, beneficiaries[], name — **one user can own multiple estates**
 - **beneficiaries**: estate_id, user_id, email, photo_url (S3 key), invitation_status
 - **family_plans**: fpo_user_id, members[], $1/mo benefactor discount, $3.49 flat beneficiary rate
@@ -28,8 +28,15 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **Portal Switcher Cache**: sessionStorage caching prevents config loss on page reload
 - **FamilyTree Photo Fallback**: Estate nodes show owner_photo_url when estate_photo_url is missing
 - **CI/CD Fix**: Pinned ruff version, Node.js 22, all CodeMagic env vars (Stripe, VAPID)
-- **MongoDB Safety**: All 58 projection warnings resolved with "id": 1
+- **MongoDB Safety**: All projection warnings resolved with "id": 1
 - **is_also_beneficiary Fix**: Flag correctly set when benefactor accepts invitation to another estate
+- **Custom Estate Naming**: Editable estate name in Settings
+- **AvatarCircle Component**: Camera icon overlay for photo uploads on empty avatars
+- **Username Login**: Users can log in with either email or username
+- **Custom Usernames**: All users can set a unique username in Settings (no verification needed)
+- **Beneficiary Email Change → Re-invite**: When benefactor changes a beneficiary's email, invitation resets and prompts to resend
+- **Login Field Updated**: Label and placeholder changed to "Username or Email"
+- **FamilyTree Legend Fix**: Removed redundant "Blue nodes =" line, kept single "Blue = ..." line
 
 ## Subscription Architecture
 - Each estate requires its own active subscription
