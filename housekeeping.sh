@@ -473,6 +473,11 @@ for f in /app/Procfile /app/railway.toml /app/backend/Procfile /app/backend/rail
     fi
   fi
 done
+# Procfile at repo root conflicts with plan_path = "backend" in railway.toml
+if [ -f /app/Procfile ] && grep -q 'plan_path.*=.*"backend"' /app/railway.toml 2>/dev/null; then
+  DEPLOY_ISSUES=$((DEPLOY_ISSUES + 1))
+  DEPLOY_DETAILS="${DEPLOY_DETAILS}  Procfile at repo root conflicts with plan_path='backend' — move to /app/backend/Procfile\n"
+fi
 if [ "$DEPLOY_ISSUES" = "0" ]; then
   echo -e "$PASS (no shell built-ins in start commands)"
 else
