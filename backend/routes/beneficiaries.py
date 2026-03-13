@@ -822,6 +822,13 @@ async def accept_invitation(data: AcceptInvitationRequest):
                 {"id": existing_user["id"]}, {"$set": copy_fields}
             )
 
+        # Sync beneficiary photo to user profile if user has no photo
+        if beneficiary.get("photo_url") and not existing_user.get("photo_url"):
+            await db.users.update_one(
+                {"id": existing_user["id"]},
+                {"$set": {"photo_url": beneficiary["photo_url"]}},
+            )
+
         # Generate token for auto-login
         token = create_token(
             existing_user["id"], existing_user["email"], existing_user["role"]
@@ -866,6 +873,7 @@ async def accept_invitation(data: AcceptInvitationRequest):
         "date_of_birth": beneficiary.get("date_of_birth"),
         "phone": data.phone or beneficiary.get("phone"),
         "role": "beneficiary",
+        "photo_url": beneficiary.get("photo_url", ""),
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     await db.users.insert_one(new_user)

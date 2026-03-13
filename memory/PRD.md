@@ -44,6 +44,11 @@ A full-stack estate planning application allowing benefactors to manage digital 
   - Added photo fallback in `GET /api/estates`: `owner_photo_url` falls back to owner's beneficiary record photo
   - Added photo fallback in `GET /api/beneficiaries/{estate_id}`: falls back to linked user's `users.photo_url`
 
+- **Enhancement: Auto-sync beneficiary photo to user profile on invitation accept**
+  - New users get the beneficiary record's photo copied to their `users.photo_url` on account creation
+  - Existing users get the photo synced only if they don't already have one
+  - User's own profile photo upload always overwrites the synced photo
+
 ## Prioritized Backlog
 
 ### P1 - Upcoming
