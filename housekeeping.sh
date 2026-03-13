@@ -482,6 +482,24 @@ else
   SOC2_ISSUES=$((SOC2_ISSUES + 1))
 fi
 
+# ── A1.2 — Deployment Readiness: Healthcheck Config ─────────────────
+echo -n "37. [A1.2]  Deploy healthcheck ..... "
+HEALTH_OK=0
+# Railway: check railway.toml has healthcheckPath pointing to /api/health
+if [ -f /app/railway.toml ]; then
+  if grep -q 'healthcheckPath' /app/railway.toml 2>/dev/null; then
+    HEALTH_OK=1
+  fi
+fi
+if [ "$HEALTH_OK" = "1" ]; then
+  HC_PATH=$(grep 'healthcheckPath' /app/railway.toml 2>/dev/null | head -1)
+  echo -e "$PASS ($HC_PATH)"
+else
+  echo -e "$FAIL (railway.toml missing healthcheckPath — deploy will fail at Network stage)"
+  echo "    Fix: add healthcheckPath = \"/api/health\" under [deploy] in railway.toml"
+  SOC2_ISSUES=$((SOC2_ISSUES + 1))
+fi
+
 echo ""
 
 # ══════════════════════════════════════════════════════════════
