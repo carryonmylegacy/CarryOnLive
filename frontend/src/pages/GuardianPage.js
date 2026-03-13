@@ -220,11 +220,14 @@ const GuardianPage = () => {
   const landingInputRef = useRef(null);
   const abortControllerRef = useRef(null);
   const pendingTimeoutRef = useRef(null);
+  const isMountedRef = useRef(true);
 
   // Cleanup on unmount — clear pending timeouts, stop speech recognition
   // NOTE: Do NOT abort in-flight AI requests — let them complete in background
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
+      isMountedRef.current = false;
       if (pendingTimeoutRef.current) {
         clearTimeout(pendingTimeoutRef.current);
         pendingTimeoutRef.current = null;
@@ -410,6 +413,7 @@ const GuardianPage = () => {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
+    if (!isMountedRef.current) return;
     setLoading(false);
     setActionLoading(null);
     setMessages(prev => [...prev, { role: 'assistant', content: 'Analysis stopped by user.' }]);
@@ -443,6 +447,7 @@ const GuardianPage = () => {
         action
       }, { ...getAuthHeaders(), timeout: 120000, signal: controller.signal });
 
+      if (!isMountedRef.current) return;
       if (!overrideSessionId) setSessionId(response.data.session_id);
       const assistantMsg = { role: 'assistant', content: response.data.response };
 
@@ -459,15 +464,17 @@ const GuardianPage = () => {
       if (navigator.vibrate) navigator.vibrate(50);
     } catch (error) {
       if (axios.isCancel(error) || error.name === 'AbortError' || error.code === 'ERR_CANCELED') {
-        // Already handled by stopAnalysis
         return;
       }
+      if (!isMountedRef.current) return;
       const errDetail = error.response?.data?.detail || '';
       toast.error(errDetail || 'Failed to get response');
       setMessages(prev => [...prev, { role: 'assistant', content: errDetail || 'I encountered a temporary issue connecting to the AI service. Please try again — it usually works on the second attempt.', isError: true, retryMessage: lastUserMessage }]);
     } finally {
-      setLoading(false);
-      setActionLoading(null);
+      if (isMountedRef.current) {
+        setLoading(false);
+        setActionLoading(null);
+      }
       abortControllerRef.current = null;
     }
   };

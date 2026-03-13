@@ -20,8 +20,13 @@ const BeneficiaryGuardianPage = () => {
   const [estateId, setEstateId] = useState(null);
   const [documents, setDocuments] = useState([]);
   const scrollRef = useRef(null);
+  const isMountedRef = useRef(true);
 
-  // NOTE: No abort on unmount — let in-flight AI requests complete in background
+  // Cleanup on unmount
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -60,12 +65,14 @@ const BeneficiaryGuardianPage = () => {
         session_id: sessionId,
         estate_id: estateId
       }, { ...getAuthHeaders(), timeout: 120000 });
+      if (!isMountedRef.current) return;
       setSessionId(res.data.session_id);
       setMessages(prev => [...prev, { role: 'assistant', content: res.data.response || 'No response received.' }]);
     } catch (err) {
       if (err.name === 'AbortError' || err.code === 'ERR_CANCELED') return;
+      if (!isMountedRef.current) return;
       setMessages(prev => [...prev, { role: 'assistant', content: 'I encountered an issue. Please try again.' }]);
-    } finally { setLoading(false); }
+    } finally { if (isMountedRef.current) setLoading(false); }
   };
 
   const handleSubmit = (e) => { e.preventDefault(); sendMessage(input); };
