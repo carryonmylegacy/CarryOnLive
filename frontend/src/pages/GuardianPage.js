@@ -43,6 +43,7 @@ const suggestedQuestions = [
 
 // ─── Markdown Renderer ───
 const MarkdownText = ({ content }) => {
+  if (!content) return null;
   const lines = content.split('\n');
   const elements = [];
   let inList = false;
@@ -218,6 +219,25 @@ const GuardianPage = () => {
   const inputRef = useRef(null);
   const landingInputRef = useRef(null);
   const abortControllerRef = useRef(null);
+  const pendingTimeoutRef = useRef(null);
+
+  // Cleanup on unmount — abort in-flight requests, clear timeouts, stop speech
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+      if (pendingTimeoutRef.current) {
+        clearTimeout(pendingTimeoutRef.current);
+        pendingTimeoutRef.current = null;
+      }
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+      }
+    };
+  }, []);
 
   // Voice-to-text using Web Speech API
   const toggleVoiceInput = useCallback((setter, currentValue) => {
@@ -300,7 +320,10 @@ const GuardianPage = () => {
     setView('chat');
     setLandingInput('');
     if (initialMessage) {
-      setTimeout(() => sendMessage(initialMessage, null, newId), 100);
+      pendingTimeoutRef.current = setTimeout(() => {
+        pendingTimeoutRef.current = null;
+        sendMessage(initialMessage, null, newId);
+      }, 100);
     }
   };
 
@@ -545,7 +568,7 @@ const GuardianPage = () => {
                   const isReadiness = key === 'analyze_readiness';
                   const shouldBounce = isReadiness && !guidedFlowDone;
                   return (
-                  <button key={key} onClick={() => { startNewChat(); setTimeout(() => sendMessage('', key, `chat_${user?.id || 'anon'}_${Date.now().toString(36)}`), 200); }}
+                  <button key={key} onClick={() => { startNewChat(); pendingTimeoutRef.current = setTimeout(() => { pendingTimeoutRef.current = null; sendMessage('', key, `chat_${user?.id || 'anon'}_${Date.now().toString(36)}`); }, 200); }}
                     className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-transform duration-150 active:scale-[0.96] w-full"
                     style={{
                       background: `${color}12`, border: `1px solid ${color}25`, color,

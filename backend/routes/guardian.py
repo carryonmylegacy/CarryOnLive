@@ -343,6 +343,7 @@ async def chat_with_guardian(
     # Get estate context if estate_id provided
     estate_context = ""
     estate_id = data.estate_id
+    needs_content = False
 
     if not estate_id:
         estates = await db.estates.find(
