@@ -63,7 +63,10 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
                     # Fallback: check owner's beneficiary records for a photo
                     if not owner_photo and owner:
                         ben_photo = await db.beneficiaries.find_one(
-                            {"user_id": owner["id"], "photo_url": {"$exists": True, "$nin": [None, ""]}},
+                            {
+                                "user_id": owner["id"],
+                                "photo_url": {"$exists": True, "$nin": [None, ""]},
+                            },
                             {"_id": 0, "photo_url": 1},
                         )
                         if ben_photo and ben_photo.get("photo_url"):
@@ -90,7 +93,10 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
                 owner_photo = (owner or {}).get("photo_url", "")
                 if not owner_photo and owner:
                     ben_photo = await db.beneficiaries.find_one(
-                        {"user_id": owner["id"], "photo_url": {"$exists": True, "$nin": [None, ""]}},
+                        {
+                            "user_id": owner["id"],
+                            "photo_url": {"$exists": True, "$nin": [None, ""]},
+                        },
                         {"_id": 0, "photo_url": 1},
                     )
                     if ben_photo and ben_photo.get("photo_url"):
@@ -146,7 +152,10 @@ async def get_family_connections(current_user: dict = Depends(get_current_user))
         # records for a photo (e.g., uploaded by their original benefactor)
         if not display_photo:
             ben_with_photo = await db.beneficiaries.find_one(
-                {"user_id": benefactor["id"], "photo_url": {"$exists": True, "$nin": [None, ""]}},
+                {
+                    "user_id": benefactor["id"],
+                    "photo_url": {"$exists": True, "$nin": [None, ""]},
+                },
                 {"_id": 0, "photo_url": 1},
             )
             if ben_with_photo and ben_with_photo.get("photo_url"):

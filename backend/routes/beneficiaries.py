@@ -43,11 +43,18 @@ async def get_beneficiaries(
 
     # Enrich photo_url: if the beneficiary has a linked user account with a profile
     # photo but no photo on the beneficiary record, use the user's photo as fallback
-    user_ids = [b["user_id"] for b in beneficiaries if b.get("user_id") and not b.get("photo_url")]
+    user_ids = [
+        b["user_id"]
+        for b in beneficiaries
+        if b.get("user_id") and not b.get("photo_url")
+    ]
     if user_ids:
         users_with_photos = {}
         async for u in db.users.find(
-            {"id": {"$in": user_ids}, "photo_url": {"$exists": True, "$nin": [None, ""]}},
+            {
+                "id": {"$in": user_ids},
+                "photo_url": {"$exists": True, "$nin": [None, ""]},
+            },
             {"_id": 0, "id": 1, "photo_url": 1},
         ):
             users_with_photos[u["id"]] = u["photo_url"]
