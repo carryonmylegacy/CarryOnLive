@@ -21,7 +21,6 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
     so the frontend knows whether the user is 'owner' or 'beneficiary' in each estate."""
     user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
     is_also_benefactor = (user or {}).get("is_also_benefactor", False)
-    is_also_beneficiary = (user or {}).get("is_also_beneficiary", False)
 
     if current_user["role"] == "admin":
         estates = await db.estates.find({}, {"_id": 0}).to_list(100)
@@ -40,75 +39,74 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
             estates.append(e)
             seen_ids.add(e["id"])
 
-    # Always fetch estates they're a BENEFICIARY of (regardless of primary role)
-    if current_user["role"] == "beneficiary" or is_also_beneficiary:
-        ben_estates = await db.estates.find(
-            {"beneficiaries": current_user["id"]}, {"_id": 0}
-        ).to_list(100)
-        for be in ben_estates:
-            if be["id"] not in seen_ids:
-                # Enrich with benefactor photo
-                override = await db.beneficiary_display_overrides.find_one(
-                    {"user_id": current_user["id"], "estate_id": be["id"]},
-                    {"_id": 0, "owner_photo_url": 1},
-                )
-                if override and override.get("owner_photo_url"):
-                    be["owner_photo_url"] = override["owner_photo_url"]
-                else:
-                    owner = await db.users.find_one(
-                        {"id": be.get("owner_id")},
-                        {"_id": 0, "id": 1, "photo_url": 1, "name": 1},
-                    )
-                    owner_photo = (owner or {}).get("photo_url", "")
-                    # Fallback: check owner's beneficiary records for a photo
-                    if not owner_photo and owner:
-                        ben_photo = await db.beneficiaries.find_one(
-                            {
-                                "user_id": owner["id"],
-                                "photo_url": {"$exists": True, "$nin": [None, ""]},
-                            },
-                            {"_id": 0, "photo_url": 1},
-                        )
-                        if ben_photo and ben_photo.get("photo_url"):
-                            owner_photo = ben_photo["photo_url"]
-                    if owner_photo:
-                        be["owner_photo_url"] = owner_photo
-                    if owner and owner.get("name"):
-                        be["benefactor_name"] = owner["name"]
-                be["user_role_in_estate"] = "beneficiary"
-                be["is_beneficiary_estate"] = True
-                estates.append(be)
-                seen_ids.add(be["id"])
+    # Fetch estates they're a BENEFICIARY of (any role — covers both
+    # explicit beneficiaries and benefactors who are also beneficiaries)
+    ben_estates = await db.estates.find(
+        {"beneficiaries": current_user["id"]}, {"_id": 0}
+    ).to_list(100)
+    ben_estates = [be for be in ben_estates if be["id"] not in seen_ids]
 
-    # Fallback for benefactors without is_also_beneficiary flag but still linked
-    if current_user["role"] == "benefactor" and not is_also_beneficiary:
-        ben_estates = await db.estates.find(
-            {"beneficiaries": current_user["id"]}, {"_id": 0}
-        ).to_list(100)
+    if ben_estates:
+        # Batch-fetch all data to avoid N+1 queries
+        estate_ids = [be["id"] for be in ben_estates]
+        owner_ids = list(
+            {be.get("owner_id") for be in ben_estates if be.get("owner_id")}
+        )
+
+        # 1) Batch-fetch display overrides for all estates at once
+        overrides = {}
+        async for ov in db.beneficiary_display_overrides.find(
+            {"user_id": current_user["id"], "estate_id": {"$in": estate_ids}},
+            {"_id": 0, "estate_id": 1, "owner_photo_url": 1},
+        ):
+            if ov.get("owner_photo_url"):
+                overrides[ov["estate_id"]] = ov["owner_photo_url"]
+
+        # 2) Batch-fetch all owners at once
+        owners = {}
+        async for o in db.users.find(
+            {"id": {"$in": owner_ids}},
+            {"_id": 0, "id": 1, "photo_url": 1, "name": 1},
+        ):
+            owners[o["id"]] = o
+
+        # 3) For owners without photos, batch-fetch beneficiary record photos
+        owners_needing_photo = [
+            oid
+            for oid in owner_ids
+            if oid in owners
+            and not owners[oid].get("photo_url")
+            and oid
+            not in {be.get("owner_id") for be in ben_estates if be["id"] in overrides}
+        ]
+        ben_photos = {}
+        if owners_needing_photo:
+            async for bp in db.beneficiaries.find(
+                {
+                    "user_id": {"$in": owners_needing_photo},
+                    "photo_url": {"$exists": True, "$nin": [None, ""]},
+                },
+                {"_id": 0, "user_id": 1, "photo_url": 1},
+            ):
+                if bp["user_id"] not in ben_photos:
+                    ben_photos[bp["user_id"]] = bp["photo_url"]
+
+        # Assemble results
         for be in ben_estates:
-            if be["id"] not in seen_ids:
-                owner = await db.users.find_one(
-                    {"id": be.get("owner_id")}, {"_id": 0, "photo_url": 1, "name": 1}
-                )
-                owner_photo = (owner or {}).get("photo_url", "")
-                if not owner_photo and owner:
-                    ben_photo = await db.beneficiaries.find_one(
-                        {
-                            "user_id": owner["id"],
-                            "photo_url": {"$exists": True, "$nin": [None, ""]},
-                        },
-                        {"_id": 0, "photo_url": 1},
-                    )
-                    if ben_photo and ben_photo.get("photo_url"):
-                        owner_photo = ben_photo["photo_url"]
-                if owner_photo:
-                    be["owner_photo_url"] = owner_photo
-                if owner and owner.get("name"):
+            oid = be.get("owner_id")
+            if be["id"] in overrides:
+                be["owner_photo_url"] = overrides[be["id"]]
+            elif oid and oid in owners:
+                owner = owners[oid]
+                photo = owner.get("photo_url", "") or ben_photos.get(oid, "")
+                if photo:
+                    be["owner_photo_url"] = photo
+                if owner.get("name"):
                     be["benefactor_name"] = owner["name"]
-                be["user_role_in_estate"] = "beneficiary"
-                be["is_beneficiary_estate"] = True
-                estates.append(be)
-                seen_ids.add(be["id"])
+            be["user_role_in_estate"] = "beneficiary"
+            be["is_beneficiary_estate"] = True
+            estates.append(be)
+            seen_ids.add(be["id"])
 
     return estates
 
@@ -124,44 +122,64 @@ async def get_family_connections(current_user: dict = Depends(get_current_user))
         return []
 
     connections = []
+
+    # Batch-fetch all estates at once (avoid N+1)
+    estate_ids = [br["estate_id"] for br in ben_records]
+    estates_map = {}
+    async for e in db.estates.find({"id": {"$in": estate_ids}}, {"_id": 0}):
+        estates_map[e["id"]] = e
+
+    # Batch-fetch all estate owners at once
+    owner_ids = list(
+        {e.get("owner_id") for e in estates_map.values() if e.get("owner_id")}
+    )
+    owners_map = {}
+    async for o in db.users.find({"id": {"$in": owner_ids}}, {"_id": 0, "password": 0}):
+        owners_map[o["id"]] = o
+
+    # Batch-fetch display overrides
+    overrides_map = {}
+    async for ov in db.beneficiary_display_overrides.find(
+        {"user_id": current_user["id"], "estate_id": {"$in": estate_ids}},
+        {"_id": 0, "estate_id": 1, "owner_photo_url": 1},
+    ):
+        if ov.get("owner_photo_url"):
+            overrides_map[ov["estate_id"]] = ov["owner_photo_url"]
+
+    # Batch-fetch beneficiary photos for owners without profile photos
+    owners_needing_photo = [
+        oid
+        for oid in owner_ids
+        if oid in owners_map and not owners_map[oid].get("photo_url")
+    ]
+    ben_photos_map = {}
+    if owners_needing_photo:
+        async for bp in db.beneficiaries.find(
+            {
+                "user_id": {"$in": owners_needing_photo},
+                "photo_url": {"$exists": True, "$nin": [None, ""]},
+            },
+            {"_id": 0, "user_id": 1, "photo_url": 1},
+        ):
+            if bp["user_id"] not in ben_photos_map:
+                ben_photos_map[bp["user_id"]] = bp["photo_url"]
+
+    # Assemble connections
     for ben_record in ben_records:
-        # Get the estate
-        estate = await db.estates.find_one({"id": ben_record["estate_id"]}, {"_id": 0})
+        estate = estates_map.get(ben_record["estate_id"])
         if not estate:
             continue
-
-        # Get the benefactor (estate owner)
-        benefactor = await db.users.find_one(
-            {"id": estate.get("owner_id")}, {"_id": 0, "password": 0}
-        )
+        benefactor = owners_map.get(estate.get("owner_id"))
         if not benefactor:
             continue
 
-        # Check for beneficiary display override (beneficiary-side only, never touches benefactor)
-        override = await db.beneficiary_display_overrides.find_one(
-            {"user_id": current_user["id"], "estate_id": estate["id"]},
-            {"_id": 0, "owner_photo_url": 1},
-        )
-        display_photo = (
-            override.get("owner_photo_url", "")
-            if override and override.get("owner_photo_url")
-            else benefactor.get("photo_url", "")
-        )
-
-        # Fallback: if the benefactor has no profile photo, check their beneficiary
-        # records for a photo (e.g., uploaded by their original benefactor)
-        if not display_photo:
-            ben_with_photo = await db.beneficiaries.find_one(
-                {
-                    "user_id": benefactor["id"],
-                    "photo_url": {"$exists": True, "$nin": [None, ""]},
-                },
-                {"_id": 0, "photo_url": 1},
+        # Resolve photo: override > user profile > beneficiary record fallback
+        if estate["id"] in overrides_map:
+            display_photo = overrides_map[estate["id"]]
+        else:
+            display_photo = benefactor.get("photo_url", "") or ben_photos_map.get(
+                benefactor["id"], ""
             )
-            if ben_with_photo and ben_with_photo.get("photo_url"):
-                display_photo = ben_with_photo["photo_url"]
-
-        # Combine estate and relationship info
         connections.append(
             {
                 "id": estate["id"],
