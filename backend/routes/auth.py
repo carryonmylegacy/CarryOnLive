@@ -21,6 +21,7 @@ from utils import (
     verify_password,
 )
 from services.encryption import generate_estate_salt
+from services.photo_urls import resolve_photo_url
 
 
 def _user_response(user: dict, owns_estate: bool = False) -> UserResponse:
@@ -31,7 +32,7 @@ def _user_response(user: dict, owns_estate: bool = False) -> UserResponse:
         name=user["name"],
         role=user["role"],
         created_at=user["created_at"],
-        photo_url=user.get("photo_url", ""),
+        photo_url=resolve_photo_url(user.get("photo_url", "")),
         operator_role=user.get("operator_role", ""),
         is_also_benefactor=user.get("is_also_benefactor", False) or owns_estate,
         is_also_beneficiary=user.get("is_also_beneficiary", False) or False,
@@ -917,7 +918,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "name": current_user["name"],
         "role": current_user["role"],
         "created_at": current_user["created_at"],
-        "photo_url": photo or "",
+        "photo_url": resolve_photo_url(photo),
         "operator_role": current_user.get("operator_role", ""),
         "is_also_benefactor": user_doc.get("is_also_benefactor", False)
         or bool(owns_estate),
@@ -952,8 +953,23 @@ class ProfilePhotoUpdate(BaseModel):
 async def update_profile_photo(
     data: ProfilePhotoUpdate, current_user: dict = Depends(get_current_user)
 ):
-    """Upload a profile photo as base64. Stores as a data URL for simplicity."""
+    """Upload a profile photo. Processes and stores in object storage."""
     import base64
+
+    from services.photo_storage import delete_photo, upload_photo
+
+    if not data.photo_data:
+        # Remove photo — delete from storage if it's a stored key
+        user_doc = await db.users.find_one(
+            {"id": current_user["id"]}, {"_id": 0, "photo_url": 1}
+        )
+        old_key = (user_doc or {}).get("photo_url", "")
+        if old_key and not old_key.startswith("data:"):
+            await delete_photo(old_key)
+        await db.users.update_one(
+            {"id": current_user["id"]}, {"$set": {"photo_url": ""}}
+        )
+        return {"photo_url": ""}
 
     try:
         raw = base64.b64decode(data.photo_data)
@@ -963,22 +979,23 @@ async def update_profile_photo(
     if len(raw) > 5 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Photo must be under 5MB")
 
-    ext = data.file_name.rsplit(".", 1)[-1].lower() if "." in data.file_name else "jpg"
-    mime = {
-        "jpg": "image/jpeg",
-        "jpeg": "image/jpeg",
-        "png": "image/png",
-        "webp": "image/webp",
-        "heic": "image/heic",
-    }.get(ext, "image/jpeg")
-    data_url = f"data:{mime};base64,{data.photo_data}"
+    # Delete old photo from storage if it exists
+    user_doc = await db.users.find_one(
+        {"id": current_user["id"]}, {"_id": 0, "photo_url": 1}
+    )
+    old_key = (user_doc or {}).get("photo_url", "")
+    if old_key and not old_key.startswith("data:"):
+        await delete_photo(old_key)
+
+    # Upload new photo
+    photo_url = await upload_photo(raw, "users", current_user["id"])
 
     await db.users.update_one(
         {"id": current_user["id"]},
-        {"$set": {"photo_url": data_url}},
+        {"$set": {"photo_url": photo_url}},
     )
 
-    return {"photo_url": data_url}
+    return {"photo_url": photo_url}
 
 
 @router.post("/auth/logout")

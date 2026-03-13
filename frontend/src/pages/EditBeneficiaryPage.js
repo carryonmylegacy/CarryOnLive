@@ -14,6 +14,7 @@ import { SectionLockBanner, SectionLockedOverlay } from '../components/security/
 import { Skeleton } from '../components/ui/skeleton';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import DateMaskInput from '../components/DateMaskInput';
+import { resolvePhotoUrl } from '../utils/photoUrl';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -300,7 +301,7 @@ export default function EditBeneficiaryPage() {
                     data-testid="edit-beneficiary-photo-preview"
                   >
                     {photoPreview ? (
-                      <img src={photoPreview} alt={displayName} className="h-full w-full object-cover" />
+                      <img src={resolvePhotoUrl(photoPreview)} alt={displayName} className="h-full w-full object-cover" />
                     ) : (
                       <span className="text-3xl font-bold">{displayName.split(' ').filter(Boolean).map((part) => part[0]).join('').slice(0, 2).toUpperCase() || 'B'}</span>
                     )}

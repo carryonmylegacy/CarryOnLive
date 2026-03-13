@@ -7,6 +7,7 @@ import { Card, CardContent } from '../../components/ui/card';
 import { Skeleton } from '../../components/ui/skeleton';
 import OrbitVisualization from '../../components/estate/OrbitVisualization';
 import EmergencyAccessPanel from '../../components/beneficiary/EmergencyAccessPanel';
+import { resolvePhotoUrl } from '../../utils/photoUrl';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -156,7 +157,7 @@ const BeneficiaryHubPage = () => {
                   }}
                 >
                   {estatePhoto ? (
-                    <img src={estatePhoto} alt={estate.name} className="w-full h-full object-cover" />
+                    <img src={resolvePhotoUrl(estatePhoto)} alt={estate.name} className="w-full h-full object-cover" />
                   ) : ownerInitials}
                 </div>
                 <h3 className="font-bold text-[var(--t)] text-lg">{estate.name}</h3>
@@ -179,7 +180,7 @@ const BeneficiaryHubPage = () => {
               <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0 overflow-hidden"
                 style={{ background: myPhoto ? 'transparent' : 'linear-gradient(135deg, #7C3AED, #A855F7)', border: '2px solid rgba(212,175,55,0.4)' }}>
                 {myPhoto ? (
-                  <img src={myPhoto} alt="You" className="w-full h-full object-cover" />
+                  <img src={resolvePhotoUrl(myPhoto)} alt="You" className="w-full h-full object-cover" />
                 ) : (user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U')}
               </div>
               <div className="flex-1 min-w-0">
@@ -216,7 +217,7 @@ const BeneficiaryHubPage = () => {
                       border: isTransitioned ? '2px solid rgba(212,175,55,0.5)' : '2px solid rgba(255,255,255,0.15)',
                     }}>
                     {memberPhoto ? (
-                      <img src={memberPhoto} alt={name} className="w-full h-full object-cover" />
+                      <img src={resolvePhotoUrl(memberPhoto)} alt={name} className="w-full h-full object-cover" />
                     ) : initials}
                   </div>
                   <div className="flex-1 min-w-0">

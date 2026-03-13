@@ -40,6 +40,7 @@ import { SectionLockBanner, SectionLockedOverlay } from '../components/security/
 import { Skeleton } from '../components/ui/skeleton';
 import { Checkbox } from '../components/ui/checkbox';
 import SlidePanel from '../components/SlidePanel';
+import { resolvePhotoUrl } from '../utils/photoUrl';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -1008,7 +1009,7 @@ const MessagesPage = () => {
                         style={{ backgroundColor: ben.photo_url ? 'transparent' : ben.avatar_color + '30', color: ben.avatar_color }}
                       >
                         {ben.photo_url ? (
-                          <img src={ben.photo_url} alt={ben.name} className="w-full h-full object-cover" />
+                          <img src={resolvePhotoUrl(ben.photo_url)} alt={ben.name} className="w-full h-full object-cover" />
                         ) : ben.initials}
                       </div>
                       <div>

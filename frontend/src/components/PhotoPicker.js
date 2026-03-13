@@ -3,6 +3,7 @@ import Cropper from 'react-easy-crop';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
 import { Camera, Upload, ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
+import { resolvePhotoUrl } from '../utils/photoUrl';
 
 /**
  * Crop a circular area from an image and return a Blob.
@@ -150,7 +151,7 @@ export function PhotoPicker({ onPhotoSelected, currentPhoto, onRemove }) {
       >
         {currentPhoto ? (
           <>
-            <img src={currentPhoto} alt="Profile" className="w-20 h-20 rounded-full object-cover" />
+            <img src={resolvePhotoUrl(currentPhoto)} alt="Profile" className="w-20 h-20 rounded-full object-cover" />
             {onRemove && (
               <button
                 type="button"

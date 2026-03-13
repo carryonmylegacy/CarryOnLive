@@ -46,6 +46,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
+import { resolvePhotoUrl } from '../utils/photoUrl';
 
 // Initialize Stripe with test key
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
@@ -856,7 +857,7 @@ const TrusteePage = () => {
                     style={{ backgroundColor: ben.photo_url ? 'transparent' : ben.avatar_color + '30', color: ben.avatar_color }}
                   >
                     {ben.photo_url ? (
-                      <img src={ben.photo_url} alt={ben.name} className="w-full h-full object-cover" />
+                      <img src={resolvePhotoUrl(ben.photo_url)} alt={ben.name} className="w-full h-full object-cover" />
                     ) : ben.initials || ben.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                   </div>
                   <div>

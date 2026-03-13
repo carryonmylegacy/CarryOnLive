@@ -1,7 +1,6 @@
 """CarryOn™ Backend — Beneficiary Routes"""
 
 import asyncio
-import base64
 import os
 import uuid
 from datetime import datetime, timezone
@@ -22,6 +21,7 @@ from utils import (
     send_push_notification,
     update_estate_readiness,
 )
+from services.photo_urls import resolve_photo_url
 
 router = APIRouter()
 
@@ -66,6 +66,10 @@ async def get_beneficiaries(
     beneficiaries.sort(
         key=lambda b: (b.get("sort_order", 999), b.get("created_at", ""))
     )
+    # Resolve photo URLs for API response
+    for b in beneficiaries:
+        if b.get("photo_url"):
+            b["photo_url"] = resolve_photo_url(b["photo_url"])
     return beneficiaries
 
 
@@ -513,6 +517,8 @@ async def update_beneficiary(
 
     # Get updated beneficiary
     updated = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0})
+    if updated and updated.get("photo_url"):
+        updated["photo_url"] = resolve_photo_url(updated["photo_url"])
     return updated
 
 
@@ -522,7 +528,9 @@ async def upload_beneficiary_photo(
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user),
 ):
-    """Upload a profile photo for a beneficiary. Resizes to 200x200 and stores as base64."""
+    """Upload a profile photo for a beneficiary. Processes and stores in object storage."""
+    from services.photo_storage import delete_photo, upload_photo
+
     if not is_benefactor_or_admin(current_user):
         raise HTTPException(status_code=403, detail="Not authorized")
 
@@ -539,37 +547,15 @@ async def upload_beneficiary_photo(
         raise HTTPException(status_code=400, detail="File must be an image")
 
     try:
-        import io
+        # Delete old photo from storage if it exists
+        old_key = beneficiary.get("photo_url", "")
+        if old_key and not old_key.startswith("data:"):
+            await delete_photo(old_key)
 
-        from PIL import Image
-
-        img = Image.open(io.BytesIO(content))
-
-        # Convert to RGB if necessary (handles RGBA, P mode, etc.)
-        if img.mode in ("RGBA", "P", "LA"):
-            background = Image.new("RGB", img.size, (255, 255, 255))
-            if img.mode == "P":
-                img = img.convert("RGBA")
-            background.paste(img, mask=img.split()[-1] if "A" in img.mode else None)
-            img = background
-        elif img.mode != "RGB":
-            img = img.convert("RGB")
-
-        # Crop to square (center crop)
-        w, h = img.size
-        size = min(w, h)
-        left = (w - size) // 2
-        top = (h - size) // 2
-        img = img.crop((left, top, left + size, top + size))
-
-        # Resize to 200x200
-        img = img.resize((200, 200), Image.LANCZOS)
-
-        # Save as JPEG base64
-        buffer = io.BytesIO()
-        img.save(buffer, format="JPEG", quality=85)
-        b64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
-        photo_url = f"data:image/jpeg;base64,{b64}"
+        # Upload new photo (resized to 200x200 for beneficiary avatars)
+        photo_url = await upload_photo(
+            content, "beneficiaries", beneficiary_id, max_size=200
+        )
 
         await db.beneficiaries.update_one(
             {"id": beneficiary_id},
@@ -596,8 +582,19 @@ async def delete_beneficiary_photo(
     beneficiary_id: str, current_user: dict = Depends(get_current_user)
 ):
     """Remove the profile photo for a beneficiary."""
+    from services.photo_storage import delete_photo
+
     if not is_benefactor_or_admin(current_user):
         raise HTTPException(status_code=403, detail="Not authorized")
+
+    # Delete from storage if it's a stored key
+    ben = await db.beneficiaries.find_one(
+        {"id": beneficiary_id}, {"_id": 0, "photo_url": 1}
+    )
+    if ben:
+        old_key = ben.get("photo_url", "")
+        if old_key and not old_key.startswith("data:"):
+            await delete_photo(old_key)
 
     await db.beneficiaries.update_one(
         {"id": beneficiary_id},

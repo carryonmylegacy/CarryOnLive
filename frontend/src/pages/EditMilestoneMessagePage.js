@@ -33,6 +33,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from '../utils/toast';
 import { cachedGet } from '../utils/apiCache';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
+import { resolvePhotoUrl } from '../utils/photoUrl';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -753,7 +754,7 @@ export default function EditMilestoneMessagePage() {
                       >
                         <input type="checkbox" checked={active} readOnly className="h-4 w-4 accent-[#d4af37]" data-testid={`edit-message-recipient-checkbox-${beneficiary.id}`} />
                         <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full text-sm font-semibold" style={{ backgroundColor: beneficiary.photo_url ? 'transparent' : `${beneficiary.avatar_color}30`, color: beneficiary.avatar_color }}>
-                          {beneficiary.photo_url ? <img src={beneficiary.photo_url} alt={beneficiary.name} className="h-full w-full object-cover" /> : beneficiary.initials}
+                          {beneficiary.photo_url ? <img src={resolvePhotoUrl(beneficiary.photo_url)} alt={beneficiary.name} className="h-full w-full object-cover" /> : beneficiary.initials}
                         </div>
                         <div>
                           <p className="text-sm text-[var(--t)]">{beneficiary.name}</p>

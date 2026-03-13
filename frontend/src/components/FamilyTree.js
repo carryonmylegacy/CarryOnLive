@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users } from 'lucide-react';
+import { resolvePhotoUrl } from '../utils/photoUrl';
 
 /**
  * Static family tree — HTML/CSS based for reliable rendering.
@@ -38,7 +39,7 @@ const TreeNode = ({ initials, photo, color, label, sublabel, size = 56, badge, i
         }}
       >
         {photo ? (
-          <img src={photo} alt="" className="w-full h-full object-cover" />
+          <img src={resolvePhotoUrl(photo)} alt="" className="w-full h-full object-cover" />
         ) : (
           initials
         )}

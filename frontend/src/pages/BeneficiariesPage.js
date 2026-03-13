@@ -58,6 +58,7 @@ import AddressAutocomplete from '../components/AddressAutocomplete';
 import DateMaskInput from '../components/DateMaskInput';
 import SlidePanel from '../components/SlidePanel';
 import FamilyTree from '../components/FamilyTree';
+import { resolvePhotoUrl } from '../utils/photoUrl';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -550,7 +551,7 @@ const BeneficiariesPage = () => {
                           }}
                         >
                       {ben.photo_url ? (
-                        <img src={ben.photo_url} alt={ben.name} className="w-full h-full object-cover" />
+                        <img src={resolvePhotoUrl(ben.photo_url)} alt={ben.name} className="w-full h-full object-cover" />
                       ) : (
                         ben.initials || (ben.first_name && ben.last_name 
                           ? (ben.first_name[0] + ben.last_name[0]).toUpperCase()

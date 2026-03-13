@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { resolvePhotoUrl } from '../../utils/photoUrl';
 
 // Map relationships to generational orbit levels (0 = innermost)
 // Note: The relationship stored is from the BENEFACTOR's perspective
@@ -343,7 +344,7 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
                       }}
                     >
                       {(member.photo_url || member.owner_photo_url) ? (
-                        <img src={member.photo_url || member.owner_photo_url} alt={member.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                        <img src={resolvePhotoUrl(member.photo_url || member.owner_photo_url)} alt={member.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
                       ) : initials}
                     </div>
                   </div>

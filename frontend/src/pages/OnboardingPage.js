@@ -17,6 +17,7 @@ import { Textarea } from '../components/ui/textarea';
 import DateMaskInput from '../components/DateMaskInput';
 import { toast } from '../utils/toast';
 import AddressAutocomplete from '../components/AddressAutocomplete';
+import { resolvePhotoUrl } from '../utils/photoUrl';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -224,7 +225,7 @@ const OnboardingPage = () => {
                       style={{ backgroundColor: ben.photo_url ? 'transparent' : ben.avatar_color + '30', color: ben.avatar_color }}
                     >
                       {ben.photo_url ? (
-                        <img src={ben.photo_url} alt={ben.name} className="w-full h-full object-cover" />
+                        <img src={resolvePhotoUrl(ben.photo_url)} alt={ben.name} className="w-full h-full object-cover" />
                       ) : ben.initials || (ben.first_name?.[0] + ben.last_name?.[0]).toUpperCase()}
                     </div>
                     <div className="flex-1">

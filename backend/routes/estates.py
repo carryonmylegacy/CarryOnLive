@@ -9,6 +9,7 @@ from models import Estate, EstateCreate, EstateUpdate
 from services.encryption import generate_estate_salt
 from services.readiness import calculate_estate_readiness, ensure_default_checklist
 from utils import get_current_user, log_activity
+from services.photo_urls import resolve_photo_url
 
 router = APIRouter()
 
@@ -95,18 +96,23 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
         for be in ben_estates:
             oid = be.get("owner_id")
             if be["id"] in overrides:
-                be["owner_photo_url"] = overrides[be["id"]]
+                be["owner_photo_url"] = resolve_photo_url(overrides[be["id"]])
             elif oid and oid in owners:
                 owner = owners[oid]
                 photo = owner.get("photo_url", "") or ben_photos.get(oid, "")
                 if photo:
-                    be["owner_photo_url"] = photo
+                    be["owner_photo_url"] = resolve_photo_url(photo)
                 if owner.get("name"):
                     be["benefactor_name"] = owner["name"]
             be["user_role_in_estate"] = "beneficiary"
             be["is_beneficiary_estate"] = True
             estates.append(be)
             seen_ids.add(be["id"])
+
+    # Resolve estate_photo_url for all estates
+    for e in estates:
+        if e.get("estate_photo_url"):
+            e["estate_photo_url"] = resolve_photo_url(e["estate_photo_url"])
 
     return estates
 
@@ -191,8 +197,10 @@ async def get_family_connections(current_user: dict = Depends(get_current_user))
                 "status": estate.get("status", "pre-transition"),
                 "readiness_score": estate.get("readiness_score", 0),
                 "benefactor_id": benefactor.get("id"),
-                "photo_url": display_photo,
-                "my_photo_in_estate": ben_record.get("photo_url", ""),
+                "photo_url": resolve_photo_url(display_photo),
+                "my_photo_in_estate": resolve_photo_url(
+                    ben_record.get("photo_url", "")
+                ),
             }
         )
 
@@ -250,6 +258,8 @@ async def update_estate_photo(
     This is separate from the benefactor's personal profile photo."""
     import base64
 
+    from services.photo_storage import delete_photo, upload_photo
+
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
     if not estate:
         raise HTTPException(status_code=404, detail="Estate not found")
@@ -260,8 +270,11 @@ async def update_estate_photo(
 
     if not data.photo_data:
         # Remove estate photo
+        old_key = estate.get("estate_photo_url", "")
+        if old_key and not old_key.startswith("data:"):
+            await delete_photo(old_key)
         await db.estates.update_one(
-            {"id": estate_id}, {"$unset": {"estate_photo_url": ""}}
+            {"id": estate_id}, {"$set": {"estate_photo_url": ""}}
         )
         return {"estate_photo_url": ""}
 
@@ -273,19 +286,18 @@ async def update_estate_photo(
     if len(raw) > 5 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Photo must be under 5MB")
 
-    ext = data.file_name.rsplit(".", 1)[-1].lower() if "." in data.file_name else "jpg"
-    mime = {
-        "jpg": "image/jpeg",
-        "jpeg": "image/jpeg",
-        "png": "image/png",
-        "webp": "image/webp",
-    }.get(ext, "image/jpeg")
-    data_url = f"data:{mime};base64,{data.photo_data}"
+    # Delete old photo from storage if it exists
+    old_key = estate.get("estate_photo_url", "")
+    if old_key and not old_key.startswith("data:"):
+        await delete_photo(old_key)
+
+    # Upload new photo
+    photo_url = await upload_photo(raw, "estates", estate_id)
 
     await db.estates.update_one(
-        {"id": estate_id}, {"$set": {"estate_photo_url": data_url}}
+        {"id": estate_id}, {"$set": {"estate_photo_url": photo_url}}
     )
-    return {"estate_photo_url": data_url}
+    return {"estate_photo_url": photo_url}
 
 
 @router.get("/estates/{estate_id}")

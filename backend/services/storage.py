@@ -40,6 +40,19 @@ class StorageBackend(ABC):
     async def exists(self, storage_key: str) -> bool:
         """Check if a blob exists."""
 
+    async def upload_raw(
+        self,
+        blob: bytes,
+        key: str,
+        content_type: str = "application/octet-stream",
+    ) -> str:
+        """Upload a blob at an arbitrary key. Returns the key."""
+        raise NotImplementedError
+
+    async def download_raw(self, key: str) -> bytes:
+        """Download a blob by arbitrary key."""
+        return await self.download(key)
+
 
 class LocalStorage(StorageBackend):
     """Filesystem-backed storage for dev/preview environments."""
@@ -86,6 +99,18 @@ class LocalStorage(StorageBackend):
 
     async def exists(self, storage_key: str) -> bool:
         return self._key_to_path(storage_key).exists()
+
+    async def upload_raw(
+        self,
+        blob: bytes,
+        key: str,
+        content_type: str = "application/octet-stream",
+    ) -> str:
+        file_path = self._key_to_path(key)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_bytes(blob)
+        logger.info(f"LocalStorage: uploaded {len(blob)} bytes to {key}")
+        return key
 
 
 class S3Storage(StorageBackend):
@@ -162,6 +187,26 @@ class S3Storage(StorageBackend):
             return True
         except Exception:
             return False
+
+    async def upload_raw(
+        self,
+        blob: bytes,
+        key: str,
+        content_type: str = "application/octet-stream",
+    ) -> str:
+        import asyncio
+
+        await asyncio.to_thread(
+            self.client.put_object,
+            Bucket=self.bucket,
+            Key=key,
+            Body=blob,
+            ContentType=content_type,
+        )
+        logger.info(
+            f"S3Storage: uploaded {len(blob)} bytes to s3://{self.bucket}/{key}"
+        )
+        return key
 
 
 def get_storage_backend() -> StorageBackend:

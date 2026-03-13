@@ -8,6 +8,7 @@ import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI
+from starlette.middleware.gzip import GZipMiddleware
 
 from config import client, db, logger
 from middleware import (
@@ -47,6 +48,7 @@ from routes.staff_tools import router as staff_tools_router
 from routes.notifications import router as notifications_router
 from routes.ops_dashboard import router as ops_dashboard_router
 from routes.milestone_deliveries import router as milestone_deliveries_router
+from routes.photos import router as photos_router
 from schedulers import daily_dob_check_scheduler, weekly_digest_scheduler
 
 
@@ -164,6 +166,7 @@ api_router.include_router(staff_tools_router)
 api_router.include_router(notifications_router)
 api_router.include_router(ops_dashboard_router)
 api_router.include_router(milestone_deliveries_router)
+api_router.include_router(photos_router)
 
 
 BUILD_HASH = "2026-03-10T17:05:00Z-fix-welcome-redirect"
@@ -248,3 +251,4 @@ app.add_middleware(RequestTraceMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RateLimitMiddleware, max_requests=20, window_seconds=60)
 configure_cors(app)
+app.add_middleware(GZipMiddleware, minimum_size=500)
