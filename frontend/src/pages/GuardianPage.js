@@ -222,12 +222,19 @@ const GuardianPage = () => {
   const pendingTimeoutRef = useRef(null);
   const isMountedRef = useRef(true);
 
-  // Cleanup on unmount — clear pending timeouts, stop speech recognition
-  // NOTE: Do NOT abort in-flight AI requests — let them complete in background
+  // Cleanup on unmount — abort HTTP connections to free browser resources,
+  // clear pending timeouts, stop speech recognition.
+  // NOTE: Aborting the HTTP connection does NOT stop the backend — the AI
+  // query keeps running and saves its response. When you return to Guardian,
+  // the completed response loads from session history.
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
       if (pendingTimeoutRef.current) {
         clearTimeout(pendingTimeoutRef.current);
         pendingTimeoutRef.current = null;
