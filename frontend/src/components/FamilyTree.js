@@ -79,7 +79,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
             <TreeNode
               key={est.id}
               initials={<Users className="w-3.5 h-3.5" />}
-              photo={est.estate_photo_url}
+              photo={est.estate_photo_url || est.owner_photo_url}
               color="#60A5FA"
               size={40}
               label={est.name?.split("'")[0] || 'Estate'}
