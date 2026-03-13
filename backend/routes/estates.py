@@ -57,7 +57,7 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
                 else:
                     owner = await db.users.find_one(
                         {"id": be.get("owner_id")},
-                        {"_id": 0, "photo_url": 1, "name": 1},
+                        {"_id": 0, "id": 1, "photo_url": 1, "name": 1},
                     )
                     owner_photo = (owner or {}).get("photo_url", "")
                     # Fallback: check owner's beneficiary records for a photo
