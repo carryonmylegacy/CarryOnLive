@@ -279,14 +279,16 @@ const GuardianPage = () => {
     setSessionsLoading(true);
     try {
       const res = await axios.get(`${API_URL}/chat/sessions`, getAuthHeaders());
+      if (!isMountedRef.current) return;
       setSessions(res.data);
     } catch (err) { /* silent */ }
-    finally { setSessionsLoading(false); }
+    finally { if (isMountedRef.current) setSessionsLoading(false); }
   }, [getAuthHeaders]);
 
   const fetchEstate = useCallback(async () => {
     try {
       const res = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
+      if (!isMountedRef.current) return;
       if (res.data.length > 0) {
         const savedId = localStorage.getItem('selected_estate_id');
         const estate = res.data.find(e => e.id === savedId) || res.data[0];
@@ -300,7 +302,7 @@ const GuardianPage = () => {
     fetchEstate();
     // Check if onboarding is complete to control pulse animation
     axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders())
-      .then(res => { if (!res.data?.celebration_shown && !res.data?.all_complete) setGuidedFlowDone(false); })
+      .then(res => { if (isMountedRef.current && !res.data?.celebration_shown && !res.data?.all_complete) setGuidedFlowDone(false); })
       .catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -333,6 +335,7 @@ const GuardianPage = () => {
     setLoading(true);
     try {
       const res = await axios.get(`${API_URL}/chat/history/${sid}`, getAuthHeaders());
+      if (!isMountedRef.current) return;
       const history = res.data.map(m => {
         const msg = { role: m.role, content: m.content };
         if (m.action_result?.action === 'readiness_analyzed' && m.action_result?.readiness) {
@@ -348,18 +351,19 @@ const GuardianPage = () => {
         content: `Hello ${user?.name?.split(' ')[0] || 'there'}! Resuming our conversation...`
       }]);
     } catch (err) {
+      if (!isMountedRef.current) return;
       setMessages([{ role: 'assistant', content: 'Could not load conversation history.' }]);
     }
-    finally { setLoading(false); }
+    finally { if (isMountedRef.current) setLoading(false); }
   };
 
   const deleteSession = async (e, sid) => {
     e.stopPropagation();
     try {
       await axios.delete(`${API_URL}/chat/sessions/${sid}`, getAuthHeaders());
+      if (!isMountedRef.current) return;
       setSessions(prev => prev.filter(s => s.session_id !== sid));
-      // toast removed
-    } catch (err) { toast.error('Failed to delete'); }
+    } catch (err) { if (isMountedRef.current) toast.error('Failed to delete'); }
   };
 
   const goBackToLanding = () => {
@@ -376,17 +380,17 @@ const GuardianPage = () => {
     try {
       const headers = getAuthHeaders()?.headers;
       const res = await axios.post(`${API_URL}/guardian/export-checklist`, {}, { headers, responseType: 'blob' });
+      if (!isMountedRef.current) return;
       const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       const a = document.createElement('a');
       a.href = url;
       a.download = `CarryOn_Checklist_${new Date().toISOString().split('T')[0]}.pdf`;
       a.click();
       window.URL.revokeObjectURL(url);
-      // toast removed
     } catch (err) {
-      toast.error(err.response?.status === 404 ? 'No checklist items found — generate one first' : 'Failed to export checklist');
+      if (isMountedRef.current) toast.error(err.response?.status === 404 ? 'No checklist items found — generate one first' : 'Failed to export checklist');
     }
-    setChecklistExporting(false);
+    if (isMountedRef.current) setChecklistExporting(false);
   };
 
   const handleExport = async () => {
@@ -394,18 +398,19 @@ const GuardianPage = () => {
     try {
       const headers = getAuthHeaders()?.headers;
       const estatesRes = await cachedGet(axios, `${API_URL}/estates`, { headers });
+      if (!isMountedRef.current) return;
       if (!estatesRes.data.length) { toast.error('No estate found'); setExporting(false); return; }
       const eId = estatesRes.data[0].id;
       const res = await axios.get(`${API_URL}/estate/${eId}/export-pdf`, { headers, responseType: 'blob' });
+      if (!isMountedRef.current) return;
       const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       const a = document.createElement('a');
       a.href = url;
       a.download = `CarryOn_Estate_Plan_${new Date().toISOString().split('T')[0]}.pdf`;
       a.click();
       window.URL.revokeObjectURL(url);
-      // toast removed
-    } catch (err) { toast.error('Failed to export PDF'); }
-    setExporting(false);
+    } catch (err) { if (isMountedRef.current) toast.error('Failed to export PDF'); }
+    if (isMountedRef.current) setExporting(false);
   };
 
   const stopAnalysis = () => {
