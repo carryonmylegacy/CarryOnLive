@@ -71,6 +71,10 @@ const SettingsPage = () => {
   const [editingEstateName, setEditingEstateName] = useState(false);
   const [estateNameDraft, setEstateNameDraft] = useState('');
   const [settingsReady, setSettingsReady] = useState(false);
+  const [username, setUsername] = useState('');
+  const [editingUsername, setEditingUsername] = useState(false);
+  const [usernameDraft, setUsernameDraft] = useState('');
+  const [usernameSaving, setUsernameSaving] = useState(false);
 
   const isAdmin = user?.role === 'admin';
   const isOperator = user?.role === 'operator';
@@ -102,6 +106,7 @@ const SettingsPage = () => {
     // Fetch profile photo
     axios.get(`${API_URL}/auth/me`, getAuthHeaders()).then(res => {
       if (res.data.photo_url) setProfilePhoto(res.data.photo_url);
+      if (res.data.username) setUsername(res.data.username);
     }).catch(() => {});
     // Fetch estate photo (benefactors only)
     cachedGet(axios, `${API_URL}/estates`, getAuthHeaders()).then(res => {
@@ -297,6 +302,67 @@ const SettingsPage = () => {
                 {user?.role || 'benefactor'}
               </span>
             </div>
+          </div>
+          <Separator className="bg-[var(--b)]" />
+          <div>
+            <h4 className="text-[var(--t)] font-medium text-sm mb-1">Username</h4>
+            <p className="text-[var(--t5)] text-xs mb-2">Choose a unique username for login</p>
+            {editingUsername ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  value={usernameDraft}
+                  onChange={(e) => setUsernameDraft(e.target.value)}
+                  className="h-8 text-sm flex-1"
+                  placeholder="Enter a username"
+                  autoFocus
+                  onKeyDown={async (e) => {
+                    if (e.key === 'Enter' && usernameDraft.trim()) {
+                      setUsernameSaving(true);
+                      try {
+                        await axios.put(`${API_URL}/auth/username`, { username: usernameDraft.trim() }, getAuthHeaders());
+                        setUsername(usernameDraft.trim());
+                        setEditingUsername(false);
+                        toast.success('Username updated');
+                      } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update username'); }
+                      finally { setUsernameSaving(false); }
+                    } else if (e.key === 'Escape') {
+                      setEditingUsername(false);
+                    }
+                  }}
+                  data-testid="username-input"
+                />
+                <button
+                  disabled={usernameSaving}
+                  onClick={async () => {
+                    if (usernameDraft.trim()) {
+                      setUsernameSaving(true);
+                      try {
+                        await axios.put(`${API_URL}/auth/username`, { username: usernameDraft.trim() }, getAuthHeaders());
+                        setUsername(usernameDraft.trim());
+                        toast.success('Username updated');
+                      } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update username'); }
+                      finally { setUsernameSaving(false); }
+                    }
+                    setEditingUsername(false);
+                  }}
+                  className="p-1 rounded-md hover:bg-[var(--s)]"
+                  data-testid="username-save"
+                >
+                  {usernameSaving ? <Loader2 className="w-4 h-4 animate-spin text-[var(--gold)]" /> : <Check className="w-4 h-4 text-[var(--gn)]" />}
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-[var(--t)] text-sm font-medium">{username || <span className="text-[var(--t5)] italic">No username set</span>}</span>
+                <button
+                  onClick={() => { setUsernameDraft(username); setEditingUsername(true); }}
+                  className="p-1 rounded-md hover:bg-[var(--s)]"
+                  data-testid="username-edit"
+                >
+                  <Pencil className="w-3.5 h-3.5 text-[var(--t4)]" />
+                </button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

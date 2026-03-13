@@ -260,7 +260,7 @@ const LoginPage = () => {
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="relative">
               <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63]" />
-              <Input type="text" placeholder="Email or Username" value={email} onChange={(e) => setEmail(e.target.value)}
+              <Input type="text" placeholder="Username or Email" value={email} onChange={(e) => setEmail(e.target.value)}
                 className="h-12 bg-[#0b1322] border-[#1a2a42] text-white placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-xl pl-10"
                 autoComplete="username" data-testid="login-email" />
             </div>
@@ -448,10 +448,10 @@ const LoginPage = () => {
                   <p className="text-[#475569] text-sm mb-6">Access your CarryOn account</p>
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div>
-                      <label className="text-[#7b879e] text-xs font-medium mb-1.5 block">Email</label>
+                      <label className="text-[#7b879e] text-xs font-medium mb-1.5 block">Username or Email</label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#334155]" />
-                        <Input type="text" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email or Username" required autoComplete="username"
+                        <Input type="text" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Username or Email" required autoComplete="username"
                           className="h-11 pl-10 bg-[#0B1627] border-[#1A2D48] text-white placeholder:text-[#2A3C55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-lg" data-testid="login-email-input" />
                       </div>
                     </div>

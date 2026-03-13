@@ -494,6 +494,33 @@ async def update_beneficiary(
 
     await db.beneficiaries.update_one({"id": beneficiary_id}, {"$set": update_data})
 
+    # Detect email change — reset invitation to allow re-invite with new email
+    old_email = (beneficiary.get("email") or "").lower().strip()
+    new_email = (data.email or "").lower().strip()
+    email_changed = old_email != new_email and new_email
+
+    if email_changed and beneficiary.get("invitation_status") != "draft":
+        new_token = str(uuid.uuid4())
+        await db.beneficiaries.update_one(
+            {"id": beneficiary_id},
+            {
+                "$set": {
+                    "invitation_status": "pending",
+                    "invitation_token": new_token,
+                    "user_id": None,
+                }
+            },
+        )
+        # If a user with the new email already exists, pre-link
+        existing_new_user = await db.users.find_one(
+            {"email": new_email}, {"_id": 0, "id": 1}
+        )
+        if existing_new_user:
+            await db.beneficiaries.update_one(
+                {"id": beneficiary_id},
+                {"$set": {"user_id": existing_new_user["id"]}},
+            )
+
     # Detect which fields actually changed and log to edit_history
     changed_fields = [
         k
@@ -520,6 +547,9 @@ async def update_beneficiary(
     updated = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0})
     if updated and updated.get("photo_url"):
         updated["photo_url"] = resolve_photo_url(updated["photo_url"])
+    # Signal to frontend that the email changed so it can prompt for re-invite
+    if email_changed:
+        updated["email_changed"] = True
     return updated
 
 
@@ -875,6 +905,8 @@ async def accept_invitation(data: AcceptInvitationRequest):
     new_user = {
         "id": user_id,
         "email": beneficiary["email"].lower().strip(),
+        "username": beneficiary["email"].lower().strip(),
+        "username_lower": beneficiary["email"].lower().strip(),
         "password": hash_password(data.password),
         "name": full_name,
         "first_name": beneficiary["first_name"],

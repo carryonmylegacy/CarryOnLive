@@ -146,12 +146,20 @@ async def login(data: UserLogin, request: Request):
             detail="Account temporarily locked due to too many failed attempts. Please try again in 15 minutes.",
         )
 
-    user = await db.users.find_one({"email": data.email.lower().strip()}, {"_id": 0})
+    # Support login via username OR email
+    login_input = data.email.strip()
+    login_lower = login_input.lower()
+    user = await db.users.find_one({"email": login_lower}, {"_id": 0})
+    if not user:
+        # Try username lookup (case-insensitive)
+        user = await db.users.find_one(
+            {"username_lower": login_lower}, {"_id": 0}
+        )
     if not user or not verify_password(data.password, user["password"]):
         # Record failed attempt
         await db.failed_logins.insert_one(
             {
-                "email": data.email,
+                "email": login_input,
                 "ip_address": client_ip,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
@@ -348,6 +356,8 @@ async def register(data: UserCreate):
     user = {
         "id": user_id,
         "email": data.email,
+        "username": data.email,
+        "username_lower": data.email.lower(),
         "password": hash_password(data.password),
         "name": full_name,
         "first_name": data.first_name,
@@ -945,6 +955,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "address_zip": user_doc.get("address_zip", "")
         or ben_fallback.get("address_zip", ""),
         "address_line2": user_doc.get("address_line2", ""),
+        "username": user_doc.get("username", ""),
     }
 
 
@@ -1253,3 +1264,45 @@ async def dev_switch(data: DevSwitchRequest, request: Request):
         access_token=token,
         user=_user_response(user, owns_estate=_owns),
     )
+
+
+
+class UsernameUpdate(BaseModel):
+    username: str
+
+
+@router.get("/auth/username")
+async def get_username(current_user: dict = Depends(get_current_user)):
+    """Get the current user's username."""
+    user_doc = await db.users.find_one(
+        {"id": current_user["id"]}, {"_id": 0, "username": 1}
+    )
+    return {"username": (user_doc or {}).get("username", "")}
+
+
+@router.put("/auth/username")
+async def set_username(
+    data: UsernameUpdate, current_user: dict = Depends(get_current_user)
+):
+    """Set or update the current user's username. Must be unique."""
+    username = data.username.strip()
+    if not username:
+        raise HTTPException(status_code=400, detail="Username cannot be empty")
+
+    username_lower = username.lower()
+
+    # Check uniqueness (case-insensitive)
+    existing = await db.users.find_one(
+        {"username_lower": username_lower, "id": {"$ne": current_user["id"]}},
+        {"_id": 0, "id": 1},
+    )
+    if existing:
+        raise HTTPException(
+            status_code=400, detail="That username is already taken"
+        )
+
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$set": {"username": username, "username_lower": username_lower}},
+    )
+    return {"username": username}

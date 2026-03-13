@@ -249,9 +249,25 @@ const BeneficiariesPage = () => {
       };
 
       if (editingBeneficiary) {
-        await axios.put(`${API_URL}/beneficiaries/${editingBeneficiary.id}`, payload, getAuthHeaders());
+        const res = await axios.put(`${API_URL}/beneficiaries/${editingBeneficiary.id}`, payload, getAuthHeaders());
         if (photoFile) await uploadPhoto(editingBeneficiary.id);
-        // toast removed
+        // If email changed, prompt user to resend invite
+        if (res.data?.email_changed) {
+          setShowAddModal(false);
+          setEditingBeneficiary(null);
+          resetForm();
+          await fetchData();
+          // Ask if they want to resend the invite
+          const benName = `${payload.first_name} ${payload.last_name}`.trim();
+          const shouldResend = window.confirm(
+            `You changed ${benName}'s email to ${payload.email}.\n\nWould you like to send an invitation to this new email address?`
+          );
+          if (shouldResend) {
+            const benId = res.data.id || editingBeneficiary.id;
+            await handleSendInvitation(benId);
+          }
+          return;
+        }
       } else {
         const res = await axios.post(`${API_URL}/beneficiaries`, payload, getAuthHeaders());
         if (photoFile && res.data?.id) await uploadPhoto(res.data.id);
@@ -542,11 +558,6 @@ const BeneficiariesPage = () => {
                 setTimeout(() => quickFileRef.current?.click(), 50);
               }}
             />
-            {benEstates.length > 0 && (
-              <p className="text-[9px] text-[var(--t5)] text-center mt-1">
-                Blue nodes = estates where you're a beneficiary (click to view)
-              </p>
-            )}
           </div>
 
           {/* RIGHT: Tile Stack (primary first, then age-sorted) */}

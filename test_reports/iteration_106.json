@@ -1,0 +1,114 @@
+{
+  "summary": "All 5 features implemented and verified. Backend: 10/10 tests pass. (1) Login shows 'Username or Email' label+placeholder. (2) Login with email works. (3) Login with username works after setting username. (4) GET/PUT /api/auth/username endpoints working. (5) GET /api/auth/me includes 'username' field. (6) PUT /api/beneficiaries/{id} returns 'email_changed: true' when email changed and resets invitation_status to 'pending'. (7) FamilyTree legend has only one 'Blue = ...' line. Settings page Username section present for benefactor/beneficiary users (hidden for admin/operator by design).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "TestLoginWithEmail::test_login_with_email_credentials - POST /api/auth/login with email works",
+    "TestUsernameEndpoints::test_get_username - GET /api/auth/username returns current username",
+    "TestUsernameEndpoints::test_set_username - PUT /api/auth/username sets unique username",
+    "TestUsernameEndpoints::test_duplicate_username_rejected - Duplicate username returns 400",
+    "TestAuthMeIncludesUsername::test_auth_me_has_username_field - GET /api/auth/me includes username",
+    "TestLoginWithUsername::test_login_with_username_after_setting - Login with username works",
+    "TestSettingsPageUsernameSection::test_settings_page_has_username_section - SettingsPage.js has username edit/save UI",
+    "TestLoginPageLabels::test_login_page_labels - LoginPage has 'Username or Email' label+placeholder",
+    "TestFamilyTreeLegend::test_family_tree_legend_single_blue_line - Only one 'Blue = ...' legend line",
+    "TestFamilyTreeLegend::test_beneficiaries_page_no_duplicate_legend - No redundant legend in BeneficiariesPage"
+  ],
+  "skipped_tests": [
+    "TestBeneficiaryEmailChange::test_email_change_returns_flag - Skipped (admin user has no estate, tested manually)",
+    "TestBeneficiaryEmailChange::test_no_email_change_no_flag - Skipped (admin user has no estate, tested manually)"
+  ],
+  "manually_verified": {
+    "beneficiary_email_change": {
+      "status": "WORKING",
+      "details": "Tested via Python script: PUT /api/beneficiaries/{id} with new email returns email_changed: true and resets invitation_status to 'pending'. Also generates new invitation_token."
+    }
+  },
+  "features_verified": {
+    "login_username_or_email_label": {
+      "status": "WORKING",
+      "details": "LoginPage.js line 451 has label 'Username or Email', line 454 has placeholder 'Username or Email'. Native version line 263 also has placeholder."
+    },
+    "login_with_email": {
+      "status": "WORKING",
+      "details": "POST /api/auth/login with email 'info@carryon.us' returns token (or OTP flow)"
+    },
+    "login_with_username": {
+      "status": "WORKING",
+      "details": "After setting username via PUT /api/auth/username, login with that username works. Backend line 149 falls back to username_lower lookup when email not found."
+    },
+    "get_username_endpoint": {
+      "status": "WORKING",
+      "details": "GET /api/auth/username returns {username: string}"
+    },
+    "put_username_endpoint": {
+      "status": "WORKING",
+      "details": "PUT /api/auth/username with {username: string} sets username, enforces uniqueness (400 if taken)"
+    },
+    "auth_me_includes_username": {
+      "status": "WORKING",
+      "details": "GET /api/auth/me response includes 'username' field at line 958 of auth.py"
+    },
+    "settings_page_username_section": {
+      "status": "WORKING",
+      "details": "SettingsPage.js has Username section in Profile card (lines 308-366) with data-testid attributes for input, edit, and save buttons. Only visible for benefactor/beneficiary users (not admin/operator by design)."
+    },
+    "beneficiary_email_change_detection": {
+      "status": "WORKING",
+      "details": "beneficiaries.py lines 497-522: Detects email change, resets invitation_status to 'pending', generates new token, unlinks user_id, and returns email_changed: true in response."
+    },
+    "family_tree_legend_single_line": {
+      "status": "WORKING",
+      "details": "FamilyTree.js lines 201-205 has only one legend line: 'Blue = estates where you're a beneficiary'. No duplicate 'Blue nodes = ...' in BeneficiariesPage.js."
+    },
+    "beneficiaries_page_resend_prompt": {
+      "status": "WORKING",
+      "details": "BeneficiariesPage.js lines 255-269: When response has email_changed: true, prompts window.confirm to resend invite to new email."
+    }
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_username_email_features.py",
+    "/app/test_reports/pytest/username_email_features_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "auth.py login (line 149): Username lookup case-insensitive via username_lower field",
+    "auth.py /auth/me (line 958): Returns username in response",
+    "auth.py /auth/username GET/PUT: Endpoints at lines 1274-1309, enforces uniqueness",
+    "auth.py register (line 359): New users get username=email, username_lower=email.lower()",
+    "beneficiaries.py line 909: accept_invitation sets username=email for new beneficiary users",
+    "beneficiaries.py line 551: Returns email_changed: true when email is updated",
+    "SettingsPage.js: Username section has edit/save UI with proper data-testid attributes",
+    "LoginPage.js: Both web and native versions show 'Username or Email' placeholder",
+    "FamilyTree.js: Single legend line for blue nodes (no duplicate)"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_username_email_features.py"
+  ],
+  "success_rate": {
+    "backend": "100% (10/10 tests passed, 2 skipped due to admin role)",
+    "frontend": "100% (login label verified via Playwright)"
+  },
+  "test_credentials": {
+    "admin": {
+      "email": "info@carryon.us",
+      "password": "Demo1234!",
+      "otp_bypass": "000000"
+    }
+  },
+  "seed_data_creation": "Created and cleaned up test beneficiary for email change test",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Username feature fully working. Users can set unique username in Settings, login with username or email. Beneficiary email change triggers invitation reset flow with email_changed: true flag. FamilyTree legend has single 'Blue = ...' line. Settings page Profile card (with Username section) only visible for non-staff users (benefactor/beneficiary).",
+  "mocked_apis": {
+    "has_mocked_apis": false,
+    "mocked_apis_list": []
+  }
+}
