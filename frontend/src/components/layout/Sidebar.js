@@ -79,6 +79,7 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const [benEstates, setBenEstates] = useState([]);
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('carryon_sidebar_collapsed') === 'true');
+  const [estatePickerOpen, setEstatePickerOpen] = useState(false);
   // Dev portal switcher (founder only)
   const [devOpen, setDevOpen] = useState(false);
   const [devConfig, setDevConfig] = useState(() => {
@@ -515,82 +516,125 @@ const Sidebar = () => {
         <div style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.08)', margin: '2px 0' }} />
 
         {/* Switch View — Portal Pills */}
-        {(user?.is_also_benefactor || user?.is_also_beneficiary || 
-          (user?.role === 'benefactor' && benEstates.some(e => e.user_role_in_estate === 'beneficiary'))) && (
-          <>
-            {!collapsed && (
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#525C72', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 6, paddingLeft: 4 }}>
-                Switch View
+        {(() => {
+          const ownedEstates = benEstates.filter(e => e.user_role_in_estate === 'owner');
+          const beneficiaryEstates = benEstates.filter(e => e.user_role_in_estate === 'beneficiary' || e.is_beneficiary_estate);
+          const showSwitch = ownedEstates.length > 0 || beneficiaryEstates.length > 0;
+          if (!showSwitch) return null;
+          const isBenActive = window.location.pathname.startsWith('/beneficiary');
+          const isBenefactorActive = !isBenActive && ownedEstates.length > 0;
+          return (
+            <>
+              {!collapsed && (
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--t5)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 6, paddingLeft: 4 }}>
+                  Switch View
+                </div>
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, position: 'relative' }}>
+                {/* Benefactor Portal — single pill, picker if 2+ estates */}
+                {ownedEstates.length > 0 && (
+                  <button onClick={() => {
+                    if (ownedEstates.length === 1) {
+                      localStorage.setItem('selected_estate_id', ownedEstates[0].id);
+                      localStorage.removeItem('beneficiary_estate_id');
+                      localStorage.setItem('carryon_last_portal', 'benefactor');
+                      navigate('/dashboard');
+                    } else {
+                      setEstatePickerOpen(!estatePickerOpen);
+                    }
+                  }}
+                  data-testid="switch-benefactor-portal"
+                  className={`sb-pill w-full ${collapsed ? 'justify-center' : ''}`}
+                  style={{
+                    background: isBenefactorActive ? 'rgba(212,175,55,0.1)' : undefined,
+                    borderColor: isBenefactorActive ? 'rgba(212,175,55,0.3)' : undefined,
+                    color: isBenefactorActive ? '#d4af37' : undefined,
+                    padding: collapsed ? undefined : '10px 16px',
+                    flexDirection: collapsed ? undefined : 'column',
+                    alignItems: collapsed ? undefined : 'center',
+                    gap: collapsed ? undefined : 2,
+                  }}>
+                    {collapsed ? (
+                      <Shield className="w-[18px] h-[18px]" style={{ color: isBenefactorActive ? '#d4af37' : undefined }} />
+                    ) : (
+                      <>
+                        <span style={{ fontWeight: 600, fontSize: 14 }}>My Benefactor Portal</span>
+                        {ownedEstates.length > 1 && <span style={{ fontSize: 10, opacity: 0.5 }}>{ownedEstates.length} estates</span>}
+                      </>
+                    )}
+                  </button>
+                )}
+
+                {/* Estate Picker — floats above when 2+ estates */}
+                {estatePickerOpen && ownedEstates.length > 1 && (
+                  <>
+                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99 }}
+                      onClick={() => setEstatePickerOpen(false)} />
+                    <div style={{
+                      position: 'absolute', bottom: '100%', left: 0, right: 0, marginBottom: 4,
+                      background: 'var(--bg2)', border: '1px solid var(--b2)',
+                      borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', zIndex: 100,
+                      padding: 8,
+                    }} data-testid="estate-picker">
+                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--t5)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6, paddingLeft: 4 }}>
+                        Select Estate
+                      </div>
+                      {ownedEstates.map(estate => (
+                        <button key={estate.id}
+                          onClick={() => {
+                            localStorage.setItem('selected_estate_id', estate.id);
+                            localStorage.removeItem('beneficiary_estate_id');
+                            localStorage.setItem('carryon_last_portal', 'benefactor');
+                            setEstatePickerOpen(false);
+                            navigate('/dashboard');
+                          }}
+                          data-testid={`pick-estate-${estate.id}`}
+                          className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                          style={{ color: 'var(--t)', background: localStorage.getItem('selected_estate_id') === estate.id ? 'var(--s)' : 'transparent' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'var(--s)'}
+                          onMouseLeave={e => e.currentTarget.style.background = localStorage.getItem('selected_estate_id') === estate.id ? 'var(--s)' : 'transparent'}
+                        >
+                          {estate.name || 'Estate'}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Beneficiary Portal — single pill, always goes to hub */}
+                {beneficiaryEstates.length > 0 && (
+                  <button onClick={() => {
+                    localStorage.removeItem('selected_estate_id');
+                    localStorage.removeItem('beneficiary_estate_id');
+                    localStorage.setItem('carryon_last_portal', 'beneficiary');
+                    navigate('/beneficiary');
+                    window.location.reload();
+                  }}
+                  data-testid="switch-beneficiary-portal"
+                  className={`sb-pill w-full ${collapsed ? 'justify-center' : ''}`}
+                  style={{
+                    background: isBenActive ? 'rgba(212,175,55,0.1)' : undefined,
+                    borderColor: isBenActive ? 'rgba(212,175,55,0.3)' : undefined,
+                    color: isBenActive ? '#d4af37' : undefined,
+                    padding: collapsed ? undefined : '10px 16px',
+                    flexDirection: collapsed ? undefined : 'column',
+                    alignItems: collapsed ? undefined : 'center',
+                    gap: collapsed ? undefined : 2,
+                  }}>
+                    {collapsed ? (
+                      <Users className="w-[18px] h-[18px]" style={{ color: isBenActive ? '#d4af37' : undefined }} />
+                    ) : (
+                      <>
+                        <span style={{ fontWeight: 600, fontSize: 14 }}>My Beneficiary Portal</span>
+                        {beneficiaryEstates.length > 1 && <span style={{ fontSize: 10, opacity: 0.5 }}>{beneficiaryEstates.length} estates</span>}
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
-            )}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {benEstates.filter(e => e.user_role_in_estate === 'owner').map(estate => {
-                const isActive = !window.location.pathname.startsWith('/beneficiary');
-                return (
-                <button key={`own-${estate.id}`} onClick={() => {
-                  localStorage.setItem('selected_estate_id', estate.id);
-                  localStorage.removeItem('beneficiary_estate_id');
-                  localStorage.setItem('carryon_last_portal', 'benefactor');
-                  navigate('/dashboard');
-                }}
-                data-testid={`switch-estate-owner-${estate.id}`}
-                className={`sb-pill w-full ${collapsed ? 'justify-center' : ''}`}
-                style={{
-                  background: isActive ? 'rgba(212,175,55,0.1)' : undefined,
-                  borderColor: isActive ? 'rgba(212,175,55,0.3)' : undefined,
-                  color: isActive ? '#d4af37' : undefined,
-                  padding: collapsed ? undefined : '10px 16px',
-                  flexDirection: collapsed ? undefined : 'column',
-                  alignItems: collapsed ? undefined : 'center',
-                  gap: collapsed ? undefined : 2,
-                }}>
-                  {collapsed ? (
-                    <Shield className="w-[18px] h-[18px]" style={{ color: isActive ? '#d4af37' : undefined }} />
-                  ) : (
-                    <>
-                      <span style={{ fontWeight: 600, fontSize: 14 }}>My Benefactor Portal</span>
-                      <span style={{ fontSize: 11, opacity: 0.6 }}>Benefactor = Me</span>
-                    </>
-                  )}
-                </button>
-                );
-              })}
-              {benEstates.filter(e => e.user_role_in_estate === 'beneficiary' || e.is_beneficiary_estate).map(estate => {
-                const isActive = window.location.pathname.startsWith('/beneficiary');
-                const benefactorFirst = (estate.benefactor_name || '').split(' ')[0] || 'Unknown';
-                return (
-                <button key={`ben-${estate.id}`} onClick={() => {
-                  localStorage.setItem('beneficiary_estate_id', estate.id);
-                  localStorage.removeItem('selected_estate_id');
-                  localStorage.setItem('carryon_last_portal', 'beneficiary');
-                  navigate('/beneficiary');
-                  window.location.reload();
-                }}
-                data-testid={`switch-estate-ben-${estate.id}`}
-                className={`sb-pill w-full ${collapsed ? 'justify-center' : ''}`}
-                style={{
-                  background: isActive ? 'rgba(212,175,55,0.1)' : undefined,
-                  borderColor: isActive ? 'rgba(212,175,55,0.3)' : undefined,
-                  color: isActive ? '#d4af37' : undefined,
-                  padding: collapsed ? undefined : '10px 16px',
-                  flexDirection: collapsed ? undefined : 'column',
-                  alignItems: collapsed ? undefined : 'center',
-                  gap: collapsed ? undefined : 2,
-                }}>
-                  {collapsed ? (
-                    <Users className="w-[18px] h-[18px]" style={{ color: isActive ? '#d4af37' : undefined }} />
-                  ) : (
-                    <>
-                      <span style={{ fontWeight: 600, fontSize: 14 }}>My Beneficiary Portal</span>
-                      <span style={{ fontSize: 11, opacity: 0.6 }}>Benefactor = {benefactorFirst}</span>
-                    </>
-                  )}
-                </button>
-                );
-              })}
-            </div>
-          </>
-        )}
+            </>
+          );
+        })()}
 
         {/* ── Separator ── */}
         <div style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.08)', margin: '2px 0' }} />

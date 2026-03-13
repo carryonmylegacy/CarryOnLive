@@ -376,11 +376,6 @@ async def create_estate_for_existing_user(
             await db.vault_items.delete_many({"estate_id": existing["id"]})
             await db.checklist_items.delete_many({"estate_id": existing["id"]})
             await db.activity_logs.delete_many({"estate_id": existing["id"]})
-        else:
-            raise HTTPException(
-                status_code=400,
-                detail="You already have an estate plan. Go to your Dashboard to manage it.",
-            )
 
     user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
     if not user:

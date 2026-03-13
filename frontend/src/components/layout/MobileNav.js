@@ -108,6 +108,7 @@ const DebugValues = () => {
     }, 100);
   }, []);
 
+
   const row = (label, value, highlight) => (
     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
       <span style={{ color: '#aaa', fontSize: '12px' }}>{label}</span>
@@ -149,6 +150,22 @@ const MobileNav = () => {
   const [open, setOpen] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
   const longPressTimerRef = React.useRef(null);
+  const [mobileEstates, setMobileEstates] = useState([]);
+  const [mobileEstatePicker, setMobileEstatePicker] = useState(false);
+
+  // Fetch estates for portal switching
+  React.useEffect(() => {
+    if (user && user.role !== 'admin' && user.role !== 'operator') {
+      const token = localStorage.getItem('carryon_token');
+      if (token) {
+        import('axios').then(({ default: ax }) => {
+          ax.get(`${BASE_URL}/api/estates`, { headers: { Authorization: `Bearer ${token}` } })
+            .then(res => setMobileEstates(res.data || []))
+            .catch(() => {});
+        });
+      }
+    }
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Dev portal switcher (founder only)
   const [devOpen, setDevOpen] = useState(false);
@@ -681,50 +698,91 @@ const MobileNav = () => {
 
                 {/* Switch View — Portal Pills */}
                 {(() => {
-                  const isMultiRole = user?.is_also_benefactor || user?.is_also_beneficiary ||
-                    (user?.role === 'benefactor' && user?.role !== 'admin');
-                  if (!isMultiRole || user?.role === 'admin' || user?.role === 'operator') return null;
+                  const ownedEstates = mobileEstates.filter(e => e.user_role_in_estate === 'owner');
+                  const beneficiaryEstates = mobileEstates.filter(e => e.user_role_in_estate === 'beneficiary' || e.is_beneficiary_estate);
+                  const showSwitch = ownedEstates.length > 0 || beneficiaryEstates.length > 0;
+                  if (!showSwitch || user?.role === 'admin' || user?.role === 'operator') return null;
                   const isOnBeneficiary = window.location.pathname.startsWith('/beneficiary');
+                  const isBenefactorActive = !isOnBeneficiary && ownedEstates.length > 0;
                   return (
                     <div className="mb-2">
-                      <div style={{ fontSize: 11, fontWeight: 600, color: '#525C72', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 8, paddingLeft: 4 }}>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--t5)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 8, paddingLeft: 4 }}>
                         Switch View
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        <button onClick={() => {
-                          setOpen(false);
-                          localStorage.setItem('carryon_last_portal', 'benefactor');
-                          navigate('/dashboard');
-                          if (isOnBeneficiary) window.location.reload();
-                        }}
-                        data-testid="mobile-switch-benefactor"
-                        className="w-full flex flex-col items-center px-4 py-3 rounded-xl transition-all"
-                        style={{
-                          border: `1px solid ${!isOnBeneficiary ? 'rgba(212,175,55,0.3)' : theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                          color: !isOnBeneficiary ? '#d4af37' : theme === 'dark' ? '#A0AABF' : '#475569',
-                          backgroundColor: !isOnBeneficiary ? 'rgba(212,175,55,0.08)' : theme === 'dark' ? 'var(--b)' : 'rgba(0,0,0,0.05)',
-                          gap: 2,
-                        }}>
-                          <span className="font-semibold text-sm">My Benefactor Portal</span>
-                          <span style={{ fontSize: 11, opacity: 0.6 }}>Benefactor = Me</span>
-                        </button>
-                        <button onClick={() => {
-                          setOpen(false);
-                          localStorage.setItem('carryon_last_portal', 'beneficiary');
-                          navigate('/beneficiary');
-                          if (!isOnBeneficiary) window.location.reload();
-                        }}
-                        data-testid="mobile-switch-beneficiary"
-                        className="w-full flex flex-col items-center px-4 py-3 rounded-xl transition-all"
-                        style={{
-                          border: `1px solid ${isOnBeneficiary ? 'rgba(212,175,55,0.3)' : theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                          color: isOnBeneficiary ? '#d4af37' : theme === 'dark' ? '#A0AABF' : '#475569',
-                          backgroundColor: isOnBeneficiary ? 'rgba(212,175,55,0.08)' : theme === 'dark' ? 'var(--b)' : 'rgba(0,0,0,0.05)',
-                          gap: 2,
-                        }}>
-                          <span className="font-semibold text-sm">My Beneficiary Portal</span>
-                          <span style={{ fontSize: 11, opacity: 0.6 }}>Benefactor = {user?.name?.split(' ')[0] || 'Unknown'}</span>
-                        </button>
+                        {/* Benefactor Portal */}
+                        {ownedEstates.length > 0 && (
+                          <>
+                            <button onClick={() => {
+                              if (ownedEstates.length === 1) {
+                                setOpen(false);
+                                localStorage.setItem('selected_estate_id', ownedEstates[0].id);
+                                localStorage.removeItem('beneficiary_estate_id');
+                                localStorage.setItem('carryon_last_portal', 'benefactor');
+                                navigate('/dashboard');
+                                if (isOnBeneficiary) window.location.reload();
+                              } else {
+                                setMobileEstatePicker(!mobileEstatePicker);
+                              }
+                            }}
+                            data-testid="mobile-switch-benefactor"
+                            className="w-full flex flex-col items-center px-4 py-3 rounded-xl transition-all"
+                            style={{
+                              border: `1px solid ${isBenefactorActive ? 'rgba(212,175,55,0.3)' : theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                              color: isBenefactorActive ? '#d4af37' : theme === 'dark' ? '#A0AABF' : '#475569',
+                              backgroundColor: isBenefactorActive ? 'rgba(212,175,55,0.08)' : theme === 'dark' ? 'var(--b)' : 'rgba(0,0,0,0.05)',
+                              gap: 2,
+                            }}>
+                              <span className="font-semibold text-sm">My Benefactor Portal</span>
+                              {ownedEstates.length > 1 && <span style={{ fontSize: 10, opacity: 0.5 }}>{ownedEstates.length} estates</span>}
+                            </button>
+                            {/* Estate picker for multi-estate */}
+                            {mobileEstatePicker && ownedEstates.length > 1 && (
+                              <div style={{ padding: 8, borderRadius: 10, background: theme === 'dark' ? 'var(--bg2)' : 'white', border: '1px solid var(--b2)' }}
+                                data-testid="mobile-estate-picker">
+                                {ownedEstates.map(estate => (
+                                  <button key={estate.id}
+                                    onClick={() => {
+                                      setOpen(false);
+                                      setMobileEstatePicker(false);
+                                      localStorage.setItem('selected_estate_id', estate.id);
+                                      localStorage.removeItem('beneficiary_estate_id');
+                                      localStorage.setItem('carryon_last_portal', 'benefactor');
+                                      navigate('/dashboard');
+                                      if (isOnBeneficiary) window.location.reload();
+                                    }}
+                                    data-testid={`mobile-pick-estate-${estate.id}`}
+                                    className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium"
+                                    style={{ color: 'var(--t)' }}>
+                                    {estate.name || 'Estate'}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </>
+                        )}
+                        {/* Beneficiary Portal — single button to hub */}
+                        {beneficiaryEstates.length > 0 && (
+                          <button onClick={() => {
+                            setOpen(false);
+                            localStorage.removeItem('selected_estate_id');
+                            localStorage.removeItem('beneficiary_estate_id');
+                            localStorage.setItem('carryon_last_portal', 'beneficiary');
+                            navigate('/beneficiary');
+                            if (!isOnBeneficiary) window.location.reload();
+                          }}
+                          data-testid="mobile-switch-beneficiary"
+                          className="w-full flex flex-col items-center px-4 py-3 rounded-xl transition-all"
+                          style={{
+                            border: `1px solid ${isOnBeneficiary ? 'rgba(212,175,55,0.3)' : theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                            color: isOnBeneficiary ? '#d4af37' : theme === 'dark' ? '#A0AABF' : '#475569',
+                            backgroundColor: isOnBeneficiary ? 'rgba(212,175,55,0.08)' : theme === 'dark' ? 'var(--b)' : 'rgba(0,0,0,0.05)',
+                            gap: 2,
+                          }}>
+                            <span className="font-semibold text-sm">My Beneficiary Portal</span>
+                            {beneficiaryEstates.length > 1 && <span style={{ fontSize: 10, opacity: 0.5 }}>{beneficiaryEstates.length} estates</span>}
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
