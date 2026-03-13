@@ -216,7 +216,7 @@ async def enroll_voiceprint_endpoint(
         # Get existing enrollment
         existing = await db.section_security.find_one(
             {"user_id": current_user["id"], "section_id": section_id},
-            {"_id": 0, "voiceprint_samples": 1, "voiceprint_version": 1},
+            {"_id": 0, "id": 1, "voiceprint_samples": 1, "voiceprint_version": 1},
         )
 
         samples = []
@@ -472,7 +472,7 @@ async def check_unlock_status(
     """Check if a section has been unlocked in the current session."""
     session = await db.section_unlock_sessions.find_one(
         {"user_id": current_user["id"], "section_id": section_id},
-        {"_id": 0, "expires_at": 1},
+        {"_id": 0, "id": 1, "expires_at": 1},
     )
     if session:
         return {"unlocked": True}
@@ -506,7 +506,7 @@ class MasterKeyRequest(BaseModel):
 async def get_master_key_status(current_user: dict = Depends(get_current_user)):
     """Check if the user has a vault master key set."""
     user = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "vault_master_key_hash": 1}
+        {"id": current_user["id"]}, {"_id": 0, "id": 1, "vault_master_key_hash": 1}
     )
     return {"has_master_key": bool(user and user.get("vault_master_key_hash"))}
 
@@ -546,7 +546,7 @@ async def get_user_master_key_for_admin(
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
     user = await db.users.find_one(
-        {"id": user_id}, {"_id": 0, "vault_master_key_hash": 1, "name": 1}
+        {"id": user_id}, {"_id": 0, "id": 1, "vault_master_key_hash": 1, "name": 1}
     )
     if not user or not user.get("vault_master_key_hash"):
         raise HTTPException(status_code=404, detail="No master key set for this user")
@@ -563,7 +563,7 @@ async def admin_verify_master_key(
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
     user = await db.users.find_one(
-        {"id": user_id}, {"_id": 0, "vault_master_key_hash": 1}
+        {"id": user_id}, {"_id": 0, "id": 1, "vault_master_key_hash": 1}
     )
     if not user or not user.get("vault_master_key_hash"):
         raise HTTPException(status_code=404, detail="No master key set")
@@ -583,7 +583,7 @@ async def admin_unlock_all_documents(
         raise HTTPException(status_code=403, detail="Admin only")
 
     user = await db.users.find_one(
-        {"id": user_id}, {"_id": 0, "vault_master_key_hash": 1}
+        {"id": user_id}, {"_id": 0, "id": 1, "vault_master_key_hash": 1}
     )
     if not user or not user.get("vault_master_key_hash"):
         raise HTTPException(status_code=404, detail="No master key set")
@@ -595,7 +595,7 @@ async def admin_unlock_all_documents(
         100
     )
     ben_records = await db.beneficiaries.find(
-        {"user_id": user_id}, {"_id": 0, "estate_id": 1}
+        {"user_id": user_id}, {"_id": 0, "id": 1, "estate_id": 1}
     ).to_list(100)
     estate_ids = list({e["id"] for e in owned} | {b["estate_id"] for b in ben_records})
 

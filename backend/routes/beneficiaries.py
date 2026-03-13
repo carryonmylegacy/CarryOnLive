@@ -174,7 +174,7 @@ async def set_primary_beneficiary(
 
     # Find the beneficiary to get their estate_id
     ben = await db.beneficiaries.find_one(
-        {"id": beneficiary_id}, {"_id": 0, "estate_id": 1, "name": 1}
+        {"id": beneficiary_id}, {"_id": 0, "id": 1, "estate_id": 1, "name": 1}
     )
     if not ben:
         raise HTTPException(status_code=404, detail="Beneficiary not found")
@@ -241,7 +241,7 @@ async def request_estate_access(
         # Post-transition: find the primary beneficiary
         primary = await db.beneficiaries.find_one(
             {"estate_id": data.estate_id, "is_primary": True},
-            {"_id": 0, "user_id": 1, "name": 1},
+            {"_id": 0, "id": 1, "user_id": 1, "name": 1},
         )
         if not primary or not primary.get("user_id"):
             raise HTTPException(
@@ -409,7 +409,8 @@ async def handle_access_request(
                         "beneficiary_id": req["requester_id"],
                         "benefactor_id": (
                             await db.estates.find_one(
-                                {"id": req["estate_id"]}, {"_id": 0, "owner_id": 1}
+                                {"id": req["estate_id"]},
+                                {"_id": 0, "id": 1, "owner_id": 1},
                             )
                         ).get("owner_id", ""),
                         "reason": "post_transition_approval",
@@ -589,7 +590,7 @@ async def delete_beneficiary_photo(
 
     # Delete from storage if it's a stored key
     ben = await db.beneficiaries.find_one(
-        {"id": beneficiary_id}, {"_id": 0, "photo_url": 1}
+        {"id": beneficiary_id}, {"_id": 0, "id": 1, "photo_url": 1}
     )
     if ben:
         old_key = ben.get("photo_url", "")
@@ -895,7 +896,8 @@ async def accept_invitation(data: AcceptInvitationRequest):
 
     # Notify the benefactor that the invitation was accepted
     estate = await db.estates.find_one(
-        {"id": beneficiary["estate_id"]}, {"_id": 0, "user_id": 1, "owner_id": 1}
+        {"id": beneficiary["estate_id"]},
+        {"_id": 0, "id": 1, "user_id": 1, "owner_id": 1},
     )
     benefactor_id = (estate or {}).get("owner_id") or (estate or {}).get("user_id")
     if benefactor_id:
@@ -953,7 +955,7 @@ async def reorder_beneficiaries(
         current_user["role"] == "beneficiary"
         and (
             await db.users.find_one(
-                {"id": current_user["id"]}, {"_id": 0, "is_also_benefactor": 1}
+                {"id": current_user["id"]}, {"_id": 0, "id": 1, "is_also_benefactor": 1}
             )
             or {}
         ).get("is_also_benefactor")

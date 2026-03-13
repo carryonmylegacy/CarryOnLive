@@ -328,7 +328,7 @@ async def send_admin_analytics_digest():
         return {"sent": 0, "reason": "no_api_key"}
 
     admins = await db.users.find(
-        {"role": "admin"}, {"_id": 0, "email": 1, "name": 1}
+        {"role": "admin"}, {"_id": 0, "id": 1, "email": 1, "name": 1}
     ).to_list(50)
 
     if not admins:

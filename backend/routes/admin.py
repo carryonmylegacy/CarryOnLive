@@ -243,7 +243,7 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
     sub_ids = {
         s["user_id"]
         for s in await db.user_subscriptions.find(
-            {"status": "active"}, {"_id": 0, "user_id": 1}
+            {"status": "active"}, {"_id": 0, "id": 1, "user_id": 1}
         ).to_list(10000)
     }
     trial_periods = sum(1 for u in trial_candidates if u["id"] not in sub_ids)
@@ -345,7 +345,14 @@ async def get_revenue_metrics(current_user: dict = Depends(get_current_user)):
     # Active subscriptions with their plan prices
     active_subs = await db.subscriptions.find(
         {"status": "active"},
-        {"_id": 0, "plan_id": 1, "amount": 1, "billing_cycle": 1, "created_at": 1},
+        {
+            "_id": 0,
+            "id": 1,
+            "plan_id": 1,
+            "amount": 1,
+            "billing_cycle": 1,
+            "created_at": 1,
+        },
     ).to_list(100000)
 
     # Calculate MRR from active subscriptions
@@ -364,7 +371,7 @@ async def get_revenue_metrics(current_user: dict = Depends(get_current_user)):
 
     # Total revenue (all time) from completed payments
     payments = await db.payments.find(
-        {"status": "succeeded"}, {"_id": 0, "amount": 1, "created_at": 1}
+        {"status": "succeeded"}, {"_id": 0, "id": 1, "amount": 1, "created_at": 1}
     ).to_list(100000)
     total_revenue = sum(p.get("amount", 0) for p in payments) / 100  # cents to dollars
 
@@ -547,7 +554,7 @@ async def delete_user(
 
     # Verify admin password
     admin_doc = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "password": 1}
+        {"id": current_user["id"]}, {"_id": 0, "id": 1, "password": 1}
     )
     if not admin_doc or not bcrypt.checkpw(
         admin_password.encode(), admin_doc["password"].encode()
@@ -619,7 +626,7 @@ async def delete_estate_only(
         raise HTTPException(status_code=403, detail="Admin access required")
 
     admin_doc = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "password": 1}
+        {"id": current_user["id"]}, {"_id": 0, "id": 1, "password": 1}
     )
     if not admin_doc or not bcrypt.checkpw(
         admin_password.encode(), admin_doc["password"].encode()
@@ -686,7 +693,7 @@ async def cleanup_ghost_estates(
         raise HTTPException(status_code=403, detail="Admin access required")
 
     admin_doc = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "password": 1}
+        {"id": current_user["id"]}, {"_id": 0, "id": 1, "password": 1}
     )
     if not admin_doc or not bcrypt.checkpw(
         data.admin_password.encode(), admin_doc["password"].encode()
@@ -931,7 +938,7 @@ async def get_trial_users(current_user: dict = Depends(get_current_user)):
     # Exclude users who already have an active subscription
     subscribed_ids = set()
     subs = await db.user_subscriptions.find(
-        {"status": "active"}, {"_id": 0, "user_id": 1}
+        {"status": "active"}, {"_id": 0, "id": 1, "user_id": 1}
     ).to_list(10000)
     for s in subs:
         subscribed_ids.add(s["user_id"])
@@ -1723,7 +1730,7 @@ async def migrate_photos_to_s3(current_user: dict = Depends(get_current_user)):
     override_count = 0
     async for ov in db.beneficiary_display_overrides.find(
         {"owner_photo_url": {"$regex": "^data:"}},
-        {"_id": 0, "user_id": 1, "estate_id": 1, "owner_photo_url": 1},
+        {"_id": 0, "id": 1, "user_id": 1, "estate_id": 1, "owner_photo_url": 1},
     ):
         try:
             header, b64_data = ov["owner_photo_url"].split(",", 1)

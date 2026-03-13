@@ -69,7 +69,7 @@ async def request_emergency_access(
 
     # Get benefactor info
     benefactor = await db.users.find_one(
-        {"id": estate.get("owner_id")}, {"_id": 0, "name": 1, "email": 1}
+        {"id": estate.get("owner_id")}, {"_id": 0, "id": 1, "name": 1, "email": 1}
     )
 
     request_id = str(uuid.uuid4())

@@ -141,7 +141,7 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
     if estate_id:
         bens = await db.beneficiaries.find(
             {"estate_id": estate_id, "is_stub": {"$ne": True}},
-            {"_id": 0, "first_name": 1, "name": 1},
+            {"_id": 0, "id": 1, "first_name": 1, "name": 1},
         ).to_list(10)
         ben_names = [
             b.get("first_name") or b.get("name", "").split(" ")[0]
@@ -585,7 +585,7 @@ async def apply_scenario_template(
 
     # Get existing items to avoid duplicates
     existing = await db.checklists.find(
-        {"estate_id": data.estate_id}, {"_id": 0, "title": 1}
+        {"estate_id": data.estate_id}, {"_id": 0, "id": 1, "title": 1}
     ).to_list(500)
     existing_titles = {item["title"].lower().strip() for item in existing}
 

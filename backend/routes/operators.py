@@ -289,7 +289,7 @@ async def delete_operator(
     - Managers can only delete workers."""
     op = await db.users.find_one(
         {"id": operator_id, "role": "operator"},
-        {"_id": 0, "email": 1, "operator_role": 1},
+        {"_id": 0, "id": 1, "email": 1, "operator_role": 1},
     )
     if not op:
         raise HTTPException(status_code=404, detail="Operator not found")
@@ -309,7 +309,7 @@ async def delete_operator(
 
     # Verify caller's password
     caller_doc = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "password": 1}
+        {"id": current_user["id"]}, {"_id": 0, "id": 1, "password": 1}
     )
     if not caller_doc or not bcrypt.checkpw(
         admin_password.encode(), caller_doc["password"].encode()

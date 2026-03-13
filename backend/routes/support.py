@@ -210,7 +210,7 @@ async def get_all_conversations(
     result = []
     for conv in conversations:
         user = await db.users.find_one(
-            {"id": conv["_id"]}, {"_id": 0, "name": 1, "email": 1, "role": 1}
+            {"id": conv["_id"]}, {"_id": 0, "id": 1, "name": 1, "email": 1, "role": 1}
         )
         result.append(
             {

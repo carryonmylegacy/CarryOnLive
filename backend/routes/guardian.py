@@ -508,7 +508,7 @@ Provide a clear, organized analysis with specific findings and recommendations."
 
                 # Get existing checklist items to avoid duplicates
                 existing = await db.checklists.find(
-                    {"estate_id": estate_id}, {"_id": 0, "title": 1}
+                    {"estate_id": estate_id}, {"_id": 0, "id": 1, "title": 1}
                 ).to_list(200)
                 existing_titles = {item["title"].lower() for item in existing}
 

@@ -175,7 +175,7 @@ async def submit_dts_quote(
 
     # Notify the task owner about the quote
     estate = await db.estates.find_one(
-        {"id": task["estate_id"]}, {"_id": 0, "user_id": 1}
+        {"id": task["estate_id"]}, {"_id": 0, "id": 1, "user_id": 1}
     )
     if estate:
         asyncio.create_task(
@@ -296,7 +296,7 @@ async def update_dts_status(
     from services.notifications import notify
 
     task = await db.dts_tasks.find_one(
-        {"id": task_id}, {"_id": 0, "title": 1, "owner_id": 1}
+        {"id": task_id}, {"_id": 0, "id": 1, "title": 1, "owner_id": 1}
     )
     task_title = (task or {}).get("title", "DTS Task")
     asyncio.create_task(
@@ -340,7 +340,7 @@ async def assign_dts_task(
 
     # Verify target is an operator
     target = await db.users.find_one(
-        {"id": data.operator_id, "role": "operator"}, {"_id": 0, "name": 1}
+        {"id": data.operator_id, "role": "operator"}, {"_id": 0, "id": 1, "name": 1}
     )
     if not target:
         raise HTTPException(status_code=404, detail="Operator not found")
@@ -564,13 +564,13 @@ async def get_all_certificates(
     for cert in certs:
         estate = await db.estates.find_one(
             {"id": cert.get("estate_id")},
-            {"_id": 0, "name": 1, "owner_id": 1, "status": 1},
+            {"_id": 0, "id": 1, "name": 1, "owner_id": 1, "status": 1},
         )
         if estate:
             cert["estate_name"] = estate.get("name", "Unknown")
             cert["estate_status"] = estate.get("status", "unknown")
         uploader = await db.users.find_one(
-            {"id": cert.get("uploaded_by")}, {"_id": 0, "name": 1, "email": 1}
+            {"id": cert.get("uploaded_by")}, {"_id": 0, "id": 1, "name": 1, "email": 1}
         )
         if uploader:
             cert["uploader_name"] = uploader.get("name", "Unknown")
@@ -595,7 +595,7 @@ async def soft_delete_certificate(
     if not admin_password:
         raise HTTPException(status_code=400, detail="Password required to delete")
     caller_doc = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "password": 1}
+        {"id": current_user["id"]}, {"_id": 0, "id": 1, "password": 1}
     )
     if not caller_doc or not bcrypt.checkpw(
         admin_password.encode(), caller_doc["password"].encode()

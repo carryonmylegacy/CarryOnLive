@@ -46,7 +46,7 @@ async def get_pending_deliveries(
     # Enrich with estate name
     for d in deliveries:
         estate = await db.estates.find_one(
-            {"id": d.get("estate_id")}, {"_id": 0, "name": 1}
+            {"id": d.get("estate_id")}, {"_id": 0, "id": 1, "name": 1}
         )
         d["estate_name"] = (estate or {}).get("name", "")
 
@@ -91,7 +91,7 @@ async def get_delivery_detail(
 
     # Get estate info
     estate = await db.estates.find_one(
-        {"id": delivery["estate_id"]}, {"_id": 0, "name": 1, "owner_id": 1}
+        {"id": delivery["estate_id"]}, {"_id": 0, "id": 1, "name": 1, "owner_id": 1}
     )
 
     # Get all messages in the estate for context

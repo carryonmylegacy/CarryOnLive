@@ -731,7 +731,9 @@ class VerifyPasswordRequest(BaseModel):
 @router.post("/auth/verify-password")
 async def verify_password_endpoint(data: VerifyPasswordRequest):
     """Verify account password without logging in. Used for sensitive settings changes."""
-    user = await db.users.find_one({"email": data.email}, {"_id": 0, "password": 1})
+    user = await db.users.find_one(
+        {"email": data.email}, {"_id": 0, "id": 1, "password": 1}
+    )
     if not user or not verify_password(data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid password")
     return {"verified": True}
@@ -744,7 +746,9 @@ class ResendOTPRequest(BaseModel):
 @router.post("/auth/resend-otp")
 async def resend_otp(data: ResendOTPRequest):
     """Resend OTP code to the user's email. Rate-limited to prevent abuse."""
-    user = await db.users.find_one({"email": data.email}, {"_id": 0, "name": 1})
+    user = await db.users.find_one(
+        {"email": data.email}, {"_id": 0, "id": 1, "name": 1}
+    )
     if not user:
         # Don't reveal whether the email exists
         return {"message": "If an account exists, a new code has been sent."}
@@ -961,7 +965,7 @@ async def update_profile_photo(
     if not data.photo_data:
         # Remove photo — delete from storage if it's a stored key
         user_doc = await db.users.find_one(
-            {"id": current_user["id"]}, {"_id": 0, "photo_url": 1}
+            {"id": current_user["id"]}, {"_id": 0, "id": 1, "photo_url": 1}
         )
         old_key = (user_doc or {}).get("photo_url", "")
         if old_key and not old_key.startswith("data:"):
@@ -981,7 +985,7 @@ async def update_profile_photo(
 
     # Delete old photo from storage if it exists
     user_doc = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "photo_url": 1}
+        {"id": current_user["id"]}, {"_id": 0, "id": 1, "photo_url": 1}
     )
     old_key = (user_doc or {}).get("photo_url", "")
     if old_key and not old_key.startswith("data:"):
@@ -1028,7 +1032,7 @@ async def change_password(
         )
 
     user_doc = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "password": 1}
+        {"id": current_user["id"]}, {"_id": 0, "id": 1, "password": 1}
     )
     if not user_doc or not verify_password(data.current_password, user_doc["password"]):
         raise HTTPException(status_code=401, detail="Current password is incorrect")

@@ -68,7 +68,7 @@ async def get_legacy_timeline(
     )
     for ben in bens:
         ben_user = await db.users.find_one(
-            {"id": ben.get("user_id")}, {"_id": 0, "name": 1}
+            {"id": ben.get("user_id")}, {"_id": 0, "id": 1, "name": 1}
         )
         name = (
             ben_user.get("name", ben.get("email", "Someone"))

@@ -58,7 +58,7 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
         overrides = {}
         async for ov in db.beneficiary_display_overrides.find(
             {"user_id": current_user["id"], "estate_id": {"$in": estate_ids}},
-            {"_id": 0, "estate_id": 1, "owner_photo_url": 1},
+            {"_id": 0, "id": 1, "estate_id": 1, "owner_photo_url": 1},
         ):
             if ov.get("owner_photo_url"):
                 overrides[ov["estate_id"]] = ov["owner_photo_url"]
@@ -87,7 +87,7 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
                     "user_id": {"$in": owners_needing_photo},
                     "photo_url": {"$exists": True, "$nin": [None, ""]},
                 },
-                {"_id": 0, "user_id": 1, "photo_url": 1},
+                {"_id": 0, "id": 1, "user_id": 1, "photo_url": 1},
             ):
                 if bp["user_id"] not in ben_photos:
                     ben_photos[bp["user_id"]] = bp["photo_url"]
@@ -147,7 +147,7 @@ async def get_family_connections(current_user: dict = Depends(get_current_user))
     overrides_map = {}
     async for ov in db.beneficiary_display_overrides.find(
         {"user_id": current_user["id"], "estate_id": {"$in": estate_ids}},
-        {"_id": 0, "estate_id": 1, "owner_photo_url": 1},
+        {"_id": 0, "id": 1, "estate_id": 1, "owner_photo_url": 1},
     ):
         if ov.get("owner_photo_url"):
             overrides_map[ov["estate_id"]] = ov["owner_photo_url"]
@@ -165,7 +165,7 @@ async def get_family_connections(current_user: dict = Depends(get_current_user))
                 "user_id": {"$in": owners_needing_photo},
                 "photo_url": {"$exists": True, "$nin": [None, ""]},
             },
-            {"_id": 0, "user_id": 1, "photo_url": 1},
+            {"_id": 0, "id": 1, "user_id": 1, "photo_url": 1},
         ):
             if bp["user_id"] not in ben_photos_map:
                 ben_photos_map[bp["user_id"]] = bp["photo_url"]

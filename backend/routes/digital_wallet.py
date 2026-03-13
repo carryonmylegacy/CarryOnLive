@@ -139,7 +139,7 @@ async def create_digital_wallet_entry(
     if data.assigned_beneficiary_id:
         ben = await db.beneficiaries.find_one(
             {"id": data.assigned_beneficiary_id},
-            {"_id": 0, "first_name": 1, "last_name": 1},
+            {"_id": 0, "id": 1, "first_name": 1, "last_name": 1},
         )
         if ben:
             ben_name = f"{ben.get('first_name', '')} {ben.get('last_name', '')}".strip()
@@ -215,7 +215,7 @@ async def update_digital_wallet_entry(
         if data.assigned_beneficiary_id:
             ben = await db.beneficiaries.find_one(
                 {"id": data.assigned_beneficiary_id},
-                {"_id": 0, "first_name": 1, "last_name": 1},
+                {"_id": 0, "id": 1, "first_name": 1, "last_name": 1},
             )
             update["assigned_beneficiary_name"] = (
                 f"{ben.get('first_name', '')} {ben.get('last_name', '')}".strip()

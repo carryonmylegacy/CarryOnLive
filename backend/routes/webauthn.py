@@ -63,7 +63,7 @@ async def webauthn_register_options(current_user: dict = Depends(get_current_use
 
     # Check for existing credentials
     existing = await db.webauthn_credentials.find(
-        {"user_id": current_user["id"]}, {"_id": 0, "credential_id": 1}
+        {"user_id": current_user["id"]}, {"_id": 0, "id": 1, "credential_id": 1}
     ).to_list(10)
 
     exclude_credentials = []
@@ -161,7 +161,7 @@ async def webauthn_login_options(data: LoginOptionsRequest):
         user = await db.users.find_one({"email": data.email}, {"_id": 0, "id": 1})
         if user:
             creds = await db.webauthn_credentials.find(
-                {"user_id": user["id"]}, {"_id": 0, "credential_id": 1}
+                {"user_id": user["id"]}, {"_id": 0, "id": 1, "credential_id": 1}
             ).to_list(10)
             for c in creds:
                 allow_credentials.append(

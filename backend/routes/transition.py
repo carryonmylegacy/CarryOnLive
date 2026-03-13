@@ -182,7 +182,8 @@ async def approve_death_certificate(
 
     # Seal the benefactor's estate (immutable)
     estate_doc = await db.estates.find_one(
-        {"id": certificate["estate_id"]}, {"_id": 0, "beneficiaries": 1, "owner_id": 1}
+        {"id": certificate["estate_id"]},
+        {"_id": 0, "id": 1, "beneficiaries": 1, "owner_id": 1},
     )
     await db.estates.update_one(
         {"id": certificate["estate_id"]},
@@ -231,7 +232,7 @@ async def approve_death_certificate(
 
     # Create 30-day grace periods for all beneficiaries of this estate
     beneficiary_links = await db.beneficiaries.find(
-        {"estate_id": certificate["estate_id"]}, {"_id": 0, "user_id": 1}
+        {"estate_id": certificate["estate_id"]}, {"_id": 0, "id": 1, "user_id": 1}
     ).to_list(100)
 
     all_ben_ids = set()
@@ -282,7 +283,7 @@ async def approve_death_certificate(
     estate_name = ""
     if estate_doc:
         e = await db.estates.find_one(
-            {"id": certificate["estate_id"]}, {"_id": 0, "name": 1}
+            {"id": certificate["estate_id"]}, {"_id": 0, "id": 1, "name": 1}
         )
         estate_name = (e or {}).get("name", "")
 
@@ -330,7 +331,7 @@ async def delete_certificate(
     if not admin_password:
         raise HTTPException(status_code=400, detail="Admin password required")
     admin_doc = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "password": 1}
+        {"id": current_user["id"]}, {"_id": 0, "id": 1, "password": 1}
     )
     if not admin_doc or not bcrypt.checkpw(
         admin_password.encode(), admin_doc["password"].encode()
@@ -362,7 +363,7 @@ async def delete_certificate(
 
         # Unlock the benefactor's account
         estate_doc = await db.estates.find_one(
-            {"id": estate_id}, {"_id": 0, "owner_id": 1}
+            {"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1}
         )
         if estate_doc and estate_doc.get("owner_id"):
             await db.users.update_one(

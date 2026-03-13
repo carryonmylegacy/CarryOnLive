@@ -310,7 +310,7 @@ async def upload_document(
 
     beneficiaries = await db.beneficiaries.find(
         {"estate_id": estate_id, "user_id": {"$exists": True, "$ne": None}},
-        {"_id": 0, "user_id": 1},
+        {"_id": 0, "id": 1, "user_id": 1},
     ).to_list(100)
     category_label = category.replace("_", " ").title()
     for ben in beneficiaries:
@@ -431,7 +431,7 @@ async def lock_document(
 
     # Require vault master key to be set before allowing individual locks
     user_doc = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "vault_master_key_hash": 1}
+        {"id": current_user["id"]}, {"_id": 0, "id": 1, "vault_master_key_hash": 1}
     )
     if not user_doc or not user_doc.get("vault_master_key_hash"):
         raise HTTPException(
