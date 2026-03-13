@@ -75,6 +75,10 @@ const SettingsPage = () => {
   const [editingUsername, setEditingUsername] = useState(false);
   const [usernameDraft, setUsernameDraft] = useState('');
   const [usernameSaving, setUsernameSaving] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
+  const [nameSaving, setNameSaving] = useState(false);
+  const [displayName, setDisplayName] = useState('');
 
   const isAdmin = user?.role === 'admin';
   const isOperator = user?.role === 'operator';
@@ -107,6 +111,7 @@ const SettingsPage = () => {
     axios.get(`${API_URL}/auth/me`, getAuthHeaders()).then(res => {
       if (res.data.photo_url) setProfilePhoto(res.data.photo_url);
       if (res.data.username) setUsername(res.data.username);
+      setDisplayName(res.data.name || '');
     }).catch(() => {});
     // Fetch estate photo (benefactors only)
     cachedGet(axios, `${API_URL}/estates`, getAuthHeaders()).then(res => {
@@ -295,7 +300,60 @@ const SettingsPage = () => {
               }}
             />
             <div>
-              <h3 className="text-[var(--t)] font-semibold text-lg">{user?.name || 'User'}</h3>
+              {editingName ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={nameDraft}
+                    onChange={(e) => setNameDraft(e.target.value)}
+                    className="h-8 text-sm font-semibold"
+                    placeholder="Enter your name"
+                    autoFocus
+                    onKeyDown={async (e) => {
+                      if (e.key === 'Enter' && nameDraft.trim()) {
+                        setNameSaving(true);
+                        try {
+                          await axios.put(`${API_URL}/auth/display-name`, { name: nameDraft.trim() }, getAuthHeaders());
+                          setDisplayName(nameDraft.trim());
+                          setEditingName(false);
+                          toast.success('Name updated');
+                        } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update name'); }
+                        finally { setNameSaving(false); }
+                      } else if (e.key === 'Escape') { setEditingName(false); }
+                    }}
+                    data-testid="display-name-input"
+                  />
+                  <button
+                    disabled={nameSaving}
+                    onClick={async () => {
+                      if (nameDraft.trim()) {
+                        setNameSaving(true);
+                        try {
+                          await axios.put(`${API_URL}/auth/display-name`, { name: nameDraft.trim() }, getAuthHeaders());
+                          setDisplayName(nameDraft.trim());
+                          toast.success('Name updated');
+                        } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update name'); }
+                        finally { setNameSaving(false); }
+                      }
+                      setEditingName(false);
+                    }}
+                    className="p-1 rounded-md hover:bg-[var(--s)]"
+                    data-testid="display-name-save"
+                  >
+                    {nameSaving ? <Loader2 className="w-4 h-4 animate-spin text-[var(--gold)]" /> : <Check className="w-4 h-4 text-[var(--gn)]" />}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <h3 className="text-[var(--t)] font-semibold text-lg">{displayName || user?.name || 'User'}</h3>
+                  <button
+                    onClick={() => { setNameDraft(displayName || user?.name || ''); setEditingName(true); }}
+                    className="p-1 rounded-md hover:bg-[var(--s)]"
+                    data-testid="display-name-edit"
+                  >
+                    <Pencil className="w-3.5 h-3.5 text-[var(--t4)]" />
+                  </button>
+                </div>
+              )}
               <p className="text-[var(--t4)] text-sm">{user?.email || ''}</p>
               <span className="inline-block mt-1 px-2 py-0.5 bg-[var(--gold)]/20 text-[var(--gold)] text-xs rounded-full capitalize">
                 {user?.role || 'benefactor'}

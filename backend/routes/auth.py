@@ -1301,3 +1301,23 @@ async def set_username(
         {"$set": {"username": username, "username_lower": username_lower}},
     )
     return {"username": username}
+
+
+class DisplayNameUpdate(BaseModel):
+    name: str
+
+
+@router.put("/auth/display-name")
+async def update_display_name(
+    data: DisplayNameUpdate, current_user: dict = Depends(get_current_user)
+):
+    """Update the current user's display name."""
+    name = data.name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Name cannot be empty")
+
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$set": {"name": name}},
+    )
+    return {"name": name}
