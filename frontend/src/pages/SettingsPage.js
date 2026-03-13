@@ -266,8 +266,7 @@ const SettingsPage = () => {
         </p>
       </div>
 
-      {/* Profile — benefactor/beneficiary only */}
-      {!isStaff && (
+      {/* Profile */}
       <Card className="glass-card">
         <CardHeader>
           <CardTitle className="text-[var(--t)] flex items-center gap-2">
@@ -366,7 +365,6 @@ const SettingsPage = () => {
           </div>
         </CardContent>
       </Card>
-      )}
 
       {/* Estate Photo — benefactor only */}
       {(user?.role === 'benefactor' || user?.is_also_benefactor) && estateId && (
@@ -587,8 +585,7 @@ const SettingsPage = () => {
       </Card>
       )}
 
-      {/* Security — benefactor/beneficiary only */}
-      {!isStaff && (
+      {/* Security */}
       <Card className="glass-card">
         <CardHeader>
           <CardTitle className="text-[var(--t)] flex items-center gap-2">
@@ -664,7 +661,6 @@ const SettingsPage = () => {
           </Button>
         </CardContent>
       </Card>
-      )}
 
       {/* Privacy & Data Rights (GDPR) — benefactor/beneficiary only */}
       {!isStaff && (<>
