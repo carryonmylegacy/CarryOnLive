@@ -152,7 +152,12 @@ const MobileNav = () => {
 
   // Dev portal switcher (founder only)
   const [devOpen, setDevOpen] = useState(false);
-  const [devConfig, setDevConfig] = useState(null);
+  const [devConfig, setDevConfig] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem('dev_switcher_config');
+      return cached ? JSON.parse(cached) : null;
+    } catch { return null; }
+  });
   const [devSwitching, setDevSwitching] = useState(null);
   const isAdminSession = user?.role === 'admin' || localStorage.getItem('dev_switcher_admin_session') === 'true';
 
@@ -173,6 +178,7 @@ const MobileNav = () => {
         } catch {}
       }
       setDevConfig(data);
+      try { sessionStorage.setItem('dev_switcher_config', JSON.stringify(data)); } catch {}
     } catch {}
   };
 
