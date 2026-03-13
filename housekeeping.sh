@@ -505,6 +505,35 @@ else
   SOC2_ISSUES=$((SOC2_ISSUES + 1))
 fi
 
+# ── A1.2 — MongoDB Projection Safety ────────────────────────────────
+echo -n "38. [A1.2]  Mongo projection safety  "
+# Find inclusion projections ({"_id": 0, "field": 1}) that omit "id": 1
+# These cause KeyError when code later accesses doc["id"]
+PROJ_ISSUES=0
+PROJ_DETAILS=""
+for f in /app/backend/routes/*.py /app/backend/server.py; do
+  [ ! -f "$f" ] && continue
+  fname=$(basename "$f")
+  # Find lines with inclusion projections (have "field": 1 but no "id": 1)
+  # Pattern: {"_id": 0, "some_field": 1, ...} without "id": 1
+  while IFS= read -r match; do
+    line_num=$(echo "$match" | cut -d: -f1)
+    line_content=$(echo "$match" | cut -d: -f2-)
+    # Check if it's an inclusion projection (has ": 1") and excludes _id
+    if echo "$line_content" | grep -q '"_id": 0' && echo "$line_content" | grep -qE '": 1' && ! echo "$line_content" | grep -qE '"id": 1'; then
+      PROJ_ISSUES=$((PROJ_ISSUES + 1))
+      PROJ_DETAILS="${PROJ_DETAILS}  ${fname}:${line_num} — inclusion projection missing \"id\": 1\n"
+    fi
+  done < <(grep -n '{"_id": 0,' "$f" 2>/dev/null)
+done
+if [ "$PROJ_ISSUES" = "0" ]; then
+  echo -e "$PASS"
+else
+  echo -e "$WARN ($PROJ_ISSUES projection(s) may omit 'id' — risk of KeyError)"
+  echo -e "$PROJ_DETAILS"
+  echo "    Review: ensure 'id' is projected if accessed later"
+fi
+
 echo ""
 
 # ══════════════════════════════════════════════════════════════
