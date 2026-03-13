@@ -196,8 +196,9 @@ const GuardianPage = () => {
     if (header) setHeaderHeight(header.offsetHeight);
   }, []);
 
-  // View state: 'landing' or 'chat'
-  const [view, setView] = useState('landing');
+  // View state: 'landing' or 'chat' — auto-resume if active session exists
+  const savedSession = sessionStorage.getItem('ega_active_session');
+  const [view, setView] = useState(savedSession ? 'chat' : 'landing');
 
   // Persist active session across navigation
   useEffect(() => {
@@ -321,7 +322,16 @@ const GuardianPage = () => {
     // Auto-resume active session if returning to Guardian
     const activeSession = sessionStorage.getItem('ega_active_session');
     if (activeSession) {
-      resumeSession(activeSession);
+      resumeSession(activeSession).catch(() => {
+        // If resume fails, clear stale session and go to landing
+        sessionStorage.removeItem('ega_active_session');
+        if (isMountedRef.current) {
+          setView('landing');
+          setSessionId(null);
+          setMessages([]);
+          setLoading(false);
+        }
+      });
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
