@@ -20,17 +20,8 @@ const BeneficiaryGuardianPage = () => {
   const [estateId, setEstateId] = useState(null);
   const [documents, setDocuments] = useState([]);
   const scrollRef = useRef(null);
-  const abortControllerRef = useRef(null);
 
-  // Cleanup on unmount — abort in-flight requests
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-        abortControllerRef.current = null;
-      }
-    };
-  }, []);
+  // NOTE: No abort on unmount — let in-flight AI requests complete in background
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -63,20 +54,18 @@ const BeneficiaryGuardianPage = () => {
     setMessages(prev => [...prev, { role: 'user', content: text }]);
     setInput('');
     setLoading(true);
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
     try {
       const res = await axios.post(`${API_URL}/chat/guardian`, {
         message: text,
         session_id: sessionId,
         estate_id: estateId
-      }, { ...getAuthHeaders(), timeout: 120000, signal: controller.signal });
+      }, { ...getAuthHeaders(), timeout: 120000 });
       setSessionId(res.data.session_id);
       setMessages(prev => [...prev, { role: 'assistant', content: res.data.response || 'No response received.' }]);
     } catch (err) {
-      if (axios.isCancel(err) || err.name === 'AbortError' || err.code === 'ERR_CANCELED') return;
+      if (err.name === 'AbortError' || err.code === 'ERR_CANCELED') return;
       setMessages(prev => [...prev, { role: 'assistant', content: 'I encountered an issue. Please try again.' }]);
-    } finally { setLoading(false); abortControllerRef.current = null; }
+    } finally { setLoading(false); }
   };
 
   const handleSubmit = (e) => { e.preventDefault(); sendMessage(input); };

@@ -221,13 +221,10 @@ const GuardianPage = () => {
   const abortControllerRef = useRef(null);
   const pendingTimeoutRef = useRef(null);
 
-  // Cleanup on unmount — abort in-flight requests, clear timeouts, stop speech
+  // Cleanup on unmount — clear pending timeouts, stop speech recognition
+  // NOTE: Do NOT abort in-flight AI requests — let them complete in background
   useEffect(() => {
     return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-        abortControllerRef.current = null;
-      }
       if (pendingTimeoutRef.current) {
         clearTimeout(pendingTimeoutRef.current);
         pendingTimeoutRef.current = null;
