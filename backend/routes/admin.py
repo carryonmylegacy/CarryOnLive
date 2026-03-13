@@ -1674,7 +1674,13 @@ async def migrate_photos_to_s3(current_user: dict = Depends(get_current_user)):
     if current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
 
-    results = {"users": 0, "beneficiaries": 0, "estates": 0, "overrides": 0, "errors": []}
+    results = {
+        "users": 0,
+        "beneficiaries": 0,
+        "estates": 0,
+        "overrides": 0,
+        "errors": [],
+    }
 
     async def _migrate_field(collection, query_field, category, id_field="id"):
         """Migrate a single photo field across a collection."""
@@ -1711,9 +1717,7 @@ async def migrate_photos_to_s3(current_user: dict = Depends(get_current_user)):
     )
 
     # 3. Estates — estate_photo_url
-    results["estates"] = await _migrate_field(
-        db.estates, "estate_photo_url", "estates"
-    )
+    results["estates"] = await _migrate_field(db.estates, "estate_photo_url", "estates")
 
     # 4. Display overrides — owner_photo_url (keyed by user_id + estate_id)
     override_count = 0

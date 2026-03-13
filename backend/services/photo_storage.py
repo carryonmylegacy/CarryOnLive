@@ -77,7 +77,7 @@ async def delete_photo(photo_url: str) -> bool:
     # Convert URL path back to storage key
     key = photo_url
     if key.startswith("/api/photos/"):
-        key = "photos/" + key[len("/api/photos/"):]
+        key = "photos/" + key[len("/api/photos/") :]
     try:
         return await storage.delete(key)
     except Exception as e:
