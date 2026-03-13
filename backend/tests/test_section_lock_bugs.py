@@ -14,7 +14,7 @@ import requests
 import os
 
 BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://photo-lockout-fix.preview.emergentagent.com"
+    "REACT_APP_BACKEND_URL", "https://gzip-compress.preview.emergentagent.com"
 )
 
 # Test credentials

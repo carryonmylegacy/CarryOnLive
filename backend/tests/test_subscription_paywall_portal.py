@@ -11,7 +11,7 @@ import pytest
 import requests
 
 BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://photo-lockout-fix.preview.emergentagent.com"
+    "REACT_APP_BACKEND_URL", "https://gzip-compress.preview.emergentagent.com"
 )
 
 
@@ -147,7 +147,7 @@ class TestSubscriptionCheckout:
             json={
                 "plan_id": "premium",
                 "billing_cycle": "annual",
-                "origin_url": "https://photo-lockout-fix.preview.emergentagent.com",
+                "origin_url": "https://gzip-compress.preview.emergentagent.com",
             },
             headers=headers,
         )
