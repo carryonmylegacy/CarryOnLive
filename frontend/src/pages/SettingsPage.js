@@ -21,6 +21,8 @@ import {
   AlertTriangle,
   Eye,
   EyeOff,
+  Pencil,
+  Check,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -66,6 +68,8 @@ const SettingsPage = () => {
   const [estatePhoto, setEstatePhoto] = useState(null);
   const [estateId, setEstateId] = useState(null);
   const [estateName, setEstateName] = useState('');
+  const [editingEstateName, setEditingEstateName] = useState(false);
+  const [estateNameDraft, setEstateNameDraft] = useState('');
   const [settingsReady, setSettingsReady] = useState(false);
 
   const isAdmin = user?.role === 'admin';
@@ -334,8 +338,55 @@ const SettingsPage = () => {
                 try { await axios.put(`${API_URL}/estates/${estateId}/photo`, { photo_data: '', file_name: '' }, getAuthHeaders()); } catch {}
               }}
             />
-            <div>
-              <h3 className="text-[var(--t)] font-semibold">{estateName}</h3>
+            <div className="flex-1 min-w-0">
+              {editingEstateName ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={estateNameDraft}
+                    onChange={(e) => setEstateNameDraft(e.target.value)}
+                    className="h-8 text-sm"
+                    autoFocus
+                    onKeyDown={async (e) => {
+                      if (e.key === 'Enter' && estateNameDraft.trim()) {
+                        try {
+                          await axios.patch(`${API_URL}/estates/${estateId}`, { name: estateNameDraft.trim() }, getAuthHeaders());
+                          setEstateName(estateNameDraft.trim());
+                        } catch { toast.error('Failed to rename'); }
+                        setEditingEstateName(false);
+                      } else if (e.key === 'Escape') {
+                        setEditingEstateName(false);
+                      }
+                    }}
+                    data-testid="estate-name-input"
+                  />
+                  <button
+                    onClick={async () => {
+                      if (estateNameDraft.trim()) {
+                        try {
+                          await axios.patch(`${API_URL}/estates/${estateId}`, { name: estateNameDraft.trim() }, getAuthHeaders());
+                          setEstateName(estateNameDraft.trim());
+                        } catch { toast.error('Failed to rename'); }
+                      }
+                      setEditingEstateName(false);
+                    }}
+                    className="p-1 rounded-md hover:bg-[var(--s)]"
+                    data-testid="estate-name-save"
+                  >
+                    <Check className="w-4 h-4 text-[var(--gn)]" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <h3 className="text-[var(--t)] font-semibold">{estateName}</h3>
+                  <button
+                    onClick={() => { setEstateNameDraft(estateName); setEditingEstateName(true); }}
+                    className="p-1 rounded-md hover:bg-[var(--s)]"
+                    data-testid="estate-name-edit"
+                  >
+                    <Pencil className="w-3.5 h-3.5 text-[var(--t4)]" />
+                  </button>
+                </div>
+              )}
               <p className="text-[var(--t5)] text-xs">Visible to your beneficiaries</p>
             </div>
           </div>

@@ -182,7 +182,7 @@ export function PhotoPicker({ onPhotoSelected, currentPhoto, onRemove }) {
           <div className="flex flex-col gap-3 py-2">
             <Button
               variant="outline"
-              className="w-full justify-start gap-3 h-12 border-[var(--b2)] hover:bg-[var(--s)]"
+              className="w-full justify-start gap-3 h-12 border-[var(--b2)] hover:bg-[var(--s)] focus:ring-0 focus:ring-offset-0 focus-visible:ring-0"
               onClick={startCamera}
               data-testid="photo-source-camera"
             >
@@ -191,7 +191,7 @@ export function PhotoPicker({ onPhotoSelected, currentPhoto, onRemove }) {
             </Button>
             <Button
               variant="outline"
-              className="w-full justify-start gap-3 h-12 border-[var(--b2)] hover:bg-[var(--s)]"
+              className="w-full justify-start gap-3 h-12 border-[var(--b2)] hover:bg-[var(--s)] focus:ring-0 focus:ring-offset-0 focus-visible:ring-0"
               onClick={() => { setShowSourcePicker(false); fileInputRef.current?.click(); }}
               data-testid="photo-source-library"
             >
