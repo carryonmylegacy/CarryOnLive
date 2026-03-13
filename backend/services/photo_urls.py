@@ -3,20 +3,42 @@
 Converts stored photo keys to absolute served URLs in API responses.
 Handles backward compatibility with legacy base64 data URLs.
 
-Uses BACKEND_URL (or FRONTEND_URL as fallback) to construct absolute URLs
-so photos resolve correctly regardless of which domain the frontend is on.
+Auto-detects the backend's public URL from:
+1. BACKEND_URL (explicit override)
+2. RAILWAY_PUBLIC_DOMAIN (auto-set by Railway in production)
+3. FRONTEND_URL (works in preview/ingress setups where frontend=backend URL)
 """
 
 import os
 
-# The backend's own public URL, used to construct absolute photo URLs.
-# In production (Railway), set BACKEND_URL to the Railway public URL.
-# Falls back to FRONTEND_URL which works in preview/ingress setups.
-_BACKEND_URL = (
-    os.environ.get("BACKEND_URL")
-    or os.environ.get("FRONTEND_URL")
-    or ""
-).rstrip("/")
+from config import logger
+
+
+def _detect_backend_url() -> str:
+    """Detect the backend's public URL from environment variables."""
+    # 1. Explicit override
+    explicit = os.environ.get("BACKEND_URL", "").strip().rstrip("/")
+    if explicit:
+        if not explicit.startswith("http"):
+            explicit = f"https://{explicit}"
+        return explicit
+
+    # 2. Railway auto-sets this for every deployed service
+    railway_domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "").strip().rstrip("/")
+    if railway_domain:
+        url = f"https://{railway_domain}" if not railway_domain.startswith("http") else railway_domain
+        return url.rstrip("/")
+
+    # 3. Fallback: FRONTEND_URL (works when frontend and backend share a domain)
+    frontend = os.environ.get("FRONTEND_URL", "").strip().rstrip("/")
+    if frontend:
+        return frontend
+
+    return ""
+
+
+_BACKEND_URL = _detect_backend_url()
+logger.info(f"Photo URL base: {_BACKEND_URL or '(relative — no base URL detected)'}")
 
 
 def resolve_photo_url(stored_value: str) -> str:
@@ -35,4 +57,8 @@ def resolve_photo_url(stored_value: str) -> str:
     if stored_value.startswith("/api/photos/"):
         return f"{_BACKEND_URL}{stored_value}" if _BACKEND_URL else stored_value
     # Raw storage key like "photos/users/..."
-    return f"{_BACKEND_URL}/api/photos/{stored_value}" if _BACKEND_URL else f"/api/photos/{stored_value}"
+    return (
+        f"{_BACKEND_URL}/api/photos/{stored_value}"
+        if _BACKEND_URL
+        else f"/api/photos/{stored_value}"
+    )
