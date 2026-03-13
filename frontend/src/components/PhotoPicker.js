@@ -164,7 +164,7 @@ export function PhotoPicker({ onPhotoSelected, currentPhoto, onRemove }) {
             )}
           </>
         ) : (
-          <div className="w-20 h-20 rounded-full bg-[#1e293b] flex items-center justify-center">
+          <div className="w-20 h-20 rounded-full bg-[var(--bg3)] flex items-center justify-center">
             <Camera className="w-8 h-8 text-[#64748b]" />
           </div>
         )}
@@ -182,20 +182,20 @@ export function PhotoPicker({ onPhotoSelected, currentPhoto, onRemove }) {
           <div className="flex flex-col gap-3 py-2">
             <Button
               variant="outline"
-              className="w-full justify-start gap-3 h-12 border-[#1e3a5f] hover:bg-[#1e293b]"
+              className="w-full justify-start gap-3 h-12 border-[var(--b2)] hover:bg-[var(--s)]"
               onClick={startCamera}
               data-testid="photo-source-camera"
             >
-              <Camera className="w-5 h-5 text-blue-400" />
+              <Camera className="w-5 h-5 text-[var(--bl)]" />
               Take Photo
             </Button>
             <Button
               variant="outline"
-              className="w-full justify-start gap-3 h-12 border-[#1e3a5f] hover:bg-[#1e293b]"
+              className="w-full justify-start gap-3 h-12 border-[var(--b2)] hover:bg-[var(--s)]"
               onClick={() => { setShowSourcePicker(false); fileInputRef.current?.click(); }}
               data-testid="photo-source-library"
             >
-              <Upload className="w-5 h-5 text-green-400" />
+              <Upload className="w-5 h-5 text-[var(--gn)]" />
               Choose from Library
             </Button>
           </div>
@@ -284,7 +284,7 @@ export function PhotoPicker({ onPhotoSelected, currentPhoto, onRemove }) {
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                className="flex-1 border-[#1e3a5f]"
+                className="flex-1 border-[var(--b2)]"
                 onClick={() => { setShowCropper(false); setRawImage(null); }}
               >
                 Cancel
