@@ -90,7 +90,7 @@ class RouteErrorBoundary extends React.Component {
         <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg, #0F1629)' }}>
           <div className="text-center p-6">
             <p className="text-white text-lg font-bold mb-2">Something went wrong</p>
-            <button onClick={() => { sessionStorage.removeItem('ega_active_session'); window.location.reload(); }} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: '#d4af37', color: '#080e1a' }}>
+            <button onClick={() => window.location.reload()} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: '#d4af37', color: '#080e1a' }}>
               Reload
             </button>
           </div>

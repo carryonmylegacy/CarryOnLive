@@ -196,18 +196,8 @@ const GuardianPage = () => {
     if (header) setHeaderHeight(header.offsetHeight);
   }, []);
 
-  // View state: 'landing' or 'chat' — auto-resume if active session exists
-  const savedSession = sessionStorage.getItem('ega_active_session');
-  const [view, setView] = useState(savedSession ? 'chat' : 'landing');
-
-  // Persist active session across navigation
-  useEffect(() => {
-    if (view === 'chat' && sessionId) {
-      sessionStorage.setItem('ega_active_session', sessionId);
-    } else if (view === 'landing') {
-      sessionStorage.removeItem('ega_active_session');
-    }
-  }, [view, sessionId]);
+  // View state: 'landing' or 'chat'
+  const [view, setView] = useState('landing');
 
   // Landing state
   const [sessions, setSessions] = useState([]);
@@ -234,7 +224,9 @@ const GuardianPage = () => {
 
   // Cleanup on unmount — abort HTTP connections to free browser resources,
   // clear pending timeouts, stop speech recognition.
-  // Persist active session so it auto-resumes on return.
+  // NOTE: Aborting the HTTP connection does NOT stop the backend — the AI
+  // query keeps running and saves its response. When you return to Guardian,
+  // the completed response loads from session history.
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
@@ -319,20 +311,6 @@ const GuardianPage = () => {
     axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders())
       .then(res => { if (isMountedRef.current && !res.data?.celebration_shown && !res.data?.all_complete) setGuidedFlowDone(false); })
       .catch(() => {});
-    // Auto-resume active session if returning to Guardian
-    const activeSession = sessionStorage.getItem('ega_active_session');
-    if (activeSession) {
-      resumeSession(activeSession).catch(() => {
-        // If resume fails, clear stale session and go to landing
-        sessionStorage.removeItem('ega_active_session');
-        if (isMountedRef.current) {
-          setView('landing');
-          setSessionId(null);
-          setMessages([]);
-          setLoading(false);
-        }
-      });
-    }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
