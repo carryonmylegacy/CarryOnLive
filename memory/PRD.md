@@ -45,6 +45,22 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **Guardian Chat Session Persistence (P0 Bug Fix)**: Fixed critical bug where Quick Action buttons (Analyze Vault, etc.) on the Guardian landing page generated mismatched session IDs — localStorage stored ID_A but API messages were saved under ID_B. Fix: `startNewChat` now accepts an `action` parameter and passes the same session ID via closure to `sendMessage`. Also added localStorage sync in `sendMessage` response handler.
 - **Guardian Persistent Mount Architecture (P0)**: Fundamentally fixed the navigation-kills-chat bug. Previous approach relied on localStorage session resume which failed because React Router unmounts GuardianPage on navigation, destroying all in-progress state. New approach: GuardianPage is rendered persistently in DashboardLayout (hidden via `display:none` when not on `/guardian`). The component stays mounted across tab navigations — chat messages, loading state, and in-progress API calls all survive. The Route renders `null` and the actual component lives outside `<Outlet/>`.
 
+## Critical Development Protocols
+
+### Housekeeping Script (MANDATORY)
+**Location:** `/app/housekeeping.sh`
+**Rule:** Run `bash /app/housekeeping.sh` after EVERY change to ANY aspect of the platform — no exceptions. This is a production codebase used by real subscribers. The script validates: backend lint/format, frontend build, dependency security, SOC 2 compliance, env integrity, and more (38 checks total). ALL checks must pass before telling the user to push to GitHub.
+
+### Auto-Update System (Web)
+**Files:** `frontend/src/utils/versionCheck.js`, `frontend/package.json` (build script), `frontend/public/version.json`
+Each `yarn build` generates a unique hash in `/version.json`. On app mount (5s delay, web only), the app fetches it cache-busted. If the hash differs from localStorage, it hard-refreshes once. Crash-safe via sessionStorage guard.
+
+### Capacitor Live Updates (iOS — PLANNED)
+See `/app/memory/CAPACITOR_LIVE_UPDATES.md`. Implement after App Store approval so iOS users get OTA web updates without new App Store submissions.
+
+### Deployment Flow
+User pushes to GitHub → Railway builds backend → Vercel builds frontend → Live at carryon.us. The Emergent preview site is NOT used for testing. All code must work on the real platform.
+
 ## Subscription Architecture
 - Each estate requires its own active subscription
 - Family Plan: $1/mo discount per bundled benefactor, $3.49 flat beneficiary rate
