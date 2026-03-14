@@ -37,6 +37,12 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **Beneficiary Email Change → Re-invite**: When benefactor changes a beneficiary's email, invitation resets and prompts to resend
 - **Login Field Updated**: Label and placeholder changed to "Username or Email"
 - **FamilyTree Legend Fix**: Removed redundant "Blue nodes =" line, kept single "Blue = ..." line
+- **App Freeze Fix**: Backend xAI call made non-blocking via asyncio.to_thread() in guardian.py
+- **Admin Settings Access**: Settings page enabled for all admin roles with sidebar/mobile nav links
+- **Admin Display Name Edit**: Admins can edit their own display name from Settings
+
+### Completed (Feb 2026)
+- **Guardian Chat Session Persistence (P0 Bug Fix)**: Fixed critical bug where Quick Action buttons (Analyze Vault, etc.) on the Guardian landing page generated mismatched session IDs — localStorage stored ID_A but API messages were saved under ID_B. Fix: `startNewChat` now accepts an `action` parameter and passes the same session ID via closure to `sendMessage`. Also added localStorage sync in `sendMessage` response handler.
 
 ## Subscription Architecture
 - Each estate requires its own active subscription
