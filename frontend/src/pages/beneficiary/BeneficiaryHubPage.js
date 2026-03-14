@@ -6,39 +6,11 @@ import { Camera, ChevronRight, Pencil, X } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
-import OrbitVisualization from '../../components/estate/OrbitVisualization';
+import OrbitVisualization, { getOrbitLevel, orbitColors } from '../../components/estate/OrbitVisualization';
 import EmergencyAccessPanel from '../../components/beneficiary/EmergencyAccessPanel';
 import { resolvePhotoUrl } from '../../utils/photoUrl';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
-
-const getOrbitLevel = (relation) => {
-  const r = (relation || '').toLowerCase();
-  // Ring 1 (closest): Spouse, Children, In-law children, Great-grandparents (looking down)
-  if (['spouse', 'wife', 'husband', 'partner'].includes(r)) return 0;
-  if (['mother', 'father', 'parent', 'mom', 'dad'].includes(r)) return 0;
-  if (r.includes('son-in-law') || r.includes('son in law') || r.includes('daughter-in-law') || r.includes('daughter in law')) return 0;
-  if (r.includes('great-grandmother') || r.includes('great-grandfather') || r.includes('great-grandparent') || r.includes('great grandparent')) return 0;
-  // Ring 2: Parents, Siblings, Grandchildren, In-law parents, Aunt, Uncle
-  if (['son', 'daughter', 'child', 'children'].includes(r)) return 1;
-  if (['brother', 'sister', 'sibling'].includes(r)) return 1;
-  if (['grandmother', 'grandfather', 'grandparent', 'grandma', 'grandpa'].includes(r)) return 1;
-  if (['aunt', 'uncle'].includes(r)) return 1;
-  if (['nephew', 'niece'].includes(r)) return 1;
-  if (r.includes('mother-in-law') || r.includes('mother in law') || r.includes('father-in-law') || r.includes('father in law')) return 1;
-  // Ring 3: Grandparents
-  if (['grandson', 'granddaughter', 'grandchild'].includes(r)) return 2;
-  // Ring 4: Great-grandparents
-  if (r.includes('great-grandson') || r.includes('great-granddaughter') || r.includes('great-grandchild') || r.includes('great grandchild')) return 3;
-  return 1;
-};
-
-const orbitColors = [
-  ['linear-gradient(135deg, #D4AF37, #F5D76E)', 'rgba(212,175,55,0.3)'],
-  ['linear-gradient(135deg, #6D28D9, #A855F7)', 'rgba(139,92,246,0.3)'],
-  ['linear-gradient(135deg, #0D9488, #14B8A6)', 'rgba(20,184,166,0.3)'],
-  ['linear-gradient(135deg, #1E40AF, #3B82F6)', 'rgba(59,130,246,0.3)'],
-];
 
 const BeneficiaryHubPage = () => {
   const { user, getAuthHeaders } = useAuth();
