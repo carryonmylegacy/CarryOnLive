@@ -181,17 +181,6 @@ const SettingsPage = () => {
     await saveDigestPrefs({ additional_recipients: updated });
   };
 
-  const sendPreview = async () => {
-    setDigestSending(true);
-    try {
-      await axios.post(`${API_URL}/digest/preview-enhanced`, {}, getAuthHeaders());
-      toast.success('Preview email sent!');
-    } catch (e) {
-      toast.error('Could not send preview — do you have an estate?');
-    }
-    finally { setDigestSending(false); }
-  };
-
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -780,16 +769,26 @@ const SettingsPage = () => {
 
               <Separator className="bg-[var(--b)]" />
 
-              {/* Send Preview */}
-              <button
-                onClick={sendPreview}
-                disabled={digestSending}
-                className="text-xs text-[var(--gold)] hover:underline flex items-center gap-1"
-                data-testid="settings-digest-preview"
-              >
-                {digestSending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
-                Send me a preview now
-              </button>
+              {/* Send Update Now + Preview */}
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  onClick={async () => {
+                    setDigestSending(true);
+                    try {
+                      await axios.post(`${API_URL}/digest/preview-enhanced`, {}, getAuthHeaders());
+                      toast.success(`Update sent to ${[user?.email, ...additionalRecipients].filter(Boolean).join(', ')}`);
+                    } catch (e) {
+                      toast.error('Could not send update');
+                    } finally { setDigestSending(false); }
+                  }}
+                  disabled={digestSending}
+                  className="bg-[var(--gold)] text-[#0b1120] hover:bg-[var(--gold)]/90 font-semibold text-sm"
+                  data-testid="digest-send-now-btn"
+                >
+                  {digestSending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Mail className="w-4 h-4 mr-2" />}
+                  Send Update Now
+                </Button>
+              </div>
             </div>
           )}
 
