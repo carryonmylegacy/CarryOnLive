@@ -184,16 +184,29 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
     };
   }, [onMove]);
 
+  // ── Adaptive node sizing ─────────────────────────────────
+  // Shrinks nodes when a ring is crowded; floors at 28px so photos stay legible
+  const MIN_NODE = 28;
+  const MIN_GAP = 4;
+  const getNodeSizeForRing = (memberCount, orbitRadius) => {
+    if (memberCount <= 1) return ballSize;
+    const circumference = 2 * Math.PI * orbitRadius;
+    const maxFit = Math.floor(circumference / (ballSize + MIN_GAP));
+    if (memberCount <= maxFit) return ballSize;
+    return Math.max(Math.floor(circumference / memberCount - MIN_GAP), MIN_NODE);
+  };
+
   // ── Position helpers ───────────────────────────────────────
-  const getPositionsForOrbit = (memberCount, orbitRadius, level = 0) => {
+  const getPositionsForOrbit = (memberCount, orbitRadius, level = 0, nodeSize) => {
+    const sz = nodeSize || ballSize;
     const positions = [];
     const angleStep = 360 / Math.max(memberCount, 1);
     const startAngle = 90 + level * 37; // stagger each ring
     for (let i = 0; i < memberCount; i++) {
       const angle = startAngle + i * angleStep;
       positions.push({
-        left: cx + orbitRadius * Math.cos((angle * Math.PI) / 180) - ballSize / 2,
-        top: cy - orbitRadius * Math.sin((angle * Math.PI) / 180) - ballSize / 2,
+        left: cx + orbitRadius * Math.cos((angle * Math.PI) / 180) - sz / 2,
+        top: cy - orbitRadius * Math.sin((angle * Math.PI) / 180) - sz / 2,
         angle,
       });
     }
@@ -307,7 +320,8 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
         {Object.entries(orbitGroups).map(([levelStr, levelMembers]) => {
           const level = parseInt(levelStr);
           const orbitR = baseOrbitR + level * orbitSpacing;
-          const positions = getPositionsForOrbit(levelMembers.length, orbitR, level);
+          const nodeSize = getNodeSizeForRing(levelMembers.length, orbitR);
+          const positions = getPositionsForOrbit(levelMembers.length, orbitR, level, nodeSize);
           const [gradient] = orbitColors[level] || orbitColors[0];
           const rotationSpeed = 1 - level * 0.15;
 
@@ -342,8 +356,8 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
                       position: 'absolute',
                       left: pos.left,
                       top: pos.top,
-                      width: ballSize,
-                      height: ballSize,
+                      width: nodeSize,
+                      height: nodeSize,
                       zIndex: 5 - level,
                     }}
                   >
@@ -367,14 +381,14 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
                         title={`${member.name || (member.first_name + ' ' + member.last_name)} (${member.relation})`}
                         data-testid={`orbit-node-${member.id || i}`}
                         style={{
-                          width: ballSize,
-                          height: ballSize,
+                          width: nodeSize,
+                          height: nodeSize,
                           borderRadius: '50%',
                           background: gradient,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: Math.round(ballSize * 0.3),
+                          fontSize: Math.round(nodeSize * 0.3),
                           fontWeight: 700,
                           color: level === 0 ? '#1a1a2e' : 'white',
                           boxShadow: isTransitioned
