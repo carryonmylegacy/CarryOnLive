@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   Trash2, Loader2, Plus, Eye, EyeOff, Phone, Mail, Briefcase,
-  Crown, Wrench, Pencil, ChevronDown, ChevronRight
+  Crown, Wrench, Pencil, ChevronDown, ChevronRight, MapPin, Calendar, User
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -401,31 +401,70 @@ const OperatorCard = ({ op, expandedId, setExpandedId, onEdit, onDelete, canDele
           </div>
         </div>
         {isExpanded && (
-          <div className="mt-3 pt-3 border-t border-[var(--b)] grid grid-cols-2 gap-2 text-xs">
-            {op.contact_email && (
-              <div className="flex items-center gap-1.5 text-[var(--t4)]">
-                <Mail className="w-3 h-3 text-[var(--t5)]" /> {op.contact_email}
-              </div>
-            )}
-            {op.phone && (
-              <div className="flex items-center gap-1.5 text-[var(--t4)]">
-                <Phone className="w-3 h-3 text-[var(--t5)]" /> {op.phone}
-              </div>
-            )}
-            {op.title && (
-              <div className="flex items-center gap-1.5 text-[var(--t4)]">
-                <Briefcase className="w-3 h-3 text-[var(--t5)]" /> {op.title}
-              </div>
-            )}
-            <div className="text-[var(--t5)]">
-              Created: {new Date(op.created_at).toLocaleDateString()}
-            </div>
-            {op.last_login_at && (
+          <div className="mt-3 pt-3 border-t border-[var(--b)] space-y-3 text-xs">
+            {/* Contact & Role Info */}
+            <div className="grid grid-cols-2 gap-2">
+              {op.contact_email && (
+                <div className="flex items-center gap-1.5 text-[var(--t4)]">
+                  <Mail className="w-3 h-3 text-[var(--t5)]" /> {op.contact_email}
+                </div>
+              )}
+              {op.phone && (
+                <div className="flex items-center gap-1.5 text-[var(--t4)]">
+                  <Phone className="w-3 h-3 text-[var(--t5)]" /> {op.phone}
+                </div>
+              )}
+              {op.title && (
+                <div className="flex items-center gap-1.5 text-[var(--t4)]">
+                  <Briefcase className="w-3 h-3 text-[var(--t5)]" /> {op.title}
+                </div>
+              )}
               <div className="text-[var(--t5)]">
-                Last login: {new Date(op.last_login_at).toLocaleString()}
+                Created: {new Date(op.created_at).toLocaleDateString()}
+              </div>
+              {op.last_login_at && (
+                <div className="text-[var(--t5)]">
+                  Last login: {new Date(op.last_login_at).toLocaleString()}
+                </div>
+              )}
+              {op.notes && <div className="col-span-2 text-[var(--t4)] mt-1">{op.notes}</div>}
+            </div>
+
+            {/* Personal Information Section */}
+            {(op.date_of_birth || op.gender || op.marital_status || op.address_street || op.address_city) && (
+              <div className="pt-2 border-t border-[var(--b)]">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <User className="w-3 h-3 text-[var(--gold)]" />
+                  <span className="text-[10px] font-bold text-[var(--t3)] uppercase tracking-wider">Personal Information</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {op.date_of_birth && (
+                    <div className="flex items-center gap-1.5 text-[var(--t4)]">
+                      <Calendar className="w-3 h-3 text-[var(--t5)]" /> {new Date(op.date_of_birth).toLocaleDateString()}
+                    </div>
+                  )}
+                  {op.gender && (
+                    <div className="text-[var(--t4)] capitalize">
+                      Gender: {op.gender}
+                    </div>
+                  )}
+                  {op.marital_status && (
+                    <div className="text-[var(--t4)] capitalize">
+                      Marital: {op.marital_status}
+                    </div>
+                  )}
+                  {(op.address_street || op.address_city) && (
+                    <div className="col-span-2 flex items-start gap-1.5 text-[var(--t4)]">
+                      <MapPin className="w-3 h-3 text-[var(--t5)] mt-0.5 flex-shrink-0" />
+                      <span>
+                        {[op.address_street, op.address_line2, op.address_city, op.address_state, op.address_zip]
+                          .filter(Boolean).join(', ')}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
-            {op.notes && <div className="col-span-2 text-[var(--t4)] mt-1">{op.notes}</div>}
           </div>
         )}
       </CardContent>

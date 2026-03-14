@@ -207,6 +207,43 @@ async def get_family_connections(current_user: dict = Depends(get_current_user))
     return connections
 
 
+@router.get("/beneficiary/my-primary-for")
+async def get_my_primary_for_estates(current_user: dict = Depends(get_current_user)):
+    """Return all estates where the current user is designated as the primary beneficiary."""
+    ben_records = await db.beneficiaries.find(
+        {"user_id": current_user["id"], "is_primary": True, "deleted_at": None},
+        {"_id": 0, "estate_id": 1},
+    ).to_list(100)
+    if not ben_records:
+        return []
+
+    estate_ids = [b["estate_id"] for b in ben_records]
+    estates = await db.estates.find(
+        {"id": {"$in": estate_ids}},
+        {"_id": 0, "id": 1, "name": 1, "owner_id": 1, "status": 1},
+    ).to_list(100)
+
+    owner_ids = list({e["owner_id"] for e in estates if e.get("owner_id")})
+    owners = {}
+    if owner_ids:
+        async for u in db.users.find(
+            {"id": {"$in": owner_ids}},
+            {"_id": 0, "id": 1, "name": 1, "first_name": 1, "last_name": 1},
+        ):
+            owners[u["id"]] = u
+
+    result = []
+    for estate in estates:
+        owner = owners.get(estate.get("owner_id"), {})
+        result.append({
+            "estate_id": estate["id"],
+            "estate_name": estate.get("name", "Unknown"),
+            "benefactor_name": owner.get("name", "Unknown"),
+            "status": estate.get("status", "pre-transition"),
+        })
+    return result
+
+
 class DisplayOverrideUpdate(BaseModel):
     estate_id: str
     owner_photo_url: str

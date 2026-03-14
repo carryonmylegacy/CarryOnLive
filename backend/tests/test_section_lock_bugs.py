@@ -14,7 +14,7 @@ import requests
 import os
 
 BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://guardian-persist.preview.emergentagent.com"
+    "REACT_APP_BACKEND_URL", "https://founder-admin-dash.preview.emergentagent.com"
 )
 
 # Test credentials

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { User, Lock, LogOut, Shield, Moon, Sun } from 'lucide-react';
+import { User, Lock, LogOut, Shield, Moon, Sun, Crown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Switch } from '../../components/ui/switch';
@@ -20,6 +20,7 @@ const BeneficiarySettingsPage = () => {
   const navigate = useNavigate();
   const [estate, setEstate] = useState(null);
   const [profilePhoto, setProfilePhoto] = useState(null);
+  const [primaryForEstates, setPrimaryForEstates] = useState([]);
 
   useEffect(() => {
     const fetchEstate = async () => {
@@ -36,13 +37,15 @@ const BeneficiarySettingsPage = () => {
     Promise.all([
       axios.get(`${API_URL}/auth/me`, getAuthHeaders()).catch(() => ({ data: {} })),
       axios.get(`${API_URL}/beneficiary/family-connections`, getAuthHeaders()).catch(() => ({ data: [] })),
-    ]).then(([meRes, connRes]) => {
+      axios.get(`${API_URL}/beneficiary/my-primary-for`, getAuthHeaders()).catch(() => ({ data: [] })),
+    ]).then(([meRes, connRes, primaryRes]) => {
       if (meRes.data.photo_url) {
         setProfilePhoto(meRes.data.photo_url);
       } else {
         const benefactorSetPhoto = (connRes.data || []).find(c => c.my_photo_in_estate)?.my_photo_in_estate;
         if (benefactorSetPhoto) setProfilePhoto(benefactorSetPhoto);
       }
+      setPrimaryForEstates(primaryRes.data || []);
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -86,7 +89,6 @@ const BeneficiarySettingsPage = () => {
               ['Email', user?.email || ''],
               ['Name', user?.name || ''],
               ['Role', 'Beneficiary'],
-              ['Primary Benefactor', estate?.name || '—'],
             ].map(([k, v]) => (
               <div key={k} className="flex justify-between py-2.5 text-sm" style={{ borderBottom: '1px solid var(--b)' }}>
                 <span className="text-[var(--t3)]">{k}</span>
@@ -94,6 +96,29 @@ const BeneficiarySettingsPage = () => {
               </div>
             ))}
           </div>
+
+          {/* Primary Beneficiary For — list of benefactors who designated this user as primary */}
+          {primaryForEstates.length > 0 && (
+            <div className="mt-4 pt-3" style={{ borderTop: '1px solid var(--b)' }} data-testid="primary-for-section">
+              <div className="flex items-center gap-2 mb-2">
+                <Crown className="w-4 h-4 text-[var(--gold)]" />
+                <span className="text-xs font-bold text-[var(--t3)] uppercase tracking-wider">Designated Primary Beneficiary For</span>
+              </div>
+              <div className="space-y-1.5">
+                {primaryForEstates.map((entry) => (
+                  <div
+                    key={entry.estate_id}
+                    className="flex items-center justify-between py-2 px-3 rounded-lg text-sm"
+                    style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+                    data-testid={`primary-for-${entry.estate_id}`}
+                  >
+                    <span className="text-[var(--t)] font-semibold">{entry.benefactor_name}</span>
+                    <span className="text-[10px] text-[var(--t5)] capitalize">{entry.status?.replace(/-/g, ' ')}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
