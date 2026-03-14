@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 
 import pdfplumber
 from fastapi import APIRouter, Depends, HTTPException, Response
+from pydantic import BaseModel as PydanticBaseModel
 
 from config import XAI_MODEL, XAI_MODEL_LIGHT, db, logger, xai_client
 from models import ChatRequest, ChatResponse, ChecklistItem
@@ -79,9 +80,10 @@ Do NOT answer off-topic questions even if you know the answer. Do NOT get drawn 
 
 **YOUR CAPABILITIES:**
 1. **Analyze Documents**: You can read the user's Secure Document Vault contents. Reference documents by name and call out specifics.
-2. **Generate Checklists**: Create prioritized, state-specific action items. Be specific — "File Form X with Y county" not "consider updating your plan."
-3. **Analyze Readiness**: Calculate and explain the Estate Readiness Score with actionable improvement steps.
-4. **Answer Estate Law Questions**: For any of the 50 states and U.S. territories. Cite specific statutes when relevant.
+2. **Generate To-Do List**: Create a prioritized list of tasks for the benefactor to strengthen their estate plan. Be specific — "File Form X with Y county" not "consider updating your plan."
+3. **Generate Immediate Action Checklist (IAC)**: By reading vault documents, create a specific, actionable checklist for the benefactor's BENEFICIARIES to follow in the days/weeks after the benefactor's death. Extract real phone numbers, policy numbers, trustee names, and institution contacts from the vault.
+4. **Analyze Readiness**: Calculate and explain the Estate Readiness Score with actionable improvement steps.
+5. **Answer Estate Law Questions**: For any of the 50 states and U.S. territories. Cite specific statutes when relevant.
 
 **GUIDELINES:**
 - **STATE ACKNOWLEDGMENT (MANDATORY for every analysis):** At the very beginning of every substantive response — before diving into the analysis — include a brief statement confirming the user's declared state of residence and that your analysis is informed by that state's current estate laws. Example: "Based on your declared residence in [State], my analysis applies [State]'s current estate planning statutes and probate rules." If the state is "Not specified," lead by asking for it before proceeding.
@@ -379,7 +381,7 @@ async def chat_with_guardian(
             estate_id = estates[0]["id"]
 
     if estate_id:
-        needs_content = data.action in ("analyze_vault", "generate_checklist") or any(
+        needs_content = data.action in ("analyze_vault", "generate_todo", "generate_iac") or any(
             keyword in data.message.lower()
             for keyword in [
                 "analyze",
@@ -406,20 +408,38 @@ async def chat_with_guardian(
     # Handle special actions
     user_message_text = data.message
 
-    if data.action == "generate_checklist":
-        user_message_text = """Based on my estate documents and current situation, generate a comprehensive, prioritized Immediate Action Checklist.
+    if data.action == "generate_todo":
+        user_message_text = """Based on my estate documents and current situation, generate a comprehensive, prioritized To-Do List of tasks I should complete to strengthen my estate plan.
 
 Requirements:
-- Create at least 25 items if I don't already have enough
+- Create specific, actionable tasks for ME (the benefactor) to improve my estate
 - Prioritize based on urgency: immediate (day 1-3), first_week, two_weeks, first_month
 - Make items specific to MY estate based on the documents in my vault
 - Consider my state's specific legal requirements
 - Each item should have a clear title and actionable description
-- Focus on items I'm MISSING — don't duplicate existing checklist items
+- Focus on gaps and weaknesses in my current estate plan
+- Include things like missing documents, unsigned forms, outdated provisions, beneficiary gaps
 
-Return your response as helpful advice, and also return the checklist items in this exact JSON format at the END of your response, wrapped in ```checklist_json``` tags:
+Return your response as helpful advice with the to-do items clearly listed. Format them with numbered sections by priority category (Immediate, First Week, Two Weeks, First Month). Do NOT include any JSON blocks — just a clean, readable to-do list that I can download as a PDF."""
+
+    elif data.action == "generate_iac":
+        user_message_text = """Based on the documents in my Secure Document Vault, generate a comprehensive Immediate Action Checklist for my BENEFICIARIES to use in the days and weeks immediately following my death.
+
+CRITICAL: This is NOT a to-do list for me. This is a guide for my loved ones AFTER I pass away.
+
+Requirements:
+- Extract SPECIFIC, ACTIONABLE information from my vault documents — phone numbers, policy numbers, contact names, institutions
+- For each life insurance policy: include the carrier name, policy number, and the phone number to call to file a claim
+- Identify who the trustee of my trust is (if a trust document exists) and include their contact info
+- List financial institutions that need to be contacted with account details where available
+- Include steps for filing probate if required in my state
+- Note any immediate deadlines (e.g., life insurance claim windows, Social Security notification)
+- Prioritize by urgency: immediate (day 1-3), first_week, two_weeks, first_month
+- Be extremely specific — "Call MetLife at 1-800-XXX-XXXX, Policy #YYYY, to file death claim" not "Contact life insurance company"
+
+Return your response as helpful guidance, and also return the checklist items in this exact JSON format at the END of your response, wrapped in ```checklist_json``` tags:
 ```checklist_json
-[{"title": "Item title", "description": "Detailed description", "category": "immediate|first_week|two_weeks|first_month", "order": 1}]
+[{{"title": "Item title", "description": "Detailed description with specific contacts/numbers", "category": "immediate|first_week|two_weeks|first_month", "order": 1}}]
 ```"""
 
     elif data.action == "analyze_readiness":
@@ -506,7 +526,7 @@ Provide a clear, organized analysis with specific findings and recommendations."
 
         # Call xAI Grok — use Grok-4 for heavy analysis, Grok-3-mini for chat
         use_heavy_model = (
-            data.action in ("analyze_vault", "generate_checklist", "analyze_readiness")
+            data.action in ("analyze_vault", "generate_todo", "generate_iac", "analyze_readiness")
             or needs_content
         )
         selected_model = XAI_MODEL if use_heavy_model else XAI_MODEL_LIGHT
@@ -538,8 +558,8 @@ Provide a clear, organized analysis with specific findings and recommendations."
         # Append legal disclaimer to every response
         response += LEGAL_DISCLAIMER
 
-        # Handle checklist generation action
-        if data.action == "generate_checklist" and "checklist_json" in response:
+        # Handle IAC generation — only generate_iac populates the Immediate Action Checklist
+        if data.action == "generate_iac" and "checklist_json" in response:
             try:
                 json_start = response.index("```checklist_json") + len(
                     "```checklist_json"
@@ -578,7 +598,7 @@ Provide a clear, organized analysis with specific findings and recommendations."
                 await update_estate_readiness(estate_id)
 
                 action_result = {
-                    "action": "checklist_generated",
+                    "action": "iac_generated",
                     "items_added": items_added,
                 }
 
@@ -587,7 +607,7 @@ Provide a clear, organized analysis with specific findings and recommendations."
                 if clean_response:
                     response = (
                         clean_response
-                        + f"\n\n**{items_added} new checklist items have been added to your Immediate Action Checklist.**"
+                        + f"\n\n**{items_added} new items have been added to your Immediate Action Checklist.**"
                         + LEGAL_DISCLAIMER
                     )
 
@@ -596,12 +616,16 @@ Provide a clear, organized analysis with specific findings and recommendations."
                     estate_id=estate_id,
                     user_id=current_user["id"],
                     user_name=current_user["name"],
-                    action="checklist_ai_generated",
-                    description=f"Estate Guardian generated {items_added} checklist items",
+                    action="iac_ai_generated",
+                    description=f"Estate Guardian generated {items_added} IAC items from vault documents",
                     metadata={"items_added": items_added},
                 )
             except (ValueError, json_module.JSONDecodeError) as e:
                 logger.warning(f"Failed to parse checklist JSON from AI response: {e}")
+
+        elif data.action == "generate_todo":
+            # To-do list generated — mark for frontend PDF download (no DB writes)
+            action_result = {"action": "todo_generated"}
 
         elif data.action == "analyze_readiness" and estate_id:
             # Recalculate readiness to ensure it's current
@@ -957,6 +981,158 @@ async def export_checklist_pdf(
         content=bytes(pdf_bytes),
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f'attachment; filename="CarryOn_Checklist_{datetime.now(timezone.utc).strftime("%Y%m%d")}.pdf"'
+            "Content-Disposition": f'attachment; filename="CarryOn_IAC_{datetime.now(timezone.utc).strftime("%Y%m%d")}.pdf"'
+        },
+    )
+
+
+class TodoExportRequest(PydanticBaseModel):
+    content: str
+
+
+@router.post("/guardian/export-todo")
+async def export_todo_pdf(
+    data: TodoExportRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Generate a PDF from the AI-generated to-do list text content."""
+    from fpdf import FPDF
+
+    # Get user's estate for context
+    estates = await db.estates.find(
+        {"owner_id": current_user["id"]}, {"_id": 0}
+    ).to_list(1)
+    estate_name = estates[0]["name"] if estates else "My Estate"
+    estate_id = estates[0]["id"] if estates else None
+
+    benefactor = await db.users.find_one(
+        {"id": current_user["id"]}, {"_id": 0, "address_state": 1}
+    )
+    user_state = (benefactor or {}).get("address_state") or "Not specified"
+
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=20)
+    pdf.add_page()
+
+    # Header
+    pdf.set_font("Helvetica", "B", 20)
+    pdf.set_text_color(212, 175, 55)
+    pdf.cell(0, 12, "CarryOn Estate Guardian", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(100, 100, 100)
+    pdf.cell(
+        0, 6, "Estate Strengthening To-Do List", new_x="LMARGIN", new_y="NEXT"
+    )
+    pdf.cell(
+        0,
+        5,
+        sanitize_for_pdf(f"Estate: {estate_name}  |  State: {user_state}"),
+        new_x="LMARGIN",
+        new_y="NEXT",
+    )
+    pdf.cell(
+        0,
+        5,
+        f"Generated: {datetime.now(timezone.utc).strftime('%B %d, %Y at %I:%M %p UTC')}",
+        new_x="LMARGIN",
+        new_y="NEXT",
+    )
+    pdf.ln(3)
+
+    # Legal disclaimer
+    pdf.set_fill_color(255, 248, 220)
+    pdf.set_draw_color(212, 175, 55)
+    pdf.set_font("Helvetica", "I", 7)
+    pdf.set_text_color(80, 80, 80)
+    disclaimer = (
+        "IMPORTANT: This to-do list is generated by an AI assistant for informational purposes only "
+        "and does not constitute legal advice. For legally binding decisions, always consult a "
+        "bar-certified attorney licensed in your jurisdiction."
+    )
+    pdf.multi_cell(0, 3.5, disclaimer, border=1, fill=True)
+    pdf.ln(6)
+
+    # Content — strip the legal disclaimer that's appended to every AI response
+    content = data.content
+    if "---\n*This analysis" in content:
+        content = content[: content.index("---\n*This analysis")].strip()
+
+    # Render content line by line
+    left_margin = pdf.l_margin
+    for line in content.split("\n"):
+        clean = sanitize_for_pdf(line.strip())
+        if not clean:
+            pdf.ln(2)
+            continue
+
+        # Reset x position at start of each line to avoid FPDF width issues
+        pdf.set_x(left_margin)
+
+        # Detect headers (markdown ## or **)
+        if clean.startswith("##") or clean.startswith("**"):
+            heading = clean.lstrip("#* ").rstrip("*")
+            if heading:
+                pdf.set_font("Helvetica", "B", 11)
+                pdf.set_text_color(30, 40, 70)
+                pdf.multi_cell(0, 5.5, heading)
+                pdf.set_draw_color(212, 175, 55)
+                pdf.line(left_margin, pdf.get_y(), left_margin + 170, pdf.get_y())
+                pdf.ln(2)
+        elif clean.startswith(("- ", "* ", "- [ ]", "- [x]")):
+            # Bullet/checklist items
+            bullet_text = clean.lstrip("-*[] x").strip()
+            if bullet_text:
+                check = "[x]" if "[x]" in clean else "[ ]" if "[ ]" in clean else "-"
+                pdf.set_font("Helvetica", "", 9)
+                pdf.set_text_color(40, 40, 40)
+                pdf.cell(8, 5, check, new_x="RIGHT", new_y="TOP")
+                pdf.multi_cell(0, 5, bullet_text)
+        elif clean[0].isdigit() and "." in clean[:4]:
+            # Numbered items
+            pdf.set_font("Helvetica", "", 9)
+            pdf.set_text_color(40, 40, 40)
+            pdf.multi_cell(0, 5, clean)
+        else:
+            pdf.set_font("Helvetica", "", 9)
+            pdf.set_text_color(60, 60, 60)
+            pdf.multi_cell(0, 4.5, clean)
+
+    # Footer
+    pdf.ln(6)
+    pdf.set_draw_color(200, 200, 200)
+    pdf.line(pdf.get_x(), pdf.get_y(), pdf.get_x() + 170, pdf.get_y())
+    pdf.ln(4)
+    pdf.set_font("Helvetica", "", 8)
+    pdf.set_text_color(100, 100, 100)
+    pdf.cell(
+        0,
+        5,
+        "AES-256-GCM Encrypted  |  Zero-Knowledge Architecture  |  2FA Protected",
+        new_x="LMARGIN",
+        new_y="NEXT",
+    )
+    pdf.cell(
+        0,
+        5,
+        f"CarryOn Technologies  |  carryon.us  |  {datetime.now(timezone.utc).year}",
+        new_x="LMARGIN",
+        new_y="NEXT",
+    )
+
+    pdf_bytes = pdf.output()
+    if estate_id:
+        await audit_log(
+            action="guardian.todo_export",
+            user_id=current_user["id"],
+            resource_type="todo_pdf",
+            estate_id=estate_id,
+            details={"content_length": len(data.content)},
+        )
+
+    return Response(
+        content=bytes(pdf_bytes),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="CarryOn_ToDo_{datetime.now(timezone.utc).strftime("%Y%m%d")}.pdf"'
         },
     )

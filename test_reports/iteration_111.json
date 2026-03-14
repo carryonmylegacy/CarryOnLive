@@ -1,0 +1,70 @@
+{
+  "summary": "Iteration 111 - Guardian To-Do and IAC Split Feature Testing Complete. All 9 backend tests passed (100%). Fixed FPDF PDF generation bug in export-todo endpoint. Frontend UI verified showing 5 action buttons: Analyze Vault, Generate To-Do List, Generate IAC, Readiness Score, Beneficiary Review.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "bugs_fixed_by_tester": [
+    {
+      "file": "/app/backend/routes/guardian.py",
+      "issue": "FPDF export-todo endpoint returning 500 error",
+      "root_cause": "After pdf.cell() call for bullet/checklist items, the x position was not being reset, causing 'Not enough horizontal space to render a single character' error in subsequent multi_cell calls",
+      "fix": "Added pdf.set_x(left_margin) at start of each line iteration loop to reset x position, and used multi_cell(0, 5, ...) instead of fixed width for bullet text"
+    }
+  ],
+  "passed_tests": [
+    "POST /api/chat/guardian with action='generate_todo' returns action_result.action='todo_generated'",
+    "generate_todo response does NOT contain checklist_json block",
+    "generate_todo does NOT populate IAC database (no items_added field)",
+    "POST /api/chat/guardian with action='generate_iac' returns action_result.action='iac_generated' with items_added",
+    "POST /api/guardian/export-todo returns valid PDF (200, application/pdf, %PDF header)",
+    "POST /api/guardian/export-todo handles minimal content",
+    "POST /api/guardian/export-todo requires authentication (returns 401/403 without auth)",
+    "POST /api/guardian/export-checklist still works for existing IAC items",
+    "Frontend displays 5 action buttons: Analyze Vault, Generate To-Do List, Generate IAC, Readiness Score, Beneficiary Review"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_guardian_todo_iac_split.py",
+    "/app/test_reports/pytest/guardian_todo_iac_split_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/routes/guardian.py",
+    "/app/backend/tests/test_guardian_todo_iac_split.py"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "100%"
+  },
+  "test_credentials": {
+    "founder_admin": "info@carryon.us / Demo1234!"
+  },
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 111 verified the Guardian To-Do and IAC split feature. The generate_todo action now returns action_result.action='todo_generated' and frontend shows 'Download To-Do List PDF' button. The generate_iac action populates the IAC database and shows '{N} IAC items added' badge. Fixed FPDF x-position bug in export-todo endpoint. The xAI API sometimes returns 502 errors under load - this is transient and not a code issue.",
+  "mocked_apis": {
+    "has_mocked_apis": false,
+    "mocked_apis_list": []
+  },
+  "feature_verification": {
+    "generate_todo": {
+      "action_result": "todo_generated",
+      "populates_iac": false,
+      "pdf_download": "POST /api/guardian/export-todo",
+      "frontend_button": "Generate To-Do List"
+    },
+    "generate_iac": {
+      "action_result": "iac_generated",
+      "populates_iac": true,
+      "pdf_download": "POST /api/guardian/export-checklist",
+      "frontend_button": "Generate IAC"
+    }
+  }
+}

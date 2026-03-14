@@ -12,6 +12,7 @@ import {
   StopCircle,
   FileSearch,
   ListChecks,
+  ClipboardList,
   Gauge,
   CheckCircle2,
   HelpCircle,
@@ -25,7 +26,8 @@ import {
   Shield,
   Copy,
   Mic,
-  MicOff
+  MicOff,
+  Download
 } from 'lucide-react';
 
 import { toast } from '../utils/toast';
@@ -127,8 +129,10 @@ const ThinkingIndicator = ({ actionLoading, onStop }) => {
 
   const thinkingMessages = actionLoading === 'analyze_vault'
     ? ['Reading your documents...', 'Reviewing legal provisions...', 'Checking for gaps...', 'Preparing analysis...']
-    : actionLoading === 'generate_checklist'
-    ? ['Reviewing your estate...', 'Identifying action items...', 'Prioritizing by urgency...', 'Building your checklist...']
+    : actionLoading === 'generate_todo'
+    ? ['Reviewing your estate...', 'Identifying gaps...', 'Prioritizing tasks...', 'Building your to-do list...']
+    : actionLoading === 'generate_iac'
+    ? ['Reading your vault documents...', 'Extracting contacts and policy numbers...', 'Building beneficiary action items...', 'Prioritizing by urgency...']
     : actionLoading === 'analyze_readiness'
     ? ['Scoring your documents...', 'Evaluating messages...', 'Checking your checklist...', 'Calculating readiness...']
     : ['Thinking...', 'Reviewing context...', 'Forming response...'];
@@ -169,7 +173,8 @@ const ThinkingIndicator = ({ actionLoading, onStop }) => {
 };
 const actionButtons = [
   { key: 'analyze_vault', label: 'Analyze Vault', icon: FileSearch, color: '#3B7BF7' },
-  { key: 'generate_checklist', label: 'Generate Checklist', icon: ListChecks, color: '#22C993' },
+  { key: 'generate_todo', label: 'Generate To-Do List', icon: ClipboardList, color: '#22C993' },
+  { key: 'generate_iac', label: 'Generate IAC', icon: ListChecks, color: '#F59E0B' },
   { key: 'analyze_readiness', label: 'Readiness Score', icon: Gauge, color: '#F5A623' },
   { key: 'beneficiary_review', label: 'Beneficiary Review', icon: Users, color: '#8b5cf6' },
 ];
@@ -337,8 +342,11 @@ const GuardianPage = () => {
         if (m.action_result?.action === 'readiness_analyzed' && m.action_result?.readiness) {
           msg.readiness = m.action_result.readiness;
         }
-        if (m.action_result?.action === 'checklist_generated') {
-          msg.actionBadge = `${m.action_result.items_added} checklist items added`;
+        if (m.action_result?.action === 'checklist_generated' || m.action_result?.action === 'iac_generated') {
+          msg.actionBadge = `${m.action_result.items_added} IAC items added`;
+        }
+        if (m.action_result?.action === 'todo_generated') {
+          msg.showTodoDownload = true;
         }
         return msg;
       });
@@ -379,14 +387,29 @@ const GuardianPage = () => {
       const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       const a = document.createElement('a');
       a.href = url;
-      a.download = `CarryOn_Checklist_${new Date().toISOString().split('T')[0]}.pdf`;
+      a.download = `CarryOn_IAC_${new Date().toISOString().split('T')[0]}.pdf`;
       a.click();
       window.URL.revokeObjectURL(url);
-      // toast removed
     } catch (err) {
-      toast.error(err.response?.status === 404 ? 'No checklist items found — generate one first' : 'Failed to export checklist');
+      toast.error(err.response?.status === 404 ? 'No IAC items found — generate one first' : 'Failed to export checklist');
     }
     setChecklistExporting(false);
+  };
+
+  const handleTodoDownload = async (content) => {
+    try {
+      const headers = getAuthHeaders()?.headers;
+      const res = await axios.post(`${API_URL}/guardian/export-todo`, { content }, { headers, responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `CarryOn_ToDo_${new Date().toISOString().split('T')[0]}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success('To-Do List downloaded');
+    } catch (err) {
+      toast.error('Failed to generate PDF');
+    }
   };
 
   const handleExport = async () => {
@@ -427,7 +450,7 @@ const GuardianPage = () => {
     const activeSessionId = overrideSessionId || sessionId;
 
     const displayText = action
-      ? { analyze_vault: 'Analyze my Document Vault', generate_checklist: 'Generate my Action Checklist', analyze_readiness: 'Analyze my Estate Readiness Score', beneficiary_review: 'Review my beneficiary designations and coverage' }[action] || messageText
+      ? { analyze_vault: 'Analyze my Document Vault', generate_todo: 'Generate my Estate To-Do List', generate_iac: 'Generate my Immediate Action Checklist', analyze_readiness: 'Analyze my Estate Readiness Score', beneficiary_review: 'Review my beneficiary designations and coverage' }[action] || messageText
       : messageText;
 
     setMessages(prev => [...prev, { role: 'user', content: displayText }]);
@@ -453,8 +476,10 @@ const GuardianPage = () => {
 
       if (response.data.action_result) {
         const result = response.data.action_result;
-        if (result.action === 'checklist_generated') {
-          assistantMsg.actionBadge = `${result.items_added} checklist items added`;
+        if (result.action === 'iac_generated') {
+          assistantMsg.actionBadge = `${result.items_added} IAC items added`;
+        } else if (result.action === 'todo_generated') {
+          assistantMsg.showTodoDownload = true;
         } else if (result.action === 'readiness_analyzed' && result.readiness) {
           assistantMsg.readiness = result.readiness;
         }
@@ -512,7 +537,7 @@ const GuardianPage = () => {
                 </h1>
                 <ul className="text-xs text-[var(--t5)] mt-1 space-y-0.5">
                   <li>· AI estate planning assistant trained in all 50 U.S. states</li>
-                  <li>· Analyzes your vault, identifies gaps, generates checklists</li>
+                  <li>· Analyzes your vault, identifies gaps, generates to-do lists</li>
                   <li>· Not legal advice — consult a licensed attorney for decisions</li>
                 </ul>
               </div>
@@ -705,6 +730,14 @@ const GuardianPage = () => {
                   <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-[#22c993]">
                     <CheckCircle2 className="w-3.5 h-3.5" /> {msg.actionBadge}
                   </div>
+                )}
+                {msg.showTodoDownload && !loading && (
+                  <button onClick={() => handleTodoDownload(msg.content)}
+                    className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95"
+                    style={{ background: 'rgba(34,201,147,0.12)', border: '1px solid rgba(34,201,147,0.3)', color: '#22C993' }}
+                    data-testid={`download-todo-${index}`}>
+                    <Download className="w-3.5 h-3.5" /> Download To-Do List PDF
+                  </button>
                 )}
                 {msg.readiness && (
                   <div className="mt-3 grid grid-cols-3 gap-2">
