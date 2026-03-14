@@ -40,7 +40,9 @@ class TestFounderOperatorsEndpoint:
             f"{BASE_URL}/api/founder/operators",
             headers=admin_auth_headers,
         )
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+        assert response.status_code == 200, (
+            f"Expected 200, got {response.status_code}: {response.text}"
+        )
 
     def test_founder_operators_returns_list(self, admin_auth_headers):
         """Test that the endpoint returns a list"""
@@ -52,7 +54,9 @@ class TestFounderOperatorsEndpoint:
         data = response.json()
         assert isinstance(data, list), "Response should be a list"
 
-    def test_founder_operators_schema_includes_personal_info_fields(self, admin_auth_headers):
+    def test_founder_operators_schema_includes_personal_info_fields(
+        self, admin_auth_headers
+    ):
         """Test that personal info fields are NOT excluded (they should pass through if present in DB)"""
         response = requests.get(
             f"{BASE_URL}/api/founder/operators",
@@ -63,8 +67,13 @@ class TestFounderOperatorsEndpoint:
         # The endpoint excludes only _id and password, so personal info should pass through
         # Note: These fields may be empty/null if operators haven't filled them in
         expected_possible_fields = [
-            "date_of_birth", "gender", "marital_status",
-            "address_street", "address_city", "address_state", "address_zip"
+            "date_of_birth",
+            "gender",
+            "marital_status",
+            "address_street",
+            "address_city",
+            "address_state",
+            "address_zip",
         ]
         # Just verify the endpoint doesn't explicitly exclude personal info
         # We can't assert they exist because operators may not have filled them
@@ -77,9 +86,13 @@ class TestFounderOperatorsEndpoint:
             assert "_id" not in sample_op, "_id should be excluded"
             # Check if any operator has personal info
             for op in data:
-                has_personal_info = any(op.get(field) for field in expected_possible_fields)
+                has_personal_info = any(
+                    op.get(field) for field in expected_possible_fields
+                )
                 if has_personal_info:
-                    print(f"Operator {op.get('name', op.get('id'))} has personal info: {[f for f in expected_possible_fields if op.get(f)]}")
+                    print(
+                        f"Operator {op.get('name', op.get('id'))} has personal info: {[f for f in expected_possible_fields if op.get(f)]}"
+                    )
                     break
 
 
@@ -93,7 +106,9 @@ class TestBeneficiaryMyPrimaryForEndpoint:
             headers=admin_auth_headers,
         )
         # Should return 200 (might be empty array for admin user)
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+        assert response.status_code == 200, (
+            f"Expected 200, got {response.status_code}: {response.text}"
+        )
 
     def test_endpoint_returns_list(self, admin_auth_headers):
         """Test that the endpoint returns a list (may be empty for admin)"""
@@ -116,7 +131,9 @@ class TestBeneficiaryMyPrimaryForEndpoint:
         """Test that the endpoint requires authentication"""
         response = requests.get(f"{BASE_URL}/api/beneficiary/my-primary-for")
         # Should return 401 or 403 without auth
-        assert response.status_code in [401, 403, 422], f"Expected auth error, got {response.status_code}"
+        assert response.status_code in [401, 403, 422], (
+            f"Expected auth error, got {response.status_code}"
+        )
 
 
 class TestBeneficiaryEndpointSchema:
@@ -130,7 +147,7 @@ class TestBeneficiaryEndpointSchema:
         )
         assert response.status_code == 200
         data = response.json()
-        
+
         if len(data) > 0:
             entry = data[0]
             assert "estate_id" in entry, "Missing estate_id"
@@ -140,8 +157,10 @@ class TestBeneficiaryEndpointSchema:
             # Verify data types
             assert isinstance(entry["estate_id"], str), "estate_id should be string"
             assert isinstance(entry["estate_name"], str), "estate_name should be string"
-            assert isinstance(entry["benefactor_name"], str), "benefactor_name should be string"
+            assert isinstance(entry["benefactor_name"], str), (
+                "benefactor_name should be string"
+            )
             assert isinstance(entry["status"], str), "status should be string"
-            print(f"VERIFIED: Response schema matches expected format")
+            print("VERIFIED: Response schema matches expected format")
         else:
             print("No primary-for estates found for test user (expected for admin)")

@@ -13,10 +13,16 @@ A full-stack estate planning application allowing benefactors to manage digital 
 ## Key Data Models
 - **users**: email, password, username, username_lower, role, is_also_benefactor, is_also_beneficiary, photo_url (S3 key)
 - **estates**: owner_id, beneficiaries[], name — **one user can own multiple estates**
-- **beneficiaries**: estate_id, user_id, email, photo_url (S3 key), invitation_status
+- **beneficiaries**: estate_id, user_id, email, photo_url (S3 key), invitation_status, is_primary
 - **family_plans**: fpo_user_id, members[], $1/mo benefactor discount, $3.49 flat beneficiary rate
+- **digest_preferences**: user_id, frequency, content toggles, additional recipients
 
 ## What's Been Implemented
+
+### Completed (March 14, 2026)
+- **Founder Portal — Operator Personal Info**: Operators tab expanded card now displays personal information (DOB, gender, marital status, address) when operators have filled in their profile via Settings.
+- **Beneficiary Settings — Primary Beneficiary For List**: Replaced confusing "Primary Benefactor: [None]" with a clean vertical list of all benefactors for whom the user is designated as primary beneficiary. New endpoint: `GET /api/beneficiary/my-primary-for`.
+- **Codebase Cleanup**: Removed dead files: Dockerfile.bak, root-level backend_test.py, test_result.md, tests/archive/ directory.
 
 ### Completed (March 13, 2026)
 - **S3 Photo Migration**: All photos stored as S3 presigned URLs (not base64)
@@ -40,10 +46,13 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **App Freeze Fix**: Backend xAI call made non-blocking via asyncio.to_thread() in guardian.py
 - **Admin Settings Access**: Settings page enabled for all admin roles with sidebar/mobile nav links
 - **Admin Display Name Edit**: Admins can edit their own display name from Settings
-
-### Completed (Feb 2026)
-- **Guardian Chat Session Persistence (P0 Bug Fix)**: Fixed critical bug where Quick Action buttons (Analyze Vault, etc.) on the Guardian landing page generated mismatched session IDs — localStorage stored ID_A but API messages were saved under ID_B. Fix: `startNewChat` now accepts an `action` parameter and passes the same session ID via closure to `sendMessage`. Also added localStorage sync in `sendMessage` response handler.
-- **Guardian Persistent Mount Architecture (P0)**: Fundamentally fixed the navigation-kills-chat bug. Previous approach relied on localStorage session resume which failed because React Router unmounts GuardianPage on navigation, destroying all in-progress state. New approach: GuardianPage is rendered persistently in DashboardLayout (hidden via `display:none` when not on `/guardian`). The component stays mounted across tab navigations — chat messages, loading state, and in-progress API calls all survive. The Route renders `null` and the actual component lives outside `<Outlet/>`.
+- **Guardian Chat Session Persistence**: Fixed session ID mismatch bug and implemented persistent mount architecture
+- **Role-Aware Email Digests**: Automated digest system for all user types with customizable frequency and content
+- **Guardian AI First-Request Timeout Fix**: Connection warm-up, retries, parallelized context queries
+- **Web App Auto-Update**: Version-check mechanism with hash-based hard refresh
+- **Login Lockout Countdown**: Live countdown timer during rate-limit lockout
+- **State-Aware AI & PDFs**: Legal disclaimer referencing user's state of residence
+- **Universal Personal Information Editing**: All users can update name, address, contact info via Settings
 
 ## Critical Development Protocols
 
@@ -70,10 +79,11 @@ User pushes to GitHub → Railway builds backend → Vercel builds frontend → 
 ## Prioritized Backlog
 ### P1 - Upcoming
 - Share Extension Setup (instructions in /app/memory/SHARE_EXTENSION_SETUP.md)
-- Twilio SMS OTP Integration (blocked on A2P 10DLC approval)
+- Capacitor Live Updates for iOS (plan in /app/memory/CAPACITOR_LIVE_UPDATES.md)
 - "Create New Estate" button in estate picker for multi-estate users
 
 ### P2 - Future
+- Twilio SMS OTP Integration (blocked on A2P 10DLC approval)
 - Scalability enhancements (CDN for S3, horizontal scaling)
 - Settings page "flash" glitch investigation
 

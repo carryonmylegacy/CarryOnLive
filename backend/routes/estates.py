@@ -235,12 +235,14 @@ async def get_my_primary_for_estates(current_user: dict = Depends(get_current_us
     result = []
     for estate in estates:
         owner = owners.get(estate.get("owner_id"), {})
-        result.append({
-            "estate_id": estate["id"],
-            "estate_name": estate.get("name", "Unknown"),
-            "benefactor_name": owner.get("name", "Unknown"),
-            "status": estate.get("status", "pre-transition"),
-        })
+        result.append(
+            {
+                "estate_id": estate["id"],
+                "estate_name": estate.get("name", "Unknown"),
+                "benefactor_name": owner.get("name", "Unknown"),
+                "status": estate.get("status", "pre-transition"),
+            }
+        )
     return result
 
 
