@@ -79,7 +79,7 @@
   },
   "scripts": {
     "start": "craco start",
-    "build": "CI=false craco build",
+    "build": "node -e \"require('fs').writeFileSync('public/version.json',JSON.stringify({v:Date.now().toString(36)}))\" && CI=false craco build",
     "test": "craco test"
   },
   "browserslist": {

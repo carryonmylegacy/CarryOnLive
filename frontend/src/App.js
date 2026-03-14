@@ -13,6 +13,7 @@ import NetworkStatusBanner from './components/NetworkStatusBanner';
 import NotificationContainer from './components/AppNotification';
 import { AmberAlertProvider } from './components/AmberAlert';
 import { initErrorReporter, reportError } from './utils/errorReporter';
+import { checkForUpdates } from './utils/versionCheck';
 import { Loader2 } from 'lucide-react';
 
 const CARRYON_BUILD = '2026-03-10T20:30:00Z-fix-portal-paywall';
@@ -347,6 +348,12 @@ function App() {
   useEffect(() => {
     // Initialize global error reporter
     initErrorReporter();
+
+    // Check for platform updates (web only — safe, silent, no crashes)
+    if (!isNative) {
+      const timer = setTimeout(() => checkForUpdates(), 5000);
+      return () => clearTimeout(timer);
+    }
 
     if (isNative) {
       CapacitorUpdater.notifyAppReady();
