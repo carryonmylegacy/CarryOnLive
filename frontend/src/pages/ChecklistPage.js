@@ -88,6 +88,7 @@ const ChecklistPage = () => {
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [showTemplates, setShowTemplates] = useState(false);
   const [suggestingAI, setSuggestingAI] = useState(false);
   const [aiElapsed, setAiElapsed] = useState(0);
@@ -636,9 +637,10 @@ const ChecklistPage = () => {
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}
+                      onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(item.id); }}
                       disabled={deleting === item.id}
                       className="p-1.5 rounded-lg text-[var(--t5)] active:text-red-400 transition-colors disabled:opacity-50"
+                      data-testid={`delete-iac-${item.id}`}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -696,6 +698,35 @@ const ChecklistPage = () => {
               </button>
               <button onClick={() => setFeedbackItem(null)} className="px-4 py-2.5 rounded-xl text-sm font-bold glass-card text-[var(--t4)]">
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }} onClick={() => setConfirmDeleteId(null)} data-testid="delete-confirm-overlay">
+          <div className="w-full max-w-xs rounded-2xl p-5 text-center" style={{ background: 'var(--s)', border: '1px solid var(--b)' }} onClick={e => e.stopPropagation()}>
+            <Trash2 className="w-8 h-8 mx-auto mb-3 text-red-400" />
+            <h3 className="text-sm font-bold text-[var(--t)] mb-1">Delete IAC Item?</h3>
+            <p className="text-xs text-[var(--t4)] mb-4">Are you sure you want to delete this item? This cannot be undone.</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { handleDelete(confirmDeleteId); setConfirmDeleteId(null); }}
+                disabled={deleting === confirmDeleteId}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-50"
+                style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: 'white' }}
+                data-testid="delete-confirm-yes"
+              >
+                {deleting === confirmDeleteId ? 'Deleting...' : 'Yes, Delete'}
+              </button>
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold glass-card text-[var(--t4)] transition-all active:scale-95"
+                data-testid="delete-confirm-no"
+              >
+                No, Keep It
               </button>
             </div>
           </div>
