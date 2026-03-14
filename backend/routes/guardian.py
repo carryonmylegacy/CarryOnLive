@@ -381,7 +381,11 @@ async def chat_with_guardian(
             estate_id = estates[0]["id"]
 
     if estate_id:
-        needs_content = data.action in ("analyze_vault", "generate_todo", "generate_iac") or any(
+        needs_content = data.action in (
+            "analyze_vault",
+            "generate_todo",
+            "generate_iac",
+        ) or any(
             keyword in data.message.lower()
             for keyword in [
                 "analyze",
@@ -526,7 +530,8 @@ Provide a clear, organized analysis with specific findings and recommendations."
 
         # Call xAI Grok — use Grok-4 for heavy analysis, Grok-3-mini for chat
         use_heavy_model = (
-            data.action in ("analyze_vault", "generate_todo", "generate_iac", "analyze_readiness")
+            data.action
+            in ("analyze_vault", "generate_todo", "generate_iac", "analyze_readiness")
             or needs_content
         )
         selected_model = XAI_MODEL if use_heavy_model else XAI_MODEL_LIGHT
@@ -1020,9 +1025,7 @@ async def export_todo_pdf(
     pdf.cell(0, 12, "CarryOn Estate Guardian", new_x="LMARGIN", new_y="NEXT")
     pdf.set_font("Helvetica", "", 10)
     pdf.set_text_color(100, 100, 100)
-    pdf.cell(
-        0, 6, "Estate Strengthening To-Do List", new_x="LMARGIN", new_y="NEXT"
-    )
+    pdf.cell(0, 6, "Estate Strengthening To-Do List", new_x="LMARGIN", new_y="NEXT")
     pdf.cell(
         0,
         5,

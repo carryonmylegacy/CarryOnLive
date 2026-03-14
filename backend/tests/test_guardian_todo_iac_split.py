@@ -60,24 +60,32 @@ class TestGenerateTodoAction:
             },
             timeout=120,  # AI responses may take time
         )
-        
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+
+        assert response.status_code == 200, (
+            f"Expected 200, got {response.status_code}: {response.text}"
+        )
         data = response.json()
-        
+
         # Verify action_result structure
         assert "action_result" in data, "Response should contain action_result"
         action_result = data["action_result"]
         assert action_result is not None, "action_result should not be None"
-        assert action_result.get("action") == "todo_generated", f"Expected action='todo_generated', got {action_result.get('action')}"
-        
+        assert action_result.get("action") == "todo_generated", (
+            f"Expected action='todo_generated', got {action_result.get('action')}"
+        )
+
         # Verify NO items_added field (IAC should not be populated)
-        assert "items_added" not in action_result, "generate_todo should NOT populate IAC (no items_added field)"
-        
+        assert "items_added" not in action_result, (
+            "generate_todo should NOT populate IAC (no items_added field)"
+        )
+
         # Verify response content exists
         assert "response" in data, "Response should contain AI response text"
-        assert len(data["response"]) > 100, "Response should contain substantial content"
-        
-        print(f"PASS: generate_todo returned action_result with action='todo_generated'")
+        assert len(data["response"]) > 100, (
+            "Response should contain substantial content"
+        )
+
+        print("PASS: generate_todo returned action_result with action='todo_generated'")
         print(f"Response length: {len(data['response'])} characters")
 
     def test_generate_todo_response_no_checklist_json(self, auth_headers, estate_id):
@@ -92,21 +100,25 @@ class TestGenerateTodoAction:
             },
             timeout=120,
         )
-        
+
         assert response.status_code == 200
         data = response.json()
-        
+
         # The AI response should NOT contain checklist_json format
         ai_response = data.get("response", "")
-        assert "```checklist_json" not in ai_response, "generate_todo response should NOT contain checklist_json block"
-        
-        print(f"PASS: generate_todo response does not contain checklist_json block")
+        assert "```checklist_json" not in ai_response, (
+            "generate_todo response should NOT contain checklist_json block"
+        )
+
+        print("PASS: generate_todo response does not contain checklist_json block")
 
 
 class TestGenerateIACAction:
     """Tests for the generate_iac action - SHOULD populate IAC"""
 
-    def test_generate_iac_returns_action_result_with_items(self, auth_headers, estate_id):
+    def test_generate_iac_returns_action_result_with_items(
+        self, auth_headers, estate_id
+    ):
         """POST /api/guardian/chat with action='generate_iac' returns response with IAC items"""
         response = requests.post(
             f"{BASE_URL}/api/chat/guardian",
@@ -118,27 +130,33 @@ class TestGenerateIACAction:
             },
             timeout=120,  # AI responses may take time
         )
-        
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+
+        assert response.status_code == 200, (
+            f"Expected 200, got {response.status_code}: {response.text}"
+        )
         data = response.json()
-        
+
         # Verify action_result structure
         assert "action_result" in data, "Response should contain action_result"
         action_result = data["action_result"]
-        
+
         # If IAC items were added, verify the structure
         if action_result and action_result.get("action") == "iac_generated":
-            assert "items_added" in action_result, "iac_generated should include items_added count"
+            assert "items_added" in action_result, (
+                "iac_generated should include items_added count"
+            )
             items_added = action_result["items_added"]
             assert isinstance(items_added, int), "items_added should be an integer"
             print(f"PASS: generate_iac added {items_added} IAC items to database")
         else:
             # Sometimes no new items added if duplicates exist
             print(f"INFO: generate_iac action_result: {action_result}")
-            
+
         # Verify response content exists
         assert "response" in data, "Response should contain AI response text"
-        assert len(data["response"]) > 100, "Response should contain substantial content"
+        assert len(data["response"]) > 100, (
+            "Response should contain substantial content"
+        )
 
 
 class TestExportTodoEndpoint:
@@ -160,21 +178,27 @@ class TestExportTodoEndpoint:
             json={"content": test_content},
             timeout=30,
         )
-        
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
-        
+
+        assert response.status_code == 200, (
+            f"Expected 200, got {response.status_code}: {response.text}"
+        )
+
         # Verify PDF content type
         content_type = response.headers.get("Content-Type", "")
-        assert "application/pdf" in content_type, f"Expected PDF content type, got {content_type}"
-        
+        assert "application/pdf" in content_type, (
+            f"Expected PDF content type, got {content_type}"
+        )
+
         # Verify PDF magic bytes
         pdf_content = response.content
         assert pdf_content[:4] == b"%PDF", "Response should start with PDF magic bytes"
-        
+
         # Verify Content-Disposition header
         content_disp = response.headers.get("Content-Disposition", "")
-        assert "CarryOn_ToDo" in content_disp, f"Expected filename with CarryOn_ToDo, got {content_disp}"
-        
+        assert "CarryOn_ToDo" in content_disp, (
+            f"Expected filename with CarryOn_ToDo, got {content_disp}"
+        )
+
         print(f"PASS: export-todo returned valid PDF ({len(pdf_content)} bytes)")
 
     def test_export_todo_pdf_with_empty_content(self, auth_headers):
@@ -185,9 +209,11 @@ class TestExportTodoEndpoint:
             json={"content": "Minimal content"},
             timeout=30,
         )
-        
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
-        print(f"PASS: export-todo handles minimal content")
+
+        assert response.status_code == 200, (
+            f"Expected 200, got {response.status_code}: {response.text}"
+        )
+        print("PASS: export-todo handles minimal content")
 
     def test_export_todo_pdf_requires_auth(self):
         """POST /api/guardian/export-todo without auth returns 401"""
@@ -196,9 +222,11 @@ class TestExportTodoEndpoint:
             json={"content": "Test content"},
             timeout=30,
         )
-        
-        assert response.status_code in [401, 403], f"Expected 401/403 without auth, got {response.status_code}"
-        print(f"PASS: export-todo requires authentication")
+
+        assert response.status_code in [401, 403], (
+            f"Expected 401/403 without auth, got {response.status_code}"
+        )
+        print("PASS: export-todo requires authentication")
 
 
 class TestExportChecklistEndpoint:
@@ -212,14 +240,16 @@ class TestExportChecklistEndpoint:
             json={},
             timeout=30,
         )
-        
+
         # May return 404 if no checklist items exist, or 200 with PDF
         if response.status_code == 200:
             content_type = response.headers.get("Content-Type", "")
-            assert "application/pdf" in content_type, f"Expected PDF content type, got {content_type}"
-            print(f"PASS: export-checklist returned valid PDF")
+            assert "application/pdf" in content_type, (
+                f"Expected PDF content type, got {content_type}"
+            )
+            print("PASS: export-checklist returned valid PDF")
         elif response.status_code == 404:
-            print(f"INFO: No checklist items found - endpoint returns 404 as expected")
+            print("INFO: No checklist items found - endpoint returns 404 as expected")
         else:
             pytest.fail(f"Unexpected status {response.status_code}: {response.text}")
 
@@ -241,16 +271,18 @@ class TestActionButtonsConfiguration:
             },
             timeout=120,
         )
-        
+
         assert response.status_code == 200
         data = response.json()
-        
+
         # Verify the response structure indicates todo_generated
         action_result = data.get("action_result", {})
         if action_result:
-            assert action_result.get("action") == "todo_generated", "Should use todo_generated action"
-        
-        print(f"PASS: generate_todo uses correct action identifier")
+            assert action_result.get("action") == "todo_generated", (
+                "Should use todo_generated action"
+            )
+
+        print("PASS: generate_todo uses correct action identifier")
 
     def test_generate_iac_uses_checklist_json_format(self, auth_headers, estate_id):
         """Verify generate_iac requests checklist_json format from AI"""
@@ -266,15 +298,19 @@ class TestActionButtonsConfiguration:
             },
             timeout=120,
         )
-        
+
         assert response.status_code == 200
         data = response.json()
-        
+
         # If IAC was generated, it should have the iac_generated action
         action_result = data.get("action_result", {})
         if action_result and action_result.get("action") == "iac_generated":
-            assert "items_added" in action_result, "iac_generated should track items_added"
-            print(f"PASS: generate_iac uses iac_generated action with items_added={action_result['items_added']}")
+            assert "items_added" in action_result, (
+                "iac_generated should track items_added"
+            )
+            print(
+                f"PASS: generate_iac uses iac_generated action with items_added={action_result['items_added']}"
+            )
         else:
             # Could be no new items if duplicates
             print(f"INFO: generate_iac action_result: {action_result}")
