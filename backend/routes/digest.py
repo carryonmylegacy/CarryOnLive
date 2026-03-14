@@ -717,7 +717,9 @@ async def preview_enhanced_digest(
     if current_user["role"] not in ("admin", "benefactor"):
         raise HTTPException(status_code=403, detail="Not authorized")
 
+    send_to_email = body.get("send_to") if body else None
     target = current_user
+
     if current_user["role"] == "admin" and body and body.get("target_email"):
         user_doc = await db.users.find_one(
             {"email": body["target_email"]}, {"_id": 0, "password": 0}
@@ -729,7 +731,6 @@ async def preview_enhanced_digest(
     # If target has no estates, find the first benefactor with an estate to demo
     estates = await db.estates.find({"owner_id": target["id"]}, {"_id": 0}).to_list(1)
     if not estates and current_user["role"] == "admin":
-        # Find any benefactor with beneficiaries for a rich preview
         sample_estate = await db.estates.find_one(
             {}, {"_id": 0}, sort=[("created_at", -1)]
         )
@@ -739,8 +740,12 @@ async def preview_enhanced_digest(
             )
             if owner:
                 target = owner
-                # Override email to send to admin
-                target["email"] = current_user["email"]
+
+    # Admin can override the recipient email
+    if send_to_email and current_user["role"] == "admin":
+        target["email"] = send_to_email
+    elif not send_to_email and current_user["role"] == "admin":
+        target["email"] = current_user["email"]
 
     dashboard_url = "https://carryon.us/dashboard"
     ok = await send_enhanced_digest_for_user(target, dashboard_url)
