@@ -22,7 +22,8 @@ A full-stack estate planning application allowing benefactors to manage digital 
 ### Completed (March 14, 2026)
 - **Founder Portal — Operator Personal Info**: Operators tab expanded card now displays personal information (DOB, gender, marital status, address) when operators have filled in their profile via Settings.
 - **Beneficiary Settings — Primary Beneficiary For List**: Replaced confusing "Primary Benefactor: [None]" with a clean vertical list of all benefactors for whom the user is designated as primary beneficiary. New endpoint: `GET /api/beneficiary/my-primary-for`.
-- **Codebase Cleanup**: Removed dead files: Dockerfile.bak, root-level backend_test.py, test_result.md, tests/archive/ directory.
+- **Orbit Visualization Overhaul**: Complete rewrite of OrbitVisualization component — responsive sizing via ResizeObserver (scales from 358px mobile to 560px desktop), larger nodes (42-50px), correct ring hierarchy (Ring 0: Spouse+Children, Ring 1: Parents/Grandchildren/Siblings, Ring 2: Grandparents/Nieces/Nephews, Ring 3: Great-Grandparents), 37-degree stagger per ring. Relationship mapping properly inverts the benefactor's perspective.
+- **Codebase Cleanup**: Removed dead files: Dockerfile.bak, root-level backend_test.py, test_result.md, tests/archive/ directory. Removed unused getOrbitLevel/orbitColors from BeneficiaryHubPage.js (now imported from OrbitVisualization).
 
 ### Completed (March 13, 2026)
 - **S3 Photo Migration**: All photos stored as S3 presigned URLs (not base64)
