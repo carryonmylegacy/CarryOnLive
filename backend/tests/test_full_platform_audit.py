@@ -19,7 +19,7 @@ import os
 import uuid
 
 BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://founder-admin-dash.preview.emergentagent.com"
+    "REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com"
 ).rstrip("/")
 
 # Test credentials

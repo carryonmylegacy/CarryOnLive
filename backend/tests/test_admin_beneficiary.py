@@ -10,7 +10,7 @@ import requests
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 if not BASE_URL:
-    BASE_URL = "https://founder-admin-dash.preview.emergentagent.com"
+    BASE_URL = "https://todo-pdf-gen.preview.emergentagent.com"
 
 
 class TestAdminEndpoints:

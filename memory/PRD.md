@@ -19,7 +19,10 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
-### Completed (March 14, 2026)
+### Completed (March 14, 2026 — Session 2)
+- **Guardian AI Cold-Start Fix (3-Layer Defense)**: Resolved recurring "temporary issue connecting to the AI service" error that struck after idle periods. Root cause: httpx connection pool lost keep-alive TCP connections to api.x.ai after inactivity. Fix: (1) Backend periodic keepalive — background task pings xAI every 5 minutes to keep connections warm (replaces one-time startup warmup). (2) Backend improved retry — 3 attempts with escalating backoff (0s, 1.5s, 3s) instead of 2 with 1s. (3) Frontend auto-retry — silently retries the API call once (with 2s delay) before showing an error to the user.
+
+### Completed (March 14, 2026 — Session 1)
 - **Founder Portal — Operator Personal Info**: Operators tab expanded card now displays personal information (DOB, gender, marital status, address) when operators have filled in their profile via Settings.
 - **Beneficiary Settings — Primary Beneficiary For List**: Replaced confusing "Primary Benefactor: [None]" with a clean vertical list of all benefactors for whom the user is designated as primary beneficiary. New endpoint: `GET /api/beneficiary/my-primary-for`.
 - **Orbit Visualization Overhaul**: Complete rewrite of OrbitVisualization component — responsive sizing via ResizeObserver (scales from 358px mobile to 560px desktop), larger nodes (42-50px), correct ring hierarchy (Ring 0: Spouse+Children, Ring 1: Parents/Grandchildren/Siblings, Ring 2: Grandparents/Nieces/Nephews, Ring 3: Great-Grandparents), 37-degree stagger per ring. Adaptive node sizing shrinks nodes when a ring is crowded (floor 28px). Adaptive height — container only as tall as needed for active rings. Relationship mapping properly inverts the benefactor's perspective.

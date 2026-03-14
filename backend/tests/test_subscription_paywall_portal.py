@@ -11,7 +11,7 @@ import pytest
 import requests
 
 BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://founder-admin-dash.preview.emergentagent.com"
+    "REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com"
 )
 
 
@@ -147,7 +147,7 @@ class TestSubscriptionCheckout:
             json={
                 "plan_id": "premium",
                 "billing_cycle": "annual",
-                "origin_url": "https://founder-admin-dash.preview.emergentagent.com",
+                "origin_url": "https://todo-pdf-gen.preview.emergentagent.com",
             },
             headers=headers,
         )

@@ -11,7 +11,7 @@ import requests
 import os
 
 BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://founder-admin-dash.preview.emergentagent.com"
+    "REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com"
 )
 
 # Test credentials - using the founder account

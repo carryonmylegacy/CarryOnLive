@@ -461,13 +461,28 @@ const GuardianPage = () => {
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
+    const requestPayload = {
+      message: messageText || displayText,
+      session_id: activeSessionId,
+      estate_id: estateId,
+      action
+    };
+    const requestConfig = { ...getAuthHeaders(), timeout: 120000, signal: controller.signal };
+
+    // Helper — single API call attempt
+    const tryCall = () => axios.post(`${API_URL}/chat/guardian`, requestPayload, requestConfig);
+
     try {
-      const response = await axios.post(`${API_URL}/chat/guardian`, {
-        message: messageText || displayText,
-        session_id: activeSessionId,
-        estate_id: estateId,
-        action
-      }, { ...getAuthHeaders(), timeout: 120000, signal: controller.signal });
+      let response;
+      try {
+        response = await tryCall();
+      } catch (firstErr) {
+        // If cancelled by user, propagate immediately
+        if (axios.isCancel(firstErr) || firstErr.name === 'AbortError' || firstErr.code === 'ERR_CANCELED') throw firstErr;
+        // Silent auto-retry once — connection may have gone stale after idle
+        await new Promise(r => setTimeout(r, 2000));
+        response = await tryCall();
+      }
 
       if (!overrideSessionId) setSessionId(response.data.session_id);
       // Always keep localStorage in sync with the active session

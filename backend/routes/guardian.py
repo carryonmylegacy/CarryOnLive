@@ -19,15 +19,18 @@ from utils import get_current_user, log_activity, update_estate_readiness
 
 router = APIRouter()
 
-# Track if xAI connection has been warmed up
-_xai_warmed_up = False
+# ── xAI Connection Keep-Alive ──────────────────────────────────
+# The httpx connection pool drops idle TCP connections after a few
+# minutes.  A one-time warmup at startup is not enough — we need a
+# periodic ping to keep the pool warm so the first user request after
+# an idle gap doesn't hit a dead socket.
+
+_xai_keepalive_task = None
+_XAI_KEEPALIVE_INTERVAL = 300  # seconds (5 minutes)
 
 
-async def warmup_xai():
-    """Pre-warm the xAI connection to avoid cold-start timeout on first user request."""
-    global _xai_warmed_up
-    if _xai_warmed_up or not xai_client:
-        return
+async def _xai_ping():
+    """Send a minimal request to xAI to keep the connection pool alive."""
     try:
         await asyncio.to_thread(
             xai_client.chat.completions.create,
@@ -35,10 +38,36 @@ async def warmup_xai():
             messages=[{"role": "user", "content": "ping"}],
             max_tokens=1,
         )
-        _xai_warmed_up = True
-        logger.info("xAI connection warmed up successfully")
+        return True
     except Exception as e:
-        logger.warning(f"xAI warmup failed (non-critical): {e}")
+        logger.warning(f"xAI keepalive ping failed: {e}")
+        return False
+
+
+async def _xai_keepalive_loop():
+    """Background loop that pings xAI every N seconds to keep connections warm."""
+    while True:
+        try:
+            await asyncio.sleep(_XAI_KEEPALIVE_INTERVAL)
+            ok = await _xai_ping()
+            if ok:
+                logger.info("xAI keepalive ping OK")
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logger.warning(f"xAI keepalive loop error: {e}")
+
+
+async def warmup_xai():
+    """Initial warmup + start the periodic keepalive loop."""
+    global _xai_keepalive_task
+    if not xai_client:
+        return
+    ok = await _xai_ping()
+    if ok:
+        logger.info("xAI connection warmed up successfully")
+    # Start the keepalive background loop
+    _xai_keepalive_task = asyncio.create_task(_xai_keepalive_loop())
 
 
 # ===================== AI CHAT ROUTES =====================
@@ -536,11 +565,16 @@ Provide a clear, organized analysis with specific findings and recommendations."
         )
         selected_model = XAI_MODEL if use_heavy_model else XAI_MODEL_LIGHT
 
-        # Auto-retry: if first attempt fails, retry once before returning error
+        # Auto-retry with escalating backoff (3 attempts).
+        # After an idle period the httpx pool may hold dead sockets;
+        # the first attempt flushes them and subsequent ones succeed.
         completion = None
         last_error = None
-        for attempt in range(2):
+        _RETRY_DELAYS = [0, 1.5, 3]  # seconds to wait before each attempt
+        for attempt in range(3):
             try:
+                if _RETRY_DELAYS[attempt]:
+                    await asyncio.sleep(_RETRY_DELAYS[attempt])
                 completion = await asyncio.to_thread(
                     xai_client.chat.completions.create,
                     model=selected_model,
@@ -551,9 +585,9 @@ Provide a clear, organized analysis with specific findings and recommendations."
                 break
             except Exception as e:
                 last_error = e
-                if attempt == 0:
-                    logger.warning(f"xAI attempt 1 failed ({e}), retrying...")
-                    await asyncio.sleep(1)
+                logger.warning(
+                    f"xAI attempt {attempt + 1}/3 failed ({type(e).__name__}: {e})"
+                )
 
         if completion is None:
             raise last_error

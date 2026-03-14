@@ -75,7 +75,7 @@
   "seed_data_creation": "Created test sessions during testing (prefix: test_session_, test_delete_)",
   "retest_needed": false,
   "should_main_agent_self_test": false,
-  "context_for_next_testing_agent": "Guardian landing page with ChatGPT-like UI fully tested. All session management features working: list sessions (max 20), create via chat, resume by clicking, delete via API and hover button. Backend endpoints: GET /api/chat/sessions, DELETE /api/chat/sessions/{session_id}, GET /api/chat/history/{session_id}, POST /api/chat/guardian. Cross-chat knowledge enabled - AI has context from recent sessions. Minor HTML nesting issue with delete button inside session button (console error but functional). App URL: https://founder-admin-dash.preview.emergentagent.com. Login: admin@carryon.com / admin123.",
+  "context_for_next_testing_agent": "Guardian landing page with ChatGPT-like UI fully tested. All session management features working: list sessions (max 20), create via chat, resume by clicking, delete via API and hover button. Backend endpoints: GET /api/chat/sessions, DELETE /api/chat/sessions/{session_id}, GET /api/chat/history/{session_id}, POST /api/chat/guardian. Cross-chat knowledge enabled - AI has context from recent sessions. Minor HTML nesting issue with delete button inside session button (console error but functional). App URL: https://todo-pdf-gen.preview.emergentagent.com. Login: admin@carryon.com / admin123.",
   "features_verified": {
     "guardian_landing_page": {
       "status": "WORKING",

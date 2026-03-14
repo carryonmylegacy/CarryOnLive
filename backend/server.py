@@ -120,7 +120,7 @@ async def lifespan(app):
     reminder_task = asyncio.create_task(trial_reminder_scheduler())
     dob_task = asyncio.create_task(daily_dob_check_scheduler())
 
-    # Warm up xAI connection in background to avoid cold-start timeouts
+    # Warm up xAI connection + start periodic keepalive
     from routes.guardian import warmup_xai
 
     asyncio.create_task(warmup_xai())
@@ -129,6 +129,11 @@ async def lifespan(app):
     digest_task.cancel()
     reminder_task.cancel()
     dob_task.cancel()
+    # Cancel xAI keepalive if running
+    from routes.guardian import _xai_keepalive_task as ka_task
+
+    if ka_task:
+        ka_task.cancel()
     client.close()
     logger.info("CarryOn™ API shutting down")
 
