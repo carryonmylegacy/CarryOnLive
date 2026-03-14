@@ -1023,6 +1023,16 @@ async def update_profile(body: dict, current_user: dict = Depends(get_current_us
         update["name"] = f"{fn} {ln}".strip()
 
     await db.users.update_one({"id": current_user["id"]}, {"$set": update})
+
+    # When the user changes their address_state in Settings, keep all their
+    # owned estates in sync so the EGA, PDFs, and readiness reports always
+    # reflect the user's current declared state of residence.
+    if "address_state" in update and update["address_state"]:
+        await db.estates.update_many(
+            {"owner_id": current_user["id"]},
+            {"$set": {"state": update["address_state"]}},
+        )
+
     user = await db.users.find_one(
         {"id": current_user["id"]}, {"_id": 0, "password": 0}
     )

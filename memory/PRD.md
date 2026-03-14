@@ -21,6 +21,7 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ### Completed (March 14, 2026 — Session 2)
 - **Guardian AI Cold-Start Fix (3-Layer Defense)**: Resolved recurring "temporary issue connecting to the AI service" error that struck after idle periods. Root cause: httpx connection pool lost keep-alive TCP connections to api.x.ai after inactivity. Fix: (1) Backend periodic keepalive — background task pings xAI every 5 minutes to keep connections warm (replaces one-time startup warmup). (2) Backend improved retry — 3 attempts with escalating backoff (0s, 1.5s, 3s) instead of 2 with 1s. (3) Frontend auto-retry — silently retries the API call once (with 2s delay) before showing an error to the user.
+- **EGA State-Specific Law Calibration**: EGA now always reads the benefactor's current address from the `users` collection (Settings page) — not a stale estate-level cache. When a user changes their address in Settings, all owned estates' `state` field is proactively synced. The `gather_estate_context` function also syncs the estate state on every EGA query if it drifts. The system prompt emphasizes the declared state is sourced from Settings and all analysis must be tailored accordingly.
 
 ### Completed (March 14, 2026 — Session 1)
 - **Founder Portal — Operator Personal Info**: Operators tab expanded card now displays personal information (DOB, gender, marital status, address) when operators have filled in their profile via Settings.

@@ -206,7 +206,10 @@ async def gather_estate_context(
             "special_status": 1,
         },
     )
-    # Use benefactor's registered state, falling back to estate.state
+    # ALWAYS use the benefactor's CURRENT address from Settings (users collection).
+    # The Settings page is the single source of truth for address/state — the
+    # estate's cached "state" field is only a fallback if the user profile has
+    # no state set at all (e.g. legacy accounts that predate the address fields).
     benefactor_state = (
         (benefactor or {}).get("address_state")
         or estate.get("state")
@@ -214,11 +217,14 @@ async def gather_estate_context(
     )
     benefactor_city = (benefactor or {}).get("address_city", "")
     benefactor_zip = (benefactor or {}).get("address_zip", "")
+    benefactor_street = (benefactor or {}).get("address_street", "")
     benefactor_marital = (benefactor or {}).get("marital_status", "")
     benefactor_special = (benefactor or {}).get("special_status", [])
 
-    # Also update estate.state if it's missing but benefactor has it
-    if not estate.get("state") and benefactor_state != "Not specified":
+    # Keep estate.state in sync with the user's current Settings address.
+    # This ensures PDFs, readiness reports, and other estate-level features
+    # also reflect the user's current declared state of residence.
+    if benefactor_state != "Not specified" and estate.get("state") != benefactor_state:
         await db.estates.update_one(
             {"id": estate_id}, {"$set": {"state": benefactor_state}}
         )
@@ -253,10 +259,11 @@ async def gather_estate_context(
     # Build context string
     context_parts = []
 
-    # Estate info with benefactor's residence for state-specific legal advice
+    # Estate info with benefactor's CURRENT residence (from Settings page) for state-specific legal advice
     context_parts.append(f"""
 **CURRENT ESTATE INFORMATION:**
 - Estate Name: {estate["name"]}
+- Benefactor's Declared Address: {benefactor_street or "Not specified"}, {benefactor_city or "Not specified"}, {benefactor_state} {benefactor_zip or ""}
 - Benefactor's State of Residence: {benefactor_state}
 - Benefactor's City: {benefactor_city or "Not specified"}
 - Benefactor's ZIP: {benefactor_zip or "Not specified"}
@@ -265,7 +272,7 @@ async def gather_estate_context(
 - Estate Status: {estate.get("status", "pre-transition")}
 - Overall Readiness Score: {readiness["overall_score"]}%
 
-**IMPORTANT: All legal analysis and recommendations MUST be tailored to {benefactor_state} state law. Reference {benefactor_state}-specific statutes, probate rules, homestead exemptions, community/common property rules, estate/inheritance tax thresholds, and filing requirements. If the state is "Not specified", ask the user to confirm their state before providing state-specific advice.**
+**IMPORTANT: The benefactor's declared state of residence is {benefactor_state} (sourced from their current Settings/Profile page — this is always the most up-to-date value). ALL legal analysis, statutes, probate rules, homestead exemptions, community/common property rules, estate/inheritance tax thresholds, and filing requirements MUST be specific to {benefactor_state}. If the state is "Not specified", ask the user to update their address in Settings before providing state-specific advice.**
 """)
 
     # Readiness breakdown
