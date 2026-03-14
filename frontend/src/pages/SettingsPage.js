@@ -43,6 +43,14 @@ const SettingsPage = () => {
   const [weeklyDigest, setWeeklyDigest] = useState(true);
   const [digestLoading, setDigestLoading] = useState(false);
   const [digestSending, setDigestSending] = useState(false);
+  const [digestFrequency, setDigestFrequency] = useState('weekly');
+  const [digestSections, setDigestSections] = useState({
+    family_tree: true, connection_status: true, readiness_score: true,
+    dashboard_tiles: true, action_items: true, missing_items: true,
+  });
+  const [additionalRecipients, setAdditionalRecipients] = useState([]);
+  const [newRecipientEmail, setNewRecipientEmail] = useState('');
+  const [digestSaving, setDigestSaving] = useState(false);
   const [onboardingVisible, setOnboardingVisible] = useState(() => localStorage.getItem('carryon_onboarding_dismissed') !== 'true');
 
   // GDPR state
@@ -93,7 +101,10 @@ const SettingsPage = () => {
     const fetchDigestPref = async () => {
       try {
         const res = await axios.get(`${API_URL}/digest/preferences`, getAuthHeaders());
-        setWeeklyDigest(res.data.weekly_digest);
+        setWeeklyDigest(res.data.enabled !== false);
+        setDigestFrequency(res.data.frequency || 'weekly');
+        if (res.data.sections) setDigestSections(res.data.sections);
+        if (res.data.additional_recipients) setAdditionalRecipients(res.data.additional_recipients);
       } catch (e) { /* default to true */ }
     };
     const fetchConsent = async () => {
@@ -128,17 +139,51 @@ const SettingsPage = () => {
   const toggleDigest = async (val) => {
     setDigestLoading(true);
     try {
-      await axios.put(`${API_URL}/digest/preferences`, { weekly_digest: val }, getAuthHeaders());
+      await axios.put(`${API_URL}/digest/preferences`, { enabled: val }, getAuthHeaders());
       setWeeklyDigest(val);
     } catch (e) { /* ignore */ }
     finally { setDigestLoading(false); }
   };
 
+  const saveDigestPrefs = async (updates) => {
+    setDigestSaving(true);
+    try {
+      const res = await axios.put(`${API_URL}/digest/preferences`, updates, getAuthHeaders());
+      if (res.data.frequency) setDigestFrequency(res.data.frequency);
+      if (res.data.sections) setDigestSections(res.data.sections);
+      if (res.data.additional_recipients !== undefined) setAdditionalRecipients(res.data.additional_recipients);
+      toast.success('Preferences saved');
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Failed to save preferences');
+    }
+    finally { setDigestSaving(false); }
+  };
+
+  const addRecipient = async () => {
+    const email = newRecipientEmail.trim().toLowerCase();
+    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    if (additionalRecipients.includes(email)) {
+      toast.error('This email is already added');
+      return;
+    }
+    const updated = [...additionalRecipients, email];
+    await saveDigestPrefs({ additional_recipients: updated });
+    setNewRecipientEmail('');
+  };
+
+  const removeRecipient = async (email) => {
+    const updated = additionalRecipients.filter(e => e !== email);
+    await saveDigestPrefs({ additional_recipients: updated });
+  };
+
   const sendPreview = async () => {
     setDigestSending(true);
     try {
-      await axios.post(`${API_URL}/digest/preview`, {}, getAuthHeaders());
-      // toast removed
+      await axios.post(`${API_URL}/digest/preview-enhanced`, {}, getAuthHeaders());
+      toast.success('Preview email sent!');
     } catch (e) {
       toast.error('Could not send preview — do you have an estate?');
     }
@@ -584,23 +629,23 @@ const SettingsPage = () => {
         </CardContent>
       </Card>
 
-      {/* Notifications — benefactor/beneficiary only */}
-      {!isStaff && (
+      {/* Notifications & Digest — all users and admins */}
       <Card className="glass-card">
         <CardHeader>
           <CardTitle className="text-[var(--t)] flex items-center gap-2">
             <Bell className="w-5 h-5 text-[var(--gold)]" />
-            Notifications
+            Notifications & Digest
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Master Toggle */}
           <div className="flex items-center justify-between">
             <div>
               <h4 className="text-[var(--t)] font-medium flex items-center gap-2">
                 <Mail className="w-4 h-4 text-[var(--t4)]" />
-                Weekly Estate Digest
+                Estate Health Digest
               </h4>
-              <p className="text-[var(--t5)] text-sm">Monday morning readiness report with your top 3 action items</p>
+              <p className="text-[var(--t5)] text-sm">Automated status update email with your estate's health</p>
             </div>
             <div className="flex items-center gap-2">
               {digestLoading && <Loader2 className="w-4 h-4 animate-spin text-[var(--gold)]" />}
@@ -612,17 +657,139 @@ const SettingsPage = () => {
               />
             </div>
           </div>
-          {weeklyDigest && user?.role === 'benefactor' && (
-            <button
-              onClick={sendPreview}
-              disabled={digestSending}
-              className="text-xs text-[var(--gold)] hover:underline flex items-center gap-1"
-              data-testid="settings-digest-preview"
-            >
-              {digestSending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
-              Send me a preview now
-            </button>
+
+          {weeklyDigest && (
+            <div className="space-y-4 pl-1 pt-1">
+              {/* Frequency */}
+              <div>
+                <label className="text-[var(--t)] text-sm font-medium mb-2 block">Frequency</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { value: 'daily', label: 'Daily' },
+                    { value: 'weekly', label: 'Weekly' },
+                    { value: 'biweekly', label: 'Bi-weekly' },
+                    { value: 'monthly', label: 'Monthly' },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => saveDigestPrefs({ frequency: opt.value })}
+                      disabled={digestSaving}
+                      className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${
+                        digestFrequency === opt.value
+                          ? 'bg-[var(--gold)] text-[#0b1120] border-[var(--gold)]'
+                          : 'bg-[var(--card)] text-[var(--t4)] border-[var(--b)] hover:border-[var(--gold)]'
+                      }`}
+                      data-testid={`digest-freq-${opt.value}`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <Separator className="bg-[var(--b)]" />
+
+              {/* Sections */}
+              <div>
+                <label className="text-[var(--t)] text-sm font-medium mb-3 block">Content Sections</label>
+                <div className="space-y-3">
+                  {[
+                    { key: 'family_tree', label: 'Family Connections Tree', desc: 'Visual tree with beneficiary nodes and status' },
+                    { key: 'connection_status', label: 'Connection Status', desc: 'Linked accounts, invitations, primary beneficiary' },
+                    { key: 'readiness_score', label: 'Estate Readiness Score', desc: 'Overall score with weekly trend' },
+                    { key: 'dashboard_tiles', label: 'Dashboard Tiles', desc: 'Documents, Messages, and Checklist scores' },
+                    { key: 'action_items', label: 'Action Items', desc: 'Top prioritized next steps' },
+                    { key: 'missing_items', label: 'Missing Items', desc: 'Specific gaps in each section' },
+                  ].map(section => (
+                    <div key={section.key} className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[var(--t)] text-sm font-medium">{section.label}</p>
+                        <p className="text-[var(--t5)] text-xs">{section.desc}</p>
+                      </div>
+                      <Switch
+                        checked={digestSections[section.key] !== false}
+                        onCheckedChange={(val) => saveDigestPrefs({ sections: { ...digestSections, [section.key]: val } })}
+                        disabled={digestSaving}
+                        data-testid={`digest-section-${section.key}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator className="bg-[var(--b)]" />
+
+              {/* Recipients */}
+              <div>
+                <label className="text-[var(--t)] text-sm font-medium mb-3 block">Recipients</label>
+                <div className="space-y-2">
+                  {/* Primary account email */}
+                  <div className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-[var(--card)] border border-[var(--b)]">
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-3.5 h-3.5 text-[var(--gold)]" />
+                      <span className="text-[var(--t)] text-sm">{user?.email}</span>
+                    </div>
+                    <span className="text-[var(--t5)] text-xs font-medium">Primary</span>
+                  </div>
+
+                  {/* Additional recipients */}
+                  {additionalRecipients.map((email, i) => (
+                    <div key={i} className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-[var(--card)] border border-[var(--b)]">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-3.5 h-3.5 text-[var(--t4)]" />
+                        <span className="text-[var(--t)] text-sm">{email}</span>
+                      </div>
+                      <button
+                        onClick={() => removeRecipient(email)}
+                        disabled={digestSaving}
+                        className="text-red-400 hover:text-red-300 p-1 rounded transition-colors"
+                        data-testid={`remove-recipient-${i}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* Add recipient input */}
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="email"
+                      placeholder="email@example.com"
+                      value={newRecipientEmail}
+                      onChange={(e) => setNewRecipientEmail(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && addRecipient()}
+                      className="bg-[var(--card)] border-[var(--b)] text-[var(--t)] text-sm flex-1"
+                      data-testid="digest-add-recipient-input"
+                    />
+                    <Button
+                      onClick={addRecipient}
+                      disabled={digestSaving || !newRecipientEmail.trim()}
+                      variant="outline"
+                      size="sm"
+                      className="border-[var(--gold)] text-[var(--gold)] hover:bg-[var(--gold)] hover:text-[#0b1120] whitespace-nowrap"
+                      data-testid="digest-add-recipient-btn"
+                    >
+                      {digestSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : '+ Add'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <Separator className="bg-[var(--b)]" />
+
+              {/* Send Preview */}
+              <button
+                onClick={sendPreview}
+                disabled={digestSending}
+                className="text-xs text-[var(--gold)] hover:underline flex items-center gap-1"
+                data-testid="settings-digest-preview"
+              >
+                {digestSending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
+                Send me a preview now
+              </button>
+            </div>
           )}
+
           <Separator className="bg-[var(--b)]" />
           <div className="flex items-center justify-between">
             <div>
@@ -641,7 +808,6 @@ const SettingsPage = () => {
           </div>
         </CardContent>
       </Card>
-      )}
 
       {/* Security */}
       <Card className="glass-card">

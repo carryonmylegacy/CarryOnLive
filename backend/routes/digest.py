@@ -276,28 +276,88 @@ async def run_weekly_digest(dashboard_url: str):
 
 # ===================== API ENDPOINTS =====================
 
+DEFAULT_DIGEST_PREFS = {
+    "enabled": True,
+    "frequency": "weekly",
+    "sections": {
+        "family_tree": True,
+        "connection_status": True,
+        "readiness_score": True,
+        "dashboard_tiles": True,
+        "action_items": True,
+        "missing_items": True,
+    },
+    "additional_recipients": [],
+}
+
 
 @router.get("/digest/preferences")
 async def get_digest_preferences(current_user: dict = Depends(get_current_user)):
-    """Get user's digest email preferences."""
-    prefs = await db.user_preferences.find_one(
+    """Get the current user's digest email preferences."""
+    prefs = await db.digest_preferences.find_one(
         {"user_id": current_user["id"]}, {"_id": 0}
     )
-    return {"weekly_digest": prefs.get("weekly_digest", True) if prefs else True}
+    if not prefs:
+        prefs = {**DEFAULT_DIGEST_PREFS, "user_id": current_user["id"]}
+    # Back-compat: also include weekly_digest
+    prefs["weekly_digest"] = prefs.get("enabled", True)
+    return prefs
 
 
 @router.put("/digest/preferences")
 async def update_digest_preferences(
     body: dict, current_user: dict = Depends(get_current_user)
 ):
-    """Update user's digest email preferences."""
-    weekly_digest = body.get("weekly_digest", True)
-    await db.user_preferences.update_one(
-        {"user_id": current_user["id"]},
-        {"$set": {"user_id": current_user["id"], "weekly_digest": weekly_digest}},
-        upsert=True,
+    """Update the current user's digest email preferences."""
+    allowed_fields = {
+        "enabled",
+        "frequency",
+        "sections",
+        "additional_recipients",
+        "weekly_digest",
+    }
+    update = {k: v for k, v in body.items() if k in allowed_fields}
+
+    # Back-compat: map weekly_digest to enabled
+    if "weekly_digest" in update:
+        update["enabled"] = update.pop("weekly_digest")
+
+    if "frequency" in update:
+        valid_frequencies = ["weekly", "biweekly", "monthly", "daily"]
+        if update["frequency"] not in valid_frequencies:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid frequency. Must be one of: {', '.join(valid_frequencies)}",
+            )
+
+    if "sections" in update:
+        valid_sections = set(DEFAULT_DIGEST_PREFS["sections"].keys())
+        update["sections"] = {
+            k: bool(v) for k, v in update["sections"].items() if k in valid_sections
+        }
+
+    if "additional_recipients" in update:
+        if not isinstance(update["additional_recipients"], list):
+            raise HTTPException(
+                status_code=400, detail="additional_recipients must be an array"
+            )
+        import re
+
+        email_re = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+        for email in update["additional_recipients"]:
+            if not email_re.match(email):
+                raise HTTPException(
+                    status_code=400, detail=f"Invalid email address: {email}"
+                )
+
+    update["user_id"] = current_user["id"]
+    await db.digest_preferences.update_one(
+        {"user_id": current_user["id"]}, {"$set": update}, upsert=True
     )
-    return {"weekly_digest": weekly_digest}
+    prefs = await db.digest_preferences.find_one(
+        {"user_id": current_user["id"]}, {"_id": 0}
+    )
+    return prefs
 
 
 @router.post("/digest/send-weekly")
@@ -324,7 +384,6 @@ async def preview_digest(current_user: dict = Depends(get_current_user)):
     return {"message": "Preview digest sent to your email"}
 
 
-
 # ===================== ENHANCED WEEKLY ESTATE HEALTH EMAIL =====================
 
 
@@ -339,6 +398,7 @@ def build_estate_health_email(
     owner_initials: str,
     actions: list,
     dashboard_url: str,
+    app_url: str = "https://carryon.us",
 ) -> str:
     """Build a comprehensive weekly estate health email with family tree,
     connection status, dashboard tiles, and readiness score."""
@@ -416,7 +476,11 @@ def build_estate_health_email(
         status_label, status_color, status_icon = get_ben_status(ben)
         ben_name = ben.get("first_name") or ben.get("name", "").split(" ")[0] or "?"
         relation = ben.get("relation", "")
-        primary_tag = ' <span style="color:#d4af37;font-size:9px;font-weight:bold;">(Primary)</span>' if ben.get("is_primary") else ""
+        primary_tag = (
+            ' <span style="color:#d4af37;font-size:9px;font-weight:bold;">(Primary)</span>'
+            if ben.get("is_primary")
+            else ""
+        )
 
         ben_nodes_html += f"""
         <td align="center" valign="top" style="padding:0 8px;">
@@ -432,16 +496,38 @@ def build_estate_health_email(
     # Connection status summary
     total_bens = len(beneficiaries)
     linked_count = sum(1 for b in beneficiaries if b.get("is_linked"))
-    invited_count = sum(1 for b in beneficiaries if b.get("invitation_status") == "sent" and not b.get("is_linked"))
+    invited_count = sum(
+        1
+        for b in beneficiaries
+        if b.get("invitation_status") == "sent" and not b.get("is_linked")
+    )
     pending_count = total_bens - linked_count - invited_count
     has_primary = any(b.get("is_primary") for b in beneficiaries)
 
     connection_rows = ""
     connection_items = [
-        ("Linked Accounts", f"{linked_count}/{total_bens}", "#22C993" if linked_count == total_bens else "#F5A623"),
-        ("Invitations Sent", f"{linked_count + invited_count}/{total_bens}", "#22C993" if linked_count + invited_count == total_bens else "#F5A623"),
-        ("Primary Beneficiary", "Designated" if has_primary else "Not Set", "#22C993" if has_primary else "#F05252"),
-        ("Pending Action", f"{pending_count} beneficiar{'y' if pending_count == 1 else 'ies'}" if pending_count > 0 else "All connected", "#F5A623" if pending_count > 0 else "#22C993"),
+        (
+            "Linked Accounts",
+            f"{linked_count}/{total_bens}",
+            "#22C993" if linked_count == total_bens else "#F5A623",
+        ),
+        (
+            "Invitations Sent",
+            f"{linked_count + invited_count}/{total_bens}",
+            "#22C993" if linked_count + invited_count == total_bens else "#F5A623",
+        ),
+        (
+            "Primary Beneficiary",
+            "Designated" if has_primary else "Not Set",
+            "#22C993" if has_primary else "#F05252",
+        ),
+        (
+            "Pending Action",
+            f"{pending_count} beneficiar{'y' if pending_count == 1 else 'ies'}"
+            if pending_count > 0
+            else "All connected",
+            "#F5A623" if pending_count > 0 else "#22C993",
+        ),
     ]
     for label, value, color in connection_items:
         connection_rows += f"""
@@ -518,9 +604,14 @@ def build_estate_health_email(
 
 <!-- Header -->
 <tr><td style="padding:28px 28px 0 28px;text-align:center;">
+  <img src="{
+        app_url
+    }/carryon-logo.jpg" alt="CarryOn" style="width:60px;height:auto;margin-bottom:12px;" />
   <p style="margin:0 0 2px 0;"><span style="font-size:20px;font-weight:bold;color:#d4af37;">CarryOn&trade;</span></p>
   <p style="margin:0 0 20px 0;color:#64748b;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;">Weekly Estate Health Report</p>
-  <p style="color:#f8fafc;font-size:15px;margin:0 0 16px 0;text-align:left;">Hi {name},</p>
+  <p style="color:#f8fafc;font-size:15px;margin:0 0 16px 0;text-align:left;">Hi {
+        name
+    },</p>
   <p style="color:#94a3b8;font-size:12px;margin:0 0 20px 0;text-align:left;line-height:1.5;">Here's your weekly snapshot of your estate's health — your connections, your readiness, and what to focus on next.</p>
 </td></tr>
 
@@ -532,18 +623,30 @@ def build_estate_health_email(
       <!-- Owner node -->
       <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
         <tr><td align="center">
-          <div style="width:52px;height:52px;border-radius:50%;background:#d4af37;border:2px solid {score_color};box-shadow:0 0 12px {score_color}40;text-align:center;line-height:52px;font-size:16px;font-weight:bold;color:#080e1a;margin:0 auto;">
+          <div style="width:52px;height:52px;border-radius:50%;background:#d4af37;border:2px solid {
+        score_color
+    };box-shadow:0 0 12px {
+        score_color
+    }40;text-align:center;line-height:52px;font-size:16px;font-weight:bold;color:#080e1a;margin:0 auto;">
             {owner_initials}
           </div>
-          <p style="margin:3px 0 0 0;font-size:11px;font-weight:bold;color:#f8fafc;">{name}</p>
+          <p style="margin:3px 0 0 0;font-size:11px;font-weight:bold;color:#f8fafc;">{
+        name
+    }</p>
           <p style="margin:1px 0 0 0;font-size:9px;color:#d4af37;">Benefactor</p>
         </td></tr>
       </table>
       <!-- Connector -->
-      <div style="width:2px;height:16px;background:{score_color};opacity:0.4;margin:0 auto;"></div>
+      <div style="width:2px;height:16px;background:{
+        score_color
+    };opacity:0.4;margin:0 auto;"></div>
       <!-- Beneficiary nodes -->
       <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
-        <tr>{ben_nodes_html if ben_nodes_html else '<td style="padding:8px;text-align:center;"><p style="color:#64748b;font-size:11px;font-style:italic;">No beneficiaries enrolled yet</p></td>'}</tr>
+        <tr>{
+        ben_nodes_html
+        if ben_nodes_html
+        else '<td style="padding:8px;text-align:center;"><p style="color:#64748b;font-size:11px;font-style:italic;">No beneficiaries enrolled yet</p></td>'
+    }</tr>
       </table>
     </td></tr>
     <!-- Legend -->
@@ -573,9 +676,15 @@ def build_estate_health_email(
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0c1628;border-radius:12px;border:1px solid #1e293b;margin-bottom:16px;">
     <tr><td style="padding:20px;text-align:center;">
       <p style="margin:0 0 4px 0;color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:1px;">Estate Readiness Score</p>
-      <p style="margin:0;font-size:52px;font-weight:bold;color:{score_color};">{readiness_score}%</p>
-      <p style="margin:4px 0 0 0;font-size:12px;font-weight:bold;color:{score_color};">{score_label}</p>
-      <p style="margin:6px 0 0 0;font-size:11px;color:{trend_color};">{trend_arrow} {trend_text}</p>
+      <p style="margin:0;font-size:52px;font-weight:bold;color:{score_color};">{
+        readiness_score
+    }%</p>
+      <p style="margin:4px 0 0 0;font-size:12px;font-weight:bold;color:{score_color};">{
+        score_label
+    }</p>
+      <p style="margin:6px 0 0 0;font-size:11px;color:{trend_color};">{trend_arrow} {
+        trend_text
+    }</p>
     </td></tr>
   </table>
 </td></tr>
@@ -592,11 +701,15 @@ def build_estate_health_email(
 </td></tr>
 
 <!-- Missing items callouts -->
-{f'''<tr><td style="padding:0 28px;">
+{
+        f'''<tr><td style="padding:0 28px;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0c1628;border-radius:10px;border:1px solid #1e293b;margin-bottom:16px;">
     {missing_callouts}
   </table>
-</td></tr>''' if missing_callouts else ''}
+</td></tr>'''
+        if missing_callouts
+        else ""
+    }
 
 <!-- ═══ SECTION 5: TOP ACTIONS ═══ -->
 <tr><td style="padding:0 28px;">
@@ -608,7 +721,9 @@ def build_estate_health_email(
 
 <!-- CTA Button -->
 <tr><td style="padding:20px 28px;" align="center">
-  <a href="{dashboard_url}" style="display:inline-block;background-color:#d4af37;color:#0b1120;font-size:13px;font-weight:bold;padding:13px 36px;border-radius:10px;text-decoration:none;">Open Your Dashboard</a>
+  <a href="{
+        app_url
+    }/login" style="display:inline-block;background-color:#d4af37;color:#0b1120;font-size:13px;font-weight:bold;padding:13px 36px;border-radius:10px;text-decoration:none;">Open Your Dashboard</a>
 </td></tr>
 
 <!-- Footer -->
