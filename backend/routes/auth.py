@@ -981,6 +981,54 @@ class ProfilePhotoUpdate(BaseModel):
     file_name: str = "photo.jpg"
 
 
+@router.get("/auth/profile")
+async def get_profile(current_user: dict = Depends(get_current_user)):
+    """Get the current user's full profile."""
+    user = await db.users.find_one(
+        {"id": current_user["id"]}, {"_id": 0, "password": 0}
+    )
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
+@router.put("/auth/profile")
+async def update_profile(body: dict, current_user: dict = Depends(get_current_user)):
+    """Update the current user's personal information."""
+    allowed_fields = {
+        "first_name",
+        "middle_name",
+        "last_name",
+        "phone",
+        "date_of_birth",
+        "gender",
+        "marital_status",
+        "address_street",
+        "address_line2",
+        "address_city",
+        "address_state",
+        "address_zip",
+    }
+    update = {k: v for k, v in body.items() if k in allowed_fields}
+    if not update:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+
+    # Rebuild display name if first/last changed
+    if "first_name" in update or "last_name" in update:
+        current = await db.users.find_one(
+            {"id": current_user["id"]}, {"_id": 0, "first_name": 1, "last_name": 1}
+        )
+        fn = update.get("first_name", (current or {}).get("first_name", ""))
+        ln = update.get("last_name", (current or {}).get("last_name", ""))
+        update["name"] = f"{fn} {ln}".strip()
+
+    await db.users.update_one({"id": current_user["id"]}, {"$set": update})
+    user = await db.users.find_one(
+        {"id": current_user["id"]}, {"_id": 0, "password": 0}
+    )
+    return user
+
+
 @router.put("/auth/profile-photo")
 async def update_profile_photo(
     data: ProfilePhotoUpdate, current_user: dict = Depends(get_current_user)
