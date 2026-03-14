@@ -97,9 +97,12 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
       ? (maxOuterR - baseOrbitR) / numRings
       : maxOuterR - baseOrbitR;
 
-  const containerSize = w;
-  const cx = w / 2;
-  const cy = w / 2;
+  // Adaptive height: only as tall as the outermost active ring requires
+  const outerR = baseOrbitR + maxOrbitLevel * orbitSpacing;
+  const containerHeight = (outerR + ballSize / 2 + 12) * 2;
+  const containerWidth = w;
+  const cx = containerWidth / 2;
+  const cy = containerHeight / 2;
 
   // ── Drag / spin state ──────────────────────────────────────
   const angleRef = useRef(0);
@@ -225,8 +228,8 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
         ref={containerRef}
         style={{
           position: 'relative',
-          width: containerSize,
-          height: containerSize,
+          width: containerWidth,
+          height: containerHeight,
           margin: '0 auto 12px',
           cursor: 'grab',
           userSelect: 'none',
