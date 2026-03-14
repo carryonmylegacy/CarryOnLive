@@ -18,6 +18,28 @@ from utils import get_current_user, log_activity, update_estate_readiness
 
 router = APIRouter()
 
+# Track if xAI connection has been warmed up
+_xai_warmed_up = False
+
+
+async def warmup_xai():
+    """Pre-warm the xAI connection to avoid cold-start timeout on first user request."""
+    global _xai_warmed_up
+    if _xai_warmed_up or not xai_client:
+        return
+    try:
+        await asyncio.to_thread(
+            xai_client.chat.completions.create,
+            model=XAI_MODEL_LIGHT,
+            messages=[{"role": "user", "content": "ping"}],
+            max_tokens=1,
+        )
+        _xai_warmed_up = True
+        logger.info("xAI connection warmed up successfully")
+    except Exception as e:
+        logger.warning(f"xAI warmup failed (non-critical): {e}")
+
+
 # ===================== AI CHAT ROUTES =====================
 
 # Comprehensive estate law system prompt — Grok-like persona
@@ -169,29 +191,32 @@ async def gather_estate_context(
             {"id": estate_id}, {"$set": {"state": benefactor_state}}
         )
 
-    # Fetch all estate data
-    documents = await db.documents.find(
-        {"estate_id": estate_id},
-        {
-            "_id": 0,
-            "lock_password_hash": 0,
-            "backup_code": 0,
-            "voice_passphrase_hash": 0,
-        },
-    ).to_list(100)
-
-    beneficiaries = await db.beneficiaries.find(
-        {"estate_id": estate_id}, {"_id": 0}
-    ).to_list(100)
-    checklist_items = (
-        await db.checklists.find({"estate_id": estate_id}, {"_id": 0})
+    # Fetch all estate data in parallel
+    (
+        documents,
+        beneficiaries,
+        checklist_items,
+        messages,
+        readiness,
+    ) = await asyncio.gather(
+        db.documents.find(
+            {"estate_id": estate_id},
+            {
+                "_id": 0,
+                "lock_password_hash": 0,
+                "backup_code": 0,
+                "voice_passphrase_hash": 0,
+            },
+        ).to_list(100),
+        db.beneficiaries.find({"estate_id": estate_id}, {"_id": 0}).to_list(100),
+        db.checklists.find({"estate_id": estate_id}, {"_id": 0})
         .sort("order", 1)
-        .to_list(200)
+        .to_list(200),
+        db.messages.find({"estate_id": estate_id}, {"_id": 0, "video_url": 0}).to_list(
+            100
+        ),
+        calculate_estate_readiness(estate_id),
     )
-    messages = await db.messages.find(
-        {"estate_id": estate_id}, {"_id": 0, "video_url": 0}
-    ).to_list(100)
-    readiness = await calculate_estate_readiness(estate_id)
 
     # Build context string
     context_parts = []
@@ -238,7 +263,6 @@ async def gather_estate_context(
         # Include document content if requested
         if include_doc_content:
             context_parts.append("\n**DOCUMENT CONTENTS (for analysis):**")
-            import asyncio
 
             async def extract_one(doc):
                 try:
@@ -486,14 +510,28 @@ Provide a clear, organized analysis with specific findings and recommendations."
         )
         selected_model = XAI_MODEL if use_heavy_model else XAI_MODEL_LIGHT
 
-        completion = await asyncio.to_thread(
-            xai_client.chat.completions.create,
-            model=selected_model,
-            messages=history_messages,
-            temperature=0.7,
-            max_tokens=4096,
-            timeout=90,
-        )
+        # Auto-retry: if first attempt fails, retry once before returning error
+        completion = None
+        last_error = None
+        for attempt in range(2):
+            try:
+                completion = await asyncio.to_thread(
+                    xai_client.chat.completions.create,
+                    model=selected_model,
+                    messages=history_messages,
+                    temperature=0.7,
+                    max_tokens=4096,
+                )
+                break
+            except Exception as e:
+                last_error = e
+                if attempt == 0:
+                    logger.warning(f"xAI attempt 1 failed ({e}), retrying...")
+                    await asyncio.sleep(1)
+
+        if completion is None:
+            raise last_error
+
         response = completion.choices[0].message.content
 
         # Append legal disclaimer to every response

@@ -4,6 +4,7 @@ import logging
 import os
 from pathlib import Path
 
+import httpx
 import resend
 import stripe
 from dotenv import load_dotenv
@@ -60,7 +61,12 @@ XAI_MODEL = os.environ.get("XAI_MODEL", "grok-4")
 XAI_MODEL_LIGHT = os.environ.get("XAI_MODEL_LIGHT", "grok-3-mini")
 xai_client = None
 if XAI_API_KEY:
-    xai_client = XAIClient(api_key=XAI_API_KEY, base_url=XAI_BASE_URL)
+    xai_client = XAIClient(
+        api_key=XAI_API_KEY,
+        base_url=XAI_BASE_URL,
+        timeout=httpx.Timeout(120.0, connect=15.0),
+        max_retries=2,
+    )
     logger.info(f"xAI Grok configured (model: {XAI_MODEL})")
 else:
     logger.warning("XAI_API_KEY not set - Estate Guardian AI disabled")

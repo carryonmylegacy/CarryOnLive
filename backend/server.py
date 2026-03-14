@@ -119,6 +119,12 @@ async def lifespan(app):
     digest_task = asyncio.create_task(weekly_digest_scheduler())
     reminder_task = asyncio.create_task(trial_reminder_scheduler())
     dob_task = asyncio.create_task(daily_dob_check_scheduler())
+
+    # Warm up xAI connection in background to avoid cold-start timeouts
+    from routes.guardian import warmup_xai
+
+    asyncio.create_task(warmup_xai())
+
     yield
     digest_task.cancel()
     reminder_task.cancel()
