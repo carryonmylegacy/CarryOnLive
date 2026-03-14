@@ -301,7 +301,7 @@ const GuardianPage = () => {
   }, [messages, loading]);
 
   // ─── Chat Actions ───
-  const startNewChat = (initialMessage = null) => {
+  const startNewChat = (initialMessage = null, action = null) => {
     const newId = `chat_${user?.id || 'anon'}_${Date.now().toString(36)}`;
     setSessionId(newId);
     setMessages([{
@@ -313,6 +313,8 @@ const GuardianPage = () => {
     try { localStorage.setItem('ega_active_session', newId); } catch (e) { /* silent */ }
     if (initialMessage) {
       setTimeout(() => sendMessage(initialMessage, null, newId), 100);
+    } else if (action) {
+      setTimeout(() => sendMessage('', action, newId), 200);
     }
   };
 
@@ -438,6 +440,8 @@ const GuardianPage = () => {
       }, { ...getAuthHeaders(), timeout: 120000, signal: controller.signal });
 
       if (!overrideSessionId) setSessionId(response.data.session_id);
+      // Always keep localStorage in sync with the active session
+      try { localStorage.setItem('ega_active_session', response.data.session_id || activeSessionId); } catch (e) { /* silent */ }
       const assistantMsg = { role: 'assistant', content: response.data.response };
 
       if (response.data.action_result) {
@@ -559,7 +563,7 @@ const GuardianPage = () => {
                   const isReadiness = key === 'analyze_readiness';
                   const shouldBounce = isReadiness && !guidedFlowDone;
                   return (
-                  <button key={key} onClick={() => { startNewChat(); setTimeout(() => sendMessage('', key, `chat_${user?.id || 'anon'}_${Date.now().toString(36)}`), 200); }}
+                  <button key={key} onClick={() => startNewChat(null, key)}
                     className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-transform duration-150 active:scale-[0.96] w-full"
                     style={{
                       background: `${color}12`, border: `1px solid ${color}25`, color,
