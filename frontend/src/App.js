@@ -258,7 +258,7 @@ function AppRoutes() {
         <Route path="/messages/:messageId/edit" element={<EditMilestoneMessagePage />} />
         <Route path="/beneficiaries" element={<BeneficiariesPage />} />
         {/* Beneficiary edit now handled by SlidePanel */}
-        <Route path="/guardian" element={<GuardianPage />} />
+        <Route path="/guardian" element={null} />
         <Route path="/checklist" element={<ChecklistPage />} />
         <Route path="/trustee" element={<TrusteePage />} />
         <Route path="/transition" element={<TransitionPage />} />

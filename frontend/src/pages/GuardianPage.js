@@ -300,6 +300,13 @@ const GuardianPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end', inline: 'nearest' });
   }, [messages, loading]);
 
+  // Refresh sessions when user navigates back to guardian while on landing view
+  useEffect(() => {
+    if (location.pathname === '/guardian' && view === 'landing') {
+      fetchSessions();
+    }
+  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ─── Chat Actions ───
   const startNewChat = (initialMessage = null, action = null) => {
     const newId = `chat_${user?.id || 'anon'}_${Date.now().toString(36)}`;

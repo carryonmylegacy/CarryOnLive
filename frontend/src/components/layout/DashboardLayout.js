@@ -1,13 +1,22 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Outlet } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import PullToRefreshIndicator from '../PullToRefreshIndicator';
 import { haptics } from '../../utils/haptics';
 
+const GuardianPage = lazy(() => import('../../pages/GuardianPage'));
+
 const DashboardLayout = () => {
+  const location = useLocation();
+  const isOnGuardian = location.pathname === '/guardian';
+  const [guardianMounted, setGuardianMounted] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('carryon_sidebar_collapsed') === 'true');
+
+  useEffect(() => {
+    if (isOnGuardian) setGuardianMounted(true);
+  }, [isOnGuardian]);
 
   useEffect(() => {
     const onStorage = () => setSidebarCollapsed(localStorage.getItem('carryon_sidebar_collapsed') === 'true');
@@ -79,6 +88,15 @@ const DashboardLayout = () => {
       <main id="main-content" className={`main-content ${sidebarCollapsed ? 'sb-collapsed' : ''}`} role="main" aria-label="Main content">
         <Outlet />
       </main>
+
+      {/* Persistent Guardian — stays mounted after first visit so chat state survives navigation */}
+      {guardianMounted && (
+        <div style={{ display: isOnGuardian ? 'block' : 'none' }}>
+          <Suspense fallback={null}>
+            <GuardianPage />
+          </Suspense>
+        </div>
+      )}
     </div>
   );
 };
