@@ -84,6 +84,7 @@ Do NOT answer off-topic questions even if you know the answer. Do NOT get drawn 
 4. **Answer Estate Law Questions**: For any of the 50 states and U.S. territories. Cite specific statutes when relevant.
 
 **GUIDELINES:**
+- **STATE ACKNOWLEDGMENT (MANDATORY for every analysis):** At the very beginning of every substantive response — before diving into the analysis — include a brief statement confirming the user's declared state of residence and that your analysis is informed by that state's current estate laws. Example: "Based on your declared residence in [State], my analysis applies [State]'s current estate planning statutes and probate rules." If the state is "Not specified," lead by asking for it before proceeding.
 - Always reference the user's actual documents and data when available. Don't guess — look at what's in the vault.
 - When discussing state law, cite the specific state. If the state is unknown, ask.
 - You will NEVER draft legal documents, fill in forms, or make changes. You advise — the user acts. That's the line.
@@ -776,6 +777,17 @@ async def export_checklist_pdf(
     pdf.set_auto_page_break(auto=True, margin=20)
     pdf.add_page()
 
+    # Get benefactor's state of residence
+    benefactor = await db.users.find_one(
+        {"id": estate.get("owner_id")},
+        {"_id": 0, "address_state": 1},
+    )
+    user_state = (
+        (benefactor or {}).get("address_state")
+        or estate.get("state")
+        or "Not specified"
+    )
+
     # Header
     pdf.set_font("Helvetica", "B", 20)
     pdf.set_text_color(212, 175, 55)
@@ -787,7 +799,7 @@ async def export_checklist_pdf(
         0,
         5,
         sanitize_for_pdf(
-            f"Estate: {estate['name']}  |  State: {estate.get('state', 'Not specified')}  |  Readiness: {readiness['overall_score']}%"
+            f"Estate: {estate['name']}  |  State: {user_state}  |  Readiness: {readiness['overall_score']}%"
         ),
         new_x="LMARGIN",
         new_y="NEXT",
@@ -799,7 +811,21 @@ async def export_checklist_pdf(
         new_x="LMARGIN",
         new_y="NEXT",
     )
-    pdf.ln(4)
+    pdf.ln(3)
+
+    # State jurisdiction banner
+    pdf.set_fill_color(15, 29, 53)
+    pdf.set_draw_color(212, 175, 55)
+    pdf.set_font("Helvetica", "B", 8)
+    pdf.set_text_color(212, 175, 55)
+    jurisdiction_text = (
+        f"Declared State of Residence: {user_state}  |  "
+        f"This checklist is informed by {user_state} estate planning statutes and probate rules."
+    )
+    pdf.multi_cell(
+        0, 4.5, sanitize_for_pdf(jurisdiction_text), border=1, fill=True, align="C"
+    )
+    pdf.ln(3)
 
     # Legal disclaimer box
     pdf.set_fill_color(255, 248, 220)
