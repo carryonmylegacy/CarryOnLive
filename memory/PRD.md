@@ -43,6 +43,7 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ### Completed (Feb 2026)
 - **Guardian Chat Session Persistence (P0 Bug Fix)**: Fixed critical bug where Quick Action buttons (Analyze Vault, etc.) on the Guardian landing page generated mismatched session IDs — localStorage stored ID_A but API messages were saved under ID_B. Fix: `startNewChat` now accepts an `action` parameter and passes the same session ID via closure to `sendMessage`. Also added localStorage sync in `sendMessage` response handler.
+- **Guardian Persistent Mount Architecture (P0)**: Fundamentally fixed the navigation-kills-chat bug. Previous approach relied on localStorage session resume which failed because React Router unmounts GuardianPage on navigation, destroying all in-progress state. New approach: GuardianPage is rendered persistently in DashboardLayout (hidden via `display:none` when not on `/guardian`). The component stays mounted across tab navigations — chat messages, loading state, and in-progress API calls all survive. The Route renders `null` and the actual component lives outside `<Outlet/>`.
 
 ## Subscription Architecture
 - Each estate requires its own active subscription
