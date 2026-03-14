@@ -51,6 +51,7 @@ const SettingsPage = () => {
   const [additionalRecipients, setAdditionalRecipients] = useState([]);
   const [newRecipientEmail, setNewRecipientEmail] = useState('');
   const [digestSaving, setDigestSaving] = useState(false);
+  const [digestSectionLabels, setDigestSectionLabels] = useState({});
   const [onboardingVisible, setOnboardingVisible] = useState(() => localStorage.getItem('carryon_onboarding_dismissed') !== 'true');
 
   // GDPR state
@@ -105,6 +106,7 @@ const SettingsPage = () => {
         setDigestFrequency(res.data.frequency || 'weekly');
         if (res.data.sections) setDigestSections(res.data.sections);
         if (res.data.additional_recipients) setAdditionalRecipients(res.data.additional_recipients);
+        if (res.data.section_labels) setDigestSectionLabels(res.data.section_labels);
       } catch (e) { /* default to true */ }
     };
     const fetchConsent = async () => {
@@ -645,7 +647,11 @@ const SettingsPage = () => {
                 <Mail className="w-4 h-4 text-[var(--t4)]" />
                 Estate Health Digest
               </h4>
-              <p className="text-[var(--t5)] text-sm">Automated status update email with your estate's health</p>
+              <p className="text-[var(--t5)] text-sm">
+                {user?.role === 'admin' ? 'Founder analytics, subscriptions & platform health'
+                 : user?.role === 'operator' ? (user?.operator_role === 'manager' ? 'Queue status, team performance & priorities' : 'Your assigned tasks & queue counts')
+                 : "Automated status update email with your estate's health"}
+              </p>
             </div>
             <div className="flex items-center gap-2">
               {digestLoading && <Loader2 className="w-4 h-4 animate-spin text-[var(--gold)]" />}
@@ -689,31 +695,28 @@ const SettingsPage = () => {
 
               <Separator className="bg-[var(--b)]" />
 
-              {/* Sections */}
+              {/* Sections — dynamically loaded from API based on role */}
               <div>
                 <label className="text-[var(--t)] text-sm font-medium mb-3 block">Content Sections</label>
                 <div className="space-y-3">
-                  {[
-                    { key: 'family_tree', label: 'Family Connections Tree', desc: 'Visual tree with beneficiary nodes and status' },
-                    { key: 'connection_status', label: 'Connection Status', desc: 'Linked accounts, invitations, primary beneficiary' },
-                    { key: 'readiness_score', label: 'Estate Readiness Score', desc: 'Overall score with weekly trend' },
-                    { key: 'dashboard_tiles', label: 'Dashboard Tiles', desc: 'Documents, Messages, and Checklist scores' },
-                    { key: 'action_items', label: 'Action Items', desc: 'Top prioritized next steps' },
-                    { key: 'missing_items', label: 'Missing Items', desc: 'Specific gaps in each section' },
-                  ].map(section => (
-                    <div key={section.key} className="flex items-center justify-between">
-                      <div>
-                        <p className="text-[var(--t)] text-sm font-medium">{section.label}</p>
-                        <p className="text-[var(--t5)] text-xs">{section.desc}</p>
+                  {Object.keys(digestSections).map(key => {
+                    const labels = digestSectionLabels[key];
+                    if (!labels) return null;
+                    return (
+                      <div key={key} className="flex items-center justify-between">
+                        <div>
+                          <p className="text-[var(--t)] text-sm font-medium">{labels[0]}</p>
+                          <p className="text-[var(--t5)] text-xs">{labels[1]}</p>
+                        </div>
+                        <Switch
+                          checked={digestSections[key] !== false}
+                          onCheckedChange={(val) => saveDigestPrefs({ sections: { ...digestSections, [key]: val } })}
+                          disabled={digestSaving}
+                          data-testid={`digest-section-${key}`}
+                        />
                       </div>
-                      <Switch
-                        checked={digestSections[section.key] !== false}
-                        onCheckedChange={(val) => saveDigestPrefs({ sections: { ...digestSections, [section.key]: val } })}
-                        disabled={digestSaving}
-                        data-testid={`digest-section-${section.key}`}
-                      />
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
