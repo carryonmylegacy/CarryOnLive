@@ -141,9 +141,28 @@ async def login(data: UserLogin, request: Request):
         }
     )
     if recent_failures >= 5:
+        # Find the oldest failure in this window to calculate remaining lockout
+        oldest_failure = await db.failed_logins.find_one(
+            {"email": data.email, "timestamp": {"$gte": lockout_window}},
+            {"_id": 0, "timestamp": 1},
+            sort=[("timestamp", 1)],
+        )
+        retry_after = 900  # 15 minutes default
+        if oldest_failure and oldest_failure.get("timestamp"):
+            try:
+                oldest_ts = datetime.fromisoformat(
+                    oldest_failure["timestamp"].replace("Z", "+00:00")
+                )
+                unlock_at = oldest_ts + timedelta(minutes=15)
+                retry_after = max(
+                    1, int((unlock_at - datetime.now(timezone.utc)).total_seconds())
+                )
+            except (ValueError, TypeError):
+                pass
         raise HTTPException(
             status_code=429,
-            detail="Account temporarily locked due to too many failed attempts. Please try again in 15 minutes.",
+            detail=f"Account temporarily locked. Try again in {retry_after} seconds.",
+            headers={"Retry-After": str(retry_after)},
         )
 
     # Support login via username OR email

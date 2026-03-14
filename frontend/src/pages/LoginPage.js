@@ -52,6 +52,7 @@ const LoginPage = () => {
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otp, setOtp] = useState('');
   const [trustToday, setTrustToday] = useState(false);
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
   const [flagOpacity, setFlagOpacity] = useState(1);
   const [exiting, setExiting] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -104,6 +105,18 @@ const LoginPage = () => {
       if (isPasskeySupported()) hasRegisteredPasskey().then(setPasskeyAvailable);
     }).catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Lockout countdown timer
+  useEffect(() => {
+    if (lockoutSeconds <= 0) return;
+    const interval = setInterval(() => {
+      setLockoutSeconds(prev => {
+        if (prev <= 1) { clearInterval(interval); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [lockoutSeconds]);
 
   /* flag fade on scroll */
   useEffect(() => {
@@ -160,7 +173,14 @@ const LoginPage = () => {
         setShowOtpModal(true);
       }
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Invalid credentials');
+      if (error.response?.status === 429) {
+        const detail = error.response?.data?.detail || '';
+        const match = detail.match(/(\d+)\s*seconds/);
+        const secs = match ? parseInt(match[1], 10) : 900;
+        setLockoutSeconds(secs);
+      } else {
+        toast.error(error.response?.data?.detail || 'Invalid credentials');
+      }
     } finally {
       setLoading(false);
     }
@@ -273,9 +293,15 @@ const LoginPage = () => {
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            <Button type="submit" disabled={loading || !email || !password} className="w-full h-12 rounded-xl text-base font-bold"
-              style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }} data-testid="login-submit">
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sign In'}
+            {lockoutSeconds > 0 && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-center" data-testid="lockout-banner">
+                <p className="text-red-400 text-sm font-semibold">Account temporarily locked</p>
+                <p className="text-red-300/80 text-xs mt-1">Try again in <span className="font-bold text-red-300 tabular-nums">{Math.floor(lockoutSeconds / 60)}:{String(lockoutSeconds % 60).padStart(2, '0')}</span></p>
+              </div>
+            )}
+            <Button type="submit" disabled={loading || !email || !password || lockoutSeconds > 0} className="w-full h-12 rounded-xl text-base font-bold"
+              style={{ background: lockoutSeconds > 0 ? '#374151' : 'linear-gradient(135deg, #d4af37, #b8962e)', color: lockoutSeconds > 0 ? '#6b7280' : '#080e1a' }} data-testid="login-submit">
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : lockoutSeconds > 0 ? `Locked (${Math.floor(lockoutSeconds / 60)}:${String(lockoutSeconds % 60).padStart(2, '0')})` : 'Sign In'}
             </Button>
           </form>
           {passkeyAvailable && (
@@ -466,9 +492,15 @@ const LoginPage = () => {
                         </button>
                       </div>
                     </div>
-                    <Button type="submit" disabled={loading} className="w-full h-11 rounded-lg font-semibold text-sm" data-testid="login-submit-button"
-                      style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#0B1221' }}>
-                      {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Signing In...</> : 'Sign In'}
+                    {lockoutSeconds > 0 && (
+                      <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-center" data-testid="lockout-banner-mobile">
+                        <p className="text-red-400 text-sm font-semibold">Account temporarily locked</p>
+                        <p className="text-red-300/80 text-xs mt-1">Try again in <span className="font-bold text-red-300 tabular-nums">{Math.floor(lockoutSeconds / 60)}:{String(lockoutSeconds % 60).padStart(2, '0')}</span></p>
+                      </div>
+                    )}
+                    <Button type="submit" disabled={loading || lockoutSeconds > 0} className="w-full h-11 rounded-lg font-semibold text-sm" data-testid="login-submit-button"
+                      style={{ background: lockoutSeconds > 0 ? '#374151' : 'linear-gradient(135deg, #d4af37, #b8962e)', color: lockoutSeconds > 0 ? '#6b7280' : '#0B1221' }}>
+                      {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Signing In...</> : lockoutSeconds > 0 ? `Locked (${Math.floor(lockoutSeconds / 60)}:${String(lockoutSeconds % 60).padStart(2, '0')})` : 'Sign In'}
                     </Button>
                   </form>
                   {passkeyAvailable && (
