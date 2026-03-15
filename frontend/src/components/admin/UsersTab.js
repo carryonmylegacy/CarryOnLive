@@ -100,7 +100,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
 
     return (
       <React.Fragment key={u.id}>
-        <div className={`glass-card p-3 flex flex-wrap items-center gap-2 sm:gap-3 ${indent ? 'ml-6 sm:ml-8 border-l-2 border-[var(--b)]' : ''}`} data-testid={`admin-user-${u.id}`}>
+        <div className={`glass-card p-3 flex items-center gap-2.5 ${indent ? 'ml-6 sm:ml-8 border-l-2 border-[var(--b)]' : ''}`} data-testid={`admin-user-${u.id}`}>
           {/* Tree toggle for benefactors with beneficiaries (tree mode only) */}
           {viewMode === 'tree' && !indent && (u.role === 'benefactor' || u.is_also_benefactor) && (
             <button
@@ -117,12 +117,12 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
             </button>
           )}
 
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold flex-shrink-0" style={{ background: rc.bg, color: rc.color }}>
+          <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: rc.bg, color: rc.color }}>
             {u.name ? u.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-bold text-[var(--t)] text-xs sm:text-sm truncate">{u.name || 'No name'}</div>
-            <div className="text-[10px] sm:text-xs text-[var(--t4)] truncate">{u.email}</div>
+            <div className="font-bold text-[var(--t)] text-sm truncate">{u.name || 'No name'}</div>
+            <div className="text-xs text-[var(--t4)] truncate">{u.email}</div>
             {u.subscription?.plan_id && (
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="text-[10px] px-1.5 py-0.5 rounded font-bold capitalize" style={{ background: 'rgba(212,175,55,0.1)', color: '#d4af37' }}>
@@ -135,47 +135,31 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
             {viewMode === 'tree' && !indent && hasBens && (
               <div className="flex items-center gap-1 mt-0.5">
                 <GitBranch className="w-3 h-3 text-[var(--t5)]" />
-                <span className="text-[10px] text-[var(--t5)]">{u.linked_beneficiaries.length} ben{u.linked_beneficiaries.length === 1 ? '' : 's'}</span>
+                <span className="text-[10px] text-[var(--t5)]">{u.linked_beneficiaries.length} beneficiar{u.linked_beneficiaries.length === 1 ? 'y' : 'ies'}</span>
               </div>
             )}
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
             <span
-              className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md font-bold capitalize"
+              className="text-xs px-2 py-0.5 rounded-md font-bold capitalize"
               style={{ background: rc.bg, color: rc.color }}
               data-testid={`admin-role-badge-${u.id}`}
             >
               {u.role}
             </span>
-            {u.is_also_beneficiary && (
-              <span
-                className="text-[10px] px-1.5 py-0.5 rounded-md font-bold hidden sm:inline"
-                style={{ background: 'rgba(139,92,246,0.1)', color: '#B794F6' }}
-              >
-                + ben
-              </span>
-            )}
-            {u.is_also_benefactor && u.role === 'beneficiary' && (
-              <span
-                className="text-[10px] px-1.5 py-0.5 rounded-md font-bold hidden sm:inline"
-                style={{ background: 'rgba(37,99,235,0.1)', color: '#60A5FA' }}
-              >
-                + bnf
-              </span>
-            )}
           </div>
           {u.id !== currentUserId && (
             <div className="flex items-center gap-0.5 flex-shrink-0">
               {(u.role === 'benefactor' || u.role === 'beneficiary') && (
-                <Button variant="ghost" size="sm" className="text-[var(--t5)] h-7 w-7 p-0 sm:h-8 sm:w-8"
+                <Button variant="ghost" size="sm" className="text-[var(--t5)] h-8 w-8 p-0"
                   onClick={() => { setUnlockUserId(unlockUserId === u.id ? null : u.id); setMasterKeyInput(''); }}
                   title="Vault Unlock" data-testid={`vault-unlock-${u.id}`}>
-                  <KeyRound className="w-3.5 h-3.5" />
+                  <KeyRound className="w-4 h-4" />
                 </Button>
               )}
               {!operatorMode && (
-              <Button variant="ghost" size="sm" className="text-[var(--rd)] hover:bg-[var(--rdbg)] h-7 w-7 p-0 sm:h-8 sm:w-8" onClick={() => { setDeleteTarget({ id: u.id, name: u.name, role: u.role }); setDeletePassword(''); setShowDeletePw(false); }} data-testid={`admin-delete-user-${u.id}`}>
-                <Trash2 className="w-3.5 h-3.5" />
+              <Button variant="ghost" size="sm" className="text-[var(--rd)] hover:bg-[var(--rdbg)] h-8 w-8 p-0" onClick={() => { setDeleteTarget({ id: u.id, name: u.name, role: u.role }); setDeletePassword(''); setShowDeletePw(false); }} data-testid={`admin-delete-user-${u.id}`}>
+                <Trash2 className="w-4 h-4" />
               </Button>
               )}
             </div>
@@ -597,7 +581,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
           <Search className="w-4 h-4 text-[var(--t5)]" />
           <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search..." className="flex-1 bg-transparent border-none text-[var(--t)] text-sm outline-none placeholder:text-[var(--t5)]" data-testid="admin-users-search" />
         </div>
-        <div className="flex gap-1 overflow-x-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
+        <div className="flex gap-1.5 w-full">
           {['all', 'benefactor', 'beneficiary'].map(r => (
             <button key={r} onClick={() => {
               const mainEl = document.querySelector('.main-content');
@@ -621,9 +605,9 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                   html.style.scrollBehavior = '';
                 }, 200);
               }
-            }} className={`px-2 sm:px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold whitespace-nowrap flex-shrink-0 ${roleFilter === r ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'}`} data-testid={`admin-role-filter-${r}`}>{r === 'all' ? 'All' : r === 'beneficiary' ? 'Beneficiaries' : 'Benefactors'}</button>
+            }} className={`flex-1 py-2 rounded-lg text-xs font-bold whitespace-nowrap text-center ${roleFilter === r ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'}`} data-testid={`admin-role-filter-${r}`}>{r === 'all' ? 'All' : r === 'beneficiary' ? 'Beneficiaries' : 'Benefactors'}</button>
           ))}
-          <div className="w-px bg-[var(--b)] mx-0.5 sm:mx-1" />
+          <div className="w-px bg-[var(--b)]" />
           <button
             onClick={() => {
               const mainEl = document.querySelector('.main-content');
@@ -645,7 +629,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                 }, 200);
               }
             }}
-            className={`px-2 sm:px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold whitespace-nowrap flex-shrink-0 flex items-center gap-1 sm:gap-1.5 ${viewMode !== 'list' ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'}`}
+            className={`flex-1 py-2 rounded-lg text-xs font-bold whitespace-nowrap flex items-center justify-center gap-1.5 ${viewMode !== 'list' ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'}`}
             data-testid="toggle-tree-view"
           >
             <GitBranch className="w-3.5 h-3.5" /> {viewMode === 'tree' ? 'Tree' : viewMode === 'graph' ? 'Graph' : 'List'}
