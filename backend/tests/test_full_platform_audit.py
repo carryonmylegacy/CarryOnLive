@@ -18,9 +18,7 @@ import requests
 import os
 import uuid
 
-BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com"
-).rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com").rstrip("/")
 
 # Test credentials
 ADMIN_EMAIL = "admin@carryon.com"
@@ -96,16 +94,10 @@ class TestAuthenticationAndSecurity:
         response = self.session.get(f"{BASE_URL}/api/health")
         assert response.status_code == 200
         # Check security headers
-        assert "X-Frame-Options" in response.headers or response.headers.get(
-            "x-frame-options"
-        )
-        assert "X-Content-Type-Options" in response.headers or response.headers.get(
-            "x-content-type-options"
-        )
+        assert "X-Frame-Options" in response.headers or response.headers.get("x-frame-options")
+        assert "X-Content-Type-Options" in response.headers or response.headers.get("x-content-type-options")
         # HSTS header
-        assert "Strict-Transport-Security" in response.headers or response.headers.get(
-            "strict-transport-security"
-        )
+        assert "Strict-Transport-Security" in response.headers or response.headers.get("strict-transport-security")
 
     def test_dev_switcher_config_no_passwords(self):
         """SECURITY: /dev-switcher/config does NOT return passwords"""
@@ -331,9 +323,7 @@ class TestGuardianChatEndpoints:
 
     def test_chat_history_for_nonexistent_session(self):
         """GUARDIAN: Chat history returns empty for nonexistent session"""
-        response = self.session.get(
-            f"{BASE_URL}/api/chat/history/nonexistent_session_12345"
-        )
+        response = self.session.get(f"{BASE_URL}/api/chat/history/nonexistent_session_12345")
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
@@ -377,9 +367,7 @@ class TestSubscriptionsEndpoints:
         response = self.session.get(f"{BASE_URL}/api/subscriptions/status")
         assert response.status_code == 200
         data = response.json()
-        assert (
-            "beta_mode" in data or "trial" in data or "has_active_subscription" in data
-        )
+        assert "beta_mode" in data or "trial" in data or "has_active_subscription" in data
 
 
 class TestSupportEndpoints:

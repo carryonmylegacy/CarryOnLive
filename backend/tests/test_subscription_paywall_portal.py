@@ -10,9 +10,7 @@ import os
 import pytest
 import requests
 
-BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com"
-)
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com")
 
 
 class TestSubscriptionPlansEndpoint:
@@ -45,15 +43,11 @@ class TestSubscriptionPlansEndpoint:
         # Benefactor plans should include standard tiers
         expected_plans = ["premium", "standard", "base"]
         for plan_id in expected_plans:
-            assert plan_id in benefactor_plan_ids, (
-                f"Missing expected benefactor plan: {plan_id}"
-            )
+            assert plan_id in benefactor_plan_ids, f"Missing expected benefactor plan: {plan_id}"
 
         # None should have ben_ prefix
         for plan_id in benefactor_plan_ids:
-            assert not plan_id.startswith("ben_"), (
-                f"Benefactor plan has ben_ prefix: {plan_id}"
-            )
+            assert not plan_id.startswith("ben_"), f"Benefactor plan has ben_ prefix: {plan_id}"
 
     def test_beneficiary_plans_have_correct_ids(self):
         """Verify beneficiary plans have ben_ prefix"""
@@ -64,16 +58,12 @@ class TestSubscriptionPlansEndpoint:
 
         # All beneficiary plans should have ben_ prefix
         for plan_id in beneficiary_plan_ids:
-            assert plan_id.startswith("ben_"), (
-                f"Beneficiary plan missing ben_ prefix: {plan_id}"
-            )
+            assert plan_id.startswith("ben_"), f"Beneficiary plan missing ben_ prefix: {plan_id}"
 
         # Should include expected beneficiary tiers
         expected_ben_plans = ["ben_premium", "ben_standard", "ben_base"]
         for plan_id in expected_ben_plans:
-            assert plan_id in beneficiary_plan_ids, (
-                f"Missing expected beneficiary plan: {plan_id}"
-            )
+            assert plan_id in beneficiary_plan_ids, f"Missing expected beneficiary plan: {plan_id}"
 
 
 class TestLoginFlows:
@@ -87,9 +77,7 @@ class TestLoginFlows:
         )
 
         # Regular login returns 200 with token (OTP disabled for test accounts)
-        assert response.status_code == 200, (
-            f"Login failed: {response.status_code} - {response.text}"
-        )
+        assert response.status_code == 200, f"Login failed: {response.status_code} - {response.text}"
         data = response.json()
         assert "access_token" in data, "Missing access_token in login response"
         assert data.get("user", {}).get("role") == "admin", "Expected admin role"
@@ -102,20 +90,12 @@ class TestLoginFlows:
             json={"email": "fulltest@test.com", "password": "Password.123"},
         )
 
-        assert response.status_code == 200, (
-            f"Login failed: {response.status_code} - {response.text}"
-        )
+        assert response.status_code == 200, f"Login failed: {response.status_code} - {response.text}"
         data = response.json()
         assert "access_token" in data, "Missing access_token in login response"
-        assert data.get("user", {}).get("role") == "benefactor", (
-            "Expected benefactor role"
-        )
-        assert data.get("user", {}).get("is_also_benefactor"), (
-            "Expected is_also_benefactor=true"
-        )
-        print(
-            "✓ fulltest@test.com login successful (benefactor, is_also_benefactor=true)"
-        )
+        assert data.get("user", {}).get("role") == "benefactor", "Expected benefactor role"
+        assert data.get("user", {}).get("is_also_benefactor"), "Expected is_also_benefactor=true"
+        print("✓ fulltest@test.com login successful (benefactor, is_also_benefactor=true)")
 
 
 class TestSubscriptionCheckout:

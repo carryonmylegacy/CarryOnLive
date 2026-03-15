@@ -19,9 +19,7 @@ from routes.subscriptions.plans import router, APPLE_BUNDLE_ID
 
 # Apple's root CA G3 certificate SHA-256 fingerprint (hex).
 # Used to anchor the certificate-chain verification so we only trust Apple-signed JWS.
-APPLE_ROOT_G3_FINGERPRINT = (
-    "b0b1730ecbc7ff4505142c49f1295e6eda6bcaed7e2c68c5be91b5a11001f024"
-)
+APPLE_ROOT_G3_FINGERPRINT = "b0b1730ecbc7ff4505142c49f1295e6eda6bcaed7e2c68c5be91b5a11001f024"
 
 # Mapping: Apple product ID → internal plan ID
 APPLE_TO_PLAN = {
@@ -120,9 +118,7 @@ def decode_apple_jws(signed_payload: str, verify: bool = True) -> dict:
     pub_key = _extract_public_key_from_x5c(x5c)
 
     if verify and not _verify_cert_chain(x5c):
-        logger.warning(
-            "Apple JWS chain verification failed — root fingerprint mismatch"
-        )
+        logger.warning("Apple JWS chain verification failed — root fingerprint mismatch")
         # Don't hard-fail; Apple may rotate certificates. Log and continue.
 
     # PyJWT with ES256 + cryptography backend
@@ -313,9 +309,7 @@ async def _handle_renewal_status_change(txn: dict, renewal: dict | None):
         {"user_id": app_account_token, "payment_provider": "apple_iap"},
         {"$set": {"auto_renew": auto_renew}},
     )
-    logger.info(
-        f"Apple RENEWAL_STATUS: user={app_account_token} auto_renew={auto_renew}"
-    )
+    logger.info(f"Apple RENEWAL_STATUS: user={app_account_token} auto_renew={auto_renew}")
 
 
 _NOTIFICATION_HANDLERS = {
@@ -371,9 +365,7 @@ async def apple_webhook(request: Request):
         try:
             txn_info = decode_apple_jws(signed_txn)
         except Exception as e:
-            logger.warning(
-                f"Apple webhook: failed to decode signedTransactionInfo: {e}"
-            )
+            logger.warning(f"Apple webhook: failed to decode signedTransactionInfo: {e}")
 
     # Decode nested signedRenewalInfo
     renewal_info: dict | None = None

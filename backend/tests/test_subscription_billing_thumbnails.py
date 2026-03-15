@@ -51,21 +51,15 @@ class TestSubscriptionPlansEndpoint:
         response = requests.get(f"{BASE_URL}/api/subscriptions/plans")
         data = response.json()
         assert "beneficiary_plans" in data, "beneficiary_plans key missing"
-        assert len(data["beneficiary_plans"]) >= 4, (
-            "Expected at least 4 beneficiary plans"
-        )
+        assert len(data["beneficiary_plans"]) >= 4, "Expected at least 4 beneficiary plans"
 
     def test_beneficiary_plans_have_quarterly_price(self):
         """All beneficiary plans should have quarterly_price"""
         response = requests.get(f"{BASE_URL}/api/subscriptions/plans")
         data = response.json()
         for plan in data["beneficiary_plans"]:
-            assert "quarterly_price" in plan, (
-                f"Plan {plan['id']} missing quarterly_price"
-            )
-            assert isinstance(plan["quarterly_price"], (int, float)), (
-                "quarterly_price should be numeric"
-            )
+            assert "quarterly_price" in plan, f"Plan {plan['id']} missing quarterly_price"
+            assert isinstance(plan["quarterly_price"], (int, float)), "quarterly_price should be numeric"
 
     def test_beneficiary_plans_have_annual_price(self):
         """All beneficiary plans should have annual_price"""
@@ -73,18 +67,14 @@ class TestSubscriptionPlansEndpoint:
         data = response.json()
         for plan in data["beneficiary_plans"]:
             assert "annual_price" in plan, f"Plan {plan['id']} missing annual_price"
-            assert isinstance(plan["annual_price"], (int, float)), (
-                "annual_price should be numeric"
-            )
+            assert isinstance(plan["annual_price"], (int, float)), "annual_price should be numeric"
 
     def test_default_plans_have_quarterly_annual_prices(self):
         """Default plans should also have quarterly and annual prices"""
         response = requests.get(f"{BASE_URL}/api/subscriptions/plans")
         data = response.json()
         for plan in data["plans"]:
-            assert "quarterly_price" in plan, (
-                f"Plan {plan['id']} missing quarterly_price"
-            )
+            assert "quarterly_price" in plan, f"Plan {plan['id']} missing quarterly_price"
             assert "annual_price" in plan, f"Plan {plan['id']} missing annual_price"
 
     def test_quarterly_price_is_10_percent_discount(self):
@@ -94,9 +84,7 @@ class TestSubscriptionPlansEndpoint:
         for plan in data["beneficiary_plans"]:
             if plan["price"] > 0:
                 expected = round(plan["price"] * 0.9, 2)
-                assert abs(plan["quarterly_price"] - expected) < 0.05, (
-                    f"Plan {plan['id']} quarterly price incorrect"
-                )
+                assert abs(plan["quarterly_price"] - expected) < 0.05, f"Plan {plan['id']} quarterly price incorrect"
 
     def test_annual_price_is_20_percent_discount(self):
         """Annual price should be roughly 20% off monthly"""
@@ -105,9 +93,7 @@ class TestSubscriptionPlansEndpoint:
         for plan in data["beneficiary_plans"]:
             if plan["price"] > 0:
                 expected = round(plan["price"] * 0.8, 2)
-                assert abs(plan["annual_price"] - expected) < 0.05, (
-                    f"Plan {plan['id']} annual price incorrect"
-                )
+                assert abs(plan["annual_price"] - expected) < 0.05, f"Plan {plan['id']} annual price incorrect"
 
 
 class TestSubscriptionCheckout:
@@ -137,9 +123,7 @@ class TestSubscriptionCheckout:
                 "origin_url": "https://todo-pdf-gen.preview.emergentagent.com",
             },
         )
-        assert response.status_code in [401, 403], (
-            f"Expected 401/403, got {response.status_code}"
-        )
+        assert response.status_code in [401, 403], f"Expected 401/403, got {response.status_code}"
 
 
 class TestFamilyPlanRequest:
@@ -206,9 +190,7 @@ class TestBeneficiaryLifecycleStatus:
 
     def test_lifecycle_status_requires_auth(self):
         """Lifecycle status should require authentication"""
-        response = requests.get(
-            f"{BASE_URL}/api/subscriptions/beneficiary/lifecycle-status"
-        )
+        response = requests.get(f"{BASE_URL}/api/subscriptions/beneficiary/lifecycle-status")
         assert response.status_code in [401, 403]
 
 
@@ -232,9 +214,7 @@ class TestAdminTriggerTransition:
             headers=admin_headers,
         )
         # 200 or 404 depending on if benefactor exists
-        assert response.status_code in [200, 404], (
-            f"Expected 200/404, got {response.status_code}"
-        )
+        assert response.status_code in [200, 404], f"Expected 200/404, got {response.status_code}"
         if response.status_code == 200:
             data = response.json()
             assert "success" in data
@@ -259,9 +239,7 @@ class TestDocumentPreviewForThumbnails:
 
     def test_preview_pdf_returns_blob(self, auth_headers):
         """Preview endpoint should return PDF blob for thumbnail rendering"""
-        response = requests.get(
-            f"{BASE_URL}/api/documents/{self.PDF_DOC_ID}/preview", headers=auth_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/documents/{self.PDF_DOC_ID}/preview", headers=auth_headers)
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         assert "pdf" in response.headers.get("content-type", "").lower()
 
@@ -280,20 +258,14 @@ class TestSubscriptionStatus:
 
     def test_status_returns_user_role(self, auth_headers):
         """Subscription status should include user_role for role-aware plan display"""
-        response = requests.get(
-            f"{BASE_URL}/api/subscriptions/status", headers=auth_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/subscriptions/status", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
-        assert "user_role" in data, (
-            "user_role key missing - needed for role-aware plan display"
-        )
+        assert "user_role" in data, "user_role key missing - needed for role-aware plan display"
         assert data["user_role"] in ["benefactor", "beneficiary"]
 
     def test_status_includes_beta_mode(self, auth_headers):
         """Status should indicate beta mode for free feature access"""
-        response = requests.get(
-            f"{BASE_URL}/api/subscriptions/status", headers=auth_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/subscriptions/status", headers=auth_headers)
         data = response.json()
         assert "beta_mode" in data

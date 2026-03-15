@@ -58,29 +58,21 @@ class TestFamilyTreeFeatures:
 
         # Find owned estate - should have user_role_in_estate = 'owner'
         owned_estates = [e for e in estates if e.get("user_role_in_estate") == "owner"]
-        assert len(owned_estates) > 0, (
-            "No owned estates found - expected at least one with user_role_in_estate='owner'"
-        )
+        assert len(owned_estates) > 0, "No owned estates found - expected at least one with user_role_in_estate='owner'"
 
         owned = owned_estates[0]
         assert "id" in owned, "Estate missing id"
         assert "name" in owned, "Estate missing name"
-        print(
-            f"✓ Owned estate found: {owned.get('name')} with user_role_in_estate='owner'"
-        )
+        print(f"✓ Owned estate found: {owned.get('name')} with user_role_in_estate='owner'")
 
         # Check if there are any beneficiary estates too
-        ben_estates = [
-            e for e in estates if e.get("user_role_in_estate") == "beneficiary"
-        ]
+        ben_estates = [e for e in estates if e.get("user_role_in_estate") == "beneficiary"]
         print(f"✓ Found {len(ben_estates)} estate(s) where user is beneficiary")
 
     def test_beneficiaries_endpoint_returns_dob_for_sorting(self, benefactor_auth):
         """GET /api/beneficiaries/{estate_id} should return date_of_birth for age sorting"""
         # First get estate
-        estates_response = requests.get(
-            f"{BASE_URL}/api/estates", headers=benefactor_auth
-        )
+        estates_response = requests.get(f"{BASE_URL}/api/estates", headers=benefactor_auth)
         assert estates_response.status_code == 200
         estates = estates_response.json()
 
@@ -91,9 +83,7 @@ class TestFamilyTreeFeatures:
         estate_id = owned_estates[0]["id"]
 
         # Get beneficiaries
-        response = requests.get(
-            f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=benefactor_auth
-        )
+        response = requests.get(f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=benefactor_auth)
         assert response.status_code == 200
         beneficiaries = response.json()
 
@@ -102,9 +92,7 @@ class TestFamilyTreeFeatures:
         # Check structure of each beneficiary
         for ben in beneficiaries:
             assert "id" in ben, "Beneficiary missing id"
-            assert "first_name" in ben or "name" in ben, (
-                "Beneficiary missing name fields"
-            )
+            assert "first_name" in ben or "name" in ben, "Beneficiary missing name fields"
             # date_of_birth may be null but should be in response
             print(
                 f"  - {ben.get('first_name', ben.get('name', 'Unknown'))}: DOB={ben.get('date_of_birth', 'N/A')}, is_primary={ben.get('is_primary', False)}"
@@ -112,9 +100,7 @@ class TestFamilyTreeFeatures:
 
     def test_beneficiaries_include_avatar_color(self, benefactor_auth):
         """Beneficiaries should include avatar_color for tree node styling"""
-        estates_response = requests.get(
-            f"{BASE_URL}/api/estates", headers=benefactor_auth
-        )
+        estates_response = requests.get(f"{BASE_URL}/api/estates", headers=benefactor_auth)
         estates = estates_response.json()
 
         owned_estates = [e for e in estates if e.get("user_role_in_estate") == "owner"]
@@ -122,24 +108,18 @@ class TestFamilyTreeFeatures:
             pytest.skip("No owned estates")
 
         estate_id = owned_estates[0]["id"]
-        response = requests.get(
-            f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=benefactor_auth
-        )
+        response = requests.get(f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=benefactor_auth)
         assert response.status_code == 200
         beneficiaries = response.json()
 
         for ben in beneficiaries:
             # avatar_color is used for tree node colors
             if ben.get("avatar_color"):
-                print(
-                    f"✓ {ben.get('first_name', 'Unknown')} has avatar_color: {ben['avatar_color']}"
-                )
+                print(f"✓ {ben.get('first_name', 'Unknown')} has avatar_color: {ben['avatar_color']}")
 
     def test_beneficiaries_have_relation_field(self, benefactor_auth):
         """Beneficiaries should include relation field for tree display"""
-        estates_response = requests.get(
-            f"{BASE_URL}/api/estates", headers=benefactor_auth
-        )
+        estates_response = requests.get(f"{BASE_URL}/api/estates", headers=benefactor_auth)
         estates = estates_response.json()
 
         owned_estates = [e for e in estates if e.get("user_role_in_estate") == "owner"]
@@ -147,9 +127,7 @@ class TestFamilyTreeFeatures:
             pytest.skip("No owned estates")
 
         estate_id = owned_estates[0]["id"]
-        response = requests.get(
-            f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=benefactor_auth
-        )
+        response = requests.get(f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=benefactor_auth)
         assert response.status_code == 200
         beneficiaries = response.json()
 
@@ -189,17 +167,13 @@ class TestAdminGraphView:
 
         for bfactor in benefactors:
             linked = bfactor.get("linked_beneficiaries", [])
-            print(
-                f"  - {bfactor.get('name', 'Unknown')}: {len(linked)} linked beneficiaries"
-            )
+            print(f"  - {bfactor.get('name', 'Unknown')}: {len(linked)} linked beneficiaries")
 
             # Verify structure of linked beneficiaries for Graph view
             for ben in linked:
                 assert "id" in ben, "linked_beneficiary missing id"
                 # These fields are used by Graph view SVG rendering
-                assert "first_name" in ben or "name" in ben, (
-                    "linked_beneficiary missing name"
-                )
+                assert "first_name" in ben or "name" in ben, "linked_beneficiary missing name"
                 # date_of_birth used for age calculation in sorting
 
     def test_admin_users_includes_date_of_birth(self, admin_auth):
@@ -221,10 +195,7 @@ class TestAdminGraphView:
 
         # Find benefactors with linked beneficiaries
         benefactors_with_bens = [
-            u
-            for u in users
-            if u.get("role") == "benefactor"
-            and len(u.get("linked_beneficiaries", [])) > 0
+            u for u in users if u.get("role") == "benefactor" and len(u.get("linked_beneficiaries", [])) > 0
         ]
 
         if not benefactors_with_bens:
@@ -269,17 +240,13 @@ class TestBeneficiaryEstatesFilter:
                 assert is_ben_estate, (
                     f"Estate {estate.get('name')} has user_role_in_estate=beneficiary but is_beneficiary_estate is not True"
                 )
-                print(
-                    f"✓ Beneficiary estate: {estate.get('name')} (is_beneficiary_estate=True)"
-                )
+                print(f"✓ Beneficiary estate: {estate.get('name')} (is_beneficiary_estate=True)")
             elif role == "owner":
                 # Should not have is_beneficiary_estate=True
                 assert not is_ben_estate, (
                     f"Owned estate {estate.get('name')} should not have is_beneficiary_estate=True"
                 )
-                print(
-                    f"✓ Owned estate: {estate.get('name')} (user_role_in_estate=owner)"
-                )
+                print(f"✓ Owned estate: {estate.get('name')} (user_role_in_estate=owner)")
 
 
 class TestPreviousBugFixes:
@@ -313,9 +280,7 @@ class TestPreviousBugFixes:
 
     def test_onboarding_progress_returns_already_graduated(self, benefactor_auth):
         """GET /api/onboarding/progress should return already_graduated field"""
-        response = requests.get(
-            f"{BASE_URL}/api/onboarding/progress", headers=benefactor_auth
-        )
+        response = requests.get(f"{BASE_URL}/api/onboarding/progress", headers=benefactor_auth)
         assert response.status_code == 200
         data = response.json()
 
@@ -325,9 +290,7 @@ class TestPreviousBugFixes:
 
     def test_beneficiaries_sorted_by_sort_order(self, benefactor_auth):
         """GET /api/beneficiaries/{estate_id} should return sorted by sort_order"""
-        estates_response = requests.get(
-            f"{BASE_URL}/api/estates", headers=benefactor_auth
-        )
+        estates_response = requests.get(f"{BASE_URL}/api/estates", headers=benefactor_auth)
         estates = estates_response.json()
 
         owned_estates = [e for e in estates if e.get("user_role_in_estate") == "owner"]
@@ -335,9 +298,7 @@ class TestPreviousBugFixes:
             pytest.skip("No owned estates")
 
         estate_id = owned_estates[0]["id"]
-        response = requests.get(
-            f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=benefactor_auth
-        )
+        response = requests.get(f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=benefactor_auth)
         assert response.status_code == 200
         beneficiaries = response.json()
 
@@ -347,18 +308,14 @@ class TestPreviousBugFixes:
         # Check that sort_order is present and verify order
         for i, ben in enumerate(beneficiaries):
             sort_order = ben.get("sort_order", i)
-            print(
-                f"✓ Position {i}: {ben.get('first_name', 'Unknown')} (sort_order={sort_order})"
-            )
+            print(f"✓ Position {i}: {ben.get('first_name', 'Unknown')} (sort_order={sort_order})")
 
     def test_admin_delete_requires_password(self, admin_auth):
         """DELETE /api/admin/users/{user_id} should require password"""
         # Try to delete without password - should fail
         # Use a fake user_id to avoid deleting real users
         fake_user_id = "test-fake-user-id-12345"
-        response = requests.delete(
-            f"{BASE_URL}/api/admin/users/{fake_user_id}", headers=admin_auth
-        )
+        response = requests.delete(f"{BASE_URL}/api/admin/users/{fake_user_id}", headers=admin_auth)
 
         # Should require password
         assert response.status_code in [401, 422, 404], (

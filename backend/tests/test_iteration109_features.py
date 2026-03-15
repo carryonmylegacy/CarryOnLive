@@ -40,9 +40,7 @@ class TestFounderOperatorsEndpoint:
             f"{BASE_URL}/api/founder/operators",
             headers=admin_auth_headers,
         )
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
 
     def test_founder_operators_returns_list(self, admin_auth_headers):
         """Test that the endpoint returns a list"""
@@ -54,9 +52,7 @@ class TestFounderOperatorsEndpoint:
         data = response.json()
         assert isinstance(data, list), "Response should be a list"
 
-    def test_founder_operators_schema_includes_personal_info_fields(
-        self, admin_auth_headers
-    ):
+    def test_founder_operators_schema_includes_personal_info_fields(self, admin_auth_headers):
         """Test that personal info fields are NOT excluded (they should pass through if present in DB)"""
         response = requests.get(
             f"{BASE_URL}/api/founder/operators",
@@ -86,9 +82,7 @@ class TestFounderOperatorsEndpoint:
             assert "_id" not in sample_op, "_id should be excluded"
             # Check if any operator has personal info
             for op in data:
-                has_personal_info = any(
-                    op.get(field) for field in expected_possible_fields
-                )
+                has_personal_info = any(op.get(field) for field in expected_possible_fields)
                 if has_personal_info:
                     print(
                         f"Operator {op.get('name', op.get('id'))} has personal info: {[f for f in expected_possible_fields if op.get(f)]}"
@@ -106,9 +100,7 @@ class TestBeneficiaryMyPrimaryForEndpoint:
             headers=admin_auth_headers,
         )
         # Should return 200 (might be empty array for admin user)
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
 
     def test_endpoint_returns_list(self, admin_auth_headers):
         """Test that the endpoint returns a list (may be empty for admin)"""
@@ -131,9 +123,7 @@ class TestBeneficiaryMyPrimaryForEndpoint:
         """Test that the endpoint requires authentication"""
         response = requests.get(f"{BASE_URL}/api/beneficiary/my-primary-for")
         # Should return 401 or 403 without auth
-        assert response.status_code in [401, 403, 422], (
-            f"Expected auth error, got {response.status_code}"
-        )
+        assert response.status_code in [401, 403, 422], f"Expected auth error, got {response.status_code}"
 
 
 class TestBeneficiaryEndpointSchema:
@@ -157,9 +147,7 @@ class TestBeneficiaryEndpointSchema:
             # Verify data types
             assert isinstance(entry["estate_id"], str), "estate_id should be string"
             assert isinstance(entry["estate_name"], str), "estate_name should be string"
-            assert isinstance(entry["benefactor_name"], str), (
-                "benefactor_name should be string"
-            )
+            assert isinstance(entry["benefactor_name"], str), "benefactor_name should be string"
             assert isinstance(entry["status"], str), "status should be string"
             print("VERIFIED: Response schema matches expected format")
         else:

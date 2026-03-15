@@ -20,9 +20,7 @@ BENEFACTOR_PASSWORD = "Password.123"
 
 def get_token(email, password):
     """Get auth token for user"""
-    resp = requests.post(
-        f"{BASE_URL}/api/auth/login", json={"email": email, "password": password}
-    )
+    resp = requests.post(f"{BASE_URL}/api/auth/login", json={"email": email, "password": password})
     if resp.status_code == 200:
         return resp.json().get("access_token")
     return None
@@ -141,9 +139,7 @@ class TestDTSTasks:
         if not self.admin_token:
             pytest.skip("No admin token")
         headers = get_headers(self.admin_token)
-        resp = requests.get(
-            f"{BASE_URL}/api/dts/tasks/all?include_deleted=true", headers=headers
-        )
+        resp = requests.get(f"{BASE_URL}/api/dts/tasks/all?include_deleted=true", headers=headers)
         assert resp.status_code == 200
         print("PASS: Admin can get DTS tasks with include_deleted")
 
@@ -152,9 +148,7 @@ class TestDTSTasks:
         if not self.operator_token:
             pytest.skip("No operator token")
         headers = get_headers(self.operator_token)
-        resp = requests.post(
-            f"{BASE_URL}/api/dts/tasks/fake-id/restore", headers=headers
-        )
+        resp = requests.post(f"{BASE_URL}/api/dts/tasks/fake-id/restore", headers=headers)
         assert resp.status_code == 403, f"Expected 403, got {resp.status_code}"
         print("PASS: Operator correctly denied DTS restore (403)")
 
@@ -190,9 +184,7 @@ class TestVerifications:
         if not self.admin_token:
             pytest.skip("No admin token")
         headers = get_headers(self.admin_token)
-        resp = requests.get(
-            f"{BASE_URL}/api/admin/verifications?include_deleted=true", headers=headers
-        )
+        resp = requests.get(f"{BASE_URL}/api/admin/verifications?include_deleted=true", headers=headers)
         assert resp.status_code == 200
         print("PASS: Admin can get verifications with include_deleted")
 
@@ -201,9 +193,7 @@ class TestVerifications:
         if not self.operator_token:
             pytest.skip("No operator token")
         headers = get_headers(self.operator_token)
-        resp = requests.post(
-            f"{BASE_URL}/api/admin/verifications/fake-id/restore", headers=headers
-        )
+        resp = requests.post(f"{BASE_URL}/api/admin/verifications/fake-id/restore", headers=headers)
         assert resp.status_code == 403, f"Expected 403, got {resp.status_code}"
         print("PASS: Operator correctly denied verification restore (403)")
 
@@ -221,9 +211,7 @@ class TestTransitionCertificates:
         if not self.admin_token:
             pytest.skip("No admin token")
         headers = get_headers(self.admin_token)
-        resp = requests.get(
-            f"{BASE_URL}/api/transition/certificates/all", headers=headers
-        )
+        resp = requests.get(f"{BASE_URL}/api/transition/certificates/all", headers=headers)
         assert resp.status_code == 200, f"Expected 200, got {resp.status_code}"
         print(f"PASS: Admin can get certificates, count: {len(resp.json())}")
 
@@ -232,9 +220,7 @@ class TestTransitionCertificates:
         if not self.operator_token:
             pytest.skip("No operator token")
         headers = get_headers(self.operator_token)
-        resp = requests.get(
-            f"{BASE_URL}/api/transition/certificates/all", headers=headers
-        )
+        resp = requests.get(f"{BASE_URL}/api/transition/certificates/all", headers=headers)
         assert resp.status_code == 200, f"Expected 200, got {resp.status_code}"
         print(f"PASS: Operator can get certificates, count: {len(resp.json())}")
 
@@ -255,9 +241,7 @@ class TestTransitionCertificates:
         if not self.operator_token:
             pytest.skip("No operator token")
         headers = get_headers(self.operator_token)
-        resp = requests.post(
-            f"{BASE_URL}/api/transition/certificates/fake-id/restore", headers=headers
-        )
+        resp = requests.post(f"{BASE_URL}/api/transition/certificates/fake-id/restore", headers=headers)
         assert resp.status_code == 403, f"Expected 403, got {resp.status_code}"
         print("PASS: Operator correctly denied certificate restore (403)")
 

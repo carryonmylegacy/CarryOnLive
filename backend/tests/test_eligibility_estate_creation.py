@@ -72,9 +72,7 @@ class TestEstateCreationWithEligibility:
         assert "estate_id" in data
 
         # Verify subscription status shows military in eligible_tiers
-        status_resp = self.session.get(
-            f"{BASE_URL}/api/subscriptions/status", headers=headers
-        )
+        status_resp = self.session.get(f"{BASE_URL}/api/subscriptions/status", headers=headers)
         assert status_resp.status_code == 200
         status_data = status_resp.json()
 
@@ -95,9 +93,7 @@ class TestEstateCreationWithEligibility:
         assert resp.status_code == 200
 
         # Verify
-        status_resp = self.session.get(
-            f"{BASE_URL}/api/subscriptions/status", headers=headers
-        )
+        status_resp = self.session.get(f"{BASE_URL}/api/subscriptions/status", headers=headers)
         assert status_resp.status_code == 200
         status_data = status_resp.json()
 
@@ -118,9 +114,7 @@ class TestEstateCreationWithEligibility:
         assert resp.status_code == 200
 
         # Verify
-        status_resp = self.session.get(
-            f"{BASE_URL}/api/subscriptions/status", headers=headers
-        )
+        status_resp = self.session.get(f"{BASE_URL}/api/subscriptions/status", headers=headers)
         assert status_resp.status_code == 200
         status_data = status_resp.json()
 
@@ -145,9 +139,7 @@ class TestEstateCreationWithEligibility:
         assert resp.status_code == 200
 
         # Verify
-        status_resp = self.session.get(
-            f"{BASE_URL}/api/subscriptions/status", headers=headers
-        )
+        status_resp = self.session.get(f"{BASE_URL}/api/subscriptions/status", headers=headers)
         assert status_resp.status_code == 200
         status_data = status_resp.json()
 
@@ -168,9 +160,7 @@ class TestEstateCreationWithEligibility:
         assert resp.status_code == 200
 
         # Verify - first_responder maps to military tier
-        status_resp = self.session.get(
-            f"{BASE_URL}/api/subscriptions/status", headers=headers
-        )
+        status_resp = self.session.get(f"{BASE_URL}/api/subscriptions/status", headers=headers)
         assert status_resp.status_code == 200
         status_data = status_resp.json()
 
@@ -192,17 +182,12 @@ class TestEstateCreationWithEligibility:
         assert resp.status_code == 200
 
         # Verify - no special tiers
-        status_resp = self.session.get(
-            f"{BASE_URL}/api/subscriptions/status", headers=headers
-        )
+        status_resp = self.session.get(f"{BASE_URL}/api/subscriptions/status", headers=headers)
         assert status_resp.status_code == 200
         status_data = status_resp.json()
 
         # Should have empty or no special status
-        assert (
-            status_data.get("special_status", []) == []
-            or status_data.get("special_status") is None
-        )
+        assert status_data.get("special_status", []) == [] or status_data.get("special_status") is None
 
     def test_create_estate_with_beneficiaries_and_special_status(self):
         """Test creating estate with beneficiaries AND special status"""
@@ -230,9 +215,7 @@ class TestEstateCreationWithEligibility:
         assert data["beneficiaries_enrolled"] == 1
 
         # Verify special status also saved
-        status_resp = self.session.get(
-            f"{BASE_URL}/api/subscriptions/status", headers=headers
-        )
+        status_resp = self.session.get(f"{BASE_URL}/api/subscriptions/status", headers=headers)
         assert status_resp.status_code == 200
         status_data = status_resp.json()
         assert "military" in status_data.get("eligible_tiers", [])

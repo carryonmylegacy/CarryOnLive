@@ -132,9 +132,7 @@ class TestAnnouncements:
     def test_announcements_blocked_for_benefactor(self, benefactor_headers):
         """Benefactor cannot access announcements endpoints"""
         # Try to list
-        response = requests.get(
-            f"{BASE_URL}/api/admin/announcements", headers=benefactor_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/announcements", headers=benefactor_headers)
         assert response.status_code == 403, f"Expected 403, got {response.status_code}"
 
         # Try to create
@@ -156,9 +154,7 @@ class TestSystemHealth:
 
     def test_get_system_health_founder(self, founder_headers):
         """GET /api/admin/system-health - founder can access"""
-        response = requests.get(
-            f"{BASE_URL}/api/admin/system-health", headers=founder_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/system-health", headers=founder_headers)
         assert response.status_code == 200
         data = response.json()
 
@@ -181,15 +177,11 @@ class TestSystemHealth:
         assert "client_errors_24h" in activity
         assert "audit_events_today" in activity
 
-        print(
-            f"System health: {data['status']}, Users: {db['users']}, Estates: {db['estates']}"
-        )
+        print(f"System health: {data['status']}, Users: {db['users']}, Estates: {db['estates']}")
 
     def test_system_health_blocked_for_benefactor(self, benefactor_headers):
         """Benefactor cannot access system health"""
-        response = requests.get(
-            f"{BASE_URL}/api/admin/system-health", headers=benefactor_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/system-health", headers=benefactor_headers)
         assert response.status_code == 403
 
 
@@ -223,9 +215,7 @@ class TestEscalations:
 
     def test_list_escalations(self, founder_headers):
         """GET /api/ops/escalations - staff can list"""
-        response = requests.get(
-            f"{BASE_URL}/api/ops/escalations", headers=founder_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/ops/escalations", headers=founder_headers)
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
@@ -233,9 +223,7 @@ class TestEscalations:
 
     def test_list_escalations_with_filter(self, founder_headers):
         """GET /api/ops/escalations?status=open - filter by status"""
-        response = requests.get(
-            f"{BASE_URL}/api/ops/escalations?status=open", headers=founder_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/ops/escalations?status=open", headers=founder_headers)
         assert response.status_code == 200
         data = response.json()
         # All should be open
@@ -268,9 +256,7 @@ class TestEscalations:
 
     def test_escalations_blocked_for_benefactor(self, benefactor_headers):
         """Benefactor cannot access escalations endpoints"""
-        response = requests.get(
-            f"{BASE_URL}/api/ops/escalations", headers=benefactor_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/ops/escalations", headers=benefactor_headers)
         assert response.status_code == 403
 
 
@@ -301,9 +287,7 @@ class TestShiftNotes:
 
     def test_list_shift_notes(self, founder_headers):
         """GET /api/ops/shift-notes - staff can list"""
-        response = requests.get(
-            f"{BASE_URL}/api/ops/shift-notes", headers=founder_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/ops/shift-notes", headers=founder_headers)
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
@@ -330,9 +314,7 @@ class TestShiftNotes:
 
     def test_shift_notes_blocked_for_benefactor(self, benefactor_headers):
         """Benefactor cannot access shift notes endpoints"""
-        response = requests.get(
-            f"{BASE_URL}/api/ops/shift-notes", headers=benefactor_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/ops/shift-notes", headers=benefactor_headers)
         assert response.status_code == 403
 
 
@@ -365,9 +347,7 @@ class TestKnowledgeBase:
 
     def test_list_kb_articles(self, founder_headers):
         """GET /api/admin/knowledge-base - staff can list"""
-        response = requests.get(
-            f"{BASE_URL}/api/admin/knowledge-base", headers=founder_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/knowledge-base", headers=founder_headers)
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
@@ -431,17 +411,13 @@ class TestKnowledgeBase:
         article_id = create_resp.json()["id"]
 
         # Delete
-        response = requests.delete(
-            f"{BASE_URL}/api/admin/knowledge-base/{article_id}", headers=founder_headers
-        )
+        response = requests.delete(f"{BASE_URL}/api/admin/knowledge-base/{article_id}", headers=founder_headers)
         assert response.status_code == 200
         assert response.json()["deleted"]
 
     def test_kb_blocked_for_benefactor(self, benefactor_headers):
         """Benefactor cannot access knowledge base endpoints"""
-        response = requests.get(
-            f"{BASE_URL}/api/admin/knowledge-base", headers=benefactor_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/knowledge-base", headers=benefactor_headers)
         assert response.status_code == 403
 
 
@@ -455,9 +431,7 @@ class TestQuickSearch:
 
     def test_search_query(self, founder_headers):
         """GET /api/ops/search?q=test - staff can search"""
-        response = requests.get(
-            f"{BASE_URL}/api/ops/search?q=test", headers=founder_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/ops/search?q=test", headers=founder_headers)
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
@@ -465,17 +439,13 @@ class TestQuickSearch:
 
     def test_search_requires_min_length(self, founder_headers):
         """GET /api/ops/search?q=a - requires at least 2 chars"""
-        response = requests.get(
-            f"{BASE_URL}/api/ops/search?q=a", headers=founder_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/ops/search?q=a", headers=founder_headers)
         # Should return 422 validation error
         assert response.status_code == 422
 
     def test_search_blocked_for_benefactor(self, benefactor_headers):
         """Benefactor cannot access search endpoint"""
-        response = requests.get(
-            f"{BASE_URL}/api/ops/search?q=test", headers=benefactor_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/ops/search?q=test", headers=benefactor_headers)
         assert response.status_code == 403
 
 
@@ -489,9 +459,7 @@ class TestMyActivity:
 
     def test_get_my_activity(self, founder_headers):
         """GET /api/ops/my-activity - staff can view own activity"""
-        response = requests.get(
-            f"{BASE_URL}/api/ops/my-activity?limit=50", headers=founder_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/ops/my-activity?limit=50", headers=founder_headers)
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
@@ -505,9 +473,7 @@ class TestMyActivity:
 
     def test_my_activity_blocked_for_benefactor(self, benefactor_headers):
         """Benefactor cannot access my-activity endpoint"""
-        response = requests.get(
-            f"{BASE_URL}/api/ops/my-activity", headers=benefactor_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/ops/my-activity", headers=benefactor_headers)
         assert response.status_code == 403
 
 
@@ -529,9 +495,7 @@ class TestRBAC:
 
         for endpoint in admin_endpoints:
             response = requests.get(f"{BASE_URL}{endpoint}", headers=benefactor_headers)
-            assert response.status_code == 403, (
-                f"GET {endpoint} should be blocked, got {response.status_code}"
-            )
+            assert response.status_code == 403, f"GET {endpoint} should be blocked, got {response.status_code}"
             print(f"✓ GET {endpoint} correctly blocked for benefactor")
 
     def test_benefactor_blocked_from_ops_get_endpoints(self, benefactor_headers):
@@ -545,9 +509,7 @@ class TestRBAC:
 
         for endpoint in ops_endpoints:
             response = requests.get(f"{BASE_URL}{endpoint}", headers=benefactor_headers)
-            assert response.status_code == 403, (
-                f"GET {endpoint} should be blocked, got {response.status_code}"
-            )
+            assert response.status_code == 403, f"GET {endpoint} should be blocked, got {response.status_code}"
             print(f"✓ GET {endpoint} correctly blocked for benefactor")
 
 

@@ -94,9 +94,7 @@ async def get_messages(estate_id: str, current_user: dict = Depends(get_current_
         ).to_list(100)
     else:
         # Owner or admin: see all messages
-        messages = await db.messages.find(
-            {"estate_id": estate_id, "deleted_at": None}, {"_id": 0}
-        ).to_list(100)
+        messages = await db.messages.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(100)
 
     # Decrypt message fields
     decrypted = []
@@ -107,9 +105,7 @@ async def get_messages(estate_id: str, current_user: dict = Depends(get_current_
 
 
 @router.get("/messages/video/{video_id}")
-async def get_message_video(
-    video_id: str, current_user: dict = Depends(get_current_user)
-):
+async def get_message_video(video_id: str, current_user: dict = Depends(get_current_user)):
     """Get video data for a message"""
     # Check if video is in cloud storage
     message = await db.messages.find_one({"video_url": video_id}, {"_id": 0})
@@ -126,9 +122,7 @@ async def get_message_video(
                 {"_id": 0, "id": 1},
             ).to_list(10)
             valid_ids = {current_user["id"]} | {b["id"] for b in ben_records}
-            if not (valid_ids & set(message.get("recipients", []))) or not message.get(
-                "is_delivered"
-            ):
+            if not (valid_ids & set(message.get("recipients", []))) or not message.get("is_delivered"):
                 raise HTTPException(status_code=403, detail="Access denied")
         elif not (is_owner or is_admin):
             raise HTTPException(status_code=403, detail="Access denied")
@@ -165,9 +159,7 @@ async def get_message_video(
         return Response(
             content=decrypted,
             media_type=video_mime,
-            headers={
-                "Content-Disposition": f'inline; filename="{video_id}.{video_ext}"'
-            },
+            headers={"Content-Disposition": f'inline; filename="{video_id}.{video_ext}"'},
         )
     except FileNotFoundError:
         pass
@@ -184,9 +176,7 @@ async def get_message_video(
         return Response(
             content=video_bytes,
             media_type=video_mime,
-            headers={
-                "Content-Disposition": f'inline; filename="{video_id}.{video_ext}"'
-            },
+            headers={"Content-Disposition": f'inline; filename="{video_id}.{video_ext}"'},
         )
     except Exception as e:
         logger.error(f"Video decode error: {e}")
@@ -194,9 +184,7 @@ async def get_message_video(
 
 
 @router.get("/messages/voice/{voice_id}")
-async def get_message_voice(
-    voice_id: str, current_user: dict = Depends(get_current_user)
-):
+async def get_message_voice(voice_id: str, current_user: dict = Depends(get_current_user)):
     """Get voice recording data for a message"""
     message = await db.messages.find_one({"voice_url": voice_id}, {"_id": 0})
     if message:
@@ -212,9 +200,7 @@ async def get_message_voice(
                 {"_id": 0, "id": 1},
             ).to_list(10)
             valid_ids = {current_user["id"]} | {b["id"] for b in ben_records}
-            if not (valid_ids & set(message.get("recipients", []))) or not message.get(
-                "is_delivered"
-            ):
+            if not (valid_ids & set(message.get("recipients", []))) or not message.get("is_delivered"):
                 raise HTTPException(status_code=403, detail="Access denied")
         elif not (is_owner or is_admin):
             raise HTTPException(status_code=403, detail="Access denied")
@@ -243,9 +229,7 @@ async def get_message_voice(
 
 
 @router.post("/messages")
-async def create_message(
-    data: MessageCreate, current_user: dict = Depends(get_current_user)
-):
+async def create_message(data: MessageCreate, current_user: dict = Depends(get_current_user)):
     """Create a new milestone message with encrypted content."""
     require_benefactor_role(current_user, "create messages")
 
@@ -283,9 +267,7 @@ async def create_message(
     msg_dict["encrypted_content"] = encrypt_field(data.content, estate_salt)
     # Zero-knowledge: do NOT store plaintext content in database
     # Only keep a truncated, non-sensitive display title for session listing
-    msg_dict["title"] = (
-        data.title[:50] if data.title else ""
-    )  # Short display label only
+    msg_dict["title"] = data.title[:50] if data.title else ""  # Short display label only
     msg_dict.pop("content", None)  # Remove plaintext content — zero-knowledge compliant
 
     # Handle video data - encrypt and store in cloud
@@ -373,9 +355,7 @@ async def upload_message_video(
 
     # Read video bytes
     video_bytes = await video.read()
-    logger.info(
-        f"Video upload for message {message_id}: {len(video_bytes)} bytes, type={video.content_type}"
-    )
+    logger.info(f"Video upload for message {message_id}: {len(video_bytes)} bytes, type={video.content_type}")
 
     # Encrypt and store
     encrypted_video = encrypt_aes256(video_bytes, estate_salt)
@@ -393,9 +373,7 @@ async def upload_message_video(
 
 
 @router.put("/messages/{message_id}")
-async def update_message(
-    message_id: str, data: MessageUpdate, current_user: dict = Depends(get_current_user)
-):
+async def update_message(message_id: str, data: MessageUpdate, current_user: dict = Depends(get_current_user)):
     """Edit an existing message (benefactor only, before transition)"""
     require_benefactor_role(current_user, "edit messages")
 
@@ -462,11 +440,7 @@ async def update_message(
         await db.messages.update_one({"id": message_id}, {"$set": update_fields})
 
         # Log edit to edit_history for timeline tracking
-        changed_fields = [
-            k
-            for k in update_fields
-            if k not in ("updated_at", "encrypted_title", "encrypted_content")
-        ]
+        changed_fields = [k for k in update_fields if k not in ("updated_at", "encrypted_title", "encrypted_content")]
         await db.edit_history.insert_one(
             {
                 "id": str(uuid.uuid4()),
@@ -487,9 +461,7 @@ async def update_message(
 
 
 @router.delete("/messages/{message_id}")
-async def delete_message(
-    message_id: str, current_user: dict = Depends(get_current_user)
-):
+async def delete_message(message_id: str, current_user: dict = Depends(get_current_user)):
     """Delete a milestone message."""
     require_benefactor_role(current_user, "delete messages")
 

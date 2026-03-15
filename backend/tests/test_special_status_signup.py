@@ -11,9 +11,7 @@ import time
 import pytest
 import requests
 
-BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com"
-).rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com").rstrip("/")
 
 
 class TestSpecialStatusRegistration:
@@ -33,9 +31,7 @@ class TestSpecialStatusRegistration:
         }
 
         response = requests.post(f"{BASE_URL}/api/auth/register", json=payload)
-        print(
-            f"Military registration response: {response.status_code} - {response.text}"
-        )
+        print(f"Military registration response: {response.status_code} - {response.text}")
 
         assert response.status_code == 200
         data = response.json()
@@ -154,9 +150,7 @@ class TestBeneficiarySignup:
             "role": "benefactor",
         }
 
-        benefactor_response = requests.post(
-            f"{BASE_URL}/api/auth/register", json=benefactor_payload
-        )
+        benefactor_response = requests.post(f"{BASE_URL}/api/auth/register", json=benefactor_payload)
         print(f"Benefactor created: {benefactor_response.status_code}")
         assert benefactor_response.status_code == 200
 
@@ -171,9 +165,7 @@ class TestBeneficiarySignup:
             "date_of_birth": "1995-05-15",
         }
 
-        response = requests.post(
-            f"{BASE_URL}/api/auth/register", json=beneficiary_payload
-        )
+        response = requests.post(f"{BASE_URL}/api/auth/register", json=beneficiary_payload)
         print(f"Beneficiary registration: {response.status_code} - {response.text}")
 
         assert response.status_code == 200
@@ -309,7 +301,7 @@ class TestCodeReview:
             [
                 "grep",
                 "-n",
-                "is_minor\|special_status\|eligible_tiers",
+                r"is_minor\|special_status\|eligible_tiers",
                 "/app/backend/routes/subscriptions.py",
             ],
             capture_output=True,
@@ -328,7 +320,7 @@ class TestCodeReview:
             [
                 "grep",
                 "-n",
-                "autoTier\|isPlanLocked\|isMinorBeneficiary",
+                r"autoTier\|isPlanLocked\|isMinorBeneficiary",
                 "/app/frontend/src/components/settings/SubscriptionManagement.js",
             ],
             capture_output=True,

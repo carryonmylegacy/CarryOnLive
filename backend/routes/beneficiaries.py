@@ -29,32 +29,20 @@ router = APIRouter()
 
 
 @router.get("/beneficiaries/{estate_id}")
-async def get_beneficiaries(
-    estate_id: str, current_user: dict = Depends(get_current_user)
-):
+async def get_beneficiaries(estate_id: str, current_user: dict = Depends(get_current_user)):
     """List all beneficiaries for an estate, sorted by sort_order."""
-    beneficiaries = await db.beneficiaries.find(
-        {"estate_id": estate_id, "deleted_at": None}, {"_id": 0}
-    ).to_list(100)
+    beneficiaries = await db.beneficiaries.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(100)
     # Normalize dob → date_of_birth for legacy records
     for b in beneficiaries:
         if "dob" in b and "date_of_birth" not in b:
             b["date_of_birth"] = b.pop("dob")
         # Initialize succession_order for legacy records that predate the feature
         if "succession_order" not in b:
-            b["succession_order"] = (
-                b.get("sort_order", 0)
-                if b.get("is_primary")
-                else b.get("sort_order", 0)
-            )
+            b["succession_order"] = b.get("sort_order", 0) if b.get("is_primary") else b.get("sort_order", 0)
 
     # Enrich photo_url: if the beneficiary has a linked user account with a profile
     # photo but no photo on the beneficiary record, use the user's photo as fallback
-    user_ids = [
-        b["user_id"]
-        for b in beneficiaries
-        if b.get("user_id") and not b.get("photo_url")
-    ]
+    user_ids = [b["user_id"] for b in beneficiaries if b.get("user_id") and not b.get("photo_url")]
     if user_ids:
         users_with_photos = {}
         async for u in db.users.find(
@@ -70,9 +58,7 @@ async def get_beneficiaries(
                 b["photo_url"] = users_with_photos[b["user_id"]]
 
     # Sort by sort_order (fallback to created_at for records without sort_order)
-    beneficiaries.sort(
-        key=lambda b: (b.get("sort_order", 999), b.get("created_at", ""))
-    )
+    beneficiaries.sort(key=lambda b: (b.get("sort_order", 999), b.get("created_at", "")))
     # Resolve photo URLs for API response
     for b in beneficiaries:
         if b.get("photo_url"):
@@ -81,9 +67,7 @@ async def get_beneficiaries(
 
 
 @router.post("/beneficiaries")
-async def create_beneficiary(
-    data: BeneficiaryCreate, current_user: dict = Depends(get_current_user)
-):
+async def create_beneficiary(data: BeneficiaryCreate, current_user: dict = Depends(get_current_user)):
     """Add a new beneficiary to the estate."""
     require_benefactor_role(current_user, "add beneficiaries")
 
@@ -129,9 +113,7 @@ async def create_beneficiary(
 
     # If a user with this email already exists, pre-link user_id
     # but do NOT auto-accept the invitation — let the benefactor manage it normally
-    existing_user = await db.users.find_one(
-        {"email": data.email.lower().strip()}, {"_id": 0}
-    )
+    existing_user = await db.users.find_one({"email": data.email.lower().strip()}, {"_id": 0})
     if existing_user:
         await db.beneficiaries.update_one(
             {"id": beneficiary.id},
@@ -156,9 +138,7 @@ async def create_beneficiary(
 
 
 @router.delete("/beneficiaries/{beneficiary_id}")
-async def delete_beneficiary(
-    beneficiary_id: str, current_user: dict = Depends(get_current_user)
-):
+async def delete_beneficiary(beneficiary_id: str, current_user: dict = Depends(get_current_user)):
     """Remove a beneficiary from the estate."""
     require_benefactor_role(current_user, "remove beneficiaries")
 
@@ -173,17 +153,13 @@ async def delete_beneficiary(
 
 
 @router.put("/beneficiaries/{beneficiary_id}/set-primary")
-async def set_primary_beneficiary(
-    beneficiary_id: str, current_user: dict = Depends(get_current_user)
-):
+async def set_primary_beneficiary(beneficiary_id: str, current_user: dict = Depends(get_current_user)):
     """Designate a beneficiary as the primary beneficiary (trustee) of the estate.
     Also sets them as succession_order=0 in the succession hierarchy."""
     require_benefactor_role(current_user, "designate a primary beneficiary")
 
     # Find the beneficiary to get their estate_id
-    ben = await db.beneficiaries.find_one(
-        {"id": beneficiary_id}, {"_id": 0, "id": 1, "estate_id": 1, "name": 1}
-    )
+    ben = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0, "id": 1, "estate_id": 1, "name": 1})
     if not ben:
         raise HTTPException(status_code=404, detail="Beneficiary not found")
 
@@ -214,13 +190,9 @@ async def set_primary_beneficiary(
 
 
 @router.get("/beneficiaries/{estate_id}/primary")
-async def get_primary_beneficiary(
-    estate_id: str, current_user: dict = Depends(get_current_user)
-):
+async def get_primary_beneficiary(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Get the primary beneficiary for an estate."""
-    primary = await db.beneficiaries.find_one(
-        {"estate_id": estate_id, "is_primary": True}, {"_id": 0}
-    )
+    primary = await db.beneficiaries.find_one({"estate_id": estate_id, "is_primary": True}, {"_id": 0})
     return {"primary": primary}
 
 
@@ -233,14 +205,10 @@ class BeneficiaryAccessRequest(BaseModel):
 
 
 @router.post("/beneficiaries/request-access")
-async def request_estate_access(
-    data: BeneficiaryAccessRequest, current_user: dict = Depends(get_current_user)
-):
+async def request_estate_access(data: BeneficiaryAccessRequest, current_user: dict = Depends(get_current_user)):
     """Request access to a transitioned estate. Requires primary beneficiary approval."""
     if current_user["role"] != "beneficiary":
-        raise HTTPException(
-            status_code=403, detail="Only beneficiaries can request access"
-        )
+        raise HTTPException(status_code=403, detail="Only beneficiaries can request access")
 
     estate = await db.estates.find_one({"id": data.estate_id}, {"_id": 0})
     if not estate:
@@ -275,9 +243,7 @@ async def request_estate_access(
         {"_id": 0},
     )
     if existing:
-        raise HTTPException(
-            status_code=400, detail="You already have a pending access request"
-        )
+        raise HTTPException(status_code=400, detail="You already have a pending access request")
 
     request_doc = {
         "id": str(uuid.uuid4()),
@@ -310,9 +276,7 @@ async def request_estate_access(
 
 
 @router.get("/beneficiaries/access-requests/{estate_id}")
-async def get_access_requests(
-    estate_id: str, current_user: dict = Depends(get_current_user)
-):
+async def get_access_requests(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Get pending access requests for an estate. Only the approver can view these."""
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
     if not estate:
@@ -331,9 +295,7 @@ async def get_access_requests(
     if not is_owner and not is_primary and current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Not authorized to view requests")
 
-    requests = await db.access_requests.find(
-        {"estate_id": estate_id, "status": "pending"}, {"_id": 0}
-    ).to_list(100)
+    requests = await db.access_requests.find({"estate_id": estate_id, "status": "pending"}, {"_id": 0}).to_list(100)
     return requests
 
 
@@ -349,9 +311,7 @@ async def handle_access_request(
 ):
     """Approve or deny a beneficiary access request."""
     if data.action not in ("approve", "deny"):
-        raise HTTPException(
-            status_code=400, detail="Action must be 'approve' or 'deny'"
-        )
+        raise HTTPException(status_code=400, detail="Action must be 'approve' or 'deny'")
 
     req = await db.access_requests.find_one({"id": request_id}, {"_id": 0})
     if not req:
@@ -393,9 +353,7 @@ async def handle_access_request(
             if not existing_ben:
                 name = requester.get("name", requester.get("email", ""))
                 first_name = requester.get("first_name", name.split(" ")[0])
-                last_name = requester.get(
-                    "last_name", name.split(" ")[-1] if " " in name else ""
-                )
+                last_name = requester.get("last_name", name.split(" ")[-1] if " " in name else "")
                 from models import Beneficiary
 
                 new_ben = Beneficiary(
@@ -526,9 +484,7 @@ async def update_beneficiary(
             },
         )
         # If a user with the new email already exists, pre-link
-        existing_new_user = await db.users.find_one(
-            {"email": new_email}, {"_id": 0, "id": 1}
-        )
+        existing_new_user = await db.users.find_one({"email": new_email}, {"_id": 0, "id": 1})
         if existing_new_user:
             await db.beneficiaries.update_one(
                 {"id": beneficiary_id},
@@ -536,11 +492,7 @@ async def update_beneficiary(
             )
 
     # Detect which fields actually changed and log to edit_history
-    changed_fields = [
-        k
-        for k in update_data
-        if k not in ("initials",) and update_data[k] != beneficiary.get(k)
-    ]
+    changed_fields = [k for k in update_data if k not in ("initials",) and update_data[k] != beneficiary.get(k)]
     if changed_fields:
         await db.edit_history.insert_one(
             {
@@ -598,9 +550,7 @@ async def upload_beneficiary_photo(
             await delete_photo(old_key)
 
         # Upload new photo (resized to 200x200 for beneficiary avatars)
-        photo_url = await upload_photo(
-            content, "beneficiaries", beneficiary_id, max_size=200
-        )
+        photo_url = await upload_photo(content, "beneficiaries", beneficiary_id, max_size=200)
 
         await db.beneficiaries.update_one(
             {"id": beneficiary_id},
@@ -623,9 +573,7 @@ async def upload_beneficiary_photo(
 
 
 @router.delete("/beneficiaries/{beneficiary_id}/photo")
-async def delete_beneficiary_photo(
-    beneficiary_id: str, current_user: dict = Depends(get_current_user)
-):
+async def delete_beneficiary_photo(beneficiary_id: str, current_user: dict = Depends(get_current_user)):
     """Remove the profile photo for a beneficiary."""
     from services.photo_storage import delete_photo
 
@@ -633,9 +581,7 @@ async def delete_beneficiary_photo(
         raise HTTPException(status_code=403, detail="Not authorized")
 
     # Delete from storage if it's a stored key
-    ben = await db.beneficiaries.find_one(
-        {"id": beneficiary_id}, {"_id": 0, "id": 1, "photo_url": 1}
-    )
+    ben = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0, "id": 1, "photo_url": 1})
     if ben:
         old_key = ben.get("photo_url", "")
         if old_key and not old_key.startswith("data:"):
@@ -654,9 +600,7 @@ async def delete_beneficiary_photo(
 
 
 @router.post("/beneficiaries/{beneficiary_id}/invite")
-async def send_beneficiary_invitation(
-    beneficiary_id: str, current_user: dict = Depends(get_current_user)
-):
+async def send_beneficiary_invitation(beneficiary_id: str, current_user: dict = Depends(get_current_user)):
     """Send invitation email to a beneficiary"""
     require_benefactor_role(current_user, "send invitations")
 
@@ -665,9 +609,7 @@ async def send_beneficiary_invitation(
         raise HTTPException(status_code=404, detail="Beneficiary not found")
 
     if beneficiary.get("invitation_status") == "accepted":
-        raise HTTPException(
-            status_code=400, detail="Beneficiary has already accepted the invitation"
-        )
+        raise HTTPException(status_code=400, detail="Beneficiary has already accepted the invitation")
 
     # Generate new token if needed
     invitation_token = beneficiary.get("invitation_token") or str(uuid.uuid4())
@@ -753,9 +695,7 @@ async def send_beneficiary_invitation(
             )
             logger.info(f"Invitation email sent to {beneficiary['email']}")
         else:
-            logger.info(
-                f"[DEV MODE] Invitation would be sent to {beneficiary['email']} with token {invitation_token}"
-            )
+            logger.info(f"[DEV MODE] Invitation would be sent to {beneficiary['email']} with token {invitation_token}")
     except Exception as e:
         logger.error(f"Failed to send invitation email: {e}")
         # Don't fail the request, still update the status
@@ -788,16 +728,12 @@ async def send_beneficiary_invitation(
 @router.get("/invitations/{token}")
 async def get_invitation_details(token: str):
     """Get invitation details for a beneficiary to accept"""
-    beneficiary = await db.beneficiaries.find_one(
-        {"invitation_token": token}, {"_id": 0}
-    )
+    beneficiary = await db.beneficiaries.find_one({"invitation_token": token}, {"_id": 0})
     if not beneficiary:
         raise HTTPException(status_code=404, detail="Invalid or expired invitation")
 
     if beneficiary.get("invitation_status") == "accepted":
-        raise HTTPException(
-            status_code=400, detail="This invitation has already been accepted"
-        )
+        raise HTTPException(status_code=400, detail="This invitation has already been accepted")
 
     # Get estate info (limited)
     estate = await db.estates.find_one({"id": beneficiary["estate_id"]}, {"_id": 0})
@@ -805,9 +741,7 @@ async def get_invitation_details(token: str):
     # Get benefactor info (limited)
     benefactor = None
     if estate:
-        benefactor = await db.users.find_one(
-            {"id": estate.get("owner_id")}, {"_id": 0, "password": 0}
-        )
+        benefactor = await db.users.find_one({"id": estate.get("owner_id")}, {"_id": 0, "password": 0})
 
     return {
         "beneficiary": {
@@ -829,21 +763,15 @@ class AcceptInvitationRequest(BaseModel):
 @router.post("/invitations/accept")
 async def accept_invitation(data: AcceptInvitationRequest):
     """Accept an invitation and create a beneficiary user account"""
-    beneficiary = await db.beneficiaries.find_one(
-        {"invitation_token": data.token}, {"_id": 0}
-    )
+    beneficiary = await db.beneficiaries.find_one({"invitation_token": data.token}, {"_id": 0})
     if not beneficiary:
         raise HTTPException(status_code=404, detail="Invalid or expired invitation")
 
     if beneficiary.get("invitation_status") == "accepted":
-        raise HTTPException(
-            status_code=400, detail="This invitation has already been accepted"
-        )
+        raise HTTPException(status_code=400, detail="This invitation has already been accepted")
 
     # Check if email already has an account
-    existing_user = await db.users.find_one(
-        {"email": beneficiary["email"].lower().strip()}, {"_id": 0}
-    )
+    existing_user = await db.users.find_one({"email": beneficiary["email"].lower().strip()}, {"_id": 0})
     if existing_user:
         # Link existing account to this beneficiary record
         await db.beneficiaries.update_one(
@@ -859,17 +787,13 @@ async def accept_invitation(data: AcceptInvitationRequest):
         copy_fields = {}
         if beneficiary.get("date_of_birth") and not existing_user.get("date_of_birth"):
             copy_fields["date_of_birth"] = beneficiary["date_of_birth"]
-        if beneficiary.get("address_street") and not existing_user.get(
-            "address_street"
-        ):
+        if beneficiary.get("address_street") and not existing_user.get("address_street"):
             copy_fields["address_street"] = beneficiary.get("address_street", "")
             copy_fields["address_city"] = beneficiary.get("address_city", "")
             copy_fields["address_state"] = beneficiary.get("address_state", "")
             copy_fields["address_zip"] = beneficiary.get("address_zip", "")
         if copy_fields:
-            await db.users.update_one(
-                {"id": existing_user["id"]}, {"$set": copy_fields}
-            )
+            await db.users.update_one({"id": existing_user["id"]}, {"$set": copy_fields})
 
         # Sync beneficiary photo to user profile if user has no photo
         if beneficiary.get("photo_url") and not existing_user.get("photo_url"):
@@ -886,9 +810,7 @@ async def accept_invitation(data: AcceptInvitationRequest):
             )
 
         # Generate token for auto-login
-        token = create_token(
-            existing_user["id"], existing_user["email"], existing_user["role"]
-        )
+        token = create_token(existing_user["id"], existing_user["email"], existing_user["role"])
         return {
             "message": "Account linked successfully",
             "access_token": token,
@@ -943,9 +865,7 @@ async def accept_invitation(data: AcceptInvitationRequest):
     )
 
     # Add to estate's beneficiary list
-    await db.estates.update_one(
-        {"id": beneficiary["estate_id"]}, {"$addToSet": {"beneficiaries": user_id}}
-    )
+    await db.estates.update_one({"id": beneficiary["estate_id"]}, {"$addToSet": {"beneficiaries": user_id}})
 
     # Notify the benefactor that the invitation was accepted
     estate = await db.estates.find_one(
@@ -1056,9 +976,7 @@ async def reorder_beneficiaries(
 
 
 @router.put("/beneficiaries/{beneficiary_id}/toggle-succession")
-async def toggle_succession(
-    beneficiary_id: str, current_user: dict = Depends(get_current_user)
-):
+async def toggle_succession(beneficiary_id: str, current_user: dict = Depends(get_current_user)):
     """Toggle a beneficiary in/out of the succession hierarchy."""
     require_benefactor_role(current_user, "modify succession hierarchy")
 
@@ -1113,9 +1031,7 @@ async def toggle_succession(
             },
             {"_id": 0, "id": 1, "succession_order": 1},
         ).to_list(100)
-        next_order = (
-            max(b["succession_order"] for b in max_order) + 1 if max_order else 0
-        )
+        next_order = max(b["succession_order"] for b in max_order) + 1 if max_order else 0
         is_primary = next_order == 0
         await db.beneficiaries.update_one(
             {"id": beneficiary_id},
@@ -1125,9 +1041,7 @@ async def toggle_succession(
 
 
 @router.get("/beneficiaries/{estate_id}/succession")
-async def get_succession_order(
-    estate_id: str, current_user: dict = Depends(get_current_user)
-):
+async def get_succession_order(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Get the succession hierarchy for an estate, ordered by succession_order."""
     beneficiaries = await db.beneficiaries.find(
         {"estate_id": estate_id, "deleted_at": None},

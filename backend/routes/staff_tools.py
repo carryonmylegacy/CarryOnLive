@@ -82,11 +82,7 @@ async def list_announcements(
 ):
     require_staff(current_user)
     query = {"is_active": True} if active_only else {}
-    items = (
-        await db.announcements.find(query, {"_id": 0})
-        .sort("created_at", -1)
-        .to_list(100)
-    )
+    items = await db.announcements.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
     return items
 
 
@@ -146,15 +142,11 @@ async def get_system_health(current_user: dict = Depends(get_current_user)):
     active_sessions = await db.users.count_documents({"last_login": {"$gte": day_ago}})
 
     # Recent errors (last 24h)
-    recent_errors = await db.client_errors.count_documents(
-        {"created_at": {"$gte": day_ago}}
-    )
+    recent_errors = await db.client_errors.count_documents({"created_at": {"$gte": day_ago}})
 
     # Audit events today
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
-    audit_today = await db.audit_trail.count_documents(
-        {"timestamp": {"$gte": today_start}}
-    )
+    audit_today = await db.audit_trail.count_documents({"timestamp": {"$gte": today_start}})
 
     # Support queue
     open_tickets = await db.support_conversations.count_documents(
@@ -372,9 +364,7 @@ async def list_escalations(
     # Operators see their own; founders see all
     if current_user.get("role") == "operator":
         query["created_by"] = current_user["id"]
-    items = (
-        await db.escalations.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
-    )
+    items = await db.escalations.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
     return items
 
 
@@ -404,9 +394,7 @@ async def resolve_escalation(
         },
     )
     if result.modified_count == 0:
-        raise HTTPException(
-            status_code=404, detail="Escalation not found or already resolved"
-        )
+        raise HTTPException(status_code=404, detail="Escalation not found or already resolved")
     await log_audit_event(
         actor_id=current_user["id"],
         actor_email=current_user["email"],
@@ -470,9 +458,7 @@ async def list_shift_notes(
     current_user: dict = Depends(get_current_user),
 ):
     require_staff(current_user)
-    items = (
-        await db.shift_notes.find({}, {"_id": 0}).sort("created_at", -1).to_list(limit)
-    )
+    items = await db.shift_notes.find({}, {"_id": 0}).sort("created_at", -1).to_list(limit)
     return items
 
 
@@ -553,11 +539,7 @@ async def list_kb_articles(
     query = {"deleted_at": None}
     if category:
         query["category"] = category
-    items = (
-        await db.knowledge_base.find(query, {"_id": 0})
-        .sort("updated_at", -1)
-        .to_list(100)
-    )
+    items = await db.knowledge_base.find(query, {"_id": 0}).sort("updated_at", -1).to_list(100)
     return items
 
 

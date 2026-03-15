@@ -48,9 +48,7 @@ class TestAdminEndpoints:
             f"{BASE_URL}/api/auth/verify-otp",
             json={"email": "admin@carryon.com", "otp": otp},
         )
-        assert verify_resp.status_code == 200, (
-            f"OTP verification failed: {verify_resp.text}"
-        )
+        assert verify_resp.status_code == 200, f"OTP verification failed: {verify_resp.text}"
 
         data = verify_resp.json()
         token = data.get("access_token")
@@ -82,9 +80,7 @@ class TestAdminEndpoints:
         assert "estates" in stats, "Stats should have estates field"
         assert "documents" in stats, "Stats should have documents field"
         assert "messages" in stats, "Stats should have messages field"
-        assert "pending_certificates" in stats, (
-            "Stats should have pending_certificates field"
-        )
+        assert "pending_certificates" in stats, "Stats should have pending_certificates field"
 
         # Verify users breakdown
         user_stats = stats["users"]
@@ -93,9 +89,7 @@ class TestAdminEndpoints:
         assert "beneficiaries" in user_stats, "User stats should have beneficiaries"
         assert "admins" in user_stats, "User stats should have admins"
 
-        print(
-            f"✓ Admin stats: {user_stats['total']} total users, {stats['estates']['total']} estates"
-        )
+        print(f"✓ Admin stats: {user_stats['total']} total users, {stats['estates']['total']} estates")
 
     def test_admin_users_unauthorized(self):
         """GET /api/admin/users should require admin authentication"""
@@ -121,9 +115,7 @@ class TestBeneficiaryAuth:
             f"{BASE_URL}/api/auth/login",
             json={"email": "penny@mitchell.com", "password": "password123"},
         )
-        assert login_resp.status_code == 200, (
-            f"Beneficiary login failed: {login_resp.text}"
-        )
+        assert login_resp.status_code == 200, f"Beneficiary login failed: {login_resp.text}"
 
         # Get OTP from backend logs
         import subprocess
@@ -143,9 +135,7 @@ class TestBeneficiaryAuth:
             f"{BASE_URL}/api/auth/verify-otp",
             json={"email": "penny@mitchell.com", "otp": otp},
         )
-        assert verify_resp.status_code == 200, (
-            f"OTP verification failed: {verify_resp.text}"
-        )
+        assert verify_resp.status_code == 200, f"OTP verification failed: {verify_resp.text}"
 
         data = verify_resp.json()
         token = data.get("access_token")
@@ -157,9 +147,7 @@ class TestBeneficiaryAuth:
     def test_beneficiary_login_returns_beneficiary_role(self, beneficiary_session):
         """Verify beneficiary login returns correct role"""
         user = beneficiary_session.user
-        assert user["role"] == "beneficiary", (
-            f"Expected role 'beneficiary', got '{user['role']}'"
-        )
+        assert user["role"] == "beneficiary", f"Expected role 'beneficiary', got '{user['role']}'"
         print(f"✓ Beneficiary login successful: {user['name']} ({user['email']})")
 
     def test_beneficiary_can_access_estates(self, beneficiary_session):
@@ -195,9 +183,7 @@ class TestBenefactorAuth:
             f"{BASE_URL}/api/auth/login",
             json={"email": "pete@mitchell.com", "password": "password123"},
         )
-        assert login_resp.status_code == 200, (
-            f"Benefactor login failed: {login_resp.text}"
-        )
+        assert login_resp.status_code == 200, f"Benefactor login failed: {login_resp.text}"
 
         # Get OTP from backend logs
         import subprocess
@@ -217,9 +203,7 @@ class TestBenefactorAuth:
             f"{BASE_URL}/api/auth/verify-otp",
             json={"email": "pete@mitchell.com", "otp": otp},
         )
-        assert verify_resp.status_code == 200, (
-            f"OTP verification failed: {verify_resp.text}"
-        )
+        assert verify_resp.status_code == 200, f"OTP verification failed: {verify_resp.text}"
 
         data = verify_resp.json()
         token = data.get("access_token")
@@ -231,9 +215,7 @@ class TestBenefactorAuth:
     def test_benefactor_login_returns_benefactor_role(self, benefactor_session):
         """Verify benefactor login returns correct role"""
         user = benefactor_session.user
-        assert user["role"] == "benefactor", (
-            f"Expected role 'benefactor', got '{user['role']}'"
-        )
+        assert user["role"] == "benefactor", f"Expected role 'benefactor', got '{user['role']}'"
         print(f"✓ Benefactor login successful: {user['name']} ({user['email']})")
 
     def test_benefactor_cannot_access_admin_endpoints(self, benefactor_session):
@@ -282,9 +264,7 @@ class TestLoginFlow:
             f"{BASE_URL}/api/auth/login",
             json={"email": "invalid@test.com", "password": "wrongpassword"},
         )
-        assert response.status_code == 401, (
-            f"Expected 401 for invalid credentials, got {response.status_code}"
-        )
+        assert response.status_code == 401, f"Expected 401 for invalid credentials, got {response.status_code}"
         print("✓ Invalid credentials correctly rejected")
 
 

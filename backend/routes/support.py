@@ -33,18 +33,14 @@ class SupportMessageResponse(BaseModel):
 
 
 @router.post("/support/messages")
-async def send_support_message(
-    data: SupportMessageCreate, current_user: dict = Depends(get_current_user)
-):
+async def send_support_message(data: SupportMessageCreate, current_user: dict = Depends(get_current_user)):
     """Send a message to/from customer support"""
     # For users, conversation_id is their user_id
     # For admins responding, they provide the conversation_id (user's id)
 
     if current_user["role"] in ("admin", "operator"):
         if not data.conversation_id:
-            raise HTTPException(
-                status_code=400, detail="Conversation ID required for admin responses"
-            )
+            raise HTTPException(status_code=400, detail="Conversation ID required for admin responses")
         conversation_id = data.conversation_id
     else:
         conversation_id = current_user["id"]
@@ -54,9 +50,7 @@ async def send_support_message(
         "conversation_id": conversation_id,
         "sender_id": current_user["id"],
         "sender_name": current_user.get("name", current_user.get("email", "User")),
-        "sender_role": "admin"
-        if current_user["role"] in ("admin", "operator")
-        else current_user["role"],
+        "sender_role": "admin" if current_user["role"] in ("admin", "operator") else current_user["role"],
         "content": data.content,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "read": False,
@@ -128,9 +122,7 @@ async def get_my_support_messages(current_user: dict = Depends(get_current_user)
 
 
 @router.get("/support/messages/{conversation_id}")
-async def get_conversation_messages(
-    conversation_id: str, current_user: dict = Depends(get_current_user)
-):
+async def get_conversation_messages(conversation_id: str, current_user: dict = Depends(get_current_user)):
     """Admin/Operator: Get messages for a specific conversation"""
     if current_user["role"] not in ("admin", "operator"):
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -155,9 +147,7 @@ async def get_conversation_messages(
 
 
 @router.get("/support/conversations")
-async def get_all_conversations(
-    include_deleted: bool = False, current_user: dict = Depends(get_current_user)
-):
+async def get_all_conversations(include_deleted: bool = False, current_user: dict = Depends(get_current_user)):
     """Admin: Get all support conversations with latest message.
     include_deleted=true shows soft-deleted conversations (founder only)."""
     if current_user["role"] not in ("admin", "operator"):
@@ -209,9 +199,7 @@ async def get_all_conversations(
     # Enrich with user info
     result = []
     for conv in conversations:
-        user = await db.users.find_one(
-            {"id": conv["_id"]}, {"_id": 0, "id": 1, "name": 1, "email": 1, "role": 1}
-        )
+        user = await db.users.find_one({"id": conv["_id"]}, {"_id": 0, "id": 1, "name": 1, "email": 1, "role": 1})
         result.append(
             {
                 "conversation_id": str(conv["_id"]),
@@ -237,9 +225,7 @@ async def get_unread_support_count(current_user: dict = Depends(get_current_user
     """Get count of unread support messages"""
     if current_user["role"] in ("admin", "operator"):
         # Staff sees unread from users
-        count = await db.support_messages.count_documents(
-            {"sender_role": {"$ne": "admin"}, "read": False}
-        )
+        count = await db.support_messages.count_documents({"sender_role": {"$ne": "admin"}, "read": False})
     else:
         # User sees unread from support
         count = await db.support_messages.count_documents(
@@ -253,9 +239,7 @@ async def get_unread_support_count(current_user: dict = Depends(get_current_user
 
 
 @router.delete("/admin/support/conversation/{conversation_id}")
-async def delete_support_conversation(
-    conversation_id: str, current_user: dict = Depends(get_current_user)
-):
+async def delete_support_conversation(conversation_id: str, current_user: dict = Depends(get_current_user)):
     """Soft-delete all messages in a support conversation — admin/operator."""
     if current_user["role"] not in ("admin", "operator"):
         raise HTTPException(status_code=403, detail="Admin or operator only")
@@ -275,14 +259,10 @@ async def delete_support_conversation(
 
 
 @router.post("/admin/support/conversation/{conversation_id}/restore")
-async def restore_support_conversation(
-    conversation_id: str, current_user: dict = Depends(get_current_user)
-):
+async def restore_support_conversation(conversation_id: str, current_user: dict = Depends(get_current_user)):
     """Restore a soft-deleted support conversation — founder (admin) only."""
     if current_user["role"] != "admin":
-        raise HTTPException(
-            status_code=403, detail="Only the Founder can restore deleted items"
-        )
+        raise HTTPException(status_code=403, detail="Only the Founder can restore deleted items")
     result = await db.support_messages.update_many(
         {"conversation_id": conversation_id, "soft_deleted": True},
         {

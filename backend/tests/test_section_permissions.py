@@ -70,22 +70,16 @@ class TestSectionPermissions:
     def test_get_section_permissions_authenticated_owner(self, auth_token, estate_id):
         """Test GET /api/estate/{id}/section-permissions for authenticated owner"""
         headers = {"Authorization": f"Bearer {auth_token}"}
-        response = requests.get(
-            f"{BASE_URL}/api/estate/{estate_id}/section-permissions", headers=headers
-        )
+        response = requests.get(f"{BASE_URL}/api/estate/{estate_id}/section-permissions", headers=headers)
         assert response.status_code == 200
         data = response.json()
         # Should return a list (empty is valid for estates with no beneficiaries)
         assert isinstance(data, list)
-        print(
-            f"PASS: GET section-permissions returns {len(data)} beneficiary permissions"
-        )
+        print(f"PASS: GET section-permissions returns {len(data)} beneficiary permissions")
 
     def test_get_section_permissions_unauthenticated(self, estate_id):
         """Test GET section-permissions without auth token fails"""
-        response = requests.get(
-            f"{BASE_URL}/api/estate/{estate_id}/section-permissions"
-        )
+        response = requests.get(f"{BASE_URL}/api/estate/{estate_id}/section-permissions")
         assert response.status_code in [401, 403]
         print("PASS: GET section-permissions requires authentication")
 
@@ -93,9 +87,7 @@ class TestSectionPermissions:
         """Test PUT section-permissions accepts valid structure"""
         headers = {"Authorization": f"Bearer {auth_token}"}
         # First get existing beneficiaries
-        response = requests.get(
-            f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=headers
-        )
+        response = requests.get(f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=headers)
         if response.status_code != 200 or not response.json():
             # No beneficiaries - test that PUT with dummy ID returns 200 (upsert behavior)
             put_response = requests.put(
@@ -177,9 +169,7 @@ class TestMyPermissionsEndpoint:
     def test_my_permissions_non_beneficiary(self, auth_token, estate_id):
         """Test that non-beneficiary (benefactor) gets 404 from my-permissions"""
         headers = {"Authorization": f"Bearer {auth_token}"}
-        response = requests.get(
-            f"{BASE_URL}/api/beneficiary/my-permissions/{estate_id}", headers=headers
-        )
+        response = requests.get(f"{BASE_URL}/api/beneficiary/my-permissions/{estate_id}", headers=headers)
         # Benefactor is NOT a beneficiary, so should return 404
         assert response.status_code == 404
         data = response.json()
@@ -188,9 +178,7 @@ class TestMyPermissionsEndpoint:
 
     def test_my_permissions_unauthenticated(self, estate_id):
         """Test my-permissions requires authentication"""
-        response = requests.get(
-            f"{BASE_URL}/api/beneficiary/my-permissions/{estate_id}"
-        )
+        response = requests.get(f"{BASE_URL}/api/beneficiary/my-permissions/{estate_id}")
         assert response.status_code in [401, 403]
         print("PASS: my-permissions requires authentication")
 
@@ -223,10 +211,7 @@ class TestTransitionApprovalLocks:
         assert "account_locked" in content
         assert "locked_at" in content
         # Check that it updates the benefactor's user record
-        assert (
-            'estate_doc.get("owner_id")' in content
-            or 'estate_doc["owner_id"]' in content
-        )
+        assert 'estate_doc.get("owner_id")' in content or 'estate_doc["owner_id"]' in content
         print("PASS: Transition approval code includes account lock logic")
 
 
@@ -256,16 +241,12 @@ class TestTransitionStatus:
     def test_transition_status_endpoint(self, auth_token, estate_id):
         """Test GET /api/transition/status/{estate_id}"""
         headers = {"Authorization": f"Bearer {auth_token}"}
-        response = requests.get(
-            f"{BASE_URL}/api/transition/status/{estate_id}", headers=headers
-        )
+        response = requests.get(f"{BASE_URL}/api/transition/status/{estate_id}", headers=headers)
         assert response.status_code == 200
         data = response.json()
         assert "estate_status" in data
         # For pre-transition estate, certificate should be null
-        print(
-            f"PASS: Transition status returns estate_status='{data['estate_status']}'"
-        )
+        print(f"PASS: Transition status returns estate_status='{data['estate_status']}'")
 
 
 if __name__ == "__main__":

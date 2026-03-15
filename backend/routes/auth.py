@@ -85,9 +85,7 @@ class EmailCheckRequest(BaseModel):
 @router.post("/auth/check-email")
 async def check_email_exists(data: EmailCheckRequest):
     """Check if an email is already registered. Used during signup to prevent duplicates."""
-    user = await db.users.find_one(
-        {"email": data.email.lower().strip()}, {"_id": 0, "id": 1}
-    )
+    user = await db.users.find_one({"email": data.email.lower().strip()}, {"_id": 0, "id": 1})
     return {"exists": user is not None}
 
 
@@ -95,23 +93,17 @@ async def check_email_exists(data: EmailCheckRequest):
 async def check_benefactor_email(data: EmailCheckRequest):
     """Check if an email belongs to a user who owns an active estate."""
     email = data.email.lower().strip()
-    user = await db.users.find_one(
-        {"email": email}, {"_id": 0, "id": 1, "role": 1, "is_also_benefactor": 1}
-    )
+    user = await db.users.find_one({"email": email}, {"_id": 0, "id": 1, "role": 1, "is_also_benefactor": 1})
     if not user:
         return {
             "valid": False,
             "message": "No benefactor estates are associated with that email address.",
         }
     # User must either be a benefactor or have is_also_benefactor flag
-    is_benefactor = user.get("role") == "benefactor" or user.get(
-        "is_also_benefactor", False
-    )
+    is_benefactor = user.get("role") == "benefactor" or user.get("is_also_benefactor", False)
     if not is_benefactor:
         # Also check if they own any estate directly
-        estate = await db.estates.find_one(
-            {"owner_id": user["id"]}, {"_id": 0, "id": 1}
-        )
+        estate = await db.estates.find_one({"owner_id": user["id"]}, {"_id": 0, "id": 1})
         if not estate:
             return {
                 "valid": False,
@@ -144,19 +136,15 @@ async def login(data: UserLogin, request: Request):
         # Find the oldest failure in this window to calculate remaining lockout
         oldest_failure = await db.failed_logins.find_one(
             {"email": data.email, "timestamp": {"$gte": lockout_window}},
-            {"_id": 0, "timestamp": 1},
+            {"_id": 0, "id": 1, "timestamp": 1},
             sort=[("timestamp", 1)],
         )
         retry_after = 180  # 3 minutes default
         if oldest_failure and oldest_failure.get("timestamp"):
             try:
-                oldest_ts = datetime.fromisoformat(
-                    oldest_failure["timestamp"].replace("Z", "+00:00")
-                )
+                oldest_ts = datetime.fromisoformat(oldest_failure["timestamp"].replace("Z", "+00:00"))
                 unlock_at = oldest_ts + timedelta(minutes=3)
-                retry_after = max(
-                    1, int((unlock_at - datetime.now(timezone.utc)).total_seconds())
-                )
+                retry_after = max(1, int((unlock_at - datetime.now(timezone.utc)).total_seconds()))
             except (ValueError, TypeError):
                 pass
         raise HTTPException(
@@ -194,9 +182,7 @@ async def login(data: UserLogin, request: Request):
 
     # Check for transitioned benefactor accounts (sealed)
     if user.get("role") == "benefactor":
-        transitioned_estate = next(
-            (e for e in _estate_list if e.get("status") == "transitioned"), None
-        )
+        transitioned_estate = next((e for e in _estate_list if e.get("status") == "transitioned"), None)
         if transitioned_estate:
             # Return sealed flag — frontend shows locked screen
             return {
@@ -231,17 +217,13 @@ async def login(data: UserLogin, request: Request):
         # Has contact_email — use it for OTP (override the login email for OTP sending)
 
     # Check if user has a valid daily OTP trust (skip OTP for today)
-    trust = await db.otp_trust.find_one(
-        {"user_id": user["id"], "ip_address": client_ip}, {"_id": 0}
-    )
+    trust = await db.otp_trust.find_one({"user_id": user["id"], "ip_address": client_ip}, {"_id": 0})
     if trust:
         try:
             expires = datetime.fromisoformat(trust["expires_at"])
             if datetime.now(timezone.utc) < expires:
                 # Trusted — skip OTP, return token directly
-                token = await create_session_token(
-                    user["id"], user["email"], user["role"]
-                )
+                token = await create_session_token(user["id"], user["email"], user["role"])
                 return TokenResponse(
                     access_token=token,
                     user=_user_response(user, owns_estate=owns_estate),
@@ -252,9 +234,7 @@ async def login(data: UserLogin, request: Request):
         await db.otp_trust.delete_one({"user_id": user["id"], "ip_address": client_ip})
 
     # Check platform-wide OTP toggle — if disabled, skip OTP entirely
-    platform_settings = await db.platform_settings.find_one(
-        {"_id": "global"}, {"_id": 0}
-    )
+    platform_settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0})
     if platform_settings and platform_settings.get("otp_disabled"):
         token = await create_session_token(user["id"], user["email"], user["role"])
         await db.users.update_one(
@@ -269,11 +249,7 @@ async def login(data: UserLogin, request: Request):
     # Send OTP for verification
     otp_code = generate_otp()
     # For operators, use their contact_email for OTP delivery
-    otp_target_email = (
-        user.get("contact_email", data.email)
-        if user.get("role") == "operator"
-        else data.email
-    )
+    otp_target_email = user.get("contact_email", data.email) if user.get("role") == "operator" else data.email
     await db.otps.update_one(
         {"email": data.email},
         {
@@ -288,9 +264,7 @@ async def login(data: UserLogin, request: Request):
     # Send OTP via email
     email_sent = False
     try:
-        email_sent = await send_otp_email(
-            otp_target_email, otp_code, user["name"].split()[0]
-        )
+        email_sent = await send_otp_email(otp_target_email, otp_code, user["name"].split()[0])
     except Exception:
         logger.warning(f"OTP email send failed for {data.email} — OTP still stored")
 
@@ -315,15 +289,11 @@ async def register(data: UserCreate):
                 status_code=400,
                 detail="This email is already registered as a beneficiary. Please log in with your existing account — you can start your own estate plan from the beneficiary dashboard.",
             )
-        raise HTTPException(
-            status_code=400, detail="Email already registered. Please log in instead."
-        )
+        raise HTTPException(status_code=400, detail="Email already registered. Please log in instead.")
 
     # Validate password — minimum security for sensitive estate data
     if len(data.password) < 8:
-        raise HTTPException(
-            status_code=400, detail="Password must be at least 8 characters"
-        )
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
     has_upper = any(c.isupper() for c in data.password)
     has_lower = any(c.islower() for c in data.password)
     has_digit = any(c.isdigit() for c in data.password)
@@ -359,9 +329,7 @@ async def register(data: UserCreate):
         except (ValueError, TypeError):
             pass
     # Special status overrides age-based tier
-    if any(
-        s in special_statuses for s in ["military", "first_responder", "federal_agent"]
-    ):
+    if any(s in special_statuses for s in ["military", "first_responder", "federal_agent"]):
         eligible_tier = "military"
     elif "veteran" in special_statuses:
         eligible_tier = "veteran"
@@ -392,9 +360,7 @@ async def register(data: UserCreate):
         "address_zip": data.address_zip,
         "special_status": special_statuses,
         "eligible_tier": eligible_tier,
-        "role": data.role
-        if data.role in ["benefactor", "beneficiary"]
-        else "benefactor",
+        "role": data.role if data.role in ["benefactor", "beneficiary"] else "benefactor",
         "trial_ends_at": trial_ends_at,
         "subscription_status": "trialing",
         "created_at": now.isoformat(),
@@ -433,9 +399,7 @@ async def register(data: UserCreate):
             first = (ben.get("first_name") or "").strip()
             middle = (ben.get("middle_name") or "").strip()
             last = (ben.get("last_name") or data.last_name).strip()
-            initials = (
-                (first[0] if first else "?") + (last[0] if last else "?")
-            ).upper()
+            initials = ((first[0] if first else "?") + (last[0] if last else "?")).upper()
             full_name = " ".join(p for p in [first, middle, last] if p)
             beneficiaries_to_insert.append(
                 {
@@ -452,18 +416,10 @@ async def register(data: UserCreate):
                     "avatar_color": avatar_colors[i % len(avatar_colors)],
                     "invitation_status": "pending" if ben.get("email") else "draft",
                     "is_stub": not bool(first),
-                    "address_street": ben.get("address_street")
-                    if not ben.get("same_address")
-                    else data.address_street,
-                    "address_city": ben.get("address_city")
-                    if not ben.get("same_address")
-                    else data.address_city,
-                    "address_state": ben.get("address_state")
-                    if not ben.get("same_address")
-                    else data.address_state,
-                    "address_zip": ben.get("address_zip")
-                    if not ben.get("same_address")
-                    else data.address_zip,
+                    "address_street": ben.get("address_street") if not ben.get("same_address") else data.address_street,
+                    "address_city": ben.get("address_city") if not ben.get("same_address") else data.address_city,
+                    "address_state": ben.get("address_state") if not ben.get("same_address") else data.address_state,
+                    "address_zip": ben.get("address_zip") if not ben.get("same_address") else data.address_zip,
                     "created_at": now.isoformat(),
                 }
             )
@@ -596,9 +552,7 @@ async def register(data: UserCreate):
             {"email": data.benefactor_email, "role": "benefactor"}, {"_id": 0, "id": 1}
         )
         if benefactor:
-            estate = await db.estates.find_one(
-                {"owner_id": benefactor["id"]}, {"_id": 0, "id": 1}
-            )
+            estate = await db.estates.find_one({"owner_id": benefactor["id"]}, {"_id": 0, "id": 1})
             if estate:
                 # Add to estate's beneficiaries list
                 await db.estates.update_one(
@@ -626,26 +580,14 @@ async def register(data: UserCreate):
                     # Copy fields from beneficiary record to user if not already set
                     ben_fields_to_copy = {}
                     if existing_ben.get("date_of_birth") and not data.date_of_birth:
-                        ben_fields_to_copy["date_of_birth"] = existing_ben[
-                            "date_of_birth"
-                        ]
+                        ben_fields_to_copy["date_of_birth"] = existing_ben["date_of_birth"]
                     if existing_ben.get("address_street"):
-                        ben_fields_to_copy["address_street"] = existing_ben[
-                            "address_street"
-                        ]
-                        ben_fields_to_copy["address_city"] = existing_ben.get(
-                            "address_city", ""
-                        )
-                        ben_fields_to_copy["address_state"] = existing_ben.get(
-                            "address_state", ""
-                        )
-                        ben_fields_to_copy["address_zip"] = existing_ben.get(
-                            "address_zip", ""
-                        )
+                        ben_fields_to_copy["address_street"] = existing_ben["address_street"]
+                        ben_fields_to_copy["address_city"] = existing_ben.get("address_city", "")
+                        ben_fields_to_copy["address_state"] = existing_ben.get("address_state", "")
+                        ben_fields_to_copy["address_zip"] = existing_ben.get("address_zip", "")
                     if ben_fields_to_copy:
-                        await db.users.update_one(
-                            {"id": user_id}, {"$set": ben_fields_to_copy}
-                        )
+                        await db.users.update_one({"id": user_id}, {"$set": ben_fields_to_copy})
                 else:
                     await db.beneficiaries.insert_one(
                         {
@@ -657,9 +599,7 @@ async def register(data: UserCreate):
                             "name": full_name,
                             "email": data.email,
                             "relation": "",
-                            "initials": (
-                                data.first_name[0] + data.last_name[0]
-                            ).upper(),
+                            "initials": (data.first_name[0] + data.last_name[0]).upper(),
                             "avatar_color": "#60A5FA",
                             "invitation_status": "accepted",
                             "is_stub": False,
@@ -675,15 +615,10 @@ async def register(data: UserCreate):
     # --- Validate B2B code at signup if provided ---
     if data.b2b_code and "enterprise" in special_statuses:
         code_str = data.b2b_code.strip().upper()
-        code_doc = await db.b2b_codes.find_one(
-            {"code": code_str, "active": True}, {"_id": 0}
-        )
+        code_doc = await db.b2b_codes.find_one({"code": code_str, "active": True}, {"_id": 0})
         if code_doc:
             discount = code_doc.get("discount_percent", 100)
-            if (
-                code_doc.get("max_uses", 0) == 0
-                or code_doc["times_used"] < code_doc["max_uses"]
-            ):
+            if code_doc.get("max_uses", 0) == 0 or code_doc["times_used"] < code_doc["max_uses"]:
                 await db.users.update_one(
                     {"id": user_id},
                     {
@@ -695,9 +630,7 @@ async def register(data: UserCreate):
                         }
                     },
                 )
-                await db.b2b_codes.update_one(
-                    {"code": code_str}, {"$inc": {"times_used": 1}}
-                )
+                await db.b2b_codes.update_one({"code": code_str}, {"$inc": {"times_used": 1}})
                 # Auto-approve verification
                 await db.tier_verifications.insert_one(
                     {
@@ -758,9 +691,7 @@ class VerifyPasswordRequest(BaseModel):
 @router.post("/auth/verify-password")
 async def verify_password_endpoint(data: VerifyPasswordRequest):
     """Verify account password without logging in. Used for sensitive settings changes."""
-    user = await db.users.find_one(
-        {"email": data.email}, {"_id": 0, "id": 1, "password": 1}
-    )
+    user = await db.users.find_one({"email": data.email}, {"_id": 0, "id": 1, "password": 1})
     if not user or not verify_password(data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid password")
     return {"verified": True}
@@ -773,9 +704,7 @@ class ResendOTPRequest(BaseModel):
 @router.post("/auth/resend-otp")
 async def resend_otp(data: ResendOTPRequest):
     """Resend OTP code to the user's email. Rate-limited to prevent abuse."""
-    user = await db.users.find_one(
-        {"email": data.email}, {"_id": 0, "id": 1, "name": 1}
-    )
+    user = await db.users.find_one({"email": data.email}, {"_id": 0, "id": 1, "name": 1})
     if not user:
         # Don't reveal whether the email exists
         return {"message": "If an account exists, a new code has been sent."}
@@ -818,9 +747,7 @@ async def verify_otp(data: OTPVerifyWithTrust, request: Request):
     # Apple App Review demo bypass — configurable via env var
     demo_email = os.environ.get("DEMO_REVIEW_EMAIL", "")
     demo_otp = os.environ.get("DEMO_REVIEW_OTP", "")
-    is_demo_bypass = (
-        demo_email and demo_otp and data.email == demo_email and data.otp == demo_otp
-    )
+    is_demo_bypass = demo_email and demo_otp and data.email == demo_email and data.otp == demo_otp
 
     if not is_demo_bypass:
         stored_otp = await db.otps.find_one({"email": data.email}, {"_id": 0})
@@ -833,9 +760,7 @@ async def verify_otp(data: OTPVerifyWithTrust, request: Request):
         otp_created = stored_otp.get("created_at", "")
         if otp_created:
             try:
-                created_time = datetime.fromisoformat(
-                    otp_created.replace("Z", "+00:00")
-                )
+                created_time = datetime.fromisoformat(otp_created.replace("Z", "+00:00"))
                 if datetime.now(timezone.utc) - created_time > timedelta(minutes=10):
                     await db.otps.delete_one({"email": data.email})
                     raise HTTPException(
@@ -859,9 +784,7 @@ async def verify_otp(data: OTPVerifyWithTrust, request: Request):
         et = ZoneInfo("America/New_York")
         now_et = datetime.now(et)
         # Midnight tonight Eastern Time
-        midnight_et = now_et.replace(
-            hour=0, minute=0, second=0, microsecond=0
-        ) + timedelta(days=1)
+        midnight_et = now_et.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
         expires_utc = midnight_et.astimezone(timezone.utc)
 
         client_ip = get_client_ip(request)
@@ -896,9 +819,7 @@ async def verify_otp(data: OTPVerifyWithTrust, request: Request):
             severity="info",
         )
 
-    _owns = bool(
-        await db.estates.find_one({"owner_id": user["id"]}, {"_id": 0, "id": 1})
-    )
+    _owns = bool(await db.estates.find_one({"owner_id": user["id"]}, {"_id": 0, "id": 1}))
     return TokenResponse(
         access_token=token,
         user=_user_response(user, owns_estate=_owns),
@@ -908,9 +829,7 @@ async def verify_otp(data: OTPVerifyWithTrust, request: Request):
 @router.get("/auth/me")
 async def get_me(current_user: dict = Depends(get_current_user)):
     """Get the current authenticated user's profile with multi-role flags."""
-    user_doc = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "password": 0}
-    )
+    user_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "password": 0})
     if not user_doc:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -919,9 +838,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     # Fallback: if beneficiary has missing profile fields, pull from their beneficiary record
     ben_fallback = {}
     if current_user.get("role") == "beneficiary":
-        ben_rec = await db.beneficiaries.find_one(
-            {"user_id": current_user["id"]}, {"_id": 0}
-        )
+        ben_rec = await db.beneficiaries.find_one({"user_id": current_user["id"]}, {"_id": 0})
         if ben_rec:
             if not photo:
                 photo = ben_rec.get("photo_url", "")
@@ -939,9 +856,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
                     ben_fallback[field] = ben_rec[field]
 
     # Check if user owns any estates (for beneficiaries who created estates)
-    owns_estate = await db.estates.find_one(
-        {"owner_id": current_user["id"]}, {"_id": 0, "id": 1}
-    )
+    owns_estate = await db.estates.find_one({"owner_id": current_user["id"]}, {"_id": 0, "id": 1})
 
     return {
         "id": current_user["id"],
@@ -951,26 +866,19 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "created_at": current_user["created_at"],
         "photo_url": resolve_photo_url(photo),
         "operator_role": current_user.get("operator_role", ""),
-        "is_also_benefactor": user_doc.get("is_also_benefactor", False)
-        or bool(owns_estate),
+        "is_also_benefactor": user_doc.get("is_also_benefactor", False) or bool(owns_estate),
         "is_also_beneficiary": user_doc.get("is_also_beneficiary", False),
         "first_name": user_doc.get("first_name", ""),
         "last_name": user_doc.get("last_name", ""),
         "middle_name": user_doc.get("middle_name", ""),
         "suffix": user_doc.get("suffix", ""),
         "gender": user_doc.get("gender", "") or ben_fallback.get("gender", ""),
-        "date_of_birth": user_doc.get("date_of_birth", "")
-        or ben_fallback.get("date_of_birth", ""),
-        "marital_status": user_doc.get("marital_status", "")
-        or ben_fallback.get("marital_status", ""),
-        "address_street": user_doc.get("address_street", "")
-        or ben_fallback.get("address_street", ""),
-        "address_city": user_doc.get("address_city", "")
-        or ben_fallback.get("address_city", ""),
-        "address_state": user_doc.get("address_state", "")
-        or ben_fallback.get("address_state", ""),
-        "address_zip": user_doc.get("address_zip", "")
-        or ben_fallback.get("address_zip", ""),
+        "date_of_birth": user_doc.get("date_of_birth", "") or ben_fallback.get("date_of_birth", ""),
+        "marital_status": user_doc.get("marital_status", "") or ben_fallback.get("marital_status", ""),
+        "address_street": user_doc.get("address_street", "") or ben_fallback.get("address_street", ""),
+        "address_city": user_doc.get("address_city", "") or ben_fallback.get("address_city", ""),
+        "address_state": user_doc.get("address_state", "") or ben_fallback.get("address_state", ""),
+        "address_zip": user_doc.get("address_zip", "") or ben_fallback.get("address_zip", ""),
         "address_line2": user_doc.get("address_line2", ""),
         "username": user_doc.get("username", ""),
     }
@@ -984,9 +892,7 @@ class ProfilePhotoUpdate(BaseModel):
 @router.get("/auth/profile")
 async def get_profile(current_user: dict = Depends(get_current_user)):
     """Get the current user's full profile."""
-    user = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "password": 0}
-    )
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "password": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
@@ -1016,7 +922,7 @@ async def update_profile(body: dict, current_user: dict = Depends(get_current_us
     # Rebuild display name if first/last changed
     if "first_name" in update or "last_name" in update:
         current = await db.users.find_one(
-            {"id": current_user["id"]}, {"_id": 0, "first_name": 1, "last_name": 1}
+            {"id": current_user["id"]}, {"_id": 0, "id": 1, "first_name": 1, "last_name": 1}
         )
         fn = update.get("first_name", (current or {}).get("first_name", ""))
         ln = update.get("last_name", (current or {}).get("last_name", ""))
@@ -1033,16 +939,12 @@ async def update_profile(body: dict, current_user: dict = Depends(get_current_us
             {"$set": {"state": update["address_state"]}},
         )
 
-    user = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "password": 0}
-    )
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "password": 0})
     return user
 
 
 @router.put("/auth/profile-photo")
-async def update_profile_photo(
-    data: ProfilePhotoUpdate, current_user: dict = Depends(get_current_user)
-):
+async def update_profile_photo(data: ProfilePhotoUpdate, current_user: dict = Depends(get_current_user)):
     """Upload a profile photo. Processes and stores in object storage."""
     import base64
 
@@ -1050,15 +952,11 @@ async def update_profile_photo(
 
     if not data.photo_data:
         # Remove photo — delete from storage if it's a stored key
-        user_doc = await db.users.find_one(
-            {"id": current_user["id"]}, {"_id": 0, "id": 1, "photo_url": 1}
-        )
+        user_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "id": 1, "photo_url": 1})
         old_key = (user_doc or {}).get("photo_url", "")
         if old_key and not old_key.startswith("data:"):
             await delete_photo(old_key)
-        await db.users.update_one(
-            {"id": current_user["id"]}, {"$set": {"photo_url": ""}}
-        )
+        await db.users.update_one({"id": current_user["id"]}, {"$set": {"photo_url": ""}})
         return {"photo_url": ""}
 
     try:
@@ -1070,9 +968,7 @@ async def update_profile_photo(
         raise HTTPException(status_code=400, detail="Photo must be under 5MB")
 
     # Delete old photo from storage if it exists
-    user_doc = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "id": 1, "photo_url": 1}
-    )
+    user_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "id": 1, "photo_url": 1})
     old_key = (user_doc or {}).get("photo_url", "")
     if old_key and not old_key.startswith("data:"):
         await delete_photo(old_key)
@@ -1113,20 +1009,14 @@ async def change_password(
 ):
     """Change the current user's password. Requires current password verification."""
     if len(data.new_password) < 8:
-        raise HTTPException(
-            status_code=400, detail="New password must be at least 8 characters"
-        )
+        raise HTTPException(status_code=400, detail="New password must be at least 8 characters")
 
-    user_doc = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "id": 1, "password": 1}
-    )
+    user_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "id": 1, "password": 1})
     if not user_doc or not verify_password(data.current_password, user_doc["password"]):
         raise HTTPException(status_code=401, detail="Current password is incorrect")
 
     new_hash = hash_password(data.new_password)
-    await db.users.update_one(
-        {"id": current_user["id"]}, {"$set": {"password": new_hash}}
-    )
+    await db.users.update_one({"id": current_user["id"]}, {"$set": {"password": new_hash}})
 
     await log_audit_event(
         actor_id=current_user["id"],
@@ -1167,9 +1057,7 @@ async def forgot_password(data: ForgotPasswordRequest):
             "code": otp,
             "purpose": "password_reset",
             "created_at": datetime.now(timezone.utc).isoformat(),
-            "expires_at": (
-                datetime.now(timezone.utc) + timedelta(minutes=10)
-            ).isoformat(),
+            "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
         }
     )
 
@@ -1184,9 +1072,7 @@ async def reset_password(data: ResetPasswordRequest):
     email = data.email.lower().strip()
 
     if len(data.new_password) < 8:
-        raise HTTPException(
-            status_code=400, detail="Password must be at least 8 characters"
-        )
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
 
     # Find valid OTP
     otp_doc = await db.otp_codes.find_one(
@@ -1221,9 +1107,7 @@ async def reset_password(data: ResetPasswordRequest):
     # Clean up OTP
     await db.otp_codes.delete_many({"email": email, "purpose": "password_reset"})
 
-    return {
-        "message": "Password reset successfully. You can now log in with your new password."
-    }
+    return {"message": "Password reset successfully. You can now log in with your new password."}
 
 
 class DevSwitchRequest(BaseModel):
@@ -1243,28 +1127,20 @@ async def dev_login(data: UserLogin, request: Request):
         # Non-admin target: require a valid admin token in Authorization header
         auth_header = request.headers.get("authorization", "")
         if not auth_header.startswith("Bearer "):
-            raise HTTPException(
-                status_code=403, detail="Admin authorization required for impersonation"
-            )
+            raise HTTPException(status_code=403, detail="Admin authorization required for impersonation")
         try:
             token_str = auth_header.split(" ")[1]
             payload = decode_token(token_str)
             caller = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
             if not caller or caller.get("role") != "admin":
-                raise HTTPException(
-                    status_code=403, detail="Only admins can impersonate users"
-                )
+                raise HTTPException(status_code=403, detail="Only admins can impersonate users")
         except HTTPException:
             raise
         except Exception:
-            raise HTTPException(
-                status_code=403, detail="Invalid admin token for impersonation"
-            )
+            raise HTTPException(status_code=403, detail="Invalid admin token for impersonation")
 
     token = await create_dev_session_token(user["id"], user["email"], user["role"])
-    _owns = bool(
-        await db.estates.find_one({"owner_id": user["id"]}, {"_id": 0, "id": 1})
-    )
+    _owns = bool(await db.estates.find_one({"owner_id": user["id"]}, {"_id": 0, "id": 1}))
     return TokenResponse(
         access_token=token,
         user=_user_response(user, owns_estate=_owns),
@@ -1283,9 +1159,7 @@ async def dev_switch(data: DevSwitchRequest, request: Request):
     try:
         token_str = auth_header.split(" ")[1]
         payload = decode_token(token_str)
-        caller = await db.users.find_one(
-            {"id": payload["user_id"]}, {"_id": 0, "id": 1, "email": 1, "role": 1}
-        )
+        caller = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0, "id": 1, "email": 1, "role": 1})
         if not caller:
             raise HTTPException(status_code=401, detail="User not found")
     except HTTPException:
@@ -1319,9 +1193,7 @@ async def dev_switch(data: DevSwitchRequest, request: Request):
         stored_password = config.get("beneficiary_password")
 
     if not stored_password:
-        raise HTTPException(
-            status_code=400, detail="Email not configured in dev switcher"
-        )
+        raise HTTPException(status_code=400, detail="Email not configured in dev switcher")
 
     # Verify the stored password against the user
     user = await db.users.find_one({"email": data.email}, {"_id": 0})
@@ -1332,9 +1204,7 @@ async def dev_switch(data: DevSwitchRequest, request: Request):
         )
 
     token = await create_dev_session_token(user["id"], user["email"], user["role"])
-    _owns = bool(
-        await db.estates.find_one({"owner_id": user["id"]}, {"_id": 0, "id": 1})
-    )
+    _owns = bool(await db.estates.find_one({"owner_id": user["id"]}, {"_id": 0, "id": 1}))
     return TokenResponse(
         access_token=token,
         user=_user_response(user, owns_estate=_owns),
@@ -1348,16 +1218,12 @@ class UsernameUpdate(BaseModel):
 @router.get("/auth/username")
 async def get_username(current_user: dict = Depends(get_current_user)):
     """Get the current user's username."""
-    user_doc = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "id": 1, "username": 1}
-    )
+    user_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "id": 1, "username": 1})
     return {"username": (user_doc or {}).get("username", "")}
 
 
 @router.put("/auth/username")
-async def set_username(
-    data: UsernameUpdate, current_user: dict = Depends(get_current_user)
-):
+async def set_username(data: UsernameUpdate, current_user: dict = Depends(get_current_user)):
     """Set or update the current user's username. Must be unique."""
     username = data.username.strip()
     if not username:
@@ -1385,9 +1251,7 @@ class DisplayNameUpdate(BaseModel):
 
 
 @router.put("/auth/display-name")
-async def update_display_name(
-    data: DisplayNameUpdate, current_user: dict = Depends(get_current_user)
-):
+async def update_display_name(data: DisplayNameUpdate, current_user: dict = Depends(get_current_user)):
     """Update the current user's display name."""
     name = data.name.strip()
     if not name:

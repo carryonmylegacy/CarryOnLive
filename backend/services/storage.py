@@ -147,9 +147,7 @@ class S3Storage(StorageBackend):
             ContentType=content_type,
             ServerSideEncryption="AES256",  # SSE-S3 second layer
         )
-        logger.info(
-            f"S3Storage: uploaded {len(blob)} bytes to s3://{self.bucket}/{storage_key}"
-        )
+        logger.info(f"S3Storage: uploaded {len(blob)} bytes to s3://{self.bucket}/{storage_key}")
         return storage_key
 
     async def download(self, storage_key: str) -> bytes:
@@ -203,9 +201,7 @@ class S3Storage(StorageBackend):
             Body=blob,
             ContentType=content_type,
         )
-        logger.info(
-            f"S3Storage: uploaded {len(blob)} bytes to s3://{self.bucket}/{key}"
-        )
+        logger.info(f"S3Storage: uploaded {len(blob)} bytes to s3://{self.bucket}/{key}")
         return key
 
 

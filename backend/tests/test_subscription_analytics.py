@@ -46,9 +46,7 @@ class TestSubscriptionAnalyticsAPI:
     def test_subscription_stats_requires_auth(self):
         """Analytics endpoint should require authentication"""
         response = requests.get(f"{BASE_URL}/api/admin/subscription-stats")
-        assert response.status_code in [401, 403], (
-            f"Expected 401/403, got {response.status_code}"
-        )
+        assert response.status_code in [401, 403], f"Expected 401/403, got {response.status_code}"
         print("PASS: Analytics endpoint requires authentication")
 
     def test_subscription_stats_requires_admin_role(self):
@@ -60,9 +58,7 @@ class TestSubscriptionAnalyticsAPI:
             f"{BASE_URL}/api/admin/subscription-stats",
             headers={"Authorization": f"Bearer {self.user_token}"},
         )
-        assert response.status_code == 403, (
-            f"Expected 403 for non-admin, got {response.status_code}"
-        )
+        assert response.status_code == 403, f"Expected 403 for non-admin, got {response.status_code}"
         print("PASS: Analytics endpoint requires admin role (403 for non-admin)")
 
     def test_subscription_stats_returns_mrr(self):
@@ -104,15 +100,9 @@ class TestSubscriptionAnalyticsAPI:
         assert response.status_code == 200
         data = response.json()
 
-        assert "trial_conversion_pct" in data, (
-            "Response missing 'trial_conversion_pct' field"
-        )
-        assert isinstance(data["trial_conversion_pct"], (int, float)), (
-            "trial_conversion_pct should be a number"
-        )
-        assert 0 <= data["trial_conversion_pct"] <= 100, (
-            "trial_conversion_pct should be 0-100"
-        )
+        assert "trial_conversion_pct" in data, "Response missing 'trial_conversion_pct' field"
+        assert isinstance(data["trial_conversion_pct"], (int, float)), "trial_conversion_pct should be a number"
+        assert 0 <= data["trial_conversion_pct"] <= 100, "trial_conversion_pct should be 0-100"
         print(f"PASS: Trial conversion: {data['trial_conversion_pct']}%")
 
     def test_subscription_stats_returns_churn_rate_pct(self):
@@ -125,9 +115,7 @@ class TestSubscriptionAnalyticsAPI:
         data = response.json()
 
         assert "churn_rate_pct" in data, "Response missing 'churn_rate_pct' field"
-        assert isinstance(data["churn_rate_pct"], (int, float)), (
-            "churn_rate_pct should be a number"
-        )
+        assert isinstance(data["churn_rate_pct"], (int, float)), "churn_rate_pct should be a number"
         assert 0 <= data["churn_rate_pct"] <= 100, "churn_rate_pct should be 0-100"
         print(f"PASS: Churn rate: {data['churn_rate_pct']}%")
 
@@ -141,9 +129,7 @@ class TestSubscriptionAnalyticsAPI:
         data = response.json()
 
         assert "tier_distribution" in data, "Response missing 'tier_distribution' field"
-        assert isinstance(data["tier_distribution"], list), (
-            "tier_distribution should be an array"
-        )
+        assert isinstance(data["tier_distribution"], list), "tier_distribution should be an array"
 
         # Each tier should have tier name, id, count, and price
         for tier in data["tier_distribution"]:
@@ -152,9 +138,7 @@ class TestSubscriptionAnalyticsAPI:
             assert "count" in tier, "Tier entry missing 'count'"
             assert "price" in tier, "Tier entry missing 'price'"
 
-        print(
-            f"PASS: Tier distribution: {len(data['tier_distribution'])} tiers returned"
-        )
+        print(f"PASS: Tier distribution: {len(data['tier_distribution'])} tiers returned")
 
     def test_subscription_stats_returns_signup_trend(self):
         """Analytics should return 30-day signup trend"""
@@ -167,9 +151,7 @@ class TestSubscriptionAnalyticsAPI:
 
         assert "signup_trend" in data, "Response missing 'signup_trend' field"
         assert isinstance(data["signup_trend"], list), "signup_trend should be an array"
-        assert len(data["signup_trend"]) == 30, (
-            f"Expected 30 days of data, got {len(data['signup_trend'])}"
-        )
+        assert len(data["signup_trend"]) == 30, f"Expected 30 days of data, got {len(data['signup_trend'])}"
 
         # Each entry should have date and signups count
         for entry in data["signup_trend"]:
@@ -210,9 +192,7 @@ class TestSubscriptionAnalyticsAPI:
         data = response.json()
 
         assert "revenue_by_tier" in data, "Response missing 'revenue_by_tier' field"
-        assert isinstance(data["revenue_by_tier"], list), (
-            "revenue_by_tier should be an array"
-        )
+        assert isinstance(data["revenue_by_tier"], list), "revenue_by_tier should be an array"
 
         # Each entry should have tier, id, revenue, subscribers
         for tier in data["revenue_by_tier"]:

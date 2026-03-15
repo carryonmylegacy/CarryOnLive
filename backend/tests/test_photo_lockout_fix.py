@@ -78,9 +78,7 @@ def test_benefactor(api_client):
         assert response.status_code == 200, f"Registration failed: {response.text}"
 
     # Login to get token (OTP is disabled)
-    login_resp = api_client.post(
-        f"{BASE_URL}/api/auth/login", json={"email": email, "password": password}
-    )
+    login_resp = api_client.post(f"{BASE_URL}/api/auth/login", json={"email": email, "password": password})
     assert login_resp.status_code == 200, f"Benefactor login failed: {login_resp.text}"
     data = login_resp.json()
     assert "access_token" in data, f"Expected access_token: {data}"
@@ -115,17 +113,11 @@ def test_existing_user(api_client):
     if response.status_code == 400 and "already registered" in response.text:
         pass
     else:
-        assert response.status_code == 200, (
-            f"Existing user registration failed: {response.text}"
-        )
+        assert response.status_code == 200, f"Existing user registration failed: {response.text}"
 
     # Login to get token
-    login_resp = api_client.post(
-        f"{BASE_URL}/api/auth/login", json={"email": email, "password": password}
-    )
-    assert login_resp.status_code == 200, (
-        f"Existing user login failed: {login_resp.text}"
-    )
+    login_resp = api_client.post(f"{BASE_URL}/api/auth/login", json={"email": email, "password": password})
+    assert login_resp.status_code == 200, f"Existing user login failed: {login_resp.text}"
     data = login_resp.json()
 
     return {
@@ -173,16 +165,12 @@ class TestBeneficiaryCreationWithExistingEmail:
                 "first_name": "ExistingEmail",
                 "last_name": f"Beneficiary{unique_suffix}",
                 "relation": "Friend",
-                "email": test_existing_user[
-                    "email"
-                ],  # This email already has a user account
+                "email": test_existing_user["email"],  # This email already has a user account
                 "avatar_color": "#3b82f6",
             },
         )
 
-        assert response.status_code == 200, (
-            f"Create beneficiary failed: {response.text}"
-        )
+        assert response.status_code == 200, f"Create beneficiary failed: {response.text}"
         beneficiary = response.json()
 
         # KEY ASSERTION for Bug 1 Fix: status must be 'pending', NOT 'accepted'
@@ -204,9 +192,7 @@ class TestBeneficiaryCreationWithExistingEmail:
 
         return beneficiary
 
-    def test_existing_user_can_still_login_after_being_added_as_beneficiary(
-        self, api_client, test_existing_user
-    ):
+    def test_existing_user_can_still_login_after_being_added_as_beneficiary(self, api_client, test_existing_user):
         """
         The existing user should be able to login with their original credentials
         after being added as a beneficiary by someone else.
@@ -224,12 +210,8 @@ class TestBeneficiaryCreationWithExistingEmail:
         )
 
         data = response.json()
-        assert "access_token" in data, (
-            f"Expected access_token in login response: {data}"
-        )
-        assert data["user"]["id"] == test_existing_user["user_id"], (
-            "User ID should match after login"
-        )
+        assert "access_token" in data, f"Expected access_token in login response: {data}"
+        assert data["user"]["id"] == test_existing_user["user_id"], "User ID should match after login"
 
         print("✓ Existing user can still login after being added as beneficiary")
 
@@ -243,9 +225,7 @@ class TestBeneficiaryCreationWithExistingEmail:
         headers = {"Authorization": f"Bearer {test_benefactor['token']}"}
 
         # First, get the beneficiary we created
-        response = api_client.get(
-            f"{BASE_URL}/api/beneficiaries/{benefactor_estate['id']}", headers=headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/beneficiaries/{benefactor_estate['id']}", headers=headers)
         assert response.status_code == 200
         beneficiaries = response.json()
 
@@ -256,9 +236,7 @@ class TestBeneficiaryCreationWithExistingEmail:
                 target_beneficiary = b
                 break
 
-        assert target_beneficiary is not None, (
-            f"Could not find beneficiary with email {test_existing_user['email']}"
-        )
+        assert target_beneficiary is not None, f"Could not find beneficiary with email {test_existing_user['email']}"
 
         # Verify status is still pending
         assert target_beneficiary.get("invitation_status") == "pending", (
@@ -277,14 +255,10 @@ class TestBeneficiaryCreationWithExistingEmail:
             )
 
             if invite_response.status_code == 200:
-                print(
-                    "✓ Benefactor can send invitation to pending beneficiary with pre-linked user_id"
-                )
+                print("✓ Benefactor can send invitation to pending beneficiary with pre-linked user_id")
             else:
                 # Could fail if already sent, which is OK
-                print(
-                    f"✓ Invite endpoint responded (may already be sent): {invite_response.json()}"
-                )
+                print(f"✓ Invite endpoint responded (may already be sent): {invite_response.json()}")
 
 
 class TestBeneficiaryPhotoFallback:
@@ -328,9 +302,7 @@ class TestBeneficiaryPhotoFallback:
             headers=benefactor_headers,
         )
 
-        assert response.status_code == 200, (
-            f"Failed to get beneficiaries: {response.text}"
-        )
+        assert response.status_code == 200, f"Failed to get beneficiaries: {response.text}"
         beneficiaries = response.json()
 
         # Find the beneficiary with the existing user's email
@@ -348,16 +320,13 @@ class TestBeneficiaryPhotoFallback:
         if target_beneficiary.get("user_id"):
             # If user has photo and beneficiary has no direct photo, fallback should work
             print(f"✓ Beneficiary has user_id: {target_beneficiary.get('user_id')}")
-            print(
-                f"  Beneficiary photo_url: {target_beneficiary.get('photo_url', '')[:50]}..."
-            )
+            print(f"  Beneficiary photo_url: {target_beneficiary.get('photo_url', '')[:50]}...")
 
             # The fix adds photo_url from user when beneficiary has no photo
             # We just verify the endpoint returns without error and includes photo_url field
-            assert (
-                "photo_url" in target_beneficiary
-                or target_beneficiary.get("photo_url") is None
-            ), "photo_url field should be present in beneficiary response"
+            assert "photo_url" in target_beneficiary or target_beneficiary.get("photo_url") is None, (
+                "photo_url field should be present in beneficiary response"
+            )
 
             print("✓ Beneficiary photo fallback logic is in place")
 
@@ -376,9 +345,7 @@ class TestInvitationAcceptForExistingUser:
         """
         # First get the beneficiary to get the invitation token
         headers = {"Authorization": f"Bearer {test_benefactor['token']}"}
-        response = api_client.get(
-            f"{BASE_URL}/api/beneficiaries/{benefactor_estate['id']}", headers=headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/beneficiaries/{benefactor_estate['id']}", headers=headers)
         assert response.status_code == 200
         beneficiaries = response.json()
 
@@ -396,16 +363,12 @@ class TestInvitationAcceptForExistingUser:
             pytest.skip("No invitation token found on beneficiary")
 
         # Get invitation details (public endpoint)
-        invite_response = api_client.get(
-            f"{BASE_URL}/api/invitations/{invitation_token}"
-        )
+        invite_response = api_client.get(f"{BASE_URL}/api/invitations/{invitation_token}")
 
         # The response depends on whether invitation was already accepted
         if invite_response.status_code == 200:
             invite_data = invite_response.json()
-            assert "beneficiary" in invite_data, (
-                "Expected beneficiary info in invitation details"
-            )
+            assert "beneficiary" in invite_data, "Expected beneficiary info in invitation details"
             print("✓ Got invitation details for existing user beneficiary")
         elif invite_response.status_code == 400:
             # Already accepted
@@ -429,27 +392,19 @@ class TestBeneficiaryListInviteButtonAvailability:
         for beneficiaries created with existing user emails.
         """
         headers = {"Authorization": f"Bearer {test_benefactor['token']}"}
-        response = api_client.get(
-            f"{BASE_URL}/api/beneficiaries/{benefactor_estate['id']}", headers=headers
-        )
-        assert response.status_code == 200, (
-            f"Failed to get beneficiaries: {response.text}"
-        )
+        response = api_client.get(f"{BASE_URL}/api/beneficiaries/{benefactor_estate['id']}", headers=headers)
+        assert response.status_code == 200, f"Failed to get beneficiaries: {response.text}"
         beneficiaries = response.json()
 
         for b in beneficiaries:
             if b.get("email") == test_existing_user["email"]:
                 # Key assertion: status should still be pending even with user_id
                 if b.get("invitation_status") == "pending" and b.get("user_id"):
-                    print(
-                        f"✓ Beneficiary has status='pending' with pre-linked user_id='{b.get('user_id')}'"
-                    )
+                    print(f"✓ Beneficiary has status='pending' with pre-linked user_id='{b.get('user_id')}'")
                     print("  This means invite buttons should be available in the UI")
                     return
                 elif b.get("invitation_status") == "accepted":
-                    print(
-                        "✓ Beneficiary has status='accepted' (invitation was accepted)"
-                    )
+                    print("✓ Beneficiary has status='accepted' (invitation was accepted)")
                     return
 
         # If we get here, the beneficiary wasn't found or didn't have expected attributes

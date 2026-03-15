@@ -100,9 +100,7 @@ def benefactor_a(api_client):
     else:
         assert response.status_code == 200, f"Registration failed: {response.text}"
 
-    login_resp = api_client.post(
-        f"{BASE_URL}/api/auth/login", json={"email": email, "password": password}
-    )
+    login_resp = api_client.post(f"{BASE_URL}/api/auth/login", json={"email": email, "password": password})
     assert login_resp.status_code == 200, f"Login failed: {login_resp.text}"
     data = login_resp.json()
     assert "access_token" in data
@@ -150,9 +148,7 @@ def user_b(api_client):
     else:
         assert response.status_code == 200, f"Registration failed: {response.text}"
 
-    login_resp = api_client.post(
-        f"{BASE_URL}/api/auth/login", json={"email": email, "password": password}
-    )
+    login_resp = api_client.post(f"{BASE_URL}/api/auth/login", json={"email": email, "password": password})
     assert login_resp.status_code == 200
     data = login_resp.json()
 
@@ -193,9 +189,7 @@ class TestBug1AccountLockout:
             },
         )
 
-        assert response.status_code == 200, (
-            f"Create beneficiary failed: {response.text}"
-        )
+        assert response.status_code == 200, f"Create beneficiary failed: {response.text}"
         beneficiary = response.json()
 
         # KEY ASSERTION: status must be 'pending', NOT 'accepted'
@@ -230,9 +224,7 @@ class TestBug1AccountLockout:
         headers = {"Authorization": f"Bearer {benefactor_a['token']}"}
 
         # Get beneficiaries
-        response = api_client.get(
-            f"{BASE_URL}/api/beneficiaries/{benefactor_a_estate['id']}", headers=headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/beneficiaries/{benefactor_a_estate['id']}", headers=headers)
         assert response.status_code == 200
         beneficiaries = response.json()
 
@@ -246,30 +238,20 @@ class TestBug1AccountLockout:
 
         # Should be able to send invitation for pending status
         if target.get("invitation_status") == "pending":
-            invite_resp = api_client.post(
-                f"{BASE_URL}/api/beneficiaries/{target['id']}/invite", headers=headers
-            )
+            invite_resp = api_client.post(f"{BASE_URL}/api/beneficiaries/{target['id']}/invite", headers=headers)
             # Should succeed or return specific error (not 500)
-            assert invite_resp.status_code in [200, 400], (
-                f"Invite request failed: {invite_resp.text}"
-            )
-            print(
-                "✓ Invite endpoint works for pending beneficiary with pre-linked user_id"
-            )
+            assert invite_resp.status_code in [200, 400], f"Invite request failed: {invite_resp.text}"
+            print("✓ Invite endpoint works for pending beneficiary with pre-linked user_id")
 
 
 class TestInvitationAcceptWithPrelinkedUser:
     """Test /api/invitations/accept works for beneficiaries with pre-linked user_id"""
 
-    def test_accept_invitation_for_existing_user(
-        self, api_client, benefactor_a, user_b, benefactor_a_estate
-    ):
+    def test_accept_invitation_for_existing_user(self, api_client, benefactor_a, user_b, benefactor_a_estate):
         """Accept invitation works for beneficiary with pre-linked user_id"""
         # Get beneficiary with invitation token
         headers = {"Authorization": f"Bearer {benefactor_a['token']}"}
-        response = api_client.get(
-            f"{BASE_URL}/api/beneficiaries/{benefactor_a_estate['id']}", headers=headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/beneficiaries/{benefactor_a_estate['id']}", headers=headers)
         assert response.status_code == 200
         beneficiaries = response.json()
 
@@ -301,9 +283,7 @@ class TestInvitationAcceptWithPrelinkedUser:
             # Already accepted - that's OK
             print(f"✓ Invitation already accepted: {accept_resp.json()}")
         else:
-            pytest.fail(
-                f"Unexpected response: {accept_resp.status_code} - {accept_resp.text}"
-            )
+            pytest.fail(f"Unexpected response: {accept_resp.status_code} - {accept_resp.text}")
 
 
 # ==================== BUG 2: PHOTO IN ORBIT TESTS ====================
@@ -316,16 +296,12 @@ class TestBug2PhotoInOrbit:
     checking their beneficiary records for a photo.
     """
 
-    def test_upload_photo_to_beneficiary_record(
-        self, api_client, benefactor_a, user_b, benefactor_a_estate
-    ):
+    def test_upload_photo_to_beneficiary_record(self, api_client, benefactor_a, user_b, benefactor_a_estate):
         """Upload photo to B's beneficiary record (in A's estate)"""
         headers = {"Authorization": f"Bearer {benefactor_a['token']}"}
 
         # Get beneficiary B's record
-        response = api_client.get(
-            f"{BASE_URL}/api/beneficiaries/{benefactor_a_estate['id']}", headers=headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/beneficiaries/{benefactor_a_estate['id']}", headers=headers)
         assert response.status_code == 200
         beneficiaries = response.json()
 
@@ -355,9 +331,7 @@ class TestBug2PhotoInOrbit:
             assert data.get("success") or "photo_url" in data
             print("✓ Photo uploaded to beneficiary record")
         else:
-            print(
-                f"! Photo upload returned: {photo_resp.status_code} - {photo_resp.text}"
-            )
+            print(f"! Photo upload returned: {photo_resp.status_code} - {photo_resp.text}")
 
     def test_user_b_creates_own_estate(self, api_client, user_b):
         """User B creates their own estate via /api/accounts/create-estate"""
@@ -380,21 +354,15 @@ class TestBug2PhotoInOrbit:
             estates_resp = api_client.get(f"{BASE_URL}/api/estates", headers=headers)
             assert estates_resp.status_code == 200
             estates = estates_resp.json()
-            owned_estate = next(
-                (e for e in estates if e.get("user_role_in_estate") == "owner"), None
-            )
+            owned_estate = next((e for e in estates if e.get("user_role_in_estate") == "owner"), None)
             if owned_estate:
                 print(f"✓ User B already has estate: {owned_estate['id']}")
                 return owned_estate["id"]
             pytest.skip("User B has no owned estate")
         else:
-            pytest.fail(
-                f"Create estate failed: {response.status_code} - {response.text}"
-            )
+            pytest.fail(f"Create estate failed: {response.status_code} - {response.text}")
 
-    def test_user_b_adds_benefactor_a_as_beneficiary(
-        self, api_client, user_b, benefactor_a
-    ):
+    def test_user_b_adds_benefactor_a_as_beneficiary(self, api_client, user_b, benefactor_a):
         """User B (now benefactor) adds A as their beneficiary"""
         headers = {"Authorization": f"Bearer {user_b['token']}"}
 
@@ -438,9 +406,7 @@ class TestBug2PhotoInOrbit:
 
         if response.status_code == 200:
             ben = response.json()
-            print(
-                f"✓ A added as beneficiary to B's estate: status={ben.get('invitation_status')}"
-            )
+            print(f"✓ A added as beneficiary to B's estate: status={ben.get('invitation_status')}")
         elif response.status_code == 400:
             print(f"! Add beneficiary: {response.json()}")
         else:
@@ -465,9 +431,7 @@ class TestBug2PhotoInOrbit:
 
         # Now get beneficiaries as A
         headers = {"Authorization": f"Bearer {benefactor_a['token']}"}
-        response = api_client.get(
-            f"{BASE_URL}/api/beneficiaries/{benefactor_a_estate['id']}", headers=headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/beneficiaries/{benefactor_a_estate['id']}", headers=headers)
 
         assert response.status_code == 200
         beneficiaries = response.json()
@@ -479,9 +443,7 @@ class TestBug2PhotoInOrbit:
                 break
 
         if target:
-            print(
-                f"✓ Beneficiary B found with photo_url: {bool(target.get('photo_url'))}"
-            )
+            print(f"✓ Beneficiary B found with photo_url: {bool(target.get('photo_url'))}")
             # The photo_url should be present (either from beneficiary or user fallback)
         else:
             print("! Beneficiary B not found in list")
@@ -501,9 +463,7 @@ class TestBug2PhotoInOrbit:
         headers = {"Authorization": f"Bearer {a_token}"}
 
         # Get family connections as A (who is now also a beneficiary of B's estate)
-        response = api_client.get(
-            f"{BASE_URL}/api/beneficiary/family-connections", headers=headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/beneficiary/family-connections", headers=headers)
 
         if response.status_code == 200:
             connections = response.json()
@@ -512,9 +472,7 @@ class TestBug2PhotoInOrbit:
             # Look for B's estate in the connections
             for conn in connections:
                 if conn.get("benefactor_id") == user_b["user_id"]:
-                    print(
-                        f"  Found B as benefactor - photo_url: {bool(conn.get('photo_url'))}"
-                    )
+                    print(f"  Found B as benefactor - photo_url: {bool(conn.get('photo_url'))}")
                     # The fix should ensure photo_url falls back to beneficiary record
         elif response.status_code == 403:
             print("! A is not a beneficiary yet (invitation not accepted)")
@@ -542,14 +500,9 @@ class TestBug2PhotoInOrbit:
 
         # Look for B's estate where A is a beneficiary
         for estate in estates:
-            if (
-                estate.get("is_beneficiary_estate")
-                and estate.get("owner_id") == user_b["user_id"]
-            ):
+            if estate.get("is_beneficiary_estate") and estate.get("owner_id") == user_b["user_id"]:
                 owner_photo = estate.get("owner_photo_url", "")
-                print(
-                    f"✓ Found B's estate in A's list - owner_photo_url: {bool(owner_photo)}"
-                )
+                print(f"✓ Found B's estate in A's list - owner_photo_url: {bool(owner_photo)}")
                 # The fix ensures owner_photo_url falls back to B's beneficiary record photo
 
 
@@ -676,9 +629,7 @@ class TestFullFlowPhotoOrbit:
             print(f"✓ Step 5: Y created own estate: {y_estate_id}")
         elif create_estate_resp.status_code == 400:
             # Already has estate
-            y_estates = api_client.get(
-                f"{BASE_URL}/api/estates", headers=y_headers
-            ).json()
+            y_estates = api_client.get(f"{BASE_URL}/api/estates", headers=y_headers).json()
             y_estate_id = next(
                 (e["id"] for e in y_estates if e.get("user_role_in_estate") == "owner"),
                 None,
@@ -710,9 +661,7 @@ class TestFullFlowPhotoOrbit:
 
         # Step 7: Accept invitation so X is linked to Y's estate
         # Get X's beneficiary record in Y's estate
-        y_bens = api_client.get(
-            f"{BASE_URL}/api/beneficiaries/{y_estate_id}", headers=y_headers
-        )
+        y_bens = api_client.get(f"{BASE_URL}/api/beneficiaries/{y_estate_id}", headers=y_headers)
         if y_bens.status_code == 200:
             x_in_y = next((b for b in y_bens.json() if b.get("email") == x_email), None)
             if x_in_y and x_in_y.get("invitation_token"):
@@ -733,34 +682,24 @@ class TestFullFlowPhotoOrbit:
         x_new_token = x_login.json()["access_token"]
         x_new_headers = {"Authorization": f"Bearer {x_new_token}"}
 
-        fc_resp = api_client.get(
-            f"{BASE_URL}/api/beneficiary/family-connections", headers=x_new_headers
-        )
+        fc_resp = api_client.get(f"{BASE_URL}/api/beneficiary/family-connections", headers=x_new_headers)
 
         if fc_resp.status_code == 200:
             connections = fc_resp.json()
-            y_connection = next(
-                (c for c in connections if c.get("benefactor_id") == y_user_id), None
-            )
+            y_connection = next((c for c in connections if c.get("benefactor_id") == y_user_id), None)
 
             if y_connection:
                 photo_url = y_connection.get("photo_url", "")
-                print(
-                    f"✓ Step 8: X sees Y in family-connections with photo_url: {bool(photo_url)}"
-                )
+                print(f"✓ Step 8: X sees Y in family-connections with photo_url: {bool(photo_url)}")
 
                 # Bug 2 fix verification: Y has no users.photo_url, so photo should come from
                 # Y's beneficiary record (uploaded by X in step 4)
                 if photo_url:
-                    print(
-                        "✓ Bug 2 FIX VERIFIED: Y's photo visible via beneficiary record fallback"
-                    )
+                    print("✓ Bug 2 FIX VERIFIED: Y's photo visible via beneficiary record fallback")
                 else:
                     print("! Y's photo not found - fallback may not have worked")
             else:
-                print(
-                    "! Y not found in X's family-connections (may need to accept invitation)"
-                )
+                print("! Y not found in X's family-connections (may need to accept invitation)")
         else:
             print(f"! Family-connections returned: {fc_resp.status_code}")
 
@@ -769,18 +708,12 @@ class TestFullFlowPhotoOrbit:
         if estates_resp.status_code == 200:
             estates = estates_resp.json()
             y_estate_in_x = next(
-                (
-                    e
-                    for e in estates
-                    if e.get("is_beneficiary_estate") and e.get("owner_id") == y_user_id
-                ),
+                (e for e in estates if e.get("is_beneficiary_estate") and e.get("owner_id") == y_user_id),
                 None,
             )
             if y_estate_in_x:
                 owner_photo = y_estate_in_x.get("owner_photo_url", "")
-                print(
-                    f"✓ Step 9: Y's estate in X's list with owner_photo_url: {bool(owner_photo)}"
-                )
+                print(f"✓ Step 9: Y's estate in X's list with owner_photo_url: {bool(owner_photo)}")
             else:
                 print("! Y's estate not in X's list as beneficiary estate")
 

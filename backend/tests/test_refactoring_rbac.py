@@ -79,9 +79,7 @@ class TestRBACGuards:
         assert response.status_code == 200, f"Admin stats failed: {response.text}"
         data = response.json()
         assert "users" in data
-        print(
-            f"✓ Admin stats access: {data.get('users', {}).get('total', 0)} total users"
-        )
+        print(f"✓ Admin stats access: {data.get('users', {}).get('total', 0)} total users")
 
     def test_admin_can_access_admin_users(self, admin_headers):
         """Admin should be able to access /api/admin/users"""
@@ -94,9 +92,7 @@ class TestRBACGuards:
     def test_unauthenticated_cannot_access_admin_stats(self):
         """Unauthenticated requests should not access admin endpoints"""
         response = requests.get(f"{BASE_URL}/api/admin/stats")
-        assert response.status_code in [401, 403], (
-            f"Should be blocked: {response.status_code}"
-        )
+        assert response.status_code in [401, 403], f"Should be blocked: {response.status_code}"
         print("✓ Unauthenticated request correctly blocked")
 
 
@@ -138,12 +134,8 @@ class TestEstatesRBAC:
         )
         # Admin is allowed because is_benefactor_or_admin check
         # But the guard should be functioning - if status is 200 or 403, guard is working
-        assert response.status_code in [200, 201, 403], (
-            f"Unexpected: {response.status_code}"
-        )
-        print(
-            f"✓ POST /api/estates RBAC check working (status: {response.status_code})"
-        )
+        assert response.status_code in [200, 201, 403], f"Unexpected: {response.status_code}"
+        print(f"✓ POST /api/estates RBAC check working (status: {response.status_code})")
 
 
 class TestMessagesRBAC:
@@ -178,9 +170,7 @@ class TestMessagesRBAC:
                 "trigger_type": "immediate",
             },
         )
-        assert response.status_code in [401, 403], (
-            f"Should require auth: {response.status_code}"
-        )
+        assert response.status_code in [401, 403], f"Should require auth: {response.status_code}"
         print("✓ POST /api/messages requires authentication")
 
     def test_post_messages_rbac_check(self, admin_headers):
@@ -200,9 +190,7 @@ class TestMessagesRBAC:
         )
         # Should fail with 403 (not benefactor) or 404 (estate not found)
         # Either way, the RBAC guard is functioning
-        assert response.status_code in [403, 404, 500], (
-            f"RBAC check should block: {response.status_code}"
-        )
+        assert response.status_code in [403, 404, 500], f"RBAC check should block: {response.status_code}"
         print(f"✓ POST /api/messages RBAC working (status: {response.status_code})")
 
 
@@ -237,9 +225,7 @@ class TestBeneficiariesRBAC:
                 "relation": "Child",
             },
         )
-        assert response.status_code in [401, 403, 422], (
-            f"Should require auth: {response.status_code}"
-        )
+        assert response.status_code in [401, 403, 422], f"Should require auth: {response.status_code}"
         print("✓ POST /api/beneficiaries requires authentication")
 
     def test_post_beneficiaries_rbac_check(self, admin_headers):
@@ -257,9 +243,7 @@ class TestBeneficiariesRBAC:
             },
         )
         # Should fail with 403 (not benefactor) - this confirms require_benefactor_role is working
-        assert response.status_code == 403, (
-            f"Should be 403 for non-benefactor: {response.status_code}"
-        )
+        assert response.status_code == 403, f"Should be 403 for non-benefactor: {response.status_code}"
         data = response.json()
         assert "benefactor" in data.get("detail", "").lower()
         print(f"✓ POST /api/beneficiaries RBAC working: {data.get('detail')}")
@@ -313,9 +297,7 @@ class TestGuardsUtilityFunctions:
 
         # Admin should be able to access estates
         response = requests.get(f"{BASE_URL}/api/estates", headers=headers)
-        assert response.status_code == 200, (
-            f"Admin should access estates: {response.status_code}"
-        )
+        assert response.status_code == 200, f"Admin should access estates: {response.status_code}"
         print("✓ is_benefactor_or_admin allows admin users")
 
 

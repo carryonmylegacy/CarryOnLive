@@ -129,12 +129,8 @@ class TestLoginEndpoint:
         )
         # 401 = unauthorized (expected), 400 = bad request (also acceptable)
         # 500 = server error (would indicate haptics broke something)
-        assert response.status_code in [400, 401, 429], (
-            f"Unexpected status code: {response.status_code}"
-        )
-        print(
-            f"PASS: Login endpoint responds correctly (status {response.status_code})"
-        )
+        assert response.status_code in [400, 401, 429], f"Unexpected status code: {response.status_code}"
+        print(f"PASS: Login endpoint responds correctly (status {response.status_code})")
 
 
 @pytest.fixture(autouse=True)

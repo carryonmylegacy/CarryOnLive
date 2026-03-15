@@ -105,9 +105,7 @@ class TestOnboardingProgress:
 
         steps = data.get("steps", [])
         assert len(steps) == 5, f"Expected 5 steps, got {len(steps)}"
-        assert data.get("total_steps") == 5, (
-            f"Expected total_steps=5, got {data.get('total_steps')}"
-        )
+        assert data.get("total_steps") == 5, f"Expected total_steps=5, got {data.get('total_steps')}"
         print("✓ Onboarding returns exactly 5 steps")
 
     def test_onboarding_steps_correct_keys(self, auth_headers):
@@ -127,14 +125,10 @@ class TestOnboardingProgress:
         actual_keys = [step["key"] for step in data.get("steps", [])]
 
         # Check no create_estate
-        assert "create_estate" not in actual_keys, (
-            "create_estate should NOT be in onboarding steps"
-        )
+        assert "create_estate" not in actual_keys, "create_estate should NOT be in onboarding steps"
 
         # Check all expected keys present in order
-        assert actual_keys == expected_keys, (
-            f"Expected {expected_keys}, got {actual_keys}"
-        )
+        assert actual_keys == expected_keys, f"Expected {expected_keys}, got {actual_keys}"
         print(f"✓ Onboarding steps are correct: {actual_keys}")
 
     def test_onboarding_has_progress_fields(self, auth_headers):
@@ -146,9 +140,7 @@ class TestOnboardingProgress:
         assert "progress_pct" in data, "Missing progress_pct"
         assert "completed_count" in data, "Missing completed_count"
         assert 0 <= data["progress_pct"] <= 100, "progress_pct should be 0-100"
-        print(
-            f"✓ Progress: {data['completed_count']}/{data['total_steps']} ({data['progress_pct']}%)"
-        )
+        print(f"✓ Progress: {data['completed_count']}/{data['total_steps']} ({data['progress_pct']}%)")
 
 
 class TestOnboardingCompleteStep:
@@ -184,9 +176,7 @@ class TestChecklistDefaultItems:
 
     def test_checklist_returns_items(self, auth_headers, estate_id):
         """GET /api/checklists/{estate_id} returns checklist items"""
-        resp = requests.get(
-            f"{BASE_URL}/api/checklists/{estate_id}", headers=auth_headers
-        )
+        resp = requests.get(f"{BASE_URL}/api/checklists/{estate_id}", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.json()
         assert isinstance(data, list)
@@ -194,9 +184,7 @@ class TestChecklistDefaultItems:
 
     def test_default_items_have_immediate_category(self, auth_headers, estate_id):
         """Default IAC items have category='immediate'"""
-        resp = requests.get(
-            f"{BASE_URL}/api/checklists/{estate_id}", headers=auth_headers
-        )
+        resp = requests.get(f"{BASE_URL}/api/checklists/{estate_id}", headers=auth_headers)
         assert resp.status_code == 200
         items = resp.json()
 
@@ -212,9 +200,7 @@ class TestChecklistDefaultItems:
 
     def test_default_items_count(self, auth_headers, estate_id):
         """Default IAC items should be present (check is_default=True)"""
-        resp = requests.get(
-            f"{BASE_URL}/api/checklists/{estate_id}", headers=auth_headers
-        )
+        resp = requests.get(f"{BASE_URL}/api/checklists/{estate_id}", headers=auth_headers)
         assert resp.status_code == 200
         items = resp.json()
 
@@ -244,9 +230,7 @@ class TestBeneficiariesEndpoint:
 
     def test_get_beneficiaries(self, auth_headers, estate_id):
         """GET /api/beneficiaries/{estate_id} returns beneficiaries"""
-        resp = requests.get(
-            f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=auth_headers
-        )
+        resp = requests.get(f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.json()
         assert isinstance(data, list)
@@ -258,9 +242,7 @@ class TestMessagesEndpoint:
 
     def test_get_messages(self, auth_headers, estate_id):
         """GET /api/messages/{estate_id} returns messages"""
-        resp = requests.get(
-            f"{BASE_URL}/api/messages/{estate_id}", headers=auth_headers
-        )
+        resp = requests.get(f"{BASE_URL}/api/messages/{estate_id}", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.json()
         assert isinstance(data, list)
@@ -272,9 +254,7 @@ class TestGuardianEndpoint:
 
     def test_get_readiness(self, auth_headers, estate_id):
         """GET /api/estate/{estate_id}/readiness returns readiness scores"""
-        resp = requests.get(
-            f"{BASE_URL}/api/estate/{estate_id}/readiness", headers=auth_headers
-        )
+        resp = requests.get(f"{BASE_URL}/api/estate/{estate_id}/readiness", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.json()
 

@@ -203,9 +203,7 @@ class TestAppleReceiptValidation:
         if response.status_code == 400:
             data = response.json()
             assert "Unknown product" not in data.get("detail", "")
-            print(
-                f"Valid product format accepted, Apple verification status: {data.get('detail', 'N/A')}"
-            )
+            print(f"Valid product format accepted, Apple verification status: {data.get('detail', 'N/A')}")
         else:
             print(f"Response status: {response.status_code}")
 

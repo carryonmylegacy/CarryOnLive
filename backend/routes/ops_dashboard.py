@@ -60,10 +60,7 @@ async def get_ops_dashboard(current_user: dict = Depends(get_current_user)):
             }
         },
     ]
-    dts_by_status = {
-        r["_id"]: r["count"]
-        for r in await db.dts_tasks.aggregate(dts_pipeline).to_list(20)
-    }
+    dts_by_status = {r["_id"]: r["count"] for r in await db.dts_tasks.aggregate(dts_pipeline).to_list(20)}
 
     # DTS tasks assigned per operator
     dts_assigned_pipeline = [
@@ -72,11 +69,7 @@ async def get_ops_dashboard(current_user: dict = Depends(get_current_user)):
             "$group": {
                 "_id": "$assigned_to",
                 "total": {"$sum": 1},
-                "completed": {
-                    "$sum": {
-                        "$cond": [{"$in": ["$status", ["executed", "destroyed"]]}, 1, 0]
-                    }
-                },
+                "completed": {"$sum": {"$cond": [{"$in": ["$status", ["executed", "destroyed"]]}, 1, 0]}},
                 "active": {
                     "$sum": {
                         "$cond": [
@@ -94,29 +87,20 @@ async def get_ops_dashboard(current_user: dict = Depends(get_current_user)):
             }
         },
     ]
-    dts_per_operator = {
-        r["_id"]: r
-        for r in await db.dts_tasks.aggregate(dts_assigned_pipeline).to_list(100)
-    }
+    dts_per_operator = {r["_id"]: r for r in await db.dts_tasks.aggregate(dts_assigned_pipeline).to_list(100)}
 
     # Support conversations with unread messages
     open_support = await db.support_conversations.count_documents(
         {"status": {"$ne": "resolved"}, "deleted_at": {"$exists": False}}
     )
-    unanswered_support = await db.support_messages.count_documents(
-        {"sender_role": {"$ne": "admin"}, "read": False}
-    )
+    unanswered_support = await db.support_messages.count_documents({"sender_role": {"$ne": "admin"}, "read": False})
 
     # TVT (pending + reviewing certificates)
     pending_certs = await db.death_certificates.count_documents({"status": "pending"})
-    reviewing_certs = await db.death_certificates.count_documents(
-        {"status": "reviewing"}
-    )
+    reviewing_certs = await db.death_certificates.count_documents({"status": "reviewing"})
 
     # Tier verifications pending
-    pending_verifications = await db.tier_verifications.count_documents(
-        {"status": "pending"}
-    )
+    pending_verifications = await db.tier_verifications.count_documents({"status": "pending"})
 
     # Escalations
     open_escalations = await db.escalations.count_documents({"status": "open"})
@@ -132,8 +116,7 @@ async def get_ops_dashboard(current_user: dict = Depends(get_current_user)):
         },
     ]
     actions_per_operator = {
-        r["_id"]: r["actions_24h"]
-        for r in await db.audit_trail.aggregate(audit_pipeline).to_list(100)
+        r["_id"]: r["actions_24h"] for r in await db.audit_trail.aggregate(audit_pipeline).to_list(100)
     }
 
     # Shift notes (last 24h)
@@ -181,9 +164,7 @@ async def get_ops_dashboard(current_user: dict = Depends(get_current_user)):
                 "tasks_assigned": dts_stats.get("total", 0),
                 "tasks_active": dts_stats.get("active", 0),
                 "tasks_completed": dts_stats.get("completed", 0),
-                "completion_rate": round(
-                    (dts_stats.get("completed", 0) / dts_stats.get("total", 1)) * 100
-                )
+                "completion_rate": round((dts_stats.get("completed", 0) / dts_stats.get("total", 1)) * 100)
                 if dts_stats.get("total", 0) > 0
                 else 0,
                 "actions_24h": actions_per_operator.get(op_id, 0),
@@ -235,9 +216,7 @@ async def get_dashboard_events(current_user: dict = Depends(get_current_user)):
     tvt_reviewing = await db.death_certificates.count_documents({"status": "reviewing"})
 
     # 2. Milestone Notifications: Pending review
-    milestones_pending = await db.milestone_deliveries.count_documents(
-        {"status": "pending_review"}
-    )
+    milestones_pending = await db.milestone_deliveries.count_documents({"status": "pending_review"})
 
     # 3. DTS: Active requests (submitted, quoted, approved)
     dts_active = await db.dts_tasks.count_documents(
@@ -251,9 +230,7 @@ async def get_dashboard_events(current_user: dict = Depends(get_current_user)):
     emergency_pending = await db.emergency_access.count_documents({"status": "pending"})
 
     # 5. P1 Emergency: Open P1 conversations (benefactor alive alerts)
-    p1_open = await db.support_conversations.count_documents(
-        {"priority": "p1", "status": {"$in": ["open", "active"]}}
-    )
+    p1_open = await db.support_conversations.count_documents({"priority": "p1", "status": {"$in": ["open", "active"]}})
 
     # 6. Customer Service: Unread messages from users
     support_unread = await db.support_messages.count_documents(
@@ -446,10 +423,7 @@ async def get_team_tasks(current_user: dict = Depends(get_current_user)):
     team_data = []
     for op in operators:
         op_id = op["id"]
-        op_name = (
-            op.get("name")
-            or f"{op.get('first_name', '')} {op.get('last_name', '')}".strip()
-        )
+        op_name = op.get("name") or f"{op.get('first_name', '')} {op.get('last_name', '')}".strip()
 
         tasks = []
 

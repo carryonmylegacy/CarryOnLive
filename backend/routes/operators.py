@@ -31,10 +31,7 @@ def require_founder_or_manager(current_user: dict):
     """Founder or Operations Manager can manage workers."""
     if current_user.get("role") == "admin":
         return
-    if (
-        current_user.get("role") == "operator"
-        and current_user.get("operator_role") == "manager"
-    ):
+    if current_user.get("role") == "operator" and current_user.get("operator_role") == "manager":
         return
     raise HTTPException(status_code=403, detail="Manager or Founder access required")
 
@@ -77,9 +74,7 @@ async def create_operator(
 
     # Validate operator_role
     if data.operator_role not in ("manager", "worker"):
-        raise HTTPException(
-            status_code=400, detail="operator_role must be 'manager' or 'worker'"
-        )
+        raise HTTPException(status_code=400, detail="operator_role must be 'manager' or 'worker'")
 
     # Only founder can create managers
     if data.operator_role == "manager":
@@ -89,9 +84,7 @@ async def create_operator(
 
     # Check username uniqueness (normalize to lowercase for consistent login)
     normalized_username = data.username.lower().strip()
-    existing = await db.users.find_one(
-        {"email": normalized_username}, {"_id": 0, "id": 1}
-    )
+    existing = await db.users.find_one({"email": normalized_username}, {"_id": 0, "id": 1})
     if existing:
         raise HTTPException(status_code=400, detail="Username already in use")
 
@@ -136,10 +129,7 @@ async def create_operator(
     )
 
     # NOTIFICATION: If manager created a worker, notify founder
-    if (
-        current_user.get("role") == "operator"
-        and current_user.get("operator_role") == "manager"
-    ):
+    if current_user.get("role") == "operator" and current_user.get("operator_role") == "manager":
         from services.notifications import notify
         import asyncio
 
@@ -175,10 +165,7 @@ async def list_operators(current_user: dict = Depends(get_current_user)):
     - Managers see only workers."""
     if current_user.get("role") == "admin":
         query = {"role": "operator"}
-    elif (
-        current_user.get("role") == "operator"
-        and current_user.get("operator_role") == "manager"
-    ):
+    elif current_user.get("role") == "operator" and current_user.get("operator_role") == "manager":
         query = {"role": "operator", "operator_role": "worker"}
     else:
         raise HTTPException(status_code=403, detail="Access denied")
@@ -217,9 +204,7 @@ async def edit_operator(
         if current_user.get("operator_role") != "manager":
             raise HTTPException(status_code=403, detail="Manager access required")
         if op_role == "manager":
-            raise HTTPException(
-                status_code=403, detail="Managers cannot edit other managers"
-            )
+            raise HTTPException(status_code=403, detail="Managers cannot edit other managers")
     elif current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Access denied")
 
@@ -227,9 +212,7 @@ async def edit_operator(
     if data.username is not None and data.username.strip():
         normalized = data.username.lower().strip()
         if normalized != op.get("email", ""):
-            existing = await db.users.find_one(
-                {"email": normalized, "id": {"$ne": operator_id}}, {"_id": 0, "id": 1}
-            )
+            existing = await db.users.find_one({"email": normalized, "id": {"$ne": operator_id}}, {"_id": 0, "id": 1})
             if existing:
                 raise HTTPException(status_code=400, detail="Username already in use")
             update_fields["email"] = normalized
@@ -238,9 +221,7 @@ async def edit_operator(
     if data.last_name is not None:
         update_fields["last_name"] = data.last_name
     if data.first_name is not None or data.last_name is not None:
-        fn = (
-            data.first_name if data.first_name is not None else op.get("first_name", "")
-        )
+        fn = data.first_name if data.first_name is not None else op.get("first_name", "")
         ln = data.last_name if data.last_name is not None else op.get("last_name", "")
         update_fields["name"] = f"{fn} {ln}".strip()
     if data.email is not None:
@@ -252,9 +233,7 @@ async def edit_operator(
     if data.notes is not None:
         update_fields["notes"] = data.notes
     if data.password is not None and data.password:
-        update_fields["password"] = bcrypt.hashpw(
-            data.password.encode(), bcrypt.gensalt()
-        ).decode()
+        update_fields["password"] = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt()).decode()
 
     if not update_fields:
         return {"updated": False, "message": "No fields to update"}
@@ -301,19 +280,13 @@ async def delete_operator(
         if current_user.get("operator_role") != "manager":
             raise HTTPException(status_code=403, detail="Manager access required")
         if op_role == "manager":
-            raise HTTPException(
-                status_code=403, detail="Managers cannot delete other managers"
-            )
+            raise HTTPException(status_code=403, detail="Managers cannot delete other managers")
     elif current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Access denied")
 
     # Verify caller's password
-    caller_doc = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "id": 1, "password": 1}
-    )
-    if not caller_doc or not bcrypt.checkpw(
-        admin_password.encode(), caller_doc["password"].encode()
-    ):
+    caller_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "id": 1, "password": 1})
+    if not caller_doc or not bcrypt.checkpw(admin_password.encode(), caller_doc["password"].encode()):
         raise HTTPException(status_code=401, detail="Incorrect password")
 
     await db.users.delete_one({"id": operator_id})
@@ -332,10 +305,7 @@ async def delete_operator(
     )
 
     # NOTIFICATION: If manager deleted a worker, notify founder
-    if (
-        current_user.get("role") == "operator"
-        and current_user.get("operator_role") == "manager"
-    ):
+    if current_user.get("role") == "operator" and current_user.get("operator_role") == "manager":
         from services.notifications import notify
         import asyncio
 
@@ -367,18 +337,14 @@ async def operator_dev_login(
     Founder only — generates a token for the target operator."""
     require_founder(current_user)
 
-    operator = await db.users.find_one(
-        {"email": data.operator_email, "role": "operator"}, {"_id": 0}
-    )
+    operator = await db.users.find_one({"email": data.operator_email, "role": "operator"}, {"_id": 0})
     if not operator:
         raise HTTPException(status_code=404, detail="Operator not found")
 
     from routes.auth import create_dev_session_token
     from models import UserResponse, TokenResponse
 
-    token = await create_dev_session_token(
-        operator["id"], operator["email"], operator["role"]
-    )
+    token = await create_dev_session_token(operator["id"], operator["email"], operator["role"])
 
     return TokenResponse(
         access_token=token,
@@ -415,11 +381,7 @@ async def get_audit_trail(
 
     total = await db.audit_trail.count_documents(query)
     entries = (
-        await db.audit_trail.find(query, {"_id": 0})
-        .sort("timestamp", -1)
-        .skip(offset)
-        .limit(limit)
-        .to_list(limit)
+        await db.audit_trail.find(query, {"_id": 0}).sort("timestamp", -1).skip(offset).limit(limit).to_list(limit)
     )
 
     return {"total": total, "entries": entries}

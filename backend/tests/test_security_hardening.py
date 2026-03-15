@@ -28,59 +28,34 @@ class TestSecurityHeaders:
         headers = response.headers
 
         # X-Content-Type-Options
-        assert "x-content-type-options" in [h.lower() for h in headers.keys()], (
-            "Missing X-Content-Type-Options"
-        )
-        assert (
-            headers.get("X-Content-Type-Options", headers.get("x-content-type-options"))
-            == "nosniff"
-        )
+        assert "x-content-type-options" in [h.lower() for h in headers.keys()], "Missing X-Content-Type-Options"
+        assert headers.get("X-Content-Type-Options", headers.get("x-content-type-options")) == "nosniff"
         print("✓ X-Content-Type-Options: nosniff")
 
         # X-Frame-Options
-        assert "x-frame-options" in [h.lower() for h in headers.keys()], (
-            "Missing X-Frame-Options"
-        )
+        assert "x-frame-options" in [h.lower() for h in headers.keys()], "Missing X-Frame-Options"
         assert headers.get("X-Frame-Options", headers.get("x-frame-options")) == "DENY"
         print("✓ X-Frame-Options: DENY")
 
         # X-XSS-Protection
-        assert "x-xss-protection" in [h.lower() for h in headers.keys()], (
-            "Missing X-XSS-Protection"
-        )
-        assert (
-            headers.get("X-XSS-Protection", headers.get("x-xss-protection"))
-            == "1; mode=block"
-        )
+        assert "x-xss-protection" in [h.lower() for h in headers.keys()], "Missing X-XSS-Protection"
+        assert headers.get("X-XSS-Protection", headers.get("x-xss-protection")) == "1; mode=block"
         print("✓ X-XSS-Protection: 1; mode=block")
 
         # Referrer-Policy
-        assert "referrer-policy" in [h.lower() for h in headers.keys()], (
-            "Missing Referrer-Policy"
-        )
-        assert (
-            headers.get("Referrer-Policy", headers.get("referrer-policy"))
-            == "strict-origin-when-cross-origin"
-        )
+        assert "referrer-policy" in [h.lower() for h in headers.keys()], "Missing Referrer-Policy"
+        assert headers.get("Referrer-Policy", headers.get("referrer-policy")) == "strict-origin-when-cross-origin"
         print("✓ Referrer-Policy: strict-origin-when-cross-origin")
 
         # Permissions-Policy
-        assert "permissions-policy" in [h.lower() for h in headers.keys()], (
-            "Missing Permissions-Policy"
-        )
-        perm_policy = headers.get(
-            "Permissions-Policy", headers.get("permissions-policy")
-        )
+        assert "permissions-policy" in [h.lower() for h in headers.keys()], "Missing Permissions-Policy"
+        perm_policy = headers.get("Permissions-Policy", headers.get("permissions-policy"))
         assert "camera=()" in perm_policy
         print(f"✓ Permissions-Policy: {perm_policy}")
 
         # Strict-Transport-Security (HSTS)
-        assert "strict-transport-security" in [h.lower() for h in headers.keys()], (
-            "Missing HSTS"
-        )
-        hsts = headers.get(
-            "Strict-Transport-Security", headers.get("strict-transport-security")
-        )
+        assert "strict-transport-security" in [h.lower() for h in headers.keys()], "Missing HSTS"
+        hsts = headers.get("Strict-Transport-Security", headers.get("strict-transport-security"))
         assert "max-age=" in hsts
         print(f"✓ Strict-Transport-Security: {hsts}")
 
@@ -131,14 +106,9 @@ class TestDevLoginRestriction:
             f"{BASE_URL}/api/auth/dev-login",
             json={"email": NON_ADMIN_EMAIL, "password": NON_ADMIN_PASSWORD},
         )
-        assert response.status_code == 403, (
-            f"Expected 403, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 403, f"Expected 403, got {response.status_code}: {response.text}"
         data = response.json()
-        assert (
-            "restricted to admin" in data.get("detail", "").lower()
-            or "admin" in data.get("detail", "").lower()
-        )
+        assert "restricted to admin" in data.get("detail", "").lower() or "admin" in data.get("detail", "").lower()
         print(f"✓ Non-admin user correctly blocked with 403: {data.get('detail')}")
 
     def test_dev_login_returns_401_for_invalid_credentials(self):
@@ -211,9 +181,7 @@ class TestRateLimiting:
         if count_429 > 0:
             print(f"✓ Rate limiting detected: {count_429} requests returned 429")
         else:
-            print(
-                "⚠ No 429 responses - rate limiting may be handled by K8s ingress or disabled in preview"
-            )
+            print("⚠ No 429 responses - rate limiting may be handled by K8s ingress or disabled in preview")
             # This is acceptable in preview environment
 
 
@@ -236,12 +204,8 @@ class TestSubscriptionStatus:
         assert response.status_code == 200
         data = response.json()
         # Check for relevant subscription fields
-        assert (
-            "trial" in data or "beta_mode" in data or "has_active_subscription" in data
-        )
-        print(
-            f"✓ Subscription status endpoint works - beta_mode: {data.get('beta_mode')}"
-        )
+        assert "trial" in data or "beta_mode" in data or "has_active_subscription" in data
+        print(f"✓ Subscription status endpoint works - beta_mode: {data.get('beta_mode')}")
 
 
 class TestPlansEndpoint:
@@ -257,15 +221,11 @@ class TestPlansEndpoint:
         main_tiers = data.get("plans", [])
         beneficiary_tiers = data.get("beneficiary_plans", [])
 
-        print(
-            f"Main tiers: {len(main_tiers)}, Beneficiary tiers: {len(beneficiary_tiers)}"
-        )
+        print(f"Main tiers: {len(main_tiers)}, Beneficiary tiers: {len(beneficiary_tiers)}")
 
         # Should have 6 main tiers and 4 beneficiary tiers
         assert len(main_tiers) >= 6, f"Expected 6 main tiers, got {len(main_tiers)}"
-        assert len(beneficiary_tiers) >= 4, (
-            f"Expected 4 beneficiary tiers, got {len(beneficiary_tiers)}"
-        )
+        assert len(beneficiary_tiers) >= 4, f"Expected 4 beneficiary tiers, got {len(beneficiary_tiers)}"
         print("✓ Plans endpoint returns correct tier counts")
 
 
@@ -284,18 +244,14 @@ class TestAnalyticsEndpoint:
 
         # Get analytics via digest preview
         headers = {"Authorization": f"Bearer {token}"}
-        response = requests.get(
-            f"{BASE_URL}/api/admin/analytics-digest/preview", headers=headers
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/analytics-digest/preview", headers=headers)
         assert response.status_code == 200
         data = response.json()
 
         # Check expected fields exist
         assert "data" in data and "html" in data
         assert "mrr" in data.get("data", {}) or "total_users" in data.get("data", {})
-        print(
-            f"✓ Analytics digest preview works - keys: {list(data.get('data', {}).keys())[:5]}..."
-        )
+        print(f"✓ Analytics digest preview works - keys: {list(data.get('data', {}).keys())[:5]}...")
 
 
 class TestAdminVerificationManagement:

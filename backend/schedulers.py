@@ -19,13 +19,9 @@ async def weekly_digest_scheduler():
         days_until_monday = (7 - now.weekday()) % 7
         if days_until_monday == 0 and now.hour >= 13:
             days_until_monday = 7
-        next_monday = now.replace(
-            hour=13, minute=0, second=0, microsecond=0
-        ) + timedelta(days=days_until_monday)
+        next_monday = now.replace(hour=13, minute=0, second=0, microsecond=0) + timedelta(days=days_until_monday)
         wait_seconds = (next_monday - now).total_seconds()
-        logger.info(
-            f"Weekly digest scheduled for {next_monday.isoformat()} ({wait_seconds / 3600:.1f}h away)"
-        )
+        logger.info(f"Weekly digest scheduled for {next_monday.isoformat()} ({wait_seconds / 3600:.1f}h away)")
         await asyncio.sleep(max(60, wait_seconds))
 
         try:

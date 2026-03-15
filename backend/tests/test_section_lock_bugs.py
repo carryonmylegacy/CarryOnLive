@@ -13,9 +13,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com"
-)
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com")
 
 # Test credentials
 ADMIN_EMAIL = "founder@carryon.us"
@@ -53,9 +51,7 @@ class TestSectionLockBackend:
     @pytest.fixture(scope="class")
     def estate_id(self, auth_token):
         """Get the user's estate ID"""
-        response = requests.get(
-            f"{BASE_URL}/api/estates", headers={"Authorization": f"Bearer {auth_token}"}
-        )
+        response = requests.get(f"{BASE_URL}/api/estates", headers={"Authorization": f"Bearer {auth_token}"})
         assert response.status_code == 200, f"Failed to get estates: {response.text}"
         estates = response.json()
         assert len(estates) > 0, "No estates found for user"
@@ -80,9 +76,7 @@ class TestSectionLockBackend:
             f"{BASE_URL}/api/security/settings",
             headers={"Authorization": f"Bearer {auth_token}"},
         )
-        assert response.status_code == 200, (
-            f"Security settings endpoint failed: {response.text}"
-        )
+        assert response.status_code == 200, f"Security settings endpoint failed: {response.text}"
         data = response.json()
         # Response should be a dict of section settings (may be empty)
         assert isinstance(data, dict), f"Expected dict, got {type(data)}"
@@ -103,9 +97,7 @@ class TestSectionLockBackend:
             is_active = section_data.get("is_active", False)
             print(f"Section {section_id}: active={is_active}")
 
-    def test_sdv_lock_blocks_download_when_active(
-        self, auth_token, estate_id, document_id
-    ):
+    def test_sdv_lock_blocks_download_when_active(self, auth_token, estate_id, document_id):
         """Test that SDV section lock blocks document downloads with 403"""
         if not document_id:
             pytest.skip("No documents available to test download blocking")
@@ -129,9 +121,7 @@ class TestSectionLockBackend:
             )
             print("PASS: SDV lock correctly blocks download with 403")
         else:
-            print(
-                "INFO: SDV is not locked - download should succeed (200) or require document password"
-            )
+            print("INFO: SDV is not locked - download should succeed (200) or require document password")
             download_response = requests.get(
                 f"{BASE_URL}/api/documents/{document_id}/download",
                 headers={"Authorization": f"Bearer {auth_token}"},
@@ -140,13 +130,9 @@ class TestSectionLockBackend:
             assert download_response.status_code in [200, 401], (
                 f"Expected 200 or 401 when SDV unlocked, got {download_response.status_code}"
             )
-            print(
-                f"PASS: SDV not locked - download returned {download_response.status_code}"
-            )
+            print(f"PASS: SDV not locked - download returned {download_response.status_code}")
 
-    def test_create_sdv_lock_and_verify_download_blocked(
-        self, auth_token, estate_id, document_id
-    ):
+    def test_create_sdv_lock_and_verify_download_blocked(self, auth_token, estate_id, document_id):
         """Create an SDV lock and verify downloads are blocked"""
         if not document_id:
             pytest.skip("No documents available to test")
@@ -165,9 +151,7 @@ class TestSectionLockBackend:
         )
 
         if lock_response.status_code not in [200, 201]:
-            print(
-                f"Warning: Could not create SDV lock: {lock_response.status_code} - {lock_response.text}"
-            )
+            print(f"Warning: Could not create SDV lock: {lock_response.status_code} - {lock_response.text}")
             pytest.skip("Could not create SDV lock for testing")
 
         print(f"SDV lock created/updated: {lock_response.json()}")
@@ -214,9 +198,7 @@ class TestSectionLockVerification:
             headers={"Authorization": f"Bearer {auth_token}"},
         )
         # Should return 400 or 422 (bad request) not 404 (not found)
-        assert response.status_code != 404, (
-            f"Verify endpoint not found: {response.status_code}"
-        )
+        assert response.status_code != 404, f"Verify endpoint not found: {response.status_code}"
         print(f"Verify endpoint response: {response.status_code}")
 
 
@@ -236,9 +218,7 @@ class TestAPIEndpoints:
 
     def test_estates_endpoint(self, auth_token):
         """Test estates endpoint returns data"""
-        response = requests.get(
-            f"{BASE_URL}/api/estates", headers={"Authorization": f"Bearer {auth_token}"}
-        )
+        response = requests.get(f"{BASE_URL}/api/estates", headers={"Authorization": f"Bearer {auth_token}"})
         assert response.status_code == 200
         estates = response.json()
         assert isinstance(estates, list)
@@ -248,9 +228,7 @@ class TestAPIEndpoints:
     def test_beneficiaries_endpoint(self, auth_token):
         """Test beneficiaries endpoint"""
         # First get estate
-        estates_response = requests.get(
-            f"{BASE_URL}/api/estates", headers={"Authorization": f"Bearer {auth_token}"}
-        )
+        estates_response = requests.get(f"{BASE_URL}/api/estates", headers={"Authorization": f"Bearer {auth_token}"})
         estate_id = estates_response.json()[0]["id"]
 
         response = requests.get(
@@ -265,9 +243,7 @@ class TestAPIEndpoints:
     def test_messages_endpoint(self, auth_token):
         """Test messages endpoint"""
         # First get estate
-        estates_response = requests.get(
-            f"{BASE_URL}/api/estates", headers={"Authorization": f"Bearer {auth_token}"}
-        )
+        estates_response = requests.get(f"{BASE_URL}/api/estates", headers={"Authorization": f"Bearer {auth_token}"})
         estate_id = estates_response.json()[0]["id"]
 
         response = requests.get(
@@ -282,9 +258,7 @@ class TestAPIEndpoints:
     def test_checklists_endpoint(self, auth_token):
         """Test checklists endpoint"""
         # First get estate
-        estates_response = requests.get(
-            f"{BASE_URL}/api/estates", headers={"Authorization": f"Bearer {auth_token}"}
-        )
+        estates_response = requests.get(f"{BASE_URL}/api/estates", headers={"Authorization": f"Bearer {auth_token}"})
         estate_id = estates_response.json()[0]["id"]
 
         response = requests.get(
@@ -299,9 +273,7 @@ class TestAPIEndpoints:
     def test_documents_endpoint(self, auth_token):
         """Test documents endpoint"""
         # First get estate
-        estates_response = requests.get(
-            f"{BASE_URL}/api/estates", headers={"Authorization": f"Bearer {auth_token}"}
-        )
+        estates_response = requests.get(f"{BASE_URL}/api/estates", headers={"Authorization": f"Bearer {auth_token}"})
         estate_id = estates_response.json()[0]["id"]
 
         response = requests.get(

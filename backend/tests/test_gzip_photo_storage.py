@@ -51,9 +51,7 @@ def admin_session():
             },
         )
         if verify_resp.status_code != 200:
-            pytest.skip(
-                f"OTP verification failed: {verify_resp.status_code} - {verify_resp.text}"
-            )
+            pytest.skip(f"OTP verification failed: {verify_resp.status_code} - {verify_resp.text}")
         login_data = verify_resp.json()
 
     token = login_data.get("access_token")
@@ -72,9 +70,7 @@ class TestGZipCompression:
         session, _ = admin_session
 
         # Request with Accept-Encoding: gzip
-        response = session.get(
-            f"{BASE_URL}/api/health", headers={"Accept-Encoding": "gzip, deflate"}
-        )
+        response = session.get(f"{BASE_URL}/api/health", headers={"Accept-Encoding": "gzip, deflate"})
 
         assert response.status_code == 200
         print(f"Health endpoint response status: {response.status_code}")
@@ -91,9 +87,7 @@ class TestGZipCompression:
         """Verify /api/auth/me supports gzip encoding"""
         session, _ = admin_session
 
-        response = session.get(
-            f"{BASE_URL}/api/auth/me", headers={"Accept-Encoding": "gzip, deflate"}
-        )
+        response = session.get(f"{BASE_URL}/api/auth/me", headers={"Accept-Encoding": "gzip, deflate"})
 
         assert response.status_code == 200
         print(f"Auth/me response status: {response.status_code}")
@@ -122,9 +116,7 @@ class TestProfilePhotoUpload:
             json={"photo_data": MINIMAL_JPEG_BASE64, "file_name": "test_photo.jpg"},
         )
 
-        assert response.status_code == 200, (
-            f"Photo upload failed: {response.status_code} - {response.text}"
-        )
+        assert response.status_code == 200, f"Photo upload failed: {response.status_code} - {response.text}"
 
         data = response.json()
         photo_url = data.get("photo_url", "")
@@ -132,9 +124,7 @@ class TestProfilePhotoUpload:
         print(f"Uploaded photo URL: {photo_url}")
 
         # Verify the URL is in /api/photos/... format (not data: URL)
-        assert photo_url.startswith("/api/photos/"), (
-            f"Expected /api/photos/... URL, got: {photo_url}"
-        )
+        assert photo_url.startswith("/api/photos/"), f"Expected /api/photos/... URL, got: {photo_url}"
         assert "users/" in photo_url, f"Expected 'users/' in path, got: {photo_url}"
         assert ".jpg" in photo_url, f"Expected .jpg extension, got: {photo_url}"
 
@@ -194,9 +184,7 @@ class TestPhotoServing:
 
         serve_resp = session.get(serve_url)
 
-        assert serve_resp.status_code == 200, (
-            f"Photo serve failed: {serve_resp.status_code}"
-        )
+        assert serve_resp.status_code == 200, f"Photo serve failed: {serve_resp.status_code}"
 
         # Verify content-type
         content_type = serve_resp.headers.get("Content-Type", "")
@@ -245,9 +233,7 @@ class TestPhotoRemoval:
         removed_url = remove_resp.json().get("photo_url")
 
         print(f"After removal, photo_url: '{removed_url}'")
-        assert removed_url == "", (
-            f"Expected empty photo_url after removal, got: {removed_url}"
-        )
+        assert removed_url == "", f"Expected empty photo_url after removal, got: {removed_url}"
 
         # Verify /api/auth/me shows empty photo_url
         me_resp = session.get(f"{BASE_URL}/api/auth/me")
@@ -283,9 +269,7 @@ class TestLoginFlow:
                 json={"email": "info@carryon.us", "otp": "000000", "trust_today": True},
             )
 
-            assert verify_resp.status_code == 200, (
-                f"OTP verify failed: {verify_resp.status_code}"
-            )
+            assert verify_resp.status_code == 200, f"OTP verify failed: {verify_resp.status_code}"
             login_data = verify_resp.json()
 
         # Verify we got a token
@@ -306,9 +290,7 @@ class TestEstatePhotoUrls:
         # Get estates for the current user
         response = session.get(f"{BASE_URL}/api/estates")
 
-        assert response.status_code == 200, (
-            f"Estates fetch failed: {response.status_code}"
-        )
+        assert response.status_code == 200, f"Estates fetch failed: {response.status_code}"
 
         estates = response.json()
 

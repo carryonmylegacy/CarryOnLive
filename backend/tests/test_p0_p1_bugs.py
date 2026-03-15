@@ -10,9 +10,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com"
-)
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com")
 
 # Test credentials - using the founder account
 BENEFACTOR_EMAIL = "founder@carryon.us"
@@ -38,9 +36,7 @@ class TestP0InvitationLinkFix:
         )
 
         # Status code assertion
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}. Response: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}. Response: {response.text}"
 
         # Data assertions - validate response structure
         data = response.json()
@@ -49,12 +45,8 @@ class TestP0InvitationLinkFix:
 
         # Validate beneficiary details
         beneficiary = data["beneficiary"]
-        assert beneficiary["first_name"] == "Test", (
-            f"Expected first_name='Test', got '{beneficiary['first_name']}'"
-        )
-        assert beneficiary["last_name"] == "Invitee", (
-            f"Expected last_name='Invitee', got '{beneficiary['last_name']}'"
-        )
+        assert beneficiary["first_name"] == "Test", f"Expected first_name='Test', got '{beneficiary['first_name']}'"
+        assert beneficiary["last_name"] == "Invitee", f"Expected last_name='Invitee', got '{beneficiary['last_name']}'"
         assert beneficiary["email"] == "invitee@test.com"
         assert beneficiary["relation"] == "child"
 
@@ -145,21 +137,15 @@ class TestBeneficiariesAPI:
         estates_response = requests.get(f"{BASE_URL}/api/estates", headers=self.headers)
         estate_id = estates_response.json()[0]["id"]
 
-        response = requests.get(
-            f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=self.headers
-        )
+        response = requests.get(f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=self.headers)
 
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
 
         # Verify our test beneficiary exists
-        test_beneficiary = next(
-            (b for b in data if b["email"] == "invitee@test.com"), None
-        )
-        assert test_beneficiary is not None, (
-            "Test beneficiary 'invitee@test.com' not found"
-        )
+        test_beneficiary = next((b for b in data if b["email"] == "invitee@test.com"), None)
+        assert test_beneficiary is not None, "Test beneficiary 'invitee@test.com' not found"
 
         # Validate beneficiary structure
         assert test_beneficiary["first_name"] == "Test"
@@ -175,14 +161,10 @@ class TestBeneficiariesAPI:
         estates_response = requests.get(f"{BASE_URL}/api/estates", headers=self.headers)
         estate_id = estates_response.json()[0]["id"]
 
-        beneficiaries_response = requests.get(
-            f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=self.headers
-        )
+        beneficiaries_response = requests.get(f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=self.headers)
         beneficiaries = beneficiaries_response.json()
 
-        test_beneficiary = next(
-            (b for b in beneficiaries if b["email"] == "invitee@test.com"), None
-        )
+        test_beneficiary = next((b for b in beneficiaries if b["email"] == "invitee@test.com"), None)
         if not test_beneficiary:
             pytest.skip("Test beneficiary not found")
 
@@ -193,9 +175,7 @@ class TestBeneficiariesAPI:
         )
 
         # Should succeed with 200 (resend) or fail with 400 (already accepted)
-        assert response.status_code in [200, 400], (
-            f"Unexpected status: {response.status_code}"
-        )
+        assert response.status_code in [200, 400], f"Unexpected status: {response.status_code}"
 
         if response.status_code == 200:
             data = response.json()

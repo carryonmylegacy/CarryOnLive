@@ -62,12 +62,8 @@ class TestAuthAndOperatorRole:
         assert resp.status_code == 200
         data = resp.json()
         assert "user" in data
-        assert "operator_role" in data["user"], (
-            "operator_role missing from login user response"
-        )
-        print(
-            f"✓ Login user response includes operator_role: '{data['user']['operator_role']}'"
-        )
+        assert "operator_role" in data["user"], "operator_role missing from login user response"
+        print(f"✓ Login user response includes operator_role: '{data['user']['operator_role']}'")
 
 
 class TestOperatorCRUD:
@@ -96,9 +92,7 @@ class TestOperatorCRUD:
         print(f"✓ Founder can list operators, count: {len(data)}")
         # Check that each operator has operator_role
         for op in data:
-            assert "operator_role" in op, (
-                f"Operator {op.get('email')} missing operator_role"
-            )
+            assert "operator_role" in op, f"Operator {op.get('email')} missing operator_role"
 
     def test_create_worker_as_founder(self, auth_headers):
         """POST /api/founder/operators - Create worker"""
@@ -113,9 +107,7 @@ class TestOperatorCRUD:
             "notes": "Test worker created by pytest",
             "operator_role": "worker",
         }
-        resp = requests.post(
-            f"{BASE_URL}/api/founder/operators", headers=auth_headers, json=worker_data
-        )
+        resp = requests.post(f"{BASE_URL}/api/founder/operators", headers=auth_headers, json=worker_data)
         assert resp.status_code == 200, f"Create worker failed: {resp.text}"
         data = resp.json()
         assert data["operator_role"] == "worker"
@@ -136,9 +128,7 @@ class TestOperatorCRUD:
             "notes": "Test manager created by pytest",
             "operator_role": "manager",
         }
-        resp = requests.post(
-            f"{BASE_URL}/api/founder/operators", headers=auth_headers, json=manager_data
-        )
+        resp = requests.post(f"{BASE_URL}/api/founder/operators", headers=auth_headers, json=manager_data)
         assert resp.status_code == 200, f"Create manager failed: {resp.text}"
         data = resp.json()
         assert data["operator_role"] == "manager"
@@ -183,9 +173,7 @@ class TestManagerAccessControl:
             "email": "",  # No OTP email
             "operator_role": "manager",
         }
-        resp = requests.post(
-            f"{BASE_URL}/api/founder/operators", headers=headers, json=manager_data
-        )
+        resp = requests.post(f"{BASE_URL}/api/founder/operators", headers=headers, json=manager_data)
         if resp.status_code != 200:
             # Manager might already exist
             pass
@@ -214,9 +202,7 @@ class TestManagerAccessControl:
             "last_name": "Manager",
             "operator_role": "manager",
         }
-        resp = requests.post(
-            f"{BASE_URL}/api/founder/operators", headers=headers, json=manager_data
-        )
+        resp = requests.post(f"{BASE_URL}/api/founder/operators", headers=headers, json=manager_data)
         assert resp.status_code == 403, f"Expected 403, got {resp.status_code}"
         print("✓ Manager correctly denied creating another manager (403)")
 
@@ -233,12 +219,8 @@ class TestManagerAccessControl:
             "last_name": "Worker",
             "operator_role": "worker",
         }
-        resp = requests.post(
-            f"{BASE_URL}/api/founder/operators", headers=headers, json=worker_data
-        )
-        assert resp.status_code == 200, (
-            f"Manager should be able to create worker: {resp.text}"
-        )
+        resp = requests.post(f"{BASE_URL}/api/founder/operators", headers=headers, json=worker_data)
+        assert resp.status_code == 200, f"Manager should be able to create worker: {resp.text}"
         print("✓ Manager successfully created a worker")
 
     def test_manager_sees_only_workers(self, manager_token):
@@ -251,9 +233,7 @@ class TestManagerAccessControl:
         assert resp.status_code == 200
         operators = resp.json()
         for op in operators:
-            assert op.get("operator_role") != "manager", (
-                f"Manager should not see other managers: {op.get('email')}"
-            )
+            assert op.get("operator_role") != "manager", f"Manager should not see other managers: {op.get('email')}"
         print(f"✓ Manager sees only workers (count: {len(operators)})")
 
 
@@ -282,15 +262,11 @@ class TestP1ContactSettings:
         assert "email" in data
         assert "phone" in data
         assert "chat_enabled" in data
-        print(
-            f"✓ Public P1 settings: email={data['email']}, phone={data['phone']}, chat={data['chat_enabled']}"
-        )
+        print(f"✓ Public P1 settings: email={data['email']}, phone={data['phone']}, chat={data['chat_enabled']}")
 
     def test_p1_contact_settings_staff_access(self, auth_headers):
         """GET /api/founder/p1-contact-settings - Staff can read"""
-        resp = requests.get(
-            f"{BASE_URL}/api/founder/p1-contact-settings", headers=auth_headers
-        )
+        resp = requests.get(f"{BASE_URL}/api/founder/p1-contact-settings", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.json()
         assert "email" in data
@@ -342,18 +318,12 @@ class TestOperatorEditDelete:
             "last_name": "Name",
             "operator_role": "worker",
         }
-        resp = requests.post(
-            f"{BASE_URL}/api/founder/operators", headers=auth_headers, json=worker_data
-        )
+        resp = requests.post(f"{BASE_URL}/api/founder/operators", headers=auth_headers, json=worker_data)
         if resp.status_code != 200:
             # Get existing operator
-            resp = requests.get(
-                f"{BASE_URL}/api/founder/operators", headers=auth_headers
-            )
+            resp = requests.get(f"{BASE_URL}/api/founder/operators", headers=auth_headers)
             operators = resp.json()
-            test_op = next(
-                (op for op in operators if op.get("email") == "TEST_edit_worker"), None
-            )
+            test_op = next((op for op in operators if op.get("email") == "TEST_edit_worker"), None)
             if not test_op:
                 pytest.skip("No test operator available")
             operator_id = test_op["id"]
@@ -388,9 +358,7 @@ class TestOperatorEditDelete:
         operator_id = test_op["id"]
 
         # Try delete without password
-        resp = requests.delete(
-            f"{BASE_URL}/api/founder/operators/{operator_id}", headers=auth_headers
-        )
+        resp = requests.delete(f"{BASE_URL}/api/founder/operators/{operator_id}", headers=auth_headers)
         assert resp.status_code == 422, "Delete without password should fail validation"
         print("✓ Delete without password correctly rejected (422)")
 
@@ -416,9 +384,7 @@ class TestSealedAccountLogin:
             json={"email": "nonexistent@test.com", "password": "wrongpass"},
         )
         # Should fail with 401, not return sealed
-        assert resp.status_code in [401, 429], (
-            f"Expected auth failure, got {resp.status_code}"
-        )
+        assert resp.status_code in [401, 429], f"Expected auth failure, got {resp.status_code}"
         print("✓ Login correctly handles invalid credentials")
 
 

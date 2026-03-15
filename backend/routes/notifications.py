@@ -23,22 +23,13 @@ async def get_notifications(
     query = {"user_id": current_user["id"]}
     if unread_only:
         query["read"] = False
-    notifications = (
-        await db.notifications.find(query, {"_id": 0})
-        .sort("created_at", -1)
-        .limit(limit)
-        .to_list(limit)
-    )
-    unread_count = await db.notifications.count_documents(
-        {"user_id": current_user["id"], "read": False}
-    )
+    notifications = await db.notifications.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    unread_count = await db.notifications.count_documents({"user_id": current_user["id"], "read": False})
     return {"notifications": notifications, "unread_count": unread_count}
 
 
 @router.post("/notifications/{notification_id}/read")
-async def mark_notification_read(
-    notification_id: str, current_user: dict = Depends(get_current_user)
-):
+async def mark_notification_read(notification_id: str, current_user: dict = Depends(get_current_user)):
     """Mark a single notification as read."""
     result = await db.notifications.update_one(
         {"id": notification_id, "user_id": current_user["id"]},
@@ -62,7 +53,5 @@ async def mark_all_read(current_user: dict = Depends(get_current_user)):
 @router.get("/notifications/unread-count")
 async def get_unread_count(current_user: dict = Depends(get_current_user)):
     """Get unread notification count (lightweight endpoint for polling)."""
-    count = await db.notifications.count_documents(
-        {"user_id": current_user["id"], "read": False}
-    )
+    count = await db.notifications.count_documents({"user_id": current_user["id"], "read": False})
     return {"unread_count": count}

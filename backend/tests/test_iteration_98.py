@@ -105,9 +105,7 @@ class TestOpsPortalUsersTab:
         assert response.status_code == 200
         stats = response.json()
         assert isinstance(stats, dict)
-        print(
-            f"✅ Admin stats endpoint working - total users: {stats.get('users', {}).get('total', 'N/A')}"
-        )
+        print(f"✅ Admin stats endpoint working - total users: {stats.get('users', {}).get('total', 'N/A')}")
         return stats
 
 
@@ -136,9 +134,7 @@ class TestSubscriptionPlansAPI:
 
             # Check plan name
             for forbidden in forbidden_strings:
-                assert forbidden not in plan_name.lower(), (
-                    f"Plan '{plan_name}' contains forbidden text: {forbidden}"
-                )
+                assert forbidden not in plan_name.lower(), f"Plan '{plan_name}' contains forbidden text: {forbidden}"
 
             # Check features
             for feature in features:
@@ -148,9 +144,7 @@ class TestSubscriptionPlansAPI:
                         f"Feature '{feature_text}' in plan '{plan_name}' contains forbidden text: {forbidden}"
                     )
 
-        print(
-            f"✅ Verified {len(plans)} subscription plans - no 'Will/Trust Wizard' or 'Eternal Echo' found"
-        )
+        print(f"✅ Verified {len(plans)} subscription plans - no 'Will/Trust Wizard' or 'Eternal Echo' found")
         return plans
 
 

@@ -32,9 +32,7 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
 
     # Always fetch estates the user OWNS (regardless of primary role)
     if current_user["role"] == "benefactor" or is_also_benefactor:
-        owned = await db.estates.find(
-            {"owner_id": current_user["id"]}, {"_id": 0}
-        ).to_list(100)
+        owned = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0}).to_list(100)
         for e in owned:
             e["user_role_in_estate"] = "owner"
             estates.append(e)
@@ -42,17 +40,13 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
 
     # Fetch estates they're a BENEFICIARY of (any role — covers both
     # explicit beneficiaries and benefactors who are also beneficiaries)
-    ben_estates = await db.estates.find(
-        {"beneficiaries": current_user["id"]}, {"_id": 0}
-    ).to_list(100)
+    ben_estates = await db.estates.find({"beneficiaries": current_user["id"]}, {"_id": 0}).to_list(100)
     ben_estates = [be for be in ben_estates if be["id"] not in seen_ids]
 
     if ben_estates:
         # Batch-fetch all data to avoid N+1 queries
         estate_ids = [be["id"] for be in ben_estates]
-        owner_ids = list(
-            {be.get("owner_id") for be in ben_estates if be.get("owner_id")}
-        )
+        owner_ids = list({be.get("owner_id") for be in ben_estates if be.get("owner_id")})
 
         # 1) Batch-fetch display overrides for all estates at once
         overrides = {}
@@ -77,8 +71,7 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
             for oid in owner_ids
             if oid in owners
             and not owners[oid].get("photo_url")
-            and oid
-            not in {be.get("owner_id") for be in ben_estates if be["id"] in overrides}
+            and oid not in {be.get("owner_id") for be in ben_estates if be["id"] in overrides}
         ]
         ben_photos = {}
         if owners_needing_photo:
@@ -121,9 +114,7 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
 async def get_family_connections(current_user: dict = Depends(get_current_user)):
     """Get all family connections for a beneficiary with relationship data for orbit visualization"""
     # Allow both beneficiaries and benefactors who are also beneficiaries
-    ben_records = await db.beneficiaries.find(
-        {"user_id": current_user["id"]}, {"_id": 0}
-    ).to_list(100)
+    ben_records = await db.beneficiaries.find({"user_id": current_user["id"]}, {"_id": 0}).to_list(100)
     if not ben_records:
         return []
 
@@ -136,9 +127,7 @@ async def get_family_connections(current_user: dict = Depends(get_current_user))
         estates_map[e["id"]] = e
 
     # Batch-fetch all estate owners at once
-    owner_ids = list(
-        {e.get("owner_id") for e in estates_map.values() if e.get("owner_id")}
-    )
+    owner_ids = list({e.get("owner_id") for e in estates_map.values() if e.get("owner_id")})
     owners_map = {}
     async for o in db.users.find({"id": {"$in": owner_ids}}, {"_id": 0, "password": 0}):
         owners_map[o["id"]] = o
@@ -153,11 +142,7 @@ async def get_family_connections(current_user: dict = Depends(get_current_user))
             overrides_map[ov["estate_id"]] = ov["owner_photo_url"]
 
     # Batch-fetch beneficiary photos for owners without profile photos
-    owners_needing_photo = [
-        oid
-        for oid in owner_ids
-        if oid in owners_map and not owners_map[oid].get("photo_url")
-    ]
+    owners_needing_photo = [oid for oid in owner_ids if oid in owners_map and not owners_map[oid].get("photo_url")]
     ben_photos_map = {}
     if owners_needing_photo:
         async for bp in db.beneficiaries.find(
@@ -215,9 +200,7 @@ async def get_family_connections(current_user: dict = Depends(get_current_user))
         if estate["id"] in overrides_map:
             display_photo = overrides_map[estate["id"]]
         else:
-            display_photo = benefactor.get("photo_url", "") or ben_photos_map.get(
-                benefactor["id"], ""
-            )
+            display_photo = benefactor.get("photo_url", "") or ben_photos_map.get(benefactor["id"], "")
         # Invert the relation so the benefactor's label reflects what
         # the benefactor is TO the current user, not the other way around.
         raw_relation = ben_record.get("relation", "Other")
@@ -235,9 +218,7 @@ async def get_family_connections(current_user: dict = Depends(get_current_user))
                 "readiness_score": estate.get("readiness_score", 0),
                 "benefactor_id": benefactor.get("id"),
                 "photo_url": resolve_photo_url(display_photo),
-                "my_photo_in_estate": resolve_photo_url(
-                    ben_record.get("photo_url", "")
-                ),
+                "my_photo_in_estate": resolve_photo_url(ben_record.get("photo_url", "")),
             }
         )
 
@@ -249,7 +230,7 @@ async def get_my_primary_for_estates(current_user: dict = Depends(get_current_us
     """Return all estates where the current user is designated as the primary beneficiary."""
     ben_records = await db.beneficiaries.find(
         {"user_id": current_user["id"], "is_primary": True, "deleted_at": None},
-        {"_id": 0, "estate_id": 1},
+        {"_id": 0, "id": 1, "estate_id": 1},
     ).to_list(100)
     if not ben_records:
         return []
@@ -289,16 +270,12 @@ class DisplayOverrideUpdate(BaseModel):
 
 
 @router.put("/beneficiary/display-override")
-async def update_display_override(
-    data: DisplayOverrideUpdate, current_user: dict = Depends(get_current_user)
-):
+async def update_display_override(data: DisplayOverrideUpdate, current_user: dict = Depends(get_current_user)):
     """Beneficiary sets a display override for how they see a benefactor's photo.
     This NEVER modifies the benefactor's actual data — it's stored separately
     in beneficiary_display_overrides and only affects the beneficiary's view."""
     if current_user["role"] != "beneficiary":
-        raise HTTPException(
-            status_code=403, detail="Only beneficiaries can set display overrides"
-        )
+        raise HTTPException(status_code=403, detail="Only beneficiaries can set display overrides")
 
     # Verify this user is actually a beneficiary of this estate
     estate = await db.estates.find_one({"id": data.estate_id}, {"_id": 0})
@@ -340,18 +317,14 @@ async def update_estate_photo(
     if not estate:
         raise HTTPException(status_code=404, detail="Estate not found")
     if estate.get("owner_id") != current_user["id"]:
-        raise HTTPException(
-            status_code=403, detail="Only the estate owner can set the estate photo"
-        )
+        raise HTTPException(status_code=403, detail="Only the estate owner can set the estate photo")
 
     if not data.photo_data:
         # Remove estate photo
         old_key = estate.get("estate_photo_url", "")
         if old_key and not old_key.startswith("data:"):
             await delete_photo(old_key)
-        await db.estates.update_one(
-            {"id": estate_id}, {"$set": {"estate_photo_url": ""}}
-        )
+        await db.estates.update_one({"id": estate_id}, {"$set": {"estate_photo_url": ""}})
         return {"estate_photo_url": ""}
 
     try:
@@ -370,9 +343,7 @@ async def update_estate_photo(
     # Upload new photo
     photo_url = await upload_photo(raw, "estates", estate_id)
 
-    await db.estates.update_one(
-        {"id": estate_id}, {"$set": {"estate_photo_url": photo_url}}
-    )
+    await db.estates.update_one({"id": estate_id}, {"$set": {"estate_photo_url": photo_url}})
     return {"estate_photo_url": resolve_photo_url(photo_url)}
 
 
@@ -408,16 +379,12 @@ class CreateEstateRequest(BaseModel):
 
     name: str | None = None  # Optional custom estate name
     beneficiary_enrollments: list = []  # [{first_name, last_name, email, dob, relation, ...}]
-    special_status: list | None = (
-        None  # ['military', 'veteran', 'hospice', 'enterprise', ...]
-    )
+    special_status: list | None = None  # ['military', 'veteran', 'hospice', 'enterprise', ...]
     b2b_code: str | None = None
 
 
 @router.post("/accounts/create-estate")
-async def create_estate_for_existing_user(
-    data: CreateEstateRequest, current_user: dict = Depends(get_current_user)
-):
+async def create_estate_for_existing_user(data: CreateEstateRequest, current_user: dict = Depends(get_current_user)):
     """Create a new estate for an existing user WITHOUT changing their primary role.
     Works for both beneficiaries wanting to become benefactors AND benefactors creating additional estates.
     Sets is_also_benefactor=True so the user retains their original role but gains estate ownership."""
@@ -425,9 +392,7 @@ async def create_estate_for_existing_user(
     from datetime import datetime, timezone
 
     if current_user["role"] in ("admin", "operator"):
-        raise HTTPException(
-            status_code=400, detail="Staff accounts cannot create estate plans"
-        )
+        raise HTTPException(status_code=400, detail="Staff accounts cannot create estate plans")
 
     # Check if they already own an estate
     existing = await db.estates.find_one(
@@ -439,12 +404,8 @@ async def create_estate_for_existing_user(
         # items, is still in pre-transition, and was created >2 minutes ago, it's
         # an orphaned/failed creation.  Delete it so the user can start fresh.
         bens_in_estate = existing.get("beneficiaries") or []
-        ben_docs_count = await db.beneficiaries.count_documents(
-            {"estate_id": existing["id"]}
-        )
-        vault_count = await db.vault_items.count_documents(
-            {"estate_id": existing["id"]}
-        )
+        ben_docs_count = await db.beneficiaries.count_documents({"estate_id": existing["id"]})
+        vault_count = await db.vault_items.count_documents({"estate_id": existing["id"]})
         is_empty = len(bens_in_estate) == 0 and ben_docs_count == 0 and vault_count == 0
         is_ghost = is_empty and existing.get("status") == "pre-transition"
 
@@ -459,9 +420,7 @@ async def create_estate_for_existing_user(
         raise HTTPException(status_code=404, detail="User not found")
 
     now = datetime.now(timezone.utc)
-    last_name = user.get(
-        "last_name", user.get("name", "").split()[-1] if user.get("name") else "Family"
-    )
+    last_name = user.get("last_name", user.get("name", "").split()[-1] if user.get("name") else "Family")
 
     # Create estate
     estate_id = str(uuid.uuid4())
@@ -494,10 +453,7 @@ async def create_estate_for_existing_user(
                     eligible_tier = "new_adult"
             except (ValueError, TypeError):
                 pass
-        if any(
-            s in special_statuses
-            for s in ["military", "first_responder", "federal_agent"]
-        ):
+        if any(s in special_statuses for s in ["military", "first_responder", "federal_agent"]):
             eligible_tier = "military"
         elif "veteran" in special_statuses:
             eligible_tier = "veteran"
@@ -539,17 +495,13 @@ async def create_estate_for_existing_user(
             middle = (ben.get("middle_name") or "").strip()
             last = (ben.get("last_name") or last_name).strip()
             ben_email = (ben.get("email") or "").strip().lower()
-            initials = (
-                (first[0] if first else "?") + (last[0] if last else "?")
-            ).upper()
+            initials = ((first[0] if first else "?") + (last[0] if last else "?")).upper()
             full_name = " ".join(p for p in [first, middle, last] if p)
 
             # Check if this email already has an account — auto-link if so
             existing_user = None
             if ben_email:
-                existing_user = await db.users.find_one(
-                    {"email": ben_email}, {"_id": 0, "id": 1, "name": 1, "role": 1}
-                )
+                existing_user = await db.users.find_one({"email": ben_email}, {"_id": 0, "id": 1, "name": 1, "role": 1})
 
             ben_record = {
                 "id": str(uuid.uuid4()),
@@ -564,9 +516,7 @@ async def create_estate_for_existing_user(
                 "gender": ben.get("gender"),
                 "initials": initials,
                 "avatar_color": avatar_colors[i % len(avatar_colors)],
-                "invitation_status": "accepted"
-                if existing_user
-                else ("pending" if ben_email else "draft"),
+                "invitation_status": "accepted" if existing_user else ("pending" if ben_email else "draft"),
                 "is_stub": not bool(first),
                 "address_street": ben.get("address_street"),
                 "address_city": ben.get("address_city"),
@@ -599,9 +549,7 @@ async def create_estate_for_existing_user(
 
         if beneficiaries_to_insert:
             await db.beneficiaries.insert_many(beneficiaries_to_insert)
-            logger.info(
-                f"Estate {estate_id}: enrolled {len(beneficiaries_to_insert)} beneficiaries"
-            )
+            logger.info(f"Estate {estate_id}: enrolled {len(beneficiaries_to_insert)} beneficiaries")
     except Exception as e:
         logger.error(f"Error enrolling beneficiaries for estate {estate_id}: {e}")
 
@@ -690,9 +638,7 @@ class AddBeneficiaryLinkRequest(BaseModel):
 
 
 @router.post("/accounts/add-beneficiary-link")
-async def add_beneficiary_link(
-    data: AddBeneficiaryLinkRequest, current_user: dict = Depends(get_current_user)
-):
+async def add_beneficiary_link(data: AddBeneficiaryLinkRequest, current_user: dict = Depends(get_current_user)):
     """Link authenticated user as beneficiary to another estate by benefactor email.
     Does NOT change user role. Sets is_also_beneficiary flag if they're a benefactor."""
     import uuid
@@ -701,13 +647,9 @@ async def add_beneficiary_link(
     benefactor_email = data.benefactor_email.lower().strip()
 
     # Find the benefactor
-    benefactor = await db.users.find_one(
-        {"email": benefactor_email}, {"_id": 0, "id": 1, "name": 1}
-    )
+    benefactor = await db.users.find_one({"email": benefactor_email}, {"_id": 0, "id": 1, "name": 1})
     if not benefactor:
-        raise HTTPException(
-            status_code=404, detail="No benefactor found with that email address."
-        )
+        raise HTTPException(status_code=404, detail="No benefactor found with that email address.")
 
     # Find their estate
     estate = await db.estates.find_one(
@@ -715,9 +657,7 @@ async def add_beneficiary_link(
         {"_id": 0, "id": 1, "beneficiaries": 1, "name": 1},
     )
     if not estate:
-        raise HTTPException(
-            status_code=404, detail="No estate found for that benefactor."
-        )
+        raise HTTPException(status_code=404, detail="No estate found for that benefactor.")
 
     # Check if already linked
     if current_user["id"] in estate.get("beneficiaries", []):
@@ -767,10 +707,7 @@ async def add_beneficiary_link(
                 "name": full_name,
                 "email": user.get("email", ""),
                 "relation": "",
-                "initials": (
-                    (first_name[0] if first_name else "?")
-                    + (last_name[0] if last_name else "?")
-                ).upper(),
+                "initials": ((first_name[0] if first_name else "?") + (last_name[0] if last_name else "?")).upper(),
                 "avatar_color": "#60A5FA",
                 "invitation_status": "accepted",
                 "is_stub": False,
@@ -793,9 +730,7 @@ async def add_beneficiary_link(
 
 
 @router.post("/estates")
-async def create_estate(
-    data: EstateCreate, current_user: dict = Depends(get_current_user)
-):
+async def create_estate(data: EstateCreate, current_user: dict = Depends(get_current_user)):
     """Create a new estate."""
     require_benefactor_role(current_user, "create estates")
 
@@ -821,9 +756,7 @@ async def create_estate(
 
 
 @router.patch("/estates/{estate_id}")
-async def update_estate(
-    estate_id: str, data: EstateUpdate, current_user: dict = Depends(get_current_user)
-):
+async def update_estate(estate_id: str, data: EstateUpdate, current_user: dict = Depends(get_current_user)):
     """Update an existing estate."""
     require_benefactor_role(current_user, "update estates")
 
@@ -882,9 +815,7 @@ async def delete_estate(estate_id: str, current_user: dict = Depends(get_current
 
 
 @router.get("/estate/{estate_id}/readiness")
-async def get_estate_readiness(
-    estate_id: str, current_user: dict = Depends(get_current_user)
-):
+async def get_estate_readiness(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Get detailed estate readiness score breakdown"""
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
     if not estate:
@@ -915,9 +846,7 @@ async def get_estate_readiness(
 
 
 @router.post("/estate/{estate_id}/readiness")
-async def recalculate_estate_readiness(
-    estate_id: str, current_user: dict = Depends(get_current_user)
-):
+async def recalculate_estate_readiness(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Recalculate and return estate readiness score"""
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
     if not estate:
@@ -947,9 +876,7 @@ async def recalculate_estate_readiness(
 
 
 @router.get("/activity/{estate_id}")
-async def get_activity_log(
-    estate_id: str, limit: int = 50, current_user: dict = Depends(get_current_user)
-):
+async def get_activity_log(estate_id: str, limit: int = 50, current_user: dict = Depends(get_current_user)):
     """Get activity log for an estate"""
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
     if not estate:

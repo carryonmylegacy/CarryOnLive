@@ -39,13 +39,9 @@ class TestGDPRCompliance:
 
     def test_get_consent_preferences(self):
         """GET /api/compliance/consent should return consent preferences"""
-        response = requests.get(
-            f"{BASE_URL}/api/compliance/consent", headers=self.headers
-        )
+        response = requests.get(f"{BASE_URL}/api/compliance/consent", headers=self.headers)
 
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
 
         # Verify response structure
@@ -55,9 +51,7 @@ class TestGDPRCompliance:
         assert "essential_services" in data, "Missing essential_services field"
 
         # Essential services should always be True
-        assert data["essential_services"] is True, (
-            "essential_services should always be True"
-        )
+        assert data["essential_services"] is True, "essential_services should always be True"
 
         # Verify types
         assert isinstance(data["marketing_emails"], bool)
@@ -71,9 +65,7 @@ class TestGDPRCompliance:
     def test_update_consent_marketing_emails(self):
         """PUT /api/compliance/consent should update marketing_emails consent"""
         # Get current state
-        get_response = requests.get(
-            f"{BASE_URL}/api/compliance/consent", headers=self.headers
-        )
+        get_response = requests.get(f"{BASE_URL}/api/compliance/consent", headers=self.headers)
         current_state = get_response.json().get("marketing_emails", False)
 
         # Toggle the value
@@ -89,32 +81,24 @@ class TestGDPRCompliance:
             },
         )
 
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
         assert "message" in data, "Response should contain message"
         assert "updated_at" in data, "Response should contain updated_at timestamp"
 
         # Verify the change persisted
-        verify_response = requests.get(
-            f"{BASE_URL}/api/compliance/consent", headers=self.headers
-        )
+        verify_response = requests.get(f"{BASE_URL}/api/compliance/consent", headers=self.headers)
         verify_data = verify_response.json()
         assert verify_data["marketing_emails"] == new_value, (
             f"Expected {new_value}, got {verify_data['marketing_emails']}"
         )
 
-        print(
-            f"✓ PUT consent marketing_emails toggled from {current_state} to {new_value}"
-        )
+        print(f"✓ PUT consent marketing_emails toggled from {current_state} to {new_value}")
 
     def test_update_consent_analytics_tracking(self):
         """PUT /api/compliance/consent should update analytics_tracking consent"""
         # Get current state
-        get_response = requests.get(
-            f"{BASE_URL}/api/compliance/consent", headers=self.headers
-        )
+        get_response = requests.get(f"{BASE_URL}/api/compliance/consent", headers=self.headers)
         current_state = get_response.json().get("analytics_tracking", False)
 
         # Toggle the value
@@ -130,26 +114,18 @@ class TestGDPRCompliance:
             },
         )
 
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
 
         # Verify persistence
-        verify_response = requests.get(
-            f"{BASE_URL}/api/compliance/consent", headers=self.headers
-        )
+        verify_response = requests.get(f"{BASE_URL}/api/compliance/consent", headers=self.headers)
         assert verify_response.json()["analytics_tracking"] == new_value
 
-        print(
-            f"✓ PUT consent analytics_tracking toggled from {current_state} to {new_value}"
-        )
+        print(f"✓ PUT consent analytics_tracking toggled from {current_state} to {new_value}")
 
     def test_update_consent_third_party_sharing(self):
         """PUT /api/compliance/consent should update third_party_sharing consent"""
         # Get current state
-        get_response = requests.get(
-            f"{BASE_URL}/api/compliance/consent", headers=self.headers
-        )
+        get_response = requests.get(f"{BASE_URL}/api/compliance/consent", headers=self.headers)
         current_state = get_response.json().get("third_party_sharing", False)
 
         # Toggle the value
@@ -165,31 +141,21 @@ class TestGDPRCompliance:
             },
         )
 
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
 
         # Verify persistence
-        verify_response = requests.get(
-            f"{BASE_URL}/api/compliance/consent", headers=self.headers
-        )
+        verify_response = requests.get(f"{BASE_URL}/api/compliance/consent", headers=self.headers)
         assert verify_response.json()["third_party_sharing"] == new_value
 
-        print(
-            f"✓ PUT consent third_party_sharing toggled from {current_state} to {new_value}"
-        )
+        print(f"✓ PUT consent third_party_sharing toggled from {current_state} to {new_value}")
 
     # ===================== DATA EXPORT =====================
 
     def test_data_export(self):
         """GET /api/compliance/data-export should return user data in JSON format"""
-        response = requests.get(
-            f"{BASE_URL}/api/compliance/data-export", headers=self.headers
-        )
+        response = requests.get(f"{BASE_URL}/api/compliance/data-export", headers=self.headers)
 
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
 
         # Verify response structure
@@ -219,13 +185,9 @@ class TestGDPRCompliance:
 
     def test_retention_policy(self):
         """GET /api/compliance/retention-policy should return all retention categories"""
-        response = requests.get(
-            f"{BASE_URL}/api/compliance/retention-policy", headers=self.headers
-        )
+        response = requests.get(f"{BASE_URL}/api/compliance/retention-policy", headers=self.headers)
 
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
 
         # Verify structure
@@ -236,9 +198,7 @@ class TestGDPRCompliance:
         # Verify categories list
         categories = data["categories"]
         assert isinstance(categories, list), "categories should be a list"
-        assert len(categories) >= 5, (
-            f"Expected at least 5 retention categories, got {len(categories)}"
-        )
+        assert len(categories) >= 5, f"Expected at least 5 retention categories, got {len(categories)}"
 
         # Each category should have data_type, retention, and legal_basis
         for cat in categories:
@@ -257,9 +217,7 @@ class TestGDPRCompliance:
         for exp in expected_types:
             assert exp in category_types, f"Missing expected category: {exp}"
 
-        print(
-            f"✓ GET retention-policy returned {len(categories)} categories, version {data['policy_version']}"
-        )
+        print(f"✓ GET retention-policy returned {len(categories)} categories, version {data['policy_version']}")
 
     # ===================== DELETION REQUEST =====================
 
@@ -271,9 +229,7 @@ class TestGDPRCompliance:
             json={"confirm_email": "wrong@email.com", "reason": "Testing"},
         )
 
-        assert response.status_code == 400, (
-            f"Expected 400, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 400, f"Expected 400, got {response.status_code}: {response.text}"
         data = response.json()
         assert "detail" in data, "Error response should have detail"
         assert "match" in data["detail"].lower() or "email" in data["detail"].lower(), (
@@ -290,12 +246,8 @@ class TestGDPRCompliance:
         )
 
         # Should return 401 or 403 without auth
-        assert response.status_code in [401, 403], (
-            f"Expected 401/403, got {response.status_code}"
-        )
-        print(
-            f"✓ POST deletion-request rejected without auth (status {response.status_code})"
-        )
+        assert response.status_code in [401, 403], f"Expected 401/403, got {response.status_code}"
+        print(f"✓ POST deletion-request rejected without auth (status {response.status_code})")
 
     # ===================== CONSENT AUDIT LOGGING =====================
 
@@ -328,35 +280,25 @@ class TestGDPRRequiresAuth:
     def test_consent_get_requires_auth(self):
         """GET /api/compliance/consent requires auth"""
         response = requests.get(f"{BASE_URL}/api/compliance/consent")
-        assert response.status_code in [401, 403], (
-            f"Expected 401/403, got {response.status_code}"
-        )
+        assert response.status_code in [401, 403], f"Expected 401/403, got {response.status_code}"
         print("✓ GET consent requires auth")
 
     def test_consent_put_requires_auth(self):
         """PUT /api/compliance/consent requires auth"""
-        response = requests.put(
-            f"{BASE_URL}/api/compliance/consent", json={"marketing_emails": True}
-        )
-        assert response.status_code in [401, 403], (
-            f"Expected 401/403, got {response.status_code}"
-        )
+        response = requests.put(f"{BASE_URL}/api/compliance/consent", json={"marketing_emails": True})
+        assert response.status_code in [401, 403], f"Expected 401/403, got {response.status_code}"
         print("✓ PUT consent requires auth")
 
     def test_data_export_requires_auth(self):
         """GET /api/compliance/data-export requires auth"""
         response = requests.get(f"{BASE_URL}/api/compliance/data-export")
-        assert response.status_code in [401, 403], (
-            f"Expected 401/403, got {response.status_code}"
-        )
+        assert response.status_code in [401, 403], f"Expected 401/403, got {response.status_code}"
         print("✓ GET data-export requires auth")
 
     def test_retention_policy_requires_auth(self):
         """GET /api/compliance/retention-policy requires auth"""
         response = requests.get(f"{BASE_URL}/api/compliance/retention-policy")
-        assert response.status_code in [401, 403], (
-            f"Expected 401/403, got {response.status_code}"
-        )
+        assert response.status_code in [401, 403], f"Expected 401/403, got {response.status_code}"
         print("✓ GET retention-policy requires auth")
 
 

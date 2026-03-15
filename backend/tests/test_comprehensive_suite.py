@@ -245,16 +245,12 @@ class TestP1Estates:
         print("  Estate updated")
 
     def test_05_get_nonexistent_estate(self):
-        r = requests.get(
-            f"{BASE_URL}/api/estates/nonexistent-id-12345", headers=auth_header()
-        )
+        r = requests.get(f"{BASE_URL}/api/estates/nonexistent-id-12345", headers=auth_header())
         assert r.status_code in [404, 500]
         print("  Nonexistent estate handled")
 
     def test_06_readiness_score(self):
-        r = requests.get(
-            f"{BASE_URL}/api/estate/{S.estate_id}/readiness", headers=auth_header()
-        )
+        r = requests.get(f"{BASE_URL}/api/estate/{S.estate_id}/readiness", headers=auth_header())
         assert r.status_code == 200
         d = r.json()
         assert "overall_score" in d
@@ -262,16 +258,12 @@ class TestP1Estates:
         print(f"  Readiness: {d['overall_score']}%")
 
     def test_07_recalculate_readiness(self):
-        r = requests.post(
-            f"{BASE_URL}/api/estate/{S.estate_id}/readiness", headers=auth_header()
-        )
+        r = requests.post(f"{BASE_URL}/api/estate/{S.estate_id}/readiness", headers=auth_header())
         assert r.status_code == 200
         print("  Readiness recalculated")
 
     def test_08_activity_log(self):
-        r = requests.get(
-            f"{BASE_URL}/api/activity/{S.estate_id}", headers=auth_header()
-        )
+        r = requests.get(f"{BASE_URL}/api/activity/{S.estate_id}", headers=auth_header())
         assert r.status_code == 200
         d = r.json()
         assert isinstance(d, list)
@@ -303,9 +295,7 @@ class TestP1Beneficiaries:
         print(f"  Beneficiary: {d['first_name']} ({S.beneficiary_id})")
 
     def test_02_list(self):
-        r = requests.get(
-            f"{BASE_URL}/api/beneficiaries/{S.estate_id}", headers=auth_header()
-        )
+        r = requests.get(f"{BASE_URL}/api/beneficiaries/{S.estate_id}", headers=auth_header())
         assert r.status_code == 200
         d = r.json()
         assert isinstance(d, list)
@@ -373,9 +363,7 @@ class TestP1Checklist:
         print(f"  Checklist item: {S.checklist_id}")
 
     def test_02_list(self):
-        r = requests.get(
-            f"{BASE_URL}/api/checklists/{S.estate_id}", headers=auth_header()
-        )
+        r = requests.get(f"{BASE_URL}/api/checklists/{S.estate_id}", headers=auth_header())
         assert r.status_code == 200
         d = r.json()
         assert isinstance(d, list)
@@ -425,9 +413,7 @@ class TestP1Documents:
     """P1: Document vault operations."""
 
     def test_01_list_empty(self):
-        r = requests.get(
-            f"{BASE_URL}/api/documents/{S.estate_id}", headers=auth_header()
-        )
+        r = requests.get(f"{BASE_URL}/api/documents/{S.estate_id}", headers=auth_header())
         assert r.status_code == 200
         d = r.json()
         assert isinstance(d, list)
@@ -452,9 +438,7 @@ class TestP1Documents:
         print(f"  Upload: status={r.status_code}")
 
     def test_03_list_after_upload(self):
-        r = requests.get(
-            f"{BASE_URL}/api/documents/{S.estate_id}", headers=auth_header()
-        )
+        r = requests.get(f"{BASE_URL}/api/documents/{S.estate_id}", headers=auth_header())
         assert r.status_code == 200
         d = r.json()
         if d and not S.document_id:
@@ -508,9 +492,7 @@ class TestP1Messages:
         print(f"  Message: {S.message_id}")
 
     def test_02_list(self):
-        r = requests.get(
-            f"{BASE_URL}/api/messages/{S.estate_id}", headers=auth_header()
-        )
+        r = requests.get(f"{BASE_URL}/api/messages/{S.estate_id}", headers=auth_header())
         assert r.status_code == 200
         d = r.json()
         assert isinstance(d, list)
@@ -534,9 +516,7 @@ class TestP1DigitalWallet:
     """P1: Digital wallet/credentials."""
 
     def test_01_list_empty(self):
-        r = requests.get(
-            f"{BASE_URL}/api/digital-wallet/{S.estate_id}", headers=auth_header()
-        )
+        r = requests.get(f"{BASE_URL}/api/digital-wallet/{S.estate_id}", headers=auth_header())
         assert r.status_code == 200
         d = r.json()
         assert isinstance(d, list)
@@ -563,9 +543,7 @@ class TestP1DigitalWallet:
         print(f"  Wallet entry: {S.wallet_entry_id}")
 
     def test_03_list_after_create(self):
-        r = requests.get(
-            f"{BASE_URL}/api/digital-wallet/{S.estate_id}", headers=auth_header()
-        )
+        r = requests.get(f"{BASE_URL}/api/digital-wallet/{S.estate_id}", headers=auth_header())
         assert r.status_code == 200
         d = r.json()
         assert len(d) >= 1
@@ -637,9 +615,7 @@ class TestP1Support:
             print("  Conversations retrieved (admin)")
         else:
             # Verify non-admin gets 403
-            r = requests.get(
-                f"{BASE_URL}/api/support/conversations", headers=auth_header()
-            )
+            r = requests.get(f"{BASE_URL}/api/support/conversations", headers=auth_header())
             assert r.status_code == 403
             print("  Conversations: admin-only (403 for regular user)")
 
@@ -692,9 +668,7 @@ class TestP2Admin:
     def test_02_stats(self):
         if not S.admin_token:
             pytest.skip("No admin token")
-        r = requests.get(
-            f"{BASE_URL}/api/admin/stats", headers=auth_header(S.admin_token)
-        )
+        r = requests.get(f"{BASE_URL}/api/admin/stats", headers=auth_header(S.admin_token))
         assert r.status_code == 200
         d = r.json()
         assert "users" in d and "estates" in d
@@ -703,9 +677,7 @@ class TestP2Admin:
     def test_03_users_list(self):
         if not S.admin_token:
             pytest.skip("No admin token")
-        r = requests.get(
-            f"{BASE_URL}/api/admin/users", headers=auth_header(S.admin_token)
-        )
+        r = requests.get(f"{BASE_URL}/api/admin/users", headers=auth_header(S.admin_token))
         assert r.status_code == 200
         d = r.json()
         assert isinstance(d, list)
@@ -714,9 +686,7 @@ class TestP2Admin:
     def test_04_activity_log(self):
         if not S.admin_token:
             pytest.skip("No admin token")
-        r = requests.get(
-            f"{BASE_URL}/api/admin/activity", headers=auth_header(S.admin_token)
-        )
+        r = requests.get(f"{BASE_URL}/api/admin/activity", headers=auth_header(S.admin_token))
         assert r.status_code == 200
         d = r.json()
         assert isinstance(d, list)
@@ -841,9 +811,7 @@ class TestP2DTS:
     """P2: DTS task management."""
 
     def test_01_list_tasks(self):
-        r = requests.get(
-            f"{BASE_URL}/api/dts/tasks/{S.estate_id}", headers=auth_header()
-        )
+        r = requests.get(f"{BASE_URL}/api/dts/tasks/{S.estate_id}", headers=auth_header())
         assert r.status_code == 200
         d = r.json()
         assert isinstance(d, list)
@@ -882,9 +850,7 @@ class TestP2Transition:
             assert isinstance(d, list)
             print(f"  Certificates: {len(d)} (admin)")
         else:
-            r = requests.get(
-                f"{BASE_URL}/api/transition/certificates", headers=auth_header()
-            )
+            r = requests.get(f"{BASE_URL}/api/transition/certificates", headers=auth_header())
             assert r.status_code == 403
             print("  Certificates: admin-only (403)")
 
@@ -911,10 +877,7 @@ class TestP2PDFExport:
         # 200 = PDF generated, or may error if no data
         assert r.status_code in [200, 500]
         if r.status_code == 200:
-            assert (
-                "pdf" in r.headers.get("content-type", "").lower()
-                or len(r.content) > 100
-            )
+            assert "pdf" in r.headers.get("content-type", "").lower() or len(r.content) > 100
         print(f"  PDF export: status={r.status_code}")
 
 
@@ -1063,9 +1026,7 @@ class TestP3EdgeCases:
         if r.status_code == 200:
             d = r.json()
             if "id" in d:
-                requests.delete(
-                    f"{BASE_URL}/api/messages/{d['id']}", headers=auth_header()
-                )
+                requests.delete(f"{BASE_URL}/api/messages/{d['id']}", headers=auth_header())
         print(f"  Large payload: status={r.status_code}")
 
     def test_08_no_id_leak_in_responses(self):
@@ -1077,9 +1038,7 @@ class TestP3EdgeCases:
         print("  No _id leak in estate response")
 
     def test_09_no_id_leak_beneficiaries(self):
-        r = requests.get(
-            f"{BASE_URL}/api/beneficiaries/{S.estate_id}", headers=auth_header()
-        )
+        r = requests.get(f"{BASE_URL}/api/beneficiaries/{S.estate_id}", headers=auth_header())
         if r.status_code == 200:
             d = r.json()
             for b in d:
@@ -1087,9 +1046,7 @@ class TestP3EdgeCases:
         print("  No _id leak in beneficiary responses")
 
     def test_10_no_id_leak_messages(self):
-        r = requests.get(
-            f"{BASE_URL}/api/messages/{S.estate_id}", headers=auth_header()
-        )
+        r = requests.get(f"{BASE_URL}/api/messages/{S.estate_id}", headers=auth_header())
         if r.status_code == 200:
             d = r.json()
             for m in d:
@@ -1097,9 +1054,7 @@ class TestP3EdgeCases:
         print("  No _id leak in message responses")
 
     def test_11_no_id_leak_checklist(self):
-        r = requests.get(
-            f"{BASE_URL}/api/checklists/{S.estate_id}", headers=auth_header()
-        )
+        r = requests.get(f"{BASE_URL}/api/checklists/{S.estate_id}", headers=auth_header())
         if r.status_code == 200:
             d = r.json()
             for c in d:
@@ -1115,25 +1070,19 @@ class TestZZCleanup:
 
     def test_01_delete_message(self):
         if S.message_id:
-            r = requests.delete(
-                f"{BASE_URL}/api/messages/{S.message_id}", headers=auth_header()
-            )
+            r = requests.delete(f"{BASE_URL}/api/messages/{S.message_id}", headers=auth_header())
             assert r.status_code == 200
             print("  Message deleted")
 
     def test_02_delete_checklist(self):
         if S.checklist_id:
-            r = requests.delete(
-                f"{BASE_URL}/api/checklists/{S.checklist_id}", headers=auth_header()
-            )
+            r = requests.delete(f"{BASE_URL}/api/checklists/{S.checklist_id}", headers=auth_header())
             assert r.status_code == 200
             print("  Checklist item deleted")
 
     def test_03_delete_document(self):
         if S.document_id:
-            r = requests.delete(
-                f"{BASE_URL}/api/documents/{S.document_id}", headers=auth_header()
-            )
+            r = requests.delete(f"{BASE_URL}/api/documents/{S.document_id}", headers=auth_header())
             assert r.status_code == 200
             print("  Document deleted")
 
@@ -1148,9 +1097,7 @@ class TestZZCleanup:
 
     def test_05_delete_estate(self):
         if S.estate_id:
-            r = requests.delete(
-                f"{BASE_URL}/api/estates/{S.estate_id}", headers=auth_header()
-            )
+            r = requests.delete(f"{BASE_URL}/api/estates/{S.estate_id}", headers=auth_header())
             assert r.status_code == 200
             print("  Estate deleted")
 

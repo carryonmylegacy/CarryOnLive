@@ -50,9 +50,7 @@ ONBOARDING_STEPS = [
 @router.get("/onboarding/progress")
 async def get_onboarding_progress(current_user: dict = Depends(get_current_user)):
     """Get the user's onboarding progress — always checks real data for completion."""
-    progress = await db.onboarding_progress.find_one(
-        {"user_id": current_user["id"]}, {"_id": 0}
-    )
+    progress = await db.onboarding_progress.find_one({"user_id": current_user["id"]}, {"_id": 0})
 
     if not progress:
         progress = {
@@ -62,37 +60,23 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
         }
 
     # Always re-check completion from LIVE data — reset to false if counts go to 0
-    estates = await db.estates.find(
-        {"owner_id": current_user["id"]}, {"_id": 0, "id": 1}
-    ).to_list(1)
+    estates = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0, "id": 1}).to_list(1)
     estate_id = estates[0]["id"] if estates else None
 
     completed = {}
     if estate_id:
-        completed["upload_document"] = (
-            await db.documents.count_documents({"estate_id": estate_id}) > 0
-        )
-        completed["create_message"] = (
-            await db.messages.count_documents({"estate_id": estate_id}) > 0
-        )
+        completed["upload_document"] = await db.documents.count_documents({"estate_id": estate_id}) > 0
+        completed["create_message"] = await db.messages.count_documents({"estate_id": estate_id}) > 0
         # Primary beneficiary designated
         completed["designate_primary"] = (
-            await db.beneficiaries.count_documents(
-                {"estate_id": estate_id, "is_primary": True}
-            )
-            > 0
+            await db.beneficiaries.count_documents({"estate_id": estate_id, "is_primary": True}) > 0
         )
         # Checklist customized: at least one item has activation_status set (accepted/edited/removed)
         completed["customize_checklist"] = (
-            await db.checklists.count_documents(
-                {"estate_id": estate_id, "activation_status": {"$ne": None}}
-            )
-            > 0
+            await db.checklists.count_documents({"estate_id": estate_id, "activation_status": {"$ne": None}}) > 0
         )
         # DAV credential stored
-        completed["add_credential"] = (
-            await db.digital_wallet.count_documents({"estate_id": estate_id}) > 0
-        )
+        completed["add_credential"] = await db.digital_wallet.count_documents({"estate_id": estate_id}) > 0
     # review_readiness is manual — preserve from stored progress
     if progress.get("completed_steps", {}).get("review_readiness"):
         completed["review_readiness"] = True
@@ -144,9 +128,7 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
             {"_id": 0, "id": 1, "first_name": 1, "name": 1},
         ).to_list(10)
         ben_names = [
-            b.get("first_name") or b.get("name", "").split(" ")[0]
-            for b in bens
-            if b.get("first_name") or b.get("name")
+            b.get("first_name") or b.get("name", "").split(" ")[0] for b in bens if b.get("first_name") or b.get("name")
         ]
 
     return {
@@ -163,9 +145,7 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
 
 
 @router.post("/onboarding/complete-step/{step_key}")
-async def complete_onboarding_step(
-    step_key: str, current_user: dict = Depends(get_current_user)
-):
+async def complete_onboarding_step(step_key: str, current_user: dict = Depends(get_current_user)):
     """Mark an onboarding step as complete."""
     valid_keys = [s["key"] for s in ONBOARDING_STEPS]
     if step_key not in valid_keys:
@@ -568,25 +548,17 @@ async def get_scenario_templates(current_user: dict = Depends(get_current_user))
 
 
 @router.post("/templates/apply")
-async def apply_scenario_template(
-    data: TemplateApplyRequest, current_user: dict = Depends(get_current_user)
-):
+async def apply_scenario_template(data: TemplateApplyRequest, current_user: dict = Depends(get_current_user)):
     """Apply a quick-start template to an estate's checklist."""
     if current_user["role"] not in ("benefactor", "admin"):
-        raise HTTPException(
-            status_code=403, detail="Only benefactors can apply templates"
-        )
+        raise HTTPException(status_code=403, detail="Only benefactors can apply templates")
 
     template = SCENARIO_TEMPLATES.get(data.template_id)
     if not template:
-        raise HTTPException(
-            status_code=404, detail=f"Template not found: {data.template_id}"
-        )
+        raise HTTPException(status_code=404, detail=f"Template not found: {data.template_id}")
 
     # Get existing items to avoid duplicates
-    existing = await db.checklists.find(
-        {"estate_id": data.estate_id}, {"_id": 0, "id": 1, "title": 1}
-    ).to_list(500)
+    existing = await db.checklists.find({"estate_id": data.estate_id}, {"_id": 0, "id": 1, "title": 1}).to_list(500)
     existing_titles = {item["title"].lower().strip() for item in existing}
 
     current_count = len(existing)

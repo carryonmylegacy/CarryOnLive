@@ -100,13 +100,9 @@ async def upload_death_certificate(
 async def get_pending_certificates(current_user: dict = Depends(get_current_user)):
     """List pending death certificates for admin review."""
     if current_user["role"] not in ("admin", "operator"):
-        raise HTTPException(
-            status_code=403, detail="Only admins can view pending certificates"
-        )
+        raise HTTPException(status_code=403, detail="Only admins can view pending certificates")
 
-    certificates = await db.death_certificates.find(
-        {"status": "pending"}, {"_id": 0, "file_data": 0}
-    ).to_list(100)
+    certificates = await db.death_certificates.find({"status": "pending"}, {"_id": 0, "file_data": 0}).to_list(100)
     return certificates
 
 
@@ -118,9 +114,7 @@ async def begin_review(
 ):
     """TVT member opens and begins reviewing a certificate"""
     if current_user["role"] not in ("admin", "operator"):
-        raise HTTPException(
-            status_code=403, detail="Only TVT members can review certificates"
-        )
+        raise HTTPException(status_code=403, detail="Only TVT members can review certificates")
     cert = await db.death_certificates.find_one({"id": certificate_id}, {"_id": 0})
     if not cert:
         raise HTTPException(status_code=404, detail="Certificate not found")
@@ -158,13 +152,9 @@ async def approve_death_certificate(
 ):
     """Approve or reject a death certificate."""
     if current_user["role"] not in ("admin", "operator"):
-        raise HTTPException(
-            status_code=403, detail="Only authorized personnel can approve certificates"
-        )
+        raise HTTPException(status_code=403, detail="Only authorized personnel can approve certificates")
 
-    certificate = await db.death_certificates.find_one(
-        {"id": certificate_id}, {"_id": 0}
-    )
+    certificate = await db.death_certificates.find_one({"id": certificate_id}, {"_id": 0})
     if not certificate:
         raise HTTPException(status_code=404, detail="Certificate not found")
 
@@ -209,9 +199,7 @@ async def approve_death_certificate(
         )
         # The deceased benefactor may also be a beneficiary on OTHER estates.
         # Promote the next person in the succession chain on those estates.
-        asyncio.create_task(
-            promote_succession(estate_doc["owner_id"], current_user["id"])
-        )
+        asyncio.create_task(promote_succession(estate_doc["owner_id"], current_user["id"]))
 
     # Deliver all messages marked for immediate delivery
     await db.messages.update_many(
@@ -250,9 +238,7 @@ async def approve_death_certificate(
 
     grace_end = datetime.now(timezone.utc) + timedelta(days=30)
     for ben_id in all_ben_ids:
-        existing = await db.beneficiary_grace_periods.find_one(
-            {"beneficiary_id": ben_id}, {"_id": 0}
-        )
+        existing = await db.beneficiary_grace_periods.find_one({"beneficiary_id": ben_id}, {"_id": 0})
         if not existing:
             await db.beneficiary_grace_periods.insert_one(
                 {
@@ -287,9 +273,7 @@ async def approve_death_certificate(
 
     estate_name = ""
     if estate_doc:
-        e = await db.estates.find_one(
-            {"id": certificate["estate_id"]}, {"_id": 0, "id": 1, "name": 1}
-        )
+        e = await db.estates.find_one({"id": certificate["estate_id"]}, {"_id": 0, "id": 1, "name": 1})
         estate_name = (e or {}).get("name", "")
 
     # Notify beneficiaries
@@ -380,9 +364,7 @@ async def promote_succession(deceased_user_id: str, actor_id: str):
             # If this person just became primary, notify them
             if new_is_primary and not ben.get("is_primary", False):
                 promoted_name = ben.get("name", "Beneficiary")
-                estate = await db.estates.find_one(
-                    {"id": estate_id}, {"_id": 0, "id": 1, "name": 1}
-                )
+                estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "name": 1})
                 estate_name = (estate or {}).get("name", "an estate")
                 promotions.append(
                     {
@@ -419,11 +401,7 @@ async def promote_succession(deceased_user_id: str, actor_id: str):
             )
         )
         # Email notification
-        asyncio.create_task(
-            _send_succession_email(
-                promo["user_id"], promo["name"], promo["estate_name"]
-            )
-        )
+        asyncio.create_task(_send_succession_email(promo["user_id"], promo["name"], promo["estate_name"]))
 
     return promotions
 
@@ -434,9 +412,7 @@ async def _send_succession_email(user_id: str, name: str, estate_name: str):
 
     from config import RESEND_API_KEY, SENDER_EMAIL, logger
 
-    user = await db.users.find_one(
-        {"id": user_id}, {"_id": 0, "id": 1, "email": 1, "name": 1}
-    )
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "email": 1, "name": 1})
     if not user or not RESEND_API_KEY:
         return
     try:
@@ -493,18 +469,12 @@ async def delete_certificate(
     # Verify admin password
     if not admin_password:
         raise HTTPException(status_code=400, detail="Admin password required")
-    admin_doc = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "id": 1, "password": 1}
-    )
-    if not admin_doc or not bcrypt.checkpw(
-        admin_password.encode(), admin_doc["password"].encode()
-    ):
+    admin_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "id": 1, "password": 1})
+    if not admin_doc or not bcrypt.checkpw(admin_password.encode(), admin_doc["password"].encode()):
         raise HTTPException(status_code=401, detail="Incorrect admin password")
 
     # Find the certificate and its estate before deleting
-    certificate = await db.death_certificates.find_one(
-        {"id": certificate_id}, {"_id": 0}
-    )
+    certificate = await db.death_certificates.find_one({"id": certificate_id}, {"_id": 0})
     if not certificate:
         raise HTTPException(status_code=404, detail="Certificate not found")
 
@@ -525,9 +495,7 @@ async def delete_certificate(
         )
 
         # Unlock the benefactor's account
-        estate_doc = await db.estates.find_one(
-            {"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1}
-        )
+        estate_doc = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1})
         if estate_doc and estate_doc.get("owner_id"):
             await db.users.update_one(
                 {"id": estate_doc["owner_id"]},
@@ -554,27 +522,20 @@ async def delete_certificate(
         await db.milestone_reports.delete_many({"estate_id": estate_id})
 
         # Remove grace periods
-        await db.beneficiary_grace_periods.delete_many(
-            {"reason": "benefactor_transition"}
-        )
+        await db.beneficiary_grace_periods.delete_many({"reason": "benefactor_transition"})
 
     return {
         "deleted": True,
-        "transition_reversed": certificate.get("status")
-        in ("approved", "authenticated"),
+        "transition_reversed": certificate.get("status") in ("approved", "authenticated"),
     }
 
 
 @router.get("/transition/status/{estate_id}")
-async def get_transition_status(
-    estate_id: str, current_user: dict = Depends(get_current_user)
-):
+async def get_transition_status(estate_id: str, current_user: dict = Depends(get_current_user)):
     # Get the MOST RECENT certificate for this estate
     """Check the transition status of an estate."""
     certificates = (
-        await db.death_certificates.find(
-            {"estate_id": estate_id}, {"_id": 0, "file_data": 0}
-        )
+        await db.death_certificates.find({"estate_id": estate_id}, {"_id": 0, "file_data": 0})
         .sort("created_at", -1)
         .to_list(1)
     )
@@ -591,14 +552,10 @@ async def get_transition_status(
 
 
 @router.post("/milestones/report")
-async def report_milestone(
-    data: MilestoneReportCreate, current_user: dict = Depends(get_current_user)
-):
+async def report_milestone(data: MilestoneReportCreate, current_user: dict = Depends(get_current_user)):
     """Report a milestone event for a beneficiary."""
     if current_user["role"] != "beneficiary":
-        raise HTTPException(
-            status_code=403, detail="Only beneficiaries can report milestones"
-        )
+        raise HTTPException(status_code=403, detail="Only beneficiaries can report milestones")
 
     report = MilestoneReport(
         estate_id=data.estate_id,

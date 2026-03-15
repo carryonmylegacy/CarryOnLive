@@ -81,9 +81,7 @@ class Estate(BaseModel):
     status: str = "pre-transition"  # pre-transition, active, transitioned
     readiness_score: int = 0
     beneficiaries: List[str] = []
-    created_at: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     transitioned_at: Optional[str] = None
 
 
@@ -123,9 +121,7 @@ class Beneficiary(BaseModel):
     invitation_status: str = "pending"  # pending, sent, accepted
     invitation_token: Optional[str] = None
     invitation_sent_at: Optional[str] = None
-    created_at: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
 class BeneficiaryCreate(BaseModel):
@@ -166,9 +162,7 @@ class Document(BaseModel):
     voice_passphrase_hint: Optional[str] = None  # Hint for voice passphrase
     is_encrypted: bool = True  # Whether file data is encrypted
     uploaded_by: str
-    created_at: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
 class DocumentCreate(BaseModel):
@@ -194,9 +188,7 @@ class Message(BaseModel):
     is_delivered: bool = False
     delivered_at: Optional[str] = None
     created_by: str
-    created_at: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
 class MessageCreate(BaseModel):
@@ -236,7 +228,9 @@ class ChecklistItem(BaseModel):
     estate_id: str
     title: str
     description: str = ""
-    category: str = "general"  # legal, financial, insurance, property, medical, personal, government, general, immediate
+    category: str = (
+        "general"  # legal, financial, insurance, property, medical, personal, government, general, immediate
+    )
     priority: str = "medium"  # critical, high, medium, low
     action_type: str = "custom"  # call, email, visit, file_paperwork, notify, custom
     contact_name: Optional[str] = None
@@ -244,9 +238,7 @@ class ChecklistItem(BaseModel):
     contact_email: Optional[str] = None
     contact_address: Optional[str] = None
     notes: Optional[str] = None
-    due_timeframe: str = (
-        "first_week"  # immediate, first_week, two_weeks, first_month, no_rush
-    )
+    due_timeframe: str = "first_week"  # immediate, first_week, two_weeks, first_month, no_rush
     is_completed: bool = False
     completed_at: Optional[str] = None
     completed_by: Optional[str] = None
@@ -255,9 +247,7 @@ class ChecklistItem(BaseModel):
     is_default: bool = False
     activation_status: Optional[str] = None
     ai_accepted: Optional[bool] = None
-    created_at: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
 class ChecklistItemCreate(BaseModel):
@@ -305,9 +295,7 @@ class DeathCertificate(BaseModel):
     status: str = "pending"  # pending, approved, rejected
     reviewed_by: Optional[str] = None
     reviewed_at: Optional[str] = None
-    created_at: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
 class MilestoneReport(BaseModel):
@@ -320,9 +308,7 @@ class MilestoneReport(BaseModel):
     event_date: str
     proof_data: Optional[str] = None  # Base64 encoded
     status: str = "pending"  # pending, verified, rejected
-    created_at: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
 class MilestoneReportCreate(BaseModel):
@@ -341,9 +327,7 @@ class ActivityLog(BaseModel):
     action: str  # document_upload, beneficiary_added, message_created, checklist_completed, etc.
     description: str
     metadata: Optional[Dict[str, Any]] = None
-    created_at: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
 class EstateCreate(BaseModel):
@@ -366,9 +350,7 @@ class ChatRequest(BaseModel):
     message: str
     session_id: Optional[str] = None
     estate_id: Optional[str] = None
-    action: Optional[str] = (
-        None  # "analyze_vault", "generate_checklist", "analyze_readiness"
-    )
+    action: Optional[str] = None  # "analyze_vault", "generate_checklist", "analyze_readiness"
 
 
 class ChatResponse(BaseModel):

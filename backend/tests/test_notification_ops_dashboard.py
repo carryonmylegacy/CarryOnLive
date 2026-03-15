@@ -77,9 +77,7 @@ def benefactor_token():
         json={"email": BENEFACTOR_EMAIL, "password": BENEFACTOR_PASSWORD},
     )
     if response.status_code != 200:
-        pytest.skip(
-            f"Benefactor login failed: {response.status_code} - {response.text}"
-        )
+        pytest.skip(f"Benefactor login failed: {response.status_code} - {response.text}")
     return response.json().get("access_token")
 
 
@@ -94,18 +92,14 @@ class TestNotificationEndpoints:
         headers = {"Authorization": f"Bearer {founder_token}"}
         response = requests.get(f"{BASE_URL}/api/notifications", headers=headers)
 
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
 
         # Verify response structure
         assert "notifications" in data, "Response should have 'notifications' field"
         assert "unread_count" in data, "Response should have 'unread_count' field"
         assert isinstance(data["notifications"], list), "notifications should be a list"
-        assert isinstance(data["unread_count"], int), (
-            "unread_count should be an integer"
-        )
+        assert isinstance(data["unread_count"], int), "unread_count should be an integer"
         print(
             f"✓ GET /api/notifications - Found {len(data['notifications'])} notifications, {data['unread_count']} unread"
         )
@@ -113,9 +107,7 @@ class TestNotificationEndpoints:
     def test_get_notifications_unread_only(self, founder_token):
         """GET /api/notifications?unread_only=true - Returns only unread notifications"""
         headers = {"Authorization": f"Bearer {founder_token}"}
-        response = requests.get(
-            f"{BASE_URL}/api/notifications?unread_only=true", headers=headers
-        )
+        response = requests.get(f"{BASE_URL}/api/notifications?unread_only=true", headers=headers)
 
         assert response.status_code == 200
         data = response.json()
@@ -123,24 +115,18 @@ class TestNotificationEndpoints:
         # All returned notifications should be unread
         for notif in data["notifications"]:
             assert not notif.get("read"), "All notifications should be unread"
-        print(
-            f"✓ GET /api/notifications?unread_only=true - Found {len(data['notifications'])} unread notifications"
-        )
+        print(f"✓ GET /api/notifications?unread_only=true - Found {len(data['notifications'])} unread notifications")
 
     def test_get_unread_count(self, founder_token):
         """GET /api/notifications/unread-count - Returns unread count (lightweight endpoint)"""
         headers = {"Authorization": f"Bearer {founder_token}"}
-        response = requests.get(
-            f"{BASE_URL}/api/notifications/unread-count", headers=headers
-        )
+        response = requests.get(f"{BASE_URL}/api/notifications/unread-count", headers=headers)
 
         assert response.status_code == 200
         data = response.json()
 
         assert "unread_count" in data, "Response should have 'unread_count' field"
-        assert isinstance(data["unread_count"], int), (
-            "unread_count should be an integer"
-        )
+        assert isinstance(data["unread_count"], int), "unread_count should be an integer"
         print(f"✓ GET /api/notifications/unread-count - {data['unread_count']} unread")
 
     def test_mark_notification_read(self, founder_token):
@@ -148,9 +134,7 @@ class TestNotificationEndpoints:
         headers = {"Authorization": f"Bearer {founder_token}"}
 
         # First get a notification
-        response = requests.get(
-            f"{BASE_URL}/api/notifications?unread_only=true", headers=headers
-        )
+        response = requests.get(f"{BASE_URL}/api/notifications?unread_only=true", headers=headers)
         assert response.status_code == 200
         notifications = response.json().get("notifications", [])
 
@@ -161,41 +145,29 @@ class TestNotificationEndpoints:
         notif_id = notifications[0]["id"]
 
         # Mark as read
-        response = requests.post(
-            f"{BASE_URL}/api/notifications/{notif_id}/read", headers=headers
-        )
+        response = requests.post(f"{BASE_URL}/api/notifications/{notif_id}/read", headers=headers)
         assert response.status_code == 200
         data = response.json()
         assert data.get("read"), "Response should confirm read=True"
-        print(
-            f"✓ POST /api/notifications/{notif_id}/read - Marked notification as read"
-        )
+        print(f"✓ POST /api/notifications/{notif_id}/read - Marked notification as read")
 
     def test_mark_all_notifications_read(self, founder_token):
         """POST /api/notifications/read-all - Mark all notifications read"""
         headers = {"Authorization": f"Bearer {founder_token}"}
-        response = requests.post(
-            f"{BASE_URL}/api/notifications/read-all", headers=headers
-        )
+        response = requests.post(f"{BASE_URL}/api/notifications/read-all", headers=headers)
 
         assert response.status_code == 200
         data = response.json()
         assert "marked_read" in data, "Response should have 'marked_read' field"
-        print(
-            f"✓ POST /api/notifications/read-all - Marked {data['marked_read']} notifications as read"
-        )
+        print(f"✓ POST /api/notifications/read-all - Marked {data['marked_read']} notifications as read")
 
     def test_mark_nonexistent_notification_read(self, founder_token):
         """POST /api/notifications/{id}/read - Returns 404 for non-existent notification"""
         headers = {"Authorization": f"Bearer {founder_token}"}
-        response = requests.post(
-            f"{BASE_URL}/api/notifications/nonexistent-id-12345/read", headers=headers
-        )
+        response = requests.post(f"{BASE_URL}/api/notifications/nonexistent-id-12345/read", headers=headers)
 
         assert response.status_code == 404, f"Expected 404, got {response.status_code}"
-        print(
-            "✓ POST /api/notifications/{invalid_id}/read - Returns 404 for non-existent notification"
-        )
+        print("✓ POST /api/notifications/{invalid_id}/read - Returns 404 for non-existent notification")
 
 
 # ============ OPS DASHBOARD TESTS ============
@@ -209,9 +181,7 @@ class TestOpsDashboard:
         headers = {"Authorization": f"Bearer {founder_token}"}
         response = requests.get(f"{BASE_URL}/api/ops/dashboard", headers=headers)
 
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
 
         # Verify response structure
@@ -235,34 +205,26 @@ class TestOpsDashboard:
         for field in expected_queue_fields:
             assert field in queues, f"Queues should have '{field}' field"
 
-        print(
-            f"✓ GET /api/ops/dashboard (Founder) - {len(data['operators'])} operators, queues: {queues}"
-        )
+        print(f"✓ GET /api/ops/dashboard (Founder) - {len(data['operators'])} operators, queues: {queues}")
 
     def test_ops_dashboard_manager_access(self, manager_token):
         """GET /api/ops/dashboard - Manager can access ops dashboard"""
         headers = {"Authorization": f"Bearer {manager_token}"}
         response = requests.get(f"{BASE_URL}/api/ops/dashboard", headers=headers)
 
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
 
         assert "operators" in data
         assert "queues" in data
-        print(
-            f"✓ GET /api/ops/dashboard (Manager) - Access granted, {len(data['operators'])} operators visible"
-        )
+        print(f"✓ GET /api/ops/dashboard (Manager) - Access granted, {len(data['operators'])} operators visible")
 
     def test_ops_dashboard_worker_denied(self, worker_token):
         """GET /api/ops/dashboard - Worker should be denied access"""
         headers = {"Authorization": f"Bearer {worker_token}"}
         response = requests.get(f"{BASE_URL}/api/ops/dashboard", headers=headers)
 
-        assert response.status_code == 403, (
-            f"Expected 403 for worker, got {response.status_code}"
-        )
+        assert response.status_code == 403, f"Expected 403 for worker, got {response.status_code}"
         print("✓ GET /api/ops/dashboard (Worker) - Correctly denied (403)")
 
     def test_ops_dashboard_operator_profiles(self, founder_token):
@@ -332,9 +294,7 @@ class TestDTSTaskAssignment:
             json={"operator_id": operator_id},
         )
 
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
         assert "message" in data
         print(f"✓ POST /api/dts/tasks/{task_id}/assign - Task assigned successfully")
@@ -345,9 +305,7 @@ class TestDTSTaskAssignment:
         founder_headers = {"Authorization": f"Bearer {founder_token}"}
 
         # Get tasks using founder (manager may have limited view)
-        response = requests.get(
-            f"{BASE_URL}/api/dts/tasks/all", headers=founder_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/dts/tasks/all", headers=founder_headers)
         tasks = response.json() if response.status_code == 200 else []
 
         if not tasks:
@@ -376,12 +334,8 @@ class TestDTSTaskAssignment:
             json={"operator_id": operator_id},
         )
 
-        assert response.status_code == 200, (
-            f"Manager assignment failed: {response.status_code}: {response.text}"
-        )
-        print(
-            f"✓ POST /api/dts/tasks/{task_id}/assign (Manager) - Assignment successful"
-        )
+        assert response.status_code == 200, f"Manager assignment failed: {response.status_code}: {response.text}"
+        print(f"✓ POST /api/dts/tasks/{task_id}/assign (Manager) - Assignment successful")
 
     def test_assign_dts_task_worker_denied(self, worker_token, founder_token):
         """POST /api/dts/tasks/{id}/assign - Worker should be denied"""
@@ -389,9 +343,7 @@ class TestDTSTaskAssignment:
         worker_headers = {"Authorization": f"Bearer {worker_token}"}
 
         # Get a task using founder
-        response = requests.get(
-            f"{BASE_URL}/api/dts/tasks/all", headers=founder_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/dts/tasks/all", headers=founder_headers)
         tasks = response.json() if response.status_code == 200 else []
 
         if not tasks:
@@ -401,9 +353,7 @@ class TestDTSTaskAssignment:
         task_id = tasks[0]["id"]
 
         # Get an operator id using founder
-        response = requests.get(
-            f"{BASE_URL}/api/founder/operators", headers=founder_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/founder/operators", headers=founder_headers)
         operators = response.json() if response.status_code == 200 else []
 
         if not operators:
@@ -417,9 +367,7 @@ class TestDTSTaskAssignment:
             json={"operator_id": operators[0]["id"]},
         )
 
-        assert response.status_code == 403, (
-            f"Expected 403 for worker, got {response.status_code}"
-        )
+        assert response.status_code == 403, f"Expected 403 for worker, got {response.status_code}"
         print("✓ POST /api/dts/tasks/{id}/assign (Worker) - Correctly denied (403)")
 
     def test_assign_to_nonexistent_operator(self, founder_token):
@@ -467,9 +415,7 @@ class TestNotificationTriggers:
         estate_id = response.json()[0]["id"]
 
         # Get founder's current unread count
-        response = requests.get(
-            f"{BASE_URL}/api/notifications/unread-count", headers=founder_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/notifications/unread-count", headers=founder_headers)
         response.json().get("unread_count", 0)
 
         # Create DTS task
@@ -486,9 +432,7 @@ class TestNotificationTriggers:
         )
 
         if response.status_code != 200:
-            print(
-                f"⊘ DTS task creation failed: {response.status_code}: {response.text}"
-            )
+            print(f"⊘ DTS task creation failed: {response.status_code}: {response.text}")
             return
 
         task_id = response.json().get("id")
@@ -498,33 +442,21 @@ class TestNotificationTriggers:
         time.sleep(2)
 
         # Check founder's notifications
-        response = requests.get(
-            f"{BASE_URL}/api/notifications", headers=founder_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/notifications", headers=founder_headers)
         assert response.status_code == 200
         notifications = response.json().get("notifications", [])
 
         # Look for DTS notification
-        dts_notifs = [
-            n
-            for n in notifications
-            if "DTS" in n.get("title", "") or "DTS" in n.get("body", "")
-        ]
-        print(
-            f"✓ DTS task creation - Found {len(dts_notifs)} DTS-related notifications for founder"
-        )
+        dts_notifs = [n for n in notifications if "DTS" in n.get("title", "") or "DTS" in n.get("body", "")]
+        print(f"✓ DTS task creation - Found {len(dts_notifs)} DTS-related notifications for founder")
 
-    def test_support_message_triggers_notification(
-        self, benefactor_token, founder_token
-    ):
+    def test_support_message_triggers_notification(self, benefactor_token, founder_token):
         """Sending support message should trigger notification to staff"""
         benefactor_headers = {"Authorization": f"Bearer {benefactor_token}"}
         founder_headers = {"Authorization": f"Bearer {founder_token}"}
 
         # Get founder's current unread count
-        response = requests.get(
-            f"{BASE_URL}/api/notifications/unread-count", headers=founder_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/notifications/unread-count", headers=founder_headers)
         response.json().get("unread_count", 0)
 
         # Send support message
@@ -534,30 +466,20 @@ class TestNotificationTriggers:
             json={"content": f"TEST_Support_Message_{int(time.time())}"},
         )
 
-        assert response.status_code == 200, (
-            f"Support message failed: {response.status_code}"
-        )
+        assert response.status_code == 200, f"Support message failed: {response.status_code}"
         print("Sent support message")
 
         # Wait for async notification
         time.sleep(2)
 
         # Check founder's notifications
-        response = requests.get(
-            f"{BASE_URL}/api/notifications", headers=founder_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/notifications", headers=founder_headers)
         assert response.status_code == 200
         notifications = response.json().get("notifications", [])
 
         # Look for support notification
-        support_notifs = [
-            n
-            for n in notifications
-            if "Support" in n.get("title", "") or "support" in n.get("url", "")
-        ]
-        print(
-            f"✓ Support message - Found {len(support_notifs)} support-related notifications for founder"
-        )
+        support_notifs = [n for n in notifications if "Support" in n.get("title", "") or "support" in n.get("url", "")]
+        print(f"✓ Support message - Found {len(support_notifs)} support-related notifications for founder")
 
 
 # ============ OPERATOR NOTIFICATIONS TO FOUNDER ============
@@ -566,17 +488,13 @@ class TestNotificationTriggers:
 class TestOperatorNotificationsToFounder:
     """Test that operator create/delete by manager triggers founder notification"""
 
-    def test_manager_creates_worker_notifies_founder(
-        self, manager_token, founder_token
-    ):
+    def test_manager_creates_worker_notifies_founder(self, manager_token, founder_token):
         """Manager creating a worker should notify founder"""
         manager_headers = {"Authorization": f"Bearer {manager_token}"}
         founder_headers = {"Authorization": f"Bearer {founder_token}"}
 
         # Get founder's current notification count
-        response = requests.get(
-            f"{BASE_URL}/api/notifications/unread-count", headers=founder_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/notifications/unread-count", headers=founder_headers)
         response.json().get("unread_count", 0)
 
         # Manager creates a worker
@@ -595,9 +513,7 @@ class TestOperatorNotificationsToFounder:
         )
 
         if response.status_code != 200:
-            print(
-                f"⊘ Manager cannot create worker: {response.status_code}: {response.text}"
-            )
+            print(f"⊘ Manager cannot create worker: {response.status_code}: {response.text}")
             return
 
         worker_id = response.json().get("id")
@@ -607,21 +523,14 @@ class TestOperatorNotificationsToFounder:
         time.sleep(2)
 
         # Check founder's notifications
-        response = requests.get(
-            f"{BASE_URL}/api/notifications", headers=founder_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/notifications", headers=founder_headers)
         notifications = response.json().get("notifications", [])
 
         # Look for operator creation notification
         op_notifs = [
-            n
-            for n in notifications
-            if "Operator" in n.get("title", "")
-            or "operator" in n.get("body", "").lower()
+            n for n in notifications if "Operator" in n.get("title", "") or "operator" in n.get("body", "").lower()
         ]
-        print(
-            f"✓ Manager creates worker - Found {len(op_notifs)} operator-related notifications for founder"
-        )
+        print(f"✓ Manager creates worker - Found {len(op_notifs)} operator-related notifications for founder")
 
         # Cleanup - delete test worker using founder
         time.sleep(2)
@@ -645,9 +554,7 @@ class TestAuthVerification:
             f"{BASE_URL}/api/auth/login",
             json={"email": FOUNDER_EMAIL, "password": FOUNDER_PASSWORD},
         )
-        assert response.status_code == 200, (
-            f"Founder login failed: {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Founder login failed: {response.status_code}: {response.text}"
         data = response.json()
         assert data.get("user", {}).get("role") == "admin"
         print(f"✓ Founder login successful: {data['user']['email']}")

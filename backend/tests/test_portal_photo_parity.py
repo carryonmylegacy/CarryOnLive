@@ -30,9 +30,7 @@ class TestPortalPhotoParity:
         if response.status_code == 200:
             data = response.json()
             return data.get("access_token")  # API returns access_token not token
-        pytest.skip(
-            f"Login failed for fulltest@test.com: {response.status_code} - {response.text}"
-        )
+        pytest.skip(f"Login failed for fulltest@test.com: {response.status_code} - {response.text}")
 
     @pytest.fixture(scope="class")
     def spouse_user_token(self):
@@ -44,9 +42,7 @@ class TestPortalPhotoParity:
         if response.status_code == 200:
             data = response.json()
             return data.get("access_token")  # API returns access_token not token
-        pytest.skip(
-            f"Login failed for spouse@test.com: {response.status_code} - {response.text}"
-        )
+        pytest.skip(f"Login failed for spouse@test.com: {response.status_code} - {response.text}")
 
     @pytest.fixture(scope="class")
     def admin_token(self):
@@ -94,9 +90,7 @@ class TestPortalPhotoParity:
         assert photo_url, "Spouse user should have photo_url set"
 
     # === Test 2: /api/estates endpoint ===
-    def test_estates_returns_owner_photo_url_for_beneficiary_estates(
-        self, fulltest_user_token
-    ):
+    def test_estates_returns_owner_photo_url_for_beneficiary_estates(self, fulltest_user_token):
         """Test that GET /api/estates returns owner_photo_url for estates where user is beneficiary"""
         headers = {"Authorization": f"Bearer {fulltest_user_token}"}
         response = requests.get(f"{BASE_URL}/api/estates", headers=headers)
@@ -107,15 +101,11 @@ class TestPortalPhotoParity:
         print(f"Total estates returned: {len(estates)}")
 
         # Find estates where user is a beneficiary
-        beneficiary_estates = [
-            e for e in estates if e.get("user_role_in_estate") == "beneficiary"
-        ]
+        beneficiary_estates = [e for e in estates if e.get("user_role_in_estate") == "beneficiary"]
         print(f"Beneficiary estates: {len(beneficiary_estates)}")
 
         # At least one estate should exist where user is beneficiary
-        assert len(beneficiary_estates) > 0, (
-            "User should be beneficiary of at least one estate"
-        )
+        assert len(beneficiary_estates) > 0, "User should be beneficiary of at least one estate"
 
         # Check each beneficiary estate for photo fields
         for estate in beneficiary_estates:
@@ -124,9 +114,7 @@ class TestPortalPhotoParity:
             benefactor_name = estate.get("benefactor_name", "")
 
             print(f"Estate: {estate_name}")
-            print(
-                f"  - owner_photo_url: {owner_photo_url[:80] if owner_photo_url else 'NOT SET'}..."
-            )
+            print(f"  - owner_photo_url: {owner_photo_url[:80] if owner_photo_url else 'NOT SET'}...")
             print(f"  - benefactor_name: {benefactor_name}")
 
             # At least benefactor_name should be set
@@ -136,13 +124,9 @@ class TestPortalPhotoParity:
     def test_family_connections_returns_photo_url(self, fulltest_user_token):
         """Test that GET /api/beneficiary/family-connections returns photo_url for connected benefactors"""
         headers = {"Authorization": f"Bearer {fulltest_user_token}"}
-        response = requests.get(
-            f"{BASE_URL}/api/beneficiary/family-connections", headers=headers
-        )
+        response = requests.get(f"{BASE_URL}/api/beneficiary/family-connections", headers=headers)
 
-        assert response.status_code == 200, (
-            f"Family connections failed: {response.text}"
-        )
+        assert response.status_code == 200, f"Family connections failed: {response.text}"
         connections = response.json()
 
         print(f"Total family connections: {len(connections)}")
@@ -173,16 +157,12 @@ class TestPortalPhotoParity:
         estates = estates_resp.json()
 
         # Get family connections
-        connections_resp = requests.get(
-            f"{BASE_URL}/api/beneficiary/family-connections", headers=headers
-        )
+        connections_resp = requests.get(f"{BASE_URL}/api/beneficiary/family-connections", headers=headers)
         assert connections_resp.status_code == 200
         connections = connections_resp.json()
 
         # Map estate IDs
-        beneficiary_estates = {
-            e["id"]: e for e in estates if e.get("user_role_in_estate") == "beneficiary"
-        }
+        beneficiary_estates = {e["id"]: e for e in estates if e.get("user_role_in_estate") == "beneficiary"}
         connection_estates = {c.get("estate_id"): c for c in connections}
 
         # If there are connections, they should match estates
@@ -197,12 +177,8 @@ class TestPortalPhotoParity:
                     estate_photo = estate.get("owner_photo_url", "")
 
                     print(f"Estate {estate_id}:")
-                    print(
-                        f"  - Connection photo_url: {conn_photo[:50] if conn_photo else 'EMPTY'}..."
-                    )
-                    print(
-                        f"  - Estate owner_photo_url: {estate_photo[:50] if estate_photo else 'EMPTY'}..."
-                    )
+                    print(f"  - Connection photo_url: {conn_photo[:50] if conn_photo else 'EMPTY'}...")
+                    print(f"  - Estate owner_photo_url: {estate_photo[:50] if estate_photo else 'EMPTY'}...")
 
                     # Both should either have a photo or both be empty
                     # (The family-connections endpoint should prefer benefactor's own photo)
@@ -228,23 +204,17 @@ class TestPortalPhotoParity:
         print(f"Owned estates: {len(owned_estates)}")
 
         # User should have both owned and beneficiary estates
-        beneficiary_estates = [
-            e for e in estates if e.get("user_role_in_estate") == "beneficiary"
-        ]
+        beneficiary_estates = [e for e in estates if e.get("user_role_in_estate") == "beneficiary"]
 
         print(f"Total estates: {len(estates)}")
         print(f"  - As owner: {len(owned_estates)}")
         print(f"  - As beneficiary: {len(beneficiary_estates)}")
 
         # At minimum, they should be beneficiary of at least one estate
-        assert len(beneficiary_estates) >= 1, (
-            "User should be beneficiary of at least one estate"
-        )
+        assert len(beneficiary_estates) >= 1, "User should be beneficiary of at least one estate"
 
     # === Test 6: Check if benefactor's photo_url is populated in DB ===
-    def test_spouse_benefactor_has_photo_in_profile(
-        self, admin_token, spouse_user_token
-    ):
+    def test_spouse_benefactor_has_photo_in_profile(self, admin_token, spouse_user_token):
         """Verify the spouse benefactor has a photo set in their profile"""
         headers = {"Authorization": f"Bearer {spouse_user_token}"}
         response = requests.get(f"{BASE_URL}/api/auth/me", headers=headers)
@@ -261,14 +231,10 @@ class TestPortalPhotoParity:
         print(f"  - ID: {user_id}")
         print(f"  - Role: {role}")
         print(f"  - Photo URL length: {len(photo_url) if photo_url else 0} chars")
-        print(
-            f"  - Photo URL preview: {photo_url[:100] if photo_url else 'NOT SET'}..."
-        )
+        print(f"  - Photo URL preview: {photo_url[:100] if photo_url else 'NOT SET'}...")
 
         # The test data should have a photo set
-        assert photo_url, (
-            f"Spouse benefactor ({name}) should have photo_url set for this test"
-        )
+        assert photo_url, f"Spouse benefactor ({name}) should have photo_url set for this test"
 
 
 class TestFrontendPhotoFallback:
@@ -302,31 +268,23 @@ class TestFrontendPhotoFallback:
 
         # Simulate what frontend does
         estates_resp = requests.get(f"{BASE_URL}/api/estates", headers=headers)
-        connections_resp = requests.get(
-            f"{BASE_URL}/api/beneficiary/family-connections", headers=headers
-        )
+        connections_resp = requests.get(f"{BASE_URL}/api/beneficiary/family-connections", headers=headers)
 
         estates = estates_resp.json()
         connections = connections_resp.json()
 
-        beneficiary_estates = [
-            e for e in estates if e.get("user_role_in_estate") == "beneficiary"
-        ]
+        beneficiary_estates = [e for e in estates if e.get("user_role_in_estate") == "beneficiary"]
 
         if len(connections) > 0:
             print("Using family-connections path:")
             for conn in connections:
-                print(
-                    f"  - {conn.get('name')}: photo_url = {bool(conn.get('photo_url'))}"
-                )
+                print(f"  - {conn.get('name')}: photo_url = {bool(conn.get('photo_url'))}")
         else:
             print("Using estates fallback path:")
             for estate in beneficiary_estates:
                 mapped = {
                     "name": estate.get("benefactor_name") or estate.get("name"),
-                    "photo_url": estate.get("owner_photo_url")
-                    or estate.get("estate_photo_url")
-                    or "",
+                    "photo_url": estate.get("owner_photo_url") or estate.get("estate_photo_url") or "",
                     "relation": "Benefactor",
                 }
                 print(f"  - {mapped['name']}: photo_url = {bool(mapped['photo_url'])}")

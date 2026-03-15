@@ -52,9 +52,7 @@ async def get_dev_switcher_config(current_user: dict = Depends(get_current_user)
 
 
 @router.put("/admin/dev-switcher")
-async def update_dev_switcher_config(
-    data: DevSwitcherConfig, current_user: dict = Depends(get_current_user)
-):
+async def update_dev_switcher_config(data: DevSwitcherConfig, current_user: dict = Depends(get_current_user)):
     """Update dev switcher configuration — admin only"""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -136,9 +134,7 @@ async def get_all_users(current_user: dict = Depends(get_current_user)):
     users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
 
     # Build estate owner → beneficiaries map
-    estates = await db.estates.find({}, {"_id": 0, "id": 1, "owner_id": 1}).to_list(
-        10000
-    )
+    estates = await db.estates.find({}, {"_id": 0, "id": 1, "owner_id": 1}).to_list(10000)
     estate_by_owner = {e["owner_id"]: e["id"] for e in estates}
 
     all_bens = await db.beneficiaries.find(
@@ -192,9 +188,9 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Admin access required")
 
     # Get all existing user IDs for cross-referencing
-    all_users = await db.users.find(
-        {}, {"_id": 0, "id": 1, "role": 1, "email": 1, "benefactor_email": 1}
-    ).to_list(100000)
+    all_users = await db.users.find({}, {"_id": 0, "id": 1, "role": 1, "email": 1, "benefactor_email": 1}).to_list(
+        100000
+    )
     user_ids = {u["id"] for u in all_users}
 
     total_users = len(all_users)
@@ -203,34 +199,18 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
     admins = sum(1 for u in all_users if u.get("role") == "admin")
 
     # Only count estates owned by existing users
-    total_estates = await db.estates.count_documents(
-        {"owner_id": {"$in": list(user_ids)}}
-    )
-    transitioned = await db.estates.count_documents(
-        {"owner_id": {"$in": list(user_ids)}, "status": "transitioned"}
-    )
+    total_estates = await db.estates.count_documents({"owner_id": {"$in": list(user_ids)}})
+    transitioned = await db.estates.count_documents({"owner_id": {"$in": list(user_ids)}, "status": "transitioned"})
 
-    total_docs = await db.documents.count_documents(
-        {"owner_id": {"$in": list(user_ids)}}
-    )
-    total_messages = await db.messages.count_documents(
-        {"user_id": {"$in": list(user_ids)}}
-    )
+    total_docs = await db.documents.count_documents({"owner_id": {"$in": list(user_ids)}})
+    total_messages = await db.messages.count_documents({"user_id": {"$in": list(user_ids)}})
     pending_certs = await db.death_certificates.count_documents({"status": "pending"})
-    reviewing_certs = await db.death_certificates.count_documents(
-        {"status": "reviewing"}
-    )
-    unanswered_messages = await db.support_messages.count_documents(
-        {"sender_role": {"$ne": "admin"}, "read": False}
-    )
-    pending_verifications = await db.tier_verifications.count_documents(
-        {"status": "pending"}
-    )
+    reviewing_certs = await db.death_certificates.count_documents({"status": "reviewing"})
+    unanswered_messages = await db.support_messages.count_documents({"sender_role": {"$ne": "admin"}, "read": False})
+    pending_verifications = await db.tier_verifications.count_documents({"status": "pending"})
     pending_dts = await db.dts_tasks.count_documents({"status": "pending"})
     # Only count subscriptions for existing users
-    active_subs = await db.user_subscriptions.count_documents(
-        {"status": "active", "user_id": {"$in": list(user_ids)}}
-    )
+    active_subs = await db.user_subscriptions.count_documents({"status": "active", "user_id": {"$in": list(user_ids)}})
     # Count users in active trial (exclude admins/operators AND already-subscribed users)
     now_iso = datetime.now(timezone.utc).isoformat()
     trial_candidates = await db.users.find(
@@ -242,22 +222,16 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
     ).to_list(10000)
     sub_ids = {
         s["user_id"]
-        for s in await db.user_subscriptions.find(
-            {"status": "active"}, {"_id": 0, "id": 1, "user_id": 1}
-        ).to_list(10000)
+        for s in await db.user_subscriptions.find({"status": "active"}, {"_id": 0, "id": 1, "user_id": 1}).to_list(
+            10000
+        )
     }
     trial_periods = sum(1 for u in trial_candidates if u["id"] not in sub_ids)
-    pending_family = await db.family_plan_requests.count_documents(
-        {"status": "pending"}
-    )
-    deletion_requests = await db.deletion_requests.count_documents(
-        {"status": "pending"}
-    )
+    pending_family = await db.family_plan_requests.count_documents({"status": "pending"})
+    deletion_requests = await db.deletion_requests.count_documents({"status": "pending"})
 
     # Milestone deliveries pending review
-    pending_milestones = await db.milestone_deliveries.count_documents(
-        {"status": "pending_review"}
-    )
+    pending_milestones = await db.milestone_deliveries.count_documents({"status": "pending_review"})
 
     # Emergency access requests pending
     pending_emergency = await db.emergency_access.count_documents({"status": "pending"})
@@ -272,9 +246,9 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
 
     # Viral metrics — only count beneficiaries linked to existing benefactors' estates
     benefactor_ids = [u["id"] for u in all_users if u.get("role") == "benefactor"]
-    estates_for_benefactors = await db.estates.find(
-        {"owner_id": {"$in": benefactor_ids}}, {"_id": 0, "id": 1}
-    ).to_list(100000)
+    estates_for_benefactors = await db.estates.find({"owner_id": {"$in": benefactor_ids}}, {"_id": 0, "id": 1}).to_list(
+        100000
+    )
     benefactor_estate_ids = [e["id"] for e in estates_for_benefactors]
 
     total_beneficiary_records = await db.beneficiaries.count_documents(
@@ -287,8 +261,7 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
     ben_to_benefactor_count = sum(
         1
         for u in all_users
-        if u.get("role") == "benefactor"
-        and (u.get("benefactor_email") or u["email"] in ben_emails)
+        if u.get("role") == "benefactor" and (u.get("benefactor_email") or u["email"] in ben_emails)
     )
 
     return {
@@ -330,17 +303,11 @@ async def get_revenue_metrics(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Admin access required")
 
     now = datetime.now(timezone.utc)
-    this_month_start = now.replace(
-        day=1, hour=0, minute=0, second=0, microsecond=0
-    ).isoformat()
+    this_month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
     last_month_start = (
-        (now.replace(day=1) - timedelta(days=1))
-        .replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        .isoformat()
+        (now.replace(day=1) - timedelta(days=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
     )
-    last_month_end = now.replace(
-        day=1, hour=0, minute=0, second=0, microsecond=0
-    ).isoformat()
+    last_month_end = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
 
     # Active subscriptions with their plan prices
     active_subs = await db.subscriptions.find(
@@ -376,24 +343,16 @@ async def get_revenue_metrics(current_user: dict = Depends(get_current_user)):
     total_revenue = sum(p.get("amount", 0) for p in payments) / 100  # cents to dollars
 
     # This month's revenue
-    this_month_payments = [
-        p for p in payments if p.get("created_at", "") >= this_month_start
-    ]
+    this_month_payments = [p for p in payments if p.get("created_at", "") >= this_month_start]
     revenue_this_month = sum(p.get("amount", 0) for p in this_month_payments) / 100
 
     # Last month's revenue
-    last_month_payments = [
-        p
-        for p in payments
-        if last_month_start <= p.get("created_at", "") < last_month_end
-    ]
+    last_month_payments = [p for p in payments if last_month_start <= p.get("created_at", "") < last_month_end]
     revenue_last_month = sum(p.get("amount", 0) for p in last_month_payments) / 100
 
     # MoM growth rate
     if revenue_last_month > 0:
-        mom_growth = round(
-            ((revenue_this_month - revenue_last_month) / revenue_last_month) * 100, 1
-        )
+        mom_growth = round(((revenue_this_month - revenue_last_month) / revenue_last_month) * 100, 1)
     else:
         mom_growth = 0 if revenue_this_month == 0 else 100
 
@@ -407,9 +366,7 @@ async def get_revenue_metrics(current_user: dict = Depends(get_current_user)):
         {"status": "cancelled", "cancelled_at": {"$gte": this_month_start}}
     )
     total_subs_start_of_month = total_paying + cancelled_this_month
-    churn_rate = round(
-        (cancelled_this_month / max(total_subs_start_of_month, 1)) * 100, 1
-    )
+    churn_rate = round((cancelled_this_month / max(total_subs_start_of_month, 1)) * 100, 1)
 
     # LTV estimate (ARPU / churn rate)
     if churn_rate > 0:
@@ -444,15 +401,9 @@ async def get_launch_metrics(current_user: dict = Depends(get_current_user)):
     thirty_days_ago = (now - timedelta(days=30)).isoformat()
 
     # New benefactor signups — today, 7d, 30d, all time
-    signups_today = await db.users.count_documents(
-        {"role": "benefactor", "created_at": {"$gte": today_start}}
-    )
-    signups_7d = await db.users.count_documents(
-        {"role": "benefactor", "created_at": {"$gte": seven_days_ago}}
-    )
-    signups_30d = await db.users.count_documents(
-        {"role": "benefactor", "created_at": {"$gte": thirty_days_ago}}
-    )
+    signups_today = await db.users.count_documents({"role": "benefactor", "created_at": {"$gte": today_start}})
+    signups_7d = await db.users.count_documents({"role": "benefactor", "created_at": {"$gte": seven_days_ago}})
+    signups_30d = await db.users.count_documents({"role": "benefactor", "created_at": {"$gte": thirty_days_ago}})
     total_benefactors = await db.users.count_documents({"role": "benefactor"})
 
     # Beneficiaries invited per benefactor
@@ -463,22 +414,16 @@ async def get_launch_metrics(current_user: dict = Depends(get_current_user)):
     total_invited = await db.beneficiaries.count_documents(
         {"invitation_status": {"$in": ["sent", "pending", "accepted"]}}
     )
-    total_accepted = await db.beneficiaries.count_documents(
-        {"invitation_status": "accepted"}
-    )
+    total_accepted = await db.beneficiaries.count_documents({"invitation_status": "accepted"})
     activation_rate = round((total_accepted / max(total_invited, 1)) * 100, 1)
 
     # Trial → paid conversion
-    total_trialing = await db.users.count_documents(
-        {"role": "benefactor", "subscription_status": "trialing"}
-    )
+    total_trialing = await db.users.count_documents({"role": "benefactor", "subscription_status": "trialing"})
     total_paid = await db.subscriptions.count_documents({"status": "active"})
     total_expired_trials = await db.users.count_documents(
         {"role": "benefactor", "subscription_status": {"$in": ["expired", "inactive"]}}
     )
-    conversion_rate = round(
-        (total_paid / max(total_paid + total_expired_trials, 1)) * 100, 1
-    )
+    conversion_rate = round((total_paid / max(total_paid + total_expired_trials, 1)) * 100, 1)
 
     # Day-7 retention: users who signed up 7+ days ago and logged in within last 7 days
     users_7d_old = await db.users.find(
@@ -553,12 +498,8 @@ async def delete_user(
         raise HTTPException(status_code=400, detail="Cannot delete yourself")
 
     # Verify admin password
-    admin_doc = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "id": 1, "password": 1}
-    )
-    if not admin_doc or not bcrypt.checkpw(
-        admin_password.encode(), admin_doc["password"].encode()
-    ):
+    admin_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "id": 1, "password": 1})
+    if not admin_doc or not bcrypt.checkpw(admin_password.encode(), admin_doc["password"].encode()):
         raise HTTPException(status_code=401, detail="Incorrect admin password")
 
     user = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "role": 1})
@@ -567,9 +508,7 @@ async def delete_user(
 
     # Cascade delete all associated data
     # Find estates owned by this user
-    estates = await db.estates.find({"owner_id": user_id}, {"_id": 0, "id": 1}).to_list(
-        1000
-    )
+    estates = await db.estates.find({"owner_id": user_id}, {"_id": 0, "id": 1}).to_list(1000)
     estate_ids = [e["id"] for e in estates]
 
     if estate_ids:
@@ -583,12 +522,8 @@ async def delete_user(
         await db.milestone_reports.delete_many({"estate_id": {"$in": estate_ids}})
         await db.digital_credentials.delete_many({"estate_id": {"$in": estate_ids}})
         await db.section_permissions.delete_many({"estate_id": {"$in": estate_ids}})
-        await db.beneficiary_display_overrides.delete_many(
-            {"estate_id": {"$in": estate_ids}}
-        )
-        await db.beneficiary_grace_periods.delete_many(
-            {"estate_id": {"$in": estate_ids}}
-        )
+        await db.beneficiary_display_overrides.delete_many({"estate_id": {"$in": estate_ids}})
+        await db.beneficiary_grace_periods.delete_many({"estate_id": {"$in": estate_ids}})
         await db.apple_transactions.delete_many({"user_id": user_id})
         await db.estates.delete_many({"id": {"$in": estate_ids}})
 
@@ -625,17 +560,11 @@ async def delete_estate_only(
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
 
-    admin_doc = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "id": 1, "password": 1}
-    )
-    if not admin_doc or not bcrypt.checkpw(
-        admin_password.encode(), admin_doc["password"].encode()
-    ):
+    admin_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "id": 1, "password": 1})
+    if not admin_doc or not bcrypt.checkpw(admin_password.encode(), admin_doc["password"].encode()):
         raise HTTPException(status_code=401, detail="Incorrect admin password")
 
-    estate = await db.estates.find_one(
-        {"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1, "name": 1}
-    )
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1, "name": 1})
     if not estate:
         raise HTTPException(status_code=404, detail="Estate not found")
 
@@ -692,21 +621,15 @@ async def cleanup_ghost_estates(
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
 
-    admin_doc = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "id": 1, "password": 1}
-    )
-    if not admin_doc or not bcrypt.checkpw(
-        data.admin_password.encode(), admin_doc["password"].encode()
-    ):
+    admin_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "id": 1, "password": 1})
+    if not admin_doc or not bcrypt.checkpw(data.admin_password.encode(), admin_doc["password"].encode()):
         raise HTTPException(status_code=401, detail="Incorrect admin password")
 
     deleted_count = 0
     reset_users = []
 
     for estate_id in data.estate_ids:
-        estate = await db.estates.find_one(
-            {"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1, "name": 1}
-        )
+        estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1, "name": 1})
         if not estate:
             continue
 
@@ -757,9 +680,7 @@ async def cleanup_orphans(current_user: dict = Depends(get_current_user)):
     user_ids = [u["id"] for u in all_users]
 
     # Find orphan estates (owner_id not in existing users)
-    all_estates = await db.estates.find({}, {"_id": 0, "id": 1, "owner_id": 1}).to_list(
-        100000
-    )
+    all_estates = await db.estates.find({}, {"_id": 0, "id": 1, "owner_id": 1}).to_list(100000)
     orphan_estates = [e for e in all_estates if e["owner_id"] not in set(user_ids)]
     orphan_estate_ids = [e["id"] for e in orphan_estates]
     orphan_owner_ids = list({e["owner_id"] for e in orphan_estates})
@@ -774,9 +695,7 @@ async def cleanup_orphans(current_user: dict = Depends(get_current_user)):
     }
 
     if orphan_estate_ids:
-        r = await db.beneficiaries.delete_many(
-            {"estate_id": {"$in": orphan_estate_ids}}
-        )
+        r = await db.beneficiaries.delete_many({"estate_id": {"$in": orphan_estate_ids}})
         deleted["beneficiaries"] = r.deleted_count
         r = await db.documents.delete_many({"estate_id": {"$in": orphan_estate_ids}})
         deleted["documents"] = r.deleted_count
@@ -788,18 +707,14 @@ async def cleanup_orphans(current_user: dict = Depends(get_current_user)):
         deleted["estates"] = r.deleted_count
 
     if orphan_owner_ids:
-        r = await db.user_subscriptions.delete_many(
-            {"user_id": {"$in": orphan_owner_ids}}
-        )
+        r = await db.user_subscriptions.delete_many({"user_id": {"$in": orphan_owner_ids}})
         deleted["subscriptions"] = r.deleted_count
 
     return {"message": "Orphan cleanup complete", "deleted": deleted}
 
 
 @router.put("/admin/users/{user_id}/role")
-async def update_user_role(
-    user_id: str, body: dict, current_user: dict = Depends(get_current_user)
-):
+async def update_user_role(user_id: str, body: dict, current_user: dict = Depends(get_current_user)):
     """Change a user's role — admin only"""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -834,9 +749,7 @@ async def get_activity_log(current_user: dict = Depends(get_current_user)):
     activities = []
     # Recent user registrations
     recent_users = (
-        await db.users.find(
-            {}, {"_id": 0, "id": 1, "name": 1, "email": 1, "role": 1, "created_at": 1}
-        )
+        await db.users.find({}, {"_id": 0, "id": 1, "name": 1, "email": 1, "role": 1, "created_at": 1})
         .sort("created_at", -1)
         .to_list(20)
     )
@@ -852,9 +765,7 @@ async def get_activity_log(current_user: dict = Depends(get_current_user)):
             )
     # Recent estates
     recent_estates = (
-        await db.estates.find(
-            {}, {"_id": 0, "id": 1, "name": 1, "created_at": 1, "status": 1}
-        )
+        await db.estates.find({}, {"_id": 0, "id": 1, "name": 1, "created_at": 1, "status": 1})
         .sort("created_at", -1)
         .to_list(20)
     )
@@ -871,9 +782,7 @@ async def get_activity_log(current_user: dict = Depends(get_current_user)):
             )
     # Recent documents
     recent_docs = (
-        await db.documents.find({}, {"_id": 0, "id": 1, "name": 1, "created_at": 1})
-        .sort("created_at", -1)
-        .to_list(10)
+        await db.documents.find({}, {"_id": 0, "id": 1, "name": 1, "created_at": 1}).sort("created_at", -1).to_list(10)
     )
     for d in recent_docs:
         if d.get("created_at"):
@@ -886,9 +795,7 @@ async def get_activity_log(current_user: dict = Depends(get_current_user)):
                 }
             )
     # Admin actions from activity_log collection
-    admin_actions = (
-        await db.activity_log.find({}, {"_id": 0}).sort("created_at", -1).to_list(20)
-    )
+    admin_actions = await db.activity_log.find({}, {"_id": 0}).sort("created_at", -1).to_list(20)
     for a in admin_actions:
         activities.append(
             {
@@ -937,9 +844,7 @@ async def get_trial_users(current_user: dict = Depends(get_current_user)):
 
     # Exclude users who already have an active subscription
     subscribed_ids = set()
-    subs = await db.user_subscriptions.find(
-        {"status": "active"}, {"_id": 0, "id": 1, "user_id": 1}
-    ).to_list(10000)
+    subs = await db.user_subscriptions.find({"status": "active"}, {"_id": 0, "id": 1, "user_id": 1}).to_list(10000)
     for s in subs:
         subscribed_ids.add(s["user_id"])
 
@@ -967,18 +872,14 @@ async def get_platform_settings(current_user: dict = Depends(get_current_user)):
 
 
 @router.put("/admin/platform-settings")
-async def update_platform_settings(
-    data: dict, current_user: dict = Depends(get_current_user)
-):
+async def update_platform_settings(data: dict, current_user: dict = Depends(get_current_user)):
     """Update platform-wide settings (admin only)."""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
     allowed_keys = {"otp_disabled"}
     update = {k: v for k, v in data.items() if k in allowed_keys}
     if update:
-        await db.platform_settings.update_one(
-            {"_id": "global"}, {"$set": update}, upsert=True
-        )
+        await db.platform_settings.update_one({"_id": "global"}, {"$set": update}, upsert=True)
     settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0})
     return settings or {"otp_disabled": False}
 
@@ -1026,26 +927,20 @@ async def run_security_scan(current_user: dict = Depends(get_current_user)):
         )
 
     # --- 1. Authentication Controls ---
-    platform_settings = await db.platform_settings.find_one(
-        {"_id": "global"}, {"_id": 0}
-    )
+    platform_settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0})
     otp_enabled = not (platform_settings or {}).get("otp_disabled", False)
     add_check(
         "Authentication",
         "OTP Two-Factor Authentication",
         "PASS" if otp_enabled else "WARN",
-        "OTP is enabled for all logins"
-        if otp_enabled
-        else "OTP is currently DISABLED platform-wide",
+        "OTP is enabled for all logins" if otp_enabled else "OTP is currently DISABLED platform-wide",
     )
 
     add_check(
         "Authentication",
         "JWT Secret Configured",
         "PASS" if JWT_SECRET and len(JWT_SECRET) >= 32 else "FAIL",
-        f"JWT secret is set ({len(JWT_SECRET)} chars)"
-        if JWT_SECRET
-        else "JWT_SECRET is missing",
+        f"JWT secret is set ({len(JWT_SECRET)} chars)" if JWT_SECRET else "JWT_SECRET is missing",
     )
 
     add_check(
@@ -1232,16 +1127,12 @@ async def run_security_scan(current_user: dict = Depends(get_current_user)):
     for coll, field in index_checks:
         try:
             indexes = await db[coll].index_information()
-            has_index = any(
-                field in str(idx.get("key", "")) for idx in indexes.values()
-            )
+            has_index = any(field in str(idx.get("key", "")) for idx in indexes.values())
             add_check(
                 "Database",
                 f"Index: {coll}.{field}",
                 "PASS" if has_index else "WARN",
-                f"Index exists on {coll}.{field}"
-                if has_index
-                else f"Missing index on {coll}.{field}",
+                f"Index exists on {coll}.{field}" if has_index else f"Missing index on {coll}.{field}",
             )
         except Exception:
             add_check(
@@ -1275,9 +1166,7 @@ async def run_security_scan(current_user: dict = Depends(get_current_user)):
         "External Services",
         "Payment Processing (Stripe)",
         "PASS" if stripe_key else "WARN",
-        "Stripe API key configured"
-        if stripe_key
-        else "Stripe API key missing — payment processing unavailable",
+        "Stripe API key configured" if stripe_key else "Stripe API key missing — payment processing unavailable",
     )
 
     # --- 10. Compliance ---
@@ -1333,15 +1222,7 @@ async def run_security_scan(current_user: dict = Depends(get_current_user)):
 
     # --- Summary ---
     total = passed + failed + warnings
-    grade = (
-        "A"
-        if failed == 0 and warnings <= 2
-        else "B"
-        if failed == 0
-        else "C"
-        if failed <= 2
-        else "F"
-    )
+    grade = "A" if failed == 0 and warnings <= 2 else "B" if failed == 0 else "C" if failed <= 2 else "F"
 
     return {
         "scan_timestamp": now,
@@ -1426,22 +1307,14 @@ async def get_estate_health(current_user: dict = Depends(get_current_user)):
 
     for estate in all_estates:
         owner = user_by_id.get(estate.get("owner_id"))
-        if not owner or (
-            owner.get("role") != "benefactor" and not owner.get("is_also_benefactor")
-        ):
+        if not owner or (owner.get("role") != "benefactor" and not owner.get("is_also_benefactor")):
             continue
 
         bens = bens_by_estate.get(estate["id"], [])
         total = len(bens)
-        linked = sum(
-            1
-            for b in bens
-            if b.get("user_id") or b.get("invitation_status") == "accepted"
-        )
+        linked = sum(1 for b in bens if b.get("user_id") or b.get("invitation_status") == "accepted")
         complete = sum(1 for b in bens if not b.get("is_stub"))
-        invited = sum(
-            1 for b in bens if b.get("invitation_status") in ("sent", "accepted")
-        )
+        invited = sum(1 for b in bens if b.get("invitation_status") in ("sent", "accepted"))
         has_primary = any(b.get("is_primary") for b in bens)
 
         # Health score: 0-100
@@ -1465,9 +1338,7 @@ async def get_estate_health(current_user: dict = Depends(get_current_user)):
         estate_health.append(
             {
                 "estate_id": estate["id"],
-                "estate_name": estate.get(
-                    "name", f"{owner.get('name', 'Unknown')}'s Estate"
-                ),
+                "estate_name": estate.get("name", f"{owner.get('name', 'Unknown')}'s Estate"),
                 "estate_status": estate.get("status", "active"),
                 "owner": {
                     "id": owner["id"],
@@ -1487,9 +1358,7 @@ async def get_estate_health(current_user: dict = Depends(get_current_user)):
                         "relation": b.get("relation", ""),
                         "is_primary": b.get("is_primary", False),
                         "is_stub": b.get("is_stub", False),
-                        "is_linked": bool(
-                            b.get("user_id") or b.get("invitation_status") == "accepted"
-                        ),
+                        "is_linked": bool(b.get("user_id") or b.get("invitation_status") == "accepted"),
                         "invitation_status": b.get("invitation_status", "none"),
                         "date_of_birth": b.get("date_of_birth"),
                         "avatar_color": b.get("avatar_color", "#60A5FA"),
@@ -1533,11 +1402,7 @@ async def get_estate_health(current_user: dict = Depends(get_current_user)):
         reason = None
         if not owner:
             reason = "Owner account no longer exists"
-        elif (
-            len(bens) == 0
-            and owner.get("role") == "beneficiary"
-            and owner.get("is_also_benefactor")
-        ):
+        elif len(bens) == 0 and owner.get("role") == "beneficiary" and owner.get("is_also_benefactor"):
             reason = "Incomplete estate from beneficiary conversion"
         elif len(bens) == 0 and estate.get("status") == "pre-transition":
             reason = "Empty estate with no beneficiaries"
@@ -1548,9 +1413,7 @@ async def get_estate_health(current_user: dict = Depends(get_current_user)):
                     "estate_id": estate["id"],
                     "estate_name": estate.get("name", "Unknown"),
                     "owner_id": estate.get("owner_id"),
-                    "owner_name": owner.get("name", "Deleted User")
-                    if owner
-                    else "Deleted User",
+                    "owner_name": owner.get("name", "Deleted User") if owner else "Deleted User",
                     "owner_email": owner.get("email", "") if owner else "",
                     "created_at": estate.get("created_at", ""),
                     "reason": reason,
@@ -1563,27 +1426,15 @@ async def get_estate_health(current_user: dict = Depends(get_current_user)):
             "total_estates": totals["estates"],
             "total_beneficiaries": tb,
             "linking_rate": round((totals["linked"] / tb * 100) if tb > 0 else 0, 1),
-            "completion_rate": round(
-                (totals["complete"] / tb * 100) if tb > 0 else 0, 1
-            ),
-            "invitation_rate": round(
-                (totals["invited"] / tb * 100) if tb > 0 else 0, 1
-            ),
+            "completion_rate": round((totals["complete"] / tb * 100) if tb > 0 else 0, 1),
+            "invitation_rate": round((totals["invited"] / tb * 100) if tb > 0 else 0, 1),
             "primary_designated_rate": round(
-                (totals["has_primary"] / totals["estates"] * 100)
-                if totals["estates"] > 0
-                else 0,
+                (totals["has_primary"] / totals["estates"] * 100) if totals["estates"] > 0 else 0,
                 1,
             ),
-            "healthy_estates": sum(
-                1 for e in estate_health if e["metrics"]["health_status"] == "healthy"
-            ),
-            "attention_estates": sum(
-                1 for e in estate_health if e["metrics"]["health_status"] == "attention"
-            ),
-            "critical_estates": sum(
-                1 for e in estate_health if e["metrics"]["health_status"] == "critical"
-            ),
+            "healthy_estates": sum(1 for e in estate_health if e["metrics"]["health_status"] == "healthy"),
+            "attention_estates": sum(1 for e in estate_health if e["metrics"]["health_status"] == "attention"),
+            "critical_estates": sum(1 for e in estate_health if e["metrics"]["health_status"] == "critical"),
             "ghost_estates": len(ghost_estates),
         },
         "estates": estate_health,
@@ -1719,9 +1570,7 @@ async def migrate_photos_to_s3(current_user: dict = Depends(get_current_user)):
     results["users"] = await _migrate_field(db.users, "photo_url", "users")
 
     # 2. Beneficiaries — photo_url
-    results["beneficiaries"] = await _migrate_field(
-        db.beneficiaries, "photo_url", "beneficiaries"
-    )
+    results["beneficiaries"] = await _migrate_field(db.beneficiaries, "photo_url", "beneficiaries")
 
     # 3. Estates — estate_photo_url
     results["estates"] = await _migrate_field(db.estates, "estate_photo_url", "estates")
@@ -1735,9 +1584,7 @@ async def migrate_photos_to_s3(current_user: dict = Depends(get_current_user)):
         try:
             header, b64_data = ov["owner_photo_url"].split(",", 1)
             raw = base64.b64decode(b64_data)
-            photo_url = await upload_photo(
-                raw, "overrides", f"{ov['user_id']}_{ov['estate_id']}"
-            )
+            photo_url = await upload_photo(raw, "overrides", f"{ov['user_id']}_{ov['estate_id']}")
             await db.beneficiary_display_overrides.update_one(
                 {"user_id": ov["user_id"], "estate_id": ov["estate_id"]},
                 {"$set": {"owner_photo_url": photo_url}},

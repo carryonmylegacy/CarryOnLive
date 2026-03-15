@@ -76,16 +76,8 @@ class TestAppleWebhookEndpoint:
     def test_webhook_rejects_jws_without_x5c(self):
         """Webhook returns 400 for JWS without x5c certificate chain."""
         # Create a valid-looking JWS header without x5c
-        header = (
-            base64.urlsafe_b64encode(json.dumps({"alg": "ES256"}).encode())
-            .decode()
-            .rstrip("=")
-        )
-        payload = (
-            base64.urlsafe_b64encode(json.dumps({"test": "data"}).encode())
-            .decode()
-            .rstrip("=")
-        )
+        header = base64.urlsafe_b64encode(json.dumps({"alg": "ES256"}).encode()).decode().rstrip("=")
+        payload = base64.urlsafe_b64encode(json.dumps({"test": "data"}).encode()).decode().rstrip("=")
         signature = base64.urlsafe_b64encode(b"fake_signature").decode().rstrip("=")
         fake_jws = f"{header}.{payload}.{signature}"
 
@@ -145,9 +137,7 @@ class TestAuthenticatedEndpoints:
         assert "trial" in data
         assert "beta_mode" in data
         assert "has_active_subscription" in data
-        print(
-            f"PASS: Subscription status returned - has_access={data.get('has_active_subscription')}"
-        )
+        print(f"PASS: Subscription status returned - has_access={data.get('has_active_subscription')}")
 
     def test_apple_receipt_validation_rejects_empty_body(self, auth_token):
         """Apple receipt validation returns 400 for empty body."""

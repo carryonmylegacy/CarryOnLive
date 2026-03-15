@@ -39,9 +39,7 @@ from config import (
 
 
 def get_encryption_key() -> bytes:
-    kdf = PBKDF2HMAC(
-        algorithm=hashes.SHA256(), length=32, salt=ENCRYPTION_SALT, iterations=480000
-    )
+    kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=ENCRYPTION_SALT, iterations=480000)
     return base64.urlsafe_b64encode(kdf.derive(ENCRYPTION_KEY.encode()))
 
 
@@ -59,9 +57,7 @@ def generate_backup_code() -> str:
     """Generate a cryptographically secure backup code."""
     import secrets
 
-    return "-".join(
-        ["".join([str(secrets.randbelow(10)) for _ in range(4)]) for _ in range(3)]
-    )
+    return "-".join(["".join([str(secrets.randbelow(10)) for _ in range(4)]) for _ in range(3)])
 
 
 # ===================== AUTH =====================
@@ -120,9 +116,7 @@ async def get_current_user(
     # Check bulk user token revocation (e.g., password change)
     issued_at = payload.get("issued_at", "")
     if issued_at and await is_user_tokens_revoked(payload["user_id"], issued_at):
-        raise HTTPException(
-            status_code=401, detail="Session expired — please log in again"
-        )
+        raise HTTPException(status_code=401, detail="Session expired — please log in again")
 
     user = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
     if not user:
@@ -153,9 +147,7 @@ def generate_otp() -> str:
 
 async def send_otp_email(email: str, otp: str, name: str = "User"):
     if not RESEND_API_KEY:
-        logger.info(
-            f"Email not configured — OTP generated for {email} (check admin console)"
-        )
+        logger.info(f"Email not configured — OTP generated for {email} (check admin console)")
         return False
     html_content = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
 <body style="margin:0;padding:0;background-color:#0b1120;font-family:Arial,Helvetica,sans-serif;">
@@ -290,9 +282,7 @@ async def send_push_notification(
 ):
     if not vapid:
         return False
-    subscriptions = await db.push_subscriptions.find(
-        {"user_id": user_id, "active": True}, {"_id": 0}
-    ).to_list(100)
+    subscriptions = await db.push_subscriptions.find({"user_id": user_id, "active": True}, {"_id": 0}).to_list(100)
     if not subscriptions:
         return False
     payload = json_module.dumps(
@@ -317,17 +307,13 @@ async def send_push_notification(
             success_count += 1
         except WebPushException as e:
             if e.response and e.response.status_code == 410:
-                await db.push_subscriptions.update_one(
-                    {"endpoint": sub["endpoint"]}, {"$set": {"active": False}}
-                )
+                await db.push_subscriptions.update_one({"endpoint": sub["endpoint"]}, {"$set": {"active": False}})
         except Exception:
             pass
     return success_count > 0
 
 
-async def send_push_to_all_admins(
-    title: str, body: str, url: str = "/admin", tag: str = "admin-notification"
-):
+async def send_push_to_all_admins(title: str, body: str, url: str = "/admin", tag: str = "admin-notification"):
     admins = await db.users.find({"role": "admin"}, {"_id": 0, "id": 1}).to_list(100)
     for admin in admins:
         await send_push_notification(admin["id"], title, body, url, tag, "admin")

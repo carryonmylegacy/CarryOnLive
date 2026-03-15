@@ -57,9 +57,7 @@ class TestMilestoneDeliveryWorkflow:
     def _get_founder_headers(self):
         if not TestMilestoneDeliveryWorkflow.founder_token:
             pytest.skip("No founder token available")
-        return {
-            "Authorization": f"Bearer {TestMilestoneDeliveryWorkflow.founder_token}"
-        }
+        return {"Authorization": f"Bearer {TestMilestoneDeliveryWorkflow.founder_token}"}
 
     # ========= Stats Endpoint Tests =========
 
@@ -69,9 +67,7 @@ class TestMilestoneDeliveryWorkflow:
             f"{BASE_URL}/api/milestones/deliveries/stats",
             headers=self._get_founder_headers(),
         )
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
 
         # Verify response structure
@@ -86,17 +82,13 @@ class TestMilestoneDeliveryWorkflow:
         assert isinstance(data["rejected"], int) and data["rejected"] >= 0
         assert data["total"] == data["pending"] + data["approved"] + data["rejected"]
 
-        print(
-            f"Stats: pending={data['pending']}, approved={data['approved']}, rejected={data['rejected']}"
-        )
+        print(f"Stats: pending={data['pending']}, approved={data['approved']}, rejected={data['rejected']}")
 
     # ========= Deliveries List Endpoint Tests =========
 
     def test_02_get_deliveries_list_pending(self):
         """GET /api/milestones/deliveries - Lists pending_review deliveries by default"""
-        response = requests.get(
-            f"{BASE_URL}/api/milestones/deliveries", headers=self._get_founder_headers()
-        )
+        response = requests.get(f"{BASE_URL}/api/milestones/deliveries", headers=self._get_founder_headers())
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         data = response.json()
         assert isinstance(data, list), "Expected list response"
@@ -109,16 +101,12 @@ class TestMilestoneDeliveryWorkflow:
                 f"{BASE_URL}/api/milestones/deliveries?status={status}",
                 headers=self._get_founder_headers(),
             )
-            assert response.status_code == 200, (
-                f"Expected 200 for status={status}, got {response.status_code}"
-            )
+            assert response.status_code == 200, f"Expected 200 for status={status}, got {response.status_code}"
             data = response.json()
             assert isinstance(data, list), f"Expected list for status={status}"
             # All items should have matching status
             for item in data:
-                assert item.get("status") == status, (
-                    f"Expected status={status}, got {item.get('status')}"
-                )
+                assert item.get("status") == status, f"Expected status={status}, got {item.get('status')}"
             print(f"Status={status}: {len(data)} deliveries")
 
     # ========= Staff Access Control Tests =========
@@ -149,13 +137,10 @@ class TestMilestoneDeliveryWorkflow:
                 "event_date": "2026-01-15",
             },
         )
-        assert response.status_code == 403, (
-            f"Expected 403 for non-beneficiary, got {response.status_code}"
+        assert response.status_code == 403, f"Expected 403 for non-beneficiary, got {response.status_code}"
+        assert "beneficiary" in response.text.lower() or "beneficiaries" in response.text.lower(), (
+            "Error should mention beneficiary role requirement"
         )
-        assert (
-            "beneficiary" in response.text.lower()
-            or "beneficiaries" in response.text.lower()
-        ), "Error should mention beneficiary role requirement"
         print("Correctly requires beneficiary role")
 
     # ========= Delivery Detail Endpoint Tests =========
@@ -181,9 +166,7 @@ class TestMilestoneDeliveryWorkflow:
             json={"action": "invalid_action", "notes": "test"},
         )
         # Should return 400 for invalid action or 404 for non-existent delivery
-        assert response.status_code in [400, 404], (
-            f"Expected 400/404, got {response.status_code}"
-        )
+        assert response.status_code in [400, 404], f"Expected 400/404, got {response.status_code}"
         print(f"Got expected response code {response.status_code} for invalid action")
 
     def test_09_review_not_found(self):
@@ -266,9 +249,7 @@ class TestMilestoneReportCreatesDeliveries:
         if not test_estate:
             pytest.skip("No estate with beneficiaries found for testing")
 
-        print(
-            f"Found test estate: {test_estate['name']} with beneficiaries: {test_estate['beneficiaries']}"
-        )
+        print(f"Found test estate: {test_estate['name']} with beneficiaries: {test_estate['beneficiaries']}")
 
         # Store for later tests
         self.__class__.test_estate_id = test_estate["id"]
@@ -317,9 +298,7 @@ class TestMilestoneReportCreatesDeliveries:
                 assert field in d, f"Missing field '{field}' in delivery record"
             print(f"Delivery record structure verified: {list(d.keys())}")
         else:
-            print(
-                "No pending deliveries to verify structure (expected if no milestones reported)"
-            )
+            print("No pending deliveries to verify structure (expected if no milestones reported)")
 
 
 class TestDeliveryDetailEndpoint:
@@ -345,9 +324,7 @@ class TestDeliveryDetailEndpoint:
         headers = {"Authorization": f"Bearer {data['access_token']}"}
 
         # Get pending deliveries
-        deliveries_resp = requests.get(
-            f"{BASE_URL}/api/milestones/deliveries", headers=headers
-        )
+        deliveries_resp = requests.get(f"{BASE_URL}/api/milestones/deliveries", headers=headers)
         assert deliveries_resp.status_code == 200
 
         deliveries = deliveries_resp.json()
@@ -356,18 +333,14 @@ class TestDeliveryDetailEndpoint:
 
         # Get detail for first delivery
         delivery = deliveries[0]
-        detail_resp = requests.get(
-            f"{BASE_URL}/api/milestones/deliveries/{delivery['id']}", headers=headers
-        )
+        detail_resp = requests.get(f"{BASE_URL}/api/milestones/deliveries/{delivery['id']}", headers=headers)
         assert detail_resp.status_code == 200
 
         detail = detail_resp.json()
         # Check structure
         assert "delivery" in detail, "Missing 'delivery' in response"
         assert "matched_message" in detail, "Missing 'matched_message' in response"
-        assert "all_estate_messages" in detail, (
-            "Missing 'all_estate_messages' in response"
-        )
+        assert "all_estate_messages" in detail, "Missing 'all_estate_messages' in response"
         assert "milestone_report" in detail, "Missing 'milestone_report' in response"
         assert "estate_name" in detail, "Missing 'estate_name' in response"
 

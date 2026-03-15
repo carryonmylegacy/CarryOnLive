@@ -72,9 +72,7 @@ async def send_notification(
     metadata: dict = None,
 ):
     """Send both in-app + web push notification to a single user."""
-    await _store_notification(
-        user_id, title, body, url, notification_type, priority, metadata
-    )
+    await _store_notification(user_id, title, body, url, notification_type, priority, metadata)
     asyncio.create_task(_send_push(user_id, title, body, url, tag, notification_type))
 
 
@@ -95,9 +93,7 @@ async def send_to_role(
         query["operator_role"] = operator_role
     users = await db.users.find(query, {"_id": 0, "id": 1}).to_list(500)
     for u in users:
-        await send_notification(
-            u["id"], title, body, url, notification_type, priority, tag, metadata
-        )
+        await send_notification(u["id"], title, body, url, notification_type, priority, tag, metadata)
 
 
 async def send_to_all_staff(
@@ -110,13 +106,9 @@ async def send_to_all_staff(
     metadata: dict = None,
 ):
     """Send notification to Founder + all Operators (managers + workers)."""
-    staff = await db.users.find(
-        {"role": {"$in": ["admin", "operator"]}}, {"_id": 0, "id": 1}
-    ).to_list(500)
+    staff = await db.users.find({"role": {"$in": ["admin", "operator"]}}, {"_id": 0, "id": 1}).to_list(500)
     for u in staff:
-        await send_notification(
-            u["id"], title, body, url, notification_type, priority, tag, metadata
-        )
+        await send_notification(u["id"], title, body, url, notification_type, priority, tag, metadata)
 
 
 async def send_security_alert(
@@ -145,37 +137,19 @@ async def send_security_alert(
 class _Notify:
     """Namespace for notification shortcuts."""
 
-    async def benefactor(
-        self, user_id, title, body, url="/dashboard", priority="normal", metadata=None
-    ):
-        await send_notification(
-            user_id, title, body, url, "benefactor", priority, "benefactor", metadata
-        )
+    async def benefactor(self, user_id, title, body, url="/dashboard", priority="normal", metadata=None):
+        await send_notification(user_id, title, body, url, "benefactor", priority, "benefactor", metadata)
 
-    async def beneficiary(
-        self, user_id, title, body, url="/beneficiary", priority="normal", metadata=None
-    ):
-        await send_notification(
-            user_id, title, body, url, "beneficiary", priority, "beneficiary", metadata
-        )
+    async def beneficiary(self, user_id, title, body, url="/beneficiary", priority="normal", metadata=None):
+        await send_notification(user_id, title, body, url, "beneficiary", priority, "beneficiary", metadata)
 
-    async def founder(
-        self, title, body, url="/admin", priority="normal", metadata=None
-    ):
-        await send_to_role(
-            "admin", title, body, url, "founder", priority, "founder", metadata
-        )
+    async def founder(self, title, body, url="/admin", priority="normal", metadata=None):
+        await send_to_role("admin", title, body, url, "founder", priority, "founder", metadata)
 
-    async def operator(
-        self, user_id, title, body, url="/ops", priority="normal", metadata=None
-    ):
-        await send_notification(
-            user_id, title, body, url, "operator", priority, "operator", metadata
-        )
+    async def operator(self, user_id, title, body, url="/ops", priority="normal", metadata=None):
+        await send_notification(user_id, title, body, url, "operator", priority, "operator", metadata)
 
-    async def all_operators(
-        self, title, body, url="/ops", priority="normal", metadata=None
-    ):
+    async def all_operators(self, title, body, url="/ops", priority="normal", metadata=None):
         await send_to_role(
             "operator",
             title,
@@ -187,9 +161,7 @@ class _Notify:
             metadata=metadata,
         )
 
-    async def all_staff(
-        self, title, body, url="/admin", priority="normal", metadata=None
-    ):
+    async def all_staff(self, title, body, url="/admin", priority="normal", metadata=None):
         await send_to_all_staff(title, body, url, "staff", priority, "staff", metadata)
 
     async def security_alert(
@@ -204,15 +176,11 @@ class _Notify:
 
     async def all_staff_security(self, title, body, url="/admin", metadata=None):
         """P1 Alert — Amber Alert to ALL staff (buried alive, emergency contact)"""
-        await send_to_all_staff(
-            title, body, url, "security_alert", "critical", "security-alert", metadata
-        )
+        await send_to_all_staff(title, body, url, "security_alert", "critical", "security-alert", metadata)
 
     async def p2_alert(self, title, body, url="/ops", metadata=None):
         """P2 Alert — All staff (Founder + Managers + Team Members). No Amber Alert."""
-        await send_to_all_staff(
-            title, body, url, "p2_alert", "high", "p2-alert", metadata
-        )
+        await send_to_all_staff(title, body, url, "p2_alert", "high", "p2-alert", metadata)
 
     async def p3_alert(self, title, body, url="/ops", metadata=None):
         """P3 Alert — Operators only (Managers + Team Members). Not founder."""

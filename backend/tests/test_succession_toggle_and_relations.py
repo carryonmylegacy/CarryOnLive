@@ -41,20 +41,13 @@ class TestSuccessionToggle:
         assert estates_resp.status_code == 200, "Failed to get estates"
         estates = estates_resp.json()
         owned_estate = next(
-            (
-                e
-                for e in estates
-                if e.get("user_role_in_estate") == "owner"
-                or not e.get("is_beneficiary_estate")
-            ),
+            (e for e in estates if e.get("user_role_in_estate") == "owner" or not e.get("is_beneficiary_estate")),
             None,
         )
         if not owned_estate:
             pytest.skip("No owned estate found")
 
-        bens_resp = self.session.get(
-            f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}"
-        )
+        bens_resp = self.session.get(f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}")
         assert bens_resp.status_code == 200, "Failed to get beneficiaries"
         bens = bens_resp.json()
 
@@ -63,9 +56,7 @@ class TestSuccessionToggle:
 
         ben = bens[0]
         # Test the endpoint is reachable (may toggle state but that's OK)
-        resp = self.session.put(
-            f"{BASE_URL}/api/beneficiaries/{ben['id']}/toggle-succession"
-        )
+        resp = self.session.put(f"{BASE_URL}/api/beneficiaries/{ben['id']}/toggle-succession")
         assert resp.status_code == 200, f"Toggle endpoint failed: {resp.text}"
         data = resp.json()
         assert "success" in data
@@ -78,20 +69,13 @@ class TestSuccessionToggle:
         estates_resp = self.session.get(f"{BASE_URL}/api/estates")
         estates = estates_resp.json()
         owned_estate = next(
-            (
-                e
-                for e in estates
-                if e.get("user_role_in_estate") == "owner"
-                or not e.get("is_beneficiary_estate")
-            ),
+            (e for e in estates if e.get("user_role_in_estate") == "owner" or not e.get("is_beneficiary_estate")),
             None,
         )
         if not owned_estate:
             pytest.skip("No owned estate")
 
-        bens_resp = self.session.get(
-            f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}"
-        )
+        bens_resp = self.session.get(f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}")
         bens = bens_resp.json()
         if not bens:
             pytest.skip("No beneficiaries")
@@ -101,20 +85,14 @@ class TestSuccessionToggle:
 
         # If not in succession, toggle ON first
         if not initial_in_succession:
-            self.session.put(
-                f"{BASE_URL}/api/beneficiaries/{ben['id']}/toggle-succession"
-            )
+            self.session.put(f"{BASE_URL}/api/beneficiaries/{ben['id']}/toggle-succession")
 
         # Now toggle OFF
-        resp = self.session.put(
-            f"{BASE_URL}/api/beneficiaries/{ben['id']}/toggle-succession"
-        )
+        resp = self.session.put(f"{BASE_URL}/api/beneficiaries/{ben['id']}/toggle-succession")
         # Check if we just turned it off (if initial was True) or on (if initial was False then we toggled twice)
 
         # Verify by fetching the beneficiary again
-        bens_resp2 = self.session.get(
-            f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}"
-        )
+        bens_resp2 = self.session.get(f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}")
         bens2 = bens_resp2.json()
         updated_ben = next((b for b in bens2 if b["id"] == ben["id"]), None)
 
@@ -132,20 +110,13 @@ class TestSuccessionToggle:
         estates_resp = self.session.get(f"{BASE_URL}/api/estates")
         estates = estates_resp.json()
         owned_estate = next(
-            (
-                e
-                for e in estates
-                if e.get("user_role_in_estate") == "owner"
-                or not e.get("is_beneficiary_estate")
-            ),
+            (e for e in estates if e.get("user_role_in_estate") == "owner" or not e.get("is_beneficiary_estate")),
             None,
         )
         if not owned_estate:
             pytest.skip("No owned estate")
 
-        bens_resp = self.session.get(
-            f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}"
-        )
+        bens_resp = self.session.get(f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}")
         bens = bens_resp.json()
         if not bens:
             pytest.skip("No beneficiaries")
@@ -155,16 +126,12 @@ class TestSuccessionToggle:
 
         # If already in succession, toggle OFF first
         if is_in_succession:
-            off_resp = self.session.put(
-                f"{BASE_URL}/api/beneficiaries/{ben['id']}/toggle-succession"
-            )
+            off_resp = self.session.put(f"{BASE_URL}/api/beneficiaries/{ben['id']}/toggle-succession")
             assert off_resp.status_code == 200
             assert not off_resp.json()["in_succession"]
 
         # Now toggle ON
-        on_resp = self.session.put(
-            f"{BASE_URL}/api/beneficiaries/{ben['id']}/toggle-succession"
-        )
+        on_resp = self.session.put(f"{BASE_URL}/api/beneficiaries/{ben['id']}/toggle-succession")
         assert on_resp.status_code == 200
         result = on_resp.json()
         assert result["in_succession"]
@@ -175,20 +142,13 @@ class TestSuccessionToggle:
         estates_resp = self.session.get(f"{BASE_URL}/api/estates")
         estates = estates_resp.json()
         owned_estate = next(
-            (
-                e
-                for e in estates
-                if e.get("user_role_in_estate") == "owner"
-                or not e.get("is_beneficiary_estate")
-            ),
+            (e for e in estates if e.get("user_role_in_estate") == "owner" or not e.get("is_beneficiary_estate")),
             None,
         )
         if not owned_estate:
             pytest.skip("No owned estate")
 
-        bens_resp = self.session.get(
-            f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}"
-        )
+        bens_resp = self.session.get(f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}")
         bens = bens_resp.json()
 
         # Need at least 2 beneficiaries for this test
@@ -198,14 +158,10 @@ class TestSuccessionToggle:
         # Ensure all are in succession first
         for b in bens:
             if b.get("succession_order") is None:
-                self.session.put(
-                    f"{BASE_URL}/api/beneficiaries/{b['id']}/toggle-succession"
-                )
+                self.session.put(f"{BASE_URL}/api/beneficiaries/{b['id']}/toggle-succession")
 
         # Now fetch updated state
-        bens_resp2 = self.session.get(
-            f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}"
-        )
+        bens_resp2 = self.session.get(f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}")
         bens2 = bens_resp2.json()
 
         # Find the first (primary) beneficiary and toggle them OFF
@@ -217,16 +173,12 @@ class TestSuccessionToggle:
         first_ben = in_succession_bens[0]
 
         # Toggle OFF the first one
-        resp = self.session.put(
-            f"{BASE_URL}/api/beneficiaries/{first_ben['id']}/toggle-succession"
-        )
+        resp = self.session.put(f"{BASE_URL}/api/beneficiaries/{first_ben['id']}/toggle-succession")
         assert resp.status_code == 200
         assert not resp.json()["in_succession"]
 
         # Check that remaining beneficiaries are re-indexed
-        bens_resp3 = self.session.get(
-            f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}"
-        )
+        bens_resp3 = self.session.get(f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}")
         bens3 = bens_resp3.json()
 
         remaining_in = [b for b in bens3 if b.get("succession_order") is not None]
@@ -241,9 +193,7 @@ class TestSuccessionToggle:
             )
 
         # Restore: toggle the first one back ON
-        self.session.put(
-            f"{BASE_URL}/api/beneficiaries/{first_ben['id']}/toggle-succession"
-        )
+        self.session.put(f"{BASE_URL}/api/beneficiaries/{first_ben['id']}/toggle-succession")
 
 
 class TestReorderRespectsOptedOut:
@@ -269,20 +219,13 @@ class TestReorderRespectsOptedOut:
         estates_resp = self.session.get(f"{BASE_URL}/api/estates")
         estates = estates_resp.json()
         owned_estate = next(
-            (
-                e
-                for e in estates
-                if e.get("user_role_in_estate") == "owner"
-                or not e.get("is_beneficiary_estate")
-            ),
+            (e for e in estates if e.get("user_role_in_estate") == "owner" or not e.get("is_beneficiary_estate")),
             None,
         )
         if not owned_estate:
             pytest.skip("No owned estate")
 
-        bens_resp = self.session.get(
-            f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}"
-        )
+        bens_resp = self.session.get(f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}")
         bens = bens_resp.json()
         if len(bens) < 2:
             pytest.skip("Need at least 2 beneficiaries")
@@ -293,20 +236,14 @@ class TestReorderRespectsOptedOut:
 
         # Ensure first is in succession
         if first_ben.get("succession_order") is None:
-            self.session.put(
-                f"{BASE_URL}/api/beneficiaries/{first_ben['id']}/toggle-succession"
-            )
+            self.session.put(f"{BASE_URL}/api/beneficiaries/{first_ben['id']}/toggle-succession")
 
         # Ensure second is OUT of succession
         if second_ben.get("succession_order") is not None:
-            self.session.put(
-                f"{BASE_URL}/api/beneficiaries/{second_ben['id']}/toggle-succession"
-            )
+            self.session.put(f"{BASE_URL}/api/beneficiaries/{second_ben['id']}/toggle-succession")
 
         # Re-fetch
-        bens_resp2 = self.session.get(
-            f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}"
-        )
+        bens_resp2 = self.session.get(f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}")
         bens2 = bens_resp2.json()
         first_ben = next((b for b in bens2 if b["id"] == first_ben["id"]), first_ben)
         second_ben = next((b for b in bens2 if b["id"] == second_ben["id"]), second_ben)
@@ -322,9 +259,7 @@ class TestReorderRespectsOptedOut:
         assert reorder_resp.status_code == 200
 
         # Verify second is still OUT of succession
-        bens_resp3 = self.session.get(
-            f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}"
-        )
+        bens_resp3 = self.session.get(f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}")
         bens3 = bens_resp3.json()
         updated_second = next((b for b in bens3 if b["id"] == second_ben["id"]), None)
         updated_first = next((b for b in bens3 if b["id"] == first_ben["id"]), None)
@@ -333,9 +268,7 @@ class TestReorderRespectsOptedOut:
             f"Opted-out ben should remain out after reorder, got {updated_second.get('succession_order')}"
         )
         # First should still be in succession (and now primary since second is out)
-        assert updated_first.get("succession_order") is not None, (
-            "First should still be in succession"
-        )
+        assert updated_first.get("succession_order") is not None, "First should still be in succession"
         print(
             f"After reorder: second (opted-out) succession_order={updated_second.get('succession_order')}, first={updated_first.get('succession_order')}"
         )
@@ -404,9 +337,7 @@ class TestFamilyConnectionsRelationInversion:
             print(f"Connection: {conn.get('name')} - relation: {conn.get('relation')}")
 
         # The test passes if we got valid responses - actual inversion is verified by code review
-        print(
-            "Family connections returned with relation fields - inversion logic verified in code"
-        )
+        print("Family connections returned with relation fields - inversion logic verified in code")
 
 
 class TestSuccessionBadgeUI:
@@ -423,9 +354,7 @@ class TestSuccessionBadgeUI:
         ]
         expected_not_in_label = "NOT IN SUCCESSION"
         # This is a code review verification
-        print(
-            f"Expected succession labels: {expected_labels}, opted-out: {expected_not_in_label}"
-        )
+        print(f"Expected succession labels: {expected_labels}, opted-out: {expected_not_in_label}")
         assert True  # Verified via code review
 
 
@@ -436,9 +365,7 @@ class TestAuthorizationRequirements:
         """Toggle succession should require benefactor role"""
         # Try without auth
         resp = requests.put(f"{BASE_URL}/api/beneficiaries/fake-id/toggle-succession")
-        assert resp.status_code in [401, 403, 422], (
-            f"Expected auth error, got {resp.status_code}"
-        )
+        assert resp.status_code in [401, 403, 422], f"Expected auth error, got {resp.status_code}"
 
     def test_reorder_requires_benefactor_role(self):
         """Reorder should require benefactor role"""
@@ -446,6 +373,4 @@ class TestAuthorizationRequirements:
             f"{BASE_URL}/api/beneficiaries/reorder/fake-estate",
             json={"ordered_ids": ["id1"]},
         )
-        assert resp.status_code in [401, 403, 422], (
-            f"Expected auth error, got {resp.status_code}"
-        )
+        assert resp.status_code in [401, 403, 422], f"Expected auth error, got {resp.status_code}"

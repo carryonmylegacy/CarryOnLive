@@ -45,9 +45,7 @@ class TestLoginFlow:
             f"{BASE_URL}/api/auth/login",
             json={"email": TEST_EMAIL, "password": TEST_PASSWORD},
         )
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
         print(f"Login response keys: {list(data.keys())}")
 
@@ -64,18 +62,12 @@ class TestLoginFlow:
         assert response.status_code == 200
         data = response.json()
 
-        assert "user" in data, (
-            f"Response should contain 'user' field, got: {list(data.keys())}"
-        )
+        assert "user" in data, f"Response should contain 'user' field, got: {list(data.keys())}"
         user = data["user"]
 
         # Verify multi-role flags are present
-        assert "is_also_benefactor" in user, (
-            f"User should have is_also_benefactor, got: {list(user.keys())}"
-        )
-        assert "is_also_beneficiary" in user, (
-            f"User should have is_also_beneficiary, got: {list(user.keys())}"
-        )
+        assert "is_also_benefactor" in user, f"User should have is_also_benefactor, got: {list(user.keys())}"
+        assert "is_also_beneficiary" in user, f"User should have is_also_beneficiary, got: {list(user.keys())}"
 
         print(f"User role: {user.get('role')}")
         print(f"is_also_benefactor: {user.get('is_also_benefactor')}")
@@ -113,25 +105,17 @@ class TestAuthMeEndpoint:
 
     def test_auth_me_returns_200(self, auth_token):
         """/auth/me should return 200 with valid token"""
-        response = requests.get(
-            f"{BASE_URL}/api/auth/me", headers={"Authorization": f"Bearer {auth_token}"}
-        )
+        response = requests.get(f"{BASE_URL}/api/auth/me", headers={"Authorization": f"Bearer {auth_token}"})
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
 
     def test_auth_me_has_multi_role_fields(self, auth_token):
         """/auth/me should return is_also_benefactor and is_also_beneficiary fields"""
-        response = requests.get(
-            f"{BASE_URL}/api/auth/me", headers={"Authorization": f"Bearer {auth_token}"}
-        )
+        response = requests.get(f"{BASE_URL}/api/auth/me", headers={"Authorization": f"Bearer {auth_token}"})
         assert response.status_code == 200
         data = response.json()
 
-        assert "is_also_benefactor" in data, (
-            f"Should have is_also_benefactor, got: {list(data.keys())}"
-        )
-        assert "is_also_beneficiary" in data, (
-            f"Should have is_also_beneficiary, got: {list(data.keys())}"
-        )
+        assert "is_also_benefactor" in data, f"Should have is_also_benefactor, got: {list(data.keys())}"
+        assert "is_also_beneficiary" in data, f"Should have is_also_beneficiary, got: {list(data.keys())}"
 
         print(
             f"/auth/me response: is_also_benefactor={data['is_also_benefactor']}, is_also_beneficiary={data['is_also_beneficiary']}"
@@ -139,9 +123,7 @@ class TestAuthMeEndpoint:
 
     def test_auth_me_is_also_benefactor_true(self, auth_token):
         """/auth/me should return is_also_benefactor=true for this test user"""
-        response = requests.get(
-            f"{BASE_URL}/api/auth/me", headers={"Authorization": f"Bearer {auth_token}"}
-        )
+        response = requests.get(f"{BASE_URL}/api/auth/me", headers={"Authorization": f"Bearer {auth_token}"})
         assert response.status_code == 200
         data = response.json()
 
@@ -224,9 +206,7 @@ class TestBeneficiariesEndpoint:
             f"{BASE_URL}/api/beneficiaries/{ESTATE_ID}",
             headers={"Authorization": f"Bearer {auth_token}"},
         )
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
 
         assert isinstance(data, list), f"Expected list, got {type(data)}"
@@ -246,9 +226,7 @@ class TestBeneficiariesEndpoint:
             required_fields = ["id", "estate_id", "name"]
             for field in required_fields:
                 assert field in ben, f"Beneficiary missing field: {field}"
-            print(
-                f"First beneficiary: {ben.get('name')} ({ben.get('email', 'no email')})"
-            )
+            print(f"First beneficiary: {ben.get('name')} ({ben.get('email', 'no email')})")
         else:
             print("No beneficiaries found - this may be expected")
 

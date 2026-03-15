@@ -307,9 +307,7 @@ DEFAULT_CHECKLIST_ITEMS = [
 
 async def calculate_document_score(estate_id: str) -> dict:
     """Calculate document completeness score (0-100)"""
-    documents = await db.documents.find(
-        {"estate_id": estate_id}, {"_id": 0, "name": 1, "category": 1}
-    ).to_list(100)
+    documents = await db.documents.find({"estate_id": estate_id}, {"_id": 0, "name": 1, "category": 1}).to_list(100)
     doc_names_lower = [d["name"].lower() for d in documents]
 
     required_docs = []
@@ -329,20 +327,9 @@ async def calculate_document_score(estate_id: str) -> dict:
             or doc_name in req_name
             or ("will" in req_name and "will" in doc_name and "living" not in doc_name)
             or ("trust" in req_name and "trust" in doc_name)
-            or (
-                "financial power" in req_name
-                and "financial" in doc_name
-                and "power" in doc_name
-            )
-            or (
-                "medical power" in req_name
-                and "medical" in doc_name
-                and "power" in doc_name
-            )
-            or (
-                "healthcare directive" in req_name
-                and ("directive" in doc_name or "living will" in doc_name)
-            )
+            or ("financial power" in req_name and "financial" in doc_name and "power" in doc_name)
+            or ("medical power" in req_name and "medical" in doc_name and "power" in doc_name)
+            or ("healthcare directive" in req_name and ("directive" in doc_name or "living will" in doc_name))
             for doc_name in doc_names_lower
         )
         if found:
@@ -361,9 +348,7 @@ async def calculate_document_score(estate_id: str) -> dict:
 
 async def calculate_messages_score(estate_id: str) -> dict:
     """Calculate milestone messages completeness score (0-100)"""
-    beneficiaries = await db.beneficiaries.find(
-        {"estate_id": estate_id}, {"_id": 0}
-    ).to_list(100)
+    beneficiaries = await db.beneficiaries.find({"estate_id": estate_id}, {"_id": 0}).to_list(100)
     messages = await db.messages.find({"estate_id": estate_id}, {"_id": 0}).to_list(500)
 
     if not beneficiaries:
@@ -394,9 +379,7 @@ async def calculate_messages_score(estate_id: str) -> dict:
         total_found += found_for_ben
         if found_for_ben < len(expected_milestones):
             missing_count = len(expected_milestones) - found_for_ben
-            missing_milestones.append(
-                f"{ben['name']}: {missing_count} more milestone messages needed"
-            )
+            missing_milestones.append(f"{ben['name']}: {missing_count} more milestone messages needed")
 
     score = int((total_found / max(total_expected, 1)) * 100)
     return {
@@ -409,9 +392,7 @@ async def calculate_messages_score(estate_id: str) -> dict:
 
 async def calculate_checklist_score(estate_id: str) -> dict:
     """Calculate checklist completeness score (0-100)"""
-    checklist_items = await db.checklists.find(
-        {"estate_id": estate_id}, {"_id": 0}
-    ).to_list(100)
+    checklist_items = await db.checklists.find({"estate_id": estate_id}, {"_id": 0}).to_list(100)
     total_items = len(checklist_items)
     completed_items = sum(1 for item in checklist_items if item.get("is_completed"))
     min_required = 25
@@ -443,9 +424,7 @@ async def calculate_estate_readiness(estate_id: str) -> dict:
     doc_result = await calculate_document_score(estate_id)
     msg_result = await calculate_messages_score(estate_id)
     checklist_result = await calculate_checklist_score(estate_id)
-    overall_score = int(
-        (doc_result["score"] + msg_result["score"] + checklist_result["score"]) / 3
-    )
+    overall_score = int((doc_result["score"] + msg_result["score"] + checklist_result["score"]) / 3)
     return {
         "overall_score": overall_score,
         "documents": doc_result,

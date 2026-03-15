@@ -25,13 +25,9 @@ class TestHealthEndpoint:
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
 
         data = response.json()
-        assert data.get("status") == "healthy", (
-            f"Expected healthy status, got {data.get('status')}"
-        )
+        assert data.get("status") == "healthy", f"Expected healthy status, got {data.get('status')}"
         assert "database" in data, "Missing database field in health response"
-        print(
-            f"✓ Health check passed: status={data.get('status')}, db={data.get('database')}"
-        )
+        print(f"✓ Health check passed: status={data.get('status')}, db={data.get('database')}")
 
     def test_health_check_has_min_version(self):
         """Test health endpoint returns min_version field for force update gate"""
@@ -40,9 +36,7 @@ class TestHealthEndpoint:
 
         data = response.json()
         assert "min_version" in data, "Missing min_version field in health response"
-        assert data["min_version"] == "1.0.0", (
-            f"Expected min_version 1.0.0, got {data.get('min_version')}"
-        )
+        assert data["min_version"] == "1.0.0", f"Expected min_version 1.0.0, got {data.get('min_version')}"
         print(f"✓ min_version field present: {data['min_version']}")
 
     def test_health_check_has_version(self):
@@ -52,9 +46,7 @@ class TestHealthEndpoint:
 
         data = response.json()
         assert "version" in data, "Missing version field in health response"
-        assert data["version"] == "1.0.0", (
-            f"Expected version 1.0.0, got {data.get('version')}"
-        )
+        assert data["version"] == "1.0.0", f"Expected version 1.0.0, got {data.get('version')}"
         print(f"✓ version field present: {data['version']}")
 
 
@@ -80,9 +72,7 @@ class TestErrorReportingEndpoint:
             headers={"Content-Type": "application/json"},
         )
 
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
         assert data.get("received") is True, f"Expected received:true, got {data}"
         print(f"✓ Error report accepted: {data}")
@@ -97,9 +87,7 @@ class TestErrorReportingEndpoint:
             headers={"Content-Type": "application/json"},
         )
 
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
         assert data.get("received") is True
         print(f"✓ Minimal error report accepted: {data}")
@@ -139,9 +127,7 @@ class TestErrorReportingEndpoint:
             headers={"Content-Type": "application/json"},
         )
 
-        assert response.status_code == 200, (
-            f"Error report should work without auth, got {response.status_code}"
-        )
+        assert response.status_code == 200, f"Error report should work without auth, got {response.status_code}"
         print("✓ Error reporting works without authentication")
 
     def test_error_report_truncates_long_message(self):
@@ -159,9 +145,7 @@ class TestErrorReportingEndpoint:
         )
 
         # Should still accept but truncate
-        assert response.status_code == 200, (
-            f"Should accept large payload, got {response.status_code}"
-        )
+        assert response.status_code == 200, f"Should accept large payload, got {response.status_code}"
         print("✓ Long error payload handled gracefully")
 
     def test_error_report_rejects_missing_message(self):
@@ -175,9 +159,7 @@ class TestErrorReportingEndpoint:
         )
 
         # Pydantic validation should fail
-        assert response.status_code == 422, (
-            f"Expected 422 validation error, got {response.status_code}"
-        )
+        assert response.status_code == 422, f"Expected 422 validation error, got {response.status_code}"
         print("✓ Missing message field correctly rejected (422)")
 
 
@@ -188,9 +170,7 @@ class TestXRequestIdHeader:
         """Test /api/health returns X-Request-Id header"""
         response = requests.get(f"{BASE_URL}/api/health")
 
-        assert "X-Request-Id" in response.headers, (
-            "Missing X-Request-Id header in health response"
-        )
+        assert "X-Request-Id" in response.headers, "Missing X-Request-Id header in health response"
         request_id = response.headers["X-Request-Id"]
         assert len(request_id) > 0, "X-Request-Id header is empty"
         print(f"✓ Health endpoint X-Request-Id: {request_id}")
@@ -204,9 +184,7 @@ class TestXRequestIdHeader:
             headers={"Content-Type": "application/json"},
         )
 
-        assert "X-Request-Id" in response.headers, (
-            "Missing X-Request-Id header in errors/report response"
-        )
+        assert "X-Request-Id" in response.headers, "Missing X-Request-Id header in errors/report response"
         request_id = response.headers["X-Request-Id"]
         assert len(request_id) > 0
         print(f"✓ Errors report endpoint X-Request-Id: {request_id}")
@@ -221,9 +199,7 @@ class TestXRequestIdHeader:
         )
 
         # Even failed auth should have X-Request-Id
-        assert "X-Request-Id" in response.headers, (
-            "Missing X-Request-Id header in auth/login response"
-        )
+        assert "X-Request-Id" in response.headers, "Missing X-Request-Id header in auth/login response"
         request_id = response.headers["X-Request-Id"]
         assert len(request_id) > 0
         print(f"✓ Auth login endpoint X-Request-Id: {request_id}")
@@ -232,9 +208,7 @@ class TestXRequestIdHeader:
         """Test /api/subscriptions/plans returns X-Request-Id header"""
         response = requests.get(f"{BASE_URL}/api/subscriptions/plans")
 
-        assert "X-Request-Id" in response.headers, (
-            "Missing X-Request-Id header in subscriptions/plans response"
-        )
+        assert "X-Request-Id" in response.headers, "Missing X-Request-Id header in subscriptions/plans response"
         request_id = response.headers["X-Request-Id"]
         assert len(request_id) > 0
         print(f"✓ Subscription plans endpoint X-Request-Id: {request_id}")
@@ -243,14 +217,10 @@ class TestXRequestIdHeader:
         """Test that custom X-Request-Id header is preserved if provided"""
         custom_id = "custom-test-" + str(uuid.uuid4())[:8]
 
-        response = requests.get(
-            f"{BASE_URL}/api/health", headers={"X-Request-Id": custom_id}
-        )
+        response = requests.get(f"{BASE_URL}/api/health", headers={"X-Request-Id": custom_id})
 
         returned_id = response.headers.get("X-Request-Id", "")
-        assert returned_id == custom_id, (
-            f"Expected custom request ID {custom_id}, got {returned_id}"
-        )
+        assert returned_id == custom_id, f"Expected custom request ID {custom_id}, got {returned_id}"
         print(f"✓ Custom X-Request-Id preserved: {returned_id}")
 
 
@@ -267,9 +237,7 @@ class TestLoginAndAuthentication:
             headers={"Content-Type": "application/json"},
         )
 
-        assert response.status_code == 200, (
-            f"Login failed: {response.status_code} - {response.text}"
-        )
+        assert response.status_code == 200, f"Login failed: {response.status_code} - {response.text}"
         data = response.json()
         assert "access_token" in data, "Missing access_token in login response"
         assert "user" in data, "Missing user in login response"
@@ -295,16 +263,10 @@ class TestLoginAndAuthentication:
         token = login_response.json().get("access_token")
 
         # Then test authenticated endpoint
-        response = requests.get(
-            f"{BASE_URL}/api/estates", headers={"Authorization": f"Bearer {token}"}
-        )
+        response = requests.get(f"{BASE_URL}/api/estates", headers={"Authorization": f"Bearer {token}"})
 
-        assert "X-Request-Id" in response.headers, (
-            "Missing X-Request-Id in authenticated response"
-        )
-        print(
-            f"✓ Authenticated endpoint X-Request-Id: {response.headers['X-Request-Id']}"
-        )
+        assert "X-Request-Id" in response.headers, "Missing X-Request-Id in authenticated response"
+        print(f"✓ Authenticated endpoint X-Request-Id: {response.headers['X-Request-Id']}")
 
 
 # Run tests

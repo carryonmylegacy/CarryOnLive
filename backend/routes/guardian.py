@@ -169,9 +169,7 @@ async def extract_document_text(document: dict) -> str:
                 return f"[PDF document - {document['file_size']} bytes - text extraction failed]"
 
         # Text-based files
-        elif any(
-            t in file_type for t in ["text", "plain", "csv", "json", "xml", "html"]
-        ):
+        elif any(t in file_type for t in ["text", "plain", "csv", "json", "xml", "html"]):
             text = decrypted_data.decode("utf-8", errors="replace")
             return text[:8000]
 
@@ -184,9 +182,7 @@ async def extract_document_text(document: dict) -> str:
         return "[Document content unavailable - decryption error]"
 
 
-async def gather_estate_context(
-    estate_id: str, include_doc_content: bool = False
-) -> str:
+async def gather_estate_context(estate_id: str, include_doc_content: bool = False) -> str:
     """Gather comprehensive estate context for the AI"""
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
     if not estate:
@@ -210,11 +206,7 @@ async def gather_estate_context(
     # The Settings page is the single source of truth for address/state — the
     # estate's cached "state" field is only a fallback if the user profile has
     # no state set at all (e.g. legacy accounts that predate the address fields).
-    benefactor_state = (
-        (benefactor or {}).get("address_state")
-        or estate.get("state")
-        or "Not specified"
-    )
+    benefactor_state = (benefactor or {}).get("address_state") or estate.get("state") or "Not specified"
     benefactor_city = (benefactor or {}).get("address_city", "")
     benefactor_zip = (benefactor or {}).get("address_zip", "")
     benefactor_street = (benefactor or {}).get("address_street", "")
@@ -225,9 +217,7 @@ async def gather_estate_context(
     # This ensures PDFs, readiness reports, and other estate-level features
     # also reflect the user's current declared state of residence.
     if benefactor_state != "Not specified" and estate.get("state") != benefactor_state:
-        await db.estates.update_one(
-            {"id": estate_id}, {"$set": {"state": benefactor_state}}
-        )
+        await db.estates.update_one({"id": estate_id}, {"$set": {"state": benefactor_state}})
 
     # Fetch all estate data in parallel
     (
@@ -247,12 +237,8 @@ async def gather_estate_context(
             },
         ).to_list(100),
         db.beneficiaries.find({"estate_id": estate_id}, {"_id": 0}).to_list(100),
-        db.checklists.find({"estate_id": estate_id}, {"_id": 0})
-        .sort("order", 1)
-        .to_list(200),
-        db.messages.find({"estate_id": estate_id}, {"_id": 0, "video_url": 0}).to_list(
-            100
-        ),
+        db.checklists.find({"estate_id": estate_id}, {"_id": 0}).sort("order", 1).to_list(200),
+        db.messages.find({"estate_id": estate_id}, {"_id": 0, "video_url": 0}).to_list(100),
         calculate_estate_readiness(estate_id),
     )
 
@@ -290,11 +276,7 @@ async def gather_estate_context(
     context_parts.append("**DOCUMENTS IN VAULT:**")
     if documents:
         for doc in documents:
-            locked_status = (
-                f" [LOCKED - {doc.get('lock_type', 'unknown')}]"
-                if doc.get("is_locked")
-                else ""
-            )
+            locked_status = f" [LOCKED - {doc.get('lock_type', 'unknown')}]" if doc.get("is_locked") else ""
             context_parts.append(
                 f"- {doc['name']} (Category: {doc['category']}, Type: {doc.get('file_type', 'unknown')}, Size: {doc.get('file_size', 0)} bytes){locked_status}"
             )
@@ -305,30 +287,20 @@ async def gather_estate_context(
 
             async def extract_one(doc):
                 try:
-                    full_doc = await db.documents.find_one(
-                        {"id": doc["id"]}, {"_id": 0}
-                    )
-                    if not full_doc or not (
-                        full_doc.get("storage_key") or full_doc.get("file_data")
-                    ):
+                    full_doc = await db.documents.find_one({"id": doc["id"]}, {"_id": 0})
+                    if not full_doc or not (full_doc.get("storage_key") or full_doc.get("file_data")):
                         return doc["name"], "[No content available]"
-                    text = await asyncio.wait_for(
-                        extract_document_text(full_doc), timeout=15
-                    )
+                    text = await asyncio.wait_for(extract_document_text(full_doc), timeout=15)
                     return doc["name"], text
                 except asyncio.TimeoutError:
                     return doc["name"], "[Extraction timed out]"
                 except Exception:
                     return doc["name"], "[Extraction error]"
 
-            results = await asyncio.gather(
-                *[extract_one(doc) for doc in documents[:10]]
-            )
+            results = await asyncio.gather(*[extract_one(doc) for doc in documents[:10]])
             for name, text in results:
                 if text and not text.startswith("["):
-                    context_parts.append(
-                        f"\n--- {name} ---\n{text[:4000]}\n--- End of {name} ---"
-                    )
+                    context_parts.append(f"\n--- {name} ---\n{text[:4000]}\n--- End of {name} ---")
                 else:
                     context_parts.append(f"\n--- {name} ---\n{text}\n---")
     else:
@@ -341,18 +313,12 @@ async def gather_estate_context(
             age_info = ""
             if ben.get("date_of_birth"):
                 try:
-                    dob = datetime.fromisoformat(
-                        ben["date_of_birth"].replace("Z", "+00:00")
-                    )
+                    dob = datetime.fromisoformat(ben["date_of_birth"].replace("Z", "+00:00"))
                     age = (datetime.now(timezone.utc) - dob).days // 365
                     age_info = f", Age: {age}"
                 except Exception:
                     pass
-            gender_info = (
-                f", Gender: {ben.get('gender', 'not specified')}"
-                if ben.get("gender")
-                else ""
-            )
+            gender_info = f", Gender: {ben.get('gender', 'not specified')}" if ben.get("gender") else ""
             context_parts.append(
                 f"- {ben['name']} (Relation: {ben['relation']}{age_info}{gender_info}, Email: {ben['email']})"
             )
@@ -361,9 +327,7 @@ async def gather_estate_context(
 
     # Checklist summary
     completed = sum(1 for item in checklist_items if item.get("is_completed"))
-    context_parts.append(
-        f"\n**CHECKLIST STATUS:** {completed}/{len(checklist_items)} items completed"
-    )
+    context_parts.append(f"\n**CHECKLIST STATUS:** {completed}/{len(checklist_items)} items completed")
 
     # Current checklist categories
     categories = {}
@@ -376,9 +340,7 @@ async def gather_estate_context(
             categories[cat]["completed"] += 1
 
     for cat, counts in categories.items():
-        context_parts.append(
-            f"  - {cat}: {counts['completed']}/{counts['total']} completed"
-        )
+        context_parts.append(f"  - {cat}: {counts['completed']}/{counts['total']} completed")
 
     # Messages summary
     context_parts.append(f"\n**MILESTONE MESSAGES:** {len(messages)} total")
@@ -386,17 +348,13 @@ async def gather_estate_context(
         trigger_info = msg.get("trigger_type", "immediate")
         if msg.get("trigger_age"):
             trigger_info += f" (age {msg['trigger_age']})"
-        context_parts.append(
-            f'- "{msg["title"]}" (Type: {msg.get("message_type", "text")}, Trigger: {trigger_info})'
-        )
+        context_parts.append(f'- "{msg["title"]}" (Type: {msg.get("message_type", "text")}, Trigger: {trigger_info})')
 
     return "\n".join(context_parts)
 
 
 @router.post("/chat/guardian", response_model=ChatResponse)
-async def chat_with_guardian(
-    data: ChatRequest, current_user: dict = Depends(get_current_user)
-):
+async def chat_with_guardian(data: ChatRequest, current_user: dict = Depends(get_current_user)):
     """Send a message to the Estate Guardian AI."""
     if not xai_client:
         raise HTTPException(status_code=500, detail="AI service not configured")
@@ -410,9 +368,7 @@ async def chat_with_guardian(
     needs_content = False
 
     if not estate_id:
-        estates = await db.estates.find(
-            {"owner_id": current_user["id"]}, {"_id": 0}
-        ).to_list(1)
+        estates = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0}).to_list(1)
         if estates:
             estate_id = estates[0]["id"]
 
@@ -435,9 +391,7 @@ async def chat_with_guardian(
                 "check my",
             ]
         )
-        estate_context = await gather_estate_context(
-            estate_id, include_doc_content=needs_content
-        )
+        estate_context = await gather_estate_context(estate_id, include_doc_content=needs_content)
 
     system_message = ESTATE_GUARDIAN_SYSTEM_PROMPT.format(
         estate_context=estate_context
@@ -537,8 +491,7 @@ Provide a clear, organized analysis with specific findings and recommendations."
                     # Take last 2 exchanges from each session (up to 4 messages)
                     msgs = sess["messages"][-4:]
                     summary = " | ".join(
-                        f"{'User' if m['role'] == 'user' else 'Guardian'}: {m['content'][:150]}"
-                        for m in msgs
+                        f"{'User' if m['role'] == 'user' else 'Guardian'}: {m['content'][:150]}" for m in msgs
                     )
                     cross_context_parts.append(summary)
                 cross_context = "\n---\n".join(cross_context_parts)
@@ -551,9 +504,7 @@ Provide a clear, organized analysis with specific findings and recommendations."
 
         # Load previous messages from this session
         prev_messages = (
-            await db.chat_history.find(
-                {"session_id": session_id, "user_id": current_user["id"]}, {"_id": 0}
-            )
+            await db.chat_history.find({"session_id": session_id, "user_id": current_user["id"]}, {"_id": 0})
             .sort("created_at", 1)
             .to_list(50)
         )
@@ -566,9 +517,7 @@ Provide a clear, organized analysis with specific findings and recommendations."
 
         # Call xAI Grok — use Grok-4 for heavy analysis, Grok-3-mini for chat
         use_heavy_model = (
-            data.action
-            in ("analyze_vault", "generate_todo", "generate_iac", "analyze_readiness")
-            or needs_content
+            data.action in ("analyze_vault", "generate_todo", "generate_iac", "analyze_readiness") or needs_content
         )
         selected_model = XAI_MODEL if use_heavy_model else XAI_MODEL_LIGHT
 
@@ -592,9 +541,7 @@ Provide a clear, organized analysis with specific findings and recommendations."
                 break
             except Exception as e:
                 last_error = e
-                logger.warning(
-                    f"xAI attempt {attempt + 1}/3 failed ({type(e).__name__}: {e})"
-                )
+                logger.warning(f"xAI attempt {attempt + 1}/3 failed ({type(e).__name__}: {e})")
 
         if completion is None:
             raise last_error
@@ -607,17 +554,15 @@ Provide a clear, organized analysis with specific findings and recommendations."
         # Handle IAC generation — only generate_iac populates the Immediate Action Checklist
         if data.action == "generate_iac" and "checklist_json" in response:
             try:
-                json_start = response.index("```checklist_json") + len(
-                    "```checklist_json"
-                )
+                json_start = response.index("```checklist_json") + len("```checklist_json")
                 json_end = response.index("```", json_start)
                 checklist_json_str = response[json_start:json_end].strip()
                 new_items = json_module.loads(checklist_json_str)
 
                 # Get existing checklist items to avoid duplicates
-                existing = await db.checklists.find(
-                    {"estate_id": estate_id}, {"_id": 0, "id": 1, "title": 1}
-                ).to_list(200)
+                existing = await db.checklists.find({"estate_id": estate_id}, {"_id": 0, "id": 1, "title": 1}).to_list(
+                    200
+                )
                 existing_titles = {item["title"].lower() for item in existing}
 
                 items_added = 0
@@ -634,9 +579,7 @@ Provide a clear, organized analysis with specific findings and recommendations."
                         )
                         item_dict = checklist_item.model_dump()
                         item_dict["ai_suggested"] = True
-                        item_dict["ai_accepted"] = (
-                            None  # None=pending, True=accepted, False=rejected
-                        )
+                        item_dict["ai_accepted"] = None  # None=pending, True=accepted, False=rejected
                         await db.checklists.insert_one(item_dict)
                         items_added += 1
 
@@ -700,9 +643,7 @@ Provide a clear, organized analysis with specific findings and recommendations."
             }
         )
 
-        return ChatResponse(
-            response=response, session_id=session_id, action_result=action_result
-        )
+        return ChatResponse(response=response, session_id=session_id, action_result=action_result)
     except Exception as e:
         error_msg = str(e)
         logger.error(f"AI chat error: {error_msg}")
@@ -718,14 +659,10 @@ Provide a clear, organized analysis with specific findings and recommendations."
 
 
 @router.get("/chat/history/{session_id}")
-async def get_chat_history(
-    session_id: str, current_user: dict = Depends(get_current_user)
-):
+async def get_chat_history(session_id: str, current_user: dict = Depends(get_current_user)):
     """Retrieve chat history with the Estate Guardian."""
     history = (
-        await db.chat_history.find(
-            {"session_id": session_id, "user_id": current_user["id"]}, {"_id": 0}
-        )
+        await db.chat_history.find({"session_id": session_id, "user_id": current_user["id"]}, {"_id": 0})
         .sort("created_at", 1)
         .to_list(100)
     )
@@ -775,13 +712,9 @@ async def get_chat_sessions(current_user: dict = Depends(get_current_user)):
 
 
 @router.delete("/chat/sessions/{session_id}")
-async def delete_chat_session(
-    session_id: str, current_user: dict = Depends(get_current_user)
-):
+async def delete_chat_session(session_id: str, current_user: dict = Depends(get_current_user)):
     """Delete a chat session."""
-    result = await db.chat_history.delete_many(
-        {"session_id": session_id, "user_id": current_user["id"]}
-    )
+    result = await db.chat_history.delete_many({"session_id": session_id, "user_id": current_user["id"]})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Session not found")
     return {"success": True, "deleted": result.deleted_count}
@@ -818,9 +751,7 @@ async def export_checklist_pdf(
     from fpdf import FPDF
 
     # Get user's estate
-    estates = await db.estates.find(
-        {"owner_id": current_user["id"]}, {"_id": 0}
-    ).to_list(1)
+    estates = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0}).to_list(1)
     if not estates:
         raise HTTPException(status_code=404, detail="No estate found")
 
@@ -828,11 +759,7 @@ async def export_checklist_pdf(
     estate_id = estate["id"]
 
     # Get checklist items
-    items = (
-        await db.checklists.find({"estate_id": estate_id}, {"_id": 0})
-        .sort("order", 1)
-        .to_list(200)
-    )
+    items = await db.checklists.find({"estate_id": estate_id}, {"_id": 0}).sort("order", 1).to_list(200)
 
     if not items:
         raise HTTPException(status_code=404, detail="No checklist items found")
@@ -850,13 +777,9 @@ async def export_checklist_pdf(
     # Get benefactor's state of residence
     benefactor = await db.users.find_one(
         {"id": estate.get("owner_id")},
-        {"_id": 0, "address_state": 1},
+        {"_id": 0, "id": 1, "address_state": 1},
     )
-    user_state = (
-        (benefactor or {}).get("address_state")
-        or estate.get("state")
-        or "Not specified"
-    )
+    user_state = (benefactor or {}).get("address_state") or estate.get("state") or "Not specified"
 
     # Header
     pdf.set_font("Helvetica", "B", 20)
@@ -892,9 +815,7 @@ async def export_checklist_pdf(
         f"Declared State of Residence: {user_state}  |  "
         f"This checklist is informed by {user_state} estate planning statutes and probate rules."
     )
-    pdf.multi_cell(
-        0, 4.5, sanitize_for_pdf(jurisdiction_text), border=1, fill=True, align="C"
-    )
+    pdf.multi_cell(0, 4.5, sanitize_for_pdf(jurisdiction_text), border=1, fill=True, align="C")
     pdf.ln(3)
 
     # Legal disclaimer box
@@ -1045,15 +966,11 @@ async def export_todo_pdf(
     from fpdf import FPDF
 
     # Get user's estate for context
-    estates = await db.estates.find(
-        {"owner_id": current_user["id"]}, {"_id": 0}
-    ).to_list(1)
+    estates = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0}).to_list(1)
     estate_name = estates[0]["name"] if estates else "My Estate"
     estate_id = estates[0]["id"] if estates else None
 
-    benefactor = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "address_state": 1}
-    )
+    benefactor = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "id": 1, "address_state": 1})
     user_state = (benefactor or {}).get("address_state") or "Not specified"
 
     pdf = FPDF()

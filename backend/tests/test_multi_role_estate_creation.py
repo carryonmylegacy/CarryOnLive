@@ -55,11 +55,7 @@ class TestMultiRoleEstateCreation:
                 print("OTP required for founder login")
 
     def get_headers(self, use_founder=False):
-        token = (
-            TestMultiRoleEstateCreation.founder_token
-            if use_founder
-            else TestMultiRoleEstateCreation.auth_token
-        )
+        token = TestMultiRoleEstateCreation.founder_token if use_founder else TestMultiRoleEstateCreation.auth_token
         return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
     # ===================== AUTH/ME ENDPOINT TESTS =====================
@@ -96,12 +92,8 @@ class TestMultiRoleEstateCreation:
         if not TestMultiRoleEstateCreation.founder_token:
             pytest.skip("No founder token available")
 
-        response = requests.get(
-            f"{BASE_URL}/api/auth/me", headers=self.get_headers(use_founder=True)
-        )
-        assert response.status_code == 200, (
-            f"Auth/me failed for founder: {response.text}"
-        )
+        response = requests.get(f"{BASE_URL}/api/auth/me", headers=self.get_headers(use_founder=True))
+        assert response.status_code == 200, f"Auth/me failed for founder: {response.text}"
 
         data = response.json()
         assert data.get("email") == FOUNDER_EMAIL
@@ -137,9 +129,7 @@ class TestMultiRoleEstateCreation:
             pytest.skip("No auth token available")
 
         # Get user info first
-        me_response = requests.get(
-            f"{BASE_URL}/api/auth/me", headers=self.get_headers()
-        )
+        me_response = requests.get(f"{BASE_URL}/api/auth/me", headers=self.get_headers())
         if me_response.status_code != 200:
             pytest.skip("Could not get user info")
 
@@ -173,14 +163,11 @@ class TestMultiRoleEstateCreation:
         )
 
         # Should return 400 with "already have an estate" message
-        assert response.status_code == 400, (
-            f"Expected 400 for existing estate owner, got {response.status_code}"
-        )
+        assert response.status_code == 400, f"Expected 400 for existing estate owner, got {response.status_code}"
         data = response.json()
-        assert (
-            "already" in data.get("detail", "").lower()
-            or "estate" in data.get("detail", "").lower()
-        ), f"Expected 'already has estate' error, got: {data.get('detail')}"
+        assert "already" in data.get("detail", "").lower() or "estate" in data.get("detail", "").lower(), (
+            f"Expected 'already has estate' error, got: {data.get('detail')}"
+        )
 
         print(f"Create-estate correctly rejected: {data.get('detail')}")
 
@@ -219,24 +206,13 @@ class TestMultiRoleEstateCreation:
             data = response.json()
             # If it says "user not found" or similar, the endpoint exists
             detail = data.get("detail", "").lower()
-            if (
-                "user" in detail
-                or "benefactor" in detail
-                or "found" in detail
-                or "estate" in detail
-            ):
-                print(
-                    f"Add-beneficiary-link endpoint exists, returned 404 for nonexistent user: {data.get('detail')}"
-                )
+            if "user" in detail or "benefactor" in detail or "found" in detail or "estate" in detail:
+                print(f"Add-beneficiary-link endpoint exists, returned 404 for nonexistent user: {data.get('detail')}")
                 return  # Test passes - endpoint exists
             else:
-                assert False, (
-                    f"add-beneficiary-link endpoint not found: {data.get('detail')}"
-                )
+                assert False, f"add-beneficiary-link endpoint not found: {data.get('detail')}"
 
-        assert response.status_code != 405, (
-            "add-beneficiary-link endpoint method not allowed"
-        )
+        assert response.status_code != 405, "add-beneficiary-link endpoint method not allowed"
         print(f"Add-beneficiary-link endpoint exists, returned: {response.status_code}")
 
     def test_add_beneficiary_link_rejects_nonexistent_benefactor(self):
@@ -250,9 +226,7 @@ class TestMultiRoleEstateCreation:
             headers=self.get_headers(),
         )
 
-        assert response.status_code == 404, (
-            f"Expected 404 for nonexistent benefactor, got {response.status_code}"
-        )
+        assert response.status_code == 404, f"Expected 404 for nonexistent benefactor, got {response.status_code}"
         print("Add-beneficiary-link correctly returns 404 for nonexistent benefactor")
 
     # ===================== LEGACY BECOME-BENEFACTOR ENDPOINT TESTS =====================
@@ -262,19 +236,12 @@ class TestMultiRoleEstateCreation:
         if not TestMultiRoleEstateCreation.auth_token:
             pytest.skip("No auth token available")
 
-        response = requests.post(
-            f"{BASE_URL}/api/beneficiary/become-benefactor", headers=self.get_headers()
-        )
+        response = requests.post(f"{BASE_URL}/api/beneficiary/become-benefactor", headers=self.get_headers())
 
         # Should return 400 with redirect message
-        assert response.status_code == 400, (
-            f"Expected 400 for disabled endpoint, got {response.status_code}"
-        )
+        assert response.status_code == 400, f"Expected 400 for disabled endpoint, got {response.status_code}"
         data = response.json()
-        assert (
-            "wizard" in data.get("detail", "").lower()
-            or "create estate" in data.get("detail", "").lower()
-        ), (
+        assert "wizard" in data.get("detail", "").lower() or "create estate" in data.get("detail", "").lower(), (
             f"Expected redirect message to Create Estate wizard, got: {data.get('detail')}"
         )
 
@@ -296,13 +263,9 @@ class TestMultiRoleEstateCreation:
         if response.status_code == 429:
             pytest.skip("Rate limited - skipping test")
 
-        assert response.status_code == 200, (
-            f"Check-benefactor-email failed: {response.text}"
-        )
+        assert response.status_code == 200, f"Check-benefactor-email failed: {response.text}"
         data = response.json()
-        assert data.get("valid"), (
-            f"Expected valid=True for existing benefactor, got {data}"
-        )
+        assert data.get("valid"), f"Expected valid=True for existing benefactor, got {data}"
         print("Check-benefactor-email correctly validates existing benefactor")
 
     def test_check_benefactor_email_invalid(self):
@@ -319,17 +282,11 @@ class TestMultiRoleEstateCreation:
         if response.status_code == 429:
             pytest.skip("Rate limited - skipping test")
 
-        assert response.status_code == 200, (
-            f"Check-benefactor-email failed: {response.text}"
-        )
+        assert response.status_code == 200, f"Check-benefactor-email failed: {response.text}"
         data = response.json()
-        assert not data.get("valid"), (
-            f"Expected valid=False for nonexistent email, got {data}"
-        )
+        assert not data.get("valid"), f"Expected valid=False for nonexistent email, got {data}"
         assert "message" in data, "Expected error message for invalid email"
-        print(
-            f"Check-benefactor-email correctly invalidates nonexistent email: {data.get('message')}"
-        )
+        print(f"Check-benefactor-email correctly invalidates nonexistent email: {data.get('message')}")
 
 
 class TestLoginFlow:
@@ -368,17 +325,11 @@ class TestLoginFlow:
             },
         )
 
-        assert response.status_code == 200, (
-            f"Auth/me failed for founder: {response.text}"
-        )
+        assert response.status_code == 200, f"Auth/me failed for founder: {response.text}"
         data = response.json()
         assert data.get("email") == FOUNDER_EMAIL, f"Wrong user: {data.get('email')}"
-        assert data.get("role") == "admin", (
-            f"Founder should be admin, got {data.get('role')}"
-        )
-        print(
-            f"Founder verified via /auth/me: {data.get('name')}, role={data.get('role')}"
-        )
+        assert data.get("role") == "admin", f"Founder should be admin, got {data.get('role')}"
+        print(f"Founder verified via /auth/me: {data.get('name')}, role={data.get('role')}")
 
 
 class TestHealthCheck:
@@ -387,9 +338,7 @@ class TestHealthCheck:
     def test_api_health(self):
         """Test that API is reachable"""
         response = requests.get(f"{BASE_URL}/api/health")
-        assert response.status_code == 200, (
-            f"Health check failed: {response.status_code}"
-        )
+        assert response.status_code == 200, f"Health check failed: {response.status_code}"
         print("API health check passed")
 
     def test_base_url_valid(self):

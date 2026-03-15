@@ -54,9 +54,9 @@ class TestDocumentPreviewEndpoint:
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         # Image content type should be image/*
         content_type = response.headers.get("Content-Type", "")
-        assert (
-            "image" in content_type.lower() or "application" in content_type.lower()
-        ), f"Unexpected content-type: {content_type}"
+        assert "image" in content_type.lower() or "application" in content_type.lower(), (
+            f"Unexpected content-type: {content_type}"
+        )
         # Should return binary content
         assert len(response.content) > 0, "Response content is empty"
 
@@ -77,9 +77,7 @@ class TestDocumentPreviewEndpoint:
         print(f"No-auth preview status: {response.status_code}")
 
         # Should return 401 or 403 without auth
-        assert response.status_code in [401, 403, 422], (
-            f"Expected 401/403/422, got {response.status_code}"
-        )
+        assert response.status_code in [401, 403, 422], f"Expected 401/403/422, got {response.status_code}"
 
 
 class TestDocumentDownloadEndpoint:
@@ -91,16 +89,12 @@ class TestDocumentDownloadEndpoint:
         response = requests.get(url, headers=auth_headers)
 
         print(f"PDF Download Status: {response.status_code}")
-        print(
-            f"Content-Disposition: {response.headers.get('Content-Disposition', 'N/A')}"
-        )
+        print(f"Content-Disposition: {response.headers.get('Content-Disposition', 'N/A')}")
 
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         # Should have Content-Disposition header for download
         content_disp = response.headers.get("Content-Disposition", "")
-        assert "attachment" in content_disp.lower(), (
-            f"Expected attachment disposition, got: {content_disp}"
-        )
+        assert "attachment" in content_disp.lower(), f"Expected attachment disposition, got: {content_disp}"
 
     def test_download_image_document_success(self, auth_headers):
         """Test download endpoint returns image content for download"""
@@ -121,9 +115,7 @@ class TestDocumentListEndpoint:
         estates_url = f"{BASE_URL}/api/estates"
         estates_response = requests.get(estates_url, headers=auth_headers)
 
-        assert estates_response.status_code == 200, (
-            f"Failed to get estates: {estates_response.status_code}"
-        )
+        assert estates_response.status_code == 200, f"Failed to get estates: {estates_response.status_code}"
         estates = estates_response.json()
         assert len(estates) > 0, "No estates found for test user"
 

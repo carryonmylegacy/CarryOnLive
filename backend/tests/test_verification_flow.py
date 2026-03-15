@@ -13,9 +13,7 @@ import requests
 import os
 import base64
 
-BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com"
-)
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com")
 
 # Test credentials provided
 BENEFACTOR_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNjA3YjE2NGUtMGQzOS00Yjk1LWI5N2QtMmE2MDM5MTgyNDhhIiwiZW1haWwiOiJmdWxsdGVzdEB0ZXN0LmNvbSIsInJvbGUiOiJiZW5lZmFjdG9yIiwiaXNzdWVkX2F0IjoiMjAyNi0wMi0yOFQxOToyMTo0MC42ODI0NDcrMDA6MDAiLCJleHAiOjE3NzIzMzUzMDB9.pk5w6rPA0G1XR0CgfmZ2uWfFBddrKwjeae-lY2GtwYk"
@@ -63,23 +61,17 @@ class TestSubscriptionPlans:
     def test_plans_endpoint_returns_all_plans(self, api_client):
         """GET /api/subscriptions/plans returns benefactor and beneficiary plans"""
         response = api_client.get(f"{BASE_URL}/api/subscriptions/plans")
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
 
         data = response.json()
         assert "plans" in data, "Response should contain 'plans' key"
-        assert "beneficiary_plans" in data, (
-            "Response should contain 'beneficiary_plans' key"
-        )
+        assert "beneficiary_plans" in data, "Response should contain 'beneficiary_plans' key"
 
         # Check plans structure
         plan_ids = [p["id"] for p in data["plans"]]
         assert "military" in plan_ids, "Military plan should be in plans"
         assert "hospice" in plan_ids, "Hospice plan should be in plans"
-        print(
-            f"✓ Found {len(data['plans'])} plans and {len(data['beneficiary_plans'])} beneficiary plans"
-        )
+        print(f"✓ Found {len(data['plans'])} plans and {len(data['beneficiary_plans'])} beneficiary plans")
 
     def test_military_plan_has_verification_requirement(self, api_client):
         """Military plan should have requires_verification=True"""
@@ -89,12 +81,8 @@ class TestSubscriptionPlans:
         data = response.json()
         military_plan = next((p for p in data["plans"] if p["id"] == "military"), None)
         assert military_plan is not None, "Military plan not found"
-        assert military_plan.get("requires_verification") is True, (
-            "Military plan should require verification"
-        )
-        print(
-            f"✓ Military plan requires verification: {military_plan.get('requires_verification')}"
-        )
+        assert military_plan.get("requires_verification") is True, "Military plan should require verification"
+        print(f"✓ Military plan requires verification: {military_plan.get('requires_verification')}")
 
     def test_hospice_plan_has_verification_requirement(self, api_client):
         """Hospice plan should have requires_verification=True"""
@@ -104,9 +92,7 @@ class TestSubscriptionPlans:
         data = response.json()
         hospice_plan = next((p for p in data["plans"] if p["id"] == "hospice"), None)
         assert hospice_plan is not None, "Hospice plan not found"
-        assert hospice_plan.get("requires_verification") is True, (
-            "Hospice plan should require verification"
-        )
+        assert hospice_plan.get("requires_verification") is True, "Hospice plan should require verification"
         assert hospice_plan.get("price") == 0.00, "Hospice plan should be free"
         print(
             f"✓ Hospice plan: requires_verification={hospice_plan.get('requires_verification')}, price={hospice_plan.get('price')}"
@@ -122,9 +108,7 @@ class TestSubscriptionPlans:
         assert len(ben_plans) > 0, "Should have beneficiary plans"
 
         for plan in ben_plans:
-            assert "quarterly_price" in plan, (
-                f"Plan {plan['id']} missing quarterly_price"
-            )
+            assert "quarterly_price" in plan, f"Plan {plan['id']} missing quarterly_price"
             assert "annual_price" in plan, f"Plan {plan['id']} missing annual_price"
             print(
                 f"✓ {plan['id']}: monthly=${plan['price']}, quarterly=${plan['quarterly_price']}, annual=${plan['annual_price']}"
@@ -145,9 +129,7 @@ class TestVerificationUpload:
                 "file_name": "test.jpg",
             },
         )
-        assert response.status_code in [401, 403, 422], (
-            f"Expected auth error, got {response.status_code}"
-        )
+        assert response.status_code in [401, 403, 422], f"Expected auth error, got {response.status_code}"
         print(f"✓ Verification upload requires auth (status: {response.status_code})")
 
     def test_verification_upload_invalid_tier(self, api_client, benefactor_headers):
@@ -165,12 +147,8 @@ class TestVerificationUpload:
             },
         )
         # 400 for invalid tier or 422 for validation
-        assert response.status_code in [400, 422], (
-            f"Expected 400/422 for invalid tier, got {response.status_code}"
-        )
-        print(
-            f"✓ Invalid tier rejected: {response.json().get('detail', 'Unknown error')}"
-        )
+        assert response.status_code in [400, 422], f"Expected 400/422 for invalid tier, got {response.status_code}"
+        print(f"✓ Invalid tier rejected: {response.json().get('detail', 'Unknown error')}")
 
     def test_verification_upload_military(self, api_client, benefactor_headers):
         """POST /api/verification/upload accepts military tier with valid doc"""
@@ -192,9 +170,7 @@ class TestVerificationUpload:
             },
         )
         # Accept 200 (success) or 400 (already has pending verification)
-        assert response.status_code in [200, 400], (
-            f"Unexpected status: {response.status_code}: {response.text}"
-        )
+        assert response.status_code in [200, 400], f"Unexpected status: {response.status_code}: {response.text}"
 
         if response.status_code == 200:
             data = response.json()
@@ -203,9 +179,7 @@ class TestVerificationUpload:
             print(f"✓ Verification uploaded: {data.get('verification_id')}")
         else:
             # Already has pending verification
-            print(
-                f"✓ Verification blocked (already pending): {response.json().get('detail')}"
-            )
+            print(f"✓ Verification blocked (already pending): {response.json().get('detail')}")
 
 
 class TestAdminVerifications:
@@ -213,22 +187,14 @@ class TestAdminVerifications:
 
     def test_admin_verifications_requires_admin(self, api_client, benefactor_headers):
         """GET /api/admin/verifications requires admin role"""
-        response = api_client.get(
-            f"{BASE_URL}/api/admin/verifications", headers=benefactor_headers
-        )
-        assert response.status_code == 403, (
-            f"Expected 403 for non-admin, got {response.status_code}"
-        )
+        response = api_client.get(f"{BASE_URL}/api/admin/verifications", headers=benefactor_headers)
+        assert response.status_code == 403, f"Expected 403 for non-admin, got {response.status_code}"
         print("✓ Admin verifications requires admin role")
 
     def test_admin_verifications_list(self, api_client, admin_headers):
         """GET /api/admin/verifications returns list of verifications"""
-        response = api_client.get(
-            f"{BASE_URL}/api/admin/verifications", headers=admin_headers
-        )
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        response = api_client.get(f"{BASE_URL}/api/admin/verifications", headers=admin_headers)
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
 
         data = response.json()
         assert isinstance(data, list), "Should return a list"
@@ -248,16 +214,12 @@ class TestAdminVerifications:
     def test_admin_verification_review_approve(self, api_client, admin_headers):
         """POST /api/admin/verifications/{id}/review can approve verification"""
         # First get list of verifications
-        list_response = api_client.get(
-            f"{BASE_URL}/api/admin/verifications", headers=admin_headers
-        )
+        list_response = api_client.get(f"{BASE_URL}/api/admin/verifications", headers=admin_headers)
         if list_response.status_code != 200:
             pytest.skip("Could not get verifications list")
 
         verifications = list_response.json()
-        pending_verification = next(
-            (v for v in verifications if v.get("status") == "pending"), None
-        )
+        pending_verification = next((v for v in verifications if v.get("status") == "pending"), None)
 
         if not pending_verification:
             # Try to find any verification to test with
@@ -269,12 +231,8 @@ class TestAdminVerifications:
                     headers=admin_headers,
                     json={"action": "approve", "notes": "Test approval from pytest"},
                 )
-                assert response.status_code == 200, (
-                    f"Expected 200, got {response.status_code}: {response.text}"
-                )
-                print(
-                    f"✓ Verification review endpoint works (toggled approval for {test_v['id']})"
-                )
+                assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+                print(f"✓ Verification review endpoint works (toggled approval for {test_v['id']})")
             else:
                 pytest.skip("No verifications found to test")
             return
@@ -285,9 +243,7 @@ class TestAdminVerifications:
             headers=admin_headers,
             json={"action": "approve", "notes": "Test approval from pytest"},
         )
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
         assert data.get("success") is True, "Approval should succeed"
         print(f"✓ Verification approved: {pending_verification['id']}")
@@ -295,27 +251,19 @@ class TestAdminVerifications:
     def test_admin_verification_notify(self, api_client, admin_headers):
         """POST /api/admin/verifications/{id}/notify sends notification to benefactor"""
         # Get list and find an approved verification that hasn't been notified
-        list_response = api_client.get(
-            f"{BASE_URL}/api/admin/verifications", headers=admin_headers
-        )
+        list_response = api_client.get(f"{BASE_URL}/api/admin/verifications", headers=admin_headers)
         if list_response.status_code != 200:
             pytest.skip("Could not get verifications list")
 
         verifications = list_response.json()
         approved_verification = next(
-            (
-                v
-                for v in verifications
-                if v.get("status") == "approved" and not v.get("notified")
-            ),
+            (v for v in verifications if v.get("status") == "approved" and not v.get("notified")),
             None,
         )
 
         if not approved_verification:
             # Check if any approved verification exists (even if notified)
-            approved_any = next(
-                (v for v in verifications if v.get("status") == "approved"), None
-            )
+            approved_any = next((v for v in verifications if v.get("status") == "approved"), None)
             if approved_any:
                 # Test the endpoint - it should fail gracefully or succeed
                 response = api_client.post(
@@ -335,9 +283,7 @@ class TestAdminVerifications:
             f"{BASE_URL}/api/admin/verifications/{approved_verification['id']}/notify",
             headers=admin_headers,
         )
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
         assert data.get("success") is True, "Notification should succeed"
         print(f"✓ Notification sent for verification: {approved_verification['id']}")
@@ -348,18 +294,14 @@ class TestVerificationStatus:
 
     def test_verification_status_returns_status(self, api_client, benefactor_headers):
         """GET /api/verification/status returns current user's verification status"""
-        response = api_client.get(
-            f"{BASE_URL}/api/verification/status", headers=benefactor_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/verification/status", headers=benefactor_headers)
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
 
         data = response.json()
         assert "status" in data, "Response should contain status field"
         valid_statuses = ["none", "pending", "approved", "denied"]
         assert data["status"] in valid_statuses, f"Invalid status: {data['status']}"
-        print(
-            f"✓ Verification status: {data['status']}, tier: {data.get('tier_requested', 'N/A')}"
-        )
+        print(f"✓ Verification status: {data['status']}, tier: {data.get('tier_requested', 'N/A')}")
 
 
 if __name__ == "__main__":

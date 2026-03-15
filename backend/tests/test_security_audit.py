@@ -9,9 +9,7 @@ import requests
 import os
 import uuid
 
-BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com"
-).rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com").rstrip("/")
 
 # Test credentials from problem statement
 ADMIN_EMAIL = "founder@carryon.us"
@@ -61,9 +59,7 @@ class TestAccountLockout:
             )
             print(f"Attempt {i + 1}: Status {response.status_code}")
             # May be 401 or 429 if rate limited
-            assert response.status_code in [401, 429], (
-                f"Unexpected status: {response.status_code}"
-            )
+            assert response.status_code in [401, 429], f"Unexpected status: {response.status_code}"
 
         # 6th attempt should be locked (429)
         response = requests.post(
@@ -71,9 +67,7 @@ class TestAccountLockout:
             json={"email": test_email, "password": "wrong_password"},
         )
         print(f"6th attempt: Status {response.status_code}, Body: {response.text}")
-        assert response.status_code == 429, (
-            f"Expected 429 for account lockout, got {response.status_code}"
-        )
+        assert response.status_code == 429, f"Expected 429 for account lockout, got {response.status_code}"
         assert "locked" in response.text.lower() or "too many" in response.text.lower()
 
     def test_lockout_message_contains_lockout_info(self):
@@ -115,9 +109,7 @@ class TestAccountLockout:
         )
 
         print(f"Post-lockout attempt: {response.status_code}")
-        assert response.status_code == 429, (
-            f"Expected 429 during lockout, got {response.status_code}"
-        )
+        assert response.status_code == 429, f"Expected 429 during lockout, got {response.status_code}"
 
 
 class TestSecurityHeaders:
@@ -156,9 +148,7 @@ class TestSecurityHeaders:
 
         # X-Content-Type-Options
         xcto = headers.get("x-content-type-options", "")
-        assert xcto == "nosniff", (
-            f"X-Content-Type-Options should be nosniff, got {xcto}"
-        )
+        assert xcto == "nosniff", f"X-Content-Type-Options should be nosniff, got {xcto}"
         print(f"✓ X-Content-Type-Options: {xcto}")
 
     def test_api_routes_have_cache_control_no_store(self):
@@ -173,9 +163,7 @@ class TestSecurityHeaders:
         cache_control = headers.get("cache-control", "")
         print(f"Cache-Control for /api/auth/login: {cache_control}")
 
-        assert "no-store" in cache_control, (
-            f"Cache-Control should contain 'no-store', got {cache_control}"
-        )
+        assert "no-store" in cache_control, f"Cache-Control should contain 'no-store', got {cache_control}"
 
     def test_authenticated_api_has_no_cache(self):
         """Test authenticated API responses have no-cache headers"""
@@ -192,9 +180,7 @@ class TestSecurityHeaders:
         token = login_resp.json()["access_token"]
 
         # Access /api/auth/me
-        me_resp = requests.get(
-            f"{BASE_URL}/api/auth/me", headers={"Authorization": f"Bearer {token}"}
-        )
+        me_resp = requests.get(f"{BASE_URL}/api/auth/me", headers={"Authorization": f"Bearer {token}"})
 
         cache_control = me_resp.headers.get("cache-control", "")
         print(f"Cache-Control for /api/auth/me: {cache_control}")
@@ -292,9 +278,7 @@ class TestPasswordValidation:
         )
         print(f"Strong password response: {response.status_code} - {response.text}")
         # Should succeed with 200/201 or return message about OTP
-        assert response.status_code in [200, 201], (
-            f"Strong password rejected: {response.text}"
-        )
+        assert response.status_code in [200, 201], f"Strong password rejected: {response.text}"
 
 
 class TestCORSConfiguration:
@@ -365,13 +349,9 @@ class TestDocumentAuthorization:
             files={"file": ("test.pdf", b"fake content", "application/pdf")},
         )
 
-        print(
-            f"Document upload to non-owned estate: {response.status_code} - {response.text}"
-        )
+        print(f"Document upload to non-owned estate: {response.status_code} - {response.text}")
         # Should be 403 (access denied) or 404 (estate not found)
-        assert response.status_code in [403, 404], (
-            f"Expected 403/404, got {response.status_code}"
-        )
+        assert response.status_code in [403, 404], f"Expected 403/404, got {response.status_code}"
 
     def test_document_list_requires_estate_access(self, authenticated_session):
         """Document list should require estate access"""
@@ -385,9 +365,7 @@ class TestDocumentAuthorization:
             headers={"Authorization": f"Bearer {authenticated_session['token']}"},
         )
 
-        print(
-            f"Document list for non-accessible estate: {response.status_code} - {response.text}"
-        )
+        print(f"Document list for non-accessible estate: {response.status_code} - {response.text}")
         # Should be 403 or 404
         assert response.status_code in [403, 404]
 
@@ -419,9 +397,7 @@ class TestZeroKnowledgeMessages:
             }
         return None
 
-    def test_message_response_has_no_plaintext_content_field(
-        self, authenticated_session
-    ):
+    def test_message_response_has_no_plaintext_content_field(self, authenticated_session):
         """
         Messages should NOT store plaintext 'content' field.
         The content should be encrypted_content only.
@@ -470,9 +446,7 @@ class TestOTPExpiry:
 
         print(f"Invalid OTP verification: {response.status_code} - {response.text}")
         # Should be 401 (Invalid OTP) or 429 (rate limited)
-        assert response.status_code in [401, 429], (
-            f"Unexpected status: {response.status_code}"
-        )
+        assert response.status_code in [401, 429], f"Unexpected status: {response.status_code}"
         if response.status_code == 401:
             assert "Invalid OTP" in response.json().get("detail", "")
 
@@ -505,9 +479,7 @@ class TestAdminAccess:
         print(f"Admin user role: {user.get('role')}")
 
         # Access /auth/me
-        me_resp = requests.get(
-            f"{BASE_URL}/api/auth/me", headers={"Authorization": f"Bearer {token}"}
-        )
+        me_resp = requests.get(f"{BASE_URL}/api/auth/me", headers={"Authorization": f"Bearer {token}"})
 
         assert me_resp.status_code == 200
         me_data = me_resp.json()

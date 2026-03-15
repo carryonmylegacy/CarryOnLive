@@ -69,9 +69,7 @@ class SectionVerifyRequest(BaseModel):
 @router.get("/security/settings")
 async def get_security_settings(current_user: dict = Depends(get_current_user)):
     """Get security settings for all sections"""
-    settings = await db.section_security.find(
-        {"user_id": current_user["id"]}, {"_id": 0}
-    ).to_list(20)
+    settings = await db.section_security.find({"user_id": current_user["id"]}, {"_id": 0}).to_list(20)
     settings_map = {s["section_id"]: s for s in settings}
     result = {}
     for sid, name in LOCKABLE_SECTIONS.items():
@@ -128,9 +126,7 @@ async def update_security_settings(
     if data.security_question is not None:
         update_fields["security_question"] = data.security_question
     if data.security_answer is not None:
-        update_fields["security_answer_hash"] = hash_password(
-            data.security_answer.lower().strip()
-        )
+        update_fields["security_answer_hash"] = hash_password(data.security_answer.lower().strip())
     if data.lock_mode is not None:
         if data.lock_mode not in ("on_page_leave", "on_logout", "manual"):
             raise HTTPException(status_code=400, detail="Invalid lock mode")
@@ -293,9 +289,7 @@ async def verify_section_security(
     if section_id not in LOCKABLE_SECTIONS:
         raise HTTPException(status_code=400, detail=f"Invalid section: {section_id}")
 
-    settings = await db.section_security.find_one(
-        {"user_id": current_user["id"], "section_id": section_id}, {"_id": 0}
-    )
+    settings = await db.section_security.find_one({"user_id": current_user["id"], "section_id": section_id}, {"_id": 0})
     if not settings:
         return {"verified": True, "message": "No security configured"}
 
@@ -378,15 +372,9 @@ async def verify_section_security(
 
                 test_vp = await asyncio.to_thread(extract_voiceprint_legacy, wav_bytes)
                 if test_vp is None:
-                    raise HTTPException(
-                        status_code=400, detail="Could not process voice sample"
-                    )
-                similarity, is_match = compare_voiceprints_legacy(
-                    settings["voiceprint"], test_vp
-                )
-                confidence_level = (
-                    "high" if similarity >= 0.88 else "medium" if is_match else "low"
-                )
+                    raise HTTPException(status_code=400, detail="Could not process voice sample")
+                similarity, is_match = compare_voiceprints_legacy(settings["voiceprint"], test_vp)
+                confidence_level = "high" if similarity >= 0.88 else "medium" if is_match else "low"
 
             # Also verify the passphrase text via Whisper if available
             text_match_result = {"match": True, "score": 1.0}
@@ -408,9 +396,7 @@ async def verify_section_security(
                         expected = settings["voice_passphrase"].strip()
                         text_match_result = match_passphrase(spoken, expected)
                 except Exception as e:
-                    logger.warning(
-                        f"Whisper text verification failed, relying on voiceprint only: {e}"
-                    )
+                    logger.warning(f"Whisper text verification failed, relying on voiceprint only: {e}")
 
             if not is_match:
                 pct = int(similarity * 100)
@@ -437,14 +423,10 @@ async def verify_section_security(
                 Path(wav_path).unlink()
 
     # Layer 3: Security Question
-    if settings.get("security_question_enabled") and settings.get(
-        "security_answer_hash"
-    ):
+    if settings.get("security_question_enabled") and settings.get("security_answer_hash"):
         if not security_answer:
             raise HTTPException(status_code=400, detail="Security answer required")
-        if not verify_password(
-            security_answer.lower().strip(), settings["security_answer_hash"]
-        ):
+        if not verify_password(security_answer.lower().strip(), settings["security_answer_hash"]):
             raise HTTPException(status_code=401, detail="Incorrect security answer")
         results["security_question"] = True
 
@@ -466,9 +448,7 @@ async def verify_section_security(
 
 
 @router.get("/security/unlock-status/{section_id}")
-async def check_unlock_status(
-    section_id: str, current_user: dict = Depends(get_current_user)
-):
+async def check_unlock_status(section_id: str, current_user: dict = Depends(get_current_user)):
     """Check if a section has been unlocked in the current session."""
     session = await db.section_unlock_sessions.find_one(
         {"user_id": current_user["id"], "section_id": section_id},
@@ -480,15 +460,11 @@ async def check_unlock_status(
 
 
 @router.delete("/security/settings/{section_id}")
-async def remove_section_security(
-    section_id: str, current_user: dict = Depends(get_current_user)
-):
+async def remove_section_security(section_id: str, current_user: dict = Depends(get_current_user)):
     """Remove all security settings for a section"""
     if section_id not in LOCKABLE_SECTIONS:
         raise HTTPException(status_code=400, detail=f"Invalid section: {section_id}")
-    await db.section_security.delete_one(
-        {"user_id": current_user["id"], "section_id": section_id}
-    )
+    await db.section_security.delete_one({"user_id": current_user["id"], "section_id": section_id})
     return {
         "success": True,
         "message": f"Security removed from {LOCKABLE_SECTIONS[section_id]}",
@@ -505,16 +481,12 @@ class MasterKeyRequest(BaseModel):
 @router.get("/security/master-key-status")
 async def get_master_key_status(current_user: dict = Depends(get_current_user)):
     """Check if the user has a vault master key set."""
-    user = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "id": 1, "vault_master_key_hash": 1}
-    )
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "id": 1, "vault_master_key_hash": 1})
     return {"has_master_key": bool(user and user.get("vault_master_key_hash"))}
 
 
 @router.post("/security/master-key")
-async def set_master_key(
-    data: MasterKeyRequest, current_user: dict = Depends(get_current_user)
-):
+async def set_master_key(data: MasterKeyRequest, current_user: dict = Depends(get_current_user)):
     """Set or update the vault master key."""
     if current_user.get("role") not in ("benefactor", "beneficiary", "admin"):
         raise HTTPException(
@@ -522,9 +494,7 @@ async def set_master_key(
             detail="Only benefactors and beneficiaries can set a master key",
         )
     if len(data.master_key.strip()) < 4:
-        raise HTTPException(
-            status_code=400, detail="Master key must be at least 4 characters"
-        )
+        raise HTTPException(status_code=400, detail="Master key must be at least 4 characters")
 
     await db.users.update_one(
         {"id": current_user["id"]},
@@ -539,15 +509,11 @@ async def set_master_key(
 
 
 @router.get("/admin/user/{user_id}/master-key-hint")
-async def get_user_master_key_for_admin(
-    user_id: str, current_user: dict = Depends(get_current_user)
-):
+async def get_user_master_key_for_admin(user_id: str, current_user: dict = Depends(get_current_user)):
     """Admin: get the master key hash for phone verification. Admin sees the hash, not plaintext."""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
-    user = await db.users.find_one(
-        {"id": user_id}, {"_id": 0, "id": 1, "vault_master_key_hash": 1, "name": 1}
-    )
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "vault_master_key_hash": 1, "name": 1})
     if not user or not user.get("vault_master_key_hash"):
         raise HTTPException(status_code=404, detail="No master key set for this user")
     return {"has_master_key": True, "user_name": user.get("name", "")}
@@ -562,9 +528,7 @@ async def admin_verify_master_key(
     """Admin: verify a spoken master key against the stored hash."""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
-    user = await db.users.find_one(
-        {"id": user_id}, {"_id": 0, "id": 1, "vault_master_key_hash": 1}
-    )
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "vault_master_key_hash": 1})
     if not user or not user.get("vault_master_key_hash"):
         raise HTTPException(status_code=404, detail="No master key set")
     if not verify_password(data.master_key.strip(), user["vault_master_key_hash"]):
@@ -582,21 +546,15 @@ async def admin_unlock_all_documents(
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
 
-    user = await db.users.find_one(
-        {"id": user_id}, {"_id": 0, "id": 1, "vault_master_key_hash": 1}
-    )
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "vault_master_key_hash": 1})
     if not user or not user.get("vault_master_key_hash"):
         raise HTTPException(status_code=404, detail="No master key set")
     if not verify_password(data.master_key.strip(), user["vault_master_key_hash"]):
         raise HTTPException(status_code=401, detail="Master key does not match")
 
     # Find estates owned by or accessible to this user
-    owned = await db.estates.find({"owner_id": user_id}, {"_id": 0, "id": 1}).to_list(
-        100
-    )
-    ben_records = await db.beneficiaries.find(
-        {"user_id": user_id}, {"_id": 0, "id": 1, "estate_id": 1}
-    ).to_list(100)
+    owned = await db.estates.find({"owner_id": user_id}, {"_id": 0, "id": 1}).to_list(100)
+    ben_records = await db.beneficiaries.find({"user_id": user_id}, {"_id": 0, "id": 1, "estate_id": 1}).to_list(100)
     estate_ids = list({e["id"] for e in owned} | {b["estate_id"] for b in ben_records})
 
     # Unlock all locked documents across all accessible estates

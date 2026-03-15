@@ -70,9 +70,7 @@ async def lifespan(app):
         await db.messages.create_index("estate_id")
         await db.beneficiaries.create_index("estate_id")
         await db.beneficiaries.create_index("user_id")
-        await db.beneficiary_display_overrides.create_index(
-            [("user_id", 1), ("estate_id", 1)]
-        )
+        await db.beneficiary_display_overrides.create_index([("user_id", 1), ("estate_id", 1)])
         await db.estates.create_index("beneficiaries")
         await db.checklists.create_index("estate_id")
         await db.chat_history.create_index([("user_id", 1), ("session_id", 1)])
@@ -89,9 +87,7 @@ async def lifespan(app):
             await db.otp_trust.drop_index("otp_trust_user_ip_unique")
         except Exception:
             pass
-        await db.otp_trust.create_index(
-            [("user_id", 1), ("ip_address", 1)], unique=True
-        )
+        await db.otp_trust.create_index([("user_id", 1), ("ip_address", 1)], unique=True)
         await db.security_audit_log.create_index("user_id")
         await db.security_audit_log.create_index("created_at")
         await db.sensitive_access_log.create_index("user_id")
@@ -100,12 +96,8 @@ async def lifespan(app):
         await db.deletion_requests.create_index("user_id")
         await db.security_incidents.create_index("created_at")
         await db.user_consent.create_index("user_id", unique=True)
-        await db.section_unlock_sessions.create_index(
-            "expires_at", expireAfterSeconds=0
-        )
-        await db.section_unlock_sessions.create_index(
-            [("user_id", 1), ("section_id", 1)]
-        )
+        await db.section_unlock_sessions.create_index("expires_at", expireAfterSeconds=0)
+        await db.section_unlock_sessions.create_index([("user_id", 1), ("section_id", 1)])
         await db.apple_transactions.create_index("transaction_id", unique=True)
         await db.apple_webhook_log.create_index("received_at")
         await db.client_errors.create_index("created_at")
@@ -248,8 +240,7 @@ async def debug_user_state(email: str):
         "owns_estates": len(estates),
         "estate_names": [e.get("name") for e in estates],
         "beneficiary_count_in_first_estate": ben_count,
-        "computed_is_also_benefactor": user.get("is_also_benefactor", False)
-        or len(estates) > 0,
+        "computed_is_also_benefactor": user.get("is_also_benefactor", False) or len(estates) > 0,
         "estate_detail": estate_detail,
     }
 

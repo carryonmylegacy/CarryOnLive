@@ -25,9 +25,7 @@ class TestHealthAndErrorReporting:
         assert data["database"] == "connected"
         assert "version" in data
         assert "min_version" in data
-        print(
-            f"✓ Health endpoint: version={data['version']}, min_version={data['min_version']}"
-        )
+        print(f"✓ Health endpoint: version={data['version']}, min_version={data['min_version']}")
 
     def test_error_report_endpoint_accepts_basic_error(self):
         """POST /api/errors/report should accept error reports"""
@@ -35,9 +33,7 @@ class TestHealthAndErrorReporting:
             "message": "TEST_pytest_notification_test_error",
             "context": "Testing iOS notification error reporter",
         }
-        response = requests.post(
-            f"{BASE_URL}/api/errors/report", json=payload, timeout=10
-        )
+        response = requests.post(f"{BASE_URL}/api/errors/report", json=payload, timeout=10)
         assert response.status_code == 200
         data = response.json()
         assert "received" in data
@@ -53,18 +49,14 @@ class TestHealthAndErrorReporting:
             "url": "https://test.carryon.us/test",
             "userAgent": "pytest-test-agent",
         }
-        response = requests.post(
-            f"{BASE_URL}/api/errors/report", json=payload, timeout=10
-        )
+        response = requests.post(f"{BASE_URL}/api/errors/report", json=payload, timeout=10)
         assert response.status_code == 200
         print("✓ Error report with severity accepted")
 
     def test_error_report_minimal_data(self):
         """POST /api/errors/report with minimal required fields"""
         payload = {"message": "TEST_pytest_minimal"}
-        response = requests.post(
-            f"{BASE_URL}/api/errors/report", json=payload, timeout=10
-        )
+        response = requests.post(f"{BASE_URL}/api/errors/report", json=payload, timeout=10)
         assert response.status_code == 200
         print("✓ Minimal error report accepted")
 
@@ -113,9 +105,7 @@ class TestAdminEndpoints:
 
     def test_admin_announcements_endpoint(self, auth_headers):
         """GET /api/admin/announcements should return list"""
-        response = requests.get(
-            f"{BASE_URL}/api/admin/announcements", headers=auth_headers, timeout=10
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/announcements", headers=auth_headers, timeout=10)
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
@@ -123,9 +113,7 @@ class TestAdminEndpoints:
 
     def test_admin_system_health_endpoint(self, auth_headers):
         """GET /api/admin/system-health should return health data"""
-        response = requests.get(
-            f"{BASE_URL}/api/admin/system-health", headers=auth_headers, timeout=10
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/system-health", headers=auth_headers, timeout=10)
         assert response.status_code == 200
         data = response.json()
         assert "status" in data or "healthy" in str(data).lower()
@@ -133,9 +121,7 @@ class TestAdminEndpoints:
 
     def test_admin_escalations_endpoint(self, auth_headers):
         """GET /api/ops/escalations should return list"""
-        response = requests.get(
-            f"{BASE_URL}/api/ops/escalations", headers=auth_headers, timeout=10
-        )
+        response = requests.get(f"{BASE_URL}/api/ops/escalations", headers=auth_headers, timeout=10)
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
@@ -143,9 +129,7 @@ class TestAdminEndpoints:
 
     def test_admin_knowledge_base_endpoint(self, auth_headers):
         """GET /api/admin/knowledge-base should return list"""
-        response = requests.get(
-            f"{BASE_URL}/api/admin/knowledge-base", headers=auth_headers, timeout=10
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/knowledge-base", headers=auth_headers, timeout=10)
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)

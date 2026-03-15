@@ -13,9 +13,7 @@ from utils import get_current_user
 router = APIRouter()
 
 
-def build_digest_html(
-    name: str, score: int, prev_score: int, actions: list, dashboard_url: str
-) -> str:
+def build_digest_html(name: str, score: int, prev_score: int, actions: list, dashboard_url: str) -> str:
     """Build Outlook-safe HTML email for weekly digest"""
     # Trend
     diff = score - prev_score
@@ -101,9 +99,7 @@ def build_digest_html(
 </body></html>"""
 
 
-def prioritize_actions(
-    doc_result: dict, msg_result: dict, checklist_result: dict
-) -> list:
+def prioritize_actions(doc_result: dict, msg_result: dict, checklist_result: dict) -> list:
     """Generate top 3 most impactful actions, ranked by potential score lift."""
     actions = []
 
@@ -195,9 +191,7 @@ async def send_digest_for_user(user: dict, dashboard_url: str) -> bool:
 
     # Store this week's snapshot
     now = datetime.now(timezone.utc)
-    week_start = (now - timedelta(days=now.weekday())).replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
+    week_start = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
     await db.readiness_history.update_one(
         {"estate_id": estate_id, "week_start": week_start.isoformat()},
         {
@@ -218,9 +212,7 @@ async def send_digest_for_user(user: dict, dashboard_url: str) -> bool:
     )
 
     # Generate top 3 actions
-    actions = prioritize_actions(
-        result["documents"], result["messages"], result["checklist"]
-    )
+    actions = prioritize_actions(result["documents"], result["messages"], result["checklist"])
 
     # Build and send email
     name = user.get("name", "").split(" ")[0] or "there"
@@ -352,9 +344,7 @@ def get_default_prefs(user: dict) -> dict:
     return {
         "enabled": True,
         "frequency": "weekly",
-        "sections": {
-            **ROLE_DIGEST_SECTIONS.get(role_key, ROLE_DIGEST_SECTIONS["benefactor"])
-        },
+        "sections": {**ROLE_DIGEST_SECTIONS.get(role_key, ROLE_DIGEST_SECTIONS["benefactor"])},
         "additional_recipients": [],
     }
 
@@ -362,9 +352,7 @@ def get_default_prefs(user: dict) -> dict:
 @router.get("/digest/preferences")
 async def get_digest_preferences(current_user: dict = Depends(get_current_user)):
     """Get the current user's digest email preferences (role-aware)."""
-    prefs = await db.digest_preferences.find_one(
-        {"user_id": current_user["id"]}, {"_id": 0}
-    )
+    prefs = await db.digest_preferences.find_one({"user_id": current_user["id"]}, {"_id": 0})
     defaults = get_default_prefs(current_user)
     if not prefs:
         prefs = {**defaults, "user_id": current_user["id"]}
@@ -380,9 +368,7 @@ async def get_digest_preferences(current_user: dict = Depends(get_current_user))
 
 
 @router.put("/digest/preferences")
-async def update_digest_preferences(
-    body: dict, current_user: dict = Depends(get_current_user)
-):
+async def update_digest_preferences(body: dict, current_user: dict = Depends(get_current_user)):
     """Update the current user's digest email preferences."""
     allowed_fields = {
         "enabled",
@@ -408,38 +394,26 @@ async def update_digest_preferences(
     if "sections" in update:
         role_key = get_digest_role_key(current_user)
         valid_sections = set(ROLE_DIGEST_SECTIONS.get(role_key, {}).keys())
-        update["sections"] = {
-            k: bool(v) for k, v in update["sections"].items() if k in valid_sections
-        }
+        update["sections"] = {k: bool(v) for k, v in update["sections"].items() if k in valid_sections}
 
     if "additional_recipients" in update:
         if not isinstance(update["additional_recipients"], list):
-            raise HTTPException(
-                status_code=400, detail="additional_recipients must be an array"
-            )
+            raise HTTPException(status_code=400, detail="additional_recipients must be an array")
         import re
 
         email_re = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
         for email in update["additional_recipients"]:
             if not email_re.match(email):
-                raise HTTPException(
-                    status_code=400, detail=f"Invalid email address: {email}"
-                )
+                raise HTTPException(status_code=400, detail=f"Invalid email address: {email}")
 
     update["user_id"] = current_user["id"]
-    await db.digest_preferences.update_one(
-        {"user_id": current_user["id"]}, {"$set": update}, upsert=True
-    )
-    prefs = await db.digest_preferences.find_one(
-        {"user_id": current_user["id"]}, {"_id": 0}
-    )
+    await db.digest_preferences.update_one({"user_id": current_user["id"]}, {"$set": update}, upsert=True)
+    prefs = await db.digest_preferences.find_one({"user_id": current_user["id"]}, {"_id": 0})
     return prefs
 
 
 @router.post("/digest/send-weekly")
-async def trigger_weekly_digest(
-    body: dict = None, current_user: dict = Depends(get_current_user)
-):
+async def trigger_weekly_digest(body: dict = None, current_user: dict = Depends(get_current_user)):
     """Manually trigger the weekly digest — admin only."""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -572,11 +546,7 @@ def build_estate_health_email(
     # Connection status summary
     total_bens = len(beneficiaries)
     linked_count = sum(1 for b in beneficiaries if b.get("is_linked"))
-    invited_count = sum(
-        1
-        for b in beneficiaries
-        if b.get("invitation_status") == "sent" and not b.get("is_linked")
-    )
+    invited_count = sum(1 for b in beneficiaries if b.get("invitation_status") == "sent" and not b.get("is_linked"))
     pending_count = total_bens - linked_count - invited_count
     has_primary = any(b.get("is_primary") for b in beneficiaries)
 
@@ -680,14 +650,10 @@ def build_estate_health_email(
 
 <!-- Header -->
 <tr><td style="padding:28px 28px 0 28px;text-align:center;">
-  <img src="{
-        app_url
-    }/carryon-logo.jpg" alt="CarryOn" style="width:60px;height:auto;margin-bottom:12px;" />
+  <img src="{app_url}/carryon-logo.jpg" alt="CarryOn" style="width:60px;height:auto;margin-bottom:12px;" />
   <p style="margin:0 0 2px 0;"><span style="font-size:20px;font-weight:bold;color:#d4af37;">CarryOn&trade;</span></p>
   <p style="margin:0 0 20px 0;color:#64748b;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;">Weekly Estate Health Report</p>
-  <p style="color:#f8fafc;font-size:15px;margin:0 0 16px 0;text-align:left;">Hi {
-        name
-    },</p>
+  <p style="color:#f8fafc;font-size:15px;margin:0 0 16px 0;text-align:left;">Hi {name},</p>
   <p style="color:#94a3b8;font-size:12px;margin:0 0 20px 0;text-align:left;line-height:1.5;">Here's your weekly snapshot of your estate's health — your connections, your readiness, and what to focus on next.</p>
 </td></tr>
 
@@ -706,16 +672,12 @@ def build_estate_health_email(
     }40;text-align:center;line-height:52px;font-size:16px;font-weight:bold;color:#080e1a;margin:0 auto;">
             {owner_initials}
           </div>
-          <p style="margin:3px 0 0 0;font-size:11px;font-weight:bold;color:#f8fafc;">{
-        name
-    }</p>
+          <p style="margin:3px 0 0 0;font-size:11px;font-weight:bold;color:#f8fafc;">{name}</p>
           <p style="margin:1px 0 0 0;font-size:9px;color:#d4af37;">Benefactor</p>
         </td></tr>
       </table>
       <!-- Connector -->
-      <div style="width:2px;height:16px;background:{
-        score_color
-    };opacity:0.4;margin:0 auto;"></div>
+      <div style="width:2px;height:16px;background:{score_color};opacity:0.4;margin:0 auto;"></div>
       <!-- Beneficiary nodes -->
       <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
         <tr>{
@@ -752,15 +714,9 @@ def build_estate_health_email(
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0c1628;border-radius:12px;border:1px solid #1e293b;margin-bottom:16px;">
     <tr><td style="padding:20px;text-align:center;">
       <p style="margin:0 0 4px 0;color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:1px;">Estate Readiness Score</p>
-      <p style="margin:0;font-size:52px;font-weight:bold;color:{score_color};">{
-        readiness_score
-    }%</p>
-      <p style="margin:4px 0 0 0;font-size:12px;font-weight:bold;color:{score_color};">{
-        score_label
-    }</p>
-      <p style="margin:6px 0 0 0;font-size:11px;color:{trend_color};">{trend_arrow} {
-        trend_text
-    }</p>
+      <p style="margin:0;font-size:52px;font-weight:bold;color:{score_color};">{readiness_score}%</p>
+      <p style="margin:4px 0 0 0;font-size:12px;font-weight:bold;color:{score_color};">{score_label}</p>
+      <p style="margin:6px 0 0 0;font-size:11px;color:{trend_color};">{trend_arrow} {trend_text}</p>
     </td></tr>
   </table>
 </td></tr>
@@ -837,9 +793,7 @@ async def gather_ops_manager_data():
     )
     tvt_pending = await db.death_certificates.count_documents({"status": "pending"})
     tvt_reviewing = await db.death_certificates.count_documents({"status": "reviewing"})
-    mm_pending = await db.milestone_deliveries.count_documents(
-        {"status": "pending_review"}
-    )
+    mm_pending = await db.milestone_deliveries.count_documents({"status": "pending_review"})
     support_unread = await db.support_messages.count_documents(
         {"sender_role": {"$nin": ["admin", "operator"]}, "read": False}
     )
@@ -853,12 +807,12 @@ async def gather_ops_manager_data():
             "soft_deleted": {"$ne": True},
             "status": {"$in": ["submitted", "quoted", "approved"]},
         },
-        {"_id": 0, "title": 1, "created_at": 1, "status": 1, "task_type": 1},
+        {"_id": 0, "id": 1, "title": 1, "created_at": 1, "status": 1, "task_type": 1},
         sort=[("created_at", 1)],
     )
     oldest_tvt = await db.death_certificates.find_one(
         {"status": {"$in": ["pending", "reviewing"]}},
-        {"_id": 0, "estate_id": 1, "created_at": 1, "status": 1},
+        {"_id": 0, "id": 1, "estate_id": 1, "created_at": 1, "status": 1},
         sort=[("created_at", 1)],
     )
 
@@ -871,10 +825,7 @@ async def gather_ops_manager_data():
         {"$match": {"timestamp": {"$gte": week_ago}}},
         {"$group": {"_id": "$actor_id", "actions_7d": {"$sum": 1}}},
     ]
-    actions_by_op = {
-        r["_id"]: r["actions_7d"]
-        for r in await db.audit_trail.aggregate(audit_pipeline).to_list(100)
-    }
+    actions_by_op = {r["_id"]: r["actions_7d"] for r in await db.audit_trail.aggregate(audit_pipeline).to_list(100)}
 
     team_stats = []
     for op in operators:
@@ -897,7 +848,7 @@ async def gather_ops_manager_data():
     shift_notes = (
         await db.shift_notes.find(
             {},
-            {"_id": 0, "content": 1, "author_name": 1, "category": 1, "created_at": 1},
+            {"_id": 0, "id": 1, "content": 1, "author_name": 1, "category": 1, "created_at": 1},
         )
         .sort("created_at", -1)
         .to_list(3)
@@ -961,17 +912,11 @@ def build_ops_manager_email(name, data, app_url="https://carryon.us"):
     hi_priority_html = ""
     if data.get("oldest_dts"):
         d = data["oldest_dts"]
-        age = (
-            datetime.now(timezone.utc)
-            - datetime.fromisoformat(d["created_at"].replace("Z", "+00:00"))
-        ).days
+        age = (datetime.now(timezone.utc) - datetime.fromisoformat(d["created_at"].replace("Z", "+00:00"))).days
         hi_priority_html += f'<tr><td style="padding:8px 0;border-bottom:1px solid #1a2744;"><span style="color:#F5A623;font-size:12px;font-weight:bold;">DTS</span> <span style="color:#f8fafc;font-size:12px;">{d.get("title", "Untitled")}</span><br/><span style="color:#ef4444;font-size:11px;">{age} days in queue</span></td></tr>'
     if data.get("oldest_tvt"):
         d = data["oldest_tvt"]
-        age = (
-            datetime.now(timezone.utc)
-            - datetime.fromisoformat(d["created_at"].replace("Z", "+00:00"))
-        ).days
+        age = (datetime.now(timezone.utc) - datetime.fromisoformat(d["created_at"].replace("Z", "+00:00"))).days
         hi_priority_html += f'<tr><td style="padding:8px 0;border-bottom:1px solid #1a2744;"><span style="color:#60A5FA;font-size:12px;font-weight:bold;">TVT</span> <span style="color:#f8fafc;font-size:12px;">Certificate Review - {d.get("status", "pending")}</span><br/><span style="color:#ef4444;font-size:11px;">{age} days in queue</span></td></tr>'
 
     team_html = ""
@@ -1029,7 +974,7 @@ async def gather_ops_worker_data(user_id: str):
                 "soft_deleted": {"$ne": True},
                 "status": {"$in": ["submitted", "quoted", "approved", "ready"]},
             },
-            {"_id": 0, "title": 1, "status": 1, "task_type": 1, "created_at": 1},
+            {"_id": 0, "id": 1, "title": 1, "status": 1, "task_type": 1, "created_at": 1},
         )
         .sort("created_at", 1)
         .to_list(20)
@@ -1037,7 +982,7 @@ async def gather_ops_worker_data(user_id: str):
     my_tvt = (
         await db.death_certificates.find(
             {"reviewer_id": user_id, "status": {"$in": ["pending", "reviewing"]}},
-            {"_id": 0, "estate_id": 1, "status": 1, "created_at": 1},
+            {"_id": 0, "id": 1, "estate_id": 1, "status": 1, "created_at": 1},
         )
         .sort("created_at", 1)
         .to_list(20)
@@ -1045,7 +990,7 @@ async def gather_ops_worker_data(user_id: str):
     my_mm = (
         await db.milestone_deliveries.find(
             {"reviewer_id": user_id, "status": "pending_review"},
-            {"_id": 0, "milestone_type": 1, "status": 1, "created_at": 1},
+            {"_id": 0, "id": 1, "milestone_type": 1, "status": 1, "created_at": 1},
         )
         .sort("created_at", 1)
         .to_list(20)
@@ -1057,19 +1002,13 @@ async def gather_ops_worker_data(user_id: str):
             "status": {"$in": ["submitted", "quoted", "approved", "ready"]},
         }
     )
-    tvt_total = await db.death_certificates.count_documents(
-        {"status": {"$in": ["pending", "reviewing"]}}
-    )
-    mm_total = await db.milestone_deliveries.count_documents(
-        {"status": "pending_review"}
-    )
+    tvt_total = await db.death_certificates.count_documents({"status": {"$in": ["pending", "reviewing"]}})
+    mm_total = await db.milestone_deliveries.count_documents({"status": "pending_review"})
     support_total = await db.support_conversations.count_documents(
         {"status": {"$ne": "resolved"}, "deleted_at": {"$exists": False}}
     )
     escalations_total = await db.escalations.count_documents({"status": "open"})
-    my_actions = await db.audit_trail.count_documents(
-        {"actor_id": user_id, "timestamp": {"$gte": day_ago}}
-    )
+    my_actions = await db.audit_trail.count_documents({"actor_id": user_id, "timestamp": {"$gte": day_ago}})
 
     return {
         "my_dts": my_dts,
@@ -1092,22 +1031,13 @@ def build_ops_worker_email(name, data, app_url="https://carryon.us"):
 
     tasks_html = ""
     for t in data.get("my_dts", []):
-        age = (
-            datetime.now(timezone.utc)
-            - datetime.fromisoformat(t["created_at"].replace("Z", "+00:00"))
-        ).days
+        age = (datetime.now(timezone.utc) - datetime.fromisoformat(t["created_at"].replace("Z", "+00:00"))).days
         tasks_html += f'<tr><td style="padding:6px 0;border-bottom:1px solid #1a2744;"><span style="color:#d4af37;font-size:10px;font-weight:bold;">DTS</span> <span style="color:#f8fafc;font-size:12px;">{t.get("title", "Untitled")}</span> <span style="color:#64748b;font-size:10px;">({t.get("status", "")})</span><br/><span style="color:#94a3b8;font-size:10px;">{age}d in queue</span></td></tr>'
     for t in data.get("my_tvt", []):
-        age = (
-            datetime.now(timezone.utc)
-            - datetime.fromisoformat(t["created_at"].replace("Z", "+00:00"))
-        ).days
+        age = (datetime.now(timezone.utc) - datetime.fromisoformat(t["created_at"].replace("Z", "+00:00"))).days
         tasks_html += f'<tr><td style="padding:6px 0;border-bottom:1px solid #1a2744;"><span style="color:#60A5FA;font-size:10px;font-weight:bold;">TVT</span> <span style="color:#f8fafc;font-size:12px;">Certificate Review</span> <span style="color:#64748b;font-size:10px;">({t.get("status", "")})</span><br/><span style="color:#94a3b8;font-size:10px;">{age}d in queue</span></td></tr>'
     for t in data.get("my_mm", []):
-        age = (
-            datetime.now(timezone.utc)
-            - datetime.fromisoformat(t["created_at"].replace("Z", "+00:00"))
-        ).days
+        age = (datetime.now(timezone.utc) - datetime.fromisoformat(t["created_at"].replace("Z", "+00:00"))).days
         tasks_html += f'<tr><td style="padding:6px 0;border-bottom:1px solid #1a2744;"><span style="color:#8b5cf6;font-size:10px;font-weight:bold;">MM</span> <span style="color:#f8fafc;font-size:12px;">Milestone - {t.get("milestone_type", "Unknown")}</span><br/><span style="color:#94a3b8;font-size:10px;">{age}d in queue</span></td></tr>'
 
     q = data["queues"]
@@ -1154,9 +1084,7 @@ async def send_enhanced_digest_for_user(user: dict, dashboard_url: str) -> bool:
     estate_id = estate["id"]
     result = await calculate_estate_readiness(estate_id)
     current_score = result["overall_score"]
-    prev_snapshot = await db.readiness_history.find_one(
-        {"estate_id": estate_id}, {"_id": 0}, sort=[("week_start", -1)]
-    )
+    prev_snapshot = await db.readiness_history.find_one({"estate_id": estate_id}, {"_id": 0}, sort=[("week_start", -1)])
     prev_score = prev_snapshot["score"] if prev_snapshot else current_score
     bens = await db.beneficiaries.find(
         {"estate_id": estate_id},
@@ -1175,16 +1103,12 @@ async def send_enhanced_digest_for_user(user: dict, dashboard_url: str) -> bool:
         },
     ).to_list(50)
     for b in bens:
-        b["is_linked"] = bool(
-            b.get("user_id") or b.get("invitation_status") == "accepted"
-        )
+        b["is_linked"] = bool(b.get("user_id") or b.get("invitation_status") == "accepted")
     name = user.get("name", "").split(" ")[0] or "there"
     full_name = user.get("name", "")
     parts = full_name.split()
     owner_initials = "".join(p[0] for p in parts[:2]).upper() if parts else "??"
-    actions = prioritize_actions(
-        result["documents"], result["messages"], result["checklist"]
-    )
+    actions = prioritize_actions(result["documents"], result["messages"], result["checklist"])
     html = build_estate_health_email(
         name=name,
         readiness_score=current_score,
@@ -1198,9 +1122,7 @@ async def send_enhanced_digest_for_user(user: dict, dashboard_url: str) -> bool:
         dashboard_url=dashboard_url,
     )
     try:
-        prefs = await db.digest_preferences.find_one(
-            {"user_id": user["id"]}, {"_id": 0}
-        )
+        prefs = await db.digest_preferences.find_one({"user_id": user["id"]}, {"_id": 0})
         recipients = [user["email"]]
         if prefs and prefs.get("additional_recipients"):
             recipients.extend(prefs["additional_recipients"])
@@ -1213,9 +1135,7 @@ async def send_enhanced_digest_for_user(user: dict, dashboard_url: str) -> bool:
                 "html": html,
             },
         )
-        logger.info(
-            f"Enhanced estate health digest sent to {user['email']} (score: {current_score}%)"
-        )
+        logger.info(f"Enhanced estate health digest sent to {user['email']} (score: {current_score}%)")
         return True
     except Exception as e:
         logger.error(f"Failed to send enhanced digest to {user['email']}: {e}")
@@ -1249,9 +1169,7 @@ async def send_role_digest(user: dict) -> bool:
         else:
             return await send_enhanced_digest_for_user(user, app_url)
 
-        prefs = await db.digest_preferences.find_one(
-            {"user_id": user["id"]}, {"_id": 0}
-        )
+        prefs = await db.digest_preferences.find_one({"user_id": user["id"]}, {"_id": 0})
         recipients = [user["email"]]
         if prefs and prefs.get("additional_recipients"):
             recipients.extend(prefs["additional_recipients"])
@@ -1273,18 +1191,14 @@ async def send_role_digest(user: dict) -> bool:
 
 
 @router.post("/digest/preview-enhanced")
-async def preview_enhanced_digest(
-    body: dict = None, current_user: dict = Depends(get_current_user)
-):
+async def preview_enhanced_digest(body: dict = None, current_user: dict = Depends(get_current_user)):
     """Send the role-appropriate digest preview to the current user.
     Admin can pass {"send_to": "email"} to redirect, {"target_email": "email"} to preview for a user."""
     send_to_email = body.get("send_to") if body else None
     target = current_user
 
     if current_user["role"] == "admin" and body and body.get("target_email"):
-        user_doc = await db.users.find_one(
-            {"email": body["target_email"]}, {"_id": 0, "password": 0}
-        )
+        user_doc = await db.users.find_one({"email": body["target_email"]}, {"_id": 0, "password": 0})
         if not user_doc:
             raise HTTPException(status_code=404, detail="Target user not found")
         target = user_doc
@@ -1293,17 +1207,11 @@ async def preview_enhanced_digest(
 
     # For benefactors with no estates, find a sample
     if role_key == "benefactor":
-        estates = await db.estates.find({"owner_id": target["id"]}, {"_id": 0}).to_list(
-            1
-        )
+        estates = await db.estates.find({"owner_id": target["id"]}, {"_id": 0}).to_list(1)
         if not estates and current_user["role"] == "admin":
-            sample_estate = await db.estates.find_one(
-                {}, {"_id": 0}, sort=[("created_at", -1)]
-            )
+            sample_estate = await db.estates.find_one({}, {"_id": 0}, sort=[("created_at", -1)])
             if sample_estate:
-                owner = await db.users.find_one(
-                    {"id": sample_estate["owner_id"]}, {"_id": 0, "password": 0}
-                )
+                owner = await db.users.find_one({"id": sample_estate["owner_id"]}, {"_id": 0, "password": 0})
                 if owner:
                     target = owner
 
@@ -1316,6 +1224,4 @@ async def preview_enhanced_digest(
     ok = await send_role_digest(target)
     if not ok:
         raise HTTPException(status_code=400, detail="No data found or email failed")
-    return {
-        "message": f"Digest sent to {target['email']} (type: {get_digest_role_key(target)})"
-    }
+    return {"message": f"Digest sent to {target['email']} (type: {get_digest_role_key(target)})"}

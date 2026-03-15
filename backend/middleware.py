@@ -43,15 +43,11 @@ class APIMetrics:
         uptime_seconds = (datetime.now(timezone.utc) - self.start_time).total_seconds()
         avg_ms = round(sum(times) / len(times), 1) if times else 0
         p95_ms = round(
-            sorted(times)[int(len(times) * 0.95)]
-            if len(times) >= 20
-            else max(times, default=0),
+            sorted(times)[int(len(times) * 0.95)] if len(times) >= 20 else max(times, default=0),
             1,
         )
         p99_ms = round(
-            sorted(times)[int(len(times) * 0.99)]
-            if len(times) >= 100
-            else max(times, default=0),
+            sorted(times)[int(len(times) * 0.99)] if len(times) >= 100 else max(times, default=0),
             1,
         )
 
@@ -69,9 +65,7 @@ class APIMetrics:
             "total_requests": self.total_requests,
             "error_4xx": self.error_4xx,
             "error_5xx": self.error_5xx,
-            "error_rate_pct": round(
-                (self.error_5xx / max(self.total_requests, 1)) * 100, 2
-            ),
+            "error_rate_pct": round((self.error_5xx / max(self.total_requests, 1)) * 100, 2),
             "avg_response_ms": avg_ms,
             "p95_response_ms": p95_ms,
             "p99_response_ms": p99_ms,
@@ -157,12 +151,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "0"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions-Policy"] = (
-            "camera=(), microphone=(self), geolocation=(), payment=(self)"
-        )
-        response.headers["Strict-Transport-Security"] = (
-            "max-age=31536000; includeSubDomains; preload"
-        )
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(self), geolocation=(), payment=(self)"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://unpkg.com; "
@@ -180,9 +170,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
         path = request.url.path
         if path.startswith("/api/") and path not in ("/api/health",):
-            response.headers["Cache-Control"] = (
-                "no-store, no-cache, must-revalidate, private"
-            )
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
             response.headers["Pragma"] = "no-cache"
         return response
 
@@ -231,14 +219,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if limit:
             forwarded = request.headers.get("x-forwarded-for", "")
             client_ip = (
-                forwarded.split(",")[0].strip()
-                if forwarded
-                else (request.client.host if request.client else "unknown")
+                forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "unknown")
             )
             now = time.time()
-            self.requests[client_ip] = [
-                t for t in self.requests[client_ip] if now - t < self.window
-            ]
+            self.requests[client_ip] = [t for t in self.requests[client_ip] if now - t < self.window]
             if len(self.requests[client_ip]) >= limit:
                 return Response(
                     content='{"detail":"Too many requests. Please wait before trying again."}',

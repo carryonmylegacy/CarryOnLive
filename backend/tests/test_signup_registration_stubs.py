@@ -173,15 +173,11 @@ class TestRegistrationWithNewFields:
 
         # First registration should succeed
         response1 = requests.post(f"{BASE_URL}/api/auth/register", json=payload)
-        assert response1.status_code == 200, (
-            f"First registration failed: {response1.text}"
-        )
+        assert response1.status_code == 200, f"First registration failed: {response1.text}"
 
         # Second registration with same email should fail
         response2 = requests.post(f"{BASE_URL}/api/auth/register", json=payload)
-        assert response2.status_code == 400, (
-            f"Expected 400 for duplicate email, got {response2.status_code}"
-        )
+        assert response2.status_code == 400, f"Expected 400 for duplicate email, got {response2.status_code}"
         assert "already registered" in response2.json().get("detail", "").lower()
         print("✓ Duplicate email correctly rejected")
 
@@ -199,16 +195,12 @@ class TestRegistrationWithNewFields:
         }
 
         response = requests.post(f"{BASE_URL}/api/auth/register", json=payload)
-        assert response.status_code == 400, (
-            f"Expected 400 for weak password, got {response.status_code}"
-        )
+        assert response.status_code == 400, f"Expected 400 for weak password, got {response.status_code}"
         print("✓ Weak password correctly rejected")
 
     def test_register_password_complexity_required(self):
         """Test that password must have upper, lower, and digit"""
-        unique_email = (
-            f"test_complex_{int(time.time())}_{uuid.uuid4().hex[:6]}@test.com"
-        )
+        unique_email = f"test_complex_{int(time.time())}_{uuid.uuid4().hex[:6]}@test.com"
 
         # Test lowercase only (8 chars)
         payload = {
@@ -220,9 +212,7 @@ class TestRegistrationWithNewFields:
         }
 
         response = requests.post(f"{BASE_URL}/api/auth/register", json=payload)
-        assert response.status_code == 400, (
-            f"Expected 400 for simple password, got {response.status_code}"
-        )
+        assert response.status_code == 400, f"Expected 400 for simple password, got {response.status_code}"
         print("✓ Password complexity requirement enforced")
 
     def test_register_optional_fields_can_be_null(self):
@@ -238,9 +228,7 @@ class TestRegistrationWithNewFields:
         }
 
         response = requests.post(f"{BASE_URL}/api/auth/register", json=payload)
-        assert response.status_code == 200, (
-            f"Registration with minimal fields failed: {response.text}"
-        )
+        assert response.status_code == 200, f"Registration with minimal fields failed: {response.text}"
         print("✓ Registration with minimal fields successful")
 
 
@@ -261,9 +249,7 @@ class TestBeneficiaryUpdate:
             },
         )
         # Should return 401 (unauthorized), 403 (forbidden), or 404 (not found), not 500
-        assert response.status_code in [401, 403, 404, 422], (
-            f"Unexpected status: {response.status_code}"
-        )
+        assert response.status_code in [401, 403, 404, 422], f"Unexpected status: {response.status_code}"
         print("✓ Beneficiary update endpoint accessible (auth required)")
 
 

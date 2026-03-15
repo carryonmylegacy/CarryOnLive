@@ -26,9 +26,7 @@ async def get_subscription_access(current_user: dict = Depends(get_current_user)
         return {"has_access": True, "reason": "admin"}
 
     # Check for free access override (B2B, beta, etc.)
-    override = await db.subscription_overrides.find_one(
-        {"user_id": user["id"]}, {"_id": 0}
-    )
+    override = await db.subscription_overrides.find_one({"user_id": user["id"]}, {"_id": 0})
     if override and override.get("free_access"):
         return {"has_access": True, "reason": "free_access"}
 
@@ -73,9 +71,7 @@ async def require_account_not_locked(
     current_user: dict = Depends(get_current_user),
 ):
     """Block all write operations if the benefactor's account is locked (post-transition)."""
-    user = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "account_locked": 1}
-    )
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "account_locked": 1})
     if user and user.get("account_locked"):
         raise HTTPException(
             status_code=403,
@@ -90,14 +86,10 @@ def require_benefactor_role(current_user: dict, action: str = "perform this acti
     Used across all endpoints that restrict write access to benefactors.
     Supports the cross-pollination model where beneficiaries can also be benefactors.
     """
-    if current_user["role"] != "benefactor" and not current_user.get(
-        "is_also_benefactor"
-    ):
+    if current_user["role"] != "benefactor" and not current_user.get("is_also_benefactor"):
         raise HTTPException(status_code=403, detail=f"Only benefactors can {action}")
 
 
 def is_benefactor_or_admin(current_user: dict):
     """Check if user is a benefactor, is_also_benefactor, or admin. Returns bool."""
-    return current_user["role"] in ("benefactor", "admin") or current_user.get(
-        "is_also_benefactor"
-    )
+    return current_user["role"] in ("benefactor", "admin") or current_user.get("is_also_benefactor")

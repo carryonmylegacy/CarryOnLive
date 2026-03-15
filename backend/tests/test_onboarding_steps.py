@@ -4,9 +4,7 @@ import os
 import pytest
 import requests
 
-BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com"
-).rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com").rstrip("/")
 
 # Test credentials
 TEST_EMAIL = "fulltest@test.com"
@@ -39,14 +37,10 @@ class TestOnboardingProgress:
         data = response.json()
 
         # Verify total_steps is 6
-        assert data["total_steps"] == 6, (
-            f"Expected 6 total steps, got {data['total_steps']}"
-        )
+        assert data["total_steps"] == 6, f"Expected 6 total steps, got {data['total_steps']}"
 
         # Verify steps array has 6 entries
-        assert len(data["steps"]) == 6, (
-            f"Expected 6 steps in array, got {len(data['steps'])}"
-        )
+        assert len(data["steps"]) == 6, f"Expected 6 steps in array, got {len(data['steps'])}"
 
     def test_onboarding_step_keys_correct(self, auth_token):
         """Verify the 6 step keys are exactly as specified"""
@@ -69,9 +63,7 @@ class TestOnboardingProgress:
 
         actual_keys = [step["key"] for step in data["steps"]]
 
-        assert actual_keys == expected_keys, (
-            f"Step keys mismatch. Expected: {expected_keys}, Got: {actual_keys}"
-        )
+        assert actual_keys == expected_keys, f"Step keys mismatch. Expected: {expected_keys}, Got: {actual_keys}"
 
     def test_onboarding_add_credential_step_present(self, auth_token):
         """Verify add_credential (DAV) step is present as step 5"""
@@ -84,18 +76,14 @@ class TestOnboardingProgress:
         data = response.json()
 
         # Find add_credential step
-        dav_step = next(
-            (s for s in data["steps"] if s["key"] == "add_credential"), None
-        )
+        dav_step = next((s for s in data["steps"] if s["key"] == "add_credential"), None)
 
         assert dav_step is not None, "add_credential step not found"
         assert dav_step["label"] == "Store a Digital Account Credential"
 
         # Verify it's the 5th step (index 4)
         step_index = data["steps"].index(dav_step)
-        assert step_index == 4, (
-            f"add_credential should be step 5 (index 4), but is at index {step_index}"
-        )
+        assert step_index == 4, f"add_credential should be step 5 (index 4), but is at index {step_index}"
 
     def test_onboarding_response_structure(self, auth_token):
         """Verify response structure has all required fields"""

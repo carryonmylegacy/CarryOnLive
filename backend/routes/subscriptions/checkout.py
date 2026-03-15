@@ -47,15 +47,11 @@ async def get_subscription_plans():
 async def get_subscription_status(current_user: dict = Depends(get_current_user)):
     """Get current user's subscription status including trial info"""
     user_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
-    sub = await db.user_subscriptions.find_one(
-        {"user_id": current_user["id"]}, {"_id": 0}
-    )
+    sub = await db.user_subscriptions.find_one({"user_id": current_user["id"]}, {"_id": 0})
     settings = await get_subscription_settings()
 
     # Check admin overrides
-    override = await db.subscription_overrides.find_one(
-        {"user_id": current_user["id"]}, {"_id": 0}
-    )
+    override = await db.subscription_overrides.find_one({"user_id": current_user["id"]}, {"_id": 0})
 
     # Calculate trial status
     trial = (
@@ -65,27 +61,21 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
     )
 
     # Check verification status
-    verification = await db.tier_verifications.find_one(
-        {"user_id": current_user["id"]}, {"_id": 0}
-    )
+    verification = await db.tier_verifications.find_one({"user_id": current_user["id"]}, {"_id": 0})
 
     is_beta = settings.get("beta_mode", True)
     has_free_access = override and override.get("free_access", False)
     has_active_sub = sub and sub.get("status") in ("active", "past_due")
 
     # User has access if: beta mode OR free override OR active subscription OR trial active
-    has_access = (
-        is_beta or has_free_access or has_active_sub or trial.get("trial_active", False)
-    )
+    has_access = is_beta or has_free_access or has_active_sub or trial.get("trial_active", False)
 
     # Determine eligible special tiers based on DOB
     eligible_tiers = []
     if user_doc and user_doc.get("date_of_birth"):
         try:
             dob = datetime.fromisoformat(user_doc["date_of_birth"])
-            age = (
-                datetime.now(timezone.utc) - dob.replace(tzinfo=timezone.utc)
-            ).days // 365
+            age = (datetime.now(timezone.utc) - dob.replace(tzinfo=timezone.utc)).days // 365
             if 18 <= age <= 25:
                 eligible_tiers.append("new_adult")
         except (ValueError, TypeError):
@@ -105,13 +95,9 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
         ben_estate = None
 
         # Method 1: Check `beneficiaries` collection (user_id or email match)
-        ben_link = await db.beneficiaries.find_one(
-            {"user_id": current_user["id"]}, {"_id": 0, "estate_id": 1}
-        )
+        ben_link = await db.beneficiaries.find_one({"user_id": current_user["id"]}, {"_id": 0, "estate_id": 1})
         if not ben_link:
-            ben_link = await db.beneficiaries.find_one(
-                {"email": current_user.get("email")}, {"_id": 0, "estate_id": 1}
-            )
+            ben_link = await db.beneficiaries.find_one({"email": current_user.get("email")}, {"_id": 0, "estate_id": 1})
         if ben_link and ben_link.get("estate_id"):
             ben_estate = await db.estates.find_one(
                 {"id": ben_link["estate_id"]}, {"_id": 0, "owner_id": 1, "status": 1}
@@ -132,12 +118,8 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
             estate_transitioned = ben_estate.get("status") == "transitioned"
 
         if benefactor_id:
-            ben_sub = await db.user_subscriptions.find_one(
-                {"user_id": benefactor_id}, {"_id": 0}
-            )
-            benefactor_user = await db.users.find_one(
-                {"id": benefactor_id}, {"_id": 0, "verified_tier": 1}
-            )
+            ben_sub = await db.user_subscriptions.find_one({"user_id": benefactor_id}, {"_id": 0})
+            benefactor_user = await db.users.find_one({"id": benefactor_id}, {"_id": 0, "verified_tier": 1})
             plan_map = {
                 "premium": "ben_premium",
                 "standard": "ben_standard",
@@ -150,22 +132,14 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
             if ben_sub and ben_sub.get("plan_id"):
                 beneficiary_locked_tier = plan_map.get(ben_sub["plan_id"], "ben_base")
             elif benefactor_user and benefactor_user.get("verified_tier"):
-                beneficiary_locked_tier = plan_map.get(
-                    benefactor_user["verified_tier"], "ben_base"
-                )
+                beneficiary_locked_tier = plan_map.get(benefactor_user["verified_tier"], "ben_base")
 
     # Check if beneficiary is a minor (under 18)
     is_minor = False
-    if (
-        current_user.get("role") == "beneficiary"
-        and user_doc
-        and user_doc.get("date_of_birth")
-    ):
+    if current_user.get("role") == "beneficiary" and user_doc and user_doc.get("date_of_birth"):
         try:
             dob = datetime.fromisoformat(user_doc["date_of_birth"])
-            age = (
-                datetime.now(timezone.utc) - dob.replace(tzinfo=timezone.utc)
-            ).days // 365
+            age = (datetime.now(timezone.utc) - dob.replace(tzinfo=timezone.utc)).days // 365
             if age < 18:
                 is_minor = True
         except (ValueError, TypeError):
@@ -176,9 +150,7 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
     if estate_transitioned and benefactor_id:
         settings = await get_subscription_settings()
         benefactor_plan_id = None
-        ben_sub_doc = await db.user_subscriptions.find_one(
-            {"user_id": benefactor_id}, {"_id": 0, "plan_id": 1}
-        )
+        ben_sub_doc = await db.user_subscriptions.find_one({"user_id": benefactor_id}, {"_id": 0, "plan_id": 1})
         if ben_sub_doc:
             benefactor_plan_id = ben_sub_doc.get("plan_id")
         if benefactor_plan_id:
@@ -197,9 +169,7 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
         "needs_subscription": not has_access,
         "verification": {
             "status": verification.get("status", "none") if verification else "none",
-            "tier_requested": verification.get("tier_requested")
-            if verification
-            else None,
+            "tier_requested": verification.get("tier_requested") if verification else None,
         }
         if verification
         else None,
@@ -264,9 +234,7 @@ async def create_subscription_checkout(
         amount = monthly_price
 
     # Apply per-user discount
-    override = await db.subscription_overrides.find_one(
-        {"user_id": current_user["id"]}, {"_id": 0}
-    )
+    override = await db.subscription_overrides.find_one({"user_id": current_user["id"]}, {"_id": 0})
     discount = override.get("custom_discount", 0) if override else 0
     if discount > 0:
         amount = round(amount * (1 - discount / 100), 2)
@@ -300,14 +268,8 @@ async def create_subscription_checkout(
     cancel_url = f"{origin}/subscription"
 
     # Use backend's own URL for webhook, not frontend origin
-    backend_url = os.environ.get(
-        "RAILWAY_PUBLIC_URL", os.environ.get("BACKEND_URL", "")
-    )
-    webhook_url = (
-        f"{backend_url}/api/webhook/stripe"
-        if backend_url
-        else f"{origin}/api/webhook/stripe"
-    )
+    backend_url = os.environ.get("RAILWAY_PUBLIC_URL", os.environ.get("BACKEND_URL", ""))
+    webhook_url = f"{backend_url}/api/webhook/stripe" if backend_url else f"{origin}/api/webhook/stripe"
 
     stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
 
@@ -349,9 +311,7 @@ async def create_subscription_checkout(
 
 
 @router.get("/subscriptions/checkout-status/{session_id}")
-async def get_checkout_status(
-    session_id: str, current_user: dict = Depends(get_current_user)
-):
+async def get_checkout_status(session_id: str, current_user: dict = Depends(get_current_user)):
     """Poll checkout session status"""
     api_key = os.environ.get("STRIPE_API_KEY")
     if not api_key:
@@ -369,9 +329,7 @@ async def get_checkout_status(
             "status": checkout_status.status,
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }
-        await db.payment_transactions.update_one(
-            {"session_id": session_id}, {"$set": update_data}
-        )
+        await db.payment_transactions.update_one({"session_id": session_id}, {"$set": update_data})
 
         # If paid, activate subscription
         if new_status == "paid":
@@ -427,9 +385,7 @@ async def stripe_webhook(request: Any):
         event = await stripe_checkout.handle_webhook(body, sig)
 
         if event.payment_status == "paid" and event.session_id:
-            txn = await db.payment_transactions.find_one(
-                {"session_id": event.session_id}, {"_id": 0}
-            )
+            txn = await db.payment_transactions.find_one({"session_id": event.session_id}, {"_id": 0})
             if txn and txn.get("payment_status") != "paid":
                 await db.payment_transactions.update_one(
                     {"session_id": event.session_id},
@@ -510,9 +466,7 @@ async def change_subscription_plan(
     - Downgrade: issues a credit/refund for the unused value difference
     - Same tier, different cycle: treated as a billing change
     """
-    sub = await db.user_subscriptions.find_one(
-        {"user_id": current_user["id"]}, {"_id": 0}
-    )
+    sub = await db.user_subscriptions.find_one({"user_id": current_user["id"]}, {"_id": 0})
     if not sub or sub.get("status") != "active":
         raise HTTPException(status_code=400, detail="No active subscription to modify")
 
@@ -562,8 +516,7 @@ async def change_subscription_plan(
         period_start = (
             datetime.fromisoformat(period_start_str.replace("Z", "+00:00"))
             if period_start_str
-            else period_end
-            - timedelta(days={"annual": 365, "quarterly": 90}.get(old_cycle, 30))
+            else period_end - timedelta(days={"annual": 365, "quarterly": 90}.get(old_cycle, 30))
         )
         if period_start.tzinfo is None:
             period_start = period_start.replace(tzinfo=timezone.utc)
@@ -577,25 +530,17 @@ async def change_subscription_plan(
 
     # --- Calculate new plan cost ---
     role = current_user.get("role", "benefactor")
-    base_price = (
-        new_plan.get("ben_price", new_plan["price"])
-        if role == "beneficiary"
-        else new_plan["price"]
-    )
+    base_price = new_plan.get("ben_price", new_plan["price"]) if role == "beneficiary" else new_plan["price"]
 
     # Apply per-user discount
-    override = await db.subscription_overrides.find_one(
-        {"user_id": current_user["id"]}, {"_id": 0}
-    )
+    override = await db.subscription_overrides.find_one({"user_id": current_user["id"]}, {"_id": 0})
     discount = override.get("custom_discount", 0) if override else 0
     if discount > 0:
         base_price = base_price * (1 - discount / 100)
 
     cycle = data.billing_cycle
     if cycle == "quarterly":
-        new_total = round(
-            float(new_plan.get("quarterly_price", base_price * 0.9)) * 3, 2
-        )
+        new_total = round(float(new_plan.get("quarterly_price", base_price * 0.9)) * 3, 2)
     elif cycle == "annual":
         new_total = round(float(new_plan.get("annual_price", base_price * 0.8)) * 12, 2)
     else:
@@ -671,14 +616,8 @@ async def change_subscription_plan(
     origin = validate_origin_url(data.origin_url) if data.origin_url else ""
     success_url = f"{origin}/settings?session_id={{CHECKOUT_SESSION_ID}}&change=true"
     cancel_url = f"{origin}/settings"
-    backend_url = os.environ.get(
-        "RAILWAY_PUBLIC_URL", os.environ.get("BACKEND_URL", "")
-    )
-    webhook_url = (
-        f"{backend_url}/api/webhook/stripe"
-        if backend_url
-        else f"{origin}/api/webhook/stripe"
-    )
+    backend_url = os.environ.get("RAILWAY_PUBLIC_URL", os.environ.get("BACKEND_URL", ""))
+    webhook_url = f"{backend_url}/api/webhook/stripe" if backend_url else f"{origin}/api/webhook/stripe"
 
     stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
     checkout_request = CheckoutSessionRequest(
@@ -740,9 +679,7 @@ async def change_billing_cycle(
     current_user: dict = Depends(get_current_user),
 ):
     """Change billing cycle — creates a Stripe checkout for the new cycle amount."""
-    sub = await db.user_subscriptions.find_one(
-        {"user_id": current_user["id"]}, {"_id": 0}
-    )
+    sub = await db.user_subscriptions.find_one({"user_id": current_user["id"]}, {"_id": 0})
     if not sub or sub.get("status") != "active":
         raise HTTPException(status_code=400, detail="No active subscription")
 
@@ -782,9 +719,7 @@ async def change_billing_cycle(
         amount = monthly_price
 
     # Apply per-user discount
-    override = await db.subscription_overrides.find_one(
-        {"user_id": current_user["id"]}, {"_id": 0}
-    )
+    override = await db.subscription_overrides.find_one({"user_id": current_user["id"]}, {"_id": 0})
     discount = override.get("custom_discount", 0) if override else 0
     if discount > 0:
         amount = round(amount * (1 - discount / 100), 2)
@@ -821,18 +756,10 @@ async def change_billing_cycle(
     origin = data.origin_url.rstrip("/") if data.origin_url else ""
     if origin:
         origin = validate_origin_url(origin)
-    success_url = (
-        f"{origin}/settings?session_id={{CHECKOUT_SESSION_ID}}&billing_change=true"
-    )
+    success_url = f"{origin}/settings?session_id={{CHECKOUT_SESSION_ID}}&billing_change=true"
     cancel_url = f"{origin}/settings"
-    backend_url = os.environ.get(
-        "RAILWAY_PUBLIC_URL", os.environ.get("BACKEND_URL", "")
-    )
-    webhook_url = (
-        f"{backend_url}/api/webhook/stripe"
-        if backend_url
-        else f"{origin}/api/webhook/stripe"
-    )
+    backend_url = os.environ.get("RAILWAY_PUBLIC_URL", os.environ.get("BACKEND_URL", ""))
+    webhook_url = f"{backend_url}/api/webhook/stripe" if backend_url else f"{origin}/api/webhook/stripe"
 
     stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
     checkout_request = CheckoutSessionRequest(
@@ -874,9 +801,7 @@ async def change_billing_cycle(
 @router.post("/subscriptions/cancel")
 async def cancel_subscription(current_user: dict = Depends(get_current_user)):
     """Cancel current subscription"""
-    sub = await db.user_subscriptions.find_one(
-        {"user_id": current_user["id"]}, {"_id": 0}
-    )
+    sub = await db.user_subscriptions.find_one({"user_id": current_user["id"]}, {"_id": 0})
     if not sub or sub.get("status") != "active":
         raise HTTPException(status_code=400, detail="No active subscription")
 
@@ -912,12 +837,8 @@ async def get_admin_subscription_settings(
 
     # Get subscription stats
     total_subs = await db.user_subscriptions.count_documents({"status": "active"})
-    free_overrides = await db.subscription_overrides.count_documents(
-        {"free_access": True}
-    )
-    discount_overrides = await db.subscription_overrides.count_documents(
-        {"custom_discount": {"$gt": 0}}
-    )
+    free_overrides = await db.subscription_overrides.count_documents({"free_access": True})
+    discount_overrides = await db.subscription_overrides.count_documents({"custom_discount": {"$gt": 0}})
 
     return {
         **settings,
@@ -946,9 +867,7 @@ async def update_admin_subscription_settings(
 
     if update:
         update["updated_at"] = datetime.now(timezone.utc).isoformat()
-        await db.subscription_settings.update_one(
-            {"_id": "global"}, {"$set": update}, upsert=True
-        )
+        await db.subscription_settings.update_one({"_id": "global"}, {"$set": update}, upsert=True)
 
     return {"success": True, "message": "Subscription settings updated"}
 
@@ -963,9 +882,7 @@ async def get_admin_user_subscriptions(current_user: dict = Depends(get_current_
 
     for user in users:
         sub = await db.user_subscriptions.find_one({"user_id": user["id"]}, {"_id": 0})
-        override = await db.subscription_overrides.find_one(
-            {"user_id": user["id"]}, {"_id": 0}
-        )
+        override = await db.subscription_overrides.find_one({"user_id": user["id"]}, {"_id": 0})
         user["subscription"] = sub
         user["override"] = override
 
@@ -994,9 +911,7 @@ async def update_admin_user_subscription(
             raise HTTPException(status_code=400, detail="Discount must be 0-100")
         update["custom_discount"] = data.custom_discount
 
-    await db.subscription_overrides.update_one(
-        {"user_id": user_id}, {"$set": update}, upsert=True
-    )
+    await db.subscription_overrides.update_one({"user_id": user_id}, {"$set": update}, upsert=True)
 
     return {
         "success": True,
@@ -1021,9 +936,7 @@ async def update_plan_price(
     for plan in plans:
         if plan["id"] == plan_id:
             if not plan.get("adjustable", True):
-                raise HTTPException(
-                    status_code=400, detail=f"{plan['name']} pricing is fixed"
-                )
+                raise HTTPException(status_code=400, detail=f"{plan['name']} pricing is fixed")
             plan["price"] = price
             found = True
             break
@@ -1068,9 +981,7 @@ async def update_beneficiary_plan_price(
             break
 
     if not found:
-        raise HTTPException(
-            status_code=404, detail=f"Beneficiary plan not found: {plan_id}"
-        )
+        raise HTTPException(status_code=404, detail=f"Beneficiary plan not found: {plan_id}")
 
     await db.subscription_settings.update_one(
         {"_id": "global"},
@@ -1141,9 +1052,7 @@ async def verify_apple_receipt_with_server(receipt_data: str) -> dict:
     # Try production first
     async with httpx.AsyncClient(timeout=15) as client:
         try:
-            prod_res = await client.post(
-                "https://buy.itunes.apple.com/verifyReceipt", json=payload
-            )
+            prod_res = await client.post("https://buy.itunes.apple.com/verifyReceipt", json=payload)
             prod_data = prod_res.json()
 
             # Status 21007 means sandbox receipt sent to production
@@ -1172,18 +1081,14 @@ async def validate_apple_receipt(
     receipt_data = data.get("receipt")
 
     if not transaction_id or not product_id:
-        raise HTTPException(
-            status_code=400, detail="Missing transaction_id or product_id"
-        )
+        raise HTTPException(status_code=400, detail="Missing transaction_id or product_id")
 
     plan_id = APPLE_TO_PLAN.get(product_id)
     if not plan_id:
         raise HTTPException(status_code=400, detail=f"Unknown product: {product_id}")
 
     # Prevent transaction replay attacks — check if already used
-    existing_txn = await db.apple_transactions.find_one(
-        {"transaction_id": transaction_id}, {"_id": 0}
-    )
+    existing_txn = await db.apple_transactions.find_one({"transaction_id": transaction_id}, {"_id": 0})
     if existing_txn:
         if existing_txn.get("user_id") == current_user["id"]:
             return {
@@ -1191,9 +1096,7 @@ async def validate_apple_receipt(
                 "plan_id": plan_id,
                 "message": "Transaction already validated for this account",
             }
-        raise HTTPException(
-            status_code=400, detail="This transaction has already been used"
-        )
+        raise HTTPException(status_code=400, detail="This transaction has already been used")
 
     # Server-side receipt verification with Apple
     apple_shared_secret = os.environ.get("APPLE_SHARED_SECRET", "")
@@ -1201,10 +1104,7 @@ async def validate_apple_receipt(
         verification = await verify_apple_receipt_with_server(receipt_data)
         apple_status = verification.get("status", -1)
         if apple_status != 0:
-            logger.warning(
-                f"Apple receipt verification failed for user {current_user['id']}: "
-                f"status={apple_status}"
-            )
+            logger.warning(f"Apple receipt verification failed for user {current_user['id']}: status={apple_status}")
             # Status 0 = valid, anything else is invalid
             # Allow sandbox receipts during review (status codes 21007/21008 handled above)
             if apple_status not in (0,):
@@ -1213,13 +1113,7 @@ async def validate_apple_receipt(
                     detail="Receipt verification failed with Apple",
                 )
 
-    billing_cycle = (
-        "annual"
-        if "annual" in product_id
-        else "quarterly"
-        if "quarterly" in product_id
-        else "monthly"
-    )
+    billing_cycle = "annual" if "annual" in product_id else "quarterly" if "quarterly" in product_id else "monthly"
 
     now = datetime.now(timezone.utc)
     if billing_cycle == "annual":

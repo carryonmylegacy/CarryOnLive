@@ -37,9 +37,7 @@ class EmergencyAccessReview(BaseModel):
 
 
 @router.post("/emergency-access/request")
-async def request_emergency_access(
-    data: EmergencyAccessRequest, current_user: dict = Depends(get_current_user)
-):
+async def request_emergency_access(data: EmergencyAccessRequest, current_user: dict = Depends(get_current_user)):
     """Beneficiary requests emergency access to an estate vault."""
     # Verify the user is a beneficiary of this estate
     estate = await db.estates.find_one({"id": data.estate_id}, {"_id": 0})
@@ -68,9 +66,7 @@ async def request_emergency_access(
         )
 
     # Get benefactor info
-    benefactor = await db.users.find_one(
-        {"id": estate.get("owner_id")}, {"_id": 0, "id": 1, "name": 1, "email": 1}
-    )
+    benefactor = await db.users.find_one({"id": estate.get("owner_id")}, {"_id": 0, "id": 1, "name": 1, "email": 1})
 
     request_id = str(uuid.uuid4())
     request_doc = {
@@ -80,9 +76,7 @@ async def request_emergency_access(
         "requester_id": current_user["id"],
         "requester_name": current_user.get("name", ""),
         "requester_email": current_user.get("email", ""),
-        "benefactor_name": benefactor.get("name", "Unknown")
-        if benefactor
-        else "Unknown",
+        "benefactor_name": benefactor.get("name", "Unknown") if benefactor else "Unknown",
         "benefactor_email": benefactor.get("email", "") if benefactor else "",
         "reason": data.reason,
         "relationship": data.relationship_to_benefactor,
@@ -172,11 +166,7 @@ async def get_all_emergency_requests(current_user: dict = Depends(get_current_us
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
 
-    requests = (
-        await db.emergency_access.find({}, {"_id": 0})
-        .sort("created_at", -1)
-        .to_list(200)
-    )
+    requests = await db.emergency_access.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
     return requests
 
 
@@ -191,9 +181,7 @@ async def review_emergency_access(
         raise HTTPException(status_code=403, detail="Admin access required")
 
     if data.action not in ("approve", "deny", "request_more_info"):
-        raise HTTPException(
-            status_code=400, detail="Action must be approve, deny, or request_more_info"
-        )
+        raise HTTPException(status_code=400, detail="Action must be approve, deny, or request_more_info")
 
     request_doc = await db.emergency_access.find_one({"id": request_id}, {"_id": 0})
     if not request_doc:
@@ -208,9 +196,7 @@ async def review_emergency_access(
     if data.action == "approve":
         from datetime import timedelta
 
-        expires_at = (
-            datetime.now(timezone.utc) + timedelta(hours=data.access_duration_hours)
-        ).isoformat()
+        expires_at = (datetime.now(timezone.utc) + timedelta(hours=data.access_duration_hours)).isoformat()
         update["status"] = "approved"
         update["access_level"] = data.access_level
         update["access_expires_at"] = expires_at
@@ -253,9 +239,7 @@ async def review_emergency_access(
         details={
             "action": data.action,
             "access_level": data.access_level if data.action == "approve" else None,
-            "duration_hours": data.access_duration_hours
-            if data.action == "approve"
-            else None,
+            "duration_hours": data.access_duration_hours if data.action == "approve" else None,
         },
     )
 

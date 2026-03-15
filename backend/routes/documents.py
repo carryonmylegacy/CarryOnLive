@@ -162,13 +162,9 @@ async def upload_document(
     require_benefactor_role(current_user, "upload documents")
 
     # Verify user owns this estate
-    estate = await db.estates.find_one(
-        {"id": estate_id, "owner_id": current_user["id"]}, {"_id": 0}
-    )
+    estate = await db.estates.find_one({"id": estate_id, "owner_id": current_user["id"]}, {"_id": 0})
     if not estate:
-        raise HTTPException(
-            status_code=403, detail="Access denied — you do not own this estate"
-        )
+        raise HTTPException(status_code=403, detail="Access denied — you do not own this estate")
 
     # File upload security: validate content type, extension, and size
     ALLOWED_CONTENT_TYPES = {
@@ -218,9 +214,7 @@ async def upload_document(
     content = await file.read()
 
     if len(content) > MAX_FILE_SIZE:
-        raise HTTPException(
-            status_code=413, detail="File too large. Maximum size is 25MB."
-        )
+        raise HTTPException(status_code=413, detail="File too large. Maximum size is 25MB.")
 
     file_ct = (file.content_type or "application/octet-stream").split(";")[0].strip()
     if file_ct not in ALLOWED_CONTENT_TYPES:
@@ -236,11 +230,7 @@ async def upload_document(
 
     # Generate backup code for locked documents
     backup_code = generate_backup_code() if lock_type else None
-    password_hash = (
-        hash_password(lock_password)
-        if lock_password and lock_type == "password"
-        else None
-    )
+    password_hash = hash_password(lock_password) if lock_password and lock_type == "password" else None
 
     document = Document(
         estate_id=estate_id,
@@ -331,9 +321,7 @@ async def upload_document(
     }
     if backup_code:
         response["backup_code"] = backup_code
-        response["backup_message"] = (
-            "Save this backup code securely - it can be used to unlock this document"
-        )
+        response["backup_message"] = "Save this backup code securely - it can be used to unlock this document"
 
     return response
 
@@ -360,10 +348,7 @@ async def unlock_document(
         if not document.get("lock_password_hash"):
             raise HTTPException(status_code=400, detail="Document has no password set")
         if not verify_password(unlock_data.password, document["lock_password_hash"]):
-            if (
-                unlock_data.backup_code
-                and document.get("backup_code") == unlock_data.backup_code
-            ):
+            if unlock_data.backup_code and document.get("backup_code") == unlock_data.backup_code:
                 pass
             else:
                 raise HTTPException(status_code=401, detail="Invalid password")
@@ -425,14 +410,10 @@ async def lock_document(
 
     estate = await db.estates.find_one({"id": document["estate_id"]}, {"_id": 0})
     if not estate or estate.get("owner_id") != current_user["id"]:
-        raise HTTPException(
-            status_code=403, detail="Only the estate owner can lock documents"
-        )
+        raise HTTPException(status_code=403, detail="Only the estate owner can lock documents")
 
     # Require vault master key to be set before allowing individual locks
-    user_doc = await db.users.find_one(
-        {"id": current_user["id"]}, {"_id": 0, "id": 1, "vault_master_key_hash": 1}
-    )
+    user_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "id": 1, "vault_master_key_hash": 1})
     if not user_doc or not user_doc.get("vault_master_key_hash"):
         raise HTTPException(
             status_code=400,
@@ -440,9 +421,7 @@ async def lock_document(
         )
 
     if len(data.password) < 4:
-        raise HTTPException(
-            status_code=400, detail="Password must be at least 4 characters"
-        )
+        raise HTTPException(status_code=400, detail="Password must be at least 4 characters")
 
     backup_code = generate_backup_code()
 
@@ -487,9 +466,7 @@ async def remove_document_lock(
 
     estate = await db.estates.find_one({"id": document["estate_id"]}, {"_id": 0})
     if not estate or estate.get("owner_id") != current_user["id"]:
-        raise HTTPException(
-            status_code=403, detail="Only the estate owner can remove locks"
-        )
+        raise HTTPException(status_code=403, detail="Only the estate owner can remove locks")
 
     await db.documents.update_one(
         {"id": document_id},
@@ -509,9 +486,7 @@ async def remove_document_lock(
 
 
 @router.get("/vault/security-info/{estate_id}")
-async def get_vault_security_info(
-    estate_id: str, current_user: dict = Depends(get_current_user)
-):
+async def get_vault_security_info(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Get encryption and security metadata for the vault."""
     documents = await db.documents.find(
         {"estate_id": estate_id, "deleted_at": None},
@@ -528,9 +503,7 @@ async def get_vault_security_info(
 
     total_docs = len(documents)
     cloud_stored = sum(1 for d in documents if d.get("storage_key"))
-    aes256_encrypted = sum(
-        1 for d in documents if d.get("encryption_version") == "aes-256-gcm"
-    )
+    aes256_encrypted = sum(1 for d in documents if d.get("encryption_version") == "aes-256-gcm")
     legacy_encrypted = total_docs - aes256_encrypted
     total_size = sum(d.get("file_size", 0) for d in documents)
 
@@ -638,9 +611,7 @@ async def download_document(
             elif backup_code and document.get("backup_code") == backup_code:
                 pass
             else:
-                raise HTTPException(
-                    status_code=401, detail="Invalid credentials for locked document"
-                )
+                raise HTTPException(status_code=401, detail="Invalid credentials for locked document")
         elif lock_type in ["backup", "voice"]:
             if not backup_code or document.get("backup_code") != backup_code:
                 raise HTTPException(status_code=401, detail="Invalid backup code")
@@ -742,9 +713,7 @@ async def preview_document(
             elif backup_code and document.get("backup_code") == backup_code:
                 pass
             else:
-                raise HTTPException(
-                    status_code=401, detail="Invalid credentials for locked document"
-                )
+                raise HTTPException(status_code=401, detail="Invalid credentials for locked document")
         elif lock_type in ["backup", "voice"]:
             if not backup_code or document.get("backup_code") != backup_code:
                 raise HTTPException(status_code=401, detail="Invalid backup code")
@@ -807,9 +776,7 @@ class VoiceVerifyRequest(BaseModel):
 
 
 @router.post("/voice/transcribe")
-async def transcribe_voice(
-    file: UploadFile = File(...), current_user: dict = Depends(get_current_user)
-):
+async def transcribe_voice(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
     """Transcribe audio using OpenAI Whisper for voice verification"""
     from emergentintegrations.llm.openai import OpenAISpeechToText
 
@@ -890,9 +857,7 @@ async def verify_voice_passphrase(
             "verified": verified,
             "transcription": transcription,
             "similarity": round(similarity, 2),
-            "message": "Voice verified successfully"
-            if verified
-            else "Voice verification failed. Please try again.",
+            "message": "Voice verified successfully" if verified else "Voice verification failed. Please try again.",
         }
     except Exception as e:
         logger.error(f"Voice verification error: {e}")
@@ -900,9 +865,7 @@ async def verify_voice_passphrase(
 
 
 @router.post("/documents/{document_id}/voice/setup")
-async def setup_voice_passphrase(
-    document_id: str, passphrase: str, current_user: dict = Depends(get_current_user)
-):
+async def setup_voice_passphrase(document_id: str, passphrase: str, current_user: dict = Depends(get_current_user)):
     """Set up voice verification passphrase for a document"""
     require_benefactor_role(current_user, "set up voice verification")
 
@@ -910,9 +873,7 @@ async def setup_voice_passphrase(
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
     if document.get("lock_type") != "voice":
-        raise HTTPException(
-            status_code=400, detail="Document is not set up for voice verification"
-        )
+        raise HTTPException(status_code=400, detail="Document is not set up for voice verification")
 
     normalized_passphrase = passphrase.lower().strip()
     await db.documents.update_one(
@@ -920,9 +881,7 @@ async def setup_voice_passphrase(
         {
             "$set": {
                 "voice_passphrase_hash": hash_password(normalized_passphrase),
-                "voice_passphrase_hint": passphrase[:3] + "..."
-                if len(passphrase) > 3
-                else passphrase,
+                "voice_passphrase_hint": passphrase[:3] + "..." if len(passphrase) > 3 else passphrase,
             }
         },
     )
@@ -943,9 +902,7 @@ async def verify_document_voice_passphrase(
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
     if not document.get("voice_passphrase_hash"):
-        raise HTTPException(
-            status_code=400, detail="Voice passphrase not set up. Use backup code."
-        )
+        raise HTTPException(status_code=400, detail="Voice passphrase not set up. Use backup code.")
 
     normalized_spoken = data.spoken_text.lower().strip()
     if verify_password(normalized_spoken, document["voice_passphrase_hash"]):
@@ -958,9 +915,7 @@ async def verify_document_voice_passphrase(
 
 
 @router.get("/documents/{document_id}/voice/hint")
-async def get_voice_hint(
-    document_id: str, current_user: dict = Depends(get_current_user)
-):
+async def get_voice_hint(document_id: str, current_user: dict = Depends(get_current_user)):
     """Get voice passphrase hint"""
     document = await db.documents.find_one({"id": document_id}, {"_id": 0})
     if not document:
@@ -972,9 +927,7 @@ async def get_voice_hint(
 
 
 @router.delete("/documents/{document_id}")
-async def delete_document(
-    document_id: str, current_user: dict = Depends(get_current_user)
-):
+async def delete_document(document_id: str, current_user: dict = Depends(get_current_user)):
     """Delete a document from the vault."""
     require_benefactor_role(current_user, "delete documents")
 
@@ -983,13 +936,9 @@ async def delete_document(
         raise HTTPException(status_code=404, detail="Document not found")
 
     # Verify user owns the estate
-    estate = await db.estates.find_one(
-        {"id": document["estate_id"], "owner_id": current_user["id"]}, {"_id": 0}
-    )
+    estate = await db.estates.find_one({"id": document["estate_id"], "owner_id": current_user["id"]}, {"_id": 0})
     if not estate:
-        raise HTTPException(
-            status_code=403, detail="Access denied — you do not own this estate"
-        )
+        raise HTTPException(status_code=403, detail="Access denied — you do not own this estate")
 
     # Delete from cloud storage
     if document.get("storage_key"):
@@ -1029,13 +978,9 @@ async def update_document(
         raise HTTPException(status_code=404, detail="Document not found")
 
     # Verify user owns the estate
-    estate = await db.estates.find_one(
-        {"id": doc["estate_id"], "owner_id": current_user["id"]}, {"_id": 0}
-    )
+    estate = await db.estates.find_one({"id": doc["estate_id"], "owner_id": current_user["id"]}, {"_id": 0})
     if not estate:
-        raise HTTPException(
-            status_code=403, detail="Access denied — you do not own this estate"
-        )
+        raise HTTPException(status_code=403, detail="Access denied — you do not own this estate")
 
     update_data = {}
     if name is not None:

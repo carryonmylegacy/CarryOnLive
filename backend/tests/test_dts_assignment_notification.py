@@ -123,12 +123,8 @@ class TestDTSTaskAssignment:
         assert resp.status_code == 200, f"Failed: {resp.text}"
         result = resp.json()
         assert "message" in result, "Response should have message"
-        assert new_status in result["message"], (
-            f"Status should be updated to {new_status}"
-        )
-        print(
-            f"✅ POST /api/dts/tasks/{task_id}/status?task_status={new_status} - Status updated"
-        )
+        assert new_status in result["message"], f"Status should be updated to {new_status}"
+        print(f"✅ POST /api/dts/tasks/{task_id}/status?task_status={new_status} - Status updated")
 
         # Restore original status
         requests.post(
@@ -200,9 +196,7 @@ class TestDTSTaskAssignment:
         )
         if task_resp.status_code == 200:
             updated_task = task_resp.json()
-            assert updated_task.get("assigned_to") == operator_id, (
-                "Task should be assigned to operator"
-            )
+            assert updated_task.get("assigned_to") == operator_id, "Task should be assigned to operator"
             print(f"   Verified: Task now assigned to operator {operator_id}")
 
     def test_06_dts_assign_invalid_operator(self, founder_token):
@@ -221,9 +215,7 @@ class TestDTSTaskAssignment:
             headers={"Authorization": f"Bearer {founder_token}"},
             json={"operator_id": "invalid-operator-id-xxx"},
         )
-        assert resp.status_code == 404, (
-            f"Should fail with invalid operator: {resp.text}"
-        )
+        assert resp.status_code == 404, f"Should fail with invalid operator: {resp.text}"
         print("✅ Invalid operator assignment rejected correctly (404)")
 
 
@@ -281,9 +273,7 @@ class TestNotificationTriggers:
         result = resp.json()
         # API returns {"unread_count": N}
         assert "unread_count" in result, "Should have unread_count field"
-        print(
-            f"✅ GET /api/notifications/unread-count - Count: {result['unread_count']}"
-        )
+        print(f"✅ GET /api/notifications/unread-count - Count: {result['unread_count']}")
 
     def test_03_founder_notification_types(self, founder_token):
         """Verify founder has notifications with expected types"""
@@ -305,14 +295,10 @@ class TestNotificationTriggers:
             or "new user" in n.get("title", "").lower()
         ]
         if found_signup_notifications:
-            print(
-                f"✅ Found {len(found_signup_notifications)} signup-related notifications"
-            )
+            print(f"✅ Found {len(found_signup_notifications)} signup-related notifications")
             print(f"   Sample: {found_signup_notifications[0].get('title', 'N/A')}")
         else:
-            print(
-                f"⚠️ No signup notifications found in {len(notifications)} total notifications"
-            )
+            print(f"⚠️ No signup notifications found in {len(notifications)} total notifications")
 
     def test_04_benefactor_notifications_endpoint(self, benefactor_token):
         """GET /api/notifications - Benefactor can access notifications"""
@@ -325,9 +311,7 @@ class TestNotificationTriggers:
         assert "notifications" in data, "Should have notifications field"
         notifications = data["notifications"]
         assert isinstance(notifications, list), "notifications should be a list"
-        print(
-            f"✅ GET /api/notifications - Benefactor has {len(notifications)} notifications"
-        )
+        print(f"✅ GET /api/notifications - Benefactor has {len(notifications)} notifications")
 
         # Check for invitation accepted notifications
         invitation_notifications = [
@@ -339,9 +323,7 @@ class TestNotificationTriggers:
             or "joined" in n.get("title", "").lower()
         ]
         if invitation_notifications:
-            print(
-                f"   Found {len(invitation_notifications)} invitation-related notifications"
-            )
+            print(f"   Found {len(invitation_notifications)} invitation-related notifications")
 
     def test_05_notification_mark_read(self, founder_token):
         """POST /api/notifications/{id}/read - Mark notification as read"""
@@ -410,17 +392,11 @@ class TestNewUserRegistrationNotification:
         # Either 200 (success), 400 (email check), 422 (validation), or 429 (rate limit) is acceptable
         # This confirms the endpoint exists and processes requests
         if resp.status_code == 429:
-            print(
-                "⚠️ POST /api/auth/register rate limited (429) - endpoint exists but rate limited"
-            )
+            print("⚠️ POST /api/auth/register rate limited (429) - endpoint exists but rate limited")
             pytest.skip("Registration endpoint rate limited - skipping")
 
-        assert resp.status_code in [200, 400, 422], (
-            f"Registration endpoint error: {resp.status_code} - {resp.text}"
-        )
-        print(
-            f"✅ POST /api/auth/register endpoint accessible (status: {resp.status_code})"
-        )
+        assert resp.status_code in [200, 400, 422], f"Registration endpoint error: {resp.status_code} - {resp.text}"
+        print(f"✅ POST /api/auth/register endpoint accessible (status: {resp.status_code})")
 
         # If registration was successful, founder should receive notification
         if resp.status_code == 200:
@@ -466,9 +442,7 @@ class TestDocumentUploadNotification:
         assert isinstance(estates, list), "Should return list of estates"
         if estates:
             print(f"✅ GET /api/estates - Found {len(estates)} estates")
-            print(
-                f"   First estate: {estates[0].get('name', 'N/A')}, ID: {estates[0].get('id', 'N/A')}"
-            )
+            print(f"   First estate: {estates[0].get('name', 'N/A')}, ID: {estates[0].get('id', 'N/A')}")
             return estates[0]["id"]
         else:
             print("⚠️ No estates found for benefactor")
@@ -522,9 +496,7 @@ class TestDTSQuoteCreation:
 
         # Find a task in 'submitted' status
         tasks = tasks_resp.json()
-        submitted_task = next(
-            (t for t in tasks if t.get("status") == "submitted"), None
-        )
+        submitted_task = next((t for t in tasks if t.get("status") == "submitted"), None)
 
         if not submitted_task:
             # Use first task regardless of status for testing
@@ -568,9 +540,7 @@ class TestDTSQuoteCreation:
         )
         if task_resp.status_code == 200:
             updated_task = task_resp.json()
-            assert updated_task.get("status") == "quoted", (
-                "Task status should be 'quoted'"
-            )
+            assert updated_task.get("status") == "quoted", "Task status should be 'quoted'"
             print("   Verified: Task status is now 'quoted'")
 
 
@@ -609,9 +579,7 @@ class TestOpsOpsDashboard:
                 users = users_resp.json()
                 print(f"✅ GET /api/admin/users - Found {len(users)} users")
             else:
-                print(
-                    f"⚠️ Admin endpoints returned {resp.status_code} and {users_resp.status_code}"
-                )
+                print(f"⚠️ Admin endpoints returned {resp.status_code} and {users_resp.status_code}")
 
     def test_02_founder_operators_list(self, founder_token):
         """GET /api/founder/operators - Founder can see operators"""

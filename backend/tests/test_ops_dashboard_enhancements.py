@@ -43,9 +43,7 @@ class TestDashboardEventsAPI:
     def test_dashboard_events_returns_all_event_types(self):
         """Verify dashboard-events returns counts for all 6 event types"""
         response = self.session.get(f"{BASE_URL}/api/ops/dashboard-events")
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
 
         data = response.json()
 
@@ -57,12 +55,8 @@ class TestDashboardEventsAPI:
         required_types = ["tvt", "milestones", "dts", "emergency", "p1", "support"]
         for event_type in required_types:
             assert event_type in events, f"Missing event type: {event_type}"
-            assert "count" in events[event_type], (
-                f"Event type {event_type} should have 'count' field"
-            )
-            assert isinstance(events[event_type]["count"], int), (
-                f"Count for {event_type} should be integer"
-            )
+            assert "count" in events[event_type], f"Event type {event_type} should have 'count' field"
+            assert isinstance(events[event_type]["count"], int), f"Count for {event_type} should be integer"
 
         # Verify TVT has breakdown
         assert "pending" in events["tvt"], "TVT should have 'pending' count"
@@ -70,9 +64,7 @@ class TestDashboardEventsAPI:
 
         # Verify each event has a path
         for event_type in required_types:
-            assert "path" in events[event_type], (
-                f"Event type {event_type} should have 'path' field"
-            )
+            assert "path" in events[event_type], f"Event type {event_type} should have 'path' field"
 
         print(f"Dashboard events: {events}")
 
@@ -88,9 +80,7 @@ class TestDashboardEventsAPI:
         recent = data["recent_activity"]
         for key in ["tvt", "milestones", "dts", "emergency"]:
             assert key in recent, f"recent_activity should contain '{key}'"
-            assert isinstance(recent[key], list), (
-                f"recent_activity.{key} should be a list"
-            )
+            assert isinstance(recent[key], list), f"recent_activity.{key} should be a list"
 
     def test_dashboard_events_has_timestamp(self):
         """Verify dashboard-events returns a timestamp"""
@@ -124,24 +114,18 @@ class TestTeamTasksAPI:
     def test_team_tasks_returns_team_data(self):
         """Verify team-tasks returns team data structure"""
         response = self.session.get(f"{BASE_URL}/api/ops/team-tasks")
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
 
         data = response.json()
 
         # Verify structure
         assert "team" in data, "Response should contain 'team' field"
-        assert "total_active_tasks" in data, (
-            "Response should contain 'total_active_tasks'"
-        )
+        assert "total_active_tasks" in data, "Response should contain 'total_active_tasks'"
         assert "timestamp" in data, "Response should contain 'timestamp'"
 
         # Verify team is a list
         assert isinstance(data["team"], list), "'team' should be a list"
-        assert isinstance(data["total_active_tasks"], int), (
-            "'total_active_tasks' should be integer"
-        )
+        assert isinstance(data["total_active_tasks"], int), "'total_active_tasks' should be integer"
 
         print(f"Team tasks response: {data}")
 
@@ -189,9 +173,7 @@ class TestAdminStatsNewFields:
     def test_admin_stats_has_new_fields(self):
         """Verify admin stats contains new ops-related fields"""
         response = self.session.get(f"{BASE_URL}/api/admin/stats")
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
 
         data = response.json()
 
@@ -253,9 +235,7 @@ class TestOpsDashboardAPI:
     def test_ops_dashboard_returns_data(self):
         """Verify ops dashboard returns expected structure"""
         response = self.session.get(f"{BASE_URL}/api/ops/dashboard")
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
 
         data = response.json()
 
@@ -291,9 +271,7 @@ class TestOperatorDeletePermissions:
     def test_founder_can_list_operators(self):
         """Verify founder can list all operators"""
         response = self.session.get(f"{BASE_URL}/api/founder/operators")
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
 
         data = response.json()
         assert isinstance(data, list), "Response should be a list of operators"
@@ -310,9 +288,7 @@ class TestOperatorDeletePermissions:
         """Verify delete requires password parameter"""
         response = self.session.delete(f"{BASE_URL}/api/founder/operators/fake-id")
         # Should fail with 422 (missing required param) or 404 (not found)
-        assert response.status_code in [400, 404, 422], (
-            f"Expected error without password, got {response.status_code}"
-        )
+        assert response.status_code in [400, 404, 422], f"Expected error without password, got {response.status_code}"
 
     def test_delete_with_wrong_password_fails(self):
         """Verify delete fails with incorrect password"""
@@ -324,9 +300,7 @@ class TestOperatorDeletePermissions:
         ops = list_response.json()
         test_op = ops[0]
 
-        response = self.session.delete(
-            f"{BASE_URL}/api/founder/operators/{test_op['id']}?admin_password=wrongpassword"
-        )
+        response = self.session.delete(f"{BASE_URL}/api/founder/operators/{test_op['id']}?admin_password=wrongpassword")
         # Should fail with 401 (incorrect password)
         assert response.status_code == 401, (
             f"Expected 401 for wrong password, got {response.status_code}: {response.text}"
@@ -371,9 +345,7 @@ class TestOperatorCRUD:
             },
         )
 
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
 
         data = response.json()
         assert data.get("operator_role") == "worker", "Should create worker role"
@@ -384,9 +356,7 @@ class TestOperatorCRUD:
 
         # Cleanup: Delete the test operator
         if created_id:
-            self.session.delete(
-                f"{BASE_URL}/api/founder/operators/{created_id}?admin_password={FOUNDER_PASSWORD}"
-            )
+            self.session.delete(f"{BASE_URL}/api/founder/operators/{created_id}?admin_password={FOUNDER_PASSWORD}")
 
     def test_create_manager_operator(self):
         """Test creating a manager operator (founder only)"""
@@ -406,9 +376,7 @@ class TestOperatorCRUD:
             },
         )
 
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
 
         data = response.json()
         assert data.get("operator_role") == "manager", "Should create manager role"
@@ -418,9 +386,7 @@ class TestOperatorCRUD:
 
         # Cleanup
         if created_id:
-            self.session.delete(
-                f"{BASE_URL}/api/founder/operators/{created_id}?admin_password={FOUNDER_PASSWORD}"
-            )
+            self.session.delete(f"{BASE_URL}/api/founder/operators/{created_id}?admin_password={FOUNDER_PASSWORD}")
 
 
 if __name__ == "__main__":

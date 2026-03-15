@@ -38,12 +38,8 @@ class TestSubscriptionPlans:
         features = premium_plan.get("features", [])
         features_text = " ".join(features)
 
-        assert "Will/Trust Wizard" not in features_text, (
-            f"Found 'Will/Trust Wizard' in Premium features: {features}"
-        )
-        assert "Eternal Echo" not in features_text, (
-            f"Found 'Eternal Echo' in Premium features: {features}"
-        )
+        assert "Will/Trust Wizard" not in features_text, f"Found 'Will/Trust Wizard' in Premium features: {features}"
+        assert "Eternal Echo" not in features_text, f"Found 'Eternal Echo' in Premium features: {features}"
         print(f"✅ Premium plan features: {features}")
 
     def test_all_plans_no_wizard_eternal_echo(self):
@@ -56,16 +52,10 @@ class TestSubscriptionPlans:
             features = plan.get("features", [])
             features_text = " ".join(features)
 
-            assert "Will/Trust Wizard" not in features_text, (
-                f"Plan {plan.get('name')} has 'Will/Trust Wizard'"
-            )
-            assert "Eternal Echo" not in features_text, (
-                f"Plan {plan.get('name')} has 'Eternal Echo'"
-            )
+            assert "Will/Trust Wizard" not in features_text, f"Plan {plan.get('name')} has 'Will/Trust Wizard'"
+            assert "Eternal Echo" not in features_text, f"Plan {plan.get('name')} has 'Eternal Echo'"
 
-        print(
-            f"✅ All {len(data['plans'])} plans verified - no Will/Trust Wizard or Eternal Echo text"
-        )
+        print(f"✅ All {len(data['plans'])} plans verified - no Will/Trust Wizard or Eternal Echo text")
 
 
 class TestHealthCheck:

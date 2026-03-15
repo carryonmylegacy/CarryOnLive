@@ -37,17 +37,12 @@ async def get_pending_deliveries(
         query["status"] = status
 
     deliveries = (
-        await db.milestone_deliveries.find(query, {"_id": 0})
-        .sort("created_at", -1)
-        .limit(limit)
-        .to_list(limit)
+        await db.milestone_deliveries.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
     )
 
     # Enrich with estate name
     for d in deliveries:
-        estate = await db.estates.find_one(
-            {"id": d.get("estate_id")}, {"_id": 0, "id": 1, "name": 1}
-        )
+        estate = await db.estates.find_one({"id": d.get("estate_id")}, {"_id": 0, "id": 1, "name": 1})
         d["estate_name"] = (estate or {}).get("name", "")
 
     return deliveries
@@ -58,9 +53,7 @@ async def get_delivery_stats(current_user: dict = Depends(get_current_user)):
     """Get milestone delivery stats for the dashboard."""
     require_staff(current_user)
 
-    pending = await db.milestone_deliveries.count_documents(
-        {"status": "pending_review"}
-    )
+    pending = await db.milestone_deliveries.count_documents({"status": "pending_review"})
     approved = await db.milestone_deliveries.count_documents({"status": "approved"})
     rejected = await db.milestone_deliveries.count_documents({"status": "rejected"})
 
@@ -85,14 +78,10 @@ async def get_delivery_detail(
         raise HTTPException(status_code=404, detail="Delivery not found")
 
     # Get the message (decrypted title for review)
-    message = await db.messages.find_one(
-        {"id": delivery["message_id"]}, {"_id": 0, "file_data": 0}
-    )
+    message = await db.messages.find_one({"id": delivery["message_id"]}, {"_id": 0, "file_data": 0})
 
     # Get estate info
-    estate = await db.estates.find_one(
-        {"id": delivery["estate_id"]}, {"_id": 0, "id": 1, "name": 1, "owner_id": 1}
-    )
+    estate = await db.estates.find_one({"id": delivery["estate_id"]}, {"_id": 0, "id": 1, "name": 1, "owner_id": 1})
 
     # Get all messages in the estate for context
     all_messages = await db.messages.find(
@@ -111,9 +100,7 @@ async def get_delivery_detail(
     ).to_list(100)
 
     # Get milestone report
-    report = await db.milestone_reports.find_one(
-        {"id": delivery["milestone_report_id"]}, {"_id": 0}
-    )
+    report = await db.milestone_reports.find_one({"id": delivery["milestone_report_id"]}, {"_id": 0})
 
     return {
         "delivery": delivery,
@@ -139,13 +126,9 @@ async def review_delivery(
     require_staff(current_user)
 
     if data.action not in ("approve", "reject"):
-        raise HTTPException(
-            status_code=400, detail="Action must be 'approve' or 'reject'"
-        )
+        raise HTTPException(status_code=400, detail="Action must be 'approve' or 'reject'")
 
-    delivery = await db.milestone_deliveries.find_one(
-        {"id": delivery_id, "status": "pending_review"}, {"_id": 0}
-    )
+    delivery = await db.milestone_deliveries.find_one({"id": delivery_id, "status": "pending_review"}, {"_id": 0})
     if not delivery:
         raise HTTPException(status_code=404, detail="Pending delivery not found")
 

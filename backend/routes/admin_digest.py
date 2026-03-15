@@ -26,23 +26,15 @@ async def gather_weekly_analytics():
     now_iso = now.isoformat()
 
     # Current period counts
-    new_signups = await db.users.count_documents(
-        {"created_at": {"$gte": week_ago, "$lte": now_iso}}
-    )
-    prev_signups = await db.users.count_documents(
-        {"created_at": {"$gte": two_weeks_ago, "$lte": week_ago}}
-    )
+    new_signups = await db.users.count_documents({"created_at": {"$gte": week_ago, "$lte": now_iso}})
+    prev_signups = await db.users.count_documents({"created_at": {"$gte": two_weeks_ago, "$lte": week_ago}})
 
     total_users = await db.users.count_documents({"role": {"$ne": "admin"}})
     active_trials = await db.users.count_documents({"trial_ends_at": {"$gt": now_iso}})
-    expired_trials = await db.users.count_documents(
-        {"trial_ends_at": {"$lte": now_iso}, "role": {"$ne": "admin"}}
-    )
+    expired_trials = await db.users.count_documents({"trial_ends_at": {"$lte": now_iso}, "role": {"$ne": "admin"}})
 
     active_subs = await db.user_subscriptions.count_documents({"status": "active"})
-    cancelled_subs = await db.user_subscriptions.count_documents(
-        {"status": "cancelled"}
-    )
+    cancelled_subs = await db.user_subscriptions.count_documents({"status": "cancelled"})
 
     new_cancellations = await db.user_subscriptions.count_documents(
         {
@@ -63,28 +55,20 @@ async def gather_weekly_analytics():
     plan_lookup = {p["id"]: p for p in DEFAULT_PLANS}
     mrr = 0.0
     tier_counts = {}
-    active_sub_docs = await db.user_subscriptions.find(
-        {"status": "active"}, {"_id": 0}
-    ).to_list(5000)
+    active_sub_docs = await db.user_subscriptions.find({"status": "active"}, {"_id": 0}).to_list(5000)
     for sub in active_sub_docs:
         plan = plan_lookup.get(sub.get("plan_id", ""))
         if plan:
             mrr += get_price_for_cycle(plan, "monthly")
-        tier_counts[sub.get("plan_id", "")] = (
-            tier_counts.get(sub.get("plan_id", ""), 0) + 1
-        )
+        tier_counts[sub.get("plan_id", "")] = tier_counts.get(sub.get("plan_id", ""), 0) + 1
 
     # Churn & conversion rates
     total_ever = active_subs + cancelled_subs
     churn_rate = round((cancelled_subs / total_ever) * 100, 1) if total_ever > 0 else 0
     left_trial = expired_trials + active_subs + cancelled_subs
-    conversion_rate = (
-        round((active_subs / left_trial) * 100, 1) if left_trial > 0 else 0
-    )
+    conversion_rate = round((active_subs / left_trial) * 100, 1) if left_trial > 0 else 0
 
-    pending_verifications = await db.tier_verifications.count_documents(
-        {"status": "pending"}
-    )
+    pending_verifications = await db.tier_verifications.count_documents({"status": "pending"})
 
     # Daily signups for sparkline
     daily_signups = []
@@ -98,9 +82,7 @@ async def gather_weekly_analytics():
     return {
         "new_signups": new_signups,
         "prev_signups": prev_signups,
-        "signup_trend": "up"
-        if new_signups > prev_signups
-        else ("down" if new_signups < prev_signups else "flat"),
+        "signup_trend": "up" if new_signups > prev_signups else ("down" if new_signups < prev_signups else "flat"),
         "total_users": total_users,
         "active_trials": active_trials,
         "expired_trials": expired_trials,
@@ -123,11 +105,7 @@ async def gather_weekly_analytics():
 def build_analytics_digest_html(data, app_url="https://app.carryon.us"):
     """Build HTML email for weekly admin analytics digest."""
     signup_delta = data["new_signups"] - data["prev_signups"]
-    signup_arrow = (
-        "&#9650;"
-        if signup_delta > 0
-        else ("&#9660;" if signup_delta < 0 else "&#8212;")
-    )
+    signup_arrow = "&#9650;" if signup_delta > 0 else ("&#9660;" if signup_delta < 0 else "&#8212;")
     signup_color = "#22C993" if signup_delta >= 0 else "#ef4444"
     signup_pct = (
         f"+{round((signup_delta / data['prev_signups']) * 100)}%"
@@ -166,9 +144,7 @@ def build_analytics_digest_html(data, app_url="https://app.carryon.us"):
     <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#0F1629;color:#F1F3F8;border-radius:16px;overflow:hidden;">
       <!-- Header -->
       <div style="padding:32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.07);">
-        <img src="{
-        app_url
-    }/carryon-logo.jpg" alt="CarryOn" style="width:60px;height:auto;margin-bottom:12px;" />
+        <img src="{app_url}/carryon-logo.jpg" alt="CarryOn" style="width:60px;height:auto;margin-bottom:12px;" />
         <h1 style="font-size:22px;margin:0;color:#d4af37;">Weekly Analytics Digest</h1>
         <p style="color:#525C72;font-size:12px;margin:6px 0 0;">
           {datetime.now(timezone.utc).strftime("%b %d, %Y")} &middot; Past 7 days
@@ -191,9 +167,7 @@ def build_analytics_digest_html(data, app_url="https://app.carryon.us"):
               <div style="font-size:28px;font-weight:bold;color:#22C993;font-family:'Georgia',serif;margin:4px 0;">{
         data["conversion_rate"]
     }%</div>
-              <div style="font-size:10px;color:#525C72;">{
-        data["new_conversions"]
-    } new this week</div>
+              <div style="font-size:10px;color:#525C72;">{data["new_conversions"]} new this week</div>
             </td>
             <td style="width:8px;"></td>
             <td style="width:33%;text-align:center;padding:12px 8px;background:rgba(239,68,68,0.06);border-radius:12px;">
@@ -201,9 +175,7 @@ def build_analytics_digest_html(data, app_url="https://app.carryon.us"):
               <div style="font-size:28px;font-weight:bold;color:{
         "#ef4444" if data["churn_rate"] > 5 else "#22C993"
     };font-family:'Georgia',serif;margin:4px 0;">{data["churn_rate"]}%</div>
-              <div style="font-size:10px;color:#525C72;">{
-        data["new_cancellations"]
-    } cancelled</div>
+              <div style="font-size:10px;color:#525C72;">{data["new_cancellations"]} cancelled</div>
             </td>
           </tr>
         </table>
@@ -219,14 +191,12 @@ def build_analytics_digest_html(data, app_url="https://app.carryon.us"):
                 <span style="font-size:32px;font-weight:bold;color:#F1F3F8;font-family:'Georgia',serif;">{
         data["new_signups"]
     }</span>
-                <span style="font-size:13px;color:{signup_color};font-weight:bold;">{
-        signup_arrow
-    } {signup_pct} vs last week</span>
+                <span style="font-size:13px;color:{signup_color};font-weight:bold;">{signup_arrow} {
+        signup_pct
+    } vs last week</span>
               </div>
               <div style="margin-top:12px;">
-                <table role="presentation" cellpadding="0" cellspacing="0"><tr>{
-        sparkline_html
-    }</tr></table>
+                <table role="presentation" cellpadding="0" cellspacing="0"><tr>{sparkline_html}</tr></table>
               </div>
             </td>
           </tr>
@@ -240,18 +210,14 @@ def build_analytics_digest_html(data, app_url="https://app.carryon.us"):
           <tr>
             <td style="padding:8px 12px;background:rgba(96,165,250,0.08);border-radius:8px;margin-bottom:6px;">
               <span style="font-size:12px;color:#60A5FA;font-weight:bold;">Active Trials</span>
-              <span style="float:right;font-size:14px;color:#F1F3F8;font-weight:bold;">{
-        data["active_trials"]
-    }</span>
+              <span style="float:right;font-size:14px;color:#F1F3F8;font-weight:bold;">{data["active_trials"]}</span>
             </td>
           </tr>
           <tr><td style="height:4px;"></td></tr>
           <tr>
             <td style="padding:8px 12px;background:rgba(34,201,147,0.08);border-radius:8px;">
               <span style="font-size:12px;color:#22C993;font-weight:bold;">Active Subscribers</span>
-              <span style="float:right;font-size:14px;color:#F1F3F8;font-weight:bold;">{
-        data["active_subs"]
-    }</span>
+              <span style="float:right;font-size:14px;color:#F1F3F8;font-weight:bold;">{data["active_subs"]}</span>
             </td>
           </tr>
           <tr><td style="height:4px;"></td></tr>
@@ -267,9 +233,7 @@ def build_analytics_digest_html(data, app_url="https://app.carryon.us"):
           <tr>
             <td style="padding:8px 12px;background:rgba(239,68,68,0.08);border-radius:8px;">
               <span style="font-size:12px;color:#ef4444;font-weight:bold;">Churned</span>
-              <span style="float:right;font-size:14px;color:#F1F3F8;font-weight:bold;">{
-        data["cancelled_subs"]
-    }</span>
+              <span style="float:right;font-size:14px;color:#F1F3F8;font-weight:bold;">{data["cancelled_subs"]}</span>
             </td>
           </tr>
         </table>
@@ -327,9 +291,7 @@ async def send_admin_analytics_digest():
         logger.warning("Analytics digest skipped — RESEND_API_KEY not configured")
         return {"sent": 0, "reason": "no_api_key"}
 
-    admins = await db.users.find(
-        {"role": "admin"}, {"_id": 0, "id": 1, "email": 1, "name": 1}
-    ).to_list(50)
+    admins = await db.users.find({"role": "admin"}, {"_id": 0, "id": 1, "email": 1, "name": 1}).to_list(50)
 
     if not admins:
         logger.info("No admin users found for analytics digest")

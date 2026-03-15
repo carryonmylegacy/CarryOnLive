@@ -64,9 +64,7 @@ class TestGhostEstateAutoCleanup:
             headers={"Authorization": ""},
         )
         # Should require auth, not 404
-        assert resp.status_code in [401, 403, 422], (
-            f"Expected auth error, got {resp.status_code}"
-        )
+        assert resp.status_code in [401, 403, 422], f"Expected auth error, got {resp.status_code}"
         print("PASS: create-estate endpoint exists and requires auth")
 
     def test_02_create_estate_for_benefactor_account(self):
@@ -77,13 +75,9 @@ class TestGhostEstateAutoCleanup:
             json={"beneficiary_enrollments": []},
         )
         # Admins/operators cannot create estate plans
-        assert resp.status_code in [400, 403], (
-            f"Expected 400/403 for admin, got {resp.status_code}"
-        )
+        assert resp.status_code in [400, 403], f"Expected 400/403 for admin, got {resp.status_code}"
         if resp.status_code == 400:
-            assert "Staff accounts cannot create estate plans" in resp.json().get(
-                "detail", ""
-            )
+            assert "Staff accounts cannot create estate plans" in resp.json().get("detail", "")
         print("PASS: Admins correctly blocked from creating estates")
 
     def test_03_create_ghost_estate_scenario(self):
@@ -107,9 +101,7 @@ class TestGhostEstateAutoCleanup:
         )
 
         if register_resp.status_code != 200:
-            pytest.skip(
-                f"Registration failed: {register_resp.status_code} - {register_resp.text}"
-            )
+            pytest.skip(f"Registration failed: {register_resp.status_code} - {register_resp.text}")
 
         register_resp.json()
         print(f"PASS: User registered: {self.test_email}")
@@ -150,9 +142,7 @@ class TestGhostEstateAutoCleanup:
         )
 
         if create_resp1.status_code != 200:
-            print(
-                f"First estate creation response: {create_resp1.status_code} - {create_resp1.text}"
-            )
+            print(f"First estate creation response: {create_resp1.status_code} - {create_resp1.text}")
             # This is expected if they already have an estate
         else:
             self.created_estate_id = create_resp1.json().get("estate_id")
@@ -167,9 +157,7 @@ class TestGhostEstateAutoCleanup:
         # Should succeed by cleaning up the ghost estate
         if create_resp2.status_code == 200:
             new_estate = create_resp2.json()
-            print(
-                f"PASS: Ghost estate auto-cleaned, new estate created: {new_estate.get('estate_id')}"
-            )
+            print(f"PASS: Ghost estate auto-cleaned, new estate created: {new_estate.get('estate_id')}")
             assert "estate_id" in new_estate
             assert new_estate.get("success")
         elif create_resp2.status_code == 400:
@@ -178,9 +166,7 @@ class TestGhostEstateAutoCleanup:
             print(f"INFO: Estate creation blocked (may have real estate): {detail}")
             # This is acceptable if the first estate wasn't actually a ghost
         else:
-            pytest.fail(
-                f"Unexpected response: {create_resp2.status_code} - {create_resp2.text}"
-            )
+            pytest.fail(f"Unexpected response: {create_resp2.status_code} - {create_resp2.text}")
 
     def test_04_verify_is_also_benefactor_flag_after_create(self):
         """Test that is_also_benefactor is set to true after estate creation"""
@@ -227,9 +213,7 @@ class TestGhostEstateAutoCleanup:
         )
 
         if create_resp.status_code != 200:
-            pytest.skip(
-                f"Estate creation failed: {create_resp.status_code} - {create_resp.text}"
-            )
+            pytest.skip(f"Estate creation failed: {create_resp.status_code} - {create_resp.text}")
 
         # Verify is_also_benefactor via /api/auth/me
         me_resp = user_session.get(f"{BASE_URL}/api/auth/me")
@@ -240,9 +224,7 @@ class TestGhostEstateAutoCleanup:
             f"Expected is_also_benefactor=True, got {user_data.get('is_also_benefactor')}"
         )
 
-        print(
-            "PASS: is_also_benefactor flag correctly set to True after estate creation"
-        )
+        print("PASS: is_also_benefactor flag correctly set to True after estate creation")
 
     def test_05_blocking_user_with_real_estate(self):
         """Test that users with populated estates are blocked from creating new ones"""
@@ -300,9 +282,7 @@ class TestGhostEstateAutoCleanup:
         )
 
         if create_resp1.status_code != 200:
-            pytest.skip(
-                f"First estate creation failed: {create_resp1.status_code} - {create_resp1.text}"
-            )
+            pytest.skip(f"First estate creation failed: {create_resp1.status_code} - {create_resp1.text}")
 
         estate_id = create_resp1.json().get("estate_id")
         print(f"INFO: First estate created with beneficiary: {estate_id}")
@@ -318,9 +298,7 @@ class TestGhostEstateAutoCleanup:
         )
 
         detail = create_resp2.json().get("detail", "")
-        assert "already have an estate" in detail.lower(), (
-            f"Expected 'already have an estate' message, got: {detail}"
-        )
+        assert "already have an estate" in detail.lower(), f"Expected 'already have an estate' message, got: {detail}"
 
         print("PASS: User with real estate correctly blocked from creating another")
 
@@ -440,9 +418,7 @@ class TestAuthMeAfterEstateCreation:
         )
 
         if create_resp.status_code != 200:
-            pytest.skip(
-                f"Estate creation failed: {create_resp.status_code} - {create_resp.text}"
-            )
+            pytest.skip(f"Estate creation failed: {create_resp.status_code} - {create_resp.text}")
 
         # Check state after creation
         me_resp2 = self.session.get(f"{BASE_URL}/api/auth/me")
@@ -457,13 +433,9 @@ class TestAuthMeAfterEstateCreation:
             f"is_also_benefactor should be True after estate creation, got {user_after.get('is_also_benefactor')}"
         )
 
-        print(
-            "PASS: /api/auth/me correctly returns is_also_benefactor=True after estate creation"
-        )
+        print("PASS: /api/auth/me correctly returns is_also_benefactor=True after estate creation")
         print(f"  role: {user_after.get('role')} (unchanged)")
-        print(
-            f"  is_also_benefactor: {user_after.get('is_also_benefactor')} (set to True)"
-        )
+        print(f"  is_also_benefactor: {user_after.get('is_also_benefactor')} (set to True)")
 
 
 if __name__ == "__main__":

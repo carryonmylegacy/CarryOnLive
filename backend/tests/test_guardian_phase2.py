@@ -11,9 +11,7 @@ import requests
 import os
 import time
 
-BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com"
-).rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com").rstrip("/")
 
 
 class TestGuardianPhase2:
@@ -57,9 +55,7 @@ class TestGuardianPhase2:
         )
 
         assert response.status_code == 200, f"Export checklist failed: {response.text}"
-        assert response.headers.get("Content-Type") == "application/pdf", (
-            "Wrong content type"
-        )
+        assert response.headers.get("Content-Type") == "application/pdf", "Wrong content type"
         assert len(response.content) > 1000, "PDF too small - likely empty"
 
         # Check PDF magic bytes
@@ -68,13 +64,9 @@ class TestGuardianPhase2:
 
     def test_export_checklist_pdf_requires_auth(self):
         """POST /api/guardian/export-checklist should require authentication"""
-        response = requests.post(
-            f"{BASE_URL}/api/guardian/export-checklist", timeout=30
-        )
+        response = requests.post(f"{BASE_URL}/api/guardian/export-checklist", timeout=30)
 
-        assert response.status_code in [401, 403], (
-            f"Expected 401/403, got {response.status_code}"
-        )
+        assert response.status_code in [401, 403], f"Expected 401/403, got {response.status_code}"
         print("✅ Export checklist properly requires authentication")
 
     # ─── AI Chat with Legal Disclaimer ───
@@ -99,10 +91,9 @@ class TestGuardianPhase2:
         assert "---" in ai_response, "Separator '---' not found in response"
         assert "legal advice" in ai_response.lower(), "Legal advice reference not found"
         assert "attorney" in ai_response.lower(), "Attorney reference not found"
-        assert (
-            "informational" in ai_response.lower()
-            or "educational" in ai_response.lower()
-        ), "Informational/educational purpose not mentioned"
+        assert "informational" in ai_response.lower() or "educational" in ai_response.lower(), (
+            "Informational/educational purpose not mentioned"
+        )
 
         print("✅ Legal disclaimer found in AI response")
 
@@ -166,9 +157,7 @@ class TestGuardianPhase2:
             timeout=120,
         )
 
-        assert response.status_code == 200, (
-            f"Generate checklist failed: {response.text}"
-        )
+        assert response.status_code == 200, f"Generate checklist failed: {response.text}"
 
         data = response.json()
         ai_response = data.get("response", "")
@@ -202,9 +191,7 @@ class TestGuardianPhase2:
 
         # Should return readiness data
         if action_result:
-            assert action_result.get("action") == "readiness_analyzed", (
-                "Wrong action result"
-            )
+            assert action_result.get("action") == "readiness_analyzed", "Wrong action result"
             readiness = action_result.get("readiness")
             if readiness:
                 assert "documents" in readiness, "Documents readiness missing"
@@ -216,9 +203,7 @@ class TestGuardianPhase2:
     # ─── Chat Sessions ───
     def test_get_chat_sessions(self, auth_headers):
         """GET /api/chat/sessions should return user's chat sessions"""
-        response = requests.get(
-            f"{BASE_URL}/api/chat/sessions", headers=auth_headers, timeout=30
-        )
+        response = requests.get(f"{BASE_URL}/api/chat/sessions", headers=auth_headers, timeout=30)
 
         assert response.status_code == 200, f"Get sessions failed: {response.text}"
 
@@ -237,9 +222,7 @@ class TestGuardianPhase2:
     def test_resume_chat_session(self, auth_headers):
         """GET /api/chat/history/{session_id} should return chat history"""
         # First get sessions
-        sessions_response = requests.get(
-            f"{BASE_URL}/api/chat/sessions", headers=auth_headers, timeout=30
-        )
+        sessions_response = requests.get(f"{BASE_URL}/api/chat/sessions", headers=auth_headers, timeout=30)
 
         if sessions_response.status_code == 200 and sessions_response.json():
             session_id = sessions_response.json()[0]["session_id"]
@@ -251,9 +234,7 @@ class TestGuardianPhase2:
                 timeout=30,
             )
 
-            assert history_response.status_code == 200, (
-                f"Get history failed: {history_response.text}"
-            )
+            assert history_response.status_code == 200, f"Get history failed: {history_response.text}"
 
             history = history_response.json()
             assert isinstance(history, list), "History should be a list"

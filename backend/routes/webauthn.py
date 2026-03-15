@@ -68,9 +68,7 @@ async def webauthn_register_options(current_user: dict = Depends(get_current_use
 
     exclude_credentials = []
     for cred in existing:
-        exclude_credentials.append(
-            {"id": base64url_to_bytes(cred["credential_id"]), "type": "public-key"}
-        )
+        exclude_credentials.append({"id": base64url_to_bytes(cred["credential_id"]), "type": "public-key"})
 
     options = webauthn.generate_registration_options(
         rp_id=RP_ID,
@@ -199,9 +197,7 @@ async def webauthn_login_complete(data: LoginCompleteRequest):
 
     # Find the credential in our DB
     cred_id_b64 = data.credential.get("id", "")
-    stored_cred = await db.webauthn_credentials.find_one(
-        {"credential_id": cred_id_b64}, {"_id": 0}
-    )
+    stored_cred = await db.webauthn_credentials.find_one({"credential_id": cred_id_b64}, {"_id": 0})
     if not stored_cred:
         raise HTTPException(status_code=401, detail="Unknown credential")
 
@@ -235,9 +231,7 @@ async def webauthn_login_complete(data: LoginCompleteRequest):
     await db.webauthn_challenges.delete_one({"_id": challenge_doc.get("_id")})
 
     # Get user and create token
-    user = await db.users.find_one(
-        {"id": stored_cred["user_id"]}, {"_id": 0, "password": 0}
-    )
+    user = await db.users.find_one({"id": stored_cred["user_id"]}, {"_id": 0, "password": 0})
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
 

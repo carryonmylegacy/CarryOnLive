@@ -17,9 +17,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com"
-).rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com").rstrip("/")
 
 # Test credentials
 FOUNDER_EMAIL = "info@carryon.us"
@@ -42,9 +40,7 @@ class TestAuthEmailNormalization:
             json={"email": BENEFACTOR_EMAIL.lower(), "password": BENEFACTOR_PASSWORD},
         )
         # Should return 200 with OTP required or token (if OTP disabled)
-        assert response.status_code in [200, 401], (
-            f"Expected 200/401, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code in [200, 401], f"Expected 200/401, got {response.status_code}: {response.text}"
         if response.status_code == 200:
             data = response.json()
             # Either OTP required or token returned
@@ -57,9 +53,7 @@ class TestAuthEmailNormalization:
             json={"email": BENEFACTOR_EMAIL.upper(), "password": BENEFACTOR_PASSWORD},
         )
         # Should work same as lowercase due to normalization
-        assert response.status_code in [200, 401], (
-            f"Expected 200/401, got {response.status_code}"
-        )
+        assert response.status_code in [200, 401], f"Expected 200/401, got {response.status_code}"
 
     def test_login_mixed_case_email(self):
         """Login with mixed case email should be normalized"""
@@ -68,9 +62,7 @@ class TestAuthEmailNormalization:
             f"{BASE_URL}/api/auth/login",
             json={"email": mixed_email, "password": BENEFACTOR_PASSWORD},
         )
-        assert response.status_code in [200, 401], (
-            f"Expected 200/401, got {response.status_code}"
-        )
+        assert response.status_code in [200, 401], f"Expected 200/401, got {response.status_code}"
 
     def test_operator_login_non_email_username(self):
         """Operator login with non-email username works"""
@@ -78,9 +70,7 @@ class TestAuthEmailNormalization:
             f"{BASE_URL}/api/auth/login",
             json={"email": MANAGER_USERNAME, "password": MANAGER_PASSWORD},
         )
-        assert response.status_code in [200, 429], (
-            f"Expected 200/429, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code in [200, 429], f"Expected 200/429, got {response.status_code}: {response.text}"
 
 
 class TestAuthPasswordFlows:
@@ -112,9 +102,7 @@ class TestAuthPasswordFlows:
             headers=headers,
         )
         # Should fail with 401 for incorrect current password
-        assert response.status_code == 401, (
-            f"Expected 401, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 401, f"Expected 401, got {response.status_code}: {response.text}"
         assert (
             "incorrect" in response.json().get("detail", "").lower()
             or "password" in response.json().get("detail", "").lower()
@@ -131,9 +119,7 @@ class TestAuthPasswordFlows:
         msg1 = response1.json().get("message", "")
 
         # Test with existing email
-        response2 = requests.post(
-            f"{BASE_URL}/api/auth/forgot-password", json={"email": FOUNDER_EMAIL}
-        )
+        response2 = requests.post(f"{BASE_URL}/api/auth/forgot-password", json={"email": FOUNDER_EMAIL})
         assert response2.status_code == 200
         msg2 = response2.json().get("message", "")
 
@@ -176,9 +162,7 @@ class TestSubscriptionStatus:
         if not benefactor_session:
             pytest.skip("Cannot authenticate benefactor")
 
-        response = requests.get(
-            f"{BASE_URL}/api/subscriptions/status", headers=benefactor_session
-        )
+        response = requests.get(f"{BASE_URL}/api/subscriptions/status", headers=benefactor_session)
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
 
         data = response.json()
@@ -218,9 +202,7 @@ class TestBeneficiaryFeatures:
             pytest.skip("No estates available")
 
         estate_id = estates[0]["id"]
-        response = requests.get(
-            f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=founder_session
-        )
+        response = requests.get(f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=founder_session)
         assert response.status_code == 200
 
         # Check that beneficiaries use date_of_birth (not dob)
@@ -228,9 +210,7 @@ class TestBeneficiaryFeatures:
         for ben in beneficiaries:
             # Should not have 'dob', should have 'date_of_birth' if date exists
             if "dob" in ben and "date_of_birth" not in ben:
-                pytest.fail(
-                    "Beneficiary has 'dob' but not 'date_of_birth' - normalization not working"
-                )
+                pytest.fail("Beneficiary has 'dob' but not 'date_of_birth' - normalization not working")
 
 
 class TestDTSFeatures:
@@ -255,13 +235,9 @@ class TestDTSFeatures:
             pytest.skip("Cannot authenticate")
 
         # Try to delete without password
-        response = requests.delete(
-            f"{BASE_URL}/api/dts/tasks/nonexistent-id", headers=founder_session
-        )
+        response = requests.delete(f"{BASE_URL}/api/dts/tasks/nonexistent-id", headers=founder_session)
         # Should require password (400) or task not found (404)
-        assert response.status_code in [400, 404], (
-            f"Expected 400/404, got {response.status_code}"
-        )
+        assert response.status_code in [400, 404], f"Expected 400/404, got {response.status_code}"
 
 
 class TestTVTFeatures:
@@ -292,9 +268,7 @@ class TestTVTFeatures:
             headers=founder_session,
         )
         # Should require password (400) or not found (404)
-        assert response.status_code in [400, 404], (
-            f"Expected 400/404, got {response.status_code}"
-        )
+        assert response.status_code in [400, 404], f"Expected 400/404, got {response.status_code}"
 
     def test_tvt_certificate_delete_with_wrong_password(self, founder_session):
         """TVT certificate delete fails with wrong password"""
@@ -307,9 +281,7 @@ class TestTVTFeatures:
             headers=founder_session,
         )
         # Should fail with 401 (wrong password) or 404 (not found)
-        assert response.status_code in [401, 404], (
-            f"Expected 401/404, got {response.status_code}"
-        )
+        assert response.status_code in [401, 404], f"Expected 401/404, got {response.status_code}"
 
 
 class TestOperatorSystem:
@@ -333,9 +305,7 @@ class TestOperatorSystem:
         if not founder_session:
             pytest.skip("Cannot authenticate founder")
 
-        response = requests.get(
-            f"{BASE_URL}/api/founder/operators", headers=founder_session
-        )
+        response = requests.get(f"{BASE_URL}/api/founder/operators", headers=founder_session)
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
 
         operators = response.json()
@@ -349,9 +319,7 @@ class TestOperatorSystem:
             pytest.skip("Cannot authenticate founder")
 
         # Get operators first
-        ops_resp = requests.get(
-            f"{BASE_URL}/api/founder/operators", headers=founder_session
-        )
+        ops_resp = requests.get(f"{BASE_URL}/api/founder/operators", headers=founder_session)
         if ops_resp.status_code != 200:
             pytest.skip("Cannot get operators")
 
@@ -404,9 +372,7 @@ class TestAdminFeatures:
         if not founder_session:
             pytest.skip("Cannot authenticate")
 
-        response = requests.get(
-            f"{BASE_URL}/api/admin/trial-users", headers=founder_session
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/trial-users", headers=founder_session)
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
 
         trial_users = response.json()
@@ -435,9 +401,7 @@ class TestNotificationPriorities:
             assert "p2_alert" in content, "P2 alert method should exist"
             assert "p3_alert" in content, "P3 alert method should exist"
             assert "p4_alert" in content, "P4 alert method should exist"
-            assert "security_alert" in content, (
-                "Security alert (P1) method should exist"
-            )
+            assert "security_alert" in content, "Security alert (P1) method should exist"
 
             # Verify P2 is high priority, P3/P4 are normal
             assert 'priority="high"' in content or '"high"' in content
@@ -466,9 +430,7 @@ class TestSettingsFeatures:
         if not founder_session:
             pytest.skip("Cannot authenticate")
 
-        response = requests.get(
-            f"{BASE_URL}/api/compliance/data-export", headers=founder_session
-        )
+        response = requests.get(f"{BASE_URL}/api/compliance/data-export", headers=founder_session)
         # Should return 200 with user data
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
 
@@ -505,9 +467,7 @@ class TestMilestoneDelivery:
             headers=founder_session,
         )
         # Should fail with 400 (invalid action) or 404 (not found)
-        assert response.status_code in [400, 404], (
-            f"Expected 400/404, got {response.status_code}"
-        )
+        assert response.status_code in [400, 404], f"Expected 400/404, got {response.status_code}"
 
 
 class TestSealedAccountFlow:
@@ -536,9 +496,7 @@ class TestIsAlsoBeneficiaryFlag:
         with open(estates_path, "r") as f:
             content = f.read()
 
-        assert "is_also_beneficiary" in content, (
-            "is_also_beneficiary flag should be set in become-benefactor"
-        )
+        assert "is_also_beneficiary" in content, "is_also_beneficiary flag should be set in become-benefactor"
         assert "become-benefactor" in content or "become_benefactor" in content
 
 

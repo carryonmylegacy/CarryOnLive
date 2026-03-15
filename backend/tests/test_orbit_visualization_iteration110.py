@@ -30,9 +30,7 @@ class TestRingHierarchyMapping:
         # Great-grand checks FIRST
         if "great-grand" in r or "great grand" in r:
             if "son" in r or "daughter" in r or "child" in r:
-                return (
-                    3  # Great-Grandson/Granddaughter → benefactor is great-grandparent
-                )
+                return 3  # Great-Grandson/Granddaughter → benefactor is great-grandparent
             return 1  # Great-Grandmother/Grandfather → benefactor is great-grandchild
 
         # Ring 0: Spouse & Children

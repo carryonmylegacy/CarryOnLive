@@ -42,9 +42,7 @@ class TestAdminUsersEndpoint:
     def test_admin_users_returns_200(self, auth_headers):
         """Test that admin users endpoint returns 200"""
         response = requests.get(f"{BASE_URL}/api/admin/users", headers=auth_headers)
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
         assert isinstance(data, list), "Response should be a list of users"
         print(f"✓ Admin users endpoint returned {len(data)} users")
@@ -71,20 +69,12 @@ class TestAdminUsersEndpoint:
 
         # All benefactors should have linked_beneficiaries field
         for b in benefactors:
-            assert "linked_beneficiaries" in b, (
-                f"Benefactor {b.get('email')} missing linked_beneficiaries"
-            )
-            assert isinstance(b["linked_beneficiaries"], list), (
-                "linked_beneficiaries should be a list"
-            )
+            assert "linked_beneficiaries" in b, f"Benefactor {b.get('email')} missing linked_beneficiaries"
+            assert isinstance(b["linked_beneficiaries"], list), "linked_beneficiaries should be a list"
 
         # Count benefactors with at least one beneficiary
-        with_bens = sum(
-            1 for b in benefactors if len(b.get("linked_beneficiaries", [])) > 0
-        )
-        print(
-            f"✓ {len(benefactors)} benefactors found, {with_bens} have linked beneficiaries"
-        )
+        with_bens = sum(1 for b in benefactors if len(b.get("linked_beneficiaries", [])) > 0)
+        print(f"✓ {len(benefactors)} benefactors found, {with_bens} have linked beneficiaries")
 
     def test_linked_beneficiaries_structure(self, auth_headers):
         """Test that linked_beneficiaries have expected fields"""
@@ -93,9 +83,7 @@ class TestAdminUsersEndpoint:
         data = response.json()
 
         benefactors = [u for u in data if u.get("role") == "benefactor"]
-        benefactor_with_bens = next(
-            (b for b in benefactors if len(b.get("linked_beneficiaries", [])) > 0), None
-        )
+        benefactor_with_bens = next((b for b in benefactors if len(b.get("linked_beneficiaries", [])) > 0), None)
 
         if not benefactor_with_bens:
             pytest.skip("No benefactors with beneficiaries to test structure")
@@ -114,9 +102,7 @@ class TestAdminStatsEndpoint:
     def test_admin_stats_returns_200(self, auth_headers):
         """Test that admin stats endpoint returns 200"""
         response = requests.get(f"{BASE_URL}/api/admin/stats", headers=auth_headers)
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
         assert isinstance(data, dict), "Response should be a dict"
         print("✓ Admin stats endpoint returned successfully")
@@ -143,26 +129,16 @@ class TestAdminStatsEndpoint:
         data = response.json()
 
         # Viral metrics
-        assert "avg_beneficiaries_per_benefactor" in data, (
-            "Stats should have avg_beneficiaries_per_benefactor"
-        )
-        assert "beneficiaries_converted" in data, (
-            "Stats should have beneficiaries_converted"
-        )
+        assert "avg_beneficiaries_per_benefactor" in data, "Stats should have avg_beneficiaries_per_benefactor"
+        assert "beneficiaries_converted" in data, "Stats should have beneficiaries_converted"
 
         avg_bens = data["avg_beneficiaries_per_benefactor"]
         converted = data["beneficiaries_converted"]
 
-        assert isinstance(avg_bens, (int, float)), (
-            "avg_beneficiaries_per_benefactor should be numeric"
-        )
-        assert isinstance(converted, int), (
-            "beneficiaries_converted should be an integer"
-        )
+        assert isinstance(avg_bens, (int, float)), "avg_beneficiaries_per_benefactor should be numeric"
+        assert isinstance(converted, int), "beneficiaries_converted should be an integer"
 
-        print(
-            f"✓ Viral metrics: avg_bens_per_benefactor={avg_bens}, beneficiaries_converted={converted}"
-        )
+        print(f"✓ Viral metrics: avg_bens_per_benefactor={avg_bens}, beneficiaries_converted={converted}")
 
     def test_stats_contains_estate_info(self, auth_headers):
         """Test that stats contains estate breakdown"""
@@ -185,21 +161,15 @@ class TestAdminRevenueMetrics:
 
     def test_revenue_metrics_returns_200(self, auth_headers):
         """Test that revenue metrics endpoint returns 200"""
-        response = requests.get(
-            f"{BASE_URL}/api/admin/revenue-metrics", headers=auth_headers
-        )
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/revenue-metrics", headers=auth_headers)
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
         assert isinstance(data, dict), "Response should be a dict"
         print("✓ Revenue metrics endpoint returned successfully")
 
     def test_revenue_metrics_structure(self, auth_headers):
         """Test that revenue metrics has expected fields"""
-        response = requests.get(
-            f"{BASE_URL}/api/admin/revenue-metrics", headers=auth_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/revenue-metrics", headers=auth_headers)
         assert response.status_code == 200
         data = response.json()
 
@@ -219,9 +189,7 @@ class TestAdminRevenueMetrics:
         for field in expected_fields:
             assert field in data, f"Revenue metrics missing field: {field}"
 
-        print(
-            f"✓ Revenue metrics: MRR=${data['mrr']}, ARR=${data['arr']}, paying={data['paying_subscribers']}"
-        )
+        print(f"✓ Revenue metrics: MRR=${data['mrr']}, ARR=${data['arr']}, paying={data['paying_subscribers']}")
 
 
 class TestAdminPlatformOverview:
@@ -229,16 +197,10 @@ class TestAdminPlatformOverview:
 
     def test_platform_settings_accessible(self, auth_headers):
         """Test that platform settings endpoint is accessible"""
-        response = requests.get(
-            f"{BASE_URL}/api/admin/platform-settings", headers=auth_headers
-        )
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/platform-settings", headers=auth_headers)
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
-        assert "otp_disabled" in data, (
-            "Platform settings should have otp_disabled field"
-        )
+        assert "otp_disabled" in data, "Platform settings should have otp_disabled field"
         print(f"✓ Platform settings: otp_disabled={data.get('otp_disabled')}")
 
 
@@ -250,16 +212,12 @@ class TestNewAdultSignupAPI:
         # Just check the endpoint responds (don't actually register)
         response = requests.post(f"{BASE_URL}/api/auth/register", json={})
         # Should get validation error, not 404
-        assert response.status_code in [400, 422], (
-            f"Register endpoint should exist: {response.status_code}"
-        )
+        assert response.status_code in [400, 422], f"Register endpoint should exist: {response.status_code}"
         print("✓ Register endpoint exists and returns validation errors")
 
     def test_subscription_plans_include_new_adult(self, auth_headers):
         """Test that subscription plans include new_adult tier"""
-        response = requests.get(
-            f"{BASE_URL}/api/subscriptions/plans", headers=auth_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/subscriptions/plans", headers=auth_headers)
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         data = response.json()
 

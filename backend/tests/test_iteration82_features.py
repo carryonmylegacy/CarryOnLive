@@ -27,9 +27,7 @@ class TestAuthHelpers:
     @staticmethod
     def login(email, password):
         """Login and return token"""
-        response = requests.post(
-            f"{BASE_URL}/api/auth/login", json={"email": email, "password": password}
-        )
+        response = requests.post(f"{BASE_URL}/api/auth/login", json={"email": email, "password": password})
         if response.status_code == 200:
             return response.json().get("access_token")
         return None
@@ -53,19 +51,13 @@ class TestOnboardingAlreadyGraduated:
             headers=TestAuthHelpers.get_auth_headers(token),
         )
 
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
 
         # Check that already_graduated field is returned
-        assert "already_graduated" in data, (
-            f"Response missing 'already_graduated' field: {data}"
-        )
+        assert "already_graduated" in data, f"Response missing 'already_graduated' field: {data}"
         assert "dismissed" in data, f"Response missing 'dismissed' field: {data}"
-        assert "celebration_shown" in data, (
-            f"Response missing 'celebration_shown' field: {data}"
-        )
+        assert "celebration_shown" in data, f"Response missing 'celebration_shown' field: {data}"
         assert "steps" in data, f"Response missing 'steps' field: {data}"
 
         print(
@@ -92,9 +84,7 @@ class TestOnboardingAlreadyGraduated:
             )
             print("PASS: dismissed stays True when already_graduated is True")
         else:
-            print(
-                f"INFO: User has not graduated yet (already_graduated={data.get('already_graduated')})"
-            )
+            print(f"INFO: User has not graduated yet (already_graduated={data.get('already_graduated')})")
 
 
 class TestBeneficiaryReorder:
@@ -106,12 +96,8 @@ class TestBeneficiaryReorder:
         assert token, "Failed to login as benefactor"
 
         # Get estates to find estate_id
-        estates_resp = requests.get(
-            f"{BASE_URL}/api/estates", headers=TestAuthHelpers.get_auth_headers(token)
-        )
-        assert estates_resp.status_code == 200, (
-            f"Failed to get estates: {estates_resp.text}"
-        )
+        estates_resp = requests.get(f"{BASE_URL}/api/estates", headers=TestAuthHelpers.get_auth_headers(token))
+        assert estates_resp.status_code == 200, f"Failed to get estates: {estates_resp.text}"
         estates = estates_resp.json()
         assert len(estates) > 0, "No estates found for benefactor"
 
@@ -123,22 +109,16 @@ class TestBeneficiaryReorder:
             headers=TestAuthHelpers.get_auth_headers(token),
         )
 
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         beneficiaries = response.json()
 
         if len(beneficiaries) > 1:
             # Check that beneficiaries are sorted by sort_order
             sort_orders = [b.get("sort_order", 999) for b in beneficiaries]
-            assert sort_orders == sorted(sort_orders), (
-                f"Beneficiaries not sorted by sort_order: {sort_orders}"
-            )
+            assert sort_orders == sorted(sort_orders), f"Beneficiaries not sorted by sort_order: {sort_orders}"
             print(f"PASS: Beneficiaries sorted by sort_order: {sort_orders}")
         else:
-            print(
-                f"INFO: Only {len(beneficiaries)} beneficiary found, skipping sort verification"
-            )
+            print(f"INFO: Only {len(beneficiaries)} beneficiary found, skipping sort verification")
 
     def test_reorder_beneficiaries_persists_order(self):
         """Test PUT /api/beneficiaries/reorder/{estate_id} persists sort order"""
@@ -146,9 +126,7 @@ class TestBeneficiaryReorder:
         assert token, "Failed to login as benefactor"
 
         # Get estates
-        estates_resp = requests.get(
-            f"{BASE_URL}/api/estates", headers=TestAuthHelpers.get_auth_headers(token)
-        )
+        estates_resp = requests.get(f"{BASE_URL}/api/estates", headers=TestAuthHelpers.get_auth_headers(token))
         assert estates_resp.status_code == 200
         estates = estates_resp.json()
         assert len(estates) > 0
@@ -179,12 +157,8 @@ class TestBeneficiaryReorder:
             headers=TestAuthHelpers.get_auth_headers(token),
         )
 
-        assert reorder_resp.status_code == 200, (
-            f"Expected 200, got {reorder_resp.status_code}: {reorder_resp.text}"
-        )
-        assert reorder_resp.json().get("success") is True, (
-            f"Expected success=True: {reorder_resp.json()}"
-        )
+        assert reorder_resp.status_code == 200, f"Expected 200, got {reorder_resp.status_code}: {reorder_resp.text}"
+        assert reorder_resp.json().get("success") is True, f"Expected success=True: {reorder_resp.json()}"
 
         # Verify the order was persisted
         verify_resp = requests.get(
@@ -195,9 +169,7 @@ class TestBeneficiaryReorder:
         new_beneficiaries = verify_resp.json()
         new_ids = [b["id"] for b in new_beneficiaries]
 
-        assert new_ids == reversed_ids, (
-            f"Order not persisted. Expected {reversed_ids}, got {new_ids}"
-        )
+        assert new_ids == reversed_ids, f"Order not persisted. Expected {reversed_ids}, got {new_ids}"
         print(f"PASS: Reorder persisted correctly. New order: {new_ids}")
 
         # Restore original order
@@ -223,9 +195,7 @@ class TestAdminDeleteUserCleanup:
             headers=TestAuthHelpers.get_auth_headers(token),
         )
 
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         users = response.json()
 
         # Find benefactors
@@ -242,9 +212,7 @@ class TestAdminDeleteUserCleanup:
                 assert isinstance(b["linked_beneficiaries"], list), (
                     f"linked_beneficiaries should be a list: {type(b['linked_beneficiaries'])}"
                 )
-                print(
-                    f"Benefactor {b.get('name')} has {len(b['linked_beneficiaries'])} linked beneficiaries"
-                )
+                print(f"Benefactor {b.get('name')} has {len(b['linked_beneficiaries'])} linked beneficiaries")
 
     def test_admin_delete_user_requires_password(self):
         """Test DELETE /api/admin/users/{user_id} requires admin password"""
@@ -307,9 +275,7 @@ class TestAccountsCreateEstate:
         assert "estate" in detail.lower() or "already" in detail.lower(), (
             f"Expected error about existing estate: {detail}"
         )
-        print(
-            f"PASS: Create estate returns appropriate error for existing user: {detail}"
-        )
+        print(f"PASS: Create estate returns appropriate error for existing user: {detail}")
 
 
 if __name__ == "__main__":

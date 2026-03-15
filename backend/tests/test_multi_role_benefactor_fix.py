@@ -62,9 +62,7 @@ class TestMultiRoleBenefactorFix:
         if not self.admin_token:
             pytest.skip("No admin token available")
 
-        response = requests.get(
-            f"{BASE_URL}/api/admin/users", headers=self.get_admin_headers()
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/users", headers=self.get_admin_headers())
         assert response.status_code == 200, f"Admin users failed: {response.text}"
 
         users = response.json()
@@ -77,9 +75,7 @@ class TestMultiRoleBenefactorFix:
         if not self.admin_token:
             pytest.skip("No admin token available")
 
-        response = requests.get(
-            f"{BASE_URL}/api/admin/users", headers=self.get_admin_headers()
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/users", headers=self.get_admin_headers())
         assert response.status_code == 200
 
         users = response.json()
@@ -93,9 +89,7 @@ class TestMultiRoleBenefactorFix:
             assert "linked_beneficiaries" in benefactor, (
                 f"Benefactor {benefactor.get('email')} missing linked_beneficiaries"
             )
-            assert isinstance(benefactor["linked_beneficiaries"], list), (
-                "linked_beneficiaries should be a list"
-            )
+            assert isinstance(benefactor["linked_beneficiaries"], list), "linked_beneficiaries should be a list"
 
         print(f"Found {len(benefactors)} benefactors with linked_beneficiaries")
 
@@ -104,23 +98,15 @@ class TestMultiRoleBenefactorFix:
         if not self.admin_token:
             pytest.skip("No admin token available")
 
-        response = requests.get(
-            f"{BASE_URL}/api/admin/users", headers=self.get_admin_headers()
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/users", headers=self.get_admin_headers())
         assert response.status_code == 200
 
         users = response.json()
 
         # Find multi-role users: role=beneficiary AND is_also_benefactor=True
-        multi_role_users = [
-            u
-            for u in users
-            if u.get("role") == "beneficiary" and u.get("is_also_benefactor")
-        ]
+        multi_role_users = [u for u in users if u.get("role") == "beneficiary" and u.get("is_also_benefactor")]
 
-        print(
-            f"Found {len(multi_role_users)} multi-role users (beneficiary + is_also_benefactor)"
-        )
+        print(f"Found {len(multi_role_users)} multi-role users (beneficiary + is_also_benefactor)")
 
         # If any exist, they should have linked_beneficiaries
         for user in multi_role_users:
@@ -136,16 +122,12 @@ class TestMultiRoleBenefactorFix:
         if not self.admin_token:
             pytest.skip("No admin token available")
 
-        response = requests.get(
-            f"{BASE_URL}/api/admin/users", headers=self.get_admin_headers()
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/users", headers=self.get_admin_headers())
         assert response.status_code == 200
 
         users = response.json()
         for user in users[:10]:  # Check first 10 users
-            assert "subscription" in user, (
-                f"User {user.get('email')} missing subscription field"
-            )
+            assert "subscription" in user, f"User {user.get('email')} missing subscription field"
 
         print("All sampled users have subscription field")
 
@@ -156,9 +138,7 @@ class TestMultiRoleBenefactorFix:
         if not self.admin_token:
             pytest.skip("No admin token available")
 
-        response = requests.get(
-            f"{BASE_URL}/api/admin/estate-health", headers=self.get_admin_headers()
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/estate-health", headers=self.get_admin_headers())
         assert response.status_code == 200, f"Estate health failed: {response.text}"
 
         data = response.json()
@@ -172,33 +152,21 @@ class TestMultiRoleBenefactorFix:
             pytest.skip("No admin token available")
 
         # First get all users to find multi-role users
-        users_response = requests.get(
-            f"{BASE_URL}/api/admin/users", headers=self.get_admin_headers()
-        )
+        users_response = requests.get(f"{BASE_URL}/api/admin/users", headers=self.get_admin_headers())
         users = users_response.json()
-        multi_role_user_ids = {
-            u["id"]
-            for u in users
-            if u.get("role") == "beneficiary" and u.get("is_also_benefactor")
-        }
+        multi_role_user_ids = {u["id"] for u in users if u.get("role") == "beneficiary" and u.get("is_also_benefactor")}
 
         # Get estate health
-        response = requests.get(
-            f"{BASE_URL}/api/admin/estate-health", headers=self.get_admin_headers()
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/estate-health", headers=self.get_admin_headers())
         assert response.status_code == 200
 
         data = response.json()
         estates = data.get("estates", [])
 
         # Check if any estates are owned by multi-role users
-        multi_role_estates = [
-            e for e in estates if e.get("owner", {}).get("id") in multi_role_user_ids
-        ]
+        multi_role_estates = [e for e in estates if e.get("owner", {}).get("id") in multi_role_user_ids]
 
-        print(
-            f"Found {len(multi_role_estates)} estates owned by multi-role users in estate-health"
-        )
+        print(f"Found {len(multi_role_estates)} estates owned by multi-role users in estate-health")
 
         # If multi-role users have estates, they should appear in estate-health
         if multi_role_user_ids:
@@ -210,9 +178,7 @@ class TestMultiRoleBenefactorFix:
         if not self.admin_token:
             pytest.skip("No admin token available")
 
-        response = requests.get(
-            f"{BASE_URL}/api/admin/estate-health", headers=self.get_admin_headers()
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/estate-health", headers=self.get_admin_headers())
         assert response.status_code == 200
 
         data = response.json()
@@ -259,9 +225,7 @@ class TestMultiRoleBenefactorFix:
         )
 
         # Should fail due to missing password
-        assert response.status_code in [400, 422], (
-            f"Expected 400/422 for missing password, got {response.status_code}"
-        )
+        assert response.status_code in [400, 422], f"Expected 400/422 for missing password, got {response.status_code}"
         print("Delete estate correctly requires admin password")
 
     def test_admin_delete_estate_wrong_password(self):
@@ -275,9 +239,7 @@ class TestMultiRoleBenefactorFix:
         )
 
         # Should be 401 (unauthorized) due to wrong password
-        assert response.status_code in [401, 404], (
-            f"Expected 401 for wrong password, got {response.status_code}"
-        )
+        assert response.status_code in [401, 404], f"Expected 401 for wrong password, got {response.status_code}"
         print("Delete estate correctly rejects wrong password")
 
     # ===================== CREATE ESTATE FLOW TESTS =====================
@@ -300,10 +262,9 @@ class TestMultiRoleBenefactorFix:
 
         if response.status_code == 400:
             data = response.json()
-            assert (
-                "staff" in data.get("detail", "").lower()
-                or "cannot" in data.get("detail", "").lower()
-            ), f"Expected staff restriction message, got: {data.get('detail')}"
+            assert "staff" in data.get("detail", "").lower() or "cannot" in data.get("detail", "").lower(), (
+                f"Expected staff restriction message, got: {data.get('detail')}"
+            )
         print(f"Create-estate endpoint exists, returned: {response.status_code}")
 
     # ===================== INTEGRATION TEST: GHOST ESTATE CLEANUP =====================
@@ -313,9 +274,7 @@ class TestMultiRoleBenefactorFix:
         if not self.admin_token:
             pytest.skip("No admin token available")
 
-        response = requests.get(
-            f"{BASE_URL}/api/admin/users", headers=self.get_admin_headers()
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/users", headers=self.get_admin_headers())
         assert response.status_code == 200
 
         users = response.json()
@@ -336,9 +295,7 @@ class TestMultiRoleBenefactorFix:
         # All benefactors and multi-role users should have linked_beneficiaries
         for user in benefactors + multi_role:
             if user.get("role") == "benefactor" or user.get("is_also_benefactor"):
-                assert "linked_beneficiaries" in user, (
-                    f"User {user.get('email')} should have linked_beneficiaries"
-                )
+                assert "linked_beneficiaries" in user, f"User {user.get('email')} should have linked_beneficiaries"
 
 
 class TestHealthCheck:
@@ -347,9 +304,7 @@ class TestHealthCheck:
     def test_api_health(self):
         """Test that API is reachable"""
         response = requests.get(f"{BASE_URL}/api/health")
-        assert response.status_code == 200, (
-            f"Health check failed: {response.status_code}"
-        )
+        assert response.status_code == 200, f"Health check failed: {response.status_code}"
         print("API health check passed")
 
     def test_base_url_valid(self):

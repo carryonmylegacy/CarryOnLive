@@ -49,34 +49,22 @@ async def export_user_data(current_user: dict = Depends(get_current_user)):
         {"_id": 0, "encrypted_content": 0, "encrypted_title": 0},
     ).to_list(1000)
 
-    beneficiaries = await db.beneficiaries.find(
-        {"estate_id": {"$in": estate_ids}}, {"_id": 0}
-    ).to_list(500)
+    beneficiaries = await db.beneficiaries.find({"estate_id": {"$in": estate_ids}}, {"_id": 0}).to_list(500)
 
-    checklists = await db.checklists.find(
-        {"estate_id": {"$in": estate_ids}}, {"_id": 0}
-    ).to_list(1000)
+    checklists = await db.checklists.find({"estate_id": {"$in": estate_ids}}, {"_id": 0}).to_list(1000)
 
-    activity_logs = await db.activity_log.find(
-        {"user_id": user_id}, {"_id": 0}
-    ).to_list(5000)
+    activity_logs = await db.activity_log.find({"user_id": user_id}, {"_id": 0}).to_list(5000)
 
-    subscriptions = await db.user_subscriptions.find_one(
-        {"user_id": user_id}, {"_id": 0}
-    )
+    subscriptions = await db.user_subscriptions.find_one({"user_id": user_id}, {"_id": 0})
 
     digital_wallet = await db.digital_wallet.find(
         {"estate_id": {"$in": estate_ids}},
         {"_id": 0, "encrypted_value": 0},
     ).to_list(500)
 
-    dts_tasks = await db.dts_tasks.find(
-        {"estate_id": {"$in": estate_ids}}, {"_id": 0}
-    ).to_list(500)
+    dts_tasks = await db.dts_tasks.find({"estate_id": {"$in": estate_ids}}, {"_id": 0}).to_list(500)
 
-    consent_history = await db.consent_audit_log.find(
-        {"user_id": user_id}, {"_id": 0}
-    ).to_list(500)
+    consent_history = await db.consent_audit_log.find({"user_id": user_id}, {"_id": 0}).to_list(500)
 
     user_consent = await db.user_consent.find_one({"user_id": user_id}, {"_id": 0})
 
@@ -138,23 +126,15 @@ class DeletionRequest(BaseModel):
 
 
 @router.post("/compliance/deletion-request")
-async def request_account_deletion(
-    data: DeletionRequest, current_user: dict = Depends(get_current_user)
-):
+async def request_account_deletion(data: DeletionRequest, current_user: dict = Depends(get_current_user)):
     """GDPR Article 17: Request account and data deletion."""
     if data.confirm_email != current_user["email"]:
-        raise HTTPException(
-            status_code=400, detail="Email confirmation does not match your account"
-        )
+        raise HTTPException(status_code=400, detail="Email confirmation does not match your account")
 
     # Don't allow deletion if user has active estates with beneficiaries
-    estates = await db.estates.find(
-        {"owner_id": current_user["id"]}, {"_id": 0}
-    ).to_list(100)
+    estates = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0}).to_list(100)
     for estate in estates:
-        ben_count = await db.beneficiaries.count_documents(
-            {"estate_id": estate["id"], "status": "accepted"}
-        )
+        ben_count = await db.beneficiaries.count_documents({"estate_id": estate["id"], "status": "accepted"})
         if ben_count > 0:
             raise HTTPException(
                 status_code=400,
@@ -201,9 +181,7 @@ class ConsentUpdate(BaseModel):
 @router.get("/compliance/consent")
 async def get_consent_preferences(current_user: dict = Depends(get_current_user)):
     """Get user's current consent preferences."""
-    consent = await db.user_consent.find_one(
-        {"user_id": current_user["id"]}, {"_id": 0}
-    )
+    consent = await db.user_consent.find_one({"user_id": current_user["id"]}, {"_id": 0})
     if not consent:
         consent = {
             "user_id": current_user["id"],
@@ -224,9 +202,7 @@ async def get_consent_preferences(current_user: dict = Depends(get_current_user)
 
 
 @router.put("/compliance/consent")
-async def update_consent_preferences(
-    data: ConsentUpdate, current_user: dict = Depends(get_current_user)
-):
+async def update_consent_preferences(data: ConsentUpdate, current_user: dict = Depends(get_current_user)):
     """Update user's consent preferences (GDPR consent management)."""
     now = datetime.now(timezone.utc).isoformat()
     await db.user_consent.update_one(
@@ -308,9 +284,7 @@ class IncidentReport(BaseModel):
 
 
 @router.post("/compliance/incident")
-async def report_security_incident(
-    data: IncidentReport, current_user: dict = Depends(get_current_user)
-):
+async def report_security_incident(data: IncidentReport, current_user: dict = Depends(get_current_user)):
     """SOC 2: Log a security incident for investigation."""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -336,11 +310,7 @@ async def get_security_incidents(current_user: dict = Depends(get_current_user))
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
 
-    incidents = (
-        await db.security_incidents.find({}, {"_id": 0})
-        .sort("created_at", -1)
-        .to_list(200)
-    )
+    incidents = await db.security_incidents.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
     return {"incidents": incidents}
 
 
@@ -353,11 +323,7 @@ async def get_deletion_requests(current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
 
-    requests = (
-        await db.deletion_requests.find({}, {"_id": 0})
-        .sort("requested_at", -1)
-        .to_list(200)
-    )
+    requests = await db.deletion_requests.find({}, {"_id": 0}).sort("requested_at", -1).to_list(200)
     return {"requests": requests}
 
 

@@ -79,9 +79,7 @@ async def create_setup_intent(user: dict = Depends(get_current_user)):
                 metadata={"carryon_user_id": user["id"]},
             )
             stripe_customer_id = customer.id
-            await db.users.update_one(
-                {"id": user["id"]}, {"$set": {"stripe_customer_id": stripe_customer_id}}
-            )
+            await db.users.update_one({"id": user["id"]}, {"$set": {"stripe_customer_id": stripe_customer_id}})
 
         # Create SetupIntent for saving payment method
         setup_intent = stripe.SetupIntent.create(
@@ -90,14 +88,10 @@ async def create_setup_intent(user: dict = Depends(get_current_user)):
             metadata={"carryon_user_id": user["id"]},
         )
 
-        return SetupIntentResponse(
-            client_secret=setup_intent.client_secret, setup_intent_id=setup_intent.id
-        )
+        return SetupIntentResponse(client_secret=setup_intent.client_secret, setup_intent_id=setup_intent.id)
     except Exception as e:
         logger.error(f"Error creating setup intent: {e}")
-        raise HTTPException(
-            status_code=500, detail="Payment service error. Please try again."
-        )
+        raise HTTPException(status_code=500, detail="Payment service error. Please try again.")
 
 
 @router.post("/dts/tasks/{task_id}/payment-method")
@@ -113,9 +107,7 @@ async def save_dts_payment_method(
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
 
-        estate = await db.estates.find_one(
-            {"id": task["estate_id"], "user_id": user["id"]}, {"_id": 0}
-        )
+        estate = await db.estates.find_one({"id": task["estate_id"], "user_id": user["id"]}, {"_id": 0})
         if not estate:
             raise HTTPException(status_code=403, detail="Not authorized")
 
@@ -138,9 +130,7 @@ async def save_dts_payment_method(
         raise
     except Exception as e:
         logger.error(f"Error saving payment method: {e}")
-        raise HTTPException(
-            status_code=500, detail="Payment service error. Please try again."
-        )
+        raise HTTPException(status_code=500, detail="Payment service error. Please try again.")
 
 
 # ===================== STRIPE SUBSCRIPTIONS =====================
@@ -425,9 +415,7 @@ async def get_subscription_settings():
             "plans": DEFAULT_PLANS,
             "family_plan_enabled": True,
         }
-        await db.subscription_settings.update_one(
-            {"_id": "global"}, {"$set": settings}, upsert=True
-        )
+        await db.subscription_settings.update_one({"_id": "global"}, {"$set": settings}, upsert=True)
     else:
         # Ensure any new plans from code are added to stored settings
         # and merge new fields from DEFAULT_PLANS into existing stored plans
@@ -452,9 +440,7 @@ async def get_subscription_settings():
                             needs_update = True
                         break
         if needs_update:
-            await db.subscription_settings.update_one(
-                {"_id": "global"}, {"$set": {"plans": settings["plans"]}}
-            )
+            await db.subscription_settings.update_one({"_id": "global"}, {"$set": {"plans": settings["plans"]}})
     return settings
 
 

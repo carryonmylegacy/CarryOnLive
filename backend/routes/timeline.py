@@ -11,9 +11,7 @@ router = APIRouter()
 
 
 @router.get("/timeline/{estate_id}")
-async def get_legacy_timeline(
-    estate_id: str, current_user: dict = Depends(get_current_user)
-):
+async def get_legacy_timeline(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Build a chronological timeline of all estate events."""
     # Verify access
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
@@ -21,9 +19,7 @@ async def get_legacy_timeline(
         raise HTTPException(status_code=404, detail="Estate not found")
 
     is_owner = estate.get("owner_id") == current_user["id"]
-    is_ben = await db.beneficiaries.find_one(
-        {"estate_id": estate_id, "user_id": current_user["id"]}, {"_id": 0}
-    )
+    is_ben = await db.beneficiaries.find_one({"estate_id": estate_id, "user_id": current_user["id"]}, {"_id": 0})
     is_admin = current_user.get("role") == "admin"
     if not is_owner and not is_ben and not is_admin:
         raise HTTPException(status_code=403, detail="Access denied")
@@ -63,26 +59,16 @@ async def get_legacy_timeline(
         )
 
     # 3. Beneficiaries added
-    bens = await db.beneficiaries.find({"estate_id": estate_id}, {"_id": 0}).to_list(
-        100
-    )
+    bens = await db.beneficiaries.find({"estate_id": estate_id}, {"_id": 0}).to_list(100)
     for ben in bens:
-        ben_user = await db.users.find_one(
-            {"id": ben.get("user_id")}, {"_id": 0, "id": 1, "name": 1}
-        )
-        name = (
-            ben_user.get("name", ben.get("email", "Someone"))
-            if ben_user
-            else ben.get("email", "Someone")
-        )
+        ben_user = await db.users.find_one({"id": ben.get("user_id")}, {"_id": 0, "id": 1, "name": 1})
+        name = ben_user.get("name", ben.get("email", "Someone")) if ben_user else ben.get("email", "Someone")
         status = ben.get("status", "invited")
         events.append(
             {
                 "type": "beneficiary_added",
                 "category": "family",
-                "title": "Beneficiary Invited"
-                if status == "invited"
-                else "Beneficiary Joined",
+                "title": "Beneficiary Invited" if status == "invited" else "Beneficiary Joined",
                 "description": name,
                 "date": ben.get("created_at", ben.get("invited_at", "")),
                 "icon": "users",
@@ -112,9 +98,7 @@ async def get_legacy_timeline(
         )
 
     # 5. Checklist items completed
-    checklists = await db.checklists.find({"estate_id": estate_id}, {"_id": 0}).to_list(
-        500
-    )
+    checklists = await db.checklists.find({"estate_id": estate_id}, {"_id": 0}).to_list(500)
     for item in checklists:
         if item.get("completed"):
             events.append(
@@ -133,11 +117,7 @@ async def get_legacy_timeline(
             )
 
     # 6. Edit history (message edits, document edits, etc.)
-    edits = (
-        await db.edit_history.find({"estate_id": estate_id}, {"_id": 0})
-        .sort("created_at", -1)
-        .to_list(500)
-    )
+    edits = await db.edit_history.find({"estate_id": estate_id}, {"_id": 0}).sort("created_at", -1).to_list(500)
     for edit in edits:
         item_type = edit.get("item_type", "item")
         changed = edit.get("changed_fields", [])
@@ -216,11 +196,7 @@ async def get_legacy_timeline(
             )
 
     # 7. Activity log entries (catch-all)
-    activities = (
-        await db.activity_log.find({"estate_id": estate_id}, {"_id": 0})
-        .sort("created_at", -1)
-        .to_list(200)
-    )
+    activities = await db.activity_log.find({"estate_id": estate_id}, {"_id": 0}).sort("created_at", -1).to_list(200)
     seen_actions = set()
     for act in activities:
         key = f"{act.get('action')}_{act.get('description', '')}"

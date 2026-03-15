@@ -25,16 +25,11 @@ if _s3_bucket and os.environ.get("AWS_ACCESS_KEY_ID"):
         )
         logger.info("Photo URL resolver: using S3 presigned URLs")
     except Exception as e:
-        logger.warning(
-            f"Photo URL resolver: S3 client init failed ({e}), using fallback"
-        )
+        logger.warning(f"Photo URL resolver: S3 client init failed ({e}), using fallback")
 
 # Fallback base URL for non-S3 environments
 _FALLBACK_URL = (
-    os.environ.get("BACKEND_URL")
-    or os.environ.get("RAILWAY_PUBLIC_DOMAIN", "")
-    or os.environ.get("FRONTEND_URL")
-    or ""
+    os.environ.get("BACKEND_URL") or os.environ.get("RAILWAY_PUBLIC_DOMAIN", "") or os.environ.get("FRONTEND_URL") or ""
 ).rstrip("/")
 if _FALLBACK_URL and not _FALLBACK_URL.startswith("http"):
     _FALLBACK_URL = f"https://{_FALLBACK_URL}"
@@ -84,8 +79,4 @@ def resolve_photo_url(stored_value: str) -> str:
     # Fallback: proxy through backend
     if stored_value.startswith("/api/photos/"):
         return f"{_FALLBACK_URL}{stored_value}" if _FALLBACK_URL else stored_value
-    return (
-        f"{_FALLBACK_URL}/api/photos/{stored_value}"
-        if _FALLBACK_URL
-        else f"/api/photos/{stored_value}"
-    )
+    return f"{_FALLBACK_URL}/api/photos/{stored_value}" if _FALLBACK_URL else f"/api/photos/{stored_value}"

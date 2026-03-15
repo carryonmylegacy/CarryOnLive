@@ -60,9 +60,7 @@ async def log_audit_event(
     await db.audit_trail.insert_one(entry)
 
     if severity == "critical":
-        logger.warning(
-            f"AUDIT[{severity}] {actor_email} {action} {resource_type}:{resource_id}"
-        )
+        logger.warning(f"AUDIT[{severity}] {actor_email} {action} {resource_type}:{resource_id}")
 
 
 def get_client_ip(request) -> str:

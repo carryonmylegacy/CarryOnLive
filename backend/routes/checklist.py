@@ -15,29 +15,19 @@ router = APIRouter()
 
 
 @router.get("/checklists/{estate_id}")
-async def get_checklists(
-    estate_id: str, current_user: dict = Depends(get_current_user)
-):
+async def get_checklists(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Get all checklist items for an estate."""
     checklists = (
-        await db.checklists.find(
-            {"estate_id": estate_id, "deleted_at": None}, {"_id": 0}
-        )
-        .sort("order", 1)
-        .to_list(200)
+        await db.checklists.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).sort("order", 1).to_list(200)
     )
     return checklists
 
 
 @router.post("/checklists")
-async def create_checklist_item(
-    data: ChecklistItemCreate, current_user: dict = Depends(get_current_user)
-):
+async def create_checklist_item(data: ChecklistItemCreate, current_user: dict = Depends(get_current_user)):
     """Benefactor creates a new IAC item."""
     if current_user["role"] not in ("benefactor", "admin"):
-        raise HTTPException(
-            status_code=403, detail="Only benefactors can create checklist items"
-        )
+        raise HTTPException(status_code=403, detail="Only benefactors can create checklist items")
 
     # Enforce subscription requirement
     from guards import get_subscription_access
@@ -83,9 +73,7 @@ async def update_checklist_item(
 ):
     """Benefactor edits an existing IAC item."""
     if current_user["role"] not in ("benefactor", "admin"):
-        raise HTTPException(
-            status_code=403, detail="Only benefactors can edit checklist items"
-        )
+        raise HTTPException(status_code=403, detail="Only benefactors can edit checklist items")
 
     item = await db.checklists.find_one({"id": item_id}, {"_id": 0})
     if not item:
@@ -103,14 +91,10 @@ async def update_checklist_item(
 
 
 @router.delete("/checklists/{item_id}")
-async def delete_checklist_item(
-    item_id: str, current_user: dict = Depends(get_current_user)
-):
+async def delete_checklist_item(item_id: str, current_user: dict = Depends(get_current_user)):
     """Benefactor deletes an IAC item."""
     if current_user["role"] not in ("benefactor", "admin"):
-        raise HTTPException(
-            status_code=403, detail="Only benefactors can delete checklist items"
-        )
+        raise HTTPException(status_code=403, detail="Only benefactors can delete checklist items")
 
     item = await db.checklists.find_one({"id": item_id}, {"_id": 0})
     if not item:
@@ -128,9 +112,7 @@ async def delete_checklist_item(
 
 
 @router.patch("/checklists/{item_id}/toggle")
-async def toggle_checklist_item(
-    item_id: str, current_user: dict = Depends(get_current_user)
-):
+async def toggle_checklist_item(item_id: str, current_user: dict = Depends(get_current_user)):
     """Beneficiary (or benefactor) toggles completion status."""
     item = await db.checklists.find_one({"id": item_id}, {"_id": 0})
     if not item:
@@ -170,9 +152,7 @@ async def toggle_checklist_item(
 
 
 @router.post("/checklists/reorder")
-async def reorder_checklists(
-    data: dict, current_user: dict = Depends(get_current_user)
-):
+async def reorder_checklists(data: dict, current_user: dict = Depends(get_current_user)):
     """Benefactor reorders IAC items. Expects: {item_ids: ["id1", "id2", ...]}"""
     if current_user["role"] not in ("benefactor", "admin"):
         raise HTTPException(status_code=403, detail="Only benefactors can reorder")
@@ -208,9 +188,7 @@ async def reject_ai_item(item_id: str, current_user: dict = Depends(get_current_
 
 
 @router.post("/checklists/{item_id}/reject-with-feedback")
-async def reject_ai_item_with_feedback(
-    item_id: str, request: Request, current_user: dict = Depends(get_current_user)
-):
+async def reject_ai_item_with_feedback(item_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     """Reject an AI-suggested checklist item with feedback."""
     require_benefactor_role(current_user, "reject items")
     data = await request.json()

@@ -32,18 +32,12 @@ async def upload_verification_document(
     """Upload a verification document for a special tier (Military/Hospice/Veteran)"""
     valid_tiers = ["military", "hospice", "veteran", "enterprise"]
     if tier_requested not in valid_tiers:
-        raise HTTPException(
-            status_code=400, detail=f"Invalid tier. Must be one of: {valid_tiers}"
-        )
+        raise HTTPException(status_code=400, detail=f"Invalid tier. Must be one of: {valid_tiers}")
 
     # Check for existing pending verification
-    existing = await db.tier_verifications.find_one(
-        {"user_id": current_user["id"], "status": "pending"}, {"_id": 0}
-    )
+    existing = await db.tier_verifications.find_one({"user_id": current_user["id"], "status": "pending"}, {"_id": 0})
     if existing:
-        raise HTTPException(
-            status_code=400, detail="You already have a pending verification request"
-        )
+        raise HTTPException(status_code=400, detail="You already have a pending verification request")
 
     import uuid
 
@@ -87,9 +81,7 @@ async def get_verification_status(current_user: dict = Depends(get_current_user)
 
 
 @router.get("/admin/verifications")
-async def get_all_verifications(
-    include_deleted: bool = False, current_user: dict = Depends(get_current_user)
-):
+async def get_all_verifications(include_deleted: bool = False, current_user: dict = Depends(get_current_user)):
     """Get all verification requests (admin/operator)"""
     if current_user.get("role") not in ("admin", "operator"):
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -99,25 +91,19 @@ async def get_all_verifications(
         query["soft_deleted"] = {"$ne": True}
 
     verifications = (
-        await db.tier_verifications.find(query, {"_id": 0, "file_data": 0})
-        .sort("submitted_at", -1)
-        .to_list(200)
+        await db.tier_verifications.find(query, {"_id": 0, "file_data": 0}).sort("submitted_at", -1).to_list(200)
     )
 
     return verifications
 
 
 @router.get("/admin/verifications/{verification_id}/document")
-async def get_verification_document(
-    verification_id: str, current_user: dict = Depends(get_current_user)
-):
+async def get_verification_document(verification_id: str, current_user: dict = Depends(get_current_user)):
     """Download a verification document (admin only)"""
     if current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
 
-    verification = await db.tier_verifications.find_one(
-        {"id": verification_id}, {"_id": 0}
-    )
+    verification = await db.tier_verifications.find_one({"id": verification_id}, {"_id": 0})
     if not verification:
         raise HTTPException(status_code=404, detail="Verification not found")
 
@@ -139,13 +125,9 @@ async def review_verification(
         raise HTTPException(status_code=403, detail="Admin access required")
 
     if data.action not in ["approve", "deny"]:
-        raise HTTPException(
-            status_code=400, detail="Action must be 'approve' or 'deny'"
-        )
+        raise HTTPException(status_code=400, detail="Action must be 'approve' or 'deny'")
 
-    verification = await db.tier_verifications.find_one(
-        {"id": verification_id}, {"_id": 0}
-    )
+    verification = await db.tier_verifications.find_one({"id": verification_id}, {"_id": 0})
     if not verification:
         raise HTTPException(status_code=404, detail="Verification not found")
 
@@ -193,15 +175,11 @@ async def notify_benefactor_verified(
     if current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
 
-    verification = await db.tier_verifications.find_one(
-        {"id": verification_id}, {"_id": 0}
-    )
+    verification = await db.tier_verifications.find_one({"id": verification_id}, {"_id": 0})
     if not verification:
         raise HTTPException(status_code=404, detail="Verification not found")
     if verification.get("status") != "approved":
-        raise HTTPException(
-            status_code=400, detail="Can only notify for approved verifications"
-        )
+        raise HTTPException(status_code=400, detail="Can only notify for approved verifications")
 
     import uuid
 
@@ -285,9 +263,7 @@ async def delete_verification(
     if current_user.get("role") not in ("admin", "operator"):
         raise HTTPException(status_code=403, detail="Admin or operator only")
 
-    verification = await db.tier_verifications.find_one(
-        {"id": verification_id}, {"_id": 0}
-    )
+    verification = await db.tier_verifications.find_one({"id": verification_id}, {"_id": 0})
     if not verification:
         raise HTTPException(status_code=404, detail="Verification not found")
 
@@ -312,9 +288,7 @@ async def restore_verification(
 ):
     """Restore a soft-deleted verification — founder (admin) only."""
     if current_user.get("role") != "admin":
-        raise HTTPException(
-            status_code=403, detail="Only the Founder can restore deleted items"
-        )
+        raise HTTPException(status_code=403, detail="Only the Founder can restore deleted items")
 
     result = await db.tier_verifications.update_one(
         {"id": verification_id, "soft_deleted": True},
@@ -351,21 +325,13 @@ async def get_subscription_stats(current_user: dict = Depends(get_current_user))
         }
     )
     active_subs = await db.user_subscriptions.count_documents({"status": "active"})
-    cancelled_subs = await db.user_subscriptions.count_documents(
-        {"status": "cancelled"}
-    )
-    pending_verifications = await db.tier_verifications.count_documents(
-        {"status": "pending"}
-    )
-    free_overrides = await db.subscription_overrides.count_documents(
-        {"free_access": True}
-    )
+    cancelled_subs = await db.user_subscriptions.count_documents({"status": "cancelled"})
+    pending_verifications = await db.tier_verifications.count_documents({"status": "pending"})
+    free_overrides = await db.subscription_overrides.count_documents({"free_access": True})
 
     # --- MRR ---
     mrr = 0.0
-    active_sub_docs = await db.user_subscriptions.find(
-        {"status": "active"}, {"_id": 0}
-    ).to_list(5000)
+    active_sub_docs = await db.user_subscriptions.find({"status": "active"}, {"_id": 0}).to_list(5000)
     plan_lookup = {p["id"]: p for p in DEFAULT_PLANS}
     tier_counts = {}
     for sub in active_sub_docs:
@@ -378,19 +344,11 @@ async def get_subscription_stats(current_user: dict = Depends(get_current_user))
 
     # --- Trial conversion % ---
     users_who_left_trial = expired_trials + active_subs + cancelled_subs
-    trial_conversion = (
-        round((active_subs / users_who_left_trial) * 100, 1)
-        if users_who_left_trial > 0
-        else 0
-    )
+    trial_conversion = round((active_subs / users_who_left_trial) * 100, 1) if users_who_left_trial > 0 else 0
 
     # --- Churn rate ---
     total_ever_subscribed = active_subs + cancelled_subs
-    churn_rate = (
-        round((cancelled_subs / total_ever_subscribed) * 100, 1)
-        if total_ever_subscribed > 0
-        else 0
-    )
+    churn_rate = round((cancelled_subs / total_ever_subscribed) * 100, 1) if total_ever_subscribed > 0 else 0
 
     # --- Tier distribution ---
     tier_distribution = []
@@ -410,12 +368,8 @@ async def get_subscription_stats(current_user: dict = Depends(get_current_user))
     for i in range(30):
         day = now - timedelta(days=29 - i)
         day_start = day.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
-        day_end = day.replace(
-            hour=23, minute=59, second=59, microsecond=999999
-        ).isoformat()
-        count = await db.users.count_documents(
-            {"created_at": {"$gte": day_start, "$lte": day_end}}
-        )
+        day_end = day.replace(hour=23, minute=59, second=59, microsecond=999999).isoformat()
+        count = await db.users.count_documents({"created_at": {"$gte": day_start, "$lte": day_end}})
         signup_trend.append(
             {
                 "date": day.strftime("%m/%d"),
@@ -489,9 +443,7 @@ async def request_family_plan_add(
     current_user: dict = Depends(get_current_user),
 ):
     """Beneficiary requests a benefactor to add them to their family plan."""
-    benefactor = await db.users.find_one(
-        {"email": data.benefactor_email, "role": "benefactor"}, {"_id": 0}
-    )
+    benefactor = await db.users.find_one({"email": data.benefactor_email, "role": "benefactor"}, {"_id": 0})
     if not benefactor:
         raise HTTPException(
             status_code=404,
@@ -602,14 +554,10 @@ async def get_beneficiary_lifecycle(current_user: dict = Depends(get_current_use
             pass
 
     # Check grace period (e.g., benefactor transition)
-    grace = await db.beneficiary_grace_periods.find_one(
-        {"beneficiary_id": current_user["id"]}, {"_id": 0}
-    )
+    grace = await db.beneficiary_grace_periods.find_one({"beneficiary_id": current_user["id"]}, {"_id": 0})
     grace_info = None
     if grace:
-        grace_end = datetime.fromisoformat(
-            grace["grace_ends_at"].replace("Z", "+00:00")
-        )
+        grace_end = datetime.fromisoformat(grace["grace_ends_at"].replace("Z", "+00:00"))
         if grace_end.tzinfo is None:
             grace_end = grace_end.replace(tzinfo=timezone.utc)
         days_left = max(0, (grace_end - now).days)
@@ -641,11 +589,7 @@ async def get_beneficiary_lifecycle(current_user: dict = Depends(get_current_use
         "needs_subscription": not (
             family_plan
             or (grace_info and not grace_info["expired"])
-            or (
-                await db.user_subscriptions.find_one(
-                    {"user_id": current_user["id"], "status": "active"}, {"_id": 0}
-                )
-            )
+            or (await db.user_subscriptions.find_one({"user_id": current_user["id"], "status": "active"}, {"_id": 0}))
         ),
     }
 
@@ -680,22 +624,16 @@ async def trigger_benefactor_transition(
 
     for ben_id in beneficiary_ids:
         # Check if beneficiary already has a subscription or grace period
-        existing_sub = await db.user_subscriptions.find_one(
-            {"user_id": ben_id, "status": "active"}, {"_id": 0}
-        )
+        existing_sub = await db.user_subscriptions.find_one({"user_id": ben_id, "status": "active"}, {"_id": 0})
         if existing_sub:
             continue  # Already has a plan
 
-        existing_grace = await db.beneficiary_grace_periods.find_one(
-            {"beneficiary_id": ben_id}, {"_id": 0}
-        )
+        existing_grace = await db.beneficiary_grace_periods.find_one({"beneficiary_id": ben_id}, {"_id": 0})
         if existing_grace:
             continue  # Already has grace period
 
         # Check if part of a family plan
-        family_member = await db.family_plan_members.find_one(
-            {"member_id": ben_id, "status": "active"}, {"_id": 0}
-        )
+        family_member = await db.family_plan_members.find_one({"member_id": ben_id, "status": "active"}, {"_id": 0})
         if family_member:
             continue  # Covered by family plan
 
@@ -751,9 +689,7 @@ async def check_dob_subscription_events():
     events_triggered = 0
     for user_doc in users:
         try:
-            dob = datetime.fromisoformat(
-                user_doc["date_of_birth"].replace("Z", "+00:00")
-            )
+            dob = datetime.fromisoformat(user_doc["date_of_birth"].replace("Z", "+00:00"))
             if dob.tzinfo is None:
                 dob = dob.replace(tzinfo=timezone.utc)
             age = (now - dob).days // 365
@@ -766,9 +702,7 @@ async def check_dob_subscription_events():
                 days_since = (now - eighteenth).days
                 if 0 <= days_since <= 7:
                     # Check not already notified
-                    already = await db.lifecycle_events.find_one(
-                        {"user_id": user_doc["id"], "event": "turned_18"}
-                    )
+                    already = await db.lifecycle_events.find_one({"user_id": user_doc["id"], "event": "turned_18"})
                     if not already:
                         await db.lifecycle_events.insert_one(
                             {
@@ -801,9 +735,7 @@ async def check_dob_subscription_events():
                     twentysixth = twentysixth.replace(tzinfo=timezone.utc)
                 days_since = (now - twentysixth).days
                 if 0 <= days_since <= 7:
-                    already = await db.lifecycle_events.find_one(
-                        {"user_id": user_doc["id"], "event": "turned_26"}
-                    )
+                    already = await db.lifecycle_events.find_one({"user_id": user_doc["id"], "event": "turned_26"})
                     if not already:
                         # Auto-migrate from new_adult to standard pricing
                         sub = await db.user_subscriptions.find_one(
@@ -870,9 +802,7 @@ async def get_b2b_codes(current_user: dict = Depends(get_current_user)):
 
 
 @router.post("/admin/b2b-codes")
-async def create_b2b_code(
-    request: Request, current_user: dict = Depends(get_current_user)
-):
+async def create_b2b_code(request: Request, current_user: dict = Depends(get_current_user)):
     """Create a new B2B partner code."""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
@@ -909,9 +839,7 @@ async def create_b2b_code(
 
 
 @router.put("/admin/b2b-codes/{code_id}")
-async def update_b2b_code(
-    code_id: str, request: Request, current_user: dict = Depends(get_current_user)
-):
+async def update_b2b_code(code_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     """Update a B2B partner code."""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
@@ -941,9 +869,7 @@ async def delete_b2b_code(code_id: str, current_user: dict = Depends(get_current
 
 
 @router.post("/subscriptions/verify-b2b-code")
-async def verify_b2b_code(
-    request: Request, current_user: dict = Depends(get_current_user)
-):
+async def verify_b2b_code(request: Request, current_user: dict = Depends(get_current_user)):
     """Verify a B2B partner code and apply enterprise tier."""
     data = await request.json()
     code_str = (data.get("code") or "").strip().upper()
@@ -960,24 +886,15 @@ async def verify_b2b_code(
         {"_id": 0},
     )
     if existing:
-        raise HTTPException(
-            status_code=400, detail="You already have an active enterprise subscription"
-        )
+        raise HTTPException(status_code=400, detail="You already have an active enterprise subscription")
 
-    code_doc = await db.b2b_codes.find_one(
-        {"code": code_str, "active": True}, {"_id": 0}
-    )
+    code_doc = await db.b2b_codes.find_one({"code": code_str, "active": True}, {"_id": 0})
     if not code_doc:
         raise HTTPException(status_code=404, detail="Invalid or inactive code")
 
     # Check max uses
-    if (
-        code_doc.get("max_uses", 0) > 0
-        and code_doc["times_used"] >= code_doc["max_uses"]
-    ):
-        raise HTTPException(
-            status_code=400, detail="This code has reached its usage limit"
-        )
+    if code_doc.get("max_uses", 0) > 0 and code_doc["times_used"] >= code_doc["max_uses"]:
+        raise HTTPException(status_code=400, detail="This code has reached its usage limit")
 
     # Apply enterprise tier to user
     discount = code_doc.get("discount_percent", 100)

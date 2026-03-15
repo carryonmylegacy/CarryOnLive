@@ -21,9 +21,7 @@ class TestEstateHealthAPI:
             json={"email": "info@carryon.us", "password": "Demo1234!"},
         )
         if login_response.status_code != 200:
-            pytest.skip(
-                f"Admin login failed: {login_response.status_code} - {login_response.text}"
-            )
+            pytest.skip(f"Admin login failed: {login_response.status_code} - {login_response.text}")
         token = login_response.json().get("access_token")
         if not token:
             pytest.skip("No access_token in login response")
@@ -35,9 +33,7 @@ class TestEstateHealthAPI:
             f"{BASE_URL}/api/admin/estate-health",
             headers={"Authorization": f"Bearer {admin_token}"},
         )
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         print("PASS: Estate health endpoint returns 200")
 
     def test_estate_health_response_has_summary(self, admin_token):
@@ -123,17 +119,13 @@ class TestEstateHealthAPI:
 
         assert "health_score" in metrics, "Metrics must have health_score"
         assert "health_status" in metrics, "Metrics must have health_status"
-        assert isinstance(metrics["health_score"], (int, float)), (
-            "health_score must be numeric"
-        )
+        assert isinstance(metrics["health_score"], (int, float)), "health_score must be numeric"
         assert 0 <= metrics["health_score"] <= 100, "health_score must be 0-100"
         assert metrics["health_status"] in ["healthy", "attention", "critical"], (
             f"health_status must be healthy/attention/critical, got {metrics['health_status']}"
         )
 
-        print(
-            f"PASS: Estate metrics valid - score: {metrics['health_score']}, status: {metrics['health_status']}"
-        )
+        print(f"PASS: Estate metrics valid - score: {metrics['health_score']}, status: {metrics['health_status']}")
 
     def test_estate_beneficiaries_structure(self, admin_token):
         """Test beneficiary structure in estate response"""
@@ -168,9 +160,7 @@ class TestEstateHealthAPI:
         """Test that endpoint requires admin authentication"""
         # Without token
         response = requests.get(f"{BASE_URL}/api/admin/estate-health")
-        assert response.status_code in [401, 403], (
-            f"Expected 401/403 without auth, got {response.status_code}"
-        )
+        assert response.status_code in [401, 403], f"Expected 401/403 without auth, got {response.status_code}"
         print("PASS: Endpoint requires authentication")
 
     def test_estate_health_summary_rates_are_percentages(self, admin_token):
@@ -216,9 +206,7 @@ class TestEstateHealthAPI:
         for i in range(len(statuses) - 1):
             current_order = order_map.get(statuses[i], 3)
             next_order = order_map.get(statuses[i + 1], 3)
-            assert current_order <= next_order, (
-                f"Estates not sorted correctly: {statuses[i]} before {statuses[i + 1]}"
-            )
+            assert current_order <= next_order, f"Estates not sorted correctly: {statuses[i]} before {statuses[i + 1]}"
 
         print("PASS: Estates sorted correctly by health status")
 

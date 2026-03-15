@@ -32,9 +32,7 @@ class TestSubscriptionPlans:
     def test_get_plans_returns_200(self):
         """GET /api/subscriptions/plans should return 200"""
         response = requests.get(f"{BASE_URL}/api/subscriptions/plans")
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         print("PASS: GET /api/subscriptions/plans returns 200")
 
     def test_plans_returns_six_tiers(self):
@@ -93,9 +91,7 @@ class TestSubscriptionPlans:
 
         for plan in plans:
             if plan.get("price", 0) > 0:  # Skip hospice
-                assert "quarterly_price" in plan, (
-                    f"{plan['id']} missing quarterly_price"
-                )
+                assert "quarterly_price" in plan, f"{plan['id']} missing quarterly_price"
                 assert "annual_price" in plan, f"{plan['id']} missing annual_price"
 
                 # Verify discounts are approximately correct
@@ -124,9 +120,7 @@ class TestSubscriptionPlans:
 
         assert "beneficiary_plans" in data, "Missing beneficiary_plans in response"
         ben_plans = data.get("beneficiary_plans", [])
-        assert len(ben_plans) >= 3, (
-            f"Expected at least 3 beneficiary plans, got {len(ben_plans)}"
-        )
+        assert len(ben_plans) >= 3, f"Expected at least 3 beneficiary plans, got {len(ben_plans)}"
 
         print(f"PASS: {len(ben_plans)} beneficiary plans returned")
         for bp in ben_plans:
@@ -177,9 +171,7 @@ class TestSubscriptionStatus:
     def test_status_requires_auth(self):
         """GET /api/subscriptions/status should require authentication"""
         response = requests.get(f"{BASE_URL}/api/subscriptions/status")
-        assert response.status_code in [401, 403], (
-            f"Expected 401/403, got {response.status_code}"
-        )
+        assert response.status_code in [401, 403], f"Expected 401/403, got {response.status_code}"
         print("PASS: Status endpoint requires authentication")
 
     def test_status_returns_trial_info(self, admin_token):
@@ -266,9 +258,7 @@ class TestVerificationUpload:
                 "file_name": "test.pdf",
             },
         )
-        assert response.status_code in [401, 403], (
-            f"Expected 401/403, got {response.status_code}"
-        )
+        assert response.status_code in [401, 403], f"Expected 401/403, got {response.status_code}"
         print("PASS: Verification upload requires authentication")
 
     def test_upload_requires_valid_tier(self, regular_user_token):
@@ -283,9 +273,7 @@ class TestVerificationUpload:
                 "file_name": "test.pdf",
             },
         )
-        assert response.status_code == 400, (
-            f"Expected 400 for invalid tier, got {response.status_code}"
-        )
+        assert response.status_code == 400, f"Expected 400 for invalid tier, got {response.status_code}"
         print("PASS: Invalid tier rejected")
 
     def test_upload_accepts_military_tier(self, regular_user_token):
@@ -301,18 +289,14 @@ class TestVerificationUpload:
             },
         )
         # May get 400 if already has pending verification - that's acceptable
-        assert response.status_code in [200, 201, 400], (
-            f"Unexpected status: {response.status_code}: {response.text}"
-        )
+        assert response.status_code in [200, 201, 400], f"Unexpected status: {response.status_code}: {response.text}"
 
         if response.status_code in [200, 201]:
             data = response.json()
             assert data.get("success"), "Expected success=True"
             print("PASS: Military verification upload accepted")
         else:
-            print(
-                "PASS: Military verification rejected (already has pending) - expected behavior"
-            )
+            print("PASS: Military verification rejected (already has pending) - expected behavior")
 
 
 class TestVerificationStatus:
@@ -332,9 +316,7 @@ class TestVerificationStatus:
     def test_verification_status_requires_auth(self):
         """Should require authentication"""
         response = requests.get(f"{BASE_URL}/api/verification/status")
-        assert response.status_code in [401, 403], (
-            f"Expected 401/403, got {response.status_code}"
-        )
+        assert response.status_code in [401, 403], f"Expected 401/403, got {response.status_code}"
         print("PASS: Verification status requires authentication")
 
     def test_verification_status_returns_data(self, regular_user_token):
@@ -416,9 +398,7 @@ class TestAdminVerifications:
             json={"action": "invalid_action"},
         )
         # Should return 400 for invalid action or 404 for not found
-        assert response.status_code in [400, 404], (
-            f"Expected 400/404, got {response.status_code}"
-        )
+        assert response.status_code in [400, 404], f"Expected 400/404, got {response.status_code}"
         print("PASS: Invalid review action rejected")
 
 
@@ -500,18 +480,14 @@ class TestAdminSubscriptionSettings:
         """GET /api/admin/subscription-settings requires admin"""
         # First test without auth
         response = requests.get(f"{BASE_URL}/api/admin/subscription-settings")
-        assert response.status_code in [401, 403], (
-            f"Expected 401/403 without auth, got {response.status_code}"
-        )
+        assert response.status_code in [401, 403], f"Expected 401/403 without auth, got {response.status_code}"
 
         # Test with admin
         response = requests.get(
             f"{BASE_URL}/api/admin/subscription-settings",
             headers={"Authorization": f"Bearer {admin_token}"},
         )
-        assert response.status_code == 200, (
-            f"Expected 200 with admin, got {response.status_code}"
-        )
+        assert response.status_code == 200, f"Expected 200 with admin, got {response.status_code}"
 
         data = response.json()
         assert "beta_mode" in data, "Missing beta_mode"
@@ -557,9 +533,7 @@ class TestExpiredTrialUser:
                     print(f"  - needs_subscription: {data.get('needs_subscription')}")
                     print(f"  - beta_mode: {data.get('beta_mode')}")
                 else:
-                    print(
-                        f"INFO: User trial not expired yet - days_remaining: {trial.get('days_remaining')}"
-                    )
+                    print(f"INFO: User trial not expired yet - days_remaining: {trial.get('days_remaining')}")
 
 
 if __name__ == "__main__":

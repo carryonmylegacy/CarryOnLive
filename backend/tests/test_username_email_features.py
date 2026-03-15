@@ -17,9 +17,7 @@ import requests
 import os
 import uuid
 
-BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com"
-)
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com")
 
 # Test credentials
 ADMIN_EMAIL = "info@carryon.us"
@@ -47,9 +45,7 @@ class TestLoginWithEmail:
                 f"{BASE_URL}/api/auth/verify-otp",
                 json={"email": ADMIN_EMAIL, "otp": OTP_BYPASS, "trust_today": False},
             )
-            assert otp_response.status_code == 200, (
-                f"OTP verify failed: {otp_response.text}"
-            )
+            assert otp_response.status_code == 200, f"OTP verify failed: {otp_response.text}"
             data = otp_response.json()
 
         assert "access_token" in data, "No access token in response"
@@ -103,9 +99,7 @@ class TestUsernameEndpoints:
 
         assert response.status_code == 200, f"PUT username failed: {response.text}"
         data = response.json()
-        assert data.get("username") == test_username, (
-            f"Username not set correctly: {data}"
-        )
+        assert data.get("username") == test_username, f"Username not set correctly: {data}"
         print(f"✅ PUT /api/auth/username set username to: {test_username}")
 
         # Verify it was persisted
@@ -128,9 +122,7 @@ class TestUsernameEndpoints:
 
         # Now we can't test duplicate with same user, but we can verify the endpoint works
         # The real duplicate test would need two different users
-        print(
-            "✅ Username uniqueness endpoint works (400 error returned for duplicates)"
-        )
+        print("✅ Username uniqueness endpoint works (400 error returned for duplicates)")
 
 
 class TestAuthMeIncludesUsername:
@@ -155,18 +147,12 @@ class TestAuthMeIncludesUsername:
         token = data.get("access_token")
 
         # Get /api/auth/me
-        me_response = requests.get(
-            f"{BASE_URL}/api/auth/me", headers={"Authorization": f"Bearer {token}"}
-        )
+        me_response = requests.get(f"{BASE_URL}/api/auth/me", headers={"Authorization": f"Bearer {token}"})
 
-        assert me_response.status_code == 200, (
-            f"GET /api/auth/me failed: {me_response.text}"
-        )
+        assert me_response.status_code == 200, f"GET /api/auth/me failed: {me_response.text}"
         me_data = me_response.json()
 
-        assert "username" in me_data, (
-            f"'username' field missing from /api/auth/me response: {me_data.keys()}"
-        )
+        assert "username" in me_data, f"'username' field missing from /api/auth/me response: {me_data.keys()}"
         print(f"✅ GET /api/auth/me includes username: '{me_data.get('username')}'")
 
 
@@ -198,9 +184,7 @@ class TestLoginWithUsername:
             json={"username": test_username},
             headers={"Authorization": f"Bearer {token}"},
         )
-        assert set_response.status_code == 200, (
-            f"Failed to set username: {set_response.text}"
-        )
+        assert set_response.status_code == 200, f"Failed to set username: {set_response.text}"
 
         # Now try to login with the username instead of email
         username_login_response = requests.post(
@@ -211,15 +195,11 @@ class TestLoginWithUsername:
             },
         )
 
-        assert username_login_response.status_code == 200, (
-            f"Login with username failed: {username_login_response.text}"
-        )
+        assert username_login_response.status_code == 200, f"Login with username failed: {username_login_response.text}"
         login_data = username_login_response.json()
 
         # Should either get token directly or OTP required
-        assert "access_token" in login_data or "otp_required" in login_data, (
-            f"Unexpected response: {login_data}"
-        )
+        assert "access_token" in login_data or "otp_required" in login_data, f"Unexpected response: {login_data}"
         print(f"✅ Login with username '{test_username}' succeeded")
 
 
@@ -302,9 +282,7 @@ class TestBeneficiaryEmailChange:
             headers=headers,
         )
 
-        assert update_response.status_code == 200, (
-            f"Update failed: {update_response.text}"
-        )
+        assert update_response.status_code == 200, f"Update failed: {update_response.text}"
         data = update_response.json()
 
         # Check for email_changed flag
@@ -315,9 +293,7 @@ class TestBeneficiaryEmailChange:
             f"invitation_status not reset: {data.get('invitation_status')}"
         )
 
-        print(
-            "✅ Beneficiary email change returns email_changed: true and resets invitation_status to 'pending'"
-        )
+        print("✅ Beneficiary email change returns email_changed: true and resets invitation_status to 'pending'")
 
         # Cleanup - delete the test beneficiary
         requests.delete(f"{BASE_URL}/api/beneficiaries/{ben_id}", headers=headers)
@@ -341,18 +317,12 @@ class TestBeneficiaryEmailChange:
             headers=headers,
         )
 
-        assert update_response.status_code == 200, (
-            f"Update failed: {update_response.text}"
-        )
+        assert update_response.status_code == 200, f"Update failed: {update_response.text}"
         data = update_response.json()
 
         # Should NOT have email_changed flag
-        assert not data.get("email_changed"), (
-            f"email_changed should not be set when email unchanged: {data}"
-        )
-        print(
-            "✅ Beneficiary update without email change does not set email_changed flag"
-        )
+        assert not data.get("email_changed"), f"email_changed should not be set when email unchanged: {data}"
+        print("✅ Beneficiary update without email change does not set email_changed flag")
 
         # Cleanup
         requests.delete(f"{BASE_URL}/api/beneficiaries/{ben_id}", headers=headers)
@@ -370,26 +340,16 @@ class TestSettingsPageUsernameSection:
             content = f.read()
 
         # Check for username state variables
-        assert "useState('')" in content and "username" in content.lower(), (
-            "Username state not found"
-        )
+        assert "useState('')" in content and "username" in content.lower(), "Username state not found"
         assert "editingUsername" in content, "editingUsername state not found"
 
         # Check for Username section UI
-        assert 'data-testid="username-input"' in content, (
-            "Username input test ID not found"
-        )
-        assert 'data-testid="username-edit"' in content, (
-            "Username edit button test ID not found"
-        )
-        assert 'data-testid="username-save"' in content, (
-            "Username save button test ID not found"
-        )
+        assert 'data-testid="username-input"' in content, "Username input test ID not found"
+        assert 'data-testid="username-edit"' in content, "Username edit button test ID not found"
+        assert 'data-testid="username-save"' in content, "Username save button test ID not found"
 
         # Check for API call to set username (uses API_URL variable, so look for 'auth/username')
-        assert "auth/username" in content, (
-            "Username API endpoint not found in SettingsPage"
-        )
+        assert "auth/username" in content, "Username API endpoint not found in SettingsPage"
 
         print("✅ SettingsPage.js has Username section with edit/save functionality")
 
@@ -405,9 +365,7 @@ class TestLoginPageLabels:
             content = f.read()
 
         # Check for 'Username or Email' in label (line ~451)
-        assert "Username or Email" in content, (
-            "'Username or Email' text not found in LoginPage.js"
-        )
+        assert "Username or Email" in content, "'Username or Email' text not found in LoginPage.js"
 
         # Check for placeholder (line ~454)
         occurrences = content.count("Username or Email")
@@ -432,19 +390,14 @@ class TestFamilyTreeLegend:
         blue_legend_count = content.lower().count("blue =")
 
         # Should have exactly one occurrence
-        assert blue_legend_count == 1, (
-            f"Should have exactly 1 'Blue = ...' legend line, found {blue_legend_count}"
-        )
+        assert blue_legend_count == 1, f"Should have exactly 1 'Blue = ...' legend line, found {blue_legend_count}"
 
         # Verify the line is present (around line 201-205)
-        assert (
-            "estates where you're a beneficiary" in content.lower()
-            or "blue = estates" in content.lower()
-        ), "Blue legend text not found"
-
-        print(
-            "✅ FamilyTree.js has exactly one 'Blue = ...' legend line (no duplicate)"
+        assert "estates where you're a beneficiary" in content.lower() or "blue = estates" in content.lower(), (
+            "Blue legend text not found"
         )
+
+        print("✅ FamilyTree.js has exactly one 'Blue = ...' legend line (no duplicate)")
 
     def test_beneficiaries_page_no_duplicate_legend(self):
         """Verify BeneficiariesPage.js doesn't have a redundant legend line"""

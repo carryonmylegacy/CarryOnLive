@@ -34,18 +34,11 @@ class TestSuccessionHierarchy:
         """Get an estate ID to test with"""
         # Get estates for the logged-in user
         estates_resp = requests.get(f"{BASE_URL}/api/estates", headers=auth_headers)
-        assert estates_resp.status_code == 200, (
-            f"Get estates failed: {estates_resp.text}"
-        )
+        assert estates_resp.status_code == 200, f"Get estates failed: {estates_resp.text}"
         estates = estates_resp.json()
 
         # Find an owned estate
-        owned = [
-            e
-            for e in estates
-            if e.get("user_role_in_estate") == "owner"
-            or not e.get("user_role_in_estate")
-        ]
+        owned = [e for e in estates if e.get("user_role_in_estate") == "owner" or not e.get("user_role_in_estate")]
         if owned:
             return owned[0]["id"]
 
@@ -57,9 +50,7 @@ class TestSuccessionHierarchy:
 
     def test_get_beneficiaries_returns_list(self, auth_headers, estate_id):
         """GET /api/beneficiaries/{estate_id} returns list of beneficiaries"""
-        resp = requests.get(
-            f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=auth_headers
-        )
+        resp = requests.get(f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=auth_headers)
         assert resp.status_code == 200, f"Get beneficiaries failed: {resp.text}"
         beneficiaries = resp.json()
         assert isinstance(beneficiaries, list), "Expected list of beneficiaries"
@@ -68,9 +59,7 @@ class TestSuccessionHierarchy:
 
     def test_get_succession_order_endpoint(self, auth_headers, estate_id):
         """GET /api/beneficiaries/{estate_id}/succession returns sorted succession list"""
-        resp = requests.get(
-            f"{BASE_URL}/api/beneficiaries/{estate_id}/succession", headers=auth_headers
-        )
+        resp = requests.get(f"{BASE_URL}/api/beneficiaries/{estate_id}/succession", headers=auth_headers)
         assert resp.status_code == 200, f"Get succession order failed: {resp.text}"
 
         succession = resp.json()
@@ -85,17 +74,13 @@ class TestSuccessionHierarchy:
             for idx, ben in enumerate(succession):
                 order = ben.get("succession_order")
                 is_primary = ben.get("is_primary", False)
-                print(
-                    f"  Position {idx}: {ben['name']} - succession_order={order}, is_primary={is_primary}"
-                )
+                print(f"  Position {idx}: {ben['name']} - succession_order={order}, is_primary={is_primary}")
         return succession
 
     def test_reorder_beneficiaries_sets_succession(self, auth_headers, estate_id):
         """PUT /api/beneficiaries/reorder/{estate_id} sets succession_order and is_primary"""
         # First get current beneficiaries
-        get_resp = requests.get(
-            f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=auth_headers
-        )
+        get_resp = requests.get(f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=auth_headers)
         assert get_resp.status_code == 200
         beneficiaries = get_resp.json()
 
@@ -117,9 +102,7 @@ class TestSuccessionHierarchy:
         print("Reorder API returned success")
 
         # Verify succession_order was set
-        verify_resp = requests.get(
-            f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=auth_headers
-        )
+        verify_resp = requests.get(f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=auth_headers)
         assert verify_resp.status_code == 200
         updated = verify_resp.json()
 
@@ -128,12 +111,8 @@ class TestSuccessionHierarchy:
             if ben:
                 expected_primary = idx == 0
                 assert ben.get("sort_order") == idx, f"sort_order should be {idx}"
-                assert ben.get("succession_order") == idx, (
-                    f"succession_order should be {idx}"
-                )
-                assert ben.get("is_primary") == expected_primary, (
-                    f"is_primary should be {expected_primary}"
-                )
+                assert ben.get("succession_order") == idx, f"succession_order should be {idx}"
+                assert ben.get("is_primary") == expected_primary, f"is_primary should be {expected_primary}"
                 print(
                     f"  {ben['name']}: sort_order={ben.get('sort_order')}, succession_order={ben.get('succession_order')}, is_primary={ben.get('is_primary')}"
                 )
@@ -141,9 +120,7 @@ class TestSuccessionHierarchy:
     def test_reorder_swaps_primary(self, auth_headers, estate_id):
         """When reordering, the first position becomes Primary"""
         # Get current beneficiaries
-        get_resp = requests.get(
-            f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=auth_headers
-        )
+        get_resp = requests.get(f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=auth_headers)
         assert get_resp.status_code == 200
         beneficiaries = get_resp.json()
 
@@ -163,17 +140,13 @@ class TestSuccessionHierarchy:
         assert reorder_resp.status_code == 200, f"Reorder failed: {reorder_resp.text}"
 
         # Verify the new primary
-        verify_resp = requests.get(
-            f"{BASE_URL}/api/beneficiaries/{estate_id}/succession", headers=auth_headers
-        )
+        verify_resp = requests.get(f"{BASE_URL}/api/beneficiaries/{estate_id}/succession", headers=auth_headers)
         assert verify_resp.status_code == 200
         succession = verify_resp.json()
 
         if succession:
             first = succession[0]
-            assert first["id"] == ordered_ids[0], (
-                "First in succession should be new primary"
-            )
+            assert first["id"] == ordered_ids[0], "First in succession should be new primary"
             assert first.get("is_primary") is True, "First should be marked as primary"
             print(f"New primary: {first['name']} (succession_order=0, is_primary=True)")
 
@@ -183,17 +156,13 @@ class TestSuccessionHierarchy:
             f"{BASE_URL}/api/beneficiaries/reorder/{estate_id}",
             json={"ordered_ids": ["test-id"]},
         )
-        assert resp.status_code in [401, 403], (
-            f"Expected 401/403, got {resp.status_code}"
-        )
+        assert resp.status_code in [401, 403], f"Expected 401/403, got {resp.status_code}"
         print("Reorder endpoint correctly requires auth")
 
     def test_succession_endpoint_requires_auth(self, estate_id):
         """GET /api/beneficiaries/{estate_id}/succession requires authentication"""
         resp = requests.get(f"{BASE_URL}/api/beneficiaries/{estate_id}/succession")
-        assert resp.status_code in [401, 403], (
-            f"Expected 401/403, got {resp.status_code}"
-        )
+        assert resp.status_code in [401, 403], f"Expected 401/403, got {resp.status_code}"
         print("Succession endpoint correctly requires auth")
 
 
@@ -219,18 +188,14 @@ class TestOnboardingStepLabel:
         if resp.status_code == 200:
             progress = resp.json()
             steps = progress.get("steps", [])
-            designate_step = next(
-                (s for s in steps if s.get("key") == "designate_primary"), None
-            )
+            designate_step = next((s for s in steps if s.get("key") == "designate_primary"), None)
             if designate_step:
                 assert designate_step.get("label") == "Set Your Succession Order", (
                     f"Expected 'Set Your Succession Order', got '{designate_step.get('label')}'"
                 )
                 print(f"Onboarding step label verified: {designate_step.get('label')}")
             else:
-                print(
-                    "designate_primary step not found in onboarding (may be completed)"
-                )
+                print("designate_primary step not found in onboarding (may be completed)")
         else:
             print(f"Onboarding not available for this user (status {resp.status_code})")
 
@@ -254,12 +219,7 @@ class TestBeneficiaryCardFields:
         if estates_resp.status_code != 200:
             pytest.skip("Could not get estates")
         estates = estates_resp.json()
-        owned = [
-            e
-            for e in estates
-            if e.get("user_role_in_estate") == "owner"
-            or not e.get("user_role_in_estate")
-        ]
+        owned = [e for e in estates if e.get("user_role_in_estate") == "owner" or not e.get("user_role_in_estate")]
         if owned:
             return owned[0]["id"]
         if estates:
@@ -268,9 +228,7 @@ class TestBeneficiaryCardFields:
 
     def test_beneficiaries_include_succession_order(self, auth_headers, estate_id):
         """GET /api/beneficiaries returns succession_order and is_primary fields"""
-        resp = requests.get(
-            f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=auth_headers
-        )
+        resp = requests.get(f"{BASE_URL}/api/beneficiaries/{estate_id}", headers=auth_headers)
         assert resp.status_code == 200
         beneficiaries = resp.json()
 

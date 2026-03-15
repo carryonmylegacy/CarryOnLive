@@ -57,17 +57,13 @@ class TestLoginEndpoint:
 
     def test_login_without_email_returns_validation_error(self):
         """Missing email should return validation error"""
-        response = requests.post(
-            f"{BASE_URL}/api/auth/login", json={"password": "testpass"}
-        )
+        response = requests.post(f"{BASE_URL}/api/auth/login", json={"password": "testpass"})
 
         assert response.status_code == 422  # Validation error
 
     def test_login_without_password_returns_validation_error(self):
         """Missing password should return validation error"""
-        response = requests.post(
-            f"{BASE_URL}/api/auth/login", json={"email": "test@test.com"}
-        )
+        response = requests.post(f"{BASE_URL}/api/auth/login", json={"email": "test@test.com"})
 
         assert response.status_code == 422  # Validation error
 
@@ -77,9 +73,7 @@ class TestResendOTPEndpoint:
 
     def test_resend_otp_with_valid_email_returns_success(self):
         """Resend OTP should work for existing users"""
-        response = requests.post(
-            f"{BASE_URL}/api/auth/resend-otp", json={"email": ADMIN_EMAIL}
-        )
+        response = requests.post(f"{BASE_URL}/api/auth/resend-otp", json={"email": ADMIN_EMAIL})
 
         assert response.status_code == 200
         data = response.json()
@@ -140,17 +134,13 @@ class TestVerifyOTPEndpoint:
 
     def test_verify_otp_without_email_returns_validation_error(self):
         """Missing email should return validation error"""
-        response = requests.post(
-            f"{BASE_URL}/api/auth/verify-otp", json={"otp": "123456"}
-        )
+        response = requests.post(f"{BASE_URL}/api/auth/verify-otp", json={"otp": "123456"})
 
         assert response.status_code == 422
 
     def test_verify_otp_without_otp_returns_validation_error(self):
         """Missing OTP should return validation error"""
-        response = requests.post(
-            f"{BASE_URL}/api/auth/verify-otp", json={"email": ADMIN_EMAIL}
-        )
+        response = requests.post(f"{BASE_URL}/api/auth/verify-otp", json={"email": ADMIN_EMAIL})
 
         assert response.status_code == 422
 
@@ -168,9 +158,7 @@ class TestRateLimiting:
 
         # We'll just verify the endpoint returns 200 for the first request
         # to confirm it's accessible and rate limiting is configured
-        response = requests.post(
-            f"{BASE_URL}/api/auth/resend-otp", json={"email": ADMIN_EMAIL}
-        )
+        response = requests.post(f"{BASE_URL}/api/auth/resend-otp", json={"email": ADMIN_EMAIL})
 
         # Should succeed (not rate limited yet)
         assert response.status_code in [200, 429]
@@ -209,9 +197,7 @@ class TestOTPWorkflow:
         time.sleep(1)
 
         # Step 2: Resend OTP
-        resend_response = requests.post(
-            f"{BASE_URL}/api/auth/resend-otp", json={"email": ADMIN_EMAIL}
-        )
+        resend_response = requests.post(f"{BASE_URL}/api/auth/resend-otp", json={"email": ADMIN_EMAIL})
 
         assert resend_response.status_code == 200
         resend_data = resend_response.json()

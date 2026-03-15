@@ -7,9 +7,7 @@ import pytest
 import requests
 from uuid import uuid4
 
-BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com"
-)
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com")
 
 
 # Read admin token from file
@@ -47,9 +45,7 @@ class TestAnnouncements:
             },
         )
         print(f"POST /api/admin/announcements: {response.status_code}")
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
         assert "id" in data
         assert data["title"].startswith("TEST_Announcement_")
@@ -57,9 +53,7 @@ class TestAnnouncements:
         return data["id"]
 
     def test_list_announcements(self, admin_headers):
-        response = requests.get(
-            f"{BASE_URL}/api/admin/announcements", headers=admin_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/announcements", headers=admin_headers)
         print(f"GET /api/admin/announcements: {response.status_code}")
         assert response.status_code == 200
         data = response.json()
@@ -70,13 +64,9 @@ class TestSystemHealth:
     """Test GET /api/admin/system-health - Founder views health metrics"""
 
     def test_get_system_health(self, admin_headers):
-        response = requests.get(
-            f"{BASE_URL}/api/admin/system-health", headers=admin_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/system-health", headers=admin_headers)
         print(f"GET /api/admin/system-health: {response.status_code}")
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
         assert "status" in data
         assert "database" in data
@@ -91,13 +81,9 @@ class TestMyActivity:
     """Test GET /api/ops/my-activity - Operator sees own audit log"""
 
     def test_get_my_activity(self, admin_headers):
-        response = requests.get(
-            f"{BASE_URL}/api/ops/my-activity?limit=50", headers=admin_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/ops/my-activity?limit=50", headers=admin_headers)
         print(f"GET /api/ops/my-activity: {response.status_code}")
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
         assert isinstance(data, list)
 
@@ -106,13 +92,9 @@ class TestQuickSearch:
     """Test GET /api/ops/search - Search across all queues"""
 
     def test_search_with_query(self, admin_headers):
-        response = requests.get(
-            f"{BASE_URL}/api/ops/search?q=test", headers=admin_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/ops/search?q=test", headers=admin_headers)
         print(f"GET /api/ops/search?q=test: {response.status_code}")
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
         assert isinstance(data, list)
 
@@ -130,17 +112,13 @@ class TestShiftNotes:
             },
         )
         print(f"POST /api/ops/shift-notes: {response.status_code}")
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
         assert "id" in data
         assert data["content"].startswith("TEST_ShiftNote_")
 
     def test_list_shift_notes(self, admin_headers):
-        response = requests.get(
-            f"{BASE_URL}/api/ops/shift-notes", headers=admin_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/ops/shift-notes", headers=admin_headers)
         print(f"GET /api/ops/shift-notes: {response.status_code}")
         assert response.status_code == 200
         data = response.json()
@@ -163,17 +141,13 @@ class TestEscalations:
             },
         )
         print(f"POST /api/ops/escalations: {response.status_code}")
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
         assert "id" in data
         assert data["status"] == "open"
 
     def test_list_escalations(self, admin_headers):
-        response = requests.get(
-            f"{BASE_URL}/api/ops/escalations", headers=admin_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/ops/escalations", headers=admin_headers)
         print(f"GET /api/ops/escalations: {response.status_code}")
         assert response.status_code == 200
         data = response.json()
@@ -195,17 +169,13 @@ class TestKnowledgeBase:
             },
         )
         print(f"POST /api/admin/knowledge-base: {response.status_code}")
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
         assert "id" in data
         assert data["title"].startswith("TEST_KBArticle_")
 
     def test_list_kb_articles(self, admin_headers):
-        response = requests.get(
-            f"{BASE_URL}/api/admin/knowledge-base", headers=admin_headers
-        )
+        response = requests.get(f"{BASE_URL}/api/admin/knowledge-base", headers=admin_headers)
         print(f"GET /api/admin/knowledge-base: {response.status_code}")
         assert response.status_code == 200
         data = response.json()

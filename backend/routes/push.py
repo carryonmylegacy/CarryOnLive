@@ -28,9 +28,7 @@ class PushNotificationRequest(BaseModel):
 
 
 @router.post("/push/subscribe")
-async def subscribe_push(
-    subscription: PushSubscription, current_user: dict = Depends(get_current_user)
-):
+async def subscribe_push(subscription: PushSubscription, current_user: dict = Depends(get_current_user)):
     """Subscribe to push notifications"""
     sub_data = {
         "user_id": current_user["id"],
@@ -41,18 +39,14 @@ async def subscribe_push(
     }
 
     # Upsert subscription (update if endpoint exists, else insert)
-    await db.push_subscriptions.update_one(
-        {"endpoint": subscription.endpoint}, {"$set": sub_data}, upsert=True
-    )
+    await db.push_subscriptions.update_one({"endpoint": subscription.endpoint}, {"$set": sub_data}, upsert=True)
 
     logger.info(f"Push subscription saved for user {current_user['id']}")
     return {"success": True, "message": "Subscribed to push notifications"}
 
 
 @router.delete("/push/unsubscribe")
-async def unsubscribe_push(
-    subscription: PushSubscription, current_user: dict = Depends(get_current_user)
-):
+async def unsubscribe_push(subscription: PushSubscription, current_user: dict = Depends(get_current_user)):
     """Unsubscribe from push notifications"""
     await db.push_subscriptions.delete_one({"endpoint": subscription.endpoint})
     return {"success": True, "message": "Unsubscribed from push notifications"}
@@ -69,9 +63,7 @@ async def get_vapid_public_key():
                 encoding=serialization.Encoding.X962,
                 format=serialization.PublicFormat.UncompressedPoint,
             )
-            public_key_b64 = (
-                base64.urlsafe_b64encode(raw_bytes).decode("utf-8").rstrip("=")
-            )
+            public_key_b64 = base64.urlsafe_b64encode(raw_bytes).decode("utf-8").rstrip("=")
             return {"public_key": public_key_b64}
         else:
             # VAPID not configured — push notifications unavailable

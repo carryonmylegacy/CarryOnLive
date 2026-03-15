@@ -111,9 +111,7 @@ class TestBug1AccountLockout:
             f"{BASE_URL}/api/auth/login",
             json={"email": existing_email, "password": existing_password},
         )
-        assert login_resp.status_code == 200, (
-            f"Existing user login failed: {login_resp.text}"
-        )
+        assert login_resp.status_code == 200, f"Existing user login failed: {login_resp.text}"
         existing_data = login_resp.json()
 
         # Create benefactor who will add the existing user
@@ -136,9 +134,7 @@ class TestBug1AccountLockout:
             f"{BASE_URL}/api/auth/login",
             json={"email": benefactor_email, "password": benefactor_password},
         )
-        assert login_resp2.status_code == 200, (
-            f"Benefactor login failed: {login_resp2.text}"
-        )
+        assert login_resp2.status_code == 200, f"Benefactor login failed: {login_resp2.text}"
         benefactor_data = login_resp2.json()
 
         # Get benefactor's estate
@@ -164,9 +160,7 @@ class TestBug1AccountLockout:
             "estate_id": estates[0]["id"],
         }
 
-    def test_create_beneficiary_with_existing_email_has_pending_status(
-        self, api_client, mongo_client, test_users
-    ):
+    def test_create_beneficiary_with_existing_email_has_pending_status(self, api_client, mongo_client, test_users):
         """
         POST /api/beneficiaries with existing user email:
         - invitation_status must be 'pending' (NOT 'accepted')
@@ -187,9 +181,7 @@ class TestBug1AccountLockout:
             },
         )
 
-        assert response.status_code == 200, (
-            f"Create beneficiary failed: {response.text}"
-        )
+        assert response.status_code == 200, f"Create beneficiary failed: {response.text}"
         beneficiary = response.json()
 
         # KEY ASSERTION 1: Status must be 'pending'
@@ -204,9 +196,7 @@ class TestBug1AccountLockout:
 
         print("PASS: Beneficiary created with status='pending', user_id pre-linked")
 
-    def test_existing_user_not_added_to_estate_beneficiaries_array(
-        self, api_client, mongo_client, test_users
-    ):
+    def test_existing_user_not_added_to_estate_beneficiaries_array(self, api_client, mongo_client, test_users):
         """
         When creating beneficiary with existing email, the existing user
         must NOT be added to the estate's beneficiaries array.
@@ -224,9 +214,7 @@ class TestBug1AccountLockout:
 
         print("PASS: Existing user NOT in estate's beneficiaries array")
 
-    def test_existing_user_can_still_login_with_original_password(
-        self, api_client, test_users
-    ):
+    def test_existing_user_can_still_login_with_original_password(self, api_client, test_users):
         """
         POST /api/auth/login: Existing user can still login with original password
         after being added as beneficiary by someone else.
@@ -249,9 +237,7 @@ class TestBug1AccountLockout:
 
         print("PASS: Existing user can login with original password")
 
-    def test_benefactor_can_send_invitation_for_pending_beneficiary(
-        self, api_client, test_users
-    ):
+    def test_benefactor_can_send_invitation_for_pending_beneficiary(self, api_client, test_users):
         """
         POST /api/beneficiaries/{id}/invite: Benefactor can send invitation
         for beneficiary with status='pending' even when user_id is pre-linked.
@@ -259,18 +245,12 @@ class TestBug1AccountLockout:
         headers = {"Authorization": f"Bearer {test_users['benefactor']['token']}"}
 
         # Get the beneficiary
-        response = api_client.get(
-            f"{BASE_URL}/api/beneficiaries/{test_users['estate_id']}", headers=headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/beneficiaries/{test_users['estate_id']}", headers=headers)
         assert response.status_code == 200
         beneficiaries = response.json()
 
         target = next(
-            (
-                b
-                for b in beneficiaries
-                if b.get("email") == test_users["existing_user"]["email"]
-            ),
+            (b for b in beneficiaries if b.get("email") == test_users["existing_user"]["email"]),
             None,
         )
         assert target is not None, "Beneficiary not found"
@@ -281,18 +261,12 @@ class TestBug1AccountLockout:
         )
 
         # Try to send invitation
-        invite_resp = api_client.post(
-            f"{BASE_URL}/api/beneficiaries/{target['id']}/invite", headers=headers
-        )
+        invite_resp = api_client.post(f"{BASE_URL}/api/beneficiaries/{target['id']}/invite", headers=headers)
 
         # Should succeed (or return 400 if already sent, which is OK)
-        assert invite_resp.status_code in [200, 400], (
-            f"Invite request failed unexpectedly: {invite_resp.text}"
-        )
+        assert invite_resp.status_code in [200, 400], f"Invite request failed unexpectedly: {invite_resp.text}"
 
-        print(
-            "PASS: Benefactor can send invitation for pending beneficiary with pre-linked user_id"
-        )
+        print("PASS: Benefactor can send invitation for pending beneficiary with pre-linked user_id")
 
 
 class TestBug1EmailCaseSensitivity:
@@ -386,9 +360,7 @@ class TestBug1EmailCaseSensitivity:
             },
         )
 
-        assert response.status_code == 200, (
-            f"Create beneficiary failed: {response.text}"
-        )
+        assert response.status_code == 200, f"Create beneficiary failed: {response.text}"
         beneficiary = response.json()
 
         # Should still find the existing user and pre-link
@@ -489,9 +461,7 @@ class TestBug1InvitationAccept:
             "estate_id": estate_id,
         }
 
-    def test_accept_invitation_for_prelinked_beneficiary(
-        self, api_client, mongo_client, invitation_test_data
-    ):
+    def test_accept_invitation_for_prelinked_beneficiary(self, api_client, mongo_client, invitation_test_data):
         """
         POST /api/invitations/accept: Works for pre-linked beneficiary.
         Should correctly transition from pending to accepted, adds user to estate.
@@ -513,29 +483,23 @@ class TestBug1InvitationAccept:
             assert "access_token" in data or "message" in data
 
             # Verify beneficiary status changed to accepted
-            ben_doc = mongo_client.beneficiaries.find_one(
-                {"id": invitation_test_data["beneficiary_id"]}
-            )
+            ben_doc = mongo_client.beneficiaries.find_one({"id": invitation_test_data["beneficiary_id"]})
             assert ben_doc.get("invitation_status") == "accepted", (
                 f"Expected status='accepted' but got '{ben_doc.get('invitation_status')}'"
             )
 
             # Verify user was added to estate's beneficiaries array
-            estate_doc = mongo_client.estates.find_one(
-                {"id": invitation_test_data["estate_id"]}
+            estate_doc = mongo_client.estates.find_one({"id": invitation_test_data["estate_id"]})
+            assert invitation_test_data["existing_user"]["user_id"] in estate_doc.get("beneficiaries", []), (
+                "User should be in estate's beneficiaries array after accepting"
             )
-            assert invitation_test_data["existing_user"]["user_id"] in estate_doc.get(
-                "beneficiaries", []
-            ), "User should be in estate's beneficiaries array after accepting"
 
             print("PASS: Invitation accept works for pre-linked beneficiary")
         elif response.status_code == 400:
             # Already accepted - that's OK
             print("PASS: Invitation already accepted (expected)")
         else:
-            pytest.fail(
-                f"Unexpected response: {response.status_code} - {response.text}"
-            )
+            pytest.fail(f"Unexpected response: {response.status_code} - {response.text}")
 
 
 # ==================== BUG 2 TESTS: PHOTO IN ORBIT ====================
@@ -678,9 +642,7 @@ class TestBug2PhotoInOrbit:
             # Get existing estate
             estates_resp = api_client.get(f"{BASE_URL}/api/estates", headers=headers)
             estates = estates_resp.json()
-            owned = next(
-                (e for e in estates if e.get("user_role_in_estate") == "owner"), None
-            )
+            owned = next((e for e in estates if e.get("user_role_in_estate") == "owner"), None)
             if owned:
                 photo_test_data["b"]["estate_id"] = owned["id"]
                 print(f"PASS: B already has estate: {owned['id']}")
@@ -711,15 +673,11 @@ class TestBug2PhotoInOrbit:
 
         if response.status_code == 200:
             ben = response.json()
-            print(
-                f"PASS: A added as beneficiary to B's estate (status={ben.get('invitation_status')})"
-            )
+            print(f"PASS: A added as beneficiary to B's estate (status={ben.get('invitation_status')})")
         else:
             print(f"! Add beneficiary returned: {response.text}")
 
-    def test_family_connections_photo_fallback(
-        self, api_client, mongo_client, photo_test_data
-    ):
+    def test_family_connections_photo_fallback(self, api_client, mongo_client, photo_test_data):
         """
         GET /api/beneficiary/family-connections: Returns photo_url from beneficiary
         records when estate owner's users.photo_url is empty.
@@ -728,9 +686,7 @@ class TestBug2PhotoInOrbit:
             pytest.skip("B has no estate")
 
         # First, ensure B has no photo in users collection
-        mongo_client.users.update_one(
-            {"id": photo_test_data["b"]["user_id"]}, {"$unset": {"photo_url": ""}}
-        )
+        mongo_client.users.update_one({"id": photo_test_data["b"]["user_id"]}, {"$unset": {"photo_url": ""}})
 
         # Accept invitation so A can see B's estate
         # Get A's beneficiary record in B's estate
@@ -770,18 +726,12 @@ class TestBug2PhotoInOrbit:
 
         # Get family connections as A
         a_headers = {"Authorization": f"Bearer {a_new_token}"}
-        response = api_client.get(
-            f"{BASE_URL}/api/beneficiary/family-connections", headers=a_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/beneficiary/family-connections", headers=a_headers)
 
         if response.status_code == 200:
             connections = response.json()
             b_connection = next(
-                (
-                    c
-                    for c in connections
-                    if c.get("benefactor_id") == photo_test_data["b"]["user_id"]
-                ),
+                (c for c in connections if c.get("benefactor_id") == photo_test_data["b"]["user_id"]),
                 None,
             )
 
@@ -789,22 +739,16 @@ class TestBug2PhotoInOrbit:
                 photo_url = b_connection.get("photo_url", "")
                 # B has no users.photo_url, so photo should come from beneficiary record
                 if photo_url:
-                    print(
-                        "PASS: family-connections has photo_url fallback from beneficiary record"
-                    )
+                    print("PASS: family-connections has photo_url fallback from beneficiary record")
                 else:
                     # This might mean A is not yet accepted - check status
                     print("! B found but no photo_url - checking if fallback worked")
             else:
-                print(
-                    "! B not found in A's family-connections (A may need to accept invitation)"
-                )
+                print("! B not found in A's family-connections (A may need to accept invitation)")
         else:
             print(f"! Family-connections returned: {response.status_code}")
 
-    def test_get_estates_owner_photo_fallback(
-        self, api_client, mongo_client, photo_test_data
-    ):
+    def test_get_estates_owner_photo_fallback(self, api_client, mongo_client, photo_test_data):
         """
         GET /api/estates: owner_photo_url falls back to owner's beneficiary
         record photo when users.photo_url is empty.
@@ -813,9 +757,7 @@ class TestBug2PhotoInOrbit:
             pytest.skip("B has no estate")
 
         # Ensure B has no photo in users collection
-        mongo_client.users.update_one(
-            {"id": photo_test_data["b"]["user_id"]}, {"$unset": {"photo_url": ""}}
-        )
+        mongo_client.users.update_one({"id": photo_test_data["b"]["user_id"]}, {"$unset": {"photo_url": ""}})
 
         # Get estates as A (who should see B's estate as a beneficiary estate)
         login_a = api_client.post(
@@ -841,8 +783,7 @@ class TestBug2PhotoInOrbit:
             (
                 e
                 for e in estates
-                if e.get("is_beneficiary_estate")
-                and e.get("owner_id") == photo_test_data["b"]["user_id"]
+                if e.get("is_beneficiary_estate") and e.get("owner_id") == photo_test_data["b"]["user_id"]
             ),
             None,
         )
@@ -852,13 +793,9 @@ class TestBug2PhotoInOrbit:
             print(f"B's estate found with owner_photo_url: {bool(owner_photo)}")
             # The fix should ensure owner_photo_url comes from B's beneficiary record
         else:
-            print(
-                "! B's estate not found in A's list (A may need to accept invitation)"
-            )
+            print("! B's estate not found in A's list (A may need to accept invitation)")
 
-    def test_get_beneficiaries_photo_fallback_from_linked_user(
-        self, api_client, mongo_client, photo_test_data
-    ):
+    def test_get_beneficiaries_photo_fallback_from_linked_user(self, api_client, mongo_client, photo_test_data):
         """
         GET /api/beneficiaries/{estate_id}: photo_url falls back to linked user's
         users.photo_url when beneficiary record has no photo.
@@ -892,11 +829,7 @@ class TestBug2PhotoInOrbit:
         beneficiaries = response.json()
 
         b_ben = next(
-            (
-                b
-                for b in beneficiaries
-                if b.get("user_id") == photo_test_data["b"]["user_id"]
-            ),
+            (b for b in beneficiaries if b.get("user_id") == photo_test_data["b"]["user_id"]),
             None,
         )
 

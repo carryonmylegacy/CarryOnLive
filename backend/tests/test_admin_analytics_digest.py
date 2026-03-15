@@ -79,29 +79,19 @@ class TestAnalyticsDigestPreview:
     def test_preview_requires_authentication(self, api_client):
         """Preview endpoint should return 401/403 without authentication"""
         response = api_client.get(f"{BASE_URL}/api/admin/analytics-digest/preview")
-        assert response.status_code in [401, 403], (
-            f"Expected 401/403, got {response.status_code}"
-        )
+        assert response.status_code in [401, 403], f"Expected 401/403, got {response.status_code}"
         print("PASS: Preview endpoint requires authentication")
 
     def test_preview_requires_admin_role(self, api_client, user_headers):
         """Preview endpoint should return 403 for non-admin users"""
-        response = api_client.get(
-            f"{BASE_URL}/api/admin/analytics-digest/preview", headers=user_headers
-        )
-        assert response.status_code == 403, (
-            f"Expected 403 for non-admin, got {response.status_code}"
-        )
+        response = api_client.get(f"{BASE_URL}/api/admin/analytics-digest/preview", headers=user_headers)
+        assert response.status_code == 403, f"Expected 403 for non-admin, got {response.status_code}"
         print("PASS: Preview endpoint returns 403 for non-admin users")
 
     def test_preview_returns_html_and_data(self, api_client, admin_headers):
         """Preview endpoint should return HTML and data object for admin"""
-        response = api_client.get(
-            f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers
-        )
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        response = api_client.get(f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers)
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
 
         data = response.json()
 
@@ -118,9 +108,7 @@ class TestAnalyticsDigestPreview:
 
     def test_preview_html_contains_mrr_section(self, api_client, admin_headers):
         """Preview HTML should contain MRR section"""
-        response = api_client.get(
-            f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers)
         assert response.status_code == 200
 
         html = response.json()["html"]
@@ -129,9 +117,7 @@ class TestAnalyticsDigestPreview:
 
     def test_preview_html_contains_conversion_section(self, api_client, admin_headers):
         """Preview HTML should contain Conversion section"""
-        response = api_client.get(
-            f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers)
         assert response.status_code == 200
 
         html = response.json()["html"]
@@ -140,9 +126,7 @@ class TestAnalyticsDigestPreview:
 
     def test_preview_html_contains_churn_section(self, api_client, admin_headers):
         """Preview HTML should contain Churn section"""
-        response = api_client.get(
-            f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers)
         assert response.status_code == 200
 
         html = response.json()["html"]
@@ -151,9 +135,7 @@ class TestAnalyticsDigestPreview:
 
     def test_preview_html_contains_new_signups_section(self, api_client, admin_headers):
         """Preview HTML should contain New Signups section with sparkline"""
-        response = api_client.get(
-            f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers)
         assert response.status_code == 200
 
         html = response.json()["html"]
@@ -162,37 +144,25 @@ class TestAnalyticsDigestPreview:
 
     def test_preview_html_contains_user_funnel_section(self, api_client, admin_headers):
         """Preview HTML should contain User Funnel section"""
-        response = api_client.get(
-            f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers)
         assert response.status_code == 200
 
         html = response.json()["html"]
-        assert "User Funnel" in html or "Active Trials" in html, (
-            "HTML should contain User Funnel section"
-        )
+        assert "User Funnel" in html or "Active Trials" in html, "HTML should contain User Funnel section"
         print("PASS: Preview HTML contains User Funnel section")
 
-    def test_preview_html_contains_tier_breakdown_section(
-        self, api_client, admin_headers
-    ):
+    def test_preview_html_contains_tier_breakdown_section(self, api_client, admin_headers):
         """Preview HTML should contain Tier Breakdown section"""
-        response = api_client.get(
-            f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers)
         assert response.status_code == 200
 
         html = response.json()["html"]
-        assert "Tier Breakdown" in html or "Tier" in html, (
-            "HTML should contain Tier Breakdown section"
-        )
+        assert "Tier Breakdown" in html or "Tier" in html, "HTML should contain Tier Breakdown section"
         print("PASS: Preview HTML contains Tier Breakdown section")
 
     def test_preview_data_contains_required_fields(self, api_client, admin_headers):
         """Preview data object should contain all required analytics fields"""
-        response = api_client.get(
-            f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers)
         assert response.status_code == 200
 
         data = response.json()["data"]
@@ -218,9 +188,7 @@ class TestAnalyticsDigestPreview:
 
     def test_preview_data_mrr_is_numeric(self, api_client, admin_headers):
         """MRR value should be a numeric value"""
-        response = api_client.get(
-            f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers)
         assert response.status_code == 200
 
         data = response.json()["data"]
@@ -230,34 +198,26 @@ class TestAnalyticsDigestPreview:
 
     def test_preview_data_arr_equals_12x_mrr(self, api_client, admin_headers):
         """ARR should equal 12 times MRR"""
-        response = api_client.get(
-            f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers)
         assert response.status_code == 200
 
         data = response.json()["data"]
         expected_arr = round(data["mrr"] * 12, 2)
         actual_arr = round(data["arr"], 2)
 
-        assert actual_arr == expected_arr, (
-            f"ARR (${actual_arr}) should be 12x MRR (${data['mrr']})"
-        )
+        assert actual_arr == expected_arr, f"ARR (${actual_arr}) should be 12x MRR (${data['mrr']})"
         print(f"PASS: ARR (${actual_arr}) equals 12x MRR (${data['mrr']})")
 
     def test_preview_data_daily_signups_has_7_days(self, api_client, admin_headers):
         """Daily signups should have 7 days of data"""
-        response = api_client.get(
-            f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers)
         assert response.status_code == 200
 
         data = response.json()["data"]
         daily_signups = data["daily_signups"]
 
         assert isinstance(daily_signups, list), "daily_signups should be a list"
-        assert len(daily_signups) == 7, (
-            f"daily_signups should have 7 days, got {len(daily_signups)}"
-        )
+        assert len(daily_signups) == 7, f"daily_signups should have 7 days, got {len(daily_signups)}"
 
         # Each day should have 'day' and 'count' fields
         for day_data in daily_signups:
@@ -276,29 +236,19 @@ class TestAnalyticsDigestSend:
     def test_send_requires_authentication(self, api_client):
         """Send endpoint should return 401/403 without authentication"""
         response = api_client.post(f"{BASE_URL}/api/admin/analytics-digest/send")
-        assert response.status_code in [401, 403], (
-            f"Expected 401/403, got {response.status_code}"
-        )
+        assert response.status_code in [401, 403], f"Expected 401/403, got {response.status_code}"
         print("PASS: Send endpoint requires authentication")
 
     def test_send_requires_admin_role(self, api_client, user_headers):
         """Send endpoint should return 403 for non-admin users"""
-        response = api_client.post(
-            f"{BASE_URL}/api/admin/analytics-digest/send", headers=user_headers
-        )
-        assert response.status_code == 403, (
-            f"Expected 403 for non-admin, got {response.status_code}"
-        )
+        response = api_client.post(f"{BASE_URL}/api/admin/analytics-digest/send", headers=user_headers)
+        assert response.status_code == 403, f"Expected 403 for non-admin, got {response.status_code}"
         print("PASS: Send endpoint returns 403 for non-admin users")
 
     def test_send_works_for_admin(self, api_client, admin_headers):
         """Send endpoint should work for admin users"""
-        response = api_client.post(
-            f"{BASE_URL}/api/admin/analytics-digest/send", headers=admin_headers
-        )
-        assert response.status_code == 200, (
-            f"Expected 200, got {response.status_code}: {response.text}"
-        )
+        response = api_client.post(f"{BASE_URL}/api/admin/analytics-digest/send", headers=admin_headers)
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
 
         data = response.json()
 
@@ -310,9 +260,7 @@ class TestAnalyticsDigestSend:
 
     def test_send_returns_sent_count(self, api_client, admin_headers):
         """Send endpoint should return count of emails sent"""
-        response = api_client.post(
-            f"{BASE_URL}/api/admin/analytics-digest/send", headers=admin_headers
-        )
+        response = api_client.post(f"{BASE_URL}/api/admin/analytics-digest/send", headers=admin_headers)
         assert response.status_code == 200
 
         data = response.json()
@@ -323,9 +271,7 @@ class TestAnalyticsDigestSend:
 
     def test_send_returns_data_summary(self, api_client, admin_headers):
         """Send endpoint should return data summary"""
-        response = api_client.post(
-            f"{BASE_URL}/api/admin/analytics-digest/send", headers=admin_headers
-        )
+        response = api_client.post(f"{BASE_URL}/api/admin/analytics-digest/send", headers=admin_headers)
         assert response.status_code == 200
 
         data = response.json()
@@ -335,13 +281,9 @@ class TestAnalyticsDigestSend:
             summary = data["data_summary"]
             assert "mrr" in summary, "data_summary should contain 'mrr'"
             assert "new_signups" in summary, "data_summary should contain 'new_signups'"
-            assert "conversion_rate" in summary, (
-                "data_summary should contain 'conversion_rate'"
-            )
+            assert "conversion_rate" in summary, "data_summary should contain 'conversion_rate'"
             assert "churn_rate" in summary, "data_summary should contain 'churn_rate'"
-            print(
-                f"PASS: Send returns data summary (MRR: ${summary['mrr']}, Signups: {summary['new_signups']})"
-            )
+            print(f"PASS: Send returns data summary (MRR: ${summary['mrr']}, Signups: {summary['new_signups']})")
         else:
             print("PASS: Send endpoint returns expected response structure")
 
@@ -355,16 +297,12 @@ class TestAnalyticsDigestIntegration:
     def test_preview_and_send_consistency(self, api_client, admin_headers):
         """Preview and send should use the same analytics data"""
         # Get preview data
-        preview_response = api_client.get(
-            f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers
-        )
+        preview_response = api_client.get(f"{BASE_URL}/api/admin/analytics-digest/preview", headers=admin_headers)
         assert preview_response.status_code == 200
         preview_data = preview_response.json()["data"]
 
         # Send digest and compare data
-        send_response = api_client.post(
-            f"{BASE_URL}/api/admin/analytics-digest/send", headers=admin_headers
-        )
+        send_response = api_client.post(f"{BASE_URL}/api/admin/analytics-digest/send", headers=admin_headers)
         assert send_response.status_code == 200
 
         send_data = send_response.json()
@@ -373,9 +311,7 @@ class TestAnalyticsDigestIntegration:
         if "data_summary" in send_data and send_data["sent"] > 0:
             summary = send_data["data_summary"]
             # MRR should be close (might have slight timing difference)
-            assert abs(preview_data["mrr"] - summary["mrr"]) < 1, (
-                "MRR should be consistent between preview and send"
-            )
+            assert abs(preview_data["mrr"] - summary["mrr"]) < 1, "MRR should be consistent between preview and send"
 
         print("PASS: Preview and send use consistent analytics data")
 

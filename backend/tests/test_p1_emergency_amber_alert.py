@@ -81,18 +81,12 @@ class TestP1EmergencyFeature:
         time.sleep(1)
 
         # Fetch support messages
-        messages_resp = requests.get(
-            f"{BASE_URL}/api/support/messages", headers=headers
-        )
+        messages_resp = requests.get(f"{BASE_URL}/api/support/messages", headers=headers)
         assert messages_resp.status_code == 200
         messages = messages_resp.json()
 
         # Find the P1 emergency message
-        p1_messages = [
-            m
-            for m in messages
-            if m.get("priority") == "p1" and m.get("is_emergency") is True
-        ]
+        p1_messages = [m for m in messages if m.get("priority") == "p1" and m.get("is_emergency") is True]
         assert len(p1_messages) > 0, "No P1 emergency message found in support messages"
 
         latest_p1 = p1_messages[-1]
@@ -116,9 +110,7 @@ class TestP1EmergencyFeature:
         len(notif_before.json().get("notifications", []))
 
         # Create P1 emergency as benefactor
-        benefactor_token = self.get_token(
-            self.benefactor_email, self.benefactor_password
-        )
+        benefactor_token = self.get_token(self.benefactor_email, self.benefactor_password)
         benefactor_headers = {"Authorization": f"Bearer {benefactor_token}"}
 
         resp = requests.post(
@@ -142,19 +134,13 @@ class TestP1EmergencyFeature:
 
         # Look for critical security_alert notifications
         security_alerts = [
-            n
-            for n in notifications
-            if n.get("priority") == "critical" and n.get("type") == "security_alert"
+            n for n in notifications if n.get("priority") == "critical" and n.get("type") == "security_alert"
         ]
 
-        assert len(security_alerts) > 0, (
-            "No critical security_alert notification found for staff"
-        )
+        assert len(security_alerts) > 0, "No critical security_alert notification found for staff"
 
         latest_alert = security_alerts[0]
-        assert "P1 EMERGENCY" in latest_alert.get(
-            "title", ""
-        ) or "EMERGENCY" in latest_alert.get("body", "")
+        assert "P1 EMERGENCY" in latest_alert.get("title", "") or "EMERGENCY" in latest_alert.get("body", "")
         print(
             f"✅ Staff security_alert notification created: priority={latest_alert.get('priority')}, type={latest_alert.get('type')}"
         )
@@ -172,9 +158,7 @@ class TestP1EmergencyFeature:
                 json={"reason": reason},
                 headers=headers,
             )
-            assert resp.status_code == 200, (
-                f"P1 emergency failed for reason '{reason}': {resp.text}"
-            )
+            assert resp.status_code == 200, f"P1 emergency failed for reason '{reason}': {resp.text}"
             data = resp.json()
             assert data.get("success") is True
             print(f"✅ P1 emergency with reason '{reason}' succeeded")
@@ -193,9 +177,7 @@ class TestP1EmergencyFeature:
 
         if notif_before.status_code == 200:
             # Create P1 emergency as benefactor
-            benefactor_token = self.get_token(
-                self.benefactor_email, self.benefactor_password
-            )
+            benefactor_token = self.get_token(self.benefactor_email, self.benefactor_password)
             benefactor_headers = {"Authorization": f"Bearer {benefactor_token}"}
 
             requests.post(
@@ -215,14 +197,10 @@ class TestP1EmergencyFeature:
             notifications = notif_after.json().get("notifications", [])
 
             security_alerts = [
-                n
-                for n in notifications
-                if n.get("priority") == "critical" and n.get("type") == "security_alert"
+                n for n in notifications if n.get("priority") == "critical" and n.get("type") == "security_alert"
             ]
 
-            print(
-                f"✅ Manager has {len(security_alerts)} critical security_alert notifications"
-            )
+            print(f"✅ Manager has {len(security_alerts)} critical security_alert notifications")
         else:
             pytest.skip("Manager authentication failed")
 
@@ -238,9 +216,7 @@ class TestNotificationAmberAlertTrigger:
 
     def get_token(self, email, password):
         """Helper to get auth token"""
-        resp = requests.post(
-            f"{BASE_URL}/api/auth/login", json={"email": email, "password": password}
-        )
+        resp = requests.post(f"{BASE_URL}/api/auth/login", json={"email": email, "password": password})
         if resp.status_code == 429:
             pytest.skip("Rate limited")
         assert resp.status_code == 200
@@ -276,29 +252,21 @@ class TestNotificationAmberAlertTrigger:
         token = self.get_token(self.founder_email, self.founder_password)
         headers = {"Authorization": f"Bearer {token}"}
 
-        resp = requests.get(
-            f"{BASE_URL}/api/notifications?unread_only=true&limit=50", headers=headers
-        )
+        resp = requests.get(f"{BASE_URL}/api/notifications?unread_only=true&limit=50", headers=headers)
         assert resp.status_code == 200
 
         notifications = resp.json().get("notifications", [])
 
         # Filter for Amber Alert triggers (priority=critical AND type=security_alert)
         amber_triggers = [
-            n
-            for n in notifications
-            if n.get("priority") == "critical" and n.get("type") == "security_alert"
+            n for n in notifications if n.get("priority") == "critical" and n.get("type") == "security_alert"
         ]
 
-        print(
-            f"📊 Found {len(amber_triggers)} notifications that would trigger Amber Alert"
-        )
+        print(f"📊 Found {len(amber_triggers)} notifications that would trigger Amber Alert")
 
         if len(amber_triggers) > 0:
             for alert in amber_triggers[:3]:
-                print(
-                    f"  - {alert['title'][:50]}... (priority={alert['priority']}, type={alert['type']})"
-                )
+                print(f"  - {alert['title'][:50]}... (priority={alert['priority']}, type={alert['type']})")
 
 
 class TestNotificationEndpoints:
@@ -310,9 +278,7 @@ class TestNotificationEndpoints:
         self.founder_password = "Demo1234!"
 
     def get_token(self, email, password):
-        resp = requests.post(
-            f"{BASE_URL}/api/auth/login", json={"email": email, "password": password}
-        )
+        resp = requests.post(f"{BASE_URL}/api/auth/login", json={"email": email, "password": password})
         if resp.status_code == 429:
             pytest.skip("Rate limited")
         assert resp.status_code == 200
@@ -323,25 +289,19 @@ class TestNotificationEndpoints:
         token = self.get_token(self.founder_email, self.founder_password)
         headers = {"Authorization": f"Bearer {token}"}
 
-        resp = requests.get(
-            f"{BASE_URL}/api/notifications?unread_only=true&limit=5", headers=headers
-        )
+        resp = requests.get(f"{BASE_URL}/api/notifications?unread_only=true&limit=5", headers=headers)
         assert resp.status_code == 200
 
         data = resp.json()
         assert "notifications" in data
-        print(
-            f"✅ Unread notifications endpoint works: {len(data['notifications'])} unread"
-        )
+        print(f"✅ Unread notifications endpoint works: {len(data['notifications'])} unread")
 
     def test_get_unread_count(self):
         """Test GET /api/notifications/unread-count — used by NotificationBell polling"""
         token = self.get_token(self.founder_email, self.founder_password)
         headers = {"Authorization": f"Bearer {token}"}
 
-        resp = requests.get(
-            f"{BASE_URL}/api/notifications/unread-count", headers=headers
-        )
+        resp = requests.get(f"{BASE_URL}/api/notifications/unread-count", headers=headers)
         assert resp.status_code == 200
 
         data = resp.json()
@@ -364,9 +324,7 @@ class TestNotificationEndpoints:
         notif_id = notifications[0]["id"]
 
         # Mark as read
-        resp = requests.post(
-            f"{BASE_URL}/api/notifications/{notif_id}/read", headers=headers
-        )
+        resp = requests.post(f"{BASE_URL}/api/notifications/{notif_id}/read", headers=headers)
         assert resp.status_code == 200
         print(f"✅ Mark notification read works: {notif_id}")
 
@@ -389,9 +347,7 @@ class TestSupportMessagesEndpoints:
         self.benefactor_password = "Password.123"
 
     def get_token(self, email, password):
-        resp = requests.post(
-            f"{BASE_URL}/api/auth/login", json={"email": email, "password": password}
-        )
+        resp = requests.post(f"{BASE_URL}/api/auth/login", json={"email": email, "password": password})
         if resp.status_code == 429:
             pytest.skip("Rate limited")
         assert resp.status_code == 200

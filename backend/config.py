@@ -16,9 +16,7 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
 
 # Logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 # MongoDB
@@ -29,21 +27,15 @@ db = client[os.environ["DB_NAME"]]
 # JWT — NO FALLBACK: missing secret MUST fail fast
 JWT_SECRET = os.environ.get("JWT_SECRET")
 if not JWT_SECRET:
-    raise RuntimeError(
-        "FATAL: JWT_SECRET environment variable is not set. Server cannot start without it."
-    )
+    raise RuntimeError("FATAL: JWT_SECRET environment variable is not set. Server cannot start without it.")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 8
 
 # Encryption — NO FALLBACK: missing key MUST fail fast
 ENCRYPTION_KEY = os.environ.get("ENCRYPTION_KEY")
 if not ENCRYPTION_KEY:
-    raise RuntimeError(
-        "FATAL: ENCRYPTION_KEY environment variable is not set. Server cannot start without it."
-    )
-ENCRYPTION_SALT = (
-    b"carryon_salt_2024"  # Legacy V1 only; new encryption uses per-estate salts
-)
+    raise RuntimeError("FATAL: ENCRYPTION_KEY environment variable is not set. Server cannot start without it.")
+ENCRYPTION_SALT = b"carryon_salt_2024"  # Legacy V1 only; new encryption uses per-estate salts
 
 # Security
 security = HTTPBearer()
@@ -89,9 +81,7 @@ if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
 stripe.api_key = os.environ.get("STRIPE_API_KEY")
 
 # VAPID (Push Notifications)
-VAPID_PRIVATE_KEY_PATH = os.environ.get(
-    "VAPID_PRIVATE_KEY_PATH", "/tmp/vapid_private.pem"
-)
+VAPID_PRIVATE_KEY_PATH = os.environ.get("VAPID_PRIVATE_KEY_PATH", "/tmp/vapid_private.pem")
 VAPID_PRIVATE_KEY_INLINE = os.environ.get("VAPID_PRIVATE_KEY")
 VAPID_PUBLIC_KEY_PATH = os.environ.get("VAPID_PUBLIC_KEY_PATH", "/tmp/vapid_public.pem")
 VAPID_CLAIMS_EMAIL = os.environ.get("VAPID_CLAIMS_EMAIL", "mailto:support@carryon.us")

@@ -39,9 +39,7 @@ class TestIACActivationStatus:
 
     def test_get_checklists_returns_is_default_field(self):
         """GET /api/checklists/{estate_id} should return is_default field"""
-        response = requests.get(
-            f"{BASE_URL}/api/checklists/{self.estate_id}", headers=self.headers
-        )
+        response = requests.get(f"{BASE_URL}/api/checklists/{self.estate_id}", headers=self.headers)
         assert response.status_code == 200
         items = response.json()
         assert len(items) > 0, "Should have checklist items"
@@ -49,31 +47,23 @@ class TestIACActivationStatus:
         # Verify is_default field exists
         first_item = items[0]
         assert "is_default" in first_item, "is_default field should be present"
-        assert isinstance(first_item["is_default"], bool), (
-            "is_default should be boolean"
-        )
+        assert isinstance(first_item["is_default"], bool), "is_default should be boolean"
 
     def test_get_checklists_returns_activation_status_field(self):
         """GET /api/checklists/{estate_id} should return activation_status field"""
-        response = requests.get(
-            f"{BASE_URL}/api/checklists/{self.estate_id}", headers=self.headers
-        )
+        response = requests.get(f"{BASE_URL}/api/checklists/{self.estate_id}", headers=self.headers)
         assert response.status_code == 200
         items = response.json()
         assert len(items) > 0, "Should have checklist items"
 
         # Verify activation_status field exists (can be null)
         first_item = items[0]
-        assert "activation_status" in first_item, (
-            "activation_status field should be present"
-        )
+        assert "activation_status" in first_item, "activation_status field should be present"
 
     def test_put_checklist_with_activation_status_accepted(self):
         """PUT /api/checklists/{id} with activation_status='accepted' should succeed"""
         # First get a checklist item
-        response = requests.get(
-            f"{BASE_URL}/api/checklists/{self.estate_id}", headers=self.headers
-        )
+        response = requests.get(f"{BASE_URL}/api/checklists/{self.estate_id}", headers=self.headers)
         assert response.status_code == 200
         items = response.json()
         assert len(items) > 0
@@ -87,9 +77,7 @@ class TestIACActivationStatus:
             headers=self.headers,
             json={"activation_status": "accepted"},
         )
-        assert update_response.status_code == 200, (
-            f"PUT should succeed, got: {update_response.text}"
-        )
+        assert update_response.status_code == 200, f"PUT should succeed, got: {update_response.text}"
 
         # Verify the update
         updated_item = update_response.json()
@@ -97,9 +85,7 @@ class TestIACActivationStatus:
 
     def test_put_checklist_with_activation_status_edited(self):
         """PUT /api/checklists/{id} with activation_status='edited' should succeed"""
-        response = requests.get(
-            f"{BASE_URL}/api/checklists/{self.estate_id}", headers=self.headers
-        )
+        response = requests.get(f"{BASE_URL}/api/checklists/{self.estate_id}", headers=self.headers)
         items = response.json()
         item_id = items[1]["id"] if len(items) > 1 else items[0]["id"]
 
@@ -114,9 +100,7 @@ class TestIACActivationStatus:
 
     def test_put_checklist_with_activation_status_removed(self):
         """PUT /api/checklists/{id} with activation_status='removed' should succeed"""
-        response = requests.get(
-            f"{BASE_URL}/api/checklists/{self.estate_id}", headers=self.headers
-        )
+        response = requests.get(f"{BASE_URL}/api/checklists/{self.estate_id}", headers=self.headers)
         items = response.json()
         # Find a suitable item (not already removed)
         item_to_update = None
@@ -140,9 +124,7 @@ class TestIACActivationStatus:
 
     def test_default_iac_items_have_category_immediate(self):
         """Default IAC items should have category='immediate'"""
-        response = requests.get(
-            f"{BASE_URL}/api/checklists/{self.estate_id}", headers=self.headers
-        )
+        response = requests.get(f"{BASE_URL}/api/checklists/{self.estate_id}", headers=self.headers)
         assert response.status_code == 200
         items = response.json()
 

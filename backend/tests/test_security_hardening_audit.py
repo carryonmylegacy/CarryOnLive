@@ -12,9 +12,7 @@ import os
 import pytest
 import requests
 
-BASE_URL = os.environ.get(
-    "REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com"
-).rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://todo-pdf-gen.preview.emergentagent.com").rstrip("/")
 
 
 class TestHealthCheck:
@@ -27,9 +25,7 @@ class TestHealthCheck:
         data = response.json()
         assert data.get("status") == "healthy"
         assert data.get("database") == "connected"
-        print(
-            f"PASS: Health check - status: {data.get('status')}, db: {data.get('database')}"
-        )
+        print(f"PASS: Health check - status: {data.get('status')}, db: {data.get('database')}")
 
 
 class TestAuthEndpoints:
@@ -59,9 +55,7 @@ class TestAuthEndpoints:
             data = response.json()
             # Either OTP required or direct token
             assert "otp_required" in data or "access_token" in data
-            print(
-                f"PASS: Login returns OTP required or token - response keys: {list(data.keys())}"
-            )
+            print(f"PASS: Login returns OTP required or token - response keys: {list(data.keys())}")
         else:
             print(f"PASS: Login validation works (got {response.status_code})")
 
@@ -96,9 +90,7 @@ class TestRegistrationEndpoint:
         assert response.status_code == 400
         data = response.json()
         assert "Password" in data.get("detail", "")
-        print(
-            f"PASS: Registration rejects weak password - detail: {data.get('detail', '')[:80]}"
-        )
+        print(f"PASS: Registration rejects weak password - detail: {data.get('detail', '')[:80]}")
 
     def test_register_password_missing_uppercase(self):
         """Test password must contain uppercase letter"""
@@ -136,9 +128,7 @@ class TestCheckEmailEndpoints:
 
     def test_check_email_exists_returns_status(self):
         """Test POST /api/auth/check-email returns exists status"""
-        response = requests.post(
-            f"{BASE_URL}/api/auth/check-email", json={"email": "demo@carryon.us"}
-        )
+        response = requests.post(f"{BASE_URL}/api/auth/check-email", json={"email": "demo@carryon.us"})
         assert response.status_code == 200
         data = response.json()
         assert "exists" in data
