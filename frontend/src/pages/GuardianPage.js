@@ -414,8 +414,8 @@ const GuardianPage = () => {
     }
   };
 
-  const handleExport = async () => {
-    if (!sessionId) { toast.error('No active conversation to export'); return; }
+  const handleExportTranscript = async () => {
+    if (!sessionId) { toast.error('No active conversation'); return; }
     setExporting(true);
     try {
       const headers = getAuthHeaders()?.headers;
@@ -423,12 +423,30 @@ const GuardianPage = () => {
       const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       const a = document.createElement('a');
       a.href = url;
-      a.download = `CarryOn_EGA_Conversation_${new Date().toISOString().split('T')[0]}.pdf`;
+      a.download = `CarryOn_Transcript_${new Date().toISOString().split('T')[0]}.pdf`;
       a.click();
       window.URL.revokeObjectURL(url);
-      toast.success('Conversation exported');
-    } catch (err) { toast.error('Failed to export conversation'); }
+      toast.success('Transcript downloaded');
+    } catch (err) { toast.error('Failed to export transcript'); }
     setExporting(false);
+  };
+
+  const [planExporting, setPlanExporting] = useState(false);
+  const handleExportPlan = async () => {
+    if (!sessionId) { toast.error('No active conversation'); return; }
+    setPlanExporting(true);
+    try {
+      const headers = getAuthHeaders()?.headers;
+      const res = await axios.post(`${API_URL}/guardian/export-plan-of-action`, { session_id: sessionId }, { headers, responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `CarryOn_Plan_of_Action_${new Date().toISOString().split('T')[0]}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success('Plan of Action downloaded');
+    } catch (err) { toast.error('Failed to generate Plan of Action'); }
+    setPlanExporting(false);
   };
 
   const stopAnalysis = () => {
@@ -691,18 +709,24 @@ const GuardianPage = () => {
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={handleChecklistExport} disabled={checklistExporting} title="Export Checklist PDF"
-            className="w-10 h-10 rounded-lg flex items-center justify-center transition-all hover:bg-[var(--s)]"
+        <div className="flex items-center gap-1.5">
+          <button onClick={handleExportTranscript} disabled={exporting || !sessionId} title="Download Transcript"
+            className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:bg-[var(--s)]"
+            style={{ color: '#94a3b8' }}
+            data-testid="export-transcript-btn">
+            {exporting ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : <FileDown className="w-4.5 h-4.5" />}
+          </button>
+          <button onClick={handleExportPlan} disabled={planExporting || !sessionId} title="Download Plan of Action"
+            className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:bg-[var(--s)]"
+            style={{ color: '#d4af37' }}
+            data-testid="export-plan-btn">
+            {planExporting ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : <ClipboardList className="w-4.5 h-4.5" />}
+          </button>
+          <button onClick={handleChecklistExport} disabled={checklistExporting} title="Export IAC Checklist"
+            className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:bg-[var(--s)]"
             style={{ color: '#22C993' }}
             data-testid="export-checklist-pdf-btn">
-            {checklistExporting ? <Loader2 className="w-5 h-5 animate-spin" /> : <ListChecks className="w-5 h-5" />}
-          </button>
-          <button onClick={handleExport} disabled={exporting || !sessionId} title="Export Conversation PDF"
-            className="w-10 h-10 rounded-lg flex items-center justify-center transition-all hover:bg-[var(--s)]"
-            style={{ color: '#d4af37' }}
-            data-testid="export-pdf-btn">
-            {exporting ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileDown className="w-5 h-5" />}
+            {checklistExporting ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : <ListChecks className="w-4.5 h-4.5" />}
           </button>
         </div>
       </div>
