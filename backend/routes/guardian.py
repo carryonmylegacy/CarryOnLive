@@ -417,11 +417,16 @@ Requirements:
 Return your response as helpful advice with the to-do items clearly listed. Format them with numbered sections by priority category (Immediate, First Week, Two Weeks, First Month). Do NOT include any JSON blocks — just a clean, readable to-do list that I can download as a PDF."""
 
     elif data.action == "generate_iac":
-        user_message_text = """Based on the documents in my Secure Document Vault, generate a comprehensive Immediate Action Checklist for my BENEFICIARIES to use in the days and weeks immediately following my death.
+        user_message_text = """Based on the documents in my Secure Document Vault, generate a comprehensive Immediate Action Checklist.
 
-CRITICAL: This is NOT a to-do list for me. This is a guide for my loved ones AFTER I pass away.
+CRITICAL STRUCTURE REQUIREMENT — You MUST organize your response into TWO clearly separated sections with distinct headers. Do NOT intermix items from these two sections:
 
-Requirements:
+==============================
+SECTION 1: "IMMEDIATE ACTION CHECKLIST FOR BENEFICIARIES"
+==============================
+This section is for my BENEFICIARIES and loved ones to follow AFTER my death. These are instructions they will execute upon my passing.
+
+Requirements for Section 1:
 - Extract SPECIFIC, ACTIONABLE information from my vault documents — phone numbers, policy numbers, contact names, institutions
 - For each life insurance policy: include the carrier name, policy number, and the phone number to call to file a claim
 - Identify who the trustee of my trust is (if a trust document exists) and include their contact info
@@ -430,10 +435,23 @@ Requirements:
 - Note any immediate deadlines (e.g., life insurance claim windows, Social Security notification)
 - Prioritize by urgency: immediate (day 1-3), first_week, two_weeks, first_month
 - Be extremely specific — "Call MetLife at 1-800-XXX-XXXX, Policy #YYYY, to file death claim" not "Contact life insurance company"
+- Items like: call executor, request death certificates, freeze accounts, file insurance claims, notify SSA, contact trustee, initiate probate, distribute assets
 
-Return your response as helpful guidance, and also return the checklist items in this exact JSON format at the END of your response, wrapped in ```checklist_json``` tags:
+==============================
+SECTION 2: "ESTATE STRENGTHENING RECOMMENDATIONS FOR THE BENEFACTOR"
+==============================
+This section is for ME (the benefactor) — things I should do NOW to tighten up, fix, or improve my estate plan while I'm still alive.
+
+Requirements for Section 2:
+- Identify gaps, missing documents, expired provisions, state non-compliance, beneficiary mismatches, etc.
+- Items like: update will to current state, revise POA, correct beneficiary designations, add missing documents, fund trust, add pour-over provision
+- Prioritize by urgency: immediate, first_week, two_weeks, first_month
+
+BOTH sections should be included in your response with clear, bold section headers so the reader can immediately distinguish between "what my family does after I die" and "what I need to fix now."
+
+Return the checklist items from BOTH sections in this exact JSON format at the END of your response, wrapped in ```checklist_json``` tags. Use the "section" field to distinguish between the two types:
 ```checklist_json
-[{{"title": "Item title", "description": "Detailed description with specific contacts/numbers", "category": "immediate|first_week|two_weeks|first_month", "order": 1}}]
+[{{"title": "Item title", "description": "Detailed description with specific contacts/numbers", "category": "immediate|first_week|two_weeks|first_month", "section": "beneficiary_action|benefactor_recommendation", "order": 1}}]
 ```"""
 
     elif data.action == "analyze_readiness":
@@ -594,6 +612,8 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
                         item_dict = checklist_item.model_dump()
                         item_dict["ai_suggested"] = True
                         item_dict["ai_accepted"] = None  # None=pending, True=accepted, False=rejected
+                        # Tag items with their section so the PDF can separate them
+                        item_dict["section"] = item.get("section", "beneficiary_action")
                         await db.checklists.insert_one(item_dict)
                         items_added += 1
 
@@ -845,13 +865,9 @@ async def export_checklist_pdf(
     pdf.multi_cell(0, 3.5, disclaimer, border=1, fill=True)
     pdf.ln(6)
 
-    # Categorize items
-    categories = {}
-    for item in items:
-        cat = item.get("category", item.get("due_timeframe", "general"))
-        if cat not in categories:
-            categories[cat] = []
-        categories[cat].append(item)
+    # Separate items into two major sections
+    beneficiary_items = [i for i in items if i.get("section") != "benefactor_recommendation"]
+    benefactor_items = [i for i in items if i.get("section") == "benefactor_recommendation"]
 
     category_labels = {
         "immediate": "Immediate (Days 1-3)",
@@ -868,53 +884,98 @@ async def export_checklist_pdf(
         "general": "General",
     }
 
-    for cat, cat_items in categories.items():
-        # Category header
-        pdf.set_font("Helvetica", "B", 12)
-        pdf.set_text_color(30, 40, 70)
-        pdf.cell(
-            0,
-            8,
-            category_labels.get(cat, cat.replace("_", " ").title()),
-            new_x="LMARGIN",
-            new_y="NEXT",
-        )
-        pdf.set_draw_color(212, 175, 55)
-        pdf.line(pdf.get_x(), pdf.get_y(), pdf.get_x() + 170, pdf.get_y())
-        pdf.ln(3)
+    def render_items_by_category(pdf_obj, item_list):
+        """Render a list of checklist items grouped by category."""
+        cats = {}
+        for item in item_list:
+            cat = item.get("category", item.get("due_timeframe", "general"))
+            if cat not in cats:
+                cats[cat] = []
+            cats[cat].append(item)
 
-        for item in cat_items:
-            # Checkbox + title
-            check = "[x]" if item.get("is_completed") else "[ ]"
-            pdf.set_font("Helvetica", "B", 9)
-            pdf.set_text_color(40, 40, 40)
-            pdf.cell(8, 5, check)
-            pdf.cell(
+        for cat, cat_items in cats.items():
+            pdf_obj.set_font("Helvetica", "B", 11)
+            pdf_obj.set_text_color(30, 40, 70)
+            pdf_obj.cell(
                 0,
-                5,
-                sanitize_for_pdf(item["title"][:80]),
+                7,
+                category_labels.get(cat, cat.replace("_", " ").title()),
                 new_x="LMARGIN",
                 new_y="NEXT",
             )
+            pdf_obj.set_draw_color(212, 175, 55)
+            pdf_obj.line(pdf_obj.get_x(), pdf_obj.get_y(), pdf_obj.get_x() + 170, pdf_obj.get_y())
+            pdf_obj.ln(3)
 
-            # Description
-            if item.get("description"):
-                pdf.set_x(pdf.get_x() + 8)
-                pdf.set_font("Helvetica", "", 8)
-                pdf.set_text_color(100, 100, 100)
-                pdf.multi_cell(162, 4, sanitize_for_pdf(item["description"][:200]))
+            for item in cat_items:
+                check = "[x]" if item.get("is_completed") else "[ ]"
+                pdf_obj.set_font("Helvetica", "B", 9)
+                pdf_obj.set_text_color(40, 40, 40)
+                pdf_obj.cell(8, 5, check)
+                pdf_obj.cell(
+                    0,
+                    5,
+                    sanitize_for_pdf(item["title"][:80]),
+                    new_x="LMARGIN",
+                    new_y="NEXT",
+                )
+                if item.get("description"):
+                    pdf_obj.set_x(pdf_obj.get_x() + 8)
+                    pdf_obj.set_font("Helvetica", "", 8)
+                    pdf_obj.set_text_color(100, 100, 100)
+                    pdf_obj.multi_cell(162, 4, sanitize_for_pdf(item["description"][:200]))
+                if item.get("contact_name") or item.get("contact_phone"):
+                    pdf_obj.set_x(pdf_obj.get_x() + 8)
+                    pdf_obj.set_font("Helvetica", "I", 7)
+                    pdf_obj.set_text_color(120, 120, 120)
+                    contact = f"Contact: {item.get('contact_name', '')}"
+                    if item.get("contact_phone"):
+                        contact += f" | {item['contact_phone']}"
+                    pdf_obj.cell(0, 4, sanitize_for_pdf(contact), new_x="LMARGIN", new_y="NEXT")
+                pdf_obj.ln(2)
 
-            # Contact info
-            if item.get("contact_name") or item.get("contact_phone"):
-                pdf.set_x(pdf.get_x() + 8)
-                pdf.set_font("Helvetica", "I", 7)
-                pdf.set_text_color(120, 120, 120)
-                contact = f"Contact: {item.get('contact_name', '')}"
-                if item.get("contact_phone"):
-                    contact += f" | {item['contact_phone']}"
-                pdf.cell(0, 4, sanitize_for_pdf(contact), new_x="LMARGIN", new_y="NEXT")
+    # ── Section 1: Beneficiary Actions ──
+    pdf.set_font("Helvetica", "B", 14)
+    pdf.set_text_color(34, 201, 147)
+    pdf.cell(0, 9, "SECTION 1: Immediate Action Checklist for Beneficiaries", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Helvetica", "I", 8)
+    pdf.set_text_color(100, 100, 100)
+    pdf.cell(
+        0,
+        5,
+        "Actions for your loved ones to execute after your passing.",
+        new_x="LMARGIN",
+        new_y="NEXT",
+    )
+    pdf.ln(3)
 
-            pdf.ln(2)
+    if beneficiary_items:
+        render_items_by_category(pdf, beneficiary_items)
+    else:
+        pdf.set_font("Helvetica", "I", 9)
+        pdf.set_text_color(120, 120, 120)
+        pdf.cell(0, 6, "No beneficiary action items found.", new_x="LMARGIN", new_y="NEXT")
+
+    # ── Section 2: Benefactor Recommendations ──
+    if benefactor_items:
+        pdf.ln(6)
+        pdf.set_draw_color(212, 175, 55)
+        pdf.line(pdf.get_x(), pdf.get_y(), pdf.get_x() + 170, pdf.get_y())
+        pdf.ln(4)
+        pdf.set_font("Helvetica", "B", 14)
+        pdf.set_text_color(59, 130, 246)
+        pdf.cell(0, 9, "SECTION 2: Estate Strengthening Recommendations", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "I", 8)
+        pdf.set_text_color(100, 100, 100)
+        pdf.cell(
+            0,
+            5,
+            "Actions for YOU (the benefactor) to take now to improve your estate plan.",
+            new_x="LMARGIN",
+            new_y="NEXT",
+        )
+        pdf.ln(3)
+        render_items_by_category(pdf, benefactor_items)
 
     # Summary footer
     completed = sum(1 for i in items if i.get("is_completed"))

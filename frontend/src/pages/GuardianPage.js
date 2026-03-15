@@ -5,11 +5,29 @@ import { cachedGet } from '../utils/apiCache';
 import { useAuth } from '../contexts/AuthContext';
 
 /* ── Pie-fill progress indicator ───────────────────────────── */
+/* Asymptotic progress: advances steadily but decelerates as it
+   approaches ~90%, so it never "finishes" before the real work is
+   done — avoiding the impression that the app has hung.            */
 const PieProgress = ({ size = 18, color = 'currentColor', duration = 8 }) => {
   const r = (size - 2) / 2;
   const cx = size / 2;
   const cy = size / 2;
   const circumference = 2 * Math.PI * r;
+  const [offset, setOffset] = useState(circumference);
+
+  useEffect(() => {
+    const start = Date.now();
+    const tick = () => {
+      const elapsed = (Date.now() - start) / 1000;
+      // Asymptotic curve: approaches 90% of circumference over `duration`
+      // but never quite reaches it.  progress = 1 - e^(-2t/duration)
+      const progress = Math.min(1 - Math.exp((-2 * elapsed) / duration), 0.92);
+      setOffset(circumference * (1 - progress));
+    };
+    const id = setInterval(tick, 80);
+    return () => clearInterval(id);
+  }, [circumference, duration]);
+
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
       <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={1.5} opacity={0.2} />
@@ -17,13 +35,10 @@ const PieProgress = ({ size = 18, color = 'currentColor', duration = 8 }) => {
         cx={cx} cy={cy} r={r}
         fill="none" stroke={color} strokeWidth={2}
         strokeDasharray={circumference}
-        strokeDashoffset={circumference}
+        strokeDashoffset={offset}
         strokeLinecap="round"
-        style={{
-          animation: `pie-fill ${duration}s ease-out forwards`,
-        }}
+        style={{ transition: 'stroke-dashoffset 0.1s linear' }}
       />
-      <style>{`@keyframes pie-fill { 0% { stroke-dashoffset: ${circumference}; } 100% { stroke-dashoffset: ${circumference * 0.08}; } }`}</style>
     </svg>
   );
 };
