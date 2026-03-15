@@ -546,10 +546,21 @@ const MessagesPage = () => {
       const res = await axios.get(`${API_URL}/messages/video/${msg.video_url}`, {
         ...getAuthHeaders(),
         responseType: 'blob',
+        timeout: 30000,
       });
+      if (res.data.size === 0) {
+        toast.error('Video file is empty or unavailable');
+        return;
+      }
       setPlayingVideoUrl(URL.createObjectURL(res.data));
-    } catch {
-      toast.error('Could not load video');
+    } catch (err) {
+      if (err.code === 'ECONNABORTED') {
+        toast.error('Video took too long to load. Please try again.');
+      } else if (err.response?.status === 404) {
+        toast.error('Video not found. It may have been removed.');
+      } else {
+        toast.error('Could not load video');
+      }
     } finally {
       setLoadingPlayback(false);
     }
@@ -642,9 +653,9 @@ const MessagesPage = () => {
                 <h3 className="text-xl font-semibold text-white mb-2">Leave a Message for Your Loved Ones</h3>
                 <p className="text-[#94a3b8] mb-2">Record a video, voice, or written message — delivered when they need it most.</p>
                 <p className="text-xs text-[#64748b] mb-6">You can edit or re-record anytime. Nothing is permanent until you say so.</p>
-                <Button className="gold-button text-base px-8 py-3" onClick={() => { setEditingMessage(null); resetForm(); setShowCreateModal(true); }}>
-                  <Plus className="w-5 h-5 mr-2" />
-                  Create Your First Milestone Message
+                <Button className="gold-button text-sm sm:text-base px-5 sm:px-8 py-3" onClick={() => { setEditingMessage(null); resetForm(); setShowCreateModal(true); }}>
+                  <Plus className="w-5 h-5 mr-2 flex-shrink-0" />
+                  <span>Create Your First Milestone Message</span>
                 </Button>
               </CardContent>
             </Card>
