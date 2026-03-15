@@ -629,7 +629,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                 }, 200);
               }
             }}
-            className={`flex-1 py-2 rounded-lg text-xs font-bold whitespace-nowrap flex items-center justify-center gap-1.5 ${viewMode !== 'list' ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'}`}
+            className="flex-1 py-2 rounded-lg text-xs font-bold whitespace-nowrap flex items-center justify-center gap-1.5 bg-[var(--s)] text-[var(--t3)] border border-[var(--b)] active:bg-[var(--gold)] active:text-[#0F1629] transition-colors"
             data-testid="toggle-tree-view"
           >
             <GitBranch className="w-3.5 h-3.5" /> {viewMode === 'tree' ? 'Tree' : viewMode === 'graph' ? 'Graph' : 'List'}
