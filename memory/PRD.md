@@ -19,6 +19,11 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (March 15, 2026 — Session 4)
+- **Responsive UI Fix: OrbitVisualization**: Compressed orbit sizes on small screens (<380px): ball size 36px (was 42), center node 50px (was 60), reduced edge padding and base orbit radius for compact layout. Prevents horizontal overflow on iPhone 13 mini (375px).
+- **Responsive UI Fix: Admin UsersTab**: Made UserRow flex-wrap with smaller avatars (w-8 sm:w-9), compact action buttons (h-7 w-7), and responsive text sizes. Status key bar uses flex-wrap. Role badges and secondary info hidden on small screens. No horizontal overflow.
+- **Responsive UI Fix: Beneficiary Tiles**: Tile header switches from horizontal to vertical layout on mobile (flex-col sm:flex-row). Avatar reduced to 48px. Action buttons use compact sizing (h-7 w-7 p-0). Badge container flex-wraps to prevent overlap. All verified at 375px and 1920px viewports.
+
 ### Completed (March 15, 2026 — Session 3)
 - **PieProgress Asymptotic Animation**: Reworked the PieProgress component on all 3 EGA export buttons (Transcript, Plan of Action, IAC Checklist) from a CSS `ease-out` animation to a JS-driven asymptotic progress curve (`1 - e^(-2t/d)`). Progress advances steadily but decelerates, capping at ~92% — never appearing "stuck" or finishing before the real operation completes.
 - **IAC Two-Section Structure**: Updated the `generate_iac` AI prompt to explicitly require two distinct sections: (1) "Immediate Action Checklist for Beneficiaries" — post-death instructions for loved ones, and (2) "Estate Strengthening Recommendations for the Benefactor" — to-do items for the benefactor to fix now. Added a `section` field (`beneficiary_action` | `benefactor_recommendation`) to stored checklist items. Updated the IAC PDF export to render these as visually separated sections with distinct headers and descriptions.
