@@ -81,12 +81,15 @@ async def require_account_not_locked(
 
 
 def require_benefactor_role(current_user: dict, action: str = "perform this action"):
-    """Verify user is a benefactor or has is_also_benefactor flag.
+    """Verify user is a benefactor, admin, or has is_also_benefactor flag.
 
     Used across all endpoints that restrict write access to benefactors.
     Supports the cross-pollination model where beneficiaries can also be benefactors.
     """
-    if current_user["role"] != "benefactor" and not current_user.get("is_also_benefactor"):
+    if (
+        current_user["role"] not in ("benefactor", "admin")
+        and not current_user.get("is_also_benefactor")
+    ):
         raise HTTPException(status_code=403, detail=f"Only benefactors can {action}")
 
 
