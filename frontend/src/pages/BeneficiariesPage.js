@@ -468,6 +468,20 @@ const BeneficiariesPage = () => {
     } catch { toast.error('Failed to save order'); }
   }, [beneficiaries, estate?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const handleToggleSuccession = useCallback(async (benId, benName) => {
+    try {
+      const res = await axios.put(`${API_URL}/beneficiaries/${benId}/toggle-succession`, {}, getAuthHeaders());
+      if (res.data.in_succession) {
+        toast.success(`${benName} added to succession hierarchy`);
+      } else {
+        toast.success(`${benName} removed from succession hierarchy`);
+      }
+      fetchData();
+    } catch {
+      toast.error('Failed to update succession');
+    }
+  }, [estate?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (loading) {
     return (
       <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6">
@@ -569,7 +583,12 @@ const BeneficiariesPage = () => {
             <SortableContext items={beneficiaries.map(b => b.id)} strategy={rectSortingStrategy}>
             <div className="space-y-3" data-testid="beneficiary-tiles">
               {beneficiaries.map((ben, index) => {
-                const succStyle = SUCCESSION_COLORS[index] || { bg: 'rgba(148,163,184,0.12)', color: '#94a3b8', border: '1px solid rgba(148,163,184,0.2)' };
+                // Compute succession rank only among opted-in beneficiaries
+                const isInSuccession = ben.succession_order !== null && ben.succession_order !== undefined;
+                const succRank = isInSuccession ? beneficiaries.filter((b, i) => i < index && b.succession_order !== null && b.succession_order !== undefined).length : null;
+                const succStyle = isInSuccession
+                  ? (SUCCESSION_COLORS[succRank] || { bg: 'rgba(148,163,184,0.12)', color: '#94a3b8', border: '1px solid rgba(148,163,184,0.2)' })
+                  : { bg: 'rgba(100,116,139,0.08)', color: '#64748b', border: '1px solid rgba(100,116,139,0.15)' };
                 return (
                 <SortableCard key={ben.id} id={ben.id}>
                 <Card className="glass-card group" data-testid={`beneficiary-${ben.id}`}>
@@ -609,7 +628,7 @@ const BeneficiariesPage = () => {
                       style={{ background: succStyle.bg, color: succStyle.color, border: succStyle.border }}
                       data-testid={`succession-badge-${ben.id}`}
                     >
-                      <Shield className="w-3 h-3 flex-shrink-0" /> {getSuccessionLabel(index).toUpperCase()}
+                      <Shield className="w-3 h-3 flex-shrink-0" /> {isInSuccession ? getSuccessionLabel(succRank).toUpperCase() : 'NOT IN SUCCESSION'}
                     </span>
                     <Button
                       variant="ghost"
@@ -702,6 +721,19 @@ const BeneficiariesPage = () => {
                 )}
                 
                 <div className="mt-4 pt-3 border-t border-[var(--b)]">
+                  {/* Succession Participation Toggle */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="text-[10px] text-[var(--t5)] uppercase tracking-wider font-bold">Succession Chain</p>
+                      <p className="text-[10px] text-[var(--t5)] mt-0.5">{isInSuccession ? `Rank #${succRank + 1} in hierarchy` : 'Not participating'}</p>
+                    </div>
+                    <Switch
+                      checked={isInSuccession}
+                      onCheckedChange={() => handleToggleSuccession(ben.id, ben.name)}
+                      data-testid={`succession-toggle-${ben.id}`}
+                    />
+                  </div>
+
                   {/* Section Access Permissions — what this beneficiary sees after transition */}
                   <div className="mb-3">
                     <p className="text-[10px] text-[var(--t5)] uppercase tracking-wider font-bold mb-2">Post-Transition Access</p>

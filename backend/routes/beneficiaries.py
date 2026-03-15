@@ -40,6 +40,13 @@ async def get_beneficiaries(
     for b in beneficiaries:
         if "dob" in b and "date_of_birth" not in b:
             b["date_of_birth"] = b.pop("dob")
+        # Initialize succession_order for legacy records that predate the feature
+        if "succession_order" not in b:
+            b["succession_order"] = (
+                b.get("sort_order", 0)
+                if b.get("is_primary")
+                else b.get("sort_order", 0)
+            )
 
     # Enrich photo_url: if the beneficiary has a linked user account with a profile
     # photo but no photo on the beneficiary record, use the user's photo as fallback
@@ -997,6 +1004,7 @@ async def reorder_beneficiaries(
     current_user: dict = Depends(get_current_user),
 ):
     """Persist drag-and-drop beneficiary sort order AND succession hierarchy.
+    Only beneficiaries with succession_order != null participate in the chain.
     Position 0 = Primary, 1 = Secondary, 2 = Tertiary, etc."""
     if current_user["role"] not in ("benefactor", "admin") and not (
         current_user["role"] == "beneficiary"
@@ -1010,19 +1018,110 @@ async def reorder_beneficiaries(
     ):
         raise HTTPException(status_code=403, detail="Not authorized")
 
+    # Fetch current succession participation status for each beneficiary
+    all_bens = await db.beneficiaries.find(
+        {"estate_id": estate_id, "id": {"$in": data.ordered_ids}, "deleted_at": None},
+        {"_id": 0, "id": 1, "succession_order": 1},
+    ).to_list(100)
+    opted_out = {b["id"] for b in all_bens if b.get("succession_order") is None}
+
+    succ_idx = 0
     for idx, ben_id in enumerate(data.ordered_ids):
-        is_primary = idx == 0
-        await db.beneficiaries.update_one(
-            {"id": ben_id, "estate_id": estate_id},
-            {
-                "$set": {
-                    "sort_order": idx,
-                    "succession_order": idx,
-                    "is_primary": is_primary,
-                }
-            },
-        )
+        if ben_id in opted_out:
+            # Opted out — keep sort_order for display but no succession
+            await db.beneficiaries.update_one(
+                {"id": ben_id, "estate_id": estate_id},
+                {
+                    "$set": {
+                        "sort_order": idx,
+                        "succession_order": None,
+                        "is_primary": False,
+                    }
+                },
+            )
+        else:
+            is_primary = succ_idx == 0
+            await db.beneficiaries.update_one(
+                {"id": ben_id, "estate_id": estate_id},
+                {
+                    "$set": {
+                        "sort_order": idx,
+                        "succession_order": succ_idx,
+                        "is_primary": is_primary,
+                    }
+                },
+            )
+            succ_idx += 1
     return {"success": True}
+
+
+@router.put("/beneficiaries/{beneficiary_id}/toggle-succession")
+async def toggle_succession(
+    beneficiary_id: str, current_user: dict = Depends(get_current_user)
+):
+    """Toggle a beneficiary in/out of the succession hierarchy."""
+    require_benefactor_role(current_user, "modify succession hierarchy")
+
+    ben = await db.beneficiaries.find_one(
+        {"id": beneficiary_id, "deleted_at": None},
+        {
+            "_id": 0,
+            "id": 1,
+            "estate_id": 1,
+            "name": 1,
+            "succession_order": 1,
+            "is_primary": 1,
+        },
+    )
+    if not ben:
+        raise HTTPException(status_code=404, detail="Beneficiary not found")
+
+    estate_id = ben["estate_id"]
+    currently_in = ben.get("succession_order") is not None
+
+    if currently_in:
+        # Opt OUT — remove from succession chain
+        was_primary = ben.get("is_primary", False)
+        await db.beneficiaries.update_one(
+            {"id": beneficiary_id},
+            {"$set": {"succession_order": None, "is_primary": False}},
+        )
+        # Re-index remaining chain to close the gap
+        remaining = await db.beneficiaries.find(
+            {
+                "estate_id": estate_id,
+                "deleted_at": None,
+                "succession_order": {"$ne": None},
+                "id": {"$ne": beneficiary_id},
+            },
+            {"_id": 0, "id": 1, "succession_order": 1},
+        ).to_list(100)
+        remaining.sort(key=lambda b: b["succession_order"])
+        for new_idx, b in enumerate(remaining):
+            await db.beneficiaries.update_one(
+                {"id": b["id"]},
+                {"$set": {"succession_order": new_idx, "is_primary": new_idx == 0}},
+            )
+        return {"success": True, "in_succession": False, "was_primary": was_primary}
+    else:
+        # Opt IN — append to the end of the chain
+        max_order = await db.beneficiaries.find(
+            {
+                "estate_id": estate_id,
+                "deleted_at": None,
+                "succession_order": {"$ne": None},
+            },
+            {"_id": 0, "id": 1, "succession_order": 1},
+        ).to_list(100)
+        next_order = (
+            max(b["succession_order"] for b in max_order) + 1 if max_order else 0
+        )
+        is_primary = next_order == 0
+        await db.beneficiaries.update_one(
+            {"id": beneficiary_id},
+            {"$set": {"succession_order": next_order, "is_primary": is_primary}},
+        )
+        return {"success": True, "in_succession": True, "is_primary": is_primary}
 
 
 @router.get("/beneficiaries/{estate_id}/succession")

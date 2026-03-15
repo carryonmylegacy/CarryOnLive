@@ -171,6 +171,38 @@ async def get_family_connections(current_user: dict = Depends(get_current_user))
                 ben_photos_map[bp["user_id"]] = bp["photo_url"]
 
     # Assemble connections
+    # The relation field stores what the BENEFICIARY is to the BENEFACTOR
+    # (e.g. Pete's record on Emma's estate says "Father" = Pete is Emma's Father).
+    # On the beneficiary portal, we need the INVERSE: what the BENEFACTOR is to
+    # the current user (Emma is Pete's Daughter).
+    RELATION_INVERSE = {
+        "Father": "Son/Daughter",
+        "Mother": "Son/Daughter",
+        "Son": "Father/Mother",
+        "Daughter": "Father/Mother",
+        "Son-in-law": "Father-in-law/Mother-in-law",
+        "Daughter-in-law": "Father-in-law/Mother-in-law",
+        "Father-in-law": "Son-in-law/Daughter-in-law",
+        "Mother-in-law": "Son-in-law/Daughter-in-law",
+        "Brother": "Brother/Sister",
+        "Sister": "Brother/Sister",
+        "Uncle": "Nephew/Niece",
+        "Aunt": "Nephew/Niece",
+        "Nephew": "Uncle/Aunt",
+        "Niece": "Uncle/Aunt",
+        "Grandson": "Grandfather/Grandmother",
+        "Granddaughter": "Grandfather/Grandmother",
+        "Grandmother": "Grandson/Granddaughter",
+        "Grandfather": "Grandson/Granddaughter",
+        "Great-Grandson": "Great-Grandfather/Great-Grandmother",
+        "Great-Granddaughter": "Great-Grandfather/Great-Grandmother",
+        "Great-Grandmother": "Great-Grandson/Great-Granddaughter",
+        "Great-Grandfather": "Great-Grandson/Great-Granddaughter",
+        "Cousin": "Cousin",
+        "Spouse": "Spouse",
+        "Friend": "Friend",
+    }
+
     for ben_record in ben_records:
         estate = estates_map.get(ben_record["estate_id"])
         if not estate:
@@ -186,6 +218,11 @@ async def get_family_connections(current_user: dict = Depends(get_current_user))
             display_photo = benefactor.get("photo_url", "") or ben_photos_map.get(
                 benefactor["id"], ""
             )
+        # Invert the relation so the benefactor's label reflects what
+        # the benefactor is TO the current user, not the other way around.
+        raw_relation = ben_record.get("relation", "Other")
+        inverted_relation = RELATION_INVERSE.get(raw_relation, raw_relation)
+
         connections.append(
             {
                 "id": estate["id"],
@@ -193,7 +230,7 @@ async def get_family_connections(current_user: dict = Depends(get_current_user))
                 "name": benefactor.get("name", "Unknown"),
                 "first_name": benefactor.get("first_name"),
                 "last_name": benefactor.get("last_name"),
-                "relation": ben_record.get("relation", "Other"),
+                "relation": inverted_relation,
                 "status": estate.get("status", "pre-transition"),
                 "readiness_score": estate.get("readiness_score", 0),
                 "benefactor_id": benefactor.get("id"),
