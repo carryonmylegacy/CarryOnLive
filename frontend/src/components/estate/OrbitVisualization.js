@@ -85,13 +85,20 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
   const edgePad = ballSize / 2 + 8;
   const maxOuterR = w / 2 - edgePad;
   const baseOrbitR = centerSize / 2 + ballSize * 0.75;
-  const orbitSpacing =
+  // Tighter inner rings: first gap is 60% of even spacing, expanding outward
+  const evenSpacing =
     numRings > 1
       ? (maxOuterR - baseOrbitR) / numRings
       : maxOuterR - baseOrbitR;
+  const orbitRadii = Array.from({ length: numRings }, (_, i) => {
+    // Progressive spacing: inner rings sit closer together
+    const t = numRings > 1 ? i / (numRings - 1) : 0;
+    const factor = 0.6 + t * 0.4; // 60% of even spacing for Ring 1, scaling to 100% for outermost
+    return baseOrbitR + (i + 1) * evenSpacing * factor;
+  });
 
   // Adaptive height: only as tall as the outermost active ring requires
-  const outerR = baseOrbitR + maxOrbitLevel * orbitSpacing;
+  const outerR = orbitRadii[maxOrbitLevel] || baseOrbitR;
   const containerHeight = (outerR + ballSize / 2 + 12) * 2;
   const containerWidth = w;
   const cx = containerWidth / 2;
@@ -233,7 +240,7 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
       >
         {/* Orbit track rings — only render levels that exist */}
         {Array.from({ length: numRings }, (_, level) => {
-          const orbitR = baseOrbitR + level * orbitSpacing;
+          const orbitR = orbitRadii[level] || baseOrbitR;
           const hasMembers = orbitGroups[level]?.length > 0;
           const [, ringColor] = orbitColors[level] || orbitColors[0];
 
@@ -315,7 +322,7 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
         {/* Orbiting members grouped by ring level */}
         {Object.entries(orbitGroups).map(([levelStr, levelMembers]) => {
           const level = parseInt(levelStr);
-          const orbitR = baseOrbitR + level * orbitSpacing;
+          const orbitR = orbitRadii[level] || baseOrbitR;
           const nodeSize = getNodeSizeForRing(levelMembers.length, orbitR);
           const positions = getPositionsForOrbit(levelMembers.length, orbitR, level, nodeSize);
           const [gradient] = orbitColors[level] || orbitColors[0];
