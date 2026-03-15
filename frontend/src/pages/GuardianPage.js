@@ -1,8 +1,33 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { cachedGet } from '../utils/apiCache';
 import { useAuth } from '../contexts/AuthContext';
+
+/* ── Pie-fill progress indicator ───────────────────────────── */
+const PieProgress = ({ size = 18, color = 'currentColor', duration = 8 }) => {
+  const r = (size - 2) / 2;
+  const cx = size / 2;
+  const cy = size / 2;
+  const circumference = 2 * Math.PI * r;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={1.5} opacity={0.2} />
+      <circle
+        cx={cx} cy={cy} r={r}
+        fill="none" stroke={color} strokeWidth={2}
+        strokeDasharray={circumference}
+        strokeDashoffset={circumference}
+        strokeLinecap="round"
+        style={{
+          animation: `pie-fill ${duration}s ease-out forwards`,
+        }}
+      />
+      <style>{`@keyframes pie-fill { 0% { stroke-dashoffset: ${circumference}; } 100% { stroke-dashoffset: ${circumference * 0.08}; } }`}</style>
+    </svg>
+  );
+};
+
 import {
   User,
   Users,
@@ -714,19 +739,19 @@ const GuardianPage = () => {
             className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:bg-[var(--s)]"
             style={{ color: '#94a3b8' }}
             data-testid="export-transcript-btn">
-            {exporting ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : <FileDown className="w-4.5 h-4.5" />}
+            {exporting ? <PieProgress size={18} color="#94a3b8" duration={4} /> : <FileDown className="w-4.5 h-4.5" />}
           </button>
           <button onClick={handleExportPlan} disabled={planExporting || !sessionId} title="Download Plan of Action"
             className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:bg-[var(--s)]"
             style={{ color: '#d4af37' }}
             data-testid="export-plan-btn">
-            {planExporting ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : <ClipboardList className="w-4.5 h-4.5" />}
+            {planExporting ? <PieProgress size={18} color="#d4af37" duration={15} /> : <ClipboardList className="w-4.5 h-4.5" />}
           </button>
           <button onClick={handleChecklistExport} disabled={checklistExporting} title="Export IAC Checklist"
             className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:bg-[var(--s)]"
             style={{ color: '#22C993' }}
             data-testid="export-checklist-pdf-btn">
-            {checklistExporting ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : <ListChecks className="w-4.5 h-4.5" />}
+            {checklistExporting ? <PieProgress size={18} color="#22C993" duration={4} /> : <ListChecks className="w-4.5 h-4.5" />}
           </button>
         </div>
       </div>
