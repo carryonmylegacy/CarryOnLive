@@ -295,12 +295,28 @@ export const AmberAlertProvider = () => {
     if (!token) return;
 
     try {
-      const res = await axios.get(`${API_URL}/notifications?unread_only=true&limit=5`, {
+      const res = await axios.get(`${API_URL}/notifications?unread_only=true&limit=10`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const now = Date.now();
       const maxOverlayAge = 24 * 60 * 60 * 1000; // 24 hours
-      const criticalAlerts = (res.data.notifications || []).filter(n => {
+      const notifications = res.data.notifications || [];
+
+      // Succession promotion toast — fires once per session per notification
+      const shownToasts = JSON.parse(sessionStorage.getItem('succession_toasts_shown') || '[]');
+      const successionAlerts = notifications.filter(n =>
+        n.metadata?.type === 'succession_promotion' && !shownToasts.includes(n.id)
+      );
+      if (successionAlerts.length > 0) {
+        const { toast: sonnerToast } = await import('../utils/toast');
+        for (const sa of successionAlerts) {
+          sonnerToast.success(sa.title || 'Succession Update', { description: sa.body, duration: 8000 });
+          shownToasts.push(sa.id);
+        }
+        sessionStorage.setItem('succession_toasts_shown', JSON.stringify(shownToasts));
+      }
+
+      const criticalAlerts = notifications.filter(n => {
         if (n.priority !== 'critical' || n.type !== 'security_alert') return false;
         if (dismissed.includes(n.id)) return false;
         // After 24h, alert stays in notification panel but no longer triggers full-screen overlay

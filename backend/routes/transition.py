@@ -207,6 +207,11 @@ async def approve_death_certificate(
                 }
             },
         )
+        # The deceased benefactor may also be a beneficiary on OTHER estates.
+        # Promote the next person in the succession chain on those estates.
+        asyncio.create_task(
+            promote_succession(estate_doc["owner_id"], current_user["id"])
+        )
 
     # Deliver all messages marked for immediate delivery
     await db.messages.update_many(
@@ -313,6 +318,164 @@ async def approve_death_certificate(
         "message": "Certificate approved, benefactor sealed, beneficiary access granted",
         "beneficiaries_with_grace": len(all_ben_ids),
     }
+
+
+async def promote_succession(deceased_user_id: str, actor_id: str):
+    """When a beneficiary dies, promote the next person in line on ALL estates
+    where the deceased was part of the succession chain.
+
+    This is called after TVT verifies a death certificate — either via the
+    standard benefactor-estate transition flow (above) or via a customer
+    service request for a beneficiary who doesn't own an estate.
+    """
+    from services.notifications import notify
+
+    # Find all beneficiary records linked to the deceased user across all estates
+    deceased_links = await db.beneficiaries.find(
+        {"user_id": deceased_user_id, "deleted_at": None},
+        {
+            "_id": 0,
+            "id": 1,
+            "estate_id": 1,
+            "succession_order": 1,
+            "is_primary": 1,
+            "name": 1,
+        },
+    ).to_list(100)
+
+    promotions = []
+    for link in deceased_links:
+        estate_id = link["estate_id"]
+        was_primary = link.get("is_primary", False)
+        old_order = link.get("succession_order")
+
+        # Remove the deceased from the succession chain
+        await db.beneficiaries.update_one(
+            {"id": link["id"]},
+            {"$set": {"succession_order": None, "is_primary": False, "deceased": True}},
+        )
+
+        if old_order is None and not was_primary:
+            continue  # Not in the succession chain — nothing to promote
+
+        # Find all remaining beneficiaries in the succession chain for this estate
+        remaining = await db.beneficiaries.find(
+            {
+                "estate_id": estate_id,
+                "deleted_at": None,
+                "succession_order": {"$ne": None},
+                "id": {"$ne": link["id"]},
+            },
+            {"_id": 0, "id": 1, "name": 1, "succession_order": 1, "user_id": 1},
+        ).to_list(100)
+        remaining.sort(key=lambda b: b["succession_order"])
+
+        # Re-index the succession chain (close the gap)
+        for new_idx, ben in enumerate(remaining):
+            new_is_primary = new_idx == 0
+            await db.beneficiaries.update_one(
+                {"id": ben["id"]},
+                {"$set": {"succession_order": new_idx, "is_primary": new_is_primary}},
+            )
+            # If this person just became primary, notify them
+            if new_is_primary and not ben.get("is_primary", False):
+                promoted_name = ben.get("name", "Beneficiary")
+                estate = await db.estates.find_one(
+                    {"id": estate_id}, {"_id": 0, "id": 1, "name": 1}
+                )
+                estate_name = (estate or {}).get("name", "an estate")
+                promotions.append(
+                    {
+                        "user_id": ben.get("user_id"),
+                        "name": promoted_name,
+                        "estate_name": estate_name,
+                        "estate_id": estate_id,
+                    }
+                )
+
+    # Send notifications to newly promoted primary beneficiaries
+    for promo in promotions:
+        if not promo["user_id"]:
+            continue
+        title = "You Are Now Primary Beneficiary"
+        body = (
+            f"You have been promoted to Primary Beneficiary for the "
+            f"{promo['estate_name']}. This means you are now the designated "
+            f"trustee responsible for managing this estate during transition."
+        )
+        # In-app notification (shows in notification center + new badge)
+        asyncio.create_task(
+            notify.beneficiary(
+                promo["user_id"],
+                title,
+                body,
+                url="/beneficiary/dashboard",
+                priority="high",
+                metadata={
+                    "type": "succession_promotion",
+                    "estate_id": promo["estate_id"],
+                    "show_login_toast": True,
+                },
+            )
+        )
+        # Email notification
+        asyncio.create_task(
+            _send_succession_email(
+                promo["user_id"], promo["name"], promo["estate_name"]
+            )
+        )
+
+    return promotions
+
+
+async def _send_succession_email(user_id: str, name: str, estate_name: str):
+    """Send an email to the newly promoted primary beneficiary."""
+    import resend
+
+    from config import RESEND_API_KEY, SENDER_EMAIL, logger
+
+    user = await db.users.find_one(
+        {"id": user_id}, {"_id": 0, "id": 1, "email": 1, "name": 1}
+    )
+    if not user or not RESEND_API_KEY:
+        return
+    try:
+        resend.emails.send(
+            {
+                "from": SENDER_EMAIL,
+                "to": [user["email"]],
+                "subject": f"CarryOn™ — You Are Now Primary Beneficiary for {estate_name}",
+                "html": f"""
+                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; background: #0a1628; color: #e2e8f0; border-radius: 16px;">
+                    <div style="text-align: center; margin-bottom: 24px;">
+                        <img src="https://app.carryon.us/logo192.png" alt="CarryOn" style="width: 48px; height: 48px;" />
+                    </div>
+                    <h1 style="color: #d4af37; font-size: 22px; margin-bottom: 8px;">Succession Update</h1>
+                    <p style="color: #94a3b8; font-size: 15px; line-height: 1.6;">
+                        Dear {name},
+                    </p>
+                    <p style="color: #94a3b8; font-size: 15px; line-height: 1.6;">
+                        You have been promoted to <strong style="color: #22C993;">Primary Beneficiary</strong>
+                        for the <strong style="color: #d4af37;">{estate_name}</strong>.
+                    </p>
+                    <p style="color: #94a3b8; font-size: 15px; line-height: 1.6;">
+                        As Primary Beneficiary, you are now the designated trustee responsible for managing
+                        this estate during transition. Please log in to review your responsibilities.
+                    </p>
+                    <div style="text-align: center; margin: 28px 0;">
+                        <a href="https://app.carryon.us/beneficiary/dashboard" style="display: inline-block; padding: 12px 32px; background: #d4af37; color: #0a1628; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                            View Your Dashboard
+                        </a>
+                    </div>
+                    <p style="color: #64748b; font-size: 12px; text-align: center;">
+                        CarryOn Technologies &middot; carryon.us
+                    </p>
+                </div>
+                """,
+            }
+        )
+    except Exception as e:
+        logger.warning(f"Succession email failed for {user_id}: {e}")
 
 
 @router.delete("/transition/certificates/{certificate_id}")

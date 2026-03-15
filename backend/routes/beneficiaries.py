@@ -169,7 +169,8 @@ async def delete_beneficiary(
 async def set_primary_beneficiary(
     beneficiary_id: str, current_user: dict = Depends(get_current_user)
 ):
-    """Designate a beneficiary as the primary beneficiary (trustee) of the estate."""
+    """Designate a beneficiary as the primary beneficiary (trustee) of the estate.
+    Also sets them as succession_order=0 in the succession hierarchy."""
     require_benefactor_role(current_user, "designate a primary beneficiary")
 
     # Find the beneficiary to get their estate_id
@@ -187,10 +188,16 @@ async def set_primary_beneficiary(
         {"$set": {"is_primary": False}},
     )
 
-    # Set the new primary
+    # Set the new primary + succession_order = 0
     await db.beneficiaries.update_one(
         {"id": beneficiary_id},
-        {"$set": {"is_primary": True}},
+        {"$set": {"is_primary": True, "succession_order": 0}},
+    )
+
+    # Ensure any other beneficiaries with succession_order 0 are bumped
+    await db.beneficiaries.update_many(
+        {"estate_id": estate_id, "id": {"$ne": beneficiary_id}, "succession_order": 0},
+        {"$set": {"succession_order": None}},
     )
 
     return {
@@ -989,12 +996,14 @@ async def reorder_beneficiaries(
     data: ReorderRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    """Persist drag-and-drop beneficiary sort order."""
+    """Persist drag-and-drop beneficiary sort order AND succession hierarchy.
+    Position 0 = Primary, 1 = Secondary, 2 = Tertiary, etc."""
     if current_user["role"] not in ("benefactor", "admin") and not (
         current_user["role"] == "beneficiary"
         and (
             await db.users.find_one(
-                {"id": current_user["id"]}, {"_id": 0, "id": 1, "is_also_benefactor": 1}
+                {"id": current_user["id"]},
+                {"_id": 0, "id": 1, "is_also_benefactor": 1},
             )
             or {}
         ).get("is_also_benefactor")
@@ -1002,8 +1011,40 @@ async def reorder_beneficiaries(
         raise HTTPException(status_code=403, detail="Not authorized")
 
     for idx, ben_id in enumerate(data.ordered_ids):
+        is_primary = idx == 0
         await db.beneficiaries.update_one(
             {"id": ben_id, "estate_id": estate_id},
-            {"$set": {"sort_order": idx}},
+            {
+                "$set": {
+                    "sort_order": idx,
+                    "succession_order": idx,
+                    "is_primary": is_primary,
+                }
+            },
         )
     return {"success": True}
+
+
+@router.get("/beneficiaries/{estate_id}/succession")
+async def get_succession_order(
+    estate_id: str, current_user: dict = Depends(get_current_user)
+):
+    """Get the succession hierarchy for an estate, ordered by succession_order."""
+    beneficiaries = await db.beneficiaries.find(
+        {"estate_id": estate_id, "deleted_at": None},
+        {
+            "_id": 0,
+            "id": 1,
+            "name": 1,
+            "relation": 1,
+            "succession_order": 1,
+            "is_primary": 1,
+        },
+    ).to_list(100)
+    # Sort: those with succession_order first (by order), then those without
+    with_order = sorted(
+        [b for b in beneficiaries if b.get("succession_order") is not None],
+        key=lambda b: b["succession_order"],
+    )
+    without_order = [b for b in beneficiaries if b.get("succession_order") is None]
+    return with_order + without_order

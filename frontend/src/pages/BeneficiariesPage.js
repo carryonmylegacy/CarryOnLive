@@ -47,7 +47,6 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Textarea } from '../components/ui/textarea';
 import { toast } from '../utils/toast';
 import { Switch } from '../components/ui/switch';
@@ -86,6 +85,18 @@ const relations = [
 const avatarColors = [
   '#d4af37', '#3b82f6', '#10b981', '#8b5cf6', '#ef4444', '#f59e0b', '#ec4899', '#06b6d4'
 ];
+
+// Succession hierarchy labels — position 0 = Primary, 1 = Secondary, etc.
+const SUCCESSION_LABELS = [
+  'Primary', 'Secondary', 'Tertiary', 'Quaternary', 'Quinary',
+  'Senary', 'Septenary', 'Octonary', 'Nonary', 'Denary',
+];
+const getSuccessionLabel = (index) => SUCCESSION_LABELS[index] || `#${index + 1}`;
+const SUCCESSION_COLORS = {
+  0: { bg: 'rgba(34,201,147,0.15)', color: '#22C993', border: '1px solid rgba(34,201,147,0.3)' },
+  1: { bg: 'rgba(59,130,246,0.15)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.3)' },
+  2: { bg: 'rgba(139,92,246,0.15)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.3)' },
+};
 
 const usStates = [
   'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
@@ -130,11 +141,8 @@ const BeneficiariesPage = () => {
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [, setUploadingPhoto] = useState(null);
-  const [settingPrimary, setSettingPrimary] = useState(null);
-  const [showPrimaryDisclaimer, setShowPrimaryDisclaimer] = useState(null);
   const [accessRequests, setAccessRequests] = useState([]);
   const [handlingRequest, setHandlingRequest] = useState(null);
-  const [changingPrimary, setChangingPrimary] = useState(false);
   const [sectionPerms, setSectionPerms] = useState({});
   const [savingPerms, setSavingPerms] = useState(null);
   const [benEstates, setBenEstates] = useState([]);
@@ -370,27 +378,6 @@ const BeneficiariesPage = () => {
     }
   };
 
-  const handleSetPrimary = async (beneficiaryId) => {
-    setSettingPrimary(beneficiaryId);
-    try {
-      await axios.put(`${API_URL}/beneficiaries/${beneficiaryId}/set-primary`, {}, getAuthHeaders());
-      toast.success('Primary beneficiary designated');
-      setShowPrimaryDisclaimer(null);
-      setChangingPrimary(false);
-      fetchData();
-      // Only show the getting-started popup if user hasn't already graduated onboarding
-      try {
-        const prog = await axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
-        if (!prog.data?.already_graduated) setShowPrimaryPopup(true);
-      } catch { /* skip popup on error */ }
-    } catch (error) {
-      console.error('Set primary error:', error);
-      toast.error(error.response?.data?.detail || 'Failed to designate primary beneficiary');
-    } finally {
-      setSettingPrimary(null);
-    }
-  };
-
   const handleAccessRequest = async (requestId, action) => {
     setHandlingRequest(requestId);
     try {
@@ -468,6 +455,12 @@ const BeneficiariesPage = () => {
     if (oldIdx === -1 || newIdx === -1) return;
     const reordered = arrayMove(beneficiaries, oldIdx, newIdx);
     setBeneficiaries(reordered);
+    // Notify if the primary beneficiary changed
+    const wasPrimary = beneficiaries[0];
+    const nowPrimary = reordered[0];
+    if (wasPrimary?.id !== nowPrimary?.id) {
+      toast.success(`${nowPrimary.name} is now your Primary Beneficiary`);
+    }
     try {
       await axios.put(`${API_URL}/beneficiaries/reorder/${estate?.id}`, {
         ordered_ids: reordered.map(b => b.id),
@@ -502,7 +495,7 @@ const BeneficiariesPage = () => {
               Beneficiaries
             </h1>
             <p className="text-xs text-[var(--t5)]">
-              {beneficiaries.length} configured · Manage your family members
+              {beneficiaries.length} configured · Drag to set succession order
             </p>
           </div>
         </div>
@@ -560,12 +553,24 @@ const BeneficiariesPage = () => {
             />
           </div>
 
-          {/* RIGHT: Tile Stack (primary first, then age-sorted) */}
+          {/* RIGHT: Succession Hierarchy — drag to reorder */}
           <div>
+            {/* Succession explainer */}
+            <div className="mb-3 p-3 rounded-xl flex items-start gap-2.5" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.12)' }} data-testid="succession-explainer">
+              <Shield className="w-4 h-4 text-[#d4af37] flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs text-[var(--t3)] font-semibold">Succession Hierarchy</p>
+                <p className="text-[11px] text-[var(--t5)] leading-relaxed mt-0.5">
+                  Drag to reorder. The top position is your Primary Beneficiary (trustee). If they become unavailable, the next in line is automatically promoted.
+                </p>
+              </div>
+            </div>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={beneficiaries.map(b => b.id)} strategy={rectSortingStrategy}>
             <div className="space-y-3" data-testid="beneficiary-tiles">
-              {beneficiaries.map((ben) => (
+              {beneficiaries.map((ben, index) => {
+                const succStyle = SUCCESSION_COLORS[index] || { bg: 'rgba(148,163,184,0.12)', color: '#94a3b8', border: '1px solid rgba(148,163,184,0.2)' };
+                return (
                 <SortableCard key={ben.id} id={ben.id}>
                 <Card className="glass-card group" data-testid={`beneficiary-${ben.id}`}>
                   <CardContent className="p-5">
@@ -581,7 +586,7 @@ const BeneficiariesPage = () => {
                             : ben.name?.split(' ').map(n => n[0]).join('').toUpperCase())}
                           color={ben.avatar_color}
                           size={60}
-                          isPrimary={ben.is_primary}
+                          isPrimary={index === 0}
                           onUpload={() => {
                             setQuickUploadBenId(ben.id);
                             setTimeout(() => quickFileRef.current?.click(), 50);
@@ -598,11 +603,14 @@ const BeneficiariesPage = () => {
                     {ben.is_stub && (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--ywbg)] text-[var(--yw)] mr-1">NEEDS INFO</span>
                     )}
-                    {ben.is_primary && (
-                      <span className="flex items-center gap-1 text-[9px] font-bold whitespace-nowrap px-2 py-1 rounded-md" style={{ background: 'rgba(34,201,147,0.15)', color: '#22C993', border: '1px solid rgba(34,201,147,0.3)' }} data-testid={`primary-badge-${ben.id}`}>
-                        <Shield className="w-3 h-3 flex-shrink-0" /> PRIMARY
-                      </span>
-                    )}
+                    {/* Succession Order Badge */}
+                    <span
+                      className="flex items-center gap-1 text-[9px] font-bold whitespace-nowrap px-2 py-1 rounded-md"
+                      style={{ background: succStyle.bg, color: succStyle.color, border: succStyle.border }}
+                      data-testid={`succession-badge-${ben.id}`}
+                    >
+                      <Shield className="w-3 h-3 flex-shrink-0" /> {getSuccessionLabel(index).toUpperCase()}
+                    </span>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -750,34 +758,12 @@ const BeneficiariesPage = () => {
                       </Button>
                     </div>
                   )}
-
-                  {/* Designate Primary */}
-                  {ben.is_primary && (
-                    <button
-                      className="w-full mt-2 text-[10px] text-[var(--t5)] hover:text-[#F59E0B] transition-colors"
-                      onClick={() => setChangingPrimary(true)}
-                      data-testid={`change-primary-${ben.id}`}
-                    >
-                      Change Primary Beneficiary
-                    </button>
-                  )}
-                  {!ben.is_primary && !ben.is_stub && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className={`w-full mt-2 text-xs border-[var(--b)] ${(primaryBeneficiary && !changingPrimary) ? 'text-[var(--t5)] opacity-50 cursor-not-allowed' : 'text-[#22C993] hover:bg-[#22C993]/10'}`}
-                      onClick={() => setShowPrimaryDisclaimer(ben)}
-                      disabled={!!primaryBeneficiary && !changingPrimary}
-                      data-testid={`designate-primary-${ben.id}`}
-                    >
-                      <Shield className="w-3 h-3 mr-1.5" /> {(primaryBeneficiary && !changingPrimary) ? 'Primary Already Designated' : 'Designate as Primary'}
-                    </Button>
-                  )}
                 </div>
               </CardContent>
             </Card>
             </SortableCard>
-          ))}
+          );
+          })}
         </div>
         </SortableContext>
         </DndContext>
@@ -1127,62 +1113,6 @@ const BeneficiariesPage = () => {
         </Card>
       )}
 
-      {/* Primary Beneficiary Disclaimer Modal */}
-      <Dialog open={!!showPrimaryDisclaimer} onOpenChange={(open) => !open && setShowPrimaryDisclaimer(null)}>
-        <DialogContent className="glass-card border-[var(--b)] sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-[var(--t)] text-xl flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              <Shield className="w-5 h-5 text-[#22C993]" />
-              Designate Primary Beneficiary
-            </DialogTitle>
-          </DialogHeader>
-          {showPrimaryDisclaimer && (
-            <div className="space-y-4 py-2" data-testid="primary-disclaimer-modal">
-              <div className="p-4 rounded-xl" style={{ background: 'rgba(34,201,147,0.06)', border: '1px solid rgba(34,201,147,0.15)' }}>
-                <p className="text-sm text-[var(--t3)] leading-relaxed">
-                  You are about to designate <strong className="text-[#22C993]">{showPrimaryDisclaimer.name}</strong> as the primary beneficiary of your estate.
-                </p>
-              </div>
-              <div className="p-4 rounded-xl" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}>
-                <h4 className="text-sm font-bold text-[#F59E0B] flex items-center gap-2 mb-2">
-                  <AlertTriangle className="w-4 h-4" />
-                  Important Disclaimer
-                </h4>
-                <ul className="text-xs text-[var(--t4)] space-y-2 list-disc pl-4">
-                  <li>This person will serve as the <strong>trustee</strong> of your estate after your transition.</li>
-                  <li>They will have the <strong>sole authority</strong> to approve or deny new beneficiaries who request access to your estate after you have passed.</li>
-                  <li>No other beneficiary will have this power unless you change this designation.</li>
-                  <li>You can change your primary beneficiary at any time while your estate is active.</li>
-                </ul>
-              </div>
-              <p className="text-xs text-[var(--t5)] italic text-center">
-                By proceeding, you confirm that you understand the responsibilities being granted to this individual.
-              </p>
-              <div className="flex gap-3 pt-2">
-                <Button
-                  variant="outline"
-                  className="flex-1 border-[var(--b)] text-white"
-                  onClick={() => setShowPrimaryDisclaimer(null)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="flex-1 bg-[#22C993] hover:bg-[#1db882] text-white font-bold"
-                  onClick={() => handleSetPrimary(showPrimaryDisclaimer.id)}
-                  disabled={settingPrimary === showPrimaryDisclaimer.id}
-                  data-testid="confirm-primary-btn"
-                >
-                  {settingPrimary === showPrimaryDisclaimer.id ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Designating...</>
-                  ) : (
-                    <><Shield className="w-4 h-4 mr-2" /> Confirm Designation</>
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
       </SectionLockedOverlay>
       {showPrimaryPopup && (
         <ReturnPopup step="primary" onReturn={() => { setShowPrimaryPopup(false); navigate('/dashboard'); }} />

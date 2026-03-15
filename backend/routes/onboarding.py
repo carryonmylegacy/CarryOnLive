@@ -26,8 +26,8 @@ ONBOARDING_STEPS = [
     },
     {
         "key": "designate_primary",
-        "label": "Designate Your Primary Beneficiary",
-        "description": "Choose who will serve as trustee of your estate",
+        "label": "Set Your Succession Order",
+        "description": "Add beneficiaries and arrange your succession hierarchy",
     },
     {
         "key": "customize_checklist",
