@@ -621,9 +621,9 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                   html.style.scrollBehavior = '';
                 }, 200);
               }
-            }} className={`px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap flex-shrink-0 ${roleFilter === r ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'}`} data-testid={`admin-role-filter-${r}`}>{r === 'all' ? 'All Estates' : r === 'beneficiary' ? 'Beneficiaries' : 'Benefactors'}</button>
+            }} className={`px-2 sm:px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold whitespace-nowrap flex-shrink-0 ${roleFilter === r ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'}`} data-testid={`admin-role-filter-${r}`}>{r === 'all' ? 'All' : r === 'beneficiary' ? 'Beneficiaries' : 'Benefactors'}</button>
           ))}
-          <div className="w-px bg-[var(--b)] mx-1" />
+          <div className="w-px bg-[var(--b)] mx-0.5 sm:mx-1" />
           <button
             onClick={() => {
               const mainEl = document.querySelector('.main-content');
@@ -645,7 +645,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                 }, 200);
               }
             }}
-            className={`px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap flex-shrink-0 flex items-center gap-1.5 ${viewMode !== 'list' ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'}`}
+            className={`px-2 sm:px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold whitespace-nowrap flex-shrink-0 flex items-center gap-1 sm:gap-1.5 ${viewMode !== 'list' ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'}`}
             data-testid="toggle-tree-view"
           >
             <GitBranch className="w-3.5 h-3.5" /> {viewMode === 'tree' ? 'Tree' : viewMode === 'graph' ? 'Graph' : 'List'}
