@@ -46,7 +46,7 @@ async def export_estate_pdf(estate_id: str, current_user: dict = Depends(get_cur
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
     if not estate:
         raise HTTPException(status_code=404, detail="Estate not found")
-    if estate.get("owner_id") != current_user["id"]:
+    if estate.get("owner_id") != current_user["id"] and current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Not authorized")
 
     # Gather all estate data

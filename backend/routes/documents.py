@@ -161,8 +161,11 @@ async def upload_document(
         )
     require_benefactor_role(current_user, "upload documents")
 
-    # Verify user owns this estate
-    estate = await db.estates.find_one({"id": estate_id, "owner_id": current_user["id"]}, {"_id": 0})
+    # Verify user owns this estate (or is admin)
+    if current_user.get("role") == "admin":
+        estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
+    else:
+        estate = await db.estates.find_one({"id": estate_id, "owner_id": current_user["id"]}, {"_id": 0})
     if not estate:
         raise HTTPException(status_code=403, detail="Access denied — you do not own this estate")
 
@@ -409,7 +412,7 @@ async def lock_document(
         raise HTTPException(status_code=404, detail="Document not found")
 
     estate = await db.estates.find_one({"id": document["estate_id"]}, {"_id": 0})
-    if not estate or estate.get("owner_id") != current_user["id"]:
+    if not estate or (estate.get("owner_id") != current_user["id"] and current_user.get("role") != "admin"):
         raise HTTPException(status_code=403, detail="Only the estate owner can lock documents")
 
     # Require vault master key to be set before allowing individual locks
@@ -465,7 +468,7 @@ async def remove_document_lock(
         raise HTTPException(status_code=404, detail="Document not found")
 
     estate = await db.estates.find_one({"id": document["estate_id"]}, {"_id": 0})
-    if not estate or estate.get("owner_id") != current_user["id"]:
+    if not estate or (estate.get("owner_id") != current_user["id"] and current_user.get("role") != "admin"):
         raise HTTPException(status_code=403, detail="Only the estate owner can remove locks")
 
     await db.documents.update_one(
@@ -936,7 +939,10 @@ async def delete_document(document_id: str, current_user: dict = Depends(get_cur
         raise HTTPException(status_code=404, detail="Document not found")
 
     # Verify user owns the estate
-    estate = await db.estates.find_one({"id": document["estate_id"], "owner_id": current_user["id"]}, {"_id": 0})
+    if current_user.get("role") == "admin":
+        estate = await db.estates.find_one({"id": document["estate_id"]}, {"_id": 0})
+    else:
+        estate = await db.estates.find_one({"id": document["estate_id"], "owner_id": current_user["id"]}, {"_id": 0})
     if not estate:
         raise HTTPException(status_code=403, detail="Access denied — you do not own this estate")
 
@@ -978,7 +984,10 @@ async def update_document(
         raise HTTPException(status_code=404, detail="Document not found")
 
     # Verify user owns the estate
-    estate = await db.estates.find_one({"id": doc["estate_id"], "owner_id": current_user["id"]}, {"_id": 0})
+    if current_user.get("role") == "admin":
+        estate = await db.estates.find_one({"id": doc["estate_id"]}, {"_id": 0})
+    else:
+        estate = await db.estates.find_one({"id": doc["estate_id"], "owner_id": current_user["id"]}, {"_id": 0})
     if not estate:
         raise HTTPException(status_code=403, detail="Access denied — you do not own this estate")
 

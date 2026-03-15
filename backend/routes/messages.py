@@ -347,7 +347,7 @@ async def upload_message_video(
         raise HTTPException(status_code=404, detail="Message not found")
 
     estate = await db.estates.find_one({"id": message["estate_id"]}, {"_id": 0})
-    if not estate or estate.get("owner_id") != current_user["id"]:
+    if not estate or (estate.get("owner_id") != current_user["id"] and current_user.get("role") != "admin"):
         raise HTTPException(status_code=403, detail="Access denied")
 
     estate_salt = await get_estate_salt(message["estate_id"])

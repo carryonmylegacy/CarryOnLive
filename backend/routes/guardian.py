@@ -19,6 +19,16 @@ from utils import get_current_user, log_activity, update_estate_readiness
 
 router = APIRouter()
 
+
+async def _get_user_estate(current_user: dict, projection: dict | None = None):
+    """Get the first estate for a user, with admin fallback (all estates)."""
+    proj = projection or {"_id": 0}
+    if current_user.get("role") == "admin":
+        return await db.estates.find({}, proj).to_list(1)
+    return await db.estates.find({"owner_id": current_user["id"]}, proj).to_list(1)
+
+
+
 # ── xAI Connection Keep-Alive ──────────────────────────────────
 # The httpx connection pool drops idle TCP connections after a few
 # minutes.  A one-time warmup at startup is not enough — we need a
@@ -368,7 +378,10 @@ async def chat_with_guardian(data: ChatRequest, current_user: dict = Depends(get
     needs_content = False
 
     if not estate_id:
-        estates = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0}).to_list(1)
+        if current_user.get("role") == "admin":
+            estates = await db.estates.find({}, {"_id": 0}).to_list(1)
+        else:
+            estates = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0}).to_list(1)
         if estates:
             estate_id = estates[0]["id"]
 
@@ -796,7 +809,7 @@ async def export_checklist_pdf(
     from fpdf import FPDF
 
     # Get user's estate
-    estates = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0}).to_list(1)
+    estates = await _get_user_estate(current_user)
     if not estates:
         raise HTTPException(status_code=404, detail="No estate found")
 
@@ -1052,7 +1065,7 @@ async def export_todo_pdf(
     from fpdf import FPDF
 
     # Get user's estate for context
-    estates = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0}).to_list(1)
+    estates = await _get_user_estate(current_user)
     estate_name = estates[0]["name"] if estates else "My Estate"
     estate_id = estates[0]["id"] if estates else None
 
@@ -1201,7 +1214,7 @@ async def export_iac_report_pdf(
     """
     from fpdf import FPDF
 
-    estates = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0}).to_list(1)
+    estates = await _get_user_estate(current_user)
     estate_name = estates[0]["name"] if estates else "My Estate"
     estate_id = estates[0]["id"] if estates else None
 
@@ -1417,7 +1430,7 @@ async def export_conversation_pdf(
         raise HTTPException(status_code=404, detail="No conversation found")
 
     # Get estate context
-    estates = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0, "id": 1, "name": 1}).to_list(1)
+    estates = await _get_user_estate(current_user, {"_id": 0, "id": 1, "name": 1})
     estate_name = estates[0]["name"] if estates else "My Estate"
     estate_id = estates[0]["id"] if estates else None
     user_name = current_user.get("name", "Benefactor")
@@ -1578,7 +1591,7 @@ async def export_plan_of_action_pdf(
         raise HTTPException(status_code=404, detail="No conversation found")
 
     # Estate context
-    estates = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0, "id": 1, "name": 1}).to_list(1)
+    estates = await _get_user_estate(current_user, {"_id": 0, "id": 1, "name": 1})
     estate_name = estates[0]["name"] if estates else "My Estate"
     estate_id = estates[0]["id"] if estates else None
 

@@ -59,15 +59,16 @@ async def get_digital_wallet(estate_id: str, current_user: dict = Depends(get_cu
     if not estate:
         raise HTTPException(status_code=404, detail="Estate not found")
 
-    # Check if user is owner or assigned beneficiary (post-transition)
+    # Check if user is owner, admin, or assigned beneficiary (post-transition)
     is_owner = estate.get("owner_id") == current_user["id"]
+    is_admin = current_user.get("role") == "admin"
     is_transitioned = estate.get("transitioned", False)
 
     entries = await db.digital_wallet.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(200)
 
     estate_salt = await get_estate_salt(estate_id)
 
-    if is_owner:
+    if is_owner or is_admin:
         # Owner sees all entries with decrypted passwords
         for entry in entries:
             if entry.get("encrypted_password"):
@@ -105,7 +106,10 @@ async def create_digital_wallet_entry(data: DigitalWalletCreate, current_user: d
     """Create a new digital wallet entry."""
     require_benefactor_role(current_user, "add digital wallet entries")
 
-    estates = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0}).to_list(1)
+    if current_user.get("role") == "admin":
+        estates = await db.estates.find({}, {"_id": 0}).to_list(1)
+    else:
+        estates = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0}).to_list(1)
     if not estates:
         raise HTTPException(status_code=404, detail="No estate found")
 
@@ -166,7 +170,7 @@ async def update_digital_wallet_entry(
         raise HTTPException(status_code=404, detail="Entry not found")
 
     estate = await db.estates.find_one({"id": entry["estate_id"]}, {"_id": 0})
-    if not estate or estate.get("owner_id") != current_user["id"]:
+    if not estate or (estate.get("owner_id") != current_user["id"] and current_user.get("role") != "admin"):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     update = {}
@@ -229,7 +233,7 @@ async def delete_digital_wallet_entry(entry_id: str, current_user: dict = Depend
         raise HTTPException(status_code=404, detail="Entry not found")
 
     estate = await db.estates.find_one({"id": entry["estate_id"]}, {"_id": 0})
-    if not estate or estate.get("owner_id") != current_user["id"]:
+    if not estate or (estate.get("owner_id") != current_user["id"] and current_user.get("role") != "admin"):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     await db.digital_wallet.update_one(
