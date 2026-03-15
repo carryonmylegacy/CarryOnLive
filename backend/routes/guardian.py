@@ -1217,9 +1217,7 @@ async def export_iac_report_pdf(
     pdf.cell(
         0,
         5,
-        sanitize_for_pdf(
-            f"Prepared for: {user_name}  |  Estate: {estate_name}  |  State: {user_state}"
-        ),
+        sanitize_for_pdf(f"Prepared for: {user_name}  |  Estate: {estate_name}  |  State: {user_state}"),
         new_x="LMARGIN",
         new_y="NEXT",
     )
@@ -1279,9 +1277,8 @@ async def export_iac_report_pdf(
         # Detect section headers for special styling
         clean_lower = clean.lower()
         is_section1 = "immediate action checklist" in clean_lower and "beneficiar" in clean_lower
-        is_section2 = (
-            "estate strengthening" in clean_lower
-            or ("recommendation" in clean_lower and "benefactor" in clean_lower)
+        is_section2 = "estate strengthening" in clean_lower or (
+            "recommendation" in clean_lower and "benefactor" in clean_lower
         )
 
         if is_section1:

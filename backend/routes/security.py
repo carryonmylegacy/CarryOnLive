@@ -1,6 +1,8 @@
 """CarryOn™ Backend — Section Security (Triple Lock)"""
 
+import asyncio
 import os
+import subprocess
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
@@ -170,10 +172,9 @@ async def enroll_voiceprint_endpoint(
 
     wav_path = tmp_path + ".wav"
     try:
-        # Convert to WAV if needed using ffmpeg
-        import subprocess
-
-        result = subprocess.run(
+        # Convert to WAV if needed using ffmpeg (non-blocking)
+        result = await asyncio.to_thread(
+            subprocess.run,
             [
                 "ffmpeg",
                 "-y",
@@ -197,8 +198,6 @@ async def enroll_voiceprint_endpoint(
             wav_bytes = f.read()
 
         # Enhanced extraction (run in thread pool to avoid blocking event loop)
-        import asyncio
-
         extraction = await asyncio.to_thread(extract_voiceprint, wav_bytes)
         if extraction is None:
             raise HTTPException(
@@ -318,9 +317,8 @@ async def verify_section_security(
 
         wav_path = tmp_path + ".wav"
         try:
-            import subprocess
-
-            subprocess.run(
+            await asyncio.to_thread(
+                subprocess.run,
                 [
                     "ffmpeg",
                     "-y",
@@ -345,8 +343,6 @@ async def verify_section_security(
 
             if is_v2:
                 # Enhanced extraction (run in thread pool)
-                import asyncio
-
                 extraction = await asyncio.to_thread(extract_voiceprint, wav_bytes)
                 if extraction is None:
                     raise HTTPException(
@@ -368,8 +364,6 @@ async def verify_section_security(
                 confidence_level = vresult["confidence_level"]
             else:
                 # Legacy 60-dim voiceprint (run in thread pool)
-                import asyncio
-
                 test_vp = await asyncio.to_thread(extract_voiceprint_legacy, wav_bytes)
                 if test_vp is None:
                     raise HTTPException(status_code=400, detail="Could not process voice sample")
