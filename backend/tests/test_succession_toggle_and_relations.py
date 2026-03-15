@@ -11,7 +11,6 @@ Iteration 113: Testing new features:
 import pytest
 import requests
 import os
-import uuid
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 
@@ -53,7 +52,9 @@ class TestSuccessionToggle:
         if not owned_estate:
             pytest.skip("No owned estate found")
 
-        bens_resp = self.session.get(f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}")
+        bens_resp = self.session.get(
+            f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}"
+        )
         assert bens_resp.status_code == 200, "Failed to get beneficiaries"
         bens = bens_resp.json()
 
@@ -88,15 +89,15 @@ class TestSuccessionToggle:
         if not owned_estate:
             pytest.skip("No owned estate")
 
-        bens_resp = self.session.get(f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}")
+        bens_resp = self.session.get(
+            f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}"
+        )
         bens = bens_resp.json()
         if not bens:
             pytest.skip("No beneficiaries")
 
         ben = bens[0]
-        initial_in_succession = (
-            ben.get("succession_order") is not None
-        )
+        initial_in_succession = ben.get("succession_order") is not None
 
         # If not in succession, toggle ON first
         if not initial_in_succession:
@@ -109,7 +110,7 @@ class TestSuccessionToggle:
             f"{BASE_URL}/api/beneficiaries/{ben['id']}/toggle-succession"
         )
         # Check if we just turned it off (if initial was True) or on (if initial was False then we toggled twice)
-        
+
         # Verify by fetching the beneficiary again
         bens_resp2 = self.session.get(
             f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}"
@@ -142,7 +143,9 @@ class TestSuccessionToggle:
         if not owned_estate:
             pytest.skip("No owned estate")
 
-        bens_resp = self.session.get(f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}")
+        bens_resp = self.session.get(
+            f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}"
+        )
         bens = bens_resp.json()
         if not bens:
             pytest.skip("No beneficiaries")
@@ -156,7 +159,7 @@ class TestSuccessionToggle:
                 f"{BASE_URL}/api/beneficiaries/{ben['id']}/toggle-succession"
             )
             assert off_resp.status_code == 200
-            assert off_resp.json()["in_succession"] == False
+            assert not off_resp.json()["in_succession"]
 
         # Now toggle ON
         on_resp = self.session.put(
@@ -164,7 +167,7 @@ class TestSuccessionToggle:
         )
         assert on_resp.status_code == 200
         result = on_resp.json()
-        assert result["in_succession"] == True
+        assert result["in_succession"]
         print(f"Toggle ON result: {result}")
 
     def test_toggle_succession_reindexes_remaining_chain(self):
@@ -183,7 +186,9 @@ class TestSuccessionToggle:
         if not owned_estate:
             pytest.skip("No owned estate")
 
-        bens_resp = self.session.get(f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}")
+        bens_resp = self.session.get(
+            f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}"
+        )
         bens = bens_resp.json()
 
         # Need at least 2 beneficiaries for this test
@@ -204,9 +209,7 @@ class TestSuccessionToggle:
         bens2 = bens_resp2.json()
 
         # Find the first (primary) beneficiary and toggle them OFF
-        in_succession_bens = [
-            b for b in bens2 if b.get("succession_order") is not None
-        ]
+        in_succession_bens = [b for b in bens2 if b.get("succession_order") is not None]
         if len(in_succession_bens) < 2:
             pytest.skip("Need at least 2 in succession for this test")
 
@@ -218,7 +221,7 @@ class TestSuccessionToggle:
             f"{BASE_URL}/api/beneficiaries/{first_ben['id']}/toggle-succession"
         )
         assert resp.status_code == 200
-        assert resp.json()["in_succession"] == False
+        assert not resp.json()["in_succession"]
 
         # Check that remaining beneficiaries are re-indexed
         bens_resp3 = self.session.get(
@@ -232,7 +235,7 @@ class TestSuccessionToggle:
         # The new primary should have succession_order = 0
         if remaining_in:
             assert remaining_in[0]["succession_order"] == 0, "Re-indexing failed"
-            assert remaining_in[0]["is_primary"] == True, "Primary flag not set"
+            assert remaining_in[0]["is_primary"], "Primary flag not set"
             print(
                 f"After removing first: new primary is {remaining_in[0]['name']} with succession_order={remaining_in[0]['succession_order']}"
             )
@@ -277,7 +280,9 @@ class TestReorderRespectsOptedOut:
         if not owned_estate:
             pytest.skip("No owned estate")
 
-        bens_resp = self.session.get(f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}")
+        bens_resp = self.session.get(
+            f"{BASE_URL}/api/beneficiaries/{owned_estate['id']}"
+        )
         bens = bens_resp.json()
         if len(bens) < 2:
             pytest.skip("Need at least 2 beneficiaries")
@@ -396,9 +401,7 @@ class TestFamilyConnectionsRelationInversion:
         # Check that each connection has a relation field
         for conn in connections:
             assert "relation" in conn, f"Missing relation field in {conn}"
-            print(
-                f"Connection: {conn.get('name')} - relation: {conn.get('relation')}"
-            )
+            print(f"Connection: {conn.get('name')} - relation: {conn.get('relation')}")
 
         # The test passes if we got valid responses - actual inversion is verified by code review
         print(
@@ -432,9 +435,7 @@ class TestAuthorizationRequirements:
     def test_toggle_succession_requires_benefactor_role(self):
         """Toggle succession should require benefactor role"""
         # Try without auth
-        resp = requests.put(
-            f"{BASE_URL}/api/beneficiaries/fake-id/toggle-succession"
-        )
+        resp = requests.put(f"{BASE_URL}/api/beneficiaries/fake-id/toggle-succession")
         assert resp.status_code in [401, 403, 422], (
             f"Expected auth error, got {resp.status_code}"
         )
