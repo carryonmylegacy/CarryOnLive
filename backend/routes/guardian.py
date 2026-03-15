@@ -28,7 +28,6 @@ async def _get_user_estate(current_user: dict, projection: dict | None = None):
     return await db.estates.find({"owner_id": current_user["id"]}, proj).to_list(1)
 
 
-
 # ── xAI Connection Keep-Alive ──────────────────────────────────
 # The httpx connection pool drops idle TCP connections after a few
 # minutes.  A one-time warmup at startup is not enough — we need a

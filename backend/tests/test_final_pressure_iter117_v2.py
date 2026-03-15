@@ -25,14 +25,12 @@ def auth_token():
     """Login once at module start, reuse token for all tests"""
     print(f"\n=== Logging in to {BASE_URL} as {ADMIN_EMAIL} ===")
     response = requests.post(
-        f"{BASE_URL}/api/auth/login",
-        json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
-        timeout=30
+        f"{BASE_URL}/api/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}, timeout=30
     )
-    
+
     if response.status_code == 429:
         pytest.fail(f"Rate limited on login! Wait 3+ minutes and retry. Response: {response.text}")
-    
+
     if response.status_code == 200:
         data = response.json()
         if "access_token" in data:
@@ -40,11 +38,12 @@ def auth_token():
             return data["access_token"]
         elif data.get("otp_required"):
             pytest.fail("OTP required - cannot proceed without OTP verification")
-    
+
     pytest.fail(f"Login failed: {response.status_code} - {response.text}")
 
 
 # ==================== AUTH TESTS ====================
+
 
 def test_health_check():
     """Test health endpoint without auth"""
@@ -59,9 +58,7 @@ def test_health_check():
 def test_login_invalid_credentials():
     """Test login with invalid credentials"""
     response = requests.post(
-        f"{BASE_URL}/api/auth/login",
-        json={"email": "invalid@test.com", "password": "wrongpass123"},
-        timeout=10
+        f"{BASE_URL}/api/auth/login", json={"email": "invalid@test.com", "password": "wrongpass123"}, timeout=10
     )
     assert response.status_code == 401
     print("SUCCESS: Invalid credentials rejected with 401")
@@ -69,11 +66,7 @@ def test_login_invalid_credentials():
 
 def test_auth_me_valid_token(auth_token):
     """Test /auth/me with valid token"""
-    response = requests.get(
-        f"{BASE_URL}/api/auth/me",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
-    )
+    response = requests.get(f"{BASE_URL}/api/auth/me", headers={"Authorization": f"Bearer {auth_token}"}, timeout=10)
     assert response.status_code == 200
     data = response.json()
     assert data["email"] == ADMIN_EMAIL
@@ -84,9 +77,7 @@ def test_auth_me_valid_token(auth_token):
 def test_auth_me_invalid_token():
     """Test /auth/me rejects invalid token"""
     response = requests.get(
-        f"{BASE_URL}/api/auth/me",
-        headers={"Authorization": "Bearer invalid_token_12345"},
-        timeout=10
+        f"{BASE_URL}/api/auth/me", headers={"Authorization": "Bearer invalid_token_12345"}, timeout=10
     )
     assert response.status_code in (401, 403)
     print(f"SUCCESS: Invalid token rejected with {response.status_code}")
@@ -94,13 +85,10 @@ def test_auth_me_invalid_token():
 
 # ==================== ESTATE TESTS ====================
 
+
 def test_get_estates(auth_token):
     """Test GET /api/estates"""
-    response = requests.get(
-        f"{BASE_URL}/api/estates",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
-    )
+    response = requests.get(f"{BASE_URL}/api/estates", headers={"Authorization": f"Bearer {auth_token}"}, timeout=10)
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, list)
@@ -110,9 +98,7 @@ def test_get_estates(auth_token):
 def test_get_estate_readiness(auth_token):
     """Test GET /api/estate/{id}/readiness"""
     response = requests.get(
-        f"{BASE_URL}/api/estate/{ESTATE_ID}/readiness",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
+        f"{BASE_URL}/api/estate/{ESTATE_ID}/readiness", headers={"Authorization": f"Bearer {auth_token}"}, timeout=10
     )
     assert response.status_code == 200
     print("SUCCESS: /estate/readiness returned 200")
@@ -123,7 +109,7 @@ def test_get_section_permissions(auth_token):
     response = requests.get(
         f"{BASE_URL}/api/estate/{ESTATE_ID}/section-permissions",
         headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
+        timeout=10,
     )
     assert response.status_code == 200
     print("SUCCESS: /section-permissions returned 200")
@@ -131,12 +117,11 @@ def test_get_section_permissions(auth_token):
 
 # ==================== BENEFICIARY TESTS ====================
 
+
 def test_get_beneficiaries(auth_token):
     """Test GET /api/beneficiaries/{estate_id}"""
     response = requests.get(
-        f"{BASE_URL}/api/beneficiaries/{ESTATE_ID}",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
+        f"{BASE_URL}/api/beneficiaries/{ESTATE_ID}", headers={"Authorization": f"Bearer {auth_token}"}, timeout=10
     )
     assert response.status_code == 200
     data = response.json()
@@ -149,7 +134,7 @@ def test_get_succession_order(auth_token):
     response = requests.get(
         f"{BASE_URL}/api/beneficiaries/{ESTATE_ID}/succession",
         headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
+        timeout=10,
     )
     assert response.status_code == 200
     print("SUCCESS: /succession returned 200")
@@ -157,12 +142,11 @@ def test_get_succession_order(auth_token):
 
 # ==================== CHECKLIST TESTS (KEY BUG FIX VERIFICATION) ====================
 
+
 def test_get_checklists(auth_token):
     """Test GET /api/checklists/{estate_id}"""
     response = requests.get(
-        f"{BASE_URL}/api/checklists/{ESTATE_ID}",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
+        f"{BASE_URL}/api/checklists/{ESTATE_ID}", headers={"Authorization": f"Bearer {auth_token}"}, timeout=10
     )
     assert response.status_code == 200
     data = response.json()
@@ -181,20 +165,18 @@ def test_create_checklist_item_admin(auth_token):
             "description": "Created by iteration 117 pressure test",
             "category": "immediate",
             "priority": "high",
-            "order": 999
+            "order": 999,
         },
-        timeout=10
+        timeout=10,
     )
     assert response.status_code == 200, f"Got {response.status_code}: {response.text}"
     data = response.json()
     assert "id" in data
     print(f"SUCCESS: Admin created checklist item: {data['id']}")
-    
+
     # Cleanup
     requests.delete(
-        f"{BASE_URL}/api/checklists/{data['id']}",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=5
+        f"{BASE_URL}/api/checklists/{data['id']}", headers={"Authorization": f"Bearer {auth_token}"}, timeout=5
     )
 
 
@@ -210,29 +192,27 @@ def test_accept_ai_item_admin_bugfix(auth_token):
             "description": "Testing admin accept",
             "category": "immediate",
             "priority": "medium",
-            "order": 997
+            "order": 997,
         },
-        timeout=10
+        timeout=10,
     )
     assert create_resp.status_code == 200
     item_id = create_resp.json()["id"]
-    
+
     # Accept the item — THIS WAS THE BUG: admin role wasn't included in require_benefactor_role
     response = requests.post(
-        f"{BASE_URL}/api/checklists/{item_id}/accept",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
+        f"{BASE_URL}/api/checklists/{item_id}/accept", headers={"Authorization": f"Bearer {auth_token}"}, timeout=10
     )
-    assert response.status_code == 200, f"BUG: Admin should be able to accept! Got {response.status_code}: {response.text}"
+    assert response.status_code == 200, (
+        f"BUG: Admin should be able to accept! Got {response.status_code}: {response.text}"
+    )
     data = response.json()
-    assert data.get("success") == True
-    print(f"SUCCESS: Admin accepted AI item — BUG FIX VERIFIED ✓")
-    
+    assert data.get("success")
+    print("SUCCESS: Admin accepted AI item — BUG FIX VERIFIED ✓")
+
     # Cleanup
     requests.delete(
-        f"{BASE_URL}/api/checklists/{item_id}",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=5
+        f"{BASE_URL}/api/checklists/{item_id}", headers={"Authorization": f"Bearer {auth_token}"}, timeout=5
     )
 
 
@@ -248,22 +228,24 @@ def test_reject_ai_item_with_feedback_admin_bugfix(auth_token):
             "description": "Testing admin reject",
             "category": "immediate",
             "priority": "medium",
-            "order": 996
+            "order": 996,
         },
-        timeout=10
+        timeout=10,
     )
     assert create_resp.status_code == 200
     item_id = create_resp.json()["id"]
-    
+
     # Reject with feedback — admin role should work
     response = requests.post(
         f"{BASE_URL}/api/checklists/{item_id}/reject-with-feedback",
         headers={"Authorization": f"Bearer {auth_token}"},
         json={"feedback": "Test rejection feedback from iteration 117"},
-        timeout=10
+        timeout=10,
     )
-    assert response.status_code == 200, f"BUG: Admin should be able to reject! Got {response.status_code}: {response.text}"
-    print(f"SUCCESS: Admin rejected AI item with feedback — BUG FIX VERIFIED ✓")
+    assert response.status_code == 200, (
+        f"BUG: Admin should be able to reject! Got {response.status_code}: {response.text}"
+    )
+    print("SUCCESS: Admin rejected AI item with feedback — BUG FIX VERIFIED ✓")
 
 
 def test_delete_checklist_item_admin(auth_token):
@@ -278,18 +260,16 @@ def test_delete_checklist_item_admin(auth_token):
             "description": "Will be deleted",
             "category": "immediate",
             "priority": "low",
-            "order": 998
+            "order": 998,
         },
-        timeout=10
+        timeout=10,
     )
     assert create_resp.status_code == 200
     item_id = create_resp.json()["id"]
-    
+
     # Delete it
     response = requests.delete(
-        f"{BASE_URL}/api/checklists/{item_id}",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
+        f"{BASE_URL}/api/checklists/{item_id}", headers={"Authorization": f"Bearer {auth_token}"}, timeout=10
     )
     assert response.status_code == 200
     print(f"SUCCESS: Admin soft-deleted checklist item {item_id}")
@@ -297,12 +277,11 @@ def test_delete_checklist_item_admin(auth_token):
 
 # ==================== DOCUMENT TESTS ====================
 
+
 def test_get_documents(auth_token):
     """Test GET /api/documents/{estate_id}"""
     response = requests.get(
-        f"{BASE_URL}/api/documents/{ESTATE_ID}",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
+        f"{BASE_URL}/api/documents/{ESTATE_ID}", headers={"Authorization": f"Bearer {auth_token}"}, timeout=10
     )
     assert response.status_code == 200
     data = response.json()
@@ -312,12 +291,11 @@ def test_get_documents(auth_token):
 
 # ==================== MESSAGES TESTS ====================
 
+
 def test_get_messages(auth_token):
     """Test GET /api/messages/{estate_id}"""
     response = requests.get(
-        f"{BASE_URL}/api/messages/{ESTATE_ID}",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
+        f"{BASE_URL}/api/messages/{ESTATE_ID}", headers={"Authorization": f"Bearer {auth_token}"}, timeout=10
     )
     assert response.status_code == 200
     print("SUCCESS: /messages returned 200")
@@ -325,12 +303,11 @@ def test_get_messages(auth_token):
 
 # ==================== DIGITAL WALLET TESTS (KEY BUG FIX VERIFICATION) ====================
 
+
 def test_get_digital_wallet_admin_bugfix(auth_token):
     """KEY BUG FIX: GET /api/digital-wallet/{estate_id} — admin has access"""
     response = requests.get(
-        f"{BASE_URL}/api/digital-wallet/{ESTATE_ID}",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
+        f"{BASE_URL}/api/digital-wallet/{ESTATE_ID}", headers={"Authorization": f"Bearer {auth_token}"}, timeout=10
     )
     assert response.status_code == 200, f"BUG: Admin should have access! Got {response.status_code}: {response.text}"
     data = response.json()
@@ -340,12 +317,11 @@ def test_get_digital_wallet_admin_bugfix(auth_token):
 
 # ==================== GUARDIAN/CHAT TESTS ====================
 
+
 def test_get_chat_sessions(auth_token):
     """Test GET /api/chat/sessions"""
     response = requests.get(
-        f"{BASE_URL}/api/chat/sessions",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
+        f"{BASE_URL}/api/chat/sessions", headers={"Authorization": f"Bearer {auth_token}"}, timeout=10
     )
     assert response.status_code == 200
     data = response.json()
@@ -355,12 +331,11 @@ def test_get_chat_sessions(auth_token):
 
 # ==================== SUBSCRIPTION TESTS ====================
 
+
 def test_get_subscription_status(auth_token):
     """Test GET /api/subscriptions/status"""
     response = requests.get(
-        f"{BASE_URL}/api/subscriptions/status",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
+        f"{BASE_URL}/api/subscriptions/status", headers={"Authorization": f"Bearer {auth_token}"}, timeout=10
     )
     assert response.status_code == 200
     print("SUCCESS: /subscriptions/status returned 200")
@@ -369,9 +344,7 @@ def test_get_subscription_status(auth_token):
 def test_get_subscription_plans(auth_token):
     """Test GET /api/subscriptions/plans"""
     response = requests.get(
-        f"{BASE_URL}/api/subscriptions/plans",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
+        f"{BASE_URL}/api/subscriptions/plans", headers={"Authorization": f"Bearer {auth_token}"}, timeout=10
     )
     assert response.status_code == 200
     data = response.json()
@@ -383,12 +356,11 @@ def test_get_subscription_plans(auth_token):
 
 # ==================== NOTIFICATION TESTS ====================
 
+
 def test_get_notifications(auth_token):
     """Test GET /api/notifications"""
     response = requests.get(
-        f"{BASE_URL}/api/notifications",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
+        f"{BASE_URL}/api/notifications", headers={"Authorization": f"Bearer {auth_token}"}, timeout=10
     )
     assert response.status_code == 200
     print("SUCCESS: /notifications returned 200")
@@ -396,12 +368,11 @@ def test_get_notifications(auth_token):
 
 # ==================== TIMELINE TESTS ====================
 
+
 def test_get_timeline(auth_token):
     """Test GET /api/timeline/{estate_id}"""
     response = requests.get(
-        f"{BASE_URL}/api/timeline/{ESTATE_ID}",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
+        f"{BASE_URL}/api/timeline/{ESTATE_ID}", headers={"Authorization": f"Bearer {auth_token}"}, timeout=10
     )
     assert response.status_code == 200
     print("SUCCESS: /timeline returned 200")
@@ -409,12 +380,11 @@ def test_get_timeline(auth_token):
 
 # ==================== TRANSITION/DTS TESTS ====================
 
+
 def test_get_transition_status(auth_token):
     """Test GET /api/transition/status/{estate_id}"""
     response = requests.get(
-        f"{BASE_URL}/api/transition/status/{ESTATE_ID}",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
+        f"{BASE_URL}/api/transition/status/{ESTATE_ID}", headers={"Authorization": f"Bearer {auth_token}"}, timeout=10
     )
     assert response.status_code == 200
     print("SUCCESS: /transition/status returned 200")
@@ -423,9 +393,7 @@ def test_get_transition_status(auth_token):
 def test_get_dts_tasks(auth_token):
     """Test GET /api/dts/tasks/{estate_id}"""
     response = requests.get(
-        f"{BASE_URL}/api/dts/tasks/{ESTATE_ID}",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
+        f"{BASE_URL}/api/dts/tasks/{ESTATE_ID}", headers={"Authorization": f"Bearer {auth_token}"}, timeout=10
     )
     assert response.status_code == 200
     print("SUCCESS: /dts/tasks returned 200")
@@ -433,26 +401,23 @@ def test_get_dts_tasks(auth_token):
 
 # ==================== ADMIN TESTS ====================
 
+
 def test_get_admin_stats(auth_token):
     """Test GET /api/admin/stats"""
     response = requests.get(
-        f"{BASE_URL}/api/admin/stats",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
+        f"{BASE_URL}/api/admin/stats", headers={"Authorization": f"Bearer {auth_token}"}, timeout=10
     )
     assert response.status_code == 200
     data = response.json()
     assert "users" in data
     assert "estates" in data
-    print(f"SUCCESS: /admin/stats returned platform stats")
+    print("SUCCESS: /admin/stats returned platform stats")
 
 
 def test_get_admin_users(auth_token):
     """Test GET /api/admin/users"""
     response = requests.get(
-        f"{BASE_URL}/api/admin/users",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=15
+        f"{BASE_URL}/api/admin/users", headers={"Authorization": f"Bearer {auth_token}"}, timeout=15
     )
     assert response.status_code == 200
     data = response.json()
@@ -463,9 +428,7 @@ def test_get_admin_users(auth_token):
 def test_get_admin_activity(auth_token):
     """Test GET /api/admin/activity"""
     response = requests.get(
-        f"{BASE_URL}/api/admin/activity",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
+        f"{BASE_URL}/api/admin/activity", headers={"Authorization": f"Bearer {auth_token}"}, timeout=10
     )
     assert response.status_code == 200
     data = response.json()
@@ -475,12 +438,11 @@ def test_get_admin_activity(auth_token):
 
 # ==================== OPS DASHBOARD TESTS ====================
 
+
 def test_get_ops_dashboard(auth_token):
     """Test GET /api/ops/dashboard"""
     response = requests.get(
-        f"{BASE_URL}/api/ops/dashboard",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=15
+        f"{BASE_URL}/api/ops/dashboard", headers={"Authorization": f"Bearer {auth_token}"}, timeout=15
     )
     assert response.status_code == 200
     print("SUCCESS: /ops/dashboard returned 200")
@@ -488,12 +450,11 @@ def test_get_ops_dashboard(auth_token):
 
 # ==================== SETTINGS TESTS ====================
 
+
 def test_get_digest_preferences(auth_token):
     """Test GET /api/digest/preferences"""
     response = requests.get(
-        f"{BASE_URL}/api/digest/preferences",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
+        f"{BASE_URL}/api/digest/preferences", headers={"Authorization": f"Bearer {auth_token}"}, timeout=10
     )
     assert response.status_code == 200
     print("SUCCESS: /digest/preferences returned 200")
@@ -502,9 +463,7 @@ def test_get_digest_preferences(auth_token):
 def test_get_security_settings(auth_token):
     """Test GET /api/security/settings"""
     response = requests.get(
-        f"{BASE_URL}/api/security/settings",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
+        f"{BASE_URL}/api/security/settings", headers={"Authorization": f"Bearer {auth_token}"}, timeout=10
     )
     assert response.status_code == 200
     print("SUCCESS: /security/settings returned 200")
@@ -513,9 +472,7 @@ def test_get_security_settings(auth_token):
 def test_get_compliance_consent(auth_token):
     """Test GET /api/compliance/consent"""
     response = requests.get(
-        f"{BASE_URL}/api/compliance/consent",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
+        f"{BASE_URL}/api/compliance/consent", headers={"Authorization": f"Bearer {auth_token}"}, timeout=10
     )
     assert response.status_code == 200
     print("SUCCESS: /compliance/consent returned 200")
@@ -524,15 +481,14 @@ def test_get_compliance_consent(auth_token):
 def test_get_family_plan_status(auth_token):
     """Test GET /api/family-plan/status"""
     response = requests.get(
-        f"{BASE_URL}/api/family-plan/status",
-        headers={"Authorization": f"Bearer {auth_token}"},
-        timeout=10
+        f"{BASE_URL}/api/family-plan/status", headers={"Authorization": f"Bearer {auth_token}"}, timeout=10
     )
     assert response.status_code == 200
     print("SUCCESS: /family-plan/status returned 200")
 
 
 # ==================== PDF EXPORT TESTS ====================
+
 
 def test_export_iac_report(auth_token):
     """Test POST /api/guardian/export-iac-report generates PDF"""
@@ -542,7 +498,7 @@ def test_export_iac_report(auth_token):
         json={
             "content": "# Beneficiary Actions\n\n1. Contact executor\n2. Review documents\n\n# Benefactor Recommendations\n\n- Update will annually\n- Maintain document vault"
         },
-        timeout=30
+        timeout=30,
     )
     assert response.status_code == 200, f"Got {response.status_code}: {response.text}"
     assert "application/pdf" in response.headers.get("content-type", "")
