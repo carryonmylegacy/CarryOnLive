@@ -386,6 +386,7 @@ const GuardianPage = () => {
         }
         if (m.action_result?.action === 'checklist_generated' || m.action_result?.action === 'iac_generated') {
           msg.actionBadge = `${m.action_result.items_added} IAC items added`;
+          msg.showIacDownload = true;
         }
         if (m.action_result?.action === 'todo_generated') {
           msg.showTodoDownload = true;
@@ -451,6 +452,22 @@ const GuardianPage = () => {
       toast.success('To-Do List downloaded');
     } catch (err) {
       toast.error('Failed to generate PDF');
+    }
+  };
+
+  const handleIacDownload = async (content) => {
+    try {
+      const headers = getAuthHeaders()?.headers;
+      const res = await axios.post(`${API_URL}/guardian/export-iac-report`, { content }, { headers, responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `CarryOn_IAC_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success('IAC Report downloaded');
+    } catch (err) {
+      toast.error('Failed to generate IAC Report PDF');
     }
   };
 
@@ -551,6 +568,7 @@ const GuardianPage = () => {
         const result = response.data.action_result;
         if (result.action === 'iac_generated') {
           assistantMsg.actionBadge = `${result.items_added} IAC items added`;
+          assistantMsg.showIacDownload = true;
         } else if (result.action === 'todo_generated') {
           assistantMsg.showTodoDownload = true;
         } else if (result.action === 'readiness_analyzed' && result.readiness) {
@@ -816,6 +834,14 @@ const GuardianPage = () => {
                     style={{ background: 'rgba(34,201,147,0.12)', border: '1px solid rgba(34,201,147,0.3)', color: '#22C993' }}
                     data-testid={`download-todo-${index}`}>
                     <Download className="w-3.5 h-3.5" /> Download To-Do List PDF
+                  </button>
+                )}
+                {msg.showIacDownload && !loading && (
+                  <button onClick={() => handleIacDownload(msg.content)}
+                    className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95"
+                    style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', color: '#F59E0B' }}
+                    data-testid={`download-iac-report-${index}`}>
+                    <Download className="w-3.5 h-3.5" /> Download IAC Report PDF
                   </button>
                 )}
                 {msg.readiness && (
