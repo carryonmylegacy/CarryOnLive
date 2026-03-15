@@ -17,36 +17,32 @@ const getOrbitLevel = (relation) => {
 
   // Great-grand checks FIRST (they contain substrings of shorter words)
   if (r.includes('great-grand') || r.includes('great grand')) {
-    // "Great-Grandson / Great-Granddaughter" → benefactor is great-grandparent → Ring 3
-    if (r.includes('son') || r.includes('daughter') || r.includes('child')) return 3;
-    // "Great-Grandmother / Great-Grandfather" → benefactor is great-grandchild → Ring 1
-    return 1;
+    // ALL great-grand relationships are 3+ generations away → Ring 3
+    return 3;
   }
 
-  // Ring 0: Spouse & Children
+  // Ring 0: Spouse & Children (your makers + your mate)
   if (['spouse', 'wife', 'husband', 'partner'].includes(r)) return 0;
   // "Mother / Father / Parent" → benefactor is beneficiary's child
   if (['parent', 'mother', 'father', 'mom', 'dad'].includes(r)) return 0;
 
-  // Ring 1: Parents, Grandchildren, Siblings
+  // Ring 1: Parents, Grandparents, Siblings (products of you + Ring 0, or makers of your makers)
   // "Son / Daughter / Child" → benefactor is beneficiary's parent
   if (['son', 'daughter', 'child', 'children'].includes(r)) return 1;
   if (['sibling', 'brother', 'sister'].includes(r)) return 1;
   // "Grandmother / Grandfather" → benefactor is beneficiary's grandchild
   if (['grandparent', 'grandmother', 'grandfather', 'grandma', 'grandpa'].includes(r)) return 1;
 
-  // Ring 2: Grandparents, Nieces, Nephews, In-laws, Aunts, Uncles
+  // Ring 2: Grandchildren, Nieces, Nephews, In-laws, Aunts, Uncles
   // "Grandson / Granddaughter" → benefactor is beneficiary's grandparent
   if (['grandchild', 'grandson', 'granddaughter'].includes(r)) return 2;
   if (['nephew', 'niece'].includes(r)) return 2;
   if (['uncle', 'aunt'].includes(r)) return 2;
   if (r.includes('in-law') || r.includes('in law')) return 2;
 
-  // Ring 3: Great-Grandparents (handled above via includes check)
-
-  // Default fallback
-  if (['friend', 'other'].includes(r)) return 1;
-  return 1;
+  // Ring 3: Non-family & distant
+  if (['friend', 'other'].includes(r)) return 3;
+  return 2;
 };
 
 // Visual style for each ring level

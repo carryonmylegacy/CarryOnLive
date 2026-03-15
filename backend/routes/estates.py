@@ -160,33 +160,53 @@ async def get_family_connections(current_user: dict = Depends(get_current_user))
     # (e.g. Pete's record on Emma's estate says "Father" = Pete is Emma's Father).
     # On the beneficiary portal, we need the INVERSE: what the BENEFACTOR is to
     # the current user (Emma is Pete's Daughter).
-    RELATION_INVERSE = {
-        "Father": "Son/Daughter",
-        "Mother": "Son/Daughter",
-        "Son": "Father/Mother",
-        "Daughter": "Father/Mother",
-        "Son-in-law": "Father-in-law/Mother-in-law",
-        "Daughter-in-law": "Father-in-law/Mother-in-law",
-        "Father-in-law": "Son-in-law/Daughter-in-law",
-        "Mother-in-law": "Son-in-law/Daughter-in-law",
-        "Brother": "Brother/Sister",
-        "Sister": "Brother/Sister",
-        "Uncle": "Nephew/Niece",
-        "Aunt": "Nephew/Niece",
-        "Nephew": "Uncle/Aunt",
-        "Niece": "Uncle/Aunt",
-        "Grandson": "Grandfather/Grandmother",
-        "Granddaughter": "Grandfather/Grandmother",
-        "Grandmother": "Grandson/Granddaughter",
-        "Grandfather": "Grandson/Granddaughter",
-        "Great-Grandson": "Great-Grandfather/Great-Grandmother",
-        "Great-Granddaughter": "Great-Grandfather/Great-Grandmother",
-        "Great-Grandmother": "Great-Grandson/Great-Granddaughter",
-        "Great-Grandfather": "Great-Grandson/Great-Granddaughter",
+    # We resolve gendered pairs using the benefactor's declared gender.
+    RELATION_INVERSE_GENDERED = {
+        # key: (male_inverse, female_inverse)
+        "Father": ("Son", "Daughter"),
+        "Mother": ("Son", "Daughter"),
+        "Son": ("Father", "Mother"),
+        "Daughter": ("Father", "Mother"),
+        "Son-in-law": ("Father-in-law", "Mother-in-law"),
+        "Daughter-in-law": ("Father-in-law", "Mother-in-law"),
+        "Father-in-law": ("Son-in-law", "Daughter-in-law"),
+        "Mother-in-law": ("Son-in-law", "Daughter-in-law"),
+        "Brother": ("Brother", "Sister"),
+        "Sister": ("Brother", "Sister"),
+        "Uncle": ("Nephew", "Niece"),
+        "Aunt": ("Nephew", "Niece"),
+        "Nephew": ("Uncle", "Aunt"),
+        "Niece": ("Uncle", "Aunt"),
+        "Grandson": ("Grandfather", "Grandmother"),
+        "Granddaughter": ("Grandfather", "Grandmother"),
+        "Grandmother": ("Grandson", "Granddaughter"),
+        "Grandfather": ("Grandson", "Granddaughter"),
+        "Great-Grandson": ("Great-Grandfather", "Great-Grandmother"),
+        "Great-Granddaughter": ("Great-Grandfather", "Great-Grandmother"),
+        "Great-Grandmother": ("Great-Grandson", "Great-Granddaughter"),
+        "Great-Grandfather": ("Great-Grandson", "Great-Granddaughter"),
+    }
+    # Non-gendered relationships (same both ways)
+    RELATION_INVERSE_NEUTRAL = {
         "Cousin": "Cousin",
         "Spouse": "Spouse",
         "Friend": "Friend",
     }
+
+    def resolve_inverse(raw_relation, benefactor_gender):
+        """Resolve the inverted relationship using the benefactor's declared gender."""
+        if raw_relation in RELATION_INVERSE_NEUTRAL:
+            return RELATION_INVERSE_NEUTRAL[raw_relation]
+        pair = RELATION_INVERSE_GENDERED.get(raw_relation)
+        if not pair:
+            return raw_relation
+        male_inv, female_inv = pair
+        if benefactor_gender == "male":
+            return male_inv
+        if benefactor_gender == "female":
+            return female_inv
+        # Unknown/non-binary/prefer_not_to_say → slash fallback
+        return f"{male_inv}/{female_inv}"
 
     for ben_record in ben_records:
         estate = estates_map.get(ben_record["estate_id"])
@@ -201,10 +221,10 @@ async def get_family_connections(current_user: dict = Depends(get_current_user))
             display_photo = overrides_map[estate["id"]]
         else:
             display_photo = benefactor.get("photo_url", "") or ben_photos_map.get(benefactor["id"], "")
-        # Invert the relation so the benefactor's label reflects what
-        # the benefactor is TO the current user, not the other way around.
+        # Invert the relation using the benefactor's declared gender
         raw_relation = ben_record.get("relation", "Other")
-        inverted_relation = RELATION_INVERSE.get(raw_relation, raw_relation)
+        benefactor_gender = benefactor.get("gender", "")
+        inverted_relation = resolve_inverse(raw_relation, benefactor_gender)
 
         connections.append(
             {
