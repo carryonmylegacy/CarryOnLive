@@ -598,8 +598,14 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
                 existing_titles = {item["title"].lower() for item in existing}
 
                 items_added = 0
+                benefactor_recs = 0
                 max_order = len(existing)
                 for item in new_items:
+                    # Only inject beneficiary actions into the IAC.
+                    # Benefactor recommendations stay in the chat/PDF only.
+                    if item.get("section") == "benefactor_recommendation":
+                        benefactor_recs += 1
+                        continue
                     if item["title"].lower() not in existing_titles:
                         checklist_item = ChecklistItem(
                             estate_id=estate_id,
@@ -612,8 +618,7 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
                         item_dict = checklist_item.model_dump()
                         item_dict["ai_suggested"] = True
                         item_dict["ai_accepted"] = None  # None=pending, True=accepted, False=rejected
-                        # Tag items with their section so the PDF can separate them
-                        item_dict["section"] = item.get("section", "beneficiary_action")
+                        item_dict["section"] = "beneficiary_action"
                         await db.checklists.insert_one(item_dict)
                         items_added += 1
 
@@ -628,11 +633,17 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
                 # Clean the JSON block from the response for display
                 clean_response = response[: response.index("```checklist_json")].strip()
                 if clean_response:
-                    response = (
-                        clean_response
-                        + f"\n\n**{items_added} new items have been added to your Immediate Action Checklist.**"
-                        + LEGAL_DISCLAIMER
-                    )
+                    summary_parts = []
+                    if items_added:
+                        summary_parts.append(
+                            f"**{items_added} beneficiary action items have been added to your Immediate Action Checklist.**"
+                        )
+                    if benefactor_recs:
+                        summary_parts.append(
+                            f"**{benefactor_recs} estate strengthening recommendations are included above for your review"
+                            " (these are NOT added to the IAC — they are for you to act on now).**"
+                        )
+                    response = clean_response + "\n\n" + "\n\n".join(summary_parts) + LEGAL_DISCLAIMER
 
                 # Log activity
                 await log_activity(
