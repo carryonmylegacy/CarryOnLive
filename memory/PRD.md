@@ -34,7 +34,10 @@ A full-stack estate planning application allowing benefactors to manage digital 
   - `require_benefactor_role()` in `guards.py` now includes `"admin"` — was blocking admin users from checklist accept/reject/delete and digital wallet access
   - Fixed ownership checks in `digital_wallet.py`, `documents.py`, `guardian.py`, `pdf_export.py`, `messages.py` to include admin fallback
   - Added `_get_user_estate()` helper in `guardian.py` for admin-aware estate queries
-- **Production Pressure Test (March 15, 2026)**: 33/33 backend API tests passed, all frontend pages verified. Platform health: 100/100 code health, 19.5ms avg latency, 0% error rate, 117 users, 91 estates. All integrations live (xAI Grok, Stripe, Resend, S3).
+- **Ring Hierarchy Fix + Gender-Aware Relationship Inversion (March 15, 2026)**:
+  - Fixed orbit ring assignments: Great-Grandmother/Great-Grandfather and Friend/Other moved from Ring 1 → Ring 3 (outermost)
+  - Ring logic: Ring 0 (spouse, parents), Ring 1 (children, siblings, grandparents), Ring 2 (grandchildren, nieces/nephews, aunts/uncles, in-laws), Ring 3 (great-grand*, friend, other)
+  - Implemented gender-aware relationship inversion: uses benefactor's declared gender to resolve "Son/Daughter" → "Son" (male) or "Daughter" (female), with slash fallback for unknown/non-binary
 
 ### Completed (March 14, 2026 — Session 2)
 - **Guardian AI Cold-Start Fix (3-Layer Defense)**: Resolved recurring "temporary issue connecting to the AI service" error that struck after idle periods. Root cause: httpx connection pool lost keep-alive TCP connections to api.x.ai after inactivity. Fix: (1) Backend periodic keepalive — background task pings xAI every 5 minutes to keep connections warm (replaces one-time startup warmup). (2) Backend improved retry — 3 attempts with escalating backoff (0s, 1.5s, 3s) instead of 2 with 1s. (3) Frontend auto-retry — silently retries the API call once (with 2s delay) before showing an error to the user.
