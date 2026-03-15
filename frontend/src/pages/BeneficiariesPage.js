@@ -592,9 +592,9 @@ const BeneficiariesPage = () => {
                 return (
                 <SortableCard key={ben.id} id={ben.id}>
                 <Card className="glass-card group" data-testid={`beneficiary-${ben.id}`}>
-                  <CardContent className="p-5">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
+                  <CardContent className="p-4 sm:p-5">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3 sm:mb-4">
+                      <div className="flex items-center gap-3 min-w-0">
                         <div className="drag-handle cursor-grab active:cursor-grabbing flex items-center text-[var(--t5)] hover:text-[var(--t3)] transition-colors touch-none" data-testid={`drag-handle-${ben.id}`}>
                           <GripVertical className="w-4 h-4" />
                         </div>
@@ -604,7 +604,7 @@ const BeneficiariesPage = () => {
                             ? (ben.first_name[0] + ben.last_name[0]).toUpperCase()
                             : ben.name?.split(' ').map(n => n[0]).join('').toUpperCase())}
                           color={ben.avatar_color}
-                          size={60}
+                          size={48}
                           isPrimary={index === 0}
                           onUpload={() => {
                             setQuickUploadBenId(ben.id);
@@ -612,13 +612,13 @@ const BeneficiariesPage = () => {
                           }}
                           testId={`ben-avatar-${ben.id}`}
                         />
-                    <div>
-                      <h3 className="text-[var(--t)] font-semibold text-lg">{ben.name}</h3>
-                      <p className="text-[#d4af37] text-sm">{ben.relation}</p>
+                    <div className="min-w-0">
+                      <h3 className="text-[var(--t)] font-semibold text-base sm:text-lg truncate">{ben.name}</h3>
+                      <p className="text-[#d4af37] text-xs sm:text-sm">{ben.relation}</p>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-wrap">
                     {ben.is_stub && (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--ywbg)] text-[var(--yw)] mr-1">NEEDS INFO</span>
                     )}
@@ -633,7 +633,7 @@ const BeneficiariesPage = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-[#3b82f6] transition-opacity"
+                      className="text-[#3b82f6] transition-opacity h-7 w-7 p-0"
                       onClick={() => openEditModal(ben)}
                       data-testid={`edit-beneficiary-${ben.id}`}
                       aria-label={`Edit ${ben.first_name} ${ben.last_name}`}
@@ -643,7 +643,7 @@ const BeneficiariesPage = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-[#ef4444] transition-opacity"
+                      className="text-[#ef4444] transition-opacity h-7 w-7 p-0"
                       onClick={() => handleDelete(ben.id)}
                       data-testid={`delete-beneficiary-${ben.id}`}
                       aria-label={`Delete ${ben.first_name} ${ben.last_name}`}

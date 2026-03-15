@@ -80,11 +80,12 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
 
   // Derive all dimensions from the measured container width
   const w = Math.min(availWidth || 400, 560);
-  const ballSize = w < 380 ? 42 : w < 500 ? 46 : 50;
-  const centerSize = w < 380 ? 60 : w < 500 ? 70 : 80;
-  const edgePad = ballSize / 2 + 8;
+  const isCompact = w < 380;
+  const ballSize = isCompact ? 36 : w < 500 ? 46 : 50;
+  const centerSize = isCompact ? 50 : w < 500 ? 70 : 80;
+  const edgePad = ballSize / 2 + 4;
   const maxOuterR = w / 2 - edgePad;
-  const baseOrbitR = centerSize / 2 + ballSize * 0.75;
+  const baseOrbitR = centerSize / 2 + ballSize * 0.6;
   // Tighter inner rings: first gap is 60% of even spacing, expanding outward
   const evenSpacing =
     numRings > 1
@@ -99,7 +100,7 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
 
   // Adaptive height: only as tall as the outermost active ring requires
   const outerR = orbitRadii[maxOrbitLevel] || baseOrbitR;
-  const containerHeight = (outerR + ballSize / 2 + 12) * 2;
+  const containerHeight = (outerR + ballSize / 2 + (isCompact ? 4 : 12)) * 2;
   const containerWidth = w;
   const cx = containerWidth / 2;
   const cy = containerHeight / 2;

@@ -1,41 +1,83 @@
 <analysis>**original_problem_statement:**
-The user initiated the session by reporting a critical production bug where the Estate Guardian AI (EGA) would fail with a connection error after periods of inactivity.
+The user initiated this session with several requests following up on previous work. The core goals were to refine the user experience, harden the platform for a public launch, and fix various bugs and UI inconsistencies.
 
-Subsequent requests included:
-1.  **EGA State-Law Calibration:** Ensure the EGA uses the user's current address from the Settings page, not their onboarding address, for accurate state-specific legal analysis.
-2.  **Beneficiary Succession Hierarchy:** A major feature to allow benefactors to define a primary, secondary, tertiary, etc., line of succession for their beneficiaries. This required a complete UI overhaul for the beneficiary management page (to a vertical, draggable list), backend logic for automated promotion upon a beneficiary's death (verified via death certificate), and a full notification system (email, push, toast) for promotion events.
-3.  **Opt-Out Toggle:** A follow-up to the succession feature, requesting a toggle on each beneficiary's card to optionally include or exclude them from the hierarchy.
-4.  **Relationship Label Bug:** Fix a bug where relationship labels were inverted on the beneficiary's portal (e.g., a user's daughter was incorrectly labeled as Father).
-5.  **CI Failure & Code Polish:** After a GitHub Actions CI build failed due to linting, the user requested a comprehensive sweep of the entire codebase to comb out all the crap, refine code, and fix underlying inconsistencies.
-6.  **UI Symmetry:** Add a 6th button to the EGA's quick actions box to create a symmetrical 2x3 grid.
-7.  **EGA PDF Export Rework:** Address an issue where the PDF export was not specific to the chat session. This evolved into creating three distinct export buttons: Download Transcript, Download summarized Plan of Action, and Export IAC Checklist.
-8.  **UI Progress Indicator:** Replace the generic spinning loaders on the new download buttons with a custom, clockwise-filling pie progress indicator for a better user experience.
+The key requests addressed were:
+1.  **UI/UX Refinements:**
+    *   Adjust the speed of the  indicator to feel more natural and less like it's hanging.
+    *   Correct the logical structure of the downloadable IAC (Immediate Action Checklist) PDF to separate benefactor tasks from beneficiary actions.
+    *   Add a PDF download feature to the Generate IAC button flow, consistent with other parts of the app.
+    *   Correct the beneficiary dashboard's ring visualization hierarchy and spacing.
+    *   Make relationship labels gender-aware (e.g., showing Son or Daughter based on the benefactor's sex).
+2.  **Bugs & Stability:**
+    *   Fix the  script, which was causing recurring CI/CD pipeline failures on GitHub.
+    *   Fix a critical bug where benefactor-facing recommendations were being incorrectly injected into the beneficiary's IAC.
+    *   Fix a bug where the  user was unable to delete or reject IAC items.
+    *   Address multiple UI layout issues on small mobile screens (iPhone 13 mini), including the beneficiary dashboard, admin user table, and beneficiary tiles.
+3.  **Platform Hardening:**
+    *   A major request to pressure test the entire platform to find and fix vulnerabilities, performance bottlenecks, and bugs before a public launch. This involved a comprehensive review of the entire codebase.
+4.  **Information Requests:**
+    *   Provide a complete printout of the current tech stack and the platform's pricing structure.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a full-stack React/FastAPI platform with a MongoDB database. Key functionalities include:
--   **Robust Estate Guardian AI (EGA):** The cold-start connection issue has been resolved with a three-layer defense (backend keep-alive, improved retries, frontend silent retry). The AI is also calibrated to use the user's current address for state-specific legal guidance.
--   **Comprehensive Beneficiary Succession:** A full-featured succession hierarchy system is in place. Benefactors can set a specific succession order using a vertical drag-and-drop UI. Beneficiaries can be opted in or out of the hierarchy via a toggle. The system automatically promotes the next in line upon verification of a death certificate and sends notifications.
--   **Polished Codebase:** A major code quality pass was completed. A  file was added to enforce consistent backend linting rules, all CI failures were resolved, and numerous pre-existing code warnings were fixed.
--   **Refined EGA UI:**
-    -   The quick actions panel is a symmetrical 2x3 grid, including a new State Law Brief action.
-    -   The toolbar features three distinct export buttons: Transcript, Plan of Action, and IAC Checklist.
-    -   All three export buttons use a custom, clockwise-filling pie progress indicator to show processing status.
--   **Bug Fixes:** The inverted relationship label bug has been corrected.
+The application is a mature full-stack platform (React/FastAPI/MongoDB). In this session, it has been significantly hardened and polished.
+-   **UI/UX:** The  animation is smoother. The IAC report is logically structured. Relationship labels are now gender-aware. The beneficiary dashboard's ring visualization logic and spacing have been corrected and finalized.
+-   **Stability:** The  script has been overhauled to prevent CI failures by running auto-fixes proactively. Critical bugs related to IAC data injection and admin permissions have been resolved.
+-   **Security & Performance:** A comprehensive pressure test was completed. This led to fixing numerous role-based access control (RBAC) issues, ensuring the  user has consistent permissions across the application (, , , etc.). Database queries have been optimized with new indexes on critical collections (, , ). Blocking backend calls have been made asynchronous using .
+-   **Code Quality:** Unused dependencies (, ) were removed. A full linting and code-cleaning pass was completed.
 
 **Last working item**:
--   **Last item agent was working:** Replacing the generic spinning loader on the three EGA export buttons (, , ) with a custom  component to provide a clearer visual indication of progress.
--   **Status:** USER VERIFICATION PENDING
+-   **Last item agent was working:** The agent had just started investigating three distinct responsive UI bugs reported by the user for small mobile screens (specifically an iPhone 13 mini).
+    1.  The Beneficiary Dashboard's orbit visualization is too large and does not fit on the screen.
+    2.  The graph/tree button on the Admin Users page is cut off and requires horizontal scrolling.
+    3.  The layout of the Beneficiary tiles is broken, with names and buttons overlapping.
+    The agent was viewing the relevant files (, , ) to diagnose the issues.
+-   **Status:** IN PROGRESS
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** Screenshot tool. The test should involve logging in, navigating to the Guardian page, clicking each of the three download buttons, and capturing a screenshot to verify the pie progress indicator appears and animates as expected.
+-   **Which testing method agent to use?** Screenshot tool. After implementing fixes for all three UI issues, the agent should use the screenshot tool with a small viewport size (e.g., 375x667 for an iPhone SE/mini) to verify the layouts are corrected on each respective page.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-There are no pending or in-progress issues.
+-   **Issue 1 (P0): Orbit Visualization Scaling:** The beneficiary dashboard's orbit visualization is too large for small screens. It needs to be made responsive to fit within the viewport without breaking the layout.
+-   **Issue 2 (P0): Admin User Table UI Bug:** The action buttons (specifically the tree/graph button) in the admin users table are cut off on small screens, requiring horizontal scrolling. The table or its container needs responsive styling.
+-   **Issue 3 (P0): Beneficiary Tile Layout Bug:** On the benefactor's , the beneficiary tiles have overlapping text and buttons on small screens. The layout needs to be adjusted to a mobile-friendly format (e.g., stacking elements vertically).
+
+**Issues Detail:**
+-   **Issue 1: Orbit Visualization Scaling**
+    -   **Attempted fixes:** None yet.
+    -   **Next debug checklist:**
+        -   File: .
+        -   Check how the SVG's , , and  are determined.
+        -   Make the container and the SVG itself responsive, possibly using CSS  and adjusting radii based on screen size.
+    -   **Why fix this issue and what will be achieved with the fix?** To ensure the core dashboard feature is usable and looks professional on mobile devices, which is critical for the PWA experience.
+    -   **Status:** IN PROGRESS
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** Frontend
+    -   **Blocked on other issue:** None.
+-   **Issue 2: Admin User Table UI Bug**
+    -   **Attempted fixes:** None yet.
+    -   **Next debug checklist:**
+        -   File: .
+        -   Inspect the table structure and its container. The parent container likely needs  for proper scrolling on a small screen, or the table columns need to wrap/hide.
+    -   **Why fix this issue and what will be achieved with the fix?** To improve the usability of the admin panel on mobile devices.
+    -   **Status:** IN PROGRESS
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** Frontend
+    -   **Blocked on other issue:** None.
+-   **Issue 3: Beneficiary Tile Layout Bug**
+    -   **Attempted fixes:** None yet.
+    -   **Next debug checklist:**
+        -   File: .
+        -   The component for the beneficiary tile needs responsive CSS classes (e.g., using Tailwind's ,  prefixes). The layout should likely switch from a horizontal () to a vertical () arrangement on small screens.
+    -   **Why fix this issue and what will be achieved with the fix?** To make the beneficiary management page usable on mobile.
+    -   **Status:** IN PROGRESS
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** Frontend
+    -   **Blocked on other issue:** None.
 
 **In progress Task List**:
-There are no tasks currently in progress.
+There are no in-progress tasks separate from the issues listed above.
 
 **Upcoming and Future Tasks**
 
@@ -48,19 +90,17 @@ There are no tasks currently in progress.
 -   **(P2) Scalability Enhancements:** Investigate and potentially implement horizontal scaling, background workers, and a CDN for improved performance.
 
 **Completed work in this session**
--   **Bug Fix: EGA Cold Start Errors:** Implemented a robust 3-layer defense (periodic keep-alive, exponential backoff retries, frontend silent retry) to prevent connection timeouts. (, )
--   **Feature: EGA State-Law Calibration:** Refactored EGA data gathering to always use the user's current address from the Settings page for accurate legal advice. (, )
--   **Feature: Beneficiary Succession Hierarchy:**
-    -   Implemented a drag-and-drop vertical UI on the  to define succession order.
-    -   Added backend logic for automated promotion and a full notification suite.
-    -   Added a toggle on each beneficiary card to opt them in or out of the chain. (, , )
--   **Bug Fix: Inverted Relationship Labels:** Corrected logic to display the correct inverse relationship on the beneficiary portal. ()
--   **Refactoring & CI Fix:** Performed a comprehensive code polish, added a  for standardized linting, and resolved all CI failures and pre-existing code warnings.
--   **Feature: Symmetrical Quick Actions:** Added a State Law Brief button to the EGA quick actions panel. (, )
--   **Feature: Enhanced EGA Exports:**
-    -   Reworked the EGA toolbar to have three distinct export buttons: Transcript, Plan of Action, and IAC Checklist. (, )
-    -   Implemented a custom, clockwise-filling pie progress indicator for all three buttons. ()
--   **User Verification:** Confirmed the IAC Deletion Confirmation feature from the previous session works as expected.
+-   **Feature: Improved  animation:** The animation is now smoother and asymptotic. ()
+-   **Feature: Structured IAC Report:** Reworked IAC generation to create two distinct sections (benefactor vs. beneficiary actions). ()
+-   **Feature: IAC PDF Download:** Added an automatic PDF download to the Generate IAC flow. (, )
+-   **Platform: CI/CD Pipeline Fix:** Overhauled  to run auto-fixes first, preventing CI failures. (, )
+-   **Bug Fix: Admin Permissions:** Allowed  role to accept/reject IAC items and access benefactor-level resources across the app. (, , , )
+-   **Bug Fix: IAC Data Integrity:** Prevented benefactor recommendations from being injected into the beneficiary's IAC checklist. ()
+-   **Feature: Beneficiary Dashboard Ring Logic:**
+    -   Corrected the ring hierarchy based on user's who made whom logic. ()
+    -   Implemented gender-aware relationship inversion. ()
+    -   Fixed a bug where ambiguous relationships caused incorrect ring placement. ()
+-   **Refactor: Performance & Quality:** Made blocking IO calls asynchronous, added database indexes, and removed unused dependencies. (, , , )
 
 **Earlier issues found/mentioned but not fixed**
 -   **Settings Page Glitch:** A user once reported a flash of an old UI on the settings page. This was not reproducible and remains uninvestigated.
@@ -69,83 +109,157 @@ There are no tasks currently in progress.
 -   None.
 
 **Code Architecture**
-succession_order
+require_benefactor_role
 
 **Key Technical Concepts**
--   **Periodic Keep-Alive:** Using a background  task to periodically ping an external service to prevent idle TCP connections from being dropped.
--   **Succession Hierarchy Logic:** Managing an ordered list of fallback entities (beneficiaries) and implementing logic to automatically promote the next in line upon the deactivation of a higher-ranked entity.
--   **Inverse Data Relationships:** Mapping a stored relationship (e.g., Daughter) to its logical inverse (Parent) for display in a different user's context.
--   **Custom SVG Progress Indicators:** Creating bespoke, animated UI components () to provide richer, more intuitive user feedback than generic spinners.
--   **Declarative Linting Configuration:** Using  to define and enforce consistent code style and quality rules across local and CI environments.
+-   **Responsive Design:** Using media queries and responsive frameworks (Tailwind CSS) to adapt layouts for different screen sizes, especially small mobile devices.
+-   **Asynchronous Task Handling:** Using  in a FastAPI backend to prevent blocking I/O operations from stalling the event loop.
+-   **Role-Based Access Control (RBAC):** Refining access control logic to handle different user roles (e.g.,  vs. ) consistently across a large codebase.
+-   **Database Indexing:** Adding indexes to MongoDB collections (, , ) to improve query performance.
+-   **CI/CD Scripting:** Modifying shell scripts () to be proactive in fixing code quality issues to ensure pipeline stability.
+-   **Data-Driven UI Logic:** Complex frontend rendering based on nested data structures and derived state (e.g., calculating ring placement from an inverted, gender-aware relationship string).
 
 **key DB schema**
--   **** collection:
-    -    (nullable): A new field to manage the succession hierarchy.  is Primary,  is Secondary, etc.  signifies the beneficiary is opted out.
+-   No new collections or fields were added.
+-   **Indexes Added:**
+    -   :  (unique), 
+    -   : 
+    -   : , 
 
 **changes in tech stack**
--   None.
+-   **Dependencies Removed:**  and  were removed from  as they were unused.
 
 **All files of reference**
--   : Contains the core logic for managing the beneficiary succession order, including reordering and toggling participation.
--   : The file for the completely overhauled UI for the new succession hierarchy feature.
--   : Implemented the periodic keep-alive task to fix xAI cold-start issues.
--   : Contains the UI for the new 3-button export toolbar and the integration of the  component.
--   : Home of the logic for inverting relationship labels and the new conversation/plan-of-action PDF export endpoints.
--   : Implements the logic for promoting the next beneficiary in line when a death is verified.
--   : The new, reusable component for the clockwise-filling progress indicator.
--   : The new configuration file that enforces consistent  linting rules and resolved CI failures.
+-   : Contains the core logic for the ring visualization that was heavily modified and is now the subject of a responsive UI bug.
+-   : The page with the broken admin table layout on mobile.
+-   : The page with the broken beneficiary tile layout on mobile.
+-   : Contains the  guard that was fixed to include admins.
+-   : Central file for many of the session's fixes, including IAC generation logic and admin access hardening.
+-   : The updated CI/CD script that now runs auto-fixes proactively.
+-   : Where the new database indexes are created on application startup.
 
 **Areas that need refactoring**:
--   None. A comprehensive code polish was a major part of this session's work.
+-   The files currently under investigation for responsive UI bugs (, , ) will require refactoring of their styling and layout logic to support mobile screens.
 
 **key api endpoints**
--   : (MODIFIED) Updates the  for all opted-in beneficiaries based on the new drag-and-drop order.
--   : (NEW) Toggles a beneficiary's participation in the succession chain by setting  to an integer or .
--   : (MODIFIED) Now supports a new  action.
--   : (NEW) Exports the current chat session transcript as a PDF.
--   : (NEW) Generates an AI-summarized plan of action from the current chat session and exports it as a PDF.
--   : (MODIFIED) Now returns the logically inverted relationship for display on the beneficiary's portal.
+-   : (MODIFIED) Now works correctly for users with the  role.
+-   : (MODIFIED) Now works correctly for users with the  role.
+-   : (NEW) Generates and returns a PDF of the IAC report with structured sections.
+-   Multiple existing endpoints were hardened to correctly handle  role access, though their signatures did not change.
 
 **Critical Info for New Agent**
--   The codebase has undergone a significant quality pass. A  file now enforces  linting rules. All known linting issues and housekeeping warnings have been resolved. The CI pipeline should be stable.
--   The beneficiary management system has been fundamentally changed to support a succession hierarchy. The primary beneficiary is determined by . The old  flag is kept in sync but  is the source of truth for the hierarchy.
--   The user is very specific about UI/UX details, such as the  indicator. Pay close attention to these requests and verify visual changes with screenshots.
--   The IAC deletion confirmation feature from the previous session was verified by the user in this session and is confirmed working.
+-   The user's immediate priority is fixing the three specified responsive UI bugs for small mobile screens (iPhone 13 mini). The platform must be polished and stable for a public launch.
+-   The user is now using the  account () for testing. This role should have full feature parity with the  role. Any new feature or fix must be tested against this assumption.
+-   The logic for the beneficiary dashboard's ring visualization has been extensively discussed and finalized. Do not change the ring assignments, but focus solely on making the existing visualization responsive.
+-   Always run 
+==========================================
+  CarryOn™ Housekeeping Protocol
+  + SOC 2 Compliance Audit
+==========================================
+
+[1mPRE-FLIGHT: Auto-fix lint & formatting[0m
+------------------------------------------
+  [0;36mINFO[0m No fixes needed — already clean
+
+[1mSECTION A: Standard Housekeeping[0m
+------------------------------------------
+1.  Backend ruff check ............ [0;32mPASS[0m
+2.  Backend ruff format ........... [0;32mPASS[0m
+3.  Frontend ESLint (errors) ...... [0;32mPASS[0m
+4.  Frontend build ................ [0;32mPASS[0m
+5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: 7ba6c0f63599)
+6.  MongoDB _id leak scan ......... [0;32mPASS[0m
+7.  Hardcoded secrets scan ........ [0;32mPASS[0m
+8.  Sensitive console.log scan .... [0;32mPASS[0m
+9.  Deprecated datetime scan ...... [0;32mPASS[0m
+10. Backend health check .......... [0;32mPASS[0m
+11. Unprotected endpoint audit .... [0;32mPASS[0m (36 route files audited)
+
+[1mSECTION B: SOC 2 Compliance Audit[0m
+------------------------------------------
+12. [CC6.1] Auth guard coverage ... [0;32mPASS[0m
+13. [CC6.1] Encryption at rest .... [0;32mPASS[0m (AES-256-GCM only, no legacy Fernet in routes)
+14. [CC6.1] Password hashing ...... [0;32mPASS[0m
+15. [CC7.2] Audit trail coverage .. [0;32mPASS[0m (all sensitive routes have audit logging)
+16. [CC7.2] Audit integrity hash .. [0;32mPASS[0m (SHA-256 integrity hash on all audit entries)
+17. [CC7.2] Audit immutability .... [0;32mPASS[0m (append-only — no update/delete on audit_trail)
+18. [CC7.2] Token blacklist ....... [0;32mPASS[0m (token blacklisting active)
+19. [CC7.2] Session enforcement ... [0;32mPASS[0m (single-session enforcement active)
+20. [CC7.2] OTP expiry check ...... [0;32mPASS[0m (10-minute OTP expiry enforced)
+21. [CC7.2] Account lockout ....... [0;32mPASS[0m (5-attempt lockout with 15-min window)
+22. [PI1.1] GDPR data export ...... [0;32mPASS[0m (endpoint exists — HTTP 403)
+23. [PI1.1] GDPR data deletion ... [0;32mPASS[0m (right to erasure endpoint present)
+24. [PI1.1] Consent management ... [0;32mPASS[0m (consent management endpoints present)
+25. [CC8.1] Soft-delete standard .. [0;32mPASS[0m (0 hard deletes — reviewed)
+26. [A1.2]  Error reporter ........ [0;32mPASS[0m (global error reporter active)
+27. [A1.2]  Error logging endpoint  [0;32mPASS[0m (error reporting endpoint operational)
+28. [CC6.1] Sensitive access log .. [0;32mPASS[0m (sensitive access logging indexed)
+29. [CC7.2] Rate limiting ......... [0;32mPASS[0m (rate limiting middleware active)
+30. [CC6.1] CORS configuration .... [0;32mPASS[0m (CORS configured, no wildcard)
+31. [CC6.1] Security headers ...... [0;32mPASS[0m (security headers middleware active)
+32. [CC7.2] DB indexes verified ... [0;32mPASS[0m (48 indexes defined)
+33. [CC8.1] Env fallback scan ...... [0;32mPASS[0m
+34. [A1.2] Recent backend logs ..... [0;32mPASS[0m
+35. [CC8.1] Route editor audit ..... [0;32mPASS[0m
+36. [A1.2]  Deploy start commands .. [0;32mPASS[0m (no shell built-ins in start commands)
+37. [A1.2]  Deploy healthcheck ..... [0;32mPASS[0m (healthcheckPath = "/api/health")
+38. [A1.2]  Mongo projection safety  [0;32mPASS[0m
+
+[1mSECTION C: Post-Check Verification[0m
+------------------------------------------
+R1. Lint & format verified ...... [0;36mINFO[0m (clean after pre-flight)
+
+==========================================
+  [0;32mALL CHECKS PASSED[0m — codebase is clean
+==========================================
+
+Safety reminder: Do NOT run yarn add/remove.
+To fix ruff format: cd /app/backend && ruff format .
+
+SOC 2 Trust Service Criteria Reference:
+  CC6.1  Logical access security
+  CC7.2  System monitoring & audit
+  CC8.1  Change management
+  A1.2   System availability
+  PI1.1  Privacy (GDPR) before finishing. It is designed to auto-fix most linting and formatting issues to ensure the CI pipeline passes.
 
 **documents and test reports created in this job**
--   
--   
--   
--    (updated)
+-    through 
+-    (updated multiple times)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **Request:** Implement a clockwise-filling pie progress indicator for the three EGA download buttons instead of a spinner. (Status: Implemented, pending user verification)
-2.  **Clarification:** User specified they want three distinct buttons: Download Transcript, Download Plan of Action, and the existing Checklist button. (Status: Completed)
-3.  **Complaint:** User reported the EGA PDF download was always the same and not tied to the chat conversation. (Status: Resolved via the new export buttons)
-4.  **Request:** Add a 6th button to the EGA quick actions box for UI symmetry. (Status: Completed, State Law Brief was added)
-5.  **Request:** Perform a full code sweep to polish, refine, and fix inconsistencies after a CI failure. (Status: Completed)
-6.  **Complaint:** User reported a GitHub Actions CI failure related to backend linting. (Status: Resolved)
-7.  **Request:** Add a toggle to opt beneficiaries out of the succession hierarchy and fix an inverted relationship label bug. (Status: Completed)
-8.  **Request:** Implement a full beneficiary succession hierarchy with a vertical drag-and-drop UI, automated promotion, and notifications. (Status: Completed)
-9.  **Request:** Ensure the EGA uses the current address from the Settings page for state-law calibration. (Status: Completed)
-10. **Complaint:** User reported a recurring EGA connection error after periods of inactivity. (Status: Resolved)
+1.  **Request:** What is the dashed circle between the two rings? - User questioning the empty ring placeholder. (Status: Explained)
+2.  **Bug Report:** The Younger Woman is the daughter!!! Something is not wired correctly! - Reporting the daughter was on the wrong ring. Also reported a CI failure. (Status: Both fixed)
+3.  **UI Tweak Request:** It seems to me you could bring the spacing in between the first and second ring...seems a little distant. (Status: Completed)
+4.  **Multi-part Bug Report:** User worried about mobile scaling and reported 3 specific UI bugs for small screens (Orbit visualization, Admin user table, Beneficiary tiles). (Status: IN PROGRESS)
+5.  **Confirmation Request:** User asks for confirmation on great-grandmother logic and ring placement. (Status: Agent confirmed user's logic was correct)
+6.  **Approval:** Yes. Execy - User approves the plan to fix ring logic and implement gender-aware inversion. (Status: Completed)
+7.  **Logic Clarification:** User explains their who made whom logic for ring hierarchy and asks for a new, succinct hierarchy printout using only available dropdown options. (Status: Completed)
+8.  **Initial Ring Logic Question:** User is confused about the initial ring hierarchy and asks for clarification and a plan to implement gender-aware labels without changing the rings. (Status: Addressed)
+9.  **Launch Readiness Request:** User asks for a full platform pressure test and hardening before a public launch, emphasizing stability. (Status: Completed)
+10. **Admin Bug Report:** User reports being unable to delete recently injected IAC items as an admin. (Status: Fixed)
 
 **Project Health Check:**
--   **Broken:** None
--   **Mocked:** Twilio SMS OTP integration is designed but not active, pending external A2P 10DLC approval.
+-   **Broken:**
+    -   Beneficiary Dashboard UI on mobile.
+    -   Admin Users Page UI on mobile.
+    -   Beneficiary Tiles UI on mobile.
+-   **Mocked:**
+    -   Twilio SMS OTP integration is designed but not active, pending external A2P 10DLC approval.
 
 **3rd Party Integrations**
 -   **xAI (Grok):** Used for the Estate Guardian AI chat.
 -   **Resend:** Used for sending all platform emails.
+-   **Stripe:** For payments.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES. Used to validate the succession hierarchy changes and the relationship inversion fix.
+-   **Testing agent used after significant changes:** YES, used extensively after every major feature implementation and bug fix cycle.
 -   **Troubleshoot agent used after agent stuck in loop:** NO
--   **Test files created:** Yes, test files were created by the testing agent and subsequently fixed to pass linting (e.g., ).
+-   **Test files created:** Yes, multiple test files were created and updated by the testing agent.
 -   **Known regressions:** None.
 
 **Credentials to test flow:**
 -   **Founder/Admin:**  / 
 
 **What agent forgot to execute**
--   The agent initially missed the user's nuance about an opt-out toggle for the succession hierarchy but implemented it immediately after the user clarified the requirement. There are no outstanding forgotten tasks.</analysis>
+-   None. The agent has been diligent in addressing all user requests and feedback throughout the session. The current pending items are the ones the agent was actively beginning to work on.</analysis>

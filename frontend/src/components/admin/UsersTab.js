@@ -100,7 +100,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
 
     return (
       <React.Fragment key={u.id}>
-        <div className={`glass-card p-3 flex items-center gap-3 ${indent ? 'ml-8 border-l-2 border-[var(--b)]' : ''}`} data-testid={`admin-user-${u.id}`}>
+        <div className={`glass-card p-3 flex flex-wrap items-center gap-2 sm:gap-3 ${indent ? 'ml-6 sm:ml-8 border-l-2 border-[var(--b)]' : ''}`} data-testid={`admin-user-${u.id}`}>
           {/* Tree toggle for benefactors with beneficiaries (tree mode only) */}
           {viewMode === 'tree' && !indent && (u.role === 'benefactor' || u.is_also_benefactor) && (
             <button
@@ -117,31 +117,31 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
             </button>
           )}
 
-          <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: rc.bg, color: rc.color }}>
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold flex-shrink-0" style={{ background: rc.bg, color: rc.color }}>
             {u.name ? u.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-bold text-[var(--t)] text-sm truncate">{u.name || 'No name'}</div>
-            <div className="text-xs text-[var(--t4)] truncate">{u.email}</div>
+            <div className="font-bold text-[var(--t)] text-xs sm:text-sm truncate">{u.name || 'No name'}</div>
+            <div className="text-[10px] sm:text-xs text-[var(--t4)] truncate">{u.email}</div>
             {u.subscription?.plan_id && (
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="text-[10px] px-1.5 py-0.5 rounded font-bold capitalize" style={{ background: 'rgba(212,175,55,0.1)', color: '#d4af37' }}>
                   {u.subscription.plan_name || u.subscription.plan_id}
                 </span>
-                <span className="text-[10px] text-[var(--t5)] capitalize">{u.subscription.billing_cycle || 'monthly'}</span>
-                {u.subscription.beta_plan && <span className="text-[10px] text-purple-400">(beta)</span>}
+                <span className="text-[10px] text-[var(--t5)] capitalize hidden sm:inline">{u.subscription.billing_cycle || 'monthly'}</span>
+                {u.subscription.beta_plan && <span className="text-[10px] text-purple-400 hidden sm:inline">(beta)</span>}
               </div>
             )}
             {viewMode === 'tree' && !indent && hasBens && (
               <div className="flex items-center gap-1 mt-0.5">
                 <GitBranch className="w-3 h-3 text-[var(--t5)]" />
-                <span className="text-[10px] text-[var(--t5)]">{u.linked_beneficiaries.length} beneficiar{u.linked_beneficiaries.length === 1 ? 'y' : 'ies'}</span>
+                <span className="text-[10px] text-[var(--t5)]">{u.linked_beneficiaries.length} ben{u.linked_beneficiaries.length === 1 ? '' : 's'}</span>
               </div>
             )}
           </div>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
             <span
-              className="text-xs px-2 py-1 rounded-md font-bold capitalize"
+              className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md font-bold capitalize"
               style={{ background: rc.bg, color: rc.color }}
               data-testid={`admin-role-badge-${u.id}`}
             >
@@ -149,38 +149,33 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
             </span>
             {u.is_also_beneficiary && (
               <span
-                className="text-xs px-2 py-1 rounded-md font-bold"
+                className="text-[10px] px-1.5 py-0.5 rounded-md font-bold hidden sm:inline"
                 style={{ background: 'rgba(139,92,246,0.1)', color: '#B794F6' }}
               >
-                + beneficiary
+                + ben
               </span>
             )}
             {u.is_also_benefactor && u.role === 'beneficiary' && (
               <span
-                className="text-xs px-2 py-1 rounded-md font-bold"
+                className="text-[10px] px-1.5 py-0.5 rounded-md font-bold hidden sm:inline"
                 style={{ background: 'rgba(37,99,235,0.1)', color: '#60A5FA' }}
               >
-                + benefactor
-              </span>
-            )}
-            {u.created_at && (
-              <span className="text-[10px] text-[var(--t5)] sm:text-xs">
-                {new Date(u.created_at).toLocaleDateString()}
+                + bnf
               </span>
             )}
           </div>
           {u.id !== currentUserId && (
-            <div className="flex items-center gap-1 flex-shrink-0">
+            <div className="flex items-center gap-0.5 flex-shrink-0">
               {(u.role === 'benefactor' || u.role === 'beneficiary') && (
-                <Button variant="ghost" size="sm" className="text-[var(--t5)]"
+                <Button variant="ghost" size="sm" className="text-[var(--t5)] h-7 w-7 p-0 sm:h-8 sm:w-8"
                   onClick={() => { setUnlockUserId(unlockUserId === u.id ? null : u.id); setMasterKeyInput(''); }}
                   title="Vault Unlock" data-testid={`vault-unlock-${u.id}`}>
-                  <KeyRound className="w-4 h-4" />
+                  <KeyRound className="w-3.5 h-3.5" />
                 </Button>
               )}
               {!operatorMode && (
-              <Button variant="ghost" size="sm" className="text-[var(--rd)] hover:bg-[var(--rdbg)]" onClick={() => { setDeleteTarget({ id: u.id, name: u.name, role: u.role }); setDeletePassword(''); setShowDeletePw(false); }} data-testid={`admin-delete-user-${u.id}`}>
-                <Trash2 className="w-4 h-4" />
+              <Button variant="ghost" size="sm" className="text-[var(--rd)] hover:bg-[var(--rdbg)] h-7 w-7 p-0 sm:h-8 sm:w-8" onClick={() => { setDeleteTarget({ id: u.id, name: u.name, role: u.role }); setDeletePassword(''); setShowDeletePw(false); }} data-testid={`admin-delete-user-${u.id}`}>
+                <Trash2 className="w-3.5 h-3.5" />
               </Button>
               )}
             </div>
@@ -657,18 +652,18 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
           </button>
         </div>
       </div>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <p className="text-xs text-[var(--t5)]">{filteredUsers.length} users</p>
-        <div className="flex items-center gap-3" data-testid="status-key">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap" data-testid="status-key">
           {[
             { label: 'Draft', desc: 'No email', color: statusColors.draft },
             { label: 'Pending', desc: 'Has email', color: statusColors.pending },
             { label: 'Sent', desc: 'Invite sent', color: statusColors.sent },
             { label: 'Accepted', desc: 'Portal active', color: statusColors.accepted },
           ].map(s => (
-            <div key={s.label} className="flex items-center gap-1.5">
+            <div key={s.label} className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.color.color }} />
-              <span className="text-[10px] font-semibold" style={{ color: s.color.color }}>{s.label}</span>
+              <span className="text-[9px] sm:text-[10px] font-semibold" style={{ color: s.color.color }}>{s.label}</span>
               <span className="text-[10px] text-[var(--t5)] hidden sm:inline">— {s.desc}</span>
             </div>
           ))}
