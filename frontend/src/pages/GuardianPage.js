@@ -27,7 +27,8 @@ import {
   Copy,
   Mic,
   MicOff,
-  Download
+  Download,
+  Landmark
 } from 'lucide-react';
 
 import { toast } from '../utils/toast';
@@ -177,6 +178,7 @@ const actionButtons = [
   { key: 'generate_iac', label: 'Generate IAC', icon: ListChecks, color: '#F59E0B' },
   { key: 'analyze_readiness', label: 'Readiness Score', icon: Gauge, color: '#F5A623' },
   { key: 'beneficiary_review', label: 'Beneficiary Review', icon: Users, color: '#8b5cf6' },
+  { key: 'state_law_brief', label: 'State Law Brief', icon: Landmark, color: '#ef4444' },
 ];
 
 // ═══════════════════════════════════════════════
@@ -450,7 +452,7 @@ const GuardianPage = () => {
     const activeSessionId = overrideSessionId || sessionId;
 
     const displayText = action
-      ? { analyze_vault: 'Analyze my Document Vault', generate_todo: 'Generate my Estate To-Do List', generate_iac: 'Generate my Immediate Action Checklist', analyze_readiness: 'Analyze my Estate Readiness Score', beneficiary_review: 'Review my beneficiary designations and coverage' }[action] || messageText
+      ? { analyze_vault: 'Analyze my Document Vault', generate_todo: 'Generate my Estate To-Do List', generate_iac: 'Generate my Immediate Action Checklist', analyze_readiness: 'Analyze my Estate Readiness Score', beneficiary_review: 'Review my beneficiary designations and coverage', state_law_brief: 'Give me a brief on my state\'s estate planning laws' }[action] || messageText
       : messageText;
 
     setMessages(prev => [...prev, { role: 'user', content: displayText }]);

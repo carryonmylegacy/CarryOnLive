@@ -455,6 +455,19 @@ Also identify any potential legal issues or gaps in my estate plan based on the 
 
 Provide a clear, organized analysis with specific findings and recommendations."""
 
+    elif data.action == "state_law_brief":
+        user_message_text = """Provide a comprehensive brief on estate planning laws for my declared state of residence. Cover:
+1. Probate process — is probate required, how long does it typically take, and what are the thresholds?
+2. Estate and inheritance taxes — any state-level estate or inheritance tax, thresholds, and rates?
+3. Community vs. common law property rules
+4. Homestead exemption — does my state offer one, and what are the limits?
+5. Power of Attorney and Healthcare Directive requirements — any state-specific forms or witnesses needed?
+6. Trust laws — is my state favorable for revocable/irrevocable trusts? Any unique trust types?
+7. Beneficiary designation rules — any state-specific rules for TOD/POD accounts?
+8. Recent legislative changes — any new estate planning laws enacted in the last 2 years?
+
+Be specific to MY state. Cite actual statutes or code sections where possible."""
+
     try:
         # Build conversation history from DB for multi-turn context
         history_messages = [{"role": "system", "content": system_message}]
@@ -517,7 +530,8 @@ Provide a clear, organized analysis with specific findings and recommendations."
 
         # Call xAI Grok — use Grok-4 for heavy analysis, Grok-3-mini for chat
         use_heavy_model = (
-            data.action in ("analyze_vault", "generate_todo", "generate_iac", "analyze_readiness") or needs_content
+            data.action in ("analyze_vault", "generate_todo", "generate_iac", "analyze_readiness", "state_law_brief")
+            or needs_content
         )
         selected_model = XAI_MODEL if use_heavy_model else XAI_MODEL_LIGHT
 
