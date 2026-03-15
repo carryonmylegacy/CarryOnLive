@@ -415,21 +415,19 @@ const GuardianPage = () => {
   };
 
   const handleExport = async () => {
+    if (!sessionId) { toast.error('No active conversation to export'); return; }
     setExporting(true);
     try {
       const headers = getAuthHeaders()?.headers;
-      const estatesRes = await cachedGet(axios, `${API_URL}/estates`, { headers });
-      if (!estatesRes.data.length) { toast.error('No estate found'); setExporting(false); return; }
-      const eId = estatesRes.data[0].id;
-      const res = await axios.get(`${API_URL}/estate/${eId}/export-pdf`, { headers, responseType: 'blob' });
+      const res = await axios.post(`${API_URL}/guardian/export-conversation`, { session_id: sessionId }, { headers, responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       const a = document.createElement('a');
       a.href = url;
-      a.download = `CarryOn_Estate_Plan_${new Date().toISOString().split('T')[0]}.pdf`;
+      a.download = `CarryOn_EGA_Conversation_${new Date().toISOString().split('T')[0]}.pdf`;
       a.click();
       window.URL.revokeObjectURL(url);
-      // toast removed
-    } catch (err) { toast.error('Failed to export PDF'); }
+      toast.success('Conversation exported');
+    } catch (err) { toast.error('Failed to export conversation'); }
     setExporting(false);
   };
 
@@ -700,7 +698,7 @@ const GuardianPage = () => {
             data-testid="export-checklist-pdf-btn">
             {checklistExporting ? <Loader2 className="w-5 h-5 animate-spin" /> : <ListChecks className="w-5 h-5" />}
           </button>
-          <button onClick={handleExport} disabled={exporting} title="Export Estate PDF"
+          <button onClick={handleExport} disabled={exporting || !sessionId} title="Export Conversation PDF"
             className="w-10 h-10 rounded-lg flex items-center justify-center transition-all hover:bg-[var(--s)]"
             style={{ color: '#d4af37' }}
             data-testid="export-pdf-btn">
