@@ -39,6 +39,41 @@ echo "=========================================="
 echo ""
 
 # ══════════════════════════════════════════════════════════════
+# PRE-FLIGHT: Auto-fix lint & format BEFORE checking
+# This ensures CI will pass after housekeeping runs.
+# ══════════════════════════════════════════════════════════════
+echo -e "${BOLD}PRE-FLIGHT: Auto-fix lint & formatting${NC}"
+echo "------------------------------------------"
+PREFLIGHT_FIXES=0
+
+# 1. Auto-format backend
+cd /app/backend
+if ! ruff format --check . > /dev/null 2>&1; then
+  ruff format . > /dev/null 2>&1
+  echo -e "  ruff format .................. ${GREEN}FIXED${NC}"
+  PREFLIGHT_FIXES=$((PREFLIGHT_FIXES + 1))
+fi
+
+# 2. Auto-fix lint issues (safe fixes everywhere, unsafe in tests)
+if ! ruff check . > /dev/null 2>&1; then
+  ruff check --fix . > /dev/null 2>&1 || true
+  ruff check --fix --unsafe-fixes tests/ > /dev/null 2>&1 || true
+  # Fix bare except → except Exception (common in auto-generated test files)
+  find tests/ -name "*.py" -exec sed -i 's/    except:$/    except Exception:/g' {} + 2>/dev/null || true
+  if ruff check . > /dev/null 2>&1; then
+    echo -e "  ruff check --fix ............. ${GREEN}FIXED${NC}"
+    PREFLIGHT_FIXES=$((PREFLIGHT_FIXES + 1))
+  else
+    echo -e "  ruff check --fix ............. ${YELLOW}PARTIAL${NC} (some issues remain)"
+  fi
+fi
+
+if [ "$PREFLIGHT_FIXES" = "0" ]; then
+  echo -e "  ${INFO} No fixes needed — already clean"
+fi
+echo ""
+
+# ══════════════════════════════════════════════════════════════
 # SECTION A: STANDARD HOUSEKEEPING
 # ══════════════════════════════════════════════════════════════
 echo -e "${BOLD}SECTION A: Standard Housekeeping${NC}"
@@ -537,40 +572,29 @@ fi
 echo ""
 
 # ══════════════════════════════════════════════════════════════
-# SECTION C: SOC 2 AUTO-REPAIR (Safe Fixes Only)
+# SECTION C: Post-Check Verification
 # ══════════════════════════════════════════════════════════════
-echo -e "${BOLD}SECTION C: SOC 2 Auto-Repair${NC}"
+echo -e "${BOLD}SECTION C: Post-Check Verification${NC}"
 echo "------------------------------------------"
 
-REPAIRS=0
-
-# Auto-fix 1: Backend formatting
-echo -n "R1. Auto-format backend (ruff) .... "
+# If any lint issues survived pre-flight, try once more
 cd /app/backend
-if ! ruff format --check . > /dev/null 2>&1; then
+if ! ruff check . > /dev/null 2>&1 || ! ruff format --check . > /dev/null 2>&1; then
   ruff format . > /dev/null 2>&1
-  echo -e "${GREEN}FIXED${NC}"
-  REPAIRS=$((REPAIRS + 1))
-else
-  echo -e "$INFO (already clean)"
-fi
-
-# Auto-fix 2: Fix ruff lint issues (safe + unsafe fixes for test files)
-echo -n "R2. Auto-fix lint (safe only) ..... "
-cd /app/backend
-if ! ruff check . > /dev/null 2>&1; then
   ruff check --fix . > /dev/null 2>&1 || true
   ruff check --fix --unsafe-fixes tests/ > /dev/null 2>&1 || true
-  # Fix bare except → except Exception (common in test files)
   find tests/ -name "*.py" -exec sed -i 's/    except:$/    except Exception:/g' {} + 2>/dev/null || true
-  if ruff check . > /dev/null 2>&1; then
-    echo -e "${GREEN}FIXED${NC}"
-    REPAIRS=$((REPAIRS + 1))
+  if ruff check . > /dev/null 2>&1 && ruff format --check . > /dev/null 2>&1; then
+    echo -e "R1. Final cleanup ............... ${GREEN}FIXED${NC}"
+    REPAIRS=1
   else
-    echo -e "${YELLOW}PARTIAL${NC} (some issues remain — run ruff check manually)"
+    echo -e "R1. Final cleanup ............... ${YELLOW}PARTIAL${NC} — manual review needed:"
+    ruff check . 2>&1 | head -10
+    REPAIRS=0
   fi
 else
-  echo -e "$INFO (no lint issues)"
+  echo -e "R1. Lint & format verified ...... ${INFO} (clean after pre-flight)"
+  REPAIRS=0
 fi
 
 echo ""
