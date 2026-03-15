@@ -86,10 +86,7 @@ def require_benefactor_role(current_user: dict, action: str = "perform this acti
     Used across all endpoints that restrict write access to benefactors.
     Supports the cross-pollination model where beneficiaries can also be benefactors.
     """
-    if (
-        current_user["role"] not in ("benefactor", "admin")
-        and not current_user.get("is_also_benefactor")
-    ):
+    if current_user["role"] not in ("benefactor", "admin") and not current_user.get("is_also_benefactor"):
         raise HTTPException(status_code=403, detail=f"Only benefactors can {action}")
 
 
