@@ -98,9 +98,17 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     const hasBens = u.linked_beneficiaries?.length > 0;
     const isExpanded = expandedUsers.has(u.id);
 
+    // Billing status border colors
+    const billingStatus = u.billing_status || 'active';
+    const borderStyle = billingStatus === 'dormant'
+      ? { border: '2px solid #EF4444', boxShadow: '0 0 8px rgba(239,68,68,0.2)' }
+      : (billingStatus === 'grace_period' || billingStatus === 'trial')
+        ? { border: '2px solid #F5A623', boxShadow: '0 0 8px rgba(245,166,35,0.2)' }
+        : {};
+
     return (
       <React.Fragment key={u.id}>
-        <div className={`glass-card p-3 flex items-center gap-2.5 ${indent ? 'ml-6 sm:ml-8 border-l-2 border-[var(--b)]' : ''}`} data-testid={`admin-user-${u.id}`}>
+        <div className={`glass-card p-3 flex items-center gap-2.5 ${indent ? 'ml-6 sm:ml-8 border-l-2 border-[var(--b)]' : ''}`} style={borderStyle} data-testid={`admin-user-${u.id}`}>
           {/* Tree toggle for benefactors with beneficiaries (tree mode only) */}
           {viewMode === 'tree' && !indent && (u.role === 'benefactor' || u.is_also_benefactor) && (
             <button
@@ -139,7 +147,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
               </div>
             )}
           </div>
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0 flex-wrap">
             <span
               className="text-xs px-2 py-0.5 rounded-md font-bold capitalize"
               style={{ background: rc.bg, color: rc.color }}
@@ -147,6 +155,27 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
             >
               {u.role}
             </span>
+            {billingStatus === 'grace_period' && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold"
+                style={{ background: 'rgba(245,166,35,0.15)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}
+                data-testid={`billing-grace-${u.id}`}>
+                GRACE {u.grace_days_remaining != null ? `${u.grace_days_remaining}d` : ''}
+              </span>
+            )}
+            {billingStatus === 'trial' && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold"
+                style={{ background: 'rgba(245,166,35,0.15)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}
+                data-testid={`billing-trial-${u.id}`}>
+                TRIAL {u.trial_days_remaining != null ? `${u.trial_days_remaining}d` : ''}
+              </span>
+            )}
+            {billingStatus === 'dormant' && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold"
+                style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}
+                data-testid={`billing-dormant-${u.id}`}>
+                DORMANT
+              </span>
+            )}
           </div>
           {u.id !== currentUserId && (
             <div className="flex items-center gap-0.5 flex-shrink-0">

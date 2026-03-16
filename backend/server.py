@@ -58,6 +58,7 @@ from schedulers import daily_dob_check_scheduler, weekly_digest_scheduler
 @asynccontextmanager
 async def lifespan(app):
     from routes.trial_reminders import trial_reminder_scheduler
+    from services.billing_lifecycle import billing_lifecycle_scheduler
 
     logger.info("CarryOn™ API started - ready for real accounts")
 
@@ -107,6 +108,7 @@ async def lifespan(app):
         # Performance indexes for frequently-queried collections
         await db.user_subscriptions.create_index("user_id")
         await db.user_subscriptions.create_index("status")
+        await db.user_subscriptions.create_index([("status", 1), ("grace_period_end", 1)])
         await db.dts_tasks.create_index("estate_id")
         await db.dts_tasks.create_index("assigned_to")
         await db.death_certificates.create_index("estate_id")
@@ -128,6 +130,7 @@ async def lifespan(app):
     digest_task = asyncio.create_task(weekly_digest_scheduler())
     reminder_task = asyncio.create_task(trial_reminder_scheduler())
     dob_task = asyncio.create_task(daily_dob_check_scheduler())
+    billing_task = asyncio.create_task(billing_lifecycle_scheduler())
 
     # Warm up xAI connection + start periodic keepalive
     from routes.guardian import warmup_xai
@@ -138,6 +141,7 @@ async def lifespan(app):
     digest_task.cancel()
     reminder_task.cancel()
     dob_task.cancel()
+    billing_task.cancel()
     # Cancel xAI keepalive if running
     from routes.guardian import _xai_keepalive_task as ka_task
 

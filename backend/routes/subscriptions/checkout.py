@@ -66,6 +66,8 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
     is_beta = settings.get("beta_mode", True)
     has_free_access = override and override.get("free_access", False)
     has_active_sub = sub and sub.get("status") in ("active", "past_due")
+    is_grace = sub and sub.get("status") == "past_due"
+    is_dormant = sub and sub.get("status") == "dormant"
 
     # User has access if: beta mode OR free override OR active subscription OR trial active
     has_access = is_beta or has_free_access or has_active_sub or trial.get("trial_active", False)
@@ -167,6 +169,10 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
         "custom_discount": override.get("custom_discount", 0) if override else 0,
         "has_active_subscription": has_access,
         "needs_subscription": not has_access,
+        "is_grace_period": bool(is_grace),
+        "grace_period_end": sub.get("grace_period_end") if is_grace else None,
+        "is_dormant": bool(is_dormant),
+        "dormant_since": sub.get("dormant_since") if is_dormant else None,
         "verification": {
             "status": verification.get("status", "none") if verification else "none",
             "tier_requested": verification.get("tier_requested") if verification else None,
@@ -371,8 +377,8 @@ async def get_checkout_status(session_id: str, current_user: dict = Depends(get_
 
 
 @router.post("/webhook/stripe")
-async def stripe_webhook(request: Any):
-    """Handle Stripe webhooks"""
+async def stripe_webhook(request: Request):
+    """Handle Stripe webhooks — payment success, failure, and subscription events."""
     body = await request.body()
     sig = request.headers.get("Stripe-Signature", "")
 
@@ -381,6 +387,7 @@ async def stripe_webhook(request: Any):
         return {"received": True}
 
     try:
+        # Try structured webhook handling first
         stripe_checkout = StripeCheckout(api_key=api_key, webhook_url="")
         event = await stripe_checkout.handle_webhook(body, sig)
 
@@ -424,6 +431,11 @@ async def stripe_webhook(request: Any):
                     },
                     upsert=True,
                 )
+
+                # Reactivate if was in grace/dormant
+                from services.billing_lifecycle import handle_payment_succeeded
+                await handle_payment_succeeded(txn["user_id"])
+
                 # Notification
                 from services.notifications import notify
 
@@ -436,9 +448,49 @@ async def stripe_webhook(request: Any):
                 )
 
         return {"received": True}
+    except Exception:
+        pass
+
+    # Fallback: parse raw Stripe event for invoice/subscription events
+    try:
+        import json
+        raw_event = json.loads(body)
+        event_type = raw_event.get("type", "")
+        data_obj = raw_event.get("data", {}).get("object", {})
+
+        if event_type == "invoice.payment_failed":
+            # Payment charge failed — start grace period
+            customer_email = data_obj.get("customer_email", "")
+            if customer_email:
+                user = await db.users.find_one({"email": customer_email}, {"_id": 0, "id": 1})
+                if user:
+                    from services.billing_lifecycle import handle_payment_failed
+                    await handle_payment_failed(user["id"])
+                    logger.info(f"Payment failed webhook processed for {customer_email}")
+
+        elif event_type == "invoice.payment_succeeded":
+            # Payment succeeded — reactivate if in grace/dormant
+            customer_email = data_obj.get("customer_email", "")
+            if customer_email:
+                user = await db.users.find_one({"email": customer_email}, {"_id": 0, "id": 1})
+                if user:
+                    from services.billing_lifecycle import handle_payment_succeeded
+                    await handle_payment_succeeded(user["id"])
+                    logger.info(f"Payment succeeded webhook processed for {customer_email}")
+
+        elif event_type in ("customer.subscription.deleted", "customer.subscription.updated"):
+            customer_email = data_obj.get("customer_email", "") or ""
+            sub_status = data_obj.get("status", "")
+            if customer_email and sub_status in ("unpaid", "canceled", "incomplete_expired"):
+                user = await db.users.find_one({"email": customer_email}, {"_id": 0, "id": 1})
+                if user:
+                    from services.billing_lifecycle import handle_payment_failed
+                    await handle_payment_failed(user["id"])
+
     except Exception as e:
-        logger.error(f"Webhook error: {e}")
-        return {"received": True}
+        logger.error(f"Webhook fallback error: {e}")
+
+    return {"received": True}
 
 
 # --- User Subscription Management ---
@@ -874,17 +926,58 @@ async def update_admin_subscription_settings(
 
 @router.get("/admin/user-subscriptions")
 async def get_admin_user_subscriptions(current_user: dict = Depends(get_current_user)):
-    """Get all users with subscription info (admin and operators)"""
+    """Get all users with subscription info including billing status flags (admin and operators)"""
     if current_user.get("role") not in ("admin", "operator"):
         raise HTTPException(status_code=403, detail="Staff access required")
 
     users = await db.users.find({}, {"_id": 0, "password_hash": 0}).to_list(500)
+    now = datetime.now(timezone.utc)
 
     for user in users:
         sub = await db.user_subscriptions.find_one({"user_id": user["id"]}, {"_id": 0})
         override = await db.subscription_overrides.find_one({"user_id": user["id"]}, {"_id": 0})
         user["subscription"] = sub
         user["override"] = override
+
+        # Compute billing status flags for admin UI highlighting
+        billing_status = "active"  # default
+        grace_days_remaining = None
+        if sub:
+            if sub.get("status") == "past_due":
+                billing_status = "grace_period"
+                if sub.get("grace_period_end"):
+                    try:
+                        gpe = datetime.fromisoformat(sub["grace_period_end"].replace("Z", "+00:00"))
+                        if gpe.tzinfo is None:
+                            gpe = gpe.replace(tzinfo=timezone.utc)
+                        grace_days_remaining = max(0, (gpe - now).days)
+                    except (ValueError, TypeError):
+                        pass
+            elif sub.get("status") == "dormant":
+                billing_status = "dormant"
+            elif sub.get("status") == "cancelled":
+                billing_status = "cancelled"
+
+        # Check trial status
+        is_trial = False
+        trial_days_remaining = None
+        trial_ends = user.get("trial_ends_at")
+        if trial_ends and billing_status == "active" and not (sub and sub.get("status") == "active"):
+            try:
+                ends = datetime.fromisoformat(trial_ends.replace("Z", "+00:00"))
+                if ends.tzinfo is None:
+                    ends = ends.replace(tzinfo=timezone.utc)
+                if now < ends:
+                    is_trial = True
+                    trial_days_remaining = max(0, (ends - now).days)
+                    billing_status = "trial"
+            except (ValueError, TypeError):
+                pass
+
+        user["billing_status"] = billing_status
+        user["grace_days_remaining"] = grace_days_remaining
+        user["is_trial"] = is_trial
+        user["trial_days_remaining"] = trial_days_remaining
 
     return users
 

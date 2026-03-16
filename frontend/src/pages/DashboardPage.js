@@ -18,6 +18,7 @@ import {
   ArrowLeftRight
 } from 'lucide-react';
 import TrialBanner from '../components/TrialBanner';
+import BillingStatusBanner from '../components/BillingStatusBanner';
 import OnboardingWizard from '../components/OnboardingWizard';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -433,6 +434,8 @@ const DashboardPage = () => {
       }}>
       {/* Trial Banner */}
       <TrialBanner onUpgrade={() => navigate('/subscription')} />
+      {/* Billing Status Banner — Grace Period or Dormant */}
+      <BillingStatusBanner onUpdatePayment={() => navigate('/settings')} />
 
       {/* Header + Estate Selector */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">

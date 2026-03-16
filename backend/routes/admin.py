@@ -1294,6 +1294,34 @@ async def get_estate_health(current_user: dict = Depends(get_current_user)):
         if eid:
             bens_by_estate.setdefault(eid, []).append(b)
 
+    # Fetch subscription statuses for billing status indicators
+    all_subs = await db.user_subscriptions.find(
+        {}, {"_id": 0, "user_id": 1, "status": 1, "grace_period_end": 1, "dormant_since": 1}
+    ).to_list(100000)
+    sub_by_user = {s["user_id"]: s for s in all_subs}
+    now_utc = datetime.now(timezone.utc)
+    for uid, user in user_by_id.items():
+        sub = sub_by_user.get(uid)
+        if sub:
+            if sub.get("status") == "past_due":
+                user["billing_status"] = "grace_period"
+            elif sub.get("status") == "dormant":
+                user["billing_status"] = "dormant"
+            else:
+                user["billing_status"] = "active"
+        else:
+            trial_ends = user.get("trial_ends_at")
+            if trial_ends:
+                try:
+                    ends = datetime.fromisoformat(str(trial_ends).replace("Z", "+00:00"))
+                    if ends.tzinfo is None:
+                        ends = ends.replace(tzinfo=timezone.utc)
+                    user["billing_status"] = "trial" if now_utc < ends else "expired"
+                except (ValueError, TypeError):
+                    user["billing_status"] = "active"
+            else:
+                user["billing_status"] = "active"
+
     # Build per-estate health
     estate_health = []
     totals = {
@@ -1347,6 +1375,7 @@ async def get_estate_health(current_user: dict = Depends(get_current_user)):
                     "last_name": owner.get("last_name", ""),
                     "email": owner.get("email", ""),
                     "date_of_birth": owner.get("date_of_birth"),
+                    "billing_status": owner.get("billing_status", "active"),
                 },
                 "beneficiaries": [
                     {

@@ -3,6 +3,8 @@
 Enforces subscription requirements:
 - During trial (30 days): Full access
 - After trial, no subscription: Read-only (existing content accessible, no new uploads/creates)
+- Grace period (past_due): Full access but payment reminders active
+- Dormant: Read-only, no uploads/edits/DTS, beneficiaries cannot transition
 - Living Will + POA always accessible to beneficiaries regardless of subscription
 - Active subscription: Full access
 """
@@ -23,19 +25,30 @@ async def get_subscription_access(current_user: dict = Depends(get_current_user)
 
     # Admin always has access
     if user.get("role") == "admin":
-        return {"has_access": True, "reason": "admin"}
+        return {"has_access": True, "reason": "admin", "is_dormant": False, "is_grace": False}
 
     # Check for free access override (B2B, beta, etc.)
     override = await db.subscription_overrides.find_one({"user_id": user["id"]}, {"_id": 0})
     if override and override.get("free_access"):
-        return {"has_access": True, "reason": "free_access"}
+        return {"has_access": True, "reason": "free_access", "is_dormant": False, "is_grace": False}
 
-    # Check active subscription (including Apple grace period)
-    sub = await db.subscriptions.find_one(
-        {"user_id": user["id"], "status": {"$in": ["active", "past_due"]}}, {"_id": 0}
-    )
+    # Check beta mode first
+    settings = await db.subscription_settings.find_one({"_id": "global"}, {"_id": 0})
+    if settings and settings.get("beta_mode"):
+        return {"has_access": True, "reason": "beta", "is_dormant": False, "is_grace": False}
+
+    # Check subscription status
+    sub = await db.user_subscriptions.find_one({"user_id": user["id"]}, {"_id": 0})
     if sub:
-        return {"has_access": True, "reason": "subscription"}
+        status = sub.get("status", "")
+        if status == "active":
+            return {"has_access": True, "reason": "subscription", "is_dormant": False, "is_grace": False}
+        if status == "past_due":
+            return {"has_access": True, "reason": "grace_period", "is_dormant": False, "is_grace": True,
+                    "grace_period_end": sub.get("grace_period_end")}
+        if status == "dormant":
+            return {"has_access": False, "reason": "dormant", "is_dormant": True, "is_grace": False,
+                    "dormant_since": sub.get("dormant_since")}
 
     # Check trial
     trial_ends = user.get("trial_ends_at")
@@ -43,22 +56,23 @@ async def get_subscription_access(current_user: dict = Depends(get_current_user)
         try:
             ends = datetime.fromisoformat(trial_ends.replace("Z", "+00:00"))
             if datetime.now(timezone.utc) < ends:
-                return {"has_access": True, "reason": "trial"}
+                return {"has_access": True, "reason": "trial", "is_dormant": False, "is_grace": False}
         except (ValueError, TypeError):
             pass
 
-    # Check beta mode
-    settings = await db.subscription_settings.find_one({"_id": "global"}, {"_id": 0})
-    if settings and settings.get("beta_mode"):
-        return {"has_access": True, "reason": "beta"}
-
-    return {"has_access": False, "reason": "expired"}
+    return {"has_access": False, "reason": "expired", "is_dormant": False, "is_grace": False}
 
 
 async def require_active_subscription(
     access: dict = Depends(get_subscription_access),
 ):
-    """Dependency that blocks write operations if no active subscription/trial."""
+    """Dependency that blocks write operations if no active subscription/trial.
+    Allows reads during grace period but blocks during dormant."""
+    if access.get("is_dormant"):
+        raise HTTPException(
+            status_code=403,
+            detail="Your account is dormant due to an expired payment. Update your payment method in Settings to restore full access. Your existing data is still accessible in read-only mode.",
+        )
     if not access["has_access"]:
         raise HTTPException(
             status_code=403,

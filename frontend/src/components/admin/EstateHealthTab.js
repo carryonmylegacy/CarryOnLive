@@ -87,6 +87,13 @@ const EstateHealthCard = ({ estate }) => {
   const [expanded, setExpanded] = useState(false);
   const { metrics, owner, beneficiaries } = estate;
   const cfg = statusConfig[metrics.health_status];
+
+  // Billing status overlay — dormant = red, grace/trial = yellow
+  const billingStatus = owner?.billing_status || 'active';
+  const billingBorder = billingStatus === 'dormant' ? '#EF4444'
+    : (billingStatus === 'grace_period' || billingStatus === 'trial') ? '#F5A623'
+    : null;
+
   const sortedBens = [...beneficiaries].sort((a, b) => {
     if (a.is_primary && !b.is_primary) return -1;
     if (!a.is_primary && b.is_primary) return 1;
@@ -112,7 +119,11 @@ const EstateHealthCard = ({ estate }) => {
   return (
     <div
       className="rounded-xl overflow-hidden transition-all"
-      style={{ border: `1px solid ${cfg.border}`, background: cfg.bg }}
+      style={{
+        border: billingBorder ? `2px solid ${billingBorder}` : `1px solid ${cfg.border}`,
+        background: cfg.bg,
+        boxShadow: billingBorder ? `0 0 8px ${billingBorder}33` : undefined,
+      }}
       data-testid={`estate-health-${estate.estate_id}`}
     >
       {/* Header */}
@@ -128,6 +139,15 @@ const EstateHealthCard = ({ estate }) => {
             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
               {cfg.label}
             </span>
+            {billingStatus === 'dormant' && (
+              <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>DORMANT</span>
+            )}
+            {billingStatus === 'grace_period' && (
+              <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(245,166,35,0.15)', color: '#F5A623' }}>GRACE</span>
+            )}
+            {billingStatus === 'trial' && (
+              <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(245,166,35,0.15)', color: '#F5A623' }}>TRIAL</span>
+            )}
           </div>
           <div className="flex items-center gap-3 mt-0.5">
             <span className="text-[10px] text-[var(--t5)]">{metrics.total} beneficiar{metrics.total === 1 ? 'y' : 'ies'}</span>
