@@ -18,6 +18,10 @@ from utils import get_current_user
 router = APIRouter()
 
 
+import hashlib
+import os
+
+
 def require_staff(user: dict):
     if user.get("role") not in ("admin", "operator"):
         raise HTTPException(status_code=403, detail="Staff access required")
@@ -26,6 +30,267 @@ def require_staff(user: dict):
 def require_founder(user: dict):
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Founder access required")
+
+
+# ══════════════════════════════════════════════════════════
+# INTEGRATIONS VAULT (Password-protected)
+# ══════════════════════════════════════════════════════════
+
+INTEGRATIONS_PASSWORD_HASH = hashlib.sha256(b"Blh9170873").hexdigest()
+
+
+class IntegrationsUnlockRequest(BaseModel):
+    password: str
+
+
+@router.post("/admin/integrations/unlock")
+async def unlock_integrations(data: IntegrationsUnlockRequest, current_user: dict = Depends(get_current_user)):
+    """Unlock integrations vault with secondary password."""
+    require_founder(current_user)
+
+    if hashlib.sha256(data.password.encode()).hexdigest() != INTEGRATIONS_PASSWORD_HASH:
+        raise HTTPException(status_code=403, detail="Invalid password")
+
+    def m(val):
+        """Mask a credential value for display."""
+        if not val or len(val) < 12:
+            return val or "N/A"
+        return val[:8] + "..." + val[-4:]
+
+    integrations = [
+        {
+            "id": "railway",
+            "name": "Railway",
+            "status": "active",
+            "dashboard_url": "https://railway.com",
+            "details": [
+                {"label": "Service", "value": "carryon-api"},
+                {"label": "Plan", "value": "Pro ($20/mo base, $20 free credit)"},
+                {"label": "Region", "value": "US East (Virginia)"},
+                {"label": "Replicas", "value": "1"},
+                {"label": "CPU Limit", "value": "32 vCPU"},
+                {"label": "RAM Limit", "value": "32 GB"},
+                {"label": "URL", "value": "carryon-api-production.up.railway.app"},
+                {"label": "Deploy", "value": "Auto from GitHub main branch"},
+                {"label": "Login", "value": "founder@carryon.us", "sensitive": True},
+            ],
+        },
+        {
+            "id": "vercel",
+            "name": "Vercel",
+            "status": "active",
+            "dashboard_url": "https://vercel.com/dashboard",
+            "details": [
+                {"label": "Project", "value": "carry-on-live"},
+                {"label": "Plan", "value": "Pro ($20/mo base)"},
+                {"label": "Domain", "value": "app.carryon.us"},
+                {"label": "Root Dir", "value": "frontend"},
+                {"label": "Build Opt", "value": "ignoreCommand active (skip backend-only changes)"},
+                {"label": "Team ID", "value": "team_10xq6XsCe1dQwbo61np48Qn0"},
+                {"label": "Login", "value": "founder@carryon.us", "sensitive": True},
+            ],
+        },
+        {
+            "id": "mongodb",
+            "name": "MongoDB Atlas",
+            "status": "active",
+            "dashboard_url": "https://cloud.mongodb.com",
+            "details": [
+                {"label": "Cluster", "value": "CarryOnPreBeta"},
+                {"label": "Plan", "value": "M30 (~$394/mo)"},
+                {"label": "Region", "value": "AWS / N. Virginia (us-east-1)"},
+                {"label": "Version", "value": "MongoDB 8.0.20"},
+                {"label": "Nodes", "value": "Replica Set (3 nodes)"},
+                {"label": "Backups", "value": "Active"},
+                {"label": "Connection", "value": m(os.environ.get("MONGO_URL", "")), "sensitive": True},
+                {"label": "Login", "value": "founder@carryon.us", "sensitive": True},
+            ],
+        },
+        {
+            "id": "s3",
+            "name": "AWS S3",
+            "status": "active",
+            "dashboard_url": "https://s3.console.aws.amazon.com/s3/buckets/carryon-vault?region=us-east-2",
+            "details": [
+                {"label": "Bucket", "value": "carryon-vault"},
+                {"label": "Region", "value": "us-east-2 (Ohio)"},
+                {"label": "Plan", "value": "Pay-as-you-go (~$5/mo current)"},
+                {"label": "Encryption", "value": "AES-256-GCM (app) + SSE-S3"},
+                {"label": "Access Key", "value": m(os.environ.get("AWS_ACCESS_KEY_ID", "")), "sensitive": True},
+                {"label": "Secret Key", "value": m(os.environ.get("AWS_SECRET_ACCESS_KEY", "")), "sensitive": True},
+                {"label": "IAM Console", "value": "console.aws.amazon.com/iam"},
+            ],
+        },
+        {
+            "id": "stripe",
+            "name": "Stripe",
+            "status": "active",
+            "dashboard_url": "https://dashboard.stripe.com",
+            "details": [
+                {"label": "Plan", "value": "Standard (2.9% + $0.30/txn)"},
+                {"label": "Mode", "value": "Live"},
+                {"label": "Webhooks", "value": "dashboard.stripe.com/webhooks"},
+                {"label": "Live Key", "value": m(os.environ.get("STRIPE_API_KEY", "")), "sensitive": True},
+                {"label": "Login", "value": "founder@carryon.us", "sensitive": True},
+            ],
+        },
+        {
+            "id": "apple_iap",
+            "name": "Apple App Store / StoreKit 2",
+            "status": "active",
+            "dashboard_url": "https://appstoreconnect.apple.com",
+            "details": [
+                {"label": "Plan", "value": "Developer Program ($99/yr)"},
+                {"label": "App ID", "value": "us.carryon.app"},
+                {"label": "Commission", "value": "15% (Small Business) or 30%"},
+                {"label": "Shared Secret", "value": m(os.environ.get("APPLE_SHARED_SECRET", "")), "sensitive": True},
+                {"label": "Developer Portal", "value": "developer.apple.com/account"},
+                {"label": "Login", "value": "founder@carryon.us", "sensitive": True},
+            ],
+        },
+        {
+            "id": "xai",
+            "name": "xAI (Grok)",
+            "status": "active",
+            "dashboard_url": "https://console.x.ai",
+            "details": [
+                {"label": "Purpose", "value": "Estate Guardian AI Chat"},
+                {"label": "Models", "value": "Grok-4 (heavy) + Grok-3-mini (light)"},
+                {"label": "Credits", "value": "$500 purchased (tracked in System Health)"},
+                {"label": "Pricing", "value": "Grok-4: $3/$15 per 1M tokens (in/out)"},
+                {"label": "Team ID", "value": os.environ.get("XAI_TEAM_ID", "N/A")},
+                {"label": "API Key", "value": m(os.environ.get("XAI_API_KEY", "")), "sensitive": True},
+                {"label": "Usage", "value": "console.x.ai/team/usage"},
+            ],
+        },
+        {
+            "id": "resend",
+            "name": "Resend",
+            "status": "active",
+            "dashboard_url": "https://resend.com/overview",
+            "details": [
+                {"label": "Purpose", "value": "Transactional emails (OTP, billing, digests)"},
+                {"label": "Plan", "value": "Pro ($20/mo, 50K emails)"},
+                {"label": "Sender", "value": os.environ.get("SENDER_EMAIL", "N/A")},
+                {"label": "API Key", "value": m(os.environ.get("RESEND_API_KEY", "")), "sensitive": True},
+                {"label": "Billing", "value": "resend.com/settings/billing"},
+                {"label": "Login", "value": "founder@carryon.us", "sensitive": True},
+            ],
+        },
+        {
+            "id": "twilio",
+            "name": "Twilio",
+            "status": "blocked",
+            "dashboard_url": "https://console.twilio.com",
+            "details": [
+                {"label": "Purpose", "value": "SMS OTP Authentication"},
+                {"label": "Status", "value": "Blocked — awaiting A2P 10DLC approval"},
+                {"label": "Phone", "value": os.environ.get("TWILIO_PHONE_NUMBER", "N/A")},
+                {"label": "Account SID", "value": m(os.environ.get("TWILIO_ACCOUNT_SID", "")), "sensitive": True},
+                {"label": "Auth Token", "value": m(os.environ.get("TWILIO_AUTH_TOKEN", "")), "sensitive": True},
+                {"label": "10DLC Status", "value": "console.twilio.com/.../10dlc"},
+            ],
+        },
+        {
+            "id": "capgo",
+            "name": "Capgo",
+            "status": "active",
+            "dashboard_url": "https://console.capgo.app",
+            "details": [
+                {"label": "Purpose", "value": "OTA live updates (skip App Store review)"},
+                {"label": "Plan", "value": "Maker ($39/mo, 10K MAU)"},
+                {"label": "App ID", "value": "us.carryon.app"},
+                {"label": "Channel", "value": "production"},
+                {"label": "Current Version", "value": "0.1.0"},
+                {"label": "Login", "value": "founder@carryon.us", "sensitive": True},
+            ],
+        },
+        {
+            "id": "capacitor",
+            "name": "Capacitor",
+            "status": "free/self-hosted",
+            "dashboard_url": None,
+            "details": [
+                {"label": "Purpose", "value": "Native iOS/Android app wrapper"},
+                {"label": "Version", "value": "Capacitor 6"},
+                {"label": "Cost", "value": "$0/mo (open source)"},
+                {"label": "Plugins", "value": "Camera, Biometrics, Push, Share, Filesystem"},
+                {"label": "App ID", "value": "us.carryon.app"},
+            ],
+        },
+        {
+            "id": "google_places",
+            "name": "Google Places API",
+            "status": "active",
+            "dashboard_url": "https://console.cloud.google.com/apis/dashboard",
+            "details": [
+                {"label": "Purpose", "value": "Address autocomplete"},
+                {"label": "Plan", "value": "Pay-as-you-go ($200/mo free credit)"},
+                {"label": "Cost", "value": "~$0-50/mo"},
+                {"label": "Billing", "value": "console.cloud.google.com/billing"},
+            ],
+        },
+        {
+            "id": "webauthn",
+            "name": "WebAuthn / FIDO2",
+            "status": "free/self-hosted",
+            "dashboard_url": None,
+            "details": [
+                {"label": "Purpose", "value": "Passkey / biometric login"},
+                {"label": "Library", "value": "py-webauthn"},
+                {"label": "Cost", "value": "$0/mo (open standard)"},
+            ],
+        },
+        {
+            "id": "vapid",
+            "name": "Web Push (VAPID)",
+            "status": "free/self-hosted",
+            "dashboard_url": None,
+            "details": [
+                {"label": "Purpose", "value": "Browser push notifications"},
+                {"label": "Library", "value": "pywebpush"},
+                {"label": "Cost", "value": "$0/mo (self-hosted)"},
+                {"label": "Claims Email", "value": os.environ.get("VAPID_CLAIMS_EMAIL", "N/A")},
+            ],
+        },
+        {
+            "id": "jwt",
+            "name": "JWT Authentication",
+            "status": "free/self-hosted",
+            "dashboard_url": None,
+            "details": [
+                {"label": "Purpose", "value": "User session tokens"},
+                {"label": "Algorithm", "value": "HS256"},
+                {"label": "Cost", "value": "$0/mo"},
+                {"label": "Secret", "value": m(os.environ.get("JWT_SECRET", "")), "sensitive": True},
+            ],
+        },
+        {
+            "id": "voice_biometrics",
+            "name": "Voice Biometrics",
+            "status": "free/self-hosted",
+            "dashboard_url": None,
+            "details": [
+                {"label": "Purpose", "value": "Voice-based identity verification"},
+                {"label": "Libraries", "value": "librosa, scipy, numpy"},
+                {"label": "Processing", "value": "130-dim voiceprints, local CPU"},
+                {"label": "Cost", "value": "$0/mo (CPU absorbed by Railway)"},
+            ],
+        },
+        {
+            "id": "pdf_tools",
+            "name": "PDF Tools",
+            "status": "free/self-hosted",
+            "dashboard_url": None,
+            "details": [
+                {"label": "Purpose", "value": "Estate PDF export & document parsing"},
+                {"label": "Libraries", "value": "fpdf2, pdfplumber, Pillow"},
+                {"label": "Cost", "value": "$0/mo"},
+            ],
+        },
+    ]
+
+    return {"integrations": integrations}
 
 
 # ══════════════════════════════════════════════════════════

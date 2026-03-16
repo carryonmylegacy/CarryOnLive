@@ -6,7 +6,7 @@ import {
   Shield, Users, FileKey, Loader2,
   Headphones, CreditCard, Activity, Settings,
   MessageSquare, CheckSquare, AlertTriangle, Clock, TrendingUp, Trash2,
-  Megaphone, HeartPulse, Search, StickyNote, BookOpen, Gift, Zap
+  Megaphone, HeartPulse, Search, StickyNote, BookOpen, Gift, Zap, Puzzle
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { toast } from '../utils/toast';
@@ -43,6 +43,7 @@ import { OpsDashboardTab } from '../components/admin/OpsDashboardTab';
 import { MilestoneDeliveriesTab } from '../components/admin/MilestoneDeliveriesTab';
 import { TrialUsersTab } from '../components/admin/TrialUsersTab';
 import { EstateHealthTab } from '../components/admin/EstateHealthTab';
+import { IntegrationsTab } from '../components/admin/IntegrationsTab';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -65,6 +66,7 @@ const TAB_CONFIG = [
   { key: 'escalations', label: 'Escalations', icon: AlertTriangle, path: '/admin/escalations' },
   { key: 'knowledge-base', label: 'Knowledge Base', icon: BookOpen, path: '/admin/knowledge-base' },
   { key: 'estate-health', label: 'Estate Health', icon: HeartPulse, path: '/admin/estate-health' },
+  { key: 'integrations', label: 'Integrations', icon: Puzzle, path: '/admin/integrations' },
   { key: 'p1-settings', label: 'P1 Contact', icon: AlertTriangle, path: '/admin/p1-settings' },
   { key: 'ops-dashboard', label: 'Ops Dashboard', icon: Activity, path: '/admin/ops-dashboard' },
   { key: 'milestones', label: 'Milestones', icon: CheckSquare, path: '/admin/milestones' },
@@ -100,6 +102,7 @@ const PATH_TO_TAB = {
   '/admin/knowledge-base': 'knowledge-base',
   '/admin/p1-settings': 'p1-settings',
   '/admin/estate-health': 'estate-health',
+  '/admin/integrations': 'integrations',
   '/admin/ops-dashboard': 'ops-dashboard',
   '/admin/milestones': 'milestones',
   '/admin/trials': 'trials',
@@ -331,6 +334,7 @@ const AdminPage = ({ operatorMode = false }) => {
       {effectiveTab === 'knowledge-base' && !operatorMode && <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={true} />}
       {effectiveTab === 'p1-settings' && !operatorMode && <P1ContactSettingsTab getAuthHeaders={getAuthHeaders} />}
       {effectiveTab === 'estate-health' && <EstateHealthTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'integrations' && !operatorMode && <IntegrationsTab getAuthHeaders={getAuthHeaders} />}
       {/* New Operator features */}
       {effectiveTab === 'my-activity' && operatorMode && <MyActivityTab getAuthHeaders={getAuthHeaders} />}
       {effectiveTab === 'search' && operatorMode && <QuickSearchTab getAuthHeaders={getAuthHeaders} />}
