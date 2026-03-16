@@ -11,14 +11,16 @@ Handles:
 import asyncio
 from datetime import datetime, timedelta, timezone
 
-from config import SENDER_EMAIL, db, logger
+from config import db, logger
 
 GRACE_PERIOD_DAYS = 30
 
 
 def _grace_email_html(name: str, days_remaining: int, settings_url: str) -> str:
     """Build the grace period reminder email."""
-    urgency = "immediately" if days_remaining <= 3 else "soon" if days_remaining <= 7 else "at your earliest convenience"
+    urgency = (
+        "immediately" if days_remaining <= 3 else "soon" if days_remaining <= 7 else "at your earliest convenience"
+    )
     urgency_color = "#EF4444" if days_remaining <= 3 else "#F5A623" if days_remaining <= 7 else "#d4af37"
 
     return f"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
@@ -214,6 +216,7 @@ async def handle_payment_failed(user_id: str):
 
     # Notify admins
     from services.notifications import notify
+
     user = await db.users.find_one({"id": user_id}, {"_id": 0, "name": 1, "email": 1})
     user_name = user.get("name", user.get("email", "Unknown")) if user else "Unknown"
     asyncio.create_task(
@@ -227,6 +230,7 @@ async def handle_payment_failed(user_id: str):
     # Send first grace period email
     if user and user.get("email"):
         from services.email import send_email
+
         settings_url = "https://www.carryon.us/settings"
         name = user.get("name", "").split()[0] if user.get("name") else "there"
         await send_email(
@@ -281,6 +285,7 @@ async def handle_payment_succeeded(user_id: str):
     user = await db.users.find_one({"id": user_id}, {"_id": 0, "name": 1, "email": 1})
     if user and user.get("email"):
         from services.email import send_email
+
         name = user.get("name", "").split()[0] if user.get("name") else "there"
         plan_name = sub.get("plan_name", "CarryOn")
         await send_email(
@@ -291,6 +296,7 @@ async def handle_payment_succeeded(user_id: str):
 
     # Notify admins
     from services.notifications import notify
+
     user_name = user.get("name", user.get("email", "Unknown")) if user else "Unknown"
     status_was = "dormant" if was_dormant else "grace period"
     asyncio.create_task(
@@ -369,6 +375,7 @@ async def _run_billing_lifecycle_check():
                 user = await db.users.find_one({"id": sub["user_id"]}, {"_id": 0, "name": 1, "email": 1})
                 if user and user.get("email"):
                     from services.email import send_email
+
                     name = user.get("name", "").split()[0] if user.get("name") else "there"
                     await send_email(
                         to=user["email"],
@@ -378,6 +385,7 @@ async def _run_billing_lifecycle_check():
 
                 # Notify admins
                 from services.notifications import notify
+
                 user_name = user.get("name", user.get("email", "Unknown")) if user else "Unknown"
                 asyncio.create_task(
                     notify.founder(
@@ -392,6 +400,7 @@ async def _run_billing_lifecycle_check():
                 user = await db.users.find_one({"id": sub["user_id"]}, {"_id": 0, "name": 1, "email": 1})
                 if user and user.get("email"):
                     from services.email import send_email
+
                     name = user.get("name", "").split()[0] if user.get("name") else "there"
                     await send_email(
                         to=user["email"],

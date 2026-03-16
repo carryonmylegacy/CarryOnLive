@@ -434,6 +434,7 @@ async def stripe_webhook(request: Request):
 
                 # Reactivate if was in grace/dormant
                 from services.billing_lifecycle import handle_payment_succeeded
+
                 await handle_payment_succeeded(txn["user_id"])
 
                 # Notification
@@ -454,6 +455,7 @@ async def stripe_webhook(request: Request):
     # Fallback: parse raw Stripe event for invoice/subscription events
     try:
         import json
+
         raw_event = json.loads(body)
         event_type = raw_event.get("type", "")
         data_obj = raw_event.get("data", {}).get("object", {})
@@ -465,6 +467,7 @@ async def stripe_webhook(request: Request):
                 user = await db.users.find_one({"email": customer_email}, {"_id": 0, "id": 1})
                 if user:
                     from services.billing_lifecycle import handle_payment_failed
+
                     await handle_payment_failed(user["id"])
                     logger.info(f"Payment failed webhook processed for {customer_email}")
 
@@ -475,6 +478,7 @@ async def stripe_webhook(request: Request):
                 user = await db.users.find_one({"email": customer_email}, {"_id": 0, "id": 1})
                 if user:
                     from services.billing_lifecycle import handle_payment_succeeded
+
                     await handle_payment_succeeded(user["id"])
                     logger.info(f"Payment succeeded webhook processed for {customer_email}")
 
@@ -485,6 +489,7 @@ async def stripe_webhook(request: Request):
                 user = await db.users.find_one({"email": customer_email}, {"_id": 0, "id": 1})
                 if user:
                     from services.billing_lifecycle import handle_payment_failed
+
                     await handle_payment_failed(user["id"])
 
     except Exception as e:

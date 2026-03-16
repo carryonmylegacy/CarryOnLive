@@ -44,11 +44,21 @@ async def get_subscription_access(current_user: dict = Depends(get_current_user)
         if status == "active":
             return {"has_access": True, "reason": "subscription", "is_dormant": False, "is_grace": False}
         if status == "past_due":
-            return {"has_access": True, "reason": "grace_period", "is_dormant": False, "is_grace": True,
-                    "grace_period_end": sub.get("grace_period_end")}
+            return {
+                "has_access": True,
+                "reason": "grace_period",
+                "is_dormant": False,
+                "is_grace": True,
+                "grace_period_end": sub.get("grace_period_end"),
+            }
         if status == "dormant":
-            return {"has_access": False, "reason": "dormant", "is_dormant": True, "is_grace": False,
-                    "dormant_since": sub.get("dormant_since")}
+            return {
+                "has_access": False,
+                "reason": "dormant",
+                "is_dormant": True,
+                "is_grace": False,
+                "dormant_since": sub.get("dormant_since"),
+            }
 
     # Check trial
     trial_ends = user.get("trial_ends_at")

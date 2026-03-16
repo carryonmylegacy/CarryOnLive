@@ -19,6 +19,16 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (March 16, 2026 — Session 5)
+- **Billing Lifecycle: Grace Period & Dormant Flow**: Full implementation of payment failure handling. When Stripe reports a failed charge (via `invoice.payment_failed` webhook), the account enters a 30-day grace period with daily email reminders. After 30 days, the account goes dormant. Key files: `backend/services/billing_lifecycle.py` (core lifecycle), `backend/services/email.py` (email wrapper), `backend/guards.py` (dormant/grace access control), `backend/routes/subscriptions/checkout.py` (expanded Stripe webhook + status fields), `backend/server.py` (scheduler registration).
+  - **Grace Period (past_due)**: Full access retained. Daily email reminders with countdown. Admin notified.
+  - **Dormant**: Read-only access. No uploads, edits, DTS, beneficiary transitions. POA/Living Will remain accessible to beneficiaries.
+  - **Reactivation**: On successful payment (`invoice.payment_succeeded` webhook), account instantly restored to active with confirmation email.
+  - **Admin Notifications**: Admins notified on payment failure, dormant transition, and reactivation.
+- **Admin UI: Billing Status Indicators**: Yellow border + badge for trial/grace period accounts, red border + badge for dormant accounts. Applied across UsersTab, SubscriptionsTab, and EstateHealthTab.
+- **User-Facing Banners**: `BillingStatusBanner` component on dashboard shows grace period countdown or dormant state with CTA to update payment.
+- **Subscription Status API**: `/api/subscriptions/status` now returns `is_grace_period`, `grace_period_end`, `is_dormant`, `dormant_since`. Admin endpoints return `billing_status`, `grace_days_remaining`, `trial_days_remaining`.
+
 ### Completed (March 15, 2026 — Session 4)
 - **Responsive UI Fix: OrbitVisualization**: Compressed orbit sizes on small screens (<380px): ball size 36px (was 42), center node 50px (was 60), reduced edge padding and base orbit radius for compact layout. Prevents horizontal overflow on iPhone 13 mini (375px).
 - **Responsive UI Fix: Admin UsersTab**: Made UserRow flex-wrap with smaller avatars (w-8 sm:w-9), compact action buttons (h-7 w-7), and responsive text sizes. Status key bar uses flex-wrap. Role badges and secondary info hidden on small screens. No horizontal overflow.
