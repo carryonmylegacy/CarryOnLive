@@ -8,6 +8,9 @@ New endpoints for Founder and Operations portals:
 from datetime import datetime, timezone
 from uuid import uuid4
 
+import hashlib
+import os
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 
@@ -16,10 +19,6 @@ from services.audit import get_client_ip, log_audit_event
 from utils import get_current_user
 
 router = APIRouter()
-
-
-import hashlib
-import os
 
 
 def require_staff(user: dict):
@@ -95,7 +94,11 @@ async def unlock_integrations(data: IntegrationsUnlockRequest, current_user: dic
                 {"label": "Plan", "value": "Pro ($20/mo base)", "verified": True},
                 {"label": "Domain", "value": "app.carryon.us", "verified": True},
                 {"label": "Root Directory", "value": "frontend", "verified": True},
-                {"label": "Build Optimization", "value": "ignoreCommand active (skip backend-only changes)", "verified": True},
+                {
+                    "label": "Build Optimization",
+                    "value": "ignoreCommand active (skip backend-only changes)",
+                    "verified": True,
+                },
                 {"label": "Team ID", "value": "team_10xq6XsCe1dQwbo61np48Qn0", "verified": True},
                 {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
             ],
@@ -116,7 +119,12 @@ async def unlock_integrations(data: IntegrationsUnlockRequest, current_user: dic
                 {"label": "Version", "value": "MongoDB 8.0.20", "verified": True},
                 {"label": "Nodes", "value": "Replica Set (3 nodes)", "verified": True},
                 {"label": "Backups", "value": "Active", "verified": True},
-                {"label": "Connection String", "value": m(os.environ.get("MONGO_URL", "")), "sensitive": True, "verified": True},
+                {
+                    "label": "Connection String",
+                    "value": m(os.environ["MONGO_URL"]),
+                    "sensitive": True,
+                    "verified": True,
+                },
                 {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
             ],
         },
@@ -134,8 +142,18 @@ async def unlock_integrations(data: IntegrationsUnlockRequest, current_user: dic
                 {"label": "Region", "value": "us-east-2 (Ohio)", "verified": True},
                 {"label": "Plan", "value": "Pay-as-you-go", "verified": False},
                 {"label": "Encryption", "value": "AES-256-GCM (app layer) + SSE-S3", "verified": True},
-                {"label": "Access Key ID", "value": m(os.environ.get("AWS_ACCESS_KEY_ID", "")), "sensitive": True, "verified": True},
-                {"label": "Secret Access Key", "value": m(os.environ.get("AWS_SECRET_ACCESS_KEY", "")), "sensitive": True, "verified": True},
+                {
+                    "label": "Access Key ID",
+                    "value": m(os.environ.get("AWS_ACCESS_KEY_ID", "")),
+                    "sensitive": True,
+                    "verified": True,
+                },
+                {
+                    "label": "Secret Access Key",
+                    "value": m(os.environ.get("AWS_SECRET_ACCESS_KEY", "")),
+                    "sensitive": True,
+                    "verified": True,
+                },
                 {"label": "Monthly Cost", "value": "", "verified": False},
                 {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
             ],
@@ -154,7 +172,12 @@ async def unlock_integrations(data: IntegrationsUnlockRequest, current_user: dic
                 {"label": "Mode", "value": "Live", "verified": True},
                 {"label": "Fee Structure", "value": "2.9% + $0.30 per transaction", "verified": False},
                 {"label": "Webhooks URL", "value": "dashboard.stripe.com/webhooks", "verified": False},
-                {"label": "Live Secret Key", "value": m(os.environ.get("STRIPE_API_KEY", "")), "sensitive": True, "verified": True},
+                {
+                    "label": "Live Secret Key",
+                    "value": m(os.environ.get("STRIPE_API_KEY", "")),
+                    "sensitive": True,
+                    "verified": True,
+                },
                 {"label": "Monthly Revenue", "value": "", "verified": False},
                 {"label": "Monthly Stripe Fees", "value": "", "verified": False},
                 {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
@@ -174,7 +197,12 @@ async def unlock_integrations(data: IntegrationsUnlockRequest, current_user: dic
                 {"label": "App ID", "value": "us.carryon.app", "verified": True},
                 {"label": "Commission Rate", "value": "", "verified": False},
                 {"label": "Small Business Program", "value": "", "verified": False},
-                {"label": "Shared Secret", "value": m(os.environ.get("APPLE_SHARED_SECRET", "")), "sensitive": True, "verified": True},
+                {
+                    "label": "Shared Secret",
+                    "value": m(os.environ.get("APPLE_SHARED_SECRET", "")),
+                    "sensitive": True,
+                    "verified": True,
+                },
                 {"label": "Developer Portal", "value": "developer.apple.com/account", "verified": True},
                 {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
             ],
@@ -194,7 +222,12 @@ async def unlock_integrations(data: IntegrationsUnlockRequest, current_user: dic
                 {"label": "Credits Purchased", "value": "$500 (March 2026)", "verified": True},
                 {"label": "Pricing (Grok-4)", "value": "$3/1M input, $15/1M output tokens", "verified": True},
                 {"label": "Team ID", "value": os.environ.get("XAI_TEAM_ID", ""), "verified": True},
-                {"label": "API Key", "value": m(os.environ.get("XAI_API_KEY", "")), "sensitive": True, "verified": True},
+                {
+                    "label": "API Key",
+                    "value": m(os.environ.get("XAI_API_KEY", "")),
+                    "sensitive": True,
+                    "verified": True,
+                },
                 {"label": "Usage Dashboard", "value": "console.x.ai/team/usage", "verified": True},
                 {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
             ],
@@ -213,7 +246,12 @@ async def unlock_integrations(data: IntegrationsUnlockRequest, current_user: dic
                 {"label": "Plan", "value": "Transactional Pro ($20/mo, 50K emails)", "verified": True},
                 {"label": "Renewal", "value": "March 30, 2026", "verified": True},
                 {"label": "Sender Email", "value": os.environ.get("SENDER_EMAIL", ""), "verified": True},
-                {"label": "API Key", "value": m(os.environ.get("RESEND_API_KEY", "")), "sensitive": True, "verified": True},
+                {
+                    "label": "API Key",
+                    "value": m(os.environ.get("RESEND_API_KEY", "")),
+                    "sensitive": True,
+                    "verified": True,
+                },
                 {"label": "Billing Page", "value": "resend.com/settings/billing", "verified": True},
                 {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
             ],
@@ -231,8 +269,18 @@ async def unlock_integrations(data: IntegrationsUnlockRequest, current_user: dic
                 {"label": "Purpose", "value": "SMS OTP Authentication", "verified": True},
                 {"label": "Status", "value": "Blocked — awaiting A2P 10DLC approval", "verified": True},
                 {"label": "Phone Number", "value": os.environ.get("TWILIO_PHONE_NUMBER", ""), "verified": False},
-                {"label": "Account SID", "value": m(os.environ.get("TWILIO_ACCOUNT_SID", "")), "sensitive": True, "verified": True},
-                {"label": "Auth Token", "value": m(os.environ.get("TWILIO_AUTH_TOKEN", "")), "sensitive": True, "verified": True},
+                {
+                    "label": "Account SID",
+                    "value": m(os.environ.get("TWILIO_ACCOUNT_SID", "")),
+                    "sensitive": True,
+                    "verified": True,
+                },
+                {
+                    "label": "Auth Token",
+                    "value": m(os.environ.get("TWILIO_AUTH_TOKEN", "")),
+                    "sensitive": True,
+                    "verified": True,
+                },
                 {"label": "10DLC Registration", "value": "console.twilio.com/.../10dlc", "verified": False},
                 {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
             ],
@@ -480,16 +528,26 @@ async def unlock_integrations(data: IntegrationsUnlockRequest, current_user: dic
     warnings = []
     usage_pct = (total_users / platform_ceiling * 100) if platform_ceiling > 0 else 0
     if usage_pct >= 80:
-        warnings.append({"level": "critical", "message": f"Platform at {usage_pct:.0f}% capacity ({total_users}/{platform_ceiling}). Upgrade {most_limiting['name']} immediately."})
+        warnings.append(
+            {
+                "level": "critical",
+                "message": f"Platform at {usage_pct:.0f}% capacity ({total_users}/{platform_ceiling}). Upgrade {most_limiting['name']} immediately.",
+            }
+        )
     elif usage_pct >= 50:
-        warnings.append({"level": "warning", "message": f"Platform at {usage_pct:.0f}% capacity. Plan {most_limiting['name']} upgrade soon."})
+        warnings.append(
+            {
+                "level": "warning",
+                "message": f"Platform at {usage_pct:.0f}% capacity. Plan {most_limiting['name']} upgrade soon.",
+            }
+        )
 
     # Check xAI credit health
     xai_settings = await db.admin_settings.find_one({"id": "xai_credits"}, {"_id": 0})
     xai_balance = xai_settings.get("balance_usd", 500.0) if xai_settings else 500.0
-    total_xai_spent_agg = await db.xai_usage.aggregate([
-        {"$group": {"_id": None, "total": {"$sum": "$cost_usd"}}}
-    ]).to_list(1)
+    total_xai_spent_agg = await db.xai_usage.aggregate(
+        [{"$group": {"_id": None, "total": {"$sum": "$cost_usd"}}}]
+    ).to_list(1)
     xai_spent = total_xai_spent_agg[0]["total"] if total_xai_spent_agg else 0
     xai_remaining = xai_balance - xai_spent
     if xai_remaining < 25:
@@ -505,7 +563,12 @@ async def unlock_integrations(data: IntegrationsUnlockRequest, current_user: dic
         max_storage_gb = 40  # M30 default
         storage_pct = (storage_gb / max_storage_gb) * 100
         if storage_pct >= 70:
-            warnings.append({"level": "warning", "message": f"Database storage at {storage_pct:.0f}% ({storage_gb:.1f}GB / {max_storage_gb}GB)"})
+            warnings.append(
+                {
+                    "level": "warning",
+                    "message": f"Database storage at {storage_pct:.0f}% ({storage_gb:.1f}GB / {max_storage_gb}GB)",
+                }
+            )
     except Exception:
         pass
 
@@ -542,7 +605,9 @@ async def unlock_integrations(data: IntegrationsUnlockRequest, current_user: dic
             "storage_gb": round(db_stats.get("storageSize", 0) / (1024**3), 2) if db_stats else None,
             "data_gb": round(db_stats.get("dataSize", 0) / (1024**3), 2) if db_stats else None,
             "collections": db_stats.get("collections", 0) if db_stats else None,
-        } if db_stats else None,
+        }
+        if db_stats
+        else None,
     }
 
 
@@ -584,25 +649,44 @@ async def generate_soc2_report(data: IntegrationsUnlockRequest, current_user: di
     pdf.set_font("Helvetica", "B", 14)
     pdf.cell(0, 10, "1. Executive Summary", ln=True)
     pdf.set_font("Helvetica", "", 10)
-    pdf.multi_cell(0, 6, s(
-        "CarryOn is an estate planning platform that processes sensitive personal, financial, and legal data. "
-        "This report documents all third-party integrations, their security controls, data handling practices, "
-        "and compliance posture as required for SOC 2 Type II certification. "
-        "The platform implements AES-256-GCM encryption at rest, TLS 1.3 in transit, "
-        "role-based access control (RBAC), WebAuthn/FIDO2 passwordless authentication, "
-        "voice biometric verification, and comprehensive audit logging."
-    ))
+    pdf.multi_cell(
+        0,
+        6,
+        s(
+            "CarryOn is an estate planning platform that processes sensitive personal, financial, and legal data. "
+            "This report documents all third-party integrations, their security controls, data handling practices, "
+            "and compliance posture as required for SOC 2 Type II certification. "
+            "The platform implements AES-256-GCM encryption at rest, TLS 1.3 in transit, "
+            "role-based access control (RBAC), WebAuthn/FIDO2 passwordless authentication, "
+            "voice biometric verification, and comprehensive audit logging."
+        ),
+    )
     pdf.ln(5)
 
     # Trust Service Criteria
     pdf.set_font("Helvetica", "B", 14)
     pdf.cell(0, 10, "2. Trust Service Criteria Coverage", ln=True)
     criteria = [
-        ("Security", "AES-256-GCM encryption, TLS 1.3, RBAC, WebAuthn/FIDO2, voice biometrics, JWT tokens, VAPID push auth"),
-        ("Availability", "Railway Pro (auto-scaling, 32GB RAM/32 vCPU max), MongoDB M30 (3-node replica set), daily health scheduler"),
-        ("Processing Integrity", "Stripe webhook verification, Apple StoreKit 2 server verification, input validation on all endpoints"),
-        ("Confidentiality", "AES-256-GCM + SSE-S3 double encryption on documents, environment variable isolation, masked credentials"),
-        ("Privacy", "Minimal data collection, user-controlled data export (PDF), dormant account data preservation, GDPR-ready architecture"),
+        (
+            "Security",
+            "AES-256-GCM encryption, TLS 1.3, RBAC, WebAuthn/FIDO2, voice biometrics, JWT tokens, VAPID push auth",
+        ),
+        (
+            "Availability",
+            "Railway Pro (auto-scaling, 32GB RAM/32 vCPU max), MongoDB M30 (3-node replica set), daily health scheduler",
+        ),
+        (
+            "Processing Integrity",
+            "Stripe webhook verification, Apple StoreKit 2 server verification, input validation on all endpoints",
+        ),
+        (
+            "Confidentiality",
+            "AES-256-GCM + SSE-S3 double encryption on documents, environment variable isolation, masked credentials",
+        ),
+        (
+            "Privacy",
+            "Minimal data collection, user-controlled data export (PDF), dormant account data preservation, GDPR-ready architecture",
+        ),
     ]
     pdf.set_font("Helvetica", "", 10)
     for title, desc in criteria:
@@ -731,12 +815,16 @@ async def generate_soc2_report(data: IntegrationsUnlockRequest, current_user: di
     # Footer
     pdf.ln(10)
     pdf.set_font("Helvetica", "I", 8)
-    pdf.multi_cell(0, 4, s(
-        f"This report was auto-generated on {now.strftime('%Y-%m-%d %H:%M UTC')} from the CarryOn platform's "
-        "integration vault. Fields marked [UNVERIFIED] require manual confirmation by the platform administrator. "
-        "Sensitive credentials are redacted in this document and accessible only through the password-protected integration vault. "
-        "This document is intended for internal use and authorized auditors only."
-    ))
+    pdf.multi_cell(
+        0,
+        4,
+        s(
+            f"This report was auto-generated on {now.strftime('%Y-%m-%d %H:%M UTC')} from the CarryOn platform's "
+            "integration vault. Fields marked [UNVERIFIED] require manual confirmation by the platform administrator. "
+            "Sensitive credentials are redacted in this document and accessible only through the password-protected integration vault. "
+            "This document is intended for internal use and authorized auditors only."
+        ),
+    )
 
     # Output
     buf = BytesIO()
@@ -744,10 +832,11 @@ async def generate_soc2_report(data: IntegrationsUnlockRequest, current_user: di
     buf.seek(0)
 
     from starlette.responses import StreamingResponse
+
     return StreamingResponse(
         buf,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="CarryOn_SOC2_Report_{now.strftime("%Y%m%d")}.pdf"'}
+        headers={"Content-Disposition": f'attachment; filename="CarryOn_SOC2_Report_{now.strftime("%Y%m%d")}.pdf"'},
     )
 
 
@@ -850,7 +939,6 @@ async def delete_announcement(
 async def get_xai_credits(current_user: dict = Depends(get_current_user)):
     """Get xAI credit balance and usage for the founder dashboard."""
     require_founder(current_user)
-    import os
 
     now = datetime.now(timezone.utc)
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
@@ -862,7 +950,14 @@ async def get_xai_credits(current_user: dict = Depends(get_current_user)):
 
     # Aggregate total usage from internal tracking
     pipeline = [
-        {"$group": {"_id": None, "total_cost": {"$sum": "$cost_usd"}, "total_input": {"$sum": "$input_tokens"}, "total_output": {"$sum": "$output_tokens"}}}
+        {
+            "$group": {
+                "_id": None,
+                "total_cost": {"$sum": "$cost_usd"},
+                "total_input": {"$sum": "$input_tokens"},
+                "total_output": {"$sum": "$output_tokens"},
+            }
+        }
     ]
     total_usage = await db.xai_usage.aggregate(pipeline).to_list(1)
     total_spent = total_usage[0]["total_cost"] if total_usage else 0.0
@@ -870,7 +965,15 @@ async def get_xai_credits(current_user: dict = Depends(get_current_user)):
     # This month's usage
     month_pipeline = [
         {"$match": {"timestamp": {"$gte": month_start}}},
-        {"$group": {"_id": None, "cost": {"$sum": "$cost_usd"}, "input_t": {"$sum": "$input_tokens"}, "output_t": {"$sum": "$output_tokens"}, "calls": {"$sum": 1}}}
+        {
+            "$group": {
+                "_id": None,
+                "cost": {"$sum": "$cost_usd"},
+                "input_t": {"$sum": "$input_tokens"},
+                "output_t": {"$sum": "$output_tokens"},
+                "calls": {"$sum": 1},
+            }
+        },
     ]
     month_usage = await db.xai_usage.aggregate(month_pipeline).to_list(1)
     month_data = month_usage[0] if month_usage else {"cost": 0, "input_t": 0, "output_t": 0, "calls": 0}
@@ -878,7 +981,7 @@ async def get_xai_credits(current_user: dict = Depends(get_current_user)):
     # Today's usage
     today_pipeline = [
         {"$match": {"timestamp": {"$gte": today_start}}},
-        {"$group": {"_id": None, "cost": {"$sum": "$cost_usd"}, "calls": {"$sum": 1}}}
+        {"$group": {"_id": None, "cost": {"$sum": "$cost_usd"}, "calls": {"$sum": 1}}},
     ]
     today_usage = await db.xai_usage.aggregate(today_pipeline).to_list(1)
     today_data = today_usage[0] if today_usage else {"cost": 0, "calls": 0}
@@ -917,7 +1020,9 @@ async def get_xai_credits(current_user: dict = Depends(get_current_user)):
         "month_output_tokens": month_data.get("output_t", 0),
         "today_spent_usd": round(today_data["cost"], 4),
         "today_calls": today_data.get("calls", 0),
-        "daily_breakdown": [{"date": d["_id"], "cost": round(d["cost"], 4), "calls": d["calls"]} for d in daily_breakdown],
+        "daily_breakdown": [
+            {"date": d["_id"], "cost": round(d["cost"], 4), "calls": d["calls"]} for d in daily_breakdown
+        ],
         "guardian_sessions_today": guardian_today,
         "guardian_sessions_month": guardian_month,
     }
@@ -935,7 +1040,13 @@ async def set_xai_credit_balance(data: XAICreditBalanceUpdate, current_user: dic
     # Reset: set new initial balance and clear all tracked usage
     await db.admin_settings.update_one(
         {"id": "xai_credits"},
-        {"$set": {"id": "xai_credits", "balance_usd": data.balance_usd, "updated_at": datetime.now(timezone.utc).isoformat()}},
+        {
+            "$set": {
+                "id": "xai_credits",
+                "balance_usd": data.balance_usd,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
         upsert=True,
     )
     # Clear usage history since we're resetting the balance

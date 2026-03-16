@@ -604,16 +604,18 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
                     cost = (input_t * 3.0 / 1_000_000) + (output_t * 15.0 / 1_000_000)
                 else:
                     cost = (input_t * 0.20 / 1_000_000) + (output_t * 0.50 / 1_000_000)
-                await db.xai_usage.insert_one({
-                    "date": now_ts.strftime("%Y-%m-%d"),
-                    "timestamp": now_ts.isoformat(),
-                    "model": selected_model,
-                    "input_tokens": input_t,
-                    "output_tokens": output_t,
-                    "cost_usd": round(cost, 6),
-                    "user_id": current_user["id"],
-                    "session_id": data.session_id,
-                })
+                await db.xai_usage.insert_one(
+                    {
+                        "date": now_ts.strftime("%Y-%m-%d"),
+                        "timestamp": now_ts.isoformat(),
+                        "model": selected_model,
+                        "input_tokens": input_t,
+                        "output_tokens": output_t,
+                        "cost_usd": round(cost, 6),
+                        "user_id": current_user["id"],
+                        "session_id": data.session_id,
+                    }
+                )
         except Exception as track_err:
             logger.warning(f"Token tracking failed: {track_err}")
 
