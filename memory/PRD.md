@@ -19,6 +19,11 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (March 16, 2026 — Session 6)
+- **Infrastructure & Integration Audit**: Comprehensive review of all 17 integrations in the codebase with verified subscription levels, current costs, and scaling requirements. Full audit saved to `/app/memory/INFRASTRUCTURE_AUDIT.md`. Identified: MongoDB Atlas M10 ($57/mo), Resend Pro ($20/mo), Railway Pro (~$12/mo), Vercel Pro (~$135/mo in build minutes), xAI with $500 prepaid credits, AWS S3 pay-as-you-go, Capgo not set up.
+- **Vercel Build Optimization**: Added `ignoreCommand` to `vercel.json` to skip builds when only backend files change. Estimated ~50% reduction in build minutes ($50-60/mo savings).
+- **xAI Credit Monitor (Founder Dashboard)**: New `XAICreditsCard` on the System Health tab tracks Estate Guardian AI credit usage in real-time. Backend tracks every Grok API call's token usage internally (MongoDB `xai_usage` collection). Displays: credits remaining, monthly spend, calls today/month, 7-day usage chart. Color-coded warning levels (green/amber/red) with direct link to buy more credits. "Update Balance" button to reset when topping up. Backend endpoints: `GET /api/admin/xai-credits`, `POST /api/admin/xai-credits/set-balance`. 100% test pass rate.
+
 ### Completed (March 16, 2026 — Session 5)
 - **Billing Lifecycle: Grace Period & Dormant Flow**: Full implementation of payment failure handling. When Stripe reports a failed charge (via `invoice.payment_failed` webhook), the account enters a 30-day grace period with daily email reminders. After 30 days, the account goes dormant. Key files: `backend/services/billing_lifecycle.py` (core lifecycle), `backend/services/email.py` (email wrapper), `backend/guards.py` (dormant/grace access control), `backend/routes/subscriptions/checkout.py` (expanded Stripe webhook + status fields), `backend/server.py` (scheduler registration).
   - **Grace Period (past_due)**: Full access retained. Daily email reminders with countdown. Admin notified.
@@ -126,6 +131,10 @@ User pushes to GitHub → Railway builds backend → Vercel builds frontend → 
 - Floor-exempt tiers: military, hospice, new_adult
 
 ## Prioritized Backlog
+### P0 - Active
+- MongoDB upgrade walkthrough (M10 → M30) — user performing now
+- Capgo setup walkthrough — user needs to create account
+
 ### P1 - Upcoming
 - Share Extension Setup (instructions in /app/memory/SHARE_EXTENSION_SETUP.md)
 - Capacitor Live Updates for iOS (plan in /app/memory/CAPACITOR_LIVE_UPDATES.md)
@@ -135,6 +144,8 @@ User pushes to GitHub → Railway builds backend → Vercel builds frontend → 
 - Twilio SMS OTP Integration (blocked on A2P 10DLC approval)
 - Scalability enhancements (CDN for S3, horizontal scaling)
 - Settings page "flash" glitch investigation
+- Resend upgrade Pro → Scale (before 5K users)
+- xAI Management API key integration (optional, for direct balance check)
 
 ## Test Credentials
 - Admin: info@carryon.us / Demo1234!
