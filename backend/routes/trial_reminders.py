@@ -218,7 +218,7 @@ async def send_trial_reminders():
     # Also skip users who have an active subscription in user_subscriptions collection
     for user in expired_users:
         sub = await db.user_subscriptions.find_one(
-            {"user_id": user["id"], "status": "active"}, {"_id": 0, "user_id": 1}
+            {"user_id": user["id"], "status": "active"}, {"_id": 0, "id": 1, "user_id": 1}
         )
         if sub:
             continue  # Has active subscription, skip

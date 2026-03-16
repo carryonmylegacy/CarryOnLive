@@ -1296,7 +1296,7 @@ async def get_estate_health(current_user: dict = Depends(get_current_user)):
 
     # Fetch subscription statuses for billing status indicators
     all_subs = await db.user_subscriptions.find(
-        {}, {"_id": 0, "user_id": 1, "status": 1, "grace_period_end": 1, "dormant_since": 1}
+        {}, {"_id": 0, "id": 1, "user_id": 1, "status": 1, "grace_period_end": 1, "dormant_since": 1}
     ).to_list(100000)
     sub_by_user = {s["user_id"]: s for s in all_subs}
     now_utc = datetime.now(timezone.utc)
