@@ -27,7 +27,7 @@ A full-stack estate planning application allowing benefactors to manage digital 
   - **Admin Notifications**: Admins notified on payment failure, dormant transition, and reactivation.
 - **Admin UI: Billing Status Indicators**: Yellow border + badge for trial/grace period accounts, red border + badge for dormant accounts. Applied across UsersTab, SubscriptionsTab, and EstateHealthTab.
 - **User-Facing Banners**: `BillingStatusBanner` component on dashboard shows grace period countdown or dormant state with CTA to update payment.
-- **Subscription Status API**: `/api/subscriptions/status` now returns `is_grace_period`, `grace_period_end`, `is_dormant`, `dormant_since`. Admin endpoints return `billing_status`, `grace_days_remaining`, `trial_days_remaining`.
+- **Trial Reminder Email Cadence**: Expanded from 2 reminders (10d, 5d) to 4 reminders (10d, 5d, 3d, 1d before expiration). Added a new "Trial Expired" email sent on the day the trial ends, explaining what's now restricted vs. still accessible, with a CTA to subscribe. Trial expiration and grace/dormant remain separate flows (trial = never paid, grace = payment failed on active subscriber).
 
 ### Completed (March 15, 2026 — Session 4)
 - **Responsive UI Fix: OrbitVisualization**: Compressed orbit sizes on small screens (<380px): ball size 36px (was 42), center node 50px (was 60), reduced edge padding and base orbit radius for compact layout. Prevents horizontal overflow on iPhone 13 mini (375px).
