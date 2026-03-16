@@ -1,6 +1,7 @@
 {
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- .",
   "installCommand": "yarn install",
-  "buildCommand": "yarn build",
+  "buildCommand": "chmod +x build-prod.sh && bash build-prod.sh",
   "outputDirectory": "build",
   "rewrites": [
     { "source": "/accept-invitation/:path*", "destination": "/index.html" },
