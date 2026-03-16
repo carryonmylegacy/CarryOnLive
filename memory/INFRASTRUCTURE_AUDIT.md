@@ -46,9 +46,9 @@
   3. Use "Ignored Build Step" setting to skip builds when only backend files change
 
 ### 3. MONGODB ATLAS (Database)
-- **Plan:** M10 (Dedicated) — $57/mo
+- **Plan:** M30 (Dedicated) — $394/mo (UPGRADED from M10 on March 15, 2026)
 - **Cluster:** CarryOnPreBeta
-- **Specs:** 2 GB RAM, 2 vCPU, 10 GB storage
+- **Specs:** 8 GB RAM, 2 vCPU, 40 GB storage
 - **Current Usage:** 2.21 GB / 10 GB (22%), ~95 connections
 - **Version:** MongoDB 8.0.20, Replica Set (3 nodes)
 - **Region:** AWS / N. Virginia (us-east-1)
@@ -131,11 +131,12 @@
 - **Cost:** $0/mo
 - **Scales to 10K?** YES.
 
-### 14. CAPGO (Live OTA Updates)
-- **Status:** NOT SET UP — library installed in code but no account exists
-- **Impact:** Every code change requires full App Store review/submission
-- **If wanted:** Maker plan ($33/mo) for up to 10K MAU
-- **Decision needed:** Sign up or remove unused code
+### 10. CAPGO (Live OTA Updates)
+- **Status:** ACTIVE — Maker plan ($39/mo, 10K MAU)
+- **App ID:** us.carryon.app
+- **Channel:** production
+- **Current Version:** 0.1.0
+- **First bundle uploaded:** March 15, 2026
 
 ### 15. VOICE BIOMETRICS (librosa/scipy/numpy)
 - **Plan:** Self-hosted, open-source libraries
