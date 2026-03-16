@@ -363,19 +363,186 @@ async def unlock_integrations(data: IntegrationsUnlockRequest, current_user: dic
         },
     ]
 
+    # Add capacity limits per integration (max users each can support)
+    capacity_map = {
+        "resend": {
+            "max_users": 5000,
+            "reason": "50K emails/mo limit at ~10 emails/user/mo",
+            "upgrade_to": "Scale plan ($90/mo, 100K emails)",
+            "upgrade_url": "https://resend.com/settings/billing",
+        },
+        "capgo": {
+            "max_users": 10000,
+            "reason": "Maker plan caps at 10K monthly active users",
+            "upgrade_to": "Team plan ($83/mo, 100K MAU)",
+            "upgrade_url": "https://console.capgo.app",
+        },
+        "mongodb": {
+            "max_users": 15000,
+            "reason": "M30 (8GB RAM, 40GB storage) handles ~15K users before performance degrades",
+            "upgrade_to": "M40 (~$759/mo, 16GB RAM)",
+            "upgrade_url": "https://cloud.mongodb.com",
+        },
+        "railway": {
+            "max_users": 25000,
+            "reason": "Pro plan scales to 32GB RAM / 32 vCPU, adequate for ~25K concurrent",
+            "upgrade_to": "Enterprise (custom)",
+            "upgrade_url": "https://railway.com",
+        },
+        "xai": {
+            "max_users": 50000,
+            "reason": "$500 credits with pay-per-use pricing (usage-dependent, not hard cap)",
+            "upgrade_to": "Purchase additional credits",
+            "upgrade_url": "https://console.x.ai",
+        },
+        "vercel": {
+            "max_users": 100000,
+            "reason": "CDN-served frontend scales broadly on Pro plan",
+            "upgrade_to": "Enterprise",
+            "upgrade_url": "https://vercel.com/dashboard",
+        },
+        "stripe": {
+            "max_users": 999999,
+            "reason": "No practical user limit on Standard plan",
+            "upgrade_to": "N/A",
+            "upgrade_url": "https://dashboard.stripe.com",
+        },
+        "apple_iap": {
+            "max_users": 999999,
+            "reason": "No practical user limit",
+            "upgrade_to": "N/A",
+            "upgrade_url": "https://appstoreconnect.apple.com",
+        },
+        "s3": {
+            "max_users": 999999,
+            "reason": "Virtually unlimited on pay-as-you-go",
+            "upgrade_to": "N/A",
+            "upgrade_url": "https://s3.console.aws.amazon.com",
+        },
+        "twilio": {
+            "max_users": 999999,
+            "reason": "Pay-as-you-go, no hard cap (currently inactive)",
+            "upgrade_to": "N/A",
+            "upgrade_url": "https://console.twilio.com",
+        },
+        "google_places": {
+            "max_users": 999999,
+            "reason": "Pay-as-you-go with $200/mo free credit",
+            "upgrade_to": "N/A",
+            "upgrade_url": "https://console.cloud.google.com",
+        },
+    }
+
+    # Self-hosted have no user limits
+    for i_id in ["webauthn", "vapid", "jwt", "voice_biometrics", "pdf_tools", "capacitor"]:
+        capacity_map[i_id] = {
+            "max_users": 999999,
+            "reason": "Self-hosted, no external limit",
+            "upgrade_to": "N/A",
+            "upgrade_url": None,
+        }
+
+    # Attach capacity to each integration
+    for integ in integrations:
+        cap = capacity_map.get(integ["id"], {})
+        integ["max_users"] = cap.get("max_users", 999999)
+        integ["capacity_reason"] = cap.get("reason", "")
+        integ["upgrade_to"] = cap.get("upgrade_to", "")
+        integ["upgrade_url"] = cap.get("upgrade_url", "")
+
+    # Rank by most limiting (lowest max_users)
+    ranked = sorted(
+        [i for i in integrations if i["max_users"] < 999999],
+        key=lambda x: x["max_users"],
+    )
+    limiting_ranks = {}
+    for idx, integ in enumerate(ranked[:3]):
+        limiting_ranks[integ["id"]] = idx + 1  # 1=most limiting, 2=second, 3=third
+    for integ in integrations:
+        integ["limiting_rank"] = limiting_ranks.get(integ["id"], 0)  # 0 = not limiting
+
+    # Get total user count
+    total_users = await db.users.count_documents({})
+    role_counts = {}
+    async for doc in db.users.aggregate([{"$group": {"_id": "$role", "count": {"$sum": 1}}}]):
+        role_counts[doc["_id"]] = doc["count"]
+
+    # Platform ceiling = most limiting integration
+    platform_ceiling = ranked[0]["max_users"] if ranked else 999999
+    most_limiting = ranked[0] if ranked else None
+
     # Calculate COGS
     total_cogs = sum(i["cost_monthly"] for i in integrations)
     verified_cogs = sum(i["cost_monthly"] for i in integrations if i["cost_verified"])
     unverified_count = sum(1 for i in integrations if not i["cost_verified"])
 
+    # Health warnings
+    warnings = []
+    usage_pct = (total_users / platform_ceiling * 100) if platform_ceiling > 0 else 0
+    if usage_pct >= 80:
+        warnings.append({"level": "critical", "message": f"Platform at {usage_pct:.0f}% capacity ({total_users}/{platform_ceiling}). Upgrade {most_limiting['name']} immediately."})
+    elif usage_pct >= 50:
+        warnings.append({"level": "warning", "message": f"Platform at {usage_pct:.0f}% capacity. Plan {most_limiting['name']} upgrade soon."})
+
+    # Check xAI credit health
+    xai_settings = await db.admin_settings.find_one({"id": "xai_credits"}, {"_id": 0})
+    xai_balance = xai_settings.get("balance_usd", 500.0) if xai_settings else 500.0
+    total_xai_spent_agg = await db.xai_usage.aggregate([
+        {"$group": {"_id": None, "total": {"$sum": "$cost_usd"}}}
+    ]).to_list(1)
+    xai_spent = total_xai_spent_agg[0]["total"] if total_xai_spent_agg else 0
+    xai_remaining = xai_balance - xai_spent
+    if xai_remaining < 25:
+        warnings.append({"level": "critical", "message": f"xAI credits critically low: ${xai_remaining:.2f} remaining"})
+    elif xai_remaining < 100:
+        warnings.append({"level": "warning", "message": f"xAI credits getting low: ${xai_remaining:.2f} remaining"})
+
+    # MongoDB storage check (from config)
+    db_stats = None
+    try:
+        db_stats = await db.command("dbStats")
+        storage_gb = db_stats.get("storageSize", 0) / (1024**3)
+        max_storage_gb = 40  # M30 default
+        storage_pct = (storage_gb / max_storage_gb) * 100
+        if storage_pct >= 70:
+            warnings.append({"level": "warning", "message": f"Database storage at {storage_pct:.0f}% ({storage_gb:.1f}GB / {max_storage_gb}GB)"})
+    except Exception:
+        pass
+
     return {
         "integrations": integrations,
+        "capacity": {
+            "total_users": total_users,
+            "role_breakdown": role_counts,
+            "platform_ceiling": platform_ceiling,
+            "most_limiting_id": most_limiting["id"] if most_limiting else None,
+            "most_limiting_name": most_limiting["name"] if most_limiting else None,
+            "usage_percent": round(usage_pct, 1),
+            "top_3_limiting": [
+                {
+                    "rank": idx + 1,
+                    "id": r["id"],
+                    "name": r["name"],
+                    "max_users": r["max_users"],
+                    "reason": r["capacity_reason"],
+                    "upgrade_to": r["upgrade_to"],
+                    "upgrade_url": r["upgrade_url"],
+                }
+                for idx, r in enumerate(ranked[:3])
+            ],
+        },
+        "warnings": warnings,
         "cogs": {
             "total_monthly": round(total_cogs, 2),
             "verified_total": round(verified_cogs, 2),
             "unverified_items": unverified_count,
-            "note": "Revenue-based costs (Stripe 2.9%, Apple 15-30%) not included in COGS"
-        }
+            "note": "Revenue-based costs (Stripe 2.9%, Apple 15-30%) not included in COGS",
+        },
+        "db_stats": {
+            "storage_gb": round(db_stats.get("storageSize", 0) / (1024**3), 2) if db_stats else None,
+            "data_gb": round(db_stats.get("dataSize", 0) / (1024**3), 2) if db_stats else None,
+            "collections": db_stats.get("collections", 0) if db_stats else None,
+        } if db_stats else None,
     }
 
 

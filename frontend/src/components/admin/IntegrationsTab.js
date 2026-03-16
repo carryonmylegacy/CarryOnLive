@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { Lock, ExternalLink, Eye, EyeOff, Shield, Database, CreditCard, Mail, Bot, Cloud,
   MessageSquare, MapPin, Bell, Key, Smartphone, Mic, FileText, Puzzle, Server, Globe,
-  RefreshCw, Download, DollarSign, AlertTriangle, CheckCircle2 } from 'lucide-react';
+  RefreshCw, Download, DollarSign, AlertTriangle, CheckCircle2, Users, Gauge, ArrowUpCircle,
+  Activity, HardDrive, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { toast } from '../../utils/toast';
 
@@ -26,9 +27,10 @@ const CATEGORIES = [
   { key: 'local_processing', label: 'Local' },
 ];
 
-const statusColors = {
-  active: '#22C55E', configured: '#22C55E', blocked: '#F59E0B',
-  'not configured': '#6B7280', 'free/self-hosted': '#3B82F6',
+const RANK_STYLES = {
+  1: { border: '#EF4444', bg: 'rgba(239,68,68,0.04)', label: 'MOST LIMITING', labelBg: 'rgba(239,68,68,0.15)', labelColor: '#EF4444' },
+  2: { border: '#F97316', bg: 'rgba(249,115,22,0.04)', label: '2ND LIMITING', labelBg: 'rgba(249,115,22,0.15)', labelColor: '#F97316' },
+  3: { border: '#EAB308', bg: 'rgba(234,179,8,0.04)', label: '3RD LIMITING', labelBg: 'rgba(234,179,8,0.15)', labelColor: '#EAB308' },
 };
 
 const mask = (val) => {
@@ -36,52 +38,162 @@ const mask = (val) => {
   return val.slice(0, 8) + '...' + val.slice(-4);
 };
 
-const IntegrationCard = ({ integration, revealed, onToggle }) => {
-  const color = statusColors[integration.status] || '#6B7280';
-  const Icon = iconMap[integration.id] || Puzzle;
+// ─── Capacity Dashboard ─────────────────────────────────────
+const CapacityDashboard = ({ capacity }) => {
+  if (!capacity) return null;
+  const { total_users, platform_ceiling, most_limiting_name, usage_percent } = capacity;
+  const ceilingDisplay = platform_ceiling >= 999999 ? 'Unlimited' : platform_ceiling.toLocaleString();
+
+  const gaugeColor = usage_percent >= 80 ? '#EF4444' : usage_percent >= 50 ? '#F97316' : usage_percent >= 25 ? '#EAB308' : '#22C55E';
 
   return (
-    <Card className="glass-card" style={{ borderLeft: `3px solid ${color}` }} data-testid={`integration-${integration.id}`}>
+    <div className="grid grid-cols-3 gap-0 rounded-xl overflow-hidden" style={{ border: `1px solid var(--b)` }} data-testid="capacity-dashboard">
+      {/* Box 1: Total Users */}
+      <div className="p-4 sm:p-5 text-center" style={{ background: 'rgba(59,130,246,0.05)', borderRight: '1px solid var(--b)' }}>
+        <Users className="w-5 h-5 mx-auto mb-2 text-blue-400" />
+        <div className="text-2xl sm:text-3xl font-bold text-[var(--t)]" data-testid="total-users">{total_users.toLocaleString()}</div>
+        <div className="text-[10px] sm:text-xs text-[var(--t5)] mt-1">Total Users</div>
+        <div className="text-[9px] text-[var(--t5)] mt-0.5 hidden sm:block">
+          {capacity.role_breakdown && Object.entries(capacity.role_breakdown).map(([r, c]) => (
+            <span key={r} className="inline-block mr-2">{r}: {c}</span>
+          ))}
+        </div>
+      </div>
+      {/* Box 2: Platform Ceiling */}
+      <div className="p-4 sm:p-5 text-center" style={{ background: 'rgba(34,197,94,0.05)', borderRight: '1px solid var(--b)' }}>
+        <Gauge className="w-5 h-5 mx-auto mb-2" style={{ color: gaugeColor }} />
+        <div className="text-2xl sm:text-3xl font-bold" style={{ color: gaugeColor }} data-testid="platform-ceiling">{ceilingDisplay}</div>
+        <div className="text-[10px] sm:text-xs text-[var(--t5)] mt-1">Max Capacity</div>
+        <div className="mt-1.5 w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--s)' }}>
+          <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(usage_percent, 100)}%`, background: gaugeColor }} />
+        </div>
+        <div className="text-[9px] mt-0.5" style={{ color: gaugeColor }}>{usage_percent}% used</div>
+      </div>
+      {/* Box 3: Most Limiting */}
+      <div className="p-4 sm:p-5 text-center" style={{ background: 'rgba(239,68,68,0.05)' }}>
+        <AlertTriangle className="w-5 h-5 mx-auto mb-2 text-red-400" />
+        <div className="text-sm sm:text-base font-bold text-red-400" data-testid="most-limiting">{most_limiting_name || 'None'}</div>
+        <div className="text-[10px] sm:text-xs text-[var(--t5)] mt-1">Bottleneck</div>
+        {capacity.top_3_limiting?.[0] && (
+          <a href={capacity.top_3_limiting[0].upgrade_url} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[9px] font-bold text-red-400 hover:text-red-300 mt-1 transition-colors" data-testid="upgrade-bottleneck-link">
+            <ArrowUpCircle className="w-3 h-3" /> Upgrade
+          </a>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ─── Warnings Bar ────────────────────────────────────────────
+const WarningsBar = ({ warnings, dbStats }) => {
+  if ((!warnings || !warnings.length) && !dbStats) return null;
+  return (
+    <div className="space-y-2" data-testid="warnings-bar">
+      {warnings?.map((w, i) => (
+        <div key={i} className={`flex items-center gap-2 p-3 rounded-lg text-xs font-medium ${w.level === 'critical' ? 'bg-red-500/10 text-red-400' : 'bg-amber-500/10 text-amber-400'}`}>
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          {w.message}
+        </div>
+      ))}
+      {dbStats && (
+        <div className="flex items-center gap-3 p-3 rounded-lg text-xs" style={{ background: 'var(--s)' }}>
+          <HardDrive className="w-4 h-4 text-[var(--t4)] shrink-0" />
+          <span className="text-[var(--t5)]">Database: {dbStats.data_gb}GB data / {dbStats.storage_gb}GB on disk / {dbStats.collections} collections</span>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── Integration Card ────────────────────────────────────────
+const IntegrationCard = ({ integration, revealed, onToggle }) => {
+  const rank = integration.limiting_rank;
+  const rankStyle = RANK_STYLES[rank];
+  const isLimiting = rank > 0;
+  const statusColors = { active: '#22C55E', blocked: '#F59E0B', 'free/self-hosted': '#3B82F6' };
+  const statusColor = statusColors[integration.status] || '#6B7280';
+  const Icon = iconMap[integration.id] || Puzzle;
+
+  const borderColor = rankStyle ? rankStyle.border : 'var(--b)';
+  const cardBg = rankStyle ? rankStyle.bg : 'transparent';
+
+  return (
+    <Card className="glass-card transition-all" style={{ border: `2px solid ${borderColor}`, background: cardBg }} data-testid={`integration-${integration.id}`}>
       <CardContent className="py-4 px-4 sm:px-5">
         {/* Header */}
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${color}15` }}>
-              <Icon className="w-4 h-4" style={{ color }} />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 relative" style={{ background: `${statusColor}15` }}>
+              <Icon className="w-4 h-4" style={{ color: statusColor }} />
+              {!isLimiting && integration.max_users < 999999 && (
+                <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-500 border border-[var(--bg)]" title="Fully capable" />
+              )}
+              {!isLimiting && integration.max_users >= 999999 && (
+                <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-500 border border-[var(--bg)]" title="No limit" />
+              )}
             </div>
             <div>
-              <h3 className="text-sm font-bold text-[var(--t)]">{integration.name}</h3>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${color}15`, color }}>{integration.status}</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-sm font-bold text-[var(--t)]">{integration.name}</h3>
+                {rankStyle && (
+                  <span className="text-[9px] font-black px-2 py-0.5 rounded-full" style={{ background: rankStyle.labelBg, color: rankStyle.labelColor }}>
+                    {rankStyle.label}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${statusColor}15`, color: statusColor }}>{integration.status}</span>
                 {integration.cost_monthly > 0 && (
                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(212,175,55,0.1)', color: 'var(--gold)' }}>
                     ${integration.cost_monthly.toFixed(2)}/mo
                   </span>
                 )}
                 {integration.cost_monthly === 0 && integration.status !== 'blocked' && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(59,130,246,0.1)', color: '#3B82F6' }}>
-                    Free
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(59,130,246,0.1)', color: '#3B82F6' }}>Free</span>
+                )}
+                {integration.max_users < 999999 && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: 'var(--s)', color: 'var(--t4)' }}>
+                    {integration.max_users.toLocaleString()} users max
                   </span>
                 )}
               </div>
             </div>
           </div>
-          {integration.dashboard_url && (
-            <a href={integration.dashboard_url} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-1 text-[10px] font-bold text-[var(--t4)] hover:text-[var(--gold)] transition-colors shrink-0" data-testid={`link-${integration.id}`}>
-              Dashboard <ExternalLink className="w-3 h-3" />
-            </a>
-          )}
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            {integration.dashboard_url && (
+              <a href={integration.dashboard_url} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1 text-[10px] font-bold text-[var(--t4)] hover:text-[var(--gold)] transition-colors" data-testid={`link-${integration.id}`}>
+                Dashboard <ExternalLink className="w-3 h-3" />
+              </a>
+            )}
+            {isLimiting && integration.upgrade_url && (
+              <a href={integration.upgrade_url} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1 text-[10px] font-bold transition-colors" style={{ color: rankStyle.labelColor }}
+                data-testid={`upgrade-${integration.id}`}>
+                <ArrowUpCircle className="w-3 h-3" /> Upgrade
+              </a>
+            )}
+          </div>
         </div>
+
+        {/* Capacity reason for limiting integrations */}
+        {isLimiting && integration.capacity_reason && (
+          <div className="text-[10px] p-2 rounded mb-2 flex items-center gap-1.5" style={{ background: rankStyle.labelBg, color: rankStyle.labelColor }}>
+            <Activity className="w-3 h-3 shrink-0" />
+            <span>{integration.capacity_reason}</span>
+            {integration.upgrade_to && integration.upgrade_to !== 'N/A' && (
+              <span className="font-bold ml-1">Upgrade: {integration.upgrade_to}</span>
+            )}
+          </div>
+        )}
 
         {/* Cost note */}
         {integration.cost_note && (
           <div className="text-[10px] text-[var(--t5)] mb-2 flex items-center gap-1">
-            <DollarSign className="w-3 h-3" />
+            <DollarSign className="w-3 h-3 shrink-0" />
             {integration.cost_note}
-            {!integration.cost_verified && (
-              <span className="text-amber-400 font-bold ml-1">(unverified)</span>
-            )}
+            {!integration.cost_verified && <span className="text-amber-400 font-bold ml-1">(unverified)</span>}
           </div>
         )}
 
@@ -109,7 +221,6 @@ const IntegrationCard = ({ integration, revealed, onToggle }) => {
           })}
         </div>
 
-        {/* Show/hide credentials */}
         {integration.details.some(d => d.sensitive) && (
           <button onClick={onToggle} className="mt-2 flex items-center gap-1 text-[10px] text-[var(--t4)] hover:text-[var(--t)] transition-colors" data-testid={`reveal-${integration.id}`}>
             {revealed ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
@@ -121,6 +232,7 @@ const IntegrationCard = ({ integration, revealed, onToggle }) => {
   );
 };
 
+// ─── COGS Summary ────────────────────────────────────────────
 const COGSSummary = ({ cogs, integrations }) => {
   if (!cogs) return null;
   const paidItems = integrations.filter(i => i.cost_monthly > 0).sort((a, b) => b.cost_monthly - a.cost_monthly);
@@ -147,7 +259,6 @@ const COGSSummary = ({ cogs, integrations }) => {
             <div className="text-[10px] text-[var(--t5)]">Unverified Items</div>
           </div>
         </div>
-        {/* Breakdown */}
         <div className="space-y-1.5">
           {paidItems.map(item => (
             <div key={item.id} className="flex justify-between items-center p-2 rounded text-xs" style={{ background: 'var(--s)' }}>
@@ -169,11 +280,42 @@ const COGSSummary = ({ cogs, integrations }) => {
   );
 };
 
+// ─── Suggestions Panel ───────────────────────────────────────
+const SuggestionsPanel = ({ capacity }) => {
+  if (!capacity) return null;
+  const suggestions = [
+    { icon: TrendingUp, text: 'Set up usage alerts in Resend, MongoDB Atlas, and Railway dashboards to get email notifications before hitting plan limits.' },
+    { icon: Activity, text: 'Monitor the System Health tab for xAI credit burn rate — set a calendar reminder to check monthly spend vs. remaining balance.' },
+    { icon: HardDrive, text: 'MongoDB M30 has 40GB storage. Your current usage is small, but media-heavy estates will grow fast. Watch the database storage metric above.' },
+    { icon: ArrowUpCircle, text: 'Pre-negotiate your upgrade path: Resend Scale ($90/mo) at 5K users, Capgo Team ($83/mo) at 10K MAU, MongoDB M40 ($759/mo) at 15K users.' },
+    { icon: Shield, text: 'Railway and Vercel have no status page alerts configured. Add https://status.railway.com and https://vercel-status.com to your monitoring to catch outages.' },
+    { icon: Gauge, text: 'Consider adding a daily automated email to yourself with key metrics: total users, new signups, emails sent, Guardian AI sessions, and error count.' },
+  ];
+
+  return (
+    <Card className="glass-card" style={{ borderLeft: '3px solid #3B82F6' }} data-testid="suggestions-panel">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-bold text-[var(--t)] flex items-center gap-2">
+          <TrendingUp className="w-4 h-4 text-blue-400" /> Sole Operator Recommendations
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {suggestions.map((s, i) => (
+          <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-lg text-xs text-[var(--t4)]" style={{ background: 'var(--s)' }}>
+            <s.icon className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+            <span>{s.text}</span>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+};
+
+// ─── Main Tab ────────────────────────────────────────────────
 export const IntegrationsTab = ({ getAuthHeaders }) => {
   const [unlocked, setUnlocked] = useState(false);
   const [password, setPassword] = useState('');
-  const [integrations, setIntegrations] = useState(null);
-  const [cogs, setCogs] = useState(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [revealed, setRevealed] = useState({});
   const [error, setError] = useState('');
@@ -187,8 +329,7 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
     setError('');
     try {
       const res = await axios.post(`${API_URL}/admin/integrations/unlock`, { password }, getAuthHeaders());
-      setIntegrations(res.data.integrations);
-      setCogs(res.data.cogs);
+      setData(res.data);
       setStoredPassword(password);
       setUnlocked(true);
     } catch {
@@ -247,6 +388,7 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
     );
   }
 
+  const { integrations, capacity, warnings, cogs, db_stats: dbStats } = data;
   const filtered = activeFilter === 'all' ? integrations : integrations.filter(i => i.category === activeFilter);
   const unverifiedFieldCount = integrations.reduce((sum, i) => sum + i.details.filter(d => !d.verified).length, 0);
 
@@ -254,7 +396,7 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
     <div className="space-y-4" data-testid="integrations-tab">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Shield className="w-5 h-5 text-[var(--gold)]" />
           <h2 className="text-base font-bold text-[var(--t)]">Platform Integrations</h2>
           <span className="text-[10px] text-[var(--t5)]">({integrations.length})</span>
@@ -271,13 +413,19 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
             data-testid="soc2-download-btn">
             <Download className="w-3 h-3" /> {pdfLoading ? 'Generating...' : 'SOC 2 Report'}
           </button>
-          <button onClick={() => { setUnlocked(false); setPassword(''); setIntegrations(null); setRevealed({}); setCogs(null); }}
+          <button onClick={() => { setUnlocked(false); setPassword(''); setData(null); setRevealed({}); }}
             className="flex items-center gap-1 text-[10px] font-bold text-[var(--t5)] hover:text-red-400 px-3 py-1.5 rounded-lg transition-colors"
             style={{ background: 'var(--s)' }} data-testid="integrations-lock-btn">
             <Lock className="w-3 h-3" /> Lock
           </button>
         </div>
       </div>
+
+      {/* Capacity Dashboard Tiles */}
+      <CapacityDashboard capacity={capacity} />
+
+      {/* Warnings */}
+      <WarningsBar warnings={warnings} dbStats={dbStats} />
 
       {/* Sub-tabs */}
       <div className="flex flex-wrap gap-1.5" data-testid="integration-filters">
@@ -287,10 +435,7 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
           return (
             <button key={cat.key} onClick={() => setActiveFilter(cat.key)}
               className={`text-[10px] font-bold px-3 py-1.5 rounded-full transition-all ${isActive ? '' : 'hover:opacity-80'}`}
-              style={{
-                background: isActive ? 'var(--gold)' : 'var(--s)',
-                color: isActive ? '#0F1629' : 'var(--t4)',
-              }}
+              style={{ background: isActive ? 'var(--gold)' : 'var(--s)', color: isActive ? '#0F1629' : 'var(--t4)' }}
               data-testid={`filter-${cat.key}`}>
               {cat.label} ({count})
             </button>
@@ -298,15 +443,23 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
         })}
       </div>
 
-      {/* COGS Summary (show on All tab) */}
+      {/* COGS Summary (All tab only) */}
       {activeFilter === 'all' && <COGSSummary cogs={cogs} integrations={integrations} />}
 
-      {/* Integration cards — single column */}
+      {/* Integration cards — single column, sorted by limiting rank first */}
       <div className="space-y-3">
-        {filtered.map(integ => (
+        {[...filtered].sort((a, b) => {
+          if (a.limiting_rank && b.limiting_rank) return a.limiting_rank - b.limiting_rank;
+          if (a.limiting_rank) return -1;
+          if (b.limiting_rank) return 1;
+          return 0;
+        }).map(integ => (
           <IntegrationCard key={integ.id} integration={integ} revealed={!!revealed[integ.id]} onToggle={() => toggleReveal(integ.id)} />
         ))}
       </div>
+
+      {/* Sole Operator Recommendations (All tab only) */}
+      {activeFilter === 'all' && <SuggestionsPanel capacity={capacity} />}
     </div>
   );
 };
