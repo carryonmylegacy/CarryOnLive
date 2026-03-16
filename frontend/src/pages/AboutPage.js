@@ -166,7 +166,7 @@ const AboutPage = () => {
                 },
                 {
                   title: 'Security Without Compromise.',
-                  desc: 'Zero-knowledge encryption. Air-gapped AI. No backdoors. No exceptions.',
+                  desc: 'AES-256 per-estate encryption. Privacy-first AI. No backdoors. No exceptions.',
                 },
                 {
                   title: 'Accessible to Every Family.',

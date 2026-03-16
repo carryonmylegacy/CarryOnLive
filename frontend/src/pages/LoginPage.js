@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import { Mail, Lock, Eye, EyeOff, Loader2, Shield, Users, ChevronRight, ChevronDown, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Trash2, ClipboardCheck, MessageSquare } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, Shield, Users, ChevronRight, ChevronDown, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Trash2, ClipboardCheck, MessageSquare, Key, Layers, Smartphone, MapPin, ShieldAlert, ArrowUpDown, SlidersHorizontal } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { toast } from '../utils/toast';
@@ -447,7 +447,7 @@ const LoginPage = () => {
                     Secure your estate plan with AI-powered estate planning. Protect what matters, guide who you love.
                   </p>
                   <div className="flex items-center gap-4 justify-center sm:justify-start mb-4">
-                    {['AES-256 Encrypted', 'Zero-Knowledge', '2FA Protected'].map(badge => (
+                    {['AES-256 Encrypted', 'Per-Estate Keys', '2FA Protected'].map(badge => (
                       <div key={badge} className="flex items-center gap-1.5">
                         <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
                         <span className="text-[#475569] text-xs">{badge}</span>
@@ -548,7 +548,7 @@ const LoginPage = () => {
                     Secure your estate plan with AI-powered estate planning. Protect what matters, guide who you love.
                   </p>
                   <div className="flex items-center gap-3 justify-center mb-3">
-                    {['AES-256 Encrypted', 'Zero-Knowledge', '2FA Protected'].map(badge => (
+                    {['AES-256 Encrypted', 'Per-Estate Keys', '2FA Protected'].map(badge => (
                       <div key={badge} className="flex items-center gap-1.5">
                         <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
                         <span className="text-[#475569] text-xs">{badge}</span>
@@ -601,7 +601,7 @@ const LoginPage = () => {
               <span className="text-[#d4af37]">It&apos;s Planning for Your Family.</span>
             </h2>
             <p className="text-[#7b879e] text-base leading-relaxed mb-8">
-              Every family faces transitions &mdash; some expected, some sudden. Family readiness means your documents are organized, your wishes are clear, your checklists are built, and your loved ones know exactly what to do and where to look. CarryOn&#8482; is the secure digital infrastructure that makes all of this possible &mdash; in one place, on one platform, protected by zero-knowledge encryption.
+              Every family faces transitions &mdash; some expected, some sudden. Family readiness means your documents are organized, your wishes are clear, your checklists are built, and your loved ones know exactly what to do and where to look. CarryOn&#8482; is the secure digital infrastructure that makes all of this possible &mdash; in one place, on one platform, protected by AES-256 per-estate encryption.
             </p>
             <RevealSection delay={0.15}>
               <p className="text-white text-base lg:text-lg font-semibold italic leading-relaxed">
@@ -631,7 +631,7 @@ const LoginPage = () => {
                 {
                   icon: Sparkles, title: 'Estate Guardian\u2122 AI (EGA)',
                   bold: 'An AI analyst powered by U.S. estate law across all 50 states \u2014 working inside your encrypted vault.',
-                  desc: 'EGA analyzes your estate documents for contradictions, gaps, outdated provisions, and missing pieces. Your documents are encrypted with AES-256 zero-knowledge encryption at rest. The AI reviews your documents within the platform and auto-populates your Immediate Action Checklist (IAC) with critical details like claim phone numbers, executor contacts, and filing deadlines. No team reads them. No human touches them.',
+                  desc: 'EGA analyzes your estate documents for contradictions, gaps, outdated provisions, and missing pieces. Your documents are encrypted with AES-256 per-estate encryption at rest. The AI reviews your documents within the platform and auto-populates your Immediate Action Checklist (IAC) with critical details like claim phone numbers, executor contacts, and filing deadlines. No team reads them. No human touches them.',
                 },
                 {
                   icon: ClipboardCheck, title: 'Immediate Action Checklist (IAC)',
@@ -658,6 +658,71 @@ const LoginPage = () => {
                     <h4 className="text-white text-lg font-semibold mb-2">{title}</h4>
                     <p className="text-[#d4af37] text-sm font-medium mb-3 leading-relaxed">{bold}</p>
                     <p className="text-[#6b7a90] text-sm leading-relaxed">{desc}</p>
+                  </div>
+                </RevealSection>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════ PLATFORM FEATURES — compact grid ═══════════════════ */}
+      <section className="relative z-[35] -mt-1">
+        <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0F1A2E, #0B1221)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+          <div className="absolute inset-0 opacity-[0.15]" style={{ backgroundImage: 'url(/texture-warmth.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(10,22,40,0.6) 0%, rgba(11,18,33,0.92) 100%)' }} />
+          <div className="max-w-[1100px] mx-auto px-6 relative z-10">
+            <RevealSection>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white text-center mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                Everything Your Family Needs.
+              </h2>
+              <p className="text-[#7b879e] text-base text-center max-w-[650px] mx-auto mb-14 leading-relaxed">
+                Beyond the four pillars, CarryOn&#8482; gives your family a complete readiness infrastructure &mdash; purpose-built for modern families.
+              </p>
+            </RevealSection>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {[
+                {
+                  icon: Key, title: 'Digital Wallet Vault',
+                  desc: 'Store passwords, crypto keys, and access credentials &mdash; encrypted and assigned to specific beneficiaries.',
+                },
+                {
+                  icon: ArrowUpDown, title: 'Succession Hierarchy',
+                  desc: 'Ranked beneficiary succession with automatic promotion when a primary can no longer serve.',
+                },
+                {
+                  icon: Layers, title: 'Multi-Estate Support',
+                  desc: 'Manage multiple estates under one account &mdash; built for blended, extended, and modern families.',
+                },
+                {
+                  icon: Users, title: 'Family Connections Map',
+                  desc: 'Interactive orbit visualization of every family member, their role, and their relationship to your estate.',
+                },
+                {
+                  icon: ShieldAlert, title: 'Emergency Access',
+                  desc: 'Verified protocol for beneficiaries to request vault access when a benefactor is incapacitated.',
+                },
+                {
+                  icon: SlidersHorizontal, title: 'Section Permissions',
+                  desc: 'Control exactly what each beneficiary can see &mdash; vault, messages, checklist, digital wallet, and more.',
+                },
+                {
+                  icon: Smartphone, title: 'Native Mobile App',
+                  desc: 'iOS and Android with biometric login, push notifications, and full platform access on the go.',
+                },
+                {
+                  icon: MapPin, title: '50-State Legal AI',
+                  desc: 'Estate Guardian calibrates every analysis to your declared state of residence and its specific estate laws.',
+                },
+              ].map(({ icon: Icon, title, desc }, i) => (
+                <RevealSection key={title} delay={i * 0.06}>
+                  <div className="rounded-xl p-5 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20"
+                    style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.12)' }}>
+                      <Icon className="w-4 h-4 text-[#d4af37]" />
+                    </div>
+                    <h4 className="text-white text-sm font-semibold mb-1.5">{title}</h4>
+                    <p className="text-[#6b7a90] text-xs leading-relaxed" dangerouslySetInnerHTML={{ __html: desc }} />
                   </div>
                 </RevealSection>
               ))}
@@ -718,7 +783,7 @@ const LoginPage = () => {
             </RevealSection>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {[
-                { icon: LockIcon, text: 'AES-256 zero-knowledge encryption \u2014 CarryOn cannot access your data' },
+                { icon: LockIcon, text: 'AES-256 per-estate encryption \u2014 your data is never accessed by our team' },
                 { icon: Sparkles, text: 'Estate Guardian\u2122 AI \u2014 analyzes documents within your encrypted vault' },
                 { icon: Shield, text: 'Two-factor authentication on every login \u2014 with daily trust option' },
                 { icon: Users, text: 'Transition verification by human team \u2014 not algorithms, not AI' },
@@ -756,6 +821,22 @@ const LoginPage = () => {
               </p>
             </div>
           </RevealSection>
+          <RevealSection delay={0.2} className="max-w-[800px] mx-auto px-6 relative z-10 mt-6">
+            <div className="grid sm:grid-cols-2 gap-5">
+              <div className="rounded-xl p-6 text-center transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20" style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
+                <h4 className="text-white text-base font-bold mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Military &amp; Veteran Families</h4>
+                <p className="text-[#7b879e] text-sm leading-relaxed">
+                  Reduced pricing for active-duty service members, veterans, and their families. Your service prepared you for everything &mdash; let CarryOn help prepare your family.
+                </p>
+              </div>
+              <div className="rounded-xl p-6 text-center transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20" style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
+                <h4 className="text-white text-base font-bold mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>New Adult Tier (18&ndash;25)</h4>
+                <p className="text-[#7b879e] text-sm leading-relaxed">
+                  A dedicated tier for young Americans just starting out. Because readiness shouldn&apos;t wait until you think you need it &mdash; it should start the day you&apos;re responsible for yourself.
+                </p>
+              </div>
+            </div>
+          </RevealSection>
         </div>
       </section>
 
@@ -771,7 +852,7 @@ const LoginPage = () => {
             </p>
             <button onClick={() => navigateWithFade('/signup')} className="inline-flex items-center gap-2 px-10 py-4 rounded-lg font-semibold text-base transition-transform duration-150 active:scale-95"
               style={{ background: '#d4af37', color: '#0B1221', transition: 'all 0.3s' }}>
-              Get Started &mdash; It&apos;s Free <ChevronRight className="w-4 h-4" />
+              Start Your Free Trial <ChevronRight className="w-4 h-4" />
             </button>
           </RevealSection>
         </div>
