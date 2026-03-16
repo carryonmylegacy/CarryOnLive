@@ -287,7 +287,7 @@ const SuggestionsPanel = ({ capacity }) => {
     { icon: TrendingUp, text: 'Set up usage alerts in Resend, MongoDB Atlas, and Railway dashboards to get email notifications before hitting plan limits.' },
     { icon: Activity, text: 'Monitor the System Health tab for xAI credit burn rate — set a calendar reminder to check monthly spend vs. remaining balance.' },
     { icon: HardDrive, text: 'MongoDB M30 has 40GB storage. Your current usage is small, but media-heavy estates will grow fast. Watch the database storage metric above.' },
-    { icon: ArrowUpCircle, text: 'Pre-negotiate your upgrade path: Resend Scale ($90/mo) at 5K users, Capgo Team ($83/mo) at 10K MAU, MongoDB M40 ($759/mo) at 15K users.' },
+    { icon: ArrowUpCircle, text: 'Pre-negotiate your upgrade path: Resend Scale ($90/mo) at 8K users, Capgo Team ($83/mo) at 10K MAU, MongoDB M40 ($759/mo) at 15K users.' },
     { icon: Shield, text: 'Railway and Vercel have no status page alerts configured. Add https://status.railway.com and https://vercel-status.com to your monitoring to catch outages.' },
     { icon: Gauge, text: 'Consider adding a daily automated email to yourself with key metrics: total users, new signups, emails sent, Guardian AI sessions, and error count.' },
   ];

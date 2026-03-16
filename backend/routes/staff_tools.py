@@ -414,8 +414,8 @@ async def unlock_integrations(data: IntegrationsUnlockRequest, current_user: dic
     # Add capacity limits per integration (max users each can support)
     capacity_map = {
         "resend": {
-            "max_users": 5000,
-            "reason": "50K emails/mo limit at ~10 emails/user/mo",
+            "max_users": 8000,
+            "reason": "Pro plan: 50K emails/mo at ~6 emails/user/mo avg (OTP + digests)",
             "upgrade_to": "Scale plan ($90/mo, 100K emails)",
             "upgrade_url": "https://resend.com/settings/billing",
         },
