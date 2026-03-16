@@ -1,10 +1,124 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Activity, Database, Shield, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
+import { Activity, Database, Shield, CheckCircle2, Loader2, RefreshCw, Zap, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { toast } from '../../utils/toast';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+const XAICreditsCard = ({ getAuthHeaders }) => {
+  const [credits, setCredits] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showSetBalance, setShowSetBalance] = useState(false);
+  const [newBalance, setNewBalance] = useState('');
+
+  const fetchCredits = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/admin/xai-credits`, getAuthHeaders());
+      setCredits(res.data);
+    } catch { /* silent */ }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => {
+    fetchCredits();
+    const t = setInterval(fetchCredits, 300000);
+    return () => clearInterval(t);
+  }, []); // eslint-disable-line
+
+  const handleSetBalance = async () => {
+    const val = parseFloat(newBalance);
+    if (isNaN(val) || val < 0) return;
+    try {
+      await axios.post(`${API_URL}/admin/xai-credits/set-balance`, { balance_usd: val }, getAuthHeaders());
+      toast.success(`Credit balance set to $${val.toFixed(2)}`);
+      setShowSetBalance(false);
+      setNewBalance('');
+      fetchCredits();
+    } catch { toast.error('Failed to set balance'); }
+  };
+
+  if (loading) return <Card className="glass-card"><CardContent className="py-6 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto text-[var(--t4)]" /></CardContent></Card>;
+  if (!credits) return null;
+
+  const level = credits.warning_level;
+  const borderColor = level === 'critical' ? '#EF4444' : level === 'warning' ? '#F59E0B' : '#22C55E';
+  const bgTint = level === 'critical' ? 'rgba(239,68,68,0.06)' : level === 'warning' ? 'rgba(245,158,11,0.06)' : 'rgba(34,197,94,0.06)';
+
+  return (
+    <Card className="glass-card" style={{ borderLeft: `3px solid ${borderColor}` }} data-testid="xai-credits-card">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm font-bold text-[var(--t)] flex items-center gap-2">
+            <Zap className="w-4 h-4" style={{ color: borderColor }} /> Estate Guardian AI Credits
+            {level === 'critical' && <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-500"><AlertTriangle className="w-3 h-3" /> LOW</span>}
+            {level === 'warning' && <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500"><AlertTriangle className="w-3 h-3" /> Monitor</span>}
+          </CardTitle>
+          <button onClick={() => setShowSetBalance(!showSetBalance)} className="text-[10px] text-[var(--t4)] hover:text-[var(--t)] transition-colors" data-testid="set-balance-btn">
+            {showSetBalance ? 'Cancel' : 'Update Balance'}
+          </button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {showSetBalance && (
+          <div className="flex items-center gap-2 mb-3 p-3 rounded-lg" style={{ background: 'var(--s)' }}>
+            <span className="text-xs text-[var(--t4)]">$</span>
+            <input type="number" value={newBalance} onChange={e => setNewBalance(e.target.value)} placeholder="500.00"
+              className="flex-1 bg-transparent text-sm text-[var(--t)] outline-none border-b border-[var(--b)] pb-1" data-testid="balance-input" />
+            <button onClick={handleSetBalance} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-[#d4af37] text-[#0b1120]" data-testid="save-balance-btn">Set</button>
+          </div>
+        )}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="text-center p-3 rounded-lg" style={{ background: bgTint }}>
+            <div className="text-2xl font-bold" style={{ color: borderColor }}>${credits.balance_usd != null ? credits.balance_usd.toFixed(2) : '—'}</div>
+            <div className="text-[10px] text-[var(--t5)]">Credits Remaining</div>
+          </div>
+          <div className="text-center p-3 rounded-lg" style={{ background: 'var(--s)' }}>
+            <div className="text-xl font-bold text-[var(--t)]">${credits.month_spent_usd != null ? credits.month_spent_usd.toFixed(2) : '—'}</div>
+            <div className="text-[10px] text-[var(--t5)]">Spent This Month</div>
+          </div>
+          <div className="text-center p-3 rounded-lg" style={{ background: 'var(--s)' }}>
+            <div className="text-xl font-bold text-[var(--t)]">{credits.today_calls || 0}</div>
+            <div className="text-[10px] text-[var(--t5)]">Calls Today</div>
+          </div>
+          <div className="text-center p-3 rounded-lg" style={{ background: 'var(--s)' }}>
+            <div className="text-xl font-bold text-[var(--t)]">{credits.month_calls || 0}</div>
+            <div className="text-[10px] text-[var(--t5)]">Calls This Month</div>
+          </div>
+        </div>
+        {credits.daily_breakdown && credits.daily_breakdown.length > 0 && (
+          <div className="mt-3 p-3 rounded-lg" style={{ background: 'var(--s)' }}>
+            <div className="text-[10px] font-bold text-[var(--t4)] mb-2">Last 7 Days</div>
+            <div className="flex items-end gap-1 h-12">
+              {credits.daily_breakdown.map((d, i) => {
+                const maxCost = Math.max(...credits.daily_breakdown.map(x => x.cost), 0.01);
+                const height = Math.max(4, (d.cost / maxCost) * 100);
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
+                    <div className="w-full rounded-t" style={{ height: `${height}%`, background: borderColor, minHeight: '2px' }} title={`${d.date}: $${d.cost.toFixed(4)} (${d.calls} calls)`} />
+                    <span className="text-[8px] text-[var(--t5)]">{d.date.slice(5)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        {level === 'critical' && (
+          <a href="https://console.x.ai" target="_blank" rel="noopener noreferrer"
+            className="mt-3 block text-center text-xs font-bold px-4 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors" data-testid="buy-credits-link">
+            Buy More Credits →
+          </a>
+        )}
+        {level === 'warning' && (
+          <a href="https://console.x.ai" target="_blank" rel="noopener noreferrer"
+            className="mt-3 block text-center text-xs font-bold px-4 py-2 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors" data-testid="buy-credits-link">
+            Top Up Credits →
+          </a>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
 
 export const SystemHealthTab = ({ getAuthHeaders }) => {
   const [health, setHealth] = useState(null);
@@ -43,6 +157,9 @@ export const SystemHealthTab = ({ getAuthHeaders }) => {
           <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} /> Refresh
         </button>
       </div>
+
+      {/* xAI Credits Monitor */}
+      <XAICreditsCard getAuthHeaders={getAuthHeaders} />
 
       {/* Status timestamp */}
       <p className="text-[10px] text-[var(--t5)]">Last checked: {new Date(health.timestamp).toLocaleString()}</p>

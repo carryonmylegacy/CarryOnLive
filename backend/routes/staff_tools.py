@@ -123,6 +123,104 @@ async def delete_announcement(
 # ══════════════════════════════════════════════════════════
 
 
+@router.get("/admin/xai-credits")
+async def get_xai_credits(current_user: dict = Depends(get_current_user)):
+    """Get xAI credit balance and usage for the founder dashboard."""
+    require_founder(current_user)
+    import os
+
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+
+    # Get the admin-configured credit balance (set initial = $500 default)
+    settings = await db.admin_settings.find_one({"id": "xai_credits"}, {"_id": 0})
+    initial_balance = settings.get("balance_usd", 500.0) if settings else 500.0
+
+    # Aggregate total usage from internal tracking
+    pipeline = [
+        {"$group": {"_id": None, "total_cost": {"$sum": "$cost_usd"}, "total_input": {"$sum": "$input_tokens"}, "total_output": {"$sum": "$output_tokens"}}}
+    ]
+    total_usage = await db.xai_usage.aggregate(pipeline).to_list(1)
+    total_spent = total_usage[0]["total_cost"] if total_usage else 0.0
+
+    # This month's usage
+    month_pipeline = [
+        {"$match": {"timestamp": {"$gte": month_start}}},
+        {"$group": {"_id": None, "cost": {"$sum": "$cost_usd"}, "input_t": {"$sum": "$input_tokens"}, "output_t": {"$sum": "$output_tokens"}, "calls": {"$sum": 1}}}
+    ]
+    month_usage = await db.xai_usage.aggregate(month_pipeline).to_list(1)
+    month_data = month_usage[0] if month_usage else {"cost": 0, "input_t": 0, "output_t": 0, "calls": 0}
+
+    # Today's usage
+    today_pipeline = [
+        {"$match": {"timestamp": {"$gte": today_start}}},
+        {"$group": {"_id": None, "cost": {"$sum": "$cost_usd"}, "calls": {"$sum": 1}}}
+    ]
+    today_usage = await db.xai_usage.aggregate(today_pipeline).to_list(1)
+    today_data = today_usage[0] if today_usage else {"cost": 0, "calls": 0}
+
+    # Daily breakdown (last 7 days)
+    seven_days_ago = (now - __import__("datetime").timedelta(days=7)).isoformat()
+    daily_pipeline = [
+        {"$match": {"timestamp": {"$gte": seven_days_ago}}},
+        {"$group": {"_id": "$date", "cost": {"$sum": "$cost_usd"}, "calls": {"$sum": 1}}},
+        {"$sort": {"_id": 1}},
+    ]
+    daily_breakdown = await db.xai_usage.aggregate(daily_pipeline).to_list(7)
+
+    remaining = round(initial_balance - total_spent, 2)
+
+    # Warning levels
+    if remaining <= 25:
+        warning_level = "critical"
+    elif remaining <= 100:
+        warning_level = "warning"
+    else:
+        warning_level = "healthy"
+
+    # Guardian sessions
+    guardian_today = await db.guardian_sessions.count_documents({"updated_at": {"$gte": today_start}})
+    guardian_month = await db.guardian_sessions.count_documents({"updated_at": {"$gte": month_start}})
+
+    return {
+        "initial_balance_usd": initial_balance,
+        "total_spent_usd": round(total_spent, 2),
+        "balance_usd": remaining,
+        "warning_level": warning_level,
+        "month_spent_usd": round(month_data["cost"], 2),
+        "month_calls": month_data.get("calls", 0),
+        "month_input_tokens": month_data.get("input_t", 0),
+        "month_output_tokens": month_data.get("output_t", 0),
+        "today_spent_usd": round(today_data["cost"], 4),
+        "today_calls": today_data.get("calls", 0),
+        "daily_breakdown": [{"date": d["_id"], "cost": round(d["cost"], 4), "calls": d["calls"]} for d in daily_breakdown],
+        "guardian_sessions_today": guardian_today,
+        "guardian_sessions_month": guardian_month,
+    }
+
+
+class XAICreditBalanceUpdate(BaseModel):
+    balance_usd: float
+
+
+@router.post("/admin/xai-credits/set-balance")
+async def set_xai_credit_balance(data: XAICreditBalanceUpdate, current_user: dict = Depends(get_current_user)):
+    """Set the xAI credit balance (call this when you top up credits)."""
+    require_founder(current_user)
+
+    # Reset: set new initial balance and clear all tracked usage
+    await db.admin_settings.update_one(
+        {"id": "xai_credits"},
+        {"$set": {"id": "xai_credits", "balance_usd": data.balance_usd, "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True,
+    )
+    # Clear usage history since we're resetting the balance
+    await db.xai_usage.delete_many({})
+
+    return {"success": True, "balance_usd": data.balance_usd}
+
+
 @router.get("/admin/system-health")
 async def get_system_health(current_user: dict = Depends(get_current_user)):
     require_staff(current_user)

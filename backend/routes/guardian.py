@@ -592,6 +592,31 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
 
         response = completion.choices[0].message.content
 
+        # Track xAI token usage for credit monitoring
+        try:
+            usage = completion.usage
+            if usage:
+                now_ts = datetime.now(timezone.utc)
+                input_t = getattr(usage, "prompt_tokens", 0) or 0
+                output_t = getattr(usage, "completion_tokens", 0) or 0
+                # Grok-4: $3/1M input, $15/1M output; Grok-3-mini: ~$0.20/$0.50
+                if selected_model == XAI_MODEL:
+                    cost = (input_t * 3.0 / 1_000_000) + (output_t * 15.0 / 1_000_000)
+                else:
+                    cost = (input_t * 0.20 / 1_000_000) + (output_t * 0.50 / 1_000_000)
+                await db.xai_usage.insert_one({
+                    "date": now_ts.strftime("%Y-%m-%d"),
+                    "timestamp": now_ts.isoformat(),
+                    "model": selected_model,
+                    "input_tokens": input_t,
+                    "output_tokens": output_t,
+                    "cost_usd": round(cost, 6),
+                    "user_id": current_user["id"],
+                    "session_id": data.session_id,
+                })
+        except Exception as track_err:
+            logger.warning(f"Token tracking failed: {track_err}")
+
         # Append legal disclaimer to every response
         response += LEGAL_DISCLAIMER
 
