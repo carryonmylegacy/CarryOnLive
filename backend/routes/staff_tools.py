@@ -54,243 +54,534 @@ async def unlock_integrations(data: IntegrationsUnlockRequest, current_user: dic
     def m(val):
         """Mask a credential value for display."""
         if not val or len(val) < 12:
-            return val or "N/A"
+            return val or ""
         return val[:8] + "..." + val[-4:]
 
+    # verified=True means we have screenshot/copy-paste proof from the user
+    # verified=False means inferred from code/.env — user should confirm
     integrations = [
         {
             "id": "railway",
             "name": "Railway",
             "status": "active",
+            "category": "infrastructure",
             "dashboard_url": "https://railway.com",
+            "cost_monthly": 12.00,
+            "cost_note": "Avg ~$12/mo (Pro $20 base - $20 free credit + usage)",
+            "cost_verified": True,
             "details": [
-                {"label": "Service", "value": "carryon-api"},
-                {"label": "Plan", "value": "Pro ($20/mo base, $20 free credit)"},
-                {"label": "Region", "value": "US East (Virginia)"},
-                {"label": "Replicas", "value": "1"},
-                {"label": "CPU Limit", "value": "32 vCPU"},
-                {"label": "RAM Limit", "value": "32 GB"},
-                {"label": "URL", "value": "carryon-api-production.up.railway.app"},
-                {"label": "Deploy", "value": "Auto from GitHub main branch"},
-                {"label": "Login", "value": "founder@carryon.us", "sensitive": True},
+                {"label": "Service", "value": "carryon-api", "verified": True},
+                {"label": "Plan", "value": "Pro ($20/mo base, $20 free credit)", "verified": True},
+                {"label": "Region", "value": "US East (Virginia)", "verified": True},
+                {"label": "Replicas", "value": "1", "verified": True},
+                {"label": "CPU Limit", "value": "32 vCPU", "verified": True},
+                {"label": "RAM Limit", "value": "32 GB", "verified": True},
+                {"label": "URL", "value": "carryon-api-production.up.railway.app", "verified": True},
+                {"label": "Deploy", "value": "Auto from GitHub main branch", "verified": True},
+                {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
             ],
         },
         {
             "id": "vercel",
             "name": "Vercel",
             "status": "active",
+            "category": "infrastructure",
             "dashboard_url": "https://vercel.com/dashboard",
+            "cost_monthly": 135.00,
+            "cost_note": "$20/mo base + ~$115 build minutes (optimized Mar 2026)",
+            "cost_verified": True,
             "details": [
-                {"label": "Project", "value": "carry-on-live"},
-                {"label": "Plan", "value": "Pro ($20/mo base)"},
-                {"label": "Domain", "value": "app.carryon.us"},
-                {"label": "Root Dir", "value": "frontend"},
-                {"label": "Build Opt", "value": "ignoreCommand active (skip backend-only changes)"},
-                {"label": "Team ID", "value": "team_10xq6XsCe1dQwbo61np48Qn0"},
-                {"label": "Login", "value": "founder@carryon.us", "sensitive": True},
+                {"label": "Project", "value": "carry-on-live", "verified": True},
+                {"label": "Plan", "value": "Pro ($20/mo base)", "verified": True},
+                {"label": "Domain", "value": "app.carryon.us", "verified": True},
+                {"label": "Root Directory", "value": "frontend", "verified": True},
+                {"label": "Build Optimization", "value": "ignoreCommand active (skip backend-only changes)", "verified": True},
+                {"label": "Team ID", "value": "team_10xq6XsCe1dQwbo61np48Qn0", "verified": True},
+                {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
             ],
         },
         {
             "id": "mongodb",
             "name": "MongoDB Atlas",
             "status": "active",
+            "category": "infrastructure",
             "dashboard_url": "https://cloud.mongodb.com",
+            "cost_monthly": 394.00,
+            "cost_note": "M30 Dedicated Cluster (~$394/mo)",
+            "cost_verified": True,
             "details": [
-                {"label": "Cluster", "value": "CarryOnPreBeta"},
-                {"label": "Plan", "value": "M30 (~$394/mo)"},
-                {"label": "Region", "value": "AWS / N. Virginia (us-east-1)"},
-                {"label": "Version", "value": "MongoDB 8.0.20"},
-                {"label": "Nodes", "value": "Replica Set (3 nodes)"},
-                {"label": "Backups", "value": "Active"},
-                {"label": "Connection", "value": m(os.environ.get("MONGO_URL", "")), "sensitive": True},
-                {"label": "Login", "value": "founder@carryon.us", "sensitive": True},
+                {"label": "Cluster", "value": "CarryOnPreBeta", "verified": True},
+                {"label": "Plan", "value": "M30 (8 GB RAM, 2 vCPU, 40 GB storage)", "verified": True},
+                {"label": "Region", "value": "AWS / N. Virginia (us-east-1)", "verified": True},
+                {"label": "Version", "value": "MongoDB 8.0.20", "verified": True},
+                {"label": "Nodes", "value": "Replica Set (3 nodes)", "verified": True},
+                {"label": "Backups", "value": "Active", "verified": True},
+                {"label": "Connection String", "value": m(os.environ.get("MONGO_URL", "")), "sensitive": True, "verified": True},
+                {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
             ],
         },
         {
             "id": "s3",
             "name": "AWS S3",
             "status": "active",
+            "category": "infrastructure",
             "dashboard_url": "https://s3.console.aws.amazon.com/s3/buckets/carryon-vault?region=us-east-2",
+            "cost_monthly": 5.00,
+            "cost_note": "Estimated ~$5/mo (storage + transfer)",
+            "cost_verified": False,
             "details": [
-                {"label": "Bucket", "value": "carryon-vault"},
-                {"label": "Region", "value": "us-east-2 (Ohio)"},
-                {"label": "Plan", "value": "Pay-as-you-go (~$5/mo current)"},
-                {"label": "Encryption", "value": "AES-256-GCM (app) + SSE-S3"},
-                {"label": "Access Key", "value": m(os.environ.get("AWS_ACCESS_KEY_ID", "")), "sensitive": True},
-                {"label": "Secret Key", "value": m(os.environ.get("AWS_SECRET_ACCESS_KEY", "")), "sensitive": True},
-                {"label": "IAM Console", "value": "console.aws.amazon.com/iam"},
+                {"label": "Bucket", "value": "carryon-vault", "verified": True},
+                {"label": "Region", "value": "us-east-2 (Ohio)", "verified": True},
+                {"label": "Plan", "value": "Pay-as-you-go", "verified": False},
+                {"label": "Encryption", "value": "AES-256-GCM (app layer) + SSE-S3", "verified": True},
+                {"label": "Access Key ID", "value": m(os.environ.get("AWS_ACCESS_KEY_ID", "")), "sensitive": True, "verified": True},
+                {"label": "Secret Access Key", "value": m(os.environ.get("AWS_SECRET_ACCESS_KEY", "")), "sensitive": True, "verified": True},
+                {"label": "Monthly Cost", "value": "", "verified": False},
+                {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
             ],
         },
         {
             "id": "stripe",
             "name": "Stripe",
             "status": "active",
+            "category": "payments",
             "dashboard_url": "https://dashboard.stripe.com",
+            "cost_monthly": 0.00,
+            "cost_note": "$0 base + 2.9% + $0.30/txn (revenue-based)",
+            "cost_verified": False,
             "details": [
-                {"label": "Plan", "value": "Standard (2.9% + $0.30/txn)"},
-                {"label": "Mode", "value": "Live"},
-                {"label": "Webhooks", "value": "dashboard.stripe.com/webhooks"},
-                {"label": "Live Key", "value": m(os.environ.get("STRIPE_API_KEY", "")), "sensitive": True},
-                {"label": "Login", "value": "founder@carryon.us", "sensitive": True},
+                {"label": "Plan", "value": "Standard (assumed)", "verified": False},
+                {"label": "Mode", "value": "Live", "verified": True},
+                {"label": "Fee Structure", "value": "2.9% + $0.30 per transaction", "verified": False},
+                {"label": "Webhooks URL", "value": "dashboard.stripe.com/webhooks", "verified": False},
+                {"label": "Live Secret Key", "value": m(os.environ.get("STRIPE_API_KEY", "")), "sensitive": True, "verified": True},
+                {"label": "Monthly Revenue", "value": "", "verified": False},
+                {"label": "Monthly Stripe Fees", "value": "", "verified": False},
+                {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
             ],
         },
         {
             "id": "apple_iap",
             "name": "Apple App Store / StoreKit 2",
             "status": "active",
+            "category": "payments",
             "dashboard_url": "https://appstoreconnect.apple.com",
+            "cost_monthly": 8.25,
+            "cost_note": "Developer Program $99/yr (~$8.25/mo)",
+            "cost_verified": False,
             "details": [
-                {"label": "Plan", "value": "Developer Program ($99/yr)"},
-                {"label": "App ID", "value": "us.carryon.app"},
-                {"label": "Commission", "value": "15% (Small Business) or 30%"},
-                {"label": "Shared Secret", "value": m(os.environ.get("APPLE_SHARED_SECRET", "")), "sensitive": True},
-                {"label": "Developer Portal", "value": "developer.apple.com/account"},
-                {"label": "Login", "value": "founder@carryon.us", "sensitive": True},
+                {"label": "Plan", "value": "Developer Program ($99/yr)", "verified": False},
+                {"label": "App ID", "value": "us.carryon.app", "verified": True},
+                {"label": "Commission Rate", "value": "", "verified": False},
+                {"label": "Small Business Program", "value": "", "verified": False},
+                {"label": "Shared Secret", "value": m(os.environ.get("APPLE_SHARED_SECRET", "")), "sensitive": True, "verified": True},
+                {"label": "Developer Portal", "value": "developer.apple.com/account", "verified": True},
+                {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
             ],
         },
         {
             "id": "xai",
             "name": "xAI (Grok)",
             "status": "active",
+            "category": "ai_communication",
             "dashboard_url": "https://console.x.ai",
+            "cost_monthly": 0.00,
+            "cost_note": "Prepaid credits ($500 purchased Mar 2026, usage-based)",
+            "cost_verified": True,
             "details": [
-                {"label": "Purpose", "value": "Estate Guardian AI Chat"},
-                {"label": "Models", "value": "Grok-4 (heavy) + Grok-3-mini (light)"},
-                {"label": "Credits", "value": "$500 purchased (tracked in System Health)"},
-                {"label": "Pricing", "value": "Grok-4: $3/$15 per 1M tokens (in/out)"},
-                {"label": "Team ID", "value": os.environ.get("XAI_TEAM_ID", "N/A")},
-                {"label": "API Key", "value": m(os.environ.get("XAI_API_KEY", "")), "sensitive": True},
-                {"label": "Usage", "value": "console.x.ai/team/usage"},
+                {"label": "Purpose", "value": "Estate Guardian AI Chat", "verified": True},
+                {"label": "Models", "value": "Grok-4 (main) + Grok-3-mini (light)", "verified": True},
+                {"label": "Credits Purchased", "value": "$500 (March 2026)", "verified": True},
+                {"label": "Pricing (Grok-4)", "value": "$3/1M input, $15/1M output tokens", "verified": True},
+                {"label": "Team ID", "value": os.environ.get("XAI_TEAM_ID", ""), "verified": True},
+                {"label": "API Key", "value": m(os.environ.get("XAI_API_KEY", "")), "sensitive": True, "verified": True},
+                {"label": "Usage Dashboard", "value": "console.x.ai/team/usage", "verified": True},
+                {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
             ],
         },
         {
             "id": "resend",
             "name": "Resend",
             "status": "active",
+            "category": "ai_communication",
             "dashboard_url": "https://resend.com/overview",
+            "cost_monthly": 20.00,
+            "cost_note": "Pro plan $20/mo (50K emails/mo)",
+            "cost_verified": True,
             "details": [
-                {"label": "Purpose", "value": "Transactional emails (OTP, billing, digests)"},
-                {"label": "Plan", "value": "Pro ($20/mo, 50K emails)"},
-                {"label": "Sender", "value": os.environ.get("SENDER_EMAIL", "N/A")},
-                {"label": "API Key", "value": m(os.environ.get("RESEND_API_KEY", "")), "sensitive": True},
-                {"label": "Billing", "value": "resend.com/settings/billing"},
-                {"label": "Login", "value": "founder@carryon.us", "sensitive": True},
+                {"label": "Purpose", "value": "Transactional emails (OTP, billing, digests)", "verified": True},
+                {"label": "Plan", "value": "Transactional Pro ($20/mo, 50K emails)", "verified": True},
+                {"label": "Renewal", "value": "March 30, 2026", "verified": True},
+                {"label": "Sender Email", "value": os.environ.get("SENDER_EMAIL", ""), "verified": True},
+                {"label": "API Key", "value": m(os.environ.get("RESEND_API_KEY", "")), "sensitive": True, "verified": True},
+                {"label": "Billing Page", "value": "resend.com/settings/billing", "verified": True},
+                {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
             ],
         },
         {
             "id": "twilio",
             "name": "Twilio",
             "status": "blocked",
+            "category": "ai_communication",
             "dashboard_url": "https://console.twilio.com",
+            "cost_monthly": 0.00,
+            "cost_note": "$0 (inactive — blocked on A2P 10DLC)",
+            "cost_verified": True,
             "details": [
-                {"label": "Purpose", "value": "SMS OTP Authentication"},
-                {"label": "Status", "value": "Blocked — awaiting A2P 10DLC approval"},
-                {"label": "Phone", "value": os.environ.get("TWILIO_PHONE_NUMBER", "N/A")},
-                {"label": "Account SID", "value": m(os.environ.get("TWILIO_ACCOUNT_SID", "")), "sensitive": True},
-                {"label": "Auth Token", "value": m(os.environ.get("TWILIO_AUTH_TOKEN", "")), "sensitive": True},
-                {"label": "10DLC Status", "value": "console.twilio.com/.../10dlc"},
+                {"label": "Purpose", "value": "SMS OTP Authentication", "verified": True},
+                {"label": "Status", "value": "Blocked — awaiting A2P 10DLC approval", "verified": True},
+                {"label": "Phone Number", "value": os.environ.get("TWILIO_PHONE_NUMBER", ""), "verified": False},
+                {"label": "Account SID", "value": m(os.environ.get("TWILIO_ACCOUNT_SID", "")), "sensitive": True, "verified": True},
+                {"label": "Auth Token", "value": m(os.environ.get("TWILIO_AUTH_TOKEN", "")), "sensitive": True, "verified": True},
+                {"label": "10DLC Registration", "value": "console.twilio.com/.../10dlc", "verified": False},
+                {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
             ],
         },
         {
             "id": "capgo",
             "name": "Capgo",
             "status": "active",
+            "category": "native_updates",
             "dashboard_url": "https://console.capgo.app",
+            "cost_monthly": 39.00,
+            "cost_note": "Maker plan $39/mo (10K MAU)",
+            "cost_verified": True,
             "details": [
-                {"label": "Purpose", "value": "OTA live updates (skip App Store review)"},
-                {"label": "Plan", "value": "Maker ($39/mo, 10K MAU)"},
-                {"label": "App ID", "value": "us.carryon.app"},
-                {"label": "Channel", "value": "production"},
-                {"label": "Current Version", "value": "0.1.0"},
-                {"label": "Login", "value": "founder@carryon.us", "sensitive": True},
+                {"label": "Purpose", "value": "OTA live updates (skip App Store review)", "verified": True},
+                {"label": "Plan", "value": "Maker ($39/mo, 10K MAU)", "verified": True},
+                {"label": "App ID", "value": "us.carryon.app", "verified": True},
+                {"label": "Channel", "value": "production", "verified": True},
+                {"label": "Current Bundle", "value": "v0.1.0", "verified": True},
+                {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
             ],
         },
         {
             "id": "capacitor",
             "name": "Capacitor",
             "status": "free/self-hosted",
+            "category": "native_updates",
             "dashboard_url": None,
+            "cost_monthly": 0.00,
+            "cost_note": "$0/mo (open source)",
+            "cost_verified": True,
             "details": [
-                {"label": "Purpose", "value": "Native iOS/Android app wrapper"},
-                {"label": "Version", "value": "Capacitor 6"},
-                {"label": "Cost", "value": "$0/mo (open source)"},
-                {"label": "Plugins", "value": "Camera, Biometrics, Push, Share, Filesystem"},
-                {"label": "App ID", "value": "us.carryon.app"},
+                {"label": "Purpose", "value": "Native iOS/Android app wrapper", "verified": True},
+                {"label": "Version", "value": "Capacitor 6", "verified": True},
+                {"label": "Plugins", "value": "Camera, Biometrics, Push, Share, Filesystem", "verified": True},
+                {"label": "App ID", "value": "us.carryon.app", "verified": True},
             ],
         },
         {
             "id": "google_places",
             "name": "Google Places API",
             "status": "active",
+            "category": "native_updates",
             "dashboard_url": "https://console.cloud.google.com/apis/dashboard",
+            "cost_monthly": 0.00,
+            "cost_note": "~$0-50/mo (likely within $200/mo free credit)",
+            "cost_verified": False,
             "details": [
-                {"label": "Purpose", "value": "Address autocomplete"},
-                {"label": "Plan", "value": "Pay-as-you-go ($200/mo free credit)"},
-                {"label": "Cost", "value": "~$0-50/mo"},
-                {"label": "Billing", "value": "console.cloud.google.com/billing"},
+                {"label": "Purpose", "value": "Address autocomplete", "verified": True},
+                {"label": "Plan", "value": "Pay-as-you-go ($200/mo free credit)", "verified": False},
+                {"label": "Monthly Cost", "value": "", "verified": False},
+                {"label": "Billing Page", "value": "console.cloud.google.com/billing", "verified": False},
+                {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
             ],
         },
         {
             "id": "webauthn",
             "name": "WebAuthn / FIDO2",
             "status": "free/self-hosted",
+            "category": "security_auth",
             "dashboard_url": None,
+            "cost_monthly": 0.00,
+            "cost_note": "$0/mo (open standard, self-hosted)",
+            "cost_verified": True,
             "details": [
-                {"label": "Purpose", "value": "Passkey / biometric login"},
-                {"label": "Library", "value": "py-webauthn"},
-                {"label": "Cost", "value": "$0/mo (open standard)"},
+                {"label": "Purpose", "value": "Passkey / biometric login", "verified": True},
+                {"label": "Library", "value": "py-webauthn", "verified": True},
             ],
         },
         {
             "id": "vapid",
             "name": "Web Push (VAPID)",
             "status": "free/self-hosted",
+            "category": "security_auth",
             "dashboard_url": None,
+            "cost_monthly": 0.00,
+            "cost_note": "$0/mo (self-hosted)",
+            "cost_verified": True,
             "details": [
-                {"label": "Purpose", "value": "Browser push notifications"},
-                {"label": "Library", "value": "pywebpush"},
-                {"label": "Cost", "value": "$0/mo (self-hosted)"},
-                {"label": "Claims Email", "value": os.environ.get("VAPID_CLAIMS_EMAIL", "N/A")},
+                {"label": "Purpose", "value": "Browser push notifications", "verified": True},
+                {"label": "Library", "value": "pywebpush", "verified": True},
+                {"label": "Claims Email", "value": os.environ.get("VAPID_CLAIMS_EMAIL", ""), "verified": True},
             ],
         },
         {
             "id": "jwt",
             "name": "JWT Authentication",
             "status": "free/self-hosted",
+            "category": "security_auth",
             "dashboard_url": None,
+            "cost_monthly": 0.00,
+            "cost_note": "$0/mo (self-hosted)",
+            "cost_verified": True,
             "details": [
-                {"label": "Purpose", "value": "User session tokens"},
-                {"label": "Algorithm", "value": "HS256"},
-                {"label": "Cost", "value": "$0/mo"},
-                {"label": "Secret", "value": m(os.environ.get("JWT_SECRET", "")), "sensitive": True},
+                {"label": "Purpose", "value": "User session tokens", "verified": True},
+                {"label": "Algorithm", "value": "HS256", "verified": True},
+                {"label": "Secret", "value": m(os.environ.get("JWT_SECRET", "")), "sensitive": True, "verified": True},
             ],
         },
         {
             "id": "voice_biometrics",
             "name": "Voice Biometrics",
             "status": "free/self-hosted",
+            "category": "local_processing",
             "dashboard_url": None,
+            "cost_monthly": 0.00,
+            "cost_note": "$0/mo (CPU absorbed by Railway)",
+            "cost_verified": True,
             "details": [
-                {"label": "Purpose", "value": "Voice-based identity verification"},
-                {"label": "Libraries", "value": "librosa, scipy, numpy"},
-                {"label": "Processing", "value": "130-dim voiceprints, local CPU"},
-                {"label": "Cost", "value": "$0/mo (CPU absorbed by Railway)"},
+                {"label": "Purpose", "value": "Voice-based identity verification", "verified": True},
+                {"label": "Libraries", "value": "librosa, scipy, numpy", "verified": True},
+                {"label": "Processing", "value": "130-dim voiceprints, local CPU", "verified": True},
             ],
         },
         {
             "id": "pdf_tools",
             "name": "PDF Tools",
             "status": "free/self-hosted",
+            "category": "local_processing",
             "dashboard_url": None,
+            "cost_monthly": 0.00,
+            "cost_note": "$0/mo (open source)",
+            "cost_verified": True,
             "details": [
-                {"label": "Purpose", "value": "Estate PDF export & document parsing"},
-                {"label": "Libraries", "value": "fpdf2, pdfplumber, Pillow"},
-                {"label": "Cost", "value": "$0/mo"},
+                {"label": "Purpose", "value": "Estate PDF export & document parsing", "verified": True},
+                {"label": "Libraries", "value": "fpdf2, pdfplumber, Pillow", "verified": True},
             ],
         },
     ]
 
-    return {"integrations": integrations}
+    # Calculate COGS
+    total_cogs = sum(i["cost_monthly"] for i in integrations)
+    verified_cogs = sum(i["cost_monthly"] for i in integrations if i["cost_verified"])
+    unverified_count = sum(1 for i in integrations if not i["cost_verified"])
+
+    return {
+        "integrations": integrations,
+        "cogs": {
+            "total_monthly": round(total_cogs, 2),
+            "verified_total": round(verified_cogs, 2),
+            "unverified_items": unverified_count,
+            "note": "Revenue-based costs (Stripe 2.9%, Apple 15-30%) not included in COGS"
+        }
+    }
+
+
+@router.post("/admin/integrations/soc2-report")
+async def generate_soc2_report(data: IntegrationsUnlockRequest, current_user: dict = Depends(get_current_user)):
+    """Generate a SOC 2 compliance report PDF."""
+    require_founder(current_user)
+
+    if hashlib.sha256(data.password.encode()).hexdigest() != INTEGRATIONS_PASSWORD_HASH:
+        raise HTTPException(status_code=403, detail="Invalid password")
+
+    from io import BytesIO
+
+    from fpdf import FPDF
+
+    # ASCII-safe helper
+    def s(text):
+        return str(text).encode("ascii", "replace").decode("ascii") if text else ""
+
+    now = datetime.now(timezone.utc)
+
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=20)
+
+    # Title page
+    pdf.add_page()
+    pdf.set_font("Helvetica", "B", 24)
+    pdf.cell(0, 20, "CarryOn Technologies", ln=True, align="C")
+    pdf.set_font("Helvetica", "", 14)
+    pdf.cell(0, 10, "SOC 2 Type II - Integration & Infrastructure Report", ln=True, align="C")
+    pdf.ln(5)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.cell(0, 8, f"Report Generated: {now.strftime('%B %d, %Y at %H:%M UTC')}", ln=True, align="C")
+    pdf.cell(0, 8, "Classification: CONFIDENTIAL", ln=True, align="C")
+    pdf.cell(0, 8, "Prepared for: Internal Audit & Compliance Review", ln=True, align="C")
+    pdf.ln(10)
+
+    # Executive Summary
+    pdf.set_font("Helvetica", "B", 14)
+    pdf.cell(0, 10, "1. Executive Summary", ln=True)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.multi_cell(0, 6, s(
+        "CarryOn is an estate planning platform that processes sensitive personal, financial, and legal data. "
+        "This report documents all third-party integrations, their security controls, data handling practices, "
+        "and compliance posture as required for SOC 2 Type II certification. "
+        "The platform implements AES-256-GCM encryption at rest, TLS 1.3 in transit, "
+        "role-based access control (RBAC), WebAuthn/FIDO2 passwordless authentication, "
+        "voice biometric verification, and comprehensive audit logging."
+    ))
+    pdf.ln(5)
+
+    # Trust Service Criteria
+    pdf.set_font("Helvetica", "B", 14)
+    pdf.cell(0, 10, "2. Trust Service Criteria Coverage", ln=True)
+    criteria = [
+        ("Security", "AES-256-GCM encryption, TLS 1.3, RBAC, WebAuthn/FIDO2, voice biometrics, JWT tokens, VAPID push auth"),
+        ("Availability", "Railway Pro (auto-scaling, 32GB RAM/32 vCPU max), MongoDB M30 (3-node replica set), daily health scheduler"),
+        ("Processing Integrity", "Stripe webhook verification, Apple StoreKit 2 server verification, input validation on all endpoints"),
+        ("Confidentiality", "AES-256-GCM + SSE-S3 double encryption on documents, environment variable isolation, masked credentials"),
+        ("Privacy", "Minimal data collection, user-controlled data export (PDF), dormant account data preservation, GDPR-ready architecture"),
+    ]
+    pdf.set_font("Helvetica", "", 10)
+    for title, desc in criteria:
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.cell(40, 7, f"  {s(title)}:", ln=False)
+        pdf.set_font("Helvetica", "", 9)
+        pdf.multi_cell(0, 6, s(desc))
+        pdf.ln(2)
+    pdf.ln(5)
+
+    # Integration inventory
+    pdf.set_font("Helvetica", "B", 14)
+    pdf.cell(0, 10, "3. Third-Party Integration Inventory", ln=True)
+    pdf.ln(3)
+
+    categories = {
+        "infrastructure": "Infrastructure & Hosting",
+        "payments": "Payment Processing",
+        "ai_communication": "AI & Communication Services",
+        "native_updates": "Native App & Updates",
+        "security_auth": "Security & Authentication",
+        "local_processing": "Local Processing Libraries",
+    }
+
+    # Get integrations data (reuse the unlock endpoint logic inline)
+    unlock_resp = await unlock_integrations(data, current_user)
+    all_integrations = unlock_resp["integrations"]
+    cogs = unlock_resp["cogs"]
+
+    for cat_key, cat_label in categories.items():
+        items = [i for i in all_integrations if i["category"] == cat_key]
+        if not items:
+            continue
+
+        pdf.set_font("Helvetica", "B", 12)
+        pdf.set_fill_color(30, 40, 60)
+        pdf.set_text_color(255, 255, 255)
+        pdf.cell(0, 8, f"  {s(cat_label)}", ln=True, fill=True)
+        pdf.set_text_color(0, 0, 0)
+        pdf.ln(3)
+
+        for integ in items:
+            pdf.set_font("Helvetica", "B", 11)
+            status_text = f" [{s(integ['status']).upper()}]"
+            pdf.cell(0, 7, f"{s(integ['name'])}{status_text}", ln=True)
+            pdf.set_font("Helvetica", "", 9)
+            pdf.cell(0, 5, f"Monthly Cost: {s(integ['cost_note'])}", ln=True)
+            if integ.get("dashboard_url"):
+                pdf.cell(0, 5, f"Dashboard: {s(integ['dashboard_url'])}", ln=True)
+
+            # Details table
+            pdf.set_font("Helvetica", "", 8)
+            for detail in integ["details"]:
+                label = s(detail["label"])
+                val = s(detail.get("value", ""))
+                verified = detail.get("verified", True)
+                is_sensitive = detail.get("sensitive", False)
+
+                if is_sensitive:
+                    val = "[REDACTED - See secure vault]"
+
+                status_marker = "[VERIFIED]" if verified else "[UNVERIFIED]"
+                if not val and not is_sensitive:
+                    val = "[NEEDS INPUT]"
+
+                pdf.cell(55, 5, f"    {label}:", ln=False)
+                pdf.cell(100, 5, val, ln=False)
+                pdf.cell(0, 5, status_marker, ln=True)
+
+            pdf.ln(4)
+
+    # COGS Summary
+    pdf.add_page()
+    pdf.set_font("Helvetica", "B", 14)
+    pdf.cell(0, 10, "4. Monthly Cost of Goods Sold (COGS)", ln=True)
+    pdf.ln(3)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.cell(0, 7, f"Total Monthly COGS: ${cogs['total_monthly']:.2f}", ln=True)
+    pdf.cell(0, 7, f"Verified Costs: ${cogs['verified_total']:.2f}", ln=True)
+    pdf.cell(0, 7, f"Items with unverified costs: {cogs['unverified_items']}", ln=True)
+    pdf.cell(0, 7, f"Note: {s(cogs['note'])}", ln=True)
+    pdf.ln(5)
+
+    # Cost breakdown table
+    pdf.set_font("Helvetica", "B", 10)
+    pdf.set_fill_color(30, 40, 60)
+    pdf.set_text_color(255, 255, 255)
+    pdf.cell(80, 7, "  Service", fill=True, ln=False)
+    pdf.cell(35, 7, "Monthly Cost", fill=True, ln=False, align="R")
+    pdf.cell(35, 7, "Verified?", fill=True, ln=False, align="C")
+    pdf.cell(0, 7, "", fill=True, ln=True)
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font("Helvetica", "", 9)
+    for integ in sorted(all_integrations, key=lambda x: -x["cost_monthly"]):
+        pdf.cell(80, 6, f"  {s(integ['name'])}", ln=False)
+        pdf.cell(35, 6, f"${integ['cost_monthly']:.2f}", ln=False, align="R")
+        pdf.cell(35, 6, "Yes" if integ["cost_verified"] else "No", ln=False, align="C")
+        pdf.cell(0, 6, "", ln=True)
+    pdf.set_font("Helvetica", "B", 10)
+    pdf.cell(80, 7, "  TOTAL", ln=False)
+    pdf.cell(35, 7, f"${cogs['total_monthly']:.2f}", ln=False, align="R")
+    pdf.cell(0, 7, "", ln=True)
+    pdf.ln(10)
+
+    # Security controls
+    pdf.set_font("Helvetica", "B", 14)
+    pdf.cell(0, 10, "5. Security Controls Summary", ln=True)
+    pdf.set_font("Helvetica", "", 9)
+    controls = [
+        "Encryption at Rest: AES-256-GCM (application layer) + SSE-S3 (storage layer)",
+        "Encryption in Transit: TLS 1.3 enforced on all endpoints",
+        "Authentication: JWT tokens (HS256) + WebAuthn/FIDO2 passwordless + Voice biometrics",
+        "Authorization: Role-based access control (RBAC) with Founder/Admin/Operator/Benefactor/Beneficiary roles",
+        "API Security: Rate limiting, CORS restrictions, input validation, SQL injection prevention (MongoDB parameterized queries)",
+        "Credential Management: All secrets stored in environment variables, never in code. Masked in UI with secondary password gate.",
+        "Audit Logging: Comprehensive audit trail of all administrative actions and data access",
+        "Backup & Recovery: MongoDB Atlas automated backups, S3 versioning",
+        "Incident Response: P1 escalation system with admin notifications, billing lifecycle monitoring",
+        "Vendor Risk: All third-party integrations documented with verified/unverified status tracking",
+    ]
+    for c in controls:
+        pdf.cell(5, 5, "-", ln=False)
+        pdf.multi_cell(0, 5, f" {s(c)}")
+        pdf.ln(1)
+
+    # Footer
+    pdf.ln(10)
+    pdf.set_font("Helvetica", "I", 8)
+    pdf.multi_cell(0, 4, s(
+        f"This report was auto-generated on {now.strftime('%Y-%m-%d %H:%M UTC')} from the CarryOn platform's "
+        "integration vault. Fields marked [UNVERIFIED] require manual confirmation by the platform administrator. "
+        "Sensitive credentials are redacted in this document and accessible only through the password-protected integration vault. "
+        "This document is intended for internal use and authorized auditors only."
+    ))
+
+    # Output
+    buf = BytesIO()
+    pdf.output(buf)
+    buf.seek(0)
+
+    from starlette.responses import StreamingResponse
+    return StreamingResponse(
+        buf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="CarryOn_SOC2_Report_{now.strftime("%Y%m%d")}.pdf"'}
+    )
 
 
 # ══════════════════════════════════════════════════════════
