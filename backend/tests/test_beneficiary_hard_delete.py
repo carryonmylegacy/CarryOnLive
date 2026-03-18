@@ -3,7 +3,7 @@ Test Beneficiary Hard Delete Feature (Iteration 128)
 =====================================================
 Tests DELETE /api/beneficiaries/{id} endpoint for:
 1. Hard delete (not soft delete) - record completely removed from DB
-2. Removes section_permissions for that beneficiary  
+2. Removes section_permissions for that beneficiary
 3. Removes user_id from estate.beneficiaries array
 4. Unsets primary_beneficiary_id if this was the primary
 5. delete_from_all=true removes from all estates (admin only)
@@ -37,7 +37,7 @@ def admin_auth():
     return {
         "token": data["access_token"],
         "user": data["user"],
-        "headers": {"Authorization": f"Bearer {data['access_token']}"}
+        "headers": {"Authorization": f"Bearer {data['access_token']}"},
     }
 
 
@@ -52,8 +52,12 @@ def admin_estate(admin_auth):
     estates = resp.json()
     # Find the estate where admin is owner
     owned_estate = next(
-        (e for e in estates if e.get("user_role_in_estate") == "owner" or e.get("owner_id") == admin_auth["user"]["id"]),
-        None
+        (
+            e
+            for e in estates
+            if e.get("user_role_in_estate") == "owner" or e.get("owner_id") == admin_auth["user"]["id"]
+        ),
+        None,
     )
     if not owned_estate and estates:
         owned_estate = estates[0]  # Fallback to first estate
@@ -92,7 +96,7 @@ class TestBeneficiaryHardDelete:
         # Create a test beneficiary
         ben = create_test_beneficiary(admin_estate["id"], admin_auth["headers"])
         ben_id = ben["id"]
-        
+
         # Verify beneficiary exists before delete
         resp = requests.get(
             f"{BASE_URL}/api/beneficiaries/{admin_estate['id']}",
@@ -101,7 +105,7 @@ class TestBeneficiaryHardDelete:
         assert resp.status_code == 200
         beneficiaries_before = resp.json()
         assert any(b["id"] == ben_id for b in beneficiaries_before), "Beneficiary should exist before delete"
-        
+
         # Delete the beneficiary
         resp = requests.delete(
             f"{BASE_URL}/api/beneficiaries/{ben_id}",
@@ -109,12 +113,13 @@ class TestBeneficiaryHardDelete:
         )
         assert resp.status_code == 200, f"Delete failed: {resp.text}"
         delete_response = resp.json()
-        
+
         # Verify response message
-        assert delete_response.get("message") == "Beneficiary permanently deleted", \
+        assert delete_response.get("message") == "Beneficiary permanently deleted", (
             f"Expected 'Beneficiary permanently deleted', got: {delete_response.get('message')}"
+        )
         assert delete_response.get("deleted_count") == 1, "Should delete exactly 1 record"
-        
+
         # Verify beneficiary no longer exists (hard delete)
         time.sleep(0.5)  # Brief wait for DB consistency
         resp = requests.get(
@@ -123,9 +128,10 @@ class TestBeneficiaryHardDelete:
         )
         assert resp.status_code == 200
         beneficiaries_after = resp.json()
-        assert not any(b["id"] == ben_id for b in beneficiaries_after), \
+        assert not any(b["id"] == ben_id for b in beneficiaries_after), (
             "Beneficiary should be completely removed (hard delete), not just soft deleted"
-        
+        )
+
         print(f"\n✅ Hard delete verified: Beneficiary {ben_id} completely removed from DB")
 
     def test_02_delete_removes_section_permissions(self, admin_auth, admin_estate):
@@ -133,7 +139,7 @@ class TestBeneficiaryHardDelete:
         # Create a test beneficiary
         ben = create_test_beneficiary(admin_estate["id"], admin_auth["headers"])
         ben_id = ben["id"]
-        
+
         # Set section permissions for this beneficiary
         perms_payload = {
             "beneficiary_id": ben_id,
@@ -141,7 +147,7 @@ class TestBeneficiaryHardDelete:
                 "vault": True,
                 "messages": False,
                 "checklist": True,
-            }
+            },
         }
         resp = requests.put(
             f"{BASE_URL}/api/estate/{admin_estate['id']}/section-permissions",
@@ -149,7 +155,7 @@ class TestBeneficiaryHardDelete:
             headers=admin_auth["headers"],
         )
         # Permissions may or may not exist - endpoint might return 200 or 404
-        
+
         # Get permissions before delete (if endpoint exists)
         resp = requests.get(
             f"{BASE_URL}/api/estate/{admin_estate['id']}/section-permissions",
@@ -157,17 +163,17 @@ class TestBeneficiaryHardDelete:
         )
         if resp.status_code == 200:
             perms_before = resp.json()
-            had_permissions = any(p.get("beneficiary_id") == ben_id for p in perms_before)
+            any(p.get("beneficiary_id") == ben_id for p in perms_before)
         else:
-            had_permissions = False
-        
+            pass
+
         # Delete the beneficiary
         resp = requests.delete(
             f"{BASE_URL}/api/beneficiaries/{ben_id}",
             headers=admin_auth["headers"],
         )
         assert resp.status_code == 200, f"Delete failed: {resp.text}"
-        
+
         # Verify section permissions are removed (if endpoint exists)
         resp = requests.get(
             f"{BASE_URL}/api/estate/{admin_estate['id']}/section-permissions",
@@ -175,9 +181,10 @@ class TestBeneficiaryHardDelete:
         )
         if resp.status_code == 200:
             perms_after = resp.json()
-            assert not any(p.get("beneficiary_id") == ben_id for p in perms_after), \
+            assert not any(p.get("beneficiary_id") == ben_id for p in perms_after), (
                 "Section permissions should be removed after beneficiary delete"
-        
+            )
+
         print(f"\n✅ Section permissions cleanup verified for beneficiary {ben_id}")
 
     def test_03_delete_returns_correct_response_structure(self, admin_auth, admin_estate):
@@ -185,25 +192,25 @@ class TestBeneficiaryHardDelete:
         # Create a test beneficiary
         ben = create_test_beneficiary(admin_estate["id"], admin_auth["headers"])
         ben_id = ben["id"]
-        
+
         # Delete the beneficiary
         resp = requests.delete(
             f"{BASE_URL}/api/beneficiaries/{ben_id}",
             headers=admin_auth["headers"],
         )
         assert resp.status_code == 200, f"Delete failed: {resp.text}"
-        
+
         data = resp.json()
-        
+
         # Verify response structure
         assert "message" in data, "Response should contain 'message'"
         assert "deleted_count" in data, "Response should contain 'deleted_count'"
         assert "deleted_from_all" in data, "Response should contain 'deleted_from_all'"
-        
+
         assert data["message"] == "Beneficiary permanently deleted"
         assert data["deleted_count"] >= 1
-        assert data["deleted_from_all"] == False  # Default behavior without delete_from_all param
-        
+        assert not data["deleted_from_all"]  # Default behavior without delete_from_all param
+
         print(f"\n✅ Response structure verified: {data}")
 
     def test_04_admin_can_delete_from_all_estates(self, admin_auth, admin_estate):
@@ -211,31 +218,31 @@ class TestBeneficiaryHardDelete:
         # Create a test beneficiary
         ben = create_test_beneficiary(admin_estate["id"], admin_auth["headers"])
         ben_id = ben["id"]
-        
+
         # Admin deletes with delete_from_all=true
         resp = requests.delete(
             f"{BASE_URL}/api/beneficiaries/{ben_id}?delete_from_all=true",
             headers=admin_auth["headers"],
         )
         assert resp.status_code == 200, f"Delete with delete_from_all failed: {resp.text}"
-        
+
         data = resp.json()
-        assert data["deleted_from_all"] == True, "deleted_from_all should be True for admin"
+        assert data["deleted_from_all"], "deleted_from_all should be True for admin"
         assert data["message"] == "Beneficiary permanently deleted"
-        
+
         print(f"\n✅ Admin delete_from_all=true verified: {data}")
 
     def test_05_delete_nonexistent_beneficiary_returns_404(self, admin_auth):
         """DELETE /api/beneficiaries/{nonexistent_id} returns 404"""
         fake_id = str(uuid.uuid4())
-        
+
         resp = requests.delete(
             f"{BASE_URL}/api/beneficiaries/{fake_id}",
             headers=admin_auth["headers"],
         )
         assert resp.status_code == 404, f"Expected 404 for nonexistent beneficiary, got {resp.status_code}"
-        
-        print(f"\n✅ 404 returned for nonexistent beneficiary")
+
+        print("\n✅ 404 returned for nonexistent beneficiary")
 
     def test_06_delete_succession_reorder(self, admin_auth, admin_estate):
         """After delete, succession order is re-calculated for remaining beneficiaries"""
@@ -243,14 +250,14 @@ class TestBeneficiaryHardDelete:
         ben1 = create_test_beneficiary(admin_estate["id"], admin_auth["headers"], "_first")
         ben2 = create_test_beneficiary(admin_estate["id"], admin_auth["headers"], "_second")
         ben3 = create_test_beneficiary(admin_estate["id"], admin_auth["headers"], "_third")
-        
+
         # Delete the middle one
         resp = requests.delete(
             f"{BASE_URL}/api/beneficiaries/{ben2['id']}",
             headers=admin_auth["headers"],
         )
         assert resp.status_code == 200, f"Delete failed: {resp.text}"
-        
+
         # Verify ben2 is gone
         resp = requests.get(
             f"{BASE_URL}/api/beneficiaries/{admin_estate['id']}",
@@ -259,16 +266,16 @@ class TestBeneficiaryHardDelete:
         assert resp.status_code == 200
         remaining = resp.json()
         remaining_ids = [b["id"] for b in remaining]
-        
+
         assert ben2["id"] not in remaining_ids, "Deleted beneficiary should be gone"
         assert ben1["id"] in remaining_ids, "First beneficiary should remain"
         assert ben3["id"] in remaining_ids, "Third beneficiary should remain"
-        
+
         # Cleanup: delete the remaining test beneficiaries
         for ben_id in [ben1["id"], ben3["id"]]:
             requests.delete(f"{BASE_URL}/api/beneficiaries/{ben_id}", headers=admin_auth["headers"])
-        
-        print(f"\n✅ Succession reorder verified after delete")
+
+        print("\n✅ Succession reorder verified after delete")
 
 
 class TestNonAdminDeleteRestrictions:
@@ -278,7 +285,7 @@ class TestNonAdminDeleteRestrictions:
         """Only admins can use delete_from_all=true parameter"""
         # Admin should be able to use delete_from_all
         ben = create_test_beneficiary(admin_estate["id"], admin_auth["headers"])
-        
+
         # Verify admin can successfully use delete_from_all
         resp = requests.delete(
             f"{BASE_URL}/api/beneficiaries/{ben['id']}?delete_from_all=true",
@@ -286,9 +293,9 @@ class TestNonAdminDeleteRestrictions:
         )
         assert resp.status_code == 200, f"Admin should be able to delete with delete_from_all: {resp.text}"
         data = resp.json()
-        assert data["deleted_from_all"] == True
-        
-        print(f"\n✅ Admin delete_from_all permission verified")
+        assert data["deleted_from_all"]
+
+        print("\n✅ Admin delete_from_all permission verified")
 
 
 class TestBeneficiaryDeleteEdgeCases:
@@ -299,14 +306,14 @@ class TestBeneficiaryDeleteEdgeCases:
         # Create a test beneficiary
         ben = create_test_beneficiary(admin_estate["id"], admin_auth["headers"])
         ben_id = ben["id"]
-        
+
         # Note: We can't easily test S3 deletion without mocking, but we verify the delete succeeds
         resp = requests.delete(
             f"{BASE_URL}/api/beneficiaries/{ben_id}",
             headers=admin_auth["headers"],
         )
         assert resp.status_code == 200, f"Delete failed: {resp.text}"
-        
+
         # Verify beneficiary is gone
         resp = requests.get(
             f"{BASE_URL}/api/beneficiaries/{admin_estate['id']}",
@@ -314,22 +321,23 @@ class TestBeneficiaryDeleteEdgeCases:
         )
         assert resp.status_code == 200
         assert not any(b["id"] == ben_id for b in resp.json())
-        
-        print(f"\n✅ Beneficiary with potential photo deleted successfully")
+
+        print("\n✅ Beneficiary with potential photo deleted successfully")
 
     def test_09_delete_response_message_contains_permanent(self, admin_auth, admin_estate):
         """Verify delete response contains 'permanently' to confirm hard delete"""
         ben = create_test_beneficiary(admin_estate["id"], admin_auth["headers"])
-        
+
         resp = requests.delete(
             f"{BASE_URL}/api/beneficiaries/{ben['id']}",
             headers=admin_auth["headers"],
         )
         assert resp.status_code == 200
         data = resp.json()
-        
+
         # The message should indicate permanent deletion
-        assert "permanently" in data["message"].lower(), \
+        assert "permanently" in data["message"].lower(), (
             f"Response should indicate permanent deletion, got: {data['message']}"
-        
-        print(f"\n✅ Permanent deletion confirmed in response message")
+        )
+
+        print("\n✅ Permanent deletion confirmed in response message")

@@ -175,13 +175,18 @@ async def delete_beneficiary(
 
     # Collect all beneficiary IDs to delete
     ids_to_delete = [beneficiary_id]
+    # Collect affected estates BEFORE deletion for succession reorder
+    affected_estates = set()
+    affected_estates.add(ben.get("estate_id"))
     if is_admin and delete_from_all and ben.get("email"):
-        # Find all beneficiary records with the same email across all estates
         all_bens = await db.beneficiaries.find(
             {"email": ben["email"], "id": {"$ne": beneficiary_id}},
             {"_id": 0, "id": 1, "estate_id": 1, "user_id": 1, "photo_url": 1},
         ).to_list(1000)
         ids_to_delete.extend([b["id"] for b in all_bens])
+        for b in all_bens:
+            if b.get("estate_id"):
+                affected_estates.add(b["estate_id"])
 
     # Clean up each beneficiary record
     for bid in ids_to_delete:
@@ -219,10 +224,36 @@ async def delete_beneficiary(
         # 4. Delete section permissions
         await db.section_permissions.delete_many({"beneficiary_id": bid})
 
-        # 5. Delete the beneficiary record
+        # 5. Remove from message recipients (don't delete messages — just pull this beneficiary)
+        if estate_id:
+            await db.messages.update_many(
+                {"estate_id": estate_id, "recipients": bid},
+                {"$pull": {"recipients": bid}},
+            )
+            # Also pull by user_id if the beneficiary had a linked user account
+            if b.get("user_id"):
+                await db.messages.update_many(
+                    {"estate_id": estate_id, "recipients": b["user_id"]},
+                    {"$pull": {"recipients": b["user_id"]}},
+                )
+
+        # 6. Unset digital wallet entries assigned to this beneficiary
+        if estate_id:
+            await db.digital_wallet.update_many(
+                {"estate_id": estate_id, "assigned_beneficiary_id": bid},
+                {"$set": {"assigned_beneficiary_id": None, "assigned_beneficiary_name": None}},
+            )
+
+        # 7. Clean up milestone deliveries for this beneficiary
+        await db.milestone_deliveries.delete_many({"beneficiary_id": bid})
+
+        # 8. Clean up beneficiary grace periods
+        await db.beneficiary_grace_periods.delete_many({"beneficiary_id": bid})
+
+        # 9. Delete the beneficiary record
         await db.beneficiaries.delete_one({"id": bid})
 
-        # 6. Log activity
+        # 10. Log activity
         if estate_id:
             await log_activity(
                 estate_id=estate_id,
@@ -234,21 +265,12 @@ async def delete_beneficiary(
             )
 
     # Re-order succession for affected estates
-    affected_estates = set()
-    for bid in ids_to_delete:
-        if bid == beneficiary_id:
-            affected_estates.add(ben.get("estate_id"))
-        else:
-            b_doc = await db.beneficiaries.find_one({"id": bid}, {"_id": 0, "estate_id": 1})
-            if b_doc:
-                affected_estates.add(b_doc.get("estate_id"))
-
     for eid in affected_estates:
         if not eid:
             continue
         remaining = (
             await db.beneficiaries.find(
-                {"estate_id": eid, "deleted_at": None, "succession_order": {"$gte": 0}},
+                {"estate_id": eid, "succession_order": {"$gte": 0}},
                 {"_id": 0, "id": 1, "succession_order": 1},
             )
             .sort("succession_order", 1)
