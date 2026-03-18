@@ -1080,7 +1080,27 @@ const BeneficiariesPage = () => {
             </div>
           </div>
           
-          <div className="flex justify-end gap-3 pt-4 border-t border-[var(--b)]">
+          <div className="flex items-center gap-3 pt-4 border-t border-[var(--b)]">
+            {editingBeneficiary && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setShowAddModal(false);
+                  setEditingBeneficiary(null);
+                  resetForm();
+                  if (isAdmin) {
+                    setDeleteTarget({ id: editingBeneficiary.id, name: `${firstName} ${lastName}`.trim() });
+                  } else {
+                    handleDelete(editingBeneficiary.id);
+                  }
+                }}
+                className="h-10 px-3 text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)]"
+                data-testid="beneficiary-delete-from-edit"
+              >
+                <Trash2 className="w-4 h-4 mr-1.5" /> Delete
+              </Button>
+            )}
+            <div className="flex-1" />
             <Button
               variant="outline"
               onClick={() => {
