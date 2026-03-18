@@ -64,6 +64,8 @@ class UserResponse(BaseModel):
     operator_role: str = ""
     is_also_benefactor: bool = False
     is_also_beneficiary: bool = False
+    is_beta_tester: bool = False
+    beta_accepted: bool = False
 
 
 class TokenResponse(BaseModel):

@@ -37,6 +37,8 @@ def _user_response(user: dict, owns_estate: bool = False) -> UserResponse:
         operator_role=user.get("operator_role", ""),
         is_also_benefactor=user.get("is_also_benefactor", False) or owns_estate,
         is_also_beneficiary=user.get("is_also_beneficiary", False) or False,
+        is_beta_tester=user.get("is_beta_tester", False),
+        beta_accepted=bool(user.get("beta_accepted_at")),
     )
 
 
