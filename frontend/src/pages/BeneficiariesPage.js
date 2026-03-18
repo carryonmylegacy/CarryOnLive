@@ -56,6 +56,10 @@ import { PhotoPicker } from '../components/PhotoPicker';
 import { AvatarCircle } from '../components/AvatarCircle';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import DateMaskInput from '../components/DateMaskInput';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '../components/ui/alert-dialog';
 import SlidePanel from '../components/SlidePanel';
 import FamilyTree from '../components/FamilyTree';
 
@@ -148,6 +152,8 @@ const BeneficiariesPage = () => {
   const [benEstates, setBenEstates] = useState([]);
   const [quickUploadBenId, setQuickUploadBenId] = useState(null);
   const quickFileRef = React.useRef(null);
+  const [deleteTarget, setDeleteTarget] = useState(null); // { id, name } for admin delete dialog
+  const isAdmin = user?.role === 'admin';
 
   const SECTION_LABELS = {
     vault: 'Secure Document Vault (SDV)',
@@ -350,15 +356,22 @@ const BeneficiariesPage = () => {
     }
   };
 
-  const handleDelete = async (beneficiaryId) => {
-    if (!window.confirm('Are you sure you want to remove this beneficiary?')) return;
-    
+  const handleDelete = async (beneficiaryId, deleteFromAll = false) => {
+    // For admin users, show the custom dialog first (handled by onClick)
+    // For benefactors, use simple confirm
+    if (!isAdmin) {
+      if (!window.confirm('Are you sure you want to permanently delete this beneficiary? This cannot be undone.')) return;
+    }
+
     try {
-      await axios.delete(`${API_URL}/beneficiaries/${beneficiaryId}`, getAuthHeaders());
+      const params = deleteFromAll ? '?delete_from_all=true' : '';
+      await axios.delete(`${API_URL}/beneficiaries/${beneficiaryId}${params}`, getAuthHeaders());
       setBeneficiaries(beneficiaries.filter(b => b.id !== beneficiaryId));
+      toast.success('Beneficiary permanently deleted');
+      setDeleteTarget(null);
     } catch (error) {
       console.error('Delete error:', error);
-      toast.error('Failed to remove beneficiary');
+      toast.error(error.response?.data?.detail || 'Failed to delete beneficiary');
     }
   };
 
@@ -646,7 +659,7 @@ const BeneficiariesPage = () => {
                       variant="ghost"
                       size="sm"
                       className="text-[#ef4444] transition-opacity h-7 w-7 p-0"
-                      onClick={() => handleDelete(ben.id)}
+                      onClick={() => isAdmin ? setDeleteTarget({ id: ben.id, name: `${ben.first_name} ${ben.last_name}`.trim() }) : handleDelete(ben.id)}
                       data-testid={`delete-beneficiary-${ben.id}`}
                       aria-label={`Delete ${ben.first_name} ${ben.last_name}`}
                     >
@@ -1166,6 +1179,43 @@ const BeneficiariesPage = () => {
           e.target.value = '';
         }}
       />
+
+      {/* Admin: Delete beneficiary dialog with "delete from all estates" option */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent style={{ background: 'var(--bg2)', border: '1px solid var(--b)' }}>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-[var(--t)]">Delete Beneficiary</AlertDialogTitle>
+            <AlertDialogDescription className="text-[var(--t4)]">
+              You are about to permanently delete <strong className="text-[var(--t)]">{deleteTarget?.name}</strong>.
+              Do you want to remove them from <strong>all connected estates</strong>, or only this estate?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel
+              className="text-[var(--t4)] border-[var(--b)] hover:bg-[var(--s)]"
+              data-testid="delete-ben-cancel"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => handleDelete(deleteTarget?.id, false)}
+              className="font-bold"
+              style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}
+              data-testid="delete-ben-this-estate"
+            >
+              This Estate Only
+            </AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => handleDelete(deleteTarget?.id, true)}
+              className="font-bold"
+              style={{ background: '#EF4444', color: '#fff' }}
+              data-testid="delete-ben-all-estates"
+            >
+              All Estates
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

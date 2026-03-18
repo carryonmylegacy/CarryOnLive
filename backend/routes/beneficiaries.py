@@ -155,18 +155,114 @@ async def create_beneficiary(data: BeneficiaryCreate, current_user: dict = Depen
 
 
 @router.delete("/beneficiaries/{beneficiary_id}")
-async def delete_beneficiary(beneficiary_id: str, current_user: dict = Depends(get_current_user)):
-    """Remove a beneficiary from the estate."""
-    require_benefactor_role(current_user, "remove beneficiaries")
+async def delete_beneficiary(
+    beneficiary_id: str,
+    delete_from_all: bool = False,
+    current_user: dict = Depends(get_current_user),
+):
+    """Hard-delete a beneficiary and all related data.
 
-    result = await db.beneficiaries.update_one(
-        {"id": beneficiary_id},
-        {"$set": {"deleted_at": datetime.now(timezone.utc).isoformat()}},
-    )  # soft_delete
-    if result.modified_count == 0:
+    - Benefactors can only delete from their own estate.
+    - Admins can optionally delete from ALL estates (delete_from_all=true).
+    """
+    is_admin = current_user["role"] == "admin"
+    if not is_admin:
+        require_benefactor_role(current_user, "remove beneficiaries")
+
+    ben = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0})
+    if not ben:
         raise HTTPException(status_code=404, detail="Beneficiary not found")
 
-    return {"message": "Beneficiary removed"}
+    # Collect all beneficiary IDs to delete
+    ids_to_delete = [beneficiary_id]
+    if is_admin and delete_from_all and ben.get("email"):
+        # Find all beneficiary records with the same email across all estates
+        all_bens = await db.beneficiaries.find(
+            {"email": ben["email"], "id": {"$ne": beneficiary_id}},
+            {"_id": 0, "id": 1, "estate_id": 1, "user_id": 1, "photo_url": 1},
+        ).to_list(1000)
+        ids_to_delete.extend([b["id"] for b in all_bens])
+
+    # Clean up each beneficiary record
+    for bid in ids_to_delete:
+        b = await db.beneficiaries.find_one({"id": bid}, {"_id": 0}) if bid != beneficiary_id else ben
+        if not b:
+            continue
+        estate_id = b.get("estate_id")
+
+        # 1. Delete beneficiary photo from S3
+        if b.get("photo_url") and "beneficiaries/" in (b["photo_url"] or ""):
+            try:
+                from services.photo_storage import delete_photo
+
+                photo_key = b["photo_url"]
+                if "/" in photo_key:
+                    photo_key = "/".join(photo_key.split("/")[-2:])
+                await delete_photo(photo_key)
+            except Exception as e:
+                logger.warning(f"Failed to delete beneficiary photo: {e}")
+
+        # 2. Remove from estate beneficiaries array
+        if b.get("user_id") and estate_id:
+            await db.estates.update_one(
+                {"id": estate_id},
+                {"$pull": {"beneficiaries": b["user_id"]}},
+            )
+
+        # 3. Unset primary_beneficiary_id if this was the primary
+        if estate_id:
+            await db.estates.update_one(
+                {"id": estate_id, "primary_beneficiary_id": bid},
+                {"$unset": {"primary_beneficiary_id": ""}},
+            )
+
+        # 4. Delete section permissions
+        await db.section_permissions.delete_many({"beneficiary_id": bid})
+
+        # 5. Delete the beneficiary record
+        await db.beneficiaries.delete_one({"id": bid})
+
+        # 6. Log activity
+        if estate_id:
+            await log_activity(
+                estate_id=estate_id,
+                user_id=current_user["id"],
+                user_name=current_user["name"],
+                action="beneficiary_deleted",
+                description=f"Permanently deleted beneficiary: {b.get('name', 'Unknown')}",
+                metadata={"beneficiary_id": bid, "deleted_by": current_user["role"]},
+            )
+
+    # Re-order succession for affected estates
+    affected_estates = set()
+    for bid in ids_to_delete:
+        if bid == beneficiary_id:
+            affected_estates.add(ben.get("estate_id"))
+        else:
+            b_doc = await db.beneficiaries.find_one({"id": bid}, {"_id": 0, "estate_id": 1})
+            if b_doc:
+                affected_estates.add(b_doc.get("estate_id"))
+
+    for eid in affected_estates:
+        if not eid:
+            continue
+        remaining = (
+            await db.beneficiaries.find(
+                {"estate_id": eid, "deleted_at": None, "succession_order": {"$gte": 0}},
+                {"_id": 0, "id": 1, "succession_order": 1},
+            )
+            .sort("succession_order", 1)
+            .to_list(100)
+        )
+        for idx, r in enumerate(remaining):
+            await db.beneficiaries.update_one({"id": r["id"]}, {"$set": {"succession_order": idx}})
+        await update_estate_readiness(eid)
+
+    return {
+        "message": "Beneficiary permanently deleted",
+        "deleted_count": len(ids_to_delete),
+        "deleted_from_all": is_admin and delete_from_all,
+    }
 
 
 @router.put("/beneficiaries/{beneficiary_id}/set-primary")
