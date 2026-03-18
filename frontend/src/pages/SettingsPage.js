@@ -35,7 +35,7 @@ import { PhotoPicker } from '../components/PhotoPicker';
 import { API_URL } from '../config';
 
 const SettingsPage = () => {
-  const { user, logout, token } = useAuth();
+  const { user, logout, token, getAuthHeaders } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [profilePhoto, setProfilePhoto] = useState(null);
@@ -96,11 +96,6 @@ const SettingsPage = () => {
   const isAdmin = user?.role === 'admin';
   const isOperator = user?.role === 'operator';
   const isStaff = isAdmin || isOperator;
-
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('carryon_token');
-    return { headers: { Authorization: `Bearer ${token}` } };
-  };
 
   useEffect(() => {
     const fetchDigestPref = async () => {

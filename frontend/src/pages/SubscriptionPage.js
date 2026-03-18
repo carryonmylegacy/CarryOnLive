@@ -9,17 +9,13 @@ import { toast } from '../utils/toast';
 import { API_URL } from '../config';
 
 const SubscriptionPage = () => {
-  const { subscriptionStatus, refreshSubscription, token } = useAuth();
+  const { subscriptionStatus, refreshSubscription, token, getAuthHeaders } = useAuth();
   const [showPaywall, setShowPaywall] = useState(false);
   const [confirmingPayment, setConfirmingPayment] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   // Portal-aware: beneficiary subscription page only shows their locked tier
   const isInBeneficiaryPortal = window.location.pathname.startsWith('/beneficiary');
-
-  const getAuthHeaders = () => ({
-    headers: { Authorization: `Bearer ${token}` },
-  });
 
   // Handle post-checkout redirect from Stripe
   useEffect(() => {

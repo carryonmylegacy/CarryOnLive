@@ -1,12 +1,10 @@
 import React from 'react';
 import { Shield } from 'lucide-react';
 import SecuritySettings from '../components/SecuritySettings';
+import { useAuth } from '../contexts/AuthContext';
 
 const SecuritySettingsPage = () => {
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('carryon_token');
-    return { headers: { Authorization: `Bearer ${token}` } };
-  };
+  const { getAuthHeaders } = useAuth();
 
   return (
     <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in max-w-4xl mx-auto" data-testid="security-settings-page">
