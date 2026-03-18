@@ -225,6 +225,14 @@ async def login(data: UserLogin, request: Request):
             if datetime.now(timezone.utc) < expires:
                 # Trusted — skip OTP, return token directly
                 token = await create_session_token(user["id"], user["email"], user["role"])
+                # Reconcile beneficiary invitation status
+                if user.get("role") == "beneficiary" or user.get("is_also_beneficiary"):
+                    asyncio.create_task(
+                        db.beneficiaries.update_many(
+                            {"user_id": user["id"], "invitation_status": {"$ne": "accepted"}},
+                            {"$set": {"invitation_status": "accepted"}},
+                        )
+                    )
                 return TokenResponse(
                     access_token=token,
                     user=_user_response(user, owns_estate=owns_estate),
@@ -242,6 +250,14 @@ async def login(data: UserLogin, request: Request):
             {"id": user["id"]},
             {"$set": {"last_login_at": datetime.now(timezone.utc).isoformat()}},
         )
+        # Reconcile beneficiary invitation status
+        if user.get("role") == "beneficiary" or user.get("is_also_beneficiary"):
+            asyncio.create_task(
+                db.beneficiaries.update_many(
+                    {"user_id": user["id"], "invitation_status": {"$ne": "accepted"}},
+                    {"$set": {"invitation_status": "accepted"}},
+                )
+            )
         return TokenResponse(
             access_token=token,
             user=_user_response(user, owns_estate=owns_estate),
@@ -817,6 +833,15 @@ async def verify_otp(data: OTPVerifyWithTrust, request: Request):
         {"id": user["id"]},
         {"$set": {"last_login_at": datetime.now(timezone.utc).isoformat()}},
     )
+
+    # Reconcile beneficiary invitation status on login
+    if user.get("role") == "beneficiary" or user.get("is_also_beneficiary"):
+        asyncio.create_task(
+            db.beneficiaries.update_many(
+                {"user_id": user["id"], "invitation_status": {"$ne": "accepted"}},
+                {"$set": {"invitation_status": "accepted"}},
+            )
+        )
 
     # Audit log for operator/founder logins
     if user["role"] in ("admin", "operator"):
