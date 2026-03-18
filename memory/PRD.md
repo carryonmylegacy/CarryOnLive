@@ -152,6 +152,15 @@ User pushes to GitHub → Railway builds backend → Vercel builds frontend → 
 - Resend upgrade Pro → Scale (before 5K users)
 - Refactor integrations data from staff_tools.py to config/DB
 
+### Completed (March 18, 2026 — Session 8: Codebase Polish & Refactoring)
+- **DRY: API_URL Extraction**: Extracted `const API_URL = \`${process.env.REACT_APP_BACKEND_URL}/api\`` from **88 files** into a single `frontend/src/config.js`. All pages, components, contexts, services, hooks, and utils now import from this shared config. Three files (ForceUpdateGate, DevSwitcher, errorReporter) use `BASE_URL` (without /api suffix). Eliminates 88 lines of duplication.
+- **.gitignore Cleanup**: Reduced from **595 → 71 lines** by removing ~170 duplicate `# Environment files` blocks that had accumulated.
+- **Dead CSS Removal**: Removed **119 lines** of unused CSS from `index.css`: `.pac-*` (legacy Google Places JS SDK styles — app uses REST API), `.sb-user-info/details/name/email` (removed from sidebar), `.progress-bar/fill`, `.animate-slide-up`, `.pb-safe`, `.theme-toggle-label`, and their light-mode overrides.
+- **Dead Code Removal**: Deleted 4 unused files: `backend/utils/soft_delete.py` (orphaned after hard-delete migration), `frontend/src/utils/useWorkerFilter.js` (never imported), `frontend/src/utils/useDebouncedSearch.js` (never imported), `frontend/src/App.css` (1-line placeholder, never imported).
+- **Test Suite Cleanup**: Removed **24 stale iteration-specific test files** (test_iteration82, test_final_pressure_iter117, test_p0_bugs_iteration_104, test_soft_delete_restore, etc.). Reduced from 86 → 62 test files, cutting ~9K lines of dead test code.
+- **Artifact Purge**: Cleaned all `__pycache__` directories, `.pyc` files, `test_reports/pytest/` directory, `.DS_Store`, `.bak`, and temp files.
+- **Regression Verified**: All 38 housekeeping checks pass. ESLint clean. ruff clean. Frontend build passes. Testing agent confirmed 100% backend (14/14) and 100% frontend pass rate.
+
 ### Completed (March 18, 2026 — Session 7)
 - **Per-User Beta Feature Revamp**: Replaced global beta switch with per-user beta toggle. Admin can activate/deactivate beta for any user via the Users tab (Zap icon). On activation: no subscription fees + welcome modal on first login + draggable floating bug report button (yellow square with dark blue bug icon) on every page. On deactivation: 30-day grace period starts automatically. New "Beta Testing" admin tab lists all submitted tickets with auto-numbering and status management (Accept/Complete/Reject). Backend: 6 new endpoints in `/app/backend/routes/beta.py`. Frontend: 3 new components (BetaWelcomeModal, BetaFeedbackButton, BetaTestingTab). Testing: 15/15 backend tests passed, 100% frontend verified.
 - **Auto-Send Beneficiary Invitation Emails**: Invitation emails are now automatically sent when a benefactor adds a new beneficiary (with email) during signup OR when saving a new beneficiary post-onboarding. Toast "Invitation email sent" shown on frontend. Manual invite/resend button still available. Shared helper: `/app/backend/services/invitation_sender.py`.
