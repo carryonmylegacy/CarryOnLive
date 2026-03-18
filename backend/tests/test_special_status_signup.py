@@ -11,7 +11,7 @@ import time
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://feature-showcase-102.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://hard-delete-rebuild.preview.emergentagent.com").rstrip("/")
 
 
 class TestSpecialStatusRegistration:
