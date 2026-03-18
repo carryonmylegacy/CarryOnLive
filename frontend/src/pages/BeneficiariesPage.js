@@ -279,7 +279,9 @@ const BeneficiariesPage = () => {
       } else {
         const res = await axios.post(`${API_URL}/beneficiaries`, payload, getAuthHeaders());
         if (photoFile && res.data?.id) await uploadPhoto(res.data.id);
-        // toast removed
+        if (res.data?.auto_invited) {
+          toast.success('Invitation email sent');
+        }
       }
       
       setShowAddModal(false);

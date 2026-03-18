@@ -9,6 +9,7 @@ import { Skeleton } from '../../components/ui/skeleton';
 import OrbitVisualization, { getOrbitLevel, orbitColors } from '../../components/estate/OrbitVisualization';
 import EmergencyAccessPanel from '../../components/beneficiary/EmergencyAccessPanel';
 import { resolvePhotoUrl } from '../../utils/photoUrl';
+import BenefactorPrompt from '../../components/BenefactorPrompt';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -21,10 +22,22 @@ const BeneficiaryHubPage = () => {
   const [myPhoto, setMyPhoto] = useState(null);
   const [showPhotoEditor, setShowPhotoEditor] = useState(false);
   const [editingConnectionId, setEditingConnectionId] = useState(null);
+  const [showBenefactorPrompt, setShowBenefactorPrompt] = useState(false);
   const photoEditorFileRef = React.useRef(null);
 
   useEffect(() => { fetchData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Show "Create Your Own Estate" prompt for beneficiary-only users
+  useEffect(() => {
+    if (!user || loading) return;
+    const isAlsoBenefactor = user.is_also_benefactor;
+    const reminderHidden = user.hide_benefactor_reminder;
+    const sessionDismissed = sessionStorage.getItem('benefactor_prompt_dismissed') === 'true';
+    if (!isAlsoBenefactor && !reminderHidden && !sessionDismissed) {
+      setShowBenefactorPrompt(true);
+    }
+  }, [user, loading]);
 
   const fetchData = async () => {
     try {
@@ -47,6 +60,11 @@ const BeneficiaryHubPage = () => {
   };
 
   const firstName = user?.name?.split(' ')[0] || 'there';
+
+  const handleDismissBenefactorPrompt = () => {
+    sessionStorage.setItem('benefactor_prompt_dismissed', 'true');
+    setShowBenefactorPrompt(false);
+  };
 
   const handleBenefactorPhotoChange = async (file, estateId) => {
     try {
@@ -79,6 +97,9 @@ const BeneficiaryHubPage = () => {
 
   return (
     <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 animate-fade-in" data-testid="beneficiary-hub">
+      {/* Benefactor Prompt — Create Your Own Estate */}
+      {showBenefactorPrompt && <BenefactorPrompt onDismiss={handleDismissBenefactorPrompt} />}
+
       {/* Header */}
       <div className="text-center mb-8 mt-4">
         <img src="/carryon-app-logo.png" alt="CarryOn™" className="w-36 mx-auto mb-4" onError={(e) => { e.target.style.display = 'none'; }} />

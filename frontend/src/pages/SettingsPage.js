@@ -744,6 +744,41 @@ const SettingsPage = () => {
       {/* Push Notifications — benefactor/beneficiary only */}
       {!isStaff && <NotificationSettings getAuthHeaders={() => getAuthHeaders()} />}
 
+      {/* Beneficiary Preferences — beneficiary-only users */}
+      {user?.role === 'beneficiary' && !user?.is_also_benefactor && (
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle className="text-[var(--t)] flex items-center gap-2">
+              <Bell className="w-5 h-5 text-[var(--gold)]" />
+              Beneficiary Preferences
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-[var(--t)] font-medium">Create Estate Reminder</h4>
+                <p className="text-[var(--t5)] text-sm">Show a prompt to create your own estate plan when you log in</p>
+              </div>
+              <Switch
+                checked={!user?.hide_benefactor_reminder}
+                onCheckedChange={async (checked) => {
+                  try {
+                    await axios.put(`${API_URL}/auth/profile`, { hide_benefactor_reminder: !checked }, {
+                      headers: { Authorization: `Bearer ${token}` },
+                    });
+                    toast.success(checked ? 'Reminder enabled' : 'Reminder disabled');
+                    window.location.reload();
+                  } catch {
+                    toast.error('Failed to update preference');
+                  }
+                }}
+                data-testid="settings-benefactor-reminder-toggle"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Appearance */}
       <Card className="glass-card">
         <CardHeader>

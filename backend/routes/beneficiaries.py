@@ -134,7 +134,18 @@ async def create_beneficiary(data: BeneficiaryCreate, current_user: dict = Depen
     # Recalculate estate readiness (beneficiaries affect message score)
     await update_estate_readiness(data.estate_id)
 
-    return beneficiary
+    # Auto-send invitation email if beneficiary has an email
+    auto_invited = False
+    if data.email and beneficiary.invitation_token:
+        from services.invitation_sender import send_invitation_email
+        benefactor_info = {"name": current_user.get("name", ""), "first_name": current_user.get("first_name", current_user.get("name", "").split()[0] if current_user.get("name") else "")}
+        ben_dict = beneficiary.model_dump()
+        asyncio.create_task(send_invitation_email(ben_dict, benefactor_info))
+        auto_invited = True
+
+    result = beneficiary.model_dump()
+    result["auto_invited"] = auto_invited
+    return result
 
 
 @router.delete("/beneficiaries/{beneficiary_id}")

@@ -1,5 +1,6 @@
 """CarryOn™ Backend — Authentication Routes"""
 
+import asyncio
 import os
 import random
 import uuid
@@ -401,6 +402,8 @@ async def register(data: UserCreate):
             last = (ben.get("last_name") or data.last_name).strip()
             initials = ((first[0] if first else "?") + (last[0] if last else "?")).upper()
             full_name = " ".join(p for p in [first, middle, last] if p)
+            ben_email = (ben.get("email") or "").strip()
+            has_email = bool(ben_email)
             beneficiaries_to_insert.append(
                 {
                     "id": str(uuid.uuid4()),
@@ -410,11 +413,12 @@ async def register(data: UserCreate):
                     "last_name": last,
                     "name": full_name,
                     "relation": ben.get("relation", ""),
-                    "email": ben.get("email", "") or "",
+                    "email": ben_email,
                     "date_of_birth": ben.get("dob"),
                     "initials": initials,
                     "avatar_color": avatar_colors[i % len(avatar_colors)],
-                    "invitation_status": "pending" if ben.get("email") else "draft",
+                    "invitation_status": "pending" if has_email else "draft",
+                    "invitation_token": str(uuid.uuid4()) if has_email else None,
                     "is_stub": not bool(first),
                     "address_street": ben.get("address_street") if not ben.get("same_address") else data.address_street,
                     "address_city": ben.get("address_city") if not ben.get("same_address") else data.address_city,
@@ -480,6 +484,13 @@ async def register(data: UserCreate):
 
         if beneficiaries_to_insert:
             await db.beneficiaries.insert_many(beneficiaries_to_insert)
+
+            # Auto-send invitation emails to beneficiaries with email addresses
+            from services.invitation_sender import send_invitation_email
+            benefactor_info = {"name": full_name, "first_name": data.first_name}
+            for ben_doc in beneficiaries_to_insert:
+                if ben_doc.get("email") and ben_doc.get("invitation_token"):
+                    asyncio.create_task(send_invitation_email(ben_doc, benefactor_info))
 
         # Seed 5 default Immediate Action Checklist items
         default_checklist = [
@@ -665,7 +676,6 @@ async def register(data: UserCreate):
     logger.info(f"Registration OTP sent for {data.email}")
 
     # NOTIFICATION: New user signup → founder
-    import asyncio
     from services.notifications import notify
 
     asyncio.create_task(
@@ -883,6 +893,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "username": user_doc.get("username", ""),
         "is_beta_tester": user_doc.get("is_beta_tester", False),
         "beta_accepted": bool(user_doc.get("beta_accepted_at")),
+        "hide_benefactor_reminder": user_doc.get("hide_benefactor_reminder", False),
     }
 
 
@@ -916,6 +927,7 @@ async def update_profile(body: dict, current_user: dict = Depends(get_current_us
         "address_city",
         "address_state",
         "address_zip",
+        "hide_benefactor_reminder",
     }
     update = {k: v for k, v in body.items() if k in allowed_fields}
     if not update:
