@@ -133,23 +133,27 @@ User pushes to GitHub → Railway builds backend → Vercel builds frontend → 
 - Family Plan: $1/mo discount per bundled benefactor, $3.49 flat beneficiary rate
 - Beneficiary pricing locked to benefactor's >50% subscription tier after transition
 - Floor-exempt tiers: military, hospice, new_adult
+- **Per-User Beta Program**: Admin can toggle beta for individual users. Beta users have no subscription fees. On deactivation, 30-day grace period starts. Beta users see a one-time welcome modal and a draggable floating bug report button on every page. Admin reviews tickets in the "Beta Testing" tab.
 
 ## Prioritized Backlog
 ### P0 - Active
-- MongoDB upgrade walkthrough (M10 → M30) — user performing now
-- Capgo setup walkthrough — user needs to create account
+- AWS S3 configuration for 10K users (user verification pending)
 
 ### P1 - Upcoming
 - Share Extension Setup (instructions in /app/memory/SHARE_EXTENSION_SETUP.md)
 - Capacitor Live Updates for iOS (plan in /app/memory/CAPACITOR_LIVE_UPDATES.md)
-- "Create New Estate" button in estate picker for multi-estate users
+- Refactor LoginPage.js into smaller components
 
 ### P2 - Future
 - Twilio SMS OTP Integration (blocked on A2P 10DLC approval)
 - Scalability enhancements (CDN for S3, horizontal scaling)
 - Settings page "flash" glitch investigation
+- Video playback on Milestone Page investigation
 - Resend upgrade Pro → Scale (before 5K users)
-- xAI Management API key integration (optional, for direct balance check)
+- Refactor integrations data from staff_tools.py to config/DB
+
+### Completed (March 18, 2026 — Session 7)
+- **Per-User Beta Feature Revamp**: Replaced global beta switch with per-user beta toggle. Admin can activate/deactivate beta for any user via the Users tab (Zap icon). On activation: no subscription fees + welcome modal on first login + draggable floating bug report button (yellow square with dark blue bug icon) on every page. On deactivation: 30-day grace period starts automatically. New "Beta Testing" admin tab lists all submitted tickets with auto-numbering and status management (Accept/Complete/Reject). Backend: 6 new endpoints in `/app/backend/routes/beta.py`. Frontend: 3 new components (BetaWelcomeModal, BetaFeedbackButton, BetaTestingTab). Testing: 15/15 backend tests passed, 100% frontend verified.
 
 ## Test Credentials
 - Admin: info@carryon.us / Demo1234!
