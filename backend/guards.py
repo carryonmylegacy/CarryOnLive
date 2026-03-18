@@ -32,7 +32,11 @@ async def get_subscription_access(current_user: dict = Depends(get_current_user)
     if override and override.get("free_access"):
         return {"has_access": True, "reason": "free_access", "is_dormant": False, "is_grace": False}
 
-    # Check beta mode first
+    # Check per-user beta tester status
+    if user.get("is_beta_tester"):
+        return {"has_access": True, "reason": "beta", "is_dormant": False, "is_grace": False}
+
+    # Check global beta mode (legacy fallback)
     settings = await db.subscription_settings.find_one({"_id": "global"}, {"_id": 0})
     if settings and settings.get("beta_mode"):
         return {"has_access": True, "reason": "beta", "is_dormant": False, "is_grace": False}

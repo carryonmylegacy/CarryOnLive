@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Search, Users, Trash2, Loader2, ChevronDown, ChevronRight, KeyRound, Unlock, GitBranch, User, AlertTriangle } from 'lucide-react';
+import { Search, Users, Trash2, Loader2, ChevronDown, ChevronRight, KeyRound, Unlock, GitBranch, User, AlertTriangle, Zap } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from '../../utils/toast';
@@ -33,6 +33,19 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
   const [deletePassword, setDeletePassword] = useState('');
   const [showDeletePw, setShowDeletePw] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [togglingBeta, setTogglingBeta] = useState(null);
+
+  const handleToggleBeta = async (userId, currentBeta) => {
+    setTogglingBeta(userId);
+    try {
+      await axios.put(`${API_URL}/admin/user/${userId}/beta`, { is_beta: !currentBeta }, getAuthHeaders());
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_beta_tester: !currentBeta } : u));
+      toast.success(!currentBeta ? 'Beta mode activated' : 'Beta mode deactivated — 30-day grace period started');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to toggle beta');
+    }
+    setTogglingBeta(null);
+  };
 
   const filteredUsers = users
     .filter(u => operatorMode ? (u.role !== 'admin' && u.role !== 'operator') : true)
@@ -176,9 +189,26 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                 DORMANT
               </span>
             )}
+            {u.is_beta_tester && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold"
+                style={{ background: 'rgba(251,191,36,0.15)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.3)' }}
+                data-testid={`beta-badge-${u.id}`}>
+                BETA
+              </span>
+            )}
           </div>
           {u.id !== currentUserId && (
             <div className="flex items-center gap-0.5 flex-shrink-0">
+              {(u.role === 'benefactor' || u.role === 'beneficiary') && !operatorMode && (
+                <Button variant="ghost" size="sm"
+                  className={`h-8 w-8 p-0 ${u.is_beta_tester ? 'text-[#fbbf24]' : 'text-[var(--t5)]'}`}
+                  onClick={() => handleToggleBeta(u.id, u.is_beta_tester)}
+                  disabled={togglingBeta === u.id}
+                  title={u.is_beta_tester ? 'Remove from Beta' : 'Add to Beta'}
+                  data-testid={`beta-toggle-${u.id}`}>
+                  {togglingBeta === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                </Button>
+              )}
               {(u.role === 'benefactor' || u.role === 'beneficiary') && (
                 <Button variant="ghost" size="sm" className="text-[var(--t5)] h-8 w-8 p-0"
                   onClick={() => { setUnlockUserId(unlockUserId === u.id ? null : u.id); setMasterKeyInput(''); }}

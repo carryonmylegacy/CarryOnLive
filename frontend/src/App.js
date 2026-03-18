@@ -162,6 +162,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     && !isOnCreateEstate
     && !isOnSettings
     && !subscriptionStatus?.beta_mode
+    && !subscriptionStatus?.is_beta_tester
     && !subscriptionStatus?.has_active_subscription;
 
   if (needsSubscription && !showPaywall) {

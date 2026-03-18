@@ -2,17 +2,34 @@ import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
+import { useAuth } from '../../contexts/AuthContext';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import PullToRefreshIndicator from '../PullToRefreshIndicator';
 import { haptics } from '../../utils/haptics';
+import BetaFeedbackButton from '../BetaFeedbackButton';
+import BetaWelcomeModal from '../BetaWelcomeModal';
 
 const GuardianPage = lazy(() => import('../../pages/GuardianPage'));
 
 const DashboardLayout = () => {
   const location = useLocation();
+  const { user, subscriptionStatus, refreshUser } = useAuth();
   const isOnGuardian = location.pathname === '/guardian';
   const [guardianMounted, setGuardianMounted] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('carryon_sidebar_collapsed') === 'true');
+  const [betaAccepted, setBetaAccepted] = useState(true); // default true to avoid flash
+
+  // Check if user is a beta tester who hasn't accepted yet
+  const isBetaTester = user?.is_beta_tester || subscriptionStatus?.is_beta_tester;
+  const hasBetaAccepted = user?.beta_accepted || subscriptionStatus?.beta_accepted;
+
+  useEffect(() => {
+    if (isBetaTester && !hasBetaAccepted) {
+      setBetaAccepted(false);
+    } else {
+      setBetaAccepted(true);
+    }
+  }, [isBetaTester, hasBetaAccepted]);
 
   useEffect(() => {
     if (isOnGuardian) setGuardianMounted(true);
@@ -97,6 +114,14 @@ const DashboardLayout = () => {
           </Suspense>
         </div>
       )}
+
+      {/* Beta Tester: Welcome Modal (one-time) */}
+      {isBetaTester && !betaAccepted && (
+        <BetaWelcomeModal onAccepted={() => { setBetaAccepted(true); refreshUser(); }} />
+      )}
+
+      {/* Beta Tester: Floating Feedback Button */}
+      {isBetaTester && betaAccepted && <BetaFeedbackButton />}
     </div>
   );
 };

@@ -881,6 +881,8 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "address_zip": user_doc.get("address_zip", "") or ben_fallback.get("address_zip", ""),
         "address_line2": user_doc.get("address_line2", ""),
         "username": user_doc.get("username", ""),
+        "is_beta_tester": user_doc.get("is_beta_tester", False),
+        "beta_accepted": bool(user_doc.get("beta_accepted_at")),
     }
 
 

@@ -64,13 +64,14 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
     verification = await db.tier_verifications.find_one({"user_id": current_user["id"]}, {"_id": 0})
 
     is_beta = settings.get("beta_mode", True)
+    is_beta_tester = (user_doc or {}).get("is_beta_tester", False)
     has_free_access = override and override.get("free_access", False)
     has_active_sub = sub and sub.get("status") in ("active", "past_due")
     is_grace = sub and sub.get("status") == "past_due"
     is_dormant = sub and sub.get("status") == "dormant"
 
-    # User has access if: beta mode OR free override OR active subscription OR trial active
-    has_access = is_beta or has_free_access or has_active_sub or trial.get("trial_active", False)
+    # User has access if: beta mode OR per-user beta OR free override OR active subscription OR trial active
+    has_access = is_beta or is_beta_tester or has_free_access or has_active_sub or trial.get("trial_active", False)
 
     # Determine eligible special tiers based on DOB
     eligible_tiers = []
@@ -165,7 +166,9 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
         "subscription": sub,
         "trial": trial,
         "beta_mode": is_beta,
-        "free_access": is_beta or has_free_access,
+        "is_beta_tester": is_beta_tester,
+        "beta_accepted": bool((user_doc or {}).get("beta_accepted_at")),
+        "free_access": is_beta or is_beta_tester or has_free_access,
         "custom_discount": override.get("custom_discount", 0) if override else 0,
         "has_active_subscription": has_access,
         "needs_subscription": not has_access,

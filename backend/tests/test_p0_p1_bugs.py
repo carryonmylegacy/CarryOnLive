@@ -10,7 +10,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://founder-ops-4.preview.emergentagent.com")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://feature-showcase-102.preview.emergentagent.com")
 
 # Test credentials - using the founder account
 BENEFACTOR_EMAIL = "founder@carryon.us"
