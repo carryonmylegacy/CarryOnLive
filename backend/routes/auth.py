@@ -487,6 +487,7 @@ async def register(data: UserCreate):
 
             # Auto-send invitation emails to beneficiaries with email addresses
             from services.invitation_sender import send_invitation_email
+
             benefactor_info = {"name": full_name, "first_name": data.first_name}
             for ben_doc in beneficiaries_to_insert:
                 if ben_doc.get("email") and ben_doc.get("invitation_token"):

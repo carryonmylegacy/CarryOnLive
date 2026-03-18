@@ -97,12 +97,14 @@ async def send_invitation_email(beneficiary: dict, benefactor: dict):
             </div>
             """
 
-            resend.Emails.send({
-                "from": SENDER_EMAIL,
-                "to": email,
-                "subject": f"{benefactor_name} has added you to their CarryOn™ Estate",
-                "html": email_html,
-            })
+            resend.Emails.send(
+                {
+                    "from": SENDER_EMAIL,
+                    "to": email,
+                    "subject": f"{benefactor_name} has added you to their CarryOn™ Estate",
+                    "html": email_html,
+                }
+            )
             logger.info(f"Invitation email sent to {email}")
         else:
             logger.info(f"[DEV MODE] Invitation would be sent to {email} with token {invitation_token}")
@@ -114,10 +116,12 @@ async def send_invitation_email(beneficiary: dict, benefactor: dict):
     now = datetime.now(timezone.utc).isoformat()
     await db.beneficiaries.update_one(
         {"id": beneficiary["id"]},
-        {"$set": {
-            "invitation_status": "sent",
-            "invitation_token": invitation_token,
-            "invitation_sent_at": now,
-        }},
+        {
+            "$set": {
+                "invitation_status": "sent",
+                "invitation_token": invitation_token,
+                "invitation_sent_at": now,
+            }
+        },
     )
     return True

@@ -3,7 +3,6 @@
 Per-user beta toggle, feedback ticket submission, and admin management.
 """
 
-import os
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
@@ -40,12 +39,14 @@ async def toggle_user_beta(user_id: str, data: BetaToggleRequest, current_user: 
         # Activate beta for this user
         await db.users.update_one(
             {"id": user_id},
-            {"$set": {
-                "is_beta_tester": True,
-                "beta_activated_at": now,
-                "beta_accepted_at": None,  # Reset so they see the welcome popup
+            {
+                "$set": {
+                    "is_beta_tester": True,
+                    "beta_activated_at": now,
+                    "beta_accepted_at": None,  # Reset so they see the welcome popup
+                },
+                "$unset": {"beta_deactivated_at": ""},
             },
-            "$unset": {"beta_deactivated_at": ""}},
         )
         logger.info(f"Beta activated for user {user.get('name')} ({user_id})")
     else:
@@ -53,11 +54,13 @@ async def toggle_user_beta(user_id: str, data: BetaToggleRequest, current_user: 
         grace_end = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
         await db.users.update_one(
             {"id": user_id},
-            {"$set": {
-                "is_beta_tester": False,
-                "beta_deactivated_at": now,
-                "trial_ends_at": grace_end,
-            }},
+            {
+                "$set": {
+                    "is_beta_tester": False,
+                    "beta_deactivated_at": now,
+                    "trial_ends_at": grace_end,
+                }
+            },
         )
         logger.info(f"Beta deactivated for user {user.get('name')} ({user_id}), grace period until {grace_end}")
 
@@ -83,7 +86,7 @@ async def get_beta_users(current_user: dict = Depends(get_current_user)):
 @router.post("/beta/accept")
 async def accept_beta_terms(current_user: dict = Depends(get_current_user)):
     """User accepts beta testing terms — marks popup as seen."""
-    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "is_beta_tester": 1})
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "id": 1, "is_beta_tester": 1})
     if not user or not user.get("is_beta_tester"):
         raise HTTPException(status_code=400, detail="You are not a beta tester")
 
@@ -106,7 +109,9 @@ async def submit_beta_feedback(
     current_user: dict = Depends(get_current_user),
 ):
     """Submit a beta feedback/bug report ticket."""
-    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "is_beta_tester": 1, "name": 1, "email": 1})
+    user = await db.users.find_one(
+        {"id": current_user["id"]}, {"_id": 0, "id": 1, "is_beta_tester": 1, "name": 1, "email": 1}
+    )
     if not user or not user.get("is_beta_tester"):
         raise HTTPException(status_code=403, detail="Only beta testers can submit feedback")
 
@@ -136,6 +141,7 @@ async def submit_beta_feedback(
         try:
             file_data = await attachment.read()
             import base64
+
             ticket["attachment_name"] = attachment.filename
             ticket["attachment_data"] = base64.b64encode(file_data).decode("utf-8")
             ticket["attachment_content_type"] = attachment.content_type
@@ -156,10 +162,14 @@ async def get_beta_tickets(current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
 
-    tickets = await db.beta_tickets.find(
-        {},
-        {"_id": 0},
-    ).sort("created_at", -1).to_list(10000)
+    tickets = (
+        await db.beta_tickets.find(
+            {},
+            {"_id": 0},
+        )
+        .sort("created_at", -1)
+        .to_list(10000)
+    )
     return tickets
 
 
@@ -168,7 +178,9 @@ class TicketStatusUpdate(BaseModel):
 
 
 @router.put("/admin/beta-tickets/{ticket_id}/status")
-async def update_ticket_status(ticket_id: str, data: TicketStatusUpdate, current_user: dict = Depends(get_current_user)):
+async def update_ticket_status(
+    ticket_id: str, data: TicketStatusUpdate, current_user: dict = Depends(get_current_user)
+):
     """Update beta ticket status — admin only."""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
