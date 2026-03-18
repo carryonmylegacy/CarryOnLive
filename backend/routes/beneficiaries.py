@@ -250,10 +250,26 @@ async def delete_beneficiary(
         # 8. Clean up beneficiary grace periods
         await db.beneficiary_grace_periods.delete_many({"beneficiary_id": bid})
 
-        # 9. Delete the beneficiary record
+        # 9. Clean up DTS tasks referencing this beneficiary
+        if estate_id:
+            ben_name = b.get("name", "")
+            await db.dts_tasks.update_many(
+                {"estate_id": estate_id, "beneficiary": ben_name},
+                {"$set": {"beneficiary": None}},
+            )
+            await db.dts_tasks.update_many(
+                {"estate_id": estate_id, "disclose_to": bid},
+                {"$pull": {"disclose_to": bid}},
+            )
+
+        # 10. Clean up unread notifications for this beneficiary
+        if b.get("user_id"):
+            await db.notifications.delete_many({"user_id": b["user_id"], "read": False})
+
+        # 11. Delete the beneficiary record
         await db.beneficiaries.delete_one({"id": bid})
 
-        # 10. Log activity
+        # 12. Log activity
         if estate_id:
             await log_activity(
                 estate_id=estate_id,
