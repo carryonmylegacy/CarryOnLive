@@ -15,8 +15,7 @@ import { Skeleton } from '../components/ui/skeleton';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import DateMaskInput from '../components/DateMaskInput';
 import { resolvePhotoUrl } from '../utils/photoUrl';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 const relations = [
   'Spouse',

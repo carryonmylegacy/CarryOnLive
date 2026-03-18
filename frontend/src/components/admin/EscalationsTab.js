@@ -3,8 +3,7 @@ import axios from 'axios';
 import { AlertTriangle, Plus, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const PRIORITY_STYLES = {
   low: { color: '#64748B', bg: 'rgba(100,116,139,0.1)', label: 'Low' },

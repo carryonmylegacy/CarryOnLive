@@ -4,8 +4,7 @@
  * Web/PWA continues using Stripe — this is iOS-only.
  */
 import { isNative } from './native';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 // Product IDs must match exactly what's in App Store Connect
 export const IAP_PRODUCTS = {

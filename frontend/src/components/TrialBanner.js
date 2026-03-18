@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { Clock, ChevronRight, X } from 'lucide-react';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 export default function TrialBanner({ onUpgrade }) {
   const { token } = useAuth();

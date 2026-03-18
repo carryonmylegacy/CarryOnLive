@@ -1,3 +1,4 @@
+import { API_URL } from '../config';
 /**
  * CarryOn™ Passkey Service — WebAuthn / FIDO2
  *
@@ -5,8 +6,6 @@
  * Works on both native iOS (via Safari WebView) and web browsers.
  * Backend endpoints: /api/auth/webauthn/{register-options,register,login-options,login}
  */
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export function isPasskeySupported() {
   return !!(window.PublicKeyCredential && typeof window.PublicKeyCredential === 'function');

@@ -6,8 +6,7 @@ import { Label } from '../ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { toast } from '../../utils/toast';
 import axios from 'axios';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const LOCKABLE_SECTIONS = {
   sdv: { name: 'Secure Document Vault', abbr: 'SDV' },

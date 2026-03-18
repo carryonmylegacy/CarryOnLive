@@ -10,8 +10,7 @@ import OrbitVisualization, { getOrbitLevel, orbitColors } from '../../components
 import EmergencyAccessPanel from '../../components/beneficiary/EmergencyAccessPanel';
 import { resolvePhotoUrl } from '../../utils/photoUrl';
 import BenefactorPrompt from '../../components/BenefactorPrompt';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const BeneficiaryHubPage = () => {
   const { user, getAuthHeaders } = useAuth();

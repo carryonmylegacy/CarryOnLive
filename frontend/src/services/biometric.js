@@ -1,3 +1,4 @@
+import { API_URL } from '../config';
 /**
  * CarryOn™ Biometric Service — Secure Implementation
  * 
@@ -40,7 +41,7 @@ export const authenticateWithBiometric = async () => {
   const { NativeBiometric } = await import('@capgo/capacitor-native-biometric');
   await NativeBiometric.verifyIdentity({ reason: 'Sign in to CarryOn', title: 'CarryOn' });
   const creds = await NativeBiometric.getCredentials({ server: 'carryon.us' });
-  const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+  
   const res = await fetch(`${API_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

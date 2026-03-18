@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Users, UserPlus, ArrowRight, Clock, CreditCard, Loader2, RefreshCw } from 'lucide-react';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 export const LaunchMetricsTab = ({ getAuthHeaders }) => {
   const [metrics, setMetrics] = useState(null);

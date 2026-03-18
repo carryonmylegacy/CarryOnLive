@@ -72,9 +72,8 @@ import {
 } from 'lucide-react';
 
 import { toast } from '../utils/toast';
+import { API_URL } from '../config';
 // removed unused SectionLock from '../components/security/SectionLock';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const suggestedQuestions = [
   "What documents am I missing for a complete estate plan?",

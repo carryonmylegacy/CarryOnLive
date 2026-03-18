@@ -7,8 +7,7 @@ import {
   ChevronRight, X, Sparkles, Check, KeyRound, ArrowLeftRight
 } from 'lucide-react';
 import { Progress } from '../components/ui/progress';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 const STEP_CONFIG = {
   create_message: { icon: MessageSquare, color: '#8b5cf6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.2)', route: '/messages', label: 'Leave a Milestone Message', desc: 'Record a message for your loved ones — edit anytime' },

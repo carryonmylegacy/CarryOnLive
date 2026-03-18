@@ -10,8 +10,7 @@ import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from '../../utils/toast';
 import { useAuth } from '../../contexts/AuthContext';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const typeIcons = { delivery: Package, account_closure: Lock, financial: DollarSign, communication: Mail, destruction: Flame };
 const confColors = { full: '#F98080', partial: '#FFCB57', timed: '#7AABFD' };

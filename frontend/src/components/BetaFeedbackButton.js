@@ -5,8 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { X, Send, Paperclip, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from '../utils/toast';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 /* ---- Page name map ---- */
 const PAGE_NAMES = {

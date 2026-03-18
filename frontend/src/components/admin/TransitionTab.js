@@ -7,8 +7,7 @@ import { Input } from '../ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { toast } from '../../utils/toast';
 import { useAuth } from '../../contexts/AuthContext';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 export const TransitionTab = ({ getAuthHeaders, onStatsChange }) => {
   const { user } = useAuth();
@@ -140,7 +139,6 @@ export const TransitionTab = ({ getAuthHeaders, onStatsChange }) => {
       toast.error(err.response?.data?.detail || 'Failed to restore');
     }
   };
-
 
   if (loading) return <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-[var(--gold)]" /></div>;
 

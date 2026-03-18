@@ -5,8 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { FileText, Upload, Shield, ChevronLeft, CheckCircle2, AlertTriangle, Loader2, Lock, Clock, Search } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { toast } from '../../utils/toast';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const STATUS_CONFIG = {
   pending: { label: 'Pending Review', color: '#F59E0B', icon: Clock, description: 'Your death certificate has been received and is waiting for a TVT member to begin review.' },

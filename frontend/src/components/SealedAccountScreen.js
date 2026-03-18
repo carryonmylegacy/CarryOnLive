@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Shield, Phone, Mail, MessageSquare, ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 /**
  * Sealed Account Screen — shown when a transitioned benefactor tries to log in.

@@ -12,8 +12,8 @@ import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from 'recharts';
 import { BarChart3, PieChart as PieIcon } from 'lucide-react';
+import { API_URL } from '../../config';
 
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const CHART_COLORS = ['#d4af37', '#60A5FA', '#22C993', '#B794F6', '#F59E0B', '#ec4899'];
 
 const CustomTooltip = ({ active, payload, label }) => {

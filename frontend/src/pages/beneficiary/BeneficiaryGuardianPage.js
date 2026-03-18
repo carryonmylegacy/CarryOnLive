@@ -8,8 +8,7 @@ import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { ScrollArea } from '../../components/ui/scroll-area';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const BeneficiaryGuardianPage = () => {
   const { user, getAuthHeaders } = useAuth();

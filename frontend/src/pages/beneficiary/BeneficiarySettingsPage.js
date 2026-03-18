@@ -11,8 +11,7 @@ import { Separator } from '../../components/ui/separator';
 import { SubscriptionManagement } from '../../components/settings/SubscriptionManagement';
 import NotificationSettings from '../../components/NotificationSettings';
 import { PhotoPicker } from '../../components/PhotoPicker';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const BeneficiarySettingsPage = () => {
   const { user, logout, getAuthHeaders, subscriptionStatus, refreshSubscription } = useAuth();

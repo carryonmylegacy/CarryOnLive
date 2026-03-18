@@ -4,8 +4,7 @@ import { Bug, Loader2, Check, X, Clock, ChevronDown, ChevronUp, Image } from 'lu
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { toast } from '../../utils/toast';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const STATUS_CONFIG = {
   open: { label: 'Open', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },

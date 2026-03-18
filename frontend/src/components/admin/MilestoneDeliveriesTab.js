@@ -7,8 +7,7 @@ import {
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { toast } from '../../utils/toast';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const statusConfig = {
   pending_review: { label: 'Pending Review', color: '#F59E0B', icon: Clock },

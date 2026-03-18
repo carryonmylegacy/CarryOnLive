@@ -7,8 +7,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Skeleton } from '../ui/skeleton';
 import { toast } from '../../utils/toast';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 export const DevSwitcherTab = ({ users, getAuthHeaders }) => {
   const [config, setConfig] = useState({

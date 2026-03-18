@@ -4,8 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { isNative } from '../services/native';
 import axios from 'axios';
 import { toast } from '../utils/toast';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 // Accepted file types — PDFs and images only (no editable formats)
 const ACCEPTED_TYPES = [

@@ -3,8 +3,7 @@ import axios from 'axios';
 import { Activity, Database, Shield, CheckCircle2, Loader2, RefreshCw, Zap, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { toast } from '../../utils/toast';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const XAICreditsCard = ({ getAuthHeaders }) => {
   const [credits, setCredits] = useState(null);

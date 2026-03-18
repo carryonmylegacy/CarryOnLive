@@ -5,8 +5,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from '../../utils/toast';
 import { DeleteUserModal } from './DeleteUserModal';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const roleColors = {
   benefactor: { bg: 'rgba(37,99,235,0.1)', color: '#60A5FA' },
@@ -631,7 +630,6 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
       </div>
     );
   };
-
 
   return (
     <div className="space-y-4" data-testid="admin-users-tab">

@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { FileText, Upload, Loader2, X } from 'lucide-react';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 const ShareUploadModal = ({ pendingShare, categories, uploading, onUpload, onCancel }) => {
   const { token } = useAuth();

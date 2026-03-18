@@ -4,8 +4,7 @@ import { StickyNote, Plus, Check, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
 import { useAuth } from '../../contexts/AuthContext';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const CATEGORY_STYLES = {
   general: { color: '#3B82F6', bg: 'rgba(59,130,246,0.1)', label: 'General' },

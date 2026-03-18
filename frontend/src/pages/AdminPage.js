@@ -18,7 +18,6 @@ import { TeamActivitySection } from '../components/admin/TeamActivitySection';
 import { ActionRequired, PlatformOverview } from '../components/admin/PlatformOverview';
 import { CodeHealthTile } from '../components/admin/CodeHealthTile';
 
-
 import { UsersTab } from '../components/admin/UsersTab';
 import { TransitionTab } from '../components/admin/TransitionTab';
 import { DTSTab } from '../components/admin/DTSTab';
@@ -45,8 +44,7 @@ import { TrialUsersTab } from '../components/admin/TrialUsersTab';
 import { EstateHealthTab } from '../components/admin/EstateHealthTab';
 import { IntegrationsTab } from '../components/admin/IntegrationsTab';
 import { BetaTestingTab } from '../components/admin/BetaTestingTab';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 const TAB_CONFIG = [
   { key: 'users', label: 'Users', icon: Users, path: '/admin/users' },

@@ -4,8 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
 import { Heart, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const STEPS = [
   { key: 'submitted', label: 'Certificate Submitted', desc: 'Your death certificate has been securely uploaded and is waiting for a Transition Verification Team member.' },

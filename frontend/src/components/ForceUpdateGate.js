@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
+import { BASE_URL as API_URL } from '../config';
 
 /**
  * CarryOn — Force Update Gate
@@ -12,7 +13,7 @@ import { AlertTriangle } from 'lucide-react';
  */
 
 const APP_VERSION = process.env.REACT_APP_VERSION || '1.0.0';
-const API_URL = process.env.REACT_APP_BACKEND_URL;
+
 const CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
 function compareVersions(a, b) {

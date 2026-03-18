@@ -1,3 +1,4 @@
+import { BASE_URL as API_URL } from '../config';
 /**
  * CarryOn — Client Error Reporter
  *
@@ -5,8 +6,6 @@
  * to the backend for monitoring. Lightweight Sentry alternative.
  * Backend endpoint: POST /api/errors/report (already exists).
  */
-
-const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 let initialized = false;
 const reported = new Set(); // Dedupe within session

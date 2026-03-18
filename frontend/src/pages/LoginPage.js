@@ -9,8 +9,7 @@ import { toast } from '../utils/toast';
 import { isNative } from '../services/native';
 import SealedAccountScreen from '../components/SealedAccountScreen';
 import { haptics } from '../utils/haptics';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 /* ─── scroll-reveal hook ─── */
 const useReveal = (threshold = 0.15) => {

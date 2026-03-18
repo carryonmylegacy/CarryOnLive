@@ -10,8 +10,7 @@ import { Separator } from './ui/separator';
 import { toast } from '../utils/toast';
 import { useSectionLock } from './security/SectionLock';
 import axios from 'axios';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 const SECTIONS = [
   { id: 'sdv', name: 'Secure Document Vault', abbr: 'SDV' },

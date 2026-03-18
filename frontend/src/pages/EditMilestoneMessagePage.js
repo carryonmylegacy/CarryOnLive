@@ -34,8 +34,7 @@ import { toast } from '../utils/toast';
 import { cachedGet } from '../utils/apiCache';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { resolvePhotoUrl } from '../utils/photoUrl';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 const eventTypes = [
   { value: 'birthday', label: 'Birthday', icon: Gift },

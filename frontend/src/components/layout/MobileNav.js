@@ -34,8 +34,8 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import NotificationBell from '../NotificationBell';
 import { toast } from '../../utils/toast';
+import { API_URL } from '../../config';
 
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
 const MobileOtpToggle = () => {
@@ -107,7 +107,6 @@ const DebugValues = () => {
       document.body.removeChild(divBottom);
     }, 100);
   }, []);
-
 
   const row = (label, value, highlight) => (
     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>

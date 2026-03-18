@@ -4,8 +4,7 @@ import { Activity, UserPlus, FolderLock, FileUp, Shield, Loader2, Search } from 
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 export const ActivityTab = ({ getAuthHeaders }) => {
   const [activityLog, setActivityLog] = useState([]);

@@ -15,8 +15,7 @@ import { toast } from '../utils/toast';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import DateMaskInput from '../components/DateMaskInput';
 import axios from 'axios';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 const suffixOptions = [
   { value: 'none', label: 'None' },

@@ -5,8 +5,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from '../../utils/toast';
 import { useAuth } from '../../contexts/AuthContext';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 export const SupportTab = ({ getAuthHeaders }) => {
   const { user } = useAuth();

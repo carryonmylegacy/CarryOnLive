@@ -6,8 +6,7 @@ import { Lock, Shield, FileText, Upload, ChevronLeft, MessageCircle } from 'luci
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Skeleton } from '../../components/ui/skeleton';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const PreTransitionPage = () => {
   const { getAuthHeaders } = useAuth();

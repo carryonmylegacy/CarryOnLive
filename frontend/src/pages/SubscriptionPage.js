@@ -6,8 +6,7 @@ import FamilyPlanSettings from '../components/FamilyPlanSettings';
 import SubscriptionPaywall from '../components/SubscriptionPaywall';
 import { Loader2, CheckCircle2 } from 'lucide-react';
 import { toast } from '../utils/toast';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 const SubscriptionPage = () => {
   const { subscriptionStatus, refreshSubscription, token } = useAuth();

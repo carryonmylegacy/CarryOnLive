@@ -5,8 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { FolderLock, Lock, FileText, Search, ChevronLeft, Download, Eye, Loader2 } from 'lucide-react';
 import { Skeleton } from '../../components/ui/skeleton';
 import PDFViewerModal from '../../components/PDFViewerModal';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const BeneficiaryVaultPage = () => {
   const { getAuthHeaders } = useAuth();

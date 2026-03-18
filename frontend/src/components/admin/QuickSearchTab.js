@@ -3,8 +3,7 @@ import axios from 'axios';
 import { Search, Users, Headphones, Shield, ShieldCheck, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const TYPE_CONFIG = {
   user: { icon: Users, color: '#3B82F6', label: 'User' },

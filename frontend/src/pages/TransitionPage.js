@@ -18,8 +18,7 @@ import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
 import { toast } from '../utils/toast';
 import { Skeleton } from '../components/ui/skeleton';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 const TransitionPage = () => {
   const { getAuthHeaders } = useAuth();

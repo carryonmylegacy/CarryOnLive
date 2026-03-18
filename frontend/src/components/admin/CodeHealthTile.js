@@ -5,8 +5,7 @@ import {
   CheckCircle2, RefreshCw, Loader2, TrendingUp
 } from 'lucide-react';
 import { toast } from '../../utils/toast';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 export const CodeHealthTile = ({ getAuthHeaders }) => {
   const [health, setHealth] = useState(null);

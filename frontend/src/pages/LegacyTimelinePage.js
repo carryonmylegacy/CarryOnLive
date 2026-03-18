@@ -9,8 +9,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 const CATEGORY_CONFIG = {
   milestone:  { icon: Shield,        color: '#d4af37', bg: 'rgba(212,175,55,0.12)',  label: 'Milestones' },

@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { AlertTriangle, Shield, Volume2 } from 'lucide-react';
 import { Button } from './ui/button';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 /**
  * Generate a repeating alert tone using Web Audio API.

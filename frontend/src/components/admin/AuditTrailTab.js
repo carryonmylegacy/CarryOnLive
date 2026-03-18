@@ -4,8 +4,7 @@ import { Shield, Loader2, Search, ChevronLeft, ChevronRight } from 'lucide-react
 import { Card, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const SEVERITY_STYLE = {
   info: { bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)', color: '#60A5FA' },

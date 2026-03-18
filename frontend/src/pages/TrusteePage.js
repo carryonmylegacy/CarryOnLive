@@ -47,6 +47,7 @@ import {
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
 import { resolvePhotoUrl } from '../utils/photoUrl';
+import { API_URL } from '../config';
 
 // Initialize Stripe with test key
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
@@ -81,8 +82,6 @@ const HOW_IT_WORKS = [
   '6. Task executes after verified transition',
   '7. All records permanently destroyed',
 ];
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 // Stripe Card Element styles
 const cardElementOptions = {

@@ -10,8 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from '../../utils/toast';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const TIER_STYLES = {
   ben_premium: { accent: '#d4af37', icon: Crown, label: 'Best Value' },
@@ -390,7 +389,6 @@ export const SubscriptionManagement = ({
     }
     setChangingBilling(false);
   };
-
 
   const handleCancelSubscription = async () => {
     setCancellingPlan(true);

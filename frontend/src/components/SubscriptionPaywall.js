@@ -9,8 +9,7 @@ import { Button } from './ui/button';
 import { toast } from '../utils/toast';
 import { isNative, platform } from '../services/native';
 import { isIAPAvailable, purchaseIAP, restoreIAPPurchases, IAP_PRODUCTS } from '../services/iap';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 const TIER_ICONS = {
   premium: Crown,

@@ -32,8 +32,7 @@ import { Separator } from '../components/ui/separator';
 import { toast } from '../utils/toast';
 import NotificationSettings from '../components/NotificationSettings';
 import { PhotoPicker } from '../components/PhotoPicker';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 const SettingsPage = () => {
   const { user, logout, token } = useAuth();
@@ -207,7 +206,6 @@ const SettingsPage = () => {
       toast.error(err.response?.data?.detail || 'Failed to update profile');
     } finally { setProfileSaving(false); }
   };
-
 
   const handlePasskeyToggle = async () => {
     if (passkeyRegistered) {
@@ -646,8 +644,6 @@ const SettingsPage = () => {
           </div>
         </CardContent>
       </Card>
-
-
 
       {/* Estate Photo — benefactor only */}
       {(user?.role === 'benefactor' || user?.is_also_benefactor) && estateId && (

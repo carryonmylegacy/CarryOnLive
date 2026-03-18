@@ -9,8 +9,7 @@ import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from '../../utils/toast';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const statusConfig = {
   healthy: { color: '#22C993', bg: 'rgba(34,201,147,0.08)', border: 'rgba(34,201,147,0.25)', label: 'Healthy' },

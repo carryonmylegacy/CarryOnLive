@@ -6,8 +6,7 @@ import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { toast } from '../utils/toast';
 import axios from 'axios';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 const FamilyPlanSettings = ({ getAuthHeaders }) => {
   const [status, setStatus] = useState(null);

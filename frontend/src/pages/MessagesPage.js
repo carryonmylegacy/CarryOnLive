@@ -41,8 +41,7 @@ import { Skeleton } from '../components/ui/skeleton';
 import { Checkbox } from '../components/ui/checkbox';
 import SlidePanel from '../components/SlidePanel';
 import { resolvePhotoUrl } from '../utils/photoUrl';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 const VideoPlaybackModal = ({ url, onClose }) => {
   const videoRef = React.useRef(null);
@@ -105,7 +104,6 @@ const VideoPlaybackModal = ({ url, onClose }) => {
     </div>
   );
 };
-
 
 const triggerIcons = {
   immediate: Send,
@@ -565,7 +563,6 @@ const MessagesPage = () => {
       setLoadingPlayback(false);
     }
   };
-
 
   const filteredMessages = activeTab === 'all' 
     ? messages 

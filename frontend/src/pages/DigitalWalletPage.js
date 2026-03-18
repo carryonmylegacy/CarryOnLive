@@ -13,8 +13,7 @@ import { ReturnPopup } from '../components/GuidedActivation';
 import SlidePanel from '../components/SlidePanel';
 import axios from 'axios';
 import { cachedGet } from '../utils/apiCache';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 const CATEGORIES = [
   { value: 'crypto', label: 'Cryptocurrency', icon: Wallet },

@@ -45,9 +45,8 @@ import { Skeleton } from '../components/ui/skeleton';
 import DocThumbnail from '../components/DocThumbnail';
 import { ReturnPopup } from '../components/GuidedActivation';
 import SlidePanel from '../components/SlidePanel';
+import { API_URL } from '../config';
 const PDFViewerModal = lazy(() => import('../components/PDFViewerModal'));
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const categories = [
   { id: 'all', label: 'All', icon: FolderOpen },
@@ -322,8 +321,6 @@ const VaultPage = () => {
       setLockingDoc(false);
     }
   };
-
-
 
   const handleDownload = async (doc, password = null, backupCode = null) => {
     setDownloading(doc.id);

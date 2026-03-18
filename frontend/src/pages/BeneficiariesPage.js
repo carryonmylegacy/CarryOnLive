@@ -62,8 +62,7 @@ import {
 } from '../components/ui/alert-dialog';
 import SlidePanel from '../components/SlidePanel';
 import FamilyTree from '../components/FamilyTree';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 // Sortable wrapper for beneficiary cards
 const SortableCard = ({ id, children }) => {

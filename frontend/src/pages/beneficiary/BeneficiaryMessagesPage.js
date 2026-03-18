@@ -5,8 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { MessageSquare, ChevronLeft, Heart, Play } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/card';
 import { Skeleton } from '../../components/ui/skeleton';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const BeneficiaryMessagesPage = () => {
   const { getAuthHeaders } = useAuth();

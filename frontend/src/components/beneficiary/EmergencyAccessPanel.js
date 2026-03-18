@@ -10,8 +10,7 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { toast } from '../../utils/toast';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const STATUS_CONFIG = {
   pending: { color: '#f59e0b', bg: '#f59e0b20', icon: Clock, label: 'Under Review' },

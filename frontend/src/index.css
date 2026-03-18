@@ -308,10 +308,6 @@
     padding: 12px 6px;
   }
 
-  .sb.collapsed .sb-user-info {
-    justify-content: center;
-    padding: 10px 6px;
-  }
 
   /* Main content shifts when sidebar is collapsed */
   .main-content.sb-collapsed {
@@ -554,14 +550,6 @@
     gap: 6px;
   }
   
-  .sb-user-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    border-radius: 12px;
-    background: rgba(255,255,255,0.035);
-  }
   
   .sb-avatar {
     width: 40px;
@@ -577,27 +565,8 @@
     color: #08090F;
   }
   
-  .sb-user-details {
-    flex: 1;
-    min-width: 0;
-  }
-  
-  .sb-user-name {
-    font-weight: 600;
-    color: #F1F3F8;
-    font-size: 14px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  
-  .sb-user-email {
-    font-size: 12px;
-    color: #525C72;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+
+
   
   /* Theme Toggle in Sidebar */
   .theme-toggle {
@@ -610,13 +579,8 @@
     cursor: pointer;
   }
   
-  .theme-toggle-label {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: #A0AABF;
-    font-size: 14px;
-  }
+
+
   
   /* Main Content Area */
   .main-content {
@@ -820,9 +784,7 @@
     border-top: 1px solid rgba(30,64,130,0.1);
   }
   
-  [data-theme="light"] .sb-user-info {
-    background: rgba(255,255,255,0.25);
-  }
+
 
   [data-theme="light"] .nav-item-sm {
     color: #64748B;
@@ -836,21 +798,14 @@
     background: rgba(146,64,14,0.08);
   }
   
-  [data-theme="light"] .sb-user-name {
-    color: #1E293B;
-  }
-  
-  [data-theme="light"] .sb-user-email {
-    color: #64748B;
-  }
+
+
   
   [data-theme="light"] .theme-toggle {
     background: rgba(255,255,255,0.25);
   }
   
-  [data-theme="light"] .theme-toggle-label {
-    color: #334155;
-  }
+
 
   /* ===== HOVER SYNC: Dashboard Tile ↔ Preview Card ↔ Sidebar Nav ===== */
   [data-hover-section="vault"] [data-testid="nav-secure-document-vault"] {
@@ -907,20 +862,8 @@
   }
 
   
-  /* Progress Bar */
-  .progress-bar {
-    height: 8px;
-    background: var(--b);
-    border-radius: 4px;
-    overflow: hidden;
-  }
-  
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--gold) 0%, var(--gold2) 100%);
-    border-radius: 4px;
-    transition: width 0.5s ease;
-  }
+
+
   
   /* Animations */
   @keyframes fadeIn {
@@ -943,9 +886,7 @@
     animation: fadeIn 0.5s ease-out;
   }
   
-  .animate-slide-up {
-    animation: slideUp 0.5s ease-out;
-  }
+
 
   /* Slide-in from right — used by edit pages on desktop */
   @keyframes slideInRight {
@@ -1170,12 +1111,6 @@
   color: var(--mobile-nav-active);
 }
 
-/* Safe area for mobile — tightened for max screen real estate */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-  .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-}
 
 /* iOS Dynamic Type — ensure all fixed-height elements expand with text scaling */
 @media (max-width: 1024px) {
@@ -1255,59 +1190,6 @@
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
-}
-
-
-/* Google Places Autocomplete dropdown styling */
-.pac-container {
-  background-color: #141C33;
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-  margin-top: 4px;
-  font-family: var(--body);
-  z-index: 100000 !important;
-}
-.pac-item {
-  padding: 10px 14px;
-  border-top: 1px solid rgba(255,255,255,0.05);
-  color: #e2e8f0;
-  font-size: 13px;
-  cursor: pointer;
-}
-.pac-item:first-child {
-  border-top: none;
-}
-.pac-item:hover, .pac-item-selected {
-  background-color: rgba(212,175,55,0.1);
-}
-.pac-item-query {
-  color: #f8fafc;
-  font-weight: 700;
-}
-.pac-icon {
-  display: none;
-}
-.pac-matched {
-  color: #d4af37;
-  font-weight: 700;
-}
-/* Light mode override */
-[data-theme="light"] .pac-container {
-  background-color: #ffffff;
-  border-color: rgba(0,0,0,0.1);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-}
-[data-theme="light"] .pac-item {
-  color: #1e293b;
-  border-top-color: rgba(0,0,0,0.06);
-}
-[data-theme="light"] .pac-item:hover,
-[data-theme="light"] .pac-item-selected {
-  background-color: rgba(212,175,55,0.08);
-}
-[data-theme="light"] .pac-item-query {
-  color: #0f172a;
 }
 
 

@@ -15,8 +15,7 @@ import { SectionLockBanner, SectionLockedOverlay } from '../components/security/
 import { Skeleton } from '../components/ui/skeleton';
 import QuickStartTemplates from '../components/QuickStartTemplates';
 import AddressAutocomplete from '../components/AddressAutocomplete';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 const CATEGORIES = [
   { value: 'legal', label: 'Legal', icon: FileText, color: '#3b82f6' },

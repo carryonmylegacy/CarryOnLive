@@ -35,8 +35,8 @@ import {
 import { Switch } from '../ui/switch';
 import { toast } from '../../utils/toast';
 import NotificationBell from '../NotificationBell';
+import { API_URL } from '../../config';
 
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
 const OtpToggle = ({ collapsed }) => {
@@ -208,7 +208,7 @@ const Sidebar = () => {
   // Fetch estates for sidebar switcher (beneficiary view + multi-role users)
   useEffect(() => {
     if (user?.role === 'beneficiary' || user?.is_also_beneficiary || user?.is_also_benefactor) {
-      const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+      
       const token = localStorage.getItem('carryon_token');
       if (token) {
         axios.get(`${API_URL}/estates`, { headers: { Authorization: `Bearer ${token}` } })

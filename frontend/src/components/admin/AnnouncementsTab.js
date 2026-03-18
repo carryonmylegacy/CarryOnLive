@@ -3,8 +3,7 @@ import axios from 'axios';
 import { Megaphone, Plus, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const PRIORITY_STYLES = {
   info: { color: '#3B82F6', bg: 'rgba(59,130,246,0.1)', label: 'Info' },

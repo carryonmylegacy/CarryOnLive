@@ -1,0 +1,86 @@
+{
+  "summary": "Iteration 129 - Codebase Refactoring Regression Test. Verified that the API_URL extraction to shared config.js did NOT break any existing functionality. All 14 backend API tests passed. Frontend pages (login, admin dashboard, benefactor dashboard) load without JavaScript errors. API calls correctly use the configured backend URL from REACT_APP_BACKEND_URL. Sidebar CSS (.sb-user, .sb-avatar) working correctly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_refactoring_regression.py",
+    "/app/test_reports/pytest/refactoring_regression_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "VERIFIED: frontend/src/config.js exports API_URL (with /api suffix) and BASE_URL (without /api suffix) correctly",
+    "VERIFIED: AuthContext.js imports API_URL from '../config' and uses it for all auth endpoints",
+    "VERIFIED: LoginPage.js imports API_URL from '../config' and uses it correctly",
+    "VERIFIED: DashboardPage.js imports API_URL from '../config' and uses it correctly",
+    "VERIFIED: Sidebar.js imports API_URL from '../../config' and uses it correctly",
+    "VERIFIED: ForceUpdateGate.js uses BASE_URL (aliased as API_URL) for /api/health endpoint",
+    "VERIFIED: DevSwitcher.js uses BASE_URL (aliased as API_URL) for dev-switcher endpoints",
+    "VERIFIED: errorReporter.js uses BASE_URL (aliased as API_URL) for /api/errors/report",
+    "VERIFIED: All 88 files now import API_URL from shared config.js instead of hardcoding",
+    "VERIFIED: Sidebar CSS classes (.sb-user, .sb-avatar, .sb-logo, .nav-item) all present and working",
+    "VERIFIED: Dead CSS removed from index.css did not affect active UI components"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_refactoring_regression.py"
+  ],
+  "success_rate": {
+    "backend": "100% (14/14 tests passed)",
+    "frontend": "100% (all pages load, no JS errors, API calls work)"
+  },
+  "test_credentials": {
+    "admin": "info@carryon.us / Demo1234!"
+  },
+  "seed_data_creation": "None - used existing test accounts",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 129 verified the major codebase refactoring: (1) API_URL extracted from 88 files into shared config.js, (2) Dead CSS removed from index.css, (3) Unused files deleted (soft_delete.py, useWorkerFilter.js, useDebouncedSearch.js, App.css), (4) 24 stale test files removed, (5) .gitignore cleaned from 595 to 71 lines. All functionality confirmed working. The config.js exports both API_URL (with /api suffix) and BASE_URL (without /api suffix). Three files (ForceUpdateGate.js, DevSwitcher.js, errorReporter.js) use BASE_URL aliased as API_URL for their specific needs.",
+  "features_tested": {
+    "backend_apis": [
+      "GET /api/health - returns healthy status ✓",
+      "GET /api/subscriptions/plans - accessible without auth ✓",
+      "POST /api/auth/login - accepts valid credentials ✓",
+      "POST /api/auth/login - rejects invalid credentials ✓",
+      "GET /api/auth/me - returns user info with valid token ✓",
+      "GET /api/estates - returns estates list ✓",
+      "GET /api/notifications/unread-count - works ✓",
+      "GET /api/subscriptions/status - works ✓",
+      "GET /api/admin/platform-settings - admin endpoint works ✓",
+      "GET /api/admin/stats - admin endpoint works ✓",
+      "GET /api/admin/users - admin endpoint works ✓",
+      "GET /api/dev-switcher/config - works ✓",
+      "POST /api/errors/report - endpoint exists ✓",
+      "Protected endpoints return 401 without auth ✓"
+    ],
+    "frontend_components": [
+      "Login page renders with Sign In form ✓",
+      "Login form inputs (email, password) working ✓",
+      "Login submit triggers API call to correct URL ✓",
+      "Sidebar renders with correct CSS classes ✓",
+      "Navigation items render correctly ✓",
+      "Portal switcher works between Founder/Benefactor ✓",
+      "Admin dashboard loads without errors ✓",
+      "Benefactor dashboard loads without errors ✓",
+      "Theme toggle works ✓",
+      "Logout button present and styled ✓"
+    ]
+  },
+  "refactoring_verified": {
+    "api_url_extraction": "88 files now import from config.js instead of hardcoding",
+    "dead_css_removal": "Removed .pac-*, .sb-user-details, .progress-bar from index.css - verified these were not in use",
+    "deleted_files": [
+      "backend/utils/soft_delete.py",
+      "frontend/src/hooks/useWorkerFilter.js", 
+      "frontend/src/hooks/useDebouncedSearch.js",
+      "frontend/src/App.css"
+    ],
+    "test_files_cleaned": "24 stale test files removed",
+    "gitignore_cleaned": "From 595 to 71 lines"
+  }
+}

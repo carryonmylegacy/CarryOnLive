@@ -3,8 +3,7 @@ import axios from 'axios';
 import { BookOpen, Plus, Edit2, Trash2, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const CATEGORIES = [
   { value: '', label: 'All Categories' },

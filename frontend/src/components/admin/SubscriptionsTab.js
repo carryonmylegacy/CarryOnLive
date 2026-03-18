@@ -7,8 +7,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
 import { toast } from '../../utils/toast';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }) => {
   const [settings, setSettings] = useState(null);

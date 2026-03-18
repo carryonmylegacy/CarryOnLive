@@ -20,8 +20,7 @@ import {
 import TrialBanner from '../components/TrialBanner';
 import BillingStatusBanner from '../components/BillingStatusBanner';
 import OnboardingWizard from '../components/OnboardingWizard';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 const DashboardPage = () => {
   const { user, getAuthHeaders } = useAuth();

@@ -6,8 +6,7 @@ import { Lock, ExternalLink, Eye, EyeOff, Shield, Database, CreditCard, Mail, Bo
   Activity, HardDrive, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { toast } from '../../utils/toast';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const iconMap = {
   railway: Server, vercel: Globe, mongodb: Database, s3: Cloud,

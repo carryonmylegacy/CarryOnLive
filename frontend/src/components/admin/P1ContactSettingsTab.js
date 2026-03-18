@@ -6,8 +6,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Switch } from '../ui/switch';
 import { toast } from '../../utils/toast';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 export const P1ContactSettingsTab = ({ getAuthHeaders }) => {
   const [settings, setSettings] = useState({ email: '', phone: '', chat_enabled: true });

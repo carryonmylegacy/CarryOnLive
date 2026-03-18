@@ -9,8 +9,7 @@ import {
 import { Progress } from '../../components/ui/progress';
 import { toast } from '../../utils/toast';
 import { Skeleton } from '../../components/ui/skeleton';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../../config';
 
 const priColors = { critical: '#ef4444', high: '#f97316', medium: '#eab308', low: '#22c55e' };
 

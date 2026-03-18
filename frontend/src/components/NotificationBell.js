@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Bell, CheckCheck, X } from 'lucide-react';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 const NotificationBell = ({ collapsed }) => {
   const [unreadCount, setUnreadCount] = useState(0);

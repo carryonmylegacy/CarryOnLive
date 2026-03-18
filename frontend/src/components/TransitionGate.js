@@ -3,8 +3,7 @@ import { Navigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 /**
  * Gates beneficiary routes behind estate transition status.

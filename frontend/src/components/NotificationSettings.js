@@ -4,8 +4,7 @@ import { Bell, BellOff, Loader2, CheckCircle2, AlertTriangle } from 'lucide-reac
 import { Card, CardContent } from '../components/ui/card';
 import { Switch } from '../components/ui/switch';
 import { toast } from '../utils/toast';
-
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+import { API_URL } from '../config';
 
 // Convert URL-safe base64 to Uint8Array for VAPID key
 function urlBase64ToUint8Array(base64String) {
