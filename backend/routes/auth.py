@@ -227,17 +227,13 @@ async def login(data: UserLogin, request: Request):
                 token = await create_session_token(user["id"], user["email"], user["role"])
                 # Reconcile beneficiary invitation status and email
                 if user.get("role") == "beneficiary" or user.get("is_also_beneficiary"):
-                    asyncio.create_task(
-                        db.beneficiaries.update_many(
-                            {"user_id": user["id"], "invitation_status": {"$ne": "accepted"}},
-                            {"$set": {"invitation_status": "accepted"}},
-                        )
+                    await db.beneficiaries.update_many(
+                        {"user_id": user["id"], "invitation_status": {"$ne": "accepted"}},
+                        {"$set": {"invitation_status": "accepted"}},
                     )
-                    asyncio.create_task(
-                        db.beneficiaries.update_many(
-                            {"user_id": user["id"], "email": {"$ne": user["email"]}},
-                            {"$set": {"email": user["email"]}},
-                        )
+                    await db.beneficiaries.update_many(
+                        {"user_id": user["id"], "email": {"$ne": user["email"]}},
+                        {"$set": {"email": user["email"]}},
                     )
                 return TokenResponse(
                     access_token=token,
@@ -258,17 +254,13 @@ async def login(data: UserLogin, request: Request):
         )
         # Reconcile beneficiary invitation status and email
         if user.get("role") == "beneficiary" or user.get("is_also_beneficiary"):
-            asyncio.create_task(
-                db.beneficiaries.update_many(
-                    {"user_id": user["id"], "invitation_status": {"$ne": "accepted"}},
-                    {"$set": {"invitation_status": "accepted"}},
-                )
+            await db.beneficiaries.update_many(
+                {"user_id": user["id"], "invitation_status": {"$ne": "accepted"}},
+                {"$set": {"invitation_status": "accepted"}},
             )
-            asyncio.create_task(
-                db.beneficiaries.update_many(
-                    {"user_id": user["id"], "email": {"$ne": user["email"]}},
-                    {"$set": {"email": user["email"]}},
-                )
+            await db.beneficiaries.update_many(
+                {"user_id": user["id"], "email": {"$ne": user["email"]}},
+                {"$set": {"email": user["email"]}},
             )
         return TokenResponse(
             access_token=token,
@@ -862,18 +854,14 @@ async def verify_otp(data: OTPVerifyWithTrust, request: Request):
 
     # Reconcile beneficiary invitation status and email on login
     if user.get("role") == "beneficiary" or user.get("is_also_beneficiary"):
-        asyncio.create_task(
-            db.beneficiaries.update_many(
-                {"user_id": user["id"], "invitation_status": {"$ne": "accepted"}},
-                {"$set": {"invitation_status": "accepted"}},
-            )
+        await db.beneficiaries.update_many(
+            {"user_id": user["id"], "invitation_status": {"$ne": "accepted"}},
+            {"$set": {"invitation_status": "accepted"}},
         )
         # Sync email: overwrite beneficiary record email with user's actual email
-        asyncio.create_task(
-            db.beneficiaries.update_many(
-                {"user_id": user["id"], "email": {"$ne": user["email"]}},
-                {"$set": {"email": user["email"]}},
-            )
+        await db.beneficiaries.update_many(
+            {"user_id": user["id"], "email": {"$ne": user["email"]}},
+            {"$set": {"email": user["email"]}},
         )
 
     # Audit log for operator/founder logins
