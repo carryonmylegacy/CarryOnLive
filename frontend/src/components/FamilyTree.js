@@ -97,15 +97,15 @@ const TreeNode = ({ initials, photo, color, label, sublabel, size = 60, badge, i
     {label && isPrimary ? (
       <span className="text-[11px] font-bold whitespace-nowrap px-2 py-0.5 rounded-md text-center leading-tight" style={{ background: 'rgba(34,201,147,0.15)', color: '#22C993', border: '1px solid rgba(34,201,147,0.3)' }}>{label}</span>
     ) : label ? (
-      <span className="text-xs font-semibold text-[var(--t)] text-center leading-tight">{label}</span>
+      <span className="text-xs font-semibold text-[var(--t)] text-center leading-tight truncate w-full">{label}</span>
     ) : null}
-    {sublabel && <span className="text-[11px] text-[var(--t4)] text-center leading-tight">{sublabel}</span>}
+    {sublabel && <span className="text-[11px] text-[var(--t4)] text-center leading-tight truncate w-full">{sublabel}</span>}
   </div>
   );
 };
 
-const NODE_W = 68;  // fixed node container width
-const NODE_GAP = 8;  // horizontal gap between nodes
+const NODE_W = 88;  // fixed node container width — wide enough for "Grandmother · 89"
+const NODE_GAP = 6;  // horizontal gap between nodes
 const NODE_SLOT = NODE_W + NODE_GAP;
 
 /**
