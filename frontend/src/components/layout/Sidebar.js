@@ -358,8 +358,8 @@ const Sidebar = () => {
   return (
     <aside className={`sb hidden lg:flex ${collapsed ? 'collapsed' : ''}`} data-testid="sidebar" role="navigation" aria-label="Main navigation">
       {/* Logo Section — clickable for founder portal switcher */}
-      <div className="sb-logo" style={{ cursor: isAdminSession ? 'pointer' : 'default' }}
-        onClick={() => { if (isAdminSession) { setDevOpen(!devOpen); if (!devOpen) fetchDevConfig(); } }}
+      <div className="sb-logo" style={{ cursor: 'pointer' }}
+        onClick={() => { if (isAdminSession) { setDevOpen(!devOpen); if (!devOpen) fetchDevConfig(); } else { navigate('/dashboard'); } }}
         data-testid="sidebar-logo">
         <img 
           src="/carryon-app-icon.jpg" 

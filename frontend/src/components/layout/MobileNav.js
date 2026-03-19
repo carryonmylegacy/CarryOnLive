@@ -309,6 +309,8 @@ const MobileNav = () => {
       if (!devOpen) fetchDevConfig();
       return;
     }
+    // Non-admin: tap logo goes to dashboard
+    navigate('/dashboard');
   };
 
   const handleLogout = () => {
