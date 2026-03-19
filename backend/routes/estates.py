@@ -58,15 +58,11 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
         if r["estate_id"] not in ben_estate_ids and r["estate_id"] not in seen_ids
     ]
     if missing_ids:
-        extra = await db.estates.find(
-            {"id": {"$in": missing_ids}}, {"_id": 0}
-        ).to_list(100)
+        extra = await db.estates.find({"id": {"$in": missing_ids}}, {"_id": 0}).to_list(100)
         ben_estates.extend(extra)
         # Repair: add user_id to the estate's beneficiaries array for future queries
         for eid in missing_ids:
-            await db.estates.update_one(
-                {"id": eid}, {"$addToSet": {"beneficiaries": current_user["id"]}}
-            )
+            await db.estates.update_one({"id": eid}, {"$addToSet": {"beneficiaries": current_user["id"]}})
 
     ben_estates = [be for be in ben_estates if be["id"] not in seen_ids]
 
