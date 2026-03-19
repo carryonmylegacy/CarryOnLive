@@ -22,7 +22,6 @@ import {
   Eye,
   EyeOff,
   Pencil,
-  Check,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -82,6 +81,7 @@ const SettingsPage = () => {
   const [estateId, setEstateId] = useState(null);
   const [estateName, setEstateName] = useState('');
   const [editingEstateName, setEditingEstateName] = useState(false);
+  const [estateSaving, setEstateSaving] = useState(false);
   const [estateNameDraft, setEstateNameDraft] = useState('');
   const [settingsReady, setSettingsReady] = useState(false);
   const [username, setUsername] = useState('');
@@ -388,10 +388,14 @@ const SettingsPage = () => {
                       }
                       setEditingName(false);
                     }}
-                    className="p-1 rounded-md hover:bg-[var(--s)]"
+                    className="h-7 px-3 rounded-md text-xs font-bold bg-[var(--gold)] text-[#0b1120] hover:bg-[var(--gold)]/90 disabled:opacity-50"
                     data-testid="display-name-save"
                   >
-                    {nameSaving ? <Loader2 className="w-4 h-4 animate-spin text-[var(--gold)]" /> : <Check className="w-4 h-4 text-[var(--gn)]" />}
+                    {nameSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save'}
+                  </button>
+                  <button onClick={() => setEditingName(false)}
+                    className="h-7 px-3 rounded-md text-xs text-[var(--t4)] border border-[var(--b)] hover:bg-[var(--s)]">
+                    Cancel
                   </button>
                 </div>
               ) : (
@@ -441,7 +445,7 @@ const SettingsPage = () => {
                   data-testid="username-input"
                 />
                 <button
-                  disabled={usernameSaving}
+                  disabled={usernameSaving || !usernameDraft.trim()}
                   onClick={async () => {
                     if (usernameDraft.trim()) {
                       setUsernameSaving(true);
@@ -454,10 +458,14 @@ const SettingsPage = () => {
                     }
                     setEditingUsername(false);
                   }}
-                  className="p-1 rounded-md hover:bg-[var(--s)]"
+                  className="h-7 px-3 rounded-md text-xs font-bold bg-[var(--gold)] text-[#0b1120] hover:bg-[var(--gold)]/90 disabled:opacity-50"
                   data-testid="username-save"
                 >
-                  {usernameSaving ? <Loader2 className="w-4 h-4 animate-spin text-[var(--gold)]" /> : <Check className="w-4 h-4 text-[var(--gn)]" />}
+                  {usernameSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save'}
+                </button>
+                <button onClick={() => setEditingUsername(false)}
+                  className="h-7 px-3 rounded-md text-xs text-[var(--t4)] border border-[var(--b)] hover:bg-[var(--s)]">
+                  Cancel
                 </button>
               </div>
             ) : (
@@ -682,14 +690,17 @@ const SettingsPage = () => {
                   <Input
                     value={estateNameDraft}
                     onChange={(e) => setEstateNameDraft(e.target.value)}
-                    className="h-8 text-sm"
+                    className="h-8 text-sm flex-1"
                     autoFocus
                     onKeyDown={async (e) => {
                       if (e.key === 'Enter' && estateNameDraft.trim()) {
+                        setEstateSaving(true);
                         try {
                           await axios.patch(`${API_URL}/estates/${estateId}`, { name: estateNameDraft.trim() }, getAuthHeaders());
                           setEstateName(estateNameDraft.trim());
-                        } catch { toast.error('Failed to rename'); }
+                          toast.success('Estate name saved');
+                        } catch { toast.error('Failed to rename estate'); }
+                        setEstateSaving(false);
                         setEditingEstateName(false);
                       } else if (e.key === 'Escape') {
                         setEditingEstateName(false);
@@ -697,21 +708,34 @@ const SettingsPage = () => {
                     }}
                     data-testid="estate-name-input"
                   />
-                  <button
+                  <Button
+                    size="sm"
                     onClick={async () => {
                       if (estateNameDraft.trim()) {
+                        setEstateSaving(true);
                         try {
                           await axios.patch(`${API_URL}/estates/${estateId}`, { name: estateNameDraft.trim() }, getAuthHeaders());
                           setEstateName(estateNameDraft.trim());
-                        } catch { toast.error('Failed to rename'); }
+                          toast.success('Estate name saved');
+                        } catch { toast.error('Failed to rename estate'); }
+                        setEstateSaving(false);
                       }
                       setEditingEstateName(false);
                     }}
-                    className="p-1 rounded-md hover:bg-[var(--s)]"
+                    disabled={estateSaving || !estateNameDraft.trim()}
+                    className="bg-[var(--gold)] text-[#0b1120] hover:bg-[var(--gold)]/90 h-8 px-3 text-xs font-bold"
                     data-testid="estate-name-save"
                   >
-                    <Check className="w-4 h-4 text-[var(--gn)]" />
-                  </button>
+                    {estateSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditingEstateName(false)}
+                    className="border-[var(--b)] text-[var(--t4)] h-8 px-3 text-xs"
+                  >
+                    Cancel
+                  </Button>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">

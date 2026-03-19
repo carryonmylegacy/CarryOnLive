@@ -161,6 +161,9 @@ User pushes to GitHub → Railway builds backend → Vercel builds frontend → 
 - **Test Suite Cleanup**: Removed **24 stale iteration-specific test files** (test_iteration82, test_final_pressure_iter117, test_p0_bugs_iteration_104, test_soft_delete_restore, etc.). Reduced from 86 → 62 test files, cutting ~9K lines of dead test code.
 - **Artifact Purge**: Cleaned all `__pycache__` directories, `.pyc` files, `test_reports/pytest/` directory, `.DS_Store`, `.bak`, and temp files.
 - **Bug Fix: Beneficiary Login Lockout**: When a beneficiary tries to sign in (instead of using their invitation link), the backend now detects the pending invitation and returns a helpful message directing them to use the email link — without recording a failed login attempt (prevents lockout). Frontend lockout fallback reduced from 900s → 180s to match backend's 3-min window.
+- **UX Fix: Settings Save Feedback**: Replaced tiny, ambiguous checkmark icons on estate name, display name, and username editors with prominent gold "Save" and "Cancel" buttons. Save shows a spinner during the API call and triggers a toast notification ("Estate name saved" / "Name updated" / "Username updated") confirming the change was persisted. Matches the existing Personal Information section's save pattern.
+- **Admin Estate Rename**: Admins can now rename any estate (not just their own), enabling management of estates belonging to other users.
+- **Admin Estate Diagnostic**: Added `GET /api/admin/estate-diagnostic` endpoint showing all estates grouped by owner with beneficiary counts, flagging users with duplicate estates.
 - **Regression Verified**: All 38 housekeeping checks pass. ESLint clean. ruff clean. Frontend build passes. Testing agent confirmed 100% backend + frontend pass rate (iterations 129 & 130).
 
 ### Completed (March 18, 2026 — Session 7)

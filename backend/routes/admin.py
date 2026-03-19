@@ -1649,18 +1649,22 @@ async def estate_diagnostic(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Admin only")
 
     owners = {}
-    async for estate in db.estates.find({}, {"_id": 0, "id": 1, "name": 1, "owner_id": 1, "beneficiaries": 1, "status": 1}):
+    async for estate in db.estates.find(
+        {}, {"_id": 0, "id": 1, "name": 1, "owner_id": 1, "beneficiaries": 1, "status": 1}
+    ):
         oid = estate.get("owner_id", "unknown")
         if oid not in owners:
             owner = await db.users.find_one({"id": oid}, {"_id": 0, "id": 1, "name": 1, "email": 1})
             owners[oid] = {"owner": owner or {"id": oid, "name": "Unknown"}, "estates": []}
-        owners[oid]["estates"].append({
-            "id": estate["id"],
-            "name": estate.get("name", "NO NAME"),
-            "beneficiary_count": len(estate.get("beneficiaries", [])),
-            "beneficiary_ids": estate.get("beneficiaries", [])[:5],
-            "status": estate.get("status", "unknown"),
-        })
+        owners[oid]["estates"].append(
+            {
+                "id": estate["id"],
+                "name": estate.get("name", "NO NAME"),
+                "beneficiary_count": len(estate.get("beneficiaries", [])),
+                "beneficiary_ids": estate.get("beneficiaries", [])[:5],
+                "status": estate.get("status", "unknown"),
+            }
+        )
 
     # Flag owners with multiple estates
     results = []
