@@ -1640,3 +1640,39 @@ async def migrate_photos_to_s3(current_user: dict = Depends(get_current_user)):
         if total > 0
         else "No base64 photos found — all already migrated or none exist.",
     }
+
+
+@router.get("/admin/estate-diagnostic")
+async def estate_diagnostic(current_user: dict = Depends(get_current_user)):
+    """Admin diagnostic: show all estates grouped by owner, with beneficiary links."""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    owners = {}
+    async for estate in db.estates.find({}, {"_id": 0, "id": 1, "name": 1, "owner_id": 1, "beneficiaries": 1, "status": 1}):
+        oid = estate.get("owner_id", "unknown")
+        if oid not in owners:
+            owner = await db.users.find_one({"id": oid}, {"_id": 0, "id": 1, "name": 1, "email": 1})
+            owners[oid] = {"owner": owner or {"id": oid, "name": "Unknown"}, "estates": []}
+        owners[oid]["estates"].append({
+            "id": estate["id"],
+            "name": estate.get("name", "NO NAME"),
+            "beneficiary_count": len(estate.get("beneficiaries", [])),
+            "beneficiary_ids": estate.get("beneficiaries", [])[:5],
+            "status": estate.get("status", "unknown"),
+        })
+
+    # Flag owners with multiple estates
+    results = []
+    for oid, data in owners.items():
+        entry = {
+            "owner_name": data["owner"].get("name", "Unknown"),
+            "owner_email": data["owner"].get("email", "Unknown"),
+            "estate_count": len(data["estates"]),
+            "estates": data["estates"],
+            "has_duplicates": len(data["estates"]) > 1,
+        }
+        results.append(entry)
+
+    results.sort(key=lambda x: (-x["estate_count"], x["owner_name"]))
+    return results
