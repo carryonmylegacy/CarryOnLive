@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkfrontend=self.webpackChunkfrontend||[]).push([[3062],{3062(e,r,o){o.d(r,{default:()=>a.A});var a=o(6642);const{Axios:s,AxiosError:t,CanceledError:n,isCancel:d,CancelToken:l,VERSION:c,all:i,Cancel:C,isAxiosError:f,spread:A,toFormData:p,AxiosHeaders:u,HttpStatusCode:k,formToJSON:x,getAdapter:E,mergeConfig:g}=a.A}}]);

@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkfrontend=self.webpackChunkfrontend||[]).push([[9423],{9423(e,a,n){(0,n(9344).F3)("CapacitorShareTarget",{web:()=>n.e(2813).then(n.bind(n,2813)).then(e=>new e.CapacitorShareTargetWeb)})}}]);

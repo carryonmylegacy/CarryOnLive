@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkfrontend=self.webpackChunkfrontend||[]).push([[2813],{2813(e,n,r){r.d(n,{CapacitorShareTargetWeb:()=>a});var s=r(9344);class a extends s.E_{async getPluginVersion(){return{version:"web"}}}}}]);

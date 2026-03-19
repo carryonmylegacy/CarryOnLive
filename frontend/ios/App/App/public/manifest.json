@@ -19,5 +19,18 @@
   "orientation": "portrait",
   "theme_color": "#0B1221",
   "background_color": "#0B1221",
-  "scope": "/"
+  "scope": "/",
+  "share_target": {
+    "action": "/vault?share=true",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "file",
+          "accept": ["application/pdf", "image/jpeg", "image/png", "image/heic", "image/webp", "image/tiff"]
+        }
+      ]
+    }
+  }
 }
