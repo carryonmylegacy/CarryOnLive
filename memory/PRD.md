@@ -20,6 +20,11 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (March 19, 2026 — Session 10: Family Tree Color Coding)
+- **Beneficiary Linked/Unlinked Colors**: Changed beneficiary node colors in FamilyTree.js from ring-based coloring to status-based: green (#10b981) for "linked" (beneficiary has created their own login/user_id) and yellow (#f59e0b) for "unlinked" (no account yet). Uses `user_id` or `invitation_status === 'accepted'` to determine linked status.
+- **Updated Legend**: Replaced old "Blue = estates where you're a beneficiary" key with "Linked" / "Unlinked" legend using green/yellow dots. Font size increased from text-[9px] to text-sm for readability (older users with glasses).
+- **Primary Border Fix**: Primary beneficiary border no longer overrides linked/unlinked color — the "P" badge and green label already indicate primary status.
+
 ### Completed (March 19, 2026 — Session 9: Settings & Admin Overhaul)
 - **Settings Page Reorganization**: Moved Security card to right after Profile card. New order: Profile > Security > Personal Information > Estate Photo > Push Notifications > Appearance > Notifications & Digest > Privacy & Data Rights > Logout.
 - **Per-User 2FA Toggle**: Each user now has an `otp_enabled` field (default: true). New endpoints: `GET /api/auth/2fa-preference` (returns user's preference + global status), `PUT /api/auth/2fa-preference` (toggle own 2FA). Login flow checks global switch first, then per-user preference. Global master switch behavior: when admin turns global ON (otp_disabled: false), ALL users' otp_enabled resets to true. Users can then individually disable. When global is OFF, all 2FA is disabled regardless of individual preference. Settings page shows "Disabled platform-wide by administrator" with grayed-out toggle when global is off.

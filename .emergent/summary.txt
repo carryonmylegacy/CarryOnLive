@@ -1,44 +1,42 @@
 <analysis>**original_problem_statement:**
-The user initiated a full-scale codebase refactoring and polishing task to improve efficiency and cleanliness. This involved running housekeeping scripts, manually auditing for dead code, cleaning up artifacts, and refactoring DRY violations.
-
-Following the refactoring, a series of issues and new requests were raised:
-1.  **Bug: Beneficiary Account Lockout:** A beneficiary was getting locked out after multiple failed login attempts when trying to sign in instead of using the invitation link to create an account.
-2.  **Bug: Incorrect Estate Names:** A beneficiary was seeing all linked estates named Mitchell Family Estate instead of their custom-renamed names.
-3.  **Bug: Vercel CI Failure:** A recent push failed the Backend Lint step in the CI/CD pipeline.
-4.  **Bug: PWA Settings UI:** On the PWA, editing a name in the Founder portal Settings page caused the screen to zoom and broke the button layout.
-5.  **Feature Request: Settings Page Overhaul:**
-    *   Reorganize the Settings page to be more logical, moving user profile information (name, username, password) to the top.
-    *   Implement a per-user 2FA toggle in the admin portal, allowing admins to enable/disable 2FA for individual accounts.
-    *   Add a Sort By feature to the User, Benefactor, and Beneficiary tabs in the admin portals to improve usability without breaking the PWA layout.
-6.  **Security Concern:** The user clarified that admins should *never* be able to modify user estates, requesting a reversal of a change that allowed this.
+The user initiated a session to overhaul the admin and settings pages, alongside fixing several UI and CI/CD bugs. The core tasks included:
+1.  **Settings Page Overhaul:** Reorganize the layout to be more logical, implement a per-user 2FA toggle with a global admin override, and add a Sort By feature to the admin user tabs.
+2.  **CI/CD Bug:** A Vercel Backend Lint step was failing after a recent push.
+3.  **Family Tree UI/UX Refinement (Multi-step):** The user provided extensive, iterative feedback to redesign the family tree view on the beneficiaries page. This included:
+    *   Changing the layout from a single horizontal row to a multi-level, vertical org chart that fits within the PWA width.
+    -   Making the layout responsive and scalable to handle 1 to 50+ beneficiaries without breaking.
+    -   Iteratively redesigning a funnel graphic that visually connects estates to the benefactor, moving from a simple trapezoid to organic, adaptive, converging lines.
+    -   Adjusting labels, alignment, and spacing for a clean, symmetrical appearance.
+    -   Ensuring the component is fully compatible with both light and dark themes.
+4.  **Data Bug:** The family tree was not displaying all the estates where the current user is a beneficiary, indicating a data-fetching issue.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The codebase has undergone a massive refactoring and cleanup. Over 10,000 lines of dead code, duplicated code, and unnecessary artifacts were removed. Key violations of the DRY principle, such as 88 instances of a hardcoded API URL, have been centralized into a shared config. The UI/UX for editing fields on the Settings page has been significantly improved with clear Save/Cancel buttons and toast notifications. A new Estate Name Personalization prompt was added, which appears for new and existing benefactors on login if their estate has a default name, guiding them to customize it. Several critical bugs related to user lockout, CI pipeline failures, and mobile UI have been resolved. The admin estate-rename functionality was correctly restricted to only estate owners.
+The codebase is in a healthy state. The multi-part task to overhaul the settings and admin pages is complete: the Settings page is reorganized, a per-user 2FA toggle (with a global admin override) is fully functional, and the admin user tabs now have a Sort By dropdown. The CI linting failure has been resolved.
+
+Most significantly, the  component has been completely rewritten through multiple iterations. It is now a highly responsive, scalable, and theme-aware component that displays beneficiaries in a multi-level vertical tree, preventing overflow on PWA devices. It also features a dynamic SVG graphic of converging lines to visually represent the flow of estates to the benefactor. A backend bug was also fixed to ensure this tree is populated with the correct data.
 
 **Last working item**:
-- **Last item agent was working:** The agent was beginning the implementation of a multi-part feature request. The main focus was analyzing the current structure of the Settings page () and the admin user tabs () to plan the following changes: reorganizing the Settings page layout, adding a per-user 2FA toggle, and implementing a new Sort By control in the admin user tabs.
-- **Status:** IN PROGRESS
-- **Agent Testing Done:** N
-- **Which testing method agent to use?** both
+- **Last item agent was working:** The agent fixed a critical data bug in the  endpoint. The endpoint was failing to show all estates a user is a beneficiary of because it only checked a single array on the estate document. The fix adds a fallback query to the  collection to find all relevant estates and includes a self-healing mechanism that updates the estate document to prevent future misses.
+- **Status:** USER VERIFICATION PENDING
+- **Agent Testing Done:** Y
+- **Which testing method agent to use?** Frontend testing agent
 - **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-- **Issue 1: Video Playback on Milestone Page (P2)**
-    - Carry-over issue. Suspected to be a data issue (no video messages found for the test user).
-    - **Status:** NOT STARTED
-- **Issue 2: Settings Page Glitch (P3)**
-    - A minor, non-reproducible UI flash reported once by the user.
-    - **Status:** NOT STARTED
+-   **Issue 1: Beneficiary Estates Display (P0)**
+    -   A fix has been implemented on the backend to correctly fetch all estates a user is a beneficiary of. The user needs to verify that the family tree UI now shows the correct number of estates at the top.
+    -   **Status:** USER VERIFICATION PENDING
+-   **Issue 2: Video Playback on Milestone Page (P2)**
+    -   Carry-over issue. Suspected to be a data issue where no video messages exist for the test user.
+    -   **Status:** NOT STARTED
+-   **Issue 3: Settings Page Glitch (P3)**
+    -   A minor, non-reproducible UI flash reported once by the user.
+    -   **Status:** NOT STARTED
 
 **In progress Task List**:
-- **Task 1: Overhaul Admin Tabs & Settings Page (P0)**
-    - **Sub-task 1.1: Reorganize Settings Page:** Move the password section into the Profile card, and reorder all sections logically (Profile > Personal Info > Security > etc.).
-    - **Sub-task 1.2: Implement Per-User 2FA Toggle:** Add a toggle switch for each user in the admin UsersTab to enable/disable 2FA for their account.
-    - **Sub-task 1.3: Add Sort By to Admin Tabs:** Implement a Sort By dropdown/control in the Users, Benefactors, and Beneficiary tabs within the admin portals. Ensure the UI remains responsive and does not require horizontal scrolling on PWA.
-    - **Status:** IN PROGRESS
-    - **Blocked on something:** None.
+- None.
 
 **Upcoming and Future Tasks**
 **Upcoming Tasks:**
@@ -52,29 +50,22 @@ The codebase has undergone a massive refactoring and cleanup. Over 10,000 lines 
 *   **(P2) Twilio SMS OTP Integration:** Blocked pending the user's A2P 10DLC approval from Twilio.
 
 **Completed work in this session**
-- **Refactoring: Comprehensive Codebase Polish:**
-  - **DRY Refactoring:** Extracted the API URL from 88 separate files into a single . Consolidated 4 redundant  functions into the central .
-  - **Artifact & Dead Code Removal:** Deleted 24 stale, iteration-specific test files (~9,000 lines), unused util functions (), orphaned backend utils (), and dead CSS, cleaning up thousands of lines.
-  - ** Cleanup:** Reduced the  file from 595 to 71 lines by removing over 500 lines of duplicated entries.
-- **Feature: Estate Name Personalization Prompt:**
-  - Implemented a one-time modal () that appears for benefactors on login if their estate has a default name, prompting them to customize it.
-  - Added backend endpoints (, ) to support this flow.
-  - Added a  flag to the  collection to track completion.
-- **UX Improvement: Settings Page Save Flow:**
-  - Replaced ambiguous checkmark icons with clear **Save** and **Cancel** buttons for the name, username, and estate name editors on the Settings page.
-  - Added loading spinners to the save buttons and toast notifications for success/failure, providing definitive user feedback.
-- **Bug Fix: Beneficiary Login Lockout:**
-  - Modified the login flow in  to check for pending invitations. If an email matches an invited user, it now returns a helpful error message instead of Invalid credentials and does **not** count it as a failed login attempt, preventing lockouts.
-- **Bug Fix: PWA Settings UI:**
-  - Reworked the CSS for the edit-in-place components on  to use a responsive  layout on mobile and set input font size to , preventing both UI breakage and iOS auto-zoom.
+- **Feature: Settings & Admin Overhaul:**
+  - **Reorganized Settings Page:** New Order: Profile → Security → Personal Info.
+  - **Implemented Per-User 2FA Toggle:** Added backend logic (, ) and a frontend toggle () for user-specific 2FA, which respects a global admin override.
+  - **Added Sort By to Admin Tabs:** Implemented a sort dropdown in .
 - **Bug Fix: Vercel CI Failure:**
-  - Identified and fixed 33 linting errors (trailing whitespace, unused imports) in a test file generated by the testing agent ().
-  - Ran 126 files left unchanged across the entire backend to ensure code consistency.
-- **Security Fix: Admin Permissions:**
-  - Reverted a change that allowed admins to rename estates belonging to other users. Confirmed via testing that only the estate owner can perform this action, and admins receive a 403 error.
+  - Fixed 32 linting errors (trailing whitespace,  comparison) in the newly generated  file.
+- **Feature/Refactor: Comprehensive Family Tree UI Overhaul ():**
+  - **Responsive Layout:** Changed from a single horizontal row to a multi-level vertical tree that uses  to chunk beneficiaries into rows, preventing PWA overflow and scaling from 1 to 50+ users.
+  - **Visual Redesign:** Iteratively redesigned the funnel graphic to be a set of organic, adaptive, converging Bézier curves representing the flow of estates.
+  - **UI Polish:** Removed tier labels, perfected connector line alignment, and adjusted node spacing to prevent unwanted wrapping.
+  - **Theme Compatibility:** Made the component theme-aware, ensuring all lines, text, and graphics have proper contrast and visibility in both light and dark modes.
+- **Bug Fix: Incorrect Beneficiary Estates in Family Tree:**
+  - Patched the  endpoint with a fallback query and self-healing mechanism to ensure all estates a user is a beneficiary of are correctly fetched and displayed.
 
 **Earlier issues found/mentioned but not fixed**
-- None.
+- See **All Pending/In progress Issue list**.
 
 **Known issue recurrence from previous fork**
 - None.
@@ -83,61 +74,65 @@ The codebase has undergone a massive refactoring and cleanup. Over 10,000 lines 
 
 
 **Key Technical Concepts**
-- **Code Refactoring:** Extensive application of DRY (Don't Repeat Yourself) principle, dead code elimination, and configuration centralization.
-- **CI/CD Debugging:** Diagnosing and fixing pipeline failures by reproducing linting errors locally ().
-- **Responsive UI/UX:** Using responsive Tailwind CSS classes (, ) and CSS properties () to fix mobile layout issues and prevent undesirable browser behavior (iOS auto-zoom).
-- **API Design (FastAPI):** Careful ordering of routes to avoid path parameter conflicts (e.g., placing  before ).
-- **React State Management & UX:** Enhancing user feedback loops with loading states (), explicit Save/Cancel actions, and toast notifications.
+- **Responsive UI (React & CSS):** Using  to dynamically calculate layout based on container width and chunking components into visual rows to prevent overflow ().
+- **Advanced CSS/SVG:** Creating dynamic, adaptive graphics (Bézier curves, gradients, glows) directly in React components for data visualizations.
+- **Theme-Aware Components:** Using a React Context () to conditionally apply styles (opacities, colors) for light and dark modes.
+- **Self-Healing APIs (FastAPI):** Designing endpoints that not only fetch data but also detect and repair data inconsistencies on-the-fly (the  fix).
+- **CI/CD Debugging:** Diagnosing and fixing pipeline failures by running linters () locally to reproduce and fix errors.
 
 **key DB schema**
--   **estates**:
-    -   : (newly added) . Set to  when a user saves a custom name for their estate, either via the new prompt or the main Settings page. Prevents the rename prompt from showing again.
+- **users**:
+    - : (newly added) . Per-user preference for 2FA. Defaults to .
+- **platform_settings**:
+    - : (existing) . Global override for 2FA.
 
 **All files of reference**
--   : Major overhaul of UI, state, and layout for better UX and mobile responsiveness.
--   : Contains the logic for the new estate name personalization prompt and the corrected permissions for renaming estates.
--   : Updated to handle login attempts from users with pending invitations gracefully, preventing lockouts.
--   : New component for the one-time estate renaming prompt.
--   : New file created to centralize the , removing duplication from 88 files.
--   : Rewritten to be clean and efficient.
--   : File to be modified for the upcoming Sort By and per-user 2FA features.
+-   : Core file for the multi-stage family tree UI implementation and fixes.
+-   : Location of the critical bug fix for fetching beneficiary estates.
+-   : Reorganized layout and added the user-facing 2FA toggle.
+-   : Added the Sort By feature.
+-   : Implemented backend logic for the per-user 2FA toggle.
+-   : Updated the global 2FA switch logic.
+-   : New test file that caused and then fixed the CI linting failure.
 
 **Critical Info for New Agent**
-- The user is very particular about permissions. The admin-override for estate renaming was a misstep and had to be reverted. Assume admins should not be able to modify user-specific data unless explicitly requested.
-- The Estate Name Prompt feature was implemented to solve a data consistency issue (users not renaming default estate names) with a user-friendly workflow. This approach of using a one-time, stateful prompt is a good pattern to follow for similar future issues.
-- The codebase is now significantly cleaner after a major refactoring. Adhere to the new patterns, such as using the shared  from  and the  function from .
+-   The user is highly focused on UI/UX polish, especially on the PWA. They provide detailed visual feedback via screenshots and expect iterative refinement. Analyze all user-provided images carefully.
+-   The  component is now complex and has been through many iterations. It uses a  for responsiveness. Any changes should be tested against various beneficiary counts (1, 4, 5, 10+) and in both light/dark modes.
+-   The 2FA system has two layers: a global  switch in  and a per-user  flag on the user document. The global switch is the master override.
+-   The backend  endpoint now includes self-healing logic. If debugging data inconsistencies related to beneficiaries, this is a key place to look.
 
 **documents and test reports created in this job**
 -   
--   
--   
+-    (updated multiple times)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Requests ability to toggle 2FA per user, reorganize Settings page, and add Sort By to admin tabs. (IN PROGRESS)
-2.  **User:** Reports PWA UI bug on Settings page where editing a name zooms the screen and breaks button layout. (COMPLETED)
-3.  **User:** Confirms they want the Estate Name Prompt to be a permanent onboarding feature for all new users. (COMPLETED)
-4.  **User:** Asks for clarification on how the new Estate Name Prompt works for new vs. existing users. (COMPLETED)
-5.  **User:** Requests an automated fix for the estate name issue, choosing Option A (login prompt). (COMPLETED)
-6.  **User:** Asks for a simpler solution to the estate name problem, suggesting a better save UX on the Settings page. (COMPLETED - Led to Save/Cancel button redesign)
-7.  **User:** Provides critical feedback that individuals, not the admin, were renaming their own estates, changing the diagnosis of the estate name bug. (COMPLETED)
-8.  **User:** Clarifies that the admin diagnostic endpoint should be kept and asks who can use it. (COMPLETED)
-9.  **User:** Rejects admin estate rename capability, stating only users should edit their own estates, but admins should be able to edit their own profile names. (COMPLETED)
-10. **User:** Reports Vercel CI failure. (COMPLETED)
+1.  **User:** Requested a fix for the family tree row overflow where the 4th beneficiary wrapped to a new line. (COMPLETED)
+2.  **User:** Provided feedback that the funnel graphic looked bad (like a breast with a nipple?). (COMPLETED - Redesigned)
+3.  **User:** Requested that the redesigned funnel look good with any number of estates. (COMPLETED)
+4.  **User:** Requested that the beneficiary tree scale perfectly from 1 to 50 beneficiaries. (COMPLETED)
+5.  **User:** Requested the removal of Tier 1 labels and another redesign of the funnel. (COMPLETED)
+6.  **User:** Requested to check and ensure the tree looks good in light mode. (COMPLETED)
+7.  **User:** Reported the row overflow issue again with a specific user example (Grandfather). (COMPLETED)
+8.  **User:** Reported that the tree is not showing all the estates the user is a beneficiary of. (COMPLETED - Fix implemented, verification pending)
+9.  **User:** Provided feedback to make the beneficiary tree funnel graphic look better. (COMPLETED)
+10. **User:** Provided feedback to refine the family tree alignment and change labels to Tier 1, Tier 2. (COMPLETED)
 
 **Project Health Check:**
 - **Broken:** None.
 - **Mocked:** None.
-- The project is in a very healthy state. All housekeeping and linting checks pass. The build is successful.
 
 **3rd Party Integrations**
-- Google Places API (via REST)
-- Capacitor
+-   Google Places API (via REST)
+-   Capacitor
 
 **Testing status**
-- **Testing agent used after significant changes:** YES (Used after refactoring, bug fixes, and new feature implementation).
-- **Test files created:** , . These files initially had linting issues that were subsequently fixed.
+- **Testing agent used after significant changes:** YES (For the Settings & Admin Overhaul feature).
+- **Troubleshoot agent used after agent stuck in loop:** NO
+- **Test files created:** []
 - **Known regressions:** None.
 
 **Credentials to test flow:**
 -   **Admin/Founder:**  / 
--   **Benefactor/Beneficiary credentials** can be found by querying the database or using the admin portal.</analysis>
+
+**What agent forgot to execute**
+-   The agent correctly and iteratively addressed all user requests and feedback during this session. No tasks were overlooked.</analysis>

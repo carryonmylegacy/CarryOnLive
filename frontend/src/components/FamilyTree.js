@@ -44,6 +44,14 @@ const getOrbitLevel = (relation) => {
 
 const ringColors = ['#d4af37', '#A855F7', '#14B8A6', '#3B82F6'];
 
+// Linked/unlinked color coding for beneficiary nodes
+const LINKED_COLOR = '#10b981';   // green — beneficiary has created their own login
+const UNLINKED_COLOR = '#f59e0b'; // yellow/amber — beneficiary has NOT created their own login
+
+const getBenLinkedColor = (ben) => {
+  return (ben.user_id || ben.invitation_status === 'accepted') ? LINKED_COLOR : UNLINKED_COLOR;
+};
+
 const TreeNode = ({ initials, photo, color, label, sublabel, size = 60, badge, isPrimary, onClick, onUpload, testId }) => {
   const hasPhoto = !!photo;
   const handleClick = () => {
@@ -64,7 +72,7 @@ const TreeNode = ({ initials, photo, color, label, sublabel, size = 60, badge, i
             background: hasPhoto ? 'transparent' : (color + '25'),
             fontSize: size * 0.32,
             color: color,
-            border: isPrimary ? '2.5px solid var(--gold)' : `2.5px solid ${color}`,
+            border: `2.5px solid ${color}`,
             boxShadow: `0 0 12px ${color}40`,
             position: 'relative',
           }}
@@ -160,13 +168,13 @@ const TierGroup = ({ bens, color, tierNum, onSelectBeneficiary, onUploadPhoto, i
             {/* Nodes in this row */}
             <div className="flex justify-center w-full" style={{ gap: `0 ${NODE_GAP}px` }}>
               {row.map(ben => {
-                const benColor = ben.avatar_color || color;
+                const benColor = getBenLinkedColor(ben);
                 const age = getAge(ben.date_of_birth || ben.dob);
                 const relation = ben.relation || '';
                 return (
                   <div key={ben.id} className="flex flex-col items-center" style={{ width: NODE_W }}>
                     {/* Drop line */}
-                    <div style={{ width: 2, height: 14, background: benColor, opacity: isLight ? 0.5 : 0.4 }} />
+                    <div style={{ width: 2, height: 14, background: color, opacity: isLight ? 0.5 : 0.4 }} />
                     <TreeNode
                       initials={getInitials(ben.name, ben.first_name, ben.last_name)}
                       photo={ben.photo_url}
@@ -346,11 +354,17 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
         )}
       </div>
 
-      {benEstates.length > 0 && (
-        <p className="text-[9px] text-[var(--t5)] text-center mt-3">
-          Blue = estates where you're a beneficiary (click to view)
-        </p>
-      )}
+      {/* Legend — linked/unlinked color key */}
+      <div className="flex items-center justify-center gap-5 mt-4" data-testid="family-tree-legend">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-full" style={{ background: LINKED_COLOR, boxShadow: `0 0 6px ${LINKED_COLOR}50` }} />
+          <span className="text-sm font-medium text-[var(--t3)]">Linked</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-full" style={{ background: UNLINKED_COLOR, boxShadow: `0 0 6px ${UNLINKED_COLOR}50` }} />
+          <span className="text-sm font-medium text-[var(--t3)]">Unlinked</span>
+        </div>
+      </div>
     </div>
   );
 };
