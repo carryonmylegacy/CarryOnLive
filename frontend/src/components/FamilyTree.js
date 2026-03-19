@@ -131,14 +131,6 @@ const TierGroup = ({ bens, color, tierNum, onSelectBeneficiary, onUploadPhoto })
       {/* Vertical trunk from previous level */}
       <div style={{ width: 2, height: 24, background: color, opacity: 0.5 }} />
 
-      {/* Tier label */}
-      <div className="mb-1">
-        <span className="text-[9px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full"
-          style={{ color, background: color + '15', border: `1px solid ${color}30` }}>
-          Tier {tierNum}
-        </span>
-      </div>
-
       {/* Rows of beneficiaries */}
       {rows.map((row, rowIdx) => {
         const count = row.length;
@@ -220,20 +212,21 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
 
   return (
     <div className={className} data-testid="family-tree">
-      {/* Beneficiary estates with flowing funnel to benefactor */}
+      {/* Beneficiary estates with converging lines to benefactor */}
       {benEstates.length > 0 && (() => {
         const n = benEstates.length;
-        // Adaptive spread: 1 estate = narrow, 6+ = full width
-        const spread = n === 1 ? 0.2 : n === 2 ? 0.4 : n <= 4 ? 0.7 : 0.9;
-        const cx = 200; // center X in viewBox
-        const left = cx - (cx * spread);
-        const right = cx + (cx * spread);
-        // Control point inset — how far inside the curves bend
-        const cpIn = cx * 0.4;
+        // Each estate node is ~110px wide with gap. Calculate positions for SVG lines.
+        // We lay out estates in rows of 3 on mobile. Each line flows from its
+        // approximate horizontal position down to the center bottom.
+        const cols = Math.min(n, 3);
+        const vb = 400; // viewBox width
+        const cx = vb / 2;
+        const svgH = n <= 3 ? 50 : 60;
+
         return (
-          <div className="relative pb-4">
+          <div className="relative pb-2">
             {/* Estate nodes */}
-            <div className="relative flex flex-wrap justify-center gap-3 pt-1 pb-2 px-2" style={{ zIndex: 2 }}>
+            <div className="relative flex flex-wrap justify-center gap-3 pt-1 pb-1 px-2" style={{ zIndex: 2 }}>
               {benEstates.map(est => (
                 <TreeNode
                   key={est.id}
@@ -254,48 +247,56 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               ))}
             </div>
 
-            {/* Adaptive funnel SVG */}
+            {/* Converging lines SVG */}
             <svg
               className="w-full pointer-events-none"
-              viewBox="0 0 400 80"
+              viewBox={`0 0 ${vb} 80`}
               preserveAspectRatio="xMidYMid meet"
-              style={{ height: n === 1 ? 36 : 48, marginTop: -2, position: 'relative', zIndex: 1 }}
+              style={{ height: svgH, position: 'relative', zIndex: 1 }}
             >
               <defs>
-                <linearGradient id="funnelFlow" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.10" />
-                  <stop offset="50%" stopColor="#60A5FA" stopOpacity="0.05" />
-                  <stop offset="100%" stopColor="#d4af37" stopOpacity="0.03" />
+                <linearGradient id="lineFlow" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.25" />
+                  <stop offset="100%" stopColor="#d4af37" stopOpacity="0.15" />
                 </linearGradient>
-                <linearGradient id="funnelStroke" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.18" />
-                  <stop offset="100%" stopColor="#d4af37" stopOpacity="0.12" />
-                </linearGradient>
-                <filter id="funnelGlow">
-                  <feGaussianBlur stdDeviation="2.5" result="blur" />
+                <filter id="lineGlow">
+                  <feGaussianBlur stdDeviation="1.5" result="blur" />
                   <feMerge>
                     <feMergeNode in="blur" />
                     <feMergeNode in="SourceGraphic" />
                   </feMerge>
                 </filter>
               </defs>
-              {/* Filled shape */}
-              <path
-                d={`M ${left},0 C ${left},28 ${cx - cpIn},62 ${cx},78 C ${cx + cpIn},62 ${right},28 ${right},0 Z`}
-                fill="url(#funnelFlow)"
-              />
-              {/* Left edge */}
-              <path
-                d={`M ${left},0 C ${left},28 ${cx - cpIn},62 ${cx},78`}
-                fill="none" stroke="url(#funnelStroke)" strokeWidth="0.8" filter="url(#funnelGlow)"
-              />
-              {/* Right edge */}
-              <path
-                d={`M ${right},0 C ${right},28 ${cx + cpIn},62 ${cx},78`}
-                fill="none" stroke="url(#funnelStroke)" strokeWidth="0.8" filter="url(#funnelGlow)"
-              />
-              {/* Convergence glow */}
-              <circle cx={cx} cy="78" r="2" fill="#d4af37" opacity="0.25" filter="url(#funnelGlow)" />
+              {(() => {
+                // Generate approximate X positions for each estate
+                // Estates wrap in rows of `cols`. For each estate, calculate its
+                // horizontal center as a fraction of the container width.
+                const rows = Math.ceil(n / cols);
+                const lines = [];
+                for (let i = 0; i < n; i++) {
+                  const row = Math.floor(i / cols);
+                  const inRow = n - row * cols; // items in this row
+                  const actual = Math.min(inRow, cols);
+                  const col = i % cols;
+                  // Spread nodes evenly across the viewBox width
+                  const x = actual === 1
+                    ? cx
+                    : 60 + (col / (actual - 1)) * (vb - 120);
+                  // Y start depends on which row the estate is in
+                  const y0 = row * (30 / rows);
+                  lines.push(
+                    <path
+                      key={i}
+                      d={`M ${x},${y0} C ${x},${y0 + 30} ${cx},55 ${cx},78`}
+                      fill="none"
+                      stroke="url(#lineFlow)"
+                      strokeWidth="0.7"
+                      filter="url(#lineGlow)"
+                    />
+                  );
+                }
+                return lines;
+              })()}
             </svg>
           </div>
         );
