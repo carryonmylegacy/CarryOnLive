@@ -31,7 +31,8 @@ import {
   Search,
   StickyNote,
   Gift,
-  Plus
+  Plus,
+  Heart
 } from 'lucide-react';
 import { Switch } from '../ui/switch';
 import { toast } from '../../utils/toast';
@@ -236,6 +237,7 @@ const Sidebar = () => {
         { to: '/digital-wallet', icon: KeyRound, label: 'Digital Access Vault (DAV)' },
         { to: '/guardian', icon: Sparkles, label: 'Estate Guardian (EGA)' },
         { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
+        { to: '/ffn', icon: Heart, label: 'Family & Friends Notification (FFN)' },
         { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
         { to: '/timeline', icon: Clock, label: 'Estate Plan Timeline' },
       ]

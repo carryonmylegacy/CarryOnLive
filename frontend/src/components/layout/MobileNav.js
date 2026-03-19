@@ -31,6 +31,7 @@ import {
   StickyNote,
   Gift,
   Plus,
+  Heart,
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import NotificationBell from '../NotificationBell';
@@ -331,6 +332,7 @@ const MobileNav = () => {
     { to: '/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
     { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
     { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
+    { to: '/ffn', icon: Heart, label: 'Family & Friends Notification (FFN)' },
     { to: '/guardian', icon: Sparkles, label: 'Estate Guardian (EGA)' },
     { to: '/digital-wallet', icon: KeyRound, label: 'Digital Access Vault (DAV)' },
     { to: '/timeline', icon: Clock, label: 'Estate Plan Timeline' },

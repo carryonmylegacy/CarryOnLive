@@ -41,6 +41,7 @@ const EditMilestoneMessagePage = lazy(() => import('./pages/EditMilestoneMessage
 const GuardianPage = lazy(() => import('./pages/GuardianPage'));
 const ChecklistPage = lazy(() => import('./pages/ChecklistPage'));
 const TrusteePage = lazy(() => import('./pages/TrusteePage'));
+const FFNPage = lazy(() => import('./pages/FFNPage'));
 const TransitionPage = lazy(() => import('./pages/TransitionPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
@@ -263,6 +264,7 @@ function AppRoutes() {
         <Route path="/guardian" element={null} />
         <Route path="/checklist" element={<ChecklistPage />} />
         <Route path="/trustee" element={<TrusteePage />} />
+        <Route path="/ffn" element={<FFNPage />} />
         <Route path="/transition" element={<TransitionPage />} />
         <Route path="/digital-wallet" element={<DigitalWalletPage />} />
         <Route path="/timeline" element={<LegacyTimelinePage />} />
