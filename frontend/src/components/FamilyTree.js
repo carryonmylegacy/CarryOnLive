@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera, Users } from 'lucide-react';
 import { resolvePhotoUrl } from '../utils/photoUrl';
+import { useTheme } from '../contexts/ThemeContext';
 
 /**
  * Static family tree — HTML/CSS based for reliable rendering.
@@ -90,7 +91,7 @@ const TreeNode = ({ initials, photo, color, label, sublabel, size = 60, badge, i
     ) : label ? (
       <span className="text-[10px] font-semibold text-[var(--t)] text-center leading-tight">{label}</span>
     ) : null}
-    {sublabel && <span className="text-[8px] text-[#64748B] text-center leading-tight">{sublabel}</span>}
+    {sublabel && <span className="text-[8px] text-[var(--t4)] text-center leading-tight">{sublabel}</span>}
   </div>
   );
 };
@@ -103,7 +104,7 @@ const NODE_SLOT = NODE_W + NODE_GAP;
  * Renders a single tier of beneficiaries with proper row-chunking
  * and horizontal branch bars that match the actual layout.
  */
-const TierGroup = ({ bens, color, tierNum, onSelectBeneficiary, onUploadPhoto }) => {
+const TierGroup = ({ bens, color, tierNum, onSelectBeneficiary, onUploadPhoto, isLight }) => {
   const containerRef = useRef(null);
   const [perRow, setPerRow] = useState(4);
 
@@ -129,7 +130,7 @@ const TierGroup = ({ bens, color, tierNum, onSelectBeneficiary, onUploadPhoto })
   return (
     <div ref={containerRef} className="flex flex-col items-center w-full" data-testid={`tree-tier-${tierNum}`}>
       {/* Vertical trunk from previous level */}
-      <div style={{ width: 2, height: 24, background: color, opacity: 0.5 }} />
+      <div style={{ width: 2, height: 24, background: color, opacity: isLight ? 0.6 : 0.5 }} />
 
       {/* Rows of beneficiaries */}
       {rows.map((row, rowIdx) => {
@@ -140,7 +141,7 @@ const TierGroup = ({ bens, color, tierNum, onSelectBeneficiary, onUploadPhoto })
           <div key={rowIdx} className="flex flex-col items-center w-full">
             {/* Vertical connector between rows (skip for first row) */}
             {rowIdx > 0 && (
-              <div style={{ width: 2, height: 16, background: color, opacity: 0.3 }} />
+              <div style={{ width: 2, height: 16, background: color, opacity: isLight ? 0.4 : 0.3 }} />
             )}
 
             {/* Horizontal branch bar — spans center-of-first to center-of-last */}
@@ -150,7 +151,7 @@ const TierGroup = ({ bens, color, tierNum, onSelectBeneficiary, onUploadPhoto })
                   width: barW,
                   height: 2,
                   background: color,
-                  opacity: 0.35,
+                  opacity: isLight ? 0.45 : 0.35,
                   borderRadius: 1,
                 }} />
               </div>
@@ -165,7 +166,7 @@ const TierGroup = ({ bens, color, tierNum, onSelectBeneficiary, onUploadPhoto })
                 return (
                   <div key={ben.id} className="flex flex-col items-center" style={{ width: NODE_W }}>
                     {/* Drop line */}
-                    <div style={{ width: 2, height: 14, background: benColor, opacity: 0.4 }} />
+                    <div style={{ width: 2, height: 14, background: benColor, opacity: isLight ? 0.5 : 0.4 }} />
                     <TreeNode
                       initials={getInitials(ben.name, ben.first_name, ben.last_name)}
                       photo={ben.photo_url}
@@ -192,6 +193,8 @@ const TierGroup = ({ bens, color, tierNum, onSelectBeneficiary, onUploadPhoto })
 
 const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficiary, onUploadPhoto, className }) => {
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
 
   const sortedBens = [...beneficiaries].sort((a, b) => {
     if (a.is_primary && !b.is_primary) return -1;
@@ -256,11 +259,11 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
             >
               <defs>
                 <linearGradient id="lineFlow" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.25" />
-                  <stop offset="100%" stopColor="#d4af37" stopOpacity="0.15" />
+                  <stop offset="0%" stopColor={isLight ? '#2563EB' : '#60A5FA'} stopOpacity={isLight ? 0.35 : 0.25} />
+                  <stop offset="100%" stopColor={isLight ? '#b8860b' : '#d4af37'} stopOpacity={isLight ? 0.25 : 0.15} />
                 </linearGradient>
                 <filter id="lineGlow">
-                  <feGaussianBlur stdDeviation="1.5" result="blur" />
+                  <feGaussianBlur stdDeviation={isLight ? '1' : '1.5'} result="blur" />
                   <feMerge>
                     <feMergeNode in="blur" />
                     <feMergeNode in="SourceGraphic" />
@@ -290,7 +293,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                       d={`M ${x},${y0} C ${x},${y0 + 30} ${cx},55 ${cx},78`}
                       fill="none"
                       stroke="url(#lineFlow)"
-                      strokeWidth="0.7"
+                      strokeWidth={isLight ? '1' : '0.7'}
                       filter="url(#lineGlow)"
                     />
                   );
@@ -329,6 +332,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   tierNum={tierNum}
                   onSelectBeneficiary={onSelectBeneficiary}
                   onUploadPhoto={onUploadPhoto}
+                  isLight={isLight}
                 />
               );
             })}
