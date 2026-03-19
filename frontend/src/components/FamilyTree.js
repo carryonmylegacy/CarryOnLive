@@ -325,26 +325,16 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
           testId="tree-root-node"
         />
 
-        {/* Tier rows below the benefactor */}
-        {activeRings.length > 0 && (
-          <div className="flex flex-col items-center w-full">
-            {activeRings.map((ringLevel, ringIdx) => {
-              const bens = ringGroups[ringLevel];
-              const color = ringColors[ringLevel] || ringColors[0];
-              const tierNum = ringIdx + 1;
-              return (
-                <TierGroup
-                  key={ringLevel}
-                  bens={bens}
-                  color={color}
-                  tierNum={tierNum}
-                  onSelectBeneficiary={onSelectBeneficiary}
-                  onUploadPhoto={onUploadPhoto}
-                  isLight={isLight}
-                />
-              );
-            })}
-          </div>
+        {/* All beneficiaries — flat, all connecting directly to benefactor */}
+        {sortedBens.length > 0 && (
+          <TierGroup
+            bens={sortedBens}
+            color="#d4af37"
+            tierNum={1}
+            onSelectBeneficiary={onSelectBeneficiary}
+            onUploadPhoto={onUploadPhoto}
+            isLight={isLight}
+          />
         )}
 
         {sortedBens.length === 0 && (
