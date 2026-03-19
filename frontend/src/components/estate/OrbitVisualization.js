@@ -337,6 +337,7 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
                 inset: 0,
                 transform: `rotate(${rot * rotationSpeed}deg)`,
                 transformOrigin: `${cx}px ${cy}px`,
+                pointerEvents: 'none',
               }}
             >
               {levelMembers.map((member, i) => {
@@ -362,7 +363,8 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
                       top: pos.top,
                       width: nodeSize,
                       height: nodeSize,
-                      zIndex: 5 - level,
+                      zIndex: 20,
+                      pointerEvents: 'auto',
                     }}
                   >
                     <div
@@ -375,6 +377,8 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
                       }}
                     >
                       <div
+                        onMouseDown={(ev) => ev.stopPropagation()}
+                        onTouchStart={(ev) => ev.stopPropagation()}
                         onClick={(ev) => {
                           if (clickGuard.current) {
                             ev.stopPropagation();
