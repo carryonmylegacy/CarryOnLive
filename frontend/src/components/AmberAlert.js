@@ -234,7 +234,7 @@ const AmberAlert = ({ alert, onAcknowledge }) => {
             </div>
           )}
 
-          <div className="text-[10px] text-[#475569] mb-5">
+          <div className="text-[11px] text-[#475569] mb-5">
             {alert?.created_at && new Date(alert.created_at).toLocaleString()}
           </div>
 

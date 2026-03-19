@@ -90,8 +90,8 @@ export const AuditTrailTab = ({ getAuthHeaders }) => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-[var(--t)]">{e.action}</span>
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase" style={{ background: style.border, color: style.color }}>{e.severity}</span>
-                      <span className="px-1.5 py-0.5 rounded text-[10px] bg-[var(--s)] text-[var(--t5)]">{e.category}</span>
+                      <span className="px-1.5 py-0.5 rounded text-[11px] font-bold uppercase" style={{ background: style.border, color: style.color }}>{e.severity}</span>
+                      <span className="px-1.5 py-0.5 rounded text-[11px] bg-[var(--s)] text-[var(--t5)]">{e.category}</span>
                     </div>
                     <div className="mt-1 text-[var(--t4)]">
                       {e.actor_email && <span>by <strong className="text-[var(--t3)]">{e.actor_email}</strong></span>}
@@ -99,12 +99,12 @@ export const AuditTrailTab = ({ getAuthHeaders }) => {
                       {e.ip_address && <span> from {e.ip_address}</span>}
                     </div>
                   </div>
-                  <span className="text-[10px] text-[var(--t5)] flex-shrink-0 whitespace-nowrap">
+                  <span className="text-[11px] text-[var(--t5)] flex-shrink-0 whitespace-nowrap">
                     {new Date(e.timestamp).toLocaleString()}
                   </span>
                 </div>
                 {e.integrity_hash && (
-                  <div className="mt-1 text-[9px] text-[var(--t5)] font-mono truncate" title={`Integrity: ${e.integrity_hash}`}>
+                  <div className="mt-1 text-[11px] text-[var(--t5)] font-mono truncate" title={`Integrity: ${e.integrity_hash}`}>
                     SHA-256: {e.integrity_hash.slice(0, 16)}...
                   </div>
                 )}

@@ -413,12 +413,12 @@ export default function SubscriptionPaywall({ onDismiss }) {
             >
               {b}
               {b === 'annual' && billing !== 'annual' && (
-                <span className="absolute -top-2 -right-2 text-[10px] bg-[#22C993] text-white px-1.5 py-0.5 rounded-full font-bold">
+                <span className="absolute -top-2 -right-2 text-[11px] bg-[#22C993] text-white px-1.5 py-0.5 rounded-full font-bold">
                   Best Value
                 </span>
               )}
               {b !== 'monthly' && billing === b && (
-                <span className="absolute -top-2 -right-2 text-[10px] bg-[#22C993] text-white px-1.5 py-0.5 rounded-full font-bold">
+                <span className="absolute -top-2 -right-2 text-[11px] bg-[#22C993] text-white px-1.5 py-0.5 rounded-full font-bold">
                   {getSavingsLabel()}
                 </span>
               )}
@@ -734,15 +734,15 @@ export default function SubscriptionPaywall({ onDismiss }) {
           <p className="text-[var(--t5)] text-xs">
             AES-256 Encrypted · Zero-Knowledge Architecture · All plans include full security
           </p>
-          <p className="text-[var(--t5)] text-[10px] mt-2 leading-relaxed">
+          <p className="text-[var(--t5)] text-[11px] mt-2 leading-relaxed">
             Payment will be charged to your {useAppleIAP ? 'Apple ID' : 'payment method'} at confirmation of purchase.
             Subscriptions automatically renew unless canceled at least 24 hours before the end of the current period.
             {useAppleIAP ? ' Manage subscriptions in your iPhone Settings > Apple ID > Subscriptions.' : ''}
           </p>
           <div className="flex items-center justify-center gap-3 mt-2">
-            <a href="/terms" className="text-[var(--t5)] text-[10px] underline hover:text-[var(--t4)]" data-testid="paywall-terms-link">Terms of Service</a>
-            <span className="text-[var(--t5)] text-[10px]">·</span>
-            <a href="/privacy" className="text-[var(--t5)] text-[10px] underline hover:text-[var(--t4)]" data-testid="paywall-privacy-link">Privacy Policy</a>
+            <a href="/terms" className="text-[var(--t5)] text-[11px] underline hover:text-[var(--t4)]" data-testid="paywall-terms-link">Terms of Service</a>
+            <span className="text-[var(--t5)] text-[11px]">·</span>
+            <a href="/privacy" className="text-[var(--t5)] text-[11px] underline hover:text-[var(--t4)]" data-testid="paywall-privacy-link">Privacy Policy</a>
           </div>
         </div>
       </div>

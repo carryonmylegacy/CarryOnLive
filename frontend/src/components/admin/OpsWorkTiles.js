@@ -78,14 +78,14 @@ export const OpsWorkTiles = ({ stats, dashEvents }) => {
                   <span className="text-sm font-bold text-[var(--t)] truncate">{tile.label}</span>
                   {hasWork && (
                     <span
-                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${isUrgent ? 'animate-pulse' : 'animate-pulse'}`}
+                      className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${isUrgent ? 'animate-pulse' : 'animate-pulse'}`}
                       style={{ background: `${tile.color}25`, color: tile.color }}
                     >
                       {count}
                     </span>
                   )}
                 </div>
-                <p className="text-[10px] text-[var(--t5)] truncate mt-0.5">
+                <p className="text-[11px] text-[var(--t5)] truncate mt-0.5">
                   {hasWork ? `${count} ${tile.sub}` : 'All clear'}
                 </p>
               </div>

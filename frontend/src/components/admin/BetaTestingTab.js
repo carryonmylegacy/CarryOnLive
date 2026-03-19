@@ -126,15 +126,15 @@ export const BetaTestingTab = ({ getAuthHeaders }) => {
                         {ticket.attachment_name && <Image className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#d4af37' }} />}
                       </div>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-[10px]" style={{ color: 'var(--t5)' }}>{ticket.page}</span>
-                        <span className="text-[10px]" style={{ color: 'var(--t5)' }}>·</span>
-                        <span className="text-[10px]" style={{ color: 'var(--t5)' }}>{dateStr} {timeStr}</span>
+                        <span className="text-[11px]" style={{ color: 'var(--t5)' }}>{ticket.page}</span>
+                        <span className="text-[11px]" style={{ color: 'var(--t5)' }}>·</span>
+                        <span className="text-[11px]" style={{ color: 'var(--t5)' }}>{dateStr} {timeStr}</span>
                       </div>
                     </div>
 
                     {/* Status badge */}
                     <span
-                      className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase flex-shrink-0"
+                      className="text-[11px] px-2 py-0.5 rounded-full font-bold uppercase flex-shrink-0"
                       style={{ background: sc.bg, color: sc.color }}
                     >
                       {sc.label}
@@ -152,20 +152,20 @@ export const BetaTestingTab = ({ getAuthHeaders }) => {
                     <div className="px-4 pb-4 pt-1 space-y-3" style={{ borderTop: '1px solid var(--b)' }}>
                       {/* Description */}
                       <div>
-                        <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--t5)' }}>Description</label>
+                        <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--t5)' }}>Description</label>
                         <p className="text-sm mt-1 whitespace-pre-wrap" style={{ color: 'var(--t3)' }}>{ticket.description}</p>
                       </div>
 
                       {/* User email */}
                       <div>
-                        <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--t5)' }}>Submitted by</label>
+                        <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--t5)' }}>Submitted by</label>
                         <p className="text-xs mt-0.5" style={{ color: 'var(--t4)' }}>{ticket.user_email}</p>
                       </div>
 
                       {/* Attachment */}
                       {ticket.attachment_name && ticket.attachment_data && (
                         <div>
-                          <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--t5)' }}>Attachment</label>
+                          <label className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--t5)' }}>Attachment</label>
                           <div className="mt-1">
                             <img
                               src={`data:${ticket.attachment_content_type || 'image/png'};base64,${ticket.attachment_data}`}
@@ -173,7 +173,7 @@ export const BetaTestingTab = ({ getAuthHeaders }) => {
                               className="rounded-lg max-h-64 border"
                               style={{ borderColor: 'var(--b)' }}
                             />
-                            <p className="text-[10px] mt-1" style={{ color: 'var(--t5)' }}>{ticket.attachment_name}</p>
+                            <p className="text-[11px] mt-1" style={{ color: 'var(--t5)' }}>{ticket.attachment_name}</p>
                           </div>
                         </div>
                       )}

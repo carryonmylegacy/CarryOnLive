@@ -79,7 +79,7 @@ export function AvatarCircle({
       </div>
       {badge && !isPrimary && (
         <div
-          className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black"
+          className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-black"
           style={{ background: 'var(--gold)', color: '#080e1a' }}
         >
           {badge}

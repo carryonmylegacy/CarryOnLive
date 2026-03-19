@@ -51,7 +51,7 @@ export const P1ContactSettingsTab = ({ getAuthHeaders }) => {
       <Card className="glass-card">
         <CardContent className="p-5 space-y-4">
           <div>
-            <label className="text-[10px] text-[var(--t5)] uppercase tracking-wider font-bold mb-1.5 flex items-center gap-1.5">
+            <label className="text-[11px] text-[var(--t5)] uppercase tracking-wider font-bold mb-1.5 flex items-center gap-1.5">
               <Mail className="w-3 h-3" /> Email Address
             </label>
             <Input
@@ -63,7 +63,7 @@ export const P1ContactSettingsTab = ({ getAuthHeaders }) => {
             />
           </div>
           <div>
-            <label className="text-[10px] text-[var(--t5)] uppercase tracking-wider font-bold mb-1.5 flex items-center gap-1.5">
+            <label className="text-[11px] text-[var(--t5)] uppercase tracking-wider font-bold mb-1.5 flex items-center gap-1.5">
               <Phone className="w-3 h-3" /> Phone Number
             </label>
             <Input

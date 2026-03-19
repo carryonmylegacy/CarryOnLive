@@ -175,7 +175,7 @@ const BeneficiaryHubPage = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-[var(--t)] truncate">{name}</p>
-                    <p className="text-[10px] text-[var(--t4)]">{conn.relation || 'Benefactor'}</p>
+                    <p className="text-[11px] text-[var(--t4)]">{conn.relation || 'Benefactor'}</p>
                   </div>
                   <button
                     onClick={() => {

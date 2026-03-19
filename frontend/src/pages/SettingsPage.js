@@ -1231,7 +1231,7 @@ const SettingsPage = () => {
               </div>
             </div>
             {consent?.updated_at && (
-              <p className="text-[var(--t5)] text-[10px] mt-2">
+              <p className="text-[var(--t5)] text-[11px] mt-2">
                 Last updated: {new Date(consent.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </p>
             )}
@@ -1256,7 +1256,7 @@ const SettingsPage = () => {
                 </span>
                 {exportLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />}
               </Button>
-              <p className="text-[var(--t5)] text-[10px] pl-1">GDPR Article 15/20 — Export all your personal data as JSON</p>
+              <p className="text-[var(--t5)] text-[11px] pl-1">GDPR Article 15/20 — Export all your personal data as JSON</p>
 
               <Button
                 variant="outline"
@@ -1283,7 +1283,7 @@ const SettingsPage = () => {
                 </span>
                 <ChevronRight className="w-4 h-4" />
               </Button>
-              <p className="text-[var(--t5)] text-[10px] pl-1">GDPR Article 17 — Permanently delete your account and all data</p>
+              <p className="text-[var(--t5)] text-[11px] pl-1">GDPR Article 17 — Permanently delete your account and all data</p>
             </div>
           </div>
         </CardContent>
@@ -1312,7 +1312,7 @@ const SettingsPage = () => {
                       <p className="text-[var(--t4)] text-xs mt-0.5">{cat.retention}</p>
                     </div>
                   </div>
-                  <p className="text-[var(--t5)] text-[10px] mt-1">Legal basis: {cat.legal_basis}</p>
+                  <p className="text-[var(--t5)] text-[11px] mt-1">Legal basis: {cat.legal_basis}</p>
                 </div>
               ))}
             </div>

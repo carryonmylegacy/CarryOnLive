@@ -328,7 +328,7 @@ const UnlockModal = ({ sectionId, settings: s, onClose, onUnlocked }) => {
             {steps.map((s, i) => (
               <div key={s} className="flex items-center gap-1">
                 <div className={`w-2 h-2 rounded-full ${i < step ? 'bg-[var(--gn2)]' : i === step ? 'bg-[var(--gold)]' : 'bg-[var(--b)]'}`} />
-                <span className="text-[10px] text-[var(--t5)] capitalize">{s === 'question' ? 'Q&A' : s}</span>
+                <span className="text-[11px] text-[var(--t5)] capitalize">{s === 'question' ? 'Q&A' : s}</span>
               </div>
             ))}
           </div>

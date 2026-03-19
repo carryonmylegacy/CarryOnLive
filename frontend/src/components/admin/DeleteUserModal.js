@@ -32,7 +32,7 @@ export const DeleteUserModal = ({
           </div>
           <div>
             <h3 className="text-white font-bold text-base" style={{ fontFamily: 'Outfit, sans-serif' }}>Delete Account</h3>
-            <p className="text-[var(--t5)] text-[10px]">This action is irreversible</p>
+            <p className="text-[var(--t5)] text-[11px]">This action is irreversible</p>
           </div>
         </div>
 
@@ -40,7 +40,7 @@ export const DeleteUserModal = ({
           <p className="text-sm text-[var(--t3)]">
             Permanently delete <strong className="text-white">{deleteTarget.name}</strong> ({deleteTarget.role})?
           </p>
-          <p className="text-[10px] text-red-400/80 mt-1">
+          <p className="text-[11px] text-red-400/80 mt-1">
             This will remove their account, estate, all documents, messages, beneficiaries, subscriptions, and checklists.
           </p>
         </div>

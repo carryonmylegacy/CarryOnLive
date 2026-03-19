@@ -33,7 +33,7 @@ export const LaunchMetricsTab = ({ getAuthHeaders }) => {
       <Icon className="w-5 h-5 mx-auto mb-2" style={{ color }} />
       <div className="text-2xl font-bold text-[var(--t)]">{value}</div>
       <div className="text-xs font-bold text-[var(--t4)] mt-0.5">{label}</div>
-      {sub && <div className="text-[10px] text-[var(--t5)] mt-1">{sub}</div>}
+      {sub && <div className="text-[11px] text-[var(--t5)] mt-1">{sub}</div>}
     </div>
   );
 
@@ -60,7 +60,7 @@ export const LaunchMetricsTab = ({ getAuthHeaders }) => {
 
       {/* Signups */}
       <div>
-        <p className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2">New Benefactor Signups</p>
+        <p className="text-[11px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2">New Benefactor Signups</p>
         <div className="grid grid-cols-4 gap-2">
           <MetricCard icon={UserPlus} color="#22C993" value={metrics.signups.today} label="Today" />
           <MetricCard icon={UserPlus} color="#3B82F6" value={metrics.signups.last_7d} label="7 Days" />
@@ -71,7 +71,7 @@ export const LaunchMetricsTab = ({ getAuthHeaders }) => {
 
       {/* Viral Metrics */}
       <div>
-        <p className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2">Viral Growth</p>
+        <p className="text-[11px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2">Viral Growth</p>
         <div className="grid grid-cols-2 gap-2">
           <MetricCard icon={Users} color="#d4af37" value={metrics.avg_beneficiaries_invited} label="Avg Invited / Benefactor" />
           <MetricCard icon={ArrowRight} color="#22C993" 
@@ -83,7 +83,7 @@ export const LaunchMetricsTab = ({ getAuthHeaders }) => {
 
       {/* Rates */}
       <div>
-        <p className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2">Conversion & Retention</p>
+        <p className="text-[11px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2">Conversion & Retention</p>
         <div className="space-y-2">
           <RateBar label="Trial → Paid Conversion" rate={metrics.conversion.rate} color="#22C993" />
           <div className="grid grid-cols-3 gap-2">

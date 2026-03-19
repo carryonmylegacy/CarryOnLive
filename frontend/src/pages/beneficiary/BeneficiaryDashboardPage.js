@@ -267,7 +267,7 @@ const BeneficiaryDashboardPage = () => {
                     <div className="flex items-center gap-2 mb-2">
                       <Users className="w-4 h-4 text-[var(--t4)]" />
                       <span className="text-sm font-bold text-[var(--t)]">{ben.name || 'Unnamed'}</span>
-                      <span className="text-[10px] text-[var(--t5)] capitalize">{ben.relation}</span>
+                      <span className="text-[11px] text-[var(--t5)] capitalize">{ben.relation}</span>
                     </div>
                     <div className="space-y-1.5">
                       {Object.entries(SECTION_LABELS).map(([key, label]) => (

@@ -80,10 +80,10 @@ export const AnalyticsTab = ({ getAuthHeaders }) => {
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${kpi.color}15` }}>
                   <kpi.icon className="w-3.5 h-3.5" style={{ color: kpi.color }} />
                 </div>
-                <span className="text-[10px] text-[var(--t5)] font-bold uppercase tracking-wider">{kpi.label}</span>
+                <span className="text-[11px] text-[var(--t5)] font-bold uppercase tracking-wider">{kpi.label}</span>
               </div>
               <p className="text-2xl font-bold text-[var(--t)]">{kpi.value}</p>
-              <p className="text-[10px] text-[var(--t5)] mt-0.5">{kpi.sub}</p>
+              <p className="text-[11px] text-[var(--t5)] mt-0.5">{kpi.sub}</p>
             </CardContent>
           </Card>
         ))}

@@ -93,7 +93,7 @@ export const SupportTab = ({ getAuthHeaders }) => {
             {isFounder && (
               <button
                 onClick={() => setShowDeleted(!showDeleted)}
-                className="text-[10px] font-bold px-2 py-0.5 rounded"
+                className="text-[11px] font-bold px-2 py-0.5 rounded"
                 style={{
                   background: showDeleted ? 'rgba(239,68,68,0.1)' : 'var(--s)',
                   color: showDeleted ? '#ef4444' : 'var(--t5)',
@@ -134,7 +134,7 @@ export const SupportTab = ({ getAuthHeaders }) => {
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-[var(--t)] truncate">{conv.user_name || 'Unknown'}</span>
                       {conv.soft_deleted && (
-                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--rdbg)] text-[var(--rd)] font-bold">DELETED</span>
+                        <span className="text-[11px] px-1.5 py-0.5 rounded bg-[var(--rdbg)] text-[var(--rd)] font-bold">DELETED</span>
                       )}
                       {!conv.soft_deleted && conv.unread_count > 0 && (
                         <span className="bg-[var(--rd)] text-white text-xs px-1.5 py-0.5 rounded-full font-bold">
@@ -159,7 +159,7 @@ export const SupportTab = ({ getAuthHeaders }) => {
                             .then(() => { toast.success('Conversation restored'); fetchConversations(); })
                             .catch(() => toast.error('Failed to restore'));
                         }}
-                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold text-[var(--gn2)] hover:bg-[var(--gnbg)] transition-colors"
+                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold text-[var(--gn2)] hover:bg-[var(--gnbg)] transition-colors"
                         data-testid={`restore-conv-${conv.conversation_id}`}
                       >
                         <RotateCcw className="w-3 h-3" /> Restore
@@ -173,7 +173,7 @@ export const SupportTab = ({ getAuthHeaders }) => {
                             .then(() => { fetchConversations(); if (selectedConv?.conversation_id === conv.conversation_id) setSelectedConv(null); })
                             .catch(() => toast.error('Failed to delete'));
                         }}
-                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold text-[var(--rd)] hover:bg-[var(--rdbg)] transition-colors"
+                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold text-[var(--rd)] hover:bg-[var(--rdbg)] transition-colors"
                         data-testid={`delete-conv-${conv.conversation_id}`}
                       >
                         <Trash2 className="w-3 h-3" /> Delete

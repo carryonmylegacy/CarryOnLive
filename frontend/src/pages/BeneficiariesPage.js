@@ -634,11 +634,11 @@ const BeneficiariesPage = () => {
                   
                   <div className="flex items-center gap-1 flex-wrap">
                     {ben.is_stub && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--ywbg)] text-[var(--yw)] mr-1">NEEDS INFO</span>
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--ywbg)] text-[var(--yw)] mr-1">NEEDS INFO</span>
                     )}
                     {/* Succession Order Badge */}
                     <span
-                      className="flex items-center gap-1 text-[9px] font-bold whitespace-nowrap px-2 py-1 rounded-md"
+                      className="flex items-center gap-1 text-[11px] font-bold whitespace-nowrap px-2 py-1 rounded-md"
                       style={{ background: succStyle.bg, color: succStyle.color, border: succStyle.border }}
                       data-testid={`succession-badge-${ben.id}`}
                     >
@@ -738,8 +738,8 @@ const BeneficiariesPage = () => {
                   {/* Succession Participation Toggle */}
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <p className="text-[10px] text-[var(--t5)] uppercase tracking-wider font-bold">Succession Chain</p>
-                      <p className="text-[10px] text-[var(--t5)] mt-0.5">{isInSuccession ? `Rank #${succRank + 1} in hierarchy` : 'Not participating'}</p>
+                      <p className="text-[11px] text-[var(--t5)] uppercase tracking-wider font-bold">Succession Chain</p>
+                      <p className="text-[11px] text-[var(--t5)] mt-0.5">{isInSuccession ? `Rank #${succRank + 1} in hierarchy` : 'Not participating'}</p>
                     </div>
                     <Switch
                       checked={isInSuccession}
@@ -750,7 +750,7 @@ const BeneficiariesPage = () => {
 
                   {/* Section Access Permissions — what this beneficiary sees after transition */}
                   <div className="mb-3">
-                    <p className="text-[10px] text-[var(--t5)] uppercase tracking-wider font-bold mb-2">Post-Transition Access</p>
+                    <p className="text-[11px] text-[var(--t5)] uppercase tracking-wider font-bold mb-2">Post-Transition Access</p>
                     <div className="space-y-1.5">
                       {Object.entries(SECTION_LABELS).map(([key, label]) => {
                         const perms = sectionPerms[ben.id] || {};

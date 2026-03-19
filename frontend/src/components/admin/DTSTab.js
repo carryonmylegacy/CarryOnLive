@@ -132,7 +132,7 @@ export const DTSTab = ({ getAuthHeaders }) => {
             </div>
             <div>
               <h3 className="text-white font-bold text-base" style={{ fontFamily: 'Outfit, sans-serif' }}>Delete DTS Request</h3>
-              <p className="text-[var(--t5)] text-[10px]">This action is irreversible</p>
+              <p className="text-[var(--t5)] text-[11px]">This action is irreversible</p>
             </div>
           </div>
 
@@ -140,7 +140,7 @@ export const DTSTab = ({ getAuthHeaders }) => {
             <p className="text-sm text-[var(--t3)]">
               Permanently delete <strong className="text-white">{deleteTarget.title}</strong>?
             </p>
-            <p className="text-[10px] text-red-400/80 mt-1">
+            <p className="text-[11px] text-red-400/80 mt-1">
               This will remove the DTS request, all quote line items, and related activity logs.
             </p>
           </div>
@@ -339,7 +339,7 @@ export const DTSTab = ({ getAuthHeaders }) => {
           {isFounder && (
             <button
               onClick={() => setShowDeleted(!showDeleted)}
-              className="text-[10px] font-bold px-2 py-1 rounded flex-shrink-0"
+              className="text-[11px] font-bold px-2 py-1 rounded flex-shrink-0"
               style={{
                 background: showDeleted ? 'rgba(239,68,68,0.1)' : 'var(--s)',
                 color: showDeleted ? '#ef4444' : 'var(--t5)',
@@ -382,7 +382,7 @@ export const DTSTab = ({ getAuthHeaders }) => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <div className="font-bold text-[var(--t)] text-sm truncate">{task.title}</div>
-                    {isDeleted && <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--rdbg)] text-[var(--rd)] font-bold flex-shrink-0">DELETED</span>}
+                    {isDeleted && <span className="text-[11px] px-1.5 py-0.5 rounded bg-[var(--rdbg)] text-[var(--rd)] font-bold flex-shrink-0">DELETED</span>}
                   </div>
                   <div className="flex gap-2 mt-1 flex-wrap">
                     <span className="text-xs px-2 py-0.5 rounded-md font-bold" style={{ background: 'var(--s)', color: statusColors[task.status] }}>{task.status}</span>

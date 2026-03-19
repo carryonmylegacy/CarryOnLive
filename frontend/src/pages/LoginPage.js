@@ -307,7 +307,7 @@ const LoginPage = () => {
             <>
               <div className="flex items-center gap-3 my-4">
                 <div className="flex-1 h-px bg-[#1a2a42]" />
-                <span className="text-[#334155] text-[10px] uppercase tracking-widest font-medium">or</span>
+                <span className="text-[#334155] text-[11px] uppercase tracking-widest font-medium">or</span>
                 <div className="flex-1 h-px bg-[#1a2a42]" />
               </div>
               <button onClick={handlePasskeyLogin} disabled={passkeyLoading}
@@ -506,7 +506,7 @@ const LoginPage = () => {
                     <>
                       <div className="flex items-center gap-3 my-4">
                         <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
-                        <span className="text-[#334155] text-[10px] uppercase tracking-widest font-medium">or</span>
+                        <span className="text-[#334155] text-[11px] uppercase tracking-widest font-medium">or</span>
                         <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
                       </div>
                       <button onClick={handlePasskeyLogin} disabled={passkeyLoading}

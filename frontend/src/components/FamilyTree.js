@@ -89,17 +89,17 @@ const TreeNode = ({ initials, photo, color, label, sublabel, size = 60, badge, i
           )}
         </div>
         {badge && !isPrimary && (
-          <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black" style={{ background: '#d4af37', color: '#080e1a' }}>
+          <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-black" style={{ background: '#d4af37', color: '#080e1a' }}>
             {badge}
           </div>
         )}
       </div>
     {label && isPrimary ? (
-      <span className="text-[9px] font-bold whitespace-nowrap px-2 py-0.5 rounded-md text-center leading-tight" style={{ background: 'rgba(34,201,147,0.15)', color: '#22C993', border: '1px solid rgba(34,201,147,0.3)' }}>{label}</span>
+      <span className="text-[11px] font-bold whitespace-nowrap px-2 py-0.5 rounded-md text-center leading-tight" style={{ background: 'rgba(34,201,147,0.15)', color: '#22C993', border: '1px solid rgba(34,201,147,0.3)' }}>{label}</span>
     ) : label ? (
-      <span className="text-[10px] font-semibold text-[var(--t)] text-center leading-tight">{label}</span>
+      <span className="text-xs font-semibold text-[var(--t)] text-center leading-tight">{label}</span>
     ) : null}
-    {sublabel && <span className="text-[8px] text-[var(--t4)] text-center leading-tight">{sublabel}</span>}
+    {sublabel && <span className="text-[11px] text-[var(--t4)] text-center leading-tight">{sublabel}</span>}
   </div>
   );
 };
@@ -354,15 +354,19 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
         )}
       </div>
 
-      {/* Legend — linked/unlinked color key */}
-      <div className="flex items-center justify-center gap-5 mt-4" data-testid="family-tree-legend">
+      {/* Legend — color key for benefactor + linked/unlinked */}
+      <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 mt-4 px-2" data-testid="family-tree-legend">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-full" style={{ background: '#d4af37', boxShadow: '0 0 6px rgba(212,175,55,0.5)' }} />
+          <span className="text-xs font-medium text-[var(--t3)]">You (Benefactor)</span>
+        </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-full" style={{ background: LINKED_COLOR, boxShadow: `0 0 6px ${LINKED_COLOR}50` }} />
-          <span className="text-sm font-medium text-[var(--t3)]">Linked</span>
+          <span className="text-xs font-medium text-[var(--t3)]">Linked — has their own login</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-full" style={{ background: UNLINKED_COLOR, boxShadow: `0 0 6px ${UNLINKED_COLOR}50` }} />
-          <span className="text-sm font-medium text-[var(--t3)]">Unlinked</span>
+          <span className="text-xs font-medium text-[var(--t3)]">Unlinked — no account yet</span>
         </div>
       </div>
     </div>

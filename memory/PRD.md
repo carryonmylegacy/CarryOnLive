@@ -20,11 +20,13 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
-### Completed (March 19, 2026 — Session 10: Family Tree Colors + Apple IAP Fix)
-- **Beneficiary Linked/Unlinked Colors**: Changed beneficiary node colors in FamilyTree.js from ring-based coloring to status-based: green (#10b981) for "linked" and yellow (#f59e0b) for "unlinked". Updated legend with larger font.
-- **Apple Guideline 3.1.1 Fix (CRITICAL)**: Fixed code so iOS native app NEVER falls through to Stripe checkout. If IAP is unavailable on iOS, shows error instead of Stripe buttons. Applied to all 3 payment paths: `handleSubscribe`, `handleChangePlan`, `handleChangeBilling` in SubscriptionManagement.js and `handleCheckout` in SubscriptionPaywall.js.
-- **CI Lint Fix**: Fixed ruff formatting in `estates.py` and projection warnings in `auth.py`/`estates.py`.
-- **Housekeeping**: 38/38 PASS, zero warnings (new standard: zero tolerance for warnings).
+### Completed (March 19, 2026 — Session 10: Family Tree Colors + Apple IAP Fix + Font Sweep)
+- **Beneficiary Color Coding**: Green = linked (has own login), Yellow = unlinked (no account yet). Legend now explains all 3 colors including benefactor's gold.
+- **Apple Guideline 3.1.1 Fix**: iOS native app now NEVER falls through to Stripe. All payment paths (subscribe, change plan, change billing) block Stripe on iOS.
+- **Global Font Minimum Sweep**: Eliminated all text-[8px], text-[9px], text-[10px] across entire frontend (~330 instances). New minimum is text-[11px]. FamilyTree names bumped to text-xs (12px), sublabels to text-[11px].
+- **Orbit Click Fix**: Increased click guard threshold from 1° to 5° in OrbitVisualization to fix tap-to-navigate on mobile.
+- **CI Lint Fix**: Fixed ruff formatting and projection warnings. Housekeeping 38/38 PASS, zero warnings.
+- **Zero-Tolerance Housekeeping Rule**: Documented in PRD that ALL housekeeping checks must PASS with zero warnings, every fork, every session.
 
 ### Completed (March 19, 2026 — Session 9: Settings & Admin Overhaul)
 - **Settings Page Reorganization**: Moved Security card to right after Profile card. New order: Profile > Security > Personal Information > Estate Photo > Push Notifications > Appearance > Notifications & Digest > Privacy & Data Rights > Logout.

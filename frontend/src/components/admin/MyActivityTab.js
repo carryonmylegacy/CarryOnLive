@@ -85,10 +85,10 @@ export const MyActivityTab = ({ getAuthHeaders }) => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-[var(--t)]">{label}</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: sev.bg, color: sev.color }}>{e.severity}</span>
+                        <span className="text-[11px] px-1.5 py-0.5 rounded-full" style={{ background: sev.bg, color: sev.color }}>{e.severity}</span>
                       </div>
-                      {detail && <p className="text-[10px] text-[var(--t4)] truncate mt-0.5">{detail}</p>}
-                      <p className="text-[10px] text-[var(--t5)] mt-0.5">{e.resource_type} · {time}</p>
+                      {detail && <p className="text-[11px] text-[var(--t4)] truncate mt-0.5">{detail}</p>}
+                      <p className="text-[11px] text-[var(--t5)] mt-0.5">{e.resource_type} · {time}</p>
                     </div>
                   </div>
                 );

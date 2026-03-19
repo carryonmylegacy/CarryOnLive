@@ -172,17 +172,17 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
             <div className="text-xs text-[var(--t4)] truncate">{u.email}</div>
             {u.subscription?.plan_id && (
               <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-[10px] px-1.5 py-0.5 rounded font-bold capitalize" style={{ background: 'rgba(212,175,55,0.1)', color: '#d4af37' }}>
+                <span className="text-[11px] px-1.5 py-0.5 rounded font-bold capitalize" style={{ background: 'rgba(212,175,55,0.1)', color: '#d4af37' }}>
                   {u.subscription.plan_name || u.subscription.plan_id}
                 </span>
-                <span className="text-[10px] text-[var(--t5)] capitalize hidden sm:inline">{u.subscription.billing_cycle || 'monthly'}</span>
-                {u.subscription.beta_plan && <span className="text-[10px] text-purple-400 hidden sm:inline">(beta)</span>}
+                <span className="text-[11px] text-[var(--t5)] capitalize hidden sm:inline">{u.subscription.billing_cycle || 'monthly'}</span>
+                {u.subscription.beta_plan && <span className="text-[11px] text-purple-400 hidden sm:inline">(beta)</span>}
               </div>
             )}
             {viewMode === 'tree' && !indent && hasBens && (
               <div className="flex items-center gap-1 mt-0.5">
                 <GitBranch className="w-3 h-3 text-[var(--t5)]" />
-                <span className="text-[10px] text-[var(--t5)]">{u.linked_beneficiaries.length} beneficiar{u.linked_beneficiaries.length === 1 ? 'y' : 'ies'}</span>
+                <span className="text-[11px] text-[var(--t5)]">{u.linked_beneficiaries.length} beneficiar{u.linked_beneficiaries.length === 1 ? 'y' : 'ies'}</span>
               </div>
             )}
           </div>
@@ -195,28 +195,28 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
               {u.role}
             </span>
             {billingStatus === 'grace_period' && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold"
+              <span className="text-[11px] px-1.5 py-0.5 rounded-md font-bold"
                 style={{ background: 'rgba(245,166,35,0.15)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}
                 data-testid={`billing-grace-${u.id}`}>
                 GRACE {u.grace_days_remaining != null ? `${u.grace_days_remaining}d` : ''}
               </span>
             )}
             {billingStatus === 'trial' && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold"
+              <span className="text-[11px] px-1.5 py-0.5 rounded-md font-bold"
                 style={{ background: 'rgba(245,166,35,0.15)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}
                 data-testid={`billing-trial-${u.id}`}>
                 TRIAL {u.trial_days_remaining != null ? `${u.trial_days_remaining}d` : ''}
               </span>
             )}
             {billingStatus === 'dormant' && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold"
+              <span className="text-[11px] px-1.5 py-0.5 rounded-md font-bold"
                 style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}
                 data-testid={`billing-dormant-${u.id}`}>
                 DORMANT
               </span>
             )}
             {u.is_beta_tester && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold"
+              <span className="text-[11px] px-1.5 py-0.5 rounded-md font-bold"
                 style={{ background: 'rgba(251,191,36,0.15)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.3)' }}
                 data-testid={`beta-badge-${u.id}`}>
                 BETA
@@ -277,15 +277,15 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     const sc = statusColors[ben.invitation_status] || statusColors.draft;
     return (
       <div className="ml-8 pl-4 py-2 flex items-center gap-3 border-l-2" style={{ borderColor: 'var(--b)' }} data-testid={`tree-ben-${ben.id}`}>
-        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
           style={{ background: 'rgba(139,92,246,0.1)', color: '#B794F6' }}>
           {ben.name ? ben.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
         </div>
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-[var(--t3)] text-xs truncate">{ben.name || 'Unnamed'}</div>
-          <div className="text-[10px] text-[var(--t5)] truncate">{ben.email || 'No email'} · {ben.relation || 'beneficiary'}</div>
+          <div className="text-[11px] text-[var(--t5)] truncate">{ben.email || 'No email'} · {ben.relation || 'beneficiary'}</div>
         </div>
-        <span className="text-[9px] px-2 py-0.5 rounded-full font-bold capitalize" style={{ background: sc.bg, color: sc.color }}>
+        <span className="text-[11px] px-2 py-0.5 rounded-full font-bold capitalize" style={{ background: sc.bg, color: sc.color }}>
           {ben.invitation_status || 'draft'}
         </span>
       </div>
@@ -343,7 +343,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
       <div className="space-y-3">
         {admins.length > 0 && (
           <div className="mb-4">
-            <p className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2">Administrators</p>
+            <p className="text-[11px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2">Administrators</p>
             <div className="space-y-2">
               {admins.map(u => <UserRow key={u.id} u={u} />)}
             </div>
@@ -375,7 +375,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                   <Users className="w-3.5 h-3.5 text-[var(--gold)]" />
                 </div>
                 <span className="text-xs font-bold text-[var(--gold)] flex-1">{estateName}</span>
-                <span className="text-[10px] text-[var(--t5)] px-2 py-0.5 rounded-full" style={{ background: 'var(--s)' }}>
+                <span className="text-[11px] text-[var(--t5)] px-2 py-0.5 rounded-full" style={{ background: 'var(--s)' }}>
                   {bens.length} beneficiar{bens.length === 1 ? 'y' : 'ies'}
                 </span>
               </button>
@@ -400,15 +400,15 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="glass-card p-2.5 flex items-center gap-2.5 mb-1" style={{ fontSize: '0.85em' }}>
-                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
                             style={{ background: roleColors.beneficiary.bg, color: roleColors.beneficiary.color }}>
                             {bu.name ? bu.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="font-semibold text-[var(--t)] text-xs truncate">{bu.name || 'No name'}</div>
-                            <div className="text-[10px] text-[var(--t5)] truncate">{bu.email}</div>
+                            <div className="text-[11px] text-[var(--t5)] truncate">{bu.email}</div>
                           </div>
-                          <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold" style={{ background: roleColors.beneficiary.bg, color: roleColors.beneficiary.color }}>
+                          <span className="text-[11px] px-1.5 py-0.5 rounded-md font-bold" style={{ background: roleColors.beneficiary.bg, color: roleColors.beneficiary.color }}>
                             beneficiary
                           </span>
                           {bu.id !== currentUserId && !operatorMode && (
@@ -448,7 +448,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
         {/* Orphan beneficiary users */}
         {orphans.length > 0 && (
           <div>
-            <p className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2 mt-4">
+            <p className="text-[11px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2 mt-4">
               Unlinked Beneficiaries ({orphans.length})
             </p>
             <div className="space-y-2">
@@ -516,9 +516,9 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
             </div>
           )}
         </div>
-        {label && <span className="text-[10px] font-semibold text-[var(--t)] text-center leading-tight">{label}</span>}
-        {sublabel && <span className="text-[8px] text-[#64748B] text-center leading-tight">{sublabel}</span>}
-        {extra && <span className="text-[8px] text-center leading-tight" style={{ color: statusBadge?.bg || '#64748B' }}>{extra}</span>}
+        {label && <span className="text-[11px] font-semibold text-[var(--t)] text-center leading-tight">{label}</span>}
+        {sublabel && <span className="text-[11px] text-[#64748B] text-center leading-tight">{sublabel}</span>}
+        {extra && <span className="text-[11px] text-center leading-tight" style={{ color: statusBadge?.bg || '#64748B' }}>{extra}</span>}
       </div>
     );
 
@@ -526,7 +526,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
       <div className="space-y-4">
         {admins.length > 0 && (
           <div className="mb-4">
-            <p className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2">Administrators</p>
+            <p className="text-[11px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2">Administrators</p>
             <div className="space-y-2">
               {admins.map(u => <UserRow key={u.id} u={u} />)}
             </div>
@@ -545,19 +545,19 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                   <Users className="w-3 h-3 text-[var(--gold)]" />
                 </div>
                 <span className="text-xs font-bold text-[var(--gold)] flex-1">{owner.name}'s Estate</span>
-                <span className="text-[10px] text-[var(--t5)]">{bens.length} beneficiar{bens.length === 1 ? 'y' : 'ies'}</span>
+                <span className="text-[11px] text-[var(--t5)]">{bens.length} beneficiar{bens.length === 1 ? 'y' : 'ies'}</span>
               </div>
 
               {/* Summary stats */}
               <div className="flex items-center gap-3 mb-3 ml-7">
-                <span className="text-[10px]" style={{ color: linked === bens.length && bens.length > 0 ? '#22C993' : '#F5A623' }}>
+                <span className="text-[11px]" style={{ color: linked === bens.length && bens.length > 0 ? '#22C993' : '#F5A623' }}>
                   {linked}/{bens.length} linked
                 </span>
-                <span className="text-[10px]" style={{ color: invited > 0 ? '#8B5CF6' : '#64748B' }}>
+                <span className="text-[11px]" style={{ color: invited > 0 ? '#8B5CF6' : '#64748B' }}>
                   {invited} invited
                 </span>
                 {owner.subscription?.plan_id && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded font-bold" style={{ background: 'rgba(212,175,55,0.1)', color: '#d4af37' }}>
+                  <span className="text-[11px] px-1.5 py-0.5 rounded font-bold" style={{ background: 'rgba(212,175,55,0.1)', color: '#d4af37' }}>
                     {owner.subscription.plan_name || owner.subscription.plan_id}
                   </span>
                 )}
@@ -632,7 +632,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                 )}
 
                 {sortedBens.length === 0 && (
-                  <p className="text-[10px] text-[var(--t5)] mt-2 italic">No beneficiaries</p>
+                  <p className="text-[11px] text-[var(--t5)] mt-2 italic">No beneficiaries</p>
                 )}
               </div>
             </div>
@@ -649,7 +649,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
           if (orphans.length === 0) return null;
           return (
             <div>
-              <p className="text-[10px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2 mt-4">Unlinked Beneficiaries ({orphans.length})</p>
+              <p className="text-[11px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2 mt-4">Unlinked Beneficiaries ({orphans.length})</p>
               <div className="space-y-2">{orphans.map(u => <UserRow key={u.id} u={u} />)}</div>
             </div>
           );
@@ -728,7 +728,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="text-[10px] sm:text-xs font-bold bg-[var(--s)] border border-[var(--b)] text-[var(--t)] rounded-md px-1.5 py-1 outline-none cursor-pointer"
+              className="text-[11px] sm:text-xs font-bold bg-[var(--s)] border border-[var(--b)] text-[var(--t)] rounded-md px-1.5 py-1 outline-none cursor-pointer"
               data-testid="admin-sort-by"
             >
               <option value="default">Default</option>
@@ -750,8 +750,8 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
           ].map(s => (
             <div key={s.label} className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.color.color }} />
-              <span className="text-[9px] sm:text-[10px] font-semibold" style={{ color: s.color.color }}>{s.label}</span>
-              <span className="text-[10px] text-[var(--t5)] hidden sm:inline">— {s.desc}</span>
+              <span className="text-[11px] sm:text-[11px] font-semibold" style={{ color: s.color.color }}>{s.label}</span>
+              <span className="text-[11px] text-[var(--t5)] hidden sm:inline">— {s.desc}</span>
             </div>
           ))}
         </div>

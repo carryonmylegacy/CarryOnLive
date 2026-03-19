@@ -18,7 +18,7 @@ const RoleBadge = ({ role }) => {
   const label = isManager ? 'Manager' : 'Team Member';
   return (
     <span
-      className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+      className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
       style={{
         background: isManager ? 'rgba(245,158,11,0.12)' : 'rgba(59,130,246,0.12)',
         color: isManager ? '#F59E0B' : '#3B82F6',
@@ -162,7 +162,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
               <div className="flex items-center gap-2 mb-2">
                 <Crown className="w-4 h-4 text-[#F59E0B]" />
                 <span className="text-xs font-bold text-[var(--t)] uppercase tracking-wider">Operations Managers</span>
-                <span className="text-[10px] text-[var(--t5)]">({managers.length})</span>
+                <span className="text-[11px] text-[var(--t5)]">({managers.length})</span>
               </div>
               <div className="space-y-2">
                 {managers.map(op => (
@@ -179,7 +179,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
             <div className="flex items-center gap-2 mb-2">
               <Wrench className="w-4 h-4 text-[#3B82F6]" />
               <span className="text-xs font-bold text-[var(--t)] uppercase tracking-wider">Operations Team Members</span>
-              <span className="text-[10px] text-[var(--t5)]">({workers.length})</span>
+              <span className="text-[11px] text-[var(--t5)]">({workers.length})</span>
             </div>
             {workers.length === 0 ? (
               <Card className="glass-card"><CardContent className="p-4 text-center text-[var(--t5)] text-xs">
@@ -210,7 +210,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
             {/* Role selector — Founder can choose manager/worker, Managers can only create workers */}
             {isFounder && (
               <div>
-                <label className="text-[10px] text-[var(--t5)] uppercase tracking-wider font-bold mb-1.5 block">Account Type</label>
+                <label className="text-[11px] text-[var(--t5)] uppercase tracking-wider font-bold mb-1.5 block">Account Type</label>
                 <Select value={form.operator_role} onValueChange={(v) => setForm({ ...form, operator_role: v })}>
                   <SelectTrigger className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" data-testid="role-select">
                     <SelectValue />
@@ -240,14 +240,14 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
               </button>
             </div>
             <div className="pt-1 pb-1">
-              <p className="text-[10px] text-[var(--t5)] uppercase tracking-wider font-bold mb-2">Contact Information</p>
+              <p className="text-[11px] text-[var(--t5)] uppercase tracking-wider font-bold mb-2">Contact Information</p>
             </div>
             <Input placeholder="Email (for OTP verification)" type="email" value={form.email} onChange={f('email')}
               className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" />
             <Input placeholder="Phone number" type="tel" value={form.phone} onChange={f('phone')}
               className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" />
             <div className="pt-1 pb-1">
-              <p className="text-[10px] text-[var(--t5)] uppercase tracking-wider font-bold mb-2">Role Details</p>
+              <p className="text-[11px] text-[var(--t5)] uppercase tracking-wider font-bold mb-2">Role Details</p>
             </div>
             <Input placeholder="Title (e.g. TVT Reviewer, Support Lead)" value={form.title} onChange={f('title')}
               className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" />
@@ -278,7 +278,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
 
             {/* Login Credentials Section */}
             <div className="pt-1 pb-1">
-              <p className="text-[10px] text-[var(--t5)] uppercase tracking-wider font-bold mb-2">Login Credentials</p>
+              <p className="text-[11px] text-[var(--t5)] uppercase tracking-wider font-bold mb-2">Login Credentials</p>
             </div>
             <Input placeholder="Username (login credential)" value={editForm.username || ''} onChange={ef('username')}
               className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" data-testid="edit-username" />
@@ -294,7 +294,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
 
             {/* Contact Information Section */}
             <div className="pt-1 pb-1">
-              <p className="text-[10px] text-[var(--t5)] uppercase tracking-wider font-bold mb-2">Contact Information</p>
+              <p className="text-[11px] text-[var(--t5)] uppercase tracking-wider font-bold mb-2">Contact Information</p>
             </div>
             <Input placeholder="Email (for OTP verification)" type="email" value={editForm.email || ''} onChange={ef('email')}
               className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" data-testid="edit-email" />
@@ -303,7 +303,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
 
             {/* Role Details Section */}
             <div className="pt-1 pb-1">
-              <p className="text-[10px] text-[var(--t5)] uppercase tracking-wider font-bold mb-2">Role Details</p>
+              <p className="text-[11px] text-[var(--t5)] uppercase tracking-wider font-bold mb-2">Role Details</p>
             </div>
             <Input placeholder="Title" value={editForm.title || ''} onChange={ef('title')}
               className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" data-testid="edit-title" />
@@ -434,7 +434,7 @@ const OperatorCard = ({ op, expandedId, setExpandedId, onEdit, onDelete, canDele
               <div className="pt-2 border-t border-[var(--b)]">
                 <div className="flex items-center gap-1.5 mb-2">
                   <User className="w-3 h-3 text-[var(--gold)]" />
-                  <span className="text-[10px] font-bold text-[var(--t3)] uppercase tracking-wider">Personal Information</span>
+                  <span className="text-[11px] font-bold text-[var(--t3)] uppercase tracking-wider">Personal Information</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {op.date_of_birth && (

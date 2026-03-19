@@ -123,19 +123,19 @@ export const EscalationsTab = ({ getAuthHeaders, isFounder = false }) => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="text-sm font-bold text-[var(--t)]">{item.subject}</span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: ps.bg, color: ps.color }}>{ps.label}</span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: isOpen ? 'rgba(245,158,11,0.1)' : 'rgba(34,197,94,0.1)', color: isOpen ? '#F59E0B' : '#22C55E' }}>
+                      <span className="text-[11px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: ps.bg, color: ps.color }}>{ps.label}</span>
+                      <span className="text-[11px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: isOpen ? 'rgba(245,158,11,0.1)' : 'rgba(34,197,94,0.1)', color: isOpen ? '#F59E0B' : '#22C55E' }}>
                         {isOpen ? 'Open' : 'Resolved'}
                       </span>
-                      {item.related_type && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--s)] text-[var(--t5)] capitalize">{item.related_type}</span>}
+                      {item.related_type && <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-[var(--s)] text-[var(--t5)] capitalize">{item.related_type}</span>}
                     </div>
                     <p className="text-xs text-[var(--t3)] mb-2">{item.description}</p>
-                    <p className="text-[10px] text-[var(--t5)]">By {item.created_by_name} · {new Date(item.created_at).toLocaleString()}</p>
+                    <p className="text-[11px] text-[var(--t5)]">By {item.created_by_name} · {new Date(item.created_at).toLocaleString()}</p>
                     {item.resolution_note && (
                       <div className="mt-2 p-2 rounded-lg" style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.15)' }}>
-                        <p className="text-[10px] font-bold text-[#22C55E] mb-0.5">Resolution:</p>
+                        <p className="text-[11px] font-bold text-[#22C55E] mb-0.5">Resolution:</p>
                         <p className="text-xs text-[var(--t3)]">{item.resolution_note}</p>
-                        <p className="text-[10px] text-[var(--t5)] mt-1">By {item.resolved_by_name} · {new Date(item.resolved_at).toLocaleString()}</p>
+                        <p className="text-[11px] text-[var(--t5)] mt-1">By {item.resolved_by_name} · {new Date(item.resolved_at).toLocaleString()}</p>
                       </div>
                     )}
                   </div>

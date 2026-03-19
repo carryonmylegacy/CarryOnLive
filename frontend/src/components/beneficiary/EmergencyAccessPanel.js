@@ -207,7 +207,7 @@ const EmergencyAccessPanel = ({ estates }) => {
           </Button>
         )}
 
-        <p className="text-[10px] text-[#64748b] leading-relaxed">
+        <p className="text-[11px] text-[#64748b] leading-relaxed">
           Emergency access is for situations where the benefactor is incapacitated and cannot provide access. 
           All requests are logged and verified. Misuse may result in account termination.
         </p>

@@ -100,14 +100,14 @@ export const ShiftNotesTab = ({ getAuthHeaders }) => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-xs font-bold text-[var(--t)]">{note.author_name}</span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: cs.bg, color: cs.color }}>{cs.label}</span>
-                      <span className="text-[10px] text-[var(--t5)]">{new Date(note.created_at).toLocaleString()}</span>
+                      <span className="text-[11px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: cs.bg, color: cs.color }}>{cs.label}</span>
+                      <span className="text-[11px] text-[var(--t5)]">{new Date(note.created_at).toLocaleString()}</span>
                     </div>
                     <p className="text-sm text-[var(--t2)] whitespace-pre-wrap">{note.content}</p>
                     {ackCount > 0 && (
                       <div className="mt-2 flex items-center gap-1">
                         <Check className="w-3 h-3 text-[#22C55E]" />
-                        <span className="text-[10px] text-[var(--t5)]">Acknowledged by {(note.acknowledged_by || []).map(a => a.name).join(', ')}</span>
+                        <span className="text-[11px] text-[var(--t5)]">Acknowledged by {(note.acknowledged_by || []).map(a => a.name).join(', ')}</span>
                       </div>
                     )}
                   </div>
@@ -119,7 +119,7 @@ export const ShiftNotesTab = ({ getAuthHeaders }) => {
                     </button>
                   )}
                   {iAcknowledged && (
-                    <span className="text-[10px] text-[#22C55E] font-bold flex-shrink-0">Acknowledged</span>
+                    <span className="text-[11px] text-[#22C55E] font-bold flex-shrink-0">Acknowledged</span>
                   )}
                 </div>
               </CardContent>

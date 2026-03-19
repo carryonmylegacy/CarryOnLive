@@ -131,7 +131,7 @@ const SecuritySettings = ({ getAuthHeaders }) => {
               </Button>
               <Button size="sm" variant="outline" className="text-xs border-[var(--b)]" onClick={() => { setShowMasterKeyInput(false); setMasterKeyInput(''); }}>Cancel</Button>
             </div>
-            <p className="text-[10px] text-[var(--t5)]">This key is hashed and stored securely. Customer service cannot see it — they can only verify what you tell them over the phone.</p>
+            <p className="text-[11px] text-[var(--t5)]">This key is hashed and stored securely. Customer service cannot see it — they can only verify what you tell them over the phone.</p>
           </div>
         )}
       </CardContent>
@@ -192,7 +192,7 @@ const SectionRow = ({ section, settings: s, questions, expanded, onToggle, heade
         </div>
         <div className="flex items-center gap-2">
           {isActive && (
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--pr2)]/10 text-[var(--pr2)]">
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--pr2)]/10 text-[var(--pr2)]">
               {layers.length} layer{layers.length > 1 ? 's' : ''}
             </span>
           )}
@@ -390,7 +390,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
                 {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            {s.has_password && <p className="text-[10px] text-[var(--gn2)] flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Password set</p>}
+            {s.has_password && <p className="text-[11px] text-[var(--gn2)] flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Password set</p>}
           </div>
         )}
       </div>
@@ -442,14 +442,14 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
               )}
               <div className="text-xs font-bold text-[var(--t)]">{recording ? 'Recording — Tap to Stop' : enrolling ? 'Processing...' : 'Tap to Record Sample'}</div>
               {(enrollCount > 0 || s.has_voiceprint) && (
-                <p className="text-[10px] text-[var(--gn2)] mt-1 flex items-center justify-center gap-1">
+                <p className="text-[11px] text-[var(--gn2)] mt-1 flex items-center justify-center gap-1">
                   <CheckCircle2 className="w-3 h-3" />
                   {enrollCount > 0 ? `${enrollCount} sample${enrollCount > 1 ? 's' : ''} enrolled` : 'Voiceprint enrolled'}
                   {enrollCount < 3 && ' · Record more for better accuracy'}
                 </p>
               )}
             </div>
-            <p className="text-[10px] text-[var(--t5)] leading-relaxed">
+            <p className="text-[11px] text-[var(--t5)] leading-relaxed">
               Your voiceprint verifies both WHAT you say and WHO is saying it. Record 2-3 samples for best accuracy.
             </p>
           </div>
@@ -505,7 +505,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
                 data-testid={`q-answer-${section.id}`}
               />
             </div>
-            {s.has_security_question && <p className="text-[10px] text-[var(--gn2)] flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Security question set</p>}
+            {s.has_security_question && <p className="text-[11px] text-[var(--gn2)] flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Security question set</p>}
           </div>
         )}
       </div>

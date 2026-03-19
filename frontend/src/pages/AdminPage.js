@@ -261,7 +261,7 @@ const AdminPage = ({ operatorMode = false }) => {
         <button
           onClick={handleCleanup}
           disabled={cleaning}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold text-[var(--t5)] hover:text-[var(--t3)] transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold text-[var(--t5)] hover:text-[var(--t3)] transition-colors"
           style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
           title="Remove orphaned records from deleted users"
           data-testid="admin-cleanup-btn"

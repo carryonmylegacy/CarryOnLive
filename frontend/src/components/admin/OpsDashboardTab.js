@@ -32,8 +32,8 @@ const QueueCard = ({ icon: Icon, label, count, color, sub }) => (
   >
     <Icon className="w-4 h-4 mx-auto mb-1" style={{ color: count > 0 ? color : 'var(--t5)' }} />
     <div className="text-xl font-bold text-[var(--t)]">{count}</div>
-    <div className="text-[10px] text-[var(--t4)] font-bold">{label}</div>
-    {sub && <div className="text-[9px] text-[var(--t5)]">{sub}</div>}
+    <div className="text-[11px] text-[var(--t4)] font-bold">{label}</div>
+    {sub && <div className="text-[11px] text-[var(--t5)]">{sub}</div>}
   </div>
 );
 
@@ -95,7 +95,7 @@ export const OpsDashboardTab = ({ getAuthHeaders }) => {
           <h3 className="text-xs font-bold text-[var(--t5)] uppercase tracking-wider">
             Team Activity
           </h3>
-          <span className="text-[10px] text-[var(--t5)]">
+          <span className="text-[11px] text-[var(--t5)]">
             {operators.filter(o => o.is_online).length}/{operators.length} online
           </span>
         </div>
@@ -122,7 +122,7 @@ export const OpsDashboardTab = ({ getAuthHeaders }) => {
                     <div className="flex items-center gap-2">
                       <StatusDot online={op.is_online} />
                       <span className="text-sm font-bold text-[var(--t)] truncate">{op.name}</span>
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+                      <span className="text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
                         style={{
                           background: op.operator_role === 'manager' ? 'rgba(245,158,11,0.12)' : 'rgba(59,130,246,0.12)',
                           color: op.operator_role === 'manager' ? '#F59E0B' : '#3B82F6',
@@ -130,7 +130,7 @@ export const OpsDashboardTab = ({ getAuthHeaders }) => {
                         {op.operator_role === 'manager' ? 'Manager' : 'Team Member'}
                       </span>
                     </div>
-                    <div className="text-[10px] text-[var(--t5)] truncate">
+                    <div className="text-[11px] text-[var(--t5)] truncate">
                       @{op.username}{op.title ? ` · ${op.title}` : ''}
                     </div>
                   </div>
@@ -139,13 +139,13 @@ export const OpsDashboardTab = ({ getAuthHeaders }) => {
                   <div className="flex gap-3 flex-shrink-0">
                     <div className="text-center" title="Tasks Assigned">
                       <div className="text-sm font-bold text-[var(--t)]">{op.tasks_assigned}</div>
-                      <div className="text-[9px] text-[var(--t5)]">Tasks</div>
+                      <div className="text-[11px] text-[var(--t5)]">Tasks</div>
                     </div>
                     <div className="text-center" title="Active Tasks">
                       <div className="text-sm font-bold" style={{ color: op.tasks_active > 0 ? '#F59E0B' : 'var(--t5)' }}>
                         {op.tasks_active}
                       </div>
-                      <div className="text-[9px] text-[var(--t5)]">Active</div>
+                      <div className="text-[11px] text-[var(--t5)]">Active</div>
                     </div>
                     <div className="text-center" title="Completion Rate">
                       <div className="text-sm font-bold" style={{
@@ -153,11 +153,11 @@ export const OpsDashboardTab = ({ getAuthHeaders }) => {
                       }}>
                         {op.completion_rate}%
                       </div>
-                      <div className="text-[9px] text-[var(--t5)]">Done</div>
+                      <div className="text-[11px] text-[var(--t5)]">Done</div>
                     </div>
                     <div className="text-center" title="Actions in last 24h">
                       <div className="text-sm font-bold text-[var(--t)]">{op.actions_24h}</div>
-                      <div className="text-[9px] text-[var(--t5)]">24h</div>
+                      <div className="text-[11px] text-[var(--t5)]">24h</div>
                     </div>
                   </div>
                 </div>

@@ -625,7 +625,7 @@ const SignupPage = () => {
                                 placeholder="The email your benefactor uses on CarryOn"
                                 className={`${inputClass} pl-11`} data-testid="signup-minor-benefactor-email" />
                             </div>
-                            <p className="text-[#525c72] text-[10px]">Since you're under 18, you'll be linked to your benefactor's estate.</p>
+                            <p className="text-[#525c72] text-[11px]">Since you're under 18, you'll be linked to your benefactor's estate.</p>
                           </div>
                         )}
                       </div>
@@ -648,7 +648,7 @@ const SignupPage = () => {
                           </Select>
                         </div>
                         {(maritalStatus === 'married' || maritalStatus === 'domestic_partnership') && (
-                          <p className="text-[#525c72] text-[10px] -mt-1">Your spouse will be added as a beneficiary in the next step — do not count them below.</p>
+                          <p className="text-[#525c72] text-[11px] -mt-1">Your spouse will be added as a beneficiary in the next step — do not count them below.</p>
                         )}
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1.5">
@@ -670,7 +670,7 @@ const SignupPage = () => {
                             </Select>
                           </div>
                         </div>
-                        <p className="text-[#525c72] text-[10px]">Don't include your spouse — only children, elderly parents, or other beneficiaries.</p>
+                        <p className="text-[#525c72] text-[11px]">Don't include your spouse — only children, elderly parents, or other beneficiaries.</p>
                       </div>
                     )}
 
@@ -809,11 +809,11 @@ const SignupPage = () => {
                               </div>
                               <div className="grid grid-cols-3 gap-2">
                                 <div className="space-y-1">
-                                  <Label className="text-[#7b879e] text-[10px] font-medium">City <span className="text-red-400">*</span></Label>
+                                  <Label className="text-[#7b879e] text-[11px] font-medium">City <span className="text-red-400">*</span></Label>
                                   <Input value={ben.address_city} onChange={(e) => updateBen('address_city', e.target.value)} placeholder="City" className={inputClass} />
                                 </div>
                                 <div className="space-y-1">
-                                  <Label className="text-[#7b879e] text-[10px] font-medium">State <span className="text-red-400">*</span></Label>
+                                  <Label className="text-[#7b879e] text-[11px] font-medium">State <span className="text-red-400">*</span></Label>
                                   <Select value={ben.address_state} onValueChange={(v) => updateBen('address_state', v)}>
                                     <SelectTrigger className={selectClass}><SelectValue placeholder="State" /></SelectTrigger>
                                     <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)] max-h-48">
@@ -822,7 +822,7 @@ const SignupPage = () => {
                                   </Select>
                                 </div>
                                 <div className="space-y-1">
-                                  <Label className="text-[#7b879e] text-[10px] font-medium">ZIP <span className="text-red-400">*</span></Label>
+                                  <Label className="text-[#7b879e] text-[11px] font-medium">ZIP <span className="text-red-400">*</span></Label>
                                   <Input value={ben.address_zip} onChange={(e) => updateBen('address_zip', e.target.value)} placeholder="ZIP" className={inputClass} maxLength={10} />
                                 </div>
                               </div>
@@ -959,7 +959,7 @@ const SignupPage = () => {
                             {benefactorEmailError ? (
                               <p className="text-red-400 text-xs">{benefactorEmailError}</p>
                             ) : (
-                              <p className="text-[#525c72] text-[10px]">Links your account to their estate plan.</p>
+                              <p className="text-[#525c72] text-[11px]">Links your account to their estate plan.</p>
                             )}
                           </div>
                         )}
@@ -1016,7 +1016,7 @@ const SignupPage = () => {
                                     {s.label}
                                   </span>
                                   {active && s.id !== 'enterprise' && (
-                                    <span className="text-[10px] block mt-0.5" style={{ color: `${s.color}aa` }}>Verification required</span>
+                                    <span className="text-[11px] block mt-0.5" style={{ color: `${s.color}aa` }}>Verification required</span>
                                   )}
                                 </div>
                               </button>

@@ -85,7 +85,7 @@ const NotificationBell = ({ collapsed }) => {
         {!collapsed && <span>Notifications</span>}
         {unreadCount > 0 && (
           <span
-            className="absolute flex items-center justify-center text-[10px] font-bold text-white rounded-full"
+            className="absolute flex items-center justify-center text-[11px] font-bold text-white rounded-full"
             style={{
               background: '#EF4444',
               width: 18, height: 18,
@@ -123,7 +123,7 @@ const NotificationBell = ({ collapsed }) => {
               {unreadCount > 0 && (
                 <button
                   onClick={markAllRead}
-                  className="text-[10px] text-[var(--gold)] hover:underline font-bold"
+                  className="text-[11px] text-[var(--gold)] hover:underline font-bold"
                   data-testid="mark-all-read"
                 >
                   <CheckCheck className="w-3.5 h-3.5 inline mr-0.5" /> Mark all read
@@ -168,7 +168,7 @@ const NotificationBell = ({ collapsed }) => {
                     <div className="flex-1 min-w-0">
                       <div className="text-xs font-bold text-[var(--t)] truncate">{n.title}</div>
                       <div className="text-[11px] text-[var(--t4)] mt-0.5 line-clamp-2">{n.body}</div>
-                      <div className="text-[10px] text-[var(--t5)] mt-1">
+                      <div className="text-[11px] text-[var(--t5)] mt-1">
                         {new Date(n.created_at).toLocaleString([], {
                           month: 'short', day: 'numeric',
                           hour: '2-digit', minute: '2-digit',

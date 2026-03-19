@@ -112,7 +112,7 @@ const BeneficiarySettingsPage = () => {
                     data-testid={`primary-for-${entry.estate_id}`}
                   >
                     <span className="text-[var(--t)] font-semibold">{entry.benefactor_name}</span>
-                    <span className="text-[10px] text-[var(--t5)] capitalize">{entry.status?.replace(/-/g, ' ')}</span>
+                    <span className="text-[11px] text-[var(--t5)] capitalize">{entry.status?.replace(/-/g, ' ')}</span>
                   </div>
                 ))}
               </div>
@@ -183,7 +183,7 @@ const BeneficiarySettingsPage = () => {
           <Shield className="w-3 h-3" />
           <span>AES-256 Encrypted · Zero-Knowledge · 2FA Protected</span>
         </div>
-        <p className="text-[var(--t5)] text-[10px]">CarryOn™ v1.0.0 · © 2024 CarryOn Inc.</p>
+        <p className="text-[var(--t5)] text-[11px]">CarryOn™ v1.0.0 · © 2024 CarryOn Inc.</p>
       </div>
     </div>
   );

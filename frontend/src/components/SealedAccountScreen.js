@@ -111,7 +111,7 @@ const SealedAccountScreen = ({ transitionedAt, onBack }) => {
                   </div>
                   <div>
                     <div className="text-sm font-bold text-white">Live Chat</div>
-                    <div className="text-[10px] text-[#94A3B8]">Priority 1 — Immediate response</div>
+                    <div className="text-[11px] text-[#94A3B8]">Priority 1 — Immediate response</div>
                   </div>
                 </a>
               )}
@@ -132,7 +132,7 @@ const SealedAccountScreen = ({ transitionedAt, onBack }) => {
                 </div>
                 <div>
                   <div className="text-sm font-bold text-white">Email</div>
-                  <div className="text-[10px] text-[#94A3B8]">{p1Contact.email}</div>
+                  <div className="text-[11px] text-[#94A3B8]">{p1Contact.email}</div>
                 </div>
               </a>
 
@@ -152,7 +152,7 @@ const SealedAccountScreen = ({ transitionedAt, onBack }) => {
                 </div>
                 <div>
                   <div className="text-sm font-bold text-white">Call</div>
-                  <div className="text-[10px] text-[#94A3B8]">{p1Contact.phone}</div>
+                  <div className="text-[11px] text-[#94A3B8]">{p1Contact.phone}</div>
                 </div>
               </a>
             </div>
@@ -171,7 +171,7 @@ const SealedAccountScreen = ({ transitionedAt, onBack }) => {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-[10px] text-[#334155] mt-6">
+        <p className="text-center text-[11px] text-[#334155] mt-6">
           CarryOn™ · AES-256-GCM Encrypted · Zero-Knowledge Architecture
         </p>
       </div>

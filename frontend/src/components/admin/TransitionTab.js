@@ -164,7 +164,7 @@ export const TransitionTab = ({ getAuthHeaders, onStatsChange }) => {
           {isFounder && (
             <button
               onClick={() => setShowDeleted(!showDeleted)}
-              className="text-[10px] font-bold px-2 py-1 rounded flex-shrink-0"
+              className="text-[11px] font-bold px-2 py-1 rounded flex-shrink-0"
               style={{
                 background: showDeleted ? 'rgba(239,68,68,0.1)' : 'var(--s)',
                 color: showDeleted ? '#ef4444' : 'var(--t5)',
@@ -206,7 +206,7 @@ export const TransitionTab = ({ getAuthHeaders, onStatsChange }) => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <h3 className="font-bold text-[var(--t)] truncate">{cert.estate_name || 'Unknown Estate'}</h3>
-                    {isDeleted && <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--rdbg)] text-[var(--rd)] font-bold">DELETED</span>}
+                    {isDeleted && <span className="text-[11px] px-1.5 py-0.5 rounded bg-[var(--rdbg)] text-[var(--rd)] font-bold">DELETED</span>}
                   </div>
                   <p className="text-sm text-[var(--t4)] truncate">Uploaded by: {cert.uploader_name || cert.uploaded_by}</p>
                   <p className="text-sm text-[var(--t4)] truncate">File: {cert.file_name}</p>

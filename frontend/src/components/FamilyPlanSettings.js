@@ -159,7 +159,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
                         </div>
                         <div className="min-w-0">
                           <div className="text-sm font-medium text-[var(--t)] truncate">{m.name}</div>
-                          <div className="text-[10px] text-[var(--t5)]">{m.relation}</div>
+                          <div className="text-[11px] text-[var(--t5)]">{m.relation}</div>
                         </div>
                       </div>
                       <div className="text-right flex-shrink-0 ml-3">
@@ -168,7 +168,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
                           <span className="text-sm font-bold text-[var(--t)]">${m.family_price.toFixed(2)}</span>
                         </div>
                         {m.savings > 0 && (
-                          <div className="text-[10px] text-[#22C993] font-medium">-${m.savings.toFixed(2)}/mo</div>
+                          <div className="text-[11px] text-[#22C993] font-medium">-${m.savings.toFixed(2)}/mo</div>
                         )}
                       </div>
                     </div>
@@ -240,7 +240,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-[var(--gold)] font-bold text-sm">${m.family_price?.toFixed(2)}/mo</span>
-                {m.discount > 0 && <span className="text-[10px] text-[var(--gn2)]">-${m.discount.toFixed(2)}</span>}
+                {m.discount > 0 && <span className="text-[11px] text-[var(--gn2)]">-${m.discount.toFixed(2)}</span>}
                 {isFPO && m.role !== 'fpo' && (
                   <div className="flex gap-1 ml-2">
                     {m.member_type !== 'beneficiary' || true ? (
@@ -293,7 +293,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
                 {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
               </Button>
             </div>
-            <p className="text-[10px] text-[var(--t5)] mt-2">
+            <p className="text-[11px] text-[var(--t5)] mt-2">
               Benefactors save $1/mo (except floor-rate tiers). Beneficiaries pay flat $3.49/mo.
             </p>
           </div>

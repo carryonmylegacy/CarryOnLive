@@ -689,7 +689,7 @@ const BetaBanner = ({ collapsed }) => {
 
   return (
     <div className="mx-3 mb-2 px-2.5 py-1.5 rounded-lg text-center" style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }} data-testid="beta-banner">
-      <span className="text-[10px] font-bold text-[var(--gn2)] tracking-wider">BETA = FREE</span>
+      <span className="text-[11px] font-bold text-[var(--gn2)] tracking-wider">BETA = FREE</span>
     </div>
   );
 };

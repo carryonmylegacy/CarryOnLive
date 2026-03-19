@@ -72,12 +72,12 @@ export const QuickSearchTab = ({ getAuthHeaders }) => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-bold text-[var(--t)] truncate">{r.title}</span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: `${cfg.color}15`, color: cfg.color }}>{cfg.label}</span>
+                      <span className="text-[11px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: `${cfg.color}15`, color: cfg.color }}>{cfg.label}</span>
                     </div>
                     <p className="text-xs text-[var(--t4)] truncate">{r.subtitle}</p>
                   </div>
                   {r.status && (
-                    <span className="text-[10px] px-2 py-1 rounded-full bg-[var(--s)] text-[var(--t5)] capitalize flex-shrink-0">{r.status}</span>
+                    <span className="text-[11px] px-2 py-1 rounded-full bg-[var(--s)] text-[var(--t5)] capitalize flex-shrink-0">{r.status}</span>
                   )}
                 </CardContent>
               </Card>

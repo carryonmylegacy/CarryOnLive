@@ -328,7 +328,7 @@ const ChecklistPage = () => {
           {suggestingAI ? (
             <>
               Analyzing... <span className="tabular-nums text-xs text-[var(--t5)]">{aiElapsed}s</span>
-              <button onClick={(e) => { e.stopPropagation(); stopAISuggest(); }} className="ml-1 px-2 py-0.5 rounded text-[10px] font-bold text-[var(--rd)] border border-[var(--rd)]/30">Stop</button>
+              <button onClick={(e) => { e.stopPropagation(); stopAISuggest(); }} className="ml-1 px-2 py-0.5 rounded text-[11px] font-bold text-[var(--rd)] border border-[var(--rd)]/30">Stop</button>
             </>
           ) : 'AI Suggest from Vault'}
         </button>
@@ -614,23 +614,23 @@ const ChecklistPage = () => {
                       </>
                     )}
                     {item.ai_suggested && item.ai_accepted === true && (
-                      <span className="text-[10px] text-[#14b8a6] font-bold">Accepted</span>
+                      <span className="text-[11px] text-[#14b8a6] font-bold">Accepted</span>
                     )}
                     {item.is_default && !item.activation_status && (
                       <>
-                        <button onClick={() => handleActivationAction(item.id, 'accepted')} className="px-2 py-1 rounded-lg text-[10px] font-bold text-[#10b981] active:scale-90 transition-transform" style={{ border: '1px solid rgba(16,185,129,0.3)' }}>
+                        <button onClick={() => handleActivationAction(item.id, 'accepted')} className="px-2 py-1 rounded-lg text-[11px] font-bold text-[#10b981] active:scale-90 transition-transform" style={{ border: '1px solid rgba(16,185,129,0.3)' }}>
                           Accept
                         </button>
-                        <button onClick={(e) => { e.stopPropagation(); openEdit(item); handleActivationAction(item.id, 'edited'); }} className="px-2 py-1 rounded-lg text-[10px] font-bold text-[#d4af37] active:scale-90 transition-transform" style={{ border: '1px solid rgba(212,175,55,0.3)' }}>
+                        <button onClick={(e) => { e.stopPropagation(); openEdit(item); handleActivationAction(item.id, 'edited'); }} className="px-2 py-1 rounded-lg text-[11px] font-bold text-[#d4af37] active:scale-90 transition-transform" style={{ border: '1px solid rgba(212,175,55,0.3)' }}>
                           Edit
                         </button>
-                        <button onClick={() => handleActivationAction(item.id, 'remove')} className="px-2 py-1 rounded-lg text-[10px] font-bold text-[#ef4444] active:scale-90 transition-transform" style={{ border: '1px solid rgba(239,68,68,0.3)' }}>
+                        <button onClick={() => handleActivationAction(item.id, 'remove')} className="px-2 py-1 rounded-lg text-[11px] font-bold text-[#ef4444] active:scale-90 transition-transform" style={{ border: '1px solid rgba(239,68,68,0.3)' }}>
                           Remove
                         </button>
                       </>
                     )}
                     {item.is_default && item.activation_status && (
-                      <span className="text-[10px] text-[#10b981] font-bold capitalize">{item.activation_status}</span>
+                      <span className="text-[11px] text-[#10b981] font-bold capitalize">{item.activation_status}</span>
                     )}
                     <button onClick={(e) => { e.stopPropagation(); openEdit(item); }} className="p-1.5 rounded-lg text-[var(--t5)] active:text-[var(--gold)] transition-colors">
                       <Edit2 className="w-4 h-4" />
@@ -667,7 +667,7 @@ const ChecklistPage = () => {
             Complete Checklist Editing for Now
           </button>
           {!allDefaultsResolved && (
-            <p className="text-[10px] text-[var(--t5)] mt-2">Accept, edit, or remove each default item to continue</p>
+            <p className="text-[11px] text-[var(--t5)] mt-2">Accept, edit, or remove each default item to continue</p>
           )}
         </div>
       )}

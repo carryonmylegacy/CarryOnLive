@@ -84,7 +84,7 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
           {isFounder && (
             <button
               onClick={() => setShowDeleted(!showDeleted)}
-              className="text-[10px] font-bold px-2 py-1 rounded"
+              className="text-[11px] font-bold px-2 py-1 rounded"
               style={{
                 background: showDeleted ? 'rgba(239,68,68,0.1)' : 'var(--s)',
                 color: showDeleted ? '#ef4444' : 'var(--t5)',
@@ -131,7 +131,7 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="font-bold text-[var(--t)]">{v.user_name || v.user_email}</p>
-                        {isDeleted && <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--rdbg)] text-[var(--rd)] font-bold">DELETED</span>}
+                        {isDeleted && <span className="text-[11px] px-1.5 py-0.5 rounded bg-[var(--rdbg)] text-[var(--rd)] font-bold">DELETED</span>}
                       </div>
                       <p className="text-xs text-[var(--t5)]">{v.user_email}</p>
                       <div className="flex items-center gap-2 mt-1.5 flex-wrap">
@@ -145,14 +145,14 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
                         <span className="text-xs text-[var(--t4)]">{tierLabels[v.tier_requested] || v.tier_requested}</span>
                         <span className="text-xs text-[var(--t5)]">{v.doc_type}</span>
                       </div>
-                      <p className="text-[10px] text-[var(--t5)] mt-1">
+                      <p className="text-[11px] text-[var(--t5)] mt-1">
                         Submitted: {new Date(v.submitted_at).toLocaleString()}
                       </p>
                       {v.review_notes && (
                         <p className="text-xs text-[var(--t4)] mt-1 italic">Notes: {v.review_notes}</p>
                       )}
                       {v.notified && (
-                        <p className="text-[10px] text-[#22C993] mt-1 flex items-center gap-1">
+                        <p className="text-[11px] text-[#22C993] mt-1 flex items-center gap-1">
                           <Check className="w-3 h-3" /> Benefactor notified
                         </p>
                       )}
@@ -174,7 +174,7 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
                         </button>
                       ) : !isDeleted ? (
                         <>
-                          <Button size="sm" variant="outline" className="text-[10px] border-[var(--b)] h-7 px-2"
+                          <Button size="sm" variant="outline" className="text-[11px] border-[var(--b)] h-7 px-2"
                             onClick={() => viewDocument(v.id)} data-testid={`view-doc-${v.id}`}>
                             View Doc
                           </Button>
@@ -203,7 +203,7 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
                               size="sm"
                               onClick={() => notifyBenefactor(v)}
                               disabled={notifying === v.id}
-                              className="text-[10px] h-7 px-2 font-bold"
+                              className="text-[11px] h-7 px-2 font-bold"
                               style={{ background: 'linear-gradient(135deg, #d4af37, #c9a033)', color: '#0F1629' }}
                               data-testid={`notify-benefactor-${v.id}`}
                             >
@@ -220,7 +220,7 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
                                 .then(() => { toast.success('Verification deleted'); fetchVerifications(); })
                                 .catch(() => toast.error('Failed to delete'));
                             }}
-                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold text-[var(--rd)] hover:bg-[var(--rdbg)] transition-colors"
+                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-[var(--rd)] hover:bg-[var(--rdbg)] transition-colors"
                             data-testid={`delete-verification-${v.id}`}
                           >
                             <Trash2 className="w-3 h-3" /> Delete

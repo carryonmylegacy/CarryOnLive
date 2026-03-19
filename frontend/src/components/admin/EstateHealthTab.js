@@ -46,7 +46,7 @@ const ScoreRing = ({ score, size = 44, strokeWidth = 3 }) => {
           strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
           style={{ transition: 'stroke-dashoffset 0.6s ease' }} />
       </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold" style={{ color: cfg.color }}>
+      <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold" style={{ color: cfg.color }}>
         {score}
       </span>
     </div>
@@ -76,7 +76,7 @@ const TreeNode = ({ initials, color, size = 44, label, sublabel, badge, glowColo
         </div>
       )}
     </div>
-    {label && <span className="text-[9px] font-semibold text-[var(--t)] text-center leading-tight max-w-[60px] truncate">{label}</span>}
+    {label && <span className="text-[11px] font-semibold text-[var(--t)] text-center leading-tight max-w-[60px] truncate">{label}</span>}
     {sublabel && <span className="text-[7px] text-[#64748B] text-center leading-tight">{sublabel}</span>}
   </div>
 );
@@ -135,26 +135,26 @@ const EstateHealthCard = ({ estate }) => {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold text-[var(--t)] truncate">{estate.estate_name}</span>
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
+            <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
               {cfg.label}
             </span>
             {billingStatus === 'dormant' && (
-              <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>DORMANT</span>
+              <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>DORMANT</span>
             )}
             {billingStatus === 'grace_period' && (
-              <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(245,166,35,0.15)', color: '#F5A623' }}>GRACE</span>
+              <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(245,166,35,0.15)', color: '#F5A623' }}>GRACE</span>
             )}
             {billingStatus === 'trial' && (
-              <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(245,166,35,0.15)', color: '#F5A623' }}>TRIAL</span>
+              <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(245,166,35,0.15)', color: '#F5A623' }}>TRIAL</span>
             )}
           </div>
           <div className="flex items-center gap-3 mt-0.5">
-            <span className="text-[10px] text-[var(--t5)]">{metrics.total} beneficiar{metrics.total === 1 ? 'y' : 'ies'}</span>
-            <span className="text-[10px]" style={{ color: metrics.linked === metrics.total && metrics.total > 0 ? '#22C993' : '#F5A623' }}>
+            <span className="text-[11px] text-[var(--t5)]">{metrics.total} beneficiar{metrics.total === 1 ? 'y' : 'ies'}</span>
+            <span className="text-[11px]" style={{ color: metrics.linked === metrics.total && metrics.total > 0 ? '#22C993' : '#F5A623' }}>
               {metrics.linked}/{metrics.total} linked
             </span>
             {!metrics.has_primary && metrics.total > 0 && (
-              <span className="text-[10px] text-[#F05252] font-bold">No Primary</span>
+              <span className="text-[11px] text-[#F05252] font-bold">No Primary</span>
             )}
           </div>
         </div>
@@ -225,7 +225,7 @@ const EstateHealthCard = ({ estate }) => {
             )}
 
             {sortedBens.length === 0 && (
-              <p className="text-[10px] text-[var(--t5)] mt-2 italic">No beneficiaries enrolled</p>
+              <p className="text-[11px] text-[var(--t5)] mt-2 italic">No beneficiaries enrolled</p>
             )}
           </div>
 
@@ -237,7 +237,7 @@ const EstateHealthCard = ({ estate }) => {
               { icon: <Clock className="w-3 h-3" />, color: '#F5A623', label: 'Pending' },
               { icon: <AlertTriangle className="w-3 h-3" />, color: '#F05252', label: 'Incomplete' },
             ].map(l => (
-              <span key={l.label} className="flex items-center gap-1 text-[8px]" style={{ color: l.color }}>
+              <span key={l.label} className="flex items-center gap-1 text-[11px]" style={{ color: l.color }}>
                 {l.icon} {l.label}
               </span>
             ))}
@@ -252,8 +252,8 @@ const EstateHealthCard = ({ estate }) => {
             ].map(m => (
               <div key={m.label}>
                 <div className="flex items-center justify-between mb-0.5">
-                  <span className="text-[9px] text-[var(--t4)]">{m.label}</span>
-                  <span className="text-[9px] font-bold" style={{ color: m.color }}>{m.value}/{m.total}</span>
+                  <span className="text-[11px] text-[var(--t4)]">{m.label}</span>
+                  <span className="text-[11px] font-bold" style={{ color: m.color }}>{m.value}/{m.total}</span>
                 </div>
                 <div className="h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.05)' }}>
                   <div className="h-full rounded-full transition-all duration-500" style={{
@@ -329,7 +329,7 @@ const GhostEstateAlert = ({ ghostEstates, getAuthHeaders, onCleanupDone }) => {
         </div>
         <div className="flex-1">
           <span className="text-sm font-bold text-[#F05252]">{ghostEstates.length} Ghost Estate{ghostEstates.length > 1 ? 's' : ''} Detected</span>
-          <p className="text-[10px] text-[var(--t5)] mt-0.5">Orphaned or incomplete estates blocking user workflows</p>
+          <p className="text-[11px] text-[var(--t5)] mt-0.5">Orphaned or incomplete estates blocking user workflows</p>
         </div>
         {expanded ? <ChevronUp className="w-4 h-4 text-[var(--t5)]" /> : <ChevronDown className="w-4 h-4 text-[var(--t5)]" />}
       </button>
@@ -338,10 +338,10 @@ const GhostEstateAlert = ({ ghostEstates, getAuthHeaders, onCleanupDone }) => {
         <div className="px-4 pb-4 space-y-3" style={{ borderTop: '1px solid rgba(240,82,82,0.15)' }}>
           {/* Select all toggle */}
           <div className="flex items-center justify-between pt-2">
-            <button onClick={toggleAll} className="text-[10px] font-bold text-[var(--t4)] hover:text-[var(--t)]" data-testid="ghost-select-all">
+            <button onClick={toggleAll} className="text-[11px] font-bold text-[var(--t4)] hover:text-[var(--t)]" data-testid="ghost-select-all">
               {selected.size === ghostEstates.length ? 'Deselect All' : 'Select All'}
             </button>
-            <span className="text-[10px] text-[var(--t5)]">{selected.size} selected</span>
+            <span className="text-[11px] text-[var(--t5)]">{selected.size} selected</span>
           </div>
 
           {/* Ghost estate list */}
@@ -361,12 +361,12 @@ const GhostEstateAlert = ({ ghostEstates, getAuthHeaders, onCleanupDone }) => {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-[var(--t)] truncate">{g.estate_name}</span>
-                  <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: 'rgba(240,82,82,0.12)', color: '#F05252' }}>Ghost</span>
+                  <span className="text-[11px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: 'rgba(240,82,82,0.12)', color: '#F05252' }}>Ghost</span>
                 </div>
-                <p className="text-[10px] text-[var(--t5)] mt-0.5">{g.owner_name} ({g.owner_email || 'no email'})</p>
+                <p className="text-[11px] text-[var(--t5)] mt-0.5">{g.owner_name} ({g.owner_email || 'no email'})</p>
                 <div className="flex items-center gap-3 mt-0.5">
-                  <span className="text-[9px] text-[var(--t5)]">{formatDate(g.created_at)}</span>
-                  <span className="text-[9px] text-[#F05252]">{g.reason}</span>
+                  <span className="text-[11px] text-[var(--t5)]">{formatDate(g.created_at)}</span>
+                  <span className="text-[11px] text-[#F05252]">{g.reason}</span>
                 </div>
               </div>
             </label>
@@ -450,7 +450,7 @@ export const EstateHealthTab = ({ getAuthHeaders }) => {
                 <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: `${kpi.color}15` }}>
                   <kpi.icon className="w-3 h-3" style={{ color: kpi.color }} />
                 </div>
-                <span className="text-[9px] text-[var(--t5)] font-bold uppercase tracking-wider">{kpi.label}</span>
+                <span className="text-[11px] text-[var(--t5)] font-bold uppercase tracking-wider">{kpi.label}</span>
               </div>
               <p className="text-xl font-bold text-[var(--t)]">{kpi.value}</p>
             </CardContent>
@@ -465,7 +465,7 @@ export const EstateHealthTab = ({ getAuthHeaders }) => {
             <Heart className="w-3.5 h-3.5 text-[var(--gold)]" />
             Estate Health Distribution
           </h3>
-          <span className="text-[10px] text-[var(--t5)]">{summary.total_estates} estates</span>
+          <span className="text-[11px] text-[var(--t5)]">{summary.total_estates} estates</span>
         </div>
         <div className="flex gap-1 h-3 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)' }}>
           {summary.healthy_estates > 0 && (
@@ -484,7 +484,7 @@ export const EstateHealthTab = ({ getAuthHeaders }) => {
             { label: 'Attention', count: summary.attention_estates, color: '#F5A623' },
             { label: 'Critical', count: summary.critical_estates, color: '#F05252' },
           ].map(s => (
-            <span key={s.label} className="text-[10px] font-bold flex items-center gap-1" style={{ color: s.color }}>
+            <span key={s.label} className="text-[11px] font-bold flex items-center gap-1" style={{ color: s.color }}>
               <span className="w-2 h-2 rounded-full" style={{ background: s.color }} />
               {s.count} {s.label}
             </span>

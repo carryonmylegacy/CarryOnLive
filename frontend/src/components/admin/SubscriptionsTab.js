@@ -274,11 +274,11 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
           <div className="flex items-center gap-3 mb-4 flex-wrap">
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded border-2 border-[#F5A623]" />
-              <span className="text-[10px] text-[var(--t4)] font-medium">Trial / Grace Period</span>
+              <span className="text-[11px] text-[var(--t4)] font-medium">Trial / Grace Period</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded border-2 border-[#EF4444]" />
-              <span className="text-[10px] text-[var(--t4)] font-medium">Dormant</span>
+              <span className="text-[11px] text-[var(--t4)] font-medium">Dormant</span>
             </div>
           </div>
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg mb-4" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
@@ -321,17 +321,17 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
                         <span className="font-bold text-[var(--t)] text-sm">{u.name || u.email}</span>
                         <span className="text-xs px-1.5 py-0.5 rounded bg-[var(--b)] text-[var(--t4)]">{u.role}</span>
                         {u.billing_status === 'grace_period' && (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold" style={{ background: 'rgba(245,166,35,0.15)', color: '#F5A623' }}>
+                          <span className="text-[11px] px-1.5 py-0.5 rounded-md font-bold" style={{ background: 'rgba(245,166,35,0.15)', color: '#F5A623' }}>
                             GRACE {u.grace_days_remaining != null ? `${u.grace_days_remaining}d` : ''}
                           </span>
                         )}
                         {u.billing_status === 'trial' && (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold" style={{ background: 'rgba(245,166,35,0.15)', color: '#F5A623' }}>
+                          <span className="text-[11px] px-1.5 py-0.5 rounded-md font-bold" style={{ background: 'rgba(245,166,35,0.15)', color: '#F5A623' }}>
                             TRIAL {u.trial_days_remaining != null ? `${u.trial_days_remaining}d` : ''}
                           </span>
                         )}
                         {u.billing_status === 'dormant' && (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>
+                          <span className="text-[11px] px-1.5 py-0.5 rounded-md font-bold" style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>
                             DORMANT
                           </span>
                         )}
@@ -340,8 +340,8 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {sub && <span className="text-xs text-[var(--gn2)] font-bold">{sub.plan_name}</span>}
-                      {override.free_access && <span className="text-[10px] bg-[var(--gn2)]/10 text-[var(--gn2)] px-2 py-0.5 rounded-full font-bold">Free</span>}
-                      {override.custom_discount > 0 && <span className="text-[10px] bg-[var(--yw)]/10 text-[var(--yw)] px-2 py-0.5 rounded-full font-bold">{override.custom_discount}%</span>}
+                      {override.free_access && <span className="text-[11px] bg-[var(--gn2)]/10 text-[var(--gn2)] px-2 py-0.5 rounded-full font-bold">Free</span>}
+                      {override.custom_discount > 0 && <span className="text-[11px] bg-[var(--yw)]/10 text-[var(--yw)] px-2 py-0.5 rounded-full font-bold">{override.custom_discount}%</span>}
                     </div>
                   </div>
                   {editingUser === u.id ? (
@@ -415,14 +415,14 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
                   <Input type="number" min={0} max={100} value={newCodeForm.discount_percent}
                     onChange={e => setNewCodeForm({...newCodeForm, discount_percent: parseInt(e.target.value) || 0})}
                     className="input-field text-sm" data-testid="b2b-discount-input" />
-                  <p className="text-[10px] text-[var(--t5)]">100% = free access</p>
+                  <p className="text-[11px] text-[var(--t5)]">100% = free access</p>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs text-[var(--t4)]">Max Uses</Label>
                   <Input type="number" min={0} value={newCodeForm.max_uses}
                     onChange={e => setNewCodeForm({...newCodeForm, max_uses: parseInt(e.target.value) || 0})}
                     className="input-field text-sm" />
-                  <p className="text-[10px] text-[var(--t5)]">0 = unlimited</p>
+                  <p className="text-[11px] text-[var(--t5)]">0 = unlimited</p>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -444,7 +444,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
                       <button onClick={() => copyCode(code.code)} className="text-[var(--t5)] hover:text-[var(--t)]">
                         {copiedCode === code.code ? <Check className="w-3 h-3 text-[var(--gn2)]" /> : <Copy className="w-3 h-3" />}
                       </button>
-                      {!code.active && <span className="text-[10px] text-[var(--rd)] font-bold">INACTIVE</span>}
+                      {!code.active && <span className="text-[11px] text-[var(--rd)] font-bold">INACTIVE</span>}
                     </div>
                     <div className="flex items-center gap-3 text-xs text-[var(--t4)] mt-0.5">
                       {code.partner_name && <span>{code.partner_name}</span>}

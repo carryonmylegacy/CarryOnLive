@@ -52,7 +52,7 @@ const DocThumbnail = ({ doc }) => {
         {doc.is_locked ? (
           <div className="text-center">
             <File className="w-6 h-6 text-[var(--t5)] mx-auto" />
-            <span className="text-[9px] text-[var(--t5)] mt-1 block">Locked</span>
+            <span className="text-[11px] text-[var(--t5)] mt-1 block">Locked</span>
           </div>
         ) : (
           <FileText className="w-8 h-8 text-[var(--t5)]" />

@@ -103,12 +103,12 @@ export const AnnouncementsTab = ({ getAuthHeaders }) => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm font-bold text-[var(--t)]">{item.title}</span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: ps.bg, color: ps.color }}>{ps.label}</span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--s)] text-[var(--t5)]">{AUDIENCE_LABELS[item.audience] || item.audience}</span>
-                      {!item.is_active && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--rdbg)] text-[var(--rd)]">Inactive</span>}
+                      <span className="text-[11px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: ps.bg, color: ps.color }}>{ps.label}</span>
+                      <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-[var(--s)] text-[var(--t5)]">{AUDIENCE_LABELS[item.audience] || item.audience}</span>
+                      {!item.is_active && <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-[var(--rdbg)] text-[var(--rd)]">Inactive</span>}
                     </div>
                     <p className="text-xs text-[var(--t3)] mb-2">{item.body}</p>
-                    <p className="text-[10px] text-[var(--t5)]">By {item.created_by_name} · {new Date(item.created_at).toLocaleString()}</p>
+                    <p className="text-[11px] text-[var(--t5)]">By {item.created_by_name} · {new Date(item.created_at).toLocaleString()}</p>
                   </div>
                   {item.is_active && (
                     <button onClick={() => handleDelete(item.id)} className="p-2 rounded-lg hover:bg-[var(--rdbg)] text-[var(--t5)] hover:text-[var(--rd)] transition-colors" data-testid={`delete-announcement-${item.id}`}>

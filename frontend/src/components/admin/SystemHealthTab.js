@@ -50,10 +50,10 @@ const XAICreditsCard = ({ getAuthHeaders }) => {
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-bold text-[var(--t)] flex items-center gap-2">
             <Zap className="w-4 h-4" style={{ color: borderColor }} /> Estate Guardian AI Credits
-            {level === 'critical' && <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-500"><AlertTriangle className="w-3 h-3" /> LOW</span>}
-            {level === 'warning' && <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500"><AlertTriangle className="w-3 h-3" /> Monitor</span>}
+            {level === 'critical' && <span className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-500"><AlertTriangle className="w-3 h-3" /> LOW</span>}
+            {level === 'warning' && <span className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500"><AlertTriangle className="w-3 h-3" /> Monitor</span>}
           </CardTitle>
-          <button onClick={() => setShowSetBalance(!showSetBalance)} className="text-[10px] text-[var(--t4)] hover:text-[var(--t)] transition-colors" data-testid="set-balance-btn">
+          <button onClick={() => setShowSetBalance(!showSetBalance)} className="text-[11px] text-[var(--t4)] hover:text-[var(--t)] transition-colors" data-testid="set-balance-btn">
             {showSetBalance ? 'Cancel' : 'Update Balance'}
           </button>
         </div>
@@ -70,24 +70,24 @@ const XAICreditsCard = ({ getAuthHeaders }) => {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="text-center p-3 rounded-lg" style={{ background: bgTint }}>
             <div className="text-2xl font-bold" style={{ color: borderColor }}>${credits.balance_usd != null ? credits.balance_usd.toFixed(2) : '—'}</div>
-            <div className="text-[10px] text-[var(--t5)]">Credits Remaining</div>
+            <div className="text-[11px] text-[var(--t5)]">Credits Remaining</div>
           </div>
           <div className="text-center p-3 rounded-lg" style={{ background: 'var(--s)' }}>
             <div className="text-xl font-bold text-[var(--t)]">${credits.month_spent_usd != null ? credits.month_spent_usd.toFixed(2) : '—'}</div>
-            <div className="text-[10px] text-[var(--t5)]">Spent This Month</div>
+            <div className="text-[11px] text-[var(--t5)]">Spent This Month</div>
           </div>
           <div className="text-center p-3 rounded-lg" style={{ background: 'var(--s)' }}>
             <div className="text-xl font-bold text-[var(--t)]">{credits.today_calls || 0}</div>
-            <div className="text-[10px] text-[var(--t5)]">Calls Today</div>
+            <div className="text-[11px] text-[var(--t5)]">Calls Today</div>
           </div>
           <div className="text-center p-3 rounded-lg" style={{ background: 'var(--s)' }}>
             <div className="text-xl font-bold text-[var(--t)]">{credits.month_calls || 0}</div>
-            <div className="text-[10px] text-[var(--t5)]">Calls This Month</div>
+            <div className="text-[11px] text-[var(--t5)]">Calls This Month</div>
           </div>
         </div>
         {credits.daily_breakdown && credits.daily_breakdown.length > 0 && (
           <div className="mt-3 p-3 rounded-lg" style={{ background: 'var(--s)' }}>
-            <div className="text-[10px] font-bold text-[var(--t4)] mb-2">Last 7 Days</div>
+            <div className="text-[11px] font-bold text-[var(--t4)] mb-2">Last 7 Days</div>
             <div className="flex items-end gap-1 h-12">
               {credits.daily_breakdown.map((d, i) => {
                 const maxCost = Math.max(...credits.daily_breakdown.map(x => x.cost), 0.01);
@@ -95,7 +95,7 @@ const XAICreditsCard = ({ getAuthHeaders }) => {
                 return (
                   <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
                     <div className="w-full rounded-t" style={{ height: `${height}%`, background: borderColor, minHeight: '2px' }} title={`${d.date}: $${d.cost.toFixed(4)} (${d.calls} calls)`} />
-                    <span className="text-[8px] text-[var(--t5)]">{d.date.slice(5)}</span>
+                    <span className="text-[11px] text-[var(--t5)]">{d.date.slice(5)}</span>
                   </div>
                 );
               })}
@@ -161,7 +161,7 @@ export const SystemHealthTab = ({ getAuthHeaders }) => {
       <XAICreditsCard getAuthHeaders={getAuthHeaders} />
 
       {/* Status timestamp */}
-      <p className="text-[10px] text-[var(--t5)]">Last checked: {new Date(health.timestamp).toLocaleString()}</p>
+      <p className="text-[11px] text-[var(--t5)]">Last checked: {new Date(health.timestamp).toLocaleString()}</p>
 
       {/* Database Stats */}
       <Card className="glass-card">
@@ -175,7 +175,7 @@ export const SystemHealthTab = ({ getAuthHeaders }) => {
             {Object.entries(health.database).map(([key, value]) => (
               <div key={key} className="text-center p-3 rounded-lg" style={{ background: 'var(--s)' }}>
                 <div className="text-xl font-bold text-[var(--t)]">{value.toLocaleString()}</div>
-                <div className="text-[10px] text-[var(--t5)] capitalize">{key.replace(/_/g, ' ')}</div>
+                <div className="text-[11px] text-[var(--t5)] capitalize">{key.replace(/_/g, ' ')}</div>
               </div>
             ))}
           </div>
@@ -193,15 +193,15 @@ export const SystemHealthTab = ({ getAuthHeaders }) => {
           <div className="grid grid-cols-3 gap-3">
             <div className="text-center p-3 rounded-lg" style={{ background: 'var(--s)' }}>
               <div className="text-xl font-bold text-[#3B82F6]">{health.activity.active_sessions_24h}</div>
-              <div className="text-[10px] text-[var(--t5)]">Active Sessions</div>
+              <div className="text-[11px] text-[var(--t5)]">Active Sessions</div>
             </div>
             <div className="text-center p-3 rounded-lg" style={{ background: health.activity.client_errors_24h > 0 ? 'rgba(239,68,68,0.08)' : 'var(--s)' }}>
               <div className="text-xl font-bold" style={{ color: health.activity.client_errors_24h > 0 ? '#EF4444' : 'var(--t)' }}>{health.activity.client_errors_24h}</div>
-              <div className="text-[10px] text-[var(--t5)]">Client Errors</div>
+              <div className="text-[11px] text-[var(--t5)]">Client Errors</div>
             </div>
             <div className="text-center p-3 rounded-lg" style={{ background: 'var(--s)' }}>
               <div className="text-xl font-bold text-[var(--t)]">{health.activity.audit_events_today}</div>
-              <div className="text-[10px] text-[var(--t5)]">Audit Events Today</div>
+              <div className="text-[11px] text-[var(--t5)]">Audit Events Today</div>
             </div>
           </div>
         </CardContent>

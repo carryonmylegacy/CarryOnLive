@@ -51,7 +51,7 @@ const ShareUploadModal = ({ pendingShare, categories, uploading, onUpload, onCan
           <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-[#d4af37]" /></div>
         ) : estates.length > 1 ? (
           <div className="mb-4">
-            <p className="text-[10px] text-white/40 uppercase tracking-wider font-bold mb-2">Select Estate</p>
+            <p className="text-[11px] text-white/40 uppercase tracking-wider font-bold mb-2">Select Estate</p>
             <div className="space-y-1.5">
               {estates.map(e => (
                 <button key={e.id} onClick={() => setSelectedEstate(e.id)}
@@ -69,7 +69,7 @@ const ShareUploadModal = ({ pendingShare, categories, uploading, onUpload, onCan
         ) : null}
 
         {/* Category picker */}
-        <p className="text-[10px] text-white/40 uppercase tracking-wider font-bold mb-2">Document Category</p>
+        <p className="text-[11px] text-white/40 uppercase tracking-wider font-bold mb-2">Document Category</p>
         <div className="grid grid-cols-2 gap-1.5 mb-5">
           {categories.map(cat => (
             <button key={cat.id} onClick={() => setSelectedCategory(cat.id)}
@@ -98,7 +98,7 @@ const ShareUploadModal = ({ pendingShare, categories, uploading, onUpload, onCan
           )}
         </button>
 
-        <p className="text-[9px] text-white/30 text-center mt-3">AES-256 encrypted · Only PDFs and images accepted</p>
+        <p className="text-[11px] text-white/30 text-center mt-3">AES-256 encrypted · Only PDFs and images accepted</p>
       </div>
     </div>
   );

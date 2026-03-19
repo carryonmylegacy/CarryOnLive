@@ -56,7 +56,7 @@ export const PlatformOverview = ({ stats }) => {
             <s.icon className="w-4 h-4 mx-auto mb-1" style={{ color: s.color }} />
             <div className="text-2xl font-bold text-[var(--t)]">{s.v}</div>
             <div className="text-xs text-[var(--t4)]">{s.l}</div>
-            {s.sub && <div className="text-[10px] text-[var(--t5)] mt-0.5">{s.sub}</div>}
+            {s.sub && <div className="text-[11px] text-[var(--t5)] mt-0.5">{s.sub}</div>}
           </div>
         ))}
       </div>

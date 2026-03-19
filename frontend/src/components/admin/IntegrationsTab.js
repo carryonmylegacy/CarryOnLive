@@ -51,8 +51,8 @@ const CapacityDashboard = ({ capacity }) => {
       <div className="p-4 sm:p-5 text-center" style={{ background: 'rgba(59,130,246,0.05)', borderRight: '1px solid var(--b)' }}>
         <Users className="w-5 h-5 mx-auto mb-2 text-blue-400" />
         <div className="text-2xl sm:text-3xl font-bold text-[var(--t)]" data-testid="total-users">{total_users.toLocaleString()}</div>
-        <div className="text-[10px] sm:text-xs text-[var(--t5)] mt-1">Total Users</div>
-        <div className="text-[9px] text-[var(--t5)] mt-0.5 hidden sm:block">
+        <div className="text-[11px] sm:text-xs text-[var(--t5)] mt-1">Total Users</div>
+        <div className="text-[11px] text-[var(--t5)] mt-0.5 hidden sm:block">
           {capacity.role_breakdown && Object.entries(capacity.role_breakdown).map(([r, c]) => (
             <span key={r} className="inline-block mr-2">{r}: {c}</span>
           ))}
@@ -62,20 +62,20 @@ const CapacityDashboard = ({ capacity }) => {
       <div className="p-4 sm:p-5 text-center" style={{ background: 'rgba(34,197,94,0.05)', borderRight: '1px solid var(--b)' }}>
         <Gauge className="w-5 h-5 mx-auto mb-2" style={{ color: gaugeColor }} />
         <div className="text-2xl sm:text-3xl font-bold" style={{ color: gaugeColor }} data-testid="platform-ceiling">{ceilingDisplay}</div>
-        <div className="text-[10px] sm:text-xs text-[var(--t5)] mt-1">Max Capacity</div>
+        <div className="text-[11px] sm:text-xs text-[var(--t5)] mt-1">Max Capacity</div>
         <div className="mt-1.5 w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--s)' }}>
           <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(usage_percent, 100)}%`, background: gaugeColor }} />
         </div>
-        <div className="text-[9px] mt-0.5" style={{ color: gaugeColor }}>{usage_percent}% used</div>
+        <div className="text-[11px] mt-0.5" style={{ color: gaugeColor }}>{usage_percent}% used</div>
       </div>
       {/* Box 3: Most Limiting */}
       <div className="p-4 sm:p-5 text-center" style={{ background: 'rgba(239,68,68,0.05)' }}>
         <AlertTriangle className="w-5 h-5 mx-auto mb-2 text-red-400" />
         <div className="text-sm sm:text-base font-bold text-red-400" data-testid="most-limiting">{most_limiting_name || 'None'}</div>
-        <div className="text-[10px] sm:text-xs text-[var(--t5)] mt-1">Bottleneck</div>
+        <div className="text-[11px] sm:text-xs text-[var(--t5)] mt-1">Bottleneck</div>
         {capacity.top_3_limiting?.[0] && (
           <a href={capacity.top_3_limiting[0].upgrade_url} target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-[9px] font-bold text-red-400 hover:text-red-300 mt-1 transition-colors" data-testid="upgrade-bottleneck-link">
+            className="inline-flex items-center gap-1 text-[11px] font-bold text-red-400 hover:text-red-300 mt-1 transition-colors" data-testid="upgrade-bottleneck-link">
             <ArrowUpCircle className="w-3 h-3" /> Upgrade
           </a>
         )}
@@ -136,23 +136,23 @@ const IntegrationCard = ({ integration, revealed, onToggle }) => {
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-sm font-bold text-[var(--t)]">{integration.name}</h3>
                 {rankStyle && (
-                  <span className="text-[9px] font-black px-2 py-0.5 rounded-full" style={{ background: rankStyle.labelBg, color: rankStyle.labelColor }}>
+                  <span className="text-[11px] font-black px-2 py-0.5 rounded-full" style={{ background: rankStyle.labelBg, color: rankStyle.labelColor }}>
                     {rankStyle.label}
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${statusColor}15`, color: statusColor }}>{integration.status}</span>
+                <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${statusColor}15`, color: statusColor }}>{integration.status}</span>
                 {integration.cost_monthly > 0 && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(212,175,55,0.1)', color: 'var(--gold)' }}>
+                  <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(212,175,55,0.1)', color: 'var(--gold)' }}>
                     ${integration.cost_monthly.toFixed(2)}/mo
                   </span>
                 )}
                 {integration.cost_monthly === 0 && integration.status !== 'blocked' && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(59,130,246,0.1)', color: '#3B82F6' }}>Free</span>
+                  <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(59,130,246,0.1)', color: '#3B82F6' }}>Free</span>
                 )}
                 {integration.max_users < 999999 && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: 'var(--s)', color: 'var(--t4)' }}>
+                  <span className="text-[11px] px-1.5 py-0.5 rounded-full" style={{ background: 'var(--s)', color: 'var(--t4)' }}>
                     {integration.max_users.toLocaleString()} users max
                   </span>
                 )}
@@ -162,13 +162,13 @@ const IntegrationCard = ({ integration, revealed, onToggle }) => {
           <div className="flex flex-col items-end gap-1 shrink-0">
             {integration.dashboard_url && (
               <a href={integration.dashboard_url} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1 text-[10px] font-bold text-[var(--t4)] hover:text-[var(--gold)] transition-colors" data-testid={`link-${integration.id}`}>
+                className="flex items-center gap-1 text-[11px] font-bold text-[var(--t4)] hover:text-[var(--gold)] transition-colors" data-testid={`link-${integration.id}`}>
                 Dashboard <ExternalLink className="w-3 h-3" />
               </a>
             )}
             {isLimiting && integration.upgrade_url && (
               <a href={integration.upgrade_url} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1 text-[10px] font-bold transition-colors" style={{ color: rankStyle.labelColor }}
+                className="flex items-center gap-1 text-[11px] font-bold transition-colors" style={{ color: rankStyle.labelColor }}
                 data-testid={`upgrade-${integration.id}`}>
                 <ArrowUpCircle className="w-3 h-3" /> Upgrade
               </a>
@@ -178,7 +178,7 @@ const IntegrationCard = ({ integration, revealed, onToggle }) => {
 
         {/* Capacity reason for limiting integrations */}
         {isLimiting && integration.capacity_reason && (
-          <div className="text-[10px] p-2 rounded mb-2 flex items-center gap-1.5" style={{ background: rankStyle.labelBg, color: rankStyle.labelColor }}>
+          <div className="text-[11px] p-2 rounded mb-2 flex items-center gap-1.5" style={{ background: rankStyle.labelBg, color: rankStyle.labelColor }}>
             <Activity className="w-3 h-3 shrink-0" />
             <span>{integration.capacity_reason}</span>
             {integration.upgrade_to && integration.upgrade_to !== 'N/A' && (
@@ -189,7 +189,7 @@ const IntegrationCard = ({ integration, revealed, onToggle }) => {
 
         {/* Cost note */}
         {integration.cost_note && (
-          <div className="text-[10px] text-[var(--t5)] mb-2 flex items-center gap-1">
+          <div className="text-[11px] text-[var(--t5)] mb-2 flex items-center gap-1">
             <DollarSign className="w-3 h-3 shrink-0" />
             {integration.cost_note}
             {!integration.cost_verified && <span className="text-amber-400 font-bold ml-1">(unverified)</span>}
@@ -221,7 +221,7 @@ const IntegrationCard = ({ integration, revealed, onToggle }) => {
         </div>
 
         {integration.details.some(d => d.sensitive) && (
-          <button onClick={onToggle} className="mt-2 flex items-center gap-1 text-[10px] text-[var(--t4)] hover:text-[var(--t)] transition-colors" data-testid={`reveal-${integration.id}`}>
+          <button onClick={onToggle} className="mt-2 flex items-center gap-1 text-[11px] text-[var(--t4)] hover:text-[var(--t)] transition-colors" data-testid={`reveal-${integration.id}`}>
             {revealed ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
             {revealed ? 'Hide credentials' : 'Show credentials'}
           </button>
@@ -247,15 +247,15 @@ const COGSSummary = ({ cogs, integrations }) => {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
           <div className="text-center p-3 rounded-lg" style={{ background: 'rgba(212,175,55,0.06)' }}>
             <div className="text-2xl font-bold text-[var(--gold)]">${cogs.total_monthly.toFixed(2)}</div>
-            <div className="text-[10px] text-[var(--t5)]">Total Monthly COGS</div>
+            <div className="text-[11px] text-[var(--t5)]">Total Monthly COGS</div>
           </div>
           <div className="text-center p-3 rounded-lg" style={{ background: 'rgba(34,197,94,0.06)' }}>
             <div className="text-xl font-bold text-green-400">${cogs.verified_total.toFixed(2)}</div>
-            <div className="text-[10px] text-[var(--t5)]">Verified Costs</div>
+            <div className="text-[11px] text-[var(--t5)]">Verified Costs</div>
           </div>
           <div className="text-center p-3 rounded-lg col-span-2 sm:col-span-1" style={{ background: cogs.unverified_items > 0 ? 'rgba(245,158,11,0.06)' : 'rgba(34,197,94,0.06)' }}>
             <div className={`text-xl font-bold ${cogs.unverified_items > 0 ? 'text-amber-400' : 'text-green-400'}`}>{cogs.unverified_items}</div>
-            <div className="text-[10px] text-[var(--t5)]">Unverified Items</div>
+            <div className="text-[11px] text-[var(--t5)]">Unverified Items</div>
           </div>
         </div>
         <div className="space-y-1.5">
@@ -273,7 +273,7 @@ const COGSSummary = ({ cogs, integrations }) => {
             <span className="font-mono text-[var(--gold)]">${cogs.total_monthly.toFixed(2)}/mo</span>
           </div>
         </div>
-        <p className="text-[9px] text-[var(--t5)] mt-2 italic">{cogs.note}</p>
+        <p className="text-[11px] text-[var(--t5)] mt-2 italic">{cogs.note}</p>
       </CardContent>
     </Card>
   );
@@ -398,22 +398,22 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
         <div className="flex items-center gap-2 flex-wrap">
           <Shield className="w-5 h-5 text-[var(--gold)]" />
           <h2 className="text-base font-bold text-[var(--t)]">Platform Integrations</h2>
-          <span className="text-[10px] text-[var(--t5)]">({integrations.length})</span>
+          <span className="text-[11px] text-[var(--t5)]">({integrations.length})</span>
           {unverifiedFieldCount > 0 && (
-            <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400">
+            <span className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400">
               <AlertTriangle className="w-3 h-3" /> {unverifiedFieldCount} unverified
             </span>
           )}
         </div>
         <div className="flex items-center gap-2">
           <button onClick={handleSOC2Download} disabled={pdfLoading}
-            className="flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
             style={{ background: 'rgba(212,175,55,0.1)', color: 'var(--gold)' }}
             data-testid="soc2-download-btn">
             <Download className="w-3 h-3" /> {pdfLoading ? 'Generating...' : 'SOC 2 Report'}
           </button>
           <button onClick={() => { setUnlocked(false); setPassword(''); setData(null); setRevealed({}); }}
-            className="flex items-center gap-1 text-[10px] font-bold text-[var(--t5)] hover:text-red-400 px-3 py-1.5 rounded-lg transition-colors"
+            className="flex items-center gap-1 text-[11px] font-bold text-[var(--t5)] hover:text-red-400 px-3 py-1.5 rounded-lg transition-colors"
             style={{ background: 'var(--s)' }} data-testid="integrations-lock-btn">
             <Lock className="w-3 h-3" /> Lock
           </button>
@@ -433,7 +433,7 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
           const isActive = activeFilter === cat.key;
           return (
             <button key={cat.key} onClick={() => setActiveFilter(cat.key)}
-              className={`text-[10px] font-bold px-3 py-1.5 rounded-full transition-all ${isActive ? '' : 'hover:opacity-80'}`}
+              className={`text-[11px] font-bold px-3 py-1.5 rounded-full transition-all ${isActive ? '' : 'hover:opacity-80'}`}
               style={{ background: isActive ? 'var(--gold)' : 'var(--s)', color: isActive ? '#0F1629' : 'var(--t4)' }}
               data-testid={`filter-${cat.key}`}>
               {cat.label} ({count})

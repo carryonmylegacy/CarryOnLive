@@ -133,9 +133,9 @@ export const KnowledgeBaseTab = ({ getAuthHeaders, isFounder = false }) => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm font-bold text-[var(--t)]">{article.title}</span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold capitalize" style={{ background: `${catColor}15`, color: catColor }}>{article.category}</span>
+                      <span className="text-[11px] px-1.5 py-0.5 rounded-full font-bold capitalize" style={{ background: `${catColor}15`, color: catColor }}>{article.category}</span>
                     </div>
-                    <p className="text-[10px] text-[var(--t5)]">By {article.author_name} · Updated {new Date(article.updated_at).toLocaleDateString()}</p>
+                    <p className="text-[11px] text-[var(--t5)]">By {article.author_name} · Updated {new Date(article.updated_at).toLocaleDateString()}</p>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     {isFounder && (

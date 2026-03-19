@@ -13,7 +13,7 @@ export const TeamActivitySection = ({ teamTasks, opsDash }) => {
         <Users className="w-4 h-4 text-[var(--gold)]" />
         Team Activity
         {teamTasks?.total_active_tasks > 0 && (
-          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+          <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full"
             style={{ background: 'rgba(139,92,246,0.15)', color: '#8B5CF6' }}>
             {teamTasks.total_active_tasks} active
           </span>
@@ -35,7 +35,7 @@ export const TeamActivitySection = ({ teamTasks, opsDash }) => {
             >
               <div className="flex items-center gap-2.5">
                 <div className="relative">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold"
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold"
                     style={{ background: op.operator_role === 'manager' ? 'rgba(245,158,11,0.15)' : 'rgba(59,130,246,0.15)', color: op.operator_role === 'manager' ? '#F59E0B' : '#3B82F6' }}>
                     {(op.name || '??').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                   </div>
@@ -44,21 +44,21 @@ export const TeamActivitySection = ({ teamTasks, opsDash }) => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-bold text-[var(--t)] truncate">{op.name}</div>
-                  <div className="text-[10px] text-[var(--t5)] capitalize">{op.operator_role} · {op.title || 'Staff'}</div>
+                  <div className="text-[11px] text-[var(--t5)] capitalize">{op.operator_role} · {op.title || 'Staff'}</div>
                 </div>
                 <div className="text-right flex-shrink-0">
                   {tasks.length > 0 ? (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse"
+                    <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full animate-pulse"
                       style={{ background: 'rgba(139,92,246,0.15)', color: '#8B5CF6' }}>
                       {tasks.length} active
                     </span>
                   ) : op.tasks_active > 0 ? (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse"
+                    <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full animate-pulse"
                       style={{ background: 'rgba(139,92,246,0.15)', color: '#8B5CF6' }}>
                       {op.tasks_active} active
                     </span>
                   ) : (
-                    <span className="text-[10px] text-[var(--t5)]">{op.actions_24h || 0} actions today</span>
+                    <span className="text-[11px] text-[var(--t5)]">{op.actions_24h || 0} actions today</span>
                   )}
                 </div>
               </div>
@@ -71,7 +71,7 @@ export const TeamActivitySection = ({ teamTasks, opsDash }) => {
                     };
                     return (
                       <div key={task.id}
-                        className="flex items-center gap-1.5 text-[9px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-80 transition-opacity"
+                        className="flex items-center gap-1.5 text-[11px] px-1.5 py-0.5 rounded cursor-pointer hover:opacity-80 transition-opacity"
                         style={{ background: `${typeColors[task.type] || '#6366F1'}10` }}
                         onClick={() => navigate(task.path)}
                         data-testid={`team-task-${task.id}`}>
@@ -84,19 +84,19 @@ export const TeamActivitySection = ({ teamTasks, opsDash }) => {
                     );
                   })}
                   {tasks.length > 3 && (
-                    <div className="text-[9px] text-[var(--t5)] pl-1.5">+{tasks.length - 3} more</div>
+                    <div className="text-[11px] text-[var(--t5)] pl-1.5">+{tasks.length - 3} more</div>
                   )}
                 </div>
               )}
               {tasks.length === 0 && (op.tasks_assigned > 0) && (
                 <div className="flex gap-2 mt-2 ml-10">
-                  <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(139,92,246,0.1)', color: '#8B5CF6' }}>
+                  <span className="text-[11px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(139,92,246,0.1)', color: '#8B5CF6' }}>
                     {op.tasks_active || 0} in progress
                   </span>
-                  <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(34,201,147,0.1)', color: '#22C993' }}>
+                  <span className="text-[11px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(34,201,147,0.1)', color: '#22C993' }}>
                     {op.tasks_completed || 0} done
                   </span>
-                  <span className="text-[9px] text-[var(--t5)]">
+                  <span className="text-[11px] text-[var(--t5)]">
                     {op.completion_rate || 0}% rate
                   </span>
                 </div>

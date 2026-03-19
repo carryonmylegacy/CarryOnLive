@@ -534,7 +534,7 @@ const CreateEstatePage = () => {
                             {benefactorEmailError ? (
                               <p className="text-red-400 text-xs">{benefactorEmailError}</p>
                             ) : (
-                              <p className="text-[#525c72] text-[10px]">Enter the email of the person whose estate you're joining.</p>
+                              <p className="text-[#525c72] text-[11px]">Enter the email of the person whose estate you're joining.</p>
                             )}
                           </div>
                         )}
@@ -558,7 +558,7 @@ const CreateEstatePage = () => {
                           </Select>
                         </div>
                         {(maritalStatus === 'married' || maritalStatus === 'domestic_partnership') && (
-                          <p className="text-[#525c72] text-[10px] -mt-1">Your spouse will be added in the next step — do not count them below.</p>
+                          <p className="text-[#525c72] text-[11px] -mt-1">Your spouse will be added in the next step — do not count them below.</p>
                         )}
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1.5">
@@ -617,7 +617,7 @@ const CreateEstatePage = () => {
                               onBlur={() => validateBenEmail(ben.email, idx)}
                               placeholder="Their email address" className={`${inputClass} ${emailErrors[idx] ? 'border-red-500' : ''}`} />
                             {emailErrors[idx] && <p className="text-red-400 text-xs">{emailErrors[idx]}</p>}
-                            <p className="text-[#525c72] text-[10px]">If they already have a CarryOn account, they'll be automatically connected to your estate.</p>
+                            <p className="text-[#525c72] text-[11px]">If they already have a CarryOn account, they'll be automatically connected to your estate.</p>
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1.5">
@@ -701,7 +701,7 @@ const CreateEstatePage = () => {
                                     {s.label}
                                   </span>
                                   {active && s.id !== 'enterprise' && (
-                                    <span className="text-[10px] block mt-0.5" style={{ color: `${s.color}aa` }}>Verification required</span>
+                                    <span className="text-[11px] block mt-0.5" style={{ color: `${s.color}aa` }}>Verification required</span>
                                   )}
                                 </div>
                               </button>

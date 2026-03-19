@@ -61,7 +61,7 @@ const BeneficiaryBillingToggle = ({ billing, onChange }) => {
           >
             {c.label}
             {c.save && (
-              <span className="absolute -top-2 -right-1 text-[8px] font-bold px-1.5 py-0.5 rounded-full"
+              <span className="absolute -top-2 -right-1 text-[11px] font-bold px-1.5 py-0.5 rounded-full"
                 style={{ background: '#22C993', color: '#fff', boxShadow: '0 2px 8px rgba(34,201,147,0.4)' }}>
                 -{c.save}
               </span>
@@ -69,7 +69,7 @@ const BeneficiaryBillingToggle = ({ billing, onChange }) => {
           </button>
         ))}
       </div>
-      <p className="text-[10px] text-[var(--t5)] mt-2">Most families choose the annual plan to ensure uninterrupted access.</p>
+      <p className="text-[11px] text-[var(--t5)] mt-2">Most families choose the annual plan to ensure uninterrupted access.</p>
     </div>
   );
 };
@@ -485,7 +485,7 @@ export const SubscriptionManagement = ({
             {isBeneficiary ? 'Your Plan' : 'Subscription'}
           </CardTitle>
           {currentSub?.status === 'active' && (
-            <button onClick={() => setShowCancelConfirm(true)} className="text-[10px] text-[var(--t5)] hover:text-red-400 transition-colors px-3 py-1 rounded-lg hover:bg-red-500/5" data-testid="cancel-sub-btn">
+            <button onClick={() => setShowCancelConfirm(true)} className="text-[11px] text-[var(--t5)] hover:text-red-400 transition-colors px-3 py-1 rounded-lg hover:bg-red-500/5" data-testid="cancel-sub-btn">
               Cancel Plan
             </button>
           )}
@@ -520,7 +520,7 @@ export const SubscriptionManagement = ({
                       : 'Choose a payment option that best suits you. (Monthly/Quarterly/Annual)'}
                 </span>
                 {isBeta && (
-                  <p className="text-[10px] text-[var(--t5)] mt-0.5">No payment required during beta period</p>
+                  <p className="text-[11px] text-[var(--t5)] mt-0.5">No payment required during beta period</p>
                 )}
               </div>
             </div>
@@ -563,7 +563,7 @@ export const SubscriptionManagement = ({
             <p className="text-xs text-[var(--t4)] leading-relaxed max-w-md mx-auto mb-4">
               Your beneficiary tier is automatically set based on the plan your benefactor held for the majority of their subscription period with CarryOn. You do not need to select a plan — it will appear here once determined.
             </p>
-            <p className="text-[10px] text-[var(--t5)]">
+            <p className="text-[11px] text-[var(--t5)]">
               Beneficiary pricing does not begin until a verified transition event occurs. Minor beneficiaries (under 18) are free.
             </p>
           </div>
@@ -643,7 +643,7 @@ export const SubscriptionManagement = ({
 
                 {/* Label badges */}
                 {(style.label || isCurrent || isAutoSelected || showRecommendedPulse) && (
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 text-[9px] font-bold px-3 py-0.5 rounded-b-lg z-10"
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 text-[11px] font-bold px-3 py-0.5 rounded-b-lg z-10"
                     style={{
                       background: showRecommendedPulse ? '#22C993' : style.accent,
                       color: showRecommendedPulse ? '#fff' : '#0F1629',
@@ -739,7 +739,7 @@ export const SubscriptionManagement = ({
                             {verifyingCode ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Activate'}
                           </Button>
                         </div>
-                        <p className="text-[10px] text-[var(--t5)] text-center">Code provided by your employer or partner</p>
+                        <p className="text-[11px] text-[var(--t5)] text-center">Code provided by your employer or partner</p>
                       </div>
                     ) : verificationStatus?.status === 'pending' && verificationStatus?.tier_requested === plan.id ? (
                       <div className="w-full text-center text-xs font-bold py-3 rounded-xl"
@@ -811,19 +811,19 @@ export const SubscriptionManagement = ({
 
         {/* Apple-required subscription disclosures */}
         <div className="mt-4 p-3 rounded-xl text-center space-y-1" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
-          <p className="text-[10px] text-[var(--t5)]">
+          <p className="text-[11px] text-[var(--t5)]">
             Subscriptions auto-renew monthly unless cancelled at least 24 hours before the end of the current billing period.
             Payment is charged to your {isNative ? 'Apple ID' : 'payment method'} at confirmation of purchase.
           </p>
-          <p className="text-[10px] text-[var(--t5)]">
+          <p className="text-[11px] text-[var(--t5)]">
             You can manage or cancel your subscription anytime from {isNative ? 'iPhone Settings → Subscriptions' : 'Settings'}.
           </p>
           <div className="flex justify-center gap-3 pt-1">
-            <a href="https://carryon.us/terms" target="_blank" rel="noopener noreferrer" className="text-[10px] text-[var(--gold)] font-bold">Terms of Service</a>
-            <a href="https://carryon.us/privacy" target="_blank" rel="noopener noreferrer" className="text-[10px] text-[var(--gold)] font-bold">Privacy Policy</a>
+            <a href="https://carryon.us/terms" target="_blank" rel="noopener noreferrer" className="text-[11px] text-[var(--gold)] font-bold">Terms of Service</a>
+            <a href="https://carryon.us/privacy" target="_blank" rel="noopener noreferrer" className="text-[11px] text-[var(--gold)] font-bold">Privacy Policy</a>
             {isNative && (
               <button onClick={async () => { try { await restoreIAPPurchases(); if (refreshSubscription) refreshSubscription(); } catch {} }}
-                className="text-[10px] text-[#3B82F6] font-bold">Restore Purchases</button>
+                className="text-[11px] text-[#3B82F6] font-bold">Restore Purchases</button>
             )}
           </div>
         </div>
@@ -943,7 +943,7 @@ export const SubscriptionManagement = ({
               Submit for Review
             </Button>
 
-            <p className="text-[10px] text-[var(--t5)] text-center">
+            <p className="text-[11px] text-[var(--t5)] text-center">
               Documents are reviewed within 24-48 hours. You'll be notified in your Customer Service portal once approved.
             </p>
           </div>

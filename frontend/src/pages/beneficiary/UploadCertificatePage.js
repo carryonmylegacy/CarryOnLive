@@ -102,7 +102,7 @@ const UploadCertificatePage = () => {
 
           {/* Progress tracker */}
           <div className="glass-card p-5">
-            <p className="text-[10px] text-[var(--t5)] uppercase tracking-wider font-bold mb-4">Verification Progress</p>
+            <p className="text-[11px] text-[var(--t5)] uppercase tracking-wider font-bold mb-4">Verification Progress</p>
             <div className="space-y-3">
               {[
                 { label: 'Certificate Received', stage: 0 },
@@ -157,7 +157,7 @@ const UploadCertificatePage = () => {
                   background: i < step ? '#22C993' : i === step ? 'linear-gradient(90deg, #2563EB, #7C3AED)' : 'var(--b)',
                   boxShadow: i === step ? '0 0 12px rgba(37,99,235,0.3)' : 'none',
                 }} />
-              <p className="text-[10px] text-center transition-colors duration-300"
+              <p className="text-[11px] text-center transition-colors duration-300"
                 style={{ color: i <= step ? '#93C5FD' : 'var(--t5)', fontWeight: i === step ? 700 : 400 }}>
                 {s}
               </p>

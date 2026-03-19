@@ -180,7 +180,7 @@ const AcceptInvitationPage = () => {
 
                 {/* Features — mobile only */}
                 <div className="lg:hidden space-y-2">
-                  <p className="text-[10px] text-[#525c72] uppercase font-bold tracking-wider">When the time comes, you'll have</p>
+                  <p className="text-[11px] text-[#525c72] uppercase font-bold tracking-wider">When the time comes, you'll have</p>
                   {[
                     { icon: FileText, label: 'Important documents — securely stored and encrypted', color: '#3b82f6' },
                     { icon: Heart, label: 'Personal messages — written just for you', color: '#ec4899' },
@@ -196,7 +196,7 @@ const AcceptInvitationPage = () => {
 
                 {/* Your info */}
                 <div className="p-4 rounded-xl" style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.1)' }}>
-                  <p className="text-[10px] text-[#525c72] uppercase font-bold tracking-wider mb-2">Your Information</p>
+                  <p className="text-[11px] text-[#525c72] uppercase font-bold tracking-wider mb-2">Your Information</p>
                   <p className="text-white font-bold">{invitationData?.beneficiary?.first_name} {invitationData?.beneficiary?.last_name}</p>
                   <p className="text-sm text-[#94a3b8]">{invitationData?.beneficiary?.email}</p>
                   <p className="text-xs text-[#d4af37] mt-1 capitalize font-bold">{invitationData?.beneficiary?.relation}</p>
@@ -207,7 +207,7 @@ const AcceptInvitationPage = () => {
                   Continue to Create Account <ChevronRight className="w-5 h-5 ml-2" />
                 </Button>
 
-                <p className="text-[10px] text-center text-[#525c72] leading-relaxed">
+                <p className="text-[11px] text-center text-[#525c72] leading-relaxed">
                   Your privacy is our priority. All data is AES-256 encrypted with zero-knowledge architecture. 
                   We will never share your information. No one — not even us — can read your data.
                 </p>
@@ -273,7 +273,7 @@ const AcceptInvitationPage = () => {
                           { test: /[a-z]/.test(password), label: 'Lowercase' },
                           { test: /[0-9]/.test(password), label: 'Number' },
                         ].map((req, i) => (
-                          <span key={i} className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${req.test ? 'bg-[#10b981]/15 text-[#10b981]' : 'bg-[rgba(255,255,255,0.03)] text-[#3a4a63]'}`}>
+                          <span key={i} className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${req.test ? 'bg-[#10b981]/15 text-[#10b981]' : 'bg-[rgba(255,255,255,0.03)] text-[#3a4a63]'}`}>
                             {req.test ? '\u2713 ' : ''}{req.label}
                           </span>
                         ))}
@@ -320,7 +320,7 @@ const AcceptInvitationPage = () => {
 
                 <div className="flex items-center gap-2 justify-center mt-4">
                   <Shield className="w-3 h-3 text-[#10b981]" />
-                  <p className="text-[10px] text-[#525c72]">AES-256 encrypted | Zero-knowledge | 2FA Protected</p>
+                  <p className="text-[11px] text-[#525c72]">AES-256 encrypted | Zero-knowledge | 2FA Protected</p>
                 </div>
               </div>
             </div>

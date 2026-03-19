@@ -80,10 +80,10 @@ export const ActivityTab = ({ getAuthHeaders }) => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-[var(--t)] truncate">{a.description}</p>
-                  <p className="text-[10px] text-[var(--t5)]">{timeStr}</p>
+                  <p className="text-[11px] text-[var(--t5)]">{timeStr}</p>
                 </div>
                 {a.status && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-md font-bold capitalize"
+                  <span className="text-[11px] px-2 py-0.5 rounded-md font-bold capitalize"
                     style={{ background: 'rgba(34,201,147,0.1)', color: '#22C993' }}>{a.status}</span>
                 )}
               </div>

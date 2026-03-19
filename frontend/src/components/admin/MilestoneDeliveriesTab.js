@@ -165,7 +165,7 @@ export const MilestoneDeliveriesTab = ({ getAuthHeaders }) => {
                         <span className="text-[var(--t)] font-bold truncate flex-1">{msg.title || 'Untitled'}</span>
                         <span className="text-[var(--t5)] flex-shrink-0">{msg.trigger_type}</span>
                         {msg.id === selectedDelivery.message_id && (
-                          <span className="text-[10px] font-bold text-[var(--gold)] flex-shrink-0">MATCHED</span>
+                          <span className="text-[11px] font-bold text-[var(--gold)] flex-shrink-0">MATCHED</span>
                         )}
                       </div>
                     ))}
@@ -268,7 +268,7 @@ export const MilestoneDeliveriesTab = ({ getAuthHeaders }) => {
               )}
               data-testid={`milestone-filter-${s.label.toLowerCase()}`}>
               <div className="text-xl font-bold text-[var(--t)]">{s.count}</div>
-              <div className="text-[10px] font-bold" style={{ color: s.color }}>{s.label}</div>
+              <div className="text-[11px] font-bold" style={{ color: s.color }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -302,7 +302,7 @@ export const MilestoneDeliveriesTab = ({ getAuthHeaders }) => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold text-[var(--t)] truncate">{d.message_title || 'Milestone Message'}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                    <span className="text-[11px] px-1.5 py-0.5 rounded-full font-bold"
                       style={{ background: `${sc.color}15`, color: sc.color }}>
                       {sc.label}
                     </span>
