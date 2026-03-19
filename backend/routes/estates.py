@@ -422,7 +422,6 @@ async def customize_estate_name(
     return {"message": "Estate name saved", "name": update.get("name", estate["name"])}
 
 
-
 @router.get("/estates/{estate_id}")
 async def get_estate(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Get a single estate by ID."""
