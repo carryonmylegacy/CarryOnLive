@@ -117,27 +117,56 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
 
   return (
     <div className={className} data-testid="family-tree">
-      {/* Beneficiary estates row (above root) */}
+      {/* Beneficiary estates with funnel graphic down to benefactor */}
       {benEstates.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-3 mb-3 pb-3" style={{ borderBottom: '1px dashed rgba(96,165,250,0.2)' }}>
-          {benEstates.map(est => (
-            <TreeNode
-              key={est.id}
-              initials={<Users className="w-3.5 h-3.5" />}
-              photo={est.estate_photo_url || est.owner_photo_url}
-              color="#60A5FA"
-              size={40}
-              label={est.name?.split("'")[0] || 'Estate'}
-              sublabel="Beneficiary"
-              testId={`tree-estate-${est.id}`}
-              onClick={() => {
-                localStorage.setItem('beneficiary_estate_id', est.id);
-                localStorage.removeItem('selected_estate_id');
-                navigate('/beneficiary');
-                window.location.reload();
-              }}
+        <div className="relative mb-1">
+          {/* Funnel SVG background — wide at top, narrows to benefactor */}
+          <svg
+            className="absolute inset-0 w-full h-full pointer-events-none"
+            preserveAspectRatio="none"
+            viewBox="0 0 100 100"
+            style={{ zIndex: 0 }}
+          >
+            <defs>
+              <linearGradient id="funnelGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.07" />
+                <stop offset="100%" stopColor="#60A5FA" stopOpacity="0.01" />
+              </linearGradient>
+            </defs>
+            <polygon
+              points="2,0 98,0 62,100 38,100"
+              fill="url(#funnelGrad)"
             />
-          ))}
+            <polygon
+              points="2,0 98,0 62,100 38,100"
+              fill="none"
+              stroke="#60A5FA"
+              strokeWidth="0.3"
+              strokeOpacity="0.15"
+            />
+          </svg>
+
+          {/* Estate nodes */}
+          <div className="relative flex flex-wrap justify-center gap-3 pt-1 pb-4 px-2" style={{ zIndex: 1 }}>
+            {benEstates.map(est => (
+              <TreeNode
+                key={est.id}
+                initials={<Users className="w-3.5 h-3.5" />}
+                photo={est.estate_photo_url || est.owner_photo_url}
+                color="#60A5FA"
+                size={40}
+                label={est.name?.split("'")[0] || 'Estate'}
+                sublabel="Beneficiary"
+                testId={`tree-estate-${est.id}`}
+                onClick={() => {
+                  localStorage.setItem('beneficiary_estate_id', est.id);
+                  localStorage.removeItem('selected_estate_id');
+                  navigate('/beneficiary');
+                  window.location.reload();
+                }}
+              />
+            ))}
+          </div>
         </div>
       )}
 
