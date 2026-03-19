@@ -175,7 +175,7 @@ const LoginPage = () => {
       if (error.response?.status === 429) {
         const detail = error.response?.data?.detail || '';
         const match = detail.match(/(\d+)\s*seconds/);
-        const secs = match ? parseInt(match[1], 10) : 900;
+        const secs = match ? parseInt(match[1], 10) : 180;
         setLockoutSeconds(secs);
       } else {
         toast.error(error.response?.data?.detail || 'Invalid credentials');

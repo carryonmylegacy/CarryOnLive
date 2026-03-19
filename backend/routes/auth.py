@@ -164,6 +164,17 @@ async def login(data: UserLogin, request: Request):
         # Try username lookup (case-insensitive)
         user = await db.users.find_one({"username_lower": login_lower}, {"_id": 0})
     if not user or not verify_password(data.password, user["password"]):
+        # Check if this email has a pending beneficiary invitation
+        if not user:
+            pending_invite = await db.beneficiaries.find_one(
+                {"email": login_lower, "invitation_status": {"$in": ["sent", "pending"]}},
+                {"_id": 0, "id": 1},
+            )
+            if pending_invite:
+                raise HTTPException(
+                    status_code=401,
+                    detail="This email has a pending invitation. Please check your email and click the invitation link to create your account.",
+                )
         # Record failed attempt
         await db.failed_logins.insert_one(
             {
