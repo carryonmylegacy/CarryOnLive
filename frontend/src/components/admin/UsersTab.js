@@ -510,7 +510,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
             {initials}
           </div>
           {statusBadge && (
-            <div className="absolute -bottom-0.5 -right-0.5 px-1 py-px rounded-full text-[7px] font-black uppercase"
+            <div className="absolute -bottom-0.5 -right-0.5 px-1 py-px rounded-full text-[11px] font-black uppercase"
               style={{ background: statusBadge.bg, color: '#080e1a', lineHeight: '1.1' }}>
               {statusBadge.label === 'accepted' ? '✓' : statusBadge.label[0].toUpperCase()}
             </div>

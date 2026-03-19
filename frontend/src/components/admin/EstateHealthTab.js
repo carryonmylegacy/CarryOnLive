@@ -77,7 +77,7 @@ const TreeNode = ({ initials, color, size = 44, label, sublabel, badge, glowColo
       )}
     </div>
     {label && <span className="text-[11px] font-semibold text-[var(--t)] text-center leading-tight max-w-[60px] truncate">{label}</span>}
-    {sublabel && <span className="text-[7px] text-[#64748B] text-center leading-tight">{sublabel}</span>}
+    {sublabel && <span className="text-[11px] text-[#64748B] text-center leading-tight">{sublabel}</span>}
   </div>
 );
 

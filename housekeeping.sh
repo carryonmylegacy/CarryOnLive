@@ -572,9 +572,196 @@ fi
 echo ""
 
 # ══════════════════════════════════════════════════════════════
-# SECTION C: Post-Check Verification
+# SECTION C: iOS / APP STORE READINESS
+# Ensures every push is ready for CodeMagic → TestFlight → App Review
 # ══════════════════════════════════════════════════════════════
-echo -e "${BOLD}SECTION C: Post-Check Verification${NC}"
+echo -e "${BOLD}SECTION C: iOS / App Store Readiness${NC}"
+echo "------------------------------------------"
+IOS_ISSUES=0
+
+# ── C1. Capacitor Sync ──────────────────────────────────────────────
+echo -n "39. [iOS]   Capacitor sync ......... "
+CAP_IOS_PLUGINS=$(cd /app/frontend && npx cap ls 2>&1 | grep -c "ios:" || echo "0")
+if [ "$CAP_IOS_PLUGINS" != "0" ]; then
+  CAP_PLUGIN_COUNT=$(cd /app/frontend && npx cap ls 2>&1 | grep -A100 "ios:" | grep "@" | wc -l)
+  echo -e "$PASS ($CAP_PLUGIN_COUNT plugins for iOS)"
+else
+  echo -e "$FAIL (Capacitor cannot list iOS plugins)"
+  IOS_ISSUES=$((IOS_ISSUES + 1))
+fi
+
+# ── C2. Native Purchases Plugin ─────────────────────────────────────
+echo -n "40. [iOS]   Native purchases plugin  "
+CAP_HAS_PURCHASES=$(cd /app/frontend && npx cap ls 2>&1 | grep -c "native-purchases" || echo "0")
+POD_HAS_PURCHASES=$(grep -c "CapgoNativePurchases" /app/frontend/ios/App/Podfile 2>/dev/null || echo "0")
+PKG_HAS_PURCHASES=$(grep -c "native-purchases" /app/frontend/package.json 2>/dev/null || echo "0")
+if [ "$CAP_HAS_PURCHASES" != "0" ] && [ "$POD_HAS_PURCHASES" != "0" ] && [ "$PKG_HAS_PURCHASES" != "0" ]; then
+  PKG_VERSION=$(grep "native-purchases" /app/frontend/package.json | head -1 | sed 's/.*: *"//' | sed 's/".*//')
+  echo -e "$PASS (package.json + Capacitor + Podfile, v$PKG_VERSION)"
+else
+  MISSING=""
+  [ "$PKG_HAS_PURCHASES" = "0" ] && MISSING="${MISSING} package.json"
+  [ "$CAP_HAS_PURCHASES" = "0" ] && MISSING="${MISSING} Capacitor"
+  [ "$POD_HAS_PURCHASES" = "0" ] && MISSING="${MISSING} Podfile"
+  echo -e "$FAIL (missing from:$MISSING)"
+  IOS_ISSUES=$((IOS_ISSUES + 1))
+fi
+
+# ── C3. IAP Product IDs ─────────────────────────────────────────────
+echo -n "41. [iOS]   IAP product IDs ........ "
+IAP_COUNT=$(grep -c "us.carryon.app" /app/frontend/src/services/iap.js 2>/dev/null || echo "0")
+IAP_DUPES=$(grep "us.carryon.app" /app/frontend/src/services/iap.js 2>/dev/null | sort | uniq -d | wc -l)
+if [ "$IAP_COUNT" -ge 30 ] && [ "$IAP_DUPES" = "0" ]; then
+  echo -e "$PASS ($IAP_COUNT products, no duplicates)"
+else
+  if [ "$IAP_DUPES" != "0" ]; then
+    echo -e "$FAIL ($IAP_DUPES duplicate product IDs)"
+  else
+    echo -e "$FAIL (only $IAP_COUNT product IDs — expected 30+)"
+  fi
+  IOS_ISSUES=$((IOS_ISSUES + 1))
+fi
+
+# ── C4. Stripe Never Shown on iOS ───────────────────────────────────
+echo -n "42. [iOS]   Stripe gated on iOS .... "
+STRIPE_GATE_OK=1
+for f in /app/frontend/src/components/settings/SubscriptionManagement.js /app/frontend/src/components/SubscriptionPaywall.js; do
+  [ ! -f "$f" ] && continue
+  fname=$(basename "$f")
+  # Count Stripe redirect lines
+  STRIPE_LINES=$(grep -c "window.location.href = res.data.url" "$f" 2>/dev/null || echo "0")
+  # Count isNative guard blocks (each should return before Stripe code)
+  NATIVE_GUARDS=$(grep -c "if (isNative)" "$f" 2>/dev/null || echo "0")
+  if [ "$STRIPE_LINES" -gt 0 ] && [ "$NATIVE_GUARDS" = "0" ]; then
+    STRIPE_GATE_OK=0
+  fi
+done
+if [ "$STRIPE_GATE_OK" = "1" ]; then
+  echo -e "$PASS (all Stripe redirects gated behind isNative)"
+else
+  echo -e "$FAIL (Stripe checkout reachable on iOS — Apple 3.1.1 violation)"
+  IOS_ISSUES=$((IOS_ISSUES + 1))
+fi
+
+# ── C5. IAP Imports in Subscription Components ──────────────────────
+echo -n "43. [iOS]   IAP imports present .... "
+IAP_IMPORT_OK=1
+for f in /app/frontend/src/components/settings/SubscriptionManagement.js /app/frontend/src/components/SubscriptionPaywall.js; do
+  [ ! -f "$f" ] && continue
+  if ! grep -q "from.*services/iap" "$f" 2>/dev/null; then
+    IAP_IMPORT_OK=0
+  fi
+  if ! grep -q "from.*services/native" "$f" 2>/dev/null; then
+    IAP_IMPORT_OK=0
+  fi
+done
+if [ "$IAP_IMPORT_OK" = "1" ]; then
+  echo -e "$PASS (iap + native imported in both subscription components)"
+else
+  echo -e "$FAIL (missing IAP or native imports in subscription components)"
+  IOS_ISSUES=$((IOS_ISSUES + 1))
+fi
+
+# ── C6. Apple-Required Disclosures ──────────────────────────────────
+echo -n "44. [iOS]   Apple disclosures ...... "
+DISCLOSURE_OK=1
+# Must mention auto-renewal, 24-hour cancellation, Terms, Privacy
+for keyword in "auto-renew\|automatically renew" "24 hours" "Terms" "Privacy" "Restore Purchases"; do
+  FOUND=$(grep -c "$keyword" /app/frontend/src/components/settings/SubscriptionManagement.js /app/frontend/src/components/SubscriptionPaywall.js 2>/dev/null || echo "0")
+  if [ "$FOUND" = "0" ]; then
+    DISCLOSURE_OK=0
+  fi
+done
+if [ "$DISCLOSURE_OK" = "1" ]; then
+  echo -e "$PASS (auto-renew, 24h cancel, Terms, Privacy, Restore)"
+else
+  echo -e "$FAIL (missing Apple-required subscription disclosures)"
+  IOS_ISSUES=$((IOS_ISSUES + 1))
+fi
+
+# ── C7. Entitlements & Info.plist Valid ──────────────────────────────
+echo -n "45. [iOS]   Entitlements XML ....... "
+ENTITLE_OK=$(python3 -c "
+import xml.etree.ElementTree as ET
+try:
+    ET.parse('/app/frontend/ios/App/App/App.entitlements')
+    print('ok')
+except: print('fail')
+" 2>/dev/null)
+if [ "$ENTITLE_OK" = "ok" ]; then
+  echo -e "$PASS"
+else
+  echo -e "$FAIL (App.entitlements is invalid XML)"
+  IOS_ISSUES=$((IOS_ISSUES + 1))
+fi
+
+echo -n "46. [iOS]   Info.plist XML ......... "
+PLIST_OK=$(python3 -c "
+import xml.etree.ElementTree as ET
+try:
+    ET.parse('/app/frontend/ios/App/App/Info.plist')
+    print('ok')
+except: print('fail')
+" 2>/dev/null)
+if [ "$PLIST_OK" = "ok" ]; then
+  echo -e "$PASS"
+else
+  echo -e "$FAIL (Info.plist is invalid XML)"
+  IOS_ISSUES=$((IOS_ISSUES + 1))
+fi
+
+# ── C8. Podfile Complete ────────────────────────────────────────────
+echo -n "47. [iOS]   Podfile complete ....... "
+POD_COUNT=$(grep -c "pod '" /app/frontend/ios/App/Podfile 2>/dev/null || echo "0")
+if [ "$POD_COUNT" -ge 10 ]; then
+  echo -e "$PASS ($POD_COUNT pods defined)"
+else
+  echo -e "$FAIL (only $POD_COUNT pods — expected 10+)"
+  IOS_ISSUES=$((IOS_ISSUES + 1))
+fi
+
+# ── C9. Frontend Build Output ───────────────────────────────────────
+echo -n "48. [iOS]   Frontend build output .. "
+if [ -f "/app/frontend/build/index.html" ]; then
+  JS_COUNT=$(ls /app/frontend/build/static/js/*.js 2>/dev/null | wc -l)
+  echo -e "$PASS (index.html + $JS_COUNT JS bundles)"
+else
+  echo -e "$FAIL (no build output — run yarn build first)"
+  IOS_ISSUES=$((IOS_ISSUES + 1))
+fi
+
+# ── C10. CodeMagic Config ───────────────────────────────────────────
+echo -n "49. [iOS]   codemagic.yaml ......... "
+CM_OK=1
+CM_DETAILS=""
+if [ ! -f "/app/codemagic.yaml" ]; then
+  CM_OK=0
+  CM_DETAILS="file missing"
+else
+  grep -q "ios-build" /app/codemagic.yaml 2>/dev/null || { CM_OK=0; CM_DETAILS="no ios-build workflow"; }
+  grep -q "pod install" /app/codemagic.yaml 2>/dev/null || { CM_OK=0; CM_DETAILS="${CM_DETAILS}, no pod install step"; }
+  grep -q "cap sync" /app/codemagic.yaml 2>/dev/null || { CM_OK=0; CM_DETAILS="${CM_DETAILS}, no cap sync step"; }
+  grep -q "submit_to_testflight" /app/codemagic.yaml 2>/dev/null || { CM_OK=0; CM_DETAILS="${CM_DETAILS}, no TestFlight upload"; }
+fi
+if [ "$CM_OK" = "1" ]; then
+  echo -e "$PASS (ios-build + pod install + cap sync + TestFlight)"
+else
+  echo -e "$FAIL ($CM_DETAILS)"
+  IOS_ISSUES=$((IOS_ISSUES + 1))
+fi
+
+# ── C11. No Tiny Fonts (Apple accessibility) ────────────────────────
+echo -n "50. [iOS]   Min font size (11px) ... "
+TINY_FONTS=$(grep -rn "text-\[7px\]\|text-\[8px\]\|text-\[9px\]\|text-\[10px\]" /app/frontend/src --include="*.js" --include="*.jsx" 2>/dev/null | grep -v node_modules | wc -l)
+if [ "$TINY_FONTS" = "0" ]; then
+  echo -e "$PASS (no fonts below 11px)"
+else
+  echo -e "$WARN ($TINY_FONTS instances of sub-11px font — may fail Apple accessibility review)"
+  IOS_ISSUES=$((IOS_ISSUES + 1))
+fi
+
+echo ""
+echo -e "${BOLD}SECTION D: Post-Check Verification${NC}"
 echo "------------------------------------------"
 
 # If any lint issues survived pre-flight, try once more
@@ -603,15 +790,19 @@ echo ""
 # SUMMARY
 # ══════════════════════════════════════════════════════════════
 echo "=========================================="
-TOTAL_ISSUES=$((ISSUES + SOC2_ISSUES))
+TOTAL_ISSUES=$((ISSUES + SOC2_ISSUES + IOS_ISSUES))
 if [ "$TOTAL_ISSUES" = "0" ]; then
   echo -e "  ${GREEN}ALL CHECKS PASSED${NC} — codebase is clean"
+  echo -e "  ${GREEN}READY TO PUSH${NC} — CodeMagic → TestFlight → App Store"
 else
   if [ "$ISSUES" -gt 0 ]; then
     echo -e "  ${RED}$ISSUES STANDARD ISSUE(S)${NC}"
   fi
   if [ "$SOC2_ISSUES" -gt 0 ]; then
     echo -e "  ${YELLOW}$SOC2_ISSUES SOC 2 COMPLIANCE ISSUE(S)${NC}"
+  fi
+  if [ "$IOS_ISSUES" -gt 0 ]; then
+    echo -e "  ${RED}$IOS_ISSUES iOS / APP STORE ISSUE(S)${NC} — do NOT push until fixed"
   fi
 fi
 if [ "$REPAIRS" -gt 0 ]; then
