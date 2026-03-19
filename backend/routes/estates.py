@@ -1,5 +1,7 @@
 """CarryOn™ Backend — Estate Routes"""
 
+import re
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
@@ -365,6 +367,60 @@ async def update_estate_photo(
 
     await db.estates.update_one({"id": estate_id}, {"$set": {"estate_photo_url": photo_url}})
     return {"estate_photo_url": resolve_photo_url(photo_url)}
+
+
+@router.get("/estates/rename-check")
+async def check_estate_rename(current_user: dict = Depends(get_current_user)):
+    """Check if user has an estate with a default name that should be personalized."""
+    if current_user["role"] not in ("benefactor",) and not current_user.get("is_also_benefactor"):
+        return {"needs_rename": False}
+
+    estate = await db.estates.find_one(
+        {"owner_id": current_user["id"], "name_customized": {"$ne": True}},
+        {"_id": 0, "id": 1, "name": 1},
+    )
+    if not estate:
+        return {"needs_rename": False}
+
+    if re.match(r"^.+ Family Estate$", estate.get("name", "")):
+        return {
+            "needs_rename": True,
+            "estate_id": estate["id"],
+            "current_name": estate["name"],
+        }
+
+    return {"needs_rename": False}
+
+
+@router.post("/estates/customize-name")
+async def customize_estate_name(
+    data: EstateUpdate,
+    current_user: dict = Depends(get_current_user),
+):
+    """Save a customized estate name and mark it so the prompt doesn't return."""
+    estate = await db.estates.find_one(
+        {"owner_id": current_user["id"]},
+        {"_id": 0, "id": 1, "name": 1},
+    )
+    if not estate:
+        raise HTTPException(status_code=404, detail="No estate found")
+
+    update = {"name_customized": True}
+    if data.name and data.name.strip():
+        update["name"] = data.name.strip()
+
+    await db.estates.update_one({"id": estate["id"]}, {"$set": update})
+
+    await log_activity(
+        estate_id=estate["id"],
+        user_id=current_user["id"],
+        user_name=current_user.get("name", ""),
+        action="estate_name_customized",
+        description=f"Estate name set to: {update.get('name', estate['name'])}",
+    )
+
+    return {"message": "Estate name saved", "name": update.get("name", estate["name"])}
+
 
 
 @router.get("/estates/{estate_id}")
@@ -790,6 +846,7 @@ async def update_estate(estate_id: str, data: EstateUpdate, current_user: dict =
     update_data = {}
     if data.name:
         update_data["name"] = data.name
+        update_data["name_customized"] = True
     if data.description:
         update_data["description"] = data.description
     if data.state is not None:

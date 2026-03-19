@@ -8,6 +8,8 @@ import PullToRefreshIndicator from '../PullToRefreshIndicator';
 import { haptics } from '../../utils/haptics';
 import BetaFeedbackButton from '../BetaFeedbackButton';
 import BetaWelcomeModal from '../BetaWelcomeModal';
+import EstateNamePrompt from '../EstateNamePrompt';
+import { API_URL } from '../../config';
 
 const GuardianPage = lazy(() => import('../../pages/GuardianPage'));
 
@@ -18,6 +20,7 @@ const DashboardLayout = () => {
   const [guardianMounted, setGuardianMounted] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('carryon_sidebar_collapsed') === 'true');
   const [betaAccepted, setBetaAccepted] = useState(true); // default true to avoid flash
+  const [estateRenameData, setEstateRenameData] = useState(null);
 
   // Check if user is a beta tester who hasn't accepted yet
   const isBetaTester = user?.is_beta_tester || subscriptionStatus?.is_beta_tester;
@@ -30,6 +33,17 @@ const DashboardLayout = () => {
       setBetaAccepted(true);
     }
   }, [isBetaTester, hasBetaAccepted]);
+
+  // Check if user's estate needs a personalized name
+  useEffect(() => {
+    if (!user || user.role === 'admin' || user.role === 'operator') return;
+    const token = localStorage.getItem('carryon_token');
+    if (!token) return;
+    fetch(`${API_URL}/estates/rename-check`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(data => { if (data.needs_rename) setEstateRenameData(data); })
+      .catch(() => {});
+  }, [user]);
 
   useEffect(() => {
     if (isOnGuardian) setGuardianMounted(true);
@@ -118,6 +132,15 @@ const DashboardLayout = () => {
       {/* Beta Tester: Welcome Modal (one-time) */}
       {isBetaTester && !betaAccepted && (
         <BetaWelcomeModal onAccepted={() => { setBetaAccepted(true); refreshUser(); }} />
+      )}
+
+      {/* Estate Name Personalization Prompt (one-time) */}
+      {estateRenameData && (
+        <EstateNamePrompt
+          estateId={estateRenameData.estate_id}
+          currentName={estateRenameData.current_name}
+          onComplete={() => setEstateRenameData(null)}
+        />
       )}
 
       {/* Beta Tester: Floating Feedback Button */}
