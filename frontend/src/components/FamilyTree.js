@@ -96,8 +96,8 @@ const TreeNode = ({ initials, photo, color, label, sublabel, size = 60, badge, i
   );
 };
 
-const NODE_W = 76;  // fixed node container width
-const NODE_GAP = 12; // horizontal gap between nodes
+const NODE_W = 68;  // fixed node container width
+const NODE_GAP = 8;  // horizontal gap between nodes
 const NODE_SLOT = NODE_W + NODE_GAP;
 
 /**
