@@ -5,7 +5,7 @@ import { resolvePhotoUrl } from '../utils/photoUrl';
 
 /**
  * Static family tree — HTML/CSS based for reliable rendering.
- * Benefactor at top → branches to beneficiaries below.
+ * Benefactor at top → beneficiaries grouped by relational ring level below.
  * Also shows estates where benefactor is a beneficiary.
  */
 
@@ -23,6 +23,26 @@ const getInitials = (name, firstName, lastName) => {
   if (name) return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   return '??';
 };
+
+// Ring mapping — matches OrbitVisualization logic
+const getOrbitLevel = (relation) => {
+  const raw = (relation || '').toLowerCase().trim();
+  const parts = raw.includes('/') ? raw.split('/').map(p => p.trim()) : [raw];
+  if (parts.some(p => p.includes('great-grand') || p.includes('great grand'))) return 3;
+  const ring0 = ['spouse', 'wife', 'husband', 'partner', 'parent', 'mother', 'father', 'mom', 'dad'];
+  if (parts.some(p => ring0.includes(p))) return 0;
+  const ring1 = ['son', 'daughter', 'child', 'children', 'sibling', 'brother', 'sister',
+    'grandparent', 'grandmother', 'grandfather', 'grandma', 'grandpa'];
+  if (parts.some(p => ring1.includes(p))) return 1;
+  const ring2 = ['grandchild', 'grandson', 'granddaughter', 'nephew', 'niece', 'uncle', 'aunt'];
+  if (parts.some(p => ring2.includes(p))) return 2;
+  if (raw.includes('in-law') || raw.includes('in law')) return 2;
+  if (parts.some(p => ['friend', 'other'].includes(p))) return 3;
+  return 2;
+};
+
+const ringLabels = ['Immediate Family', 'Close Family', 'Extended Family', 'Outer Circle'];
+const ringColors = ['#d4af37', '#A855F7', '#14B8A6', '#3B82F6'];
 
 const TreeNode = ({ initials, photo, color, label, sublabel, size = 60, badge, isPrimary, onClick, onUpload, testId }) => {
   const hasPhoto = !!photo;
@@ -85,6 +105,15 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
     return getAge(a.date_of_birth || a.dob) - getAge(b.date_of_birth || b.dob);
   });
 
+  // Group beneficiaries by orbit ring level
+  const ringGroups = {};
+  sortedBens.forEach(ben => {
+    const level = getOrbitLevel(ben.relation);
+    if (!ringGroups[level]) ringGroups[level] = [];
+    ringGroups[level].push(ben);
+  });
+  const activeRings = Object.keys(ringGroups).map(Number).sort((a, b) => a - b);
+
   const benEstates = beneficiaryEstates || [];
 
   return (
@@ -125,69 +154,55 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
           testId="tree-root-node"
         />
 
-        {/* Connector: vertical trunk */}
-        {sortedBens.length > 0 && (
-          <div className="flex flex-col items-center">
-            <div style={{ width: 2, height: 20, background: '#d4af37', opacity: 0.6 }} />
+        {/* Ring-level rows below the benefactor */}
+        {activeRings.length > 0 && (
+          <div className="flex flex-col items-center w-full">
+            {activeRings.map((ringLevel, ringIdx) => {
+              const bens = ringGroups[ringLevel];
+              const color = ringColors[ringLevel] || ringColors[0];
+              const label = ringLabels[ringLevel] || `Ring ${ringLevel}`;
+              return (
+                <div key={ringLevel} className="flex flex-col items-center w-full" data-testid={`tree-ring-${ringLevel}`}>
+                  {/* Vertical trunk connector */}
+                  <div style={{ width: 2, height: 20, background: color, opacity: 0.5 }} />
 
-            {/* Horizontal branch + drops */}
-            {sortedBens.length > 1 ? (
-              <div className="relative w-full flex justify-center" style={{ minWidth: sortedBens.length * 72 }}>
-                {/* Horizontal line */}
-                <div className="absolute top-0 left-[10%] right-[10%]" style={{ height: 2, background: '#d4af37', opacity: 0.3 }} />
-                {/* Children */}
-                <div className="flex gap-3 justify-center pt-1">
-                  {sortedBens.map(ben => {
-                    const color = ben.avatar_color || '#60A5FA';
-                    const age = getAge(ben.date_of_birth || ben.dob);
-                    const relation = ben.relation || '';
-                    return (
-                      <div key={ben.id} className="flex flex-col items-center">
-                        {/* Drop line */}
-                        <div style={{ width: 2, height: 14, background: color, opacity: 0.5 }} />
-                        <TreeNode
-                          initials={getInitials(ben.name, ben.first_name, ben.last_name)}
-                          photo={ben.photo_url}
-                          color={color}
-                          size={54}
-                          label={ben.first_name || ben.name?.split(' ')[0] || ''}
-                          sublabel={`${relation}${age < 999 ? ` · ${age}` : ''}`}
-                          badge={ben.is_primary ? 'P' : null}
-                          isPrimary={ben.is_primary}
-                          testId={`tree-node-${ben.id}`}
-                          onClick={() => onSelectBeneficiary?.(ben)}
-                          onUpload={onUploadPhoto ? () => onUploadPhoto(ben.id) : undefined}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              /* Single child — just vertical */
-              sortedBens.map(ben => {
-                const color = ben.avatar_color || '#60A5FA';
-                const age = getAge(ben.date_of_birth || ben.dob);
-                return (
-                  <div key={ben.id} className="flex flex-col items-center">
-                    <div style={{ width: 2, height: 14, background: color, opacity: 0.5 }} />
-                    <TreeNode
-                      initials={getInitials(ben.name, ben.first_name, ben.last_name)}
-                      photo={ben.photo_url}
-                      color={color}
-                      size={54}
-                      label={ben.first_name || ben.name?.split(' ')[0] || ''}
-                      sublabel={`${ben.relation || ''}${age < 999 ? ` · ${age}` : ''}`}
-                      badge={ben.is_primary ? 'P' : null}
-                      isPrimary={ben.is_primary}
-                      testId={`tree-node-${ben.id}`}
-                      onClick={() => onSelectBeneficiary?.(ben)}
-                      onUpload={onUploadPhoto ? () => onUploadPhoto(ben.id) : undefined}
-                    />
+                  {/* Ring label */}
+                  <div className="mb-2">
+                    <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                      style={{ color, background: color + '15', border: `1px solid ${color}30` }}>
+                      {label}
+                    </span>
                   </div>
-                );
-              })
-            )}
+
+                  {/* Beneficiaries in this ring — wrapping within PWA bounds */}
+                  <div className="flex flex-wrap justify-center gap-3 w-full px-2">
+                    {bens.map(ben => {
+                      const benColor = ben.avatar_color || color;
+                      const age = getAge(ben.date_of_birth || ben.dob);
+                      const relation = ben.relation || '';
+                      return (
+                        <div key={ben.id} className="flex flex-col items-center">
+                          <div style={{ width: 2, height: 12, background: benColor, opacity: 0.4 }} />
+                          <TreeNode
+                            initials={getInitials(ben.name, ben.first_name, ben.last_name)}
+                            photo={ben.photo_url}
+                            color={benColor}
+                            size={54}
+                            label={ben.first_name || ben.name?.split(' ')[0] || ''}
+                            sublabel={`${relation}${age < 999 ? ` · ${age}` : ''}`}
+                            badge={ben.is_primary ? 'P' : null}
+                            isPrimary={ben.is_primary}
+                            testId={`tree-node-${ben.id}`}
+                            onClick={() => onSelectBeneficiary?.(ben)}
+                            onUpload={onUploadPhoto ? () => onUploadPhoto(ben.id) : undefined}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
