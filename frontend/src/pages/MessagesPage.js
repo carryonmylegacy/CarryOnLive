@@ -999,6 +999,27 @@ const MessagesPage = () => {
             <div className="space-y-3">
               <Label className="text-[#94a3b8]">Recipients</Label>
               <div className="space-y-2">
+                {beneficiaries.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allIds = beneficiaries.map(b => b.user_id || b.id);
+                      const allSelected = allIds.every(id => selectedRecipients.includes(id));
+                      setSelectedRecipients(allSelected ? [] : allIds);
+                    }}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl cursor-pointer active:scale-[0.98] transition-transform duration-150"
+                    style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}
+                    data-testid="select-all-recipients"
+                  >
+                    <Checkbox
+                      checked={beneficiaries.length > 0 && beneficiaries.every(b => selectedRecipients.includes(b.user_id || b.id))}
+                      onCheckedChange={() => {}}
+                    />
+                    <span className="text-sm font-semibold" style={{ color: '#d4af37' }}>
+                      {beneficiaries.every(b => selectedRecipients.includes(b.user_id || b.id)) ? 'Deselect All' : 'Select All'}
+                    </span>
+                  </button>
+                )}
                 {beneficiaries.length === 0 ? (
                   <p className="text-[#64748b] text-sm">No beneficiaries added yet</p>
                 ) : (
