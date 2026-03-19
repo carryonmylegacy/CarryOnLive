@@ -117,37 +117,11 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
 
   return (
     <div className={className} data-testid="family-tree">
-      {/* Beneficiary estates with funnel graphic down to benefactor */}
+      {/* Beneficiary estates with flowing funnel to benefactor */}
       {benEstates.length > 0 && (
-        <div className="relative mb-1">
-          {/* Funnel SVG background — wide at top, narrows to benefactor */}
-          <svg
-            className="absolute inset-0 w-full h-full pointer-events-none"
-            preserveAspectRatio="none"
-            viewBox="0 0 100 100"
-            style={{ zIndex: 0 }}
-          >
-            <defs>
-              <linearGradient id="funnelGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.07" />
-                <stop offset="100%" stopColor="#60A5FA" stopOpacity="0.01" />
-              </linearGradient>
-            </defs>
-            <polygon
-              points="2,0 98,0 62,100 38,100"
-              fill="url(#funnelGrad)"
-            />
-            <polygon
-              points="2,0 98,0 62,100 38,100"
-              fill="none"
-              stroke="#60A5FA"
-              strokeWidth="0.3"
-              strokeOpacity="0.15"
-            />
-          </svg>
-
-          {/* Estate nodes */}
-          <div className="relative flex flex-wrap justify-center gap-3 pt-1 pb-4 px-2" style={{ zIndex: 1 }}>
+        <div className="relative pb-6">
+          {/* Estate nodes — laid out first so we know the content height */}
+          <div className="relative flex flex-wrap justify-center gap-3 pt-1 pb-2 px-2" style={{ zIndex: 2 }}>
             {benEstates.map(est => (
               <TreeNode
                 key={est.id}
@@ -167,6 +141,56 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               />
             ))}
           </div>
+
+          {/* Flowing funnel SVG — curves from full width down to a focal point */}
+          <svg
+            className="w-full pointer-events-none"
+            viewBox="0 0 400 80"
+            preserveAspectRatio="none"
+            style={{ height: 48, marginTop: -4, position: 'relative', zIndex: 1 }}
+          >
+            <defs>
+              <linearGradient id="funnelFlow" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.12" />
+                <stop offset="60%" stopColor="#60A5FA" stopOpacity="0.06" />
+                <stop offset="100%" stopColor="#d4af37" stopOpacity="0.04" />
+              </linearGradient>
+              <linearGradient id="funnelStroke" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.2" />
+                <stop offset="100%" stopColor="#d4af37" stopOpacity="0.15" />
+              </linearGradient>
+              <filter id="funnelGlow">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+            {/* Filled funnel shape — smooth Bézier curves */}
+            <path
+              d="M 10,0 C 10,30 170,65 200,78 C 230,65 390,30 390,0 Z"
+              fill="url(#funnelFlow)"
+            />
+            {/* Left edge curve */}
+            <path
+              d="M 10,0 C 10,30 170,65 200,78"
+              fill="none"
+              stroke="url(#funnelStroke)"
+              strokeWidth="1"
+              filter="url(#funnelGlow)"
+            />
+            {/* Right edge curve */}
+            <path
+              d="M 390,0 C 390,30 230,65 200,78"
+              fill="none"
+              stroke="url(#funnelStroke)"
+              strokeWidth="1"
+              filter="url(#funnelGlow)"
+            />
+            {/* Center convergence glow dot */}
+            <circle cx="200" cy="78" r="2.5" fill="#d4af37" opacity="0.3" filter="url(#funnelGlow)" />
+          </svg>
         </div>
       )}
 
