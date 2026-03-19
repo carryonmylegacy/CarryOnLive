@@ -118,81 +118,85 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
   return (
     <div className={className} data-testid="family-tree">
       {/* Beneficiary estates with flowing funnel to benefactor */}
-      {benEstates.length > 0 && (
-        <div className="relative pb-6">
-          {/* Estate nodes — laid out first so we know the content height */}
-          <div className="relative flex flex-wrap justify-center gap-3 pt-1 pb-2 px-2" style={{ zIndex: 2 }}>
-            {benEstates.map(est => (
-              <TreeNode
-                key={est.id}
-                initials={<Users className="w-3.5 h-3.5" />}
-                photo={est.estate_photo_url || est.owner_photo_url}
-                color="#60A5FA"
-                size={40}
-                label={est.name?.split("'")[0] || 'Estate'}
-                sublabel="Beneficiary"
-                testId={`tree-estate-${est.id}`}
-                onClick={() => {
-                  localStorage.setItem('beneficiary_estate_id', est.id);
-                  localStorage.removeItem('selected_estate_id');
-                  navigate('/beneficiary');
-                  window.location.reload();
-                }}
-              />
-            ))}
-          </div>
+      {benEstates.length > 0 && (() => {
+        const n = benEstates.length;
+        // Adaptive spread: 1 estate = narrow, 6+ = full width
+        const spread = n === 1 ? 0.2 : n === 2 ? 0.4 : n <= 4 ? 0.7 : 0.9;
+        const cx = 200; // center X in viewBox
+        const left = cx - (cx * spread);
+        const right = cx + (cx * spread);
+        // Control point inset — how far inside the curves bend
+        const cpIn = cx * 0.4;
+        return (
+          <div className="relative pb-4">
+            {/* Estate nodes */}
+            <div className="relative flex flex-wrap justify-center gap-3 pt-1 pb-2 px-2" style={{ zIndex: 2 }}>
+              {benEstates.map(est => (
+                <TreeNode
+                  key={est.id}
+                  initials={<Users className="w-3.5 h-3.5" />}
+                  photo={est.estate_photo_url || est.owner_photo_url}
+                  color="#60A5FA"
+                  size={40}
+                  label={est.name?.split("'")[0] || 'Estate'}
+                  sublabel="Beneficiary"
+                  testId={`tree-estate-${est.id}`}
+                  onClick={() => {
+                    localStorage.setItem('beneficiary_estate_id', est.id);
+                    localStorage.removeItem('selected_estate_id');
+                    navigate('/beneficiary');
+                    window.location.reload();
+                  }}
+                />
+              ))}
+            </div>
 
-          {/* Flowing funnel SVG — curves from full width down to a focal point */}
-          <svg
-            className="w-full pointer-events-none"
-            viewBox="0 0 400 80"
-            preserveAspectRatio="none"
-            style={{ height: 48, marginTop: -4, position: 'relative', zIndex: 1 }}
-          >
-            <defs>
-              <linearGradient id="funnelFlow" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.12" />
-                <stop offset="60%" stopColor="#60A5FA" stopOpacity="0.06" />
-                <stop offset="100%" stopColor="#d4af37" stopOpacity="0.04" />
-              </linearGradient>
-              <linearGradient id="funnelStroke" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.2" />
-                <stop offset="100%" stopColor="#d4af37" stopOpacity="0.15" />
-              </linearGradient>
-              <filter id="funnelGlow">
-                <feGaussianBlur stdDeviation="3" result="blur" />
-                <feMerge>
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-            </defs>
-            {/* Filled funnel shape — smooth Bézier curves */}
-            <path
-              d="M 10,0 C 10,30 170,65 200,78 C 230,65 390,30 390,0 Z"
-              fill="url(#funnelFlow)"
-            />
-            {/* Left edge curve */}
-            <path
-              d="M 10,0 C 10,30 170,65 200,78"
-              fill="none"
-              stroke="url(#funnelStroke)"
-              strokeWidth="1"
-              filter="url(#funnelGlow)"
-            />
-            {/* Right edge curve */}
-            <path
-              d="M 390,0 C 390,30 230,65 200,78"
-              fill="none"
-              stroke="url(#funnelStroke)"
-              strokeWidth="1"
-              filter="url(#funnelGlow)"
-            />
-            {/* Center convergence glow dot */}
-            <circle cx="200" cy="78" r="2.5" fill="#d4af37" opacity="0.3" filter="url(#funnelGlow)" />
-          </svg>
-        </div>
-      )}
+            {/* Adaptive funnel SVG */}
+            <svg
+              className="w-full pointer-events-none"
+              viewBox="0 0 400 80"
+              preserveAspectRatio="xMidYMid meet"
+              style={{ height: n === 1 ? 36 : 48, marginTop: -2, position: 'relative', zIndex: 1 }}
+            >
+              <defs>
+                <linearGradient id="funnelFlow" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.10" />
+                  <stop offset="50%" stopColor="#60A5FA" stopOpacity="0.05" />
+                  <stop offset="100%" stopColor="#d4af37" stopOpacity="0.03" />
+                </linearGradient>
+                <linearGradient id="funnelStroke" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.18" />
+                  <stop offset="100%" stopColor="#d4af37" stopOpacity="0.12" />
+                </linearGradient>
+                <filter id="funnelGlow">
+                  <feGaussianBlur stdDeviation="2.5" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+              {/* Filled shape */}
+              <path
+                d={`M ${left},0 C ${left},28 ${cx - cpIn},62 ${cx},78 C ${cx + cpIn},62 ${right},28 ${right},0 Z`}
+                fill="url(#funnelFlow)"
+              />
+              {/* Left edge */}
+              <path
+                d={`M ${left},0 C ${left},28 ${cx - cpIn},62 ${cx},78`}
+                fill="none" stroke="url(#funnelStroke)" strokeWidth="0.8" filter="url(#funnelGlow)"
+              />
+              {/* Right edge */}
+              <path
+                d={`M ${right},0 C ${right},28 ${cx + cpIn},62 ${cx},78`}
+                fill="none" stroke="url(#funnelStroke)" strokeWidth="0.8" filter="url(#funnelGlow)"
+              />
+              {/* Convergence glow */}
+              <circle cx={cx} cy="78" r="2" fill="#d4af37" opacity="0.25" filter="url(#funnelGlow)" />
+            </svg>
+          </div>
+        );
+      })()}
 
       {/* Root node (benefactor) */}
       <div className="flex flex-col items-center">
