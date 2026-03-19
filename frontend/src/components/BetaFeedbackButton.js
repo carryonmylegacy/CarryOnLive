@@ -243,7 +243,7 @@ export default function BetaFeedbackButton() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe what happened, what you expected, or any suggestion..."
-                  className="mt-1 w-full rounded-lg px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#d4af37]/50"
+                  className="mt-1 w-full rounded-lg px-3 py-2.5 text-base resize-none focus:outline-none focus:ring-2 focus:ring-[#d4af37]/50"
                   style={{
                     background: 'var(--s, #242a45)',
                     color: 'var(--t, #fff)',
