@@ -147,46 +147,50 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
 
     return (
       <React.Fragment key={u.id}>
-        <div className={`glass-card p-3 flex items-center gap-2.5 ${indent ? 'ml-6 sm:ml-8 border-l-2 border-[var(--b)]' : ''}`} style={borderStyle} data-testid={`admin-user-${u.id}`}>
-          {/* Tree toggle for benefactors with beneficiaries (tree mode only) */}
-          {viewMode === 'tree' && !indent && (u.role === 'benefactor' || u.is_also_benefactor) && (
-            <button
-              onClick={() => hasBens && toggleExpand(u.id)}
-              className="w-5 h-5 flex items-center justify-center flex-shrink-0"
-              style={{ opacity: hasBens ? 1 : 0.2, cursor: hasBens ? 'pointer' : 'default' }}
-              data-testid={`tree-toggle-${u.id}`}
-            >
-              {hasBens ? (
-                isExpanded ? <ChevronDown className="w-4 h-4 text-[var(--gold)]" /> : <ChevronRight className="w-4 h-4 text-[var(--t4)]" />
-              ) : (
-                <User className="w-3 h-3 text-[var(--t5)]" />
-              )}
-            </button>
-          )}
+        <div className={`glass-card p-3 ${indent ? 'ml-6 sm:ml-8 border-l-2 border-[var(--b)]' : ''}`} style={borderStyle} data-testid={`admin-user-${u.id}`}>
+          <div className="flex items-start gap-2.5">
+            {/* Tree toggle for benefactors with beneficiaries (tree mode only) */}
+            {viewMode === 'tree' && !indent && (u.role === 'benefactor' || u.is_also_benefactor) && (
+              <button
+                onClick={() => hasBens && toggleExpand(u.id)}
+                className="w-5 h-5 flex items-center justify-center flex-shrink-0 mt-1"
+                style={{ opacity: hasBens ? 1 : 0.2, cursor: hasBens ? 'pointer' : 'default' }}
+                data-testid={`tree-toggle-${u.id}`}
+              >
+                {hasBens ? (
+                  isExpanded ? <ChevronDown className="w-4 h-4 text-[var(--gold)]" /> : <ChevronRight className="w-4 h-4 text-[var(--t4)]" />
+                ) : (
+                  <User className="w-3 h-3 text-[var(--t5)]" />
+                )}
+              </button>
+            )}
 
-          <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: rc.bg, color: rc.color }}>
-            {u.name ? u.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
+            <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: rc.bg, color: rc.color }}>
+              {u.name ? u.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-bold text-[var(--t)] text-sm">{u.name || 'No name'}</div>
+              <div className="text-xs text-[var(--t4)]">{u.email}</div>
+              {u.subscription?.plan_id && (
+                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                  <span className="text-[11px] px-1.5 py-0.5 rounded font-bold capitalize" style={{ background: 'rgba(212,175,55,0.1)', color: '#d4af37' }}>
+                    {u.subscription.plan_name || u.subscription.plan_id}
+                  </span>
+                  <span className="text-[11px] text-[var(--t5)] capitalize">{u.subscription.billing_cycle || 'monthly'}</span>
+                  {u.subscription.beta_plan && <span className="text-[11px] text-purple-400">(beta)</span>}
+                </div>
+              )}
+              {viewMode === 'tree' && !indent && hasBens && (
+                <div className="flex items-center gap-1 mt-0.5">
+                  <GitBranch className="w-3 h-3 text-[var(--t5)]" />
+                  <span className="text-[11px] text-[var(--t5)]">{u.linked_beneficiaries.length} beneficiar{u.linked_beneficiaries.length === 1 ? 'y' : 'ies'}</span>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="font-bold text-[var(--t)] text-sm truncate">{u.name || 'No name'}</div>
-            <div className="text-xs text-[var(--t4)] truncate">{u.email}</div>
-            {u.subscription?.plan_id && (
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-[11px] px-1.5 py-0.5 rounded font-bold capitalize" style={{ background: 'rgba(212,175,55,0.1)', color: '#d4af37' }}>
-                  {u.subscription.plan_name || u.subscription.plan_id}
-                </span>
-                <span className="text-[11px] text-[var(--t5)] capitalize hidden sm:inline">{u.subscription.billing_cycle || 'monthly'}</span>
-                {u.subscription.beta_plan && <span className="text-[11px] text-purple-400 hidden sm:inline">(beta)</span>}
-              </div>
-            )}
-            {viewMode === 'tree' && !indent && hasBens && (
-              <div className="flex items-center gap-1 mt-0.5">
-                <GitBranch className="w-3 h-3 text-[var(--t5)]" />
-                <span className="text-[11px] text-[var(--t5)]">{u.linked_beneficiaries.length} beneficiar{u.linked_beneficiaries.length === 1 ? 'y' : 'ies'}</span>
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-1 flex-shrink-0 flex-wrap">
+          {/* Badges + actions row */}
+          <div className="flex items-center justify-between mt-2 ml-11">
+            <div className="flex items-center gap-1 flex-wrap">
             <span
               className="text-xs px-2 py-0.5 rounded-md font-bold capitalize"
               style={{ background: rc.bg, color: rc.color }}
@@ -249,6 +253,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
               )}
             </div>
           )}
+          </div>
         </div>
         {unlockUserId === u.id && (
           <div className={`px-3 pb-3 -mt-1 ${indent ? 'ml-8' : ''}`}>
