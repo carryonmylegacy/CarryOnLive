@@ -92,6 +92,9 @@ const SettingsPage = () => {
   const [nameDraft, setNameDraft] = useState('');
   const [nameSaving, setNameSaving] = useState(false);
   const [displayName, setDisplayName] = useState('');
+  const [userOtpEnabled, setUserOtpEnabled] = useState(true);
+  const [globalOtpDisabled, setGlobalOtpDisabled] = useState(false);
+  const [otpToggling, setOtpToggling] = useState(false);
 
   const isAdmin = user?.role === 'admin';
   const isOperator = user?.role === 'operator';
@@ -139,6 +142,11 @@ const SettingsPage = () => {
         if (owned.estate_photo_url) setEstatePhoto(owned.estate_photo_url);
       }
     }).catch(() => {}).finally(() => setSettingsReady(true));
+    // Fetch 2FA preference
+    axios.get(`${API_URL}/auth/2fa-preference`, getAuthHeaders()).then(res => {
+      setUserOtpEnabled(res.data.otp_enabled !== false);
+      setGlobalOtpDisabled(res.data.global_disabled || false);
+    }).catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleDigest = async (val) => {
@@ -486,6 +494,111 @@ const SettingsPage = () => {
                 </button>
               </div>
             )}
+          </div>
+          <Separator className="bg-[var(--b)]" />
+          {/* Change Password */}
+          <div>
+            <Button variant="outline" className="w-full border-[var(--b)] text-[var(--t)] justify-between"
+              onClick={() => setShowChangePassword(!showChangePassword)} data-testid="change-password-btn">
+              Change Password
+              <ChevronRight className={`w-4 h-4 transition-transform ${showChangePassword ? 'rotate-90' : ''}`} />
+            </Button>
+            {showChangePassword && (
+              <div className="space-y-3 p-3 mt-2 rounded-xl" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+                <div className="relative">
+                  <Input type={showCurrentPw ? 'text' : 'password'} value={currentPw}
+                    onChange={e => setCurrentPw(e.target.value)} placeholder="Current password"
+                    style={{ fontSize: '16px' }}
+                    className="bg-[var(--bg)] border-[var(--b)] text-[var(--t)] pr-10" data-testid="current-password" />
+                  <button type="button" onClick={() => setShowCurrentPw(!showCurrentPw)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
+                    {showCurrentPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <div className="relative">
+                  <Input type={showNewPw ? 'text' : 'password'} value={newPw}
+                    onChange={e => setNewPw(e.target.value)} placeholder="New password"
+                    style={{ fontSize: '16px' }}
+                    className="bg-[var(--bg)] border-[var(--b)] text-[var(--t)] pr-10" data-testid="new-password" />
+                  <button type="button" onClick={() => setShowNewPw(!showNewPw)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
+                    {showNewPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <Input type={showNewPw ? 'text' : 'password'} value={confirmPw}
+                  onChange={e => setConfirmPw(e.target.value)} placeholder="Confirm new password"
+                  style={{ fontSize: '16px' }}
+                  className={`bg-[var(--bg)] border-[var(--b)] text-[var(--t)] ${confirmPw && newPw !== confirmPw ? 'border-red-500' : ''}`}
+                  data-testid="confirm-new-password" />
+                {confirmPw && newPw !== confirmPw && (
+                  <p className="text-red-400 text-xs"><span className="text-red-400">*</span> Passwords do not match</p>
+                )}
+                <Button className="w-full" disabled={!currentPw || !newPw || newPw !== confirmPw || pwLoading}
+                  style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
+                  onClick={async () => {
+                    setPwLoading(true);
+                    try {
+                      await axios.post(`${API_URL}/auth/change-password`, { current_password: currentPw, new_password: newPw }, getAuthHeaders());
+                      toast.success('Password changed successfully');
+                      setShowChangePassword(false);
+                      setCurrentPw(''); setNewPw(''); setConfirmPw('');
+                    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to change password'); }
+                    finally { setPwLoading(false); }
+                  }} data-testid="submit-change-password">
+                  {pwLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                  Update Password
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Security */}
+      <Card className="glass-card">
+        <CardHeader>
+          <CardTitle className="text-[var(--t)] flex items-center gap-2">
+            <Lock className="w-5 h-5 text-[var(--gold)]" />
+            Security
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {passkeySupported && (
+            <>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-[var(--t)] font-medium">Passkey (Face ID / Touch ID)</h4>
+                  <p className="text-[var(--t5)] text-sm">Sign in without a password</p>
+                </div>
+                <Switch checked={passkeyRegistered} onCheckedChange={handlePasskeyToggle} disabled={passkeyLoading} data-testid="settings-passkey-toggle" />
+              </div>
+              <Separator className="bg-[var(--b)]" />
+            </>
+          )}
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-[var(--t)] font-medium">Two-Factor Authentication</h4>
+              <p className="text-[var(--t5)] text-sm">
+                {globalOtpDisabled
+                  ? 'Disabled platform-wide by administrator'
+                  : 'Require a verification code on every login'}
+              </p>
+            </div>
+            <Switch
+              checked={!globalOtpDisabled && userOtpEnabled}
+              onCheckedChange={async (checked) => {
+                setOtpToggling(true);
+                try {
+                  await axios.put(`${API_URL}/auth/2fa-preference`, { otp_enabled: checked }, getAuthHeaders());
+                  setUserOtpEnabled(checked);
+                  toast.success(checked ? '2FA enabled' : '2FA disabled');
+                } catch (err) {
+                  toast.error(err.response?.data?.detail || 'Failed to update 2FA preference');
+                } finally { setOtpToggling(false); }
+              }}
+              disabled={otpToggling || globalOtpDisabled}
+              data-testid="settings-2fa-toggle"
+            />
           </div>
         </CardContent>
       </Card>
@@ -1053,83 +1166,6 @@ const SettingsPage = () => {
             </div>
             <Switch defaultChecked />
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Security */}
-      <Card className="glass-card">
-        <CardHeader>
-          <CardTitle className="text-[var(--t)] flex items-center gap-2">
-            <Lock className="w-5 h-5 text-[var(--gold)]" />
-            Security
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {passkeySupported && (
-            <>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-[var(--t)] font-medium">Passkey (Face ID / Touch ID)</h4>
-                  <p className="text-[var(--t5)] text-sm">Sign in without a password</p>
-                </div>
-                <Switch checked={passkeyRegistered} onCheckedChange={handlePasskeyToggle} disabled={passkeyLoading} data-testid="settings-passkey-toggle" />
-              </div>
-              <Separator className="bg-[var(--b)]" />
-            </>
-          )}
-          <Button variant="outline" className="w-full border-[var(--b)] text-[var(--t)] justify-between"
-            onClick={() => setShowChangePassword(!showChangePassword)} data-testid="change-password-btn">
-            Change Password
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-          {showChangePassword && (
-            <div className="space-y-3 p-3 rounded-xl" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
-              <div className="relative">
-                <Input type={showCurrentPw ? 'text' : 'password'} value={currentPw}
-                  onChange={e => setCurrentPw(e.target.value)} placeholder="Current password"
-                  className="bg-[var(--bg)] border-[var(--b)] text-[var(--t)] pr-10" data-testid="current-password" />
-                <button type="button" onClick={() => setShowCurrentPw(!showCurrentPw)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
-                  {showCurrentPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              <div className="relative">
-                <Input type={showNewPw ? 'text' : 'password'} value={newPw}
-                  onChange={e => setNewPw(e.target.value)} placeholder="New password"
-                  className="bg-[var(--bg)] border-[var(--b)] text-[var(--t)] pr-10" data-testid="new-password" />
-                <button type="button" onClick={() => setShowNewPw(!showNewPw)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
-                  {showNewPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              <Input type={showNewPw ? 'text' : 'password'} value={confirmPw}
-                onChange={e => setConfirmPw(e.target.value)} placeholder="Confirm new password"
-                className={`bg-[var(--bg)] border-[var(--b)] text-[var(--t)] ${confirmPw && newPw !== confirmPw ? 'border-red-500' : ''}`}
-                data-testid="confirm-new-password" />
-              {confirmPw && newPw !== confirmPw && (
-                <p className="text-red-400 text-xs"><span className="text-red-400">*</span> Passwords do not match</p>
-              )}
-              <Button className="w-full" disabled={!currentPw || !newPw || newPw !== confirmPw || pwLoading}
-                style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
-                onClick={async () => {
-                  setPwLoading(true);
-                  try {
-                    await axios.post(`${API_URL}/auth/change-password`, { current_password: currentPw, new_password: newPw }, getAuthHeaders());
-                    toast.success('Password changed successfully');
-                    setShowChangePassword(false);
-                    setCurrentPw(''); setNewPw(''); setConfirmPw('');
-                  } catch (err) { toast.error(err.response?.data?.detail || 'Failed to change password'); }
-                  finally { setPwLoading(false); }
-                }} data-testid="submit-change-password">
-                {pwLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                Update Password
-              </Button>
-            </div>
-          )}
-          <Button variant="outline" className="w-full border-[var(--b)] text-[var(--t)] justify-between">
-            Two-Factor Authentication
-            <span className="text-[#10b981] text-sm">Enabled</span>
-          </Button>
         </CardContent>
       </Card>
 

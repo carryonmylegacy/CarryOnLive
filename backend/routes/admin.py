@@ -873,12 +873,21 @@ async def get_platform_settings(current_user: dict = Depends(get_current_user)):
 
 @router.put("/admin/platform-settings")
 async def update_platform_settings(data: dict, current_user: dict = Depends(get_current_user)):
-    """Update platform-wide settings (admin only)."""
+    """Update platform-wide settings (admin only).
+    When otp_disabled is changed from True to False (turning 2FA ON),
+    all users' otp_enabled is reset to True."""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
     allowed_keys = {"otp_disabled"}
     update = {k: v for k, v in data.items() if k in allowed_keys}
     if update:
+        # Check if we're turning 2FA ON (otp_disabled going from True to False)
+        if "otp_disabled" in update and not update["otp_disabled"]:
+            old_settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0})
+            was_disabled = (old_settings or {}).get("otp_disabled", False)
+            if was_disabled:
+                # Turning 2FA ON globally — reset all users to otp_enabled: true
+                await db.users.update_many({}, {"$set": {"otp_enabled": True}})
         await db.platform_settings.update_one({"_id": "global"}, {"$set": update}, upsert=True)
     settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0})
     return settings or {"otp_disabled": False}

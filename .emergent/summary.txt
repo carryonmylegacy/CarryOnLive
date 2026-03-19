@@ -1,127 +1,44 @@
 <analysis>**original_problem_statement:**
-The user initiated a session to gain a comprehensive understanding of the application's third-party integrations, focusing on subscription costs, scalability limits, and overall monthly operational expenses (COGS). This primary P0 task evolved into several feature implementations on the Founder Dashboard:
+The user initiated a full-scale codebase refactoring and polishing task to improve efficiency and cleanliness. This involved running housekeeping scripts, manually auditing for dead code, cleaning up artifacts, and refactoring DRY violations.
 
-1.  **Integration Audit & Cost Analysis:** Conduct a full codebase review to identify all integrations and their associated costs and subscription tiers.
-2.  **Secure Integration Dashboard:** Create a new, password-protected Integrations tab on the Founder Dashboard to securely display a centralized list of all platform integrations, including credentials, costs, subscription details, and direct management links.
-3.  **COGS & Verification Tracking:** The dashboard must calculate and display the total monthly Cost of Goods Sold (COGS). It also needs to visually distinguish between data points verified by the user (via screenshots) and unverified data, prompting the user to fill in the gaps.
-4.  **SOC 2 Report Generation:** Add a feature to generate and download a PDF report summarizing all integration details, intended for compliance audits like SOC 2.
-5.  **Platform Capacity Monitoring:**
-    *   Implement a dashboard widget displaying Total Users vs. Maximum Platform Capacity.
-    *   The maximum capacity should be determined by the most restrictive integration limit.
-    *   Visually identify the bottleneck integration and provide an Upgrade link.
-    *   In the integrations list, highlight the top three most limiting integrations with color-coded borders (Red, Orange, Yellow).
-6.  **xAI Credit Tracker:** Add a component to the dashboard to monitor xAI (Grok) API credit usage. This involves internally tracking token consumption for every AI call and displaying the remaining balance, monthly spend, and usage counts.
-7.  **Infrastructure Optimization & Setup:**
-    *   **Vercel:** Optimize build processes to reduce costs by correctly setting the root directory and implementing rules to skip unnecessary builds.
-    *   **Capgo:** Finalize the setup for Capgo to enable Over-the-Air (OTA) updates for the native mobile apps.
-8.  **Code Quality:** Run a housekeeping script to identify and fix code quality issues, warnings, and potential bugs.
+Following the refactoring, a series of issues and new requests were raised:
+1.  **Bug: Beneficiary Account Lockout:** A beneficiary was getting locked out after multiple failed login attempts when trying to sign in instead of using the invitation link to create an account.
+2.  **Bug: Incorrect Estate Names:** A beneficiary was seeing all linked estates named Mitchell Family Estate instead of their custom-renamed names.
+3.  **Bug: Vercel CI Failure:** A recent push failed the Backend Lint step in the CI/CD pipeline.
+4.  **Bug: PWA Settings UI:** On the PWA, editing a name in the Founder portal Settings page caused the screen to zoom and broke the button layout.
+5.  **Feature Request: Settings Page Overhaul:**
+    *   Reorganize the Settings page to be more logical, moving user profile information (name, username, password) to the top.
+    *   Implement a per-user 2FA toggle in the admin portal, allowing admins to enable/disable 2FA for individual accounts.
+    *   Add a Sort By feature to the User, Benefactor, and Beneficiary tabs in the admin portals to improve usability without breaking the PWA layout.
+6.  **Security Concern:** The user clarified that admins should *never* be able to modify user estates, requesting a reversal of a change that allowed this.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application now features a sophisticated Integrations tab within the Founder Dashboard, providing a centralized hub for monitoring platform health, costs, and scalability.
-
-*   **Integrations Dashboard:** A password-protected () tab that lists all 17 platform integrations. It displays verified and unverified data, costs, plans, and management links. It features sub-tabs for filtering by category (Infrastructure, Payments, etc.).
-*   **COGS & Capacity Monitoring:** At the top of the tab, a summary displays the total monthly COGS. A separate three-tile widget shows Total Users, Max Capacity (limited by the bottleneck), and identifies the bottleneck (Resend). The integration list uses colored borders to highlight the top three bottlenecks.
-*   **SOC 2 Reporting:** A Download SOC 2 Report button generates a PDF containing all integration details for compliance purposes.
-*   **xAI Credit Tracker:** The System Health tab now includes a card that tracks xAI API credits. It shows the remaining balance (manually updatable), monthly spend, and usage counts, with color-coded warnings for low balances. The tracking is performed internally by logging token usage in the database.
-*   **Optimizations:** Vercel build settings have been optimized to reduce build minutes. Capgo setup has been completed, and the first bundle has been uploaded, making OTA updates functional.
-*   **Code Quality:** Several code quality issues identified by a housekeeping script have been resolved, particularly an environment variable fallback risk.
+The codebase has undergone a massive refactoring and cleanup. Over 10,000 lines of dead code, duplicated code, and unnecessary artifacts were removed. Key violations of the DRY principle, such as 88 instances of a hardcoded API URL, have been centralized into a shared config. The UI/UX for editing fields on the Settings page has been significantly improved with clear Save/Cancel buttons and toast notifications. A new Estate Name Personalization prompt was added, which appears for new and existing benefactors on login if their estate has a default name, guiding them to customize it. Several critical bugs related to user lockout, CI pipeline failures, and mobile UI have been resolved. The admin estate-rename functionality was correctly restricted to only estate owners.
 
 **Last working item**:
-- **Last item agent was working:** Running the 
-==========================================
-  CarryOn™ Housekeeping Protocol
-  + SOC 2 Compliance Audit
-==========================================
-
-[1mPRE-FLIGHT: Auto-fix lint & formatting[0m
-------------------------------------------
-  [0;36mINFO[0m No fixes needed — already clean
-
-[1mSECTION A: Standard Housekeeping[0m
-------------------------------------------
-1.  Backend ruff check ............ [0;32mPASS[0m
-2.  Backend ruff format ........... [0;32mPASS[0m
-3.  Frontend ESLint (errors) ...... [0;32mPASS[0m
-4.  Frontend build ................ [0;32mPASS[0m
-5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: 7ba6c0f63599)
-6.  MongoDB _id leak scan ......... [0;32mPASS[0m
-7.  Hardcoded secrets scan ........ [0;32mPASS[0m
-8.  Sensitive console.log scan .... [0;32mPASS[0m
-9.  Deprecated datetime scan ...... [0;32mPASS[0m
-10. Backend health check .......... [0;32mPASS[0m
-11. Unprotected endpoint audit .... [0;32mPASS[0m (36 route files audited)
-
-[1mSECTION B: SOC 2 Compliance Audit[0m
-------------------------------------------
-12. [CC6.1] Auth guard coverage ... [0;32mPASS[0m
-13. [CC6.1] Encryption at rest .... [0;32mPASS[0m (AES-256-GCM only, no legacy Fernet in routes)
-14. [CC6.1] Password hashing ...... [0;32mPASS[0m
-15. [CC7.2] Audit trail coverage .. [0;32mPASS[0m (all sensitive routes have audit logging)
-16. [CC7.2] Audit integrity hash .. [0;32mPASS[0m (SHA-256 integrity hash on all audit entries)
-17. [CC7.2] Audit immutability .... [0;32mPASS[0m (append-only — no update/delete on audit_trail)
-18. [CC7.2] Token blacklist ....... [0;32mPASS[0m (token blacklisting active)
-19. [CC7.2] Session enforcement ... [0;32mPASS[0m (single-session enforcement active)
-20. [CC7.2] OTP expiry check ...... [0;32mPASS[0m (10-minute OTP expiry enforced)
-21. [CC7.2] Account lockout ....... [0;32mPASS[0m (5-attempt lockout with 15-min window)
-22. [PI1.1] GDPR data export ...... [0;32mPASS[0m (endpoint exists — HTTP 403)
-23. [PI1.1] GDPR data deletion ... [0;32mPASS[0m (right to erasure endpoint present)
-24. [PI1.1] Consent management ... [0;32mPASS[0m (consent management endpoints present)
-25. [CC8.1] Soft-delete standard .. [0;32mPASS[0m (1 hard deletes — reviewed)
-26. [A1.2]  Error reporter ........ [0;32mPASS[0m (global error reporter active)
-27. [A1.2]  Error logging endpoint  [0;32mPASS[0m (error reporting endpoint operational)
-28. [CC6.1] Sensitive access log .. [0;32mPASS[0m (sensitive access logging indexed)
-29. [CC7.2] Rate limiting ......... [0;32mPASS[0m (rate limiting middleware active)
-30. [CC6.1] CORS configuration .... [0;32mPASS[0m (CORS configured, no wildcard)
-31. [CC6.1] Security headers ...... [0;32mPASS[0m (security headers middleware active)
-32. [CC7.2] DB indexes verified ... [0;32mPASS[0m (49 indexes defined)
-33. [CC8.1] Env fallback scan ...... [0;32mPASS[0m
-34. [A1.2] Recent backend logs ..... [0;32mPASS[0m
-35. [CC8.1] Route editor audit ..... [0;32mPASS[0m
-36. [A1.2]  Deploy start commands .. [0;32mPASS[0m (no shell built-ins in start commands)
-37. [A1.2]  Deploy healthcheck ..... [0;32mPASS[0m (healthcheckPath = "/api/health")
-38. [A1.2]  Mongo projection safety  [1;33mWARN[0m (2 projection(s) may omit 'id' — risk of KeyError)
-  admin.py:1299 — inclusion projection missing "id": 1
-  trial_reminders.py:221 — inclusion projection missing "id": 1
-
-    Review: ensure 'id' is projected if accessed later
-
-[1mSECTION C: Post-Check Verification[0m
-------------------------------------------
-R1. Lint & format verified ...... [0;36mINFO[0m (clean after pre-flight)
-
-==========================================
-  [0;32mALL CHECKS PASSED[0m — codebase is clean
-==========================================
-
-Safety reminder: Do NOT run yarn add/remove.
-To fix ruff format: cd /app/backend && ruff format .
-
-SOC 2 Trust Service Criteria Reference:
-  CC6.1  Logical access security
-  CC7.2  System monitoring & audit
-  CC8.1  Change management
-  A1.2   System availability
-  PI1.1  Privacy (GDPR) script and fixing the critical issues it flagged. The primary fix was resolving an env fallback scan warning in  by ensuring environment variables are accessed directly, preventing potential runtime errors if a variable is missing.
-- **Status:** COMPLETED
-- **Agent Testing Done:** Y (The agent re-ran the housekeeping script to confirm the critical issues were resolved).
-- **Which testing method agent to use?** NA
+- **Last item agent was working:** The agent was beginning the implementation of a multi-part feature request. The main focus was analyzing the current structure of the Settings page () and the admin user tabs () to plan the following changes: reorganizing the Settings page layout, adding a per-user 2FA toggle, and implementing a new Sort By control in the admin user tabs.
+- **Status:** IN PROGRESS
+- **Agent Testing Done:** N
+- **Which testing method agent to use?** both
 - **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
 - **Issue 1: Video Playback on Milestone Page (P2)**
-    - This is a carry-over issue from a previous session. The root cause is unconfirmed, suspected to be a data issue, as no video messages were found for the test user.
+    - Carry-over issue. Suspected to be a data issue (no video messages found for the test user).
     - **Status:** NOT STARTED
 - **Issue 2: Settings Page Glitch (P3)**
-    - A user once reported a flash of an old UI. This was not reproducible and remains uninvestigated.
+    - A minor, non-reproducible UI flash reported once by the user.
     - **Status:** NOT STARTED
-- **Issue 3: Twilio SMS OTP Integration (P1)**
-    - Blocked, awaiting the user's A2P 10DLC approval from Twilio.
-    - **Status:** BLOCKED
 
 **In progress Task List**:
-There are no tasks currently in progress.
+- **Task 1: Overhaul Admin Tabs & Settings Page (P0)**
+    - **Sub-task 1.1: Reorganize Settings Page:** Move the password section into the Profile card, and reorder all sections logically (Profile > Personal Info > Security > etc.).
+    - **Sub-task 1.2: Implement Per-User 2FA Toggle:** Add a toggle switch for each user in the admin UsersTab to enable/disable 2FA for their account.
+    - **Sub-task 1.3: Add Sort By to Admin Tabs:** Implement a Sort By dropdown/control in the Users, Benefactors, and Beneficiary tabs within the admin portals. Ensure the UI remains responsive and does not require horizontal scrolling on PWA.
+    - **Status:** IN PROGRESS
+    - **Blocked on something:** None.
 
 **Upcoming and Future Tasks**
 **Upcoming Tasks:**
@@ -129,115 +46,35 @@ There are no tasks currently in progress.
 *   **(P1) iOS Live Updates:** Fully test the Capacitor Live Updates (Capgo) flow for the iOS app to confirm OTA updates work end-to-end.
 
 **Future Tasks:**
-*   **(P2) Scalability Enhancements:** Investigate horizontal scaling for the backend, implement background workers for long-running tasks, and set up a CDN for static assets to improve global performance.
+*   **(P2) Scalability Enhancements:** Investigate horizontal scaling for the backend, implement background workers, and set up a CDN.
+*   **(P2) Refactor :** Break down the massive  file (now 1000+ lines) into smaller, manageable components.
+*   **(P2) Refactor Integrations Data:** Move the hardcoded integration data from  into a configuration file or database collection.
+*   **(P2) Twilio SMS OTP Integration:** Blocked pending the user's A2P 10DLC approval from Twilio.
 
 **Completed work in this session**
-- **Feature: Comprehensive Integration Audit & Dashboard:**
-    - Created the password-protected Integrations tab ().
-    - Implemented backend endpoint  to securely serve integration data.
-    - The UI displays all 17 integrations with costs, plans, and highlights verified/unverified data.
-    - Includes a COGS summary.
-- **Feature: SOC 2 PDF Report Generation:**
-    - Added a  endpoint using  to generate a PDF.
-- **Feature: Platform Capacity Monitoring:**
-    - The integrations endpoint now includes capacity analysis logic.
-    - Frontend updated with a capacity widget (Total Users vs. Max Capacity) and color-coded borders for bottleneck integrations.
-- **Feature: xAI Credit Balance Tracker:**
-    - Modified  to log xAI token usage to a new  collection in MongoDB.
-    - Created a card on the  to display the tracked balance and usage statistics.
-- **Optimization: Vercel Build Efficiency:**
-    - Created  with an  to prevent backend-only changes from triggering frontend builds.
-    - Guided the user to set the Root Directory to  in the Vercel project settings.
-- **Setup: Capgo Live Updates:**
-    - Successfully ran the Capgo CLI to register the app () and upload the initial web bundle for OTA updates.
-- **Housekeeping: Code Quality Fixes:**
-    - Executed 
-==========================================
-  CarryOn™ Housekeeping Protocol
-  + SOC 2 Compliance Audit
-==========================================
-
-[1mPRE-FLIGHT: Auto-fix lint & formatting[0m
-------------------------------------------
-  [0;36mINFO[0m No fixes needed — already clean
-
-[1mSECTION A: Standard Housekeeping[0m
-------------------------------------------
-1.  Backend ruff check ............ [0;32mPASS[0m
-2.  Backend ruff format ........... [0;32mPASS[0m
-3.  Frontend ESLint (errors) ...... [0;32mPASS[0m
-4.  Frontend build ................ [0;32mPASS[0m
-5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: 7ba6c0f63599)
-6.  MongoDB _id leak scan ......... [0;32mPASS[0m
-7.  Hardcoded secrets scan ........ [0;32mPASS[0m
-8.  Sensitive console.log scan .... [0;32mPASS[0m
-9.  Deprecated datetime scan ...... [0;32mPASS[0m
-10. Backend health check .......... [0;32mPASS[0m
-11. Unprotected endpoint audit .... [0;32mPASS[0m (36 route files audited)
-
-[1mSECTION B: SOC 2 Compliance Audit[0m
-------------------------------------------
-12. [CC6.1] Auth guard coverage ... [0;32mPASS[0m
-13. [CC6.1] Encryption at rest .... [0;32mPASS[0m (AES-256-GCM only, no legacy Fernet in routes)
-14. [CC6.1] Password hashing ...... [0;32mPASS[0m
-15. [CC7.2] Audit trail coverage .. [0;32mPASS[0m (all sensitive routes have audit logging)
-16. [CC7.2] Audit integrity hash .. [0;32mPASS[0m (SHA-256 integrity hash on all audit entries)
-17. [CC7.2] Audit immutability .... [0;32mPASS[0m (append-only — no update/delete on audit_trail)
-18. [CC7.2] Token blacklist ....... [0;32mPASS[0m (token blacklisting active)
-19. [CC7.2] Session enforcement ... [0;32mPASS[0m (single-session enforcement active)
-20. [CC7.2] OTP expiry check ...... [0;32mPASS[0m (10-minute OTP expiry enforced)
-21. [CC7.2] Account lockout ....... [0;32mPASS[0m (5-attempt lockout with 15-min window)
-22. [PI1.1] GDPR data export ...... [0;32mPASS[0m (endpoint exists — HTTP 403)
-23. [PI1.1] GDPR data deletion ... [0;32mPASS[0m (right to erasure endpoint present)
-24. [PI1.1] Consent management ... [0;32mPASS[0m (consent management endpoints present)
-25. [CC8.1] Soft-delete standard .. [0;32mPASS[0m (1 hard deletes — reviewed)
-26. [A1.2]  Error reporter ........ [0;32mPASS[0m (global error reporter active)
-27. [A1.2]  Error logging endpoint  [0;32mPASS[0m (error reporting endpoint operational)
-28. [CC6.1] Sensitive access log .. [0;32mPASS[0m (sensitive access logging indexed)
-29. [CC7.2] Rate limiting ......... [0;32mPASS[0m (rate limiting middleware active)
-30. [CC6.1] CORS configuration .... [0;32mPASS[0m (CORS configured, no wildcard)
-31. [CC6.1] Security headers ...... [0;32mPASS[0m (security headers middleware active)
-32. [CC7.2] DB indexes verified ... [0;32mPASS[0m (49 indexes defined)
-33. [CC8.1] Env fallback scan ...... [0;32mPASS[0m
-34. [A1.2] Recent backend logs ..... [0;32mPASS[0m
-35. [CC8.1] Route editor audit ..... [0;32mPASS[0m
-36. [A1.2]  Deploy start commands .. [0;32mPASS[0m (no shell built-ins in start commands)
-37. [A1.2]  Deploy healthcheck ..... [0;32mPASS[0m (healthcheckPath = "/api/health")
-38. [A1.2]  Mongo projection safety  [1;33mWARN[0m (2 projection(s) may omit 'id' — risk of KeyError)
-  admin.py:1299 — inclusion projection missing "id": 1
-  trial_reminders.py:221 — inclusion projection missing "id": 1
-
-    Review: ensure 'id' is projected if accessed later
-
-[1mSECTION C: Post-Check Verification[0m
-------------------------------------------
-R1. Lint & format verified ...... [0;36mINFO[0m (clean after pre-flight)
-
-==========================================
-  [0;32mALL CHECKS PASSED[0m — codebase is clean
-==========================================
-
-Safety reminder: Do NOT run yarn add/remove.
-To fix ruff format: cd /app/backend && ruff format .
-
-SOC 2 Trust Service Criteria Reference:
-  CC6.1  Logical access security
-  CC7.2  System monitoring & audit
-  CC8.1  Change management
-  A1.2   System availability
-  PI1.1  Privacy (GDPR) and fixed a critical environment variable access issue in .
+- **Refactoring: Comprehensive Codebase Polish:**
+  - **DRY Refactoring:** Extracted the API URL from 88 separate files into a single . Consolidated 4 redundant  functions into the central .
+  - **Artifact & Dead Code Removal:** Deleted 24 stale, iteration-specific test files (~9,000 lines), unused util functions (), orphaned backend utils (), and dead CSS, cleaning up thousands of lines.
+  - ** Cleanup:** Reduced the  file from 595 to 71 lines by removing over 500 lines of duplicated entries.
+- **Feature: Estate Name Personalization Prompt:**
+  - Implemented a one-time modal () that appears for benefactors on login if their estate has a default name, prompting them to customize it.
+  - Added backend endpoints (, ) to support this flow.
+  - Added a  flag to the  collection to track completion.
+- **UX Improvement: Settings Page Save Flow:**
+  - Replaced ambiguous checkmark icons with clear **Save** and **Cancel** buttons for the name, username, and estate name editors on the Settings page.
+  - Added loading spinners to the save buttons and toast notifications for success/failure, providing definitive user feedback.
+- **Bug Fix: Beneficiary Login Lockout:**
+  - Modified the login flow in  to check for pending invitations. If an email matches an invited user, it now returns a helpful error message instead of Invalid credentials and does **not** count it as a failed login attempt, preventing lockouts.
+- **Bug Fix: PWA Settings UI:**
+  - Reworked the CSS for the edit-in-place components on  to use a responsive  layout on mobile and set input font size to , preventing both UI breakage and iOS auto-zoom.
+- **Bug Fix: Vercel CI Failure:**
+  - Identified and fixed 33 linting errors (trailing whitespace, unused imports) in a test file generated by the testing agent ().
+  - Ran 126 files left unchanged across the entire backend to ensure code consistency.
+- **Security Fix: Admin Permissions:**
+  - Reverted a change that allowed admins to rename estates belonging to other users. Confirmed via testing that only the estate owner can perform this action, and admins receive a 403 error.
 
 **Earlier issues found/mentioned but not fixed**
-*   **Issue 1: Video Playback on Milestone Page**
-    -   **Debug checklist:** The investigation concluded that no video messages existed for the test user. The next step requires obtaining a valid  from the user's production data to test the  endpoint directly and diagnose if the issue is with data retrieval, streaming, or the frontend player.
-    -   **Why to solve this issue and what will be achieved with this?** This is a core user-facing feature. Fixing it will restore key functionality for milestone messages.
-    -   **Should Test frontend/backend/both after fix:** Both
-    -   **Is recurring issue?** N
-*   **Issue 2: Settings Page Glitch**
-    -   **Debug checklist:** This issue has not been reproduced. The first step would be to ask the user for specific steps to trigger the glitch, check browser console logs during that action, and review the rendering logic of the settings page components.
-    -   **Why to solve this issue and what will be achieved with this?** Improves UI polish and removes a distracting visual artifact for the user.
-    -   **Should Test frontend/backend/both after fix:** Frontend
-    -   **Is recurring issue?** N
+- None.
 
 **Known issue recurrence from previous fork**
 - None.
@@ -246,179 +83,61 @@ SOC 2 Trust Service Criteria Reference:
 
 
 **Key Technical Concepts**
-*   **Dynamic Configuration Management:** Securely fetching, displaying, and managing sensitive configuration data (API keys, costs) from the backend for an admin dashboard.
-*   **Server-Side PDF Generation:** Using the  library in Python to dynamically generate complex PDF documents from application data for compliance reporting.
-*   **System Bottleneck Analysis:** Implementing logic to analyze various integration subscription limits against current usage (e.g., user count) to programmatically identify the most critical scaling constraint.
-*   **Internal Usage Metering:** Creating a self-contained system to track API token consumption within the application's own database, providing a reliable source of truth without depending on external, often-unavailable billing APIs.
-*   **CI/CD Optimization:** Leveraging platform-specific configuration (, Vercel UI settings) to create efficient build pipelines, reducing operational costs and deployment times.
-*   **Password-Protected Routes:** Implementing a simple but effective security layer on both the frontend (UI lock screen) and backend (API middleware) to protect sensitive information.
+- **Code Refactoring:** Extensive application of DRY (Don't Repeat Yourself) principle, dead code elimination, and configuration centralization.
+- **CI/CD Debugging:** Diagnosing and fixing pipeline failures by reproducing linting errors locally ().
+- **Responsive UI/UX:** Using responsive Tailwind CSS classes (, ) and CSS properties () to fix mobile layout issues and prevent undesirable browser behavior (iOS auto-zoom).
+- **API Design (FastAPI):** Careful ordering of routes to avoid path parameter conflicts (e.g., placing  before ).
+- **React State Management & UX:** Enhancing user feedback loops with loading states (), explicit Save/Cancel actions, and toast notifications.
 
 **key DB schema**
-*   **xai_usage** (New Collection):
-    *   Mon Mar 16 07:33:57 UTC 2026: (Date) The date of the API usage.
-    -   : (Integer) The number of tokens consumed.
-    -   : (Float) The calculated cost for the tokens used.
-*   **subscriptions** (Existing):
-    *   : (String) Enum of , , , . Used in capacity analysis.
-
-**changes in tech stack**
-*   ****: Added to the backend for server-side PDF generation.
+-   **estates**:
+    -   : (newly added) . Set to  when a user saves a custom name for their estate, either via the new prompt or the main Settings page. Prevents the rename prompt from showing again.
 
 **All files of reference**
-*   : The single source for all new backend logic created in this session (integrations, SOC 2, capacity analysis).
-*   : The new, complex frontend component for the entire integrations dashboard.
-*   : Contains the implementation of the xAI token usage tracking.
-*   : The configuration file for optimizing Vercel builds.
-*   : The markdown document updated with confirmed integration details.
-
-**Areas that need refactoring**:
-- None.
-
-**key api endpoints**
-*   : **NEW**. Fetches all integration data, including cost and capacity analysis. Requires a password in the request body.
-*   : **NEW**. Generates and returns a PDF report based on integration data. Requires a password.
-*   : **MODIFIED**. Now fetches credit balance and usage data from the internal  database collection.
-*   : **NEW**. Allows the founder to manually set the initial xAI credit balance in the database.
+-   : Major overhaul of UI, state, and layout for better UX and mobile responsiveness.
+-   : Contains the logic for the new estate name personalization prompt and the corrected permissions for renaming estates.
+-   : Updated to handle login attempts from users with pending invitations gracefully, preventing lockouts.
+-   : New component for the one-time estate renaming prompt.
+-   : New file created to centralize the , removing duplication from 88 files.
+-   : Rewritten to be clean and efficient.
+-   : File to be modified for the upcoming Sort By and per-user 2FA features.
 
 **Critical Info for New Agent**
-*   The primary focus has shifted to operational oversight. The new Integrations tab is now the central source of truth for platform costs and scalability.
-*   **The password for the Integrations tab is **. You will need this to view or test any features on that page.
-*   The xAI credit tracking is **internal**. It works by logging usage after each call. The remaining balance is calculated based on an initial amount set by the user via the Update Balance button. It does not poll an external xAI API.
-*   Vercel builds are now optimized to only run on frontend changes. This is configured in  and the project settings on Vercel's website.
-*   Capgo is fully configured for Over-the-Air updates. The next step is to test this flow with a native build.
+- The user is very particular about permissions. The admin-override for estate renaming was a misstep and had to be reverted. Assume admins should not be able to modify user-specific data unless explicitly requested.
+- The Estate Name Prompt feature was implemented to solve a data consistency issue (users not renaming default estate names) with a user-friendly workflow. This approach of using a one-time, stateful prompt is a good pattern to follow for similar future issues.
+- The codebase is now significantly cleaner after a major refactoring. Adhere to the new patterns, such as using the shared  from  and the  function from .
 
 **documents and test reports created in this job**
-*   
-*    (Updated)
-*    (Updated)
+-   
+-   
+-   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **Request:** Run the housekeeping script 
-==========================================
-  CarryOn™ Housekeeping Protocol
-  + SOC 2 Compliance Audit
-==========================================
-
-[1mPRE-FLIGHT: Auto-fix lint & formatting[0m
-------------------------------------------
-  [0;36mINFO[0m No fixes needed — already clean
-
-[1mSECTION A: Standard Housekeeping[0m
-------------------------------------------
-1.  Backend ruff check ............ [0;32mPASS[0m
-2.  Backend ruff format ........... [0;32mPASS[0m
-3.  Frontend ESLint (errors) ...... [0;32mPASS[0m
-4.  Frontend build ................ [0;32mPASS[0m
-5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: 7ba6c0f63599)
-6.  MongoDB _id leak scan ......... [0;32mPASS[0m
-7.  Hardcoded secrets scan ........ [0;32mPASS[0m
-8.  Sensitive console.log scan .... [0;32mPASS[0m
-9.  Deprecated datetime scan ...... [0;32mPASS[0m
-10. Backend health check .......... [0;32mPASS[0m
-11. Unprotected endpoint audit .... [0;32mPASS[0m (36 route files audited)
-
-[1mSECTION B: SOC 2 Compliance Audit[0m
-------------------------------------------
-12. [CC6.1] Auth guard coverage ... [0;32mPASS[0m
-13. [CC6.1] Encryption at rest .... [0;32mPASS[0m (AES-256-GCM only, no legacy Fernet in routes)
-14. [CC6.1] Password hashing ...... [0;32mPASS[0m
-15. [CC7.2] Audit trail coverage .. [0;32mPASS[0m (all sensitive routes have audit logging)
-16. [CC7.2] Audit integrity hash .. [0;32mPASS[0m (SHA-256 integrity hash on all audit entries)
-17. [CC7.2] Audit immutability .... [0;32mPASS[0m (append-only — no update/delete on audit_trail)
-18. [CC7.2] Token blacklist ....... [0;32mPASS[0m (token blacklisting active)
-19. [CC7.2] Session enforcement ... [0;32mPASS[0m (single-session enforcement active)
-20. [CC7.2] OTP expiry check ...... [0;32mPASS[0m (10-minute OTP expiry enforced)
-21. [CC7.2] Account lockout ....... [0;32mPASS[0m (5-attempt lockout with 15-min window)
-22. [PI1.1] GDPR data export ...... [0;32mPASS[0m (endpoint exists — HTTP 403)
-23. [PI1.1] GDPR data deletion ... [0;32mPASS[0m (right to erasure endpoint present)
-24. [PI1.1] Consent management ... [0;32mPASS[0m (consent management endpoints present)
-25. [CC8.1] Soft-delete standard .. [0;32mPASS[0m (1 hard deletes — reviewed)
-26. [A1.2]  Error reporter ........ [0;32mPASS[0m (global error reporter active)
-27. [A1.2]  Error logging endpoint  [0;32mPASS[0m (error reporting endpoint operational)
-28. [CC6.1] Sensitive access log .. [0;32mPASS[0m (sensitive access logging indexed)
-29. [CC7.2] Rate limiting ......... [0;32mPASS[0m (rate limiting middleware active)
-30. [CC6.1] CORS configuration .... [0;32mPASS[0m (CORS configured, no wildcard)
-31. [CC6.1] Security headers ...... [0;32mPASS[0m (security headers middleware active)
-32. [CC7.2] DB indexes verified ... [0;32mPASS[0m (49 indexes defined)
-33. [CC8.1] Env fallback scan ...... [0;32mPASS[0m
-34. [A1.2] Recent backend logs ..... [0;32mPASS[0m
-35. [CC8.1] Route editor audit ..... [0;32mPASS[0m
-36. [A1.2]  Deploy start commands .. [0;32mPASS[0m (no shell built-ins in start commands)
-37. [A1.2]  Deploy healthcheck ..... [0;32mPASS[0m (healthcheckPath = "/api/health")
-38. [A1.2]  Mongo projection safety  [1;33mWARN[0m (2 projection(s) may omit 'id' — risk of KeyError)
-  admin.py:1299 — inclusion projection missing "id": 1
-  trial_reminders.py:221 — inclusion projection missing "id": 1
-
-    Review: ensure 'id' is projected if accessed later
-
-[1mSECTION C: Post-Check Verification[0m
-------------------------------------------
-R1. Lint & format verified ...... [0;36mINFO[0m (clean after pre-flight)
-
-==========================================
-  [0;32mALL CHECKS PASSED[0m — codebase is clean
-==========================================
-
-Safety reminder: Do NOT run yarn add/remove.
-To fix ruff format: cd /app/backend && ruff format .
-
-SOC 2 Trust Service Criteria Reference:
-  CC6.1  Logical access security
-  CC7.2  System monitoring & audit
-  CC8.1  Change management
-  A1.2   System availability
-  PI1.1  Privacy (GDPR). (Status: Implemented and fixed)
-2.  **Request:** Build capacity dashboard tiles, add colored borders for bottleneck integrations, and suggest other metrics. (Status: Implemented)
-3.  **Request:** Add a SOC 2 PDF report button, change the layout to vertical, add sub-tabs, highlight blank fields, and add a COGS summary. (Status: Implemented)
-4.  **Action/Request:** Confirmed Vercel settings were updated and then made the initial request to create the secure Integrations tab. (Status: Implemented)
-5.  **Provided Info:** Shared a screenshot of the correct way to fill in the Vercel Root Directory setting. (Status: Used for confirmation)
-6.  **Provided Info:** Shared a screenshot of the blank Vercel Root Directory setting. (Status: Used for analysis)
-7.  **Provided Info:** Shared a screenshot of the Vercel Project Settings. (Status: Used for analysis)
-8.  **Action/Request:** Confirmed subscription to Capgo and asked for next steps regarding Vercel. (Status: Addressed)
-9.  **Clarification:** Stated the codebase lives in GitHub, not locally, resolving a confusion about running CLI commands. (Status: Addressed)
-10. **Action/Request:** Confirmed the MongoDB upgrade to M30 and asked for the next steps for Capgo setup. (Status: Addressed)
+1.  **User:** Requests ability to toggle 2FA per user, reorganize Settings page, and add Sort By to admin tabs. (IN PROGRESS)
+2.  **User:** Reports PWA UI bug on Settings page where editing a name zooms the screen and breaks button layout. (COMPLETED)
+3.  **User:** Confirms they want the Estate Name Prompt to be a permanent onboarding feature for all new users. (COMPLETED)
+4.  **User:** Asks for clarification on how the new Estate Name Prompt works for new vs. existing users. (COMPLETED)
+5.  **User:** Requests an automated fix for the estate name issue, choosing Option A (login prompt). (COMPLETED)
+6.  **User:** Asks for a simpler solution to the estate name problem, suggesting a better save UX on the Settings page. (COMPLETED - Led to Save/Cancel button redesign)
+7.  **User:** Provides critical feedback that individuals, not the admin, were renaming their own estates, changing the diagnosis of the estate name bug. (COMPLETED)
+8.  **User:** Clarifies that the admin diagnostic endpoint should be kept and asks who can use it. (COMPLETED)
+9.  **User:** Rejects admin estate rename capability, stating only users should edit their own estates, but admins should be able to edit their own profile names. (COMPLETED)
+10. **User:** Reports Vercel CI failure. (COMPLETED)
 
 **Project Health Check:**
-*   **Broken:**
-    *   **Twilio Integration:** Functionality is blocked pending A2P 10DLC carrier approval.
-    *   **Video Playback:** The root cause of failures on the Milestone page is still unconfirmed.
-*   **Mocked:**
-    *   None.
+- **Broken:** None.
+- **Mocked:** None.
+- The project is in a very healthy state. All housekeeping and linting checks pass. The build is successful.
 
 **3rd Party Integrations**
-*   **Infrastructure & Hosting:**
-    *   **Railway:** Backend hosting (Pro Plan).
-    *   **Vercel:** Frontend hosting (Pro Plan).
-    *   **MongoDB Atlas:** Database (M30 Cluster).
-    *   **AWS S3:** File storage.
-*   **Payments & Subscriptions:**
-    *   **Stripe:** Primary payment gateway.
-    *   **Apple Developer Program:** For App Store In-App Purchases.
-*   **AI & Communication:**
-    *   **xAI (Grok):** For Estate Guardian AI (Pay-as-you-go API).
-    *   **Resend:** For transactional emails (Free plan, identified as bottleneck).
-    *   **Twilio:** For SMS (Blocked).
-*   **Native App & Updates:**
-    *   **Capgo:** For Capacitor Live Updates / OTA (Maker Plan).
-    *   **Sentry:** Error monitoring.
-    *   **Apple Push Notifications (APNS):** For native notifications.
-*   **Security & Auth:**
-    *   **WebAuthn/Passkeys:** For passwordless login.
-    *   **Google Auth:** Social login provider.
-*   **Frontend & Analytics:**
-    *   **Google Places API:** For address autocompletion.
-    *   **Mixpanel:** User analytics.
-    *   **Intercom:** Customer support chat widget.
+- Google Places API (via REST)
+- Capacitor
 
 **Testing status**
-*   **Testing agent used after significant changes:** YES. The agent was run three times to validate the different iterations of the Integrations Dashboard.
-*   **Troubleshoot agent used after agent stuck in loop:** NO
-*   **Test files created:** None.
-*   **Known regressions:** None.
+- **Testing agent used after significant changes:** YES (Used after refactoring, bug fixes, and new feature implementation).
+- **Test files created:** , . These files initially had linting issues that were subsequently fixed.
+- **Known regressions:** None.
 
 **Credentials to test flow:**
-*   **Founder/Admin Login:**  / 
-*   **Integrations Tab Password:** 
-
-**What agent forgot to execute**
-*   The agent correctly prioritized the user's P0 request for the integration audit and did not work on pre-existing, lower-priority issues like the video playback bug or the minor settings page UI glitch. These items remain in the backlog.</analysis>
+-   **Admin/Founder:**  / 
+-   **Benefactor/Beneficiary credentials** can be found by querying the database or using the admin portal.</analysis>

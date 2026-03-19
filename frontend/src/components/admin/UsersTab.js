@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Search, Users, Trash2, Loader2, ChevronDown, ChevronRight, KeyRound, Unlock, GitBranch, User, AlertTriangle, Zap } from 'lucide-react';
+import { Search, Users, Trash2, Loader2, ChevronDown, ChevronRight, KeyRound, Unlock, GitBranch, User, AlertTriangle, Zap, ArrowUpDown } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from '../../utils/toast';
@@ -33,6 +33,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
   const [showDeletePw, setShowDeletePw] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [togglingBeta, setTogglingBeta] = useState(null);
+  const [sortBy, setSortBy] = useState('default');
 
   const handleToggleBeta = async (userId, currentBeta) => {
     setTogglingBeta(userId);
@@ -56,7 +57,33 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
         if (a.role === 'admin' && b.role !== 'admin') return -1;
         if (b.role === 'admin' && a.role !== 'admin') return 1;
       }
-      // When viewing a specific role tab, sort alphabetically by name
+      // Apply sort preference
+      if (sortBy === 'first_name') {
+        return (a.first_name || a.name?.split(' ')[0] || '').localeCompare(b.first_name || b.name?.split(' ')[0] || '');
+      }
+      if (sortBy === 'last_name') {
+        const aLast = a.last_name || (a.name?.split(' ').slice(1).join(' ')) || '';
+        const bLast = b.last_name || (b.name?.split(' ').slice(1).join(' ')) || '';
+        return aLast.localeCompare(bLast);
+      }
+      if (sortBy === 'date_created') {
+        return (a.created_at || '').localeCompare(b.created_at || '');
+      }
+      if (sortBy === 'birthday') {
+        const aDob = a.date_of_birth || '';
+        const bDob = b.date_of_birth || '';
+        if (!aDob && !bDob) return 0;
+        if (!aDob) return 1;
+        if (!bDob) return -1;
+        return aDob.localeCompare(bDob);
+      }
+      if (sortBy === 'most_beneficiaries') {
+        return (b.linked_beneficiaries?.length || 0) - (a.linked_beneficiaries?.length || 0);
+      }
+      if (sortBy === 'least_beneficiaries') {
+        return (a.linked_beneficiaries?.length || 0) - (b.linked_beneficiaries?.length || 0);
+      }
+      // Default sort: alphabetical by name for filtered roles
       if (roleFilter !== 'all') return (a.name || '').localeCompare(b.name || '');
       return 0;
     });
@@ -694,7 +721,26 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
         </div>
       </div>
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <p className="text-xs text-[var(--t5)]">{filteredUsers.length} users</p>
+        <div className="flex items-center gap-3">
+          <p className="text-xs text-[var(--t5)]">{filteredUsers.length} users</p>
+          <div className="flex items-center gap-1.5">
+            <ArrowUpDown className="w-3 h-3 text-[var(--t5)]" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="text-[10px] sm:text-xs font-bold bg-[var(--s)] border border-[var(--b)] text-[var(--t)] rounded-md px-1.5 py-1 outline-none cursor-pointer"
+              data-testid="admin-sort-by"
+            >
+              <option value="default">Default</option>
+              <option value="first_name">First Name</option>
+              <option value="last_name">Last Name</option>
+              <option value="date_created">Date Created</option>
+              <option value="birthday">Birthday</option>
+              <option value="most_beneficiaries">Most Beneficiaries</option>
+              <option value="least_beneficiaries">Least Beneficiaries</option>
+            </select>
+          </div>
+        </div>
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap" data-testid="status-key">
           {[
             { label: 'Draft', desc: 'No email', color: statusColors.draft },

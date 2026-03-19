@@ -280,6 +280,27 @@ async def login(data: UserLogin, request: Request):
             user=_user_response(user, owns_estate=owns_estate),
         )
 
+    # Check per-user OTP preference — if user has disabled their own 2FA, skip OTP
+    if user.get("otp_enabled") is False:
+        token = await create_session_token(user["id"], user["email"], user["role"])
+        await db.users.update_one(
+            {"id": user["id"]},
+            {"$set": {"last_login_at": datetime.now(timezone.utc).isoformat()}},
+        )
+        if user.get("role") == "beneficiary" or user.get("is_also_beneficiary"):
+            await db.beneficiaries.update_many(
+                {"user_id": user["id"], "invitation_status": {"$ne": "accepted"}},
+                {"$set": {"invitation_status": "accepted"}},
+            )
+            await db.beneficiaries.update_many(
+                {"user_id": user["id"], "email": {"$ne": user["email"]}},
+                {"$set": {"email": user["email"]}},
+            )
+        return TokenResponse(
+            access_token=token,
+            user=_user_response(user, owns_estate=owns_estate),
+        )
+
     # Send OTP for verification
     otp_code = generate_otp()
     # For operators, use their contact_email for OTP delivery
@@ -954,6 +975,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "is_beta_tester": user_doc.get("is_beta_tester", False),
         "beta_accepted": bool(user_doc.get("beta_accepted_at")),
         "hide_benefactor_reminder": user_doc.get("hide_benefactor_reminder", False),
+        "otp_enabled": user_doc.get("otp_enabled", True),
     }
 
 
@@ -1103,6 +1125,43 @@ async def change_password(
     )
 
     return {"message": "Password changed successfully"}
+
+
+class TwoFAPreferenceRequest(BaseModel):
+    otp_enabled: bool
+
+
+@router.put("/auth/2fa-preference")
+async def update_2fa_preference(
+    data: TwoFAPreferenceRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Toggle the current user's personal 2FA preference."""
+    # Check if global 2FA is disabled — if so, user can't enable their own
+    platform_settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0})
+    if platform_settings and platform_settings.get("otp_disabled") and data.otp_enabled:
+        raise HTTPException(
+            status_code=400,
+            detail="2FA is currently disabled platform-wide. Contact your administrator.",
+        )
+
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$set": {"otp_enabled": data.otp_enabled}},
+    )
+    return {"otp_enabled": data.otp_enabled}
+
+
+@router.get("/auth/2fa-preference")
+async def get_2fa_preference(current_user: dict = Depends(get_current_user)):
+    """Get the current user's 2FA preference and global status."""
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "otp_enabled": 1})
+    platform_settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0})
+    global_disabled = (platform_settings or {}).get("otp_disabled", False)
+    return {
+        "otp_enabled": user.get("otp_enabled", True),
+        "global_disabled": global_disabled,
+    }
 
 
 class ForgotPasswordRequest(BaseModel):

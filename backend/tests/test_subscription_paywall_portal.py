@@ -10,7 +10,7 @@ import os
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://hard-delete-rebuild.preview.emergentagent.com")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://profile-security-ui.preview.emergentagent.com")
 
 
 class TestSubscriptionPlansEndpoint:
@@ -127,7 +127,7 @@ class TestSubscriptionCheckout:
             json={
                 "plan_id": "premium",
                 "billing_cycle": "annual",
-                "origin_url": "https://hard-delete-rebuild.preview.emergentagent.com",
+                "origin_url": "https://profile-security-ui.preview.emergentagent.com",
             },
             headers=headers,
         )
