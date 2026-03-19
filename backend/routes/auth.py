@@ -1155,7 +1155,7 @@ async def update_2fa_preference(
 @router.get("/auth/2fa-preference")
 async def get_2fa_preference(current_user: dict = Depends(get_current_user)):
     """Get the current user's 2FA preference and global status."""
-    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "otp_enabled": 1})
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "id": 1, "otp_enabled": 1})
     platform_settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0})
     global_disabled = (platform_settings or {}).get("otp_disabled", False)
     return {

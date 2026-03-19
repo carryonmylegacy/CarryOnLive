@@ -70,6 +70,7 @@ A full-stack estate planning application allowing benefactors to manage digital 
 ### Housekeeping Script (MANDATORY)
 **Location:** `/app/housekeeping.sh`
 Run after EVERY change. Validates: backend lint/format, frontend build, dependency security, SOC 2 compliance, env integrity (38 checks).
+**ZERO TOLERANCE RULE:** Every single check must be PASS. No warnings are acceptable — not "non-blocking", not "pre-existing", not "minor". If housekeeping surfaces ANY warning or failure, fix it immediately before finishing the task. This applies to every fork, every session, every time.
 
 ### Auto-Update System (Web)
 Each `yarn build` generates a unique hash in `/version.json`. App checks on mount and hard-refreshes if different.

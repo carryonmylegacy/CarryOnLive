@@ -50,7 +50,7 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
     # (handles cases where the estate array wasn't updated)
     linked_records = await db.beneficiaries.find(
         {"user_id": current_user["id"]},
-        {"_id": 0, "estate_id": 1},
+        {"_id": 0, "id": 1, "estate_id": 1},
     ).to_list(200)
     missing_ids = [
         r["estate_id"]
