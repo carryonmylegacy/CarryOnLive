@@ -407,7 +407,7 @@ const MobileNav = () => {
     { to: '/guardian', icon: Sparkles, label: 'Guardian' },
     { to: '/dashboard', icon: Home, label: 'Dashboard', isCenter: true },
     { to: '/messages', icon: MessageSquare, label: 'Milestone' },
-    { to: '/trustee', icon: Shield, label: 'Trustee' },
+    { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
   ];
 
   const beneficiaryBottomNav = [
