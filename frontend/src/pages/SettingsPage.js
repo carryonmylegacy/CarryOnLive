@@ -353,11 +353,12 @@ const SettingsPage = () => {
             />
             <div>
               {editingName ? (
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-2">
                   <Input
                     value={nameDraft}
                     onChange={(e) => setNameDraft(e.target.value)}
-                    className="h-8 text-sm font-semibold"
+                    className="h-9 text-base font-semibold"
+                    style={{ fontSize: '16px' }}
                     placeholder="Enter your name"
                     autoFocus
                     onKeyDown={async (e) => {
@@ -374,29 +375,31 @@ const SettingsPage = () => {
                     }}
                     data-testid="display-name-input"
                   />
-                  <button
-                    disabled={nameSaving}
-                    onClick={async () => {
-                      if (nameDraft.trim()) {
-                        setNameSaving(true);
-                        try {
-                          await axios.put(`${API_URL}/auth/display-name`, { name: nameDraft.trim() }, getAuthHeaders());
-                          setDisplayName(nameDraft.trim());
-                          toast.success('Name updated');
-                        } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update name'); }
-                        finally { setNameSaving(false); }
-                      }
-                      setEditingName(false);
-                    }}
-                    className="h-7 px-3 rounded-md text-xs font-bold bg-[var(--gold)] text-[#0b1120] hover:bg-[var(--gold)]/90 disabled:opacity-50"
-                    data-testid="display-name-save"
-                  >
-                    {nameSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save'}
-                  </button>
-                  <button onClick={() => setEditingName(false)}
-                    className="h-7 px-3 rounded-md text-xs text-[var(--t4)] border border-[var(--b)] hover:bg-[var(--s)]">
-                    Cancel
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      disabled={nameSaving}
+                      onClick={async () => {
+                        if (nameDraft.trim()) {
+                          setNameSaving(true);
+                          try {
+                            await axios.put(`${API_URL}/auth/display-name`, { name: nameDraft.trim() }, getAuthHeaders());
+                            setDisplayName(nameDraft.trim());
+                            toast.success('Name updated');
+                          } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update name'); }
+                          finally { setNameSaving(false); }
+                        }
+                        setEditingName(false);
+                      }}
+                      className="h-8 px-4 rounded-md text-sm font-bold bg-[var(--gold)] text-[#0b1120] hover:bg-[var(--gold)]/90 disabled:opacity-50"
+                      data-testid="display-name-save"
+                    >
+                      {nameSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save'}
+                    </button>
+                    <button onClick={() => setEditingName(false)}
+                      className="h-8 px-4 rounded-md text-sm text-[var(--t4)] border border-[var(--b)] hover:bg-[var(--s)]">
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
@@ -421,11 +424,12 @@ const SettingsPage = () => {
             <h4 className="text-[var(--t)] font-medium text-sm mb-1">Username</h4>
             <p className="text-[var(--t5)] text-xs mb-2">Choose a unique username for login</p>
             {editingUsername ? (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-2">
                 <Input
                   value={usernameDraft}
                   onChange={(e) => setUsernameDraft(e.target.value)}
-                  className="h-8 text-sm flex-1"
+                  className="h-9 text-base"
+                  style={{ fontSize: '16px' }}
                   placeholder="Enter a username"
                   autoFocus
                   onKeyDown={async (e) => {
@@ -444,29 +448,31 @@ const SettingsPage = () => {
                   }}
                   data-testid="username-input"
                 />
-                <button
-                  disabled={usernameSaving || !usernameDraft.trim()}
-                  onClick={async () => {
-                    if (usernameDraft.trim()) {
-                      setUsernameSaving(true);
-                      try {
-                        await axios.put(`${API_URL}/auth/username`, { username: usernameDraft.trim() }, getAuthHeaders());
-                        setUsername(usernameDraft.trim());
-                        toast.success('Username updated');
-                      } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update username'); }
-                      finally { setUsernameSaving(false); }
-                    }
-                    setEditingUsername(false);
-                  }}
-                  className="h-7 px-3 rounded-md text-xs font-bold bg-[var(--gold)] text-[#0b1120] hover:bg-[var(--gold)]/90 disabled:opacity-50"
-                  data-testid="username-save"
-                >
-                  {usernameSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save'}
-                </button>
-                <button onClick={() => setEditingUsername(false)}
-                  className="h-7 px-3 rounded-md text-xs text-[var(--t4)] border border-[var(--b)] hover:bg-[var(--s)]">
-                  Cancel
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    disabled={usernameSaving || !usernameDraft.trim()}
+                    onClick={async () => {
+                      if (usernameDraft.trim()) {
+                        setUsernameSaving(true);
+                        try {
+                          await axios.put(`${API_URL}/auth/username`, { username: usernameDraft.trim() }, getAuthHeaders());
+                          setUsername(usernameDraft.trim());
+                          toast.success('Username updated');
+                        } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update username'); }
+                        finally { setUsernameSaving(false); }
+                      }
+                      setEditingUsername(false);
+                    }}
+                    className="h-8 px-4 rounded-md text-sm font-bold bg-[var(--gold)] text-[#0b1120] hover:bg-[var(--gold)]/90 disabled:opacity-50"
+                    data-testid="username-save"
+                  >
+                    {usernameSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save'}
+                  </button>
+                  <button onClick={() => setEditingUsername(false)}
+                    className="h-8 px-4 rounded-md text-sm text-[var(--t4)] border border-[var(--b)] hover:bg-[var(--s)]">
+                    Cancel
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="flex items-center gap-2">
@@ -686,11 +692,12 @@ const SettingsPage = () => {
             />
             <div className="flex-1 min-w-0">
               {editingEstateName ? (
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-2">
                   <Input
                     value={estateNameDraft}
                     onChange={(e) => setEstateNameDraft(e.target.value)}
-                    className="h-8 text-sm flex-1"
+                    className="h-9 text-base"
+                    style={{ fontSize: '16px' }}
                     autoFocus
                     onKeyDown={async (e) => {
                       if (e.key === 'Enter' && estateNameDraft.trim()) {
@@ -708,34 +715,33 @@ const SettingsPage = () => {
                     }}
                     data-testid="estate-name-input"
                   />
-                  <Button
-                    size="sm"
-                    onClick={async () => {
-                      if (estateNameDraft.trim()) {
-                        setEstateSaving(true);
-                        try {
-                          await axios.patch(`${API_URL}/estates/${estateId}`, { name: estateNameDraft.trim() }, getAuthHeaders());
-                          setEstateName(estateNameDraft.trim());
-                          toast.success('Estate name saved');
-                        } catch { toast.error('Failed to rename estate'); }
-                        setEstateSaving(false);
-                      }
-                      setEditingEstateName(false);
-                    }}
-                    disabled={estateSaving || !estateNameDraft.trim()}
-                    className="bg-[var(--gold)] text-[#0b1120] hover:bg-[var(--gold)]/90 h-8 px-3 text-xs font-bold"
-                    data-testid="estate-name-save"
-                  >
-                    {estateSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save'}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setEditingEstateName(false)}
-                    className="border-[var(--b)] text-[var(--t4)] h-8 px-3 text-xs"
-                  >
-                    Cancel
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={async () => {
+                        if (estateNameDraft.trim()) {
+                          setEstateSaving(true);
+                          try {
+                            await axios.patch(`${API_URL}/estates/${estateId}`, { name: estateNameDraft.trim() }, getAuthHeaders());
+                            setEstateName(estateNameDraft.trim());
+                            toast.success('Estate name saved');
+                          } catch { toast.error('Failed to rename estate'); }
+                          setEstateSaving(false);
+                        }
+                        setEditingEstateName(false);
+                      }}
+                      disabled={estateSaving || !estateNameDraft.trim()}
+                      className="h-8 px-4 rounded-md text-sm font-bold bg-[var(--gold)] text-[#0b1120] hover:bg-[var(--gold)]/90 disabled:opacity-50"
+                      data-testid="estate-name-save"
+                    >
+                      {estateSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save'}
+                    </button>
+                    <button
+                      onClick={() => setEditingEstateName(false)}
+                      className="h-8 px-4 rounded-md text-sm text-[var(--t4)] border border-[var(--b)] hover:bg-[var(--s)]"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
