@@ -30,6 +30,7 @@ import {
   Search,
   StickyNote,
   Gift,
+  Plus,
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import NotificationBell from '../NotificationBell';
@@ -711,21 +712,10 @@ const MobileNav = () => {
                         Switch View
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        {/* Benefactor Portal */}
+                        {/* Benefactor Portal — always opens picker */}
                         {ownedEstates.length > 0 && (
                           <>
-                            <button onClick={() => {
-                              if (ownedEstates.length === 1) {
-                                setOpen(false);
-                                localStorage.setItem('selected_estate_id', ownedEstates[0].id);
-                                localStorage.removeItem('beneficiary_estate_id');
-                                localStorage.setItem('carryon_last_portal', 'benefactor');
-                                navigate('/dashboard');
-                                if (isOnBeneficiary) window.location.reload();
-                              } else {
-                                setMobileEstatePicker(!mobileEstatePicker);
-                              }
-                            }}
+                            <button onClick={() => setMobileEstatePicker(!mobileEstatePicker)}
                             data-testid="mobile-switch-benefactor"
                             className="w-full flex flex-col items-center px-4 py-3 rounded-xl transition-all"
                             style={{
@@ -735,10 +725,10 @@ const MobileNav = () => {
                               gap: 2,
                             }}>
                               <span className="font-semibold text-sm">My Benefactor Portal</span>
-                              {ownedEstates.length > 1 && <span style={{ fontSize: 10, opacity: 0.5 }}>{ownedEstates.length} estates</span>}
+                              <span style={{ fontSize: 11, opacity: 0.5 }}>{ownedEstates.length} estate{ownedEstates.length !== 1 ? 's' : ''}</span>
                             </button>
-                            {/* Estate picker for multi-estate */}
-                            {mobileEstatePicker && ownedEstates.length > 1 && (
+                            {/* Estate picker — estates + create new */}
+                            {mobileEstatePicker && (
                               <div style={{ padding: 8, borderRadius: 10, background: theme === 'dark' ? 'var(--bg2)' : 'white', border: '1px solid var(--b2)' }}
                                 data-testid="mobile-estate-picker">
                                 {ownedEstates.map(estate => (
@@ -758,6 +748,18 @@ const MobileNav = () => {
                                     {estate.name || 'Estate'}
                                   </button>
                                 ))}
+                                <div style={{ height: 1, background: 'var(--b2)', margin: '4px 4px' }} />
+                                <button
+                                  onClick={() => {
+                                    setOpen(false);
+                                    setMobileEstatePicker(false);
+                                    navigate('/create-estate');
+                                  }}
+                                  data-testid="mobile-create-new-estate-btn"
+                                  className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold"
+                                  style={{ color: '#d4af37' }}>
+                                  <Plus className="w-4 h-4" /> Create New Estate
+                                </button>
                               </div>
                             )}
                           </>

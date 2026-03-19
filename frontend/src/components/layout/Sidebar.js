@@ -30,7 +30,8 @@ import {
   BookOpen,
   Search,
   StickyNote,
-  Gift
+  Gift,
+  Plus
 } from 'lucide-react';
 import { Switch } from '../ui/switch';
 import { toast } from '../../utils/toast';
@@ -533,18 +534,9 @@ const Sidebar = () => {
                 </div>
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4, position: 'relative' }}>
-                {/* Benefactor Portal — single pill, picker if 2+ estates */}
+                {/* Benefactor Portal — always opens picker with estates + create new */}
                 {ownedEstates.length > 0 && (
-                  <button onClick={() => {
-                    if (ownedEstates.length === 1) {
-                      localStorage.setItem('selected_estate_id', ownedEstates[0].id);
-                      localStorage.removeItem('beneficiary_estate_id');
-                      localStorage.setItem('carryon_last_portal', 'benefactor');
-                      navigate('/dashboard');
-                    } else {
-                      setEstatePickerOpen(!estatePickerOpen);
-                    }
-                  }}
+                  <button onClick={() => setEstatePickerOpen(!estatePickerOpen)}
                   data-testid="switch-benefactor-portal"
                   className={`sb-pill w-full ${collapsed ? 'justify-center' : ''}`}
                   style={{
@@ -561,14 +553,14 @@ const Sidebar = () => {
                     ) : (
                       <>
                         <span style={{ fontWeight: 600, fontSize: 14 }}>My Benefactor Portal</span>
-                        {ownedEstates.length > 1 && <span style={{ fontSize: 10, opacity: 0.5 }}>{ownedEstates.length} estates</span>}
+                        <span style={{ fontSize: 11, opacity: 0.5 }}>{ownedEstates.length} estate{ownedEstates.length !== 1 ? 's' : ''}</span>
                       </>
                     )}
                   </button>
                 )}
 
-                {/* Estate Picker — floats above when 2+ estates */}
-                {estatePickerOpen && ownedEstates.length > 1 && (
+                {/* Estate Picker — always shows estates + create new */}
+                {estatePickerOpen && ownedEstates.length > 0 && (
                   <>
                     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99 }}
                       onClick={() => setEstatePickerOpen(false)} />
@@ -578,7 +570,7 @@ const Sidebar = () => {
                       borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', zIndex: 100,
                       padding: 8,
                     }} data-testid="estate-picker">
-                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--t5)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6, paddingLeft: 4 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--t5)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6, paddingLeft: 4 }}>
                         Select Estate
                       </div>
                       {ownedEstates.map(estate => (
@@ -599,6 +591,20 @@ const Sidebar = () => {
                           {estate.name || 'Estate'}
                         </button>
                       ))}
+                      <div style={{ height: 1, background: 'var(--b2)', margin: '6px 4px' }} />
+                      <button
+                        onClick={() => {
+                          setEstatePickerOpen(false);
+                          navigate('/create-estate');
+                        }}
+                        data-testid="create-new-estate-btn"
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-colors"
+                        style={{ color: '#d4af37' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.08)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <Plus className="w-4 h-4" /> Create New Estate
+                      </button>
                     </div>
                   </>
                 )}
