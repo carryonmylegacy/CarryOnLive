@@ -140,8 +140,13 @@ export default function SubscriptionPaywall({ onDismiss }) {
 
     setCheckoutLoading(true);
     try {
-      // Native iOS: use Apple In-App Purchase
-      if (useAppleIAP) {
+      // Native iOS: MUST use Apple In-App Purchase (Apple Guideline 3.1.1)
+      if (isNative) {
+        if (!useAppleIAP) {
+          toast.error('In-App Purchase is not available. Please restart the app and try again.');
+          setCheckoutLoading(false);
+          return;
+        }
         const productKey = `${plan.id}_${billing}`;
         const productId = IAP_PRODUCTS[productKey];
         if (!productId) {

@@ -287,8 +287,14 @@ export const SubscriptionManagement = ({
 
     setSubscribing(planId);
     try {
-      // Native iOS app → Apple In-App Purchase
-      if (isNative && await isIAPAvailable()) {
+      // Native iOS app → Apple In-App Purchase (MUST use IAP — Apple Guideline 3.1.1)
+      if (isNative) {
+        const iapAvailable = await isIAPAvailable();
+        if (!iapAvailable) {
+          toast.error('In-App Purchase is not available. Please restart the app and try again.');
+          setSubscribing(null);
+          return;
+        }
         const iapId = `us.carryon.app.${planId}_${billing}`;
         const result = await purchaseIAP(iapId);
         if (result.cancelled) {
@@ -329,14 +335,37 @@ export const SubscriptionManagement = ({
         await axios.post(`${API_URL}/support/messages`, {
           content: `I'd like to change my subscription from ${currentSub?.plan_name || currentPlanId} (${currentBilling}) to ${planId} (${billing}). Since this is a downgrade, please process the refund for the unused portion and switch my plan. Thank you.`,
         }, getAuthHeaders());
-        // toast removed
       } catch (e) {
         toast.error('Failed to send request. Please go to Customer Service directly.');
       }
       return;
     }
 
-    // Upgrade → proceed with Stripe
+    // Native iOS → Apple IAP for upgrades (Apple Guideline 3.1.1)
+    if (isNative) {
+      setSubscribing(planId);
+      try {
+        const iapAvailable = await isIAPAvailable();
+        if (!iapAvailable) {
+          toast.error('In-App Purchase is not available. Please restart the app and try again.');
+          setSubscribing(null);
+          return;
+        }
+        const iapId = `us.carryon.app.${planId}_${billing}`;
+        const result = await purchaseIAP(iapId);
+        if (result.cancelled) {
+          setSubscribing(null);
+          return;
+        }
+        if (refreshSubscription) await refreshSubscription();
+      } catch (e) {
+        toast.error(e.message || 'Failed to change plan');
+      }
+      setSubscribing(null);
+      return;
+    }
+
+    // Web → Stripe upgrade
     setSubscribing(planId);
     try {
       const res = await axios.post(`${API_URL}/subscriptions/change-plan`, {
@@ -363,7 +392,6 @@ export const SubscriptionManagement = ({
         await axios.post(`${API_URL}/support/messages`, {
           content: `I'd like to change my billing cycle from ${currentBilling} to ${billing} on my ${currentSub?.plan_name || currentPlanId} plan. Since this is a downgrade, please process the refund for the unused portion and update my billing. Thank you.`,
         }, getAuthHeaders());
-        // toast removed
       } catch (e) {
         toast.error('Failed to send request. Please go to Customer Service directly.');
       }
@@ -371,7 +399,31 @@ export const SubscriptionManagement = ({
       return;
     }
 
-    // Upgrade billing cycle → proceed normally
+    // Native iOS → Apple IAP for billing upgrades (Apple Guideline 3.1.1)
+    if (isNative) {
+      setChangingBilling(true);
+      try {
+        const iapAvailable = await isIAPAvailable();
+        if (!iapAvailable) {
+          toast.error('In-App Purchase is not available. Please restart the app and try again.');
+          setChangingBilling(false);
+          return;
+        }
+        const iapId = `us.carryon.app.${currentPlanId}_${billing}`;
+        const result = await purchaseIAP(iapId);
+        if (result.cancelled) {
+          setChangingBilling(false);
+          return;
+        }
+        if (refreshSubscription) await refreshSubscription();
+      } catch (e) {
+        toast.error(e.message || 'Failed to change billing cycle');
+      }
+      setChangingBilling(false);
+      return;
+    }
+
+    // Web → Stripe upgrade billing cycle
     setChangingBilling(true);
     try {
       const res = await axios.post(`${API_URL}/subscriptions/change-billing`, {

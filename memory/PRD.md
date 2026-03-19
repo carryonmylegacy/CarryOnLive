@@ -20,10 +20,11 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
-### Completed (March 19, 2026 — Session 10: Family Tree Color Coding)
-- **Beneficiary Linked/Unlinked Colors**: Changed beneficiary node colors in FamilyTree.js from ring-based coloring to status-based: green (#10b981) for "linked" (beneficiary has created their own login/user_id) and yellow (#f59e0b) for "unlinked" (no account yet). Uses `user_id` or `invitation_status === 'accepted'` to determine linked status.
-- **Updated Legend**: Replaced old "Blue = estates where you're a beneficiary" key with "Linked" / "Unlinked" legend using green/yellow dots. Font size increased from text-[9px] to text-sm for readability (older users with glasses).
-- **Primary Border Fix**: Primary beneficiary border no longer overrides linked/unlinked color — the "P" badge and green label already indicate primary status.
+### Completed (March 19, 2026 — Session 10: Family Tree Colors + Apple IAP Fix)
+- **Beneficiary Linked/Unlinked Colors**: Changed beneficiary node colors in FamilyTree.js from ring-based coloring to status-based: green (#10b981) for "linked" and yellow (#f59e0b) for "unlinked". Updated legend with larger font.
+- **Apple Guideline 3.1.1 Fix (CRITICAL)**: Fixed code so iOS native app NEVER falls through to Stripe checkout. If IAP is unavailable on iOS, shows error instead of Stripe buttons. Applied to all 3 payment paths: `handleSubscribe`, `handleChangePlan`, `handleChangeBilling` in SubscriptionManagement.js and `handleCheckout` in SubscriptionPaywall.js.
+- **CI Lint Fix**: Fixed ruff formatting in `estates.py` and projection warnings in `auth.py`/`estates.py`.
+- **Housekeeping**: 38/38 PASS, zero warnings (new standard: zero tolerance for warnings).
 
 ### Completed (March 19, 2026 — Session 9: Settings & Admin Overhaul)
 - **Settings Page Reorganization**: Moved Security card to right after Profile card. New order: Profile > Security > Personal Information > Estate Photo > Push Notifications > Appearance > Notifications & Digest > Privacy & Data Rights > Logout.
