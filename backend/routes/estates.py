@@ -42,7 +42,32 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
 
     # Fetch estates they're a BENEFICIARY of (any role — covers both
     # explicit beneficiaries and benefactors who are also beneficiaries)
+    # Primary: check the estate's beneficiaries array
     ben_estates = await db.estates.find({"beneficiaries": current_user["id"]}, {"_id": 0}).to_list(100)
+    ben_estate_ids = {be["id"] for be in ben_estates}
+
+    # Fallback: also check beneficiary records that link to this user
+    # (handles cases where the estate array wasn't updated)
+    linked_records = await db.beneficiaries.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0, "estate_id": 1},
+    ).to_list(200)
+    missing_ids = [
+        r["estate_id"]
+        for r in linked_records
+        if r["estate_id"] not in ben_estate_ids and r["estate_id"] not in seen_ids
+    ]
+    if missing_ids:
+        extra = await db.estates.find(
+            {"id": {"$in": missing_ids}}, {"_id": 0}
+        ).to_list(100)
+        ben_estates.extend(extra)
+        # Repair: add user_id to the estate's beneficiaries array for future queries
+        for eid in missing_ids:
+            await db.estates.update_one(
+                {"id": eid}, {"$addToSet": {"beneficiaries": current_user["id"]}}
+            )
+
     ben_estates = [be for be in ben_estates if be["id"] not in seen_ids]
 
     if ben_estates:
