@@ -46,7 +46,7 @@ const ringColors = ['#d4af37', '#A855F7', '#14B8A6', '#3B82F6'];
 
 // Linked/unlinked color coding for beneficiary nodes
 const LINKED_COLOR = '#10b981';   // green — beneficiary has created their own login
-const UNLINKED_COLOR = '#f59e0b'; // yellow/amber — beneficiary has NOT created their own login
+const UNLINKED_COLOR = '#FF6B35'; // orange — beneficiary has NOT created their own login
 
 const getBenLinkedColor = (ben) => {
   return (ben.user_id || ben.invitation_status === 'accepted') ? LINKED_COLOR : UNLINKED_COLOR;
