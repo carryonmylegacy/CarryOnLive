@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera, Users } from 'lucide-react';
 import { resolvePhotoUrl } from '../utils/photoUrl';
@@ -92,6 +92,109 @@ const TreeNode = ({ initials, photo, color, label, sublabel, size = 60, badge, i
     ) : null}
     {sublabel && <span className="text-[8px] text-[#64748B] text-center leading-tight">{sublabel}</span>}
   </div>
+  );
+};
+
+const NODE_W = 76;  // fixed node container width
+const NODE_GAP = 12; // horizontal gap between nodes
+const NODE_SLOT = NODE_W + NODE_GAP;
+
+/**
+ * Renders a single tier of beneficiaries with proper row-chunking
+ * and horizontal branch bars that match the actual layout.
+ */
+const TierGroup = ({ bens, color, tierNum, onSelectBeneficiary, onUploadPhoto }) => {
+  const containerRef = useRef(null);
+  const [perRow, setPerRow] = useState(4);
+
+  const measure = useCallback(() => {
+    if (!containerRef.current) return;
+    const w = containerRef.current.offsetWidth - 16; // minus px-2 padding
+    setPerRow(Math.max(1, Math.floor((w + NODE_GAP) / NODE_SLOT)));
+  }, []);
+
+  useEffect(() => {
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, [measure]);
+
+  // Chunk into visual rows
+  const rows = [];
+  for (let i = 0; i < bens.length; i += perRow) {
+    rows.push(bens.slice(i, i + perRow));
+  }
+
+  return (
+    <div ref={containerRef} className="flex flex-col items-center w-full" data-testid={`tree-tier-${tierNum}`}>
+      {/* Vertical trunk from previous level */}
+      <div style={{ width: 2, height: 24, background: color, opacity: 0.5 }} />
+
+      {/* Tier label */}
+      <div className="mb-1">
+        <span className="text-[9px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full"
+          style={{ color, background: color + '15', border: `1px solid ${color}30` }}>
+          Tier {tierNum}
+        </span>
+      </div>
+
+      {/* Rows of beneficiaries */}
+      {rows.map((row, rowIdx) => {
+        const count = row.length;
+        const barW = count > 1 ? (count - 1) * NODE_SLOT : 0;
+
+        return (
+          <div key={rowIdx} className="flex flex-col items-center w-full">
+            {/* Vertical connector between rows (skip for first row) */}
+            {rowIdx > 0 && (
+              <div style={{ width: 2, height: 16, background: color, opacity: 0.3 }} />
+            )}
+
+            {/* Horizontal branch bar — spans center-of-first to center-of-last */}
+            {count > 1 && (
+              <div className="flex justify-center w-full">
+                <div style={{
+                  width: barW,
+                  height: 2,
+                  background: color,
+                  opacity: 0.35,
+                  borderRadius: 1,
+                }} />
+              </div>
+            )}
+
+            {/* Nodes in this row */}
+            <div className="flex justify-center w-full" style={{ gap: `0 ${NODE_GAP}px` }}>
+              {row.map(ben => {
+                const benColor = ben.avatar_color || color;
+                const age = getAge(ben.date_of_birth || ben.dob);
+                const relation = ben.relation || '';
+                return (
+                  <div key={ben.id} className="flex flex-col items-center" style={{ width: NODE_W }}>
+                    {/* Drop line */}
+                    <div style={{ width: 2, height: 14, background: benColor, opacity: 0.4 }} />
+                    <TreeNode
+                      initials={getInitials(ben.name, ben.first_name, ben.last_name)}
+                      photo={ben.photo_url}
+                      color={benColor}
+                      size={54}
+                      label={ben.first_name || ben.name?.split(' ')[0] || ''}
+                      sublabel={`${relation}${age < 999 ? ` · ${age}` : ''}`}
+                      badge={ben.is_primary ? 'P' : null}
+                      isPrimary={ben.is_primary}
+                      testId={`tree-node-${ben.id}`}
+                      onClick={() => onSelectBeneficiary?.(ben)}
+                      onUpload={onUploadPhoto ? () => onUploadPhoto(ben.id) : undefined}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 };
 
@@ -210,7 +313,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
           testId="tree-root-node"
         />
 
-        {/* Ring-level rows below the benefactor */}
+        {/* Tier rows below the benefactor */}
         {activeRings.length > 0 && (
           <div className="flex flex-col items-center w-full">
             {activeRings.map((ringLevel, ringIdx) => {
@@ -218,59 +321,14 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               const color = ringColors[ringLevel] || ringColors[0];
               const tierNum = ringIdx + 1;
               return (
-                <div key={ringLevel} className="flex flex-col items-center w-full" data-testid={`tree-ring-${ringLevel}`}>
-                  {/* Vertical trunk connector */}
-                  <div style={{ width: 2, height: 24, background: color, opacity: 0.5 }} />
-
-                  {/* Tier label */}
-                  <div className="mb-1">
-                    <span className="text-[9px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full"
-                      style={{ color, background: color + '15', border: `1px solid ${color}30` }}>
-                      Tier {tierNum}
-                    </span>
-                  </div>
-
-                  {/* Beneficiaries in this tier with connected branch */}
-                  <div className="relative flex flex-wrap justify-center w-full px-2"
-                    style={{ gap: '4px 12px' }}>
-                    {/* Horizontal branch line — rendered via JS to span first-to-last node center */}
-                    {bens.length > 1 && (
-                      <div style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: `calc(50% - ${((bens.length - 1) * (76 + 12)) / 2}px)`,
-                        width: `${(bens.length - 1) * (76 + 12)}px`,
-                        height: 2,
-                        background: color,
-                        opacity: 0.35,
-                      }} />
-                    )}
-                    {bens.map(ben => {
-                      const benColor = ben.avatar_color || color;
-                      const age = getAge(ben.date_of_birth || ben.dob);
-                      const relation = ben.relation || '';
-                      return (
-                        <div key={ben.id} className="flex flex-col items-center" style={{ width: 76 }}>
-                          {/* Drop line — centered above the circle */}
-                          <div style={{ width: 2, height: 14, background: benColor, opacity: 0.4 }} />
-                          <TreeNode
-                            initials={getInitials(ben.name, ben.first_name, ben.last_name)}
-                            photo={ben.photo_url}
-                            color={benColor}
-                            size={54}
-                            label={ben.first_name || ben.name?.split(' ')[0] || ''}
-                            sublabel={`${relation}${age < 999 ? ` · ${age}` : ''}`}
-                            badge={ben.is_primary ? 'P' : null}
-                            isPrimary={ben.is_primary}
-                            testId={`tree-node-${ben.id}`}
-                            onClick={() => onSelectBeneficiary?.(ben)}
-                            onUpload={onUploadPhoto ? () => onUploadPhoto(ben.id) : undefined}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                <TierGroup
+                  key={ringLevel}
+                  bens={bens}
+                  color={color}
+                  tierNum={tierNum}
+                  onSelectBeneficiary={onSelectBeneficiary}
+                  onUploadPhoto={onUploadPhoto}
+                />
               );
             })}
           </div>
