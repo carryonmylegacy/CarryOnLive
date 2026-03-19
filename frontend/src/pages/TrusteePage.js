@@ -21,7 +21,8 @@ import {
   Send,
   Loader2,
   Edit2,
-  Trash2
+  Trash2,
+  Bell
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -57,6 +58,7 @@ const typeConfig = {
   account_closure: { icon: Lock, label: 'Account Closure', desc: 'Close online accounts, delete data, terminate billing', color: '#f97316' },
   financial: { icon: DollarSign, label: 'Financial Transfer', desc: 'Wire transfers, payments, or fund distributions', color: '#22c993' },
   communication: { icon: Mail, label: 'Communication', desc: 'Send messages, emails, or notifications on your behalf', color: '#3b82f6' },
+  transition_notification: { icon: Bell, label: 'Transition Notification', desc: 'Confidentially notify a specific person of your passing', color: '#d4af37' },
   destruction: { icon: Flame, label: 'Data / Asset Destruction', desc: 'Destroy physical materials, devices, or digital data', color: '#ef4444' },
 };
 
@@ -235,7 +237,7 @@ const TrusteePage = () => {
   const [view, setView] = useState('list');
   const [selectedId, setSelectedId] = useState(null);
   const [createStep, setCreateStep] = useState(0);
-  const [newTask, setNewTask] = useState({ type: '', title: '', desc: '', confidential: 'full', discloseTo: '', timedRelease: '', beneficiary: '' });
+  const [newTask, setNewTask] = useState({ type: '', title: '', desc: '', confidential: 'full', discloseTo: '', timedRelease: '', beneficiary: '', notifyName: '', notifyPhone: '', notifyEmail: '', notifyAddress: '' });
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [estateId, setEstateId] = useState(null);
   const [showTrialGate, setShowTrialGate] = useState(false);
@@ -302,10 +304,23 @@ const TrusteePage = () => {
   const submitNewTask = async () => {
     if (!estateId) return;
     try {
+      // For transition notifications, bundle contact info into description
+      let finalDesc = newTask.desc || '';
+      if (newTask.type === 'transition_notification') {
+        const contactLines = [
+          newTask.notifyName && `Contact Name: ${newTask.notifyName}`,
+          newTask.notifyPhone && `Phone: ${newTask.notifyPhone}`,
+          newTask.notifyEmail && `Email: ${newTask.notifyEmail}`,
+          newTask.notifyAddress && `Address: ${newTask.notifyAddress}`,
+        ].filter(Boolean);
+        finalDesc = contactLines.length > 0
+          ? `TRANSITION NOTIFICATION\n\n${contactLines.join('\n')}${finalDesc ? `\n\nAdditional Notes:\n${finalDesc}` : ''}`
+          : finalDesc;
+      }
       await axios.post(`${API_URL}/dts/tasks`, {
         estate_id: estateId,
         title: newTask.title,
-        description: newTask.desc,
+        description: finalDesc,
         task_type: newTask.type,
         confidential: newTask.confidential,
         disclose_to: newTask.discloseTo ? newTask.discloseTo.split(',').map(s => s.trim()).filter(Boolean) : [],
@@ -313,7 +328,6 @@ const TrusteePage = () => {
         beneficiary: newTask.beneficiary || null,
       }, getAuthHeaders());
       setView('submitted');
-      // toast removed
     } catch (err) {
       console.error(err);
       toast.error('Failed to submit request');
@@ -435,7 +449,7 @@ const TrusteePage = () => {
           <h2 className="text-2xl font-bold text-[var(--t)] mb-3" style={{ fontFamily: 'Cormorant Garamond, serif' }}>Request Submitted</h2>
           <p className="text-[var(--t3)] mb-3 leading-relaxed">Your DTS request has been encrypted and submitted to the CarryOn DTS team.</p>
           <p className="text-[var(--t4)] mb-8 text-sm leading-relaxed">You will receive a detailed itemized quote within 2-3 business days. You can then approve or reject each line item individually.</p>
-          <Button className="gold-button" onClick={() => { setView('list'); setCreateStep(0); setNewTask({ type: '', title: '', desc: '', confidential: 'full', discloseTo: '', timedRelease: '', beneficiary: '' }); }}>
+          <Button className="gold-button" onClick={() => { setView('list'); setCreateStep(0); setNewTask({ type: '', title: '', desc: '', confidential: 'full', discloseTo: '', timedRelease: '', beneficiary: '', notifyName: '', notifyPhone: '', notifyEmail: '', notifyAddress: '' }); }}>
             Back to Trustee Services
           </Button>
         </div>
@@ -886,22 +900,48 @@ const TrusteePage = () => {
             <Button className="gold-button w-full mt-5" disabled={!newTask.type} onClick={() => setCreateStep(2)}>Continue <ChevronRight className="w-4 h-4 ml-1" /></Button>
           </>)}
 
-          {/* Step 2: Instructions */}
+          {/* Step 2: Instructions (+ contact fields for transition notification) */}
           {createStep === 2 && (<>
-            <h3 className="text-lg font-bold text-[var(--t)] mb-4">Describe the Task</h3>
-            <div className="rounded-xl p-3 mb-4" style={{ background: 'rgba(59,123,247,0.05)', border: '1px solid rgba(59,123,247,0.1)' }}>
-              <p className="text-sm text-[var(--bl3)] leading-relaxed">Be as detailed as possible. Include names, addresses, account numbers, amounts, and any specific sequencing. The DTS team will use this to build your itemized quote.</p>
-            </div>
-            <div className="space-y-4">
-              <div><Label className="text-[var(--t4)]">Task Title <span className="text-red-400">*</span></Label><Input className="input-field mt-1" value={newTask.title} onChange={e => setNewTask(p => ({ ...p, title: e.target.value }))} placeholder="e.g., Close 5 personal subscription accounts" /></div>
-              <div><Label className="text-[var(--t4)]">Detailed Instructions for the DTS Team <span className="text-red-400">*</span></Label>
-                <textarea className="input-field mt-1 w-full rounded-lg p-3 min-h-[160px] bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm" value={newTask.desc} onChange={e => setNewTask(p => ({ ...p, desc: e.target.value }))}
-                  placeholder={"Describe exactly what you need done. Include:\n\n• Who/what is involved\n• Specific addresses, account names, amounts\n• Required sequence of operations\n• Any special handling requirements\n• What success looks like"} />
-              </div>
-            </div>
+            <h3 className="text-lg font-bold text-[var(--t)] mb-4">{newTask.type === 'transition_notification' ? 'Who Should Be Notified?' : 'Describe the Task'}</h3>
+
+            {newTask.type === 'transition_notification' ? (
+              <>
+                <div className="rounded-xl p-3 mb-4" style={{ background: 'rgba(212,175,55,0.05)', border: '1px solid rgba(212,175,55,0.15)' }}>
+                  <p className="text-sm text-[var(--t3)] leading-relaxed">Provide as much contact information as you have for the person you want notified of your passing. None of these fields are required — but the more you provide, the better DTS can ensure they are reached.</p>
+                </div>
+                <div className="space-y-4">
+                  <div><Label className="text-[var(--t4)]">Their Full Name</Label><Input className="input-field mt-1" value={newTask.notifyName} onChange={e => setNewTask(p => ({ ...p, notifyName: e.target.value }))} placeholder="e.g., Sarah Johnson" style={{ fontSize: 16 }} /></div>
+                  <div><Label className="text-[var(--t4)]">Phone Number</Label><Input className="input-field mt-1" type="tel" value={newTask.notifyPhone} onChange={e => setNewTask(p => ({ ...p, notifyPhone: e.target.value }))} placeholder="e.g., (555) 123-4567" style={{ fontSize: 16 }} /></div>
+                  <div><Label className="text-[var(--t4)]">Email Address</Label><Input className="input-field mt-1" type="email" value={newTask.notifyEmail} onChange={e => setNewTask(p => ({ ...p, notifyEmail: e.target.value }))} placeholder="e.g., sarah@example.com" style={{ fontSize: 16 }} /></div>
+                  <div><Label className="text-[var(--t4)]">Mailing Address</Label><Input className="input-field mt-1" value={newTask.notifyAddress} onChange={e => setNewTask(p => ({ ...p, notifyAddress: e.target.value }))} placeholder="e.g., 123 Main St, Anytown, USA" style={{ fontSize: 16 }} /></div>
+                  <div><Label className="text-[var(--t4)]">Additional Notes</Label>
+                    <textarea className="input-field mt-1 w-full rounded-lg p-3 min-h-[100px] bg-[var(--s)] border border-[var(--b)] text-[var(--t)]" style={{ fontSize: 16 }} value={newTask.desc} onChange={e => setNewTask(p => ({ ...p, desc: e.target.value }))}
+                      placeholder="Any additional context — your relationship to this person, what you'd like communicated, preferred method of contact, etc." />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="rounded-xl p-3 mb-4" style={{ background: 'rgba(59,123,247,0.05)', border: '1px solid rgba(59,123,247,0.1)' }}>
+                  <p className="text-sm text-[var(--bl3)] leading-relaxed">Be as detailed as possible. Include names, addresses, account numbers, amounts, and any specific sequencing. The DTS team will use this to build your itemized quote.</p>
+                </div>
+                <div className="space-y-4">
+                  <div><Label className="text-[var(--t4)]">Task Title <span className="text-red-400">*</span></Label><Input className="input-field mt-1" value={newTask.title} onChange={e => setNewTask(p => ({ ...p, title: e.target.value }))} placeholder="e.g., Close 5 personal subscription accounts" style={{ fontSize: 16 }} /></div>
+                  <div><Label className="text-[var(--t4)]">Detailed Instructions for the DTS Team <span className="text-red-400">*</span></Label>
+                    <textarea className="input-field mt-1 w-full rounded-lg p-3 min-h-[160px] bg-[var(--s)] border border-[var(--b)] text-[var(--t)]" style={{ fontSize: 16 }} value={newTask.desc} onChange={e => setNewTask(p => ({ ...p, desc: e.target.value }))}
+                      placeholder={"Describe exactly what you need done. Include:\n\n• Who/what is involved\n• Specific addresses, account names, amounts\n• Required sequence of operations\n• Any special handling requirements\n• What success looks like"} />
+                  </div>
+                </div>
+              </>
+            )}
             <div className="flex gap-3 mt-5">
               <Button variant="outline" className="border-[var(--b)] text-[var(--t3)]" onClick={() => setCreateStep(1)}><ChevronLeft className="w-4 h-4 mr-1" /> Back</Button>
-              <Button className="gold-button flex-1" disabled={!newTask.title || !newTask.desc} onClick={() => setCreateStep(3)}>Continue <ChevronRight className="w-4 h-4 ml-1" /></Button>
+              <Button className="gold-button flex-1" disabled={newTask.type === 'transition_notification' ? false : (!newTask.title || !newTask.desc)} onClick={() => {
+                if (newTask.type === 'transition_notification' && !newTask.title) {
+                  setNewTask(p => ({ ...p, title: `Notify ${p.notifyName || 'designated person'} of transition` }));
+                }
+                setCreateStep(3);
+              }}>Continue <ChevronRight className="w-4 h-4 ml-1" /></Button>
             </div>
           </>)}
 
@@ -946,7 +986,7 @@ const TrusteePage = () => {
           {createStep === 4 && (<>
             <h3 className="text-lg font-bold text-[var(--t)] mb-4">Review & Submit Request</h3>
             <div className="rounded-xl p-4 mb-4" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
-              {[newTask.beneficiary ? ['Beneficiary', newTask.beneficiary] : null, ['Task Type', typeConfig[newTask.type]?.label], ['Title', newTask.title], ['Confidentiality', confConfig[newTask.confidential]?.label], newTask.discloseTo ? ['Disclosed To', newTask.discloseTo] : null, newTask.timedRelease ? ['Timed Release', newTask.timedRelease] : null].filter(Boolean).map(([k, v], i, a) => (
+              {[newTask.beneficiary ? ['Beneficiary', newTask.beneficiary] : null, ['Task Type', typeConfig[newTask.type]?.label], ['Title', newTask.title], ['Confidentiality', confConfig[newTask.confidential]?.label], newTask.discloseTo ? ['Disclosed To', newTask.discloseTo] : null, newTask.timedRelease ? ['Timed Release', newTask.timedRelease] : null, newTask.notifyName ? ['Notify Person', newTask.notifyName] : null, newTask.notifyPhone ? ['Phone', newTask.notifyPhone] : null, newTask.notifyEmail ? ['Email', newTask.notifyEmail] : null, newTask.notifyAddress ? ['Address', newTask.notifyAddress] : null].filter(Boolean).map(([k, v], i, a) => (
                 <div key={k} className="flex justify-between py-2 text-sm" style={{ borderBottom: i < a.length - 1 ? '1px solid var(--b)' : 'none' }}>
                   <span className="text-[var(--t4)]">{k}</span>
                   <span className="text-[var(--t)] font-bold">{v}</span>
