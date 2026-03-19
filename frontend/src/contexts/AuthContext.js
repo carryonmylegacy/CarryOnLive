@@ -160,6 +160,15 @@ export const AuthProvider = ({ children }) => {
     return userData;
   };
 
+  // Direct token login — used by invitation acceptance and other flows
+  // that already have a valid token from the backend (not email/password).
+  const loginWithToken = (access_token, userData) => {
+    localStorage.setItem('carryon_token', access_token);
+    setToken(access_token);
+    setUser(userData || null);
+    setPendingEmail(null);
+  };
+
   const getAuthHeaders = () => ({
     headers: { Authorization: `Bearer ${token}` }
   });
@@ -193,6 +202,7 @@ export const AuthProvider = ({ children }) => {
       pendingEmail,
       subscriptionStatus,
       login,
+      loginWithToken,
       verifyOtp,
       resendOtp,
       devLogin,

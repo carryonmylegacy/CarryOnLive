@@ -15,7 +15,7 @@ import { API_URL } from '../config';
 const AcceptInvitationPage = () => {
   const { token } = useParams();
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { loginWithToken, logout } = useAuth();
   
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -59,7 +59,10 @@ const AcceptInvitationPage = () => {
         token, password, phone: phone ? `+1${phone.replace(/\D/g, '')}` : null
       });
       setAccepted(true);
-      setTimeout(() => { login(response.data.access_token, response.data.user); navigate('/beneficiary'); }, 3000);
+      // Clear any existing session (e.g., benefactor logged in another tab)
+      // before setting the new beneficiary's token
+      localStorage.removeItem('carryon_token');
+      setTimeout(() => { loginWithToken(response.data.access_token, response.data.user); navigate('/beneficiary'); }, 3000);
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed to create account'); }
     finally { setSubmitting(false); }
   };
