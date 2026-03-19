@@ -41,7 +41,6 @@ const getOrbitLevel = (relation) => {
   return 2;
 };
 
-const ringLabels = ['Immediate Family', 'Close Family', 'Extended Family', 'Outer Circle'];
 const ringColors = ['#d4af37', '#A855F7', '#14B8A6', '#3B82F6'];
 
 const TreeNode = ({ initials, photo, color, label, sublabel, size = 60, badge, isPrimary, onClick, onUpload, testId }) => {
@@ -160,29 +159,44 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
             {activeRings.map((ringLevel, ringIdx) => {
               const bens = ringGroups[ringLevel];
               const color = ringColors[ringLevel] || ringColors[0];
-              const label = ringLabels[ringLevel] || `Ring ${ringLevel}`;
+              const tierNum = ringIdx + 1;
               return (
                 <div key={ringLevel} className="flex flex-col items-center w-full" data-testid={`tree-ring-${ringLevel}`}>
                   {/* Vertical trunk connector */}
-                  <div style={{ width: 2, height: 20, background: color, opacity: 0.5 }} />
+                  <div style={{ width: 2, height: 24, background: color, opacity: 0.5 }} />
 
-                  {/* Ring label */}
-                  <div className="mb-2">
-                    <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                  {/* Tier label */}
+                  <div className="mb-1">
+                    <span className="text-[9px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full"
                       style={{ color, background: color + '15', border: `1px solid ${color}30` }}>
-                      {label}
+                      Tier {tierNum}
                     </span>
                   </div>
 
-                  {/* Beneficiaries in this ring — wrapping within PWA bounds */}
-                  <div className="flex flex-wrap justify-center gap-3 w-full px-2">
+                  {/* Horizontal branch line */}
+                  {bens.length > 1 && (
+                    <div className="flex justify-center w-full px-6">
+                      <div style={{
+                        height: 2,
+                        background: color,
+                        opacity: 0.25,
+                        width: `${Math.min(bens.length * 80, 320)}px`,
+                        maxWidth: '85%',
+                      }} />
+                    </div>
+                  )}
+
+                  {/* Beneficiaries in this tier */}
+                  <div className="flex flex-wrap justify-center w-full px-2"
+                    style={{ gap: '4px 12px' }}>
                     {bens.map(ben => {
                       const benColor = ben.avatar_color || color;
                       const age = getAge(ben.date_of_birth || ben.dob);
                       const relation = ben.relation || '';
                       return (
-                        <div key={ben.id} className="flex flex-col items-center">
-                          <div style={{ width: 2, height: 12, background: benColor, opacity: 0.4 }} />
+                        <div key={ben.id} className="flex flex-col items-center" style={{ width: 76 }}>
+                          {/* Drop line — centered above the circle */}
+                          <div style={{ width: 2, height: 14, background: benColor, opacity: 0.4 }} />
                           <TreeNode
                             initials={getInitials(ben.name, ben.first_name, ben.last_name)}
                             photo={ben.photo_url}
