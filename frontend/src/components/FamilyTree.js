@@ -325,16 +325,71 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
           testId="tree-root-node"
         />
 
-        {/* All beneficiaries — flat, all connecting directly to benefactor */}
+        {/* Spine layout — vertical trunk with beneficiaries alternating left/right */}
         {sortedBens.length > 0 && (
-          <TierGroup
-            bens={sortedBens}
-            color="#d4af37"
-            tierNum={1}
-            onSelectBeneficiary={onSelectBeneficiary}
-            onUploadPhoto={onUploadPhoto}
-            isLight={isLight}
-          />
+          <div className="flex flex-col items-center w-full" data-testid="tree-spine">
+            {sortedBens.map((ben, idx) => {
+              const benColor = getBenLinkedColor(ben);
+              const age = getAge(ben.date_of_birth || ben.dob);
+              const relation = ben.relation || '';
+              const isLeft = idx % 2 === 0;
+              const trunkColor = isLight ? 'rgba(212,175,55,0.5)' : 'rgba(212,175,55,0.35)';
+              const branchColor = isLight ? `${benColor}90` : `${benColor}60`;
+
+              return (
+                <div key={ben.id} className="flex items-center w-full" style={{ maxWidth: 340 }}>
+                  {/* Left side */}
+                  <div className="flex-1 flex justify-end items-center" style={{ minHeight: 70 }}>
+                    {isLeft && (
+                      <div className="flex items-center">
+                        <TreeNode
+                          initials={getInitials(ben.name, ben.first_name, ben.last_name)}
+                          photo={ben.photo_url}
+                          color={benColor}
+                          size={50}
+                          label={ben.first_name || ben.name?.split(' ')[0] || ''}
+                          sublabel={`${relation}${age < 999 ? ` · ${age}` : ''}`}
+                          badge={ben.is_primary ? 'P' : null}
+                          isPrimary={ben.is_primary}
+                          testId={`tree-node-${ben.id}`}
+                          onClick={() => onSelectBeneficiary?.(ben)}
+                          onUpload={onUploadPhoto ? () => onUploadPhoto(ben.id) : undefined}
+                        />
+                        {/* Branch line from node to trunk */}
+                        <div style={{ width: 20, height: 2, background: branchColor }} />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Center trunk */}
+                  <div style={{ width: 2, background: trunkColor, minHeight: 70 }} />
+
+                  {/* Right side */}
+                  <div className="flex-1 flex justify-start items-center" style={{ minHeight: 70 }}>
+                    {!isLeft && (
+                      <div className="flex items-center">
+                        {/* Branch line from trunk to node */}
+                        <div style={{ width: 20, height: 2, background: branchColor }} />
+                        <TreeNode
+                          initials={getInitials(ben.name, ben.first_name, ben.last_name)}
+                          photo={ben.photo_url}
+                          color={benColor}
+                          size={50}
+                          label={ben.first_name || ben.name?.split(' ')[0] || ''}
+                          sublabel={`${relation}${age < 999 ? ` · ${age}` : ''}`}
+                          badge={ben.is_primary ? 'P' : null}
+                          isPrimary={ben.is_primary}
+                          testId={`tree-node-${ben.id}`}
+                          onClick={() => onSelectBeneficiary?.(ben)}
+                          onUpload={onUploadPhoto ? () => onUploadPhoto(ben.id) : undefined}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
 
         {sortedBens.length === 0 && (
