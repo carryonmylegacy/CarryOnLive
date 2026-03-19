@@ -173,22 +173,21 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                     </span>
                   </div>
 
-                  {/* Horizontal branch line */}
-                  {bens.length > 1 && (
-                    <div className="flex justify-center w-full px-6">
+                  {/* Beneficiaries in this tier with connected branch */}
+                  <div className="relative flex flex-wrap justify-center w-full px-2"
+                    style={{ gap: '4px 12px' }}>
+                    {/* Horizontal branch line — rendered via JS to span first-to-last node center */}
+                    {bens.length > 1 && (
                       <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: `calc(50% - ${((bens.length - 1) * (76 + 12)) / 2}px)`,
+                        width: `${(bens.length - 1) * (76 + 12)}px`,
                         height: 2,
                         background: color,
-                        opacity: 0.25,
-                        width: `${Math.min(bens.length * 80, 320)}px`,
-                        maxWidth: '85%',
+                        opacity: 0.35,
                       }} />
-                    </div>
-                  )}
-
-                  {/* Beneficiaries in this tier */}
-                  <div className="flex flex-wrap justify-center w-full px-2"
-                    style={{ gap: '4px 12px' }}>
+                    )}
                     {bens.map(ben => {
                       const benColor = ben.avatar_color || color;
                       const age = getAge(ben.date_of_birth || ben.dob);
