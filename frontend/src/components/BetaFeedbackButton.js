@@ -63,7 +63,12 @@ export default function BetaFeedbackButton() {
   const [pos, setPos] = useState(() => {
     const saved = localStorage.getItem('beta_bug_pos');
     if (saved) {
-      try { return JSON.parse(saved); } catch {}
+      try {
+        const p = JSON.parse(saved);
+        // Reset if saved position is behind Dynamic Island (too high)
+        if (p.y < 60) return { x: window.innerWidth - 70, y: window.innerHeight - 140 };
+        return p;
+      } catch {}
     }
     return { x: window.innerWidth - 70, y: window.innerHeight - 140 };
   });
@@ -74,9 +79,11 @@ export default function BetaFeedbackButton() {
 
   const clamp = useCallback((x, y) => {
     const sz = 48;
+    // Respect iOS safe area (Dynamic Island / notch) — minimum 60px from top
+    const safeTop = Math.max(60, parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sat') || '0', 10) + 8);
     return {
       x: Math.max(4, Math.min(x, window.innerWidth - sz - 4)),
-      y: Math.max(4, Math.min(y, window.innerHeight - sz - 4)),
+      y: Math.max(safeTop, Math.min(y, window.innerHeight - sz - 4)),
     };
   }, []);
 
