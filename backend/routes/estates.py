@@ -141,6 +141,14 @@ async def get_family_connections(current_user: dict = Depends(get_current_user))
     if not ben_records:
         return []
 
+    # Deduplicate — keep only one record per estate (prefer the one with more data)
+    seen_estates = {}
+    for br in ben_records:
+        eid = br["estate_id"]
+        if eid not in seen_estates or (br.get("relation") and not seen_estates[eid].get("relation")):
+            seen_estates[eid] = br
+    ben_records = list(seen_estates.values())
+
     connections = []
 
     # Batch-fetch all estates at once (avoid N+1)

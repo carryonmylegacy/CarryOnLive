@@ -274,6 +274,8 @@
     flex-direction: column;
     z-index: 40;
     transition: width 0.3s ease, transform 0.3s ease;
+    overflow: hidden;
+    overscroll-behavior: contain;
   }
   
   .sb.collapsed {

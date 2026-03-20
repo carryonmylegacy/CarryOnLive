@@ -463,7 +463,7 @@ const Sidebar = () => {
       <BetaBanner collapsed={collapsed} />
 
       {/* Navigation Sections */}
-      <nav className="flex-1 overflow-y-auto py-4">
+      <nav className="flex-1 overflow-y-auto py-4" style={{ overscrollBehavior: 'contain' }}>
         {getNavSections().map((section, idx) => {
           const isAccountSection = section.title === 'ACCOUNT';
           return (
