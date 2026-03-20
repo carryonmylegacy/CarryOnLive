@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users } from 'lucide-react';
+import { Camera, Users } from 'lucide-react';
 import { resolvePhotoUrl } from '../utils/photoUrl';
 import { useTheme } from '../contexts/ThemeContext';
 
