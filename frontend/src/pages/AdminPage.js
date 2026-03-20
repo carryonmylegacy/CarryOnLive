@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   Shield, Users, FileKey, Loader2,
   Headphones, CreditCard, Activity, Settings,
-  MessageSquare, CheckSquare, AlertTriangle, Clock, TrendingUp, Trash2,
+ CheckSquare, AlertTriangle, Clock, TrendingUp, Trash2,
   Megaphone, HeartPulse, Search, StickyNote, BookOpen, Gift, Zap, Puzzle
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';

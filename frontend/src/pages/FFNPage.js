@@ -5,7 +5,7 @@ import {
   Heart, Plus, Edit2, Trash2, Loader2, Phone, Mail,
   MapPin, User, X, Check, Users
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -16,7 +16,7 @@ import { API_URL } from '../config';
 const EMPTY_FORM = { name: '', phone: '', email: '', address: '', relationship: '', notes: '' };
 
 export default function FFNPage() {
-  const { user, getAuthHeaders } = useAuth();
+  const { getAuthHeaders } = useAuth();
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [estateId, setEstateId] = useState(null);

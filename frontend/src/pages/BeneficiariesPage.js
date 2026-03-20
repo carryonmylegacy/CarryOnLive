@@ -457,7 +457,6 @@ const BeneficiariesPage = () => {
     );
   };
 
-  const primaryBeneficiary = beneficiaries.find(b => b.is_primary);
 
   // Drag and drop
   const sensors = useSensors(

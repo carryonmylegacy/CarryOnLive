@@ -17,11 +17,6 @@ export const OpsWorkTiles = ({ stats, dashEvents }) => {
   const navigate = useNavigate();
   if (!stats) return null;
 
-  const tiles = TILE_CONFIG.map(t => ({
-    ...t,
-    count: dashEvents?.events?.[t.key]?.count ?? (stats[`pending_${t.key === 'tvt' ? 'certificates' : t.key}`] || stats[`reviewing_${t.key === 'tvt' ? 'certificates' : ''}`] || stats[`unanswered_${t.key}`] || stats[`p1_emergencies`] || stats[`pending_milestones`] || 0),
-  }));
-
   // Recalculate counts properly
   const getCounts = (key) => {
     const ev = dashEvents?.events?.[key]?.count;

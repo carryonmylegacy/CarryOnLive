@@ -17,7 +17,7 @@ const BeneficiarySettingsPage = () => {
   const { user, logout, getAuthHeaders, subscriptionStatus, refreshSubscription } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
-  const [estate, setEstate] = useState(null);
+  
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [primaryForEstates, setPrimaryForEstates] = useState([]);
 
@@ -27,7 +27,7 @@ const BeneficiarySettingsPage = () => {
       if (eid) {
         try {
           const res = await axios.get(`${API_URL}/estates/${eid}`, getAuthHeaders());
-          setEstate(res.data);
+          
         } catch (e) { console.error(e); }
       }
     };

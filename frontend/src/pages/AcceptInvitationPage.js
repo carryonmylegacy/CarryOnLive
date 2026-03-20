@@ -15,7 +15,7 @@ import { API_URL } from '../config';
 const AcceptInvitationPage = () => {
   const { token } = useParams();
   const navigate = useNavigate();
-  const { loginWithToken, logout } = useAuth();
+  const { loginWithToken } = useAuth();
   
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);

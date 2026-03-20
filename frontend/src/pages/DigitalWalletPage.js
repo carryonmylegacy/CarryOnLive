@@ -34,7 +34,6 @@ const DigitalWalletPage = () => {
   const [showAdd, setShowAdd] = useState(false);
   const [editEntry, setEditEntry] = useState(null);
   const [visiblePasswords, setVisiblePasswords] = useState({});
-  const [estateId, setEstateId] = useState(null);
   const [showReturnPopup, setShowReturnPopup] = useState(false);
 
   useEffect(() => { fetchData(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -47,7 +46,6 @@ const DigitalWalletPage = () => {
       if (estatesRes.data.length > 0) {
         const savedId = localStorage.getItem('selected_estate_id');
         const eid = (savedId && estatesRes.data.find(e => e.id === savedId)?.id) || estatesRes.data[0].id;
-        setEstateId(eid);
         const [walletRes, benRes] = await Promise.all([
           axios.get(`${API_URL}/digital-wallet/${eid}`, { headers }).catch(() => ({ data: [] })),
           axios.get(`${API_URL}/beneficiaries/${eid}`, { headers }).catch(() => ({ data: [] })),

@@ -1,6 +1,6 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { resolvePhotoUrl } from '../utils/photoUrl';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -24,25 +24,6 @@ const getInitials = (name, firstName, lastName) => {
   if (name) return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   return '??';
 };
-
-// Ring mapping — matches OrbitVisualization logic
-const getOrbitLevel = (relation) => {
-  const raw = (relation || '').toLowerCase().trim();
-  const parts = raw.includes('/') ? raw.split('/').map(p => p.trim()) : [raw];
-  if (parts.some(p => p.includes('great-grand') || p.includes('great grand'))) return 3;
-  const ring0 = ['spouse', 'wife', 'husband', 'partner', 'parent', 'mother', 'father', 'mom', 'dad'];
-  if (parts.some(p => ring0.includes(p))) return 0;
-  const ring1 = ['son', 'daughter', 'child', 'children', 'sibling', 'brother', 'sister',
-    'grandparent', 'grandmother', 'grandfather', 'grandma', 'grandpa'];
-  if (parts.some(p => ring1.includes(p))) return 1;
-  const ring2 = ['grandchild', 'grandson', 'granddaughter', 'nephew', 'niece', 'uncle', 'aunt'];
-  if (parts.some(p => ring2.includes(p))) return 2;
-  if (raw.includes('in-law') || raw.includes('in law')) return 2;
-  if (parts.some(p => ['friend', 'other'].includes(p))) return 3;
-  return 2;
-};
-
-const ringColors = ['#d4af37', '#A855F7', '#14B8A6', '#3B82F6'];
 
 // Linked/unlinked color coding for beneficiary nodes
 const LINKED_COLOR = '#10b981';   // green — beneficiary has created their own login
@@ -112,100 +93,6 @@ const TreeNode = ({ initials, photo, color, label, sublabel, size = 60, badge, i
   );
 };
 
-const NODE_W = 88;  // fixed node container width — wide enough for "Grandmother · 89"
-const NODE_GAP = 6;  // horizontal gap between nodes
-const NODE_SLOT = NODE_W + NODE_GAP;
-
-/**
- * Renders a single tier of beneficiaries with proper row-chunking
- * and horizontal branch bars that match the actual layout.
- */
-const TierGroup = ({ bens, color, tierNum, onSelectBeneficiary, onUploadPhoto, isLight }) => {
-  const containerRef = useRef(null);
-  const [perRow, setPerRow] = useState(4);
-
-  const measure = useCallback(() => {
-    if (!containerRef.current) return;
-    const w = containerRef.current.offsetWidth - 16; // minus px-2 padding
-    setPerRow(Math.max(1, Math.floor((w + NODE_GAP) / NODE_SLOT)));
-  }, []);
-
-  useEffect(() => {
-    measure();
-    const ro = new ResizeObserver(measure);
-    if (containerRef.current) ro.observe(containerRef.current);
-    return () => ro.disconnect();
-  }, [measure]);
-
-  // Chunk into visual rows
-  const rows = [];
-  for (let i = 0; i < bens.length; i += perRow) {
-    rows.push(bens.slice(i, i + perRow));
-  }
-
-  return (
-    <div ref={containerRef} className="flex flex-col items-center w-full" data-testid={`tree-tier-${tierNum}`}>
-      {/* Vertical trunk from previous level */}
-      <div style={{ width: 2, height: 24, background: color, opacity: isLight ? 0.6 : 0.5 }} />
-
-      {/* Rows of beneficiaries */}
-      {rows.map((row, rowIdx) => {
-        const count = row.length;
-        const barW = count > 1 ? (count - 1) * NODE_SLOT : 0;
-
-        return (
-          <div key={rowIdx} className="flex flex-col items-center w-full">
-            {/* Vertical connector between rows (skip for first row) */}
-            {rowIdx > 0 && (
-              <div style={{ width: 2, height: 16, background: color, opacity: isLight ? 0.4 : 0.3 }} />
-            )}
-
-            {/* Horizontal branch bar — spans center-of-first to center-of-last */}
-            {count > 1 && (
-              <div className="flex justify-center w-full">
-                <div style={{
-                  width: barW,
-                  height: 2,
-                  background: color,
-                  opacity: isLight ? 0.45 : 0.35,
-                  borderRadius: 1,
-                }} />
-              </div>
-            )}
-
-            {/* Nodes in this row */}
-            <div className="flex justify-center w-full" style={{ gap: `0 ${NODE_GAP}px` }}>
-              {row.map(ben => {
-                const benColor = getBenLinkedColor(ben);
-                const age = getAge(ben.date_of_birth || ben.dob);
-                const relation = ben.relation || '';
-                return (
-                  <div key={ben.id} className="flex flex-col items-center" style={{ width: NODE_W }}>
-                    {/* Drop line */}
-                    <div style={{ width: 2, height: 14, background: color, opacity: isLight ? 0.5 : 0.4 }} />
-                    <TreeNode
-                      initials={getInitials(ben.name, ben.first_name, ben.last_name)}
-                      photo={ben.photo_url}
-                      color={benColor}
-                      size={54}
-                      label={ben.first_name || ben.name?.split(' ')[0] || ''}
-                      sublabel={`${relation}${age < 999 ? ` · ${age}` : ''}`}
-                      badge={ben.is_primary ? 'P' : null}
-                      isPrimary={ben.is_primary}
-                      testId={`tree-node-${ben.id}`}
-                      onClick={() => onSelectBeneficiary?.(ben)}
-                      onUpload={onUploadPhoto ? () => onUploadPhoto(ben.id) : undefined}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-};
 
 const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficiary, onUploadPhoto, className }) => {
   const navigate = useNavigate();
@@ -214,15 +101,6 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
 
   // Use the beneficiaries in the order the benefactor has arranged them (drag-to-reorder tiles)
   const sortedBens = beneficiaries;
-
-  // Group beneficiaries by orbit ring level
-  const ringGroups = {};
-  sortedBens.forEach(ben => {
-    const level = getOrbitLevel(ben.relation);
-    if (!ringGroups[level]) ringGroups[level] = [];
-    ringGroups[level].push(ben);
-  });
-  const activeRings = Object.keys(ringGroups).map(Number).sort((a, b) => a - b);
 
   const benEstates = beneficiaryEstates || [];
 
