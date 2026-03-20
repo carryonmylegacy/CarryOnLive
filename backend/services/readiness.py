@@ -305,50 +305,153 @@ DEFAULT_CHECKLIST_ITEMS = [
 # ===================== SCORE CALCULATIONS =====================
 
 
+def _get_age(dob_str):
+    """Calculate age from date of birth string."""
+    if not dob_str:
+        return None
+    try:
+        dob = datetime.fromisoformat(dob_str.replace("Z", "+00:00"))
+        today = datetime.now(timezone.utc)
+        age = today.year - dob.year
+        if (today.month, today.day) < (dob.month, dob.day):
+            age -= 1
+        return age
+    except Exception:
+        return None
+
+
+def get_expected_milestone_count(ben: dict) -> int:
+    """Calculate expected number of milestone messages for a beneficiary
+    based on their age and standard American life milestones.
+
+    Under 14 (pre-high school): 8 milestones
+      HS grad, college acceptance, college grad, engagement, marriage,
+      first child, first home, major birthday
+    14-17 (high school): 7 milestones
+      HS grad, college acceptance, college grad, engagement, marriage,
+      first child, first home
+    18-22 (college age): 5 milestones
+      College grad, engagement, marriage, first child, first home
+    23-30 (young adult): 3 milestones
+      Marriage, first child, major birthday
+    31+ (past typical milestones): 1 milestone
+      General upon-death / anniversary message
+    Unknown age: 1 milestone (minimum expectation)
+    """
+    age = _get_age(ben.get("date_of_birth") or ben.get("dob"))
+    if age is None:
+        return 1
+    if age < 14:
+        return 8
+    if age < 18:
+        return 7
+    if age < 23:
+        return 5
+    if age <= 30:
+        return 3
+    return 1
+
+
 async def calculate_document_score(estate_id: str) -> dict:
-    """Calculate document completeness score (0-100)"""
-    documents = await db.documents.find({"estate_id": estate_id}, {"_id": 0, "name": 1, "category": 1}).to_list(100)
+    """Calculate document completeness score (0-100)
+
+    Scoring tiers:
+      80% = Will + Trust + at least 1 Power of Attorney (3 core docs)
+      100% = 80% base PLUS any of:
+        - A second Power of Attorney (financial AND medical)
+        - A Healthcare Directive / Living Will
+        - A deed, title, or other estate/property document
+
+    Below 3 core docs = proportional (each core doc = ~27%)
+    """
+    documents = await db.documents.find(
+        {"estate_id": estate_id}, {"_id": 0, "id": 1, "name": 1, "category": 1}
+    ).to_list(200)
     doc_names_lower = [d["name"].lower() for d in documents]
+    doc_categories = [d.get("category", "").lower() for d in documents]
 
-    required_docs = []
-    for docs in REQUIRED_DOCUMENTS.values():
-        required_docs.extend(docs)
+    # Detect core documents
+    has_will = any(
+        ("will" in n and "living will" not in n) or "last will" in n or "testament" in n for n in doc_names_lower
+    )
+    has_trust = any("trust" in n for n in doc_names_lower)
+    has_financial_poa = any(
+        ("financial" in n and "power" in n) or ("financial" in n and "attorney" in n) or "financial poa" in n
+        for n in doc_names_lower
+    )
+    has_medical_poa = any(
+        ("medical" in n and "power" in n)
+        or ("medical" in n and "attorney" in n)
+        or ("healthcare" in n and "power" in n)
+        or "medical poa" in n
+        for n in doc_names_lower
+    )
+    has_any_poa = has_financial_poa or has_medical_poa
+    has_both_poa = has_financial_poa and has_medical_poa
 
-    if not required_docs:
-        return {"score": 100, "found": 0, "required": 0, "missing": []}
-
-    found_docs = 0
-    missing_docs = []
-
-    for req_doc in required_docs:
-        req_name = req_doc["name"].lower()
-        found = any(
-            req_name in doc_name
-            or doc_name in req_name
-            or ("will" in req_name and "will" in doc_name and "living" not in doc_name)
-            or ("trust" in req_name and "trust" in doc_name)
-            or ("financial power" in req_name and "financial" in doc_name and "power" in doc_name)
-            or ("medical power" in req_name and "medical" in doc_name and "power" in doc_name)
-            or ("healthcare directive" in req_name and ("directive" in doc_name or "living will" in doc_name))
-            for doc_name in doc_names_lower
+    # Healthcare directive — could be standalone or embedded in will
+    has_directive = any(
+        "directive" in n
+        or "living will" in n
+        or "advance directive" in n
+        or ("healthcare" in n and ("directive" in n or "wish" in n))
+        for n in doc_names_lower
+    )
+    # If the will document name suggests it includes healthcare directives
+    if not has_directive and has_will:
+        has_directive = any(
+            ("will" in n and ("healthcare" in n or "directive" in n or "medical" in n)) for n in doc_names_lower
         )
-        if found:
-            found_docs += 1
-        else:
-            missing_docs.append(req_doc["name"])
 
-    score = int((found_docs / len(required_docs)) * 100) if required_docs else 0
+    # Deed or estate property document
+    has_deed = any("deed" in n or "title" in n or "property" in n or "mortgage" in n for n in doc_names_lower) or any(
+        c in ("property", "real estate", "deed") for c in doc_categories
+    )
+
+    # Calculate score
+    core_count = sum([has_will, has_trust, has_any_poa])
+    missing = []
+
+    if core_count < 3:
+        # Below 80% tier — proportional
+        score = int((core_count / 3) * 80)
+        if not has_will:
+            missing.append("Last Will and Testament")
+        if not has_trust:
+            missing.append("Revocable Living Trust")
+        if not has_any_poa:
+            missing.append("Power of Attorney (Financial or Medical)")
+    else:
+        # Have all 3 core docs → base 80%
+        bonus_items = sum([has_both_poa, has_directive, has_deed])
+        if bonus_items > 0:
+            score = 100
+        else:
+            score = 80
+            if not has_both_poa:
+                missing.append("Second Power of Attorney (Financial or Medical)")
+            if not has_directive:
+                missing.append("Healthcare Directive / Living Will")
+            missing.append("Property deed or estate document (any one for 100%)")
+
     return {
-        "score": score,
-        "found": found_docs,
-        "required": len(required_docs),
-        "missing": missing_docs,
+        "score": min(score, 100),
+        "found": len(documents),
+        "required": 3,
+        "missing": missing[:3],
     }
 
 
 async def calculate_messages_score(estate_id: str) -> dict:
-    """Calculate milestone messages completeness score (0-100)"""
-    beneficiaries = await db.beneficiaries.find({"estate_id": estate_id}, {"_id": 0}).to_list(100)
+    """Calculate milestone messages completeness score (0-100)
+
+    For each beneficiary, expected milestones are based on age:
+      <14: 8, 14-17: 7, 18-22: 5, 23-30: 3, 31+: 1
+
+    A message sent to multiple recipients counts toward EACH recipient.
+    Score = total messages found / total expected across all beneficiaries.
+    """
+    beneficiaries = await db.beneficiaries.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(200)
     messages = await db.messages.find({"estate_id": estate_id}, {"_id": 0}).to_list(500)
 
     if not beneficiaries:
@@ -361,45 +464,53 @@ async def calculate_messages_score(estate_id: str) -> dict:
 
     total_expected = 0
     total_found = 0
-    missing_milestones = []
+    missing_info = []
 
     for ben in beneficiaries:
-        expected_milestones = get_expected_milestones(ben)
-        total_expected += len(expected_milestones)
+        expected = get_expected_milestone_count(ben)
+        total_expected += expected
         ben_id = ben["id"]
         ben_user_id = ben.get("user_id")
-        ben_messages = [
-            m
+
+        # Count messages that include this beneficiary as a recipient
+        # Group messages (sent to multiple people) count for each recipient
+        ben_msg_count = sum(
+            1
             for m in messages
             if ben_id in m.get("recipients", [])
             or (ben_user_id and ben_user_id in m.get("recipients", []))
-            or not m.get("recipients")
-        ]
-        found_for_ben = min(len(ben_messages), len(expected_milestones))
+            or not m.get("recipients")  # messages with no recipients = sent to all
+        )
+        found_for_ben = min(ben_msg_count, expected)
         total_found += found_for_ben
-        if found_for_ben < len(expected_milestones):
-            missing_count = len(expected_milestones) - found_for_ben
-            missing_milestones.append(f"{ben['name']}: {missing_count} more milestone messages needed")
+
+        if found_for_ben < expected:
+            remaining = expected - found_for_ben
+            name = ben.get("name") or ben.get("first_name") or "Unnamed"
+            missing_info.append(f"{name}: {remaining} more message{'s' if remaining != 1 else ''} needed")
 
     score = int((total_found / max(total_expected, 1)) * 100)
     return {
         "score": min(score, 100),
         "found": total_found,
         "required": total_expected,
-        "missing": missing_milestones[:5],
+        "missing": missing_info[:5],
     }
 
 
 async def calculate_checklist_score(estate_id: str) -> dict:
     """Calculate checklist preparation score (0-100)
-    Score measures how many items the BENEFACTOR has prepared for their
+
+    Score measures how many IAC items the BENEFACTOR has prepared for their
     beneficiaries to follow after transition. Creating items IS the work —
-    completion happens post-transition by the family, not by the benefactor."""
+    completion happens post-transition by the family, not by the benefactor.
+
+    15 items = 100%. Below 15 = proportional.
+    """
     checklist_items = await db.checklists.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(200)
     total_items = len(checklist_items)
 
-    # 10 items = thorough preparation → 100%
-    target = 10
+    target = 15
     if total_items == 0:
         score = 0
     elif total_items >= target:

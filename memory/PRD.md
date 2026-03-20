@@ -98,6 +98,7 @@ User pushes to GitHub → Railway builds backend → Vercel builds frontend → 
 
 ### P2 - Future
 - **(NEW) FFN — Family & Friends Notification:** A standalone main feature page (like Milestone Messages, DTS, SDV) where the benefactor creates a list of people they want their beneficiaries to contact and notify of their passing. NOT a DTS task — this is an open, non-confidential list with names + contact info (phone, email, address) that the family can reference. Think of it like the Login & Password Vault but for "people to notify." The benefactor is asking their beneficiaries to handle these notifications, not CarryOn/DTS. This is distinct from the DTS "Transition Notification" type (which is confidential, handled by DTS, and hidden from family).
+- **(NEW) Estate Readiness Scoring Policy Page:** Add a "Policies" or "How We Score" page under the Account section of the menu. Displays the Estate Readiness Score rubric so benefactors understand how their score is calculated: Documents (Will + Trust + POA = 80%, +extras = 100%), Messages (age-based milestone expectations per beneficiary), Checklist (15 items created = 100%). This is informational, not editable.
 - Video playback on Milestone Page investigation
 - Settings page "flash" glitch investigation
 - Twilio SMS OTP Integration (blocked on A2P 10DLC approval)
