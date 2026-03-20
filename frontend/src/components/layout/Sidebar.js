@@ -588,6 +588,7 @@ const Sidebar = () => {
                             localStorage.setItem('carryon_last_portal', 'benefactor');
                             setEstatePickerOpen(false);
                             navigate('/dashboard');
+                            window.location.reload();
                           }}
                           data-testid={`pick-estate-${estate.id}`}
                           className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors"

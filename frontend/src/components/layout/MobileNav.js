@@ -745,7 +745,7 @@ const MobileNav = () => {
                                       localStorage.removeItem('beneficiary_estate_id');
                                       localStorage.setItem('carryon_last_portal', 'benefactor');
                                       navigate('/dashboard');
-                                      if (isOnBeneficiary) window.location.reload();
+                                      window.location.reload();
                                     }}
                                     data-testid={`mobile-pick-estate-${estate.id}`}
                                     className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium"
