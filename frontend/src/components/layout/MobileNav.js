@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { haptics } from '../../utils/haptics';
+import { clearCache } from '../../utils/apiCache';
 import {
   FolderLock,
   MessageSquare,
@@ -744,6 +745,7 @@ const MobileNav = () => {
                                       localStorage.setItem('selected_estate_id', estate.id);
                                       localStorage.removeItem('beneficiary_estate_id');
                                       localStorage.setItem('carryon_last_portal', 'benefactor');
+                                      clearCache();
                                       navigate('/dashboard');
                                       window.location.reload();
                                     }}
@@ -776,6 +778,7 @@ const MobileNav = () => {
                             localStorage.removeItem('selected_estate_id');
                             localStorage.removeItem('beneficiary_estate_id');
                             localStorage.setItem('carryon_last_portal', 'beneficiary');
+                            clearCache();
                             navigate('/beneficiary');
                             if (!isOnBeneficiary) window.location.reload();
                           }}

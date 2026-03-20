@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { haptics } from '../../utils/haptics';
+import { clearCache } from '../../utils/apiCache';
 import axios from 'axios';
 import {
   LayoutDashboard,
@@ -587,6 +588,7 @@ const Sidebar = () => {
                             localStorage.removeItem('beneficiary_estate_id');
                             localStorage.setItem('carryon_last_portal', 'benefactor');
                             setEstatePickerOpen(false);
+                            clearCache();
                             navigate('/dashboard');
                             window.location.reload();
                           }}
@@ -623,6 +625,7 @@ const Sidebar = () => {
                     localStorage.removeItem('selected_estate_id');
                     localStorage.removeItem('beneficiary_estate_id');
                     localStorage.setItem('carryon_last_portal', 'beneficiary');
+                    clearCache();
                     navigate('/beneficiary');
                     window.location.reload();
                   }}
