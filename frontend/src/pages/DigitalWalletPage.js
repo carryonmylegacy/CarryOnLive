@@ -45,7 +45,8 @@ const DigitalWalletPage = () => {
       if (!headers) { setLoading(false); return; }
       const estatesRes = await cachedGet(axios, `${API_URL}/estates`, { headers });
       if (estatesRes.data.length > 0) {
-        const eid = estatesRes.data[0].id;
+        const savedId = localStorage.getItem('selected_estate_id');
+        const eid = (savedId && estatesRes.data.find(e => e.id === savedId)?.id) || estatesRes.data[0].id;
         setEstateId(eid);
         const [walletRes, benRes] = await Promise.all([
           axios.get(`${API_URL}/digital-wallet/${eid}`, { headers }).catch(() => ({ data: [] })),

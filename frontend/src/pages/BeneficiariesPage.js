@@ -172,7 +172,11 @@ const BeneficiariesPage = () => {
       const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
       const allEstates = estatesRes.data;
       // Find the owned estate (benefactor context)
-      const ownedEstate = allEstates.find(e => e.user_role_in_estate === 'owner' || (!e.user_role_in_estate && !e.is_beneficiary_estate));
+      const ownedEstate = (() => {
+        const owned = allEstates.filter(e => e.user_role_in_estate === 'owner' || (!e.user_role_in_estate && !e.is_beneficiary_estate));
+        const savedId = localStorage.getItem('selected_estate_id');
+        return (savedId && owned.find(e => e.id === savedId)) || owned[0];
+      })();
       // Beneficiary estates (for family tree)
       const bEstates = allEstates.filter(e => e.user_role_in_estate === 'beneficiary' || e.is_beneficiary_estate);
       setBenEstates(bEstates);

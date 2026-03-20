@@ -29,7 +29,11 @@ export default function FFNPage() {
   const fetchData = useCallback(async () => {
     try {
       const estatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders());
-      const owned = estatesRes.data.find(e => e.user_role_in_estate === 'owner' || (!e.user_role_in_estate && !e.is_beneficiary_estate));
+      const owned = (() => {
+        const all = estatesRes.data.filter(e => e.user_role_in_estate === 'owner' || (!e.user_role_in_estate && !e.is_beneficiary_estate));
+        const savedId = localStorage.getItem('selected_estate_id');
+        return (savedId && all.find(e => e.id === savedId)) || all[0];
+      })();
       if (!owned) { setLoading(false); return; }
       setEstateId(owned.id);
       const contactsRes = await axios.get(`${API_URL}/ffn/${owned.id}`, getAuthHeaders());

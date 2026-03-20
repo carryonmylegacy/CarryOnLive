@@ -103,8 +103,10 @@ const ChecklistPage = () => {
     try {
       const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
       if (estatesRes.data.length > 0) {
-        setEstate(estatesRes.data[0]);
-        const checklistRes = await axios.get(`${API_URL}/checklists/${estatesRes.data[0].id}`, getAuthHeaders());
+        const savedId = localStorage.getItem('selected_estate_id');
+        const selected = (savedId && estatesRes.data.find(e => e.id === savedId)) || estatesRes.data[0];
+        setEstate(selected);
+        const checklistRes = await axios.get(`${API_URL}/checklists/${selected.id}`, getAuthHeaders());
         setChecklists(checklistRes.data);
       }
     } catch (error) {

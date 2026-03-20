@@ -174,8 +174,10 @@ const VaultPage = () => {
       const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
       const estates = Array.isArray(estatesRes.data) ? estatesRes.data : [];
       if (estates.length > 0) {
-        setEstate(estates[0]);
-        const docsRes = await axios.get(`${API_URL}/documents/${estates[0].id}`, getAuthHeaders()).catch(() => ({ data: [] }));
+        const savedId = localStorage.getItem('selected_estate_id');
+        const selected = (savedId && estates.find(e => e.id === savedId)) || estates[0];
+        setEstate(selected);
+        const docsRes = await axios.get(`${API_URL}/documents/${selected.id}`, getAuthHeaders()).catch(() => ({ data: [] }));
         setDocuments(Array.isArray(docsRes.data) ? docsRes.data : []);
       }
     } catch (error) {

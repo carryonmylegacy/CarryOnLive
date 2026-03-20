@@ -207,10 +207,12 @@ const MessagesPage = () => {
     try {
       const estatesRes = await cachedGet(axios, `${API_URL}/estates`, getAuthHeaders());
       if (estatesRes.data.length > 0) {
-        setEstate(estatesRes.data[0]);
+        const savedId = localStorage.getItem('selected_estate_id');
+        const selected = (savedId && estatesRes.data.find(e => e.id === savedId)) || estatesRes.data[0];
+        setEstate(selected);
         const [msgsRes, bensRes] = await Promise.all([
-          axios.get(`${API_URL}/messages/${estatesRes.data[0].id}`, getAuthHeaders()),
-          axios.get(`${API_URL}/beneficiaries/${estatesRes.data[0].id}`, getAuthHeaders())
+          axios.get(`${API_URL}/messages/${selected.id}`, getAuthHeaders()),
+          axios.get(`${API_URL}/beneficiaries/${selected.id}`, getAuthHeaders())
         ]);
         setMessages(msgsRes.data);
         setBeneficiaries(bensRes.data);

@@ -139,7 +139,8 @@ const LegacyTimelinePage = () => {
           });
           const estates = estatesRes.data || [];
           if (estates.length > 0) {
-            estateId = estates[0].id;
+            const savedId = localStorage.getItem('selected_estate_id');
+            estateId = (savedId && estates.find(e => e.id === savedId)?.id) || estates[0].id;
             localStorage.setItem('selected_estate_id', estateId);
           }
         }

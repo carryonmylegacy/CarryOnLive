@@ -135,7 +135,11 @@ const SettingsPage = () => {
     // Fetch estate photo (benefactors only)
     cachedGet(axios, `${API_URL}/estates`, getAuthHeaders()).then(res => {
       const estates = res.data || [];
-      const owned = estates.find(e => !e.is_beneficiary_estate);
+      const owned = (() => {
+        const ownedList = estates.filter(e => !e.is_beneficiary_estate);
+        const savedId = localStorage.getItem('selected_estate_id');
+        return (savedId && ownedList.find(e => e.id === savedId)) || ownedList[0];
+      })();
       if (owned) {
         setEstateId(owned.id);
         setEstateName(owned.name || '');
