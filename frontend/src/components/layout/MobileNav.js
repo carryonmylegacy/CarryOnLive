@@ -778,7 +778,7 @@ const MobileNav = () => {
                                       onClick={async (e) => {
                                         e.stopPropagation();
                                         try {
-                                          await axios.put(`${API_URL}/estates/set-primary/${estate.id}`, {}, getAuthHeaders());
+                                          await axios.put(`${API_URL}/estates/set-primary/${estate.id}`, {}, { headers: { Authorization: `Bearer ${localStorage.getItem('carryon_token')}` } });
                                           clearCache();
                                           window.location.reload();
                                         } catch {}
