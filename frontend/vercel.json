@@ -27,6 +27,7 @@
     { "source": "/timeline", "destination": "/index.html" },
     { "source": "/subscription", "destination": "/index.html" },
     { "source": "/create-estate", "destination": "/index.html" },
+    { "source": "/ffn", "destination": "/index.html" },
     { "source": "/beneficiary/:path*", "destination": "/index.html" },
     { "source": "/admin/:path*", "destination": "/index.html" },
     { "source": "/ops/:path*", "destination": "/index.html" }

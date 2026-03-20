@@ -14,7 +14,16 @@ export CI=false
 cp public/index.html /tmp/index.html.carryon.bak
 
 # Use Python to cleanly strip Emergent-specific code from index.html
-python3 -c "
+# Try python3, then python, then fall back to sed
+PYTHON_CMD=""
+if command -v python3 >/dev/null 2>&1; then
+    PYTHON_CMD="python3"
+elif command -v python >/dev/null 2>&1; then
+    PYTHON_CMD="python"
+fi
+
+if [ -n "$PYTHON_CMD" ]; then
+$PYTHON_CMD -c "
 import re
 
 with open('public/index.html', 'r') as f:
@@ -44,11 +53,19 @@ with open('public/index.html', 'w') as f:
 print('Emergent-specific scripts stripped from index.html')
 " || {
     echo "Python stripping failed, falling back to sed..."
-    # Fallback: just remove the known script lines
     cp /tmp/index.html.carryon.bak public/index.html
     sed -i '/DataCloneError/d' public/index.html
     sed -i '/assets\.emergent\.sh/d' public/index.html
+    sed -i '/posthog\.init/d' public/index.html
+    sed -i '/emergent-badge/d' public/index.html
 }
+else
+    echo "Python not available, using sed fallback..."
+    sed -i '/DataCloneError/d' public/index.html
+    sed -i '/assets\.emergent\.sh/d' public/index.html
+    sed -i '/posthog\.init/d' public/index.html
+    sed -i '/emergent-badge/d' public/index.html
+fi
 
 echo "Building production bundle..."
 
