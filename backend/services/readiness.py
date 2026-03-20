@@ -391,30 +391,27 @@ async def calculate_messages_score(estate_id: str) -> dict:
 
 
 async def calculate_checklist_score(estate_id: str) -> dict:
-    """Calculate checklist completeness score (0-100)"""
-    checklist_items = await db.checklists.find({"estate_id": estate_id}, {"_id": 0}).to_list(100)
+    """Calculate checklist completeness score (0-100)
+    Score = percentage of existing items that are completed.
+    Having items is a prerequisite; completing them drives the score."""
+    checklist_items = await db.checklists.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(200)
     total_items = len(checklist_items)
     completed_items = sum(1 for item in checklist_items if item.get("is_completed"))
-    min_required = 25
 
-    if total_items < min_required:
-        item_coverage = total_items / min_required
-        completion_rate = completed_items / max(total_items, 1)
-        score = int((item_coverage * 0.5 + completion_rate * 0.5) * 100)
-    else:
-        score = int((completed_items / total_items) * 100)
+    if total_items == 0:
+        return {"score": 0, "found": 0, "required": 1, "missing": ["Add checklist items"]}
+
+    score = int((completed_items / total_items) * 100)
 
     missing = []
-    if total_items < min_required:
-        missing.append(f"Add {min_required - total_items} more checklist items")
     incomplete = total_items - completed_items
     if incomplete > 0:
-        missing.append(f"Complete {incomplete} remaining items")
+        missing.append(f"Complete {incomplete} remaining item{'s' if incomplete != 1 else ''}")
 
     return {
-        "score": min(score, 100),
+        "score": score,
         "found": completed_items,
-        "required": max(total_items, min_required),
+        "required": total_items,
         "missing": missing,
     }
 
