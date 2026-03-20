@@ -129,16 +129,17 @@ async def login(data: UserLogin, request: Request):
 
     # Check for account lockout (10 failed attempts in 3 minutes)
     lockout_window = (datetime.now(timezone.utc) - timedelta(minutes=3)).isoformat()
+    lockout_email = data.email.strip().lower()
     recent_failures = await db.failed_logins.count_documents(
         {
-            "email": data.email,
+            "email": lockout_email,
             "timestamp": {"$gte": lockout_window},
         }
     )
     if recent_failures >= 10:
         # Find the oldest failure in this window to calculate remaining lockout
         oldest_failure = await db.failed_logins.find_one(
-            {"email": data.email, "timestamp": {"$gte": lockout_window}},
+            {"email": lockout_email, "timestamp": {"$gte": lockout_window}},
             {"_id": 0, "id": 1, "timestamp": 1},
             sort=[("timestamp", 1)],
         )
@@ -178,7 +179,7 @@ async def login(data: UserLogin, request: Request):
         # Record failed attempt
         await db.failed_logins.insert_one(
             {
-                "email": login_input,
+                "email": login_lower,
                 "ip_address": client_ip,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
@@ -186,7 +187,7 @@ async def login(data: UserLogin, request: Request):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     # Clear failed attempts on successful login
-    await db.failed_logins.delete_many({"email": data.email})
+    await db.failed_logins.delete_many({"email": login_lower})
 
     # Check estate ownership for multi-role flag (used in all response paths)
     _estate_list = await db.estates.find(
