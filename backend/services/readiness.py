@@ -391,27 +391,32 @@ async def calculate_messages_score(estate_id: str) -> dict:
 
 
 async def calculate_checklist_score(estate_id: str) -> dict:
-    """Calculate checklist completeness score (0-100)
-    Score = percentage of existing items that are completed.
-    Having items is a prerequisite; completing them drives the score."""
+    """Calculate checklist preparation score (0-100)
+    Score measures how many items the BENEFACTOR has prepared for their
+    beneficiaries to follow after transition. Creating items IS the work —
+    completion happens post-transition by the family, not by the benefactor."""
     checklist_items = await db.checklists.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(200)
     total_items = len(checklist_items)
-    completed_items = sum(1 for item in checklist_items if item.get("is_completed"))
 
+    # 10 items = thorough preparation → 100%
+    target = 10
     if total_items == 0:
-        return {"score": 0, "found": 0, "required": 1, "missing": ["Add checklist items"]}
-
-    score = int((completed_items / total_items) * 100)
+        score = 0
+    elif total_items >= target:
+        score = 100
+    else:
+        score = int((total_items / target) * 100)
 
     missing = []
-    incomplete = total_items - completed_items
-    if incomplete > 0:
-        missing.append(f"Complete {incomplete} remaining item{'s' if incomplete != 1 else ''}")
+    if total_items < target:
+        missing.append(
+            f"Add {target - total_items} more item{'s' if target - total_items != 1 else ''} for a complete checklist"
+        )
 
     return {
-        "score": score,
-        "found": completed_items,
-        "required": total_items,
+        "score": min(score, 100),
+        "found": total_items,
+        "required": target,
         "missing": missing,
     }
 
