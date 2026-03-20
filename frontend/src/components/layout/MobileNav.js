@@ -34,6 +34,7 @@ import {
   Plus,
   Heart,
   Star,
+  Check,
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import NotificationBell from '../NotificationBell';
@@ -750,7 +751,7 @@ const MobileNav = () => {
                                   const isCurrent = currentEstateId === estate.id;
                                   const isPrimary = user?.primary_estate_id === estate.id;
                                   return (
-                                  <div key={estate.id} className="flex items-center gap-1 mb-0.5">
+                                  <div key={estate.id} className="flex items-center gap-1 mb-1">
                                     <button
                                       onClick={() => {
                                         setOpen(false);
@@ -763,14 +764,15 @@ const MobileNav = () => {
                                         window.location.reload();
                                       }}
                                       data-testid={`mobile-pick-estate-${estate.id}`}
-                                      className="flex-1 text-left px-3 py-2.5 rounded-lg text-sm font-medium"
+                                      className="flex-1 flex items-center gap-2 text-left px-3 py-3 rounded-lg text-sm"
                                       style={{
                                         color: isCurrent ? '#d4af37' : 'var(--t)',
-                                        background: isCurrent ? 'rgba(212,175,55,0.12)' : 'transparent',
-                                        border: isCurrent ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent',
+                                        background: isCurrent ? 'rgba(212,175,55,0.15)' : 'transparent',
+                                        border: isCurrent ? '2px solid rgba(212,175,55,0.5)' : '1px solid transparent',
                                         fontWeight: isCurrent ? 700 : 500,
                                       }}>
-                                      {estate.name || 'Estate'}{isPrimary ? ' ★' : ''}
+                                      {isCurrent && <Check className="w-4 h-4 flex-shrink-0" style={{ color: '#d4af37' }} />}
+                                      <span>{estate.name || 'Estate'}{isPrimary ? ' ★' : ''}</span>
                                     </button>
                                     <button
                                       onClick={async (e) => {
