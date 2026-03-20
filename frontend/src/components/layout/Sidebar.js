@@ -33,7 +33,8 @@ import {
   StickyNote,
   Gift,
   Plus,
-  Heart
+  Heart,
+  Star
 } from 'lucide-react';
 import { Switch } from '../ui/switch';
 import { toast } from '../../utils/toast';
@@ -581,26 +582,55 @@ const Sidebar = () => {
                       <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--t5)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6, paddingLeft: 4 }}>
                         Select Estate
                       </div>
-                      {ownedEstates.map(estate => (
-                        <button key={estate.id}
-                          onClick={() => {
-                            localStorage.setItem('selected_estate_id', estate.id);
-                            localStorage.removeItem('beneficiary_estate_id');
-                            localStorage.setItem('carryon_last_portal', 'benefactor');
-                            setEstatePickerOpen(false);
-                            clearCache();
-                            navigate('/dashboard');
-                            window.location.reload();
-                          }}
-                          data-testid={`pick-estate-${estate.id}`}
-                          className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-                          style={{ color: 'var(--t)', background: localStorage.getItem('selected_estate_id') === estate.id ? 'var(--s)' : 'transparent' }}
-                          onMouseEnter={e => e.currentTarget.style.background = 'var(--s)'}
-                          onMouseLeave={e => e.currentTarget.style.background = localStorage.getItem('selected_estate_id') === estate.id ? 'var(--s)' : 'transparent'}
-                        >
-                          {estate.name || 'Estate'}
-                        </button>
-                      ))}
+                      {[...ownedEstates].sort((a, b) => {
+                        const pid = user?.primary_estate_id;
+                        if (a.id === pid) return -1;
+                        if (b.id === pid) return 1;
+                        return 0;
+                      }).map(estate => {
+                        const isCurrent = localStorage.getItem('selected_estate_id') === estate.id;
+                        const isPrimary = user?.primary_estate_id === estate.id;
+                        return (
+                        <div key={estate.id} className="flex items-center gap-1 mb-0.5">
+                          <button
+                            onClick={() => {
+                              localStorage.setItem('selected_estate_id', estate.id);
+                              localStorage.removeItem('beneficiary_estate_id');
+                              localStorage.setItem('carryon_last_portal', 'benefactor');
+                              setEstatePickerOpen(false);
+                              clearCache();
+                              navigate('/dashboard');
+                              window.location.reload();
+                            }}
+                            data-testid={`pick-estate-${estate.id}`}
+                            className="flex-1 text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                            style={{
+                              color: isCurrent ? '#d4af37' : 'var(--t)',
+                              background: isCurrent ? 'rgba(212,175,55,0.12)' : 'transparent',
+                              border: isCurrent ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent',
+                              fontWeight: isCurrent ? 700 : 500,
+                            }}
+                          >
+                            {estate.name || 'Estate'}{isPrimary ? ' ★' : ''}
+                          </button>
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                await axios.put(`${API_URL}/estates/set-primary/${estate.id}`, {}, getAuthHeaders());
+                                clearCache();
+                                window.location.reload();
+                              } catch {}
+                            }}
+                            title={isPrimary ? 'Primary estate' : 'Set as primary'}
+                            className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-md transition-colors"
+                            style={{ color: isPrimary ? '#d4af37' : 'var(--t5)' }}
+                          >
+                            <Star className="w-3.5 h-3.5" style={{ fill: isPrimary ? '#d4af37' : 'none' }} />
+                          </button>
+                        </div>
+                        );
+                      })}
                       <div style={{ height: 1, background: 'var(--b2)', margin: '6px 4px' }} />
                       <button
                         onClick={() => {

@@ -66,8 +66,12 @@ const DashboardPage = () => {
       setEstates(ownedEstates);
       if (ownedEstates.length > 0) {
         const savedEstateId = localStorage.getItem('selected_estate_id');
-        const savedEstate = ownedEstates.find(e => e.id === savedEstateId);
-        setEstate(savedEstate || ownedEstates[0]);
+        const primaryEstateId = user?.primary_estate_id;
+        const selectedEstate = (savedEstateId && ownedEstates.find(e => e.id === savedEstateId))
+          || (primaryEstateId && ownedEstates.find(e => e.id === primaryEstateId))
+          || ownedEstates[0];
+        localStorage.setItem('selected_estate_id', selectedEstate.id);
+        setEstate(selectedEstate);
       }
     } catch (error) { console.error('Fetch estates error:', error); setLoading(false); }
   };

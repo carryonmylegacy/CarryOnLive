@@ -33,6 +33,7 @@ import {
   Gift,
   Plus,
   Heart,
+  Star,
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import NotificationBell from '../NotificationBell';
@@ -737,24 +738,55 @@ const MobileNav = () => {
                             {mobileEstatePicker && (
                               <div style={{ padding: 8, borderRadius: 10, background: theme === 'dark' ? 'var(--bg2)' : 'white', border: '1px solid var(--b2)' }}
                                 data-testid="mobile-estate-picker">
-                                {ownedEstates.map(estate => (
-                                  <button key={estate.id}
-                                    onClick={() => {
-                                      setOpen(false);
-                                      setMobileEstatePicker(false);
-                                      localStorage.setItem('selected_estate_id', estate.id);
-                                      localStorage.removeItem('beneficiary_estate_id');
-                                      localStorage.setItem('carryon_last_portal', 'benefactor');
-                                      clearCache();
-                                      navigate('/dashboard');
-                                      window.location.reload();
-                                    }}
-                                    data-testid={`mobile-pick-estate-${estate.id}`}
-                                    className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium"
-                                    style={{ color: 'var(--t)' }}>
-                                    {estate.name || 'Estate'}
-                                  </button>
-                                ))}
+                                {[...ownedEstates].sort((a, b) => {
+                                  const pid = user?.primary_estate_id;
+                                  if (a.id === pid) return -1;
+                                  if (b.id === pid) return 1;
+                                  return 0;
+                                }).map(estate => {
+                                  const isCurrent = localStorage.getItem('selected_estate_id') === estate.id;
+                                  const isPrimary = user?.primary_estate_id === estate.id;
+                                  return (
+                                  <div key={estate.id} className="flex items-center gap-1 mb-0.5">
+                                    <button
+                                      onClick={() => {
+                                        setOpen(false);
+                                        setMobileEstatePicker(false);
+                                        localStorage.setItem('selected_estate_id', estate.id);
+                                        localStorage.removeItem('beneficiary_estate_id');
+                                        localStorage.setItem('carryon_last_portal', 'benefactor');
+                                        clearCache();
+                                        navigate('/dashboard');
+                                        window.location.reload();
+                                      }}
+                                      data-testid={`mobile-pick-estate-${estate.id}`}
+                                      className="flex-1 text-left px-3 py-2.5 rounded-lg text-sm font-medium"
+                                      style={{
+                                        color: isCurrent ? '#d4af37' : 'var(--t)',
+                                        background: isCurrent ? 'rgba(212,175,55,0.12)' : 'transparent',
+                                        border: isCurrent ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent',
+                                        fontWeight: isCurrent ? 700 : 500,
+                                      }}>
+                                      {estate.name || 'Estate'}{isPrimary ? ' ★' : ''}
+                                    </button>
+                                    <button
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
+                                        try {
+                                          await axios.put(`${API_URL}/estates/set-primary/${estate.id}`, {}, getAuthHeaders());
+                                          clearCache();
+                                          window.location.reload();
+                                        } catch {}
+                                      }}
+                                      title={isPrimary ? 'Primary estate' : 'Set as primary'}
+                                      className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-md"
+                                      style={{ color: isPrimary ? '#d4af37' : 'var(--t5)' }}
+                                    >
+                                      <Star className="w-4 h-4" style={{ fill: isPrimary ? '#d4af37' : 'none' }} />
+                                    </button>
+                                  </div>
+                                  );
+                                })}
                                 <div style={{ height: 1, background: 'var(--b2)', margin: '4px 4px' }} />
                                 <button
                                   onClick={() => {

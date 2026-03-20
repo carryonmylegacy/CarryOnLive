@@ -421,6 +421,16 @@ async def check_estate_rename(current_user: dict = Depends(get_current_user)):
     return {"needs_rename": False}
 
 
+@router.put("/estates/set-primary/{estate_id}")
+async def set_primary_estate(estate_id: str, current_user: dict = Depends(get_current_user)):
+    """Mark an estate as the user's primary (default on login, shows first in picker)."""
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1})
+    if not estate or estate["owner_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Not your estate")
+    await db.users.update_one({"id": current_user["id"]}, {"$set": {"primary_estate_id": estate_id}})
+    return {"success": True, "primary_estate_id": estate_id}
+
+
 @router.post("/estates/customize-name")
 async def customize_estate_name(
     data: EstateUpdate,
