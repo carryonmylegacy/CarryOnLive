@@ -682,7 +682,7 @@
     background: var(--bg2);
     color: var(--t);
     padding: 0.25rem 0.75rem;
-    font-size: 0.875rem;
+    font-size: 1rem;
     transition: border-color 0.15s;
   }
   .input-field::placeholder {
@@ -692,6 +692,12 @@
     outline: none;
     border-color: #d4af37;
     box-shadow: 0 0 0 1px rgba(212,175,55,0.2);
+  }
+
+
+  /* Prevent iOS zoom on ALL form elements — minimum 16px */
+  input, textarea, select, [contenteditable] {
+    font-size: max(1rem, inherit) !important;
   }
 
   
