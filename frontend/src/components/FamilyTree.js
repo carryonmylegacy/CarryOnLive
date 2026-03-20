@@ -52,8 +52,16 @@ const getBenLinkedColor = (ben) => {
   return (ben.user_id || ben.invitation_status === 'accepted') ? LINKED_COLOR : UNLINKED_COLOR;
 };
 
-const TreeNode = ({ initials, photo, color, label, sublabel, size = 60, badge, isPrimary, onClick, onUpload, testId }) => {
+// Succession hierarchy colors — matches BeneficiariesPage
+const SUCC_COLORS = {
+  0: { bg: 'rgba(34,201,147,0.15)', color: '#22C993', border: '1px solid rgba(34,201,147,0.3)' },
+  1: { bg: 'rgba(59,130,246,0.15)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.3)' },
+  2: { bg: 'rgba(139,92,246,0.15)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.3)' },
+};
+
+const TreeNode = ({ initials, photo, color, label, sublabel, size = 60, badge, isPrimary, succRank, onClick, onUpload, testId }) => {
   const hasPhoto = !!photo;
+  const succStyle = (succRank !== null && succRank !== undefined) ? SUCC_COLORS[succRank] : null;
   const handleClick = () => {
     if (hasPhoto && onClick) onClick();
     else if (!hasPhoto && onUpload) onUpload();
@@ -94,8 +102,8 @@ const TreeNode = ({ initials, photo, color, label, sublabel, size = 60, badge, i
           </div>
         )}
       </div>
-    {label && isPrimary ? (
-      <span className="text-[11px] font-bold whitespace-nowrap px-2 py-0.5 rounded-md text-center leading-tight" style={{ background: 'rgba(34,201,147,0.15)', color: '#22C993', border: '1px solid rgba(34,201,147,0.3)' }}>{label}</span>
+    {label && succStyle ? (
+      <span className="text-[11px] font-bold whitespace-nowrap px-2 py-0.5 rounded-md text-center leading-tight" style={{ background: succStyle.bg, color: succStyle.color, border: succStyle.border }}>{label}</span>
     ) : label ? (
       <span className="text-xs font-semibold text-[var(--t)] text-center leading-tight w-full">{label}</span>
     ) : null}
@@ -332,6 +340,9 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               const isLeft = idx % 2 === 0;
               const trunkColor = isLight ? 'rgba(212,175,55,0.5)' : 'rgba(212,175,55,0.35)';
               const branchColor = isLight ? `${benColor}90` : `${benColor}60`;
+              // Compute succession rank (same logic as BeneficiariesPage tiles)
+              const isInSuccession = ben.succession_order !== null && ben.succession_order !== undefined;
+              const succRank = isInSuccession ? sortedBens.filter((b, i) => i < idx && b.succession_order !== null && b.succession_order !== undefined).length : null;
 
               return (
                 <div key={ben.id} className="flex items-center w-full" style={{ maxWidth: 340 }}>
@@ -348,6 +359,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                           sublabel={`${relation}${age < 999 ? ` · ${age}` : ''}`}
                           badge={ben.is_primary ? 'P' : null}
                           isPrimary={ben.is_primary}
+                          succRank={succRank}
                           testId={`tree-node-${ben.id}`}
                           onClick={() => onSelectBeneficiary?.(ben)}
                           onUpload={onUploadPhoto ? () => onUploadPhoto(ben.id) : undefined}
@@ -376,6 +388,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                           sublabel={`${relation}${age < 999 ? ` · ${age}` : ''}`}
                           badge={ben.is_primary ? 'P' : null}
                           isPrimary={ben.is_primary}
+                          succRank={succRank}
                           testId={`tree-node-${ben.id}`}
                           onClick={() => onSelectBeneficiary?.(ben)}
                           onUpload={onUploadPhoto ? () => onUploadPhoto(ben.id) : undefined}
