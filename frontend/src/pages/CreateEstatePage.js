@@ -70,6 +70,8 @@ const CreateEstatePage = () => {
   const [addressState, setAddressState] = useState('');
   const [addressZip, setAddressZip] = useState('');
   const [addressLine2, setAddressLine2] = useState('');
+  const [isAdditionalEstate, setIsAdditionalEstate] = useState(false);
+  const [estateName, setEstateName] = useState('');
 
   // New data
   const [role, setRole] = useState('');
@@ -100,6 +102,11 @@ const CreateEstatePage = () => {
         setAddressState(p.address_state || '');
         setAddressZip(p.address_zip || '');
         setAddressLine2(p.address_line2 || '');
+        // Detect if user already owns an estate — skip role selection
+        if (p.role === 'benefactor' || p.is_also_benefactor) {
+          setRole('benefactor');
+          setIsAdditionalEstate(true);
+        }
       } catch {
         toast.error('Failed to load profile data');
       } finally {
@@ -144,12 +151,19 @@ const CreateEstatePage = () => {
   const computeSteps = () => {
     const steps = [
       { id: 'confirm', label: 'Confirm', icon: User },
-      { id: 'role', label: 'Role', icon: Users },
     ];
+    // Skip role selection for users already creating an additional estate
+    if (!isAdditionalEstate) {
+      steps.push({ id: 'role', label: 'Role', icon: Users });
+    }
     if (role === 'beneficiary') {
       return steps;
     }
     if (role === 'benefactor') {
+      // For additional estates, add estate name step
+      if (isAdditionalEstate) {
+        steps.push({ id: 'estate_name', label: 'Name', icon: Heart });
+      }
       steps.push({ id: 'family', label: 'Family', icon: Heart });
       beneficiaries.forEach((ben, idx) => {
         steps.push({ id: `beneficiary_${idx}`, label: ben.relation, icon: UserPlus, benIndex: idx });
@@ -177,6 +191,7 @@ const CreateEstatePage = () => {
   const canAdvance = () => {
     const sid = currentStep?.id;
     if (sid === 'confirm') return firstName.trim() && lastName.trim();
+    if (sid === 'estate_name') return estateName.trim().length > 0;
     if (sid === 'role') {
       if (!role) return false;
       if (role === 'beneficiary' && !benefactorEmail.trim()) return false;
@@ -241,6 +256,7 @@ const CreateEstatePage = () => {
         }));
 
         const res = await axios.post(`${API_URL}/accounts/create-estate`, {
+          name: estateName.trim() || null,
           beneficiary_enrollments: enrollments,
           special_status: specialStatus.length > 0 ? specialStatus : null,
           b2b_code: specialStatus.includes('enterprise') ? b2bCodeSignup : null,
@@ -542,6 +558,30 @@ const CreateEstatePage = () => {
                     )}
 
                     {/* STEP: Family (marital + dependents) */}
+                    {/* STEP: Estate Name (for additional estates only) */}
+                    {currentStep?.id === 'estate_name' && (
+                      <div className="space-y-4">
+                        <div>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Name Your New Estate</h2>
+                          <p className="text-[#6b7a90] text-sm">Give this estate a unique name to distinguish it from your other estate(s).</p>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-[#7b879e] text-sm font-medium">Estate Name</Label>
+                          <input
+                            className={inputClass}
+                            value={estateName}
+                            onChange={(e) => setEstateName(e.target.value)}
+                            placeholder={`e.g., ${lastName || 'Smith'} Second Family Estate`}
+                            style={{ fontSize: 16 }}
+                            data-testid="estate-name-input"
+                          />
+                        </div>
+                        <div className="rounded-xl p-3" style={{ background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.1)' }}>
+                          <p className="text-sm text-[#7b879e] leading-relaxed">This name is how you'll identify this estate in your portal. You can always change it later in Settings.</p>
+                        </div>
+                      </div>
+                    )}
+
                     {currentStep?.id === 'family' && (
                       <div className="space-y-3">
                         <div>
