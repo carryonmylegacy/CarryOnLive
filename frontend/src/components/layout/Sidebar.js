@@ -542,16 +542,21 @@ const Sidebar = () => {
                   data-testid="switch-benefactor-portal"
                   className={`sb-pill w-full ${collapsed ? 'justify-center' : ''}`}
                   style={{
-                    background: isBenefactorActive ? 'rgba(212,175,55,0.1)' : undefined,
-                    borderColor: isBenefactorActive ? 'rgba(212,175,55,0.3)' : undefined,
-                    color: isBenefactorActive ? '#d4af37' : undefined,
+                    background: isBenefactorActive
+                      ? theme === 'light' ? 'rgba(212,175,55,0.15)' : 'rgba(212,175,55,0.1)'
+                      : undefined,
+                    borderColor: isBenefactorActive ? 'rgba(212,175,55,0.4)' : undefined,
+                    color: isBenefactorActive
+                      ? theme === 'light' ? '#1a2744' : '#d4af37'
+                      : undefined,
+                    fontWeight: isBenefactorActive ? 700 : undefined,
                     padding: collapsed ? undefined : '10px 16px',
                     flexDirection: collapsed ? undefined : 'column',
                     alignItems: collapsed ? undefined : 'center',
                     gap: collapsed ? undefined : 2,
                   }}>
                     {collapsed ? (
-                      <Shield className="w-[18px] h-[18px]" style={{ color: isBenefactorActive ? '#d4af37' : undefined }} />
+                      <Shield className="w-[18px] h-[18px]" style={{ color: isBenefactorActive ? (theme === 'light' ? '#1a2744' : '#d4af37') : undefined }} />
                     ) : (
                       <>
                         <span style={{ fontWeight: 600, fontSize: 14 }}>My Benefactor Portal</span>
@@ -623,16 +628,21 @@ const Sidebar = () => {
                   data-testid="switch-beneficiary-portal"
                   className={`sb-pill w-full ${collapsed ? 'justify-center' : ''}`}
                   style={{
-                    background: isBenActive ? 'rgba(212,175,55,0.1)' : undefined,
-                    borderColor: isBenActive ? 'rgba(212,175,55,0.3)' : undefined,
-                    color: isBenActive ? '#d4af37' : undefined,
+                    background: isBenActive
+                      ? theme === 'light' ? 'rgba(212,175,55,0.15)' : 'rgba(212,175,55,0.1)'
+                      : undefined,
+                    borderColor: isBenActive ? 'rgba(212,175,55,0.4)' : undefined,
+                    color: isBenActive
+                      ? theme === 'light' ? '#1a2744' : '#d4af37'
+                      : undefined,
+                    fontWeight: isBenActive ? 700 : undefined,
                     padding: collapsed ? undefined : '10px 16px',
                     flexDirection: collapsed ? undefined : 'column',
                     alignItems: collapsed ? undefined : 'center',
                     gap: collapsed ? undefined : 2,
                   }}>
                     {collapsed ? (
-                      <Users className="w-[18px] h-[18px]" style={{ color: isBenActive ? '#d4af37' : undefined }} />
+                      <Users className="w-[18px] h-[18px]" style={{ color: isBenActive ? (theme === 'light' ? '#1a2744' : '#d4af37') : undefined }} />
                     ) : (
                       <>
                         <span style={{ fontWeight: 600, fontSize: 14 }}>My Beneficiary Portal</span>

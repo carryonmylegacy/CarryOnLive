@@ -600,13 +600,13 @@ const MobileNav = () => {
                           className={({ isActive }) =>
                             `flex items-center gap-3 px-3 py-3.5 rounded-xl transition-all ${
                               isActive 
-                                ? 'text-[#E0AD2B]' 
+                                ? (theme === 'light' ? 'text-[#1a2744] font-extrabold' : 'text-[#E0AD2B]')
                                 : theme === 'dark' ? 'text-[#D8DEE9]' : 'text-[#334155]'
                             }`
                           }
                           style={({ isActive }) => ({
                             backgroundColor: isActive 
-                              ? (theme === 'dark' ? 'rgba(224,173,43,0.1)' : 'rgba(224,173,43,0.1)')
+                              ? (theme === 'dark' ? 'rgba(224,173,43,0.1)' : 'rgba(224,173,43,0.15)')
                               : 'transparent',
                             fontWeight: 700,
                             fontSize: '15px'
@@ -649,13 +649,13 @@ const MobileNav = () => {
                         className={({ isActive }) =>
                           `flex items-center gap-3 px-3 py-3.5 rounded-xl transition-all ${
                             isActive 
-                              ? 'text-[#E0AD2B]' 
+                              ? (theme === 'light' ? 'text-[#1a2744] font-extrabold' : 'text-[#E0AD2B]')
                               : theme === 'dark' ? 'text-[#D8DEE9]' : 'text-[#334155]'
                           }`
                         }
                         style={({ isActive }) => ({
                           backgroundColor: isActive 
-                            ? (theme === 'dark' ? 'rgba(224,173,43,0.1)' : 'rgba(224,173,43,0.1)')
+                            ? (theme === 'dark' ? 'rgba(224,173,43,0.1)' : 'rgba(224,173,43,0.15)')
                             : 'transparent',
                           fontWeight: 700,
                           fontSize: '15px'
@@ -723,9 +723,10 @@ const MobileNav = () => {
                             data-testid="mobile-switch-benefactor"
                             className="w-full flex flex-col items-center px-4 py-3 rounded-xl transition-all"
                             style={{
-                              border: `1px solid ${isBenefactorActive ? 'rgba(212,175,55,0.3)' : theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                              color: isBenefactorActive ? '#d4af37' : theme === 'dark' ? '#A0AABF' : '#475569',
-                              backgroundColor: isBenefactorActive ? 'rgba(212,175,55,0.08)' : theme === 'dark' ? 'var(--b)' : 'rgba(0,0,0,0.05)',
+                              border: `1px solid ${isBenefactorActive ? 'rgba(212,175,55,0.4)' : theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                              color: isBenefactorActive ? (theme === 'light' ? '#1a2744' : '#d4af37') : theme === 'dark' ? '#A0AABF' : '#475569',
+                              backgroundColor: isBenefactorActive ? (theme === 'light' ? 'rgba(212,175,55,0.15)' : 'rgba(212,175,55,0.08)') : theme === 'dark' ? 'var(--b)' : 'rgba(0,0,0,0.05)',
+                              fontWeight: isBenefactorActive ? 700 : undefined,
                               gap: 2,
                             }}>
                               <span className="font-semibold text-sm">My Benefactor Portal</span>
@@ -781,9 +782,10 @@ const MobileNav = () => {
                           data-testid="mobile-switch-beneficiary"
                           className="w-full flex flex-col items-center px-4 py-3 rounded-xl transition-all"
                           style={{
-                            border: `1px solid ${isOnBeneficiary ? 'rgba(212,175,55,0.3)' : theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                            color: isOnBeneficiary ? '#d4af37' : theme === 'dark' ? '#A0AABF' : '#475569',
-                            backgroundColor: isOnBeneficiary ? 'rgba(212,175,55,0.08)' : theme === 'dark' ? 'var(--b)' : 'rgba(0,0,0,0.05)',
+                            border: `1px solid ${isOnBeneficiary ? 'rgba(212,175,55,0.4)' : theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                            color: isOnBeneficiary ? (theme === 'light' ? '#1a2744' : '#d4af37') : theme === 'dark' ? '#A0AABF' : '#475569',
+                            backgroundColor: isOnBeneficiary ? (theme === 'light' ? 'rgba(212,175,55,0.15)' : 'rgba(212,175,55,0.08)') : theme === 'dark' ? 'var(--b)' : 'rgba(0,0,0,0.05)',
+                            fontWeight: isOnBeneficiary ? 700 : undefined,
                             gap: 2,
                           }}>
                             <span className="font-semibold text-sm">My Beneficiary Portal</span>
