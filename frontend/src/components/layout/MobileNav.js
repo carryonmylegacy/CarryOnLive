@@ -148,7 +148,7 @@ const DebugValues = () => {
 };
 
 const MobileNav = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -780,14 +780,14 @@ const MobileNav = () => {
                                         try {
                                           await axios.put(`${API_URL}/estates/set-primary/${estate.id}`, {}, { headers: { Authorization: `Bearer ${localStorage.getItem('carryon_token')}` } });
                                           clearCache();
-                                          window.location.reload();
+                                          await refreshUser();
                                         } catch {}
                                       }}
                                       title={isPrimary ? 'Primary estate' : 'Set as primary'}
                                       className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-md"
                                       style={{ color: isPrimary ? '#d4af37' : 'var(--t5)' }}
                                     >
-                                      <Star className="w-4 h-4" style={{ fill: isPrimary ? '#d4af37' : 'none' }} />
+                                      <Star className="w-4 h-4" style={{ fill: isPrimary ? '#d4af37' : 'none', transition: 'fill 0.2s' }} />
                                     </button>
                                   </div>
                                   );
