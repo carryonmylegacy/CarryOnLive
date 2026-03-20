@@ -204,11 +204,8 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
   const { theme } = useTheme();
   const isLight = theme === 'light';
 
-  const sortedBens = [...beneficiaries].sort((a, b) => {
-    if (a.is_primary && !b.is_primary) return -1;
-    if (!a.is_primary && b.is_primary) return 1;
-    return getAge(a.date_of_birth || a.dob) - getAge(b.date_of_birth || b.dob);
-  });
+  // Use the beneficiaries in the order the benefactor has arranged them (drag-to-reorder tiles)
+  const sortedBens = beneficiaries;
 
   // Group beneficiaries by orbit ring level
   const ringGroups = {};
