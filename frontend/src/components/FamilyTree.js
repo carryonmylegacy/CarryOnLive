@@ -241,26 +241,39 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
 
         return (
           <div className="relative pb-2">
-            {/* Estate nodes */}
-            <div className="relative flex flex-wrap justify-center gap-3 pt-1 pb-1 px-2" style={{ zIndex: 2 }}>
-              {benEstates.map(est => (
-                <TreeNode
-                  key={est.id}
-                  initials={<Users className="w-3.5 h-3.5" />}
-                  photo={est.estate_photo_url || est.owner_photo_url}
-                  color="#60A5FA"
-                  size={40}
-                  label={est.name?.split("'")[0] || 'Estate'}
-                  sublabel="Beneficiary"
-                  testId={`tree-estate-${est.id}`}
-                  onClick={() => {
-                    localStorage.setItem('beneficiary_estate_id', est.id);
-                    localStorage.removeItem('selected_estate_id');
-                    navigate('/beneficiary');
-                    window.location.reload();
-                  }}
-                />
-              ))}
+            {/* Estate nodes — two aligned columns */}
+            <div className="relative pt-1 pb-1 px-2" style={{ zIndex: 2 }}>
+              {(() => {
+                const rows = [];
+                for (let i = 0; i < benEstates.length; i += 2) {
+                  rows.push(benEstates.slice(i, i + 2));
+                }
+                return rows.map((row, rIdx) => (
+                  <div key={rIdx} className="flex justify-center gap-4 mb-2">
+                    {row.map(est => (
+                      <div key={est.id} style={{ width: 160, display: 'flex', justifyContent: 'center' }}>
+                        <TreeNode
+                          initials={<Users className="w-3.5 h-3.5" />}
+                          photo={est.estate_photo_url || est.owner_photo_url}
+                          color="#60A5FA"
+                          size={40}
+                          label={est.name?.split("'")[0] || 'Estate'}
+                          sublabel="Beneficiary"
+                          testId={`tree-estate-${est.id}`}
+                          onClick={() => {
+                            localStorage.setItem('beneficiary_estate_id', est.id);
+                            localStorage.removeItem('selected_estate_id');
+                            navigate('/beneficiary');
+                            window.location.reload();
+                          }}
+                        />
+                      </div>
+                    ))}
+                    {/* Spacer for odd last row */}
+                    {row.length === 1 && <div style={{ width: 160 }} />}
+                  </div>
+                ));
+              })()}
             </div>
 
             {/* Converging lines SVG */}
@@ -330,26 +343,29 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
           testId="tree-root-node"
         />
 
-        {/* Spine layout — vertical trunk with beneficiaries alternating left/right */}
-        {sortedBens.length > 0 && (
-          <div className="flex flex-col items-center w-full" data-testid="tree-spine">
+        {/* Spine layout — two fixed columns with vertical trunk */}
+        {sortedBens.length > 0 && (() => {
+          const trunkColor = isLight ? 'rgba(212,175,55,0.5)' : 'rgba(212,175,55,0.35)';
+          return (
+          <div className="relative w-full" style={{ maxWidth: 360 }} data-testid="tree-spine">
+            {/* Continuous trunk line */}
+            <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 2, marginLeft: -1, background: trunkColor }} />
+
             {sortedBens.map((ben, idx) => {
               const benColor = getBenLinkedColor(ben);
               const age = getAge(ben.date_of_birth || ben.dob);
               const relation = ben.relation || '';
               const isLeft = idx % 2 === 0;
-              const trunkColor = isLight ? 'rgba(212,175,55,0.5)' : 'rgba(212,175,55,0.35)';
               const branchColor = isLight ? `${benColor}90` : `${benColor}60`;
-              // Compute succession rank (same logic as BeneficiariesPage tiles)
               const isInSuccession = ben.succession_order !== null && ben.succession_order !== undefined;
               const succRank = isInSuccession ? sortedBens.filter((b, i) => i < idx && b.succession_order !== null && b.succession_order !== undefined).length : null;
 
               return (
-                <div key={ben.id} className="flex items-center w-full" style={{ maxWidth: 340 }}>
-                  {/* Left side */}
-                  <div className="flex-1 flex justify-end items-center" style={{ minHeight: 70 }}>
+                <div key={ben.id} className="flex" style={{ minHeight: 100 }}>
+                  {/* Left column — fixed width, circle always centered */}
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                     {isLeft && (
-                      <div className="flex items-center">
+                      <>
                         <TreeNode
                           initials={getInitials(ben.name, ben.first_name, ben.last_name)}
                           photo={ben.photo_url}
@@ -364,21 +380,21 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                           onClick={() => onSelectBeneficiary?.(ben)}
                           onUpload={onUploadPhoto ? () => onUploadPhoto(ben.id) : undefined}
                         />
-                        {/* Branch line from node to trunk */}
-                        <div style={{ width: 20, height: 2, background: branchColor }} />
-                      </div>
+                      </>
+                    )}
+                    {/* Branch line — stretches from column center-right to trunk */}
+                    {isLeft && (
+                      <div style={{ position: 'absolute', right: 0, top: '50%', height: 2, width: 'calc(50% - 25px)', background: branchColor, marginTop: -1 }} />
                     )}
                   </div>
 
-                  {/* Center trunk */}
-                  <div style={{ width: 2, background: trunkColor, minHeight: 70 }} />
+                  {/* Trunk spacer */}
+                  <div style={{ width: 2 }} />
 
-                  {/* Right side */}
-                  <div className="flex-1 flex justify-start items-center" style={{ minHeight: 70 }}>
+                  {/* Right column — fixed width, circle always centered */}
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                     {!isLeft && (
-                      <div className="flex items-center">
-                        {/* Branch line from trunk to node */}
-                        <div style={{ width: 20, height: 2, background: branchColor }} />
+                      <>
                         <TreeNode
                           initials={getInitials(ben.name, ben.first_name, ben.last_name)}
                           photo={ben.photo_url}
@@ -393,14 +409,19 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                           onClick={() => onSelectBeneficiary?.(ben)}
                           onUpload={onUploadPhoto ? () => onUploadPhoto(ben.id) : undefined}
                         />
-                      </div>
+                      </>
+                    )}
+                    {/* Branch line — stretches from trunk to column center-left */}
+                    {!isLeft && (
+                      <div style={{ position: 'absolute', left: 0, top: '50%', height: 2, width: 'calc(50% - 25px)', background: branchColor, marginTop: -1 }} />
                     )}
                   </div>
                 </div>
               );
             })}
           </div>
-        )}
+          );
+        })()}
 
         {sortedBens.length === 0 && (
           <div className="mt-4 text-center">
