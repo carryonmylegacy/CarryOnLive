@@ -627,7 +627,7 @@ const BeneficiariesPage = () => {
                           testId={`ben-avatar-${ben.id}`}
                         />
                     <div className="min-w-0">
-                      <h3 className="text-[var(--t)] font-semibold text-base sm:text-lg truncate">{ben.name}</h3>
+                      <h3 className="font-semibold text-base sm:text-lg truncate" style={{ color: isInSuccession ? succStyle.color : 'var(--t)' }}>{ben.name}</h3>
                       <p className="text-[#d4af37] text-xs sm:text-sm">{ben.relation}</p>
                     </div>
                   </div>
