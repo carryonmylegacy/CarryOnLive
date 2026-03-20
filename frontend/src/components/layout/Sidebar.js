@@ -530,6 +530,10 @@ const Sidebar = () => {
           if (!showSwitch) return null;
           const isBenActive = window.location.pathname.startsWith('/beneficiary');
           const isBenefactorActive = !isBenActive && ownedEstates.length > 0;
+          // Determine which estate is currently active
+          const currentEstateId = localStorage.getItem('selected_estate_id')
+            || user?.primary_estate_id
+            || (ownedEstates.length > 0 ? ownedEstates[0].id : null);
           return (
             <>
               {!collapsed && (
@@ -588,7 +592,7 @@ const Sidebar = () => {
                         if (b.id === pid) return 1;
                         return 0;
                       }).map(estate => {
-                        const isCurrent = localStorage.getItem('selected_estate_id') === estate.id;
+                        const isCurrent = currentEstateId === estate.id;
                         const isPrimary = user?.primary_estate_id === estate.id;
                         return (
                         <div key={estate.id} className="flex items-center gap-1 mb-0.5">

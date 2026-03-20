@@ -712,6 +712,9 @@ const MobileNav = () => {
                   if (!showSwitch || user?.role === 'admin' || user?.role === 'operator') return null;
                   const isOnBeneficiary = window.location.pathname.startsWith('/beneficiary');
                   const isBenefactorActive = !isOnBeneficiary && ownedEstates.length > 0;
+                  const currentEstateId = localStorage.getItem('selected_estate_id')
+                    || user?.primary_estate_id
+                    || (ownedEstates.length > 0 ? ownedEstates[0].id : null);
                   return (
                     <div className="mb-2">
                       <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--t5)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 8, paddingLeft: 4 }}>
@@ -744,7 +747,7 @@ const MobileNav = () => {
                                   if (b.id === pid) return 1;
                                   return 0;
                                 }).map(estate => {
-                                  const isCurrent = localStorage.getItem('selected_estate_id') === estate.id;
+                                  const isCurrent = currentEstateId === estate.id;
                                   const isPrimary = user?.primary_estate_id === estate.id;
                                   return (
                                   <div key={estate.id} className="flex items-center gap-1 mb-0.5">
