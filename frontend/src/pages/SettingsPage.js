@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import axios from 'axios';
-import { cachedGet } from '../utils/apiCache';
+import { cachedGet, invalidateCache } from '../utils/apiCache';
 import {
   Moon,
   Sun,
@@ -840,6 +840,7 @@ const SettingsPage = () => {
                           try {
                             await axios.patch(`${API_URL}/estates/${estateId}`, { name: estateNameDraft.trim() }, getAuthHeaders());
                             setEstateName(estateNameDraft.trim());
+                            invalidateCache('/estates');
                             toast.success('Estate name saved');
                           } catch { toast.error('Failed to rename estate'); }
                           setEstateSaving(false);
