@@ -27,6 +27,7 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **Collapsible Beneficiary Tiles**: Beneficiary cards on BeneficiariesPage now collapsed by default showing only avatar, name, relation, succession badge, and a chevron caret. Click to expand full details (email, phone, DOB, permissions, invitation controls). Uses `expandedTiles` Set state.
 - **BeneficiaryLeaf Cleanup**: Removed redundant `ml-8 pl-4 border-l-2` from BeneficiaryLeaf component since connector column handles tree lines.
 - **Testing**: 100% pass rate (iteration 133) — all 6 features verified.
+- **Family Tree Trunk Termination**: Vertical trunk line in FamilyTree.js spine layout no longer extends below the last beneficiary. Changed from continuous trunk (`bottom: 0`) to per-row segments with `bottom: isLast ? '50%' : 0`, creating a clean 90-degree turn at the last branch.
 
 ### Completed (March 19, 2026 — Session 10: Family Tree Colors + Apple IAP Fix + Font Sweep)
 - **Beneficiary Color Coding**: Green = linked (has own login), Yellow = unlinked (no account yet). Legend now explains all 3 colors including benefactor's gold.
