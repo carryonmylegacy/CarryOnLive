@@ -28,6 +28,7 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **BeneficiaryLeaf Cleanup**: Removed redundant `ml-8 pl-4 border-l-2` from BeneficiaryLeaf component since connector column handles tree lines.
 - **Testing**: 100% pass rate (iteration 133) — all 6 features verified.
 - **Family Tree Trunk Termination**: Vertical trunk line in FamilyTree.js spine layout no longer extends below the last beneficiary. Changed from continuous trunk (`bottom: 0`) to per-row segments with `bottom: isLast ? '50%' : 0`, creating a clean 90-degree turn at the last branch.
+- **Orbit Visualization Non-Overlap Fix**: Enforced minimum ring gap = `ballSize + MIN_GAP + 2` between adjacent orbit rings so balls never overlap when passing each other. Added proportional scaling when rings exceed available space, `overflow: hidden` container clip, and tighter container height to not extend beyond title/button bounds.
 
 ### Completed (March 19, 2026 — Session 10: Family Tree Colors + Apple IAP Fix + Font Sweep)
 - **Beneficiary Color Coding**: Green = linked (has own login), Yellow = unlinked (no account yet). Legend now explains all 3 colors including benefactor's gold.

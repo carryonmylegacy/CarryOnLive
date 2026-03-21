@@ -78,29 +78,50 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
   const maxOrbitLevel = Math.max(...Object.keys(orbitGroups).map(Number), 0);
   const numRings = maxOrbitLevel + 1;
 
+  // ── Adaptive node sizing constants ─────────────────────────
+  const MIN_NODE = 28;
+  const MIN_GAP = 6;
+
   // Derive all dimensions from the measured container width
   const w = Math.min(availWidth || 400, 560);
   const isCompact = w < 380;
-  const ballSize = isCompact ? 36 : w < 500 ? 46 : 50;
-  const centerSize = isCompact ? 50 : w < 500 ? 70 : 80;
-  const edgePad = ballSize / 2 + 4;
+  let ballSize = isCompact ? 36 : w < 500 ? 44 : 48;
+  const centerSize = isCompact ? 50 : w < 500 ? 66 : 76;
+  const edgePad = ballSize / 2 + 6;
   const maxOuterR = w / 2 - edgePad;
-  const baseOrbitR = centerSize / 2 + ballSize * 0.6;
-  // Tighter inner rings: first gap is 60% of even spacing, expanding outward
+  const baseOrbitR = centerSize / 2 + ballSize * 0.65;
+
+  // Enforce minimum ring gap so balls on adjacent rings never overlap
+  const minRingGap = ballSize + MIN_GAP + 2;
   const evenSpacing =
     numRings > 1
       ? (maxOuterR - baseOrbitR) / numRings
       : maxOuterR - baseOrbitR;
-  const orbitRadii = Array.from({ length: numRings }, (_, i) => {
-    // Progressive spacing: inner rings sit closer together
-    const t = numRings > 1 ? i / (numRings - 1) : 0;
-    const factor = 0.6 + t * 0.4; // 60% of even spacing for Ring 1, scaling to 100% for outermost
-    return baseOrbitR + (i + 1) * evenSpacing * factor;
-  });
 
-  // Adaptive height: only as tall as the outermost active ring requires
+  // Build ring radii with enforced minimum gap
+  const rawRadii = [];
+  for (let i = 0; i < numRings; i++) {
+    const t = numRings > 1 ? i / (numRings - 1) : 0;
+    const factor = 0.6 + t * 0.4;
+    const targetR = baseOrbitR + (i + 1) * evenSpacing * factor;
+    const minR = i === 0 ? baseOrbitR + minRingGap : rawRadii[i - 1] + minRingGap;
+    rawRadii.push(Math.max(targetR, minR));
+  }
+
+  // Scale down if outermost ring exceeds available space
+  const rawOuter = rawRadii[numRings - 1] || baseOrbitR;
+  const orbitRadii = [...rawRadii];
+  if (rawOuter > maxOuterR && numRings > 0) {
+    const scale = (maxOuterR - baseOrbitR) / (rawOuter - baseOrbitR);
+    for (let i = 0; i < orbitRadii.length; i++) {
+      orbitRadii[i] = baseOrbitR + (rawRadii[i] - baseOrbitR) * scale;
+    }
+    ballSize = Math.max(Math.floor(ballSize * scale), MIN_NODE);
+  }
+
+  // Container height — tight bounds, no overflow
   const outerR = orbitRadii[maxOrbitLevel] || baseOrbitR;
-  const containerHeight = (outerR + ballSize / 2 + (isCompact ? 4 : 12)) * 2;
+  const containerHeight = (outerR + ballSize / 2 + 4) * 2;
   const containerWidth = w;
   const cx = containerWidth / 2;
   const cy = containerHeight / 2;
@@ -190,8 +211,6 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
 
   // ── Adaptive node sizing ─────────────────────────────────
   // Shrinks nodes when a ring is crowded; floors at 28px so photos stay legible
-  const MIN_NODE = 28;
-  const MIN_GAP = 4;
   const getNodeSizeForRing = (memberCount, orbitRadius) => {
     if (memberCount <= 1) return ballSize;
     const circumference = 2 * Math.PI * orbitRadius;
@@ -231,10 +250,11 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
           position: 'relative',
           width: containerWidth,
           height: containerHeight,
-          margin: '0 auto 12px',
+          margin: '0 auto 8px',
           cursor: 'grab',
           userSelect: 'none',
           touchAction: 'none',
+          overflow: 'hidden',
         }}
         onMouseDown={onDown}
         onTouchStart={onDown}
