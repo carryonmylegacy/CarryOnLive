@@ -23,7 +23,7 @@ const statusColors = {
 export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, operatorMode = false }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
-  const [viewMode, setViewMode] = useState('tree'); // 'list' | 'tree'
+  const [viewMode, setViewMode] = useState('hierarchy'); // 'list' | 'hierarchy' | 'tree'
   const [unlockUserId, setUnlockUserId] = useState(null);
   const [masterKeyInput, setMasterKeyInput] = useState('');
   const [unlocking, setUnlocking] = useState(false);
@@ -150,21 +150,6 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
         <div className={`glass-card p-3 ${indent ? 'ml-6 sm:ml-8 border-l-2 border-[var(--b)]' : ''}`} style={borderStyle} data-testid={`admin-user-${u.id}`}>
           <div className="flex items-start gap-2.5">
             {/* Tree toggle for benefactors with beneficiaries (tree mode only) */}
-            {viewMode === 'tree' && !indent && (u.role === 'benefactor' || u.is_also_benefactor) && (
-              <button
-                onClick={() => hasBens && toggleExpand(u.id)}
-                className="w-5 h-5 flex items-center justify-center flex-shrink-0 mt-1"
-                style={{ opacity: hasBens ? 1 : 0.2, cursor: hasBens ? 'pointer' : 'default' }}
-                data-testid={`tree-toggle-${u.id}`}
-              >
-                {hasBens ? (
-                  isExpanded ? <ChevronDown className="w-4 h-4 text-[var(--gold)]" /> : <ChevronRight className="w-4 h-4 text-[var(--t4)]" />
-                ) : (
-                  <User className="w-3 h-3 text-[var(--t5)]" />
-                )}
-              </button>
-            )}
-
             <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: rc.bg, color: rc.color }}>
               {u.name ? u.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
             </div>
@@ -178,12 +163,6 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                   </span>
                   <span className="text-[11px] text-[var(--t5)] capitalize">{u.subscription.billing_cycle || 'monthly'}</span>
                   {u.subscription.beta_plan && <span className="text-[11px] text-purple-400">(beta)</span>}
-                </div>
-              )}
-              {viewMode === 'tree' && !indent && hasBens && (
-                <div className="flex items-center gap-1 mt-0.5">
-                  <GitBranch className="w-3 h-3 text-[var(--t5)]" />
-                  <span className="text-[11px] text-[var(--t5)]">{u.linked_beneficiaries.length} beneficiar{u.linked_beneficiaries.length === 1 ? 'y' : 'ies'}</span>
                 </div>
               )}
             </div>
@@ -705,7 +684,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
               const html = document.documentElement;
               if (mainEl) { mainEl.style.scrollBehavior = 'auto'; html.style.scrollBehavior = 'auto'; }
               setRoleFilter(r);
-              setViewMode(r === 'all' ? 'tree' : 'list');
+              setViewMode(r === 'all' ? 'hierarchy' : 'list');
               if (mainEl) {
                 const force = () => { mainEl.scrollTop = savedPos; };
                 mainEl.addEventListener('scroll', force);
@@ -729,7 +708,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
               const savedPos = mainEl ? mainEl.scrollTop : 0;
               const html = document.documentElement;
               if (mainEl) { mainEl.style.scrollBehavior = 'auto'; html.style.scrollBehavior = 'auto'; }
-              setViewMode(viewMode === 'list' ? 'tree' : viewMode === 'tree' ? 'graph' : 'list');
+              setViewMode(viewMode === 'list' ? 'hierarchy' : viewMode === 'hierarchy' ? 'tree' : 'list');
               if (mainEl) {
                 const force = () => { mainEl.scrollTop = savedPos; };
                 mainEl.addEventListener('scroll', force);
@@ -747,7 +726,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
             className="flex-1 py-2 rounded-lg text-xs font-bold whitespace-nowrap flex items-center justify-center gap-1.5 bg-[var(--s)] text-[var(--t3)] border border-[var(--b)] active:bg-[var(--gold)] active:text-[#0F1629] transition-colors"
             data-testid="toggle-tree-view"
           >
-            <GitBranch className="w-3.5 h-3.5" /> {viewMode === 'tree' ? 'Tree' : viewMode === 'graph' ? 'Graph' : 'List'}
+            <GitBranch className="w-3.5 h-3.5" /> {viewMode === 'list' ? 'Hierarchy' : viewMode === 'hierarchy' ? 'Tree' : 'List'}
           </button>
         </div>
       </div>
@@ -788,7 +767,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
         </div>
       </div>
 
-      {viewMode === 'tree' ? renderTreeView() : viewMode === 'graph' ? renderGraphView() : (
+      {viewMode === 'hierarchy' ? renderTreeView() : viewMode === 'tree' ? renderGraphView() : (
         <div className="space-y-2">
           {filteredUsers.map(u => <UserRow key={u.id} u={u} />)}
         </div>
