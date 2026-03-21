@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Lock, ExternalLink, Eye, EyeOff, Shield, Database, CreditCard, Mail, Bot, Cloud,
   MessageSquare, MapPin, Bell, Key, Smartphone, Mic, FileText, Puzzle, Server, Globe,
   RefreshCw, Download, DollarSign, AlertTriangle, CheckCircle2, Users, Gauge, ArrowUpCircle,
-  Activity, HardDrive, TrendingUp, Pencil } from 'lucide-react';
+  Activity, HardDrive, TrendingUp, Pencil, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
@@ -433,7 +433,10 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
       {passwordPurpose && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={() => { setPasswordPurpose(null); setPendingAction(null); }}>
           <Card className="glass-card w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
-            <CardContent className="py-6 px-5">
+            <CardContent className="py-6 px-5 relative">
+              <button onClick={() => { setPasswordPurpose(null); setPendingAction(null); }} className="absolute top-3 right-3 text-[var(--t5)] hover:text-[var(--t)] p-1" data-testid="password-modal-close">
+                <X className="w-5 h-5" />
+              </button>
               <div className="text-center mb-4">
                 <Lock className="w-8 h-8 text-[var(--gold)] mx-auto mb-2" />
                 <h3 className="text-sm font-bold text-[var(--t)]">
@@ -444,8 +447,8 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
               <form onSubmit={handlePasswordSubmit} className="space-y-3">
                 <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)}
                   placeholder="Enter password" autoFocus
-                  className="input-field w-full px-4 py-3 rounded-lg text-sm text-[var(--t)] placeholder-[var(--t5)] outline-none"
-                  style={{ background: 'var(--s)', border: '1px solid var(--b)' }} data-testid="password-modal-input" />
+                  className="input-field w-full px-4 py-3 rounded-lg text-[var(--t)] placeholder-[var(--t5)] outline-none"
+                  style={{ background: 'var(--s)', border: '1px solid var(--b)', fontSize: '16px' }} data-testid="password-modal-input" />
                 {passwordError && <p className="text-xs text-red-400 text-center">{passwordError}</p>}
                 <button type="submit" disabled={!passwordInput}
                   className="w-full py-3 rounded-lg text-sm font-bold transition-all disabled:opacity-50"
@@ -460,15 +463,17 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
 
       {/* Edit Modal */}
       {editInteg && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={() => setEditInteg(null)}>
-          <Card className="glass-card w-full max-w-lg mx-4 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <CardHeader className="pb-2">
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={() => setEditInteg(null)}>
+          <Card className="glass-card w-full max-w-lg mx-4 my-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <CardHeader className="pb-2 flex flex-row items-center justify-between sticky top-0 z-10" style={{ background: 'var(--bg)' }}>
               <CardTitle className="text-base font-bold text-[var(--t)] flex items-center gap-2">
                 <Pencil className="w-4 h-4 text-[var(--gold)]" /> Edit {editInteg.name}
               </CardTitle>
+              <button onClick={() => setEditInteg(null)} className="text-[var(--t5)] hover:text-[var(--t)] p-1" data-testid="edit-modal-close">
+                <X className="w-5 h-5" />
+              </button>
             </CardHeader>
             <CardContent className="space-y-3">
-              {/* Detail fields */}
               {editInteg.details.map((d) => (
                 <div key={d.label}>
                   <label className="text-[11px] font-bold text-[var(--t5)] uppercase tracking-wider">{d.label}</label>
@@ -477,21 +482,20 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
                     value={editFields[d.label] || ''}
                     onChange={e => setEditFields(p => ({ ...p, [d.label]: e.target.value }))}
                     placeholder={d.sensitive ? '••••••••' : `Enter ${d.label.toLowerCase()}`}
-                    className="input-field w-full px-3 py-2 rounded-lg text-sm text-[var(--t)] placeholder-[var(--t5)] outline-none mt-1"
-                    style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+                    className="input-field w-full px-3 py-2.5 rounded-lg text-[var(--t)] placeholder-[var(--t5)] outline-none mt-1"
+                    style={{ background: 'var(--s)', border: '1px solid var(--b)', fontSize: '16px' }}
                     data-testid={`edit-field-${d.label.toLowerCase().replace(/\s+/g, '-')}`}
                   />
                 </div>
               ))}
 
-              {/* Cost */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[11px] font-bold text-[var(--t5)] uppercase tracking-wider">Monthly Cost ($)</label>
                   <input type="number" step="0.01" value={editCost}
                     onChange={e => setEditCost(e.target.value)}
-                    className="input-field w-full px-3 py-2 rounded-lg text-sm text-[var(--t)] outline-none mt-1"
-                    style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+                    className="input-field w-full px-3 py-2.5 rounded-lg text-[var(--t)] outline-none mt-1"
+                    style={{ background: 'var(--s)', border: '1px solid var(--b)', fontSize: '16px' }}
                     data-testid="edit-cost" />
                 </div>
                 <div>
@@ -499,13 +503,13 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
                   <input type="text" value={editCostNote}
                     onChange={e => setEditCostNote(e.target.value)}
                     placeholder="e.g. Upgraded to Pro"
-                    className="input-field w-full px-3 py-2 rounded-lg text-sm text-[var(--t)] placeholder-[var(--t5)] outline-none mt-1"
-                    style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+                    className="input-field w-full px-3 py-2.5 rounded-lg text-[var(--t)] placeholder-[var(--t5)] outline-none mt-1"
+                    style={{ background: 'var(--s)', border: '1px solid var(--b)', fontSize: '16px' }}
                     data-testid="edit-cost-note" />
                 </div>
               </div>
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-2 pt-2 sticky bottom-0 pb-1" style={{ background: 'var(--bg)' }}>
                 <button onClick={() => setEditInteg(null)}
                   className="flex-1 py-2.5 rounded-lg text-sm font-bold transition-all"
                   style={{ background: 'var(--s)', color: 'var(--t4)', border: '1px solid var(--b)' }}

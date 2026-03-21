@@ -20,6 +20,12 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (March 21, 2026 — Session 13: CI Fix + iOS Modal Zoom Fix)
+- **CI Backend Lint Fix**: Removed unused `result` variable in `staff_tools.py` PUT endpoint. Ran `ruff format` to fix formatting. Both `ruff check` and `ruff format --check` now pass cleanly.
+- **CI Actions Upgrade**: Upgraded `actions/checkout` from v4 to v5 and `actions/setup-node` from v4 to v5 in `.github/workflows/ci.yml` to resolve Node.js 20 deprecation warnings (forced June 2, 2026).
+- **IntegrationsTab X Import Fix**: Added missing `X` icon import from lucide-react used by password modal and edit modal close buttons.
+- **iOS Safari Zoom Prevention**: All `<input>` elements in IntegrationsTab modals verified with `fontSize: '16px'` inline style to prevent iOS Safari auto-zoom on focus.
+
 ### Completed (March 21, 2026 — Session 12: Tree Connector Lines + Collapsible Beneficiary Tiles)
 - **Admin Hierarchy View Lines Fix**: Horizontal connector lines in renderTreeView() now extend only from the vertical spine to the right (not beyond to the left). Fixed `alignSelf: 'flex-end'` approach.
 - **Admin Tree View Lines Fix**: Replaced percentage-based `left-[10%] right-[10%]` horizontal bar with per-node segments using `left: isFirst ? '50%' : 0, right: isLast ? '50%' : 0`, ensuring the bar spans exactly from center of first child to center of last child.
@@ -100,7 +106,7 @@ User pushes to GitHub → Railway builds backend → Vercel builds frontend → 
 ## Prioritized Backlog
 
 ### P0 - Active
-- None currently active
+- iOS Safari Zoom Trap on Integration Edit Modal — Fix applied (text-base/16px on all inputs, X close button added), verified via lint + screenshot
 
 ### P1 - Upcoming
 - Share Extension Setup (instructions in /app/memory/SHARE_EXTENSION_SETUP.md)

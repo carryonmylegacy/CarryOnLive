@@ -99,7 +99,9 @@ async def unlock_integrations(data: IntegrationsUnlockRequest, current_user: dic
 
 
 @router.put("/admin/integrations/{integration_id}")
-async def update_integration(integration_id: str, data: IntegrationUpdateRequest, current_user: dict = Depends(get_current_user)):
+async def update_integration(
+    integration_id: str, data: IntegrationUpdateRequest, current_user: dict = Depends(get_current_user)
+):
     """Update integration details (password required)."""
     require_founder(current_user)
     _verify_integrations_password(data.password)
@@ -113,7 +115,7 @@ async def update_integration(integration_id: str, data: IntegrationUpdateRequest
     if data.cost_note is not None:
         update["cost_note"] = data.cost_note
 
-    result = await db.integration_overrides.update_one(
+    await db.integration_overrides.update_one(
         {"integration_id": integration_id},
         {"$set": update},
         upsert=True,
