@@ -152,6 +152,7 @@ const BeneficiariesPage = () => {
   const [quickUploadBenId, setQuickUploadBenId] = useState(null);
   const quickFileRef = React.useRef(null);
   const [deleteTarget, setDeleteTarget] = useState(null); // { id, name } for admin delete dialog
+  const [expandedTiles, setExpandedTiles] = useState(new Set());
   const isAdmin = user?.role === 'admin';
 
   const SECTION_LABELS = {
@@ -606,212 +607,233 @@ const BeneficiariesPage = () => {
                 const succStyle = isInSuccession
                   ? (SUCCESSION_COLORS[succRank] || { bg: 'rgba(148,163,184,0.12)', color: '#94a3b8', border: '1px solid rgba(148,163,184,0.2)' })
                   : { bg: 'rgba(100,116,139,0.08)', color: '#64748b', border: '1px solid rgba(100,116,139,0.15)' };
+                const isTileExpanded = expandedTiles.has(ben.id);
                 return (
                 <SortableCard key={ben.id} id={ben.id}>
                 <Card className="glass-card group" data-testid={`beneficiary-${ben.id}`}>
                   <CardContent className="p-4 sm:p-5">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3 sm:mb-4">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="drag-handle cursor-grab active:cursor-grabbing flex items-center text-[var(--t5)] hover:text-[var(--t3)] transition-colors touch-none" data-testid={`drag-handle-${ben.id}`}>
-                          <GripVertical className="w-4 h-4" />
-                        </div>
-                        <AvatarCircle
-                          photo={ben.photo_url}
-                          initials={ben.initials || (ben.first_name && ben.last_name 
-                            ? (ben.first_name[0] + ben.last_name[0]).toUpperCase()
-                            : ben.name?.split(' ').map(n => n[0]).join('').toUpperCase())}
-                          color={ben.avatar_color}
-                          size={48}
-                          isPrimary={index === 0}
-                          onUpload={() => {
-                            setQuickUploadBenId(ben.id);
-                            setTimeout(() => quickFileRef.current?.click(), 50);
-                          }}
-                          testId={`ben-avatar-${ben.id}`}
-                        />
-                    <div className="min-w-0">
-                      <h3 className="font-semibold text-base sm:text-lg truncate" style={{ color: isInSuccession ? succStyle.color : 'var(--t)' }}>{ben.name}</h3>
-                      <p className="text-[#d4af37] text-xs sm:text-sm">{ben.relation}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-1 flex-wrap">
-                    {ben.is_stub && (
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--ywbg)] text-[var(--yw)] mr-1">NEEDS INFO</span>
-                    )}
-                    {/* Succession Order Badge */}
-                    <span
-                      className="flex items-center gap-1 text-[11px] font-bold whitespace-nowrap px-2 py-1 rounded-md"
-                      style={{ background: succStyle.bg, color: succStyle.color, border: succStyle.border }}
-                      data-testid={`succession-badge-${ben.id}`}
-                    >
-                      <Shield className="w-3 h-3 flex-shrink-0" /> {isInSuccession ? getSuccessionLabel(succRank).toUpperCase() : 'NOT IN SUCCESSION'}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-[#3b82f6] transition-opacity h-7 w-7 p-0"
-                      onClick={() => openEditModal(ben)}
-                      data-testid={`edit-beneficiary-${ben.id}`}
-                      aria-label={`Edit ${ben.first_name} ${ben.last_name}`}
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-[#ef4444] transition-opacity h-7 w-7 p-0"
-                      onClick={() => isAdmin ? setDeleteTarget({ id: ben.id, name: `${ben.first_name} ${ben.last_name}`.trim() }) : handleDelete(ben.id)}
-                      data-testid={`delete-beneficiary-${ben.id}`}
-                      aria-label={`Delete ${ben.first_name} ${ben.last_name}`}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="space-y-2 text-sm">
-                  {ben.is_stub && (
-                    <button
-                      onClick={() => openEditModal(ben)}
-                      className="w-full text-left p-2.5 rounded-lg text-xs font-bold text-[var(--yw)] mb-1 transition-transform duration-150 active:scale-[0.98]"
-                      style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}
-                      data-testid={`complete-stub-${ben.id}`}
-                    >
-                      Tap to complete enrollment — add name, email, and details
-                    </button>
-                  )}
-                  {ben.email && (
-                  <div className="flex items-center gap-2 text-[#94a3b8]">
-                    <Mail className="w-4 h-4" />
-                    <span className="truncate">{ben.email}</span>
-                  </div>
-                  )}
-                  {ben.phone && (
-                    <div className="flex items-center gap-2 text-[#94a3b8]">
-                      <Phone className="w-4 h-4" />
-                      <span>{ben.phone}</span>
-                    </div>
-                  )}
-                  {ben.date_of_birth && (
-                    <div className="flex items-center gap-2 text-[#94a3b8]">
-                      <Calendar className="w-4 h-4" />
-                      <span>{ben.date_of_birth.split('T')[0].replace(/(\d{4})-(\d{2})-(\d{2})/, (_, y, m, d) => `${parseInt(m)}/${parseInt(d)}/${y}`)}</span>
-                    </div>
-                  )}
-                  {(ben.address_city || ben.address_state) && (
-                    <div className="flex items-center gap-2 text-[#94a3b8]">
-                      <MapPin className="w-4 h-4" />
-                      <span>{[ben.address_city, ben.address_state].filter(Boolean).join(', ')}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Expandable Details */}
-                {(ben.address_street || ben.notes || ben.ssn_last_four) && (
-                  <div className="mt-3">
-                    <button
-                      onClick={() => setExpandedCard(expandedCard === ben.id ? null : ben.id)}
-                      className="text-xs text-[#d4af37] flex items-center gap-1 hover:underline"
-                    >
-                      {expandedCard === ben.id ? (
-                        <>Less details <ChevronUp className="w-3 h-3" /></>
-                      ) : (
-                        <>More details <ChevronDown className="w-3 h-3" /></>
-                      )}
-                    </button>
-                    
-                    {expandedCard === ben.id && (
-                      <div className="mt-2 pt-2 border-t border-[var(--b)] space-y-1 text-xs text-[#94a3b8]">
-                        {ben.address_street && (
-                          <p><span className="text-[#64748b]">Address:</span> {ben.address_street}, {ben.address_city}, {ben.address_state} {ben.address_zip}</p>
-                        )}
-                        {ben.ssn_last_four && (
-                          <p><span className="text-[#64748b]">SSN:</span> ***-**-{ben.ssn_last_four}</p>
-                        )}
-                        {ben.notes && (
-                          <p><span className="text-[#64748b]">Notes:</span> {ben.notes}</p>
-                        )}
+                    {/* Collapsed header — always visible */}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="drag-handle cursor-grab active:cursor-grabbing flex items-center text-[var(--t5)] hover:text-[var(--t3)] transition-colors touch-none" data-testid={`drag-handle-${ben.id}`}>
+                        <GripVertical className="w-4 h-4" />
                       </div>
-                    )}
-                  </div>
-                )}
-                
-                <div className="mt-4 pt-3 border-t border-[var(--b)]">
-                  {/* Succession Participation Toggle */}
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <p className="text-[11px] text-[var(--t5)] uppercase tracking-wider font-bold">Succession Chain</p>
-                      <p className="text-[11px] text-[var(--t5)] mt-0.5">{isInSuccession ? `Rank #${succRank + 1} in hierarchy` : 'Not participating'}</p>
+                      <AvatarCircle
+                        photo={ben.photo_url}
+                        initials={ben.initials || (ben.first_name && ben.last_name 
+                          ? (ben.first_name[0] + ben.last_name[0]).toUpperCase()
+                          : ben.name?.split(' ').map(n => n[0]).join('').toUpperCase())}
+                        color={ben.avatar_color}
+                        size={44}
+                        isPrimary={index === 0}
+                        onUpload={() => {
+                          setQuickUploadBenId(ben.id);
+                          setTimeout(() => quickFileRef.current?.click(), 50);
+                        }}
+                        testId={`ben-avatar-${ben.id}`}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm sm:text-base truncate" style={{ color: isInSuccession ? succStyle.color : 'var(--t)' }}>{ben.name}</h3>
+                        <p className="text-[#d4af37] text-xs">{ben.relation}</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <span
+                          className="flex items-center gap-1 text-[11px] font-bold whitespace-nowrap px-2 py-1 rounded-md"
+                          style={{ background: succStyle.bg, color: succStyle.color, border: succStyle.border }}
+                          data-testid={`succession-badge-${ben.id}`}
+                        >
+                          <Shield className="w-3 h-3 flex-shrink-0" /> {isInSuccession ? getSuccessionLabel(succRank).toUpperCase() : 'NOT IN SUCCESSION'}
+                        </span>
+                        <button
+                          onClick={() => setExpandedTiles(prev => {
+                            const next = new Set(prev);
+                            next.has(ben.id) ? next.delete(ben.id) : next.add(ben.id);
+                            return next;
+                          })}
+                          className="h-7 w-7 flex items-center justify-center rounded-md text-[var(--t4)] hover:text-[var(--t)] hover:bg-[var(--s)] transition-colors"
+                          data-testid={`expand-tile-${ben.id}`}
+                        >
+                          {isTileExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </button>
+                      </div>
                     </div>
-                    <Switch
-                      checked={isInSuccession}
-                      onCheckedChange={() => handleToggleSuccession(ben.id, ben.name)}
-                      data-testid={`succession-toggle-${ben.id}`}
-                    />
-                  </div>
 
-                  {/* Section Access Permissions — what this beneficiary sees after transition */}
-                  <div className="mb-3">
-                    <p className="text-[11px] text-[var(--t5)] uppercase tracking-wider font-bold mb-2">Post-Transition Access</p>
-                    <div className="space-y-1.5">
-                      {Object.entries(SECTION_LABELS).map(([key, label]) => {
-                        const perms = sectionPerms[ben.id] || {};
-                        const enabled = perms[key] !== undefined ? perms[key] : true;
-                        return (
-                          <div key={key} className="flex items-center justify-between py-1">
-                            <span className="text-xs text-[var(--t3)]">{label}</span>
+                    {/* Expanded content */}
+                    {isTileExpanded && (
+                      <div className="mt-3 pt-3 border-t border-[var(--b)] animate-fade-in">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-1 flex-wrap">
+                            {ben.is_stub && (
+                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--ywbg)] text-[var(--yw)] mr-1">NEEDS INFO</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-0.5 flex-shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-[#3b82f6] transition-opacity h-7 w-7 p-0"
+                              onClick={() => openEditModal(ben)}
+                              data-testid={`edit-beneficiary-${ben.id}`}
+                              aria-label={`Edit ${ben.first_name} ${ben.last_name}`}
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-[#ef4444] transition-opacity h-7 w-7 p-0"
+                              onClick={() => isAdmin ? setDeleteTarget({ id: ben.id, name: `${ben.first_name} ${ben.last_name}`.trim() }) : handleDelete(ben.id)}
+                              data-testid={`delete-beneficiary-${ben.id}`}
+                              aria-label={`Delete ${ben.first_name} ${ben.last_name}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                
+                        <div className="space-y-2 text-sm">
+                          {ben.is_stub && (
+                            <button
+                              onClick={() => openEditModal(ben)}
+                              className="w-full text-left p-2.5 rounded-lg text-xs font-bold text-[var(--yw)] mb-1 transition-transform duration-150 active:scale-[0.98]"
+                              style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}
+                              data-testid={`complete-stub-${ben.id}`}
+                            >
+                              Tap to complete enrollment — add name, email, and details
+                            </button>
+                          )}
+                          {ben.email && (
+                          <div className="flex items-center gap-2 text-[#94a3b8]">
+                            <Mail className="w-4 h-4" />
+                            <span className="truncate">{ben.email}</span>
+                          </div>
+                          )}
+                          {ben.phone && (
+                            <div className="flex items-center gap-2 text-[#94a3b8]">
+                              <Phone className="w-4 h-4" />
+                              <span>{ben.phone}</span>
+                            </div>
+                          )}
+                          {ben.date_of_birth && (
+                            <div className="flex items-center gap-2 text-[#94a3b8]">
+                              <Calendar className="w-4 h-4" />
+                              <span>{ben.date_of_birth.split('T')[0].replace(/(\d{4})-(\d{2})-(\d{2})/, (_, y, m, d) => `${parseInt(m)}/${parseInt(d)}/${y}`)}</span>
+                            </div>
+                          )}
+                          {(ben.address_city || ben.address_state) && (
+                            <div className="flex items-center gap-2 text-[#94a3b8]">
+                              <MapPin className="w-4 h-4" />
+                              <span>{[ben.address_city, ben.address_state].filter(Boolean).join(', ')}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Expandable Details */}
+                        {(ben.address_street || ben.notes || ben.ssn_last_four) && (
+                          <div className="mt-3">
+                            <button
+                              onClick={() => setExpandedCard(expandedCard === ben.id ? null : ben.id)}
+                              className="text-xs text-[#d4af37] flex items-center gap-1 hover:underline"
+                            >
+                              {expandedCard === ben.id ? (
+                                <>Less details <ChevronUp className="w-3 h-3" /></>
+                              ) : (
+                                <>More details <ChevronDown className="w-3 h-3" /></>
+                              )}
+                            </button>
+                            
+                            {expandedCard === ben.id && (
+                              <div className="mt-2 pt-2 border-t border-[var(--b)] space-y-1 text-xs text-[#94a3b8]">
+                                {ben.address_street && (
+                                  <p><span className="text-[#64748b]">Address:</span> {ben.address_street}, {ben.address_city}, {ben.address_state} {ben.address_zip}</p>
+                                )}
+                                {ben.ssn_last_four && (
+                                  <p><span className="text-[#64748b]">SSN:</span> ***-**-{ben.ssn_last_four}</p>
+                                )}
+                                {ben.notes && (
+                                  <p><span className="text-[#64748b]">Notes:</span> {ben.notes}</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
+                        <div className="mt-4 pt-3 border-t border-[var(--b)]">
+                          {/* Succession Participation Toggle */}
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <p className="text-[11px] text-[var(--t5)] uppercase tracking-wider font-bold">Succession Chain</p>
+                              <p className="text-[11px] text-[var(--t5)] mt-0.5">{isInSuccession ? `Rank #${succRank + 1} in hierarchy` : 'Not participating'}</p>
+                            </div>
                             <Switch
-                              checked={enabled}
-                              onCheckedChange={() => handleToggleSection(ben.id, key, enabled)}
-                              disabled={savingPerms === ben.id + key}
-                              data-testid={`perm-${key}-${ben.id}`}
+                              checked={isInSuccession}
+                              onCheckedChange={() => handleToggleSuccession(ben.id, ben.name)}
+                              data-testid={`succession-toggle-${ben.id}`}
                             />
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
 
-                  <div className="flex items-center justify-between mb-2">
-                    {getInvitationStatusBadge(ben)}
-                  </div>
-                  
-                  {ben.invitation_status !== 'accepted' && !ben.user_id && (
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="border-[var(--b)] text-[var(--t3)] text-xs w-full"
-                        onClick={() => handleCopyLink(ben)}
-                        data-testid={`copy-invite-link-${ben.id}`}
-                      >
-                        {copiedLink === ben.id ? (
-                          <><Check className="w-3 h-3 mr-1.5 text-[#10b981]" /> Copied</>
-                        ) : (
-                          <><Copy className="w-3 h-3 mr-1.5" /> Copy Link</>
-                        )}
-                      </Button>
-                      <Button
-                        size="sm"
-                        className="gold-button text-xs w-full"
-                        onClick={() => handleSendInvitation(ben.id)}
-                        disabled={sendingInvite === ben.id}
-                        data-testid={`send-invite-${ben.id}`}
-                      >
-                        {sendingInvite === ben.id ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                          <><Send className="w-3 h-3 mr-1.5 flex-shrink-0" /> <span className="truncate">{ben.invitation_status === 'sent' ? 'Resend' : 'Invite'}</span></>
-                        )}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-            </SortableCard>
-          );
+                          {/* Section Access Permissions — what this beneficiary sees after transition */}
+                          <div className="mb-3">
+                            <p className="text-[11px] text-[var(--t5)] uppercase tracking-wider font-bold mb-2">Post-Transition Access</p>
+                            <div className="space-y-1.5">
+                              {Object.entries(SECTION_LABELS).map(([key, label]) => {
+                                const perms = sectionPerms[ben.id] || {};
+                                const enabled = perms[key] !== undefined ? perms[key] : true;
+                                return (
+                                  <div key={key} className="flex items-center justify-between py-1">
+                                    <span className="text-xs text-[var(--t3)]">{label}</span>
+                                    <Switch
+                                      checked={enabled}
+                                      onCheckedChange={() => handleToggleSection(ben.id, key, enabled)}
+                                      disabled={savingPerms === ben.id + key}
+                                      data-testid={`perm-${key}-${ben.id}`}
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between mb-2">
+                            {getInvitationStatusBadge(ben)}
+                          </div>
+                          
+                          {ben.invitation_status !== 'accepted' && !ben.user_id && (
+                            <div className="grid grid-cols-2 gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-[var(--b)] text-[var(--t3)] text-xs w-full"
+                                onClick={() => handleCopyLink(ben)}
+                                data-testid={`copy-invite-link-${ben.id}`}
+                              >
+                                {copiedLink === ben.id ? (
+                                  <><Check className="w-3 h-3 mr-1.5 text-[#10b981]" /> Copied</>
+                                ) : (
+                                  <><Copy className="w-3 h-3 mr-1.5" /> Copy Link</>
+                                )}
+                              </Button>
+                              <Button
+                                size="sm"
+                                className="gold-button text-xs w-full"
+                                onClick={() => handleSendInvitation(ben.id)}
+                                disabled={sendingInvite === ben.id}
+                                data-testid={`send-invite-${ben.id}`}
+                              >
+                                {sendingInvite === ben.id ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <><Send className="w-3 h-3 mr-1.5 flex-shrink-0" /> <span className="truncate">{ben.invitation_status === 'sent' ? 'Resend' : 'Invite'}</span></>
+                                )}
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+                </SortableCard>
+              );
           })}
         </div>
         </SortableContext>

@@ -179,35 +179,27 @@ const EstateHealthCard = ({ estate }) => {
             />
 
             {sortedBens.length > 0 && (
-              <div className="flex flex-col items-center">
+              <div className="flex flex-col items-center w-full">
                 <div style={{ width: 2, height: 16, background: cfg.color, opacity: 0.4 }} />
-                {sortedBens.length > 1 ? (
-                  <div className="relative w-full flex justify-center" style={{ minWidth: sortedBens.length * 72 }}>
-                    <div className="absolute top-0 left-[10%] right-[10%]" style={{ height: 2, background: cfg.color, opacity: 0.2 }} />
-                    <div className="flex gap-2 justify-center pt-1 flex-wrap">
-                      {sortedBens.map(ben => {
-                        const age = getAge(ben.date_of_birth);
-                        return (
-                          <div key={ben.id} className="flex flex-col items-center">
-                            <div style={{ width: 2, height: 10, background: getBenColor(ben), opacity: 0.4 }} />
-                            <TreeNode
-                              initials={getInitials(ben.name, ben.first_name, ben.last_name)}
-                              color={getBenColor(ben)}
-                              size={36}
-                              label={ben.first_name || ben.name?.split(' ')[0] || ''}
-                              sublabel={`${ben.relation || ''}${age ? ` · ${age}` : ''}`}
-                              badge={getBenBadge(ben)}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : (
-                  sortedBens.map(ben => {
+                <div className="flex justify-center gap-0 flex-wrap">
+                  {sortedBens.map((ben, idx) => {
                     const age = getAge(ben.date_of_birth);
+                    const isFirst = idx === 0;
+                    const isLast = idx === sortedBens.length - 1;
+                    const isSingle = sortedBens.length === 1;
                     return (
-                      <div key={ben.id} className="flex flex-col items-center">
+                      <div key={ben.id} className="flex flex-col items-center relative" style={{ padding: '0 6px' }}>
+                        {!isSingle && (
+                          <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: isFirst ? '50%' : 0,
+                            right: isLast ? '50%' : 0,
+                            height: 2,
+                            background: cfg.color,
+                            opacity: 0.2,
+                          }} />
+                        )}
                         <div style={{ width: 2, height: 10, background: getBenColor(ben), opacity: 0.4 }} />
                         <TreeNode
                           initials={getInitials(ben.name, ben.first_name, ben.last_name)}
@@ -219,8 +211,8 @@ const EstateHealthCard = ({ estate }) => {
                         />
                       </div>
                     );
-                  })
-                )}
+                  })}
+                </div>
               </div>
             )}
 
