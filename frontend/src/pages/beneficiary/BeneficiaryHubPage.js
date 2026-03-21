@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
-import { Camera, ChevronRight, Pencil, X } from 'lucide-react';
+import { Camera, Pencil, X } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
@@ -258,67 +258,6 @@ const BeneficiaryHubPage = () => {
           );
         })}
       </div>
-
-      {/* Family Members List */}
-      {(familyConnections.length > 0 || estates.length > 0) && (
-        <div className="max-w-4xl mx-auto mb-8" data-testid="family-members-list">
-          <div className="space-y-2">
-            {/* Beneficiary (You) at top */}
-            <div className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.15)' }}>
-              <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0 overflow-hidden"
-                style={{ background: myPhoto ? 'transparent' : 'linear-gradient(135deg, #7C3AED, #A855F7)', border: '2px solid rgba(212,175,55,0.4)' }}>
-                {myPhoto ? (
-                  <img src={resolvePhotoUrl(myPhoto)} alt="You" className="w-full h-full object-cover" />
-                ) : (user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U')}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-[var(--t)] truncate">{user?.name || 'You'}</p>
-              </div>
-            </div>
-
-            {/* Family members */}
-            {(familyConnections.length > 0 ? familyConnections : estates).map((member, i) => {
-              const name = member.benefactor_name || member.name || `${member.first_name || ''} ${member.last_name || ''}`.trim();
-              const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??';
-              const relation = member.relation || 'Benefactor';
-              const level = typeof member.relation === 'string' ? getOrbitLevel(member.relation) : 1;
-              const [gradient] = orbitColors[level] || orbitColors[0];
-              const isTransitioned = member.status === 'transitioned';
-              const memberPhoto = member.photo_url || member.owner_photo_url || member.estate_photo_url || '';
-
-              return (
-                <div
-                  key={member.id || `member-${i}`}
-                  className="flex items-center gap-3 rounded-xl px-4 py-3 cursor-pointer transition-all hover:brightness-110"
-                  style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
-                  onClick={() => {
-                    const estateId = member.estate_id || member.id;
-                    localStorage.setItem('beneficiary_estate_id', estateId);
-                    navigate(isTransitioned ? '/beneficiary/dashboard' : '/beneficiary/pre');
-                  }}
-                  data-testid={`family-member-${i}`}
-                >
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 overflow-hidden"
-                    style={{
-                      background: memberPhoto ? 'transparent' : gradient,
-                      color: level === 0 ? '#1a1a2e' : 'white',
-                      border: isTransitioned ? '2px solid rgba(212,175,55,0.5)' : '2px solid rgba(255,255,255,0.15)',
-                    }}>
-                    {memberPhoto ? (
-                      <img src={resolvePhotoUrl(memberPhoto)} alt={name} className="w-full h-full object-cover" />
-                    ) : initials}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[var(--t)] truncate">{name}</p>
-                    <p className="text-xs text-[var(--t4)] capitalize">{relation}</p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-[var(--t5)] flex-shrink-0" />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Info Box */}
       <div className="max-w-4xl mx-auto space-y-4">
