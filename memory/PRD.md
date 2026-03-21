@@ -29,6 +29,7 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **Testing**: 100% pass rate (iteration 133) — all 6 features verified.
 - **Family Tree Trunk Termination**: Vertical trunk line in FamilyTree.js spine layout no longer extends below the last beneficiary. Changed from continuous trunk (`bottom: 0`) to per-row segments with `bottom: isLast ? '50%' : 0`, creating a clean 90-degree turn at the last branch.
 - **Removed Redundant Benefactor Tiles**: Removed the "Family Members List" section from BeneficiaryHubPage since the orbit balls and estate tiles already link to the same places. Page now flows: Orbit → Change Photos → Estate Tiles → Info/CTA.
+- **Integrations Tab Unlocked + Editable**: Removed password lock from viewing integrations. Added GET `/admin/integrations` endpoint (no password) that returns all data with sensitive values stripped. Added PUT `/admin/integrations/{id}` endpoint (password required) to save overrides to MongoDB `integration_overrides` collection. Frontend now auto-loads on mount, prompts for password only when revealing credentials or editing. Each card has an Edit button that opens a modal with editable fields (details, cost, cost note).
 
 ### Completed (March 19, 2026 — Session 10: Family Tree Colors + Apple IAP Fix + Font Sweep)
 - **Beneficiary Color Coding**: Green = linked (has own login), Yellow = unlinked (no account yet). Legend now explains all 3 colors including benefactor's gold.

@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Lock, ExternalLink, Eye, EyeOff, Shield, Database, CreditCard, Mail, Bot, Cloud,
   MessageSquare, MapPin, Bell, Key, Smartphone, Mic, FileText, Puzzle, Server, Globe,
   RefreshCw, Download, DollarSign, AlertTriangle, CheckCircle2, Users, Gauge, ArrowUpCircle,
-  Activity, HardDrive, TrendingUp } from 'lucide-react';
+  Activity, HardDrive, TrendingUp, Pencil } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
@@ -106,7 +106,7 @@ const WarningsBar = ({ warnings, dbStats }) => {
 };
 
 // ─── Integration Card ────────────────────────────────────────
-const IntegrationCard = ({ integration, revealed, onToggle }) => {
+const IntegrationCard = ({ integration, revealed, onToggle, onEdit }) => {
   const rank = integration.limiting_rank;
   const rankStyle = RANK_STYLES[rank];
   const isLimiting = rank > 0;
@@ -125,12 +125,7 @@ const IntegrationCard = ({ integration, revealed, onToggle }) => {
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 relative" style={{ background: `${statusColor}15` }}>
               <Icon className="w-4 h-4" style={{ color: statusColor }} />
-              {!isLimiting && integration.max_users < 999999 && (
-                <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-500 border border-[var(--bg)]" title="Fully capable" />
-              )}
-              {!isLimiting && integration.max_users >= 999999 && (
-                <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-500 border border-[var(--bg)]" title="No limit" />
-              )}
+              <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-500 border border-[var(--bg)]" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -173,6 +168,10 @@ const IntegrationCard = ({ integration, revealed, onToggle }) => {
                 <ArrowUpCircle className="w-3 h-3" /> Upgrade
               </a>
             )}
+            <button onClick={() => onEdit(integration)} className="flex items-center gap-1 text-[11px] font-bold text-[var(--t4)] hover:text-blue-400 transition-colors mt-0.5"
+              data-testid={`edit-${integration.id}`}>
+              <Pencil className="w-3 h-3" /> Edit
+            </button>
           </div>
         </div>
 
@@ -213,7 +212,7 @@ const IntegrationCard = ({ integration, revealed, onToggle }) => {
                   {d.verified && <CheckCircle2 className="w-2.5 h-2.5 text-green-500/50" />}
                 </span>
                 <span className={`font-mono text-right break-all ${highlight ? 'text-amber-400 italic' : 'text-[var(--t)]'}`}>
-                  {isEmpty ? 'Needs input' : d.sensitive ? (revealed ? d.value || 'Needs input' : mask(d.value)) : d.value}
+                  {isEmpty ? 'Needs input' : d.sensitive ? (revealed ? d.value || 'Needs input' : '••••••••') : d.value}
                 </span>
               </div>
             );
@@ -312,80 +311,117 @@ const SuggestionsPanel = ({ capacity }) => {
 
 // ─── Main Tab ────────────────────────────────────────────────
 export const IntegrationsTab = ({ getAuthHeaders }) => {
-  const [unlocked, setUnlocked] = useState(false);
-  const [password, setPassword] = useState('');
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [revealed, setRevealed] = useState({});
-  const [error, setError] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [pdfLoading, setPdfLoading] = useState(false);
-  const [storedPassword, setStoredPassword] = useState('');
+  const [sessionPassword, setSessionPassword] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordPurpose, setPasswordPurpose] = useState(null); // 'reveal' | 'edit' | 'soc2'
+  const [pendingAction, setPendingAction] = useState(null);
+  const [editInteg, setEditInteg] = useState(null);
+  const [editFields, setEditFields] = useState({});
+  const [editCost, setEditCost] = useState('');
+  const [editCostNote, setEditCostNote] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const handleUnlock = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    try {
-      const res = await axios.post(`${API_URL}/admin/integrations/unlock`, { password }, getAuthHeaders());
-      setData(res.data);
-      setStoredPassword(password);
-      setUnlocked(true);
-    } catch {
-      setError('Incorrect password');
-      toast.error('Access denied');
-    } finally { setLoading(false); }
+  // Auto-load integrations on mount (no password needed)
+  React.useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/admin/integrations`, getAuthHeaders());
+        setData(res.data);
+      } catch { toast.error('Failed to load integrations'); }
+      finally { setLoading(false); }
+    };
+    load();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Prompt for password with a purpose
+  const requirePassword = (purpose, action) => {
+    if (sessionPassword) { action(sessionPassword); return; }
+    setPasswordPurpose(purpose);
+    setPendingAction(() => action);
+    setPasswordInput('');
+    setPasswordError('');
   };
 
-  const handleSOC2Download = async () => {
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      // Validate password by unlocking (also gets full data with sensitive values)
+      const res = await axios.post(`${API_URL}/admin/integrations/unlock`, { password: passwordInput }, getAuthHeaders());
+      setSessionPassword(passwordInput);
+      setData(res.data); // update with full sensitive data
+      setPasswordPurpose(null);
+      if (pendingAction) pendingAction(passwordInput);
+      setPendingAction(null);
+    } catch {
+      setPasswordError('Incorrect password');
+    }
+  };
+
+  const handleToggleReveal = (id) => {
+    if (revealed[id]) { setRevealed(p => ({ ...p, [id]: false })); return; }
+    requirePassword('reveal', () => setRevealed(p => ({ ...p, [id]: true })));
+  };
+
+  const handleEdit = (integ) => {
+    requirePassword('edit', () => {
+      setEditInteg(integ);
+      const fields = {};
+      integ.details.forEach(d => { fields[d.label] = d.value || ''; });
+      setEditFields(fields);
+      setEditCost(integ.cost_monthly?.toString() || '0');
+      setEditCostNote(integ.cost_note || '');
+    });
+  };
+
+  const handleSave = async () => {
+    if (!editInteg || !sessionPassword) return;
+    setSaving(true);
+    try {
+      await axios.put(`${API_URL}/admin/integrations/${editInteg.id}`, {
+        password: sessionPassword,
+        details: editFields,
+        cost_monthly: parseFloat(editCost) || 0,
+        cost_note: editCostNote || null,
+      }, getAuthHeaders());
+      // Refresh data
+      const res = await axios.post(`${API_URL}/admin/integrations/unlock`, { password: sessionPassword }, getAuthHeaders());
+      setData(res.data);
+      setEditInteg(null);
+      toast.success(`${editInteg.name} updated`);
+    } catch { toast.error('Failed to save — check password'); }
+    finally { setSaving(false); }
+  };
+
+  const handleSOC2Download = async (pw) => {
     setPdfLoading(true);
     try {
-      const res = await axios.post(`${API_URL}/admin/integrations/soc2-report`, { password: storedPassword }, {
-        ...getAuthHeaders(),
-        responseType: 'blob',
+      const res = await axios.post(`${API_URL}/admin/integrations/soc2-report`, { password: pw || sessionPassword }, {
+        ...getAuthHeaders(), responseType: 'blob',
       });
       const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       const a = document.createElement('a');
-      a.href = url;
-      a.download = `CarryOn_SOC2_Report_${new Date().toISOString().slice(0, 10)}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
+      a.href = url; a.download = `CarryOn_SOC2_Report_${new Date().toISOString().slice(0, 10)}.pdf`;
+      a.click(); URL.revokeObjectURL(url);
       toast.success('SOC 2 report downloaded');
-    } catch {
-      toast.error('Failed to generate report');
-    } finally { setPdfLoading(false); }
+    } catch { toast.error('Failed to generate report'); }
+    finally { setPdfLoading(false); }
   };
 
-  const toggleReveal = (id) => setRevealed(p => ({ ...p, [id]: !p[id] }));
-
-  if (!unlocked) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Card className="glass-card w-full max-w-sm">
-          <CardHeader className="text-center pb-2">
-            <div className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.1)' }}>
-              <Lock className="w-7 h-7 text-[var(--gold)]" />
-            </div>
-            <CardTitle className="text-lg font-bold text-[var(--t)]">Integrations Vault</CardTitle>
-            <p className="text-xs text-[var(--t5)]">Enter your security password to access integration credentials</p>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleUnlock} className="space-y-3">
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter password"
-                className="w-full px-4 py-3 rounded-lg text-sm text-[var(--t)] placeholder-[var(--t5)] outline-none" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
-                autoFocus data-testid="integrations-password-input" />
-              {error && <p className="text-xs text-red-400 text-center">{error}</p>}
-              <button type="submit" disabled={loading || !password}
-                className="w-full py-3 rounded-lg text-sm font-bold transition-all disabled:opacity-50"
-                style={{ background: 'var(--gold)', color: '#0F1629' }} data-testid="integrations-unlock-btn">
-                {loading ? 'Verifying...' : 'Unlock'}
-              </button>
-            </form>
-          </CardContent>
-        </Card>
+        <div className="text-sm text-[var(--t5)]">Loading integrations...</div>
       </div>
     );
   }
+
+  if (!data) return null;
 
   const { integrations, capacity, warnings, cogs, db_stats: dbStats } = data;
   const filtered = activeFilter === 'all' ? integrations : integrations.filter(i => i.category === activeFilter);
@@ -393,6 +429,101 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
 
   return (
     <div className="space-y-4" data-testid="integrations-tab">
+      {/* Password Modal */}
+      {passwordPurpose && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={() => { setPasswordPurpose(null); setPendingAction(null); }}>
+          <Card className="glass-card w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
+            <CardContent className="py-6 px-5">
+              <div className="text-center mb-4">
+                <Lock className="w-8 h-8 text-[var(--gold)] mx-auto mb-2" />
+                <h3 className="text-sm font-bold text-[var(--t)]">
+                  {passwordPurpose === 'reveal' ? 'View Credentials' : passwordPurpose === 'edit' ? 'Edit Integration' : 'Download Report'}
+                </h3>
+                <p className="text-xs text-[var(--t5)] mt-1">Enter your security password to continue</p>
+              </div>
+              <form onSubmit={handlePasswordSubmit} className="space-y-3">
+                <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)}
+                  placeholder="Enter password" autoFocus
+                  className="input-field w-full px-4 py-3 rounded-lg text-sm text-[var(--t)] placeholder-[var(--t5)] outline-none"
+                  style={{ background: 'var(--s)', border: '1px solid var(--b)' }} data-testid="password-modal-input" />
+                {passwordError && <p className="text-xs text-red-400 text-center">{passwordError}</p>}
+                <button type="submit" disabled={!passwordInput}
+                  className="w-full py-3 rounded-lg text-sm font-bold transition-all disabled:opacity-50"
+                  style={{ background: 'var(--gold)', color: '#0F1629' }} data-testid="password-modal-submit">
+                  Confirm
+                </button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {editInteg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={() => setEditInteg(null)}>
+          <Card className="glass-card w-full max-w-lg mx-4 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-bold text-[var(--t)] flex items-center gap-2">
+                <Pencil className="w-4 h-4 text-[var(--gold)]" /> Edit {editInteg.name}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {/* Detail fields */}
+              {editInteg.details.map((d) => (
+                <div key={d.label}>
+                  <label className="text-[11px] font-bold text-[var(--t5)] uppercase tracking-wider">{d.label}</label>
+                  <input
+                    type={d.sensitive ? 'password' : 'text'}
+                    value={editFields[d.label] || ''}
+                    onChange={e => setEditFields(p => ({ ...p, [d.label]: e.target.value }))}
+                    placeholder={d.sensitive ? '••••••••' : `Enter ${d.label.toLowerCase()}`}
+                    className="input-field w-full px-3 py-2 rounded-lg text-sm text-[var(--t)] placeholder-[var(--t5)] outline-none mt-1"
+                    style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+                    data-testid={`edit-field-${d.label.toLowerCase().replace(/\s+/g, '-')}`}
+                  />
+                </div>
+              ))}
+
+              {/* Cost */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-bold text-[var(--t5)] uppercase tracking-wider">Monthly Cost ($)</label>
+                  <input type="number" step="0.01" value={editCost}
+                    onChange={e => setEditCost(e.target.value)}
+                    className="input-field w-full px-3 py-2 rounded-lg text-sm text-[var(--t)] outline-none mt-1"
+                    style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+                    data-testid="edit-cost" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-[var(--t5)] uppercase tracking-wider">Cost Note</label>
+                  <input type="text" value={editCostNote}
+                    onChange={e => setEditCostNote(e.target.value)}
+                    placeholder="e.g. Upgraded to Pro"
+                    className="input-field w-full px-3 py-2 rounded-lg text-sm text-[var(--t)] placeholder-[var(--t5)] outline-none mt-1"
+                    style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+                    data-testid="edit-cost-note" />
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button onClick={() => setEditInteg(null)}
+                  className="flex-1 py-2.5 rounded-lg text-sm font-bold transition-all"
+                  style={{ background: 'var(--s)', color: 'var(--t4)', border: '1px solid var(--b)' }}
+                  data-testid="edit-cancel">
+                  Cancel
+                </button>
+                <button onClick={handleSave} disabled={saving}
+                  className="flex-1 py-2.5 rounded-lg text-sm font-bold transition-all disabled:opacity-50"
+                  style={{ background: 'var(--gold)', color: '#0F1629' }}
+                  data-testid="edit-save">
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">
@@ -406,16 +537,11 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={handleSOC2Download} disabled={pdfLoading}
+          <button onClick={() => requirePassword('soc2', handleSOC2Download)} disabled={pdfLoading}
             className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
             style={{ background: 'rgba(212,175,55,0.1)', color: 'var(--gold)' }}
             data-testid="soc2-download-btn">
             <Download className="w-3 h-3" /> {pdfLoading ? 'Generating...' : 'SOC 2 Report'}
-          </button>
-          <button onClick={() => { setUnlocked(false); setPassword(''); setData(null); setRevealed({}); }}
-            className="flex items-center gap-1 text-[11px] font-bold text-[var(--t5)] hover:text-red-400 px-3 py-1.5 rounded-lg transition-colors"
-            style={{ background: 'var(--s)' }} data-testid="integrations-lock-btn">
-            <Lock className="w-3 h-3" /> Lock
           </button>
         </div>
       </div>
@@ -453,7 +579,8 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
           if (b.limiting_rank) return 1;
           return 0;
         }).map(integ => (
-          <IntegrationCard key={integ.id} integration={integ} revealed={!!revealed[integ.id]} onToggle={() => toggleReveal(integ.id)} />
+          <IntegrationCard key={integ.id} integration={integ} revealed={!!revealed[integ.id]}
+            onToggle={() => handleToggleReveal(integ.id)} onEdit={handleEdit} />
         ))}
       </div>
 

@@ -42,13 +42,99 @@ class IntegrationsUnlockRequest(BaseModel):
     password: str
 
 
+class IntegrationUpdateRequest(BaseModel):
+    password: str
+    details: dict = {}
+    cost_monthly: float | None = None
+    cost_note: str | None = None
+
+
+def _verify_integrations_password(password: str):
+    if hashlib.sha256(password.encode()).hexdigest() != INTEGRATIONS_PASSWORD_HASH:
+        raise HTTPException(status_code=403, detail="Invalid password")
+
+
+async def _merge_overrides(integrations: list):
+    """Merge user-saved overrides from MongoDB into hardcoded integration data."""
+    overrides = {}
+    async for doc in db.integration_overrides.find({}, {"_id": 0}):
+        overrides[doc["integration_id"]] = doc
+
+    for integ in integrations:
+        ovr = overrides.get(integ["id"])
+        if not ovr:
+            continue
+        if ovr.get("cost_monthly") is not None:
+            integ["cost_monthly"] = ovr["cost_monthly"]
+        if ovr.get("cost_note"):
+            integ["cost_note"] = ovr["cost_note"]
+        if ovr.get("cost_verified") is not None:
+            integ["cost_verified"] = ovr["cost_verified"]
+        saved_details = ovr.get("details", {})
+        for detail in integ["details"]:
+            if detail["label"] in saved_details:
+                detail["value"] = saved_details[detail["label"]]
+                detail["verified"] = True
+
+
+@router.get("/admin/integrations")
+async def get_integrations(current_user: dict = Depends(get_current_user)):
+    """Return integrations data without sensitive credential values (no password needed)."""
+    require_founder(current_user)
+    data = await _build_integrations_data()
+    # Strip sensitive values for unauthenticated view
+    for integ in data["integrations"]:
+        for detail in integ["details"]:
+            if detail.get("sensitive"):
+                detail["value"] = ""
+    return data
+
+
 @router.post("/admin/integrations/unlock")
 async def unlock_integrations(data: IntegrationsUnlockRequest, current_user: dict = Depends(get_current_user)):
-    """Unlock integrations vault with secondary password."""
+    """Unlock integrations vault with secondary password — returns full sensitive values."""
     require_founder(current_user)
+    _verify_integrations_password(data.password)
+    return await _build_integrations_data()
 
-    if hashlib.sha256(data.password.encode()).hexdigest() != INTEGRATIONS_PASSWORD_HASH:
-        raise HTTPException(status_code=403, detail="Invalid password")
+
+@router.put("/admin/integrations/{integration_id}")
+async def update_integration(integration_id: str, data: IntegrationUpdateRequest, current_user: dict = Depends(get_current_user)):
+    """Update integration details (password required)."""
+    require_founder(current_user)
+    _verify_integrations_password(data.password)
+
+    update = {"integration_id": integration_id, "updated_at": datetime.now(timezone.utc).isoformat()}
+    if data.details:
+        update["details"] = data.details
+    if data.cost_monthly is not None:
+        update["cost_monthly"] = data.cost_monthly
+        update["cost_verified"] = True
+    if data.cost_note is not None:
+        update["cost_note"] = data.cost_note
+
+    result = await db.integration_overrides.update_one(
+        {"integration_id": integration_id},
+        {"$set": update},
+        upsert=True,
+    )
+
+    await log_audit_event(
+        actor_id=current_user.get("user_id") or current_user.get("id", ""),
+        actor_email=current_user.get("email", ""),
+        actor_role=current_user.get("role", "admin"),
+        action="integration_updated",
+        category="admin",
+        resource_type="integration",
+        resource_id=integration_id,
+        details={"fields_updated": list(data.details.keys()) if data.details else []},
+    )
+
+    return {"status": "ok", "integration_id": integration_id}
+
+
+async def _build_integrations_data():
+    """Build the full integrations data payload with DB overrides merged in."""
 
     def m(val):
         """Mask a credential value for display."""
@@ -571,6 +657,9 @@ async def unlock_integrations(data: IntegrationsUnlockRequest, current_user: dic
             )
     except Exception:
         pass
+
+    # Merge user overrides from MongoDB
+    await _merge_overrides(integrations)
 
     return {
         "integrations": integrations,
