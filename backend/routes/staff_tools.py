@@ -32,26 +32,40 @@ def require_founder(user: dict):
 
 
 # ══════════════════════════════════════════════════════════
-# INTEGRATIONS VAULT (Password-protected)
+# INTEGRATIONS VAULT (PIN-protected)
 # ══════════════════════════════════════════════════════════
 
-INTEGRATIONS_PASSWORD_HASH = hashlib.sha256(b"Blh9170873").hexdigest()
+DEFAULT_PIN_HASH = hashlib.sha256(b"9170").hexdigest()
 
 
-class IntegrationsUnlockRequest(BaseModel):
-    password: str
+class IntegrationsPinRequest(BaseModel):
+    pin: str
 
 
 class IntegrationUpdateRequest(BaseModel):
-    password: str
+    pin: str
     details: dict = {}
     cost_monthly: float | None = None
     cost_note: str | None = None
 
 
-def _verify_integrations_password(password: str):
-    if hashlib.sha256(password.encode()).hexdigest() != INTEGRATIONS_PASSWORD_HASH:
-        raise HTTPException(status_code=403, detail="Invalid password")
+class ChangePinRequest(BaseModel):
+    current_pin: str
+    new_pin: str
+
+
+async def _get_pin_hash():
+    """Get the stored PIN hash from MongoDB, or default."""
+    doc = await db.app_settings.find_one({"key": "integrations_pin"}, {"_id": 0})
+    if doc and doc.get("pin_hash"):
+        return doc["pin_hash"]
+    return DEFAULT_PIN_HASH
+
+
+async def _verify_integrations_pin(pin: str):
+    stored_hash = await _get_pin_hash()
+    if hashlib.sha256(pin.encode()).hexdigest() != stored_hash:
+        raise HTTPException(status_code=403, detail="Invalid PIN")
 
 
 async def _merge_overrides(integrations: list):
@@ -91,10 +105,10 @@ async def get_integrations(current_user: dict = Depends(get_current_user)):
 
 
 @router.post("/admin/integrations/unlock")
-async def unlock_integrations(data: IntegrationsUnlockRequest, current_user: dict = Depends(get_current_user)):
-    """Unlock integrations vault with secondary password — returns full sensitive values."""
+async def unlock_integrations(data: IntegrationsPinRequest, current_user: dict = Depends(get_current_user)):
+    """Unlock integrations vault with PIN — returns full sensitive values."""
     require_founder(current_user)
-    _verify_integrations_password(data.password)
+    await _verify_integrations_pin(data.pin)
     return await _build_integrations_data()
 
 
@@ -102,9 +116,9 @@ async def unlock_integrations(data: IntegrationsUnlockRequest, current_user: dic
 async def update_integration(
     integration_id: str, data: IntegrationUpdateRequest, current_user: dict = Depends(get_current_user)
 ):
-    """Update integration details (password required)."""
+    """Update integration details (PIN required)."""
     require_founder(current_user)
-    _verify_integrations_password(data.password)
+    await _verify_integrations_pin(data.pin)
 
     update = {"integration_id": integration_id, "updated_at": datetime.now(timezone.utc).isoformat()}
     if data.details:
@@ -133,6 +147,36 @@ async def update_integration(
     )
 
     return {"status": "ok", "integration_id": integration_id}
+
+
+@router.put("/admin/integrations-pin")
+async def change_integrations_pin(data: ChangePinRequest, current_user: dict = Depends(get_current_user)):
+    """Change the integrations vault PIN."""
+    require_founder(current_user)
+    await _verify_integrations_pin(data.current_pin)
+
+    if len(data.new_pin) != 4 or not data.new_pin.isdigit():
+        raise HTTPException(status_code=400, detail="PIN must be exactly 4 digits")
+
+    new_hash = hashlib.sha256(data.new_pin.encode()).hexdigest()
+    await db.app_settings.update_one(
+        {"key": "integrations_pin"},
+        {"$set": {"key": "integrations_pin", "pin_hash": new_hash}},
+        upsert=True,
+    )
+
+    await log_audit_event(
+        actor_id=current_user.get("user_id") or current_user.get("id", ""),
+        actor_email=current_user.get("email", ""),
+        actor_role=current_user.get("role", "admin"),
+        action="integrations_pin_changed",
+        category="admin",
+        resource_type="settings",
+        resource_id="integrations_pin",
+        details={},
+    )
+
+    return {"status": "ok"}
 
 
 async def _build_integrations_data():
@@ -703,12 +747,11 @@ async def _build_integrations_data():
 
 
 @router.post("/admin/integrations/soc2-report")
-async def generate_soc2_report(data: IntegrationsUnlockRequest, current_user: dict = Depends(get_current_user)):
+async def generate_soc2_report(data: IntegrationsPinRequest, current_user: dict = Depends(get_current_user)):
     """Generate a SOC 2 compliance report PDF."""
     require_founder(current_user)
 
-    if hashlib.sha256(data.password.encode()).hexdigest() != INTEGRATIONS_PASSWORD_HASH:
-        raise HTTPException(status_code=403, detail="Invalid password")
+    await _verify_integrations_pin(data.pin)
 
     from io import BytesIO
 

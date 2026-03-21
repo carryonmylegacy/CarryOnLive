@@ -317,16 +317,20 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
   const [revealed, setRevealed] = useState({});
   const [activeFilter, setActiveFilter] = useState('all');
   const [pdfLoading, setPdfLoading] = useState(false);
-  const [sessionPassword, setSessionPassword] = useState('');
-  const [passwordInput, setPasswordInput] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const [passwordPurpose, setPasswordPurpose] = useState(null); // 'reveal' | 'edit' | 'soc2'
+  const [sessionPin, setSessionPin] = useState('');
+  const [pinDigits, setPinDigits] = useState(['', '', '', '']);
+  const [pinError, setPinError] = useState('');
+  const [pinPurpose, setPinPurpose] = useState(null); // 'reveal' | 'edit' | 'soc2'
   const [pendingAction, setPendingAction] = useState(null);
   const [editInteg, setEditInteg] = useState(null);
   const [editFields, setEditFields] = useState({});
   const [editCost, setEditCost] = useState('');
   const [editCostNote, setEditCostNote] = useState('');
   const [saving, setSaving] = useState(false);
+  const [changePinMode, setChangePinMode] = useState(false);
+  const [newPinDigits, setNewPinDigits] = useState(['', '', '', '']);
+  const [changePinStep, setChangePinStep] = useState('current'); // 'current' | 'new'
+  const [currentPinForChange, setCurrentPinForChange] = useState('');
 
   // Auto-load integrations on mount (no password needed)
   React.useEffect(() => {
@@ -340,37 +344,58 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
     load();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Prompt for password with a purpose
-  const requirePassword = (purpose, action) => {
-    if (sessionPassword) { action(sessionPassword); return; }
-    setPasswordPurpose(purpose);
+  // Prompt for PIN with a purpose
+  const requirePin = (purpose, action) => {
+    if (sessionPin) { action(sessionPin); return; }
+    setPinPurpose(purpose);
     setPendingAction(() => action);
-    setPasswordInput('');
-    setPasswordError('');
+    setPinDigits(['', '', '', '']);
+    setPinError('');
   };
 
-  const handlePasswordSubmit = async (e) => {
-    e.preventDefault();
+  const submitPin = async (fullPin) => {
     try {
-      // Validate password by unlocking (also gets full data with sensitive values)
-      const res = await axios.post(`${API_URL}/admin/integrations/unlock`, { password: passwordInput }, getAuthHeaders());
-      setSessionPassword(passwordInput);
-      setData(res.data); // update with full sensitive data
-      setPasswordPurpose(null);
-      if (pendingAction) pendingAction(passwordInput);
+      const res = await axios.post(`${API_URL}/admin/integrations/unlock`, { pin: fullPin }, getAuthHeaders());
+      setSessionPin(fullPin);
+      setData(res.data);
+      setPinPurpose(null);
+      if (pendingAction) pendingAction(fullPin);
       setPendingAction(null);
     } catch {
-      setPasswordError('Incorrect password');
+      setPinError('Wrong PIN');
+      setPinDigits(['', '', '', '']);
+    }
+  };
+
+  const handlePinDigit = (digit) => {
+    setPinError('');
+    const newDigits = [...pinDigits];
+    const nextEmpty = newDigits.findIndex(d => d === '');
+    if (nextEmpty === -1) return;
+    newDigits[nextEmpty] = digit;
+    setPinDigits(newDigits);
+    if (nextEmpty === 3) {
+      setTimeout(() => submitPin(newDigits.join('')), 150);
+    }
+  };
+
+  const handlePinBackspace = () => {
+    setPinError('');
+    const newDigits = [...pinDigits];
+    const lastFilled = newDigits.map((d, i) => d !== '' ? i : -1).filter(i => i >= 0).pop();
+    if (lastFilled !== undefined && lastFilled >= 0) {
+      newDigits[lastFilled] = '';
+      setPinDigits(newDigits);
     }
   };
 
   const handleToggleReveal = (id) => {
     if (revealed[id]) { setRevealed(p => ({ ...p, [id]: false })); return; }
-    requirePassword('reveal', () => setRevealed(p => ({ ...p, [id]: true })));
+    requirePin('reveal', () => setRevealed(p => ({ ...p, [id]: true })));
   };
 
   const handleEdit = (integ) => {
-    requirePassword('edit', () => {
+    requirePin('edit', () => {
       setEditInteg(integ);
       const fields = {};
       integ.details.forEach(d => { fields[d.label] = d.value || ''; });
@@ -381,28 +406,27 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
   };
 
   const handleSave = async () => {
-    if (!editInteg || !sessionPassword) return;
+    if (!editInteg || !sessionPin) return;
     setSaving(true);
     try {
       await axios.put(`${API_URL}/admin/integrations/${editInteg.id}`, {
-        password: sessionPassword,
+        pin: sessionPin,
         details: editFields,
         cost_monthly: parseFloat(editCost) || 0,
         cost_note: editCostNote || null,
       }, getAuthHeaders());
-      // Refresh data
-      const res = await axios.post(`${API_URL}/admin/integrations/unlock`, { password: sessionPassword }, getAuthHeaders());
+      const res = await axios.post(`${API_URL}/admin/integrations/unlock`, { pin: sessionPin }, getAuthHeaders());
       setData(res.data);
       setEditInteg(null);
       toast.success(`${editInteg.name} updated`);
-    } catch { toast.error('Failed to save — check password'); }
+    } catch { toast.error('Failed to save'); }
     finally { setSaving(false); }
   };
 
-  const handleSOC2Download = async (pw) => {
+  const handleSOC2Download = async (pin) => {
     setPdfLoading(true);
     try {
-      const res = await axios.post(`${API_URL}/admin/integrations/soc2-report`, { password: pw || sessionPassword }, {
+      const res = await axios.post(`${API_URL}/admin/integrations/soc2-report`, { pin: pin || sessionPin }, {
         ...getAuthHeaders(), responseType: 'blob',
       });
       const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
@@ -412,6 +436,70 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
       toast.success('SOC 2 report downloaded');
     } catch { toast.error('Failed to generate report'); }
     finally { setPdfLoading(false); }
+  };
+
+  const openChangePin = () => {
+    setChangePinMode(true);
+    setChangePinStep('current');
+    setPinDigits(['', '', '', '']);
+    setNewPinDigits(['', '', '', '']);
+    setPinError('');
+    setCurrentPinForChange('');
+  };
+
+  const handleChangePinDigit = (digit) => {
+    setPinError('');
+    if (changePinStep === 'current') {
+      const d = [...pinDigits];
+      const i = d.findIndex(x => x === '');
+      if (i === -1) return;
+      d[i] = digit;
+      setPinDigits(d);
+      if (i === 3) {
+        setCurrentPinForChange(d.join(''));
+        setTimeout(() => {
+          setChangePinStep('new');
+          setNewPinDigits(['', '', '', '']);
+          setPinError('');
+        }, 200);
+      }
+    } else {
+      const d = [...newPinDigits];
+      const i = d.findIndex(x => x === '');
+      if (i === -1) return;
+      d[i] = digit;
+      setNewPinDigits(d);
+      if (i === 3) {
+        setTimeout(async () => {
+          try {
+            await axios.put(`${API_URL}/admin/integrations-pin`, {
+              current_pin: currentPinForChange,
+              new_pin: d.join(''),
+            }, getAuthHeaders());
+            toast.success('PIN changed successfully');
+            setSessionPin(d.join(''));
+            setChangePinMode(false);
+          } catch {
+            setPinError('Current PIN incorrect');
+            setChangePinStep('current');
+            setPinDigits(['', '', '', '']);
+          }
+        }, 200);
+      }
+    }
+  };
+
+  const handleChangePinBackspace = () => {
+    setPinError('');
+    if (changePinStep === 'current') {
+      const d = [...pinDigits];
+      const last = d.map((x, i) => x !== '' ? i : -1).filter(i => i >= 0).pop();
+      if (last !== undefined) { d[last] = ''; setPinDigits(d); }
+    } else {
+      const d = [...newPinDigits];
+      const last = d.map((x, i) => x !== '' ? i : -1).filter(i => i >= 0).pop();
+      if (last !== undefined) { d[last] = ''; setNewPinDigits(d); }
+    }
   };
 
   if (loading) {
@@ -430,33 +518,62 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
 
   return (
     <div className="space-y-4" data-testid="integrations-tab">
-      {/* Password Modal — portaled to body to escape main-content stacking context */}
-      {passwordPurpose && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }} onClick={() => { setPasswordPurpose(null); setPendingAction(null); }}>
-          <div className="w-[calc(100%-2rem)] max-w-sm rounded-2xl overflow-hidden" style={{ background: 'var(--bg)', border: '1px solid var(--b)' }} onClick={e => e.stopPropagation()}>
-            <div className="py-6 px-5 relative">
-              <button onClick={() => { setPasswordPurpose(null); setPendingAction(null); }} className="absolute top-3 right-3 text-[var(--t5)] hover:text-[var(--t)] p-2" data-testid="password-modal-close">
+      {/* PIN Keypad Modal — portaled to body */}
+      {pinPurpose && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }} onClick={() => { setPinPurpose(null); setPendingAction(null); }}>
+          <div className="w-[calc(100%-2rem)] max-w-xs rounded-2xl overflow-hidden" style={{ background: 'var(--bg)', border: '1px solid var(--b)' }} onClick={e => e.stopPropagation()}>
+            <div className="py-5 px-5 relative">
+              <button onClick={() => { setPinPurpose(null); setPendingAction(null); }} className="absolute top-3 right-3 text-[var(--t5)] hover:text-[var(--t)] p-2" data-testid="pin-modal-close">
                 <X className="w-5 h-5" />
               </button>
-              <div className="text-center mb-4">
-                <Lock className="w-8 h-8 text-[var(--gold)] mx-auto mb-2" />
+              <div className="text-center mb-5">
+                <Lock className="w-7 h-7 text-[var(--gold)] mx-auto mb-2" />
                 <h3 className="text-sm font-bold text-[var(--t)]">
-                  {passwordPurpose === 'reveal' ? 'View Credentials' : passwordPurpose === 'edit' ? 'Edit Integration' : 'Download Report'}
+                  {pinPurpose === 'reveal' ? 'View Credentials' : pinPurpose === 'edit' ? 'Edit Integration' : 'Download Report'}
                 </h3>
-                <p className="text-xs text-[var(--t5)] mt-1">Enter your security password to continue</p>
+                <p className="text-xs text-[var(--t5)] mt-1">Enter your 4-digit PIN</p>
               </div>
-              <form onSubmit={handlePasswordSubmit} className="space-y-3">
-                <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)}
-                  placeholder="Enter password" autoFocus
-                  className="input-field w-full px-4 py-3 rounded-lg text-[var(--t)] placeholder-[var(--t5)] outline-none"
-                  style={{ background: 'var(--s)', border: '1px solid var(--b)', fontSize: '16px' }} data-testid="password-modal-input" />
-                {passwordError && <p className="text-xs text-red-400 text-center">{passwordError}</p>}
-                <button type="submit" disabled={!passwordInput}
-                  className="w-full py-3 rounded-lg text-sm font-bold transition-all disabled:opacity-50"
-                  style={{ background: 'var(--gold)', color: '#0F1629' }} data-testid="password-modal-submit">
-                  Confirm
+
+              {/* PIN Dots */}
+              <div className="flex justify-center gap-3 mb-4" data-testid="pin-dots">
+                {pinDigits.map((d, i) => (
+                  <div key={i} className="w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold transition-all"
+                    style={{
+                      background: d ? 'rgba(212,175,55,0.15)' : 'var(--s)',
+                      border: `2px solid ${d ? 'var(--gold)' : pinError ? '#EF4444' : 'var(--b)'}`,
+                      color: 'var(--t)',
+                    }}>
+                    {d ? '•' : ''}
+                  </div>
+                ))}
+              </div>
+
+              {pinError && <p className="text-xs text-red-400 text-center mb-3" data-testid="pin-error">{pinError}</p>}
+
+              {/* Numeric Keypad */}
+              <div className="grid grid-cols-3 gap-2" data-testid="pin-keypad">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+                  <button key={n} onClick={() => handlePinDigit(String(n))}
+                    className="py-3 rounded-xl text-lg font-bold text-[var(--t)] transition-all active:scale-95"
+                    style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+                    data-testid={`pin-key-${n}`}>
+                    {n}
+                  </button>
+                ))}
+                <div />
+                <button onClick={() => handlePinDigit('0')}
+                  className="py-3 rounded-xl text-lg font-bold text-[var(--t)] transition-all active:scale-95"
+                  style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+                  data-testid="pin-key-0">
+                  0
                 </button>
-              </form>
+                <button onClick={handlePinBackspace}
+                  className="py-3 rounded-xl text-sm font-bold text-[var(--t5)] transition-all active:scale-95"
+                  style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+                  data-testid="pin-key-back">
+                  ←
+                </button>
+              </div>
             </div>
           </div>
         </div>,
@@ -539,6 +656,65 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
         document.body
       )}
 
+      {/* Change PIN Modal — portaled to body */}
+      {changePinMode && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }} onClick={() => setChangePinMode(false)}>
+          <div className="w-[calc(100%-2rem)] max-w-xs rounded-2xl overflow-hidden" style={{ background: 'var(--bg)', border: '1px solid var(--b)' }} onClick={e => e.stopPropagation()}>
+            <div className="py-5 px-5 relative">
+              <button onClick={() => setChangePinMode(false)} className="absolute top-3 right-3 text-[var(--t5)] hover:text-[var(--t)] p-2" data-testid="change-pin-close">
+                <X className="w-5 h-5" />
+              </button>
+              <div className="text-center mb-5">
+                <Key className="w-7 h-7 text-[var(--gold)] mx-auto mb-2" />
+                <h3 className="text-sm font-bold text-[var(--t)]">
+                  {changePinStep === 'current' ? 'Enter Current PIN' : 'Enter New PIN'}
+                </h3>
+                <p className="text-xs text-[var(--t5)] mt-1">
+                  {changePinStep === 'current' ? 'Verify your identity first' : 'Choose a new 4-digit PIN'}
+                </p>
+              </div>
+
+              <div className="flex justify-center gap-3 mb-4">
+                {(changePinStep === 'current' ? pinDigits : newPinDigits).map((d, i) => (
+                  <div key={i} className="w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold transition-all"
+                    style={{
+                      background: d ? 'rgba(212,175,55,0.15)' : 'var(--s)',
+                      border: `2px solid ${d ? 'var(--gold)' : pinError ? '#EF4444' : 'var(--b)'}`,
+                      color: 'var(--t)',
+                    }}>
+                    {d ? '•' : ''}
+                  </div>
+                ))}
+              </div>
+
+              {pinError && <p className="text-xs text-red-400 text-center mb-3">{pinError}</p>}
+
+              <div className="grid grid-cols-3 gap-2">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+                  <button key={n} onClick={() => handleChangePinDigit(String(n))}
+                    className="py-3 rounded-xl text-lg font-bold text-[var(--t)] transition-all active:scale-95"
+                    style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+                    {n}
+                  </button>
+                ))}
+                <div />
+                <button onClick={() => handleChangePinDigit('0')}
+                  className="py-3 rounded-xl text-lg font-bold text-[var(--t)] transition-all active:scale-95"
+                  style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+                  0
+                </button>
+                <button onClick={handleChangePinBackspace}
+                  className="py-3 rounded-xl text-sm font-bold text-[var(--t5)] transition-all active:scale-95"
+                  style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+                  ←
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">
@@ -552,7 +728,13 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => requirePassword('soc2', handleSOC2Download)} disabled={pdfLoading}
+          <button onClick={openChangePin}
+            className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg transition-colors"
+            style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--t4)', border: '1px solid var(--b)' }}
+            data-testid="change-pin-btn">
+            <Key className="w-3 h-3" /> Change PIN
+          </button>
+          <button onClick={() => requirePin('soc2', handleSOC2Download)} disabled={pdfLoading}
             className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
             style={{ background: 'rgba(212,175,55,0.1)', color: 'var(--gold)' }}
             data-testid="soc2-download-btn">

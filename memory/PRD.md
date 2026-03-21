@@ -107,7 +107,7 @@ User pushes to GitHub → Railway builds backend → Vercel builds frontend → 
 ## Prioritized Backlog
 
 ### P0 - Active
-- None currently active (iOS zoom fix verified, CI fix applied)
+- None currently active
 
 ### P1 - Upcoming
 - Share Extension Setup (instructions in /app/memory/SHARE_EXTENSION_SETUP.md)
