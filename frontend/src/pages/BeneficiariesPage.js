@@ -591,8 +591,8 @@ const BeneficiariesPage = () => {
             <div className="mb-3 p-3 rounded-xl flex items-start gap-2.5" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.12)' }} data-testid="succession-explainer">
               <Shield className="w-4 h-4 text-[#d4af37] flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs text-[var(--t3)] font-semibold">Succession Hierarchy</p>
-                <p className="text-[11px] text-[var(--t5)] leading-relaxed mt-0.5">
+                <p className="text-sm text-[var(--t)] font-semibold">Succession Hierarchy</p>
+                <p className="text-xs text-[var(--t3)] leading-relaxed mt-0.5">
                   Drag to reorder. The top position is your Primary Beneficiary (trustee). If they become unavailable, the next in line is automatically promoted.
                 </p>
               </div>
