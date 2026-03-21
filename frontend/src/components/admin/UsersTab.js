@@ -313,32 +313,50 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     const beneficiaryUsers = filteredUsers.filter(u => u.role === 'beneficiary' && !u.is_also_benefactor);
     const admins = filteredUsers.filter(u => u.role === 'admin');
 
-    // Build estate map: estate -> { owner, beneficiaries[] }
-    const estateMap = new Map();
+    // Build estate map: each estate is a separate entry (supports multi-estate owners)
+    const estateEntries = [];
     const benUserByEmail = new Map();
     beneficiaryUsers.forEach(u => { if (u.email) benUserByEmail.set(u.email.toLowerCase(), u); });
 
     benefactors.forEach(owner => {
-      const bens = owner.linked_beneficiaries || [];
-      estateMap.set(owner.id, {
-        owner,
-        estateName: `${owner.name || 'Unknown'}'s Estate`,
-        beneficiaries: bens,
-        linkedUsers: bens
-          .map(b => b.email ? benUserByEmail.get(b.email.toLowerCase()) : null)
-          .filter(Boolean),
-      });
+      const groups = owner.estate_groups || [];
+      if (groups.length > 0) {
+        groups.forEach(group => {
+          const bens = group.beneficiaries || [];
+          estateEntries.push({
+            key: `${owner.id}-${group.estate_id}`,
+            owner,
+            estateName: group.estate_name || `${owner.name || 'Unknown'}'s Estate`,
+            beneficiaries: bens,
+            linkedUsers: bens
+              .map(b => b.email ? benUserByEmail.get(b.email.toLowerCase()) : null)
+              .filter(Boolean),
+          });
+        });
+      } else {
+        // Fallback for users without estate_groups
+        const bens = owner.linked_beneficiaries || [];
+        estateEntries.push({
+          key: owner.id,
+          owner,
+          estateName: `${owner.name || 'Unknown'}'s Estate`,
+          beneficiaries: bens,
+          linkedUsers: bens
+            .map(b => b.email ? benUserByEmail.get(b.email.toLowerCase()) : null)
+            .filter(Boolean),
+        });
+      }
     });
 
     // Track shown beneficiary user IDs so we can show orphans
     const shownBenIds = new Set();
-    estateMap.forEach(estate => {
+    estateEntries.forEach(estate => {
       estate.linkedUsers.forEach(u => shownBenIds.add(u.id));
     });
     const orphans = beneficiaryUsers.filter(u => !shownBenIds.has(u.id));
 
-    // Sort benefactors by age (youngest first)
-    const sortedEstates = [...estateMap.values()].sort((a, b) => {
+    // Sort estates by owner age (youngest first)
+    const sortedEstates = [...estateEntries].sort((a, b) => {
       const ageA = getAge(a.owner.date_of_birth);
       const ageB = getAge(b.owner.date_of_birth);
       return ageA - ageB;
@@ -355,8 +373,8 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
           </div>
         )}
 
-        {sortedEstates.map(({ owner, estateName, beneficiaries: bens, linkedUsers }) => {
-          const isExpanded = expandedUsers.has(owner.id);
+        {sortedEstates.map(({ key, owner, estateName, beneficiaries: bens, linkedUsers }) => {
+          const isExpanded = expandedUsers.has(key);
 
           // Sort linked beneficiaries by age
           const sortedLinkedUsers = [...linkedUsers].sort((a, b) => getAge(a.date_of_birth) - getAge(b.date_of_birth));
@@ -366,12 +384,12 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
             .sort((a, b) => getAge(a.date_of_birth || a.dob) - getAge(b.date_of_birth || b.dob));
 
           return (
-            <div key={owner.id} className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--b)', background: 'rgba(255,255,255,0.01)' }}>
+            <div key={key} className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--b)', background: 'rgba(255,255,255,0.01)' }}>
               {/* Estate header */}
               <button
-                onClick={() => toggleExpand(owner.id)}
+                onClick={() => toggleExpand(key)}
                 className="w-full flex items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-[var(--s)]"
-                data-testid={`estate-header-${owner.id}`}
+                data-testid={`estate-header-${key}`}
               >
                 <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
                   {isExpanded ? <ChevronDown className="w-4 h-4 text-[var(--gold)]" /> : <ChevronRight className="w-4 h-4 text-[var(--t5)]" />}
@@ -473,10 +491,18 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     const benUserByEmail = new Map();
     beneficiaryUsers.forEach(u => { if (u.email) benUserByEmail.set(u.email.toLowerCase(), u); });
 
-    const estates = benefactors.map(owner => {
-      const bens = owner.linked_beneficiaries || [];
-      return { owner, bens };
-    }).sort((a, b) => getAge(a.owner.date_of_birth) - getAge(b.owner.date_of_birth));
+    const estateEntries = [];
+    benefactors.forEach(owner => {
+      const groups = owner.estate_groups || [];
+      if (groups.length > 0) {
+        groups.forEach(group => {
+          estateEntries.push({ key: `${owner.id}-${group.estate_id}`, owner, estateName: group.estate_name || `${owner.name}'s Estate`, bens: group.beneficiaries || [] });
+        });
+      } else {
+        estateEntries.push({ key: owner.id, owner, estateName: `${owner.name}'s Estate`, bens: owner.linked_beneficiaries || [] });
+      }
+    });
+    const estates = estateEntries.sort((a, b) => getAge(a.owner.date_of_birth) - getAge(b.owner.date_of_birth));
 
     const getInit = (n) => n?.name ? n.name.split(' ').map(x => x[0]).join('').toUpperCase().slice(0, 2) : '??';
     const benAge = (b) => { const a = getAge(b.date_of_birth || b.dob); return a < 999 ? a : null; };
@@ -538,18 +564,18 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
           </div>
         )}
 
-        {estates.map(({ owner, bens }) => {
+        {estates.map(({ key, owner, estateName, bens }) => {
           const sortedBens = [...bens].sort((a, b) => getAge(a.date_of_birth || a.dob) - getAge(b.date_of_birth || b.dob));
           const linked = sortedBens.filter(b => b.email && benUserByEmail.has(b.email.toLowerCase())).length;
           const invited = sortedBens.filter(b => b.invitation_status === 'sent' || b.invitation_status === 'accepted').length;
 
           return (
-            <div key={owner.id} className="glass-card p-4 rounded-xl" data-testid={`graph-estate-${owner.id}`}>
+            <div key={key} className="glass-card p-4 rounded-xl" data-testid={`graph-estate-${key}`}>
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-5 h-5 rounded flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.1)' }}>
                   <Users className="w-3 h-3 text-[var(--gold)]" />
                 </div>
-                <span className="text-xs font-bold text-[var(--gold)] flex-1">{owner.name}'s Estate</span>
+                <span className="text-xs font-bold text-[var(--gold)] flex-1">{estateName}</span>
                 <span className="text-[11px] text-[var(--t5)]">{bens.length} beneficiar{bens.length === 1 ? 'y' : 'ies'}</span>
               </div>
 

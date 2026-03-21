@@ -176,13 +176,24 @@ async def get_all_users(current_user: dict = Depends(get_current_user)):
         u["subscription"] = sub
 
         # For benefactors (including multi-role users), attach their beneficiary list
-        # across ALL their estates
+        # across ALL their estates, grouped by estate for tree/graph views
         if u.get("role") == "benefactor" or u.get("is_also_benefactor"):
             estate_ids = estates_by_owner.get(u["id"], [])
             all_linked = []
+            estate_groups = []
             for eid in estate_ids:
-                all_linked.extend(bens_by_estate.get(eid, []))
+                bens = bens_by_estate.get(eid, [])
+                all_linked.extend(bens)
+                estate_info = next((e for e in estates if e["id"] == eid), None)
+                estate_groups.append(
+                    {
+                        "estate_id": eid,
+                        "estate_name": estate_info["name"] if estate_info else "Estate",
+                        "beneficiaries": bens,
+                    }
+                )
             u["linked_beneficiaries"] = all_linked
+            u["estate_groups"] = estate_groups
 
     return users
 
