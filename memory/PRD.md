@@ -20,6 +20,14 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (March 21, 2026 — Session 12: Tree Connector Lines + Collapsible Beneficiary Tiles)
+- **Admin Hierarchy View Lines Fix**: Horizontal connector lines in renderTreeView() now extend only from the vertical spine to the right (not beyond to the left). Fixed `alignSelf: 'flex-end'` approach.
+- **Admin Tree View Lines Fix**: Replaced percentage-based `left-[10%] right-[10%]` horizontal bar with per-node segments using `left: isFirst ? '50%' : 0, right: isLast ? '50%' : 0`, ensuring the bar spans exactly from center of first child to center of last child.
+- **Estate Health Tree Fix**: Same per-node connector segment pattern applied to mini family tree in expanded estate health cards.
+- **Collapsible Beneficiary Tiles**: Beneficiary cards on BeneficiariesPage now collapsed by default showing only avatar, name, relation, succession badge, and a chevron caret. Click to expand full details (email, phone, DOB, permissions, invitation controls). Uses `expandedTiles` Set state.
+- **BeneficiaryLeaf Cleanup**: Removed redundant `ml-8 pl-4 border-l-2` from BeneficiaryLeaf component since connector column handles tree lines.
+- **Testing**: 100% pass rate (iteration 133) — all 6 features verified.
+
 ### Completed (March 19, 2026 — Session 10: Family Tree Colors + Apple IAP Fix + Font Sweep)
 - **Beneficiary Color Coding**: Green = linked (has own login), Yellow = unlinked (no account yet). Legend now explains all 3 colors including benefactor's gold.
 - **Apple Guideline 3.1.1 Fix**: iOS native app now NEVER falls through to Stripe. All payment paths (subscribe, change plan, change billing) block Stripe on iOS.
