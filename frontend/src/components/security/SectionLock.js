@@ -1,4 +1,5 @@
 import React, { useState, createContext, useContext, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Lock, Unlock, Eye, EyeOff, Mic, KeyRound, CheckCircle2, Loader2, HelpCircle, Square } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -124,6 +125,7 @@ export const useSectionLock = () => {
 export const SectionLockBanner = ({ sectionId }) => {
   const ctx = useSectionLock();
   const { settings, isLocked, requestUnlock, resolveId } = ctx;
+  const navigate = useNavigate();
   const sid = resolveId(sectionId);
   const sec = LOCKABLE_SECTIONS[sid];
   const s = settings[sid];
@@ -131,7 +133,12 @@ export const SectionLockBanner = ({ sectionId }) => {
 
   if (!s?.is_active) {
     return (
-      <div className="rounded-xl p-4 mb-4 flex items-center justify-between gap-3" style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.12)' }} data-testid={`lock-banner-${sectionId}`}>
+      <div
+        className="rounded-xl p-4 mb-4 flex items-center justify-between gap-3 cursor-pointer transition-all hover:opacity-80 active:scale-[0.99]"
+        style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.12)' }}
+        onClick={() => navigate('/security-settings')}
+        data-testid={`lock-banner-${sectionId}`}
+      >
         <div className="flex items-center gap-3">
           <Unlock className="w-5 h-5 text-[var(--pr2)]" />
           <div>
