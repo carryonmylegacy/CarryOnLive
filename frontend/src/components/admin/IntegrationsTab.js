@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { Lock, ExternalLink, Eye, EyeOff, Shield, Database, CreditCard, Mail, Bot, Cloud,
   MessageSquare, MapPin, Bell, Key, Smartphone, Mic, FileText, Puzzle, Server, Globe,
@@ -429,8 +430,8 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
 
   return (
     <div className="space-y-4" data-testid="integrations-tab">
-      {/* Password Modal */}
-      {passwordPurpose && (
+      {/* Password Modal — portaled to body to escape main-content stacking context */}
+      {passwordPurpose && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }} onClick={() => { setPasswordPurpose(null); setPendingAction(null); }}>
           <div className="w-[calc(100%-2rem)] max-w-sm rounded-2xl overflow-hidden" style={{ background: 'var(--bg)', border: '1px solid var(--b)' }} onClick={e => e.stopPropagation()}>
             <div className="py-6 px-5 relative">
@@ -458,11 +459,12 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
               </form>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* Edit Modal */}
-      {editInteg && (
+      {/* Edit Modal — portaled to body to escape main-content stacking context */}
+      {editInteg && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }} onClick={() => setEditInteg(null)}>
           <div
             className="w-[calc(100%-2rem)] max-w-md flex flex-col rounded-2xl overflow-hidden"
@@ -533,7 +535,8 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Header */}
