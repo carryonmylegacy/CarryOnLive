@@ -133,9 +133,11 @@ async def get_all_users(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Staff access required")
     users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
 
-    # Build estate owner → beneficiaries map
-    estates = await db.estates.find({}, {"_id": 0, "id": 1, "owner_id": 1}).to_list(10000)
-    estate_by_owner = {e["owner_id"]: e["id"] for e in estates}
+    # Build estate owner → beneficiaries map (supports multiple estates per owner)
+    estates = await db.estates.find({}, {"_id": 0, "id": 1, "owner_id": 1, "name": 1}).to_list(10000)
+    estates_by_owner = {}
+    for e in estates:
+        estates_by_owner.setdefault(e["owner_id"], []).append(e["id"])
 
     all_bens = await db.beneficiaries.find(
         {},
@@ -174,9 +176,13 @@ async def get_all_users(current_user: dict = Depends(get_current_user)):
         u["subscription"] = sub
 
         # For benefactors (including multi-role users), attach their beneficiary list
+        # across ALL their estates
         if u.get("role") == "benefactor" or u.get("is_also_benefactor"):
-            estate_id = estate_by_owner.get(u["id"])
-            u["linked_beneficiaries"] = bens_by_estate.get(estate_id, [])
+            estate_ids = estates_by_owner.get(u["id"], [])
+            all_linked = []
+            for eid in estate_ids:
+                all_linked.extend(bens_by_estate.get(eid, []))
+            u["linked_beneficiaries"] = all_linked
 
     return users
 
