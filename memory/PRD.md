@@ -25,7 +25,7 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **CI Actions Upgrade**: Upgraded `actions/checkout` from v4 to v5 and `actions/setup-node` from v4 to v5 in `.github/workflows/ci.yml` to resolve Node.js 20 deprecation warnings (forced June 2, 2026).
 - **IntegrationsTab X Import Fix**: Added missing `X` icon import from lucide-react used by password modal and edit modal close buttons.
 - **iOS Safari Zoom Prevention**: All `<input>` elements in IntegrationsTab modals have `fontSize: '16px'`. Global sweep fixed 15 additional `text-sm` violations on inputs/selects across TrusteePage, SecuritySettings, FamilyPlanSettings, and 6 admin tabs. Updated Shadcn `select.jsx` base component from `text-sm` to `text-base`. Added `maximum-scale=1, user-scalable=no` to viewport meta tag.
-- **Housekeeping**: 6/6 checks PASS — input font-size, console.log, ESLint, ruff check/format, viewport meta, MongoDB _id serialization.
+- **Housekeeping**: 50/50 checks PASS — Standard (11/11), SOC 2 Compliance (27/27), iOS/App Store Readiness (12/12). Global `text-sm` input sweep fixed 15 violations across 9 files + Shadcn select.jsx base. Viewport meta updated with `maximum-scale=1, user-scalable=no`.
 
 ### Completed (March 21, 2026 — Session 12: Tree Connector Lines + Collapsible Beneficiary Tiles)
 - **Admin Hierarchy View Lines Fix**: Horizontal connector lines in renderTreeView() now extend only from the vertical spine to the right (not beyond to the left). Fixed `alignSelf: 'flex-end'` approach.
