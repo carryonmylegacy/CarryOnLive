@@ -237,7 +237,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               const isLast = idx === sortedBens.length - 1;
 
               return (
-                <div key={ben.id} className="flex relative" style={{ minHeight: 100 }}>
+                <div key={ben.id} className="flex relative" style={{ minHeight: 72 }}>
                   {/* Trunk segment — stops at the center of the last row */}
                   <div style={{
                     position: 'absolute',
