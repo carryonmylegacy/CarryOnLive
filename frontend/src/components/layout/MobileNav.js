@@ -342,7 +342,7 @@ const MobileNav = () => {
   ];
 
   const beneficiaryLegacyItems = [
-    { to: '/beneficiary/dashboard', icon: Home, label: 'Dashboard' },
+    { to: '/beneficiary', icon: Home, label: 'Dashboard' },
     { to: '/beneficiary/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
     { to: '/beneficiary/guardian', icon: Sparkles, label: 'Estate Guardian (EGA)' },
     { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
@@ -416,7 +416,7 @@ const MobileNav = () => {
   const beneficiaryBottomNav = [
     { to: '/beneficiary/vault', icon: FolderLock, label: 'Vault' },
     { to: '/beneficiary/guardian', icon: Sparkles, label: 'Guardian' },
-    { to: '/beneficiary/dashboard', icon: Home, label: 'Dashboard', isCenter: true },
+    { to: '/beneficiary', icon: Home, label: 'Dashboard', isCenter: true },
     { to: '/beneficiary/messages', icon: MessageSquare, label: 'Messages' },
     { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Checklist' },
   ];

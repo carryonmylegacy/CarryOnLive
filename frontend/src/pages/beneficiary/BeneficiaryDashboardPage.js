@@ -118,18 +118,6 @@ const BeneficiaryDashboardPage = () => {
         </div>
       </div>
 
-      {/* Back to Estates — only when single estate */}
-      {allEstates.length <= 1 && (
-        <button
-          onClick={() => navigate('/beneficiary')}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl mb-4 text-sm font-bold transition-all"
-          style={{ background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.35)', color: '#60A5FA' }}
-          data-testid="back-to-estates"
-        >
-          <ChevronLeft className="w-4 h-4" /> Back to My Estates
-        </button>
-      )}
-
       {/* Header with Estate Switcher */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
         <div>
@@ -140,7 +128,14 @@ const BeneficiaryDashboardPage = () => {
             {benefactorFirst} prepared these resources to help guide you.
           </p>
         </div>
-
+        <button
+          onClick={() => { localStorage.removeItem('beneficiary_estate_id'); navigate('/beneficiary'); }}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shrink-0"
+          style={{ background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.35)', color: '#60A5FA' }}
+          data-testid="back-to-all-estates"
+        >
+          <ChevronLeft className="w-4 h-4" /> All Estates
+        </button>
       </div>
 
       {/* Stat Cards */}
