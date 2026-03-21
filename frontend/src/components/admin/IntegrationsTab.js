@@ -431,10 +431,10 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
     <div className="space-y-4" data-testid="integrations-tab">
       {/* Password Modal */}
       {passwordPurpose && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={() => { setPasswordPurpose(null); setPendingAction(null); }}>
-          <Card className="glass-card w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
-            <CardContent className="py-6 px-5 relative">
-              <button onClick={() => { setPasswordPurpose(null); setPendingAction(null); }} className="absolute top-3 right-3 text-[var(--t5)] hover:text-[var(--t)] p-1" data-testid="password-modal-close">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }} onClick={() => { setPasswordPurpose(null); setPendingAction(null); }}>
+          <div className="w-[calc(100%-2rem)] max-w-sm rounded-2xl overflow-hidden" style={{ background: 'var(--bg)', border: '1px solid var(--b)' }} onClick={e => e.stopPropagation()}>
+            <div className="py-6 px-5 relative">
+              <button onClick={() => { setPasswordPurpose(null); setPendingAction(null); }} className="absolute top-3 right-3 text-[var(--t5)] hover:text-[var(--t)] p-2" data-testid="password-modal-close">
                 <X className="w-5 h-5" />
               </button>
               <div className="text-center mb-4">
@@ -456,24 +456,31 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
                   Confirm
                 </button>
               </form>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Edit Modal */}
       {editInteg && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={() => setEditInteg(null)}>
-          <Card className="glass-card w-full max-w-lg mx-4 my-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <CardHeader className="pb-2 flex flex-row items-center justify-between sticky top-0 z-10" style={{ background: 'var(--bg)' }}>
-              <CardTitle className="text-base font-bold text-[var(--t)] flex items-center gap-2">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }} onClick={() => setEditInteg(null)}>
+          <div
+            className="w-[calc(100%-2rem)] max-w-md flex flex-col rounded-2xl overflow-hidden"
+            style={{ background: 'var(--bg)', border: '1px solid var(--b)', maxHeight: 'calc(100dvh - 8rem)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Sticky Header */}
+            <div className="flex items-center justify-between px-4 py-3 shrink-0" style={{ borderBottom: '1px solid var(--b)' }}>
+              <div className="flex items-center gap-2 text-base font-bold text-[var(--t)]">
                 <Pencil className="w-4 h-4 text-[var(--gold)]" /> Edit {editInteg.name}
-              </CardTitle>
-              <button onClick={() => setEditInteg(null)} className="text-[var(--t5)] hover:text-[var(--t)] p-1" data-testid="edit-modal-close">
+              </div>
+              <button onClick={() => setEditInteg(null)} className="text-[var(--t5)] hover:text-[var(--t)] p-2 -mr-2" data-testid="edit-modal-close">
                 <X className="w-5 h-5" />
               </button>
-            </CardHeader>
-            <CardContent className="space-y-3">
+            </div>
+
+            {/* Scrollable Body */}
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3" style={{ WebkitOverflowScrolling: 'touch' }}>
               {editInteg.details.map((d) => (
                 <div key={d.label}>
                   <label className="text-[11px] font-bold text-[var(--t5)] uppercase tracking-wider">{d.label}</label>
@@ -508,23 +515,24 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
                     data-testid="edit-cost-note" />
                 </div>
               </div>
+            </div>
 
-              <div className="flex gap-2 pt-2 sticky bottom-0 pb-1" style={{ background: 'var(--bg)' }}>
-                <button onClick={() => setEditInteg(null)}
-                  className="flex-1 py-2.5 rounded-lg text-sm font-bold transition-all"
-                  style={{ background: 'var(--s)', color: 'var(--t4)', border: '1px solid var(--b)' }}
-                  data-testid="edit-cancel">
-                  Cancel
-                </button>
-                <button onClick={handleSave} disabled={saving}
-                  className="flex-1 py-2.5 rounded-lg text-sm font-bold transition-all disabled:opacity-50"
-                  style={{ background: 'var(--gold)', color: '#0F1629' }}
-                  data-testid="edit-save">
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </CardContent>
-          </Card>
+            {/* Sticky Footer */}
+            <div className="flex gap-2 px-4 py-3 shrink-0" style={{ borderTop: '1px solid var(--b)' }}>
+              <button onClick={() => setEditInteg(null)}
+                className="flex-1 py-2.5 rounded-lg text-sm font-bold transition-all"
+                style={{ background: 'var(--s)', color: 'var(--t4)', border: '1px solid var(--b)' }}
+                data-testid="edit-cancel">
+                Cancel
+              </button>
+              <button onClick={handleSave} disabled={saving}
+                className="flex-1 py-2.5 rounded-lg text-sm font-bold transition-all disabled:opacity-50"
+                style={{ background: 'var(--gold)', color: '#0F1629' }}
+                data-testid="edit-save">
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
