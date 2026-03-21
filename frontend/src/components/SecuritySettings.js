@@ -353,12 +353,12 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
       <div className="pt-4">
         <Label className="text-[var(--t4)] text-xs font-bold">Lock Behavior</Label>
         <Select value={lockMode} onValueChange={setLockMode}>
-          <SelectTrigger className="input-field mt-1 w-full text-sm">
+          <SelectTrigger className="input-field mt-1 w-full text-base">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]" style={{ zIndex: 99999 }}>
             {LOCK_MODES.map(m => (
-              <SelectItem key={m.value} value={m.value} className="text-[var(--t2)] hover:bg-[var(--s)] cursor-pointer text-sm">{m.label}</SelectItem>
+              <SelectItem key={m.value} value={m.value} className="text-[var(--t2)] hover:bg-[var(--s)] cursor-pointer text-base">{m.label}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -472,14 +472,14 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
             <div>
               <Label className="text-[var(--t4)] text-xs">Choose a Question</Label>
               <Select value={isCustomQuestion && question !== '__custom__' ? '__custom__' : question} onValueChange={(v) => { setQuestion(v); if (v !== '__custom__') setCustomQ(''); }}>
-                <SelectTrigger className="input-field mt-1 w-full text-sm">
+                <SelectTrigger className="input-field mt-1 w-full text-base">
                   <SelectValue placeholder="Select a question..." />
                 </SelectTrigger>
                 <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)] max-h-60" style={{ zIndex: 99999 }}>
                   {questions.map(q => (
-                    <SelectItem key={q} value={q} className="text-[var(--t2)] hover:bg-[var(--s)] cursor-pointer text-sm">{q}</SelectItem>
+                    <SelectItem key={q} value={q} className="text-[var(--t2)] hover:bg-[var(--s)] cursor-pointer text-base">{q}</SelectItem>
                   ))}
-                  <SelectItem value="__custom__" className="text-[var(--pr2)] hover:bg-[var(--s)] cursor-pointer text-sm font-bold">Write my own question...</SelectItem>
+                  <SelectItem value="__custom__" className="text-[var(--pr2)] hover:bg-[var(--s)] cursor-pointer text-base font-bold">Write my own question...</SelectItem>
                 </SelectContent>
               </Select>
             </div>

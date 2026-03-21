@@ -356,7 +356,7 @@ export const DTSTab = ({ getAuthHeaders }) => {
       {dtsTasks.length > 0 && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
           <Search className="w-4 h-4 text-[var(--t5)]" />
-          <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by title, type, status, beneficiary..." className="flex-1 bg-transparent border-none text-[var(--t)] text-sm outline-none placeholder:text-[var(--t5)]" data-testid="dts-search" />
+          <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by title, type, status, beneficiary..." className="flex-1 bg-transparent border-none text-[var(--t)] text-base outline-none placeholder:text-[var(--t5)]" data-testid="dts-search" />
         </div>
       )}
 

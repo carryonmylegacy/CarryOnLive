@@ -198,7 +198,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
                   {editingPrice === plan.id ? (
                     <div className="flex items-center gap-2">
                       <span className="text-[var(--t4)]">$</span>
-                      <Input type="number" step="0.01" value={newPrice} onChange={e => setNewPrice(e.target.value)} className="input-field w-20 text-sm" autoFocus />
+                      <Input type="number" step="0.01" value={newPrice} onChange={e => setNewPrice(e.target.value)} className="input-field w-20 text-base" autoFocus />
                       <Button size="sm" className="gold-button text-xs" onClick={() => updatePrice(plan.id)}>Save</Button>
                       <Button size="sm" variant="outline" className="text-xs border-[var(--b)]" onClick={() => setEditingPrice(null)}>Cancel</Button>
                     </div>
@@ -236,7 +236,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
                   {editingPrice === `ben_${plan.id}` ? (
                     <div className="flex items-center gap-2">
                       <span className="text-[var(--t4)]">$</span>
-                      <Input type="number" step="0.01" value={newPrice} onChange={e => setNewPrice(e.target.value)} className="input-field w-20 text-sm" autoFocus />
+                      <Input type="number" step="0.01" value={newPrice} onChange={e => setNewPrice(e.target.value)} className="input-field w-20 text-base" autoFocus />
                       <Button size="sm" className="gold-button text-xs" onClick={async () => {
                         try {
                           const formData = new FormData();
@@ -283,7 +283,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
           </div>
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg mb-4" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
             <Search className="w-4 h-4 text-[var(--t5)]" />
-            <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by name or email..." className="flex-1 bg-transparent border-none text-[var(--t)] text-sm outline-none placeholder:text-[var(--t5)]" data-testid="subscriptions-user-search" />
+            <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by name or email..." className="flex-1 bg-transparent border-none text-[var(--t)] text-base outline-none placeholder:text-[var(--t5)]" data-testid="subscriptions-user-search" />
             {searchQuery && (
               <button onClick={() => setSearchQuery('')} className="text-[var(--t5)] hover:text-[var(--t)]">
                 <span className="text-xs">&times;</span>

@@ -63,7 +63,7 @@ const XAICreditsCard = ({ getAuthHeaders }) => {
           <div className="flex items-center gap-2 mb-3 p-3 rounded-lg" style={{ background: 'var(--s)' }}>
             <span className="text-xs text-[var(--t4)]">$</span>
             <input type="number" value={newBalance} onChange={e => setNewBalance(e.target.value)} placeholder="500.00"
-              className="flex-1 bg-transparent text-sm text-[var(--t)] outline-none border-b border-[var(--b)] pb-1" data-testid="balance-input" />
+              className="flex-1 bg-transparent text-base text-[var(--t)] outline-none border-b border-[var(--b)] pb-1" data-testid="balance-input" />
             <button onClick={handleSetBalance} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-[#d4af37] text-[#0b1120]" data-testid="save-balance-btn">Set</button>
           </div>
         )}

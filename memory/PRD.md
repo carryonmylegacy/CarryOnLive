@@ -24,7 +24,8 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **CI Backend Lint Fix**: Removed unused `result` variable in `staff_tools.py` PUT endpoint. Ran `ruff format` to fix formatting. Both `ruff check` and `ruff format --check` now pass cleanly.
 - **CI Actions Upgrade**: Upgraded `actions/checkout` from v4 to v5 and `actions/setup-node` from v4 to v5 in `.github/workflows/ci.yml` to resolve Node.js 20 deprecation warnings (forced June 2, 2026).
 - **IntegrationsTab X Import Fix**: Added missing `X` icon import from lucide-react used by password modal and edit modal close buttons.
-- **iOS Safari Zoom Prevention**: All `<input>` elements in IntegrationsTab modals verified with `fontSize: '16px'` inline style to prevent iOS Safari auto-zoom on focus.
+- **iOS Safari Zoom Prevention**: All `<input>` elements in IntegrationsTab modals have `fontSize: '16px'`. Global sweep fixed 15 additional `text-sm` violations on inputs/selects across TrusteePage, SecuritySettings, FamilyPlanSettings, and 6 admin tabs. Updated Shadcn `select.jsx` base component from `text-sm` to `text-base`. Added `maximum-scale=1, user-scalable=no` to viewport meta tag.
+- **Housekeeping**: 6/6 checks PASS — input font-size, console.log, ESLint, ruff check/format, viewport meta, MongoDB _id serialization.
 
 ### Completed (March 21, 2026 — Session 12: Tree Connector Lines + Collapsible Beneficiary Tiles)
 - **Admin Hierarchy View Lines Fix**: Horizontal connector lines in renderTreeView() now extend only from the vertical spine to the right (not beyond to the left). Fixed `alignSelf: 'flex-end'` approach.
@@ -106,7 +107,7 @@ User pushes to GitHub → Railway builds backend → Vercel builds frontend → 
 ## Prioritized Backlog
 
 ### P0 - Active
-- iOS Safari Zoom Trap on Integration Edit Modal — Fix applied (text-base/16px on all inputs, X close button added), verified via lint + screenshot
+- None currently active (iOS zoom fix verified, CI fix applied)
 
 ### P1 - Upcoming
 - Share Extension Setup (instructions in /app/memory/SHARE_EXTENSION_SETUP.md)

@@ -676,7 +676,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="flex items-center gap-2 flex-1 px-3 py-2 rounded-lg" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
           <Search className="w-4 h-4 text-[var(--t5)]" />
-          <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search..." className="flex-1 bg-transparent border-none text-[var(--t)] text-sm outline-none placeholder:text-[var(--t5)]" data-testid="admin-users-search" />
+          <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search..." className="flex-1 bg-transparent border-none text-[var(--t)] text-base outline-none placeholder:text-[var(--t5)]" data-testid="admin-users-search" />
         </div>
         <div className="flex gap-1.5 w-full">
           {['all', 'benefactor', 'beneficiary'].map(r => (
