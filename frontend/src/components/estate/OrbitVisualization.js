@@ -80,43 +80,42 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
 
   // ── Adaptive node sizing constants ─────────────────────────
   const MIN_NODE = 28;
-  const MIN_GAP = 6;
+  const MIN_GAP = 4;
 
   // Derive all dimensions from the measured container width
   const w = Math.min(availWidth || 400, 560);
   const isCompact = w < 380;
-  let ballSize = isCompact ? 36 : w < 500 ? 44 : 48;
-  const centerSize = isCompact ? 50 : w < 500 ? 66 : 76;
-  const edgePad = ballSize / 2 + 6;
+  const ballSize = isCompact ? 36 : w < 500 ? 46 : 50;
+  const centerSize = isCompact ? 50 : w < 500 ? 70 : 80;
+  const edgePad = ballSize / 2 + 4;
   const maxOuterR = w / 2 - edgePad;
-  const baseOrbitR = centerSize / 2 + ballSize * 0.65;
+  const baseOrbitR = centerSize / 2 + ballSize * 0.6;
 
-  // Enforce minimum ring gap so balls on adjacent rings never overlap
-  const minRingGap = ballSize + MIN_GAP + 2;
+  // Progressive spacing with soft minimum gap
+  // Balls on adjacent rings may briefly "touch" during rotation but never fully overlap
+  const softMinGap = Math.max(ballSize * 0.6, 24);
   const evenSpacing =
     numRings > 1
       ? (maxOuterR - baseOrbitR) / numRings
       : maxOuterR - baseOrbitR;
 
-  // Build ring radii with enforced minimum gap
-  const rawRadii = [];
+  // Build ring radii — compress positions if needed, never shrink balls
+  const orbitRadii = [];
   for (let i = 0; i < numRings; i++) {
     const t = numRings > 1 ? i / (numRings - 1) : 0;
     const factor = 0.6 + t * 0.4;
     const targetR = baseOrbitR + (i + 1) * evenSpacing * factor;
-    const minR = i === 0 ? baseOrbitR + minRingGap : rawRadii[i - 1] + minRingGap;
-    rawRadii.push(Math.max(targetR, minR));
+    const minR = i === 0 ? baseOrbitR + softMinGap : orbitRadii[i - 1] + softMinGap;
+    orbitRadii.push(Math.max(targetR, minR));
   }
 
-  // Scale down if outermost ring exceeds available space
-  const rawOuter = rawRadii[numRings - 1] || baseOrbitR;
-  const orbitRadii = [...rawRadii];
-  if (rawOuter > maxOuterR && numRings > 0) {
-    const scale = (maxOuterR - baseOrbitR) / (rawOuter - baseOrbitR);
+  // If outer ring exceeds bounds, scale ring POSITIONS only (not ball size)
+  if (orbitRadii.length > 0 && orbitRadii[orbitRadii.length - 1] > maxOuterR) {
+    const scale = (maxOuterR - baseOrbitR) / (orbitRadii[orbitRadii.length - 1] - baseOrbitR);
+    const snapshot = [...orbitRadii];
     for (let i = 0; i < orbitRadii.length; i++) {
-      orbitRadii[i] = baseOrbitR + (rawRadii[i] - baseOrbitR) * scale;
+      orbitRadii[i] = baseOrbitR + (snapshot[i] - baseOrbitR) * scale;
     }
-    ballSize = Math.max(Math.floor(ballSize * scale), MIN_NODE);
   }
 
   // Container height — tight bounds, no overflow
@@ -224,7 +223,7 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
     const sz = nodeSize || ballSize;
     const positions = [];
     const angleStep = 360 / Math.max(memberCount, 1);
-    const startAngle = 90 + level * 37; // stagger each ring
+    const startAngle = 90 + level * 51; // golden-angle-ish stagger reduces same-angle alignment
     for (let i = 0; i < memberCount; i++) {
       const angle = startAngle + i * angleStep;
       positions.push({
