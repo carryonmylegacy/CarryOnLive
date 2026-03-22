@@ -300,6 +300,9 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
       }
     });
 
+    // Build estate map: each estate is a separate entry (supports multi-estate owners)
+    const estateEntries = [];
+
     benefactors.forEach(owner => {
       const groups = owner.estate_groups || [];
       if (groups.length > 0) {
