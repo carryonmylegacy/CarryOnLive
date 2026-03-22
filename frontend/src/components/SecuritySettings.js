@@ -316,21 +316,21 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
   const [lockMode, setLockMode] = useState(s.lock_mode || 'manual');
   const [saving, setSaving] = useState(false);
 
-  // Account password verification for disabling security
-  const [showAccountPwModal, setShowAccountPwModal] = useState(false);
-  const [accountPw, setAccountPw] = useState('');
-  const [accountPwVerifying, setAccountPwVerifying] = useState(false);
-  const [showAccountPwValue, setShowAccountPwValue] = useState(false);
+  // Master key verification for disabling security
+  const [showMasterKeyModal, setShowMasterKeyModal] = useState(false);
+  const [masterKeyVerify, setMasterKeyVerify] = useState('');
+  const [masterKeyVerifying, setMasterKeyVerifying] = useState(false);
+  const [showMasterKeyVerifyValue, setShowMasterKeyVerifyValue] = useState(false);
   const [pendingToggle, setPendingToggle] = useState(null);
 
   const isCustomQuestion = question === '__custom__' || (question && !questions.includes(question));
 
-  // Wrap toggle-off actions to require account password
+  // Wrap toggle-off actions to require master key
   const handleToggle = (field, value) => {
     if (!value && s.is_active) {
       setPendingToggle({ field, value });
-      setShowAccountPwModal(true);
-      setAccountPw('');
+      setShowMasterKeyModal(true);
+      setMasterKeyVerify('');
     } else {
       if (field === 'pin') setPinEnabled(value);
       else if (field === 'password') setPwEnabled(value);
@@ -338,11 +338,10 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
     }
   };
 
-  const verifyAccountPassword = async () => {
-    setAccountPwVerifying(true);
+  const verifyMasterKey = async () => {
+    setMasterKeyVerifying(true);
     try {
-      const { email } = JSON.parse(atob(localStorage.getItem('carryon_token').split('.')[1]));
-      await axios.post(`${API_URL}/auth/verify-password`, { email, password: accountPw }, { headers });
+      await axios.post(`${API_URL}/security/verify-master-key`, { master_key: masterKeyVerify }, { headers: { ...headers, 'Content-Type': 'application/json' } });
       if (pendingToggle) {
         if (pendingToggle.field === 'pin') setPinEnabled(pendingToggle.value);
         else if (pendingToggle.field === 'password') setPwEnabled(pendingToggle.value);
@@ -352,13 +351,13 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
           onUpdate();
         }
       }
-      setShowAccountPwModal(false);
+      setShowMasterKeyModal(false);
       setPendingToggle(null);
-      setAccountPw('');
+      setMasterKeyVerify('');
     } catch (err) {
-      toast.error('Incorrect account password');
+      toast.error(err.response?.data?.detail || 'Incorrect master key');
     }
-    setAccountPwVerifying(false);
+    setMasterKeyVerifying(false);
   };
 
   const handleSave = async () => {
@@ -405,8 +404,8 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
 
   const handleRemove = () => {
     setPendingToggle({ field: 'remove' });
-    setShowAccountPwModal(true);
-    setAccountPw('');
+    setShowMasterKeyModal(true);
+    setMasterKeyVerify('');
   };
 
   // PIN keypad handlers
@@ -577,45 +576,45 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
         )}
       </div>
 
-      {/* Account Password Verification Modal */}
-      {showAccountPwModal && createPortal(
-        <div className="fixed inset-0 z-[99999] bg-black/60 flex items-center justify-center px-4" onClick={() => { setShowAccountPwModal(false); setPendingToggle(null); }}>
-          <div className="rounded-2xl p-6 max-w-sm w-full border border-[var(--b2)]" style={{ background: 'var(--bg)' }} onClick={e => e.stopPropagation()} data-testid="account-pw-modal">
+      {/* Master Key Verification Modal */}
+      {showMasterKeyModal && createPortal(
+        <div className="fixed inset-0 z-[99999] bg-black/60 flex items-center justify-center px-4" onClick={() => { setShowMasterKeyModal(false); setPendingToggle(null); }}>
+          <div className="rounded-2xl p-6 max-w-sm w-full border border-[var(--b2)]" style={{ background: 'var(--bg)' }} onClick={e => e.stopPropagation()} data-testid="master-key-verify-modal">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-[var(--gold)]/10 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-[var(--gold)]" />
+                <KeyRound className="w-5 h-5 text-[var(--gold)]" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-[var(--t)]">Confirm Identity</h3>
-                <p className="text-xs text-[var(--t4)]">Enter your account password to modify security settings</p>
+                <h3 className="text-base font-bold text-[var(--t)]">Confirm with Master Key</h3>
+                <p className="text-xs text-[var(--t4)]">Enter your Vault Master Key to modify security settings</p>
               </div>
             </div>
             <div className="relative">
               <Input
-                type={showAccountPwValue ? 'text' : 'password'}
-                value={accountPw}
-                onChange={e => setAccountPw(e.target.value)}
-                placeholder="Account password"
+                type={showMasterKeyVerifyValue ? 'text' : 'password'}
+                value={masterKeyVerify}
+                onChange={e => setMasterKeyVerify(e.target.value)}
+                placeholder="Enter your master key"
                 className="input-field mb-3 pr-10"
                 style={{ fontSize: '16px' }}
-                onKeyDown={e => e.key === 'Enter' && accountPw && verifyAccountPassword()}
+                onKeyDown={e => e.key === 'Enter' && masterKeyVerify && verifyMasterKey()}
                 autoFocus
-                data-testid="account-pw-input"
+                data-testid="master-key-verify-input"
               />
               <button
                 type="button"
                 onMouseDown={e => e.preventDefault()}
-                onClick={() => setShowAccountPwValue(!showAccountPwValue)}
+                onClick={() => setShowMasterKeyVerifyValue(!showMasterKeyVerifyValue)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 -mt-1.5 text-[var(--t5)] hover:text-[var(--t)] transition-colors"
-                data-testid="account-pw-toggle-visibility"
+                data-testid="master-key-verify-toggle"
               >
-                {showAccountPwValue ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showMasterKeyVerifyValue ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" className="flex-1 border-[var(--b)] text-[var(--t)]" onClick={() => { setShowAccountPwModal(false); setPendingToggle(null); }}>Cancel</Button>
-              <Button className="flex-1 gold-button" disabled={!accountPw || accountPwVerifying} onClick={verifyAccountPassword} data-testid="account-pw-confirm">
-                {accountPwVerifying ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : null}
+              <Button variant="outline" className="flex-1 border-[var(--b)] text-[var(--t)]" onClick={() => { setShowMasterKeyModal(false); setPendingToggle(null); }}>Cancel</Button>
+              <Button className="flex-1 gold-button" disabled={!masterKeyVerify || masterKeyVerifying} onClick={verifyMasterKey} data-testid="master-key-verify-confirm">
+                {masterKeyVerifying ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : null}
                 Confirm
               </Button>
             </div>
