@@ -33,9 +33,9 @@ HIGH_CONFIDENCE_THRESHOLD = 0.88
 LOW_CONFIDENCE_THRESHOLD = 0.70
 
 # Quality thresholds
-MIN_SNR_DB = 6.0  # Minimum signal-to-noise ratio
+MIN_SNR_DB = 3.0  # Minimum signal-to-noise ratio (lowered for mobile recordings)
 MAX_CLIPPING_RATIO = 0.02  # Max fraction of clipped samples
-MIN_RMS_ENERGY = 0.005  # Minimum RMS to consider non-silent
+MIN_RMS_ENERGY = 0.001  # Minimum RMS to consider non-silent (lowered for mobile/quiet rooms)
 
 # Passphrase matching
 PASSPHRASE_THRESHOLD = 0.65  # difflib sequence match ratio
@@ -95,7 +95,7 @@ def assess_audio_quality(audio: np.ndarray, sr: int) -> dict:
         score -= 0.4
 
     if rms < MIN_RMS_ENERGY:
-        issues.append("Audio too quiet")
+        issues.append(f"Audio too quiet (RMS {rms:.6f})")
         score -= 0.3
 
     if clipped > MAX_CLIPPING_RATIO:
@@ -103,11 +103,17 @@ def assess_audio_quality(audio: np.ndarray, sr: int) -> dict:
         score -= 0.2
 
     if snr_db < MIN_SNR_DB:
-        issues.append(f"Noisy recording (SNR {snr_db:.1f} dB)")
-        score -= 0.2
+        issues.append(f"Low signal-to-noise ratio (SNR {snr_db:.1f} dB)")
+        score -= 0.15
 
     score = max(0.0, min(1.0, score))
-    passed = score >= 0.5
+    passed = score >= 0.4  # More lenient pass threshold for mobile recordings
+
+    logger.info(
+        f"Audio quality: duration={duration:.2f}s, rms={rms:.6f}, "
+        f"snr={snr_db:.1f}dB, clip={clipped:.4f}, score={score:.2f}, "
+        f"passed={passed}, issues={issues}"
+    )
 
     return {
         "passed": passed,
@@ -127,16 +133,18 @@ def extract_voiceprint(audio_bytes: bytes) -> dict | None:
     """
     Extract a rich ~130-dimension voiceprint from audio bytes.
     Returns dict with feature vector, quality info, and metadata.
-    Returns None if extraction fails.
+    Returns None if extraction fails — includes quality_issues for diagnostics.
     """
     try:
         audio, sr = librosa.load(io.BytesIO(audio_bytes), sr=SAMPLE_RATE, mono=True)
+        logger.info(f"Loaded audio: {len(audio)} samples, {len(audio)/sr:.2f}s at {sr}Hz")
 
         # Quality check on raw audio
         quality = assess_audio_quality(audio, sr)
         if not quality["passed"]:
             logger.warning(f"Audio quality check failed: {quality['issues']}")
-            return None
+            # Return a dict with quality info so the caller can show specific issues
+            return {"failed_quality": True, "quality": quality}
 
         # Preprocess
         audio_clean = preprocess_audio(audio, sr)

@@ -389,7 +389,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
           toast.success(res.data.message || 'Voice sample enrolled!');
         } catch (err) {
           const detail = err.response?.data?.detail;
-          toast.error(detail || 'Voice enrollment failed — try in a quieter environment');
+          toast.error(detail || 'Voice enrollment failed — please try again');
         }
         setEnrolling(false);
       };

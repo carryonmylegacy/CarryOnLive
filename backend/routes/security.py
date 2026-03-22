@@ -214,12 +214,23 @@ async def enroll_voiceprint_endpoint(
             logger.error(f"Voice feature extraction error: {ve}")
             raise HTTPException(
                 status_code=400,
-                detail=f"Voice processing error: {str(ve)[:200]}. Try recording in a quieter environment.",
+                detail=f"Voice processing error: {str(ve)[:200]}. Try recording again.",
             )
+
         if extraction is None:
             raise HTTPException(
                 status_code=400,
-                detail="Could not extract voice features. Please record a longer, clearer sample (at least 2 seconds in a quiet environment).",
+                detail="Could not process audio file. Please try recording again.",
+            )
+
+        # Check if quality check failed (extraction returned quality info only)
+        if extraction.get("failed_quality"):
+            quality_issues = extraction["quality"].get("issues", [])
+            issue_text = "; ".join(quality_issues) if quality_issues else "unknown quality issue"
+            logger.warning(f"Voice enrollment quality fail for {section_id}: {issue_text}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Recording quality issue: {issue_text}. Please speak louder and hold for 2+ seconds.",
             )
 
         new_voiceprint = extraction["voiceprint"]
@@ -364,7 +375,16 @@ async def verify_section_security(
                 if extraction is None:
                     raise HTTPException(
                         status_code=400,
-                        detail="Could not process voice sample. Please try again in a quieter environment.",
+                        detail="Could not process voice sample. Please try again.",
+                    )
+
+                # Handle quality failure with specific feedback
+                if extraction.get("failed_quality"):
+                    quality_issues = extraction["quality"].get("issues", [])
+                    issue_text = "; ".join(quality_issues) if quality_issues else "audio quality issue"
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Voice sample quality issue: {issue_text}. Please speak louder and clearly.",
                     )
 
                 test_vp = extraction["voiceprint"]
