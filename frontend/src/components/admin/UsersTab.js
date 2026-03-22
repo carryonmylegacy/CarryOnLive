@@ -705,13 +705,40 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                     sublabel={benUser.email}
                   />
 
-                  {connectedEstates.length > 0 && (
+                  {connectedEstates.length > 0 && (() => {
+                    const n = connectedEstates.length;
+                    const vbW = 200;
+                    const vbH = 36;
+                    const cx = vbW / 2;
+                    const arcPaths = [];
+                    for (let i = 0; i < n; i++) {
+                      const isSingle = n === 1;
+                      const endX = isSingle ? cx : (30 + (i / (n - 1)) * (vbW - 60));
+                      const cpX = cx + (endX - cx) * 0.3;
+                      arcPaths.push(`M ${cx},0 Q ${cpX},${vbH * 0.55} ${endX},${vbH}`);
+                    }
+                    return (
                     <div className="flex flex-col items-center w-full">
-                      <div style={{ width: 1, height: 16, background: 'linear-gradient(to bottom, rgba(139,92,246,0.5), transparent)' }} />
+                      <div className="flex justify-center" style={{ marginTop: -2, marginBottom: -2 }}>
+                        <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '80%', height: 22 }} className="overflow-visible">
+                          <defs>
+                            <linearGradient id={`bg-${benUser.id}`} x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.4" />
+                              <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.06" />
+                            </linearGradient>
+                            <filter id={`bgGlow-${benUser.id}`}>
+                              <feGaussianBlur stdDeviation="1.5" result="blur" />
+                              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                            </filter>
+                          </defs>
+                          {arcPaths.map((d, i) => (
+                            <path key={i} d={d} fill="none" stroke={`url(#bg-${benUser.id})`} strokeWidth="0.8" filter={`url(#bgGlow-${benUser.id})`} />
+                          ))}
+                        </svg>
+                      </div>
                       <div className="flex justify-center gap-5 flex-wrap pt-1">
                         {connectedEstates.map((estate, idx) => (
                           <div key={`${estate.owner.id}-${idx}`} className="flex flex-col items-center">
-                            <div style={{ width: 1, height: 10, background: '#d4af37', opacity: 0.3 }} />
                             <GraphNode
                               initials={getInit(estate.owner)}
                               color="#d4af37"
@@ -724,7 +751,8 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                         ))}
                       </div>
                     </div>
-                  )}
+                    );
+                  })()}
 
                   {connectedEstates.length === 0 && (
                     <p className="text-[11px] text-[var(--t5)] mt-2 italic">No connected estates</p>
@@ -783,9 +811,39 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                   sublabel={owner.email}
                 />
 
-                {sortedBens.length > 0 && (
+                {sortedBens.length > 0 && (() => {
+                  const n = sortedBens.length;
+                  const cols = Math.min(n, 3);
+                  const vbW = 200;
+                  const vbH = 36;
+                  const cx = vbW / 2;
+                  const arcPaths = [];
+                  for (let i = 0; i < Math.min(n, 6); i++) {
+                    const isSingle = n === 1;
+                    const endX = isSingle ? cx : (20 + (i / (Math.min(n, 6) - 1)) * (vbW - 40));
+                    const cpX = cx + (endX - cx) * 0.3;
+                    arcPaths.push(`M ${cx},0 Q ${cpX},${vbH * 0.55} ${endX},${vbH}`);
+                  }
+
+                  return (
                   <div className="flex flex-col items-center w-full">
-                    <div style={{ width: 1, height: 16, background: 'linear-gradient(to bottom, rgba(212,175,55,0.5), transparent)' }} />
+                    <div className="flex justify-center" style={{ marginTop: -2, marginBottom: -2 }}>
+                      <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '80%', height: 24 }} className="overflow-visible">
+                        <defs>
+                          <linearGradient id={`ag-${key}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#d4af37" stopOpacity="0.4" />
+                            <stop offset="100%" stopColor="#d4af37" stopOpacity="0.06" />
+                          </linearGradient>
+                          <filter id={`agGlow-${key}`}>
+                            <feGaussianBlur stdDeviation="1.5" result="blur" />
+                            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                          </filter>
+                        </defs>
+                        {arcPaths.map((d, i) => (
+                          <path key={i} d={d} fill="none" stroke={`url(#ag-${key})`} strokeWidth="0.8" filter={`url(#agGlow-${key})`} />
+                        ))}
+                      </svg>
+                    </div>
                     <div className="flex justify-center gap-5 flex-wrap pt-1">
                       {sortedBens.map((ben, idx) => {
                         const color = getBenNodeColor(ben);
@@ -796,7 +854,6 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                           : ben.name ? ben.name.split(' ').map(x => x[0]).join('').toUpperCase().slice(0, 2) : '??';
                         return (
                           <div key={ben.id} className="flex flex-col items-center">
-                            <div style={{ width: 1, height: 10, background: color, opacity: 0.3 }} />
                             <GraphNode
                               initials={benInitials}
                               color={color}
@@ -811,7 +868,8 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                       })}
                     </div>
                   </div>
-                )}
+                  );
+                })()}
 
                 {sortedBens.length === 0 && (
                   <p className="text-[11px] text-[var(--t5)] mt-2 italic">No beneficiaries</p>
