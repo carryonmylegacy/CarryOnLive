@@ -186,11 +186,11 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                     ? cx
                     : 60 + (col / (actual - 1)) * (vb - 120);
                   const y0 = row * (30 / rows);
-                  // Two wide brush strokes per estate — no center vertical
-                  const strokes = [-1, 1];
+                  // 5 thin brush strokes per estate — soft fan effect
+                  const strokes = [-2, -1, 0, 1, 2];
                   strokes.forEach((s, si) => {
-                    const spread = 18;
-                    const xo = x + s * spread; // fan out at estate end
+                    const spread = 5;
+                    const xo = x + s * spread;
                     lines.push(
                       <path
                         key={`${i}-${si}`}
@@ -230,28 +230,27 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
           const vbH = 80;
           const cx = vbW / 2;
           const arcPaths = [];
-          // Calculate end positions same way upper calculates start positions
           for (let i = 0; i < n; i++) {
             const isOddLast = n % 2 !== 0 && i === n - 1;
             const col = i % cols;
             const endX = isOddLast ? cx : (col === 0 ? vbW * 0.2 : vbW * 0.8);
-            // Two brush strokes per beneficiary — exact mirror of upper curve pattern
-            const strokes = [-1, 1];
+            // 5 thin brush strokes per beneficiary — soft fan, not paired lines
+            const strokes = [-2, -1, 0, 1, 2];
             strokes.forEach(s => {
-              const spread = 18;
+              const spread = 5;
               const endXo = endX + s * spread;
-              // Mirror of upper: M xo,0 C xo,30 cx,55 cx,78 → flipped vertically
               arcPaths.push(`M ${cx},0 C ${cx},22 ${endXo},48 ${endXo},78`);
             });
           }
           const goldStart = isLight ? '#b8860b' : '#d4af37';
           const goldEnd = isLight ? '#d4af37' : '#FFD700';
+          // Match upper SVG height formula exactly
           const lowerSvgH = n <= 2 ? 80 : Math.min(140, 60 + n * 18);
 
           return (
           <div className="w-full" style={{ maxWidth: 340 }} data-testid="tree-spine">
-            {/* SVG — same rendered height as upper arcs */}
-            <div className="flex justify-center" style={{ marginTop: 6, marginBottom: -8, position: 'relative', zIndex: 0 }}>
+            {/* SVG — tight to benefactor label, symmetric with upper */}
+            <div className="flex justify-center" style={{ marginTop: -2, marginBottom: -8, position: 'relative', zIndex: 0 }}>
               <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: lowerSvgH }} className="overflow-visible">
                 <defs>
                   <linearGradient id="ftGoldGrad" x1="0" y1="0" x2="0" y2="1">

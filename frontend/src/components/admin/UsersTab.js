@@ -714,16 +714,16 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                     for (let i = 0; i < n; i++) {
                       const isSingle = n === 1;
                       const endX = isSingle ? cx : (40 + (i / (n - 1)) * (vbW - 80));
-                      const strokes = [-1, 1];
+                      const strokes = [-2, -1, 0, 1, 2];
                       strokes.forEach(s => {
-                      const spread = 18;
+                      const spread = 5;
                       const endXo = endX + s * spread;
                       arcPaths.push(`M ${cx},0 C ${cx},22 ${endXo},48 ${endXo},78`);
                       });
                     }
                     return (
                     <div className="flex flex-col items-center w-full">
-                      <div className="flex justify-center" style={{ marginTop: 4, marginBottom: -6 }}>
+                      <div className="flex justify-center" style={{ marginTop: -2, marginBottom: -6 }}>
                         <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '90%', height: Math.min(80, 40 + n * 8) }} className="overflow-visible">
                           <defs>
                             <linearGradient id={`bg-${benUser.id}`} x1="0" y1="0" x2="0" y2="1">
@@ -825,9 +825,9 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                   for (let i = 0; i < maxArcs; i++) {
                     const isSingle = maxArcs === 1;
                     const endX = isSingle ? cx : (30 + (i / (maxArcs - 1)) * (vbW - 60));
-                    const strokes = [-1, 1];
+                    const strokes = [-2, -1, 0, 1, 2];
                     strokes.forEach(s => {
-                      const spread = 18;
+                      const spread = 5;
                       const endXo = endX + s * spread;
                       arcPaths.push(`M ${cx},0 C ${cx},22 ${endXo},48 ${endXo},78`);
                     });
@@ -835,7 +835,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
 
                   return (
                   <div className="flex flex-col items-center w-full">
-                    <div className="flex justify-center" style={{ marginTop: 4, marginBottom: -6 }}>
+                    <div className="flex justify-center" style={{ marginTop: -2, marginBottom: -6 }}>
                       <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '90%', height: Math.min(80, 40 + maxArcs * 8) }} className="overflow-visible">
                         <defs>
                           <linearGradient id={`ag-${key}`} x1="0" y1="0" x2="0" y2="1">
