@@ -186,10 +186,10 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                     ? cx
                     : 60 + (col / (actual - 1)) * (vb - 120);
                   const y0 = row * (30 / rows);
-                  // Brush-stroke bundle: 3 curves that fan at the estate end, converge at benefactor center
-                  const strokes = [-1, 0, 1];
+                  // Two wide brush strokes per estate — no center vertical
+                  const strokes = [-1, 1];
                   strokes.forEach((s, si) => {
-                    const spread = 8;
+                    const spread = 18;
                     const xo = x + s * spread; // fan out at estate end
                     lines.push(
                       <path
@@ -234,10 +234,10 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
             const isOddLast = n % 2 !== 0 && i === n - 1;
             const col = i % cols;
             const endX = isOddLast ? cx : (col === 0 ? vbW * 0.2 : vbW * 0.8);
-            // Brush-stroke bundle: 3 curves that fan at beneficiary end, converge at benefactor
-            const strokes = [-1, 0, 1];
+            // Two wide brush strokes per beneficiary — no center vertical
+            const strokes = [-1, 1];
             strokes.forEach(s => {
-              const spread = 8;
+              const spread = 18;
               const endXo = endX + s * spread;
               arcPaths.push(`M ${cx},0 C ${cx},${vbH * 0.35} ${endXo},${vbH * 0.6} ${endXo},${vbH}`);
             });

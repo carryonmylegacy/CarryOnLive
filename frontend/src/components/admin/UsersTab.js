@@ -714,9 +714,9 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                     for (let i = 0; i < n; i++) {
                       const isSingle = n === 1;
                       const endX = isSingle ? cx : (40 + (i / (n - 1)) * (vbW - 80));
-                      const strokes = [-1, 0, 1];
+                      const strokes = [-1, 1];
                       strokes.forEach(s => {
-                        const spread = 8;
+                        const spread = 18;
                         const endXo = endX + s * spread;
                         arcPaths.push(`M ${cx},0 C ${cx},${vbH * 0.35} ${endXo},${vbH * 0.6} ${endXo},${vbH}`);
                       });
@@ -825,9 +825,9 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                   for (let i = 0; i < maxArcs; i++) {
                     const isSingle = maxArcs === 1;
                     const endX = isSingle ? cx : (30 + (i / (maxArcs - 1)) * (vbW - 60));
-                    const strokes = [-1, 0, 1];
+                    const strokes = [-1, 1];
                     strokes.forEach(s => {
-                      const spread = 8;
+                      const spread = 18;
                       const endXo = endX + s * spread;
                       arcPaths.push(`M ${cx},0 C ${cx},${vbH * 0.35} ${endXo},${vbH * 0.6} ${endXo},${vbH}`);
                     });
