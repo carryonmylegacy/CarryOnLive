@@ -143,6 +143,7 @@ const SecuritySettings = ({ getAuthHeaders }) => {
                 />
                 <button
                   type="button"
+                  onMouseDown={e => e.preventDefault()}
                   onClick={() => setShowMasterKeyValue(!showMasterKeyValue)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)] hover:text-[var(--t)] transition-colors"
                   data-testid="master-key-toggle-visibility"
@@ -492,7 +493,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
                 className="input-field pr-10 text-sm"
                 data-testid={`pw-input-${section.id}`}
               />
-              <button onClick={() => setShowPw(p => !p)} className="absolute right-3 top-2.5 text-[var(--t5)]">
+              <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowPw(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
                 {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
@@ -603,6 +604,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
               />
               <button
                 type="button"
+                onMouseDown={e => e.preventDefault()}
                 onClick={() => setShowAccountPwValue(!showAccountPwValue)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 -mt-1.5 text-[var(--t5)] hover:text-[var(--t)] transition-colors"
                 data-testid="account-pw-toggle-visibility"

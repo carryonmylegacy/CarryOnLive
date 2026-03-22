@@ -395,19 +395,19 @@ const UnlockModal = ({ sectionId, settings: s, onClose, onUnlocked }) => {
           {/* Password Step */}
           {currentStep === 'password' && (
             <div className="space-y-4">
+              <Label className="text-[var(--t4)] text-xs">Section Password <span className="text-red-400">*</span></Label>
               <div className="relative">
-                <Label className="text-[var(--t4)] text-xs">Section Password <span className="text-red-400">*</span></Label>
                 <Input
                   type={showPw ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="Enter section password"
-                  className="input-field mt-1 pr-10"
+                  className="input-field pr-10"
                   onKeyDown={e => e.key === 'Enter' && canProceed() && handleNext()}
                   autoFocus
                   data-testid="unlock-password-input"
                 />
-                <button onClick={() => setShowPw(p => !p)} className="absolute right-3 top-8 text-[var(--t5)]">
+                <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowPw(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]" data-testid="unlock-pw-eye">
                   {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>

@@ -923,7 +923,7 @@ const VaultPage = () => {
                     style={{ fontSize: '16px' }}
                     data-testid="upload-password-input"
                   />
-                  <button type="button" onClick={() => setShowPwEye(!showPwEye)}
+                  <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowPwEye(!showPwEye)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)] hover:text-[var(--t)] transition-colors"
                     data-testid="upload-password-toggle">
                     {showPwEye ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -1100,7 +1100,7 @@ const VaultPage = () => {
                     className="input-field pr-10"
                     data-testid="unlock-password-input"
                   />
-                  <button type="button" onClick={() => setShowUnlockPwEye(!showUnlockPwEye)}
+                  <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowUnlockPwEye(!showUnlockPwEye)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
                     {showUnlockPwEye ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -1420,7 +1420,7 @@ const VaultPage = () => {
                   className="input-field pr-10"
                   data-testid="set-lock-password"
                 />
-                <button type="button" onClick={() => setShowPwEye(!showPwEye)}
+                <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowPwEye(!showPwEye)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
                   {showPwEye ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -1437,7 +1437,7 @@ const VaultPage = () => {
                   className="input-field pr-10"
                   data-testid="confirm-lock-password"
                 />
-                <button type="button" onClick={() => setShowPwEye(!showPwEye)}
+                <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowPwEye(!showPwEye)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
                   {showPwEye ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>

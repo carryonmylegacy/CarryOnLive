@@ -158,7 +158,7 @@ export const DTSTab = ({ getAuthHeaders }) => {
                 autoFocus
                 data-testid="dts-delete-confirm-password"
               />
-              <button type="button" onClick={() => setShowDeletePw(!showDeletePw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3a4a63]">
+              <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowDeletePw(!showDeletePw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3a4a63]">
                 {showDeletePw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>

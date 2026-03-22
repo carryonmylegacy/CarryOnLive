@@ -286,12 +286,14 @@ const WalletEntryPanel = ({ entry, beneficiaries, onClose, onSaved, getAuthHeade
               <Label className="text-[var(--t4)] text-xs">Login / Username / Email <span className="text-red-400">*</span></Label>
               <Input value={login} onChange={e => setLogin(e.target.value)} placeholder="username or email" className="input-field mt-1" data-testid="wallet-login" />
             </div>
-            <div className="relative">
+            <div>
               <Label className="text-[var(--t4)] text-xs">Password</Label>
-              <Input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="********" className="input-field mt-1 pr-10" data-testid="wallet-password" />
-              <button onClick={() => setShowPw(p => !p)} className="absolute right-3 top-7 text-[var(--t5)]">
-                {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
+              <div className="relative mt-1">
+                <Input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="********" className="input-field pr-10" data-testid="wallet-password" />
+                <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowPw(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
+                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
             <div>
               <Label className="text-[var(--t4)] text-xs">Additional Access Info</Label>

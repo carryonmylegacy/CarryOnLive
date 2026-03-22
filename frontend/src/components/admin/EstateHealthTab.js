@@ -375,7 +375,7 @@ const GhostEstateAlert = ({ ghostEstates, getAuthHeaders, onCleanupDone }) => {
                 className="text-xs pr-8"
                 data-testid="ghost-cleanup-password"
               />
-              <button onClick={() => setShowPw(!showPw)} className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--t5)]">
+              <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowPw(!showPw)} className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--t5)]">
                 {showPw ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               </button>
             </div>

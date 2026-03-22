@@ -234,7 +234,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
               <Input placeholder="Password *" type={showFormPassword ? 'text' : 'password'} value={form.password}
                 onChange={f('password')}
                 className="bg-[var(--s)] border-[var(--b)] text-[var(--t)] pr-10" data-testid="create-password" />
-              <button type="button" onClick={() => setShowFormPassword(!showFormPassword)}
+              <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowFormPassword(!showFormPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
                 {showFormPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -286,7 +286,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
               <Input placeholder="New password (leave blank to keep)" type={showEditPassword ? 'text' : 'password'}
                 value={editForm.password || ''} onChange={ef('password')}
                 className="bg-[var(--s)] border-[var(--b)] text-[var(--t)] pr-10" data-testid="edit-password" />
-              <button type="button" onClick={() => setShowEditPassword(!showEditPassword)}
+              <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowEditPassword(!showEditPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
                 {showEditPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -334,7 +334,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
             <Input type={showDeletePassword ? 'text' : 'password'} value={deletePassword}
               onChange={e => setDeletePassword(e.target.value)} placeholder="Your password"
               className="bg-[var(--s)] border-[var(--b)] text-[var(--t)] pr-10" data-testid="delete-password" />
-            <button type="button" onClick={() => setShowDeletePassword(!showDeletePassword)}
+            <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowDeletePassword(!showDeletePassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
               {showDeletePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>

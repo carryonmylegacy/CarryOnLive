@@ -514,7 +514,7 @@ const SettingsPage = () => {
                     onChange={e => setCurrentPw(e.target.value)} placeholder="Current password"
                     style={{ fontSize: '16px' }}
                     className="bg-[var(--bg)] border-[var(--b)] text-[var(--t)] pr-10" data-testid="current-password" />
-                  <button type="button" onClick={() => setShowCurrentPw(!showCurrentPw)}
+                  <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowCurrentPw(!showCurrentPw)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
                     {showCurrentPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -524,7 +524,7 @@ const SettingsPage = () => {
                     onChange={e => setNewPw(e.target.value)} placeholder="New password"
                     style={{ fontSize: '16px' }}
                     className="bg-[var(--bg)] border-[var(--b)] text-[var(--t)] pr-10" data-testid="new-password" />
-                  <button type="button" onClick={() => setShowNewPw(!showNewPw)}
+                  <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowNewPw(!showNewPw)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)]">
                     {showNewPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
