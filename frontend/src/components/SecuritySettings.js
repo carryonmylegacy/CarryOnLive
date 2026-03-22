@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Shield, Lock, Unlock, KeyRound, HelpCircle, Eye, EyeOff, CheckCircle2, Loader2, ChevronDown, ChevronUp, Hash, Delete, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -37,6 +38,16 @@ const SecuritySettings = ({ getAuthHeaders }) => {
   const [expandedSection, setExpandedSection] = useState(null);
   const [loading, setLoading] = useState(true);
   const { fetchSettings: refreshGlobalLock } = useSectionLock();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Auto-expand section from URL param (e.g., /security-settings?section=sdv)
+  useEffect(() => {
+    const sectionParam = searchParams.get('section');
+    if (sectionParam && SECTIONS.find(s => s.id === sectionParam)) {
+      setExpandedSection(sectionParam);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   // Master key state
   const [hasMasterKey, setHasMasterKey] = useState(false);

@@ -27,6 +27,7 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **Unlock Modal Updated**: SectionLock.js unlock modal now shows PIN keypad step (instead of voice recording) with multi-step progress dots (PIN → Password → Q&A).
 - **Migration Cleanup**: Backend `$unset`s all legacy voice fields (voiceprint, voiceprint_samples, voice_enabled, etc.) when saving section security settings.
 - **Layer Wiring Bug Fixed**: Fixed critical bug where enabling one security layer caused the system to think all three were enabled. Root cause: (1) Frontend unlock modal checked `*_enabled` without also checking `has_*` (data exists), (2) Backend didn't auto-disable layers enabled without data. Fix: frontend now requires BOTH `*_enabled && has_*` before showing a step; backend auto-disables layers post-save if their data (hash/answer) doesn't exist.
+- **Lock Banner Deep-Link to Settings**: Locked/unlocked section banners now show "Tap to add X more layer(s)" when fewer than 3 layers are configured. Tapping the text area navigates to `/security-settings?section={sid}` which auto-expands that section's config panel. Unlock and Re-Lock buttons remain unaffected.
 - **Testing**: 100% pass rate — 16/16 backend tests, all frontend UI elements verified (iteration 134). Additional 7-case API regression test passed covering PIN-only, multi-layer, and edge cases.
 - **Handoff Note**: User NEVER tests on preview URL. User deploys via GitHub → Railway (backend) + Vercel (frontend) → tests on production site (carryon.us). Do not ask about preview testing.
 

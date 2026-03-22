@@ -154,32 +154,56 @@ export const SectionLockBanner = ({ sectionId }) => {
     if (s.pin_enabled && s.has_pin) layers.push('PIN');
     if (s.password_enabled && s.has_password) layers.push('Password');
     if (s.security_question_enabled && s.has_security_question) layers.push('Security Question');
+    const missingCount = 3 - layers.length;
     return (
       <div className="rounded-xl p-4 mb-4 flex items-center justify-between gap-3" style={{ background: 'rgba(240,82,82,0.06)', border: '1px solid rgba(240,82,82,0.12)' }} data-testid={`lock-banner-${sectionId}`}>
-        <div className="flex items-center gap-3">
-          <Lock className="w-5 h-5 text-[var(--rd2)]" />
-          <div>
+        <div
+          className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer active:opacity-70 transition-opacity"
+          onClick={() => navigate(`/security-settings?section=${sid}`)}
+          data-testid={`lock-banner-settings-${sectionId}`}
+        >
+          <Lock className="w-5 h-5 text-[var(--rd2)] flex-shrink-0" />
+          <div className="min-w-0">
             <div className="text-sm font-bold text-[var(--rd2)]">{sec.name} — Locked</div>
             <p className="text-xs text-[var(--t4)]">{layers.join(' + ')} verification required</p>
+            {missingCount > 0 && (
+              <p className="text-[11px] text-[var(--pr2)] mt-0.5">Tap to add {missingCount} more security layer{missingCount > 1 ? 's' : ''}</p>
+            )}
           </div>
         </div>
-        <Button size="sm" onClick={() => requestUnlock(sectionId)} className="text-xs gold-button" data-testid={`unlock-${sectionId}`}>
+        <Button size="sm" onClick={() => requestUnlock(sectionId)} className="text-xs gold-button flex-shrink-0" data-testid={`unlock-${sectionId}`}>
           <KeyRound className="w-3 h-3 mr-1" /> Unlock
         </Button>
       </div>
     );
   }
 
+  // Unlocked this session
+  const activeLayers = [];
+  if (s.pin_enabled && s.has_pin) activeLayers.push('PIN');
+  if (s.password_enabled && s.has_password) activeLayers.push('Password');
+  if (s.security_question_enabled && s.has_security_question) activeLayers.push('Q&A');
+  const missingLayers = 3 - activeLayers.length;
+
   return (
     <div className="rounded-xl p-3 mb-4 flex items-center justify-between gap-3" style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.12)' }} data-testid={`lock-banner-${sectionId}`}>
-      <div className="flex items-center gap-2">
-        <CheckCircle2 className="w-4 h-4 text-[var(--gn2)]" />
-        <span className="text-xs font-bold text-[var(--gn2)]">Unlocked this session</span>
+      <div
+        className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer active:opacity-70 transition-opacity"
+        onClick={() => navigate(`/security-settings?section=${sid}`)}
+        data-testid={`lock-banner-settings-${sectionId}`}
+      >
+        <CheckCircle2 className="w-4 h-4 text-[var(--gn2)] flex-shrink-0" />
+        <div className="min-w-0">
+          <span className="text-xs font-bold text-[var(--gn2)]">Unlocked this session</span>
+          {missingLayers > 0 && (
+            <p className="text-[11px] text-[var(--pr2)]">Tap to add {missingLayers} more layer{missingLayers > 1 ? 's' : ''}</p>
+          )}
+        </div>
       </div>
       <Button size="sm" variant="outline" onClick={() => {
         const { lockAll } = ctx;
         if (lockAll) lockAll();
-      }} className="text-xs border-[var(--b)] text-[var(--t4)] hover:text-[var(--rd2)] hover:border-[var(--rd2)]" data-testid={`relock-${sectionId}`}>
+      }} className="text-xs border-[var(--b)] text-[var(--t4)] hover:text-[var(--rd2)] hover:border-[var(--rd2)] flex-shrink-0" data-testid={`relock-${sectionId}`}>
         <Lock className="w-3 h-3 mr-1" /> Re-Lock
       </Button>
     </div>
