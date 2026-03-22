@@ -296,8 +296,112 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     return age;
   };
 
+  // Beneficiary-centric view: shows each beneficiary as root with connected estates underneath
+  const renderBeneficiaryCentricView = () => {
+    // Build reverse map: beneficiary email → estates/benefactors they belong to
+    const allBenefactors = users.filter(u => u.role === 'benefactor' || u.is_also_benefactor);
+    const estatesByBenEmail = new Map();
+
+    allBenefactors.forEach(owner => {
+      const groups = owner.estate_groups || [];
+      if (groups.length > 0) {
+        groups.forEach(group => {
+          (group.beneficiaries || []).forEach(ben => {
+            if (ben.email) {
+              const email = ben.email.toLowerCase();
+              if (!estatesByBenEmail.has(email)) estatesByBenEmail.set(email, []);
+              estatesByBenEmail.get(email).push({
+                owner,
+                estateName: group.estate_name || `${owner.name}'s Estate`,
+                relation: ben.relation || 'beneficiary',
+              });
+            }
+          });
+        });
+      } else {
+        (owner.linked_beneficiaries || []).forEach(ben => {
+          if (ben.email) {
+            const email = ben.email.toLowerCase();
+            if (!estatesByBenEmail.has(email)) estatesByBenEmail.set(email, []);
+            estatesByBenEmail.get(email).push({
+              owner,
+              estateName: `${owner.name}'s Estate`,
+              relation: ben.relation || 'beneficiary',
+            });
+          }
+        });
+      }
+    });
+
+    return (
+      <div className="space-y-3">
+        {filteredUsers.map(benUser => {
+          const connectedEstates = estatesByBenEmail.get(benUser.email?.toLowerCase()) || [];
+          const isExpanded = expandedUsers.has(benUser.id);
+
+          return (
+            <div key={benUser.id} className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--b)', background: 'rgba(255,255,255,0.01)' }}>
+              {connectedEstates.length > 0 && (
+                <button
+                  onClick={() => toggleExpand(benUser.id)}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-[var(--s)]"
+                  data-testid={`ben-header-${benUser.id}`}
+                >
+                  <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                    {isExpanded ? <ChevronDown className="w-4 h-4" style={{ color: '#B794F6' }} /> : <ChevronRight className="w-4 h-4 text-[var(--t5)]" />}
+                  </div>
+                  <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(139,92,246,0.1)' }}>
+                    <User className="w-3.5 h-3.5" style={{ color: '#B794F6' }} />
+                  </div>
+                  <span className="text-xs font-bold flex-1" style={{ color: '#B794F6' }}>
+                    Connected to {connectedEstates.length} estate{connectedEstates.length !== 1 ? 's' : ''}
+                  </span>
+                </button>
+              )}
+
+              <div className="px-2 pb-1">
+                <UserRow u={benUser} />
+              </div>
+
+              {isExpanded && connectedEstates.length > 0 && (
+                <div className="pb-2">
+                  <div className="ml-7 sm:ml-9 pl-3 mx-2 space-y-1.5" style={{ borderLeft: '2px solid rgba(37,99,235,0.25)' }}>
+                    {connectedEstates.map((estate, idx) => (
+                      <div key={`${estate.owner.id}-${idx}`} className="glass-card p-2.5 flex items-center gap-2.5" style={{ fontSize: '0.85em' }} data-testid={`ben-estate-${estate.owner.id}`}>
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
+                          style={{ background: roleColors.benefactor.bg, color: roleColors.benefactor.color }}>
+                          {estate.owner.name ? estate.owner.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-[var(--t)] text-xs truncate">{estate.estateName}</div>
+                          <div className="text-[11px] text-[var(--t5)] truncate">{estate.owner.email} · {estate.relation}</div>
+                        </div>
+                        <span className="text-[11px] px-1.5 py-0.5 rounded-md font-bold" style={{ background: roleColors.benefactor.bg, color: roleColors.benefactor.color }}>
+                          benefactor
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {filteredUsers.length === 0 && (
+          <div className="text-center py-8 text-xs text-[var(--t5)]">No beneficiaries found</div>
+        )}
+      </div>
+    );
+  };
+
   // Tree view: group by ESTATE, benefactors at top sorted by age, beneficiaries indented below sorted by age
   const renderTreeView = () => {
+    // Beneficiary filter: use flipped relationship view
+    if (roleFilter === 'beneficiary') {
+      return renderBeneficiaryCentricView();
+    }
+
     const benefactors = filteredUsers.filter(u => u.role === 'benefactor' || u.is_also_benefactor);
     const beneficiaryUsers = filteredUsers.filter(u => u.role === 'beneficiary' && !u.is_also_benefactor);
     const admins = filteredUsers.filter(u => u.role === 'admin');
@@ -403,72 +507,34 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                 <UserRow u={owner} />
               </div>
 
-              {/* Expanded: show beneficiaries indented with tree connectors */}
+              {/* Expanded: show beneficiaries with clean left-border indentation */}
               {isExpanded && (
-                <div className="px-2 pb-2">
-                  {(() => {
-                    const allChildren = [
-                      ...sortedLinkedUsers.map(bu => ({ type: 'user', data: bu })),
-                      ...nonUserBens.map(ben => ({ type: 'stub', data: ben })),
-                    ];
-                    return allChildren.map((child, idx) => {
-                      const isLast = idx === allChildren.length - 1;
-                      if (child.type === 'user') {
-                        const bu = child.data;
-                        return (
-                          <div key={bu.id} className="flex" data-testid={`tree-child-${bu.id}`}>
-                            <div className="flex flex-col items-center ml-6 flex-shrink-0" style={{ width: 20 }}>
-                              <div style={{ width: 1, flex: '1 1 0', background: 'var(--b)' }} />
-                              <div style={{ width: 10, height: 1, background: 'var(--b)', alignSelf: 'flex-end' }} />
-                              {!isLast ? (
-                                <div style={{ width: 1, flex: '1 1 0', background: 'var(--b)' }} />
-                              ) : (
-                                <div style={{ flex: '1 1 0' }} />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0 pl-1.5">
-                              <div className="glass-card p-2.5 flex items-center gap-2.5 mb-1" style={{ fontSize: '0.85em' }}>
-                                <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
-                                  style={{ background: roleColors.beneficiary.bg, color: roleColors.beneficiary.color }}>
-                                  {bu.name ? bu.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-semibold text-[var(--t)] text-xs truncate">{bu.name || 'No name'}</div>
-                                  <div className="text-[11px] text-[var(--t5)] truncate">{bu.email}</div>
-                                </div>
-                                <span className="text-[11px] px-1.5 py-0.5 rounded-md font-bold" style={{ background: roleColors.beneficiary.bg, color: roleColors.beneficiary.color }}>
-                                  beneficiary
-                                </span>
-                                {bu.id !== currentUserId && !operatorMode && (
-                                  <Button variant="ghost" size="sm" className="text-[var(--rd)] hover:bg-[var(--rdbg)] h-6 w-6 p-0" onClick={() => { setDeleteTarget({ id: bu.id, name: bu.name, role: bu.role }); setDeletePassword(''); setShowDeletePw(false); }}>
-                                    <Trash2 className="w-3 h-3" />
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      } else {
-                        const ben = child.data;
-                        return (
-                          <div key={ben.id} className="flex" data-testid={`tree-stub-${ben.id}`}>
-                            <div className="flex flex-col items-center ml-6 flex-shrink-0" style={{ width: 20 }}>
-                              <div style={{ width: 1, flex: '1 1 0', background: 'var(--b)' }} />
-                              <div style={{ width: 10, height: 1, background: 'var(--b)', alignSelf: 'flex-end' }} />
-                              {!isLast ? (
-                                <div style={{ width: 1, flex: '1 1 0', background: 'var(--b)' }} />
-                              ) : (
-                                <div style={{ flex: '1 1 0' }} />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0 pl-1.5">
-                              <BeneficiaryLeaf ben={ben} />
-                            </div>
-                          </div>
-                        );
-                      }
-                    });
-                  })()}
+                <div className="pb-2">
+                  <div className="ml-7 sm:ml-9 pl-3 mx-2 space-y-1.5" style={{ borderLeft: '2px solid rgba(139,92,246,0.25)' }}>
+                    {sortedLinkedUsers.map(bu => (
+                      <div key={bu.id} className="glass-card p-2.5 flex items-center gap-2.5" style={{ fontSize: '0.85em' }} data-testid={`tree-child-${bu.id}`}>
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
+                          style={{ background: roleColors.beneficiary.bg, color: roleColors.beneficiary.color }}>
+                          {bu.name ? bu.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-[var(--t)] text-xs truncate">{bu.name || 'No name'}</div>
+                          <div className="text-[11px] text-[var(--t5)] truncate">{bu.email}</div>
+                        </div>
+                        <span className="text-[11px] px-1.5 py-0.5 rounded-md font-bold" style={{ background: roleColors.beneficiary.bg, color: roleColors.beneficiary.color }}>
+                          beneficiary
+                        </span>
+                        {bu.id !== currentUserId && !operatorMode && (
+                          <Button variant="ghost" size="sm" className="text-[var(--rd)] hover:bg-[var(--rdbg)] h-6 w-6 p-0" onClick={() => { setDeleteTarget({ id: bu.id, name: bu.name, role: bu.role }); setDeletePassword(''); setShowDeletePw(false); }}>
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    {nonUserBens.map(ben => (
+                      <BeneficiaryLeaf key={ben.id} ben={ben} />
+                    ))}
+                  </div>
                   {bens.length === 0 && (
                     <div className="ml-8 pl-4 py-2 text-xs text-[var(--t5)] italic">
                       No beneficiaries enrolled yet
@@ -707,7 +773,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
               const html = document.documentElement;
               if (mainEl) { mainEl.style.scrollBehavior = 'auto'; html.style.scrollBehavior = 'auto'; }
               setRoleFilter(r);
-              setViewMode(r === 'all' ? 'hierarchy' : 'list');
+              setViewMode(r === 'all' || r === 'beneficiary' ? 'hierarchy' : 'list');
               if (mainEl) {
                 const force = () => { mainEl.scrollTop = savedPos; };
                 mainEl.addEventListener('scroll', force);
