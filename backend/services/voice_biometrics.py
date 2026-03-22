@@ -137,7 +137,7 @@ def extract_voiceprint(audio_bytes: bytes) -> dict | None:
     """
     try:
         audio, sr = librosa.load(io.BytesIO(audio_bytes), sr=SAMPLE_RATE, mono=True)
-        logger.info(f"Loaded audio: {len(audio)} samples, {len(audio)/sr:.2f}s at {sr}Hz")
+        logger.info(f"Loaded audio: {len(audio)} samples, {len(audio) / sr:.2f}s at {sr}Hz")
 
         # Quality check on raw audio
         quality = assess_audio_quality(audio, sr)
