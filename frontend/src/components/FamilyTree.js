@@ -234,12 +234,13 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
             const isOddLast = n % 2 !== 0 && i === n - 1;
             const col = i % cols;
             const endX = isOddLast ? cx : (col === 0 ? vbW * 0.2 : vbW * 0.8);
-            // Two wide brush strokes per beneficiary — no center vertical
+            // Two wide brush strokes per beneficiary — mirror upper blue pattern
             const strokes = [-1, 1];
             strokes.forEach(s => {
-              const spread = 18;
+              const spread = 16;
               const endXo = endX + s * spread;
-              arcPaths.push(`M ${cx},0 C ${cx},${vbH * 0.35} ${endXo},${vbH * 0.6} ${endXo},${vbH}`);
+              // Mirror of upper: start at center, immediately fan to target position
+              arcPaths.push(`M ${cx},2 C ${cx},14 ${endXo},${vbH * 0.45} ${endXo},${vbH}`);
             });
           }
           const goldStart = isLight ? '#b8860b' : '#d4af37';
