@@ -49,7 +49,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
 
   const filteredUsers = users
     .filter(u => operatorMode ? (u.role !== 'admin' && u.role !== 'operator') : true)
-    .filter(u => roleFilter === 'all' || u.role === roleFilter || (roleFilter === 'benefactor' && u.is_also_benefactor))
+    .filter(u => roleFilter === 'all' || u.role === roleFilter || (roleFilter === 'benefactor' && u.is_also_benefactor) || (roleFilter === 'beneficiary' && u.is_also_beneficiary))
     .filter(u => !searchQuery || u.name?.toLowerCase().includes(searchQuery.toLowerCase()) || u.email?.toLowerCase().includes(searchQuery.toLowerCase()))
     .sort((a, b) => {
       // Admins always on top in the All Estates view
@@ -292,10 +292,13 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     const beneficiaryUsers = filteredUsers.filter(u => u.role === 'beneficiary' && !u.is_also_benefactor);
     const admins = filteredUsers.filter(u => u.role === 'admin');
 
-    // Build estate map: each estate is a separate entry (supports multi-estate owners)
-    const estateEntries = [];
+    // Build email lookup for ALL potential beneficiaries (including dual-role benefactors)
     const benUserByEmail = new Map();
-    beneficiaryUsers.forEach(u => { if (u.email) benUserByEmail.set(u.email.toLowerCase(), u); });
+    filteredUsers.forEach(u => {
+      if (u.email && (u.role === 'beneficiary' || u.is_also_beneficiary)) {
+        benUserByEmail.set(u.email.toLowerCase(), u);
+      }
+    });
 
     benefactors.forEach(owner => {
       const groups = owner.estate_groups || [];
@@ -485,7 +488,11 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     const beneficiaryUsers = filteredUsers.filter(u => u.role === 'beneficiary' && !u.is_also_benefactor);
     const admins = filteredUsers.filter(u => u.role === 'admin');
     const benUserByEmail = new Map();
-    beneficiaryUsers.forEach(u => { if (u.email) benUserByEmail.set(u.email.toLowerCase(), u); });
+    filteredUsers.forEach(u => {
+      if (u.email && (u.role === 'beneficiary' || u.is_also_beneficiary)) {
+        benUserByEmail.set(u.email.toLowerCase(), u);
+      }
+    });
 
     const estateEntries = [];
     benefactors.forEach(owner => {
