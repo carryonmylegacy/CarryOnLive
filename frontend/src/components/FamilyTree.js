@@ -228,7 +228,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               className="w-full pointer-events-none"
               viewBox={`0 0 ${vbW} ${vbH}`}
               preserveAspectRatio="xMidYMid meet"
-              style={{ height: svgH, position: 'relative', zIndex: 1 }}
+              style={{ height: svgH, position: 'relative', zIndex: 1, marginTop: -8 }}
               dangerouslySetInnerHTML={{ __html: (() => {
                 const gradColor1 = isLight ? '#3B82F6' : '#60A5FA';
                 const gradColor2 = isLight ? '#2563EB' : '#93C5FD';
@@ -329,7 +329,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
           return (
           <div className="w-full" style={{ maxWidth: 340 }} data-testid="tree-spine">
             {/* SVG — symmetric with upper */}
-            <div className="flex justify-center" style={{ marginTop: -2, marginBottom: -8, position: 'relative', zIndex: 0 }}>
+            <div className="flex justify-center" style={{ marginTop: 10, marginBottom: -8, position: 'relative', zIndex: 0 }}>
               <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: lowerSvgH }} className="overflow-visible"
                 dangerouslySetInnerHTML={{ __html: (() => {
                   const blurDev = isLight ? 1.5 : 2;
