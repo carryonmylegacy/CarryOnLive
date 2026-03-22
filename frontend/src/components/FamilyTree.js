@@ -222,7 +222,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
           testId="tree-root-node"
         />
 
-        {/* Gold glow brush-stroke arcs fanning to beneficiaries — matched to upper blue arcs */}
+        {/* Gold glow brush-stroke arcs fanning to beneficiaries — exact mirror of upper blue arcs */}
         {sortedBens.length > 0 && (() => {
           const n = sortedBens.length;
           const cols = 2;
@@ -230,27 +230,29 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
           const vbH = 80;
           const cx = vbW / 2;
           const arcPaths = [];
+          // Calculate end positions same way upper calculates start positions
           for (let i = 0; i < n; i++) {
             const isOddLast = n % 2 !== 0 && i === n - 1;
             const col = i % cols;
             const endX = isOddLast ? cx : (col === 0 ? vbW * 0.2 : vbW * 0.8);
-            // Two wide brush strokes per beneficiary — mirror upper blue pattern
+            // Two brush strokes per beneficiary — exact mirror of upper curve pattern
             const strokes = [-1, 1];
             strokes.forEach(s => {
-              const spread = 16;
+              const spread = 18;
               const endXo = endX + s * spread;
-              // Mirror of upper: start at center, immediately fan to target position
-              arcPaths.push(`M ${cx},2 C ${cx},14 ${endXo},${vbH * 0.45} ${endXo},${vbH}`);
+              // Mirror of upper: M xo,0 C xo,30 cx,55 cx,78 → flipped vertically
+              arcPaths.push(`M ${cx},0 C ${cx},22 ${endXo},48 ${endXo},78`);
             });
           }
           const goldStart = isLight ? '#b8860b' : '#d4af37';
           const goldEnd = isLight ? '#d4af37' : '#FFD700';
+          const lowerSvgH = n <= 2 ? 80 : Math.min(140, 60 + n * 18);
 
           return (
           <div className="w-full" style={{ maxWidth: 340 }} data-testid="tree-spine">
-            {/* SVG curved arc bundles fanning from benefactor — gold glow */}
-            <div className="flex justify-center" style={{ marginTop: 6, marginBottom: -6, position: 'relative', zIndex: 0 }}>
-              <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: 60 }} className="overflow-visible">
+            {/* SVG — same rendered height as upper arcs */}
+            <div className="flex justify-center" style={{ marginTop: 6, marginBottom: -8, position: 'relative', zIndex: 0 }}>
+              <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: lowerSvgH }} className="overflow-visible">
                 <defs>
                   <linearGradient id="ftGoldGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor={goldStart} stopOpacity={isLight ? 0.5 : 0.4} />
