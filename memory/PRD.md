@@ -26,7 +26,9 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **Security Layer Reorder**: Layer 1 = PIN, Layer 2 = Password, Layer 3 = Security Question. Backend stores PIN as bcrypt hash (`pin_hash`), validates 4-8 numeric digits.
 - **Unlock Modal Updated**: SectionLock.js unlock modal now shows PIN keypad step (instead of voice recording) with multi-step progress dots (PIN → Password → Q&A).
 - **Migration Cleanup**: Backend `$unset`s all legacy voice fields (voiceprint, voiceprint_samples, voice_enabled, etc.) when saving section security settings.
-- **Testing**: 100% pass rate — 16/16 backend tests, all frontend UI elements verified (iteration 134).
+- **Layer Wiring Bug Fixed**: Fixed critical bug where enabling one security layer caused the system to think all three were enabled. Root cause: (1) Frontend unlock modal checked `*_enabled` without also checking `has_*` (data exists), (2) Backend didn't auto-disable layers enabled without data. Fix: frontend now requires BOTH `*_enabled && has_*` before showing a step; backend auto-disables layers post-save if their data (hash/answer) doesn't exist.
+- **Testing**: 100% pass rate — 16/16 backend tests, all frontend UI elements verified (iteration 134). Additional 7-case API regression test passed covering PIN-only, multi-layer, and edge cases.
+- **Handoff Note**: User NEVER tests on preview URL. User deploys via GitHub → Railway (backend) + Vercel (frontend) → tests on production site (carryon.us). Do not ask about preview testing.
 
 ### Completed (March 21, 2026 — Session 13: CI Fix + iOS Modal Zoom Fix)
 - **CI Backend Lint Fix**: Removed unused `result` variable in `staff_tools.py` PUT endpoint. Ran `ruff format` to fix formatting. Both `ruff check` and `ruff format --check` now pass cleanly.

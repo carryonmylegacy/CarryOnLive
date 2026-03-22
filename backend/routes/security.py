@@ -141,6 +141,25 @@ async def update_security_settings(
         upsert=True,
     )
 
+    # Auto-disable layers that are enabled but have no data
+    saved = await db.section_security.find_one(
+        {"user_id": current_user["id"], "section_id": section_id},
+        {"_id": 0},
+    )
+    if saved:
+        auto_fix = {}
+        if saved.get("pin_enabled") and not saved.get("pin_hash"):
+            auto_fix["pin_enabled"] = False
+        if saved.get("password_enabled") and not saved.get("password_hash"):
+            auto_fix["password_enabled"] = False
+        if saved.get("security_question_enabled") and not saved.get("security_answer_hash"):
+            auto_fix["security_question_enabled"] = False
+        if auto_fix:
+            await db.section_security.update_one(
+                {"user_id": current_user["id"], "section_id": section_id},
+                {"$set": auto_fix},
+            )
+
     return {
         "success": True,
         "section_id": section_id,

@@ -151,9 +151,9 @@ export const SectionLockBanner = ({ sectionId }) => {
 
   if (isLocked(sectionId)) {
     const layers = [];
-    if (s.pin_enabled) layers.push('PIN');
-    if (s.password_enabled) layers.push('Password');
-    if (s.security_question_enabled) layers.push('Security Question');
+    if (s.pin_enabled && s.has_pin) layers.push('PIN');
+    if (s.password_enabled && s.has_password) layers.push('Password');
+    if (s.security_question_enabled && s.has_security_question) layers.push('Security Question');
     return (
       <div className="rounded-xl p-4 mb-4 flex items-center justify-between gap-3" style={{ background: 'rgba(240,82,82,0.06)', border: '1px solid rgba(240,82,82,0.12)' }} data-testid={`lock-banner-${sectionId}`}>
         <div className="flex items-center gap-3">
@@ -222,11 +222,11 @@ const UnlockModal = ({ sectionId, settings: s, onClose, onUnlocked }) => {
   const [verifying, setVerifying] = useState(false);
   const [step, setStep] = useState(0);
 
-  // Determine which steps are needed
+  // Determine which steps are needed — only include layers that are BOTH enabled AND configured
   const steps = [];
-  if (s?.pin_enabled) steps.push('pin');
-  if (s?.password_enabled) steps.push('password');
-  if (s?.security_question_enabled) steps.push('question');
+  if (s?.pin_enabled && s?.has_pin) steps.push('pin');
+  if (s?.password_enabled && s?.has_password) steps.push('password');
+  if (s?.security_question_enabled && s?.has_security_question) steps.push('question');
 
   const currentStep = steps[step] || 'done';
 

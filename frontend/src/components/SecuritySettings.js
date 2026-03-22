@@ -185,9 +185,9 @@ const SecuritySettings = ({ getAuthHeaders }) => {
 const SectionRow = ({ section, settings: s, questions, expanded, onToggle, headers, onUpdate }) => {
   const isActive = s.is_active;
   const layers = [];
-  if (s.pin_enabled) layers.push('PIN');
-  if (s.password_enabled) layers.push('Password');
-  if (s.security_question_enabled) layers.push('Q&A');
+  if (s.pin_enabled && s.has_pin) layers.push('PIN');
+  if (s.password_enabled && s.has_password) layers.push('Password');
+  if (s.security_question_enabled && s.has_security_question) layers.push('Q&A');
 
   return (
     <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${isActive ? 'rgba(139,92,246,0.2)' : 'var(--b)'}`, background: isActive ? 'rgba(139,92,246,0.03)' : 'transparent' }}>
@@ -360,12 +360,17 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
       return;
     }
 
+    // Only enable layers that have their data set (either new data or existing data)
+    const pinReallyEnabled = pinEnabled && (s.has_pin || pinDigits.length >= MIN_PIN_LENGTH);
+    const pwReallyEnabled = pwEnabled && (s.has_password || pw.length > 0);
+    const qReallyEnabled = qEnabled && (s.has_security_question || answer.length > 0);
+
     setSaving(true);
     try {
       const data = {
-        pin_enabled: pinEnabled,
-        password_enabled: pwEnabled,
-        security_question_enabled: qEnabled,
+        pin_enabled: pinReallyEnabled,
+        password_enabled: pwReallyEnabled,
+        security_question_enabled: qReallyEnabled,
         lock_mode: lockMode,
       };
       if (pinDigits.length >= MIN_PIN_LENGTH) data.pin = pinDigits;
