@@ -10,6 +10,9 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **Storage**: AWS S3 for documents AND photos (presigned URLs)
 - **Integrations**: xAI (Grok), Stripe, Apple IAP, AWS S3, Resend, Google Places, Capgo, CodeMagic, Railway, Vercel
 
+## CRITICAL: User Deployment & Testing Workflow
+**The user ALWAYS pushes to GitHub, deploys through Railway (backend) and Vercel (frontend), and tests EXCLUSIVELY on their production site (carryon.us) via iOS/PWA. NEVER suggest "check the preview URL" or "push to GitHub to see changes" — they already do this every time. All code changes MUST work in production deployment. Do not reference the preview environment when discussing what the user sees.**
+
 ## Key Data Models
 - **users**: email, password, username, username_lower, role, is_also_benefactor, is_also_beneficiary, photo_url (S3 key), otp_enabled (default: true)
 - **estates**: owner_id, beneficiaries[], name, name_customized

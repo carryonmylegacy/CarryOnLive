@@ -708,8 +708,8 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
 
                 {sortedBens.length > 0 && (
                   <div className="flex flex-col items-center w-full">
-                    <div style={{ width: 2, height: 18, background: '#d4af37', opacity: 0.5 }} />
-                    <div className="flex justify-center gap-0 flex-wrap">
+                    <div style={{ width: 1, height: 16, background: 'linear-gradient(to bottom, rgba(212,175,55,0.5), transparent)' }} />
+                    <div className="flex justify-center gap-5 flex-wrap pt-1">
                       {sortedBens.map((ben, idx) => {
                         const color = getBenNodeColor(ben);
                         const age = benAge(ben);
@@ -717,23 +717,9 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                         const benInitials = ben.first_name && ben.last_name
                           ? ben.first_name[0] + ben.last_name[0]
                           : ben.name ? ben.name.split(' ').map(x => x[0]).join('').toUpperCase().slice(0, 2) : '??';
-                        const isFirst = idx === 0;
-                        const isLast = idx === sortedBens.length - 1;
-                        const isSingle = sortedBens.length === 1;
                         return (
-                          <div key={ben.id} className="flex flex-col items-center relative" style={{ padding: '0 8px' }}>
-                            {!isSingle && (
-                              <div style={{
-                                position: 'absolute',
-                                top: 0,
-                                left: isFirst ? '50%' : 0,
-                                right: isLast ? '50%' : 0,
-                                height: 1,
-                                background: '#d4af37',
-                                opacity: 0.15,
-                              }} />
-                            )}
-                            <div style={{ width: 1, height: 12, background: color, opacity: 0.25 }} />
+                          <div key={ben.id} className="flex flex-col items-center">
+                            <div style={{ width: 1, height: 10, background: color, opacity: 0.3 }} />
                             <GraphNode
                               initials={benInitials}
                               color={color}
