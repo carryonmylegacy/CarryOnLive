@@ -14,11 +14,21 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **users**: email, password, username, username_lower, role, is_also_benefactor, is_also_beneficiary, photo_url (S3 key), otp_enabled (default: true)
 - **estates**: owner_id, beneficiaries[], name, name_customized
 - **beneficiaries**: estate_id, user_id, email, photo_url (S3 key), invitation_status, is_primary
+- **ega_tasks**: estate_id, type, status (running/completed/error), items_added, duplicates_skipped, duplicate_titles, started_at, completed_at
 - **family_plans**: fpo_user_id, members[], $1/mo benefactor discount, $3.49 flat beneficiary rate
 - **digest_preferences**: user_id, frequency, content toggles, additional recipients
 - **platform_settings**: _id="global", otp_disabled (master switch)
 
 ## What's Been Implemented
+
+### Completed (March 22, 2026 — Session 15: EGA Real-Time Updates + Cross-Platform Downloads)
+- **EGA IAC Duplicate Detection**: When generating IAC items, the system now tracks and reports duplicates. The `action_result` includes `duplicates_skipped` count and `duplicate_titles` list. The AI response summary shows how many items were skipped as duplicates.
+- **EGA IAC Real-Time Polling**: New `ega_tasks` collection tracks IAC generation status (running/completed/error). New `GET /api/guardian/iac-task-status` endpoint returns the latest task status for the user's estate.
+- **Dashboard Real-Time Updates**: DashboardPage polls `/api/guardian/iac-task-status` every 4 seconds. Shows a gold banner "Estate Guardian is generating IAC items" when EGA is running. Auto-refreshes estate data (stats, checklist counts) when generation completes.
+- **Checklist Real-Time Updates**: ChecklistPage polls `/api/guardian/iac-task-status` every 4 seconds. Shows a gold banner when EGA is generating. Auto-refreshes checklist items when generation completes.
+- **GuardianPage Duplicate Feedback UI**: When IAC generation returns duplicates, the chat message shows an amber info box listing the duplicate item titles with a count.
+- **Cross-Platform Download Utility**: Created `/app/frontend/src/utils/downloadFile.js` — on web, triggers standard browser download; on iOS/Capacitor, writes to Documents directory via Filesystem API and opens the native Share sheet. All 5 PDF download handlers in GuardianPage updated to use this utility.
+- **Testing**: 100% pass rate — all backend endpoints verified, all frontend pages load correctly with polling hooks active (iteration 135).
 
 ### Completed (March 22, 2026 — Session 14: Voice Biometric → PIN Replacement)
 - **Voice Biometric Removed**: Completely removed voice biometric security feature (Layer 2) from both frontend and backend. Archived full implementation to `/app/memory/VOICE_BIOMETRIC_ARCHIVE.md` for future re-implementation.
@@ -26,114 +36,51 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **Security Layer Reorder**: Layer 1 = PIN, Layer 2 = Password, Layer 3 = Security Question. Backend stores PIN as bcrypt hash (`pin_hash`), validates 4-8 numeric digits.
 - **Unlock Modal Updated**: SectionLock.js unlock modal now shows PIN keypad step (instead of voice recording) with multi-step progress dots (PIN → Password → Q&A).
 - **Migration Cleanup**: Backend `$unset`s all legacy voice fields (voiceprint, voiceprint_samples, voice_enabled, etc.) when saving section security settings.
-- **Layer Wiring Bug Fixed**: Fixed critical bug where enabling one security layer caused the system to think all three were enabled. Root cause: (1) Frontend unlock modal checked `*_enabled` without also checking `has_*` (data exists), (2) Backend didn't auto-disable layers enabled without data. Fix: frontend now requires BOTH `*_enabled && has_*` before showing a step; backend auto-disables layers post-save if their data (hash/answer) doesn't exist.
-- **Lock Banner Deep-Link to Settings**: Locked/unlocked section banners now show "Tap to add X more layer(s)" when fewer than 3 layers are configured. Tapping the text area navigates to `/security-settings?section={sid}` which auto-expands that section's config panel. Unlock and Re-Lock buttons remain unaffected.
-- **Testing**: 100% pass rate — 16/16 backend tests, all frontend UI elements verified (iteration 134). Additional 7-case API regression test passed covering PIN-only, multi-layer, and edge cases.
-- **Handoff Note**: User NEVER tests on preview URL. User deploys via GitHub → Railway (backend) + Vercel (frontend) → tests on production site (carryon.us). Do not ask about preview testing.
+- **Layer Wiring Bug Fixed**: Fixed critical bug where enabling one security layer caused the system to think all three were enabled.
+- **Lock Banner Deep-Link to Settings**: Locked/unlocked section banners now show "Tap to add X more layer(s)" when fewer than 3 layers are configured.
+- **Eyeball Icons**: Platform-wide vertical centering + `onMouseDown={e => e.preventDefault()}` to preserve mobile keyboard.
+- **Vault Master Key Verification**: Security layer disable/toggle verification uses Vault Master Key (not account password).
+- **Auto-Save Toggles**: Security layer toggles auto-save instantly to DB.
+- **Settings Defaults**: Security sections default to collapsed on load.
+- **Text Overflow Fix**: Master Key placeholder and Lock Dropdown truncated.
 
 ### Completed (March 21, 2026 — Session 13: CI Fix + iOS Modal Zoom Fix)
-- **CI Backend Lint Fix**: Removed unused `result` variable in `staff_tools.py` PUT endpoint. Ran `ruff format` to fix formatting. Both `ruff check` and `ruff format --check` now pass cleanly.
-- **CI Actions Upgrade**: Upgraded `actions/checkout` from v4 to v5 and `actions/setup-node` from v4 to v5 in `.github/workflows/ci.yml` to resolve Node.js 20 deprecation warnings (forced June 2, 2026).
-- **IntegrationsTab X Import Fix**: Added missing `X` icon import from lucide-react used by password modal and edit modal close buttons.
-- **iOS Safari Zoom Prevention**: All `<input>` elements in IntegrationsTab modals have `fontSize: '16px'`. Global sweep fixed 15 additional `text-sm` violations on inputs/selects across TrusteePage, SecuritySettings, FamilyPlanSettings, and 6 admin tabs. Updated Shadcn `select.jsx` base component from `text-sm` to `text-base`. Added `maximum-scale=1, user-scalable=no` to viewport meta tag.
-- **Housekeeping**: 50/50 checks PASS — Standard (11/11), SOC 2 Compliance (27/27), iOS/App Store Readiness (12/12). Global `text-sm` input sweep fixed 15 violations across 9 files + Shadcn select.jsx base. Viewport meta updated with `maximum-scale=1, user-scalable=no`.
+- CI Backend Lint Fix, CI Actions Upgrade, IntegrationsTab X Import Fix, iOS Safari Zoom Prevention.
 
 ### Completed (March 21, 2026 — Session 12: Tree Connector Lines + Collapsible Beneficiary Tiles)
-- **Admin Hierarchy View Lines Fix**: Horizontal connector lines in renderTreeView() now extend only from the vertical spine to the right (not beyond to the left). Fixed `alignSelf: 'flex-end'` approach.
-- **Admin Tree View Lines Fix**: Replaced percentage-based `left-[10%] right-[10%]` horizontal bar with per-node segments using `left: isFirst ? '50%' : 0, right: isLast ? '50%' : 0`, ensuring the bar spans exactly from center of first child to center of last child.
-- **Estate Health Tree Fix**: Same per-node connector segment pattern applied to mini family tree in expanded estate health cards.
-- **Collapsible Beneficiary Tiles**: Beneficiary cards on BeneficiariesPage now collapsed by default showing only avatar, name, relation, succession badge, and a chevron caret. Click to expand full details (email, phone, DOB, permissions, invitation controls). Uses `expandedTiles` Set state.
-- **BeneficiaryLeaf Cleanup**: Removed redundant `ml-8 pl-4 border-l-2` from BeneficiaryLeaf component since connector column handles tree lines.
-- **Testing**: 100% pass rate (iteration 133) — all 6 features verified.
-- **Family Tree Trunk Termination**: Vertical trunk line in FamilyTree.js spine layout no longer extends below the last beneficiary. Changed from continuous trunk (`bottom: 0`) to per-row segments with `bottom: isLast ? '50%' : 0`, creating a clean 90-degree turn at the last branch.
-- **Removed Redundant Benefactor Tiles**: Removed the "Family Members List" section from BeneficiaryHubPage since the orbit balls and estate tiles already link to the same places. Page now flows: Orbit → Change Photos → Estate Tiles → Info/CTA.
-- **Integrations Tab Unlocked + Editable**: Removed password lock from viewing integrations. Added GET `/admin/integrations` endpoint (no password) that returns all data with sensitive values stripped. Added PUT `/admin/integrations/{id}` endpoint (password required) to save overrides to MongoDB `integration_overrides` collection. Frontend now auto-loads on mount, prompts for password only when revealing credentials or editing. Each card has an Edit button that opens a modal with editable fields (details, cost, cost note).
+- Admin Hierarchy View Lines Fix, Collapsible Beneficiary Tiles, Integrations Tab Unlocked + Editable.
 
-### Completed (March 19, 2026 — Session 10: Family Tree Colors + Apple IAP Fix + Font Sweep)
-- **Beneficiary Color Coding**: Green = linked (has own login), Yellow = unlinked (no account yet). Legend now explains all 3 colors including benefactor's gold.
-- **Apple Guideline 3.1.1 Fix**: iOS native app now NEVER falls through to Stripe. All payment paths (subscribe, change plan, change billing) block Stripe on iOS.
-- **Global Font Minimum Sweep**: Eliminated all text-[8px], text-[9px], text-[10px] across entire frontend (~330 instances). New minimum is text-[11px]. FamilyTree names bumped to text-xs (12px), sublabels to text-[11px].
-- **Orbit Click Fix**: Increased click guard threshold from 1° to 5° in OrbitVisualization to fix tap-to-navigate on mobile.
-- **CI Lint Fix**: Fixed ruff formatting and projection warnings. Housekeeping 38/38 PASS, zero warnings.
-- **Zero-Tolerance Housekeeping Rule**: Documented in PRD that ALL housekeeping checks must PASS with zero warnings, every fork, every session.
+### Completed (March 19, 2026 — Session 10)
+- Beneficiary Color Coding, Apple Guideline 3.1.1 Fix, Global Font Minimum Sweep, Orbit Click Fix.
 
-### Completed (March 19, 2026 — Session 9: Settings & Admin Overhaul)
-- **Settings Page Reorganization**: Moved Security card to right after Profile card. New order: Profile > Security > Personal Information > Estate Photo > Push Notifications > Appearance > Notifications & Digest > Privacy & Data Rights > Logout.
-- **Per-User 2FA Toggle**: Each user now has an `otp_enabled` field (default: true). New endpoints: `GET /api/auth/2fa-preference` (returns user's preference + global status), `PUT /api/auth/2fa-preference` (toggle own 2FA). Login flow checks global switch first, then per-user preference. Global master switch behavior: when admin turns global ON (otp_disabled: false), ALL users' otp_enabled resets to true. Users can then individually disable. When global is OFF, all 2FA is disabled regardless of individual preference. Settings page shows "Disabled platform-wide by administrator" with grayed-out toggle when global is off.
-- **Sort By in Admin UsersTab**: Added dropdown with 7 options: Default, First Name, Last Name, Date Created, Birthday, Most Beneficiaries, Least Beneficiaries. Compact, responsive design that doesn't break PWA layout. Applied to all view modes (List, Tree, Graph).
-- **Testing**: 100% pass rate — 10/10 backend tests, all frontend UI elements verified (iteration 132).
+### Completed (March 19, 2026 — Session 9)
+- Settings Page Reorganization, Per-User 2FA Toggle, Sort By in Admin UsersTab.
 
-### Completed (March 18, 2026 — Session 8: Codebase Polish & Refactoring)
-- **DRY: API_URL Extraction**: Extracted API_URL from 88 files into `frontend/src/config.js`.
-- **DRY: getAuthHeaders Consolidation**: Removed 3 redundant definitions.
-- **.gitignore Cleanup**: 595 → 71 lines.
-- **Dead CSS/Code Removal**: ~119 lines CSS, 4 unused files, 24 stale test files (~9K lines).
-- **Bug Fix: Beneficiary Login Lockout**: Pending invitations no longer trigger failed login counts.
-- **UX Fix: Settings Save Feedback**: Save/Cancel buttons with spinners and toasts.
-- **Feature: Estate Name Personalization Prompt**: One-time modal for renaming default estates.
-- **Security Fix: Admin Estate Permissions**: Only estate owners can rename.
+### Completed (March 18, 2026 — Session 8)
+- DRY: API_URL Extraction, getAuthHeaders Consolidation, Dead CSS/Code Removal, Bug Fix: Beneficiary Login Lockout, Estate Name Personalization Prompt.
 
-### Completed (March 18, 2026 — Session 7)
-- Per-User Beta Feature, Auto-Send Beneficiary Invitations, Beneficiary "Create Your Own Estate" Prompt, Beneficiary Hard Delete.
+## P0/P1/P2 Prioritized Backlog
 
-### Completed (March 16, 2026 — Session 6)
-- Infrastructure & Integration Audit, Vercel Build Optimization, MongoDB Upgrade, Capgo Setup, xAI Credits, xAI Credit Monitor, Integrations Vault Tab.
+### P1
+- **Share Extension Setup**: Re-add the Share Extension target in Xcode per `/app/memory/SHARE_EXTENSION_SETUP.md`
+- **iOS Live Updates**: Test Capgo OTA update flow end-to-end
 
-### Completed (March 16, 2026 — Session 5)
-- Billing Lifecycle (Grace Period & Dormant), Admin Billing Indicators, User-Facing Banners, Trial Reminder Email Cadence.
+### P2
+- **Video Playback on Milestone Page**: Recurring issue (3x) — debug media player for object storage URLs on Safari/iOS
+- **Settings Page UI Glitch**: Investigate FOUC/suspense boundary issues
+- **Readiness Scoring Policy Page**: Informational page under Account section
+- **Scalability Enhancements**: Horizontal scaling, background workers, CDN
+- **Refactor Large Files**: Break down LoginPage.js, SettingsPage.js, TrusteePage.js
+- **Twilio SMS OTP**: Blocked on A2P 10DLC approval
 
-### Completed (March 15, 2026 — Session 4)
-- Responsive UI Fixes (OrbitVisualization, Admin UsersTab, Beneficiary Tiles).
+## Key API Endpoints
+- `POST /api/security/verify/{section_id}` — validates PIN/Password/Question combos
+- `GET /api/security/master-key-status` — checks if master key exists
+- `GET /api/guardian/iac-task-status` — polls for EGA IAC generation status (running/completed/error)
+- `POST /api/chat/guardian` — EGA AI chat with action support (generate_iac, analyze_vault, etc.)
 
-### Completed (March 15, 2026 — Session 3)
-- PieProgress Animation, IAC Two-Section Structure, IAC Report PDF, Platform Polishing, Admin Role Auth Fix, Ring Hierarchy Fix.
-
-### Completed (March 14, 2026 — Session 2)
-- Guardian AI Cold-Start Fix, EGA State-Specific Law, Beneficiary Succession Hierarchy, Relationship Label Inversion.
-
-### Completed (March 14, 2026 — Session 1)
-- Founder Portal Operator Info, Beneficiary Primary-For List, Orbit Visualization Overhaul, Guardian AI To-Do/IAC Split.
-
-### Completed (March 13, 2026)
-- S3 Photo Migration, GZip, Multi-Estate, Sidebar Switcher, Light Mode, CI/CD, Username Login, and more.
-
-## Critical Development Protocols
-
-### Housekeeping Script (MANDATORY)
-**Location:** `/app/housekeeping.sh`
-Run after EVERY change. Validates: backend lint/format, frontend build, dependency security, SOC 2 compliance, env integrity (38 checks).
-**ZERO TOLERANCE RULE:** Every single check must be PASS. No warnings are acceptable — not "non-blocking", not "pre-existing", not "minor". If housekeeping surfaces ANY warning or failure, fix it immediately before finishing the task. This applies to every fork, every session, every time.
-
-### Auto-Update System (Web)
-Each `yarn build` generates a unique hash in `/version.json`. App checks on mount and hard-refreshes if different.
-
-### Deployment Flow
-User pushes to GitHub → Railway builds backend → Vercel builds frontend → Live at carryon.us.
-
-## Subscription Architecture
-- Each estate requires its own active subscription
-- Family Plan: $1/mo discount per bundled benefactor, $3.49 flat beneficiary rate
-- Per-User Beta Program with admin toggle
-
-## Prioritized Backlog
-
-### P0 - Active
-- None currently active
-
-### P1 - Upcoming
-- Share Extension Setup (instructions in /app/memory/SHARE_EXTENSION_SETUP.md)
-- Capacitor Live Updates for iOS (plan in /app/memory/CAPACITOR_LIVE_UPDATES.md)
-- Refactor LoginPage.js into smaller components
-
-### P2 - Future
-- **(NEW) FFN — Family & Friends Notification:** A standalone main feature page (like Milestone Messages, DTS, SDV) where the benefactor creates a list of people they want their beneficiaries to contact and notify of their passing. NOT a DTS task — this is an open, non-confidential list with names + contact info (phone, email, address) that the family can reference. Think of it like the Login & Password Vault but for "people to notify." The benefactor is asking their beneficiaries to handle these notifications, not CarryOn/DTS. This is distinct from the DTS "Transition Notification" type (which is confidential, handled by DTS, and hidden from family).
-- **(NEW) Estate Readiness Scoring Policy Page:** Add a "Policies" or "How We Score" page under the Account section of the menu. Displays the Estate Readiness Score rubric so benefactors understand how their score is calculated: Documents (Will + Trust + POA = 80%, +extras = 100%), Messages (age-based milestone expectations per beneficiary), Checklist (15 items created = 100%). This is informational, not editable.
-- Video playback on Milestone Page investigation
-- Settings page "flash" glitch investigation
-- Twilio SMS OTP Integration (blocked on A2P 10DLC approval)
-- Scalability enhancements (CDN for S3, horizontal scaling)
-- Resend upgrade Pro → Scale (before 5K users)
-- Refactor integrations data from staff_tools.py to config/DB
-
-## Test Credentials
-- Admin: info@carryon.us / Demo1234!
+## Critical Notes
+- **User Testing Protocol**: User NEVER tests on preview URL. Deploys via GitHub → Railway/Vercel → tests on iOS device.
+- **Voice Biometrics**: Completely removed. Do not reintroduce.
+- **Eyeball Icons**: Any new password inputs MUST include `onMouseDown={(e) => e.preventDefault()}`.
+- **Downloads**: All PDF downloads must use `/app/frontend/src/utils/downloadFile.js` for cross-platform compatibility.
