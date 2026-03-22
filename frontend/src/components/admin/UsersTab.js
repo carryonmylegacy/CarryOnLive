@@ -708,19 +708,24 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                   {connectedEstates.length > 0 && (() => {
                     const n = connectedEstates.length;
                     const vbW = 200;
-                    const vbH = 36;
+                    const vbH = 40;
                     const cx = vbW / 2;
                     const arcPaths = [];
                     for (let i = 0; i < n; i++) {
                       const isSingle = n === 1;
                       const endX = isSingle ? cx : (30 + (i / (n - 1)) * (vbW - 60));
-                      const cpX = cx + (endX - cx) * 0.3;
-                      arcPaths.push(`M ${cx},0 Q ${cpX},${vbH * 0.55} ${endX},${vbH}`);
+                      const strokes = [-1, 0, 1];
+                      strokes.forEach(s => {
+                        const spread = 3;
+                        const cpX = cx + (endX - cx) * 0.35 + s * spread;
+                        const endXo = endX + s * (spread * 0.5);
+                        arcPaths.push(`M ${cx},0 Q ${cpX},${vbH * 0.55} ${endXo},${vbH}`);
+                      });
                     }
                     return (
                     <div className="flex flex-col items-center w-full">
                       <div className="flex justify-center" style={{ marginTop: -2, marginBottom: -2 }}>
-                        <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '80%', height: 22 }} className="overflow-visible">
+                        <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '80%', height: 24 }} className="overflow-visible">
                           <defs>
                             <linearGradient id={`bg-${benUser.id}`} x1="0" y1="0" x2="0" y2="1">
                               <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.4" />
@@ -732,7 +737,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                             </filter>
                           </defs>
                           {arcPaths.map((d, i) => (
-                            <path key={i} d={d} fill="none" stroke={`url(#bg-${benUser.id})`} strokeWidth="0.8" filter={`url(#bgGlow-${benUser.id})`} />
+                            <path key={i} d={d} fill="none" stroke={`url(#bg-${benUser.id})`} strokeWidth="0.7" filter={`url(#bgGlow-${benUser.id})`} />
                           ))}
                         </svg>
                       </div>
@@ -813,22 +818,27 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
 
                 {sortedBens.length > 0 && (() => {
                   const n = sortedBens.length;
-                  const cols = Math.min(n, 3);
                   const vbW = 200;
-                  const vbH = 36;
+                  const vbH = 40;
                   const cx = vbW / 2;
                   const arcPaths = [];
-                  for (let i = 0; i < Math.min(n, 6); i++) {
-                    const isSingle = n === 1;
-                    const endX = isSingle ? cx : (20 + (i / (Math.min(n, 6) - 1)) * (vbW - 40));
-                    const cpX = cx + (endX - cx) * 0.3;
-                    arcPaths.push(`M ${cx},0 Q ${cpX},${vbH * 0.55} ${endX},${vbH}`);
+                  const maxArcs = Math.min(n, 6);
+                  for (let i = 0; i < maxArcs; i++) {
+                    const isSingle = maxArcs === 1;
+                    const endX = isSingle ? cx : (20 + (i / (maxArcs - 1)) * (vbW - 40));
+                    const strokes = [-1, 0, 1];
+                    strokes.forEach(s => {
+                      const spread = 3;
+                      const cpX = cx + (endX - cx) * 0.35 + s * spread;
+                      const endXo = endX + s * (spread * 0.5);
+                      arcPaths.push(`M ${cx},0 Q ${cpX},${vbH * 0.55} ${endXo},${vbH}`);
+                    });
                   }
 
                   return (
                   <div className="flex flex-col items-center w-full">
                     <div className="flex justify-center" style={{ marginTop: -2, marginBottom: -2 }}>
-                      <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '80%', height: 24 }} className="overflow-visible">
+                      <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '85%', height: 26 }} className="overflow-visible">
                         <defs>
                           <linearGradient id={`ag-${key}`} x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stopColor="#d4af37" stopOpacity="0.4" />
@@ -840,12 +850,12 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                           </filter>
                         </defs>
                         {arcPaths.map((d, i) => (
-                          <path key={i} d={d} fill="none" stroke={`url(#ag-${key})`} strokeWidth="0.8" filter={`url(#agGlow-${key})`} />
+                          <path key={i} d={d} fill="none" stroke={`url(#ag-${key})`} strokeWidth="0.7" filter={`url(#agGlow-${key})`} />
                         ))}
                       </svg>
                     </div>
                     <div className="flex justify-center gap-5 flex-wrap pt-1">
-                      {sortedBens.map((ben, idx) => {
+                      {sortedBens.map((ben) => {
                         const color = getBenNodeColor(ben);
                         const age = benAge(ben);
                         const badge = getBenStatusBadge(ben);

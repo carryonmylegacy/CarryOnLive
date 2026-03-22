@@ -225,26 +225,34 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
         {sortedBens.length > 0 && (() => {
           const n = sortedBens.length;
           const cols = 2;
-          // SVG arc from benefactor center to each beneficiary position
           const vbW = 200;
-          const vbH = 40;
+          const vbH = 44;
           const cx = vbW / 2;
           const arcPaths = [];
+          // Generate multiple brush-stroke curves per beneficiary
           for (let i = 0; i < n; i++) {
             const isOddLast = n % 2 !== 0 && i === n - 1;
             const col = i % cols;
+            const row = Math.floor(i / cols);
             const endX = isOddLast ? cx : (col === 0 ? vbW * 0.28 : vbW * 0.72);
-            const cpX = cx + (endX - cx) * 0.3;
-            arcPaths.push(`M ${cx},0 Q ${cpX},${vbH * 0.6} ${endX},${vbH}`);
+            // 3 strokes per beneficiary — slightly fanned
+            const strokes = [-1, 0, 1];
+            strokes.forEach(s => {
+              const spread = 4;
+              const cpX = cx + (endX - cx) * 0.35 + s * spread;
+              const endXo = endX + s * (spread * 0.6);
+              const cpY = vbH * (0.5 + row * 0.08);
+              arcPaths.push(`M ${cx},0 Q ${cpX},${cpY} ${endXo},${vbH}`);
+            });
           }
-          const gradOpacity = isLight ? [0.45, 0.08] : [0.35, 0.05];
-          const blurStd = isLight ? '1' : '1.5';
+          const gradOpacity = isLight ? [0.5, 0.1] : [0.4, 0.06];
+          const blurStd = isLight ? '1.2' : '1.8';
 
           return (
           <div className="w-full" style={{ maxWidth: 340 }} data-testid="tree-spine">
-            {/* SVG curved arcs fanning from benefactor to grid */}
-            <div className="flex justify-center" style={{ marginTop: -2, marginBottom: -4, position: 'relative', zIndex: 0 }}>
-              <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '75%', height: 28 }} className="overflow-visible">
+            {/* SVG curved arc bundles fanning from benefactor */}
+            <div className="flex justify-center" style={{ marginTop: -2, marginBottom: -6, position: 'relative', zIndex: 0 }}>
+              <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '80%', height: 32 }} className="overflow-visible">
                 <defs>
                   <linearGradient id="ftArcGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#d4af37" stopOpacity={gradOpacity[0]} />
@@ -259,7 +267,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   </filter>
                 </defs>
                 {arcPaths.map((d, i) => (
-                  <path key={i} d={d} fill="none" stroke="url(#ftArcGrad)" strokeWidth={isLight ? '1.2' : '0.8'} filter="url(#ftArcGlow)" />
+                  <path key={i} d={d} fill="none" stroke="url(#ftArcGrad)" strokeWidth={isLight ? '1' : '0.7'} filter="url(#ftArcGlow)" />
                 ))}
               </svg>
             </div>
