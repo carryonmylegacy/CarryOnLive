@@ -233,16 +233,17 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   const rowCenterY = (rIdx + 0.5) * rowH;
                   for (let s = 0; s < strandsPerNode; s++) {
                     const ySpd = (s - 1) * nodeSpread;
-                    const trunkOff = (s - 1) * 0.5 + dir * 0.7;
-                    const sx = nodeX + dir * circleR;
-                    const sy = rowCenterY + ySpd;
-                    const trunkX = cx + trunkOff;
-                    const joinY = sy + 4;
-                    const cp1x = nodeX + dir * (circleR + 14);
                     const deltaOff = dir * 2 + (s - 1) * 0.8;
-                    const deltaX = cx + deltaOff;
-                    const midTrunkY = (joinY + 96) / 2;
-                    const d = `M ${sx.toFixed(1)},${sy.toFixed(1)} C ${cp1x.toFixed(1)},${sy.toFixed(1)} ${cx},${(sy + 1.5).toFixed(1)} ${trunkX.toFixed(1)},${joinY.toFixed(1)} C ${trunkX.toFixed(1)},${midTrunkY.toFixed(1)} ${deltaX.toFixed(1)},94 ${deltaX.toFixed(1)},98`;
+                    const startX = nodeX + dir * circleR;
+                    const startY = rowCenterY + ySpd;
+                    const endX = cx + deltaOff;
+                    const endY = 98;
+                    // Gradual bezier: smooth sweeping arc from node to trunk (quarter-circle-like)
+                    const cp1x = startX + 0.42 * (endX - startX);
+                    const cp1y = startY;
+                    const cp2x = endX;
+                    const cp2y = startY + 0.42 * (endY - startY);
+                    const d = `M ${startX.toFixed(1)},${startY.toFixed(1)} C ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${endX.toFixed(1)},${endY.toFixed(1)}`;
                     allPaths.push(d);
                   }
                 }
@@ -341,16 +342,17 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   for (let s = 0; s < strandsPerNode; s++) {
                     const ySpd = (s - 1) * nodeSpread;
                     const side = isLeft ? -1 : 1;
-                    const trunkOff = (s - 1) * 0.5 + (isCentered ? 0 : dir * 0.7);
                     const deltaOff = (isCentered ? 0 : side * 2) + (s - 1) * 0.8;
-                    const sx = cx + deltaOff;
-                    const trunkX = cx + trunkOff;
-                    const branchY = rowCenterY - 4;
-                    const ex = isCentered ? (cx + (s - 1) * 2) : (nodeX + dir * circleR);
-                    const ey = rowCenterY + ySpd;
-                    const midTrunkY = (2 + branchY) / 2;
-                    const cp2x = isCentered ? ex : (nodeX + dir * (circleR + 14));
-                    const d = `M ${sx.toFixed(1)},2 C ${sx.toFixed(1)},${midTrunkY.toFixed(1)} ${trunkX.toFixed(1)},${(branchY - 3).toFixed(1)} ${trunkX.toFixed(1)},${branchY.toFixed(1)} C ${cx},${(ey - 1.5).toFixed(1)} ${cp2x.toFixed(1)},${ey.toFixed(1)} ${ex.toFixed(1)},${ey.toFixed(1)}`;
+                    const startX = cx + deltaOff;
+                    const startY = 2;
+                    const endX = isCentered ? (cx + (s - 1) * 2) : (nodeX + dir * circleR);
+                    const endY = rowCenterY + ySpd;
+                    // Gradual bezier: smooth sweeping arc from trunk to node (quarter-circle-like)
+                    const cp1x = startX;
+                    const cp1y = isCentered ? (startY + 0.5 * (endY - startY)) : (startY + 0.42 * (endY - startY));
+                    const cp2x = isCentered ? endX : (endX + 0.42 * (startX - endX));
+                    const cp2y = endY;
+                    const d = `M ${startX.toFixed(1)},${startY.toFixed(1)} C ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${endX.toFixed(1)},${endY.toFixed(1)}`;
                     allPaths.push(d);
                   }
                 }

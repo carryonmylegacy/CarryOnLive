@@ -24,6 +24,11 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (March 22, 2026 — Session 21: SVG Gradual Curves + Mobile Grid Fix)
+- **SVG Bezier Curves Softened**: Updated both blue (estate→benefactor) and gold (benefactor→beneficiary) strand paths in `FamilyTree.js` from sharp-elbowed curves to smooth, sweeping quarter-circle arcs using 0.42 bezier control point factors. Fixed critical bug where `sy` and `trunkX` variables were undefined in the blue strand path generation (would have crashed on render).
+- **Mobile 2-Column Grid**: Ensured `BeneficiaryHubPage.js` estate tiles stay in 2 columns (`grid-cols-2`) at ALL viewport widths including narrowest PWA mode, expanding to 3 columns (`lg:grid-cols-3`) on desktop. Also fixed loading skeleton grid to match.
+- **Testing**: Visual verification via screenshots at multiple viewports (340px, 380px, 600px).
+
 ### Completed (March 22, 2026 — Session 16: Admin Users Tab Tree View Overhaul)
 - **Removed Ugly Tree Connector Lines**: Replaced rigid horizontal/vertical div-based tree connectors with a polished nested container design featuring 4px accent bars (purple for beneficiaries, blue for connected estates) at 50% opacity, tinted background containers, and clean row-based layouts.
 - **Relationship Labels + Status Badges**: Expanded estates now show each beneficiary's relationship (Spouse, Son, Parent, etc.) and invitation status (Pending, Accepted, Draft) with color-coded badges.
@@ -88,6 +93,7 @@ A full-stack estate planning application allowing benefactors to manage digital 
   - **Scroll-Linked Fill Animation** (Session 19): Replaced CSS keyframe animations with JS scroll handler controlling `stroke-dashoffset` per scroll position. Auto-detects scrollable ancestor. Upper blue fills first (0-250px scroll), gold origin flash, lower gold fills (175-375px range). Fill is ratcheted (never reverses). Stays permanently once filled. Resets on unmount/remount.
   - **Visual refinements** (Session 19): 8 strands/bundle (was 5), thinner strokes (0.7px base, 1.0px overlay), reduced SVG height (vbH=50, was 80), toned-down brightness (~0.45 overlay opacity), smaller glow blur
   - **Neural/Dendritic Side-Emergence Geometry** (Session 20): Fundamental architecture change — SVG moved from a tiny strip below/above nodes to a full-height absolute-positioned overlay that covers the entire node grid. Strands now emerge HORIZONTALLY from inner sides of each circle, flow DOWNWARD through the center gap between the two columns (visible alongside nodes), merge into a central trunk, and end at the benefactor/beneficiaries. Uses `preserveAspectRatio="none"` for SVG stretching, normalized viewBox (0 0 100 100), dynamic row positioning, and wide column gaps (22% CSS grid gap). Handles centered (odd last) beneficiary. Flash circles positioned per node.
+  - **Gradual Bezier Curves** (Session 21): Control point factors reduced to 0.42 (from 0.65) producing smooth quarter-circle-like arcs. Strands leave trunk vertically and arrive at nodes horizontally through a gradual, organic sweep — no visible "elbow" or squared-off turns.
   - Uses `dangerouslySetInnerHTML` for SVG content to bypass Babel `<span>` wrapping
   - Applied same fix to UsersTab.js admin graph views
 
