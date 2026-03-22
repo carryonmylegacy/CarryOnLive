@@ -1,10 +1,10 @@
 import React, { useState, createContext, useContext, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Unlock, Eye, EyeOff, Mic, KeyRound, CheckCircle2, Loader2, HelpCircle, Square } from 'lucide-react';
+import { Lock, Unlock, Eye, EyeOff, KeyRound, CheckCircle2, Loader2, HelpCircle, Hash, Delete, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { toast } from '../../utils/toast';
 import axios from 'axios';
 import { API_URL } from '../../config';
@@ -91,7 +91,6 @@ export const SectionLockProvider = ({ children }) => {
   const completeUnlock = (sid) => {
     setSessionUnlocked(prev => ({ ...prev, [sid]: true }));
     setUnlockModal(null);
-    // toast removed
   };
 
   // Lock on logout
@@ -152,8 +151,8 @@ export const SectionLockBanner = ({ sectionId }) => {
 
   if (isLocked(sectionId)) {
     const layers = [];
+    if (s.pin_enabled) layers.push('PIN');
     if (s.password_enabled) layers.push('Password');
-    if (s.voice_enabled) layers.push('Voice');
     if (s.security_question_enabled) layers.push('Security Question');
     return (
       <div className="rounded-xl p-4 mb-4 flex items-center justify-between gap-3" style={{ background: 'rgba(240,82,82,0.06)', border: '1px solid rgba(240,82,82,0.12)' }} data-testid={`lock-banner-${sectionId}`}>
@@ -215,98 +214,50 @@ export const SectionLockedOverlay = ({ sectionId, children }) => {
 // === UNLOCK MODAL ===
 const UnlockModal = ({ sectionId, settings: s, onClose, onUnlocked }) => {
   const sec = LOCKABLE_SECTIONS[sectionId];
+  const [pinDigits, setPinDigits] = useState('');
+  const [pinError, setPinError] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [securityAnswer, setSecurityAnswer] = useState('');
-  const [recording, setRecording] = useState(false);
-  const [voiceBlob, setVoiceBlob] = useState(null);
-  const [voiceStatus, setVoiceStatus] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [step, setStep] = useState(0);
-  const mediaRecorderRef = React.useRef(null);
 
   // Determine which steps are needed
   const steps = [];
+  if (s?.pin_enabled) steps.push('pin');
   if (s?.password_enabled) steps.push('password');
-  if (s?.voice_enabled) steps.push('voice');
   if (s?.security_question_enabled) steps.push('question');
 
   const currentStep = steps[step] || 'done';
 
-  const handleVoiceRecord = () => {
-    if (recording) return;
-    setRecording(true);
-    setVoiceStatus('Listening... speak your passphrase');
-    setVoiceBlob(null);
-
-    navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(stream => {
-        const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-        const chunks = [];
-        mediaRecorderRef.current = mediaRecorder;
-        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-        mediaRecorder.onstop = () => {
-          stream.getTracks().forEach(t => t.stop());
-          mediaRecorderRef.current = null;
-          const blob = new Blob(chunks, { type: 'audio/webm' });
-          setVoiceBlob(blob);
-          setRecording(false);
-          setVoiceStatus('Processing...');
-        };
-        mediaRecorder.start();
-      })
-      .catch(() => {
-        toast.error('Microphone access denied');
-        setRecording(false);
-        setVoiceStatus('');
-      });
-  };
-
-  const handleStopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.stop();
-    }
-  };
-
-  // Auto-verify when voice is recorded and it's the last (or only) step
-  React.useEffect(() => {
-    if (voiceBlob && currentStep === 'voice') {
-      // If voice is the last step, auto-submit
-      if (step >= steps.length - 1) {
-        handleVerify();
-      } else {
-        // Move to next step automatically
-        setStep(prev => prev + 1);
-      }
-    }
-  }, [voiceBlob]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const handleVerify = async () => {
     setVerifying(true);
-    setVoiceStatus('Verifying...');
     try {
       const token = localStorage.getItem('carryon_token');
       const formData = new FormData();
+      if (pinDigits) formData.append('pin', pinDigits);
       if (password) formData.append('password', password);
       if (securityAnswer) formData.append('security_answer', securityAnswer);
-      if (voiceBlob) formData.append('voice_file', voiceBlob, 'voice.webm');
 
       await axios.post(`${API_URL}/security/verify/${sectionId}`, formData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
       onUnlocked();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Verification failed');
-      // Reset voice for retry
-      setVoiceBlob(null);
-      setVoiceStatus('');
+      const detail = err.response?.data?.detail || 'Verification failed';
+      toast.error(detail);
+      // If PIN failed, reset PIN
+      if (detail.toLowerCase().includes('pin')) {
+        setPinDigits('');
+        setPinError('Incorrect PIN');
+      }
     }
     setVerifying(false);
   };
 
   const canProceed = () => {
+    if (currentStep === 'pin') return pinDigits.length >= 4;
     if (currentStep === 'password') return password.length >= 1;
-    if (currentStep === 'voice') return voiceBlob !== null;
     if (currentStep === 'question') return securityAnswer.length >= 1;
     return false;
   };
@@ -319,29 +270,104 @@ const UnlockModal = ({ sectionId, settings: s, onClose, onUnlocked }) => {
     }
   };
 
-  return (
-    <Dialog open onOpenChange={onClose}>
-      <DialogContent className="glass-card border-[var(--b2)] sm:max-w-md overflow-hidden !top-[5vh] !translate-y-0 max-h-[90vh] overflow-y-auto" data-testid="unlock-modal">
-        <DialogHeader className="px-5 pt-5 pb-3" style={{ background: 'linear-gradient(135deg, rgba(224,173,43,0.08), rgba(139,92,246,0.05))' }}>
-          <DialogTitle className="text-[var(--t)]">Unlock {sec?.name}</DialogTitle>
-          <DialogDescription className="text-[var(--t4)]">
-            Step {step + 1} of {steps.length}: {currentStep === 'password' ? 'Enter section password' : currentStep === 'voice' ? 'Voice verification' : 'Security question'}
-          </DialogDescription>
-        </DialogHeader>
+  const handlePinDigit = (digit) => {
+    setPinError('');
+    if (pinDigits.length < 8) {
+      setPinDigits(prev => prev + digit);
+    }
+  };
+  const handlePinBackspace = () => {
+    setPinError('');
+    setPinDigits(prev => prev.slice(0, -1));
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }} onClick={onClose}>
+      <div
+        className="w-[calc(100%-2rem)] max-w-sm flex flex-col rounded-2xl overflow-hidden"
+        style={{ background: 'var(--bg)', border: '1px solid var(--b)', maxHeight: 'calc(100dvh - 6rem)' }}
+        onClick={e => e.stopPropagation()}
+        data-testid="unlock-modal"
+      >
+        {/* Header */}
+        <div className="px-5 pt-5 pb-3 relative" style={{ background: 'linear-gradient(135deg, rgba(224,173,43,0.08), rgba(139,92,246,0.05))' }}>
+          <button onClick={onClose} className="absolute top-3 right-3 text-[var(--t5)] hover:text-[var(--t)] p-2" data-testid="unlock-modal-close">
+            <X className="w-5 h-5" />
+          </button>
+          <h3 className="text-base font-bold text-[var(--t)]">Unlock {sec?.name}</h3>
+          <p className="text-xs text-[var(--t4)] mt-1">
+            Step {step + 1} of {steps.length}: {currentStep === 'pin' ? 'Enter your PIN' : currentStep === 'password' ? 'Enter section password' : 'Security question'}
+          </p>
+        </div>
 
         {/* Progress dots */}
         {steps.length > 1 && (
           <div className="flex gap-2 px-5 pt-3 justify-center">
-            {steps.map((s, i) => (
-              <div key={s} className="flex items-center gap-1">
+            {steps.map((st, i) => (
+              <div key={st} className="flex items-center gap-1">
                 <div className={`w-2 h-2 rounded-full ${i < step ? 'bg-[var(--gn2)]' : i === step ? 'bg-[var(--gold)]' : 'bg-[var(--b)]'}`} />
-                <span className="text-[11px] text-[var(--t5)] capitalize">{s === 'question' ? 'Q&A' : s}</span>
+                <span className="text-[11px] text-[var(--t5)] capitalize">{st === 'question' ? 'Q&A' : st === 'pin' ? 'PIN' : st}</span>
               </div>
             ))}
           </div>
         )}
 
-        <div className="p-5">
+        {/* Body — scrollable */}
+        <div className="flex-1 overflow-y-auto p-5" style={{ WebkitOverflowScrolling: 'touch' }}>
+          {/* PIN Step */}
+          {currentStep === 'pin' && (
+            <div className="space-y-4">
+              <div className="text-center mb-2">
+                <Lock className="w-7 h-7 text-[var(--gold)] mx-auto mb-2" />
+                <p className="text-xs text-[var(--t5)]">Enter your 4-8 digit PIN</p>
+              </div>
+
+              {/* PIN Dots — show up to 8 */}
+              <div className="flex justify-center gap-2" data-testid="unlock-pin-dots">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold transition-all"
+                    style={{
+                      background: i < pinDigits.length ? 'rgba(212,175,55,0.15)' : 'var(--s)',
+                      border: `2px solid ${i < pinDigits.length ? 'var(--gold)' : pinError ? '#EF4444' : 'var(--b)'}`,
+                      color: 'var(--t)',
+                      opacity: i < pinDigits.length ? 1 : 0.4,
+                    }}>
+                    {i < pinDigits.length ? '\u2022' : ''}
+                  </div>
+                ))}
+              </div>
+
+              {pinError && <p className="text-xs text-red-400 text-center" data-testid="unlock-pin-error">{pinError}</p>}
+
+              {/* Numeric Keypad */}
+              <div className="grid grid-cols-3 gap-2 max-w-[240px] mx-auto" data-testid="unlock-pin-keypad">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+                  <button key={n} onClick={() => handlePinDigit(String(n))}
+                    className="py-3 rounded-xl text-lg font-bold text-[var(--t)] transition-all active:scale-95"
+                    style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+                    disabled={pinDigits.length >= 8}
+                    data-testid={`unlock-pin-key-${n}`}>
+                    {n}
+                  </button>
+                ))}
+                <div />
+                <button onClick={() => handlePinDigit('0')}
+                  className="py-3 rounded-xl text-lg font-bold text-[var(--t)] transition-all active:scale-95"
+                  style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+                  disabled={pinDigits.length >= 8}
+                  data-testid="unlock-pin-key-0">
+                  0
+                </button>
+                <button onClick={handlePinBackspace}
+                  className="py-3 rounded-xl text-sm font-bold text-[var(--t5)] transition-all active:scale-95"
+                  style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+                  data-testid="unlock-pin-key-back">
+                  <Delete className="w-5 h-5 mx-auto" />
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Password Step */}
           {currentStep === 'password' && (
             <div className="space-y-4">
@@ -360,53 +386,6 @@ const UnlockModal = ({ sectionId, settings: s, onClose, onUnlocked }) => {
                 <button onClick={() => setShowPw(p => !p)} className="absolute right-3 top-8 text-[var(--t5)]">
                   {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
-              </div>
-            </div>
-          )}
-
-          {/* Voice Step */}
-          {currentStep === 'voice' && (
-            <div className="space-y-4">
-              {s?.voice_passphrase && (
-                <div className="text-center text-xs text-[var(--t4)]">
-                  Speak your passphrase: <span className="font-bold text-[var(--t)]">"{s.voice_passphrase}"</span>
-                </div>
-              )}
-              <div className="text-center p-6 rounded-xl" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
-                {verifying ? (
-                  <>
-                    <Loader2 className="w-12 h-12 mx-auto text-[var(--gold)] mb-3 animate-spin" />
-                    <div className="text-sm font-bold text-[var(--t4)]">Verifying voice...</div>
-                  </>
-                ) : (
-                  <>
-                    <div
-                      onClick={recording ? handleStopRecording : handleVoiceRecord}
-                      className="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center cursor-pointer transition-all hover:scale-105"
-                      style={{
-                        background: recording ? 'rgba(240,82,82,0.2)' : 'rgba(59,123,247,0.12)',
-                        border: `3px solid ${recording ? 'var(--rd2)' : 'var(--bl3)'}`,
-                      }}
-                      data-testid="voice-record-btn"
-                    >
-                      {recording ? (
-                        <Square className="w-6 h-6 text-[var(--rd2)]" style={{ fill: 'currentColor' }} />
-                      ) : (
-                        <Mic className="w-7 h-7 text-[var(--bl3)]" />
-                      )}
-                    </div>
-                    <div className="text-sm font-bold text-[var(--t)]">
-                      {recording ? 'Recording... Tap to Stop' : 'Tap to Record'}
-                    </div>
-                    {recording && (
-                      <div className="flex items-center justify-center gap-1 mt-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--rd2)] animate-pulse" />
-                        <span className="text-xs text-[var(--rd2)]">Listening</span>
-                      </div>
-                    )}
-                  </>
-                )}
-                {voiceStatus && !recording && !verifying && <p className="text-xs text-[var(--t4)] mt-2">{voiceStatus}</p>}
               </div>
             </div>
           )}
@@ -435,20 +414,19 @@ const UnlockModal = ({ sectionId, settings: s, onClose, onUnlocked }) => {
             </div>
           )}
 
-          {/* Only show button for non-voice steps, or when voice isn't the current step */}
-          {currentStep !== 'voice' && (
-            <Button
-              className="w-full mt-4 gold-button"
-              disabled={!canProceed() || verifying}
-              onClick={handleNext}
-              data-testid="unlock-verify-btn"
-            >
-              {verifying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              {step < steps.length - 1 ? 'Continue' : 'Verify & Unlock'}
-            </Button>
-          )}
+          {/* Submit Button — always shown now (no auto-submit voice step) */}
+          <Button
+            className="w-full mt-4 gold-button"
+            disabled={!canProceed() || verifying}
+            onClick={handleNext}
+            data-testid="unlock-verify-btn"
+          >
+            {verifying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            {step < steps.length - 1 ? 'Continue' : 'Verify & Unlock'}
+          </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>,
+    document.body
   );
 };

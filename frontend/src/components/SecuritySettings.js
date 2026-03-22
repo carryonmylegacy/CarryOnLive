@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Shield, Lock, Unlock, Mic, KeyRound, HelpCircle, Eye, EyeOff, CheckCircle2, Loader2, ChevronDown, ChevronUp, StopCircle } from 'lucide-react';
+import { Shield, Lock, Unlock, KeyRound, HelpCircle, Eye, EyeOff, CheckCircle2, Loader2, ChevronDown, ChevronUp, Hash, Delete, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -27,6 +27,9 @@ const LOCK_MODES = [
   { value: 'on_logout', label: 'Auto-lock when you log out' },
   { value: 'manual', label: 'Manual lock only (lock on command)' },
 ];
+
+const MAX_PIN_LENGTH = 8;
+const MIN_PIN_LENGTH = 4;
 
 const SecuritySettings = ({ getAuthHeaders }) => {
   const [settings, setSettings] = useState({});
@@ -157,7 +160,7 @@ const SecuritySettings = ({ getAuthHeaders }) => {
           Section Security (Triple Lock)
         </CardTitle>
         <p className="text-xs text-[var(--t4)] mt-1">
-          Configure up to 3 security layers per section: Password, Voice Biometric, and Security Question.
+          Configure up to 3 security layers per section: PIN, Password, and Security Question.
         </p>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -182,8 +185,8 @@ const SecuritySettings = ({ getAuthHeaders }) => {
 const SectionRow = ({ section, settings: s, questions, expanded, onToggle, headers, onUpdate }) => {
   const isActive = s.is_active;
   const layers = [];
+  if (s.pin_enabled) layers.push('PIN');
   if (s.password_enabled) layers.push('Password');
-  if (s.voice_enabled) layers.push('Voice');
   if (s.security_question_enabled) layers.push('Q&A');
 
   return (
@@ -221,45 +224,104 @@ const SectionRow = ({ section, settings: s, questions, expanded, onToggle, heade
   );
 };
 
+// ─── Inline PIN Keypad (for setting PIN in config) ───────────
+const PinKeypad = ({ digits, onDigit, onBackspace, onClear, error, maxLen = MAX_PIN_LENGTH }) => (
+  <div className="space-y-3">
+    {/* PIN Dots */}
+    <div className="flex justify-center gap-2" data-testid="pin-setup-dots">
+      {Array.from({ length: maxLen }).map((_, i) => (
+        <div key={i} className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold transition-all"
+          style={{
+            background: i < digits.length ? 'rgba(212,175,55,0.15)' : 'var(--s)',
+            border: `2px solid ${i < digits.length ? 'var(--gold)' : error ? '#EF4444' : 'var(--b)'}`,
+            color: 'var(--t)',
+            opacity: i < digits.length ? 1 : 0.4,
+          }}>
+          {i < digits.length ? '\u2022' : ''}
+        </div>
+      ))}
+    </div>
+
+    {error && <p className="text-xs text-red-400 text-center" data-testid="pin-setup-error">{error}</p>}
+
+    <div className="text-[11px] text-center text-[var(--t5)]">
+      {digits.length < MIN_PIN_LENGTH
+        ? `Enter at least ${MIN_PIN_LENGTH} digits`
+        : `${digits.length} of ${maxLen} digits entered`}
+    </div>
+
+    {/* Numeric Keypad */}
+    <div className="grid grid-cols-3 gap-2 max-w-[240px] mx-auto" data-testid="pin-setup-keypad">
+      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+        <button key={n} type="button" onClick={() => onDigit(String(n))}
+          className="py-3 rounded-xl text-lg font-bold text-[var(--t)] transition-all active:scale-95"
+          style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+          disabled={digits.length >= maxLen}
+          data-testid={`pin-setup-key-${n}`}>
+          {n}
+        </button>
+      ))}
+      <button type="button" onClick={onClear}
+        className="py-3 rounded-xl text-xs font-bold text-[var(--t5)] transition-all active:scale-95"
+        style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+        data-testid="pin-setup-key-clear">
+        Clear
+      </button>
+      <button type="button" onClick={() => onDigit('0')}
+        className="py-3 rounded-xl text-lg font-bold text-[var(--t)] transition-all active:scale-95"
+        style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+        disabled={digits.length >= maxLen}
+        data-testid="pin-setup-key-0">
+        0
+      </button>
+      <button type="button" onClick={onBackspace}
+        className="py-3 rounded-xl text-sm font-bold text-[var(--t5)] transition-all active:scale-95"
+        style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+        data-testid="pin-setup-key-back">
+        <Delete className="w-5 h-5 mx-auto" />
+      </button>
+    </div>
+  </div>
+);
+
 const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) => {
+  // PIN state
+  const [pinEnabled, setPinEnabled] = useState(s.pin_enabled || false);
+  const [pinDigits, setPinDigits] = useState('');
+  const [pinError, setPinError] = useState('');
+
+  // Password state
   const [pw, setPw] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [pwEnabled, setPwEnabled] = useState(s.password_enabled || false);
-  const [voiceEnabled, setVoiceEnabled] = useState(s.voice_enabled || false);
+
+  // Security question state
   const [qEnabled, setQEnabled] = useState(s.security_question_enabled || false);
   const [question, setQuestion] = useState(s.security_question || '');
   const [customQ, setCustomQ] = useState('');
   const [answer, setAnswer] = useState('');
+
   const [lockMode, setLockMode] = useState(s.lock_mode || 'manual');
   const [saving, setSaving] = useState(false);
-  const [voicePhrase, setVoicePhrase] = useState(s.voice_passphrase || '');
-  const [recording, setRecording] = useState(false);
-  const [enrollCount, setEnrollCount] = useState(0);
-  const [enrolling, setEnrolling] = useState(false);
-  const [micGranted, setMicGranted] = useState(false);
-  const mediaRecorderRef = React.useRef(null);
-  const streamRef = React.useRef(null);
 
   // Account password verification for disabling security
   const [showAccountPwModal, setShowAccountPwModal] = useState(false);
   const [accountPw, setAccountPw] = useState('');
   const [accountPwVerifying, setAccountPwVerifying] = useState(false);
   const [showAccountPwValue, setShowAccountPwValue] = useState(false);
-  const [pendingToggle, setPendingToggle] = useState(null); // { field, value }
+  const [pendingToggle, setPendingToggle] = useState(null);
 
   const isCustomQuestion = question === '__custom__' || (question && !questions.includes(question));
 
   // Wrap toggle-off actions to require account password
   const handleToggle = (field, value) => {
     if (!value && s.is_active) {
-      // Turning OFF an active security feature — require password
       setPendingToggle({ field, value });
       setShowAccountPwModal(true);
       setAccountPw('');
     } else {
-      // Turning ON is always allowed
-      if (field === 'password') setPwEnabled(value);
-      else if (field === 'voice') setVoiceEnabled(value);
+      if (field === 'pin') setPinEnabled(value);
+      else if (field === 'password') setPwEnabled(value);
       else if (field === 'question') setQEnabled(value);
     }
   };
@@ -269,15 +331,12 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
     try {
       const { email } = JSON.parse(atob(localStorage.getItem('carryon_token').split('.')[1]));
       await axios.post(`${API_URL}/auth/verify-password`, { email, password: accountPw }, { headers });
-      // Password verified — apply the toggle
       if (pendingToggle) {
-        if (pendingToggle.field === 'password') setPwEnabled(pendingToggle.value);
-        else if (pendingToggle.field === 'voice') setVoiceEnabled(pendingToggle.value);
+        if (pendingToggle.field === 'pin') setPinEnabled(pendingToggle.value);
+        else if (pendingToggle.field === 'password') setPwEnabled(pendingToggle.value);
         else if (pendingToggle.field === 'question') setQEnabled(pendingToggle.value);
         else if (pendingToggle.field === 'remove') {
-          // Full removal
           await axios.delete(`${API_URL}/security/settings/${section.id}`, { headers });
-          // toast removed
           onUpdate();
         }
       }
@@ -291,23 +350,35 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
   };
 
   const handleSave = async () => {
+    // Validate PIN if enabled and being set
+    if (pinEnabled && pinDigits.length > 0 && pinDigits.length < MIN_PIN_LENGTH) {
+      setPinError(`PIN must be at least ${MIN_PIN_LENGTH} digits`);
+      return;
+    }
+    if (pinEnabled && !s.has_pin && pinDigits.length === 0) {
+      setPinError('Please set a PIN');
+      return;
+    }
+
     setSaving(true);
     try {
       const data = {
+        pin_enabled: pinEnabled,
         password_enabled: pwEnabled,
-        voice_enabled: voiceEnabled,
         security_question_enabled: qEnabled,
         lock_mode: lockMode,
       };
+      if (pinDigits.length >= MIN_PIN_LENGTH) data.pin = pinDigits;
       if (pw) data.password = pw;
       const finalQ = question === '__custom__' ? customQ : question;
       if (finalQ) data.security_question = finalQ;
       if (answer) data.security_answer = answer;
 
       await axios.put(`${API_URL}/security/settings/${section.id}`, data, { headers: { ...headers, 'Content-Type': 'application/json' } });
-      // toast removed
       setPw('');
       setAnswer('');
+      setPinDigits('');
+      setPinError('');
       onUpdate();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to save');
@@ -321,92 +392,20 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
     setAccountPw('');
   };
 
-  // Step 1: Request mic permission (without starting recording)
-  const handleMicPermission = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Keep stream alive briefly, then stop tracks — permission is now cached
-      stream.getTracks().forEach(t => t.stop());
-      setMicGranted(true);
-    } catch {
-      toast.error('Microphone access denied — enable in your device settings');
+  // PIN keypad handlers
+  const handlePinDigit = (digit) => {
+    setPinError('');
+    if (pinDigits.length < MAX_PIN_LENGTH) {
+      setPinDigits(prev => prev + digit);
     }
   };
-
-  // Step 2: Start recording (mic already granted)
-  const handleStartRecording = async () => {
-    if (recording || enrolling) return;
-    if (!voicePhrase.trim()) { toast.error('Enter a passphrase first'); return; }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-
-      // Detect best supported MIME type for this browser
-      let mimeType = '';
-      for (const type of ['audio/webm', 'audio/mp4', 'audio/ogg', '']) {
-        if (!type || MediaRecorder.isTypeSupported(type)) { mimeType = type; break; }
-      }
-      const options = mimeType ? { mimeType } : {};
-      const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
-
-      const mediaRecorder = new MediaRecorder(stream, options);
-      mediaRecorderRef.current = mediaRecorder;
-      const chunks = [];
-
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data && e.data.size > 0) chunks.push(e.data);
-      };
-
-      mediaRecorder.onstop = async () => {
-        stream.getTracks().forEach(t => t.stop());
-        streamRef.current = null;
-        mediaRecorderRef.current = null;
-        setRecording(false);
-
-        if (chunks.length === 0) {
-          toast.error('No audio captured — please try again');
-          return;
-        }
-
-        setEnrolling(true);
-        const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
-
-        if (blob.size < 1000) {
-          toast.error('Recording too short — speak for at least 2 seconds');
-          setEnrolling(false);
-          return;
-        }
-
-        try {
-          const formData = new FormData();
-          formData.append('file', blob, `voice.${ext}`);
-          formData.append('passphrase', voicePhrase.trim());
-          const res = await axios.post(`${API_URL}/security/voice/enroll/${section.id}`, formData, {
-            headers: { ...headers, 'Content-Type': 'multipart/form-data' }
-          });
-          setEnrollCount(res.data.samples_recorded);
-          toast.success(res.data.message || 'Voice sample enrolled!');
-        } catch (err) {
-          const detail = err.response?.data?.detail;
-          toast.error(detail || 'Voice enrollment failed — please try again');
-        }
-        setEnrolling(false);
-      };
-
-      mediaRecorder.start();
-      setRecording(true);
-    } catch (e) {
-      toast.error('Could not start recording: ' + (e.message || 'Unknown error'));
-      setMicGranted(false);
-    }
+  const handlePinBackspace = () => {
+    setPinError('');
+    setPinDigits(prev => prev.slice(0, -1));
   };
-
-  // Step 3: Stop recording
-  const handleVoiceStop = () => {
-    if (mediaRecorderRef.current && recording) {
-      mediaRecorderRef.current.stop();
-    }
+  const handlePinClear = () => {
+    setPinError('');
+    setPinDigits('');
   };
 
   return (
@@ -428,12 +427,41 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
 
       <Separator className="bg-[var(--b)]" />
 
-      {/* Layer 1: Password */}
+      {/* Layer 1: PIN */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <KeyRound className="w-4 h-4 text-[var(--gold)]" />
-            <span className="text-sm font-bold text-[var(--t)]">Layer 1: Password</span>
+            <Hash className="w-4 h-4 text-[var(--gold)]" />
+            <span className="text-sm font-bold text-[var(--t)]">Layer 1: PIN</span>
+          </div>
+          <Switch checked={pinEnabled} onCheckedChange={(v) => handleToggle('pin', v)} data-testid={`pin-toggle-${section.id}`} />
+        </div>
+        {pinEnabled && (
+          <div className="ml-2 space-y-3">
+            <PinKeypad
+              digits={pinDigits}
+              onDigit={handlePinDigit}
+              onBackspace={handlePinBackspace}
+              onClear={handlePinClear}
+              error={pinError}
+            />
+            {s.has_pin && pinDigits.length === 0 && (
+              <p className="text-[11px] text-[var(--gn2)] flex items-center justify-center gap-1">
+                <CheckCircle2 className="w-3 h-3" /> PIN set — enter new digits above to change
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      <Separator className="bg-[var(--b)]" />
+
+      {/* Layer 2: Password */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <KeyRound className="w-4 h-4 text-[var(--bl3)]" />
+            <span className="text-sm font-bold text-[var(--t)]">Layer 2: Password</span>
           </div>
           <Switch checked={pwEnabled} onCheckedChange={(v) => handleToggle('password', v)} data-testid={`pw-toggle-${section.id}`} />
         </div>
@@ -444,7 +472,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
                 type={showPw ? 'text' : 'password'}
                 value={pw}
                 onChange={e => setPw(e.target.value)}
-                placeholder={s.has_password ? '••••••• (already set, enter to change)' : 'Create section password'}
+                placeholder={s.has_password ? '\u2022\u2022\u2022\u2022\u2022\u2022\u2022 (already set, enter to change)' : 'Create section password'}
                 className="input-field pr-10 text-sm"
                 data-testid={`pw-input-${section.id}`}
               />
@@ -453,78 +481,6 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
               </button>
             </div>
             {s.has_password && <p className="text-[11px] text-[var(--gn2)] flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Password set</p>}
-          </div>
-        )}
-      </div>
-
-      <Separator className="bg-[var(--b)]" />
-
-      {/* Layer 2: Voice Biometric */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Mic className="w-4 h-4 text-[var(--bl3)]" />
-            <span className="text-sm font-bold text-[var(--t)]">Layer 2: Voice Biometric</span>
-          </div>
-          <Switch checked={voiceEnabled} onCheckedChange={(v) => handleToggle('voice', v)} data-testid={`voice-toggle-${section.id}`} />
-        </div>
-        {voiceEnabled && (
-          <div className="ml-6 space-y-3">
-            <div>
-              <Label className="text-[var(--t4)] text-xs">Your Passphrase <span className="text-red-400">*</span></Label>
-              <Input
-                value={voicePhrase}
-                onChange={e => setVoicePhrase(e.target.value)}
-                placeholder='e.g., "Blue rivers flow beneath the mountain"'
-                className="input-field mt-1 text-sm"
-                data-testid={`voice-phrase-${section.id}`}
-              />
-            </div>
-            <div className="rounded-xl p-4 text-center" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
-              {enrolling ? (
-                <Loader2 className="w-8 h-8 mx-auto text-[var(--bl3)] animate-spin mb-2" />
-              ) : recording ? (
-                <div
-                  onClick={handleVoiceStop}
-                  className="w-14 h-14 rounded-full mx-auto mb-2 flex items-center justify-center cursor-pointer transition-all animate-pulse"
-                  style={{ background: 'rgba(240,82,82,0.2)', border: '3px solid var(--rd2)' }}
-                  data-testid={`voice-stop-${section.id}`}
-                >
-                  <StopCircle className="w-6 h-6 text-[var(--rd2)]" />
-                </div>
-              ) : !micGranted ? (
-                <div
-                  onClick={handleMicPermission}
-                  className="w-14 h-14 rounded-full mx-auto mb-2 flex items-center justify-center cursor-pointer transition-all"
-                  style={{ background: 'rgba(139,92,246,0.12)', border: '3px solid var(--pr2)' }}
-                  data-testid={`voice-mic-enable-${section.id}`}
-                >
-                  <Mic className="w-6 h-6 text-[var(--pr2)]" />
-                </div>
-              ) : (
-                <div
-                  onClick={handleStartRecording}
-                  className="w-14 h-14 rounded-full mx-auto mb-2 flex items-center justify-center cursor-pointer transition-all"
-                  style={{ background: 'rgba(59,123,247,0.12)', border: '3px solid var(--bl3)' }}
-                  data-testid={`voice-enroll-${section.id}`}
-                >
-                  <Mic className="w-6 h-6 text-[var(--bl3)]" />
-                </div>
-              )}
-              <div className="text-xs font-bold text-[var(--t)]">
-                {recording ? 'Recording — Tap to Stop' : enrolling ? 'Processing...' : !micGranted ? 'Tap to Enable Microphone' : 'Tap to Record Sample'}
-              </div>
-              {(enrollCount > 0 || s.has_voiceprint) && (
-                <p className="text-[11px] text-[var(--gn2)] mt-1 flex items-center justify-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" />
-                  {enrollCount > 0 ? `${enrollCount} sample${enrollCount > 1 ? 's' : ''} enrolled` : 'Voiceprint enrolled'}
-                  {enrollCount < 3 && ' · Record more for better accuracy'}
-                </p>
-              )}
-            </div>
-            <p className="text-[11px] text-[var(--t5)] leading-relaxed">
-              Your voiceprint verifies both WHAT you say and WHO is saying it. Record 2-3 samples for best accuracy.
-            </p>
           </div>
         )}
       </div>
@@ -573,7 +529,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
               <Input
                 value={answer}
                 onChange={e => setAnswer(e.target.value)}
-                placeholder={s.has_security_question ? '••••••• (already set, enter to change)' : 'Enter your answer'}
+                placeholder={s.has_security_question ? '\u2022\u2022\u2022\u2022\u2022\u2022\u2022 (already set, enter to change)' : 'Enter your answer'}
                 className="input-field mt-1 text-sm"
                 data-testid={`q-answer-${section.id}`}
               />
@@ -590,7 +546,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
         <Button
           className="flex-1 text-sm"
           style={{ background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)', color: 'white' }}
-          disabled={saving || (!pwEnabled && !voiceEnabled && !qEnabled)}
+          disabled={saving || (!pinEnabled && !pwEnabled && !qEnabled)}
           onClick={handleSave}
           data-testid={`save-security-${section.id}`}
         >

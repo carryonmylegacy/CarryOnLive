@@ -1,25 +1,12 @@
 """CarryOn™ Backend — Section Security (Triple Lock)"""
 
-import asyncio
-import os
-import subprocess
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, Form, HTTPException
 from pydantic import BaseModel
 
-from config import db, logger
-from services.voice_biometrics import (
-    compare_voiceprints_legacy,
-    compute_enrollment_model,
-    extract_voiceprint,
-    extract_voiceprint_legacy,
-    is_outlier_sample,
-    match_passphrase,
-    verify_voiceprint,
-)
+from config import db
 from utils import get_current_user, hash_password, verify_password
 
 router = APIRouter()
@@ -50,9 +37,10 @@ PRESET_SECURITY_QUESTIONS = [
 
 
 class SectionSecurityUpdate(BaseModel):
+    pin_enabled: Optional[bool] = None
+    pin: Optional[str] = None
     password_enabled: Optional[bool] = None
     password: Optional[str] = None
-    voice_enabled: Optional[bool] = None
     security_question_enabled: Optional[bool] = None
     security_question: Optional[str] = None
     security_answer: Optional[str] = None
@@ -60,12 +48,9 @@ class SectionSecurityUpdate(BaseModel):
 
 
 class SectionVerifyRequest(BaseModel):
+    pin: Optional[str] = None
     password: Optional[str] = None
     security_answer: Optional[str] = None
-    # voice is sent as a file separately
-
-
-# NOTE: extract_voiceprint, verify_voiceprint, etc. are now in voice_biometrics.py
 
 
 @router.get("/security/settings")
@@ -79,17 +64,16 @@ async def get_security_settings(current_user: dict = Depends(get_current_user)):
         result[sid] = {
             "section_id": sid,
             "name": name,
+            "pin_enabled": s.get("pin_enabled", False),
+            "has_pin": bool(s.get("pin_hash")),
             "password_enabled": s.get("password_enabled", False),
             "has_password": bool(s.get("password_hash")),
-            "voice_enabled": s.get("voice_enabled", False),
-            "has_voiceprint": bool(s.get("voiceprint")),
-            "voice_passphrase": s.get("voice_passphrase", ""),
             "security_question_enabled": s.get("security_question_enabled", False),
             "has_security_question": bool(s.get("security_question")),
             "security_question": s.get("security_question", ""),
             "lock_mode": s.get("lock_mode", "manual"),
-            "is_active": s.get("password_enabled", False)
-            or s.get("voice_enabled", False)
+            "is_active": s.get("pin_enabled", False)
+            or s.get("password_enabled", False)
             or s.get("security_question_enabled", False),
         }
     return result
@@ -117,12 +101,16 @@ async def update_security_settings(
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
 
+    if data.pin_enabled is not None:
+        update_fields["pin_enabled"] = data.pin_enabled
+    if data.pin:
+        if len(data.pin) < 4 or len(data.pin) > 8 or not data.pin.isdigit():
+            raise HTTPException(status_code=400, detail="PIN must be 4-8 digits")
+        update_fields["pin_hash"] = hash_password(data.pin)
     if data.password_enabled is not None:
         update_fields["password_enabled"] = data.password_enabled
     if data.password:
         update_fields["password_hash"] = hash_password(data.password)
-    if data.voice_enabled is not None:
-        update_fields["voice_enabled"] = data.voice_enabled
     if data.security_question_enabled is not None:
         update_fields["security_question_enabled"] = data.security_question_enabled
     if data.security_question is not None:
@@ -134,9 +122,22 @@ async def update_security_settings(
             raise HTTPException(status_code=400, detail="Invalid lock mode")
         update_fields["lock_mode"] = data.lock_mode
 
+    # Clear voice biometric fields if they exist (migrating away from voice)
     await db.section_security.update_one(
         {"user_id": current_user["id"], "section_id": section_id},
-        {"$set": update_fields},
+        {
+            "$set": update_fields,
+            "$unset": {
+                "voice_enabled": "",
+                "voiceprint": "",
+                "voiceprint_samples": "",
+                "voiceprint_version": "",
+                "voiceprint_dimension": "",
+                "enrollment_consistency": "",
+                "voice_passphrase": "",
+                "voice_enrolled_at": "",
+            },
+        },
         upsert=True,
     )
 
@@ -147,169 +148,12 @@ async def update_security_settings(
     }
 
 
-@router.post("/security/voice/enroll/{section_id}")
-async def enroll_voiceprint_endpoint(
-    section_id: str,
-    passphrase: str = Form(...),
-    file: UploadFile = File(...),
-    current_user: dict = Depends(get_current_user),
-):
-    """Enroll voice biometric for a section — enhanced multi-feature voiceprint"""
-    if section_id not in LOCKABLE_SECTIONS:
-        raise HTTPException(status_code=400, detail=f"Invalid section: {section_id}")
-
-    content = await file.read()
-    if len(content) > 25 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="File too large")
-    if len(content) < 1000:
-        raise HTTPException(
-            status_code=400,
-            detail="Recording too short — please hold the button for at least 2 seconds.",
-        )
-
-    # Save to temp file for processing
-    import tempfile as tf
-
-    suffix = "." + (file.filename or "audio.webm").split(".")[-1]
-    logger.info(f"Voice enroll: received {len(content)} bytes, filename={file.filename}, suffix={suffix}")
-    with tf.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
-        tmp.write(content)
-        tmp_path = tmp.name
-
-    wav_path = tmp_path + ".wav"
-    try:
-        # Convert to WAV if needed using ffmpeg (non-blocking)
-        result = await asyncio.to_thread(
-            subprocess.run,
-            [
-                "ffmpeg",
-                "-y",
-                "-i",
-                tmp_path,
-                "-ar",
-                "16000",
-                "-ac",
-                "1",
-                "-f",
-                "wav",
-                wav_path,
-            ],
-            capture_output=True,
-            timeout=30,
-        )
-        if result.returncode != 0:
-            logger.error(f"ffmpeg failed: {result.stderr.decode()[:500]}")
-            raise HTTPException(
-                status_code=400,
-                detail="Could not process audio file. Please try recording again.",
-            )
-
-        with open(wav_path, "rb") as f:
-            wav_bytes = f.read()
-
-        # Enhanced extraction (run in thread pool to avoid blocking event loop)
-        try:
-            extraction = await asyncio.to_thread(extract_voiceprint, wav_bytes)
-        except Exception as ve:
-            logger.error(f"Voice feature extraction error: {ve}")
-            raise HTTPException(
-                status_code=400,
-                detail=f"Voice processing error: {str(ve)[:200]}. Try recording again.",
-            )
-
-        if extraction is None:
-            raise HTTPException(
-                status_code=400,
-                detail="Could not process audio file. Please try recording again.",
-            )
-
-        # Check if quality check failed (extraction returned quality info only)
-        if extraction.get("failed_quality"):
-            quality_issues = extraction["quality"].get("issues", [])
-            issue_text = "; ".join(quality_issues) if quality_issues else "unknown quality issue"
-            logger.warning(f"Voice enrollment quality fail for {section_id}: {issue_text}")
-            raise HTTPException(
-                status_code=400,
-                detail=f"Recording quality issue: {issue_text}. Please speak louder and hold for 2+ seconds.",
-            )
-
-        new_voiceprint = extraction["voiceprint"]
-        quality = extraction["quality"]
-
-        # Get existing enrollment
-        existing = await db.section_security.find_one(
-            {"user_id": current_user["id"], "section_id": section_id},
-            {"_id": 0, "id": 1, "voiceprint_samples": 1, "voiceprint_version": 1},
-        )
-
-        samples = []
-        if existing and existing.get("voiceprint_version") == "v2":
-            samples = existing.get("voiceprint_samples", [])
-
-        # Outlier rejection: reject samples that don't sound like the enrolled user
-        if samples and is_outlier_sample(new_voiceprint, samples):
-            raise HTTPException(
-                status_code=400,
-                detail="This voice sample sounds too different from your existing enrollment. "
-                "Please try again in a quiet environment, speaking naturally.",
-            )
-
-        samples.append(new_voiceprint)
-        if len(samples) > 5:
-            samples = samples[-5:]
-
-        # Build enrollment model (smart averaging + consistency scoring)
-        model = compute_enrollment_model(samples)
-
-        await db.section_security.update_one(
-            {"user_id": current_user["id"], "section_id": section_id},
-            {
-                "$set": {
-                    "user_id": current_user["id"],
-                    "section_id": section_id,
-                    "voiceprint": model["voiceprint"],
-                    "voiceprint_samples": samples,
-                    "voiceprint_version": "v2",
-                    "voiceprint_dimension": extraction["dimension"],
-                    "enrollment_consistency": model["consistency"],
-                    "voice_passphrase": passphrase.strip(),
-                    "voice_enabled": True,
-                    "voice_enrolled_at": datetime.now(timezone.utc).isoformat(),
-                    "updated_at": datetime.now(timezone.utc).isoformat(),
-                }
-            },
-            upsert=True,
-        )
-
-        # Feedback message based on enrollment quality
-        sample_count = len(samples)
-        if sample_count == 1:
-            tip = "Record 1-2 more samples for better accuracy."
-        elif sample_count < 3:
-            tip = f"Good — {sample_count} samples recorded. One more recommended."
-        else:
-            tip = f"Excellent — {sample_count} samples, consistency {model['consistency']:.0%}."
-
-        return {
-            "success": True,
-            "samples_recorded": sample_count,
-            "enrollment_consistency": model["consistency"],
-            "audio_quality": quality,
-            "message": f"Voice enrolled. {tip}",
-        }
-    finally:
-        if Path(tmp_path).exists():
-            Path(tmp_path).unlink()
-        if Path(wav_path).exists():
-            Path(wav_path).unlink()
-
-
 @router.post("/security/verify/{section_id}")
 async def verify_section_security(
     section_id: str,
+    pin: Optional[str] = Form(None),
     password: Optional[str] = Form(None),
     security_answer: Optional[str] = Form(None),
-    voice_file: Optional[UploadFile] = File(None),
     current_user: dict = Depends(get_current_user),
 ):
     """Verify security credentials for a section — checks all enabled layers"""
@@ -322,136 +166,21 @@ async def verify_section_security(
 
     results = {}
 
-    # Layer 1: Password
+    # Layer 1: PIN
+    if settings.get("pin_enabled") and settings.get("pin_hash"):
+        if not pin:
+            raise HTTPException(status_code=400, detail="PIN required")
+        if not verify_password(pin, settings["pin_hash"]):
+            raise HTTPException(status_code=401, detail="Incorrect PIN")
+        results["pin"] = True
+
+    # Layer 2: Password
     if settings.get("password_enabled") and settings.get("password_hash"):
         if not password:
             raise HTTPException(status_code=400, detail="Password required")
         if not verify_password(password, settings["password_hash"]):
             raise HTTPException(status_code=401, detail="Incorrect section password")
         results["password"] = True
-
-    # Layer 2: Voice biometric (enhanced multi-metric)
-    if settings.get("voice_enabled") and settings.get("voiceprint"):
-        if not voice_file:
-            raise HTTPException(status_code=400, detail="Voice verification required")
-
-        content = await voice_file.read()
-        import tempfile as tf
-
-        suffix = "." + (voice_file.filename or "audio.webm").split(".")[-1]
-        with tf.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
-            tmp.write(content)
-            tmp_path = tmp.name
-
-        wav_path = tmp_path + ".wav"
-        try:
-            await asyncio.to_thread(
-                subprocess.run,
-                [
-                    "ffmpeg",
-                    "-y",
-                    "-i",
-                    tmp_path,
-                    "-ar",
-                    "16000",
-                    "-ac",
-                    "1",
-                    "-f",
-                    "wav",
-                    wav_path,
-                ],
-                capture_output=True,
-                timeout=30,
-            )
-            with open(wav_path, "rb") as f:
-                wav_bytes = f.read()
-
-            # Detect voiceprint version and extract accordingly
-            is_v2 = settings.get("voiceprint_version") == "v2"
-
-            if is_v2:
-                # Enhanced extraction (run in thread pool)
-                extraction = await asyncio.to_thread(extract_voiceprint, wav_bytes)
-                if extraction is None:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="Could not process voice sample. Please try again.",
-                    )
-
-                # Handle quality failure with specific feedback
-                if extraction.get("failed_quality"):
-                    quality_issues = extraction["quality"].get("issues", [])
-                    issue_text = "; ".join(quality_issues) if quality_issues else "audio quality issue"
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Voice sample quality issue: {issue_text}. Please speak louder and clearly.",
-                    )
-
-                test_vp = extraction["voiceprint"]
-
-                # Build enrolled model dict for verification
-                enrolled_model = {
-                    "voiceprint": settings["voiceprint"],
-                    "sample_count": len(settings.get("voiceprint_samples", [1])),
-                    "consistency": settings.get("enrollment_consistency", 0.8),
-                }
-                vresult = verify_voiceprint(enrolled_model, test_vp)
-                is_match = vresult["is_match"]
-                similarity = vresult["confidence"]
-                confidence_level = vresult["confidence_level"]
-            else:
-                # Legacy 60-dim voiceprint (run in thread pool)
-                test_vp = await asyncio.to_thread(extract_voiceprint_legacy, wav_bytes)
-                if test_vp is None:
-                    raise HTTPException(status_code=400, detail="Could not process voice sample")
-                similarity, is_match = compare_voiceprints_legacy(settings["voiceprint"], test_vp)
-                confidence_level = "high" if similarity >= 0.88 else "medium" if is_match else "low"
-
-            # Also verify the passphrase text via Whisper if available
-            text_match_result = {"match": True, "score": 1.0}
-            if settings.get("voice_passphrase"):
-                try:
-                    from emergentintegrations.llm.openai import OpenAISpeechToText
-
-                    api_key = os.environ.get("EMERGENT_LLM_KEY")
-                    if api_key:
-                        stt = OpenAISpeechToText(api_key=api_key)
-                        with open(wav_path, "rb") as af:
-                            stt_response = await stt.transcribe(
-                                file=af,
-                                model="whisper-1",
-                                response_format="json",
-                                language="en",
-                            )
-                        spoken = stt_response.text.strip()
-                        expected = settings["voice_passphrase"].strip()
-                        text_match_result = match_passphrase(spoken, expected)
-                except Exception as e:
-                    logger.warning(f"Whisper text verification failed, relying on voiceprint only: {e}")
-
-            if not is_match:
-                pct = int(similarity * 100)
-                raise HTTPException(
-                    status_code=401,
-                    detail=f"Voice mismatch ({pct}% confidence, {confidence_level}). Please try again.",
-                )
-            if not text_match_result["match"]:
-                raise HTTPException(
-                    status_code=401,
-                    detail=f"Passphrase did not match (score: {text_match_result['score']:.0%}). Please speak your passphrase clearly.",
-                )
-
-            results["voice"] = {
-                "verified": True,
-                "confidence": round(similarity, 3),
-                "confidence_level": confidence_level,
-                "passphrase_score": text_match_result.get("score", 1.0),
-            }
-        finally:
-            if Path(tmp_path).exists():
-                Path(tmp_path).unlink()
-            if Path(wav_path).exists():
-                Path(wav_path).unlink()
 
     # Layer 3: Security Question
     if settings.get("security_question_enabled") and settings.get("security_answer_hash"):
