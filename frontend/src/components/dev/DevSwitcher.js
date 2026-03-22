@@ -197,7 +197,15 @@ const DevSwitcher = () => {
           {/* Account buttons */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {accounts.map(acc => {
-              const isActive = acc.role === 'admin' ? user?.role === 'admin' : user?.email === acc.email;
+              const currentPath = window.location.pathname;
+              const isActive = acc.role === 'admin'
+                ? user?.role === 'admin' && currentPath.startsWith('/admin')
+                : acc.role === 'ops_view'
+                  ? currentPath.startsWith('/ops')
+                  : user?.email === acc.email && (
+                      (acc.role === 'benefactor' && (currentPath.startsWith('/dashboard') || currentPath === '/'))
+                      || (acc.role === 'beneficiary' && currentPath.startsWith('/beneficiary'))
+                    );
               
               return (
                 <div

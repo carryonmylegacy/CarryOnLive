@@ -52,8 +52,8 @@ export const DevSwitcherTab = ({ users, getAuthHeaders }) => {
     }
   };
 
-  const benefactors = users.filter(u => u.role === 'benefactor');
-  const beneficiaries = users.filter(u => u.role === 'beneficiary');
+  const benefactors = users.filter(u => u.role === 'benefactor' || u.is_also_benefactor);
+  const beneficiaries = users.filter(u => u.role === 'beneficiary' || u.is_also_beneficiary);
 
   if (loading) {
     return <Skeleton className="h-64 w-full" />;

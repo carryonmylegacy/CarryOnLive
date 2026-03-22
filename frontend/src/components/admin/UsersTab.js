@@ -177,6 +177,16 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
             >
               {u.role}
             </span>
+            {u.is_also_beneficiary && u.role !== 'beneficiary' && (
+              <span className="text-[11px] px-1.5 py-0.5 rounded-md font-bold" style={{ background: 'rgba(139,92,246,0.12)', color: '#a78bfa' }}>
+                + Beneficiary
+              </span>
+            )}
+            {u.is_also_benefactor && u.role !== 'benefactor' && (
+              <span className="text-[11px] px-1.5 py-0.5 rounded-md font-bold" style={{ background: 'rgba(37,99,235,0.12)', color: '#60a5fa' }}>
+                + Benefactor
+              </span>
+            )}
             {billingStatus === 'grace_period' && (
               <span className="text-[11px] px-1.5 py-0.5 rounded-md font-bold"
                 style={{ background: 'rgba(245,166,35,0.15)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}
