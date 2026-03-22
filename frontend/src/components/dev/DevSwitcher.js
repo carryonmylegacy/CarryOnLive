@@ -199,9 +199,15 @@ const DevSwitcher = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {accounts.map(acc => {
               const devActiveRole = localStorage.getItem('dev_switcher_active_role');
+              // When devActiveRole is set (post dev-switch): only that role is Active.
+              // When NOT set (normal login): fall back to user's primary role.
               const isActive = acc.role === 'admin'
                 ? user?.role === 'admin' && (!devActiveRole || devActiveRole === 'admin')
-                : acc.role === devActiveRole && user?.email === acc.email;
+                : acc.role === 'ops_view'
+                  ? devActiveRole === 'ops_view'
+                  : devActiveRole
+                    ? acc.role === devActiveRole && user?.email === acc.email
+                    : acc.role === user?.role && user?.email === acc.email;
               
               return (
                 <div
