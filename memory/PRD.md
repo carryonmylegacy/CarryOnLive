@@ -21,6 +21,12 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (March 22, 2026 — Session 16: Admin Users Tab Tree View Overhaul)
+- **Removed Ugly Tree Connector Lines**: Replaced rigid horizontal/vertical div-based tree connectors in the hierarchy view with a clean left-border indentation layout. Beneficiaries now shown with a subtle purple left border (`rgba(139,92,246,0.25)`) instead of L-shaped connector lines.
+- **Beneficiary-Centric View**: When clicking "Beneficiaries" filter, the relationship hierarchy is now flipped — each beneficiary is the root card, with their connected benefactor estates shown underneath using blue left-border indentation. Shows "Connected to X estates" header with expand/collapse.
+- **Role Filter View Mode Fix**: "Beneficiaries" filter now stays in hierarchy mode (instead of switching to flat list), enabling the flipped relationship view.
+- **Testing**: 100% pass rate — all UI features verified (iteration 137).
+
 ### Completed (March 22, 2026 — Session 15b: Single-Session Enforcement + Data Freshness)
 - **Single-Session Login Blocking**: Non-admin users are now blocked from logging in on a second device while an active session exists. Clear "Signed in elsewhere" warning shown instead of generic "Invalid credentials." A "Sign In Here Instead" button allows force-login (ends the other session). Sessions older than 24h are treated as stale and don't block.
 - **Logout Clears Session**: `POST /api/auth/logout` now clears `active_session_id` from the user document, allowing clean re-login from any device.
