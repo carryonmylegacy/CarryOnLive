@@ -22,10 +22,12 @@ A full-stack estate planning application allowing benefactors to manage digital 
 ## What's Been Implemented
 
 ### Completed (March 22, 2026 — Session 16: Admin Users Tab Tree View Overhaul)
-- **Removed Ugly Tree Connector Lines**: Replaced rigid horizontal/vertical div-based tree connectors in the hierarchy view with a clean left-border indentation layout. Beneficiaries now shown with a subtle purple left border (`rgba(139,92,246,0.25)`) instead of L-shaped connector lines.
-- **Beneficiary-Centric View**: When clicking "Beneficiaries" filter, the relationship hierarchy is now flipped — each beneficiary is the root card, with their connected benefactor estates shown underneath using blue left-border indentation. Shows "Connected to X estates" header with expand/collapse.
-- **Role Filter View Mode Fix**: "Beneficiaries" filter now stays in hierarchy mode (instead of switching to flat list), enabling the flipped relationship view.
-- **Testing**: 100% pass rate — all UI features verified (iteration 137).
+- **Removed Ugly Tree Connector Lines**: Replaced rigid horizontal/vertical div-based tree connectors with a polished nested container design featuring 4px accent bars (purple for beneficiaries, blue for connected estates) at 50% opacity, tinted background containers, and clean row-based layouts.
+- **Relationship Labels + Status Badges**: Expanded estates now show each beneficiary's relationship (Spouse, Son, Parent, etc.) and invitation status (Pending, Accepted, Draft) with color-coded badges.
+- **Beneficiary-Centric Inverse View**: Clicking "Beneficiaries" filter flips the hierarchy — each beneficiary is root, with "Connected to X estates" expandable header showing connected benefactor estates underneath with blue accent styling.
+- **Default Hierarchy Mode**: All role filters (All, Benefactors, Beneficiaries) now default to hierarchy view mode.
+- **Graph View Softened**: Tree/graph view horizontal connectors reduced to 1px at 15% opacity for a more subtle look.
+- **Testing**: 100% pass rate — iterations 137 & 138.
 
 ### Completed (March 22, 2026 — Session 15b: Single-Session Enforcement + Data Freshness)
 - **Single-Session Login Blocking**: Non-admin users are now blocked from logging in on a second device while an active session exists. Clear "Signed in elsewhere" warning shown instead of generic "Invalid credentials." A "Sign In Here Instead" button allows force-login (ends the other session). Sessions older than 24h are treated as stale and don't block.
