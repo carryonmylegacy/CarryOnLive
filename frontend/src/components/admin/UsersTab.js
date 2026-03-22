@@ -657,6 +657,83 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
 
     return (
       <div className="space-y-4">
+        {roleFilter === 'beneficiary' ? (() => {
+          // INVERSE GRAPH: beneficiary as root, connected estates as children
+          const allBenefactors = users.filter(u => u.role === 'benefactor' || u.is_also_benefactor);
+          const estatesByBenEmail = new Map();
+          allBenefactors.forEach(owner => {
+            const groups = owner.estate_groups || [];
+            if (groups.length > 0) {
+              groups.forEach(group => {
+                (group.beneficiaries || []).forEach(ben => {
+                  if (ben.email) {
+                    const email = ben.email.toLowerCase();
+                    if (!estatesByBenEmail.has(email)) estatesByBenEmail.set(email, []);
+                    estatesByBenEmail.get(email).push({ owner, estateName: group.estate_name || `${owner.name}'s Estate`, relation: ben.relation || '' });
+                  }
+                });
+              });
+            } else {
+              (owner.linked_beneficiaries || []).forEach(ben => {
+                if (ben.email) {
+                  const email = ben.email.toLowerCase();
+                  if (!estatesByBenEmail.has(email)) estatesByBenEmail.set(email, []);
+                  estatesByBenEmail.get(email).push({ owner, estateName: `${owner.name}'s Estate`, relation: ben.relation || '' });
+                }
+              });
+            }
+          });
+
+          return filteredUsers.map(benUser => {
+            const connectedEstates = estatesByBenEmail.get(benUser.email?.toLowerCase()) || [];
+            return (
+              <div key={benUser.id} className="glass-card p-4 rounded-xl" data-testid={`graph-ben-${benUser.id}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-5 h-5 rounded flex items-center justify-center" style={{ background: 'rgba(139,92,246,0.1)' }}>
+                    <Users className="w-3 h-3" style={{ color: '#B794F6' }} />
+                  </div>
+                  <span className="text-xs font-bold flex-1" style={{ color: '#B794F6' }}>{benUser.name || 'Beneficiary'}</span>
+                  <span className="text-[11px] text-[var(--t5)]">{connectedEstates.length} estate{connectedEstates.length !== 1 ? 's' : ''}</span>
+                </div>
+
+                <div className="flex flex-col items-center">
+                  <GraphNode
+                    initials={getInit(benUser)}
+                    color={roleColors.beneficiary.color}
+                    size={52}
+                    label={benUser.name?.split(' ')[0] || 'Beneficiary'}
+                    sublabel={benUser.email}
+                  />
+
+                  {connectedEstates.length > 0 && (
+                    <div className="flex flex-col items-center w-full">
+                      <div style={{ width: 1, height: 16, background: 'linear-gradient(to bottom, rgba(139,92,246,0.5), transparent)' }} />
+                      <div className="flex justify-center gap-5 flex-wrap pt-1">
+                        {connectedEstates.map((estate, idx) => (
+                          <div key={`${estate.owner.id}-${idx}`} className="flex flex-col items-center">
+                            <div style={{ width: 1, height: 10, background: '#d4af37', opacity: 0.3 }} />
+                            <GraphNode
+                              initials={getInit(estate.owner)}
+                              color="#d4af37"
+                              size={40}
+                              label={estate.estateName.split("'")[0] || 'Estate'}
+                              sublabel={estate.relation}
+                              extra={estate.owner.email}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {connectedEstates.length === 0 && (
+                    <p className="text-[11px] text-[var(--t5)] mt-2 italic">No connected estates</p>
+                  )}
+                </div>
+              </div>
+            );
+          });
+        })() : (<>
         {admins.length > 0 && (
           <div className="mb-4">
             <p className="text-[11px] font-bold text-[var(--t5)] uppercase tracking-wider mb-2">Administrators</p>
@@ -759,6 +836,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
             </div>
           );
         })()}
+        </>)}
       </div>
     );
   };
