@@ -154,7 +154,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               })()}
             </div>
 
-            {/* Converging lines SVG */}
+            {/* Converging lines SVG — blue glow brush-stroke bundles */}
             <svg
               className="w-full pointer-events-none"
               viewBox={`0 0 ${vb} 80`}
@@ -163,11 +163,11 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
             >
               <defs>
                 <linearGradient id="lineFlow" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={isLight ? '#2563EB' : '#60A5FA'} stopOpacity={isLight ? 0.35 : 0.25} />
-                  <stop offset="100%" stopColor={isLight ? '#b8860b' : '#d4af37'} stopOpacity={isLight ? 0.25 : 0.15} />
+                  <stop offset="0%" stopColor={isLight ? '#3B82F6' : '#60A5FA'} stopOpacity={isLight ? 0.5 : 0.4} />
+                  <stop offset="100%" stopColor={isLight ? '#2563EB' : '#93C5FD'} stopOpacity={isLight ? 0.15 : 0.08} />
                 </linearGradient>
                 <filter id="lineGlow">
-                  <feGaussianBlur stdDeviation={isLight ? '1' : '1.5'} result="blur" />
+                  <feGaussianBlur stdDeviation={isLight ? '2' : '2.5'} result="blur" />
                   <feMerge>
                     <feMergeNode in="blur" />
                     <feMergeNode in="SourceGraphic" />
@@ -175,32 +175,34 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                 </filter>
               </defs>
               {(() => {
-                // Generate approximate X positions for each estate
-                // Estates wrap in rows of `cols`. For each estate, calculate its
-                // horizontal center as a fraction of the container width.
                 const rows = Math.ceil(n / cols);
                 const lines = [];
                 for (let i = 0; i < n; i++) {
                   const row = Math.floor(i / cols);
-                  const inRow = n - row * cols; // items in this row
+                  const inRow = n - row * cols;
                   const actual = Math.min(inRow, cols);
                   const col = i % cols;
-                  // Spread nodes evenly across the viewBox width
                   const x = actual === 1
                     ? cx
                     : 60 + (col / (actual - 1)) * (vb - 120);
-                  // Y start depends on which row the estate is in
                   const y0 = row * (30 / rows);
-                  lines.push(
-                    <path
-                      key={i}
-                      d={`M ${x},${y0} C ${x},${y0 + 30} ${cx},55 ${cx},78`}
-                      fill="none"
-                      stroke="url(#lineFlow)"
-                      strokeWidth={isLight ? '1' : '0.7'}
-                      filter="url(#lineGlow)"
-                    />
-                  );
+                  // Brush-stroke bundle: 3 slightly offset curves per estate
+                  const strokes = [-1, 0, 1];
+                  strokes.forEach((s, si) => {
+                    const spread = 6;
+                    const xo = x + s * spread;
+                    const cxo = cx + s * (spread * 0.3);
+                    lines.push(
+                      <path
+                        key={`${i}-${si}`}
+                        d={`M ${xo},${y0} C ${xo},${y0 + 30} ${cxo},55 ${cx},78`}
+                        fill="none"
+                        stroke="url(#lineFlow)"
+                        strokeWidth={isLight ? '1' : '0.7'}
+                        filter="url(#lineGlow)"
+                      />
+                    );
+                  });
                 }
                 return lines;
               })()}
@@ -221,45 +223,43 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
           testId="tree-root-node"
         />
 
-        {/* Flowing arc layout — beneficiaries connected by elegant curved SVG arcs */}
+        {/* Gold glow brush-stroke arcs fanning to beneficiaries — matched to upper blue arcs */}
         {sortedBens.length > 0 && (() => {
           const n = sortedBens.length;
           const cols = 2;
-          const vbW = 200;
-          const vbH = 44;
+          const vbW = 300;
+          const vbH = 80;
           const cx = vbW / 2;
           const arcPaths = [];
-          // Generate multiple brush-stroke curves per beneficiary
           for (let i = 0; i < n; i++) {
             const isOddLast = n % 2 !== 0 && i === n - 1;
             const col = i % cols;
-            const row = Math.floor(i / cols);
-            const endX = isOddLast ? cx : (col === 0 ? vbW * 0.28 : vbW * 0.72);
-            // 3 strokes per beneficiary — slightly fanned
+            const endX = isOddLast ? cx : (col === 0 ? vbW * 0.2 : vbW * 0.8);
+            // Brush-stroke bundle: 3 curves per beneficiary
             const strokes = [-1, 0, 1];
             strokes.forEach(s => {
-              const spread = 4;
+              const spread = 6;
               const cpX = cx + (endX - cx) * 0.35 + s * spread;
-              const endXo = endX + s * (spread * 0.6);
-              const cpY = vbH * (0.5 + row * 0.08);
-              arcPaths.push(`M ${cx},0 Q ${cpX},${cpY} ${endXo},${vbH}`);
+              const endXo = endX + s * (spread * 0.5);
+              const cxo = cx + s * (spread * 0.3);
+              arcPaths.push(`M ${cx},0 C ${cxo},${vbH * 0.35} ${cpX},${vbH * 0.6} ${endXo},${vbH}`);
             });
           }
-          const gradOpacity = isLight ? [0.5, 0.1] : [0.4, 0.06];
-          const blurStd = isLight ? '1.2' : '1.8';
+          const goldStart = isLight ? '#b8860b' : '#d4af37';
+          const goldEnd = isLight ? '#d4af37' : '#FFD700';
 
           return (
           <div className="w-full" style={{ maxWidth: 340 }} data-testid="tree-spine">
-            {/* SVG curved arc bundles fanning from benefactor */}
-            <div className="flex justify-center" style={{ marginTop: -2, marginBottom: -6, position: 'relative', zIndex: 0 }}>
-              <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '80%', height: 32 }} className="overflow-visible">
+            {/* SVG curved arc bundles fanning from benefactor — gold glow */}
+            <div className="flex justify-center" style={{ marginTop: -4, marginBottom: -8, position: 'relative', zIndex: 0 }}>
+              <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: 60 }} className="overflow-visible">
                 <defs>
-                  <linearGradient id="ftArcGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#d4af37" stopOpacity={gradOpacity[0]} />
-                    <stop offset="100%" stopColor="#d4af37" stopOpacity={gradOpacity[1]} />
+                  <linearGradient id="ftGoldGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={goldStart} stopOpacity={isLight ? 0.5 : 0.4} />
+                    <stop offset="100%" stopColor={goldEnd} stopOpacity={isLight ? 0.15 : 0.08} />
                   </linearGradient>
-                  <filter id="ftArcGlow">
-                    <feGaussianBlur stdDeviation={blurStd} result="blur" />
+                  <filter id="ftGoldGlow">
+                    <feGaussianBlur stdDeviation={isLight ? '2' : '2.5'} result="blur" />
                     <feMerge>
                       <feMergeNode in="blur" />
                       <feMergeNode in="SourceGraphic" />
@@ -267,7 +267,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   </filter>
                 </defs>
                 {arcPaths.map((d, i) => (
-                  <path key={i} d={d} fill="none" stroke="url(#ftArcGrad)" strokeWidth={isLight ? '1' : '0.7'} filter="url(#ftArcGlow)" />
+                  <path key={i} d={d} fill="none" stroke="url(#ftGoldGrad)" strokeWidth={isLight ? '1' : '0.7'} filter="url(#ftGoldGlow)" />
                 ))}
               </svg>
             </div>

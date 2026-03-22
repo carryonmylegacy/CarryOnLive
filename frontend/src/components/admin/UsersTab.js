@@ -707,32 +707,33 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
 
                   {connectedEstates.length > 0 && (() => {
                     const n = connectedEstates.length;
-                    const vbW = 200;
-                    const vbH = 40;
+                    const vbW = 300;
+                    const vbH = 80;
                     const cx = vbW / 2;
                     const arcPaths = [];
                     for (let i = 0; i < n; i++) {
                       const isSingle = n === 1;
-                      const endX = isSingle ? cx : (30 + (i / (n - 1)) * (vbW - 60));
+                      const endX = isSingle ? cx : (40 + (i / (n - 1)) * (vbW - 80));
                       const strokes = [-1, 0, 1];
                       strokes.forEach(s => {
-                        const spread = 3;
+                        const spread = 5;
                         const cpX = cx + (endX - cx) * 0.35 + s * spread;
-                        const endXo = endX + s * (spread * 0.5);
-                        arcPaths.push(`M ${cx},0 Q ${cpX},${vbH * 0.55} ${endXo},${vbH}`);
+                        const endXo = endX + s * (spread * 0.4);
+                        const cxo = cx + s * (spread * 0.3);
+                        arcPaths.push(`M ${cx},0 C ${cxo},${vbH * 0.35} ${cpX},${vbH * 0.6} ${endXo},${vbH}`);
                       });
                     }
                     return (
                     <div className="flex flex-col items-center w-full">
-                      <div className="flex justify-center" style={{ marginTop: -2, marginBottom: -2 }}>
-                        <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '80%', height: 24 }} className="overflow-visible">
+                      <div className="flex justify-center" style={{ marginTop: -2, marginBottom: -4 }}>
+                        <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '90%', height: 44 }} className="overflow-visible">
                           <defs>
                             <linearGradient id={`bg-${benUser.id}`} x1="0" y1="0" x2="0" y2="1">
                               <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.4" />
-                              <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.06" />
+                              <stop offset="100%" stopColor="#A78BFA" stopOpacity="0.08" />
                             </linearGradient>
                             <filter id={`bgGlow-${benUser.id}`}>
-                              <feGaussianBlur stdDeviation="1.5" result="blur" />
+                              <feGaussianBlur stdDeviation="2.5" result="blur" />
                               <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                             </filter>
                           </defs>
@@ -818,34 +819,35 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
 
                 {sortedBens.length > 0 && (() => {
                   const n = sortedBens.length;
-                  const vbW = 200;
-                  const vbH = 40;
+                  const vbW = 300;
+                  const vbH = 80;
                   const cx = vbW / 2;
                   const arcPaths = [];
                   const maxArcs = Math.min(n, 6);
                   for (let i = 0; i < maxArcs; i++) {
                     const isSingle = maxArcs === 1;
-                    const endX = isSingle ? cx : (20 + (i / (maxArcs - 1)) * (vbW - 40));
+                    const endX = isSingle ? cx : (30 + (i / (maxArcs - 1)) * (vbW - 60));
                     const strokes = [-1, 0, 1];
                     strokes.forEach(s => {
-                      const spread = 3;
+                      const spread = 5;
                       const cpX = cx + (endX - cx) * 0.35 + s * spread;
-                      const endXo = endX + s * (spread * 0.5);
-                      arcPaths.push(`M ${cx},0 Q ${cpX},${vbH * 0.55} ${endXo},${vbH}`);
+                      const endXo = endX + s * (spread * 0.4);
+                      const cxo = cx + s * (spread * 0.3);
+                      arcPaths.push(`M ${cx},0 C ${cxo},${vbH * 0.35} ${cpX},${vbH * 0.6} ${endXo},${vbH}`);
                     });
                   }
 
                   return (
                   <div className="flex flex-col items-center w-full">
-                    <div className="flex justify-center" style={{ marginTop: -2, marginBottom: -2 }}>
-                      <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '85%', height: 26 }} className="overflow-visible">
+                    <div className="flex justify-center" style={{ marginTop: -2, marginBottom: -4 }}>
+                      <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '90%', height: 44 }} className="overflow-visible">
                         <defs>
                           <linearGradient id={`ag-${key}`} x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stopColor="#d4af37" stopOpacity="0.4" />
-                            <stop offset="100%" stopColor="#d4af37" stopOpacity="0.06" />
+                            <stop offset="100%" stopColor="#FFD700" stopOpacity="0.08" />
                           </linearGradient>
                           <filter id={`agGlow-${key}`}>
-                            <feGaussianBlur stdDeviation="1.5" result="blur" />
+                            <feGaussianBlur stdDeviation="2.5" result="blur" />
                             <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                           </filter>
                         </defs>
