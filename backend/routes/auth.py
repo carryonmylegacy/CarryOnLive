@@ -192,11 +192,7 @@ async def login(data: UserLogin, request: Request):
     # ── Single-session enforcement at login time ──
     # If user already has an active session and didn't request force, block login.
     # Admin is exempt. Sessions older than 24h are considered stale.
-    if (
-        not data.force_login
-        and user.get("role") != "admin"
-        and user.get("active_session_id")
-    ):
+    if not data.force_login and user.get("role") != "admin" and user.get("active_session_id"):
         # Treat sessions older than 24h as stale (app crash, lost device, etc.)
         last_login = user.get("last_login_at")
         session_is_fresh = False

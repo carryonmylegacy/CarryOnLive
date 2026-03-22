@@ -571,18 +571,20 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
             iac_task_id = f"iac_{uuid.uuid4().hex[:8]}"
             await db.ega_tasks.update_one(
                 {"estate_id": estate_id, "type": "generate_iac"},
-                {"$set": {
-                    "id": iac_task_id,
-                    "estate_id": estate_id,
-                    "user_id": current_user["id"],
-                    "type": "generate_iac",
-                    "status": "running",
-                    "items_added": 0,
-                    "duplicates_skipped": 0,
-                    "duplicate_titles": [],
-                    "started_at": datetime.now(timezone.utc).isoformat(),
-                    "completed_at": None,
-                }},
+                {
+                    "$set": {
+                        "id": iac_task_id,
+                        "estate_id": estate_id,
+                        "user_id": current_user["id"],
+                        "type": "generate_iac",
+                        "status": "running",
+                        "items_added": 0,
+                        "duplicates_skipped": 0,
+                        "duplicate_titles": [],
+                        "started_at": datetime.now(timezone.utc).isoformat(),
+                        "completed_at": None,
+                    }
+                },
                 upsert=True,
             )
 
@@ -701,13 +703,15 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
                 if iac_task_id:
                     await db.ega_tasks.update_one(
                         {"id": iac_task_id},
-                        {"$set": {
-                            "status": "completed",
-                            "items_added": items_added,
-                            "duplicates_skipped": duplicates_skipped,
-                            "duplicate_titles": duplicate_titles[:10],
-                            "completed_at": datetime.now(timezone.utc).isoformat(),
-                        }},
+                        {
+                            "$set": {
+                                "status": "completed",
+                                "items_added": items_added,
+                                "duplicates_skipped": duplicates_skipped,
+                                "duplicate_titles": duplicate_titles[:10],
+                                "completed_at": datetime.now(timezone.utc).isoformat(),
+                            }
+                        },
                     )
 
                 # Clean the JSON block from the response for display
