@@ -20,6 +20,14 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (March 22, 2026 — Session 14: Voice Biometric → PIN Replacement)
+- **Voice Biometric Removed**: Completely removed voice biometric security feature (Layer 2) from both frontend and backend. Archived full implementation to `/app/memory/VOICE_BIOMETRIC_ARCHIVE.md` for future re-implementation.
+- **PIN Security Layer Added**: New Layer 1 is a 4-8 digit PIN with on-screen numeric keypad (matching IntegrationsTab design). Keypad includes 0-9, Clear, Backspace buttons with gold-highlighted dot display.
+- **Security Layer Reorder**: Layer 1 = PIN, Layer 2 = Password, Layer 3 = Security Question. Backend stores PIN as bcrypt hash (`pin_hash`), validates 4-8 numeric digits.
+- **Unlock Modal Updated**: SectionLock.js unlock modal now shows PIN keypad step (instead of voice recording) with multi-step progress dots (PIN → Password → Q&A).
+- **Migration Cleanup**: Backend `$unset`s all legacy voice fields (voiceprint, voiceprint_samples, voice_enabled, etc.) when saving section security settings.
+- **Testing**: 100% pass rate — 16/16 backend tests, all frontend UI elements verified (iteration 134).
+
 ### Completed (March 21, 2026 — Session 13: CI Fix + iOS Modal Zoom Fix)
 - **CI Backend Lint Fix**: Removed unused `result` variable in `staff_tools.py` PUT endpoint. Ran `ruff format` to fix formatting. Both `ruff check` and `ruff format --check` now pass cleanly.
 - **CI Actions Upgrade**: Upgraded `actions/checkout` from v4 to v5 and `actions/setup-node` from v4 to v5 in `.github/workflows/ci.yml` to resolve Node.js 20 deprecation warnings (forced June 2, 2026).
