@@ -127,35 +127,39 @@ async def login(data: UserLogin, request: Request):
     """Login — verifies credentials, then sends OTP unless user has a daily trust token."""
     client_ip = get_client_ip(request)
 
-    # Check for account lockout (10 failed attempts in 3 minutes)
+    # Check for account lockout (10 failed attempts in 3 minutes) — skip for admin accounts
     lockout_window = (datetime.now(timezone.utc) - timedelta(minutes=3)).isoformat()
     lockout_email = data.email.strip().lower()
-    recent_failures = await db.failed_logins.count_documents(
-        {
-            "email": lockout_email,
-            "timestamp": {"$gte": lockout_window},
-        }
-    )
-    if recent_failures >= 10:
-        # Find the oldest failure in this window to calculate remaining lockout
-        oldest_failure = await db.failed_logins.find_one(
-            {"email": lockout_email, "timestamp": {"$gte": lockout_window}},
-            {"_id": 0, "id": 1, "timestamp": 1},
-            sort=[("timestamp", 1)],
+    # Pre-check if this is an admin account (founder/operations) — exempt from lockout
+    admin_check = await db.users.find_one({"email": lockout_email}, {"_id": 0, "role": 1})
+    is_admin = admin_check and admin_check.get("role") == "admin"
+    if not is_admin:
+        recent_failures = await db.failed_logins.count_documents(
+            {
+                "email": lockout_email,
+                "timestamp": {"$gte": lockout_window},
+            }
         )
-        retry_after = 180  # 3 minutes default
-        if oldest_failure and oldest_failure.get("timestamp"):
-            try:
-                oldest_ts = datetime.fromisoformat(oldest_failure["timestamp"].replace("Z", "+00:00"))
-                unlock_at = oldest_ts + timedelta(minutes=3)
-                retry_after = max(1, int((unlock_at - datetime.now(timezone.utc)).total_seconds()))
-            except (ValueError, TypeError):
-                pass
-        raise HTTPException(
-            status_code=429,
-            detail=f"Account temporarily locked. Try again in {retry_after} seconds.",
-            headers={"Retry-After": str(retry_after)},
-        )
+        if recent_failures >= 10:
+            # Find the oldest failure in this window to calculate remaining lockout
+            oldest_failure = await db.failed_logins.find_one(
+                {"email": lockout_email, "timestamp": {"$gte": lockout_window}},
+                {"_id": 0, "id": 1, "timestamp": 1},
+                sort=[("timestamp", 1)],
+            )
+            retry_after = 180  # 3 minutes default
+            if oldest_failure and oldest_failure.get("timestamp"):
+                try:
+                    oldest_ts = datetime.fromisoformat(oldest_failure["timestamp"].replace("Z", "+00:00"))
+                    unlock_at = oldest_ts + timedelta(minutes=3)
+                    retry_after = max(1, int((unlock_at - datetime.now(timezone.utc)).total_seconds()))
+                except (ValueError, TypeError):
+                    pass
+            raise HTTPException(
+                status_code=429,
+                detail=f"Account temporarily locked. Try again in {retry_after} seconds.",
+                headers={"Retry-After": str(retry_after)},
+            )
 
     # Support login via username OR email
     login_input = data.email.strip()
