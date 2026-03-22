@@ -565,6 +565,27 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
         )
         selected_model = XAI_MODEL if use_heavy_model else XAI_MODEL_LIGHT
 
+        # Track IAC generation task for real-time polling by Dashboard/Checklist
+        iac_task_id = None
+        if data.action == "generate_iac" and estate_id:
+            iac_task_id = f"iac_{uuid.uuid4().hex[:8]}"
+            await db.ega_tasks.update_one(
+                {"estate_id": estate_id, "type": "generate_iac"},
+                {"$set": {
+                    "id": iac_task_id,
+                    "estate_id": estate_id,
+                    "user_id": current_user["id"],
+                    "type": "generate_iac",
+                    "status": "running",
+                    "items_added": 0,
+                    "duplicates_skipped": 0,
+                    "duplicate_titles": [],
+                    "started_at": datetime.now(timezone.utc).isoformat(),
+                    "completed_at": None,
+                }},
+                upsert=True,
+            )
+
         # Auto-retry with escalating backoff (3 attempts).
         # After an idle period the httpx pool may hold dead sockets;
         # the first attempt flushes them and subsequent ones succeed.
@@ -637,6 +658,8 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
                 existing_titles = {item["title"].lower() for item in existing}
 
                 items_added = 0
+                duplicates_skipped = 0
+                duplicate_titles = []
                 benefactor_recs = 0
                 max_order = len(existing)
                 for item in new_items:
@@ -645,21 +668,24 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
                     if item.get("section") == "benefactor_recommendation":
                         benefactor_recs += 1
                         continue
-                    if item["title"].lower() not in existing_titles:
-                        checklist_item = ChecklistItem(
-                            estate_id=estate_id,
-                            title=item["title"],
-                            description=item.get("description", ""),
-                            category=item.get("category", "first_month"),
-                            priority=item.get("priority", "medium"),
-                            order=max_order + items_added + 1,
-                        )
-                        item_dict = checklist_item.model_dump()
-                        item_dict["ai_suggested"] = True
-                        item_dict["ai_accepted"] = None  # None=pending, True=accepted, False=rejected
-                        item_dict["section"] = "beneficiary_action"
-                        await db.checklists.insert_one(item_dict)
-                        items_added += 1
+                    if item["title"].lower() in existing_titles:
+                        duplicates_skipped += 1
+                        duplicate_titles.append(item["title"])
+                        continue
+                    checklist_item = ChecklistItem(
+                        estate_id=estate_id,
+                        title=item["title"],
+                        description=item.get("description", ""),
+                        category=item.get("category", "first_month"),
+                        priority=item.get("priority", "medium"),
+                        order=max_order + items_added + 1,
+                    )
+                    item_dict = checklist_item.model_dump()
+                    item_dict["ai_suggested"] = True
+                    item_dict["ai_accepted"] = None  # None=pending, True=accepted, False=rejected
+                    item_dict["section"] = "beneficiary_action"
+                    await db.checklists.insert_one(item_dict)
+                    items_added += 1
 
                 # Recalculate readiness
                 await update_estate_readiness(estate_id)
@@ -667,7 +693,22 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
                 action_result = {
                     "action": "iac_generated",
                     "items_added": items_added,
+                    "duplicates_skipped": duplicates_skipped,
+                    "duplicate_titles": duplicate_titles[:10],
                 }
+
+                # Update EGA task record for real-time polling
+                if iac_task_id:
+                    await db.ega_tasks.update_one(
+                        {"id": iac_task_id},
+                        {"$set": {
+                            "status": "completed",
+                            "items_added": items_added,
+                            "duplicates_skipped": duplicates_skipped,
+                            "duplicate_titles": duplicate_titles[:10],
+                            "completed_at": datetime.now(timezone.utc).isoformat(),
+                        }},
+                    )
 
                 # Clean the JSON block from the response for display
                 clean_response = response[: response.index("```checklist_json")].strip()
@@ -676,6 +717,11 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
                     if items_added:
                         summary_parts.append(
                             f"**{items_added} beneficiary action items have been added to your Immediate Action Checklist.**"
+                        )
+                    if duplicates_skipped:
+                        summary_parts.append(
+                            f"**{duplicates_skipped} existing item{'s' if duplicates_skipped != 1 else ''}"
+                            f" skipped (already in your checklist).**"
                         )
                     if benefactor_recs:
                         summary_parts.append(
@@ -729,6 +775,15 @@ Be specific to MY state. Cite actual statutes or code sections where possible.""
 
         return ChatResponse(response=response, session_id=session_id, action_result=action_result)
     except Exception as e:
+        # Mark EGA task as error if IAC generation was in progress
+        if data.action == "generate_iac" and estate_id:
+            try:
+                await db.ega_tasks.update_one(
+                    {"estate_id": estate_id, "type": "generate_iac", "status": "running"},
+                    {"$set": {"status": "error", "completed_at": datetime.now(timezone.utc).isoformat()}},
+                )
+            except Exception:
+                pass
         error_msg = str(e)
         logger.error(f"AI chat error: {error_msg}")
         if "timeout" in error_msg.lower() or "timed out" in error_msg.lower():
@@ -802,6 +857,27 @@ async def delete_chat_session(session_id: str, current_user: dict = Depends(get_
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Session not found")
     return {"success": True, "deleted": result.deleted_count}
+
+
+@router.get("/guardian/iac-task-status")
+async def get_iac_task_status(current_user: dict = Depends(get_current_user)):
+    """Get the latest IAC generation task status for the user's estate.
+
+    Used by Dashboard and Checklist pages to poll for real-time updates
+    while EGA is generating IAC items in the background.
+    """
+    estates = await _get_user_estate(current_user, {"_id": 0, "id": 1})
+    if not estates:
+        return {"status": "none"}
+    estate_id = estates[0]["id"]
+
+    task = await db.ega_tasks.find_one(
+        {"estate_id": estate_id, "type": "generate_iac"},
+        {"_id": 0},
+    )
+    if not task:
+        return {"status": "none"}
+    return task
 
 
 def sanitize_for_pdf(text: str) -> str:

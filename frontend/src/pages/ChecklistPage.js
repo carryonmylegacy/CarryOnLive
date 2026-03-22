@@ -8,7 +8,7 @@ import {
   CheckSquare, Plus, Trash2, Edit2, Phone, Mail, MapPin, FileText,
   Briefcase, Users, Heart, Shield, Building, Stethoscope,
   Sparkles, Save, X,
-  Check, XCircle
+  Check, XCircle, Loader2
 } from 'lucide-react';
 import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
@@ -93,11 +93,40 @@ const ChecklistPage = () => {
   const [aiElapsed, setAiElapsed] = useState(0);
   const [feedbackItem, setFeedbackItem] = useState(null);
   const [feedbackText, setFeedbackText] = useState('');
+  const [egaRunning, setEgaRunning] = useState(false);
   const aiAbortRef = useRef(null);
   const aiTimerRef = useRef(null);
+  const lastCompletedAtRef = useRef(null);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchData(); }, []);
+
+  // Poll for EGA IAC task status (real-time updates while Guardian generates)
+  useEffect(() => {
+    if (!estate?.id) return;
+    let active = true;
+    const poll = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/guardian/iac-task-status`, getAuthHeaders());
+        if (!active) return;
+        const task = res.data;
+        if (task.status === 'running') {
+          setEgaRunning(true);
+        } else if (task.status === 'completed' && task.completed_at) {
+          setEgaRunning(false);
+          if (lastCompletedAtRef.current && lastCompletedAtRef.current !== task.completed_at) {
+            fetchData();
+          }
+          lastCompletedAtRef.current = task.completed_at;
+        } else {
+          setEgaRunning(false);
+        }
+      } catch { /* silent */ }
+    };
+    poll();
+    const interval = setInterval(poll, 4000);
+    return () => { active = false; clearInterval(interval); };
+  }, [estate?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
     try {
@@ -297,6 +326,15 @@ const ChecklistPage = () => {
       </div>
 
       <SectionLockBanner sectionId="checklist" />
+
+      {egaRunning && (
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-bold"
+          style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)', color: '#d4af37' }}
+          data-testid="ega-generating-banner">
+          <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
+          <span>Estate Guardian is generating IAC items — new items will appear automatically</span>
+        </div>
+      )}
 
       <SectionLockedOverlay sectionId="checklist">
       {/* Info + Actions */}

@@ -72,6 +72,7 @@ import {
 } from 'lucide-react';
 
 import { toast } from '../utils/toast';
+import { downloadFile } from '../utils/downloadFile';
 import { API_URL } from '../config';
 // removed unused SectionLock from '../components/security/SectionLock';
 
@@ -385,6 +386,13 @@ const GuardianPage = () => {
         }
         if (m.action_result?.action === 'checklist_generated' || m.action_result?.action === 'iac_generated') {
           msg.actionBadge = `${m.action_result.items_added} IAC items added`;
+          if (m.action_result.duplicates_skipped > 0) {
+            msg.actionBadge += ` · ${m.action_result.duplicates_skipped} duplicate${m.action_result.duplicates_skipped !== 1 ? 's' : ''} skipped`;
+            msg.duplicateInfo = {
+              count: m.action_result.duplicates_skipped,
+              titles: m.action_result.duplicate_titles || [],
+            };
+          }
           msg.showIacDownload = true;
         }
         if (m.action_result?.action === 'todo_generated') {
@@ -426,12 +434,7 @@ const GuardianPage = () => {
     try {
       const headers = getAuthHeaders()?.headers;
       const res = await axios.post(`${API_URL}/guardian/export-checklist`, {}, { headers, responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `CarryOn_IAC_${new Date().toISOString().split('T')[0]}.pdf`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+      await downloadFile(new Blob([res.data], { type: 'application/pdf' }), `CarryOn_IAC_${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (err) {
       toast.error(err.response?.status === 404 ? 'No IAC items found — generate one first' : 'Failed to export checklist');
     }
@@ -442,12 +445,7 @@ const GuardianPage = () => {
     try {
       const headers = getAuthHeaders()?.headers;
       const res = await axios.post(`${API_URL}/guardian/export-todo`, { content }, { headers, responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `CarryOn_ToDo_${new Date().toISOString().split('T')[0]}.pdf`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+      await downloadFile(new Blob([res.data], { type: 'application/pdf' }), `CarryOn_ToDo_${new Date().toISOString().split('T')[0]}.pdf`);
       toast.success('To-Do List downloaded');
     } catch (err) {
       toast.error('Failed to generate PDF');
@@ -458,12 +456,7 @@ const GuardianPage = () => {
     try {
       const headers = getAuthHeaders()?.headers;
       const res = await axios.post(`${API_URL}/guardian/export-iac-report`, { content }, { headers, responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `CarryOn_IAC_Report_${new Date().toISOString().split('T')[0]}.pdf`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+      await downloadFile(new Blob([res.data], { type: 'application/pdf' }), `CarryOn_IAC_Report_${new Date().toISOString().split('T')[0]}.pdf`);
       toast.success('IAC Report downloaded');
     } catch (err) {
       toast.error('Failed to generate IAC Report PDF');
@@ -476,12 +469,7 @@ const GuardianPage = () => {
     try {
       const headers = getAuthHeaders()?.headers;
       const res = await axios.post(`${API_URL}/guardian/export-conversation`, { session_id: sessionId }, { headers, responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `CarryOn_Transcript_${new Date().toISOString().split('T')[0]}.pdf`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+      await downloadFile(new Blob([res.data], { type: 'application/pdf' }), `CarryOn_Transcript_${new Date().toISOString().split('T')[0]}.pdf`);
       toast.success('Transcript downloaded');
     } catch (err) { toast.error('Failed to export transcript'); }
     setExporting(false);
@@ -494,12 +482,7 @@ const GuardianPage = () => {
     try {
       const headers = getAuthHeaders()?.headers;
       const res = await axios.post(`${API_URL}/guardian/export-plan-of-action`, { session_id: sessionId }, { headers, responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `CarryOn_Plan_of_Action_${new Date().toISOString().split('T')[0]}.pdf`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+      await downloadFile(new Blob([res.data], { type: 'application/pdf' }), `CarryOn_Plan_of_Action_${new Date().toISOString().split('T')[0]}.pdf`);
       toast.success('Plan of Action downloaded');
     } catch (err) { toast.error('Failed to generate Plan of Action'); }
     setPlanExporting(false);
@@ -566,8 +549,18 @@ const GuardianPage = () => {
       if (response.data.action_result) {
         const result = response.data.action_result;
         if (result.action === 'iac_generated') {
-          assistantMsg.actionBadge = `${result.items_added} IAC items added`;
+          let badge = `${result.items_added} IAC items added`;
+          if (result.duplicates_skipped > 0) {
+            badge += ` · ${result.duplicates_skipped} duplicate${result.duplicates_skipped !== 1 ? 's' : ''} skipped`;
+          }
+          assistantMsg.actionBadge = badge;
           assistantMsg.showIacDownload = true;
+          if (result.duplicates_skipped > 0) {
+            assistantMsg.duplicateInfo = {
+              count: result.duplicates_skipped,
+              titles: result.duplicate_titles || [],
+            };
+          }
         } else if (result.action === 'todo_generated') {
           assistantMsg.showTodoDownload = true;
         } else if (result.action === 'readiness_analyzed' && result.readiness) {
@@ -825,6 +818,21 @@ const GuardianPage = () => {
                 {msg.actionBadge && (
                   <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-[#22c993]">
                     <CheckCircle2 className="w-3.5 h-3.5" /> {msg.actionBadge}
+                  </div>
+                )}
+                {msg.duplicateInfo && msg.duplicateInfo.count > 0 && (
+                  <div className="mt-1.5 rounded-lg px-3 py-2" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.15)' }}>
+                    <p className="text-[11px] font-bold text-[#F59E0B] mb-1">
+                      {msg.duplicateInfo.count} duplicate{msg.duplicateInfo.count !== 1 ? 's' : ''} already in your checklist:
+                    </p>
+                    <ul className="space-y-0.5">
+                      {msg.duplicateInfo.titles.map((t, i) => (
+                        <li key={i} className="text-[11px] text-[var(--t4)] flex items-center gap-1.5">
+                          <span className="w-1 h-1 rounded-full bg-[#F59E0B] flex-shrink-0" />
+                          {t}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
                 {msg.showTodoDownload && !loading && (

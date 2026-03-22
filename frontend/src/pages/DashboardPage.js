@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
@@ -15,7 +15,8 @@ import {
   X,
   Sparkles,
   KeyRound,
-  ArrowLeftRight
+  ArrowLeftRight,
+  Loader2
 } from 'lucide-react';
 import TrialBanner from '../components/TrialBanner';
 import BillingStatusBanner from '../components/BillingStatusBanner';
@@ -37,7 +38,9 @@ const DashboardPage = () => {
   const [guidedStep, setGuidedStep] = useState(null);
   const [showWelcomeStep, setShowWelcomeStep] = useState(false);
   const [dashboardReady, setDashboardReady] = useState(false);
+  const [egaRunning, setEgaRunning] = useState(false);
   const guidedDismissedRef = useRef(false);
+  const lastCompletedAtRef = useRef(null);
 
   const handleCelebrationDismiss = () => {
     setShowCelebration(false);
@@ -55,6 +58,9 @@ const DashboardPage = () => {
       import('./MessagesPage').catch(() => {});
     }
   }, [loading]);
+
+  // Ref to hold fetchEstateData for polling effect (initialized after function definition)
+  const fetchEstateDataRef = useRef(null);
 
   const fetchEstates = async () => {
     try {
@@ -124,6 +130,37 @@ const DashboardPage = () => {
       });
     }
   };
+
+  // Update ref after fetchEstateData is defined
+  fetchEstateDataRef.current = fetchEstateData;
+
+  // Poll for EGA IAC generation task status (real-time updates)
+  useEffect(() => {
+    if (!estate?.id) return;
+    let active = true;
+    const poll = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/guardian/iac-task-status`, getAuthHeaders());
+        if (!active) return;
+        const task = res.data;
+        if (task.status === 'running') {
+          setEgaRunning(true);
+        } else if (task.status === 'completed' && task.completed_at) {
+          setEgaRunning(false);
+          // Only refresh data when a new completion is detected
+          if (lastCompletedAtRef.current && lastCompletedAtRef.current !== task.completed_at) {
+            fetchEstateDataRef.current?.(estate.id);
+          }
+          lastCompletedAtRef.current = task.completed_at;
+        } else {
+          setEgaRunning(false);
+        }
+      } catch { /* silent */ }
+    };
+    poll();
+    const interval = setInterval(poll, 4000);
+    return () => { active = false; clearInterval(interval); };
+  }, [estate?.id, getAuthHeaders]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const completedTasks = checklists.filter(c => c.is_completed).length;
   const totalTasks = checklists.length || 5;
@@ -513,6 +550,14 @@ const DashboardPage = () => {
           onClick={() => navigate('/checklist')}
           sectionKey="checklist"
         />
+        {egaRunning && (
+          <div className="col-span-3 lg:col-span-4 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold"
+            style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)', color: '#d4af37' }}
+            data-testid="ega-running-banner">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            Estate Guardian is generating IAC items — counts will update automatically
+          </div>
+        )}
         <StatCard 
           icon={Users}
           value={stats.beneficiaries}

@@ -17,7 +17,7 @@ import requests
 import os
 import uuid
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://security-polish.preview.emergentagent.com")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://iac-dashboard.preview.emergentagent.com")
 
 # Test credentials
 ADMIN_EMAIL = "info@carryon.us"
