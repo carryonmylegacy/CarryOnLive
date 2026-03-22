@@ -290,7 +290,7 @@ async def set_master_key(data: MasterKeyRequest, current_user: dict = Depends(ge
 @router.post("/security/verify-master-key")
 async def verify_master_key(data: MasterKeyRequest, current_user: dict = Depends(get_current_user)):
     """Verify the user's master key. Used for modifying security settings."""
-    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "vault_master_key_hash": 1})
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "id": 1, "vault_master_key_hash": 1})
     if not user or not user.get("vault_master_key_hash"):
         raise HTTPException(status_code=400, detail="No master key set. Please set one first.")
     if not verify_password(data.master_key.strip(), user["vault_master_key_hash"]):
