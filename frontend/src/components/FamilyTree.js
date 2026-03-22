@@ -259,15 +259,19 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   const row = Math.floor(idx / 2);
                   const isLeft = idx % 2 === 0;
                   const nodeX = isLeft ? leftCol : rightCol;
+                  const dir = isLeft ? 1 : -1;
                   const joinFrac = numRows <= 1 ? 0.5 : row / (numRows - 1);
-                  const joinY = vbH * 0.12 + joinFrac * vbH * 0.38;
+                  const trunkY = vbH * 0.35 + joinFrac * vbH * 0.25;
                   for (let s = 0; s < strandsPerNode; s++) {
-                    const nOff = (s - 1) * nodeSpread;
-                    const side = isLeft ? -1 : 1;
-                    const fOff = side * 3 + (s - 1) * 1.2 + (numRows > 1 ? (row - (numRows - 1) / 2) * 0.8 : 0);
-                    const sx = nodeX + nOff;
+                    const ySpd = (s - 1) * nodeSpread;
+                    const sx = nodeX + dir * 18;
+                    const sy = Math.max(0.5, 3 + ySpd);
+                    const cp1x = nodeX + dir * 42;
+                    const cp2y = trunkY * 0.4;
+                    const fOff = (isLeft ? -1 : 1) * 3 + (s - 1) * 1.2 + (numRows > 1 ? (row - (numRows - 1) / 2) * 0.8 : 0);
                     const ex = cx + fOff;
-                    const d = `M ${sx.toFixed(1)},0 C ${sx.toFixed(1)},${(joinY * 0.35).toFixed(1)} ${cx},${(joinY * 0.7).toFixed(1)} ${cx},${joinY.toFixed(1)} C ${cx},${(joinY + (vbH - joinY) * 0.65).toFixed(1)} ${ex.toFixed(1)},${(vbH * 0.9).toFixed(1)} ${ex.toFixed(1)},${vbH}`;
+                    const cp3y = trunkY + (vbH - trunkY) * 0.6;
+                    const d = `M ${sx.toFixed(1)},${sy.toFixed(1)} C ${cp1x.toFixed(1)},${sy.toFixed(1)} ${cx},${cp2y.toFixed(1)} ${cx},${trunkY.toFixed(1)} C ${cx},${cp3y.toFixed(1)} ${ex.toFixed(1)},${(vbH * 0.88).toFixed(1)} ${ex.toFixed(1)},${vbH}`;
                     allPaths.push(d);
                   }
                 }
@@ -326,16 +330,24 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   for (let idx = 0; idx < n; idx++) {
                     const row = Math.floor(idx / 2);
                     const isLeft = idx % 2 === 0;
-                    const nodeX = isLeft ? leftCol : rightCol;
+                    const isCentered = (n % 2 !== 0 && idx === n - 1);
+                    const nodeX = isCentered ? cx : (isLeft ? leftCol : rightCol);
+                    const dir = isCentered ? 0 : (isLeft ? 1 : -1);
                     const branchFrac = numBenRows <= 1 ? 0.5 : row / (numBenRows - 1);
-                    const branchY = vbH * 0.12 + branchFrac * vbH * 0.38;
+                    const branchY = vbH * 0.35 + branchFrac * vbH * 0.25;
                     for (let s = 0; s < strandsPerNode; s++) {
-                      const nOff = (s - 1) * nodeSpread;
+                      const ySpd = (s - 1) * nodeSpread;
                       const side = isLeft ? -1 : 1;
-                      const fOff = side * 3 + (s - 1) * 1.2 + (numBenRows > 1 ? (row - (numBenRows - 1) / 2) * 0.8 : 0);
+                      const fOff = (isCentered ? 0 : side * 3) + (s - 1) * 1.2 + (numBenRows > 1 ? (row - (numBenRows - 1) / 2) * 0.8 : 0);
                       const sx = cx + fOff;
-                      const ex = nodeX + nOff;
-                      const d = `M ${sx.toFixed(1)},0 C ${sx.toFixed(1)},${(branchY * 0.1).toFixed(1)} ${cx},${(branchY * 0.35).toFixed(1)} ${cx},${branchY.toFixed(1)} C ${cx},${(branchY + (vbH - branchY) * 0.35).toFixed(1)} ${ex.toFixed(1)},${(branchY + (vbH - branchY) * 0.65).toFixed(1)} ${ex.toFixed(1)},${vbH}`;
+                      const sideOff = isCentered ? ((s - 1) * 3) : (dir * 18);
+                      const ex = nodeX + sideOff;
+                      const ey = Math.min(vbH, vbH - 3 + ySpd);
+                      const cp1y = branchY * 0.3;
+                      const cp2y = branchY * 0.7;
+                      const cp3y = branchY + (vbH - branchY) * 0.4;
+                      const cp4x = isCentered ? ex : (nodeX + dir * 40);
+                      const d = `M ${sx.toFixed(1)},0 C ${sx.toFixed(1)},${cp1y.toFixed(1)} ${cx},${cp2y.toFixed(1)} ${cx},${branchY.toFixed(1)} C ${cx},${cp3y.toFixed(1)} ${cp4x.toFixed(1)},${ey.toFixed(1)} ${ex.toFixed(1)},${ey.toFixed(1)}`;
                       allPaths.push(d);
                     }
                   }
@@ -361,8 +373,12 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   allPaths.forEach(d => {
                     svg += `<path class="fill-path-gold" d="${d}" fill="none" stroke="${lightColor}" stroke-width="${overlayW}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" filter="url(#lightPulseGold)" />`;
                   });
-                  svg += `<circle class="flash-gold-end" cx="${leftCol}" cy="${vbH - 2}" r="6" fill="${lightColor}" opacity="0" filter="url(#lightPulseGold)" />`;
-                  svg += `<circle class="flash-gold-end" cx="${rightCol}" cy="${vbH - 2}" r="6" fill="${lightColor}" opacity="0" filter="url(#lightPulseGold)" />`;
+                  for (let fi = 0; fi < n; fi++) {
+                    const fiLeft = fi % 2 === 0;
+                    const fiCen = (n % 2 !== 0 && fi === n - 1);
+                    const fiX = fiCen ? cx : ((fiLeft ? leftCol : rightCol) + (fiLeft ? 1 : -1) * 18);
+                    svg += `<circle class="flash-gold-end" cx="${fiX}" cy="${vbH - 3}" r="5" fill="${lightColor}" opacity="0" filter="url(#lightPulseGold)" />`;
+                  }
                   return svg;
                 })() }}
               />

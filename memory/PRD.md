@@ -80,13 +80,14 @@ A full-stack estate planning application allowing benefactors to manage digital 
 ## P0/P1/P2 Prioritized Backlog
 
 ### P0
-- **SVG Family Tree Visual Overhaul**: ✅ COMPLETED (Session 17+18+19)
+- **SVG Family Tree Visual Overhaul**: ✅ COMPLETED (Session 17+18+19+20)
   - Replaced rigid vertical/straight SVG connector lines with dynamic symmetric brush-stroke Bezier curves
   - Upper blue arcs (estates → benefactor) and lower gold arcs (benefactor → beneficiaries) now mirror each other
   - Branch centers of mass aligned with 2-column node layout centers (25%/75%)
   - No vertical branches sticking up from the middle (control point shift = 0.35)
   - **Scroll-Linked Fill Animation** (Session 19): Replaced CSS keyframe animations with JS scroll handler controlling `stroke-dashoffset` per scroll position. Auto-detects scrollable ancestor. Upper blue fills first (0-250px scroll), gold origin flash, lower gold fills (175-375px range). Fill is ratcheted (never reverses). Stays permanently once filled. Resets on unmount/remount.
   - **Visual refinements** (Session 19): 8 strands/bundle (was 5), thinner strokes (0.7px base, 1.0px overlay), reduced SVG height (vbH=50, was 80), toned-down brightness (~0.45 overlay opacity), smaller glow blur
+  - **Neural/Dendritic Side-Emergence Geometry** (Session 20): Rewrote SVG path `M`/`C` coordinates so strands emerge HORIZONTALLY from the inner sides of estate/beneficiary circles (not from top/bottom). Uses horizontal tangent control points at circle edges, curves into central vertical trunk, flares at delta near benefactor node. Handles centered (odd last) beneficiary with straight vertical paths. Flash-gold-end circles dynamically positioned per beneficiary node.
   - Uses `dangerouslySetInnerHTML` for SVG content to bypass Babel `<span>` wrapping
   - Applied same fix to UsersTab.js admin graph views
 
