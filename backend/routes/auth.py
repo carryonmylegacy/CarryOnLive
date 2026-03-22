@@ -189,6 +189,29 @@ async def login(data: UserLogin, request: Request):
     # Clear failed attempts on successful login
     await db.failed_logins.delete_many({"email": login_lower})
 
+    # ── Single-session enforcement at login time ──
+    # If user already has an active session and didn't request force, block login.
+    # Admin is exempt. Sessions older than 24h are considered stale.
+    if (
+        not data.force_login
+        and user.get("role") != "admin"
+        and user.get("active_session_id")
+    ):
+        # Treat sessions older than 24h as stale (app crash, lost device, etc.)
+        last_login = user.get("last_login_at")
+        session_is_fresh = False
+        if last_login:
+            try:
+                login_dt = datetime.fromisoformat(last_login.replace("Z", "+00:00"))
+                session_is_fresh = (datetime.now(timezone.utc) - login_dt) < timedelta(hours=24)
+            except (ValueError, TypeError):
+                pass
+        if session_is_fresh:
+            return {
+                "active_session_exists": True,
+                "message": "This account is currently signed in on another device. Sign in here to end the other session.",
+            }
+
     # Check estate ownership for multi-role flag (used in all response paths)
     _estate_list = await db.estates.find(
         {"owner_id": user["id"]}, {"_id": 0, "id": 1, "status": 1, "transitioned_at": 1}
@@ -1084,13 +1107,18 @@ async def update_profile_photo(data: ProfilePhotoUpdate, current_user: dict = De
 
 @router.post("/auth/logout")
 async def logout(request: Request, current_user: dict = Depends(get_current_user)):
-    """Logout — blacklists the current token server-side."""
+    """Logout — blacklists the current token and clears active session."""
     from services.token_blacklist import blacklist_token
 
     auth_header = request.headers.get("authorization", "")
     if auth_header.startswith("Bearer "):
         token_str = auth_header.split(" ")[1]
         await blacklist_token(token_str, current_user["id"], reason="logout")
+    # Clear active session so the user can log in from another device
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$unset": {"active_session_id": ""}},
+    )
     return {"message": "Logged out successfully"}
 
 

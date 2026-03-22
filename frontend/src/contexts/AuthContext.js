@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { API_URL } from '../config';
+import { clearCache } from '../utils/apiCache';
 
 const AuthContext = createContext(null);
 
@@ -66,15 +67,21 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const login = async (email, password, otpMethod = 'email', phone = null) => {
+  const login = async (email, password, otpMethod = 'email', phone = null, forceLogin = false) => {
     // Clear dev switcher session on normal login
     localStorage.removeItem('dev_switcher_admin_session');
-    const payload = { email, password, otp_method: otpMethod };
+    // Clear API data cache to ensure fresh data on new session
+    clearCache();
+    const payload = { email, password, otp_method: otpMethod, force_login: forceLogin };
     if (otpMethod === 'sms' && phone) {
       payload.phone = phone.startsWith('+') ? phone : `+1${phone.replace(/\D/g, '')}`;
     }
     const response = await axios.post(`${API_URL}/auth/login`, payload);
     const data = response.data;
+    // Active session on another device — return for UI to handle
+    if (data.active_session_exists) {
+      return { activeSessionExists: true, message: data.message };
+    }
     // Sealed account — transitioned benefactor
     if (data.sealed) {
       return { sealed: true, transitioned_at: data.transitioned_at };
@@ -108,7 +115,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    // Server-side token blacklisting
+    // Server-side token blacklisting + session clear
     try {
       if (token) {
         await axios.post(`${API_URL}/auth/logout`, {}, {
@@ -116,6 +123,7 @@ export const AuthProvider = ({ children }) => {
         });
       }
     } catch (e) { /* proceed with client-side logout even if server call fails */ }
+    clearCache();
     localStorage.removeItem('carryon_token');
     localStorage.removeItem('dev_switcher_admin_session');
     localStorage.removeItem('dev_switcher_admin_token');

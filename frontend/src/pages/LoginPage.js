@@ -70,6 +70,7 @@ const LoginPage = () => {
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotMsg, setForgotMsg] = useState('');
   const [forgotError, setForgotError] = useState(false);
+  const [activeSessionWarning, setActiveSessionWarning] = useState(null);
 
   const navigateWithFade = (path) => {
     setExiting(true);
@@ -157,11 +158,17 @@ const LoginPage = () => {
     }
   };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleLogin = async (e, forceLogin = false) => {
+    e?.preventDefault?.();
     setLoading(true);
     try {
-      const result = await login(email, password);
+      const result = await login(email, password, 'email', null, forceLogin);
+      if (result.activeSessionExists) {
+        // Show confirmation instead of an error toast
+        setActiveSessionWarning(result.message);
+        return;
+      }
+      setActiveSessionWarning(null);
       if (result.sealed) {
         setSealedAccount({ transitionedAt: result.transitioned_at });
         return;
@@ -296,6 +303,18 @@ const LoginPage = () => {
               <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-center" data-testid="lockout-banner">
                 <p className="text-red-400 text-sm font-semibold">Account temporarily locked</p>
                 <p className="text-red-300/80 text-xs mt-1">Try again in <span className="font-bold text-red-300 tabular-nums">{Math.floor(lockoutSeconds / 60)}:{String(lockoutSeconds % 60).padStart(2, '0')}</span></p>
+              </div>
+            )}
+            {activeSessionWarning && (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-center" data-testid="active-session-warning">
+                <p className="text-amber-400 text-sm font-semibold">Signed in elsewhere</p>
+                <p className="text-amber-300/80 text-xs mt-1.5">{activeSessionWarning}</p>
+                <button type="button" onClick={(e) => { setActiveSessionWarning(null); handleLogin(e, true); }}
+                  className="mt-2.5 w-full h-10 rounded-lg text-sm font-bold transition-all active:scale-[0.97]"
+                  style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)', color: '#d4af37' }}
+                  data-testid="force-login-btn">
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Sign In Here Instead'}
+                </button>
               </div>
             )}
             <Button type="submit" disabled={loading || !email || !password || lockoutSeconds > 0} className="w-full h-12 rounded-xl text-base font-bold"
@@ -495,6 +514,18 @@ const LoginPage = () => {
                       <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-center" data-testid="lockout-banner-mobile">
                         <p className="text-red-400 text-sm font-semibold">Account temporarily locked</p>
                         <p className="text-red-300/80 text-xs mt-1">Try again in <span className="font-bold text-red-300 tabular-nums">{Math.floor(lockoutSeconds / 60)}:{String(lockoutSeconds % 60).padStart(2, '0')}</span></p>
+                      </div>
+                    )}
+                    {activeSessionWarning && (
+                      <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-center" data-testid="active-session-warning-desktop">
+                        <p className="text-amber-400 text-sm font-semibold">Signed in elsewhere</p>
+                        <p className="text-amber-300/80 text-xs mt-1.5">{activeSessionWarning}</p>
+                        <button type="button" onClick={(e) => { setActiveSessionWarning(null); handleLogin(e, true); }}
+                          className="mt-2.5 w-full h-10 rounded-lg text-sm font-bold transition-all active:scale-[0.97]"
+                          style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)', color: '#d4af37' }}
+                          data-testid="force-login-btn-desktop">
+                          {loading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Sign In Here Instead'}
+                        </button>
                       </div>
                     )}
                     <Button type="submit" disabled={loading || lockoutSeconds > 0} className="w-full h-11 rounded-lg font-semibold text-sm" data-testid="login-submit-button"

@@ -46,6 +46,7 @@ class UserLogin(BaseModel):
     password: str
     otp_method: str = "email"  # "email" or "sms"
     phone: Optional[str] = None  # Required if otp_method is "sms"
+    force_login: bool = False  # Override active session on another device
 
 
 class OTPVerify(BaseModel):
