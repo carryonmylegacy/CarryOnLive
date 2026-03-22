@@ -68,7 +68,8 @@ import {
   Mic,
   MicOff,
   Download,
-  Landmark
+  Landmark,
+  AlertCircle
 } from 'lucide-react';
 
 import { toast } from '../utils/toast';
@@ -388,12 +389,13 @@ const GuardianPage = () => {
           msg.actionBadge = `${m.action_result.items_added} IAC items added`;
           if (m.action_result.duplicates_skipped > 0) {
             msg.actionBadge += ` · ${m.action_result.duplicates_skipped} duplicate${m.action_result.duplicates_skipped !== 1 ? 's' : ''} skipped`;
-            msg.duplicateInfo = {
-              count: m.action_result.duplicates_skipped,
-              titles: m.action_result.duplicate_titles || [],
-            };
           }
           msg.showIacDownload = true;
+          msg.iacSummary = {
+            added: m.action_result.items_added,
+            skipped: m.action_result.duplicates_skipped || 0,
+            titles: m.action_result.duplicate_titles || [],
+          };
         }
         if (m.action_result?.action === 'todo_generated') {
           msg.showTodoDownload = true;
@@ -555,11 +557,18 @@ const GuardianPage = () => {
           }
           assistantMsg.actionBadge = badge;
           assistantMsg.showIacDownload = true;
-          if (result.duplicates_skipped > 0) {
-            assistantMsg.duplicateInfo = {
-              count: result.duplicates_skipped,
-              titles: result.duplicate_titles || [],
-            };
+          assistantMsg.iacSummary = {
+            added: result.items_added,
+            skipped: result.duplicates_skipped || 0,
+            titles: result.duplicate_titles || [],
+          };
+          // Toast so the user sees the result even on long responses
+          if (result.items_added > 0 && result.duplicates_skipped > 0) {
+            toast.success(`${result.items_added} new items added · ${result.duplicates_skipped} duplicate${result.duplicates_skipped !== 1 ? 's' : ''} skipped`);
+          } else if (result.items_added > 0) {
+            toast.success(`${result.items_added} new IAC items added to your checklist`);
+          } else if (result.duplicates_skipped > 0) {
+            toast(`All ${result.duplicates_skipped} items already exist in your checklist — no duplicates added`);
           }
         } else if (result.action === 'todo_generated') {
           assistantMsg.showTodoDownload = true;
@@ -815,24 +824,46 @@ const GuardianPage = () => {
                     Try Again
                   </button>
                 )}
-                {msg.actionBadge && (
-                  <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-[#22c993]">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> {msg.actionBadge}
+                {msg.iacSummary && (
+                  <div className="mt-3 rounded-xl p-3 space-y-2" style={{ background: 'var(--card-bg)', border: '1px solid var(--border)' }} data-testid={`iac-summary-${index}`}>
+                    <p className="text-sm font-bold" style={{ color: 'var(--t1)' }}>IAC Generation Summary</p>
+                    <div className="flex items-center gap-3">
+                      {msg.iacSummary.added > 0 && (
+                        <div className="flex items-center gap-1.5 text-sm font-semibold text-[#22c993]">
+                          <CheckCircle2 className="w-4 h-4" />
+                          {msg.iacSummary.added} new item{msg.iacSummary.added !== 1 ? 's' : ''} added
+                        </div>
+                      )}
+                      {msg.iacSummary.skipped > 0 && (
+                        <div className="flex items-center gap-1.5 text-sm font-semibold text-[#F59E0B]">
+                          <AlertCircle className="w-4 h-4" />
+                          {msg.iacSummary.skipped} duplicate{msg.iacSummary.skipped !== 1 ? 's' : ''} skipped
+                        </div>
+                      )}
+                      {msg.iacSummary.added === 0 && msg.iacSummary.skipped === 0 && (
+                        <div className="text-sm text-[var(--t4)]">No items generated</div>
+                      )}
+                    </div>
+                    {msg.iacSummary.skipped > 0 && msg.iacSummary.titles.length > 0 && (
+                      <details className="text-xs text-[var(--t4)]">
+                        <summary className="cursor-pointer font-medium text-[#F59E0B] hover:underline">
+                          View {msg.iacSummary.skipped} skipped duplicate{msg.iacSummary.skipped !== 1 ? 's' : ''}
+                        </summary>
+                        <ul className="mt-1.5 space-y-0.5 pl-3">
+                          {msg.iacSummary.titles.map((t, i) => (
+                            <li key={i} className="flex items-center gap-1.5">
+                              <span className="w-1 h-1 rounded-full bg-[#F59E0B] flex-shrink-0" />
+                              {t}
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
                   </div>
                 )}
-                {msg.duplicateInfo && msg.duplicateInfo.count > 0 && (
-                  <div className="mt-1.5 rounded-lg px-3 py-2" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.15)' }}>
-                    <p className="text-[11px] font-bold text-[#F59E0B] mb-1">
-                      {msg.duplicateInfo.count} duplicate{msg.duplicateInfo.count !== 1 ? 's' : ''} already in your checklist:
-                    </p>
-                    <ul className="space-y-0.5">
-                      {msg.duplicateInfo.titles.map((t, i) => (
-                        <li key={i} className="text-[11px] text-[var(--t4)] flex items-center gap-1.5">
-                          <span className="w-1 h-1 rounded-full bg-[#F59E0B] flex-shrink-0" />
-                          {t}
-                        </li>
-                      ))}
-                    </ul>
+                {msg.actionBadge && !msg.iacSummary && (
+                  <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-[#22c993]">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> {msg.actionBadge}
                   </div>
                 )}
                 {msg.showTodoDownload && !loading && (

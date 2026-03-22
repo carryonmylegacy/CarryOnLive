@@ -97,6 +97,8 @@ const ChecklistPage = () => {
   const aiAbortRef = useRef(null);
   const aiTimerRef = useRef(null);
   const lastCompletedAtRef = useRef(null);
+  const getAuthHeadersRef = useRef(getAuthHeaders);
+  getAuthHeadersRef.current = getAuthHeaders;
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchData(); }, []);
@@ -107,7 +109,7 @@ const ChecklistPage = () => {
     let active = true;
     const poll = async () => {
       try {
-        const res = await axios.get(`${API_URL}/guardian/iac-task-status`, getAuthHeaders());
+        const res = await axios.get(`${API_URL}/guardian/iac-task-status`, getAuthHeadersRef.current());
         if (!active) return;
         const task = res.data;
         if (task.status === 'running') {

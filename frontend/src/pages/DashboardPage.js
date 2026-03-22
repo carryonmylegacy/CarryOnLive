@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
@@ -61,6 +61,8 @@ const DashboardPage = () => {
 
   // Ref to hold fetchEstateData for polling effect (initialized after function definition)
   const fetchEstateDataRef = useRef(null);
+  const getAuthHeadersRef = useRef(getAuthHeaders);
+  getAuthHeadersRef.current = getAuthHeaders;
 
   const fetchEstates = async () => {
     try {
@@ -140,7 +142,7 @@ const DashboardPage = () => {
     let active = true;
     const poll = async () => {
       try {
-        const res = await axios.get(`${API_URL}/guardian/iac-task-status`, getAuthHeaders());
+        const res = await axios.get(`${API_URL}/guardian/iac-task-status`, getAuthHeadersRef.current());
         if (!active) return;
         const task = res.data;
         if (task.status === 'running') {
@@ -160,7 +162,7 @@ const DashboardPage = () => {
     poll();
     const interval = setInterval(poll, 4000);
     return () => { active = false; clearInterval(interval); };
-  }, [estate?.id, getAuthHeaders]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [estate?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const completedTasks = checklists.filter(c => c.is_completed).length;
   const totalTasks = checklists.length || 5;
