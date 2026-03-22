@@ -11,7 +11,7 @@ import requests
 import os
 import time
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://beneficiary-branches.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://estate-glow.preview.emergentagent.com").rstrip("/")
 
 
 class TestGuardianPhase2:
