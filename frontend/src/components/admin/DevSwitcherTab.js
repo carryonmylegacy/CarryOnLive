@@ -167,10 +167,10 @@ export const DevSwitcherTab = ({ users, getAuthHeaders }) => {
             </div>
             <button
               onClick={() => setConfig(prev => ({ ...prev, enabled: !prev.enabled }))}
-              className={`w-12 h-6 rounded-full transition-colors relative ${config.enabled ? 'bg-[var(--gold)]' : 'bg-[var(--s2)]'}`}
+              className={`w-12 h-7 rounded-full transition-colors relative flex-shrink-0 ${config.enabled ? 'bg-[var(--gold)]' : 'bg-[var(--s2)]'}`}
               data-testid="dev-switcher-toggle"
             >
-              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${config.enabled ? 'left-7' : 'left-1'}`} />
+              <div className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white transition-transform shadow-sm ${config.enabled ? 'translate-x-5' : 'translate-x-0'}`} />
             </button>
           </div>
 

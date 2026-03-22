@@ -78,7 +78,7 @@ async def update_dev_switcher_config(data: DevSwitcherConfig, current_user: dict
                 status_code=400,
                 detail=f"Beneficiary account not found: {data.beneficiary_email}",
             )
-        if user["role"] != "beneficiary":
+        if user["role"] != "beneficiary" and not user.get("is_also_beneficiary"):
             raise HTTPException(
                 status_code=400,
                 detail=f"Account is not a beneficiary: {data.beneficiary_email}",
