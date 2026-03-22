@@ -913,14 +913,22 @@ const VaultPage = () => {
             {uploadLockType === 'password' && (
               <div className="space-y-2">
               <Label className="text-[#94a3b8]">Set Document Password <span className="text-red-400">*</span></Label>
-                <Input
-                  type="password"
-                  value={uploadLockPassword}
-                  onChange={(e) => setUploadLockPassword(e.target.value)}
-                  placeholder="Enter a secure password"
-                  className="input-field"
-                  data-testid="upload-password-input"
-                />
+                <div className="relative">
+                  <Input
+                    type={showPwEye ? 'text' : 'password'}
+                    value={uploadLockPassword}
+                    onChange={(e) => setUploadLockPassword(e.target.value)}
+                    placeholder="Enter a secure password"
+                    className="input-field pr-10"
+                    style={{ fontSize: '16px' }}
+                    data-testid="upload-password-input"
+                  />
+                  <button type="button" onClick={() => setShowPwEye(!showPwEye)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)] hover:text-[var(--t)] transition-colors"
+                    data-testid="upload-password-toggle">
+                    {showPwEye ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
                 <p className="text-[#64748b] text-xs">
                   This password will be required to access the document. A backup code will also be generated.
                 </p>

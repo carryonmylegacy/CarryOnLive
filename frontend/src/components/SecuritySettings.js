@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Shield, Lock, Unlock, Mic, KeyRound, HelpCircle, Eye, EyeOff, CheckCircle2, Loader2, ChevronDown, ChevronUp, StopCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -39,6 +40,7 @@ const SecuritySettings = ({ getAuthHeaders }) => {
   const [masterKeyInput, setMasterKeyInput] = useState('');
   const [savingMasterKey, setSavingMasterKey] = useState(false);
   const [showMasterKeyInput, setShowMasterKeyInput] = useState(false);
+  const [showMasterKeyValue, setShowMasterKeyValue] = useState(false);
 
   const headers = getAuthHeaders()?.headers || {};
 
@@ -115,14 +117,25 @@ const SecuritySettings = ({ getAuthHeaders }) => {
           <div className="mt-4 pt-4 space-y-3" style={{ borderTop: '1px solid var(--b)' }}>
             <div className="space-y-1.5">
               <Label className="text-xs text-[var(--t4)]">{hasMasterKey ? 'New Master Key' : 'Master Key'} <span className="text-red-400">*</span></Label>
-              <Input
-                type="password"
-                value={masterKeyInput}
-                onChange={(e) => setMasterKeyInput(e.target.value)}
-                placeholder="A memorable word or phrase (min 4 chars)"
-                className="input-field"
-                data-testid="master-key-input"
-              />
+              <div className="relative">
+                <Input
+                  type={showMasterKeyValue ? 'text' : 'password'}
+                  value={masterKeyInput}
+                  onChange={(e) => setMasterKeyInput(e.target.value)}
+                  placeholder="A memorable word or phrase (min 4 chars)"
+                  className="input-field pr-10"
+                  style={{ fontSize: '16px' }}
+                  data-testid="master-key-input"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowMasterKeyValue(!showMasterKeyValue)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)] hover:text-[var(--t)] transition-colors"
+                  data-testid="master-key-toggle-visibility"
+                >
+                  {showMasterKeyValue ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
             <div className="flex gap-2">
               <Button size="sm" className="gold-button text-xs" onClick={handleSaveMasterKey} disabled={savingMasterKey || masterKeyInput.trim().length < 4} data-testid="save-master-key">
@@ -192,7 +205,7 @@ const SectionRow = ({ section, settings: s, questions, expanded, onToggle, heade
         </div>
         <div className="flex items-center gap-2">
           {isActive && (
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--pr2)]/10 text-[var(--pr2)]">
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--pr2)]/10 text-[var(--pr2)] whitespace-nowrap">
               {layers.length} layer{layers.length > 1 ? 's' : ''}
             </span>
           )}
@@ -229,6 +242,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
   const [showAccountPwModal, setShowAccountPwModal] = useState(false);
   const [accountPw, setAccountPw] = useState('');
   const [accountPwVerifying, setAccountPwVerifying] = useState(false);
+  const [showAccountPwValue, setShowAccountPwValue] = useState(false);
   const [pendingToggle, setPendingToggle] = useState(null); // { field, value }
 
   const isCustomQuestion = question === '__custom__' || (question && !questions.includes(question));
@@ -312,7 +326,10 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
 
     navigator.mediaDevices.getUserMedia({ audio: true })
       .then(stream => {
-        const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        // iOS Safari only supports audio/mp4, not audio/webm
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
+        const ext = mimeType === 'audio/mp4' ? 'mp4' : 'webm';
+        const mediaRecorder = new MediaRecorder(stream, { mimeType });
         mediaRecorderRef.current = mediaRecorder;
         const chunks = [];
         mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
@@ -321,10 +338,10 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
           mediaRecorderRef.current = null;
           setRecording(false);
           setEnrolling(true);
-          const blob = new Blob(chunks, { type: 'audio/webm' });
+          const blob = new Blob(chunks, { type: mimeType });
           try {
             const formData = new FormData();
-            formData.append('file', blob, 'voice.webm');
+            formData.append('file', blob, `voice.${ext}`);
             formData.append('passphrase', voicePhrase.trim());
             const res = await axios.post(`${API_URL}/security/voice/enroll/${section.id}`, formData, {
               headers: { ...headers, 'Content-Type': 'multipart/form-data' }
@@ -532,9 +549,9 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
       </div>
 
       {/* Account Password Verification Modal */}
-      {showAccountPwModal && (
-        <div className="fixed inset-0 z-[99999] bg-black/60 flex items-start justify-center pt-[5vh] px-4" onClick={() => { setShowAccountPwModal(false); setPendingToggle(null); }}>
-          <div className="glass-card p-6 max-w-sm w-full border border-[var(--b2)]" onClick={e => e.stopPropagation()} data-testid="account-pw-modal">
+      {showAccountPwModal && createPortal(
+        <div className="fixed inset-0 z-[99999] bg-black/60 flex items-center justify-center px-4" onClick={() => { setShowAccountPwModal(false); setPendingToggle(null); }}>
+          <div className="rounded-2xl p-6 max-w-sm w-full border border-[var(--b2)]" style={{ background: 'var(--bg)' }} onClick={e => e.stopPropagation()} data-testid="account-pw-modal">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-[var(--gold)]/10 flex items-center justify-center">
                 <Shield className="w-5 h-5 text-[var(--gold)]" />
@@ -544,16 +561,27 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
                 <p className="text-xs text-[var(--t4)]">Enter your account password to modify security settings</p>
               </div>
             </div>
-            <Input
-              type="password"
-              value={accountPw}
-              onChange={e => setAccountPw(e.target.value)}
-              placeholder="Account password"
-              className="input-field mb-3"
-              onKeyDown={e => e.key === 'Enter' && accountPw && verifyAccountPassword()}
-              autoFocus
-              data-testid="account-pw-input"
-            />
+            <div className="relative">
+              <Input
+                type={showAccountPwValue ? 'text' : 'password'}
+                value={accountPw}
+                onChange={e => setAccountPw(e.target.value)}
+                placeholder="Account password"
+                className="input-field mb-3 pr-10"
+                style={{ fontSize: '16px' }}
+                onKeyDown={e => e.key === 'Enter' && accountPw && verifyAccountPassword()}
+                autoFocus
+                data-testid="account-pw-input"
+              />
+              <button
+                type="button"
+                onClick={() => setShowAccountPwValue(!showAccountPwValue)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 -mt-1.5 text-[var(--t5)] hover:text-[var(--t)] transition-colors"
+                data-testid="account-pw-toggle-visibility"
+              >
+                {showAccountPwValue ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1 border-[var(--b)] text-[var(--t)]" onClick={() => { setShowAccountPwModal(false); setPendingToggle(null); }}>Cancel</Button>
               <Button className="flex-1 gold-button" disabled={!accountPw || accountPwVerifying} onClick={verifyAccountPassword} data-testid="account-pw-confirm">
@@ -562,7 +590,8 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
               </Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
