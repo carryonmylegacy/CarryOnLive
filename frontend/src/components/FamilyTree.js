@@ -181,15 +181,23 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                       <feGaussianBlur stdDeviation="${blurDev}" result="blur" />
                       <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                     </filter>
+                    <style>
+                      @keyframes drawBlue { to { stroke-dashoffset: 0; } }
+                    </style>
                   </defs>`;
+                let idx = 0;
                 for (let s = 0; s < strokesPerBundle; s++) {
                   const offset = (s - (strokesPerBundle - 1) / 2) * brushSpread;
                   const xoL = upperLeftTarget + offset;
                   const cp1xL = cx + (xoL - cx) * 0.35;
-                  svgContent += `<path d="M ${cx},78 C ${cp1xL},56 ${xoL},30 ${xoL},0" fill="none" stroke="url(#lineFlow)" stroke-width="${sw}" filter="url(#lineGlow)" />`;
+                  const delayL = (0.08 * idx).toFixed(2);
+                  svgContent += `<path d="M ${cx},78 C ${cp1xL},56 ${xoL},30 ${xoL},0" fill="none" stroke="url(#lineFlow)" stroke-width="${sw}" filter="url(#lineGlow)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="animation:drawBlue 1.2s ease-out ${delayL}s forwards" />`;
+                  idx++;
                   const xoR = upperRightTarget + offset;
                   const cp1xR = cx + (xoR - cx) * 0.35;
-                  svgContent += `<path d="M ${cx},78 C ${cp1xR},56 ${xoR},30 ${xoR},0" fill="none" stroke="url(#lineFlow)" stroke-width="${sw}" filter="url(#lineGlow)" />`;
+                  const delayR = (0.08 * idx).toFixed(2);
+                  svgContent += `<path d="M ${cx},78 C ${cp1xR},56 ${xoR},30 ${xoR},0" fill="none" stroke="url(#lineFlow)" stroke-width="${sw}" filter="url(#lineGlow)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="animation:drawBlue 1.2s ease-out ${delayR}s forwards" />`;
+                  idx++;
                 }
                 return svgContent;
               })() }}
@@ -257,9 +265,13 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                         <feGaussianBlur stdDeviation="${blurDev}" result="blur" />
                         <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                       </filter>
+                      <style>
+                        @keyframes drawGold { to { stroke-dashoffset: 0; } }
+                      </style>
                     </defs>`;
-                  arcPaths.forEach(d => {
-                    svg += `<path d="${d}" fill="none" stroke="url(#ftGoldGrad)" stroke-width="${sw}" filter="url(#ftGoldGlow)" />`;
+                  arcPaths.forEach((d, i) => {
+                    const delay = (0.08 * i).toFixed(2);
+                    svg += `<path d="${d}" fill="none" stroke="url(#ftGoldGrad)" stroke-width="${sw}" filter="url(#ftGoldGlow)" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="animation:drawGold 1.2s ease-out ${delay}s forwards" />`;
                   });
                   return svg;
                 })() }}

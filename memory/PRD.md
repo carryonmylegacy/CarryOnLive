@@ -85,6 +85,7 @@ A full-stack estate planning application allowing benefactors to manage digital 
   - Upper blue arcs (estates → benefactor) and lower gold arcs (benefactor → beneficiaries) now mirror each other
   - Branch centers of mass aligned with 2-column node layout centers (25%/75%)
   - No vertical branches sticking up from the middle (control point shift = 0.35)
+  - Progressive draw animation on load: `stroke-dashoffset` keyframes with 80ms stagger between strokes
   - Uses `dangerouslySetInnerHTML` for SVG content to bypass platform Babel plugin wrapping dynamic JSX in `<span>` elements
   - Applied same fix to UsersTab.js admin graph views
 

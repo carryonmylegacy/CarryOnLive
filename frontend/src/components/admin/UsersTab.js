@@ -727,15 +727,23 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                           <feGaussianBlur stdDeviation="2.5" result="blur" />
                           <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                         </filter>
+                        <style>
+                          @keyframes drawPurple { to { stroke-dashoffset: 0; } }
+                        </style>
                       </defs>`;
+                      let idx = 0;
                       for (let i = 0; i < strokesPerBundle; i++) {
                         const offset = (i - (strokesPerBundle - 1) / 2) * spread;
                         const xoL = leftTarget + offset;
                         const cp1xL = cx + (xoL - cx) * 0.35;
-                        s += `<path d="M ${cx},0 C ${cp1xL},22 ${xoL},48 ${xoL},78" fill="none" stroke="url(#${gradId})" stroke-width="1.2" filter="url(#${filtId})" />`;
+                        const delayL = (0.08 * idx).toFixed(2);
+                        s += `<path d="M ${cx},0 C ${cp1xL},22 ${xoL},48 ${xoL},78" fill="none" stroke="url(#${gradId})" stroke-width="1.2" filter="url(#${filtId})" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="animation:drawPurple 1.2s ease-out ${delayL}s forwards" />`;
+                        idx++;
                         const xoR = rightTarget + offset;
                         const cp1xR = cx + (xoR - cx) * 0.35;
-                        s += `<path d="M ${cx},0 C ${cp1xR},22 ${xoR},48 ${xoR},78" fill="none" stroke="url(#${gradId})" stroke-width="1.2" filter="url(#${filtId})" />`;
+                        const delayR = (0.08 * idx).toFixed(2);
+                        s += `<path d="M ${cx},0 C ${cp1xR},22 ${xoR},48 ${xoR},78" fill="none" stroke="url(#${gradId})" stroke-width="1.2" filter="url(#${filtId})" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="animation:drawPurple 1.2s ease-out ${delayR}s forwards" />`;
+                        idx++;
                       }
                       return s;
                     })();
@@ -844,15 +852,23 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                         <feGaussianBlur stdDeviation="2.5" result="blur" />
                         <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                       </filter>
+                      <style>
+                        @keyframes drawAdminGold { to { stroke-dashoffset: 0; } }
+                      </style>
                     </defs>`;
+                    let idx = 0;
                     for (let i = 0; i < strokesPerBundle; i++) {
                       const offset = (i - (strokesPerBundle - 1) / 2) * spread;
                       const xoL = leftTarget + offset;
                       const cp1xL = cx + (xoL - cx) * 0.35;
-                      s += `<path d="M ${cx},0 C ${cp1xL},22 ${xoL},48 ${xoL},78" fill="none" stroke="url(#${gradId})" stroke-width="1.2" filter="url(#${filtId})" />`;
+                      const delayL = (0.08 * idx).toFixed(2);
+                      s += `<path d="M ${cx},0 C ${cp1xL},22 ${xoL},48 ${xoL},78" fill="none" stroke="url(#${gradId})" stroke-width="1.2" filter="url(#${filtId})" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="animation:drawAdminGold 1.2s ease-out ${delayL}s forwards" />`;
+                      idx++;
                       const xoR = rightTarget + offset;
                       const cp1xR = cx + (xoR - cx) * 0.35;
-                      s += `<path d="M ${cx},0 C ${cp1xR},22 ${xoR},48 ${xoR},78" fill="none" stroke="url(#${gradId})" stroke-width="1.2" filter="url(#${filtId})" />`;
+                      const delayR = (0.08 * idx).toFixed(2);
+                      s += `<path d="M ${cx},0 C ${cp1xR},22 ${xoR},48 ${xoR},78" fill="none" stroke="url(#${gradId})" stroke-width="1.2" filter="url(#${filtId})" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="animation:drawAdminGold 1.2s ease-out ${delayR}s forwards" />`;
+                      idx++;
                     }
                     return s;
                   })();
