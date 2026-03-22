@@ -80,12 +80,12 @@ A full-stack estate planning application allowing benefactors to manage digital 
 ## P0/P1/P2 Prioritized Backlog
 
 ### P0
-- **SVG Family Tree Visual Overhaul**: ✅ COMPLETED (Session 17)
+- **SVG Family Tree Visual Overhaul**: ✅ COMPLETED (Session 17+18)
   - Replaced rigid vertical/straight SVG connector lines with dynamic symmetric brush-stroke Bezier curves
   - Upper blue arcs (estates → benefactor) and lower gold arcs (benefactor → beneficiaries) now mirror each other
   - Branch centers of mass aligned with 2-column node layout centers (25%/75%)
   - No vertical branches sticking up from the middle (control point shift = 0.35)
-  - Scroll-triggered light pulse animation: bright highlights travel along strands (estates→Pete upper, Pete→beneficiaries lower) via `stroke-dashoffset` + `pathLength`, triggered by IntersectionObserver on each page visit
+  - **Fill-and-Flash Scroll Animation** (Session 18): Replaced traveling pulse with permanent fill. Base strokes subdued (30% opacity), overlay strokes progressively fill top→bottom via `stroke-dasharray="1"` + `stroke-dashoffset: 1→0` with `forwards`. Upper blue fills first (~1.1s), flash circle at convergence point, then gold origin flash, lower gold fills (~1.5s delay + 1.1s), flash circles at both endpoints. Branches stay fully illuminated permanently. Resets on component unmount/remount.
   - Uses `dangerouslySetInnerHTML` for SVG content to bypass platform Babel plugin wrapping dynamic JSX in `<span>` elements
   - Applied same fix to UsersTab.js admin graph views
 

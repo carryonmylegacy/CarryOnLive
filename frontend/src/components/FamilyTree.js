@@ -186,8 +186,8 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               dangerouslySetInnerHTML={{ __html: (() => {
                 const gradColor1 = isLight ? '#3B82F6' : '#60A5FA';
                 const gradColor2 = isLight ? '#2563EB' : '#93C5FD';
-                const gradOp1 = isLight ? 0.6 : 0.5;
-                const gradOp2 = isLight ? 0.2 : 0.12;
+                const gradOp1 = isLight ? 0.4 : 0.3;
+                const gradOp2 = isLight ? 0.12 : 0.07;
                 const blurDev = isLight ? 2 : 2.5;
                 const sw = isLight ? 1.5 : 1.2;
                 const lightColor = isLight ? 'rgba(100,160,255,0.9)' : 'rgba(180,210,255,0.85)';
@@ -205,7 +205,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                       <feGaussianBlur stdDeviation="4" result="blur" />
                       <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                     </filter>
-                    ${lightActive ? '<style>@keyframes lightTravelDown { from { stroke-dashoffset: 1; } to { stroke-dashoffset: -0.2; } }</style>' : ''}
+                    ${lightActive ? '<style>@keyframes fillBranchBlue { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } } @keyframes flashGlow { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }</style>' : ''}
                   </defs>`;
                 for (let s = 0; s < strokesPerBundle; s++) {
                   const offset = (s - (strokesPerBundle - 1) / 2) * brushSpread;
@@ -222,15 +222,16 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                     const offset = (s - (strokesPerBundle - 1) / 2) * brushSpread;
                     const xoL = upperLeftTarget + offset;
                     const cp1xL = cx + (xoL - cx) * 0.35;
-                    const delayL = (0.06 * idx).toFixed(2);
-                    svgContent += `<path d="M ${xoL},0 C ${xoL},30 ${cp1xL},56 ${cx},78" fill="none" stroke="${lightColor}" stroke-width="2" pathLength="1" stroke-dasharray="0.15 0.85" stroke-dashoffset="1" filter="url(#lightPulseBlue)" style="animation:lightTravelDown 1.4s ease-in-out ${delayL}s forwards" />`;
+                    const delayL = (0.04 * idx).toFixed(2);
+                    svgContent += `<path d="M ${xoL},0 C ${xoL},30 ${cp1xL},56 ${cx},78" fill="none" stroke="${lightColor}" stroke-width="2.5" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" filter="url(#lightPulseBlue)" style="animation:fillBranchBlue 1.1s ease-in-out ${delayL}s forwards" />`;
                     idx++;
                     const xoR = upperRightTarget + offset;
                     const cp1xR = cx + (xoR - cx) * 0.35;
-                    const delayR = (0.06 * idx).toFixed(2);
-                    svgContent += `<path d="M ${xoR},0 C ${xoR},30 ${cp1xR},56 ${cx},78" fill="none" stroke="${lightColor}" stroke-width="2" pathLength="1" stroke-dasharray="0.15 0.85" stroke-dashoffset="1" filter="url(#lightPulseBlue)" style="animation:lightTravelDown 1.4s ease-in-out ${delayR}s forwards" />`;
+                    const delayR = (0.04 * idx).toFixed(2);
+                    svgContent += `<path d="M ${xoR},0 C ${xoR},30 ${cp1xR},56 ${cx},78" fill="none" stroke="${lightColor}" stroke-width="2.5" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" filter="url(#lightPulseBlue)" style="animation:fillBranchBlue 1.1s ease-in-out ${delayR}s forwards" />`;
                     idx++;
                   }
+                  svgContent += `<circle cx="${cx}" cy="76" r="10" fill="${lightColor}" opacity="0" filter="url(#lightPulseBlue)" style="animation:flashGlow 0.35s ease-in-out 1.1s" />`;
                 }
                 return svgContent;
               })() }}
@@ -292,8 +293,8 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   let svg = `
                     <defs>
                       <linearGradient id="ftGoldGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="${goldStart}" stop-opacity="${isLight ? 0.6 : 0.5}" />
-                        <stop offset="100%" stop-color="${goldEnd}" stop-opacity="${isLight ? 0.2 : 0.12}" />
+                        <stop offset="0%" stop-color="${goldStart}" stop-opacity="${isLight ? 0.4 : 0.3}" />
+                        <stop offset="100%" stop-color="${goldEnd}" stop-opacity="${isLight ? 0.12 : 0.07}" />
                       </linearGradient>
                       <filter id="ftGoldGlow" x="-50%" y="-50%" width="200%" height="200%">
                         <feGaussianBlur stdDeviation="${blurDev}" result="blur" />
@@ -303,17 +304,21 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                         <feGaussianBlur stdDeviation="4" result="blur" />
                         <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                       </filter>
-                      ${lightActive ? '<style>@keyframes lightTravelGold { from { stroke-dashoffset: 1; } to { stroke-dashoffset: -0.2; } }</style>' : ''}
+                      ${lightActive ? '<style>@keyframes fillBranchGold { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } } @keyframes flashGlowGold { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }</style>' : ''}
                     </defs>`;
                   arcPaths.forEach(d => {
                     svg += `<path d="${d}" fill="none" stroke="url(#ftGoldGrad)" stroke-width="${sw}" filter="url(#ftGoldGlow)" />`;
                   });
                   if (lightActive) {
-                    const baseDelay = 1.0;
+                    const baseDelay = 1.5;
+                    svg += `<circle cx="${cx}" cy="2" r="10" fill="${lightColor}" opacity="0" filter="url(#lightPulseGold)" style="animation:flashGlowGold 0.3s ease-in-out ${(baseDelay - 0.15).toFixed(2)}s" />`;
                     arcPaths.forEach((d, i) => {
-                      const delay = (baseDelay + 0.06 * i).toFixed(2);
-                      svg += `<path d="${d}" fill="none" stroke="${lightColor}" stroke-width="2" pathLength="1" stroke-dasharray="0.15 0.85" stroke-dashoffset="1" filter="url(#lightPulseGold)" style="animation:lightTravelGold 1.4s ease-in-out ${delay}s forwards" />`;
+                      const delay = (baseDelay + 0.04 * i).toFixed(2);
+                      svg += `<path d="${d}" fill="none" stroke="${lightColor}" stroke-width="2.5" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" filter="url(#lightPulseGold)" style="animation:fillBranchGold 1.1s ease-in-out ${delay}s forwards" />`;
                     });
+                    const flashDelay = (baseDelay + 0.04 * (arcPaths.length - 1) + 1.0).toFixed(2);
+                    svg += `<circle cx="${leftTarget}" cy="76" r="10" fill="${lightColor}" opacity="0" filter="url(#lightPulseGold)" style="animation:flashGlowGold 0.35s ease-in-out ${flashDelay}s" />`;
+                    svg += `<circle cx="${rightTarget}" cy="76" r="10" fill="${lightColor}" opacity="0" filter="url(#lightPulseGold)" style="animation:flashGlowGold 0.35s ease-in-out ${flashDelay}s" />`;
                   }
                   return svg;
                 })() }}
