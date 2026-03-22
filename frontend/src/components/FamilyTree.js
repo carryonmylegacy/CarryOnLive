@@ -112,10 +112,14 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
         // Each estate node is ~110px wide with gap. Calculate positions for SVG lines.
         // We lay out estates in rows of 3 on mobile. Each line flows from its
         // approximate horizontal position down to the center bottom.
-        const cols = Math.min(n, 3);
-        const vb = 400; // viewBox width
-        const cx = vb / 2;
-        const svgH = n <= 3 ? 50 : 60;
+        const vbW = 300;
+        const vbH = 80;
+        const cx = vbW / 2;
+        const svgH = Math.min(100, 60 + n * 10);
+        const strokesPerBundle = 5;
+        const brushSpread = 4;
+        const upperLeftTarget = vbW * 0.25;
+        const upperRightTarget = vbW * 0.75;
 
         return (
           <div className="relative pb-2">
@@ -157,52 +161,39 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
             {/* Converging lines SVG — blue glow brush-stroke bundles mirroring lower gold arcs */}
             <svg
               className="w-full pointer-events-none"
-              viewBox={`0 0 ${vb} 80`}
+              viewBox={`0 0 ${vbW} ${vbH}`}
               preserveAspectRatio="xMidYMid meet"
               style={{ height: svgH, position: 'relative', zIndex: 1 }}
-            >
-              <defs>
-                <linearGradient id="lineFlow" x1="0" y1="1" x2="0" y2="0">
-                  <stop offset="0%" stopColor={isLight ? '#3B82F6' : '#60A5FA'} stopOpacity={isLight ? 0.5 : 0.4} />
-                  <stop offset="100%" stopColor={isLight ? '#2563EB' : '#93C5FD'} stopOpacity={isLight ? 0.15 : 0.08} />
-                </linearGradient>
-                <filter id="lineGlow">
-                  <feGaussianBlur stdDeviation={isLight ? '2' : '2.5'} result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
-              {(() => {
-                // Group estates into left and right columns
-                const leftTarget = vb * 0.25;
-                const rightTarget = vb * 0.75;
-                const leftCount = Math.ceil(n / 2);
-                const rightCount = Math.floor(n / 2);
-                const lines = [];
-                const strokeSpread = 5;
-                // Left bundle — fans from Pete (cx,78) up to left column (leftTarget,0)
-                for (let s = 0; s < leftCount; s++) {
-                  const offset = (s - (leftCount - 1) / 2) * strokeSpread;
-                  const xo = leftTarget + offset;
-                  lines.push(
-                    <path key={`l-${s}`} d={`M ${cx},78 C ${cx},56 ${xo},30 ${xo},0`}
-                      fill="none" stroke="url(#lineFlow)" strokeWidth={isLight ? '1' : '0.7'} filter="url(#lineGlow)" />
-                  );
+              dangerouslySetInnerHTML={{ __html: (() => {
+                const gradColor1 = isLight ? '#3B82F6' : '#60A5FA';
+                const gradColor2 = isLight ? '#2563EB' : '#93C5FD';
+                const gradOp1 = isLight ? 0.6 : 0.5;
+                const gradOp2 = isLight ? 0.2 : 0.12;
+                const blurDev = isLight ? 2 : 2.5;
+                const sw = isLight ? 1.5 : 1.2;
+                let svgContent = `
+                  <defs>
+                    <linearGradient id="lineFlow" x1="0" y1="1" x2="0" y2="0">
+                      <stop offset="0%" stop-color="${gradColor1}" stop-opacity="${gradOp1}" />
+                      <stop offset="100%" stop-color="${gradColor2}" stop-opacity="${gradOp2}" />
+                    </linearGradient>
+                    <filter id="lineGlow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur stdDeviation="${blurDev}" result="blur" />
+                      <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                    </filter>
+                  </defs>`;
+                for (let s = 0; s < strokesPerBundle; s++) {
+                  const offset = (s - (strokesPerBundle - 1) / 2) * brushSpread;
+                  const xoL = upperLeftTarget + offset;
+                  const cp1xL = cx + (xoL - cx) * 0.35;
+                  svgContent += `<path d="M ${cx},78 C ${cp1xL},56 ${xoL},30 ${xoL},0" fill="none" stroke="url(#lineFlow)" stroke-width="${sw}" filter="url(#lineGlow)" />`;
+                  const xoR = upperRightTarget + offset;
+                  const cp1xR = cx + (xoR - cx) * 0.35;
+                  svgContent += `<path d="M ${cx},78 C ${cp1xR},56 ${xoR},30 ${xoR},0" fill="none" stroke="url(#lineFlow)" stroke-width="${sw}" filter="url(#lineGlow)" />`;
                 }
-                // Right bundle — fans from Pete (cx,78) up to right column (rightTarget,0)
-                for (let s = 0; s < rightCount; s++) {
-                  const offset = (s - (rightCount - 1) / 2) * strokeSpread;
-                  const xo = rightTarget + offset;
-                  lines.push(
-                    <path key={`r-${s}`} d={`M ${cx},78 C ${cx},56 ${xo},30 ${xo},0`}
-                      fill="none" stroke="url(#lineFlow)" strokeWidth={isLight ? '1' : '0.7'} filter="url(#lineGlow)" />
-                  );
-                }
-                return lines;
-              })()}
-            </svg>
+                return svgContent;
+              })() }}
+            />
           </div>
         );
       })()}
@@ -226,48 +217,53 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
           const vbH = 80;
           const cx = vbW / 2;
           const arcPaths = [];
-          // Column-aligned bundles — strokes per column = nodes in that column
           const leftTarget = vbW * 0.25;
           const rightTarget = vbW * 0.75;
-          const leftCount = Math.ceil(n / 2);
-          const rightCount = Math.floor(n / 2);
-          const strokeSpread = 5;
-          // Left bundle — fans from Pete (cx,0) down to left column (leftTarget,78)
-          for (let s = 0; s < leftCount; s++) {
-            const offset = (s - (leftCount - 1) / 2) * strokeSpread;
-            arcPaths.push(`M ${cx},0 C ${cx},22 ${leftTarget + offset},48 ${leftTarget + offset},78`);
+          const strokesPerBundle = 5;
+          const spread = 4;
+          // Left bundle — fans from center (cx,0) down to left column
+          for (let s = 0; s < strokesPerBundle; s++) {
+            const offset = (s - (strokesPerBundle - 1) / 2) * spread;
+            const xo = leftTarget + offset;
+            const cp1x = cx + (xo - cx) * 0.35;
+            arcPaths.push(`M ${cx},0 C ${cp1x},22 ${xo},48 ${xo},78`);
           }
-          // Right bundle — fans from Pete (cx,0) down to right column (rightTarget,78)
-          for (let s = 0; s < rightCount; s++) {
-            const offset = (s - (rightCount - 1) / 2) * strokeSpread;
-            arcPaths.push(`M ${cx},0 C ${cx},22 ${rightTarget + offset},48 ${rightTarget + offset},78`);
+          // Right bundle — mirrors left, fans to right column
+          for (let s = 0; s < strokesPerBundle; s++) {
+            const offset = (s - (strokesPerBundle - 1) / 2) * spread;
+            const xo = rightTarget + offset;
+            const cp1x = cx + (xo - cx) * 0.35;
+            arcPaths.push(`M ${cx},0 C ${cp1x},22 ${xo},48 ${xo},78`);
           }
           const goldStart = isLight ? '#b8860b' : '#d4af37';
           const goldEnd = isLight ? '#d4af37' : '#FFD700';
-          const lowerSvgH = n <= 2 ? 80 : Math.min(140, 60 + n * 18);
+          const lowerSvgH = Math.min(100, 60 + n * 10);
 
           return (
           <div className="w-full" style={{ maxWidth: 340 }} data-testid="tree-spine">
             {/* SVG — symmetric with upper */}
             <div className="flex justify-center" style={{ marginTop: -2, marginBottom: -8, position: 'relative', zIndex: 0 }}>
-              <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: lowerSvgH }} className="overflow-visible">
-                <defs>
-                  <linearGradient id="ftGoldGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={goldStart} stopOpacity={isLight ? 0.5 : 0.4} />
-                    <stop offset="100%" stopColor={goldEnd} stopOpacity={isLight ? 0.15 : 0.08} />
-                  </linearGradient>
-                  <filter id="ftGoldGlow">
-                    <feGaussianBlur stdDeviation={isLight ? '2' : '2.5'} result="blur" />
-                    <feMerge>
-                      <feMergeNode in="blur" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                </defs>
-                {arcPaths.map((d, i) => (
-                  <path key={i} d={d} fill="none" stroke="url(#ftGoldGrad)" strokeWidth={isLight ? '1' : '0.7'} filter="url(#ftGoldGlow)" />
-                ))}
-              </svg>
+              <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: lowerSvgH }} className="overflow-visible"
+                dangerouslySetInnerHTML={{ __html: (() => {
+                  const blurDev = isLight ? 2 : 2.5;
+                  const sw = isLight ? 1.5 : 1.2;
+                  let svg = `
+                    <defs>
+                      <linearGradient id="ftGoldGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="${goldStart}" stop-opacity="${isLight ? 0.6 : 0.5}" />
+                        <stop offset="100%" stop-color="${goldEnd}" stop-opacity="${isLight ? 0.2 : 0.12}" />
+                      </linearGradient>
+                      <filter id="ftGoldGlow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation="${blurDev}" result="blur" />
+                        <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                      </filter>
+                    </defs>`;
+                  arcPaths.forEach(d => {
+                    svg += `<path d="${d}" fill="none" stroke="url(#ftGoldGrad)" stroke-width="${sw}" filter="url(#ftGoldGlow)" />`;
+                  });
+                  return svg;
+                })() }}
+              />
             </div>
 
             {/* Beneficiary grid — 2 columns */}

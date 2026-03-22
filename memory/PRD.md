@@ -79,6 +79,15 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## P0/P1/P2 Prioritized Backlog
 
+### P0
+- **SVG Family Tree Visual Overhaul**: ✅ COMPLETED (Session 17)
+  - Replaced rigid vertical/straight SVG connector lines with dynamic symmetric brush-stroke Bezier curves
+  - Upper blue arcs (estates → benefactor) and lower gold arcs (benefactor → beneficiaries) now mirror each other
+  - Branch centers of mass aligned with 2-column node layout centers (25%/75%)
+  - No vertical branches sticking up from the middle (control point shift = 0.35)
+  - Uses `dangerouslySetInnerHTML` for SVG content to bypass platform Babel plugin wrapping dynamic JSX in `<span>` elements
+  - Applied same fix to UsersTab.js admin graph views
+
 ### P1
 - **Share Extension Setup**: Re-add the Share Extension target in Xcode per `/app/memory/SHARE_EXTENSION_SETUP.md`
 - **iOS Live Updates**: Test Capgo OTA update flow end-to-end
@@ -102,3 +111,4 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **Voice Biometrics**: Completely removed. Do not reintroduce.
 - **Eyeball Icons**: Any new password inputs MUST include `onMouseDown={(e) => e.preventDefault()}`.
 - **Downloads**: All PDF downloads must use `/app/frontend/src/utils/downloadFile.js` for cross-platform compatibility.
+- **SVG in JSX**: Platform's Babel plugin wraps dynamic JSX expressions (`{arr.map(...)}`, `{(() => { ... })()}`) inside SVG elements in a `<span>`, breaking SVG rendering. Use `dangerouslySetInnerHTML` for any dynamic SVG content.
