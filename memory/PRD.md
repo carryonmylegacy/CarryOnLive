@@ -21,7 +21,14 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
-### Completed (March 22, 2026 — Session 15: EGA Real-Time Updates + Cross-Platform Downloads)
+### Completed (March 22, 2026 — Session 15b: Single-Session Enforcement + Data Freshness)
+- **Single-Session Login Blocking**: Non-admin users are now blocked from logging in on a second device while an active session exists. Clear "Signed in elsewhere" warning shown instead of generic "Invalid credentials." A "Sign In Here Instead" button allows force-login (ends the other session). Sessions older than 24h are treated as stale and don't block.
+- **Logout Clears Session**: `POST /api/auth/logout` now clears `active_session_id` from the user document, allowing clean re-login from any device.
+- **API Cache Cleared on Login/Logout**: `clearCache()` from `apiCache.js` is called on every login and logout to guarantee fresh data from MongoDB on the next session.
+- **Dashboard/Checklist Polling Stability**: Replaced `getAuthHeaders` in useEffect dependency arrays with `getAuthHeadersRef` ref pattern to prevent effect re-creation on every render.
+- **IAC Feedback Visibility**: Replaced tiny `text-xs` green badge with a prominent summary card showing "X new items added" (green) + "Y duplicates skipped" (amber). Added toast notifications for immediate visibility. Duplicate titles available via collapsible `<details>`.
+
+### Completed (March 22, 2026 — Session 15a: EGA Real-Time Updates + Cross-Platform Downloads)
 - **EGA IAC Duplicate Detection**: When generating IAC items, the system now tracks and reports duplicates. The `action_result` includes `duplicates_skipped` count and `duplicate_titles` list. The AI response summary shows how many items were skipped as duplicates.
 - **EGA IAC Real-Time Polling**: New `ega_tasks` collection tracks IAC generation status (running/completed/error). New `GET /api/guardian/iac-task-status` endpoint returns the latest task status for the user's estate.
 - **Dashboard Real-Time Updates**: DashboardPage polls `/api/guardian/iac-task-status` every 4 seconds. Shows a gold banner "Estate Guardian is generating IAC items" when EGA is running. Auto-refreshes estate data (stats, checklist counts) when generation completes.
