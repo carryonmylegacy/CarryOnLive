@@ -186,16 +186,15 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                     ? cx
                     : 60 + (col / (actual - 1)) * (vb - 120);
                   const y0 = row * (30 / rows);
-                  // Brush-stroke bundle: 3 slightly offset curves per estate
+                  // Brush-stroke bundle: 3 curves that fan at the estate end, converge at benefactor center
                   const strokes = [-1, 0, 1];
                   strokes.forEach((s, si) => {
-                    const spread = 6;
-                    const xo = x + s * spread;
-                    const cxo = cx + s * (spread * 0.3);
+                    const spread = 8;
+                    const xo = x + s * spread; // fan out at estate end
                     lines.push(
                       <path
                         key={`${i}-${si}`}
-                        d={`M ${xo},${y0} C ${xo},${y0 + 30} ${cxo},55 ${cx},78`}
+                        d={`M ${xo},${y0} C ${xo},${y0 + 30} ${cx},55 ${cx},78`}
                         fill="none"
                         stroke="url(#lineFlow)"
                         strokeWidth={isLight ? '1' : '0.7'}
@@ -235,14 +234,12 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
             const isOddLast = n % 2 !== 0 && i === n - 1;
             const col = i % cols;
             const endX = isOddLast ? cx : (col === 0 ? vbW * 0.2 : vbW * 0.8);
-            // Brush-stroke bundle: 3 curves per beneficiary
+            // Brush-stroke bundle: 3 curves that fan at beneficiary end, converge at benefactor
             const strokes = [-1, 0, 1];
             strokes.forEach(s => {
-              const spread = 6;
-              const cpX = cx + (endX - cx) * 0.35 + s * spread;
-              const endXo = endX + s * (spread * 0.5);
-              const cxo = cx + s * (spread * 0.3);
-              arcPaths.push(`M ${cx},0 C ${cxo},${vbH * 0.35} ${cpX},${vbH * 0.6} ${endXo},${vbH}`);
+              const spread = 8;
+              const endXo = endX + s * spread;
+              arcPaths.push(`M ${cx},0 C ${cx},${vbH * 0.35} ${endXo},${vbH * 0.6} ${endXo},${vbH}`);
             });
           }
           const goldStart = isLight ? '#b8860b' : '#d4af37';
@@ -251,7 +248,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
           return (
           <div className="w-full" style={{ maxWidth: 340 }} data-testid="tree-spine">
             {/* SVG curved arc bundles fanning from benefactor — gold glow */}
-            <div className="flex justify-center" style={{ marginTop: -4, marginBottom: -8, position: 'relative', zIndex: 0 }}>
+            <div className="flex justify-center" style={{ marginTop: 6, marginBottom: -6, position: 'relative', zIndex: 0 }}>
               <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: 60 }} className="overflow-visible">
                 <defs>
                   <linearGradient id="ftGoldGrad" x1="0" y1="0" x2="0" y2="1">

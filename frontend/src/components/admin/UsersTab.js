@@ -716,16 +716,14 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                       const endX = isSingle ? cx : (40 + (i / (n - 1)) * (vbW - 80));
                       const strokes = [-1, 0, 1];
                       strokes.forEach(s => {
-                        const spread = 5;
-                        const cpX = cx + (endX - cx) * 0.35 + s * spread;
-                        const endXo = endX + s * (spread * 0.4);
-                        const cxo = cx + s * (spread * 0.3);
-                        arcPaths.push(`M ${cx},0 C ${cxo},${vbH * 0.35} ${cpX},${vbH * 0.6} ${endXo},${vbH}`);
+                        const spread = 8;
+                        const endXo = endX + s * spread;
+                        arcPaths.push(`M ${cx},0 C ${cx},${vbH * 0.35} ${endXo},${vbH * 0.6} ${endXo},${vbH}`);
                       });
                     }
                     return (
                     <div className="flex flex-col items-center w-full">
-                      <div className="flex justify-center" style={{ marginTop: -2, marginBottom: -4 }}>
+                      <div className="flex justify-center" style={{ marginTop: 4, marginBottom: -4 }}>
                         <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '90%', height: 44 }} className="overflow-visible">
                           <defs>
                             <linearGradient id={`bg-${benUser.id}`} x1="0" y1="0" x2="0" y2="1">
@@ -829,17 +827,15 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                     const endX = isSingle ? cx : (30 + (i / (maxArcs - 1)) * (vbW - 60));
                     const strokes = [-1, 0, 1];
                     strokes.forEach(s => {
-                      const spread = 5;
-                      const cpX = cx + (endX - cx) * 0.35 + s * spread;
-                      const endXo = endX + s * (spread * 0.4);
-                      const cxo = cx + s * (spread * 0.3);
-                      arcPaths.push(`M ${cx},0 C ${cxo},${vbH * 0.35} ${cpX},${vbH * 0.6} ${endXo},${vbH}`);
+                      const spread = 8;
+                      const endXo = endX + s * spread;
+                      arcPaths.push(`M ${cx},0 C ${cx},${vbH * 0.35} ${endXo},${vbH * 0.6} ${endXo},${vbH}`);
                     });
                   }
 
                   return (
                   <div className="flex flex-col items-center w-full">
-                    <div className="flex justify-center" style={{ marginTop: -2, marginBottom: -4 }}>
+                    <div className="flex justify-center" style={{ marginTop: 4, marginBottom: -4 }}>
                       <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '90%', height: 44 }} className="overflow-visible">
                         <defs>
                           <linearGradient id={`ag-${key}`} x1="0" y1="0" x2="0" y2="1">
