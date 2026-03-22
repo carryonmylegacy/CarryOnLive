@@ -178,13 +178,14 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
       {benEstates.length > 0 && (() => {
         const n = benEstates.length;
         const vbW = 300;
-        const vbH = 50;
+        const vbH = 60;
         const cx = vbW / 2;
-        const svgH = Math.min(60, 30 + n * 7);
-        const strokesPerBundle = 8;
-        const brushSpread = 2.5;
-        const upperLeftTarget = vbW * 0.25;
-        const upperRightTarget = vbW * 0.75;
+        const svgH = Math.min(65, 32 + n * 7);
+        const leftCol = vbW * 0.25;
+        const rightCol = vbW * 0.75;
+        const strandsPerNode = 3;
+        const nodeSpread = 2.5;
+        const numRows = Math.ceil(n / 2);
 
         return (
           <div className="relative pb-2">
@@ -232,15 +233,12 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               dangerouslySetInnerHTML={{ __html: (() => {
                 const gradColor1 = isLight ? '#3B82F6' : '#60A5FA';
                 const gradColor2 = isLight ? '#2563EB' : '#93C5FD';
-                const gradOp1 = isLight ? 0.25 : 0.18;
-                const gradOp2 = isLight ? 0.08 : 0.04;
+                const gradOp1 = isLight ? 0.18 : 0.12;
+                const gradOp2 = isLight ? 0.06 : 0.03;
                 const blurDev = isLight ? 1.5 : 2;
-                const sw = isLight ? 0.7 : 0.5;
-                const lightColor = isLight ? 'rgba(100,160,255,0.45)' : 'rgba(160,200,255,0.4)';
-                const overlayW = isLight ? 1.0 : 0.8;
-                const yBot = vbH - 2;
-                const yMid = Math.round(vbH * 0.7);
-                const yUp = Math.round(vbH * 0.375);
+                const sw = isLight ? 0.6 : 0.5;
+                const lightColor = isLight ? 'rgba(100,160,255,0.3)' : 'rgba(160,200,255,0.25)';
+                const overlayW = isLight ? 0.8 : 0.7;
                 let svgContent = `
                   <defs>
                     <linearGradient id="lineFlow" x1="0" y1="1" x2="0" y2="0">
@@ -256,25 +254,30 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                       <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                     </filter>
                   </defs>`;
-                for (let s = 0; s < strokesPerBundle; s++) {
-                  const offset = (s - (strokesPerBundle - 1) / 2) * brushSpread;
-                  const xoL = upperLeftTarget + offset;
-                  const cp1xL = cx + (xoL - cx) * 0.35;
-                  svgContent += `<path d="M ${cx},${yBot} C ${cp1xL},${yMid} ${xoL},${yUp} ${xoL},0" fill="none" stroke="url(#lineFlow)" stroke-width="${sw}" filter="url(#lineGlow)" />`;
-                  const xoR = upperRightTarget + offset;
-                  const cp1xR = cx + (xoR - cx) * 0.35;
-                  svgContent += `<path d="M ${cx},${yBot} C ${cp1xR},${yMid} ${xoR},${yUp} ${xoR},0" fill="none" stroke="url(#lineFlow)" stroke-width="${sw}" filter="url(#lineGlow)" />`;
+                const allPaths = [];
+                for (let idx = 0; idx < n; idx++) {
+                  const row = Math.floor(idx / 2);
+                  const isLeft = idx % 2 === 0;
+                  const nodeX = isLeft ? leftCol : rightCol;
+                  const joinFrac = numRows <= 1 ? 0.5 : row / (numRows - 1);
+                  const joinY = vbH * 0.12 + joinFrac * vbH * 0.38;
+                  for (let s = 0; s < strandsPerNode; s++) {
+                    const nOff = (s - 1) * nodeSpread;
+                    const side = isLeft ? -1 : 1;
+                    const fOff = side * 3 + (s - 1) * 1.2 + (numRows > 1 ? (row - (numRows - 1) / 2) * 0.8 : 0);
+                    const sx = nodeX + nOff;
+                    const ex = cx + fOff;
+                    const d = `M ${sx.toFixed(1)},0 C ${sx.toFixed(1)},${(joinY * 0.35).toFixed(1)} ${cx},${(joinY * 0.7).toFixed(1)} ${cx},${joinY.toFixed(1)} C ${cx},${(joinY + (vbH - joinY) * 0.65).toFixed(1)} ${ex.toFixed(1)},${(vbH * 0.9).toFixed(1)} ${ex.toFixed(1)},${vbH}`;
+                    allPaths.push(d);
+                  }
                 }
-                for (let s = 0; s < strokesPerBundle; s++) {
-                  const offset = (s - (strokesPerBundle - 1) / 2) * brushSpread;
-                  const xoL = upperLeftTarget + offset;
-                  const cp1xL = cx + (xoL - cx) * 0.35;
-                  svgContent += `<path class="fill-path-blue" d="M ${xoL},0 C ${xoL},${yUp} ${cp1xL},${yMid} ${cx},${yBot}" fill="none" stroke="${lightColor}" stroke-width="${overlayW}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" filter="url(#lightPulseBlue)" />`;
-                  const xoR = upperRightTarget + offset;
-                  const cp1xR = cx + (xoR - cx) * 0.35;
-                  svgContent += `<path class="fill-path-blue" d="M ${xoR},0 C ${xoR},${yUp} ${cp1xR},${yMid} ${cx},${yBot}" fill="none" stroke="${lightColor}" stroke-width="${overlayW}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" filter="url(#lightPulseBlue)" />`;
-                }
-                svgContent += `<circle class="flash-blue" cx="${cx}" cy="${vbH-4}" r="6" fill="${lightColor}" opacity="0" filter="url(#lightPulseBlue)" />`;
+                allPaths.forEach(d => {
+                  svgContent += `<path d="${d}" fill="none" stroke="url(#lineFlow)" stroke-width="${sw}" filter="url(#lineGlow)" />`;
+                });
+                allPaths.forEach(d => {
+                  svgContent += `<path class="fill-path-blue" d="${d}" fill="none" stroke="${lightColor}" stroke-width="${overlayW}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" filter="url(#lightPulseBlue)" />`;
+                });
+                svgContent += `<circle class="flash-blue" cx="${cx}" cy="${vbH - 2}" r="6" fill="${lightColor}" opacity="0" filter="url(#lightPulseBlue)" />`;
                 return svgContent;
               })() }}
             />
@@ -298,33 +301,16 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
         {sortedBens.length > 0 && (() => {
           const n = sortedBens.length;
           const vbW = 300;
-          const vbH = 50;
+          const vbH = 60;
           const cx = vbW / 2;
-          const arcPaths = [];
-          const leftTarget = vbW * 0.25;
-          const rightTarget = vbW * 0.75;
-          const strokesPerBundle = 8;
-          const spread = 2.5;
-          const yCtrl = Math.round(vbH * 0.275);
-          const yMidL = Math.round(vbH * 0.6);
-          const yEndL = vbH - 2;
-          // Left bundle — fans from center (cx,0) down to left column
-          for (let s = 0; s < strokesPerBundle; s++) {
-            const offset = (s - (strokesPerBundle - 1) / 2) * spread;
-            const xo = leftTarget + offset;
-            const cp1x = cx + (xo - cx) * 0.35;
-            arcPaths.push(`M ${cx},0 C ${cp1x},${yCtrl} ${xo},${yMidL} ${xo},${yEndL}`);
-          }
-          // Right bundle — mirrors left, fans to right column
-          for (let s = 0; s < strokesPerBundle; s++) {
-            const offset = (s - (strokesPerBundle - 1) / 2) * spread;
-            const xo = rightTarget + offset;
-            const cp1x = cx + (xo - cx) * 0.35;
-            arcPaths.push(`M ${cx},0 C ${cp1x},${yCtrl} ${xo},${yMidL} ${xo},${yEndL}`);
-          }
+          const leftCol = vbW * 0.25;
+          const rightCol = vbW * 0.75;
+          const strandsPerNode = 3;
+          const nodeSpread = 2.5;
+          const numBenRows = Math.ceil(n / 2);
           const goldStart = isLight ? '#b8860b' : '#d4af37';
           const goldEnd = isLight ? '#d4af37' : '#FFD700';
-          const lowerSvgH = Math.min(60, 30 + n * 7);
+          const lowerSvgH = Math.min(65, 32 + n * 7);
 
           return (
           <div className="w-full" style={{ maxWidth: 340 }} data-testid="tree-spine">
@@ -333,14 +319,31 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: lowerSvgH }} className="overflow-visible"
                 dangerouslySetInnerHTML={{ __html: (() => {
                   const blurDev = isLight ? 1.5 : 2;
-                  const sw = isLight ? 0.7 : 0.5;
-                  const lightColor = isLight ? 'rgba(200,170,50,0.45)' : 'rgba(255,230,140,0.4)';
-                  const overlayW = isLight ? 1.0 : 0.8;
+                  const sw = isLight ? 0.6 : 0.5;
+                  const lightColor = isLight ? 'rgba(200,170,50,0.3)' : 'rgba(255,230,140,0.25)';
+                  const overlayW = isLight ? 0.8 : 0.7;
+                  const allPaths = [];
+                  for (let idx = 0; idx < n; idx++) {
+                    const row = Math.floor(idx / 2);
+                    const isLeft = idx % 2 === 0;
+                    const nodeX = isLeft ? leftCol : rightCol;
+                    const branchFrac = numBenRows <= 1 ? 0.5 : row / (numBenRows - 1);
+                    const branchY = vbH * 0.12 + branchFrac * vbH * 0.38;
+                    for (let s = 0; s < strandsPerNode; s++) {
+                      const nOff = (s - 1) * nodeSpread;
+                      const side = isLeft ? -1 : 1;
+                      const fOff = side * 3 + (s - 1) * 1.2 + (numBenRows > 1 ? (row - (numBenRows - 1) / 2) * 0.8 : 0);
+                      const sx = cx + fOff;
+                      const ex = nodeX + nOff;
+                      const d = `M ${sx.toFixed(1)},0 C ${sx.toFixed(1)},${(branchY * 0.1).toFixed(1)} ${cx},${(branchY * 0.35).toFixed(1)} ${cx},${branchY.toFixed(1)} C ${cx},${(branchY + (vbH - branchY) * 0.35).toFixed(1)} ${ex.toFixed(1)},${(branchY + (vbH - branchY) * 0.65).toFixed(1)} ${ex.toFixed(1)},${vbH}`;
+                      allPaths.push(d);
+                    }
+                  }
                   let svg = `
                     <defs>
                       <linearGradient id="ftGoldGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="${goldStart}" stop-opacity="${isLight ? 0.25 : 0.18}" />
-                        <stop offset="100%" stop-color="${goldEnd}" stop-opacity="${isLight ? 0.08 : 0.04}" />
+                        <stop offset="0%" stop-color="${goldStart}" stop-opacity="${isLight ? 0.18 : 0.12}" />
+                        <stop offset="100%" stop-color="${goldEnd}" stop-opacity="${isLight ? 0.06 : 0.03}" />
                       </linearGradient>
                       <filter id="ftGoldGlow" x="-50%" y="-50%" width="200%" height="200%">
                         <feGaussianBlur stdDeviation="${blurDev}" result="blur" />
@@ -351,15 +354,15 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                         <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                       </filter>
                     </defs>`;
-                  arcPaths.forEach(d => {
+                  allPaths.forEach(d => {
                     svg += `<path d="${d}" fill="none" stroke="url(#ftGoldGrad)" stroke-width="${sw}" filter="url(#ftGoldGlow)" />`;
                   });
                   svg += `<circle class="flash-gold-origin" cx="${cx}" cy="2" r="6" fill="${lightColor}" opacity="0" filter="url(#lightPulseGold)" />`;
-                  arcPaths.forEach(d => {
+                  allPaths.forEach(d => {
                     svg += `<path class="fill-path-gold" d="${d}" fill="none" stroke="${lightColor}" stroke-width="${overlayW}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" filter="url(#lightPulseGold)" />`;
                   });
-                  svg += `<circle class="flash-gold-end" cx="${leftTarget}" cy="${vbH-4}" r="6" fill="${lightColor}" opacity="0" filter="url(#lightPulseGold)" />`;
-                  svg += `<circle class="flash-gold-end" cx="${rightTarget}" cy="${vbH-4}" r="6" fill="${lightColor}" opacity="0" filter="url(#lightPulseGold)" />`;
+                  svg += `<circle class="flash-gold-end" cx="${leftCol}" cy="${vbH - 2}" r="6" fill="${lightColor}" opacity="0" filter="url(#lightPulseGold)" />`;
+                  svg += `<circle class="flash-gold-end" cx="${rightCol}" cy="${vbH - 2}" r="6" fill="${lightColor}" opacity="0" filter="url(#lightPulseGold)" />`;
                   return svg;
                 })() }}
               />
