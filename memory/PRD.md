@@ -80,13 +80,14 @@ A full-stack estate planning application allowing benefactors to manage digital 
 ## P0/P1/P2 Prioritized Backlog
 
 ### P0
-- **SVG Family Tree Visual Overhaul**: ✅ COMPLETED (Session 17+18)
+- **SVG Family Tree Visual Overhaul**: ✅ COMPLETED (Session 17+18+19)
   - Replaced rigid vertical/straight SVG connector lines with dynamic symmetric brush-stroke Bezier curves
   - Upper blue arcs (estates → benefactor) and lower gold arcs (benefactor → beneficiaries) now mirror each other
   - Branch centers of mass aligned with 2-column node layout centers (25%/75%)
   - No vertical branches sticking up from the middle (control point shift = 0.35)
-  - **Fill-and-Flash Scroll Animation** (Session 18): Replaced traveling pulse with permanent fill. Base strokes subdued (30% opacity), overlay strokes progressively fill top→bottom via `stroke-dasharray="1"` + `stroke-dashoffset: 1→0` with `forwards`. Upper blue fills first (~1.1s), flash circle at convergence point, then gold origin flash, lower gold fills (~1.5s delay + 1.1s), flash circles at both endpoints. Branches stay fully illuminated permanently. Resets on component unmount/remount.
-  - Uses `dangerouslySetInnerHTML` for SVG content to bypass platform Babel plugin wrapping dynamic JSX in `<span>` elements
+  - **Scroll-Linked Fill Animation** (Session 19): Replaced CSS keyframe animations with JS scroll handler controlling `stroke-dashoffset` per scroll position. Auto-detects scrollable ancestor. Upper blue fills first (0-250px scroll), gold origin flash, lower gold fills (175-375px range). Fill is ratcheted (never reverses). Stays permanently once filled. Resets on unmount/remount.
+  - **Visual refinements** (Session 19): 8 strands/bundle (was 5), thinner strokes (0.7px base, 1.0px overlay), reduced SVG height (vbH=50, was 80), toned-down brightness (~0.45 overlay opacity), smaller glow blur
+  - Uses `dangerouslySetInnerHTML` for SVG content to bypass Babel `<span>` wrapping
   - Applied same fix to UsersTab.js admin graph views
 
 ### P1
