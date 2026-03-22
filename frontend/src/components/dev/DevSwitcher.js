@@ -121,6 +121,7 @@ const DevSwitcher = () => {
       localStorage.removeItem('selected_estate_id');
       localStorage.removeItem('beneficiary_estate_id');
       localStorage.setItem('dev_switcher_admin_session', 'true');
+      localStorage.setItem('dev_switcher_active_role', account.role);
       localStorage.setItem('carryon_token', data.access_token);
       window.location.href = account.redirect;
     } catch (err) {
@@ -197,15 +198,10 @@ const DevSwitcher = () => {
           {/* Account buttons */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {accounts.map(acc => {
-              const currentPath = window.location.pathname;
+              const devActiveRole = localStorage.getItem('dev_switcher_active_role');
               const isActive = acc.role === 'admin'
-                ? user?.role === 'admin' && currentPath.startsWith('/admin')
-                : acc.role === 'ops_view'
-                  ? currentPath.startsWith('/ops')
-                  : user?.email === acc.email && (
-                      (acc.role === 'benefactor' && (currentPath.startsWith('/dashboard') || currentPath === '/'))
-                      || (acc.role === 'beneficiary' && currentPath.startsWith('/beneficiary'))
-                    );
+                ? user?.role === 'admin' && (!devActiveRole || devActiveRole === 'admin')
+                : acc.role === devActiveRole && user?.email === acc.email;
               
               return (
                 <div

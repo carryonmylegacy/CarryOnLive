@@ -127,6 +127,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('carryon_token');
     localStorage.removeItem('dev_switcher_admin_session');
     localStorage.removeItem('dev_switcher_admin_token');
+    localStorage.removeItem('dev_switcher_active_role');
     sessionStorage.removeItem('trial_banner_dismissed');
     setToken(null);
     setUser(null);

@@ -44,7 +44,7 @@ export const DevSwitcherTab = ({ users, getAuthHeaders }) => {
     setSaving(true);
     try {
       await axios.put(`${API_URL}/admin/dev-switcher`, config, getAuthHeaders());
-      // toast removed
+      toast.success('Dev Switcher config saved');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to save config');
     } finally {
