@@ -230,7 +230,10 @@ const SectionRow = ({ section, settings: s, questions, expanded, onToggle, heade
 
       {/* Expanded settings */}
       {expanded && (
-        <SectionConfig section={section} settings={s} questions={questions} headers={headers} onUpdate={onUpdate} />
+        <SectionConfig
+          key={`${section.id}-${s.pin_enabled}-${s.password_enabled}-${s.security_question_enabled}-${s.has_pin}-${s.has_password}-${s.has_security_question}`}
+          section={section} settings={s} questions={questions} headers={headers} onUpdate={onUpdate}
+        />
       )}
     </div>
   );
@@ -342,15 +345,35 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
     setMasterKeyVerifying(true);
     try {
       await axios.post(`${API_URL}/security/verify-master-key`, { master_key: masterKeyVerify }, { headers: { ...headers, 'Content-Type': 'application/json' } });
+
       if (pendingToggle) {
-        if (pendingToggle.field === 'pin') setPinEnabled(pendingToggle.value);
-        else if (pendingToggle.field === 'password') setPwEnabled(pendingToggle.value);
-        else if (pendingToggle.field === 'question') setQEnabled(pendingToggle.value);
-        else if (pendingToggle.field === 'remove') {
+        if (pendingToggle.field === 'remove') {
+          // Remove all security for this section
           await axios.delete(`${API_URL}/security/settings/${section.id}`, { headers });
-          onUpdate();
+          setPinEnabled(false);
+          setPwEnabled(false);
+          setQEnabled(false);
+        } else {
+          // Disable specific layer — compute new enabled states and save immediately
+          const newPin = pendingToggle.field === 'pin' ? false : pinEnabled;
+          const newPw = pendingToggle.field === 'password' ? false : pwEnabled;
+          const newQ = pendingToggle.field === 'question' ? false : qEnabled;
+
+          await axios.put(`${API_URL}/security/settings/${section.id}`, {
+            pin_enabled: newPin && s.has_pin,
+            password_enabled: newPw && s.has_password,
+            security_question_enabled: newQ && s.has_security_question,
+            lock_mode: lockMode,
+          }, { headers: { ...headers, 'Content-Type': 'application/json' } });
+
+          setPinEnabled(newPin);
+          setPwEnabled(newPw);
+          setQEnabled(newQ);
         }
+        // Refresh parent settings + global lock state
+        onUpdate();
       }
+
       setShowMasterKeyModal(false);
       setPendingToggle(null);
       setMasterKeyVerify('');
@@ -589,13 +612,13 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
                 <p className="text-xs text-[var(--t4)]">Enter your Vault Master Key to modify security settings</p>
               </div>
             </div>
-            <div className="relative">
+            <div className="relative mb-3">
               <Input
                 type={showMasterKeyVerifyValue ? 'text' : 'password'}
                 value={masterKeyVerify}
                 onChange={e => setMasterKeyVerify(e.target.value)}
                 placeholder="Enter your master key"
-                className="input-field mb-3 pr-10"
+                className="input-field pr-10"
                 style={{ fontSize: '16px' }}
                 onKeyDown={e => e.key === 'Enter' && masterKeyVerify && verifyMasterKey()}
                 autoFocus
@@ -605,7 +628,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
                 type="button"
                 onMouseDown={e => e.preventDefault()}
                 onClick={() => setShowMasterKeyVerifyValue(!showMasterKeyVerifyValue)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 -mt-1.5 text-[var(--t5)] hover:text-[var(--t)] transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)] hover:text-[var(--t)] transition-colors"
                 data-testid="master-key-verify-toggle"
               >
                 {showMasterKeyVerifyValue ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
