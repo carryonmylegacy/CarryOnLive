@@ -221,87 +221,44 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
           testId="tree-root-node"
         />
 
-        {/* Spine layout — two fixed columns with vertical trunk */}
+        {/* Clean flowing layout — beneficiaries in a tidy grid without rigid connector lines */}
         {sortedBens.length > 0 && (() => {
-          const trunkColor = isLight ? 'rgba(212,175,55,0.5)' : 'rgba(212,175,55,0.35)';
           return (
-          <div className="relative w-full" style={{ maxWidth: 360 }} data-testid="tree-spine">
-            {sortedBens.map((ben, idx) => {
-              const benColor = getBenLinkedColor(ben);
-              const age = getAge(ben.date_of_birth || ben.dob);
-              const relation = ben.relation || '';
-              const isLeft = idx % 2 === 0;
-              const branchColor = isLight ? `${benColor}90` : `${benColor}60`;
-              const isInSuccession = ben.succession_order !== null && ben.succession_order !== undefined;
-              const succRank = isInSuccession ? sortedBens.filter((b, i) => i < idx && b.succession_order !== null && b.succession_order !== undefined).length : null;
-              const isLast = idx === sortedBens.length - 1;
+          <div className="w-full" style={{ maxWidth: 340 }} data-testid="tree-spine">
+            {/* Subtle gradient stem from benefactor */}
+            <div className="flex justify-center">
+              <div style={{ width: 1, height: 16, background: isLight ? 'linear-gradient(to bottom, rgba(212,175,55,0.5), rgba(212,175,55,0.08))' : 'linear-gradient(to bottom, rgba(212,175,55,0.35), rgba(212,175,55,0.05))' }} />
+            </div>
 
-              return (
-                <div key={ben.id} className="flex relative" style={{ marginTop: idx > 0 ? -23 : 0 }}>
-                  {/* Trunk segment — stops at the center of the last row */}
-                  <div style={{
-                    position: 'absolute',
-                    left: '50%',
-                    top: 0,
-                    bottom: isLast ? '50%' : 0,
-                    width: 2,
-                    marginLeft: -1,
-                    background: trunkColor,
-                  }} />
+            {/* Beneficiary grid — 2 columns, clean spacing */}
+            <div className="grid gap-y-3 gap-x-2 px-1" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
+              {sortedBens.map((ben, idx) => {
+                const benColor = getBenLinkedColor(ben);
+                const age = getAge(ben.date_of_birth || ben.dob);
+                const relation = ben.relation || '';
+                const isInSuccession = ben.succession_order !== null && ben.succession_order !== undefined;
+                const succRank = isInSuccession ? sortedBens.filter((b, i) => i < idx && b.succession_order !== null && b.succession_order !== undefined).length : null;
 
-                  {/* Left column — fixed width, circle always centered */}
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                    {isLeft && (
-                      <TreeNode
-                        initials={getInitials(ben.name, ben.first_name, ben.last_name)}
-                        photo={ben.photo_url}
-                        color={benColor}
-                        size={50}
-                        label={ben.first_name || ben.name?.split(' ')[0] || ''}
-                        sublabel={`${relation}${age < 999 ? ` · ${age}` : ''}`}
-                        badge={ben.is_primary ? 'P' : null}
-                        isPrimary={ben.is_primary}
-                        succRank={succRank}
-                        testId={`tree-node-${ben.id}`}
-                        onClick={() => onSelectBeneficiary?.(ben)}
-                        onUpload={onUploadPhoto ? () => onUploadPhoto(ben.id) : undefined}
-                      />
-                    )}
-                    {/* Branch line — stretches from column center-right to trunk */}
-                    {isLeft && (
-                      <div style={{ position: 'absolute', right: 0, top: '50%', height: 2, width: 'calc(50% - 25px)', background: branchColor, marginTop: -1 }} />
-                    )}
+                return (
+                  <div key={ben.id} className="flex justify-center" style={sortedBens.length % 2 !== 0 && idx === sortedBens.length - 1 ? { gridColumn: '1 / -1' } : undefined}>
+                    <TreeNode
+                      initials={getInitials(ben.name, ben.first_name, ben.last_name)}
+                      photo={ben.photo_url}
+                      color={benColor}
+                      size={50}
+                      label={ben.first_name || ben.name?.split(' ')[0] || ''}
+                      sublabel={`${relation}${age < 999 ? ` · ${age}` : ''}`}
+                      badge={ben.is_primary ? 'P' : null}
+                      isPrimary={ben.is_primary}
+                      succRank={succRank}
+                      testId={`tree-node-${ben.id}`}
+                      onClick={() => onSelectBeneficiary?.(ben)}
+                      onUpload={onUploadPhoto ? () => onUploadPhoto(ben.id) : undefined}
+                    />
                   </div>
-
-                  {/* Trunk spacer */}
-                  <div style={{ width: 2 }} />
-
-                  {/* Right column — fixed width, circle always centered */}
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                    {!isLeft && (
-                      <TreeNode
-                        initials={getInitials(ben.name, ben.first_name, ben.last_name)}
-                        photo={ben.photo_url}
-                        color={benColor}
-                        size={50}
-                        label={ben.first_name || ben.name?.split(' ')[0] || ''}
-                        sublabel={`${relation}${age < 999 ? ` · ${age}` : ''}`}
-                        badge={ben.is_primary ? 'P' : null}
-                        isPrimary={ben.is_primary}
-                        succRank={succRank}
-                        testId={`tree-node-${ben.id}`}
-                        onClick={() => onSelectBeneficiary?.(ben)}
-                        onUpload={onUploadPhoto ? () => onUploadPhoto(ben.id) : undefined}
-                      />
-                    )}
-                    {/* Branch line — stretches from trunk to column center-left */}
-                    {!isLeft && (
-                      <div style={{ position: 'absolute', left: 0, top: '50%', height: 2, width: 'calc(50% - 25px)', background: branchColor, marginTop: -1 }} />
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
           );
         })()}
