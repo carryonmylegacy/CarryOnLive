@@ -154,7 +154,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               })()}
             </div>
 
-            {/* Converging lines SVG — blue glow brush-stroke bundles */}
+            {/* Converging lines SVG — blue glow brush-stroke bundles mirroring lower gold arcs */}
             <svg
               className="w-full pointer-events-none"
               viewBox={`0 0 ${vb} 80`}
@@ -162,7 +162,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               style={{ height: svgH, position: 'relative', zIndex: 1 }}
             >
               <defs>
-                <linearGradient id="lineFlow" x1="0" y1="0" x2="0" y2="1">
+                <linearGradient id="lineFlow" x1="0" y1="1" x2="0" y2="0">
                   <stop offset="0%" stopColor={isLight ? '#3B82F6' : '#60A5FA'} stopOpacity={isLight ? 0.5 : 0.4} />
                   <stop offset="100%" stopColor={isLight ? '#2563EB' : '#93C5FD'} stopOpacity={isLight ? 0.15 : 0.08} />
                 </linearGradient>
@@ -175,33 +175,30 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                 </filter>
               </defs>
               {(() => {
-                const rows = Math.ceil(n / cols);
+                // Group estates into left and right columns
+                const leftTarget = vb * 0.25;
+                const rightTarget = vb * 0.75;
+                const leftCount = Math.ceil(n / 2);
+                const rightCount = Math.floor(n / 2);
                 const lines = [];
-                for (let i = 0; i < n; i++) {
-                  const row = Math.floor(i / cols);
-                  const inRow = n - row * cols;
-                  const actual = Math.min(inRow, cols);
-                  const col = i % cols;
-                  const x = actual === 1
-                    ? cx
-                    : 60 + (col / (actual - 1)) * (vb - 120);
-                  const y0 = row * (30 / rows);
-                  // 5 thin brush strokes per estate — soft fan effect
-                  const strokes = [-2, -1, 0, 1, 2];
-                  strokes.forEach((s, si) => {
-                    const spread = 5;
-                    const xo = x + s * spread;
-                    lines.push(
-                      <path
-                        key={`${i}-${si}`}
-                        d={`M ${xo},${y0} C ${xo},${y0 + 30} ${cx},55 ${cx},78`}
-                        fill="none"
-                        stroke="url(#lineFlow)"
-                        strokeWidth={isLight ? '1' : '0.7'}
-                        filter="url(#lineGlow)"
-                      />
-                    );
-                  });
+                const strokeSpread = 5;
+                // Left bundle — fans from Pete (cx,78) up to left column (leftTarget,0)
+                for (let s = 0; s < leftCount; s++) {
+                  const offset = (s - (leftCount - 1) / 2) * strokeSpread;
+                  const xo = leftTarget + offset;
+                  lines.push(
+                    <path key={`l-${s}`} d={`M ${cx},78 C ${cx},56 ${xo},30 ${xo},0`}
+                      fill="none" stroke="url(#lineFlow)" strokeWidth={isLight ? '1' : '0.7'} filter="url(#lineGlow)" />
+                  );
+                }
+                // Right bundle — fans from Pete (cx,78) up to right column (rightTarget,0)
+                for (let s = 0; s < rightCount; s++) {
+                  const offset = (s - (rightCount - 1) / 2) * strokeSpread;
+                  const xo = rightTarget + offset;
+                  lines.push(
+                    <path key={`r-${s}`} d={`M ${cx},78 C ${cx},56 ${xo},30 ${xo},0`}
+                      fill="none" stroke="url(#lineFlow)" strokeWidth={isLight ? '1' : '0.7'} filter="url(#lineGlow)" />
+                  );
                 }
                 return lines;
               })()}
@@ -225,31 +222,33 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
         {/* Gold glow brush-stroke arcs fanning to beneficiaries — exact mirror of upper blue arcs */}
         {sortedBens.length > 0 && (() => {
           const n = sortedBens.length;
-          const cols = 2;
           const vbW = 300;
           const vbH = 80;
           const cx = vbW / 2;
           const arcPaths = [];
-          for (let i = 0; i < n; i++) {
-            const isOddLast = n % 2 !== 0 && i === n - 1;
-            const col = i % cols;
-            const endX = isOddLast ? cx : (col === 0 ? vbW * 0.2 : vbW * 0.8);
-            // 5 thin brush strokes per beneficiary — soft fan, not paired lines
-            const strokes = [-2, -1, 0, 1, 2];
-            strokes.forEach(s => {
-              const spread = 5;
-              const endXo = endX + s * spread;
-              arcPaths.push(`M ${cx},0 C ${cx},22 ${endXo},48 ${endXo},78`);
-            });
+          // Column-aligned bundles — strokes per column = nodes in that column
+          const leftTarget = vbW * 0.25;
+          const rightTarget = vbW * 0.75;
+          const leftCount = Math.ceil(n / 2);
+          const rightCount = Math.floor(n / 2);
+          const strokeSpread = 5;
+          // Left bundle — fans from Pete (cx,0) down to left column (leftTarget,78)
+          for (let s = 0; s < leftCount; s++) {
+            const offset = (s - (leftCount - 1) / 2) * strokeSpread;
+            arcPaths.push(`M ${cx},0 C ${cx},22 ${leftTarget + offset},48 ${leftTarget + offset},78`);
+          }
+          // Right bundle — fans from Pete (cx,0) down to right column (rightTarget,78)
+          for (let s = 0; s < rightCount; s++) {
+            const offset = (s - (rightCount - 1) / 2) * strokeSpread;
+            arcPaths.push(`M ${cx},0 C ${cx},22 ${rightTarget + offset},48 ${rightTarget + offset},78`);
           }
           const goldStart = isLight ? '#b8860b' : '#d4af37';
           const goldEnd = isLight ? '#d4af37' : '#FFD700';
-          // Match upper SVG height formula exactly
           const lowerSvgH = n <= 2 ? 80 : Math.min(140, 60 + n * 18);
 
           return (
           <div className="w-full" style={{ maxWidth: 340 }} data-testid="tree-spine">
-            {/* SVG — tight to benefactor label, symmetric with upper */}
+            {/* SVG — symmetric with upper */}
             <div className="flex justify-center" style={{ marginTop: -2, marginBottom: -8, position: 'relative', zIndex: 0 }}>
               <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: lowerSvgH }} className="overflow-visible">
                 <defs>
