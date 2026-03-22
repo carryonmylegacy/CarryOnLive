@@ -156,6 +156,7 @@ const Sidebar = () => {
           localStorage.removeItem('selected_estate_id');
           localStorage.removeItem('beneficiary_estate_id');
           localStorage.setItem('dev_switcher_admin_session', 'true');
+          localStorage.setItem('dev_switcher_active_role', account.role);
           window.location.href = account.redirect;
           return;
         }
@@ -177,6 +178,7 @@ const Sidebar = () => {
         localStorage.removeItem('selected_estate_id');
         localStorage.removeItem('beneficiary_estate_id');
         localStorage.setItem('dev_switcher_admin_session', 'true');
+        localStorage.setItem('dev_switcher_active_role', account.role);
         localStorage.setItem('carryon_token', loginData.access_token);
         window.location.href = account.redirect;
         return;
@@ -194,6 +196,7 @@ const Sidebar = () => {
       localStorage.removeItem('selected_estate_id');
       localStorage.removeItem('beneficiary_estate_id');
       localStorage.setItem('dev_switcher_admin_session', 'true');
+      localStorage.setItem('dev_switcher_active_role', account.role);
       localStorage.setItem('carryon_token', data.access_token);
       window.location.href = account.redirect;
     } catch (err) {
@@ -415,7 +418,14 @@ const Sidebar = () => {
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 {devAccounts.map(acc => {
-                  const isActive = acc.role === 'admin' ? (user?.role === 'admin' && !window.location.pathname.startsWith('/ops')) : acc.role === 'ops_view' ? (user?.role === 'admin' && window.location.pathname.startsWith('/ops')) : user?.email === acc.email;
+                  const devActiveRole = localStorage.getItem('dev_switcher_active_role');
+                  const isActive = acc.role === 'admin'
+                    ? user?.role === 'admin' && (!devActiveRole || devActiveRole === 'admin')
+                    : acc.role === 'ops_view'
+                      ? devActiveRole === 'ops_view'
+                      : devActiveRole
+                        ? acc.role === devActiveRole && user?.email === acc.email
+                        : acc.role === user?.role && user?.email === acc.email;
                   return (
                     <div key={acc.role}
                       onClick={(e) => { e.stopPropagation(); if (!isActive && !devSwitching) handleDevSwitch(acc); }}
