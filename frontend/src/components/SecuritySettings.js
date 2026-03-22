@@ -24,9 +24,9 @@ const SECTIONS = [
 ];
 
 const LOCK_MODES = [
-  { value: 'on_page_leave', label: 'Auto-lock when you leave the page' },
-  { value: 'on_logout', label: 'Auto-lock when you log out' },
-  { value: 'manual', label: 'Manual lock only (lock on command)' },
+  { value: 'on_page_leave', label: 'Auto-lock on page leave' },
+  { value: 'on_logout', label: 'Auto-lock on logout' },
+  { value: 'manual', label: 'Manual lock only' },
 ];
 
 const MAX_PIN_LENGTH = 8;
@@ -136,7 +136,7 @@ const SecuritySettings = ({ getAuthHeaders }) => {
                   type={showMasterKeyValue ? 'text' : 'password'}
                   value={masterKeyInput}
                   onChange={(e) => setMasterKeyInput(e.target.value)}
-                  placeholder="A memorable word or phrase (min 4 chars)"
+                  placeholder="Min 4 characters"
                   className="input-field pr-10"
                   style={{ fontSize: '16px' }}
                   data-testid="master-key-input"
@@ -209,11 +209,11 @@ const SectionRow = ({ section, settings: s, questions, expanded, onToggle, heade
         className="w-full flex items-center justify-between p-4 hover:bg-[var(--s)]/50 transition-colors"
         data-testid={`section-security-${section.id}`}
       >
-        <div className="flex items-center gap-3">
-          {isActive ? <Lock className="w-4 h-4 text-[var(--pr2)]" /> : <Unlock className="w-4 h-4 text-[var(--t5)]" />}
-          <div className="text-left">
-            <div className="text-sm font-bold text-[var(--t)]">{section.name}</div>
-            <div className="text-xs text-[var(--t4)]">
+        <div className="flex items-center gap-3 min-w-0">
+          {isActive ? <Lock className="w-4 h-4 text-[var(--pr2)] flex-shrink-0" /> : <Unlock className="w-4 h-4 text-[var(--t5)] flex-shrink-0" />}
+          <div className="text-left min-w-0">
+            <div className="text-sm font-bold text-[var(--t)] truncate">{section.name}</div>
+            <div className="text-xs text-[var(--t4)] truncate">
               {isActive ? `${layers.join(' + ')} · ${LOCK_MODES.find(m => m.value === s.lock_mode)?.label || 'Manual'}` : 'No security configured'}
             </div>
           </div>
@@ -453,12 +453,12 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
       <div className="pt-4">
         <Label className="text-[var(--t4)] text-xs font-bold">Lock Behavior</Label>
         <Select value={lockMode} onValueChange={setLockMode}>
-          <SelectTrigger className="input-field mt-1 w-full text-base">
+          <SelectTrigger className="input-field mt-1 w-full text-sm truncate">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]" style={{ zIndex: 99999 }}>
             {LOCK_MODES.map(m => (
-              <SelectItem key={m.value} value={m.value} className="text-[var(--t2)] hover:bg-[var(--s)] cursor-pointer text-base">{m.label}</SelectItem>
+              <SelectItem key={m.value} value={m.value} className="text-[var(--t2)] hover:bg-[var(--s)] cursor-pointer text-sm">{m.label}</SelectItem>
             ))}
           </SelectContent>
         </Select>
