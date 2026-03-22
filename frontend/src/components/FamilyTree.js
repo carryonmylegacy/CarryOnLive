@@ -177,59 +177,29 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
       {/* Beneficiary estates with converging lines to benefactor */}
       {benEstates.length > 0 && (() => {
         const n = benEstates.length;
-        const vbW = 300;
-        const vbH = 60;
-        const cx = vbW / 2;
-        const svgH = Math.min(65, 32 + n * 7);
-        const leftCol = vbW * 0.25;
-        const rightCol = vbW * 0.75;
-        const strandsPerNode = 3;
-        const nodeSpread = 2.5;
         const numRows = Math.ceil(n / 2);
+        const vbW = 100;
+        const vbH = 100;
+        const cx = vbW / 2;
+        const leftCol = 20;
+        const rightCol = 80;
+        const circleR = 6;
+        const strandsPerNode = 3;
+        const nodeSpread = 0.8;
+        const estRowH = 80;
+        const trailPx = 28;
+        const totalEstH = numRows * estRowH + trailPx;
+        const nodeZone = (numRows * estRowH / totalEstH) * 100;
+        const rowH = nodeZone / numRows;
 
         return (
-          <div className="relative pb-2">
-            {/* Estate nodes — two aligned columns */}
-            <div className="relative pt-1 pb-1 px-2" style={{ zIndex: 2 }}>
-              {(() => {
-                const rows = [];
-                for (let i = 0; i < benEstates.length; i += 2) {
-                  rows.push(benEstates.slice(i, i + 2));
-                }
-                return rows.map((row, rIdx) => (
-                  <div key={rIdx} className="flex justify-center gap-4 mb-2">
-                    {row.map(est => (
-                      <div key={est.id} style={{ width: 160, display: 'flex', justifyContent: 'center' }}>
-                        <TreeNode
-                          initials={<Users className="w-3.5 h-3.5" />}
-                          photo={est.estate_photo_url || est.owner_photo_url}
-                          color="#60A5FA"
-                          size={40}
-                          label={est.name?.split("'")[0] || 'Estate'}
-                          sublabel="Beneficiary"
-                          testId={`tree-estate-${est.id}`}
-                          onClick={() => {
-                            localStorage.setItem('beneficiary_estate_id', est.id);
-                            localStorage.removeItem('selected_estate_id');
-                            navigate('/beneficiary');
-                            window.location.reload();
-                          }}
-                        />
-                      </div>
-                    ))}
-                    {/* Spacer for odd last row */}
-                    {row.length === 1 && <div style={{ width: 160 }} />}
-                  </div>
-                ));
-              })()}
-            </div>
-
-            {/* Converging lines SVG — blue glow brush-stroke bundles mirroring lower gold arcs */}
+          <div className="relative" style={{ paddingBottom: trailPx }}>
+            {/* Full-height SVG overlay behind nodes — strands run through center gap */}
             <svg
-              className="w-full pointer-events-none"
+              className="absolute pointer-events-none overflow-visible"
               viewBox={`0 0 ${vbW} ${vbH}`}
-              preserveAspectRatio="xMidYMid meet"
-              style={{ height: svgH, position: 'relative', zIndex: 1, marginTop: -8 }}
+              preserveAspectRatio="none"
+              style={{ top: 0, left: 0, width: '100%', height: '100%', zIndex: 1 }}
               dangerouslySetInnerHTML={{ __html: (() => {
                 const gradColor1 = isLight ? '#3B82F6' : '#60A5FA';
                 const gradColor2 = isLight ? '#2563EB' : '#93C5FD';
@@ -241,7 +211,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                 const overlayW = isLight ? 0.8 : 0.7;
                 let svgContent = `
                   <defs>
-                    <linearGradient id="lineFlow" x1="0" y1="1" x2="0" y2="0">
+                    <linearGradient id="lineFlow" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stop-color="${gradColor1}" stop-opacity="${gradOp1}" />
                       <stop offset="100%" stop-color="${gradColor2}" stop-opacity="${gradOp2}" />
                     </linearGradient>
@@ -256,22 +226,23 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   </defs>`;
                 const allPaths = [];
                 for (let idx = 0; idx < n; idx++) {
-                  const row = Math.floor(idx / 2);
+                  const rIdx = Math.floor(idx / 2);
                   const isLeft = idx % 2 === 0;
                   const nodeX = isLeft ? leftCol : rightCol;
                   const dir = isLeft ? 1 : -1;
-                  const joinFrac = numRows <= 1 ? 0.5 : row / (numRows - 1);
-                  const trunkY = vbH * 0.35 + joinFrac * vbH * 0.25;
+                  const rowCenterY = (rIdx + 0.5) * rowH;
                   for (let s = 0; s < strandsPerNode; s++) {
                     const ySpd = (s - 1) * nodeSpread;
-                    const sx = nodeX + dir * 18;
-                    const sy = Math.max(0.5, 3 + ySpd);
-                    const cp1x = nodeX + dir * 42;
-                    const cp2y = trunkY * 0.4;
-                    const fOff = (isLeft ? -1 : 1) * 3 + (s - 1) * 1.2 + (numRows > 1 ? (row - (numRows - 1) / 2) * 0.8 : 0);
-                    const ex = cx + fOff;
-                    const cp3y = trunkY + (vbH - trunkY) * 0.6;
-                    const d = `M ${sx.toFixed(1)},${sy.toFixed(1)} C ${cp1x.toFixed(1)},${sy.toFixed(1)} ${cx},${cp2y.toFixed(1)} ${cx},${trunkY.toFixed(1)} C ${cx},${cp3y.toFixed(1)} ${ex.toFixed(1)},${(vbH * 0.88).toFixed(1)} ${ex.toFixed(1)},${vbH}`;
+                    const trunkOff = (s - 1) * 0.5 + dir * 0.7;
+                    const sx = nodeX + dir * circleR;
+                    const sy = rowCenterY + ySpd;
+                    const trunkX = cx + trunkOff;
+                    const joinY = sy + 4;
+                    const cp1x = nodeX + dir * (circleR + 14);
+                    const deltaOff = dir * 2 + (s - 1) * 0.8;
+                    const deltaX = cx + deltaOff;
+                    const midTrunkY = (joinY + 96) / 2;
+                    const d = `M ${sx.toFixed(1)},${sy.toFixed(1)} C ${cp1x.toFixed(1)},${sy.toFixed(1)} ${cx},${(sy + 1.5).toFixed(1)} ${trunkX.toFixed(1)},${joinY.toFixed(1)} C ${trunkX.toFixed(1)},${midTrunkY.toFixed(1)} ${deltaX.toFixed(1)},94 ${deltaX.toFixed(1)},98`;
                     allPaths.push(d);
                   }
                 }
@@ -281,13 +252,37 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                 allPaths.forEach(d => {
                   svgContent += `<path class="fill-path-blue" d="${d}" fill="none" stroke="${lightColor}" stroke-width="${overlayW}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" filter="url(#lightPulseBlue)" />`;
                 });
-                svgContent += `<circle class="flash-blue" cx="${cx}" cy="${vbH - 2}" r="6" fill="${lightColor}" opacity="0" filter="url(#lightPulseBlue)" />`;
+                svgContent += `<circle class="flash-blue" cx="${cx}" cy="97" r="4" fill="${lightColor}" opacity="0" filter="url(#lightPulseBlue)" />`;
                 return svgContent;
               })() }}
             />
+
+            {/* Estate nodes — two columns with wide center gap */}
+            <div className="relative grid px-2" style={{ gridTemplateColumns: '1fr 1fr', columnGap: '22%', rowGap: 10, justifyItems: 'center', zIndex: 2 }}>
+              {benEstates.map((est, idx) => (
+                <div key={est.id} style={benEstates.length % 2 !== 0 && idx === benEstates.length - 1 ? { gridColumn: '1 / -1' } : undefined}>
+                  <TreeNode
+                    initials={<Users className="w-3.5 h-3.5" />}
+                    photo={est.estate_photo_url || est.owner_photo_url}
+                    color="#60A5FA"
+                    size={40}
+                    label={est.name?.split("'")[0] || 'Estate'}
+                    sublabel="Beneficiary"
+                    testId={`tree-estate-${est.id}`}
+                    onClick={() => {
+                      localStorage.setItem('beneficiary_estate_id', est.id);
+                      localStorage.removeItem('selected_estate_id');
+                      navigate('/beneficiary');
+                      window.location.reload();
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         );
       })()}
+
 
       {/* Root node (benefactor) */}
       <div className="flex flex-col items-center">
@@ -301,91 +296,102 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
           testId="tree-root-node"
         />
 
-        {/* Gold glow brush-stroke arcs fanning to beneficiaries — exact mirror of upper blue arcs */}
+        {/* Gold neural strands from benefactor down to beneficiaries */}
         {sortedBens.length > 0 && (() => {
           const n = sortedBens.length;
-          const vbW = 300;
-          const vbH = 60;
-          const cx = vbW / 2;
-          const leftCol = vbW * 0.25;
-          const rightCol = vbW * 0.75;
-          const strandsPerNode = 3;
-          const nodeSpread = 2.5;
           const numBenRows = Math.ceil(n / 2);
+          const vbW = 100;
+          const vbH = 100;
+          const cx = vbW / 2;
+          const leftCol = 20;
+          const rightCol = 80;
+          const circleR = 7;
+          const strandsPerNode = 3;
+          const nodeSpread = 0.8;
           const goldStart = isLight ? '#b8860b' : '#d4af37';
           const goldEnd = isLight ? '#d4af37' : '#FFD700';
-          const lowerSvgH = Math.min(65, 32 + n * 7);
+          const estRowH = 85;
+          const trailPx = 25;
+          const totalEstH = numBenRows * estRowH + trailPx;
+          const topTrail = (trailPx / totalEstH) * 100;
+          const nodeZone = 100 - topTrail;
+          const rowH = nodeZone / numBenRows;
 
           return (
-          <div className="w-full" style={{ maxWidth: 340 }} data-testid="tree-spine">
-            {/* SVG — symmetric with upper */}
-            <div className="flex justify-center" style={{ marginTop: 10, marginBottom: -8, position: 'relative', zIndex: 0 }}>
-              <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: lowerSvgH }} className="overflow-visible"
-                dangerouslySetInnerHTML={{ __html: (() => {
-                  const blurDev = isLight ? 1.5 : 2;
-                  const sw = isLight ? 0.6 : 0.5;
-                  const lightColor = isLight ? 'rgba(200,170,50,0.3)' : 'rgba(255,230,140,0.25)';
-                  const overlayW = isLight ? 0.8 : 0.7;
-                  const allPaths = [];
-                  for (let idx = 0; idx < n; idx++) {
-                    const row = Math.floor(idx / 2);
-                    const isLeft = idx % 2 === 0;
-                    const isCentered = (n % 2 !== 0 && idx === n - 1);
-                    const nodeX = isCentered ? cx : (isLeft ? leftCol : rightCol);
-                    const dir = isCentered ? 0 : (isLeft ? 1 : -1);
-                    const branchFrac = numBenRows <= 1 ? 0.5 : row / (numBenRows - 1);
-                    const branchY = vbH * 0.35 + branchFrac * vbH * 0.25;
-                    for (let s = 0; s < strandsPerNode; s++) {
-                      const ySpd = (s - 1) * nodeSpread;
-                      const side = isLeft ? -1 : 1;
-                      const fOff = (isCentered ? 0 : side * 3) + (s - 1) * 1.2 + (numBenRows > 1 ? (row - (numBenRows - 1) / 2) * 0.8 : 0);
-                      const sx = cx + fOff;
-                      const sideOff = isCentered ? ((s - 1) * 3) : (dir * 18);
-                      const ex = nodeX + sideOff;
-                      const ey = Math.min(vbH, vbH - 3 + ySpd);
-                      const cp1y = branchY * 0.3;
-                      const cp2y = branchY * 0.7;
-                      const cp3y = branchY + (vbH - branchY) * 0.4;
-                      const cp4x = isCentered ? ex : (nodeX + dir * 40);
-                      const d = `M ${sx.toFixed(1)},0 C ${sx.toFixed(1)},${cp1y.toFixed(1)} ${cx},${cp2y.toFixed(1)} ${cx},${branchY.toFixed(1)} C ${cx},${cp3y.toFixed(1)} ${cp4x.toFixed(1)},${ey.toFixed(1)} ${ex.toFixed(1)},${ey.toFixed(1)}`;
-                      allPaths.push(d);
-                    }
+          <div className="w-full relative" style={{ maxWidth: 380, marginTop: 8 }} data-testid="tree-spine">
+            {/* Full-height SVG overlay — strands run through center gap between columns */}
+            <svg
+              className="absolute pointer-events-none overflow-visible"
+              viewBox={`0 0 ${vbW} ${vbH}`}
+              preserveAspectRatio="none"
+              style={{ top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}
+              dangerouslySetInnerHTML={{ __html: (() => {
+                const blurDev = isLight ? 1.5 : 2;
+                const sw = isLight ? 0.6 : 0.5;
+                const lightColor = isLight ? 'rgba(200,170,50,0.3)' : 'rgba(255,230,140,0.25)';
+                const overlayW = isLight ? 0.8 : 0.7;
+                const allPaths = [];
+                for (let idx = 0; idx < n; idx++) {
+                  const rIdx = Math.floor(idx / 2);
+                  const isLeft = idx % 2 === 0;
+                  const isCentered = (n % 2 !== 0 && idx === n - 1);
+                  const nodeX = isCentered ? cx : (isLeft ? leftCol : rightCol);
+                  const dir = isCentered ? 0 : (isLeft ? 1 : -1);
+                  const rowCenterY = topTrail + (rIdx + 0.5) * rowH;
+                  for (let s = 0; s < strandsPerNode; s++) {
+                    const ySpd = (s - 1) * nodeSpread;
+                    const side = isLeft ? -1 : 1;
+                    const trunkOff = (s - 1) * 0.5 + (isCentered ? 0 : dir * 0.7);
+                    const deltaOff = (isCentered ? 0 : side * 2) + (s - 1) * 0.8;
+                    const sx = cx + deltaOff;
+                    const trunkX = cx + trunkOff;
+                    const branchY = rowCenterY - 4;
+                    const ex = isCentered ? (cx + (s - 1) * 2) : (nodeX + dir * circleR);
+                    const ey = rowCenterY + ySpd;
+                    const midTrunkY = (2 + branchY) / 2;
+                    const cp2x = isCentered ? ex : (nodeX + dir * (circleR + 14));
+                    const d = `M ${sx.toFixed(1)},2 C ${sx.toFixed(1)},${midTrunkY.toFixed(1)} ${trunkX.toFixed(1)},${(branchY - 3).toFixed(1)} ${trunkX.toFixed(1)},${branchY.toFixed(1)} C ${cx},${(ey - 1.5).toFixed(1)} ${cp2x.toFixed(1)},${ey.toFixed(1)} ${ex.toFixed(1)},${ey.toFixed(1)}`;
+                    allPaths.push(d);
                   }
-                  let svg = `
-                    <defs>
-                      <linearGradient id="ftGoldGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="${goldStart}" stop-opacity="${isLight ? 0.18 : 0.12}" />
-                        <stop offset="100%" stop-color="${goldEnd}" stop-opacity="${isLight ? 0.06 : 0.03}" />
-                      </linearGradient>
-                      <filter id="ftGoldGlow" x="-50%" y="-50%" width="200%" height="200%">
-                        <feGaussianBlur stdDeviation="${blurDev}" result="blur" />
-                        <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                      </filter>
-                      <filter id="lightPulseGold" x="-100%" y="-100%" width="300%" height="300%">
-                        <feGaussianBlur stdDeviation="2" result="blur" />
-                        <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                      </filter>
-                    </defs>`;
-                  allPaths.forEach(d => {
-                    svg += `<path d="${d}" fill="none" stroke="url(#ftGoldGrad)" stroke-width="${sw}" filter="url(#ftGoldGlow)" />`;
-                  });
-                  svg += `<circle class="flash-gold-origin" cx="${cx}" cy="2" r="6" fill="${lightColor}" opacity="0" filter="url(#lightPulseGold)" />`;
-                  allPaths.forEach(d => {
-                    svg += `<path class="fill-path-gold" d="${d}" fill="none" stroke="${lightColor}" stroke-width="${overlayW}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" filter="url(#lightPulseGold)" />`;
-                  });
-                  for (let fi = 0; fi < n; fi++) {
-                    const fiLeft = fi % 2 === 0;
-                    const fiCen = (n % 2 !== 0 && fi === n - 1);
-                    const fiX = fiCen ? cx : ((fiLeft ? leftCol : rightCol) + (fiLeft ? 1 : -1) * 18);
-                    svg += `<circle class="flash-gold-end" cx="${fiX}" cy="${vbH - 3}" r="5" fill="${lightColor}" opacity="0" filter="url(#lightPulseGold)" />`;
-                  }
-                  return svg;
-                })() }}
-              />
-            </div>
+                }
+                let svg = `
+                  <defs>
+                    <linearGradient id="ftGoldGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="${goldStart}" stop-opacity="${isLight ? 0.18 : 0.12}" />
+                      <stop offset="100%" stop-color="${goldEnd}" stop-opacity="${isLight ? 0.06 : 0.03}" />
+                    </linearGradient>
+                    <filter id="ftGoldGlow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur stdDeviation="${blurDev}" result="blur" />
+                      <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                    </filter>
+                    <filter id="lightPulseGold" x="-100%" y="-100%" width="300%" height="300%">
+                      <feGaussianBlur stdDeviation="2" result="blur" />
+                      <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                    </filter>
+                  </defs>`;
+                allPaths.forEach(d => {
+                  svg += `<path d="${d}" fill="none" stroke="url(#ftGoldGrad)" stroke-width="${sw}" filter="url(#ftGoldGlow)" />`;
+                });
+                svg += `<circle class="flash-gold-origin" cx="${cx}" cy="2" r="4" fill="${lightColor}" opacity="0" filter="url(#lightPulseGold)" />`;
+                allPaths.forEach(d => {
+                  svg += `<path class="fill-path-gold" d="${d}" fill="none" stroke="${lightColor}" stroke-width="${overlayW}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" filter="url(#lightPulseGold)" />`;
+                });
+                for (let fi = 0; fi < n; fi++) {
+                  const fiR = Math.floor(fi / 2);
+                  const fiLeft = fi % 2 === 0;
+                  const fiCen = (n % 2 !== 0 && fi === n - 1);
+                  const fiY = topTrail + (fiR + 0.5) * rowH;
+                  const fiNx = fiCen ? cx : (fiLeft ? leftCol : rightCol);
+                  const fiDir = fiCen ? 0 : (fiLeft ? 1 : -1);
+                  const fiX = fiNx + fiDir * circleR;
+                  svg += `<circle class="flash-gold-end" cx="${fiX.toFixed(1)}" cy="${fiY.toFixed(1)}" r="3" fill="${lightColor}" opacity="0" filter="url(#lightPulseGold)" />`;
+                }
+                return svg;
+              })() }}
+            />
 
-            {/* Beneficiary grid — 2 columns */}
-            <div className="grid gap-y-3 gap-x-2 px-1" style={{ gridTemplateColumns: 'repeat(2, 1fr)', position: 'relative', zIndex: 1 }}>
+            {/* Beneficiary grid — two columns with wide center gap */}
+            <div className="grid px-1" style={{ gridTemplateColumns: 'repeat(2, 1fr)', columnGap: '20%', rowGap: 12, justifyItems: 'center', paddingTop: trailPx, position: 'relative', zIndex: 1 }}>
               {sortedBens.map((ben, idx) => {
                 const benColor = getBenLinkedColor(ben);
                 const age = getAge(ben.date_of_birth || ben.dob);
@@ -416,6 +422,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
           </div>
           );
         })()}
+
 
         {sortedBens.length === 0 && (
           <div className="mt-4 text-center">
