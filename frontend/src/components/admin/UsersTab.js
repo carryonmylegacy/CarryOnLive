@@ -364,23 +364,25 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
               </div>
 
               {isExpanded && connectedEstates.length > 0 && (
-                <div className="pb-2">
-                  <div className="ml-7 sm:ml-9 pl-3 mx-2 space-y-1.5" style={{ borderLeft: '2px solid rgba(37,99,235,0.25)' }}>
-                    {connectedEstates.map((estate, idx) => (
-                      <div key={`${estate.owner.id}-${idx}`} className="glass-card p-2.5 flex items-center gap-2.5" style={{ fontSize: '0.85em' }} data-testid={`ben-estate-${estate.owner.id}`}>
-                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
-                          style={{ background: roleColors.benefactor.bg, color: roleColors.benefactor.color }}>
-                          {estate.owner.name ? estate.owner.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
+                <div className="pb-3 px-2">
+                  <div className="ml-4 sm:ml-6 rounded-lg overflow-hidden" style={{ background: 'rgba(37,99,235,0.04)', border: '1px solid rgba(37,99,235,0.1)' }}>
+                    <div style={{ borderLeft: '4px solid rgba(37,99,235,0.5)' }}>
+                      {connectedEstates.map((estate, idx) => (
+                        <div key={`${estate.owner.id}-${idx}`} className="flex items-center gap-2.5 px-3 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }} data-testid={`ben-estate-${estate.owner.id}`}>
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
+                            style={{ background: roleColors.benefactor.bg, color: roleColors.benefactor.color }}>
+                            {estate.owner.name ? estate.owner.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-[var(--t)] text-xs truncate">{estate.estateName}</div>
+                            <div className="text-[11px] text-[var(--t5)] truncate">{estate.owner.name}<span className="capitalize"> · {estate.relation}</span></div>
+                          </div>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: roleColors.benefactor.bg, color: roleColors.benefactor.color }}>
+                            estate
+                          </span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-[var(--t)] text-xs truncate">{estate.estateName}</div>
-                          <div className="text-[11px] text-[var(--t5)] truncate">{estate.owner.email} · {estate.relation}</div>
-                        </div>
-                        <span className="text-[11px] px-1.5 py-0.5 rounded-md font-bold" style={{ background: roleColors.benefactor.bg, color: roleColors.benefactor.color }}>
-                          benefactor
-                        </span>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -507,41 +509,59 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                 <UserRow u={owner} />
               </div>
 
-              {/* Expanded: show beneficiaries with clean left-border indentation */}
-              {isExpanded && (
-                <div className="pb-2">
-                  <div className="ml-7 sm:ml-9 pl-3 mx-2 space-y-1.5" style={{ borderLeft: '2px solid rgba(139,92,246,0.25)' }}>
-                    {sortedLinkedUsers.map(bu => (
-                      <div key={bu.id} className="glass-card p-2.5 flex items-center gap-2.5" style={{ fontSize: '0.85em' }} data-testid={`tree-child-${bu.id}`}>
-                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
-                          style={{ background: roleColors.beneficiary.bg, color: roleColors.beneficiary.color }}>
-                          {bu.name ? bu.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-[var(--t)] text-xs truncate">{bu.name || 'No name'}</div>
-                          <div className="text-[11px] text-[var(--t5)] truncate">{bu.email}</div>
-                        </div>
-                        <span className="text-[11px] px-1.5 py-0.5 rounded-md font-bold" style={{ background: roleColors.beneficiary.bg, color: roleColors.beneficiary.color }}>
-                          beneficiary
-                        </span>
-                        {bu.id !== currentUserId && !operatorMode && (
-                          <Button variant="ghost" size="sm" className="text-[var(--rd)] hover:bg-[var(--rdbg)] h-6 w-6 p-0" onClick={() => { setDeleteTarget({ id: bu.id, name: bu.name, role: bu.role }); setDeletePassword(''); setShowDeletePw(false); }}>
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        )}
+              {/* Expanded: beneficiaries in a polished nested container */}
+              {isExpanded && (() => {
+                const benEntryByEmail = new Map();
+                bens.forEach(b => { if (b.email) benEntryByEmail.set(b.email.toLowerCase(), b); });
+                const hasChildren = sortedLinkedUsers.length > 0 || nonUserBens.length > 0;
+                return hasChildren ? (
+                  <div className="pb-3 px-2">
+                    <div className="ml-4 sm:ml-6 rounded-lg overflow-hidden" style={{ background: 'rgba(139,92,246,0.04)', border: '1px solid rgba(139,92,246,0.1)' }}>
+                      <div style={{ borderLeft: '4px solid rgba(139,92,246,0.5)' }}>
+                        {sortedLinkedUsers.map(bu => {
+                          const benEntry = benEntryByEmail.get(bu.email?.toLowerCase());
+                          const relation = benEntry?.relation || '';
+                          const invStatus = benEntry?.invitation_status || '';
+                          const sc = statusColors[invStatus] || statusColors.accepted;
+                          return (
+                            <div key={bu.id} className="flex items-center gap-2.5 px-3 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }} data-testid={`tree-child-${bu.id}`}>
+                              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
+                                style={{ background: roleColors.beneficiary.bg, color: roleColors.beneficiary.color }}>
+                                {bu.name ? bu.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="font-semibold text-[var(--t)] text-xs truncate">{bu.name || 'No name'}</div>
+                                <div className="text-[11px] text-[var(--t5)] truncate">
+                                  {bu.email}{relation && <span className="capitalize"> · {relation}</span>}
+                                </div>
+                              </div>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold capitalize" style={{ background: sc.bg, color: sc.color }}>
+                                {invStatus || 'active'}
+                              </span>
+                              {bu.id !== currentUserId && !operatorMode && (
+                                <Button variant="ghost" size="sm" className="text-[var(--rd)] hover:bg-[var(--rdbg)] h-6 w-6 p-0" onClick={() => { setDeleteTarget({ id: bu.id, name: bu.name, role: bu.role }); setDeletePassword(''); setShowDeletePw(false); }}>
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              )}
+                            </div>
+                          );
+                        })}
+                        {nonUserBens.map(ben => (
+                          <div key={ben.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                            <BeneficiaryLeaf ben={ben} />
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                    {nonUserBens.map(ben => (
-                      <BeneficiaryLeaf key={ben.id} ben={ben} />
-                    ))}
+                    </div>
                   </div>
-                  {bens.length === 0 && (
-                    <div className="ml-8 pl-4 py-2 text-xs text-[var(--t5)] italic">
+                ) : (
+                  <div className="pb-3 px-2">
+                    <div className="ml-4 sm:ml-6 py-2.5 pl-4 text-xs text-[var(--t5)] italic rounded-lg" style={{ borderLeft: '4px solid rgba(139,92,246,0.15)', background: 'rgba(139,92,246,0.02)' }}>
                       No beneficiaries enrolled yet
                     </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                );
+              })()}
             </div>
           );
         })}
@@ -708,12 +728,12 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                                 top: 0,
                                 left: isFirst ? '50%' : 0,
                                 right: isLast ? '50%' : 0,
-                                height: 2,
+                                height: 1,
                                 background: '#d4af37',
-                                opacity: 0.25,
+                                opacity: 0.15,
                               }} />
                             )}
-                            <div style={{ width: 2, height: 12, background: color, opacity: 0.4 }} />
+                            <div style={{ width: 1, height: 12, background: color, opacity: 0.25 }} />
                             <GraphNode
                               initials={benInitials}
                               color={color}
