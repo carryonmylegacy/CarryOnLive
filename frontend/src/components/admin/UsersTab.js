@@ -773,7 +773,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
               const html = document.documentElement;
               if (mainEl) { mainEl.style.scrollBehavior = 'auto'; html.style.scrollBehavior = 'auto'; }
               setRoleFilter(r);
-              setViewMode(r === 'all' || r === 'beneficiary' ? 'hierarchy' : 'list');
+              setViewMode('hierarchy');
               if (mainEl) {
                 const force = () => { mainEl.scrollTop = savedPos; };
                 mainEl.addEventListener('scroll', force);
