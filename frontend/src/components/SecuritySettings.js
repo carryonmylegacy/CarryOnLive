@@ -236,7 +236,9 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
   const [recording, setRecording] = useState(false);
   const [enrollCount, setEnrollCount] = useState(0);
   const [enrolling, setEnrolling] = useState(false);
+  const [micGranted, setMicGranted] = useState(false);
   const mediaRecorderRef = React.useRef(null);
+  const streamRef = React.useRef(null);
 
   // Account password verification for disabling security
   const [showAccountPwModal, setShowAccountPwModal] = useState(false);
@@ -319,65 +321,88 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
     setAccountPw('');
   };
 
-  const handleVoiceEnroll = () => {
-    if (recording || enrolling) return;
-    if (!voicePhrase.trim()) { toast.error('Enter a passphrase first'); return; }
-    setRecording(true);
-
-    navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(stream => {
-        // iOS Safari only supports audio/mp4, not audio/webm
-        let mimeType = 'audio/webm';
-        if (!MediaRecorder.isTypeSupported('audio/webm')) {
-          mimeType = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : '';
-        }
-        const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
-        const options = mimeType ? { mimeType } : {};
-        const mediaRecorder = new MediaRecorder(stream, options);
-        mediaRecorderRef.current = mediaRecorder;
-        const chunks = [];
-        mediaRecorder.ondataavailable = (e) => {
-          if (e.data && e.data.size > 0) chunks.push(e.data);
-        };
-        mediaRecorder.onstop = async () => {
-          stream.getTracks().forEach(t => t.stop());
-          mediaRecorderRef.current = null;
-          setRecording(false);
-
-          if (chunks.length === 0) {
-            toast.error('No audio recorded — please try again');
-            return;
-          }
-
-          setEnrolling(true);
-          const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
-
-          if (blob.size < 1000) {
-            toast.error('Recording too short — hold for at least 2 seconds');
-            setEnrolling(false);
-            return;
-          }
-
-          try {
-            const formData = new FormData();
-            formData.append('file', blob, `voice.${ext}`);
-            formData.append('passphrase', voicePhrase.trim());
-            const res = await axios.post(`${API_URL}/security/voice/enroll/${section.id}`, formData, {
-              headers: { ...headers, 'Content-Type': 'multipart/form-data' }
-            });
-            setEnrollCount(res.data.samples_recorded);
-            // toast removed
-          } catch (err) {
-            const detail = err.response?.data?.detail;
-            toast.error(detail || 'Voice enrollment failed — check microphone permissions');
-          }
-          setEnrolling(false);
-        };
-        mediaRecorder.start();
-      })
-      .catch(() => { toast.error('Microphone access denied'); setRecording(false); });
+  // Step 1: Request mic permission (without starting recording)
+  const handleMicPermission = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Keep stream alive briefly, then stop tracks — permission is now cached
+      stream.getTracks().forEach(t => t.stop());
+      setMicGranted(true);
+    } catch {
+      toast.error('Microphone access denied — enable in your device settings');
+    }
   };
 
+  // Step 2: Start recording (mic already granted)
+  const handleStartRecording = async () => {
+    if (recording || enrolling) return;
+    if (!voicePhrase.trim()) { toast.error('Enter a passphrase first'); return; }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      // Detect best supported MIME type for this browser
+      let mimeType = '';
+      for (const type of ['audio/webm', 'audio/mp4', 'audio/ogg', '']) {
+        if (!type || MediaRecorder.isTypeSupported(type)) { mimeType = type; break; }
+      }
+      const options = mimeType ? { mimeType } : {};
+      const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+
+      const mediaRecorder = new MediaRecorder(stream, options);
+      mediaRecorderRef.current = mediaRecorder;
+      const chunks = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
+        mediaRecorderRef.current = null;
+        setRecording(false);
+
+        if (chunks.length === 0) {
+          toast.error('No audio captured — please try again');
+          return;
+        }
+
+        setEnrolling(true);
+        const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
+
+        if (blob.size < 1000) {
+          toast.error('Recording too short — speak for at least 2 seconds');
+          setEnrolling(false);
+          return;
+        }
+
+        try {
+          const formData = new FormData();
+          formData.append('file', blob, `voice.${ext}`);
+          formData.append('passphrase', voicePhrase.trim());
+          const res = await axios.post(`${API_URL}/security/voice/enroll/${section.id}`, formData, {
+            headers: { ...headers, 'Content-Type': 'multipart/form-data' }
+          });
+          setEnrollCount(res.data.samples_recorded);
+          toast.success(res.data.message || 'Voice sample enrolled!');
+        } catch (err) {
+          const detail = err.response?.data?.detail;
+          toast.error(detail || 'Voice enrollment failed — try in a quieter environment');
+        }
+        setEnrolling(false);
+      };
+
+      mediaRecorder.start();
+      setRecording(true);
+    } catch (e) {
+      toast.error('Could not start recording: ' + (e.message || 'Unknown error'));
+      setMicGranted(false);
+    }
+  };
+
+  // Step 3: Stop recording
   const handleVoiceStop = () => {
     if (mediaRecorderRef.current && recording) {
       mediaRecorderRef.current.stop();
@@ -467,9 +492,18 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
                 >
                   <StopCircle className="w-6 h-6 text-[var(--rd2)]" />
                 </div>
+              ) : !micGranted ? (
+                <div
+                  onClick={handleMicPermission}
+                  className="w-14 h-14 rounded-full mx-auto mb-2 flex items-center justify-center cursor-pointer transition-all"
+                  style={{ background: 'rgba(139,92,246,0.12)', border: '3px solid var(--pr2)' }}
+                  data-testid={`voice-mic-enable-${section.id}`}
+                >
+                  <Mic className="w-6 h-6 text-[var(--pr2)]" />
+                </div>
               ) : (
                 <div
-                  onClick={handleVoiceEnroll}
+                  onClick={handleStartRecording}
                   className="w-14 h-14 rounded-full mx-auto mb-2 flex items-center justify-center cursor-pointer transition-all"
                   style={{ background: 'rgba(59,123,247,0.12)', border: '3px solid var(--bl3)' }}
                   data-testid={`voice-enroll-${section.id}`}
@@ -477,7 +511,9 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
                   <Mic className="w-6 h-6 text-[var(--bl3)]" />
                 </div>
               )}
-              <div className="text-xs font-bold text-[var(--t)]">{recording ? 'Recording — Tap to Stop' : enrolling ? 'Processing...' : 'Tap to Record Sample'}</div>
+              <div className="text-xs font-bold text-[var(--t)]">
+                {recording ? 'Recording — Tap to Stop' : enrolling ? 'Processing...' : !micGranted ? 'Tap to Enable Microphone' : 'Tap to Record Sample'}
+              </div>
               {(enrollCount > 0 || s.has_voiceprint) && (
                 <p className="text-[11px] text-[var(--gn2)] mt-1 flex items-center justify-center gap-1">
                   <CheckCircle2 className="w-3 h-3" />
