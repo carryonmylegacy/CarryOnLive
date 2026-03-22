@@ -161,11 +161,17 @@ async def enroll_voiceprint_endpoint(
     content = await file.read()
     if len(content) > 25 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="File too large")
+    if len(content) < 1000:
+        raise HTTPException(
+            status_code=400,
+            detail="Recording too short — please hold the button for at least 2 seconds.",
+        )
 
     # Save to temp file for processing
     import tempfile as tf
 
     suffix = "." + (file.filename or "audio.webm").split(".")[-1]
+    logger.info(f"Voice enroll: received {len(content)} bytes, filename={file.filename}, suffix={suffix}")
     with tf.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
         tmp.write(content)
         tmp_path = tmp.name
@@ -192,13 +198,24 @@ async def enroll_voiceprint_endpoint(
             timeout=30,
         )
         if result.returncode != 0:
-            raise HTTPException(status_code=400, detail="Could not process audio file")
+            logger.error(f"ffmpeg failed: {result.stderr.decode()[:500]}")
+            raise HTTPException(
+                status_code=400,
+                detail="Could not process audio file. Please try recording again.",
+            )
 
         with open(wav_path, "rb") as f:
             wav_bytes = f.read()
 
         # Enhanced extraction (run in thread pool to avoid blocking event loop)
-        extraction = await asyncio.to_thread(extract_voiceprint, wav_bytes)
+        try:
+            extraction = await asyncio.to_thread(extract_voiceprint, wav_bytes)
+        except Exception as ve:
+            logger.error(f"Voice feature extraction error: {ve}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Voice processing error: {str(ve)[:200]}. Try recording in a quieter environment.",
+            )
         if extraction is None:
             raise HTTPException(
                 status_code=400,

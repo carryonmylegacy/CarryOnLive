@@ -327,18 +327,37 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
     navigator.mediaDevices.getUserMedia({ audio: true })
       .then(stream => {
         // iOS Safari only supports audio/mp4, not audio/webm
-        const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
-        const ext = mimeType === 'audio/mp4' ? 'mp4' : 'webm';
-        const mediaRecorder = new MediaRecorder(stream, { mimeType });
+        let mimeType = 'audio/webm';
+        if (!MediaRecorder.isTypeSupported('audio/webm')) {
+          mimeType = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : '';
+        }
+        const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+        const options = mimeType ? { mimeType } : {};
+        const mediaRecorder = new MediaRecorder(stream, options);
         mediaRecorderRef.current = mediaRecorder;
         const chunks = [];
-        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) chunks.push(e.data);
+        };
         mediaRecorder.onstop = async () => {
           stream.getTracks().forEach(t => t.stop());
           mediaRecorderRef.current = null;
           setRecording(false);
+
+          if (chunks.length === 0) {
+            toast.error('No audio recorded — please try again');
+            return;
+          }
+
           setEnrolling(true);
-          const blob = new Blob(chunks, { type: mimeType });
+          const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
+
+          if (blob.size < 1000) {
+            toast.error('Recording too short — hold for at least 2 seconds');
+            setEnrolling(false);
+            return;
+          }
+
           try {
             const formData = new FormData();
             formData.append('file', blob, `voice.${ext}`);
@@ -349,7 +368,8 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
             setEnrollCount(res.data.samples_recorded);
             // toast removed
           } catch (err) {
-            toast.error(err.response?.data?.detail || 'Voice enrollment failed');
+            const detail = err.response?.data?.detail;
+            toast.error(detail || 'Voice enrollment failed — check microphone permissions');
           }
           setEnrolling(false);
         };
