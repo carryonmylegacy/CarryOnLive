@@ -99,138 +99,22 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
   const { theme } = useTheme();
   const isLight = theme === 'light';
   const treeRef = useRef(null);
-  const upperMaxRef = useRef(0);
-  const lowerMaxRef = useRef(0);
-  const upperFlashedRef = useRef(false);
-  const lowerStartedRef = useRef(false);
-  const lowerFlashedRef = useRef(false);
-  const initialTopRef = useRef(null);
-  const autoFrameRef = useRef(null);
 
+  // Trigger animation when tree enters viewport via IntersectionObserver
   useEffect(() => {
     const el = treeRef.current;
     if (!el) return;
-    let scrollEl = el.parentElement;
-    while (scrollEl && scrollEl !== document.body) {
-      const st = window.getComputedStyle(scrollEl);
-      if (scrollEl.scrollHeight > scrollEl.clientHeight && (st.overflowY === 'auto' || st.overflowY === 'scroll')) break;
-      scrollEl = scrollEl.parentElement;
-    }
-    const scrollTarget = (scrollEl && scrollEl !== document.body) ? scrollEl : window;
-
-    // RAF-synced flash: show for 2 frames then smooth fade
-    const triggerFlash = (node) => {
-      if (!node) return;
-      node.style.transition = 'none';
-      node.style.opacity = '1';
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          node.style.transition = 'opacity 0.4s ease-out';
-          node.style.opacity = '0';
-        });
-      });
-    };
-
-    // Lerp-based animation state — no CSS transitions, pure RAF
-    let targetRaw = 0;
-    let currentRaw = 0;
-    let animLoopRunning = false;
-    const LERP = 0.12;
-
-    const applyValues = (raw) => {
-      const upper = Math.min(1, raw * 2);
-      const lower = Math.min(1, Math.max(0, (raw - 0.35) * 2.5));
-
-      if (upper > upperMaxRef.current) {
-        upperMaxRef.current = upper;
-        const offset = (1 - upper).toString();
-        el.querySelectorAll('.fill-path-blue').forEach(p => { p.setAttribute('stroke-dashoffset', offset); });
-        el.querySelectorAll('.fill-line-blue').forEach(line => { line.style.opacity = upper.toString(); });
-      }
-      if (upper >= 1 && !upperFlashedRef.current) {
-        upperFlashedRef.current = true;
-        triggerFlash(el.querySelector('.flash-blue'));
-      }
-      if (lower > 0 && !lowerStartedRef.current) {
-        lowerStartedRef.current = true;
-        triggerFlash(el.querySelector('.flash-gold-origin'));
-      }
-      if (lower > lowerMaxRef.current) {
-        lowerMaxRef.current = lower;
-        const offset = (1 - lower).toString();
-        el.querySelectorAll('.fill-path-gold').forEach(p => { p.setAttribute('stroke-dashoffset', offset); });
-        el.querySelectorAll('.fill-line-gold').forEach(line => { line.style.opacity = lower.toString(); });
-      }
-      if (lower >= 1 && !lowerFlashedRef.current) {
-        lowerFlashedRef.current = true;
-        el.querySelectorAll('.flash-gold-end').forEach(f => triggerFlash(f));
-      }
-    };
-
-    // Continuous RAF loop — lerps currentRaw toward targetRaw each frame
-    const tick = () => {
-      if (!el.isConnected) { animLoopRunning = false; return; }
-      const diff = targetRaw - currentRaw;
-      if (Math.abs(diff) < 0.0005) {
-        currentRaw = targetRaw;
-        animLoopRunning = false;
-      } else {
-        currentRaw += diff * LERP;
-        requestAnimationFrame(tick);
-      }
-      applyValues(currentRaw);
-    };
-
-    const ensureAnimLoop = () => {
-      if (!animLoopRunning) {
-        animLoopRunning = true;
-        requestAnimationFrame(tick);
-      }
-    };
-
-    // Scroll handler — just sets the target, RAF loop does the rest
-    const handleScroll = () => {
-      const rect = el.getBoundingClientRect();
-      const vh = window.innerHeight;
-      if (rect.top > vh) return;
-      if (initialTopRef.current === null) initialTopRef.current = rect.top;
-      const scrollDist = Math.max(0, initialTopRef.current - rect.top);
-      targetRaw = scrollDist / 500;
-      ensureAnimLoop();
-    };
-
-    scrollTarget.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-
-    // Desktop: auto-animate when tree is visible (direct drive, no lerp needed)
-    const autoTimer = setTimeout(() => {
-      if (lowerMaxRef.current >= 1) return;
-      const treeRect = el.getBoundingClientRect();
-      const isDesktop = window.innerWidth >= 1024;
-      if (isDesktop && treeRect.top < window.innerHeight) {
-        let startTime = null;
-        const animate = (ts) => {
-          if (!el.isConnected) return;
-          if (!startTime) startTime = ts;
-          const raw = Math.min(1, (ts - startTime) / 2500);
-          currentRaw = raw;
-          targetRaw = raw;
-          applyValues(raw);
-          if (raw < 1) autoFrameRef.current = requestAnimationFrame(animate);
-        };
-        autoFrameRef.current = requestAnimationFrame(animate);
-      }
-    }, 600);
-
-    return () => {
-      scrollTarget.removeEventListener('scroll', handleScroll);
-      clearTimeout(autoTimer);
-      if (autoFrameRef.current) cancelAnimationFrame(autoFrameRef.current);
-      animLoopRunning = false;
-      upperMaxRef.current = 0; lowerMaxRef.current = 0;
-      upperFlashedRef.current = false; lowerStartedRef.current = false; lowerFlashedRef.current = false;
-      initialTopRef.current = null;
-    };
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => el.classList.add('tree-animate'), 400);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
   }, []);
 
   // Use the beneficiaries in the order the benefactor has arranged them (drag-to-reorder tiles)
@@ -240,6 +124,43 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
 
   return (
     <div ref={treeRef} className={className} data-testid="family-tree">
+      {/* CSS keyframe animations — compositor-accelerated, zero JS overhead */}
+      <style>{`
+        @keyframes ftDashReveal {
+          to { stroke-dashoffset: 0; }
+        }
+        @keyframes ftFlash {
+          0%   { opacity: 0; }
+          25%  { opacity: 1; }
+          100% { opacity: 0; }
+        }
+        @keyframes ftFadeIn {
+          to { opacity: 1; }
+        }
+        /* Blue upper paths — estate branches converge to benefactor */
+        .tree-animate .fill-path-blue {
+          animation: ftDashReveal 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        .tree-animate .fill-line-blue {
+          animation: ftFadeIn 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        .tree-animate .flash-blue {
+          animation: ftFlash 0.6s ease-out 1.35s forwards;
+        }
+        /* Gold lower paths — benefactor branches to beneficiaries */
+        .tree-animate .flash-gold-origin {
+          animation: ftFlash 0.6s ease-out 1.35s forwards;
+        }
+        .tree-animate .fill-path-gold {
+          animation: ftDashReveal 1.2s cubic-bezier(0.4, 0, 0.2, 1) 1.5s forwards;
+        }
+        .tree-animate .fill-line-gold {
+          animation: ftFadeIn 1.2s cubic-bezier(0.4, 0, 0.2, 1) 1.5s forwards;
+        }
+        .tree-animate .flash-gold-end {
+          animation: ftFlash 0.6s ease-out 2.65s forwards;
+        }
+      `}</style>
       {/* Beneficiary estates with converging lines to benefactor */}
       {benEstates.length > 0 && (() => {
         const n = benEstates.length;
