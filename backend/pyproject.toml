@@ -17,3 +17,9 @@ ignore = ["E501"]
 
 [tool.ruff.format]
 line-ending = "auto"
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "error",
+    "ignore::PendingDeprecationWarning:starlette",
+]

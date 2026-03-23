@@ -267,7 +267,7 @@ try:
         vapid_private_key_for_webpush = VAPID_PRIVATE_KEY_PATH
         logger.info("VAPID keys loaded from file")
     else:
-        logger.warning("VAPID private key not found - push notifications disabled")
+        logger.info("VAPID private key not found - push notifications disabled")
 except Exception as e:
     logger.error(f"Failed to load VAPID keys: {e}")
 

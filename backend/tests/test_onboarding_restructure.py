@@ -86,7 +86,7 @@ class TestOnboardingStepsConfiguration:
         
         designate_step = next((s for s in ONBOARDING_STEPS if s["key"] == "designate_primary"), None)
         assert designate_step is not None, "designate_primary step not found"
-        assert designate_step.get("optional") == True, \
+        assert designate_step.get("optional") is True, \
             f"Expected designate_primary to have optional=True, got optional={designate_step.get('optional')}"
         print("SUCCESS: designate_primary has optional=True")
     
@@ -99,7 +99,7 @@ class TestOnboardingStepsConfiguration:
         
         credential_step = next((s for s in ONBOARDING_STEPS if s["key"] == "add_credential"), None)
         assert credential_step is not None, "add_credential step not found"
-        assert credential_step.get("optional") == True, \
+        assert credential_step.get("optional") is True, \
             f"Expected add_credential to have optional=True, got optional={credential_step.get('optional')}"
         print("SUCCESS: add_credential has optional=True")
 
