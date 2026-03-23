@@ -265,31 +265,22 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                     </filter>
                   </defs>`;
                 // All paths flow from estate circles down to convergence point near Pete
+                // Odd estate goes to LEFT column (no centering) — asymmetric layout
                 const allPaths = [];
-                let centeredPathBlue = null;
                 for (let idx = 0; idx < n; idx++) {
                   const rIdx = Math.floor(idx / 2);
                   const isLeft = idx % 2 === 0;
-                  const isCentered = (n % 2 !== 0 && idx === n - 1);
-                  const nodeX = isCentered ? cx : (isLeft ? leftCol : rightCol);
-                  const dir = isCentered ? 0 : (isLeft ? 1 : -1);
+                  const nodeX = isLeft ? leftCol : rightCol;
+                  const dir = isLeft ? 1 : -1;
                   const rowCenterY = (rIdx + 0.3) * rowH;
-                  if (isCentered) {
-                    centeredPathBlue = `M ${cx.toFixed(1)},${rowCenterY.toFixed(1)} L ${cx.toFixed(1)},97`;
-                    allPaths.push(centeredPathBlue);
-                  } else {
-                    const sx = nodeX + dir * circleR;
-                    const cp1x = sx + 0.6 * (cx - sx);
-                    const cp2y = rowCenterY + 0.5 * (97 - rowCenterY);
-                    allPaths.push(`M ${sx.toFixed(1)},${rowCenterY.toFixed(1)} C ${cp1x.toFixed(1)},${rowCenterY.toFixed(1)} ${cx.toFixed(1)},${cp2y.toFixed(1)} ${cx.toFixed(1)},97`);
-                  }
+                  const sx = nodeX + dir * circleR;
+                  const cp1x = sx + 0.6 * (cx - sx);
+                  const cp2y = rowCenterY + 0.5 * (97 - rowCenterY);
+                  allPaths.push(`M ${sx.toFixed(1)},${rowCenterY.toFixed(1)} C ${cp1x.toFixed(1)},${rowCenterY.toFixed(1)} ${cx.toFixed(1)},${cp2y.toFixed(1)} ${cx.toFixed(1)},97`);
                 }
                 allPaths.forEach(d => {
                   svgContent += `<path d="${d}" fill="none" stroke="url(#lineFlow)" stroke-width="${sw}" filter="url(#lineGlow)" />`;
                 });
-                if (centeredPathBlue) {
-                  svgContent += `<path d="${centeredPathBlue}" fill="none" stroke="${isLight ? '#3B82F6' : '#60A5FA'}" stroke-width="${sw * 1.5}" opacity="0.25" filter="url(#lineGlow)" />`;
-                }
                 allPaths.forEach(d => {
                   svgContent += `<path class="fill-path-blue" d="${d}" fill="none" stroke="${lightColor}" stroke-width="${overlayW}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" filter="url(#lightPulseBlue)" />`;
                 });
@@ -298,28 +289,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               })() }}
             />
 
-            {/* Vertical connector for centered (odd) estate node — from centered circle to curve convergence */}
-            {n % 2 !== 0 && (() => {
-              const blueColor = isLight ? 'rgba(59,130,246,0.2)' : 'rgba(100,160,255,0.18)';
-              const glowColorB = isLight ? 'rgba(59,130,246,0.12)' : 'rgba(100,160,255,0.10)';
-              const animColorB = isLight ? 'rgba(100,160,255,0.3)' : 'rgba(160,200,255,0.25)';
-              const lastRowTop = (numRows - 1) * estRowH;
-              const prevRowBottom = lastRowTop - 10;
-              return (
-                <div className="absolute pointer-events-none" style={{
-                  left: '50%', top: prevRowBottom, height: estRowH - 10,
-                  width: 0, transform: 'translateX(-50%)', zIndex: 0,
-                  borderLeft: `1.5px solid ${blueColor}`,
-                  boxShadow: `0 0 6px ${glowColorB}, 0 0 12px ${glowColorB}`,
-                }}>
-                  <div className="fill-line-blue" style={{
-                    position: 'absolute', left: -1, top: 0, width: 2, height: '100%',
-                    background: animColorB, opacity: 0,
-                    boxShadow: `0 0 8px ${animColorB}`,
-                  }} />
-                </div>
-              );
-            })()}
+            {/* No centered estate connector needed — odd estates go to left column */}
 
             {/* Estate nodes — two columns with wide center gap */}
             <div className="relative grid px-1" style={{ gridTemplateColumns: '1fr 1fr', columnGap: '20%', rowGap: 10, justifyItems: 'center', zIndex: 2 }}>
@@ -328,7 +298,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                 const labelTop = nameWords.length > 2 ? nameWords.slice(0, -1).join(' ') : nameWords.join(' ');
                 const labelBottom = nameWords.length > 2 ? nameWords.slice(-1)[0] : '';
                 return (
-                <div key={est.id} style={benEstates.length % 2 !== 0 && idx === benEstates.length - 1 ? { gridColumn: '1 / -1' } : undefined}>
+                <div key={est.id}>
                   <TreeNode
                     initials={<Users className="w-3.5 h-3.5" />}
                     photo={est.estate_photo_url || est.owner_photo_url}
@@ -467,8 +437,8 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               const glowColor = isLight ? 'rgba(184,134,11,0.12)' : 'rgba(212,175,55,0.10)';
               const animColor = isLight ? 'rgba(200,170,50,0.3)' : 'rgba(255,230,140,0.25)';
               const numFullRows = Math.floor(n / 2);
-              // Start where curves meet (center of first row circles)
-              const lineTop = trailPx + 25;
+              // Start where trunk is (top of container, near SVG y=2)
+              const lineTop = 0;
               // End at top edge of centered node circle (don't go through it)
               const lineBottom = trailPx + numFullRows * estRowH + (numFullRows - 1) * 12 + 12;
               return (
