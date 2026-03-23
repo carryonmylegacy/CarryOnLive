@@ -303,37 +303,16 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
       {/* Root node (benefactor) with halo orb + trunk flares */}
       <div className="flex flex-col items-center mt-3">
         <div className="relative" style={{ overflow: 'visible' }}>
-          {/* Trunk flare — blue, above Pete */}
+          {/* Halo orb — narrow vertical ellipse bridging trunk tips through Pete */}
           <div className="absolute pointer-events-none" style={{
-            width: 140, height: 20,
-            left: '50%', top: -14,
-            transform: 'translateX(-50%)',
-            background: isLight
-              ? 'radial-gradient(ellipse at 50% 100%, rgba(59,130,246,0.35) 0%, transparent 65%)'
-              : 'radial-gradient(ellipse at 50% 100%, rgba(100,160,255,0.28) 0%, transparent 65%)',
-            filter: 'blur(2px)',
-            zIndex: 0,
-          }} />
-          {/* Bi-color halo orb centered on Pete's circle */}
-          <div className="absolute pointer-events-none" style={{
-            width: 240, height: 240,
-            left: '50%', top: 30,
-            transform: 'translate(-50%, -50%)',
+            width: 36, height: 140,
+            left: '50%', top: '50%',
+            transform: 'translate(-50%, -45%)',
             borderRadius: '50%',
             background: isLight
-              ? 'radial-gradient(ellipse at 50% 20%, rgba(59,130,246,0.28) 0%, rgba(59,130,246,0.08) 30%, transparent 55%), radial-gradient(ellipse at 50% 80%, rgba(184,134,11,0.24) 0%, rgba(184,134,11,0.06) 30%, transparent 55%)'
-              : 'radial-gradient(ellipse at 50% 20%, rgba(100,160,255,0.28) 0%, rgba(100,160,255,0.08) 30%, transparent 55%), radial-gradient(ellipse at 50% 80%, rgba(212,175,55,0.24) 0%, rgba(212,175,55,0.06) 30%, transparent 55%)',
-            zIndex: 0,
-          }} />
-          {/* Trunk flare — gold, below Pete */}
-          <div className="absolute pointer-events-none" style={{
-            width: 140, height: 20,
-            left: '50%', bottom: -14,
-            transform: 'translateX(-50%)',
-            background: isLight
-              ? 'radial-gradient(ellipse at 50% 0%, rgba(184,134,11,0.35) 0%, transparent 65%)'
-              : 'radial-gradient(ellipse at 50% 0%, rgba(212,175,55,0.28) 0%, transparent 65%)',
-            filter: 'blur(2px)',
+              ? 'radial-gradient(ellipse at 50% 15%, rgba(59,130,246,0.30) 0%, rgba(59,130,246,0.08) 35%, transparent 60%), radial-gradient(ellipse at 50% 85%, rgba(184,134,11,0.26) 0%, rgba(184,134,11,0.06) 35%, transparent 60%)'
+              : 'radial-gradient(ellipse at 50% 15%, rgba(100,160,255,0.28) 0%, rgba(100,160,255,0.08) 35%, transparent 60%), radial-gradient(ellipse at 50% 85%, rgba(212,175,55,0.24) 0%, rgba(212,175,55,0.06) 35%, transparent 60%)',
+            filter: 'blur(6px)',
             zIndex: 0,
           }} />
           <div style={{ position: 'relative', zIndex: 1 }}>
