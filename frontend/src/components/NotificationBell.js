@@ -100,22 +100,34 @@ const NotificationBell = ({ collapsed }) => {
         )}
       </button>
 
-      {/* Notification Panel — grows upward from button */}
+      {/* Notification Panel — fixed on mobile (safe area aware), absolute on desktop */}
       {open && (
-        <div
-          className="absolute z-[200] rounded-xl overflow-hidden right-0 lg:right-auto lg:left-0"
-          style={{
-            width: 340,
-            maxWidth: 'calc(100vw - 32px)',
-            maxHeight: 'min(420px, 60vh)',
-            bottom: 'calc(100% + 8px)',
-            ...(collapsed ? { left: 48, right: 'auto' } : {}),
-            background: 'var(--bg2, #0F1629)',
-            border: '1px solid var(--b)',
-            boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
-          }}
-          data-testid="notification-panel"
-        >
+        <>
+          {/* Mobile backdrop */}
+          <div className="fixed inset-0 z-[199] bg-black/30 lg:hidden" onClick={() => setOpen(false)} />
+          <div
+            className="fixed z-[200] rounded-xl overflow-hidden inset-x-4 lg:absolute lg:inset-x-auto lg:right-auto lg:left-0"
+            style={{
+              // Mobile: fixed within safe areas
+              top: 'calc(env(safe-area-inset-top, 0px) + 8px)',
+              bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
+              // Desktop overrides
+              ...(typeof window !== 'undefined' && window.innerWidth >= 1024 ? {
+                top: 'auto',
+                bottom: 'calc(100% + 8px)',
+                width: 340,
+                maxWidth: 'calc(100vw - 32px)',
+                maxHeight: 'min(420px, 60vh)',
+                left: collapsed ? 48 : 0,
+                right: 'auto',
+                position: 'absolute',
+              } : {}),
+              background: 'var(--bg2, #0F1629)',
+              border: '1px solid var(--b)',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
+            }}
+            data-testid="notification-panel"
+          >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--b)' }}>
             <span className="text-xs font-bold text-[var(--t)] uppercase tracking-wider">Notifications</span>
@@ -136,7 +148,7 @@ const NotificationBell = ({ collapsed }) => {
           </div>
 
           {/* List */}
-          <div className="overflow-y-auto" style={{ maxHeight: 360 }}>
+          <div className="overflow-y-auto" style={{ maxHeight: 'calc(100% - 48px)' }}>
             {loading ? (
               <div className="flex justify-center py-6">
                 <div className="w-5 h-5 border-2 border-[var(--gold)] border-t-transparent rounded-full animate-spin" />
@@ -181,6 +193,7 @@ const NotificationBell = ({ collapsed }) => {
             )}
           </div>
         </div>
+        </>
       )}
     </div>
   );
