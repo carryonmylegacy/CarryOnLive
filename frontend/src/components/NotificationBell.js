@@ -9,6 +9,8 @@ const NotificationBell = ({ collapsed }) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const panelRef = useRef(null);
+  const buttonRef = useRef(null);
+  const [panelPos, setPanelPos] = useState({ left: 0, bottom: 0 });
 
   const token = localStorage.getItem('carryon_token');
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -38,7 +40,14 @@ const NotificationBell = ({ collapsed }) => {
   };
 
   const handleOpen = () => {
-    if (!open) fetchNotifications();
+    if (!open) {
+      fetchNotifications();
+      // Calculate position from button for fixed desktop panel
+      if (buttonRef.current && window.innerWidth >= 1024) {
+        const rect = buttonRef.current.getBoundingClientRect();
+        setPanelPos({ left: rect.left, bottom: window.innerHeight - rect.top + 8 });
+      }
+    }
     setOpen(!open);
   };
 
@@ -76,6 +85,7 @@ const NotificationBell = ({ collapsed }) => {
   return (
     <div className="relative" ref={panelRef}>
       <button
+        ref={buttonRef}
         onClick={handleOpen}
         className={`sb-pill w-full ${collapsed ? 'justify-center' : ''} relative`}
         title={collapsed ? `Notifications${unreadCount > 0 ? ` (${unreadCount})` : ''}` : undefined}
@@ -106,21 +116,21 @@ const NotificationBell = ({ collapsed }) => {
           {/* Mobile backdrop */}
           <div className="fixed inset-0 z-[199] bg-black/30 lg:hidden" onClick={() => setOpen(false)} />
           <div
-            className="fixed z-[200] rounded-xl overflow-hidden inset-x-4 lg:absolute lg:inset-x-auto lg:right-auto lg:left-0"
+            className="fixed z-[200] rounded-xl overflow-hidden inset-x-4 lg:inset-x-auto"
             style={{
               // Mobile: fixed within safe areas
               top: 'calc(env(safe-area-inset-top, 0px) + 8px)',
               bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
-              // Desktop overrides
+              // Desktop overrides — fixed position so it's not clipped by sidebar overflow
               ...(typeof window !== 'undefined' && window.innerWidth >= 1024 ? {
+                position: 'fixed',
                 top: 'auto',
-                bottom: 'calc(100% + 8px)',
-                width: 340,
+                bottom: panelPos.bottom,
+                left: panelPos.left,
+                right: 'auto',
+                width: 360,
                 maxWidth: 'calc(100vw - 32px)',
                 maxHeight: 'min(420px, 60vh)',
-                left: collapsed ? 48 : 0,
-                right: 'auto',
-                position: 'absolute',
               } : {}),
               background: 'var(--bg2, #0F1629)',
               border: '1px solid var(--b)',
