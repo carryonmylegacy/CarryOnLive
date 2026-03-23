@@ -690,8 +690,8 @@ const SettingsPage = () => {
             <div>
               <label className="text-[var(--t5)] text-xs mb-1 block">Date of Birth</label>
               {profileEditing ? (
-                <Input type="date" value={profileData.date_of_birth || ''} onChange={e => setProfileData(p => ({...p, date_of_birth: e.target.value}))}
-                  className="bg-[var(--card)] border-[var(--b)] text-[var(--t)] text-sm" data-testid="profile-dob" />
+                <Input type="text" value={profileData.date_of_birth || ''} onChange={e => setProfileData(p => ({...p, date_of_birth: e.target.value}))}
+                  placeholder="MM/DD/YYYY" className="bg-[var(--card)] border-[var(--b)] text-[var(--t)] text-sm" data-testid="profile-dob" />
               ) : (
                 <p className="text-[var(--t)] text-sm font-medium">{profileData.date_of_birth || '—'}</p>
               )}

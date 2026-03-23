@@ -140,6 +140,10 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
       if (upper > upperMaxRef.current) {
         upperMaxRef.current = upper;
         el.querySelectorAll('.fill-path-blue').forEach(p => { p.style.strokeDashoffset = (1 - upper).toString(); });
+        el.querySelectorAll('.fill-line-blue').forEach(line => {
+          line.style.transition = 'opacity 0.3s ease-out';
+          line.style.opacity = upper.toString();
+        });
       }
       if (upper >= 1 && !upperFlashedRef.current) {
         upperFlashedRef.current = true;
@@ -153,6 +157,11 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
       if (lower > lowerMaxRef.current) {
         lowerMaxRef.current = lower;
         el.querySelectorAll('.fill-path-gold').forEach(p => { p.style.strokeDashoffset = (1 - lower).toString(); });
+        // Animate centered vertical connector line
+        el.querySelectorAll('.fill-line-gold').forEach(line => {
+          line.style.transition = 'opacity 0.3s ease-out';
+          line.style.opacity = lower.toString();
+        });
       }
       if (lower >= 1 && !lowerFlashedRef.current) {
         lowerFlashedRef.current = true;
@@ -289,20 +298,26 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               })() }}
             />
 
-            {/* Vertical connector line for centered (odd) bottom estate node */}
-            {n % 2 !== 0 && (
-              <div className="absolute pointer-events-none" style={{
-                left: '50%',
-                top: 0,
-                bottom: 0,
-                width: 2,
-                transform: 'translateX(-50%)',
-                background: isLight
-                  ? 'linear-gradient(to bottom, rgba(59,130,246,0.12), rgba(59,130,246,0.18))'
-                  : 'linear-gradient(to bottom, rgba(100,160,255,0.10), rgba(100,160,255,0.15))',
-                zIndex: 0,
-              }} />
-            )}
+            {/* Vertical connector for centered (odd) estate node — styled like tree curves */}
+            {n % 2 !== 0 && (() => {
+              const blueColor = isLight ? 'rgba(59,130,246,0.2)' : 'rgba(100,160,255,0.18)';
+              const glowColorB = isLight ? 'rgba(59,130,246,0.12)' : 'rgba(100,160,255,0.10)';
+              const animColorB = isLight ? 'rgba(100,160,255,0.3)' : 'rgba(160,200,255,0.25)';
+              return (
+                <div className="absolute pointer-events-none" style={{
+                  left: '50%', top: 0, bottom: 0,
+                  width: 0, transform: 'translateX(-50%)', zIndex: 0,
+                  borderLeft: `1.5px solid ${blueColor}`,
+                  boxShadow: `0 0 6px ${glowColorB}, 0 0 12px ${glowColorB}`,
+                }}>
+                  <div className="fill-line-blue" style={{
+                    position: 'absolute', left: -1, top: 0, width: 2, height: '100%',
+                    background: animColorB, opacity: 0,
+                    boxShadow: `0 0 8px ${animColorB}`,
+                  }} />
+                </div>
+              );
+            })()}
 
             {/* Estate nodes — two columns with wide center gap */}
             <div className="relative grid px-1" style={{ gridTemplateColumns: '1fr 1fr', columnGap: '20%', rowGap: 10, justifyItems: 'center', zIndex: 2 }}>
@@ -444,20 +459,27 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               })() }}
             />
 
-            {/* Vertical connector line for centered (odd) bottom node */}
-            {n % 2 !== 0 && (
-              <div className="absolute pointer-events-none" style={{
-                left: '50%',
-                top: trailPx,
-                bottom: 0,
-                width: 2,
-                transform: 'translateX(-50%)',
-                background: isLight
-                  ? 'linear-gradient(to bottom, rgba(184,134,11,0.18), rgba(184,134,11,0.12))'
-                  : 'linear-gradient(to bottom, rgba(212,175,55,0.15), rgba(212,175,55,0.10))',
-                zIndex: 0,
-              }} />
-            )}
+            {/* Vertical connector for centered (odd) bottom node — styled like tree curves */}
+            {n % 2 !== 0 && (() => {
+              const goldColor = isLight ? 'rgba(184,134,11,0.2)' : 'rgba(212,175,55,0.18)';
+              const glowColor = isLight ? 'rgba(184,134,11,0.12)' : 'rgba(212,175,55,0.10)';
+              const animColor = isLight ? 'rgba(200,170,50,0.3)' : 'rgba(255,230,140,0.25)';
+              return (
+                <div className="absolute pointer-events-none" style={{
+                  left: '50%', top: trailPx, bottom: 0,
+                  width: 0, transform: 'translateX(-50%)', zIndex: 0,
+                  borderLeft: `1.5px solid ${goldColor}`,
+                  boxShadow: `0 0 6px ${glowColor}, 0 0 12px ${glowColor}`,
+                }}>
+                  {/* Animated light overlay */}
+                  <div className="fill-line-gold" style={{
+                    position: 'absolute', left: -1, top: 0, width: 2, height: '100%',
+                    background: animColor, opacity: 0,
+                    boxShadow: `0 0 8px ${animColor}`,
+                  }} />
+                </div>
+              );
+            })()}
 
             {/* Beneficiary grid — two columns with wide center gap */}
             <div className="grid px-1" style={{ gridTemplateColumns: 'repeat(2, 1fr)', columnGap: '20%', rowGap: 12, justifyItems: 'center', paddingTop: trailPx, position: 'relative', zIndex: 1 }}>
