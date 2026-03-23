@@ -289,6 +289,21 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               })() }}
             />
 
+            {/* Vertical connector line for centered (odd) bottom estate node */}
+            {n % 2 !== 0 && (
+              <div className="absolute pointer-events-none" style={{
+                left: '50%',
+                top: 0,
+                bottom: 0,
+                width: 2,
+                transform: 'translateX(-50%)',
+                background: isLight
+                  ? 'linear-gradient(to bottom, rgba(59,130,246,0.12), rgba(59,130,246,0.18))'
+                  : 'linear-gradient(to bottom, rgba(100,160,255,0.10), rgba(100,160,255,0.15))',
+                zIndex: 0,
+              }} />
+            )}
+
             {/* Estate nodes — two columns with wide center gap */}
             <div className="relative grid px-1" style={{ gridTemplateColumns: '1fr 1fr', columnGap: '20%', rowGap: 10, justifyItems: 'center', zIndex: 2 }}>
               {benEstates.map((est, idx) => {
@@ -428,6 +443,21 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                 return svg;
               })() }}
             />
+
+            {/* Vertical connector line for centered (odd) bottom node */}
+            {n % 2 !== 0 && (
+              <div className="absolute pointer-events-none" style={{
+                left: '50%',
+                top: trailPx,
+                bottom: 0,
+                width: 2,
+                transform: 'translateX(-50%)',
+                background: isLight
+                  ? 'linear-gradient(to bottom, rgba(184,134,11,0.18), rgba(184,134,11,0.12))'
+                  : 'linear-gradient(to bottom, rgba(212,175,55,0.15), rgba(212,175,55,0.10))',
+                zIndex: 0,
+              }} />
+            )}
 
             {/* Beneficiary grid — two columns with wide center gap */}
             <div className="grid px-1" style={{ gridTemplateColumns: 'repeat(2, 1fr)', columnGap: '20%', rowGap: 12, justifyItems: 'center', paddingTop: trailPx, position: 'relative', zIndex: 1 }}>
