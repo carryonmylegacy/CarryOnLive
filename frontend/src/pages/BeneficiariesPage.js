@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { cachedGet } from '../utils/apiCache';
@@ -112,11 +112,14 @@ const usStates = [
 const BeneficiariesPage = () => {
   const { user, getAuthHeaders } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromGettingStarted = location.state?.fromGettingStarted;
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [estate, setEstate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showPrimaryPopup, setShowPrimaryPopup] = useState(false);
+  const [showBenAddedPopup, setShowBenAddedPopup] = useState(false);
   const [adding, setAdding] = useState(false);
   const [sendingInvite, setSendingInvite] = useState(null);
   const [expandedCard, setExpandedCard] = useState(null);
@@ -293,6 +296,16 @@ const BeneficiariesPage = () => {
         if (photoFile && res.data?.id) await uploadPhoto(res.data.id);
         if (res.data?.auto_invited) {
           toast.success('Invitation email sent');
+        }
+        // Show return popup when adding beneficiary from Getting Started flow
+        if (fromGettingStarted) {
+          setShowAddModal(false);
+          setEditingBeneficiary(null);
+          resetForm();
+          await fetchData();
+          setShowBenAddedPopup(true);
+          setAdding(false);
+          return;
         }
       }
       
@@ -1197,6 +1210,13 @@ const BeneficiariesPage = () => {
       </SectionLockedOverlay>
       {showPrimaryPopup && (
         <ReturnPopup step="primary" onReturn={() => { setShowPrimaryPopup(false); navigate('/dashboard'); }} />
+      )}
+      {showBenAddedPopup && (
+        <ReturnPopup
+          step="beneficiary"
+          onReturn={() => { setShowBenAddedPopup(false); navigate('/dashboard'); }}
+          onAddAnother={() => { setShowBenAddedPopup(false); setShowAddModal(true); }}
+        />
       )}
       {/* Hidden file input for quick avatar photo upload */}
       <input

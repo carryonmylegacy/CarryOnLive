@@ -1,12 +1,20 @@
 import React from 'react';
-import { Sparkles, Upload, MessageSquare, CheckSquare, ChevronRight, UserCheck, KeyRound } from 'lucide-react';
+import { Sparkles, Upload, MessageSquare, CheckSquare, ChevronRight, UserCheck, KeyRound, Users } from 'lucide-react';
 
 /**
  * Bouncing "Return to Dashboard" popup — appears after completing an activation step.
  * Different copy each time for warmth.
  */
-export const ReturnPopup = ({ step, beneficiaryNames, onReturn, onAlternate }) => {
+export const ReturnPopup = ({ step, beneficiaryNames, onReturn, onAlternate, onAddAnother }) => {
   const variants = {
+    beneficiary: {
+      title: 'Wonderful — your first beneficiary is added!',
+      subtitle: 'You can add more beneficiaries now, or continue to the next step of your estate plan.',
+      returnText: 'Return to Dashboard for Next Step',
+      alternateText: 'Add Another Beneficiary',
+      icon: Users,
+      color: '#3b82f6',
+    },
     message: {
       title: 'Beautiful. That message will mean everything.',
       subtitle: 'You can edit or create more messages anytime.',
@@ -94,8 +102,8 @@ export const ReturnPopup = ({ step, beneficiaryNames, onReturn, onAlternate }) =
           style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}>
           {v.returnText} <ChevronRight className="w-4 h-4 inline ml-1" />
         </button>
-        {v.alternateText && onAlternate && (
-          <button onClick={onAlternate}
+        {v.alternateText && (onAlternate || onAddAnother) && (
+          <button onClick={onAddAnother || onAlternate}
             className="w-full py-2.5 rounded-xl text-sm font-bold"
             style={{ color: 'var(--t4, #94a3b8)', border: '1px solid var(--b, rgba(255,255,255,0.08))' }}>
             {v.alternateText}

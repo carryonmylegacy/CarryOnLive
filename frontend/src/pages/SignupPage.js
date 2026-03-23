@@ -143,35 +143,20 @@ const SignupPage = () => {
   // Dynamic steps
   const computeSteps = () => {
     const steps = [
-      { id: 'name', label: 'Name', icon: User },
-      { id: 'personal', label: 'About You', icon: Heart },
+      { id: 'name', label: 'About You', icon: User },
     ];
     if (isMinor) {
-      // Under 18: Name → About You (with benefactor email) → Credentials
+      // Under 18: Name+Gender+DOB+BenefactorEmail → Credentials
       steps.push({ id: 'credentials', label: 'Login', icon: Lock });
       return steps;
     }
-    steps.push({ id: 'address', label: 'Address', icon: MapPin });
     steps.push({ id: 'role', label: 'Role', icon: Users });
     if (role === 'beneficiary') {
-      // Beneficiary: skip marital, dependents, eligibility
+      steps.push({ id: 'benefactor_email', label: 'Your Benefactor', icon: Mail });
       steps.push({ id: 'credentials', label: 'Login', icon: Lock });
       return steps;
     }
-    if (isNewAdult) {
-      // New adults: skip marital step AND eligibility — go straight to parent enrollment → credentials
-      // They auto-qualify for New Adult tier; no verification needed
-      beneficiaries.forEach((ben, idx) => {
-        steps.push({ id: `beneficiary_${idx}`, label: ben.relation, icon: Users, benIndex: idx });
-      });
-      steps.push({ id: 'credentials', label: 'Login', icon: Lock });
-      return steps;
-    }
-    steps.push({ id: 'marital', label: 'Family', icon: Heart });
-    // Add a step for each beneficiary
-    beneficiaries.forEach((ben, idx) => {
-      steps.push({ id: `beneficiary_${idx}`, label: ben.relation, icon: Users, benIndex: idx });
-    });
+    // Benefactor (including new adults)
     steps.push({ id: 'eligibility', label: 'Eligibility', icon: Shield });
     steps.push({ id: 'credentials', label: 'Login', icon: Lock });
     return steps;
@@ -209,27 +194,18 @@ const SignupPage = () => {
 
   const canAdvance = () => {
     const sid = currentStep?.id;
-    if (sid === 'name') return firstName.trim() && lastName.trim();
-    if (sid === 'personal') {
-      if (isMinor) return !!benefactorEmail.trim();
+    if (sid === 'name') {
+      if (!firstName.trim() || !lastName.trim()) return false;
+      if (isMinor && !benefactorEmail.trim()) return false;
       return true;
     }
-    if (sid === 'address') return addressStreet.trim() && addressCity.trim() && addressState && addressZip.trim();
     if (sid === 'role') {
       if (!role) return false;
-      if (role === 'beneficiary' && !benefactorEmail.trim()) return false;
-      if (role === 'beneficiary' && benefactorEmailError) return false;
       return true;
     }
-    if (sid === 'marital') return true;
-    if (sid?.startsWith('beneficiary_')) {
-      const idx = currentStep.benIndex;
-      const ben = beneficiaries[idx];
-      if (!ben) return false;
-      if (!ben.first_name.trim()) return false;
-      if (!ben.last_name.trim()) return false;
-      if (ben.requireEmail && !ben.email.trim()) return false;
-      if (emailErrors[idx]) return false;
+    if (sid === 'benefactor_email') {
+      if (!benefactorEmail.trim()) return false;
+      if (benefactorEmailError) return false;
       return true;
     }
     if (sid === 'eligibility') {
@@ -243,17 +219,16 @@ const SignupPage = () => {
   const handleNext = () => {
     if (!canAdvance()) {
       const sid = currentStep?.id;
-      if (sid === 'name') toast.error('Please enter your first and last name');
-      if (sid === 'address') toast.error('Please enter your full address');
+      if (sid === 'name') {
+        if (!firstName.trim() || !lastName.trim()) toast.error('Please enter your first and last name');
+        else if (isMinor && !benefactorEmail.trim()) toast.error('Please enter your benefactor\'s email');
+      }
       if (sid === 'role') {
         if (!role) toast.error('Please select your role');
-        else if (role === 'beneficiary' && !benefactorEmail.trim()) toast.error('Please enter your benefactor\'s email address');
       }
-      if (sid === 'personal' && isMinor && !benefactorEmail.trim()) toast.error('Please enter your benefactor\'s email');
-      if (sid?.startsWith('beneficiary_')) {
-        const idx = currentStep.benIndex;
-        if (emailErrors[idx]) toast.error(emailErrors[idx]);
-        else toast.error('Please fill in the required fields');
+      if (sid === 'benefactor_email') {
+        if (!benefactorEmail.trim()) toast.error('Please enter your benefactor\'s email address');
+        else if (benefactorEmailError) toast.error(benefactorEmailError);
       }
       if (sid === 'eligibility' && specialStatus.includes('enterprise') && !b2bCodeSignup.trim()) toast.error('Please enter your partner access code');
       if (sid === 'credentials') {
@@ -321,7 +296,7 @@ const SignupPage = () => {
     try {
       const user = await verifyOtp(registeredEmail, otp);
       // toast removed
-      navigate(user.role === 'beneficiary' ? '/beneficiary' : '/onboarding');
+      navigate(user.role === 'beneficiary' ? '/beneficiary' : '/dashboard');
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Invalid OTP');
     } finally {
@@ -590,16 +565,6 @@ const SignupPage = () => {
                             </Select>
                           </div>
                         </div>
-                      </div>
-                    )}
-
-                    {/* STEP 1: Personal */}
-                    {currentStep?.id === 'personal' && (
-                      <div className="space-y-3 sm:space-y-4">
-                        <div>
-                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Tell us about yourself</h2>
-                          <p className="text-[#6b7a90] text-sm">Helps personalize your experience.</p>
-                        </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1.5">
                             <Label className="text-[#7b879e] text-sm font-medium">Gender</Label>
@@ -631,266 +596,7 @@ const SignupPage = () => {
                       </div>
                     )}
 
-                    {/* Marital Status & Dependents (benefactors only) */}
-                    {currentStep?.id === 'marital' && (
-                      <div className="space-y-3">
-                        <div>
-                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Your Family</h2>
-                          <p className="text-[#6b7a90] text-sm">This helps us set up your beneficiaries.</p>
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-[#7b879e] text-sm font-medium">Marital Status <span className="text-red-400">*</span></Label>
-                          <Select value={maritalStatus} onValueChange={setMaritalStatus}>
-                            <SelectTrigger className={selectClass} data-testid="signup-marital-select"><SelectValue placeholder="Select..." /></SelectTrigger>
-                            <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
-                              {maritalOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        {(maritalStatus === 'married' || maritalStatus === 'domestic_partnership') && (
-                          <p className="text-[#525c72] text-[11px] -mt-1">Your spouse will be added as a beneficiary in the next step — do not count them below.</p>
-                        )}
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="space-y-1.5">
-                            <Label className="text-[#7b879e] text-sm font-medium">Beneficiaries Under 18</Label>
-                            <Select value={String(dependentsUnder18)} onValueChange={(v) => setDependentsUnder18(parseInt(v))}>
-                              <SelectTrigger className={selectClass} data-testid="signup-dependents-under"><SelectValue placeholder="0" /></SelectTrigger>
-                              <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
-                                {[...Array(11)].map((_, i) => <SelectItem key={i} value={String(i)}>{i}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-1.5">
-                            <Label className="text-[#7b879e] text-sm font-medium">Beneficiaries Over 18</Label>
-                            <Select value={String(dependentsOver18)} onValueChange={(v) => setDependentsOver18(parseInt(v))}>
-                              <SelectTrigger className={selectClass} data-testid="signup-dependents-over"><SelectValue placeholder="0" /></SelectTrigger>
-                              <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
-                                {[...Array(11)].map((_, i) => <SelectItem key={i} value={String(i)}>{i}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                        <p className="text-[#525c72] text-[11px]">Don't include your spouse — only children, elderly parents, or other beneficiaries.</p>
-                      </div>
-                    )}
-
-                    {/* Beneficiary enrollment tiles (dynamic) */}
-                    {currentStep?.id?.startsWith('beneficiary_') && (() => {
-                      const idx = currentStep.benIndex;
-                      const ben = beneficiaries[idx];
-                      if (!ben) return null;
-                      const updateBen = (field, value) => {
-                        setBeneficiaries(prev => prev.map((b, i) => i === idx ? { ...b, [field]: value } : b));
-                      };
-                      const isParentStep = isNewAdult && ben.relation?.startsWith('Parent');
-                      return (
-                        <div className="space-y-3">
-                          <div>
-                            <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                              {ben.relation?.startsWith('Adult Beneficiary') ? (
-                                <><span style={{ textDecoration: 'underline', textDecorationColor: '#d4af37', textUnderlineOffset: '3px' }}>Adult</span>{ben.relation.replace('Adult', '')}</>
-                              ) : ben.relation?.startsWith('Minor Beneficiary') ? (
-                                <><span style={{ textDecoration: 'underline', textDecorationColor: '#d4af37', textUnderlineOffset: '3px' }}>Minor</span>{ben.relation.replace('Minor', '')}</>
-                              ) : ben.relation}
-                            </h2>
-                            <p className="text-[#6b7a90] text-sm">
-                              {isParentStep
-                                ? 'Give them access to your Power of Attorney, Living Will, and estate — so they can act on your behalf if something happens.'
-                                : 'Enter their details to add them as a beneficiary.'}
-                            </p>
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1.5">
-                              <Label className="text-[#7b879e] text-sm font-medium">First Name <span className="text-red-400">*</span></Label>
-                              <Input value={ben.first_name} onChange={(e) => updateBen('first_name', e.target.value)}
-                                onFocus={handleFieldFocus} placeholder="First name" className={inputClass} />
-                            </div>
-                            <div className="space-y-1.5">
-                              <Label className="text-[#7b879e] text-sm font-medium">Middle Name <span className="text-[#525c72] text-xs font-normal">(optional)</span></Label>
-                              <Input value={ben.middle_name || ''} onChange={(e) => updateBen('middle_name', e.target.value)}
-                                onFocus={handleFieldFocus} placeholder="Middle name" className={inputClass} />
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-3 gap-3">
-                            <div className="space-y-1.5 col-span-2">
-                              <Label className="text-[#7b879e] text-sm font-medium">Last Name <span className="text-red-400">*</span></Label>
-                              <Input value={ben.last_name} onChange={(e) => updateBen('last_name', e.target.value)}
-                                onFocus={handleFieldFocus} placeholder="Last name" className={inputClass} />
-                            </div>
-                            <div className="space-y-1.5">
-                              <Label className="text-[#7b879e] text-sm font-medium">Suffix</Label>
-                              <Select value={ben.suffix || ''} onValueChange={(v) => updateBen('suffix', v === 'none' ? '' : v)}>
-                                <SelectTrigger className={selectClass}><SelectValue placeholder="—" /></SelectTrigger>
-                                <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
-                                  <SelectItem value="none">None</SelectItem>
-                                  <SelectItem value="Jr.">Jr.</SelectItem>
-                                  <SelectItem value="Sr.">Sr.</SelectItem>
-                                  <SelectItem value="II">II</SelectItem>
-                                  <SelectItem value="III">III</SelectItem>
-                                  <SelectItem value="IV">IV</SelectItem>
-                                  <SelectItem value="V">V</SelectItem>
-                                  <SelectItem value="Esq.">Esq.</SelectItem>
-                                  <SelectItem value="MD">MD</SelectItem>
-                                  <SelectItem value="PhD">PhD</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                          {ben.requireEmail ? (
-                            <div className="space-y-1.5">
-                              <Label className="text-[#7b879e] text-sm font-medium">Email <span className="text-red-400">*</span></Label>
-                              <Input type="email" value={ben.email} onChange={(e) => { updateBen('email', e.target.value); if (emailErrors[idx]) setEmailErrors(prev => { const n = { ...prev }; delete n[idx]; return n; }); }}
-                                onBlur={() => validateBenEmail(ben.email, idx)}
-                                onFocus={handleFieldFocus} placeholder="Their email address" className={`${inputClass} ${emailErrors[idx] ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30' : ''}`} />
-                              {emailErrors[idx] && <p className="text-red-400 text-xs mt-1">{emailErrors[idx]}</p>}
-                            </div>
-                          ) : (
-                            <div className="space-y-1.5">
-                              <Label className="text-[#7b879e] text-sm font-medium">Email (optional)</Label>
-                              <Input type="email" value={ben.email || ''} onChange={(e) => { updateBen('email', e.target.value); if (emailErrors[idx]) setEmailErrors(prev => { const n = { ...prev }; delete n[idx]; return n; }); }}
-                                onBlur={() => validateBenEmail(ben.email, idx)}
-                                onFocus={handleFieldFocus} placeholder="Their email address (if applicable)" className={`${inputClass} ${emailErrors[idx] ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30' : ''}`} />
-                              {emailErrors[idx] && <p className="text-red-400 text-xs mt-1">{emailErrors[idx]}</p>}
-                            </div>
-                          )}
-                          <div className="space-y-1.5">
-                            <Label className="text-[#7b879e] text-sm font-medium">Date of Birth</Label>
-                            <DateMaskInput value={ben.dob} onChange={(e) => updateBen('dob', e.target.value)}
-                              onFocus={handleFieldFocus} className={inputClass} />
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1.5">
-                              <Label className="text-[#7b879e] text-sm font-medium">Relationship</Label>
-                              <Select value={ben.relation} onValueChange={(v) => updateBen('relation', v)}>
-                                <SelectTrigger className={selectClass} tabIndex={0} data-testid={`ben-relation-select-${idx}`}><SelectValue placeholder="Select..." /></SelectTrigger>
-                                <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
-                                  {beneficiaryRelations.map(rel => (
-                                    <SelectItem key={rel} value={rel}>{rel}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="space-y-1.5">
-                              <Label className="text-[#7b879e] text-sm font-medium">Sex</Label>
-                              <Select value={ben.gender || ''} onValueChange={(v) => updateBen('gender', v)}>
-                                <SelectTrigger className={selectClass} data-testid={`ben-gender-select-${idx}`}><SelectValue placeholder="Select..." /></SelectTrigger>
-                                <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
-                                  <SelectItem value="male">Male</SelectItem>
-                                  <SelectItem value="female">Female</SelectItem>
-                                  <SelectItem value="other">Other</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                            <input type="checkbox" checked={ben.same_address} onChange={(e) => {
-                              updateBen('same_address', e.target.checked);
-                              if (!e.target.checked && scrollRef.current) {
-                                setTimeout(() => scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' }), 100);
-                              }
-                            }}
-                              className="w-4 h-4 rounded" />
-                            <span className="text-sm text-[#94a3b8]">Same address as mine</span>
-                          </div>
-                          {!ben.same_address && (
-                            <div className="space-y-2">
-                              <div className="space-y-1.5">
-                                <Label className="text-[#7b879e] text-sm font-medium">Street Address <span className="text-red-400">*</span></Label>
-                                <AddressAutocomplete value={ben.address_street} onChange={(e) => updateBen('address_street', e.target.value)}
-                                  onSelect={({ street, city, state, zip }) => {
-                                    setBeneficiaries(prev => prev.map((b, i) => i === idx ? { ...b, address_street: street, address_city: city, address_state: state, address_zip: zip } : b));
-                                  }}
-                                  placeholder="Their street address" className={inputClass} />
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label className="text-[#7b879e] text-sm font-medium">Apt, Suite, Unit (optional)</Label>
-                                <Input value={ben.address_line2 || ''} onChange={(e) => updateBen('address_line2', e.target.value)}
-                                  placeholder="Apt 4B, Suite 200, etc." className={inputClass} />
-                              </div>
-                              <div className="grid grid-cols-3 gap-2">
-                                <div className="space-y-1">
-                                  <Label className="text-[#7b879e] text-[11px] font-medium">City <span className="text-red-400">*</span></Label>
-                                  <Input value={ben.address_city} onChange={(e) => updateBen('address_city', e.target.value)} placeholder="City" className={inputClass} />
-                                </div>
-                                <div className="space-y-1">
-                                  <Label className="text-[#7b879e] text-[11px] font-medium">State <span className="text-red-400">*</span></Label>
-                                  <Select value={ben.address_state} onValueChange={(v) => updateBen('address_state', v)}>
-                                    <SelectTrigger className={selectClass}><SelectValue placeholder="State" /></SelectTrigger>
-                                    <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)] max-h-48">
-                                      {usStates.map(st => <SelectItem key={st} value={st}>{st}</SelectItem>)}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div className="space-y-1">
-                                  <Label className="text-[#7b879e] text-[11px] font-medium">ZIP <span className="text-red-400">*</span></Label>
-                                  <Input value={ben.address_zip} onChange={(e) => updateBen('address_zip', e.target.value)} placeholder="ZIP" className={inputClass} maxLength={10} />
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })()}
-
-                    {/* STEP 2: Address */}
-                    {currentStep?.id === 'address' && (
-                      <div className="space-y-2">
-                        <div>
-                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-0.5" style={{ fontFamily: 'Outfit, sans-serif' }}>Your residential address</h2>
-                          <p className="text-[#6b7a90] text-xs">Used by EGA to analyze estate law specific to your state.</p>
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-[#7b879e] text-xs font-medium">Street Address <span className="text-red-400">*</span></Label>
-                          <AddressAutocomplete
-                            value={addressStreet}
-                            onChange={(e) => setAddressStreet(e.target.value)}
-                            onSelect={({ street, city, state, zip }) => {
-                              setAddressStreet(street);
-                              setAddressCity(city);
-                              setAddressState(state);
-                              setAddressZip(zip);
-                            }}
-                            placeholder="Start typing your address..."
-                            className={inputClass}
-                            data-testid="signup-address-street"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-[#7b879e] text-xs font-medium">Apt, Suite, Unit (optional)</Label>
-                          <Input value={addressLine2} onChange={(e) => setAddressLine2(e.target.value)}
-                            placeholder="Apt 4B, Suite 200, etc." className={inputClass} data-testid="signup-address-line2" />
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="space-y-1">
-                            <Label className="text-[#7b879e] text-xs font-medium">City <span className="text-red-400">*</span></Label>
-                            <Input value={addressCity} onChange={(e) => setAddressCity(e.target.value)}
-                              placeholder="City" className={inputClass} data-testid="signup-address-city" />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-[#7b879e] text-xs font-medium">State <span className="text-red-400">*</span></Label>
-                            <Select value={addressState} onValueChange={setAddressState}>
-                              <SelectTrigger className={selectClass} data-testid="signup-address-state"><SelectValue placeholder="State" /></SelectTrigger>
-                              <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)] max-h-48">
-                                {usStates.map(st => <SelectItem key={st} value={st}>{st}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-[#7b879e] text-xs font-medium">ZIP <span className="text-red-400">*</span></Label>
-                            <Input value={addressZip} onChange={(e) => setAddressZip(e.target.value)}
-                              placeholder="ZIP" className={inputClass} maxLength={10} data-testid="signup-address-zip" />
-                          </div>
-                        </div>
-                        <div className="p-2.5 rounded-xl" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.12)' }}>
-                          <p className="text-[#d4af37] text-[11px] leading-relaxed flex items-start gap-2">
-                            <Shield className="w-3 h-3 flex-shrink-0 mt-0.5" />
-                            Your address is encrypted and stored securely. It's only used for estate law analysis and is never shared.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* STEP 3: Role */}
+                    {/* STEP: Role */}
                     {currentStep?.id === 'role' && (
                       <div className="space-y-2.5">
                         <div>
@@ -940,39 +646,52 @@ const SignupPage = () => {
                           ))}
                         </div>
 
-                        {/* Beneficiary: Benefactor email (required) */}
-                        {role === 'beneficiary' && (
-                          <div className="space-y-1.5">
-                            <Label className="text-[#7b879e] text-sm font-medium">Benefactor's Email <span className="text-red-400">*</span></Label>
-                            <div className="relative">
-                              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63]" />
-                              <Input
-                                type="email"
-                                value={benefactorEmail}
-                                onChange={(e) => { setBenefactorEmail(e.target.value); if (benefactorEmailError) setBenefactorEmailError(''); }}
-                                onBlur={() => validateBenefactorEmail(benefactorEmail)}
-                                placeholder="Your benefactor's email address"
-                                className={`${inputClass} pl-11 ${benefactorEmailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30' : ''}`}
-                                data-testid="signup-benefactor-email"
-                              />
-                            </div>
-                            {benefactorEmailError ? (
-                              <p className="text-red-400 text-xs">{benefactorEmailError}</p>
-                            ) : (
-                              <p className="text-[#525c72] text-[11px]">Links your account to their estate plan.</p>
-                            )}
-                          </div>
-                        )}
-
                         {/* New Adult info banner */}
                         {role === 'benefactor' && isNewAdult && (
                           <div className="p-3 rounded-xl" style={{ background: 'rgba(183,148,246,0.06)', border: '1px solid rgba(183,148,246,0.15)' }}>
                             <p className="text-[#B794F6] text-xs leading-relaxed flex items-start gap-2">
                               <Award className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                              As a New Adult (18-25), you'll set up your parents as beneficiaries so they can access your POA and Living Will if needed. You qualify for our New Adult tier — no additional verification required.
+                              As a New Adult (18-25), you qualify for our New Adult tier — no additional verification required. You can add your parents as beneficiaries after sign up.
                             </p>
                           </div>
                         )}
+                      </div>
+                    )}
+
+                    {/* STEP: Benefactor Email (beneficiary flow) */}
+                    {currentStep?.id === 'benefactor_email' && (
+                      <div className="space-y-3 sm:space-y-4">
+                        <div>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Your Benefactor</h2>
+                          <p className="text-[#6b7a90] text-sm">Enter the email address of the benefactor whose estate you're joining.</p>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-[#7b879e] text-sm font-medium">Benefactor's Email <span className="text-red-400">*</span></Label>
+                          <div className="relative">
+                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63]" />
+                            <Input
+                              type="email"
+                              value={benefactorEmail}
+                              onChange={(e) => { setBenefactorEmail(e.target.value); if (benefactorEmailError) setBenefactorEmailError(''); }}
+                              onBlur={() => validateBenefactorEmail(benefactorEmail)}
+                              placeholder="Your benefactor's email address"
+                              className={`${inputClass} pl-11 ${benefactorEmailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30' : ''}`}
+                              data-testid="signup-benefactor-email"
+                              autoFocus
+                            />
+                          </div>
+                          {benefactorEmailError ? (
+                            <p className="text-red-400 text-xs">{benefactorEmailError}</p>
+                          ) : (
+                            <p className="text-[#525c72] text-[11px]">This links your account to their estate plan.</p>
+                          )}
+                        </div>
+                        <div className="p-3 rounded-xl" style={{ background: 'rgba(96,165,250,0.06)', border: '1px solid rgba(96,165,250,0.15)' }}>
+                          <p className="text-[#60A5FA] text-xs leading-relaxed flex items-start gap-2">
+                            <Users className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                            Your benefactor will receive a notification that you've joined their estate. If you don't know their email, ask them to invite you from their dashboard.
+                          </p>
+                        </div>
                       </div>
                     )}
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import axios from 'axios';
@@ -56,6 +56,20 @@ const SettingsPage = () => {
   const [profileEditing, setProfileEditing] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
   const [onboardingVisible, setOnboardingVisible] = useState(() => localStorage.getItem('carryon_onboarding_dismissed') !== 'true');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Auto-open address editing when directed from EGA
+  useEffect(() => {
+    if (searchParams.get('editAddress') === 'true') {
+      setProfileEditing(true);
+      setSearchParams({}, { replace: true });
+      // Scroll to address section after a short delay
+      setTimeout(() => {
+        const addressEl = document.querySelector('[data-testid="settings-address-section"]');
+        if (addressEl) addressEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 400);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // GDPR state
   const [consent, setConsent] = useState(null);
@@ -739,7 +753,7 @@ const SettingsPage = () => {
           <Separator className="bg-[var(--b)]" />
 
           {/* Address */}
-          <div>
+          <div data-testid="settings-address-section">
             <label className="text-[var(--t5)] text-xs mb-1 block">Address</label>
             {profileEditing ? (
               <div className="space-y-2">

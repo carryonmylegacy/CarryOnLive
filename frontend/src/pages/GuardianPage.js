@@ -69,7 +69,8 @@ import {
   MicOff,
   Download,
   Landmark,
-  AlertCircle
+  AlertCircle,
+  ChevronRight
 } from 'lucide-react';
 
 import { toast } from '../utils/toast';
@@ -236,6 +237,7 @@ const GuardianPage = () => {
   const [showOnboardingReturn, setShowOnboardingReturn] = useState(fromGettingStarted);
   const recognitionRef = useRef(null);
   const [guidedFlowDone, setGuidedFlowDone] = useState(true);
+  const [hasAddress, setHasAddress] = useState(null); // null = loading, true/false = resolved
 
   // Measure actual header height to position Guardian correctly
   useEffect(() => {
@@ -326,6 +328,13 @@ const GuardianPage = () => {
   useEffect(() => {
     fetchSessions();
     fetchEstate();
+    // Check if user has address on file
+    axios.get(`${API_URL}/auth/profile`, getAuthHeaders())
+      .then(res => {
+        const profile = res.data || {};
+        setHasAddress(!!(profile.address_street && profile.address_state));
+      })
+      .catch(() => setHasAddress(true)); // Don't block on error
     // Check if onboarding is complete to control pulse animation
     axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders())
       .then(res => { if (!res.data?.celebration_shown && !res.data?.all_complete) setGuidedFlowDone(false); })
@@ -608,12 +617,70 @@ const GuardianPage = () => {
   const hasConversation = messages.length > 1;
 
   // ═══════════════════════════════════════════════
+  // ADDRESS GATE — frosted glass overlay if no address on file
+  // ═══════════════════════════════════════════════
+  const renderAddressGate = () => {
+    if (hasAddress !== false) return null;
+    return (
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-6"
+        data-testid="address-gate-overlay"
+        style={{ animation: 'addressGateFadeIn 0.6s ease forwards' }}>
+        <style>{`
+          @keyframes addressGateFadeIn { from { opacity: 0; } to { opacity: 1; } }
+          @keyframes addressGateBounce {
+            0% { opacity: 0; transform: scale(0.85) translateY(30px); }
+            60% { transform: scale(1.02) translateY(-4px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+          }
+        `}</style>
+        <div className="absolute inset-0" style={{
+          backdropFilter: 'blur(20px) saturate(130%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(130%)',
+          background: 'var(--guided-overlay-bg, rgba(8,14,26,0.82))',
+        }} />
+        <div className="relative rounded-2xl p-8 max-w-sm w-full text-center"
+          style={{
+            background: 'var(--bg2, #0F1629)',
+            border: '1px solid var(--b, rgba(255,255,255,0.08))',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.4)',
+            animation: 'addressGateBounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s forwards',
+            opacity: 0,
+          }}>
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5"
+            style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)' }}>
+            <Landmark className="w-8 h-8 text-[var(--gold)]" />
+          </div>
+          <h2 className="text-xl font-bold mb-3" style={{ fontFamily: 'Outfit, sans-serif', color: 'var(--t, #ffffff)' }}>
+            Primary Residence Needed
+          </h2>
+          <p className="text-sm mb-6 leading-relaxed" style={{ color: 'var(--t4, #94a3b8)' }}>
+            EGA uses your primary residence address to analyze estate law specific to your state. Please add your address in Settings before using this feature.
+          </p>
+          <button onClick={() => navigate('/settings?editAddress=true')}
+            className="w-full py-3.5 rounded-xl text-sm font-bold mb-3 flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
+            style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}
+            data-testid="address-gate-settings-btn">
+            Go to Settings <ChevronRight className="w-4 h-4" />
+          </button>
+          <button onClick={() => navigate('/dashboard')}
+            className="w-full py-2.5 rounded-xl text-xs"
+            style={{ color: 'var(--t4, #94a3b8)', border: '1px solid var(--b, rgba(255,255,255,0.08))' }}
+            data-testid="address-gate-back-btn">
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // ═══════════════════════════════════════════════
   // LANDING VIEW
   // ═══════════════════════════════════════════════
   if (view === 'landing') {
     return (
       <div ref={guardianRef} className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10" style={{ top: headerHeight + 'px', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', left: 0, overscrollBehavior: 'contain' }} data-testid="estate-guardian">
       <style>{`@media (min-width: 1024px) { [data-testid="estate-guardian"] { left: var(--sidebar-width, 260px) !important; bottom: 0 !important; } }`}</style>
+      {renderAddressGate()}
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto flex flex-col" style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }}>
@@ -746,6 +813,7 @@ const GuardianPage = () => {
   return (
     <div ref={guardianRef} className="fixed inset-0 flex flex-col bg-[var(--bg)] z-10" style={{ top: headerHeight + 'px', bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))', left: 0, overscrollBehavior: 'contain' }} data-testid="estate-guardian">
       <style>{`@media (min-width: 1024px) { [data-testid="estate-guardian"] { left: var(--sidebar-width, 260px) !important; bottom: 0 !important; } }`}</style>
+      {renderAddressGate()}
 
       {/* Chat Header */}
       <div className="flex items-center justify-between px-4 py-2 flex-shrink-0" style={{

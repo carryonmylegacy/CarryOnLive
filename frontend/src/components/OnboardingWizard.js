@@ -10,12 +10,13 @@ import { Progress } from '../components/ui/progress';
 import { API_URL } from '../config';
 
 const STEP_CONFIG = {
+  add_beneficiary: { icon: Users, color: '#3b82f6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)', route: '/beneficiaries', label: 'Add a Beneficiary', desc: 'Add the people who matter most to your estate' },
   create_message: { icon: MessageSquare, color: '#8b5cf6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.2)', route: '/messages', label: 'Leave a Milestone Message', desc: 'Record a message for your loved ones — edit anytime' },
   upload_document: { icon: FileUp, color: '#10b981', bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.2)', route: '/vault', label: 'Upload an Estate Document', desc: 'Secure your important files in the vault' },
-  designate_primary: { icon: Users, color: '#3b82f6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)', route: '/beneficiaries', label: 'Set Your Succession Order', desc: 'Add beneficiaries and arrange your succession hierarchy' },
-  customize_checklist: { icon: CheckSquare, color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', route: '/checklist', label: 'Customize Your Action Checklist', desc: 'Review the steps your loved ones will follow' },
-  add_credential: { icon: KeyRound, color: '#06b6d4', bg: 'rgba(6,182,212,0.08)', border: 'rgba(6,182,212,0.2)', route: '/digital-wallet', label: 'Store a Digital Account Credential', desc: 'Add a login and password to your Digital Access Vault' },
   review_readiness: { icon: Sparkles, color: '#d4af37', bg: 'rgba(212,175,55,0.08)', border: 'rgba(212,175,55,0.2)', route: '/guardian', label: 'Consult the Estate Guardian', desc: 'Get an AI analysis of your estate plan' },
+  customize_checklist: { icon: CheckSquare, color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', route: '/checklist', label: 'Customize Your Action Checklist', desc: 'Review the steps your loved ones will follow' },
+  designate_primary: { icon: ArrowLeftRight, color: '#06b6d4', bg: 'rgba(6,182,212,0.08)', border: 'rgba(6,182,212,0.2)', route: '/beneficiaries', label: 'Set Your Succession Order', desc: 'Arrange your beneficiary succession hierarchy' },
+  add_credential: { icon: KeyRound, color: '#ec4899', bg: 'rgba(236,72,153,0.08)', border: 'rgba(236,72,153,0.2)', route: '/digital-wallet', label: 'Store a Digital Account Credential', desc: 'Add a login and password to your Digital Access Vault' },
 };
 
 const OnboardingWizard = ({ onAllComplete }) => {
@@ -248,7 +249,10 @@ const OnboardingWizard = ({ onAllComplete }) => {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-lg font-bold ${isComplete ? 'text-[var(--t5)] line-through' : 'text-[var(--t)]'}`}>{label}</p>
+                  <p className={`text-lg font-bold ${isComplete ? 'text-[var(--t5)] line-through' : 'text-[var(--t)]'}`}>
+                    {label}
+                    {step.optional && !isComplete && <span className="text-xs font-normal text-[var(--t5)] ml-2">(optional)</span>}
+                  </p>
                   <p className={`text-base ${isComplete ? 'text-[var(--t5)]' : 'text-[var(--t4)]'}`}>{config.desc}</p>
                 </div>
                 {isComplete ? (

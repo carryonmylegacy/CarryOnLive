@@ -37,6 +37,7 @@ const DashboardPage = () => {
   const [showGuidedFlow, setShowGuidedFlow] = useState(false);
   const [guidedStep, setGuidedStep] = useState(null);
   const [showWelcomeStep, setShowWelcomeStep] = useState(false);
+  const [showOptionalSkipInfo, setShowOptionalSkipInfo] = useState(false);
   const [dashboardReady, setDashboardReady] = useState(false);
   const [egaRunning, setEgaRunning] = useState(false);
   const guidedDismissedRef = useRef(false);
@@ -299,44 +300,63 @@ const DashboardPage = () => {
     if (!showGuidedFlow || !guidedStep) return null;
 
     const STEP_ROUTES = {
+      add_beneficiary: '/beneficiaries',
       create_message: '/messages',
       upload_document: '/vault',
-      designate_primary: '/beneficiaries',
-      customize_checklist: '/checklist',
-      add_credential: '/digital-wallet',
       review_readiness: '/guardian',
+      customize_checklist: '/checklist',
+      designate_primary: '/beneficiaries',
+      add_credential: '/digital-wallet',
     };
     const STEP_ICONS = {
+      add_beneficiary: Users,
       create_message: MessageSquare,
       upload_document: FolderLock,
-      designate_primary: Users,
-      customize_checklist: CheckSquare,
-      add_credential: KeyRound,
       review_readiness: Sparkles,
+      customize_checklist: CheckSquare,
+      designate_primary: ArrowLeftRight,
+      add_credential: KeyRound,
     };
     const STEP_COLORS = {
+      add_beneficiary: '#3b82f6',
       create_message: '#8b5cf6',
       upload_document: '#10b981',
-      designate_primary: '#3b82f6',
-      customize_checklist: '#f59e0b',
-      add_credential: '#06b6d4',
       review_readiness: '#d4af37',
+      customize_checklist: '#f59e0b',
+      designate_primary: '#06b6d4',
+      add_credential: '#ec4899',
     };
     const STEP_LABELS = {
-      create_message: { title: 'Leave a Message for Your Loved Ones', desc: 'Record a video, voice, or written message for your beneficiaries. You can edit or re-record anytime.', step: 1 },
-      upload_document: { title: 'Upload Your First Estate Document', desc: 'Securely store a will, trust, insurance policy, or other important document in your encrypted vault.', step: 2 },
-      designate_primary: { title: 'Designate Your Primary Beneficiary', desc: 'Choose who will serve as trustee of your estate. After transition, they can add/remove beneficiaries, control what each beneficiary sees, and approve access requests.', step: 3 },
-      customize_checklist: { title: 'Review Your Action Checklist', desc: 'Customize the steps your loved ones will follow when they need it most.', step: 4 },
-      add_credential: { title: 'Store a Digital Account Credential', desc: 'Add one account login and password to your Digital Access Vault so your beneficiaries can manage your accounts.', step: 5 },
-      review_readiness: { title: 'Consult the Estate Guardian', desc: 'Get an AI analysis of your estate plan and your personalized readiness score.', step: 6 },
+      add_beneficiary: { title: 'Add Your First Beneficiary', desc: 'Start by adding the people who matter most to your estate plan. You can always add more later.', step: 1 },
+      create_message: { title: 'Leave a Message for Your Loved Ones', desc: 'Record a video, voice, or written message for your beneficiaries. You can edit or re-record anytime.', step: 2 },
+      upload_document: { title: 'Upload Your First Estate Document', desc: 'Securely store a will, trust, insurance policy, or other important document in your encrypted vault.', step: 3 },
+      review_readiness: { title: 'Consult the Estate Guardian', desc: 'Get an AI analysis of your estate plan and your personalized readiness score. You\'ll need to set your address in Settings first.', step: 4 },
+      customize_checklist: { title: 'Review Your Action Checklist', desc: 'Customize the steps your loved ones will follow when they need it most.', step: 5 },
+      designate_primary: { title: 'Set Your Succession Order', desc: 'Arrange the order in which your beneficiaries inherit responsibilities. This step is optional — you can set it up anytime.', step: 6, optional: true },
+      add_credential: { title: 'Store a Digital Account Credential', desc: 'Add one account login and password to your Digital Access Vault so your beneficiaries can manage your accounts. This step is optional.', step: 7, optional: true },
     };
-    const stepInfo = STEP_LABELS[guidedStep.key] || STEP_LABELS.create_message;
+    const OPTIONAL_SKIP_INFO = {
+      designate_primary: {
+        title: 'No Problem!',
+        desc: 'You can set your succession order anytime from the Beneficiaries page. Just tap the "Succession" tab to arrange who inherits responsibilities and in what order.',
+        route: '/beneficiaries',
+        routeLabel: 'Go to Beneficiaries',
+      },
+      add_credential: {
+        title: 'No Problem!',
+        desc: 'You can store digital account credentials anytime from the Digital Access Vault. Just tap "Add Credential" to securely save a login and password for your beneficiaries.',
+        route: '/digital-wallet',
+        routeLabel: 'Go to Digital Vault',
+      },
+    };
+    const stepInfo = STEP_LABELS[guidedStep.key] || STEP_LABELS.add_beneficiary;
     const route = STEP_ROUTES[guidedStep.key];
     const StepIcon = STEP_ICONS[guidedStep.key] || Sparkles;
     const stepColor = STEP_COLORS[guidedStep.key] || '#d4af37';
-    const totalSteps = 6;
+    const totalSteps = 7;
+    const isOptional = guidedStep.optional || stepInfo.optional;
 
-    // Personalize step 1 with beneficiary names
+    // Personalize beneficiary step with beneficiary names
     let title = stepInfo.title;
     if (guidedStep.key === 'create_message') {
       const benNames = guidedStep.beneficiary_names || [];
@@ -352,6 +372,21 @@ const DashboardPage = () => {
     const dismissOverlay = () => {
       guidedDismissedRef.current = true;
       setShowGuidedFlow(false);
+    };
+
+    // Handle optional step skip — show info pane then mark complete
+    const handleOptionalSkip = async () => {
+      setShowOptionalSkipInfo(true);
+    };
+
+    const confirmOptionalSkip = async () => {
+      try {
+        await axios.post(`${API_URL}/onboarding/complete-step/${guidedStep.key}`, {}, getAuthHeaders());
+      } catch {}
+      setShowOptionalSkipInfo(false);
+      guidedDismissedRef.current = true;
+      setShowGuidedFlow(false);
+      if (estate?.id) fetchEstateData(estate.id);
     };
 
     return (
@@ -421,10 +456,37 @@ const DashboardPage = () => {
         <div className="relative max-w-md w-full mx-6 text-center"
           style={{ animation: 'bubbleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both' }}>
 
+          {/* Optional skip explanation pane */}
+          {showOptionalSkipInfo && OPTIONAL_SKIP_INFO[guidedStep.key] ? (
+            <>
+              <div className="w-28 h-28 rounded-full flex items-center justify-center mx-auto mb-6"
+                style={{
+                  background: `radial-gradient(circle, ${stepColor}20 0%, ${stepColor}08 70%)`,
+                  border: `2px solid ${stepColor}35`,
+                }}>
+                <CheckCircle2 className="w-14 h-14" style={{ color: stepColor }} />
+              </div>
+              <h1 className="text-2xl lg:text-3xl font-bold mb-3"
+                style={{ fontFamily: 'Outfit, sans-serif', color: 'var(--guided-title, #ffffff)' }}>
+                {OPTIONAL_SKIP_INFO[guidedStep.key].title}
+              </h1>
+              <p className="text-sm lg:text-base mb-8 max-w-sm mx-auto leading-relaxed"
+                style={{ color: 'var(--guided-desc, #94a3b8)' }}>
+                {OPTIONAL_SKIP_INFO[guidedStep.key].desc}
+              </p>
+              <button onClick={confirmOptionalSkip}
+                className="w-full max-w-xs mx-auto py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
+                style={{ background: `linear-gradient(135deg, ${stepColor}, ${stepColor}cc)`, color: '#080e1a', boxShadow: `0 8px 32px ${stepColor}30` }}
+                data-testid="guided-optional-confirm-btn">
+                Got It <ChevronRight className="w-5 h-5" />
+              </button>
+            </>
+          ) : (
+          <>
           {/* Step counter */}
           <p className="text-xl lg:text-2xl font-bold uppercase tracking-[0.2em] mb-6"
             style={{ color: stepColor }}>
-            Step {stepInfo.step} of {totalSteps}
+            Step {stepInfo.step} of {totalSteps}{isOptional ? ' (Optional)' : ''}
           </p>
 
           {/* Large icon bubble */}
@@ -455,13 +517,15 @@ const DashboardPage = () => {
             Let's Go <ChevronRight className="w-5 h-5" />
           </button>
 
-          {/* Skip link */}
-          <button onClick={dismissOverlay}
+          {/* Skip link — different behavior for optional steps */}
+          <button onClick={isOptional ? handleOptionalSkip : dismissOverlay}
             className="mt-8 px-5 py-2 rounded-full text-xs transition-colors"
             style={{ color: 'var(--guided-skip, #64748b)', background: 'var(--guided-skip-bg, rgba(255,255,255,0.04))', border: '1px solid var(--guided-skip-border, rgba(255,255,255,0.06))' }}
             data-testid="guided-skip-btn">
-            Skip this step for now
+            {isOptional ? 'Skip — I\'ll do this later' : 'Skip this step for now'}
           </button>
+          </>
+          )}
         </div>
         )}
       </div>

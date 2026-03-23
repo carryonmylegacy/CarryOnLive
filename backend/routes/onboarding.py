@@ -15,34 +15,46 @@ router = APIRouter()
 
 ONBOARDING_STEPS = [
     {
+        "key": "add_beneficiary",
+        "label": "Add a Beneficiary",
+        "description": "Add your first beneficiary to your estate plan",
+        "optional": False,
+    },
+    {
         "key": "create_message",
         "label": "Leave a Milestone Message",
         "description": "Record a message for your loved ones",
+        "optional": False,
     },
     {
         "key": "upload_document",
         "label": "Upload an Estate Document",
         "description": "Securely store your first important document",
-    },
-    {
-        "key": "designate_primary",
-        "label": "Set Your Succession Order",
-        "description": "Add beneficiaries and arrange your succession hierarchy",
-    },
-    {
-        "key": "customize_checklist",
-        "label": "Customize Your Action Checklist",
-        "description": "Review the steps your loved ones will follow",
-    },
-    {
-        "key": "add_credential",
-        "label": "Store a Digital Account Credential",
-        "description": "Add a login and password to your Digital Access Vault",
+        "optional": False,
     },
     {
         "key": "review_readiness",
         "label": "Consult the Estate Guardian",
         "description": "Get an AI analysis of your estate plan",
+        "optional": False,
+    },
+    {
+        "key": "customize_checklist",
+        "label": "Customize Your Action Checklist",
+        "description": "Review the steps your loved ones will follow",
+        "optional": False,
+    },
+    {
+        "key": "designate_primary",
+        "label": "Set Your Succession Order",
+        "description": "Arrange your beneficiary succession hierarchy",
+        "optional": True,
+    },
+    {
+        "key": "add_credential",
+        "label": "Store a Digital Account Credential",
+        "description": "Add a login and password to your Digital Access Vault",
+        "optional": True,
     },
 ]
 
@@ -65,6 +77,8 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
 
     completed = {}
     if estate_id:
+        # At least one beneficiary added
+        completed["add_beneficiary"] = await db.beneficiaries.count_documents({"estate_id": estate_id}) > 0
         completed["upload_document"] = await db.documents.count_documents({"estate_id": estate_id}) > 0
         completed["create_message"] = await db.messages.count_documents({"estate_id": estate_id}) > 0
         # Primary beneficiary designated
@@ -80,6 +94,11 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
     # review_readiness is manual — preserve from stored progress
     if progress.get("completed_steps", {}).get("review_readiness"):
         completed["review_readiness"] = True
+    # Optional steps that were skipped are marked complete
+    stored_completed = progress.get("completed_steps", {})
+    for step in ONBOARDING_STEPS:
+        if step.get("optional") and stored_completed.get(step["key"]):
+            completed[step["key"]] = True
 
     # Persist updated completion
     await db.onboarding_progress.update_one(
@@ -94,6 +113,7 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
             {
                 **step,
                 "completed": completed.get(step["key"], False),
+                "optional": step.get("optional", False),
             }
         )
 
