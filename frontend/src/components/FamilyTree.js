@@ -541,7 +541,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
           <span className="text-xs font-medium text-[var(--t3)]">Unlinked — has not registered yet</span>
         </div>
       </div>
-      <p className="text-[11px] text-[var(--t5)] text-center mt-2 italic">(Tap a beneficiary's icon to edit their information)</p>
+      <p className="text-[11px] text-center mt-2 italic" style={{ color: isLight ? '#1e3a5f' : '#d4af37' }}>Tap a beneficiary's icon to edit their information</p>
     </div>
   );
 };
