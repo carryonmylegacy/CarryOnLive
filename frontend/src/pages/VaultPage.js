@@ -366,9 +366,14 @@ const VaultPage = () => {
             url: result.uri,
           });
         } catch (nativeErr) {
-          console.error('Native download fallback:', nativeErr);
-          toast.error('Could not save file. Please try again.');
+          // "Share canceled" is normal when user dismisses share sheet after saving — not an error
+          const msg = nativeErr?.message || '';
+          if (!msg.toLowerCase().includes('cancel')) {
+            console.error('Native download fallback:', nativeErr);
+            toast.error('Could not save file. Please try again.');
+          }
         }
+        setDownloading(null);
       } else {
         // Web/PWA: standard blob download
         const blob = new Blob([response.data], { type: doc.file_type });
