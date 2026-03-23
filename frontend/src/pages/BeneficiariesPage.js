@@ -122,6 +122,7 @@ const BeneficiariesPage = () => {
   const [expandedCard, setExpandedCard] = useState(null);
   const [editingBeneficiary, setEditingBeneficiary] = useState(null);
   const [copiedLink, setCopiedLink] = useState(null);
+  const [treeAnimKey, setTreeAnimKey] = useState(0);
   
   // Form state - enhanced demographics
   const [firstName, setFirstName] = useState('');
@@ -574,6 +575,7 @@ const BeneficiariesPage = () => {
               <span className="text-[11px] text-[var(--t5)] italic leading-tight text-right max-w-[140px]">Tap any estate icon to visit your Beneficiary Portal</span>
             </div>
             <FamilyTree
+              key={treeAnimKey}
               user={user}
               beneficiaries={beneficiaries}
               beneficiaryEstates={benEstates}
@@ -847,7 +849,7 @@ const BeneficiariesPage = () => {
       {/* Add/Edit Beneficiary Panel */}
       <SlidePanel
         open={showAddModal}
-        onClose={() => { setShowAddModal(false); setEditingBeneficiary(null); resetForm(); }}
+        onClose={() => { setShowAddModal(false); setEditingBeneficiary(null); resetForm(); setTreeAnimKey(k => k + 1); }}
         title={editingBeneficiary ? 'Edit Beneficiary' : 'Add Beneficiary'}
         subtitle={editingBeneficiary ? 'Update the details for this beneficiary' : 'Add a family member or loved one to your estate plan'}
       >

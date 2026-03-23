@@ -257,6 +257,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   </defs>`;
                 // All paths flow from estate circles down to convergence point near Pete
                 const allPaths = [];
+                let centeredPathBlue = null;
                 for (let idx = 0; idx < n; idx++) {
                   const rIdx = Math.floor(idx / 2);
                   const isLeft = idx % 2 === 0;
@@ -265,7 +266,8 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   const dir = isCentered ? 0 : (isLeft ? 1 : -1);
                   const rowCenterY = (rIdx + 0.3) * rowH;
                   if (isCentered) {
-                    allPaths.push(`M ${cx.toFixed(1)},${rowCenterY.toFixed(1)} L ${cx.toFixed(1)},97`);
+                    centeredPathBlue = `M ${cx.toFixed(1)},${rowCenterY.toFixed(1)} L ${cx.toFixed(1)},97`;
+                    allPaths.push(centeredPathBlue);
                   } else {
                     const sx = nodeX + dir * circleR;
                     const cp1x = sx + 0.6 * (cx - sx);
@@ -276,6 +278,9 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                 allPaths.forEach(d => {
                   svgContent += `<path d="${d}" fill="none" stroke="url(#lineFlow)" stroke-width="${sw}" filter="url(#lineGlow)" />`;
                 });
+                if (centeredPathBlue) {
+                  svgContent += `<path d="${centeredPathBlue}" fill="none" stroke="${lightColor}" stroke-width="${sw}" opacity="0.4" filter="url(#lineGlow)" />`;
+                }
                 allPaths.forEach(d => {
                   svgContent += `<path class="fill-path-blue" d="${d}" fill="none" stroke="${lightColor}" stroke-width="${overlayW}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" filter="url(#lightPulseBlue)" />`;
                 });
@@ -367,6 +372,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                 const overlayW = isLight ? 0.8 : 0.7;
                 // All paths fan from ONE point (cx,2) downward — original pattern
                 const allPaths = [];
+                let centeredPath = null;
                 for (let idx = 0; idx < n; idx++) {
                   const rIdx = Math.floor(idx / 2);
                   const isLeft = idx % 2 === 0;
@@ -375,7 +381,8 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   const dir = isCentered ? 0 : (isLeft ? 1 : -1);
                   const rowCenterY = topTrail + (rIdx + 0.3) * rowH;
                   if (isCentered) {
-                    allPaths.push(`M ${cx.toFixed(1)},2 L ${cx.toFixed(1)},${rowCenterY.toFixed(1)}`);
+                    centeredPath = `M ${cx.toFixed(1)},2 L ${cx.toFixed(1)},${rowCenterY.toFixed(1)}`;
+                    allPaths.push(centeredPath);
                   } else {
                     const ex = nodeX + dir * circleR;
                     const cp1y = 2 + 0.5 * (rowCenterY - 2);
@@ -401,6 +408,9 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                 allPaths.forEach(d => {
                   svg += `<path d="${d}" fill="none" stroke="url(#ftGoldGrad)" stroke-width="${sw}" filter="url(#ftGoldGlow)" />`;
                 });
+                if (centeredPath) {
+                  svg += `<path d="${centeredPath}" fill="none" stroke="${lightColor}" stroke-width="${sw}" opacity="0.4" filter="url(#ftGoldGlow)" />`;
+                }
                 svg += `<circle class="flash-gold-origin" cx="${cx}" cy="2" r="4" fill="${lightColor}" opacity="0" filter="url(#lightPulseGold)" />`;
                 allPaths.forEach(d => {
                   svg += `<path class="fill-path-gold" d="${d}" fill="none" stroke="${lightColor}" stroke-width="${overlayW}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" filter="url(#lightPulseGold)" />`;
