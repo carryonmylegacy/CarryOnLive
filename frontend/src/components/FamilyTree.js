@@ -105,11 +105,11 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
   const lowerStartedRef = useRef(false);
   const lowerFlashedRef = useRef(false);
   const initialTopRef = useRef(null);
+  const autoFrameRef = useRef(null);
 
   useEffect(() => {
     const el = treeRef.current;
     if (!el) return;
-    // Find the actual scrollable ancestor (may not be window)
     let scrollEl = el.parentElement;
     while (scrollEl && scrollEl !== document.body) {
       const st = window.getComputedStyle(scrollEl);
@@ -124,15 +124,8 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
       node.style.opacity = '1';
       setTimeout(() => { node.style.transition = 'opacity .3s ease-out'; node.style.opacity = '0'; }, 150);
     };
-    const handleScroll = () => {
-      const rect = el.getBoundingClientRect();
-      const vh = window.innerHeight;
-      if (rect.top > vh) return;
-      if (initialTopRef.current === null) initialTopRef.current = rect.top;
-      const scrollDist = Math.max(0, initialTopRef.current - rect.top);
-      const totalDist = 500;
-      const raw = scrollDist / totalDist;
 
+    const updateAnimation = (raw) => {
       const upper = Math.min(1, raw * 2);
       if (upper > upperMaxRef.current) {
         upperMaxRef.current = upper;
@@ -142,7 +135,6 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
         upperFlashedRef.current = true;
         triggerFlash(el.querySelector('.flash-blue'));
       }
-
       const lower = Math.min(1, Math.max(0, (raw - 0.35) * 2.5));
       if (lower > 0 && !lowerStartedRef.current) {
         lowerStartedRef.current = true;
@@ -157,10 +149,41 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
         el.querySelectorAll('.flash-gold-end').forEach(f => triggerFlash(f));
       }
     };
+
+    const handleScroll = () => {
+      const rect = el.getBoundingClientRect();
+      const vh = window.innerHeight;
+      if (rect.top > vh) return;
+      if (initialTopRef.current === null) initialTopRef.current = rect.top;
+      const scrollDist = Math.max(0, initialTopRef.current - rect.top);
+      updateAnimation(scrollDist / 500);
+    };
+
     scrollTarget.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
+
+    // Desktop fallback: auto-animate when tree is visible but not enough scroll room
+    const autoTimer = setTimeout(() => {
+      if (lowerMaxRef.current >= 1) return;
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.7) {
+        let startTime = null;
+        const base = Math.max(upperMaxRef.current * 0.5, 0);
+        const animate = (ts) => {
+          if (!el.isConnected) return;
+          if (!startTime) startTime = ts;
+          const raw = base + (1 - base) * Math.min(1, (ts - startTime) / 2500);
+          updateAnimation(raw);
+          if (raw < 1) autoFrameRef.current = requestAnimationFrame(animate);
+        };
+        autoFrameRef.current = requestAnimationFrame(animate);
+      }
+    }, 600);
+
     return () => {
       scrollTarget.removeEventListener('scroll', handleScroll);
+      clearTimeout(autoTimer);
+      if (autoFrameRef.current) cancelAnimationFrame(autoFrameRef.current);
       upperMaxRef.current = 0; lowerMaxRef.current = 0;
       upperFlashedRef.current = false; lowerStartedRef.current = false; lowerFlashedRef.current = false;
       initialTopRef.current = null;
@@ -184,8 +207,6 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
         const leftCol = 20;
         const rightCol = 80;
         const circleR = 6;
-        const strandsPerNode = 3;
-        const nodeSpread = 0.8;
         const estRowH = 80;
         const trailPx = 28;
         const totalEstH = numRows * estRowH + trailPx;
@@ -228,23 +249,20 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                 for (let idx = 0; idx < n; idx++) {
                   const rIdx = Math.floor(idx / 2);
                   const isLeft = idx % 2 === 0;
-                  const nodeX = isLeft ? leftCol : rightCol;
-                  const dir = isLeft ? 1 : -1;
+                  const isCentered = (n % 2 !== 0 && idx === n - 1);
+                  const nodeX = isCentered ? cx : (isLeft ? leftCol : rightCol);
+                  const dir = isCentered ? 0 : (isLeft ? 1 : -1);
                   const rowCenterY = (rIdx + 0.5) * rowH;
-                  for (let s = 0; s < strandsPerNode; s++) {
-                    const ySpd = (s - 1) * nodeSpread;
-                    const deltaOff = dir * 2 + (s - 1) * 0.8;
-                    const startX = nodeX + dir * circleR;
-                    const startY = rowCenterY + ySpd;
-                    const endX = cx + deltaOff;
-                    const endY = 98;
-                    // Gradual bezier: smooth sweeping arc from node to trunk (quarter-circle-like)
-                    const cp1x = startX + 0.42 * (endX - startX);
-                    const cp1y = startY;
-                    const cp2x = endX;
-                    const cp2y = startY + 0.42 * (endY - startY);
-                    const d = `M ${startX.toFixed(1)},${startY.toFixed(1)} C ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${endX.toFixed(1)},${endY.toFixed(1)}`;
-                    allPaths.push(d);
+                  const startX = isCentered ? cx : (nodeX + dir * circleR);
+                  const startY = rowCenterY;
+                  if (isCentered) {
+                    allPaths.push(`M ${cx.toFixed(1)},${startY.toFixed(1)} L ${cx.toFixed(1)},93`);
+                  } else {
+                    // Single strand: branch curve from node → merge into central trunk → convergence at 93
+                    const trunkJoinY = startY + (93 - startY) * 0.35;
+                    const cp1x = startX + 0.5 * (cx - startX);
+                    const cp2y = startY + 0.5 * (trunkJoinY - startY);
+                    allPaths.push(`M ${startX.toFixed(1)},${startY.toFixed(1)} C ${cp1x.toFixed(1)},${startY.toFixed(1)} ${cx.toFixed(1)},${cp2y.toFixed(1)} ${cx.toFixed(1)},${trunkJoinY.toFixed(1)} L ${cx.toFixed(1)},93`);
                   }
                 }
                 allPaths.forEach(d => {
@@ -253,7 +271,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                 allPaths.forEach(d => {
                   svgContent += `<path class="fill-path-blue" d="${d}" fill="none" stroke="${lightColor}" stroke-width="${overlayW}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" filter="url(#lightPulseBlue)" />`;
                 });
-                svgContent += `<circle class="flash-blue" cx="${cx}" cy="97" r="4" fill="${lightColor}" opacity="0" filter="url(#lightPulseBlue)" />`;
+                svgContent += `<circle class="flash-blue" cx="${cx}" cy="92" r="4" fill="${lightColor}" opacity="0" filter="url(#lightPulseBlue)" />`;
                 return svgContent;
               })() }}
             />
@@ -307,8 +325,6 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
           const leftCol = 20;
           const rightCol = 80;
           const circleR = 7;
-          const strandsPerNode = 3;
-          const nodeSpread = 0.8;
           const goldStart = isLight ? '#b8860b' : '#d4af37';
           const goldEnd = isLight ? '#d4af37' : '#FFD700';
           const estRowH = 85;
@@ -339,21 +355,17 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   const nodeX = isCentered ? cx : (isLeft ? leftCol : rightCol);
                   const dir = isCentered ? 0 : (isLeft ? 1 : -1);
                   const rowCenterY = topTrail + (rIdx + 0.5) * rowH;
-                  for (let s = 0; s < strandsPerNode; s++) {
-                    const ySpd = (s - 1) * nodeSpread;
-                    const side = isLeft ? -1 : 1;
-                    const deltaOff = (isCentered ? 0 : side * 2) + (s - 1) * 0.8;
-                    const startX = cx + deltaOff;
-                    const startY = 2;
-                    const endX = isCentered ? (cx + (s - 1) * 2) : (nodeX + dir * circleR);
-                    const endY = rowCenterY + ySpd;
-                    // Gradual bezier: smooth sweeping arc from trunk to node (quarter-circle-like)
-                    const cp1x = startX;
-                    const cp1y = isCentered ? (startY + 0.5 * (endY - startY)) : (startY + 0.42 * (endY - startY));
-                    const cp2x = isCentered ? endX : (endX + 0.42 * (startX - endX));
-                    const cp2y = endY;
-                    const d = `M ${startX.toFixed(1)},${startY.toFixed(1)} C ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${endX.toFixed(1)},${endY.toFixed(1)}`;
-                    allPaths.push(d);
+                  const endX = isCentered ? cx : (nodeX + dir * circleR);
+                  const endY = rowCenterY;
+                  if (isCentered) {
+                    // Centered node: straight trunk line
+                    allPaths.push(`M ${cx.toFixed(1)},2 L ${cx.toFixed(1)},${endY.toFixed(1)}`);
+                  } else {
+                    // Single strand: trunk from Pete → branch curve → node
+                    const branchY = 2 + (endY - 2) * 0.65;
+                    const cp1y = branchY + 0.5 * (endY - branchY);
+                    const cp2x = endX + 0.5 * (cx - endX);
+                    allPaths.push(`M ${cx.toFixed(1)},2 L ${cx.toFixed(1)},${branchY.toFixed(1)} C ${cx.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${endY.toFixed(1)} ${endX.toFixed(1)},${endY.toFixed(1)}`);
                   }
                 }
                 let svg = `
