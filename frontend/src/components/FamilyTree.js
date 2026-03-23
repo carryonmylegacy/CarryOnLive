@@ -252,7 +252,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   const isCentered = (n % 2 !== 0 && idx === n - 1);
                   const nodeX = isCentered ? cx : (isLeft ? leftCol : rightCol);
                   const dir = isCentered ? 0 : (isLeft ? 1 : -1);
-                  const rowCenterY = (rIdx + 0.5) * rowH;
+                  const rowCenterY = (rIdx + 0.3) * rowH;
                   if (isCentered) {
                     allPaths.push(`M ${cx.toFixed(1)},${rowCenterY.toFixed(1)} L ${cx.toFixed(1)},97`);
                   } else {
@@ -353,7 +353,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   const isCentered = (n % 2 !== 0 && idx === n - 1);
                   const nodeX = isCentered ? cx : (isLeft ? leftCol : rightCol);
                   const dir = isCentered ? 0 : (isLeft ? 1 : -1);
-                  const rowCenterY = topTrail + (rIdx + 0.5) * rowH;
+                  const rowCenterY = topTrail + (rIdx + 0.3) * rowH;
                   if (isCentered) {
                     allPaths.push(`M ${cx.toFixed(1)},2 L ${cx.toFixed(1)},${rowCenterY.toFixed(1)}`);
                   } else {
@@ -391,7 +391,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   const fiR = Math.floor(fi / 2);
                   const fiLeft = fi % 2 === 0;
                   const fiCen = (n % 2 !== 0 && fi === n - 1);
-                  const fiY = topTrail + (fiR + 0.5) * rowH;
+                  const fiY = topTrail + (fiR + 0.3) * rowH;
                   const fiNx = fiCen ? cx : (fiLeft ? leftCol : rightCol);
                   const fiDir = fiCen ? 0 : (fiLeft ? 1 : -1);
                   const fiX = fiNx + fiDir * circleR;
