@@ -67,7 +67,7 @@ const UploadCertificatePage = () => {
 
   if (checkingStatus) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
+      <div className="p-4 pb-24 flex items-center justify-center" style={{ minHeight: 200 }}>
         <Loader2 className="w-8 h-8 text-[var(--gold)] animate-spin" />
       </div>
     );

@@ -156,12 +156,13 @@ const BeneficiariesPage = () => {
   const isAdmin = user?.role === 'admin';
 
   const SECTION_LABELS = {
-    vault: 'Secure Document Vault (SDV)',
     messages: 'Milestone Messages (MM)',
-    checklist: 'Immediate Action Checklist (IAC)',
     guardian: 'Estate Guardian AI (EGA)',
+    vault: 'Secure Document Vault (SDV)',
+    checklist: 'Immediate Action Checklist (IAC)',
+    ffn: 'Family & Friends Notification (FFN)',
     digital_wallet: 'Digital Access Vault (DAV)',
-    timeline: 'Estate Plan Timeline',
+    dts: 'Designated Trustee Services (DTS)',
   };
 
   useEffect(() => {
