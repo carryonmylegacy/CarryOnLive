@@ -24,6 +24,12 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (March 23, 2026 — Session 23: Settings Address UX Enhancement)
+- **Gold Highlighted Address Box**: When user navigates to `/settings?editAddress=true` (triggered by Guardian page address gate), the address input fields (Street, Apt, City, State, ZIP) are wrapped in a gold-bordered rounded box (`border-2 border-[var(--gold)] rounded-xl bg-[var(--gold)]/5 p-4`) with helper text "Please enter your address below".
+- **Auto-Scroll to Save**: After user finishes typing in the ZIP code field and blurs it, the page auto-scrolls up to bring the Save button into view using `scrollIntoView({ behavior: 'smooth', block: 'center' })` via a `useRef`.
+- **State Management**: Added `editAddressMode` state and `saveBtnRef` ref. Gold box only appears during the `editAddress=true` flow, not during normal profile editing. Both Cancel and Save clear the `editAddressMode`.
+- **Testing**: 100% pass rate — iteration 140. All 5 tests passed (gold border, helper text, auto-scroll, cancel clears mode, normal edit no gold box).
+
 ### Completed (March 23, 2026 — Session 22: Tree Polish + Admin Lockout Fix)
 - **Blue Tree = Inverted Gold Tree**: All blue lines fan from estate circle side-centers and converge to ONE point near Pete — exact mirror of gold tree geometry.
 - **Animation Flow Reversed**: Blue path direction reversed so scroll-linked "light" animation flows top-to-bottom: from estate circles → Pete → beneficiary circles. Matches natural scroll direction.
