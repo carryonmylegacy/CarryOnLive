@@ -137,28 +137,35 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
         @keyframes ftFadeIn {
           to { opacity: 1; }
         }
+        /* Lightweight GPU glow on animated overlay paths — replaces expensive SVG feGaussianBlur */
+        .fill-path-blue, .fill-path-gold {
+          filter: drop-shadow(0 0 3px currentColor);
+        }
+        .flash-blue, .flash-gold-origin, .flash-gold-end {
+          filter: drop-shadow(0 0 6px currentColor);
+        }
         /* Blue upper paths — estate branches converge to benefactor */
         .tree-animate .fill-path-blue {
-          animation: ftDashReveal 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+          animation: ftDashReveal 1.8s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
         }
         .tree-animate .fill-line-blue {
-          animation: ftFadeIn 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+          animation: ftFadeIn 1.8s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
         }
         .tree-animate .flash-blue {
-          animation: ftFlash 0.6s ease-out 1.35s forwards;
+          animation: ftFlash 0.7s ease-out 1.75s forwards;
         }
         /* Gold lower paths — benefactor branches to beneficiaries */
         .tree-animate .flash-gold-origin {
-          animation: ftFlash 0.6s ease-out 1.35s forwards;
+          animation: ftFlash 0.7s ease-out 1.75s forwards;
         }
         .tree-animate .fill-path-gold {
-          animation: ftDashReveal 1.2s cubic-bezier(0.4, 0, 0.2, 1) 1.5s forwards;
+          animation: ftDashReveal 1.6s cubic-bezier(0.25, 0.1, 0.25, 1) 1.9s forwards;
         }
         .tree-animate .fill-line-gold {
-          animation: ftFadeIn 1.2s cubic-bezier(0.4, 0, 0.2, 1) 1.5s forwards;
+          animation: ftFadeIn 1.6s cubic-bezier(0.25, 0.1, 0.25, 1) 1.9s forwards;
         }
         .tree-animate .flash-gold-end {
-          animation: ftFlash 0.6s ease-out 2.65s forwards;
+          animation: ftFlash 0.7s ease-out 3.45s forwards;
         }
       `}</style>
       {/* Beneficiary estates with converging lines to benefactor */}
@@ -204,10 +211,6 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                       <feGaussianBlur stdDeviation="${blurDev}" result="blur" />
                       <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                     </filter>
-                    <filter id="lightPulseBlue" x="-100%" y="-100%" width="300%" height="300%">
-                      <feGaussianBlur stdDeviation="2" result="blur" />
-                      <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                    </filter>
                   </defs>`;
                 // All paths flow from estate circles down to convergence point near Pete
                 // Odd estate goes to LEFT column (no centering) — asymmetric layout
@@ -227,9 +230,9 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   svgContent += `<path d="${d}" fill="none" stroke="url(#lineFlow)" stroke-width="${sw}" filter="url(#lineGlow)" />`;
                 });
                 allPaths.forEach(d => {
-                  svgContent += `<path class="fill-path-blue" d="${d}" fill="none" stroke="${lightColor}" stroke-width="${overlayW}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" filter="url(#lightPulseBlue)" />`;
+                  svgContent += `<path class="fill-path-blue" d="${d}" fill="none" stroke="${lightColor}" stroke-width="${overlayW}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" />`;
                 });
-                svgContent += `<circle class="flash-blue" cx="${cx}" cy="96" r="4" fill="${lightColor}" opacity="0" filter="url(#lightPulseBlue)" />`;
+                svgContent += `<circle class="flash-blue" cx="${cx}" cy="96" r="4" fill="${lightColor}" opacity="0" />`;
                 return svgContent;
               })() }}
             />
@@ -347,10 +350,6 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                       <feGaussianBlur stdDeviation="${blurDev}" result="blur" />
                       <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                     </filter>
-                    <filter id="lightPulseGold" x="-100%" y="-100%" width="300%" height="300%">
-                      <feGaussianBlur stdDeviation="2" result="blur" />
-                      <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                    </filter>
                   </defs>`;
                 allPaths.forEach(d => {
                   svg += `<path d="${d}" fill="none" stroke="url(#ftGoldGrad)" stroke-width="${sw}" filter="url(#ftGoldGlow)" />`;
@@ -358,9 +357,9 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                 if (centeredPath) {
                   svg += `<path d="${centeredPath}" fill="none" stroke="${isLight ? '#b8860b' : '#d4af37'}" stroke-width="${sw * 1.5}" opacity="0.25" filter="url(#ftGoldGlow)" />`;
                 }
-                svg += `<circle class="flash-gold-origin" cx="${cx}" cy="2" r="4" fill="${lightColor}" opacity="0" filter="url(#lightPulseGold)" />`;
+                svg += `<circle class="flash-gold-origin" cx="${cx}" cy="2" r="4" fill="${lightColor}" opacity="0" />`;
                 allPaths.forEach(d => {
-                  svg += `<path class="fill-path-gold" d="${d}" fill="none" stroke="${lightColor}" stroke-width="${overlayW}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" filter="url(#lightPulseGold)" />`;
+                  svg += `<path class="fill-path-gold" d="${d}" fill="none" stroke="${lightColor}" stroke-width="${overlayW}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" />`;
                 });
                 for (let fi = 0; fi < n; fi++) {
                   const fiR = Math.floor(fi / 2);
@@ -370,7 +369,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   const fiNx = fiCen ? cx : (fiLeft ? leftCol : rightCol);
                   const fiDir = fiCen ? 0 : (fiLeft ? 1 : -1);
                   const fiX = fiNx + fiDir * circleR;
-                  svg += `<circle class="flash-gold-end" cx="${fiX.toFixed(1)}" cy="${fiY.toFixed(1)}" r="3" fill="${lightColor}" opacity="0" filter="url(#lightPulseGold)" />`;
+                  svg += `<circle class="flash-gold-end" cx="${fiX.toFixed(1)}" cy="${fiY.toFixed(1)}" r="3" fill="${lightColor}" opacity="0" />`;
                 }
                 return svg;
               })() }}
