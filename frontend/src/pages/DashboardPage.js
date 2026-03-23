@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { cachedGet } from '../utils/apiCache';
@@ -26,6 +26,7 @@ import { API_URL } from '../config';
 const DashboardPage = () => {
   const { user, getAuthHeaders } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [estates, setEstates] = useState([]);
   const [estate, setEstate] = useState(null);
   const [checklists, setChecklists] = useState([]);
@@ -108,7 +109,12 @@ const DashboardPage = () => {
           guidedDismissedRef.current = true;
         } else {
           const steps = progressRes.data?.steps || [];
-          const nextIncomplete = steps.find(s => !s.completed);
+          const triggerStepKey = searchParams.get('triggerStep');
+          // If returning from Settings address flow, force-show the triggered step
+          const nextIncomplete = triggerStepKey
+            ? steps.find(s => s.key === triggerStepKey) || steps.find(s => !s.completed)
+            : steps.find(s => !s.completed);
+          if (triggerStepKey) setSearchParams({}, { replace: true });
           if (nextIncomplete && !progressRes.data?.all_complete) {
             setGuidedStep({ ...nextIncomplete, beneficiary_names: progressRes.data?.beneficiary_names || [] });
             // Show welcome step for multi-role users (beneficiary who also has own estate)

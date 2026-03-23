@@ -58,6 +58,7 @@ const SettingsPage = () => {
   const [onboardingVisible, setOnboardingVisible] = useState(() => localStorage.getItem('carryon_onboarding_dismissed') !== 'true');
   const [searchParams, setSearchParams] = useSearchParams();
   const [editAddressMode, setEditAddressMode] = useState(false);
+  const [fromOnboarding, setFromOnboarding] = useState(false);
   const saveBtnRef = useRef(null);
 
   // Auto-open address editing when directed from EGA
@@ -65,6 +66,9 @@ const SettingsPage = () => {
     if (searchParams.get('editAddress') === 'true') {
       setProfileEditing(true);
       setEditAddressMode(true);
+      if (searchParams.get('fromOnboarding') === 'true') {
+        setFromOnboarding(true);
+      }
       setSearchParams({}, { replace: true });
       // Scroll to address section after a short delay
       setTimeout(() => {
@@ -226,6 +230,13 @@ const SettingsPage = () => {
       if (res.data?.name) setDisplayName(res.data.name);
       setProfileEditing(false);
       toast.success('Personal information updated');
+      // If user came from Getting Started flow, navigate back to dashboard to show Step 4
+      if (fromOnboarding) {
+        setFromOnboarding(false);
+        setEditAddressMode(false);
+        navigate('/dashboard?triggerStep=review_readiness');
+        return;
+      }
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to update profile');
     } finally { setProfileSaving(false); }

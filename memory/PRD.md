@@ -27,8 +27,8 @@ A full-stack estate planning application allowing benefactors to manage digital 
 ### Completed (March 23, 2026 — Session 23: Settings Address UX Enhancement)
 - **Gold Highlighted Address Box**: When user navigates to `/settings?editAddress=true` (triggered by Guardian page address gate), the address input fields (Street, Apt, City, State, ZIP) are wrapped in a gold-bordered rounded box (`border-2 border-[var(--gold)] rounded-xl bg-[var(--gold)]/5 p-4`) with helper text "Please enter your address below".
 - **Auto-Scroll to Save**: After user finishes typing in the ZIP code field and blurs it, the page auto-scrolls up to bring the Save button into view using `scrollIntoView({ behavior: 'smooth', block: 'center' })` via a `useRef`.
-- **State Management**: Added `editAddressMode` state and `saveBtnRef` ref. Gold box only appears during the `editAddress=true` flow, not during normal profile editing. Both Cancel and Save clear the `editAddressMode`.
-- **Testing**: 100% pass rate — iteration 140. All 5 tests passed (gold border, helper text, auto-scroll, cancel clears mode, normal edit no gold box).
+- **Onboarding Return Flow**: When user arrives at Settings via Getting Started → Guardian address gate, `fromOnboarding=true` is passed in the URL. After saving address, user is automatically redirected to `/dashboard?triggerStep=review_readiness` which triggers the Step 4 guided overlay ("Consult the Estate Guardian") so they can proceed directly to EGA.
+- **Testing**: 100% pass rate — iteration 140. Visual verification via screenshots confirms Step 4 overlay pops up after save.
 
 ### Completed (March 23, 2026 — Session 22: Tree Polish + Admin Lockout Fix)
 - **Blue Tree = Inverted Gold Tree**: All blue lines fan from estate circle side-centers and converge to ONE point near Pete — exact mirror of gold tree geometry.

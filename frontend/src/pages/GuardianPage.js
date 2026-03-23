@@ -656,7 +656,7 @@ const GuardianPage = () => {
           <p className="text-sm mb-6 leading-relaxed" style={{ color: 'var(--t4, #94a3b8)' }}>
             EGA uses your primary residence address to analyze estate law specific to your state. Please add your address in Settings before using this feature.
           </p>
-          <button onClick={() => navigate('/settings?editAddress=true')}
+          <button onClick={() => navigate(`/settings?editAddress=true${fromGettingStarted ? '&fromOnboarding=true' : ''}`)}
             className="w-full py-3.5 rounded-xl text-sm font-bold mb-3 flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
             style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}
             data-testid="address-gate-settings-btn">
