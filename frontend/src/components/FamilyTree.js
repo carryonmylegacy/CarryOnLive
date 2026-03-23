@@ -461,17 +461,19 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               })() }}
             />
 
-            {/* Vertical connector for centered (odd) bottom node — from trunk to centered circle */}
+            {/* Vertical connector for centered (odd) bottom node — from V-point to circle top */}
             {n % 2 !== 0 && (() => {
               const goldColor = isLight ? 'rgba(184,134,11,0.2)' : 'rgba(212,175,55,0.18)';
               const glowColor = isLight ? 'rgba(184,134,11,0.12)' : 'rgba(212,175,55,0.10)';
               const animColor = isLight ? 'rgba(200,170,50,0.3)' : 'rgba(255,230,140,0.25)';
               const numFullRows = Math.floor(n / 2);
-              const lineTop = trailPx;
-              const lineBottom = trailPx + numFullRows * (estRowH + 12) + 25;
+              // Start where curves meet (center of first row circles)
+              const lineTop = trailPx + 25;
+              // End at top edge of centered node circle (don't go through it)
+              const lineBottom = trailPx + numFullRows * estRowH + (numFullRows - 1) * 12 + 12;
               return (
                 <div className="absolute pointer-events-none" style={{
-                  left: '50%', top: lineTop, height: lineBottom - lineTop,
+                  left: '50%', top: lineTop, height: Math.max(0, lineBottom - lineTop),
                   width: 0, transform: 'translateX(-50%)', zIndex: 0,
                   borderLeft: `1.5px solid ${goldColor}`,
                   boxShadow: `0 0 6px ${glowColor}, 0 0 12px ${glowColor}`,
