@@ -303,18 +303,6 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
       {/* Root node (benefactor) with halo orb + trunk flares */}
       <div className="flex flex-col items-center mt-3">
         <div className="relative" style={{ overflow: 'visible' }}>
-          {/* Halo — tall ellipse tapering at trunk tips, wide around Pete */}
-          <div className="absolute pointer-events-none" style={{
-            width: 100, height: 180,
-            left: '50%', top: 30,
-            transform: 'translate(-50%, -50%)',
-            borderRadius: '50%',
-            background: isLight
-              ? 'radial-gradient(ellipse at 50% 12%, rgba(59,130,246,0.35) 0%, rgba(59,130,246,0.06) 35%, transparent 55%), radial-gradient(ellipse at 50% 88%, rgba(184,134,11,0.30) 0%, rgba(184,134,11,0.05) 35%, transparent 55%)'
-              : 'radial-gradient(ellipse at 50% 12%, rgba(100,160,255,0.38) 0%, rgba(100,160,255,0.08) 35%, transparent 55%), radial-gradient(ellipse at 50% 88%, rgba(212,175,55,0.33) 0%, rgba(212,175,55,0.06) 35%, transparent 55%)',
-            filter: 'blur(2px)',
-            zIndex: 0,
-          }} />
           <div style={{ position: 'relative', zIndex: 1 }}>
             <TreeNode
               initials={getInitials(user?.name, user?.first_name, user?.last_name)}
