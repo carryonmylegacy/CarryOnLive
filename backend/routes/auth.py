@@ -130,17 +130,18 @@ async def login(data: UserLogin, request: Request):
     # Check for account lockout (10 failed attempts in 3 minutes) — skip for admin accounts
     lockout_window = (datetime.now(timezone.utc) - timedelta(minutes=3)).isoformat()
     lockout_email = data.email.strip().lower()
-    # Pre-check if this is an admin account (founder/operations) — exempt from lockout
+    # Pre-check if this is an admin or session-exempt account — exempt from lockout
     # Check both email and username since login supports either
     admin_check = await db.users.find_one(
         {"$or": [{"email": lockout_email}, {"username_lower": lockout_email}]},
-        {"_id": 0, "id": 1, "role": 1},
+        {"_id": 0, "id": 1, "role": 1, "session_exempt": 1},
     )
     is_admin = admin_check and admin_check.get("role") == "admin"
-    if is_admin:
-        # Admin accounts are fully exempt — also clear any existing lockout entries
+    is_exempt = admin_check and admin_check.get("session_exempt", False)
+    if is_admin or is_exempt:
+        # Admin/exempt accounts are fully exempt — also clear any existing lockout entries
         await db.failed_logins.delete_many({"email": lockout_email})
-    if not is_admin:
+    if not is_admin and not is_exempt:
         recent_failures = await db.failed_logins.count_documents(
             {
                 "email": lockout_email,
@@ -203,7 +204,7 @@ async def login(data: UserLogin, request: Request):
     # ── Single-session enforcement at login time ──
     # If user already has an active session and didn't request force, block login.
     # Admin is exempt. Sessions older than 24h are considered stale.
-    if not data.force_login and user.get("role") != "admin" and user.get("active_session_id"):
+    if not data.force_login and user.get("role") != "admin" and not user.get("session_exempt", False) and user.get("active_session_id"):
         # Treat sessions older than 24h as stale (app crash, lost device, etc.)
         last_login = user.get("last_login_at")
         session_is_fresh = False

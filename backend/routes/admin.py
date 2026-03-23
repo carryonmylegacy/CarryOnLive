@@ -137,7 +137,8 @@ async def get_all_users(current_user: dict = Depends(get_current_user)):
     estates = await db.estates.find({}, {"_id": 0, "id": 1, "owner_id": 1, "name": 1}).to_list(10000)
     estates_by_owner = {}
     for e in estates:
-        estates_by_owner.setdefault(e["owner_id"], []).append(e["id"])
+        if e.get("id") and e.get("owner_id"):
+            estates_by_owner.setdefault(e["owner_id"], []).append(e["id"])
 
     all_bens = await db.beneficiaries.find(
         {},
@@ -162,6 +163,8 @@ async def get_all_users(current_user: dict = Depends(get_current_user)):
 
     # Attach subscription info and linked beneficiaries to each user
     for u in users:
+        if not u.get("id"):
+            continue
         sub = await db.user_subscriptions.find_one(
             {"user_id": u["id"]},
             {
@@ -195,7 +198,7 @@ async def get_all_users(current_user: dict = Depends(get_current_user)):
             u["linked_beneficiaries"] = all_linked
             u["estate_groups"] = estate_groups
 
-    return users
+    return [u for u in users if u.get("id")]
 
 
 @router.get("/admin/stats")
@@ -755,6 +758,31 @@ async def update_user_role(user_id: str, body: dict, current_user: dict = Depend
         }
     )
     return {"message": f"Role updated to {new_role}"}
+
+
+@router.put("/admin/users/{user_id}/session-exempt")
+async def toggle_session_exempt(user_id: str, current_user: dict = Depends(get_current_user)):
+    """Toggle session_exempt flag — exempts user from login lockout and single-session enforcement"""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "session_exempt": 1, "name": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    new_val = not user.get("session_exempt", False)
+    await db.users.update_one({"id": user_id}, {"$set": {"session_exempt": new_val}})
+    if new_val:
+        await db.failed_logins.delete_many({"email": user_id})
+    await db.activity_log.insert_one({
+        "id": str(uuid4()),
+        "action": "session_exempt_toggle",
+        "actor_id": current_user["id"],
+        "actor_name": current_user.get("name", "Admin"),
+        "target_id": user_id,
+        "details": f"{'Enabled' if new_val else 'Disabled'} session exemption for {user.get('name', user_id)}",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+    return {"session_exempt": new_val}
+
 
 
 @router.get("/admin/activity")

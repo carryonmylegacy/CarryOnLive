@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Search, Users, Trash2, Loader2, ChevronDown, ChevronRight, KeyRound, Unlock, GitBranch, User, AlertTriangle, Zap, ArrowUpDown } from 'lucide-react';
+import { Search, Users, Trash2, Loader2, ChevronDown, ChevronRight, KeyRound, Unlock, GitBranch, User, AlertTriangle, Zap, ArrowUpDown, ShieldOff } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from '../../utils/toast';
@@ -33,6 +33,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
   const [showDeletePw, setShowDeletePw] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [togglingBeta, setTogglingBeta] = useState(null);
+  const [togglingExempt, setTogglingExempt] = useState(null);
   const [sortBy, setSortBy] = useState('default');
 
   const handleToggleBeta = async (userId, currentBeta) => {
@@ -45,6 +46,18 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
       toast.error(err.response?.data?.detail || 'Failed to toggle beta');
     }
     setTogglingBeta(null);
+  };
+
+  const handleToggleSessionExempt = async (userId, currentExempt) => {
+    setTogglingExempt(userId);
+    try {
+      const res = await axios.put(`${API_URL}/admin/users/${userId}/session-exempt`, {}, getAuthHeaders());
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, session_exempt: res.data.session_exempt } : u));
+      toast.success(res.data.session_exempt ? 'Multi-session enabled — no lockout or session limits' : 'Multi-session disabled — standard restrictions restored');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to toggle session exemption');
+    }
+    setTogglingExempt(null);
   };
 
   const filteredUsers = users
@@ -215,6 +228,13 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                 BETA
               </span>
             )}
+            {u.session_exempt && (
+              <span className="text-[11px] px-1.5 py-0.5 rounded-md font-bold"
+                style={{ background: 'rgba(34,211,238,0.15)', color: '#22d3ee', border: '1px solid rgba(34,211,238,0.3)' }}
+                data-testid={`exempt-badge-${u.id}`}>
+                MULTI-SESSION
+              </span>
+            )}
           </div>
           {u.id !== currentUserId && (
             <div className="flex items-center gap-0.5 flex-shrink-0">
@@ -226,6 +246,16 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                   title={u.is_beta_tester ? 'Remove from Beta' : 'Add to Beta'}
                   data-testid={`beta-toggle-${u.id}`}>
                   {togglingBeta === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                </Button>
+              )}
+              {!operatorMode && (
+                <Button variant="ghost" size="sm"
+                  className={`h-8 w-8 p-0 ${u.session_exempt ? 'text-[#22d3ee]' : 'text-[var(--t5)]'}`}
+                  onClick={() => handleToggleSessionExempt(u.id, u.session_exempt)}
+                  disabled={togglingExempt === u.id}
+                  title={u.session_exempt ? 'Disable multi-session (restore lockout + single-session)' : 'Enable multi-session (no lockout, simultaneous logins allowed)'}
+                  data-testid={`session-exempt-toggle-${u.id}`}>
+                  {togglingExempt === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldOff className="w-4 h-4" />}
                 </Button>
               )}
               {(u.role === 'benefactor' || u.role === 'beneficiary') && (
