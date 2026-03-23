@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -57,11 +57,14 @@ const SettingsPage = () => {
   const [profileSaving, setProfileSaving] = useState(false);
   const [onboardingVisible, setOnboardingVisible] = useState(() => localStorage.getItem('carryon_onboarding_dismissed') !== 'true');
   const [searchParams, setSearchParams] = useSearchParams();
+  const [editAddressMode, setEditAddressMode] = useState(false);
+  const saveBtnRef = useRef(null);
 
   // Auto-open address editing when directed from EGA
   useEffect(() => {
     if (searchParams.get('editAddress') === 'true') {
       setProfileEditing(true);
+      setEditAddressMode(true);
       setSearchParams({}, { replace: true });
       // Scroll to address section after a short delay
       setTimeout(() => {
@@ -645,10 +648,10 @@ const SettingsPage = () => {
                 <Pencil className="w-3.5 h-3.5 mr-1" /> Edit
               </Button>
             ) : (
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setProfileEditing(false)}
+              <div className="flex gap-2" ref={saveBtnRef}>
+                <Button variant="outline" size="sm" onClick={() => { setProfileEditing(false); setEditAddressMode(false); }}
                   className="border-[var(--b)] text-[var(--t4)]">Cancel</Button>
-                <Button size="sm" onClick={saveProfile} disabled={profileSaving}
+                <Button size="sm" onClick={() => { saveProfile(); setEditAddressMode(false); }} disabled={profileSaving}
                   className="bg-[var(--gold)] text-[#0b1120] hover:bg-[var(--gold)]/90" data-testid="profile-save-btn">
                   {profileSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save'}
                 </Button>
@@ -756,7 +759,13 @@ const SettingsPage = () => {
           <div data-testid="settings-address-section">
             <label className="text-[var(--t5)] text-xs mb-1 block">Address</label>
             {profileEditing ? (
-              <div className="space-y-2">
+              <div className={`space-y-2 transition-all duration-300 ${editAddressMode ? 'border-2 border-[var(--gold)] rounded-xl bg-[var(--gold)]/5 p-4' : ''}`}
+                data-testid="address-fields-wrapper">
+                {editAddressMode && (
+                  <p className="text-[var(--gold)] text-xs font-medium mb-1" data-testid="address-highlight-label">
+                    Please enter your address below
+                  </p>
+                )}
                 <Input value={profileData.address_street || ''} onChange={e => setProfileData(p => ({...p, address_street: e.target.value}))}
                   placeholder="Street address" className="bg-[var(--card)] border-[var(--b)] text-[var(--t)] text-sm" data-testid="profile-street" />
                 <Input value={profileData.address_line2 || ''} onChange={e => setProfileData(p => ({...p, address_line2: e.target.value}))}
@@ -777,7 +786,14 @@ const SettingsPage = () => {
                   </div>
                   <div>
                     <Input value={profileData.address_zip || ''} onChange={e => setProfileData(p => ({...p, address_zip: e.target.value}))}
-                      placeholder="ZIP" className="bg-[var(--card)] border-[var(--b)] text-[var(--t)] text-sm" data-testid="profile-zip" />
+                      placeholder="ZIP" className="bg-[var(--card)] border-[var(--b)] text-[var(--t)] text-sm" data-testid="profile-zip"
+                      onBlur={() => {
+                        if (editAddressMode && saveBtnRef.current) {
+                          setTimeout(() => {
+                            saveBtnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }, 200);
+                        }
+                      }} />
                   </div>
                 </div>
               </div>

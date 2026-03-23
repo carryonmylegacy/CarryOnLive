@@ -106,7 +106,7 @@ class TestSubscriptionCheckout:
             json={
                 "plan_id": "premium",
                 "billing_cycle": "monthly",
-                "origin_url": "https://admin-toggle-test.preview.emergentagent.com",
+                "origin_url": "https://smooth-address-input.preview.emergentagent.com",
             },
             headers=auth_headers,
         )
@@ -120,7 +120,7 @@ class TestSubscriptionCheckout:
             json={
                 "plan_id": "premium",
                 "billing_cycle": "monthly",
-                "origin_url": "https://admin-toggle-test.preview.emergentagent.com",
+                "origin_url": "https://smooth-address-input.preview.emergentagent.com",
             },
         )
         assert response.status_code in [401, 403], f"Expected 401/403, got {response.status_code}"
