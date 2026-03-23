@@ -28,7 +28,7 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **Blue Tree = Inverted Gold Tree**: All blue lines fan from estate circle side-centers and converge to ONE point near Pete — exact mirror of gold tree geometry.
 - **Animation Flow Reversed**: Blue path direction reversed so scroll-linked "light" animation flows top-to-bottom: from estate circles → Pete → beneficiary circles. Matches natural scroll direction.
 - **Estate Circle Gap Closed**: Reduced upper section `circleR` from 7 to 6, bringing SVG endpoints closer to estate circle edges for tangential connection.
-- **Halo Orb**: Added subdued bi-color radial glow behind Pete's circle — blue tint from above, gold tint from below. Fades out with distance, accentuates without overshadowing.
+- **Halo Orb**: Visible bi-color radial glow behind Pete — blue tint from above (0.28 opacity), gold tint from below (0.24 opacity), 240px diameter, no blur (crisp gradient fade). Trunk flares: 140x20px horizontal gradient bars above (blue) and below (gold) Pete that create the visual "flattening" of the trunk tips into the halo.
 - **Gold Tree Preserved**: Reverted to original one-point fan pattern the user approved.
 - **Admin Lockout Exemption**: Fixed bug where admin accounts hit 3-minute lockout when logging in via username — admin-check now queries both `email` and `username_lower`.
 - **Housekeeping**: All 50 checks pass.
