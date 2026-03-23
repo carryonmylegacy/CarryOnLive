@@ -125,7 +125,17 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
       setTimeout(() => { node.style.transition = 'opacity .3s ease-out'; node.style.opacity = '0'; }, 150);
     };
 
+    let transitionApplied = false;
+    const applyTransitions = () => {
+      if (transitionApplied) return;
+      transitionApplied = true;
+      el.querySelectorAll('.fill-path-blue, .fill-path-gold').forEach(p => {
+        p.style.transition = 'stroke-dashoffset 0.2s ease-out';
+      });
+    };
+
     const updateAnimation = (raw) => {
+      applyTransitions();
       const upper = Math.min(1, raw * 2);
       if (upper > upperMaxRef.current) {
         upperMaxRef.current = upper;
@@ -162,28 +172,8 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
     scrollTarget.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
 
-    // Desktop fallback: auto-animate when tree is visible but not enough scroll room
-    const autoTimer = setTimeout(() => {
-      if (lowerMaxRef.current >= 1) return;
-      const rect = el.getBoundingClientRect();
-      if (rect.top < window.innerHeight * 0.7) {
-        let startTime = null;
-        const base = Math.max(upperMaxRef.current * 0.5, 0);
-        const animate = (ts) => {
-          if (!el.isConnected) return;
-          if (!startTime) startTime = ts;
-          const raw = base + (1 - base) * Math.min(1, (ts - startTime) / 2500);
-          updateAnimation(raw);
-          if (raw < 1) autoFrameRef.current = requestAnimationFrame(animate);
-        };
-        autoFrameRef.current = requestAnimationFrame(animate);
-      }
-    }, 600);
-
     return () => {
       scrollTarget.removeEventListener('scroll', handleScroll);
-      clearTimeout(autoTimer);
-      if (autoFrameRef.current) cancelAnimationFrame(autoFrameRef.current);
       upperMaxRef.current = 0; lowerMaxRef.current = 0;
       upperFlashedRef.current = false; lowerStartedRef.current = false; lowerFlashedRef.current = false;
       initialTopRef.current = null;
