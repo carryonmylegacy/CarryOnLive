@@ -650,18 +650,23 @@ const LoginPage = () => {
           <div className="max-w-[1100px] mx-auto px-6 relative z-10">
             <RevealSection>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white text-center mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                Four Features.
+                Core Features.
               </h2>
               <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#d4af37] text-center mb-14" style={{ fontFamily: 'Outfit, sans-serif' }}>
                 Total Family Readiness.
               </h3>
             </RevealSection>
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
+                {
+                  icon: LockIcon, title: 'Secure Document Vault (SDV)',
+                  bold: 'Every will, trust, policy, and deed \u2014 encrypted, organized, and instantly accessible to the right people.',
+                  desc: 'Upload and store your most critical estate documents in a per-estate encrypted vault with AES-256 encryption at rest. Triple Lock protection with PIN, password, and security question. Your beneficiaries access exactly what you authorize \u2014 nothing more.',
+                },
                 {
                   icon: Sparkles, title: 'Estate Guardian\u2122 AI (EGA)',
                   bold: 'An AI analyst powered by U.S. estate law across all 50 states \u2014 working inside your encrypted vault.',
-                  desc: 'EGA analyzes your estate documents for contradictions, gaps, outdated provisions, and missing pieces. Your documents are encrypted with AES-256 per-estate encryption at rest. The AI reviews your documents within the platform and auto-populates your Immediate Action Checklist (IAC) with critical details like claim phone numbers, executor contacts, and filing deadlines. No team reads them. No human touches them.',
+                  desc: 'EGA analyzes your estate documents for contradictions, gaps, outdated provisions, and missing pieces. The AI reviews your documents within the platform and auto-populates your Immediate Action Checklist (IAC) with critical details like claim phone numbers, executor contacts, and filing deadlines. No team reads them. No human touches them.',
                 },
                 {
                   icon: ClipboardCheck, title: 'Immediate Action Checklist (IAC)',
@@ -671,12 +676,17 @@ const LoginPage = () => {
                 {
                   icon: MessageSquare, title: 'Milestone Messages (MM)',
                   bold: 'Your words at their wedding. Your message at their graduation. Your love \u2014 delivered exactly when it matters.',
-                  desc: 'Record written, voice, or video messages for the milestones you want to be part of \u2014 even if you can\'t be there. Weddings, births, graduations, birthdays, first homes, or any moment you choose. Messages are securely stored and delivered when your beneficiary reports the milestone. No team reads them. No human touches them. Just your words, arriving exactly when and where you intended.',
+                  desc: 'Record written, voice, or video messages for the milestones you want to be part of \u2014 even if you can\'t be there. Weddings, births, graduations, birthdays, first homes, or any moment you choose. Messages are securely stored and delivered when your beneficiary reports the milestone.',
+                },
+                {
+                  icon: Users, title: 'Family & Friends Notification (FFN)',
+                  bold: 'The people who matter most should never hear the news through the grapevine.',
+                  desc: 'Build a personalized notification list of family, friends, colleagues, and anyone your beneficiaries should contact after your transition. Names, phone numbers, relationships, and special notes \u2014 all organized and ready when your family needs it.',
                 },
                 {
                   icon: UserCheck, title: 'Designated Trustee Services (DTS)',
                   bold: 'Some things shouldn\'t follow you. Let a trusted team handle what you can\'t.',
-                  desc: 'Accounts to close. Subscriptions to cancel. Sensitive content to destroy. Financial transfers to execute. Things you\'d rather handle yourself \u2014 if you could. CarryOn\'s DTS lets you authorize specific, line-item tasks to be carried out confidentially after your verified transition. Each task is quoted, approved by you, and executed by our DTS Team. Every record \u2014 instructions, credentials, payment logs \u2014 is permanently destroyed after completion.',
+                  desc: 'Accounts to close. Subscriptions to cancel. Sensitive content to destroy. Financial transfers to execute. CarryOn\'s DTS lets you authorize specific, line-item tasks to be carried out confidentially after your verified transition. Each task is quoted, approved by you, and executed by our DTS Team.',
                 },
               ].map(({ icon: Icon, title, bold, desc }, i) => (
                 <RevealSection key={title} delay={i * 0.12} direction={i % 2 === 0 ? 'left' : 'right'}>
@@ -713,7 +723,7 @@ const LoginPage = () => {
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {[
                 {
-                  icon: Key, title: 'Digital Wallet Vault',
+                  icon: Key, title: 'Digital Access Vault (DAV)',
                   desc: 'Store passwords, crypto keys, and access credentials &mdash; encrypted and assigned to specific beneficiaries.',
                 },
                 {
