@@ -94,13 +94,15 @@ const DashboardPage = () => {
         axios.get(`${API_URL}/messages/${estateId}`, getAuthHeaders()),
         axios.get(`${API_URL}/beneficiaries/${estateId}`, getAuthHeaders()),
         axios.get(`${API_URL}/checklists/${estateId}`, getAuthHeaders()),
-        axios.get(`${API_URL}/estate/${estateId}/readiness`, getAuthHeaders()),
+        axios.get(`${API_URL}/estate/${estateId}/readiness`, getAuthHeaders()).catch(() => null),
         axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders()).catch(() => null),
       ]);
       setStats({ documents: docsRes.data.length, messages: msgsRes.data.length, beneficiaries: bensRes.data.length });
       setChecklists(checklistRes.data);
-      setReadiness(readinessRes.data);
-      setEstate(prev => prev ? { ...prev, readiness_score: readinessRes.data.overall_score } : prev);
+      if (readinessRes) {
+        setReadiness(readinessRes.data);
+        setEstate(prev => prev ? { ...prev, readiness_score: readinessRes.data.overall_score } : prev);
+      }
 
       // Show guided flow overlay if there are incomplete steps and user hasn't dismissed this visit
       if (!guidedDismissedRef.current && progressRes?.data) {
@@ -344,7 +346,7 @@ const DashboardPage = () => {
     const OPTIONAL_SKIP_INFO = {
       designate_primary: {
         title: 'No Problem!',
-        desc: 'You can set your succession order anytime from the Beneficiaries page. Just tap the "Succession" tab to arrange who inherits responsibilities and in what order.',
+        desc: 'You can set your succession order anytime from the Beneficiaries page. Just drag the beneficiary tiles up or down to change their relative hierarchy and succession order.',
         route: '/beneficiaries',
         routeLabel: 'Go to Beneficiaries',
       },
@@ -390,9 +392,26 @@ const DashboardPage = () => {
         await axios.post(`${API_URL}/onboarding/complete-step/${guidedStep.key}`, {}, getAuthHeaders());
       } catch {}
       setShowOptionalSkipInfo(false);
+      // Advance to the next step instead of dismissing entirely
+      if (estate?.id) {
+        try {
+          const progressRes = await axios.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
+          const steps = progressRes.data?.steps || [];
+          const nextIncomplete = steps.find(s => !s.completed);
+          if (nextIncomplete && !progressRes.data?.all_complete) {
+            setGuidedStep({ ...nextIncomplete, beneficiary_names: progressRes.data?.beneficiary_names || [] });
+            return; // Stay in guided flow with the next step
+          } else if (progressRes.data?.all_complete && !progressRes.data?.celebration_shown) {
+            guidedDismissedRef.current = true;
+            setShowGuidedFlow(false);
+            try { axios.post(`${API_URL}/onboarding/celebration-shown`, {}, getAuthHeaders()); } catch {}
+            setTimeout(() => setShowCelebration(true), 600);
+            return;
+          }
+        } catch {}
+      }
       guidedDismissedRef.current = true;
       setShowGuidedFlow(false);
-      if (estate?.id) fetchEstateData(estate.id);
     };
 
     return (

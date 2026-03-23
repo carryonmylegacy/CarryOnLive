@@ -367,7 +367,7 @@ async def calculate_document_score(estate_id: str) -> dict:
     documents = await db.documents.find(
         {"estate_id": estate_id}, {"_id": 0, "id": 1, "name": 1, "category": 1}
     ).to_list(200)
-    doc_names_lower = [d["name"].lower() for d in documents]
+    doc_names_lower = [d.get("name", d.get("title", "")).lower() for d in documents]
     doc_categories = [d.get("category", "").lower() for d in documents]
 
     # Detect core documents
