@@ -293,16 +293,6 @@ const OnboardingPage = () => {
               >
                 {firstName && lastName ? (firstName[0] + lastName[0]).toUpperCase() : '?'}
               </div>
-              <div className="flex gap-1.5">
-                {avatarColors.map((color) => (
-                  <button
-                    key={color}
-                    className={`w-6 h-6 rounded-full transition-transform ${avatarColor === color ? 'ring-2 ring-white scale-110' : ''}`}
-                    style={{ backgroundColor: color }}
-                    onClick={() => setAvatarColor(color)}
-                  />
-                ))}
-              </div>
             </div>
 
             {/* Essential Fields */}

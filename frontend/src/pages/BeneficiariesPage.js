@@ -865,20 +865,6 @@ const BeneficiariesPage = () => {
               />
             </div>
             <p className="text-center text-xs text-[#64748b]">Tap to take or choose a photo</p>
-            
-            {/* Color Picker */}
-            <div className="flex justify-center gap-2">
-              {avatarColors.map((color) => (
-                <button
-                  key={color}
-                  className={`w-8 h-8 rounded-full transition-transform ${
-                    avatarColor === color ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0f1d35] scale-110' : ''
-                  }`}
-                  style={{ backgroundColor: color }}
-                  onClick={() => setAvatarColor(color)}
-                />
-              ))}
-            </div>
 
             {/* Name Section */}
             <div className="space-y-4">
