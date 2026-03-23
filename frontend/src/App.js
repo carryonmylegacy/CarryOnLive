@@ -286,15 +286,9 @@ function AppRoutes() {
         <Route path="/beneficiary/milestone" element={<TransitionGate><MilestoneReportPage /></TransitionGate>} />
         <Route path="/beneficiary/settings" element={<BeneficiarySettingsPage />} />
         <Route path="/beneficiary/subscription" element={<SubscriptionPage />} />
+        <Route path="/beneficiary/upload-certificate" element={<UploadCertificatePage />} />
+        <Route path="/beneficiary/condolence" element={<CondolencePage />} />
       </Route>
-
-      {/* Beneficiary Full-Screen Routes (no sidebar) */}
-      <Route path="/beneficiary/upload-certificate" element={
-        <ProtectedRoute allowedRoles={['beneficiary']}><UploadCertificatePage /></ProtectedRoute>
-      } />
-      <Route path="/beneficiary/condolence" element={
-        <ProtectedRoute allowedRoles={['beneficiary']}><CondolencePage /></ProtectedRoute>
-      } />
 
       {/* Admin Routes */}
       <Route element={
