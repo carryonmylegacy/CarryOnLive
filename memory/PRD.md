@@ -24,11 +24,14 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
-### Completed (March 23, 2026 — Session 22: Blue Tree Mirror + Admin Lockout Fix)
-- **Blue Tree = Inverted Gold Tree**: Rewrote upper (blue/estate) SVG section to be an exact mirror of the gold tree. All lines now fan from ONE convergence point near Pete upward, curving to each estate circle's inner side-center — identical geometry to the gold tree but inverted. No separate trunk lines, no branch/merge pattern.
-- **Gold Tree Reverted**: Restored gold (beneficiary) section to original all-from-one-point fan pattern that user approved.
-- **Admin Lockout Exemption**: Fixed bug where admin accounts hit the 3-minute lockout when logging in via username. Admin-check query now uses `$or` to search both `email` and `username_lower`.
-- **Housekeeping**: All 50 checks pass. Fixed Mongo projection warning and sub-11px font instances.
+### Completed (March 23, 2026 — Session 22: Tree Polish + Admin Lockout Fix)
+- **Blue Tree = Inverted Gold Tree**: All blue lines fan from estate circle side-centers and converge to ONE point near Pete — exact mirror of gold tree geometry.
+- **Animation Flow Reversed**: Blue path direction reversed so scroll-linked "light" animation flows top-to-bottom: from estate circles → Pete → beneficiary circles. Matches natural scroll direction.
+- **Estate Circle Gap Closed**: Reduced upper section `circleR` from 7 to 6, bringing SVG endpoints closer to estate circle edges for tangential connection.
+- **Halo Orb**: Added subdued bi-color radial glow behind Pete's circle — blue tint from above, gold tint from below. Fades out with distance, accentuates without overshadowing.
+- **Gold Tree Preserved**: Reverted to original one-point fan pattern the user approved.
+- **Admin Lockout Exemption**: Fixed bug where admin accounts hit 3-minute lockout when logging in via username — admin-check now queries both `email` and `username_lower`.
+- **Housekeeping**: All 50 checks pass.
 
 ### Completed (March 22, 2026 — Session 21: SVG Gradual Curves + Mobile Grid Fix)
 - **SVG Bezier Curves Softened**: Updated both blue (estate→benefactor) and gold (benefactor→beneficiary) strand paths in `FamilyTree.js` from sharp-elbowed curves to smooth, sweeping quarter-circle arcs using 0.42 bezier control point factors. Fixed critical bug where `sy` and `trunkX` variables were undefined in the blue strand path generation (would have crashed on render).

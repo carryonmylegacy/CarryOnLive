@@ -206,7 +206,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
         const cx = vbW / 2;
         const leftCol = 21;
         const rightCol = 79;
-        const circleR = 7;
+        const circleR = 6;
         const estRowH = 80;
         const trailPx = 50;
         const totalEstH = numRows * estRowH + trailPx;
@@ -245,7 +245,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                       <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                     </filter>
                   </defs>`;
-                // All paths fan from ONE convergence point (cx,97) upward — exact mirror of gold tree
+                // All paths flow from estate circles down to convergence point near Pete
                 const allPaths = [];
                 for (let idx = 0; idx < n; idx++) {
                   const rIdx = Math.floor(idx / 2);
@@ -255,12 +255,12 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   const dir = isCentered ? 0 : (isLeft ? 1 : -1);
                   const rowCenterY = (rIdx + 0.3) * rowH;
                   if (isCentered) {
-                    allPaths.push(`M ${cx.toFixed(1)},97 L ${cx.toFixed(1)},${rowCenterY.toFixed(1)}`);
+                    allPaths.push(`M ${cx.toFixed(1)},${rowCenterY.toFixed(1)} L ${cx.toFixed(1)},97`);
                   } else {
                     const sx = nodeX + dir * circleR;
-                    const cp1y = 97 - 0.5 * (97 - rowCenterY);
-                    const cp2x = sx + 0.6 * (cx - sx);
-                    allPaths.push(`M ${cx.toFixed(1)},97 C ${cx.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${rowCenterY.toFixed(1)} ${sx.toFixed(1)},${rowCenterY.toFixed(1)}`);
+                    const cp1x = sx + 0.6 * (cx - sx);
+                    const cp2y = rowCenterY + 0.5 * (97 - rowCenterY);
+                    allPaths.push(`M ${sx.toFixed(1)},${rowCenterY.toFixed(1)} C ${cp1x.toFixed(1)},${rowCenterY.toFixed(1)} ${cx.toFixed(1)},${cp2y.toFixed(1)} ${cx.toFixed(1)},97`);
                   }
                 }
                 allPaths.forEach(d => {
@@ -300,17 +300,33 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
       })()}
 
 
-      {/* Root node (benefactor) */}
+      {/* Root node (benefactor) with halo orb */}
       <div className="flex flex-col items-center mt-3">
-        <TreeNode
-          initials={getInitials(user?.name, user?.first_name, user?.last_name)}
-          photo={user?.photo_url}
-          color="#d4af37"
-          size={60}
-          label={user?.first_name || user?.name?.split(' ')[0] || 'You'}
-          sublabel="Benefactor"
-          testId="tree-root-node"
-        />
+        <div className="relative">
+          {/* Bi-color halo: blue top, gold bottom — subdued glow */}
+          <div className="absolute pointer-events-none" style={{
+            width: 140, height: 140,
+            left: '50%', top: '50%',
+            transform: 'translate(-50%, -50%)',
+            borderRadius: '50%',
+            background: isLight
+              ? 'radial-gradient(ellipse at 50% 30%, rgba(59,130,246,0.09) 0%, transparent 55%), radial-gradient(ellipse at 50% 70%, rgba(184,134,11,0.07) 0%, transparent 55%)'
+              : 'radial-gradient(ellipse at 50% 30%, rgba(100,160,255,0.07) 0%, transparent 55%), radial-gradient(ellipse at 50% 70%, rgba(212,175,55,0.06) 0%, transparent 55%)',
+            filter: 'blur(10px)',
+            zIndex: 0,
+          }} />
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <TreeNode
+              initials={getInitials(user?.name, user?.first_name, user?.last_name)}
+              photo={user?.photo_url}
+              color="#d4af37"
+              size={60}
+              label={user?.first_name || user?.name?.split(' ')[0] || 'You'}
+              sublabel="Benefactor"
+              testId="tree-root-node"
+            />
+          </div>
+        </div>
 
         {/* Gold neural strands from benefactor down to beneficiaries */}
         {sortedBens.length > 0 && (() => {
