@@ -172,8 +172,28 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
     scrollTarget.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
 
+    // Desktop fallback: auto-animate only when tree fits entirely in viewport (no scroll room)
+    const autoTimer = setTimeout(() => {
+      if (lowerMaxRef.current >= 1) return;
+      const treeRect = el.getBoundingClientRect();
+      const treeFullyVisible = treeRect.top >= 0 && treeRect.bottom <= window.innerHeight;
+      if (treeFullyVisible) {
+        let startTime = null;
+        const animate = (ts) => {
+          if (!el.isConnected) return;
+          if (!startTime) startTime = ts;
+          const raw = Math.min(1, (ts - startTime) / 2500);
+          updateAnimation(raw);
+          if (raw < 1) autoFrameRef.current = requestAnimationFrame(animate);
+        };
+        autoFrameRef.current = requestAnimationFrame(animate);
+      }
+    }, 600);
+
     return () => {
       scrollTarget.removeEventListener('scroll', handleScroll);
+      clearTimeout(autoTimer);
+      if (autoFrameRef.current) cancelAnimationFrame(autoFrameRef.current);
       upperMaxRef.current = 0; lowerMaxRef.current = 0;
       upperFlashedRef.current = false; lowerStartedRef.current = false; lowerFlashedRef.current = false;
       initialTopRef.current = null;
