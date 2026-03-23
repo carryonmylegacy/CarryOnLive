@@ -702,7 +702,6 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                     color={roleColors.beneficiary.color}
                     size={52}
                     label={benUser.name?.split(' ')[0] || 'Beneficiary'}
-                    sublabel={benUser.email}
                   />
 
                   {connectedEstates.length > 0 && (() => {
@@ -717,7 +716,6 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                               size={40}
                               label={estate.estateName.split("'")[0] || 'Estate'}
                               sublabel={estate.relation}
-                              extra={estate.owner.email}
                             />
                           </div>
                         ))}
@@ -780,7 +778,6 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                   color="#d4af37"
                   size={52}
                   label={owner.name?.split(' ')[0] || 'Owner'}
-                  sublabel={owner.email}
                 />
 
                 {sortedBens.length > 0 && (() => {
@@ -803,7 +800,6 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                               label={ben.first_name || ben.name?.split(' ')[0] || ''}
                               sublabel={`${ben.relation || ''}${age !== null ? ` · ${age}` : ''}`}
                               statusBadge={badge}
-                              extra={ben.email || 'No email'}
                             />
                           </div>
                         );

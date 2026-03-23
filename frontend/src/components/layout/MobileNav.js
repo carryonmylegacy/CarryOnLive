@@ -333,14 +333,14 @@ const MobileNav = () => {
   // Navigation structure matching prototype - with sections
   const myLegacyItems = [
     { to: '/dashboard', icon: Home, label: 'Dashboard' },
-    { to: '/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
-    { to: '/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
-    { to: '/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
     { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
-    { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
+    { to: '/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
+    { to: '/guardian', icon: Sparkles, label: 'Estate Guardian AI (EGA)' },
+    { to: '/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
+    { to: '/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
     { to: '/ffn', icon: Heart, label: 'Family & Friends Notification (FFN)' },
-    { to: '/guardian', icon: Sparkles, label: 'Estate Guardian (EGA)' },
     { to: '/digital-wallet', icon: KeyRound, label: 'Digital Access Vault (DAV)' },
+    { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
     { to: '/timeline', icon: Clock, label: 'Estate Plan Timeline' },
   ];
 
@@ -409,11 +409,11 @@ const MobileNav = () => {
 
   // Bottom nav for benefactor - 5 items with Home in center
   const benefactorBottomNav = [
-    { to: '/vault', icon: FolderLock, label: 'Vault' },
-    { to: '/guardian', icon: Sparkles, label: 'Guardian' },
-    { to: '/dashboard', icon: Home, label: 'Dashboard', isCenter: true },
-    { to: '/messages', icon: MessageSquare, label: 'Milestone' },
     { to: '/beneficiaries', icon: Users, label: 'Benefic.' },
+    { to: '/messages', icon: MessageSquare, label: 'Milestone' },
+    { to: '/dashboard', icon: Home, label: 'Dashboard', isCenter: true },
+    { to: '/guardian', icon: Sparkles, label: 'Guardian' },
+    { to: '/vault', icon: FolderLock, label: 'Vault' },
   ];
 
   const beneficiaryBottomNav = [

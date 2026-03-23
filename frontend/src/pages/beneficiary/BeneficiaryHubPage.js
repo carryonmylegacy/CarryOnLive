@@ -129,6 +129,11 @@ const BeneficiaryHubPage = () => {
             // Always navigate to pre — TransitionGate on dashboard will allow through if cert exists
             navigate('/beneficiary/pre');
           }}
+          onCenterClick={() => {
+            // Navigate to primary benefactor portal's Beneficiary section
+            localStorage.removeItem('beneficiary_estate_id');
+            navigate('/beneficiaries');
+          }}
         />
       )}
 

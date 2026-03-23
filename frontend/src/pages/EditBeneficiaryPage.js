@@ -335,26 +335,6 @@ export default function EditBeneficiaryPage() {
                 )}
               </div>
 
-              <div className="space-y-3">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#d4af37]">Avatar Accent</p>
-                <div className="flex flex-wrap justify-center gap-2">
-                  {avatarColors.map((color) => {
-                    const active = form.avatarColor === color;
-                    return (
-                      <button
-                        key={color}
-                        type="button"
-                        className={`h-9 w-9 rounded-full transition-transform ${active ? 'scale-110 ring-2 ring-white ring-offset-2 ring-offset-[#0f1d35]' : ''}`}
-                        style={{ backgroundColor: color }}
-                        onClick={() => updateField('avatarColor', color)}
-                        data-testid={`edit-beneficiary-color-${color.replace('#', '')}`}
-                        aria-label={`Choose avatar color ${color}`}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-
             </CardContent>
           </Card>
 

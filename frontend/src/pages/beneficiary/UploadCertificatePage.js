@@ -81,29 +81,26 @@ const UploadCertificatePage = () => {
     const currentStageIdx = stages.indexOf(existingCert.status === 'authenticated' ? 'approved' : existingCert.status);
 
     return (
-      <div className="min-h-screen flex items-center justify-center p-5 animate-fade-in"
-        style={{ background: 'radial-gradient(ellipse at 30% 20%, rgba(37,99,235,0.08), transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(139,92,246,0.05), transparent 50%), linear-gradient(145deg, #0B1120, #0F1629 40%, #0A1628)' }}
+      <div className="p-4 pb-24 animate-fade-in max-w-md mx-auto"
         data-testid="certificate-status">
-        <div className="w-full max-w-md">
-          <button onClick={() => navigate('/beneficiary/pre')} className="inline-flex items-center gap-1 text-sm font-bold text-[#60A5FA] mb-6">
+          <button onClick={() => navigate('/beneficiary/pre')} className="inline-flex items-center gap-1 text-sm font-bold text-[#60A5FA] mb-4">
             <ChevronLeft className="w-4 h-4" /> Back
           </button>
 
-          <div className="glass-card p-6 text-center mb-6">
-            <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: `${config.color}15` }}>
-              <StatusIcon className="w-8 h-8" style={{ color: config.color }} />
+          <div className="glass-card p-5 text-center mb-4">
+            <div className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center" style={{ background: `${config.color}15` }}>
+              <StatusIcon className="w-7 h-7" style={{ color: config.color }} />
             </div>
-            <h2 className="text-xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>{config.label}</h2>
+            <h2 className="text-lg font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>{config.label}</h2>
             <p className="text-sm text-[var(--t4)] leading-relaxed">{config.description}</p>
             {existingCert.file_name && (
-              <p className="text-xs text-[var(--t5)] mt-3">File: {existingCert.file_name}</p>
+              <p className="text-xs text-[var(--t5)] mt-2">File: {existingCert.file_name}</p>
             )}
           </div>
 
-          {/* Progress tracker */}
-          <div className="glass-card p-5">
-            <p className="text-[11px] text-[var(--t5)] uppercase tracking-wider font-bold mb-4">Verification Progress</p>
-            <div className="space-y-3">
+          <div className="glass-card p-4">
+            <p className="text-[11px] text-[var(--t5)] uppercase tracking-wider font-bold mb-3">Verification Progress</p>
+            <div className="space-y-2">
               {[
                 { label: 'Certificate Received', stage: 0 },
                 { label: 'Under TVT Review', stage: 1 },
@@ -126,19 +123,16 @@ const UploadCertificatePage = () => {
               ))}
             </div>
           </div>
-        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-5 animate-fade-in"
-      style={{ background: 'radial-gradient(ellipse at 30% 20%, rgba(37,99,235,0.08), transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(139,92,246,0.05), transparent 50%), linear-gradient(145deg, #0B1120, #0F1629 40%, #0A1628)' }}
+    <div className="p-4 pb-24 animate-fade-in max-w-xl mx-auto"
       data-testid="upload-certificate">
-      <div className="w-full max-w-xl">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center"
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center"
             style={{ background: 'linear-gradient(135deg, rgba(37,99,235,0.15), rgba(139,92,246,0.1))', border: '1px solid rgba(96,165,250,0.2)' }}>
             <Shield className="w-5 h-5 text-[#60A5FA]" />
           </div>
@@ -149,7 +143,7 @@ const UploadCertificatePage = () => {
         </div>
 
         {/* Progress Steps */}
-        <div className="flex gap-2 mb-8">
+        <div className="flex gap-2 mb-5">
           {steps.map((s, i) => (
             <div key={i} className="flex-1">
               <div className="h-1.5 rounded-full mb-2 transition-all duration-500"
@@ -166,7 +160,7 @@ const UploadCertificatePage = () => {
         </div>
 
         {/* Card */}
-        <div className="rounded-2xl p-7 transition-all duration-300"
+        <div className="rounded-2xl p-5 transition-all duration-300"
           style={{
             background: 'linear-gradient(168deg, rgba(26,36,64,0.6), rgba(15,22,41,0.8))',
             border: '1px solid rgba(96,165,250,0.1)',
@@ -175,29 +169,29 @@ const UploadCertificatePage = () => {
 
           {/* Step 0: Before You Begin */}
           {step === 0 && (<>
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6"
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
               style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.08))', border: '1px solid rgba(96,165,250,0.15)' }}>
-              <FileText className="w-8 h-8 text-[#60A5FA]" />
+              <FileText className="w-7 h-7 text-[#60A5FA]" />
             </div>
-            <h2 className="text-xl font-bold text-center text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Before You Begin</h2>
-            <p className="text-sm text-[var(--t4)] text-center leading-relaxed mb-7">
-              To verify a transition and unlock access to your benefactor's estate plan, we need an official copy of their death certificate.
+            <h2 className="text-lg font-bold text-center text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Before You Begin</h2>
+            <p className="text-sm text-[var(--t4)] text-center leading-relaxed mb-4">
+              We need an official death certificate to verify the transition and unlock estate access.
             </p>
 
-            <div className="rounded-xl p-5 mb-5" style={{ background: 'rgba(37,99,235,0.04)', border: '1px solid rgba(37,99,235,0.1)' }}>
-              <div className="text-xs font-bold text-[#93C5FD] uppercase tracking-wider mb-3">Requirements</div>
-              {['An official or certified copy of the death certificate', 'The document must be legible and complete', 'Accepted formats: PDF, JPG, PNG, HEIC', 'Maximum file size: 25MB'].map((r, i) => (
-                <div key={i} className="flex items-center gap-2.5 py-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-[#22C993] flex-shrink-0" />
+            <div className="rounded-xl p-4 mb-4" style={{ background: 'rgba(37,99,235,0.04)', border: '1px solid rgba(37,99,235,0.1)' }}>
+              <div className="text-xs font-bold text-[#93C5FD] uppercase tracking-wider mb-2">Requirements</div>
+              {['Official or certified copy', 'Legible and complete', 'PDF, JPG, PNG, or HEIC format', 'Max 25MB'].map((r, i) => (
+                <div key={i} className="flex items-center gap-2 py-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#22C993] flex-shrink-0" />
                   <span className="text-sm text-[var(--t3)]">{r}</span>
                 </div>
               ))}
             </div>
 
-            <div className="rounded-xl p-4 mb-7 flex items-start gap-3" style={{ background: 'rgba(139,92,246,0.04)', border: '1px solid rgba(139,92,246,0.1)' }}>
+            <div className="rounded-xl p-3 mb-4 flex items-start gap-2" style={{ background: 'rgba(139,92,246,0.04)', border: '1px solid rgba(139,92,246,0.1)' }}>
               <Lock className="w-4 h-4 text-purple-400 mt-0.5 shrink-0" />
               <p className="text-xs text-purple-300/80 leading-relaxed">
-                Your upload is encrypted end-to-end with AES-256 and stored securely. It will only be reviewed by our Transition Verification Team and is never shared with third parties.
+                Encrypted end-to-end (AES-256). Reviewed only by our Transition Verification Team.
               </p>
             </div>
 
@@ -214,16 +208,16 @@ const UploadCertificatePage = () => {
 
           {/* Step 1: Upload */}
           {step === 1 && (<>
-            <h2 className="text-xl font-bold text-center text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Upload Death Certificate</h2>
-            <p className="text-sm text-[var(--t5)] text-center mb-7">Drag and drop or click to select your file</p>
+            <h2 className="text-lg font-bold text-center text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Upload Death Certificate</h2>
+            <p className="text-sm text-[var(--t5)] text-center mb-4">Drag and drop or tap to select</p>
 
             {!file ? (
               <label className="block cursor-pointer">
-                <div className="rounded-2xl p-14 text-center transition-all duration-300 hover:border-[#60A5FA]/50 group"
+                <div className="rounded-2xl p-8 text-center transition-all duration-300 hover:border-[#60A5FA]/50 group"
                   style={{ border: '2px dashed rgba(96,165,250,0.2)', background: 'rgba(37,99,235,0.02)' }}>
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 transition-transform duration-300 group-hover:scale-110"
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 transition-transform duration-300 group-hover:scale-110"
                     style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.08))', border: '1px solid rgba(96,165,250,0.15)' }}>
-                    <Upload className="w-7 h-7 text-[#60A5FA]" />
+                    <Upload className="w-6 h-6 text-[#60A5FA]" />
                   </div>
                   <div className="text-sm font-bold text-[#93C5FD] mb-1">Drop file here or click to browse</div>
                   <div className="text-xs text-[var(--t5)]">PDF, JPG, PNG, HEIC · Max 25MB</div>
@@ -245,7 +239,7 @@ const UploadCertificatePage = () => {
               </div>
             )}
 
-            <div className="flex gap-3 mt-7">
+            <div className="flex gap-3 mt-4">
               <Button variant="outline" className="border-[var(--b)] text-[var(--t4)] hover:text-[var(--t)]" onClick={() => setStep(0)}>
                 <ChevronLeft className="w-4 h-4 mr-1" /> Back
               </Button>
@@ -260,12 +254,12 @@ const UploadCertificatePage = () => {
 
           {/* Step 2: Confirm & Submit */}
           {step === 2 && (<>
-            <h2 className="text-xl font-bold text-center text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Confirm Submission</h2>
-            <p className="text-sm text-[var(--t5)] text-center leading-relaxed mb-7">
-              Please verify the details below before submitting for review.
+            <h2 className="text-lg font-bold text-center text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Confirm Submission</h2>
+            <p className="text-sm text-[var(--t5)] text-center leading-relaxed mb-4">
+              Verify the details below before submitting.
             </p>
 
-            <div className="rounded-xl overflow-hidden mb-5" style={{ border: '1px solid var(--b)' }}>
+            <div className="rounded-xl overflow-hidden mb-4" style={{ border: '1px solid var(--b)' }}>
               {[
                 ['Document', file?.name || 'Unknown'],
                 ['File Size', file ? `${(file.size / 1024 / 1024).toFixed(1)} MB` : ''],
@@ -280,10 +274,10 @@ const UploadCertificatePage = () => {
               ))}
             </div>
 
-            <div className="rounded-xl p-4 mb-7 flex items-start gap-3" style={{ background: 'rgba(245,158,11,0.04)', border: '1px solid rgba(245,158,11,0.1)' }}>
+            <div className="rounded-xl p-3 mb-4 flex items-start gap-2" style={{ background: 'rgba(245,158,11,0.04)', border: '1px solid rgba(245,158,11,0.1)' }}>
               <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-amber-300/80 leading-relaxed">
-                By submitting, you confirm this is an authentic, official death certificate. Fraudulent submissions may result in account termination and legal action.
+                By submitting, you confirm this is an authentic, official death certificate.
               </p>
             </div>
 
@@ -303,7 +297,6 @@ const UploadCertificatePage = () => {
             </div>
           </>)}
         </div>
-      </div>
     </div>
   );
 };

@@ -50,7 +50,7 @@ const orbitColors = [
   ['linear-gradient(135deg, #1E40AF, #3B82F6)', 'rgba(59,130,246,0.3)'],
 ];
 
-const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, benefactors }) => {
+const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, onCenterClick, benefactors }) => {
   const members = benefactors || estates || [];
 
   // ── Responsive sizing ──────────────────────────────────────
@@ -288,6 +288,7 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
 
         {/* Center node (beneficiary) */}
         <div
+          onClick={() => onCenterClick?.()}
           style={{
             position: 'absolute',
             left: cx - centerSize / 2,
@@ -295,7 +296,7 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, b
             width: centerSize,
             height: centerSize,
             zIndex: 10,
-            pointerEvents: 'none',
+            cursor: onCenterClick ? 'pointer' : 'default',
           }}
         >
           <div

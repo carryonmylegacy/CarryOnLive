@@ -214,9 +214,9 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
         const vbW = 100;
         const vbH = 100;
         const cx = vbW / 2;
-        const leftCol = 26;
-        const rightCol = 74;
-        const circleR = 6;
+        const leftCol = 21;
+        const rightCol = 79;
+        const circleR = 7;
         const estRowH = 80;
         const trailPx = 50;
         const totalEstH = numRows * estRowH + trailPx;
@@ -224,7 +224,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
         const rowH = nodeZone / numRows;
 
         return (
-          <div className="relative" style={{ paddingBottom: trailPx }}>
+          <div className="relative" style={{ paddingBottom: trailPx, maxWidth: 380, margin: '0 auto' }}>
             {/* Full-height SVG overlay behind nodes — strands run through center gap */}
             <svg
               className="absolute pointer-events-none overflow-visible"
@@ -285,15 +285,20 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
             />
 
             {/* Estate nodes — two columns with wide center gap */}
-            <div className="relative grid" style={{ gridTemplateColumns: '1fr 1fr', columnGap: 0, rowGap: 10, justifyItems: 'center', zIndex: 2, paddingLeft: '2%', paddingRight: '2%' }}>
-              {benEstates.map((est, idx) => (
+            <div className="relative grid px-1" style={{ gridTemplateColumns: '1fr 1fr', columnGap: '20%', rowGap: 10, justifyItems: 'center', zIndex: 2 }}>
+              {benEstates.map((est, idx) => {
+                const nameWords = (est.name || 'Estate').split(' ');
+                const labelTop = nameWords.length > 2 ? nameWords.slice(0, -1).join(' ') : nameWords.join(' ');
+                const labelBottom = nameWords.length > 2 ? nameWords.slice(-1)[0] : '';
+                return (
                 <div key={est.id} style={benEstates.length % 2 !== 0 && idx === benEstates.length - 1 ? { gridColumn: '1 / -1' } : undefined}>
                   <TreeNode
                     initials={<Users className="w-3.5 h-3.5" />}
                     photo={est.estate_photo_url || est.owner_photo_url}
                     color="#60A5FA"
                     size={50}
-                    label={est.name?.split("'")[0] || 'Estate'}
+                    label={labelTop}
+                    sublabel={labelBottom}
                     testId={`tree-estate-${est.id}`}
                     onClick={() => {
                       localStorage.setItem('beneficiary_estate_id', est.id);
@@ -303,7 +308,8 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                     }}
                   />
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         );
@@ -465,9 +471,10 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-full" style={{ background: UNLINKED_COLOR, boxShadow: `0 0 6px ${UNLINKED_COLOR}50` }} />
-          <span className="text-xs font-medium text-[var(--t3)]">Unlinked — no account yet</span>
+          <span className="text-xs font-medium text-[var(--t3)]">Unlinked — has not registered yet</span>
         </div>
       </div>
+      <p className="text-[11px] text-[var(--t5)] text-center mt-2 italic">(Tap a beneficiary's icon to edit their information)</p>
     </div>
   );
 };

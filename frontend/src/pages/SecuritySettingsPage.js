@@ -18,13 +18,6 @@ const SecuritySettingsPage = () => {
       </div>
 
       <SecuritySettings getAuthHeaders={getAuthHeaders} />
-
-      <div className="text-center py-4">
-        <div className="flex items-center justify-center gap-2 text-[var(--t5)] text-sm">
-          <Shield className="w-4 h-4" />
-          <span>PIN + Password + Security Question · AES-256 Encrypted · Zero-Knowledge</span>
-        </div>
-      </div>
     </div>
   );
 };
