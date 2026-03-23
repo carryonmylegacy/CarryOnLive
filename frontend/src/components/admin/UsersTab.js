@@ -377,7 +377,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                             <div className="font-semibold text-[var(--t)] text-xs truncate">{estate.estateName}</div>
                             <div className="text-[11px] text-[var(--t5)] truncate">{estate.owner.name}<span className="capitalize"> · {estate.relation}</span></div>
                           </div>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: roleColors.benefactor.bg, color: roleColors.benefactor.color }}>
+                          <span className="text-[11px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: roleColors.benefactor.bg, color: roleColors.benefactor.color }}>
                             estate
                           </span>
                         </div>
@@ -535,7 +535,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                                   {bu.email}{relation && <span className="capitalize"> · {relation}</span>}
                                 </div>
                               </div>
-                              <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold capitalize" style={{ background: sc.bg, color: sc.color }}>
+                              <span className="text-[11px] px-1.5 py-0.5 rounded-full font-bold capitalize" style={{ background: sc.bg, color: sc.color }}>
                                 {invStatus || 'active'}
                               </span>
                               {bu.id !== currentUserId && !operatorMode && (
