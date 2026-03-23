@@ -24,11 +24,12 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
-### Completed (March 23, 2026 — Session 22: Central Trunk + Tangential Lines)
-- **ONE Central Trunk**: Restructured SVG path generation in both upper (estate→benefactor) and lower (benefactor→beneficiary) sections of `FamilyTree.js`. Each section now draws a single thick vertical trunk line at the center, with individual branch paths that merge into (upper) or diverge from (lower) the trunk at staggered Y positions. Eliminates the previous "fan" pattern where all lines independently went to a single point.
-- **Tangential Circle Connections**: Reduced `circleR` from 7 to 5.5 viewbox units to close the gap between SVG line endpoints and circle edges. Lines now touch circles tangentially.
-- **"Beneficiary" Text Removed from Estates**: Confirmed no `sublabel` prop is passed for estate nodes — estate labels show only the estate name.
-- **Testing**: Visual verification via screenshot; lint passes clean.
+### Completed (March 23, 2026 — Session 22: Central Trunk + Admin Lockout Fix)
+- **ONE Central Trunk (v2)**: Thick trunk (stroke-width 3, direct visible color) in both upper and lower SVG sections. Branches curve from each node and merge into/diverge from the trunk at staggered Y positions. Previous version had invisible trunk (stroke-width 1.25 with faint gradient).
+- **Admin Lockout Exemption**: Fixed bug where admin accounts were not exempt from 3-minute lockout when logging in via username. Admin-check query now uses `$or` to search both `email` and `username_lower`.
+- **Tangential Circle Connections**: Reduced circle radius offset from 7 to 5.5 for gap-free line-to-circle connections.
+- **"Beneficiary" Text**: Confirmed removed from estate labels.
+- **Housekeeping**: All 50 checks pass. Fixed Mongo projection warning (auth.py) and sub-11px font instances (UsersTab.js).
 
 ### Completed (March 22, 2026 — Session 21: SVG Gradual Curves + Mobile Grid Fix)
 - **SVG Bezier Curves Softened**: Updated both blue (estate→benefactor) and gold (benefactor→beneficiary) strand paths in `FamilyTree.js` from sharp-elbowed curves to smooth, sweeping quarter-circle arcs using 0.42 bezier control point factors. Fixed critical bug where `sy` and `trunkX` variables were undefined in the blue strand path generation (would have crashed on render).

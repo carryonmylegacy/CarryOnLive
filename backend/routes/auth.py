@@ -131,7 +131,11 @@ async def login(data: UserLogin, request: Request):
     lockout_window = (datetime.now(timezone.utc) - timedelta(minutes=3)).isoformat()
     lockout_email = data.email.strip().lower()
     # Pre-check if this is an admin account (founder/operations) — exempt from lockout
-    admin_check = await db.users.find_one({"email": lockout_email}, {"_id": 0, "id": 1, "role": 1})
+    # Check both email and username since login supports either
+    admin_check = await db.users.find_one(
+        {"$or": [{"email": lockout_email}, {"username_lower": lockout_email}]},
+        {"_id": 0, "id": 1, "role": 1},
+    )
     is_admin = admin_check and admin_check.get("role") == "admin"
     if not is_admin:
         recent_failures = await db.failed_logins.count_documents(
