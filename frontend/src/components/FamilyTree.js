@@ -279,7 +279,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   svgContent += `<path d="${d}" fill="none" stroke="url(#lineFlow)" stroke-width="${sw}" filter="url(#lineGlow)" />`;
                 });
                 if (centeredPathBlue) {
-                  svgContent += `<path d="${centeredPathBlue}" fill="none" stroke="${lightColor}" stroke-width="${sw}" opacity="0.4" filter="url(#lineGlow)" />`;
+                  svgContent += `<path d="${centeredPathBlue}" fill="none" stroke="${isLight ? '#3B82F6' : '#60A5FA'}" stroke-width="${sw * 1.5}" opacity="0.25" filter="url(#lineGlow)" />`;
                 }
                 allPaths.forEach(d => {
                   svgContent += `<path class="fill-path-blue" d="${d}" fill="none" stroke="${lightColor}" stroke-width="${overlayW}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" filter="url(#lightPulseBlue)" />`;
@@ -409,7 +409,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   svg += `<path d="${d}" fill="none" stroke="url(#ftGoldGrad)" stroke-width="${sw}" filter="url(#ftGoldGlow)" />`;
                 });
                 if (centeredPath) {
-                  svg += `<path d="${centeredPath}" fill="none" stroke="${lightColor}" stroke-width="${sw}" opacity="0.4" filter="url(#ftGoldGlow)" />`;
+                  svg += `<path d="${centeredPath}" fill="none" stroke="${isLight ? '#b8860b' : '#d4af37'}" stroke-width="${sw * 1.5}" opacity="0.25" filter="url(#ftGoldGlow)" />`;
                 }
                 svg += `<circle class="flash-gold-origin" cx="${cx}" cy="2" r="4" fill="${lightColor}" opacity="0" filter="url(#lightPulseGold)" />`;
                 allPaths.forEach(d => {
