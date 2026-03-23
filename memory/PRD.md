@@ -24,6 +24,12 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (March 23, 2026 — Session 22: Central Trunk + Tangential Lines)
+- **ONE Central Trunk**: Restructured SVG path generation in both upper (estate→benefactor) and lower (benefactor→beneficiary) sections of `FamilyTree.js`. Each section now draws a single thick vertical trunk line at the center, with individual branch paths that merge into (upper) or diverge from (lower) the trunk at staggered Y positions. Eliminates the previous "fan" pattern where all lines independently went to a single point.
+- **Tangential Circle Connections**: Reduced `circleR` from 7 to 5.5 viewbox units to close the gap between SVG line endpoints and circle edges. Lines now touch circles tangentially.
+- **"Beneficiary" Text Removed from Estates**: Confirmed no `sublabel` prop is passed for estate nodes — estate labels show only the estate name.
+- **Testing**: Visual verification via screenshot; lint passes clean.
+
 ### Completed (March 22, 2026 — Session 21: SVG Gradual Curves + Mobile Grid Fix)
 - **SVG Bezier Curves Softened**: Updated both blue (estate→benefactor) and gold (benefactor→beneficiary) strand paths in `FamilyTree.js` from sharp-elbowed curves to smooth, sweeping quarter-circle arcs using 0.42 bezier control point factors. Fixed critical bug where `sy` and `trunkX` variables were undefined in the blue strand path generation (would have crashed on render).
 - **Mobile 2-Column Grid**: Ensured `BeneficiaryHubPage.js` estate tiles stay in 2 columns (`grid-cols-2`) at ALL viewport widths including narrowest PWA mode, expanding to 3 columns (`lg:grid-cols-3`) on desktop. Also fixed loading skeleton grid to match.

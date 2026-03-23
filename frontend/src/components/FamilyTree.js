@@ -206,7 +206,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
         const cx = vbW / 2;
         const leftCol = 21;
         const rightCol = 79;
-        const circleR = 5;
+        const circleR = 7;
         const estRowH = 80;
         const trailPx = 50;
         const totalEstH = numRows * estRowH + trailPx;
@@ -245,7 +245,9 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                       <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                     </filter>
                   </defs>`;
-                const allPaths = [];
+                const cR = 5.5;
+                const branchPaths = [];
+                let trunkTopY = 97;
                 for (let idx = 0; idx < n; idx++) {
                   const rIdx = Math.floor(idx / 2);
                   const isLeft = idx % 2 === 0;
@@ -254,20 +256,25 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   const dir = isCentered ? 0 : (isLeft ? 1 : -1);
                   const rowCenterY = (rIdx + 0.3) * rowH;
                   if (isCentered) {
-                    allPaths.push(`M ${cx.toFixed(1)},${rowCenterY.toFixed(1)} L ${cx.toFixed(1)},97`);
+                    trunkTopY = Math.min(trunkTopY, rowCenterY);
                   } else {
-                    // Start from inner side of circle, depart horizontally, sweep to convergence
-                    const sx = nodeX + dir * circleR;
-                    const flareX = cx + (isLeft ? -1.5 : 1.5);
-                    const cp1x = sx + 0.6 * (flareX - sx);
-                    const cp2y = rowCenterY + 0.5 * (97 - rowCenterY);
-                    allPaths.push(`M ${sx.toFixed(1)},${rowCenterY.toFixed(1)} C ${cp1x.toFixed(1)},${rowCenterY.toFixed(1)} ${flareX.toFixed(1)},${cp2y.toFixed(1)} ${flareX.toFixed(1)},97`);
+                    const sx = nodeX + dir * cR;
+                    const mergeY = Math.min(rowCenterY + rowH * 0.5, 95);
+                    trunkTopY = Math.min(trunkTopY, mergeY);
+                    const cp1x = sx + 0.5 * (cx - sx);
+                    const cp2y = rowCenterY + 0.7 * (mergeY - rowCenterY);
+                    branchPaths.push(`M ${sx.toFixed(1)},${rowCenterY.toFixed(1)} C ${cp1x.toFixed(1)},${rowCenterY.toFixed(1)} ${cx.toFixed(1)},${cp2y.toFixed(1)} ${cx.toFixed(1)},${mergeY.toFixed(1)}`);
                   }
                 }
-                allPaths.forEach(d => {
+                // ONE central trunk — all branches merge into this single vertical line
+                const trunkD = `M ${cx.toFixed(1)},${trunkTopY.toFixed(1)} L ${cx.toFixed(1)},97`;
+                const trunkSW = sw * 2.5;
+                svgContent += `<path d="${trunkD}" fill="none" stroke="url(#lineFlow)" stroke-width="${trunkSW}" filter="url(#lineGlow)" />`;
+                svgContent += `<path class="fill-path-blue" d="${trunkD}" fill="none" stroke="${lightColor}" stroke-width="${trunkSW * 0.8}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" filter="url(#lightPulseBlue)" />`;
+                branchPaths.forEach(d => {
                   svgContent += `<path d="${d}" fill="none" stroke="url(#lineFlow)" stroke-width="${sw}" filter="url(#lineGlow)" />`;
                 });
-                allPaths.forEach(d => {
+                branchPaths.forEach(d => {
                   svgContent += `<path class="fill-path-blue" d="${d}" fill="none" stroke="${lightColor}" stroke-width="${overlayW}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" filter="url(#lightPulseBlue)" />`;
                 });
                 svgContent += `<circle class="flash-blue" cx="${cx}" cy="96" r="4" fill="${lightColor}" opacity="0" filter="url(#lightPulseBlue)" />`;
@@ -283,9 +290,8 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                     initials={<Users className="w-3.5 h-3.5" />}
                     photo={est.estate_photo_url || est.owner_photo_url}
                     color="#60A5FA"
-                    size={40}
+                    size={50}
                     label={est.name?.split("'")[0] || 'Estate'}
-                    sublabel="Beneficiary"
                     testId={`tree-estate-${est.id}`}
                     onClick={() => {
                       localStorage.setItem('beneficiary_estate_id', est.id);
@@ -346,7 +352,9 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                 const sw = isLight ? 0.6 : 0.5;
                 const lightColor = isLight ? 'rgba(200,170,50,0.3)' : 'rgba(255,230,140,0.25)';
                 const overlayW = isLight ? 0.8 : 0.7;
-                const allPaths = [];
+                const cR = 5.5;
+                const branchPaths = [];
+                let trunkBottomY = 2;
                 for (let idx = 0; idx < n; idx++) {
                   const rIdx = Math.floor(idx / 2);
                   const isLeft = idx % 2 === 0;
@@ -355,16 +363,19 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   const dir = isCentered ? 0 : (isLeft ? 1 : -1);
                   const rowCenterY = topTrail + (rIdx + 0.3) * rowH;
                   if (isCentered) {
-                    allPaths.push(`M ${cx.toFixed(1)},2 L ${cx.toFixed(1)},${rowCenterY.toFixed(1)}`);
+                    trunkBottomY = Math.max(trunkBottomY, rowCenterY);
                   } else {
-                    // Start from Pete with flare, sweep to inner side of node circle
-                    const ex = nodeX + dir * circleR;
-                    const flareX = cx + (isLeft ? -1.5 : 1.5);
-                    const cp1y = 2 + 0.5 * (rowCenterY - 2);
-                    const cp2x = ex + 0.6 * (flareX - ex);
-                    allPaths.push(`M ${flareX.toFixed(1)},2 C ${flareX.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${rowCenterY.toFixed(1)} ${ex.toFixed(1)},${rowCenterY.toFixed(1)}`);
+                    const ex = nodeX + dir * cR;
+                    const branchY = Math.max(rowCenterY - rowH * 0.35, topTrail);
+                    trunkBottomY = Math.max(trunkBottomY, branchY);
+                    const cp1y = branchY + 0.3 * (rowCenterY - branchY);
+                    const cp2x = ex + 0.5 * (cx - ex);
+                    branchPaths.push(`M ${cx.toFixed(1)},${branchY.toFixed(1)} C ${cx.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${rowCenterY.toFixed(1)} ${ex.toFixed(1)},${rowCenterY.toFixed(1)}`);
                   }
                 }
+                // ONE central trunk — single vertical line branches diverge from
+                const trunkD = `M ${cx.toFixed(1)},2 L ${cx.toFixed(1)},${trunkBottomY.toFixed(1)}`;
+                const trunkSW = sw * 2.5;
                 let svg = `
                   <defs>
                     <linearGradient id="ftGoldGrad" x1="0" y1="0" x2="0" y2="1">
@@ -380,11 +391,15 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                       <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                     </filter>
                   </defs>`;
-                allPaths.forEach(d => {
+                // Trunk
+                svg += `<path d="${trunkD}" fill="none" stroke="url(#ftGoldGrad)" stroke-width="${trunkSW}" filter="url(#ftGoldGlow)" />`;
+                svg += `<circle class="flash-gold-origin" cx="${cx}" cy="2" r="4" fill="${lightColor}" opacity="0" filter="url(#lightPulseGold)" />`;
+                svg += `<path class="fill-path-gold" d="${trunkD}" fill="none" stroke="${lightColor}" stroke-width="${trunkSW * 0.8}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" filter="url(#lightPulseGold)" />`;
+                // Branches
+                branchPaths.forEach(d => {
                   svg += `<path d="${d}" fill="none" stroke="url(#ftGoldGrad)" stroke-width="${sw}" filter="url(#ftGoldGlow)" />`;
                 });
-                svg += `<circle class="flash-gold-origin" cx="${cx}" cy="2" r="4" fill="${lightColor}" opacity="0" filter="url(#lightPulseGold)" />`;
-                allPaths.forEach(d => {
+                branchPaths.forEach(d => {
                   svg += `<path class="fill-path-gold" d="${d}" fill="none" stroke="${lightColor}" stroke-width="${overlayW}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" filter="url(#lightPulseGold)" />`;
                 });
                 for (let fi = 0; fi < n; fi++) {
@@ -394,7 +409,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   const fiY = topTrail + (fiR + 0.3) * rowH;
                   const fiNx = fiCen ? cx : (fiLeft ? leftCol : rightCol);
                   const fiDir = fiCen ? 0 : (fiLeft ? 1 : -1);
-                  const fiX = fiNx + fiDir * circleR;
+                  const fiX = fiNx + fiDir * cR;
                   svg += `<circle class="flash-gold-end" cx="${fiX.toFixed(1)}" cy="${fiY.toFixed(1)}" r="3" fill="${lightColor}" opacity="0" filter="url(#lightPulseGold)" />`;
                 }
                 return svg;
