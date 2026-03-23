@@ -298,14 +298,16 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               })() }}
             />
 
-            {/* Vertical connector for centered (odd) estate node — styled like tree curves */}
+            {/* Vertical connector for centered (odd) estate node — from centered circle to curve convergence */}
             {n % 2 !== 0 && (() => {
               const blueColor = isLight ? 'rgba(59,130,246,0.2)' : 'rgba(100,160,255,0.18)';
               const glowColorB = isLight ? 'rgba(59,130,246,0.12)' : 'rgba(100,160,255,0.10)';
               const animColorB = isLight ? 'rgba(100,160,255,0.3)' : 'rgba(160,200,255,0.25)';
+              const lastRowTop = (numRows - 1) * estRowH;
+              const prevRowBottom = lastRowTop - 10;
               return (
                 <div className="absolute pointer-events-none" style={{
-                  left: '50%', top: 0, bottom: 0,
+                  left: '50%', top: prevRowBottom, height: estRowH - 10,
                   width: 0, transform: 'translateX(-50%)', zIndex: 0,
                   borderLeft: `1.5px solid ${blueColor}`,
                   boxShadow: `0 0 6px ${glowColorB}, 0 0 12px ${glowColorB}`,
@@ -459,19 +461,21 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               })() }}
             />
 
-            {/* Vertical connector for centered (odd) bottom node — styled like tree curves */}
+            {/* Vertical connector for centered (odd) bottom node — from curve convergence to centered circle */}
             {n % 2 !== 0 && (() => {
               const goldColor = isLight ? 'rgba(184,134,11,0.2)' : 'rgba(212,175,55,0.18)';
               const glowColor = isLight ? 'rgba(184,134,11,0.12)' : 'rgba(212,175,55,0.10)';
               const animColor = isLight ? 'rgba(200,170,50,0.3)' : 'rgba(255,230,140,0.25)';
+              // Line starts just below the first row's circles and ends just above the centered node's circle
+              const row0Bottom = trailPx + estRowH - 10;
+              const row1Top = trailPx + estRowH + 12; // after rowGap
               return (
                 <div className="absolute pointer-events-none" style={{
-                  left: '50%', top: trailPx, bottom: 0,
+                  left: '50%', top: row0Bottom, height: row1Top - row0Bottom + 25,
                   width: 0, transform: 'translateX(-50%)', zIndex: 0,
                   borderLeft: `1.5px solid ${goldColor}`,
                   boxShadow: `0 0 6px ${glowColor}, 0 0 12px ${glowColor}`,
                 }}>
-                  {/* Animated light overlay */}
                   <div className="fill-line-gold" style={{
                     position: 'absolute', left: -1, top: 0, width: 2, height: '100%',
                     background: animColor, opacity: 0,
