@@ -206,7 +206,6 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
         const cx = vbW / 2;
         const leftCol = 20;
         const rightCol = 80;
-        const circleR = 6;
         const estRowH = 80;
         const trailPx = 28;
         const totalEstH = numRows * estRowH + trailPx;
@@ -251,18 +250,14 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   const isLeft = idx % 2 === 0;
                   const isCentered = (n % 2 !== 0 && idx === n - 1);
                   const nodeX = isCentered ? cx : (isLeft ? leftCol : rightCol);
-                  const dir = isCentered ? 0 : (isLeft ? 1 : -1);
                   const rowCenterY = (rIdx + 0.5) * rowH;
-                  const startX = isCentered ? cx : (nodeX + dir * circleR);
-                  const startY = rowCenterY;
                   if (isCentered) {
-                    allPaths.push(`M ${cx.toFixed(1)},${startY.toFixed(1)} L ${cx.toFixed(1)},93`);
+                    allPaths.push(`M ${cx.toFixed(1)},${rowCenterY.toFixed(1)} L ${cx.toFixed(1)},93`);
                   } else {
-                    // Single strand: branch curve from node → merge into central trunk → convergence at 93
-                    const trunkJoinY = startY + (93 - startY) * 0.35;
-                    const cp1x = startX + 0.5 * (cx - startX);
-                    const cp2y = startY + 0.5 * (trunkJoinY - startY);
-                    allPaths.push(`M ${startX.toFixed(1)},${startY.toFixed(1)} C ${cp1x.toFixed(1)},${startY.toFixed(1)} ${cx.toFixed(1)},${cp2y.toFixed(1)} ${cx.toFixed(1)},${trunkJoinY.toFixed(1)} L ${cx.toFixed(1)},93`);
+                    // Single smooth bezier from node center to convergence — no compound path
+                    const cp1x = nodeX + 0.5 * (cx - nodeX);
+                    const cp2y = rowCenterY + 0.5 * (93 - rowCenterY);
+                    allPaths.push(`M ${nodeX.toFixed(1)},${rowCenterY.toFixed(1)} C ${cp1x.toFixed(1)},${rowCenterY.toFixed(1)} ${cx.toFixed(1)},${cp2y.toFixed(1)} ${cx.toFixed(1)},93`);
                   }
                 }
                 allPaths.forEach(d => {
@@ -277,7 +272,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
             />
 
             {/* Estate nodes — two columns with wide center gap */}
-            <div className="relative grid px-2" style={{ gridTemplateColumns: '1fr 1fr', columnGap: '22%', rowGap: 10, justifyItems: 'center', zIndex: 2 }}>
+            <div className="relative grid px-1" style={{ gridTemplateColumns: '1fr 1fr', columnGap: '20%', rowGap: 10, justifyItems: 'center', zIndex: 2 }}>
               {benEstates.map((est, idx) => (
                 <div key={est.id} style={benEstates.length % 2 !== 0 && idx === benEstates.length - 1 ? { gridColumn: '1 / -1' } : undefined}>
                   <TreeNode
@@ -324,7 +319,6 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
           const cx = vbW / 2;
           const leftCol = 20;
           const rightCol = 80;
-          const circleR = 7;
           const goldStart = isLight ? '#b8860b' : '#d4af37';
           const goldEnd = isLight ? '#d4af37' : '#FFD700';
           const estRowH = 85;
@@ -353,19 +347,14 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   const isLeft = idx % 2 === 0;
                   const isCentered = (n % 2 !== 0 && idx === n - 1);
                   const nodeX = isCentered ? cx : (isLeft ? leftCol : rightCol);
-                  const dir = isCentered ? 0 : (isLeft ? 1 : -1);
                   const rowCenterY = topTrail + (rIdx + 0.5) * rowH;
-                  const endX = isCentered ? cx : (nodeX + dir * circleR);
-                  const endY = rowCenterY;
                   if (isCentered) {
-                    // Centered node: straight trunk line
-                    allPaths.push(`M ${cx.toFixed(1)},2 L ${cx.toFixed(1)},${endY.toFixed(1)}`);
+                    allPaths.push(`M ${cx.toFixed(1)},2 L ${cx.toFixed(1)},${rowCenterY.toFixed(1)}`);
                   } else {
-                    // Single strand: trunk from Pete → branch curve → node
-                    const branchY = 2 + (endY - 2) * 0.65;
-                    const cp1y = branchY + 0.5 * (endY - branchY);
-                    const cp2x = endX + 0.5 * (cx - endX);
-                    allPaths.push(`M ${cx.toFixed(1)},2 L ${cx.toFixed(1)},${branchY.toFixed(1)} C ${cx.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${endY.toFixed(1)} ${endX.toFixed(1)},${endY.toFixed(1)}`);
+                    // Single smooth bezier from Pete to node center — no compound path
+                    const cp1y = 2 + 0.5 * (rowCenterY - 2);
+                    const cp2x = nodeX + 0.5 * (cx - nodeX);
+                    allPaths.push(`M ${cx.toFixed(1)},2 C ${cx.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${rowCenterY.toFixed(1)} ${nodeX.toFixed(1)},${rowCenterY.toFixed(1)}`);
                   }
                 }
                 let svg = `
@@ -395,9 +384,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
                   const fiLeft = fi % 2 === 0;
                   const fiCen = (n % 2 !== 0 && fi === n - 1);
                   const fiY = topTrail + (fiR + 0.5) * rowH;
-                  const fiNx = fiCen ? cx : (fiLeft ? leftCol : rightCol);
-                  const fiDir = fiCen ? 0 : (fiLeft ? 1 : -1);
-                  const fiX = fiNx + fiDir * circleR;
+                  const fiX = fiCen ? cx : (fiLeft ? leftCol : rightCol);
                   svg += `<circle class="flash-gold-end" cx="${fiX.toFixed(1)}" cy="${fiY.toFixed(1)}" r="3" fill="${lightColor}" opacity="0" filter="url(#lightPulseGold)" />`;
                 }
                 return svg;
