@@ -777,7 +777,7 @@ const GuardianPage = () => {
           </button>
           <button onClick={handleExportPlan} disabled={planExporting || !sessionId} title="Download Plan of Action"
             className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:bg-[var(--s)]"
-            style={{ color: '#d4af37' }}
+            style={{ color: 'var(--gold)' }}
             data-testid="export-plan-btn">
             {planExporting ? <PieProgress size={18} color="#d4af37" duration={15} /> : <ClipboardList className="w-4.5 h-4.5" />}
           </button>

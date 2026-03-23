@@ -675,7 +675,7 @@ const MessagesPage = () => {
                             ) : msg.message_type === 'voice' ? (
                               <Mic className="w-5 h-5 text-[#22c993]" />
                             ) : (
-                              <MessageSquare className="w-5 h-5 text-[#d4af37]" />
+                              <MessageSquare className="w-5 h-5 text-[var(--gold)]" />
                             )}
                           </div>
                           <div>
@@ -1017,7 +1017,7 @@ const MessagesPage = () => {
                       checked={beneficiaries.length > 0 && beneficiaries.every(b => selectedRecipients.includes(b.user_id || b.id))}
                       onCheckedChange={() => {}}
                     />
-                    <span className="text-sm font-semibold" style={{ color: '#d4af37' }}>
+                    <span className="text-sm font-semibold" style={{ color: 'var(--gold)' }}>
                       {beneficiaries.every(b => selectedRecipients.includes(b.user_id || b.id)) ? 'Deselect All' : 'Select All'}
                     </span>
                   </button>

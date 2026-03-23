@@ -109,7 +109,7 @@ const BeneficiaryHubPage = () => {
         <p className="text-sm text-[var(--t4)]">
           You are connected to {estates.length} benefactor estate{estates.length !== 1 ? 's' : ''}.
         </p>
-        <p className="text-xs text-[#d4af37] italic mt-1">
+        <p className="text-xs text-[var(--gold)] italic mt-1">
           Tap a benefactor to view their estate. Tap yourself to return to your{estates.length > 1 ? ' primary' : ''} Benefactor Portal.
         </p>
       </div>

@@ -647,7 +647,7 @@ const VaultPage = () => {
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
           <div className="relative flex flex-col items-center gap-4 p-10 rounded-3xl border-2 border-dashed border-[#d4af37]"
             style={{ background: 'rgba(15,22,41,0.9)' }}>
-            <Upload className="w-16 h-16 text-[#d4af37]" />
+            <Upload className="w-16 h-16 text-[var(--gold)]" />
             <p className="text-xl font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>Drop to Upload</p>
             <p className="text-sm text-[#94a3b8]">Release to add this document to your Secure Vault</p>
           </div>
@@ -745,7 +745,7 @@ const VaultPage = () => {
                     {doc.is_locked && (
                       <div className="lock-overlay">
                         <div className="text-center">
-                          <Lock className="w-8 h-8 text-[#d4af37] mx-auto mb-2" />
+                          <Lock className="w-8 h-8 text-[var(--gold)] mx-auto mb-2" />
                           <p className="text-white font-medium">Protected Document</p>
                           <p className="text-[#94a3b8] text-sm">
                             {doc.lock_type === 'password' ? 'Password Required' :
@@ -753,7 +753,7 @@ const VaultPage = () => {
                           </p>
                           <Button
                             variant="outline"
-                            className="mt-4 border-[#d4af37] text-[#d4af37]"
+                            className="mt-4 border-[#d4af37] text-[var(--gold)]"
                             onClick={() => {
                               setSelectedDoc(doc);
                               setShowLockModal(true);
@@ -828,7 +828,7 @@ const VaultPage = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-[#d4af37] hover:text-[#f5d050]"
+                              className="text-[var(--gold)] hover:text-[#f5d050]"
                               onClick={(e) => { e.stopPropagation(); openEditModal(doc); }}
                               title="Edit"
                               aria-label="Edit document"
@@ -1003,7 +1003,7 @@ const VaultPage = () => {
                 <label htmlFor="file-upload" className="cursor-pointer">
                   {uploadFile ? (
                     <div className="flex items-center justify-center gap-2 max-w-full">
-                      <FileText className="w-5 h-5 text-[#d4af37] flex-shrink-0" />
+                      <FileText className="w-5 h-5 text-[var(--gold)] flex-shrink-0" />
                       <span className="text-white text-sm truncate max-w-[200px]">{uploadFile.name}</span>
                       <button
                         onClick={(e) => {
@@ -1086,7 +1086,7 @@ const VaultPage = () => {
           
           <div className="py-4 space-y-4">
             <div className="text-center">
-              <Shield className="w-12 h-12 mx-auto text-[#d4af37] mb-2" />
+              <Shield className="w-12 h-12 mx-auto text-[var(--gold)] mb-2" />
               <p className="text-white font-medium">{selectedDoc?.name}</p>
               <p className="text-[#64748b] text-sm">
                 Protected with {selectedDoc?.lock_type} security
@@ -1128,7 +1128,7 @@ const VaultPage = () => {
                       {isListening ? (
                         <MicOff className="w-8 h-8 text-white" />
                       ) : (
-                        <Mic className="w-8 h-8 text-[#d4af37]" />
+                        <Mic className="w-8 h-8 text-[var(--gold)]" />
                       )}
                     </button>
                   </div>
@@ -1255,7 +1255,7 @@ const VaultPage = () => {
         <DialogContent className="glass-card border-[var(--b)] sm:max-w-md !top-[5vh] !translate-y-0">
           <DialogHeader>
             <DialogTitle className="text-white text-xl flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              <Key className="w-5 h-5 text-[#d4af37]" />
+              <Key className="w-5 h-5 text-[var(--gold)]" />
               Save Your Backup Code
             </DialogTitle>
             <DialogDescription className="text-[#94a3b8]">
@@ -1265,7 +1265,7 @@ const VaultPage = () => {
           
           <div className="py-4">
             <div className="bg-[#0F1629]/50 rounded-xl p-4 text-center mb-4">
-              <p className="text-2xl font-mono text-[#d4af37] tracking-wider">{backupCode}</p>
+              <p className="text-2xl font-mono text-[var(--gold)] tracking-wider">{backupCode}</p>
             </div>
             
             <Button
@@ -1296,7 +1296,7 @@ const VaultPage = () => {
 
       {/* PDF/Image Viewer Floating Tile */}
       {showPreviewModal && (
-        <Suspense fallback={<div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60"><Loader2 className="w-8 h-8 text-[#d4af37] animate-spin" /></div>}>
+        <Suspense fallback={<div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60"><Loader2 className="w-8 h-8 text-[var(--gold)] animate-spin" /></div>}>
           <PDFViewerModal
             open={showPreviewModal}
             onClose={closePreview}
@@ -1506,7 +1506,7 @@ const VaultPage = () => {
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowInvitePrompt(false)} />
           <div className="relative rounded-2xl p-6 max-w-sm w-full text-center" style={{ background: 'var(--bg2)', border: '1px solid var(--b)', boxShadow: '0 25px 60px rgba(0,0,0,0.5)' }}>
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.2)' }}>
-              <Heart className="w-8 h-8 text-[#d4af37]" />
+              <Heart className="w-8 h-8 text-[var(--gold)]" />
             </div>
             <h3 className="text-xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Your Estate Plan Has Begun</h3>
             <p className="text-sm text-[var(--t4)] mb-5">Invite someone you trust so they can access your documents when needed.</p>

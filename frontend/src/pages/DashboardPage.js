@@ -400,14 +400,14 @@ const DashboardPage = () => {
                 border: '2px solid rgba(212,175,55,0.35)',
                 animation: 'pulseRing 2.5s ease-in-out infinite',
               }}>
-              <ArrowLeftRight className="w-14 h-14 text-[#d4af37]" />
+              <ArrowLeftRight className="w-14 h-14 text-[var(--gold)]" />
             </div>
             <h1 className="text-2xl lg:text-3xl font-bold mb-3"
               style={{ fontFamily: 'Outfit, sans-serif', color: '#ffffff' }}>
               Welcome to Your Estate
             </h1>
             <p className="text-sm lg:text-base mb-8 max-w-sm mx-auto leading-relaxed" style={{ color: '#94a3b8' }}>
-              You now have both views — switch between your <strong style={{ color: '#d4af37' }}>Benefactor</strong> estate and your <strong style={{ color: '#60A5FA' }}>Beneficiary</strong> access anytime using the switcher in the sidebar.
+              You now have both views — switch between your <strong style={{ color: 'var(--gold)' }}>Benefactor</strong> estate and your <strong style={{ color: '#60A5FA' }}>Beneficiary</strong> access anytime using the switcher in the sidebar.
             </p>
             <button onClick={() => { localStorage.setItem('carryon_welcome_guided_shown', 'true'); setShowWelcomeStep(false); }}
               className="w-full max-w-xs mx-auto py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
@@ -741,7 +741,7 @@ const DashboardPage = () => {
             }}>
             <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5"
               style={{ background: 'rgba(212,175,55,0.12)', border: '2px solid rgba(212,175,55,0.3)' }}>
-              <Sparkles className="w-10 h-10 text-[#d4af37]" />
+              <Sparkles className="w-10 h-10 text-[var(--gold)]" />
             </div>
             <h1 className="text-3xl lg:text-4xl font-bold mb-4"
               style={{ fontFamily: 'Outfit, sans-serif', color: 'var(--guided-title, #ffffff)' }}>

@@ -526,7 +526,7 @@ export default function EditMilestoneMessagePage() {
           <Card className="glass-card h-fit animate-bounce-tile" data-testid="edit-message-summary-card">
             <CardContent className="space-y-5 p-6">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#d4af37]">Current Message</p>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--gold)]">Current Message</p>
                 <h2 className="mt-2 text-2xl font-semibold text-[var(--t)]" data-testid="edit-message-current-title">{title || 'Untitled message'}</h2>
                 <p className="mt-2 text-sm text-[var(--t5)]" data-testid="edit-message-current-trigger">
                   {triggerType === 'immediate' && 'Deliver on estate transition'}
@@ -537,14 +537,14 @@ export default function EditMilestoneMessagePage() {
               </div>
 
               <div className="rounded-2xl border p-4" style={{ background: 'rgba(212,175,55,0.06)', borderColor: 'rgba(212,175,55,0.15)' }} data-testid="edit-message-status-card">
-                <div className="flex items-center gap-2 text-sm text-[#d4af37]">
+                <div className="flex items-center gap-2 text-sm text-[var(--gold)]">
                   <Users className="h-4 w-4" />
                   {selectedRecipients.length} recipient{selectedRecipients.length === 1 ? '' : 's'} selected
                 </div>
               </div>
 
               <div className="space-y-3">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#d4af37]">Message Format</p>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--gold)]">Message Format</p>
                 <div className="grid gap-2">
                   {[
                     { key: 'text', label: 'Written', icon: MessageSquare },

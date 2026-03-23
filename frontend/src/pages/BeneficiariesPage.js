@@ -569,7 +569,7 @@ const BeneficiariesPage = () => {
           <div className="glass-card p-4 rounded-2xl" data-testid="family-tree-panel">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-6 h-6 rounded flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.12)' }}>
-                <Users className="w-3.5 h-3.5 text-[#d4af37]" />
+                <Users className="w-3.5 h-3.5 text-[var(--gold)]" />
               </div>
               <h3 className="text-sm font-bold text-[var(--t)] flex-1" style={{ fontFamily: 'Outfit, sans-serif' }}>{user?.first_name || user?.name?.split(' ')[0] || 'My'}'s Estate Tree</h3>
               <span className="text-[11px] italic leading-tight text-right max-w-[140px]" style={{ color: 'var(--gold)' }}>Tap any estate icon to visit your Beneficiary Portal</span>
@@ -593,7 +593,7 @@ const BeneficiariesPage = () => {
           <div>
             {/* Succession explainer */}
             <div className="mb-3 p-3 rounded-xl flex items-start gap-2.5" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.12)' }} data-testid="succession-explainer">
-              <Shield className="w-4 h-4 text-[#d4af37] flex-shrink-0 mt-0.5" />
+              <Shield className="w-4 h-4 text-[var(--gold)] flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm text-[var(--t)] font-semibold">Succession Hierarchy</p>
                 <p className="text-xs text-[var(--t3)] leading-relaxed mt-0.5">
@@ -637,7 +637,7 @@ const BeneficiariesPage = () => {
                       />
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-sm sm:text-base truncate" style={{ color: isInSuccession ? succStyle.color : 'var(--t)' }}>{ben.name}</h3>
-                        <p className="text-[#d4af37] text-xs">{ben.relation}</p>
+                        <p className="text-[var(--gold)] text-xs">{ben.relation}</p>
                       </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                         <span
@@ -736,7 +736,7 @@ const BeneficiariesPage = () => {
                           <div className="mt-3">
                             <button
                               onClick={() => setExpandedCard(expandedCard === ben.id ? null : ben.id)}
-                              className="text-xs text-[#d4af37] flex items-center gap-1 hover:underline"
+                              className="text-xs text-[var(--gold)] flex items-center gap-1 hover:underline"
                             >
                               {expandedCard === ben.id ? (
                                 <>Less details <ChevronUp className="w-3 h-3" /></>
@@ -870,7 +870,7 @@ const BeneficiariesPage = () => {
 
             {/* Name Section */}
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-[#d4af37] uppercase tracking-wide">Personal Information</h3>
+              <h3 className="text-sm font-medium text-[var(--gold)] uppercase tracking-wide">Personal Information</h3>
               
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
@@ -965,7 +965,7 @@ const BeneficiariesPage = () => {
 
             {/* Contact Section */}
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-[#d4af37] uppercase tracking-wide">Contact Information</h3>
+              <h3 className="text-sm font-medium text-[var(--gold)] uppercase tracking-wide">Contact Information</h3>
               
               <div className="space-y-2">
                 <Label className="text-[#94a3b8]">Email Address <span className="text-red-400">*</span></Label>
@@ -1000,7 +1000,7 @@ const BeneficiariesPage = () => {
 
             {/* Address Section */}
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-[#d4af37] uppercase tracking-wide">Address</h3>
+              <h3 className="text-sm font-medium text-[var(--gold)] uppercase tracking-wide">Address</h3>
               
               <div className="space-y-1.5">
                 <Label className="text-[#94a3b8]">Street Address</Label>
@@ -1053,7 +1053,7 @@ const BeneficiariesPage = () => {
               </div>
 
               <div className="p-2.5 rounded-xl" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.12)' }}>
-                <p className="text-[#d4af37] text-[11px] leading-relaxed flex items-start gap-2">
+                <p className="text-[var(--gold)] text-[11px] leading-relaxed flex items-start gap-2">
                   <Shield className="w-3 h-3 flex-shrink-0 mt-0.5" />
                   Address is encrypted and stored securely. It's only used for estate law analysis and is never shared.
                 </p>
@@ -1062,7 +1062,7 @@ const BeneficiariesPage = () => {
 
             {/* Additional Info Section */}
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-[#d4af37] uppercase tracking-wide">Additional Information</h3>
+              <h3 className="text-sm font-medium text-[var(--gold)] uppercase tracking-wide">Additional Information</h3>
               
               <div className="space-y-2">
                 <Label className="text-[#94a3b8]">SSN (Last 4 digits)</Label>
