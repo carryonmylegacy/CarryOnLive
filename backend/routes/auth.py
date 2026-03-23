@@ -137,6 +137,9 @@ async def login(data: UserLogin, request: Request):
         {"_id": 0, "id": 1, "role": 1},
     )
     is_admin = admin_check and admin_check.get("role") == "admin"
+    if is_admin:
+        # Admin accounts are fully exempt — also clear any existing lockout entries
+        await db.failed_logins.delete_many({"email": lockout_email})
     if not is_admin:
         recent_failures = await db.failed_logins.count_documents(
             {
