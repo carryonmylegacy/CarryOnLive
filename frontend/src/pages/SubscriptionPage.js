@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { SubscriptionManagement } from '../components/settings/SubscriptionManagement';
@@ -10,6 +11,7 @@ import { API_URL } from '../config';
 
 const SubscriptionPage = () => {
   const { subscriptionStatus, refreshSubscription, token, getAuthHeaders } = useAuth();
+  const navigate = useNavigate();
   const [showPaywall, setShowPaywall] = useState(false);
   const [confirmingPayment, setConfirmingPayment] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
@@ -78,15 +80,25 @@ const SubscriptionPage = () => {
         </div>
       )}
 
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
-          {isInBeneficiaryPortal ? 'Your Plan' : 'Subscription'}
-        </h1>
-        <p className="text-[var(--t4)] mt-1 text-sm sm:text-base">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            {isInBeneficiaryPortal ? 'Your Plan' : 'Subscription'}
+          </h1>
+          <p className="text-[var(--t4)] mt-1 text-sm sm:text-base">
           {isInBeneficiaryPortal
             ? 'Your tier is determined by your benefactor\'s plan'
             : 'Manage your plan, billing, and family sharing'}
         </p>
+        </div>
+        <button
+          onClick={() => navigate(-1)}
+          className="px-4 py-2 rounded-lg text-sm font-bold transition-transform hover:scale-105 flex-shrink-0"
+          style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
+          data-testid="subscription-back-button"
+        >
+          Back
+        </button>
       </div>
 
       <SubscriptionManagement

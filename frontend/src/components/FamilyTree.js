@@ -328,6 +328,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               label={user?.first_name || user?.name?.split(' ')[0] || 'You'}
               sublabel="Benefactor"
               testId="tree-root-node"
+              onClick={() => navigate('/settings')}
             />
           </div>
         </div>

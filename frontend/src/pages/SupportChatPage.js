@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { MessageCircle, Send, Loader2, Headphones } from 'lucide-react';
@@ -9,6 +10,7 @@ import { API_URL } from '../config';
 
 const SupportChatPage = () => {
   const { user, getAuthHeaders } = useAuth();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -109,7 +111,7 @@ const SupportChatPage = () => {
       <style>{`@media (min-width: 1024px) { [data-testid="support-chat-page"] { left: var(--sidebar-width, 260px) !important; bottom: 0 !important; } }`}</style>
       {/* Header */}
       <div className="flex-shrink-0 p-4 border-b border-[var(--b)] bg-[var(--bg)]">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-1">
           <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(34,197,94,0.2), rgba(22,163,74,0.15))' }}>
             <Headphones className="w-6 h-6 text-[var(--gn2)]" />
           </div>
@@ -122,6 +124,14 @@ const SupportChatPage = () => {
             </p>
           </div>
         </div>
+        <button
+          onClick={() => navigate(-1)}
+          className="px-4 py-2 rounded-lg text-sm font-bold transition-transform hover:scale-105 flex-shrink-0"
+          style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
+          data-testid="support-back-button"
+        >
+          Back
+        </button>
       </div>
 
       {/* Messages Area */}
