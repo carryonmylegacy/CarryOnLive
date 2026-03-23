@@ -131,3 +131,20 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **Eyeball Icons**: Any new password inputs MUST include `onMouseDown={(e) => e.preventDefault()}`.
 - **Downloads**: All PDF downloads must use `/app/frontend/src/utils/downloadFile.js` for cross-platform compatibility.
 - **SVG in JSX**: Platform's Babel plugin wraps dynamic JSX expressions (`{arr.map(...)}`, `{(() => { ... })()}`) inside SVG elements in a `<span>`, breaking SVG rendering. Use `dangerouslySetInnerHTML` for any dynamic SVG content.
+- **FamilyTree.js**: DO NOT modify styling unless explicitly instructed. Extremely sensitive area.
+- **Onboarding Flow (March 23, 2026)**: Simplified to 4 steps max. Address removed from signup — prompted at EGA with link to Settings. Beneficiary enrollment removed from signup — now first Getting Started step.
+
+## Signup Flow (Simplified March 2026)
+- **Benefactor**: Name+Gender+DOB → Role → Special Eligibility → Credentials (4 steps)
+- **Beneficiary**: Name+Gender+DOB → Role → Benefactor Email → Credentials (4 steps)
+- **Minor (<18)**: Name+Gender+DOB+BenefactorEmail → Credentials (2 steps, auto-beneficiary)
+- **Post-OTP**: Benefactors → /dashboard (with Getting Started overlay), Beneficiaries → /beneficiary
+
+## Getting Started Flow (7 steps)
+1. Add a Beneficiary (NEW)
+2. Create a Milestone Message
+3. Upload an Estate Document
+4. Consult the Estate Guardian (requires address in Settings)
+5. Customize Action Checklist
+6. Set Succession Order **(optional)** — skip shows explanation, marks complete
+7. Store a Digital Credential **(optional)** — skip shows explanation, marks complete
