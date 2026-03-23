@@ -118,50 +118,48 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
     }
     const scrollTarget = (scrollEl && scrollEl !== document.body) ? scrollEl : window;
 
+    // RAF-synced flash: show for 2 frames then smooth fade
     const triggerFlash = (node) => {
       if (!node) return;
-      node.style.transition = 'opacity .15s ease-in';
+      node.style.transition = 'none';
       node.style.opacity = '1';
-      setTimeout(() => { node.style.transition = 'opacity .3s ease-out'; node.style.opacity = '0'; }, 150);
-    };
-
-    let transitionApplied = false;
-    const applyTransitions = () => {
-      if (transitionApplied) return;
-      transitionApplied = true;
-      el.querySelectorAll('.fill-path-blue, .fill-path-gold').forEach(p => {
-        p.style.transition = 'stroke-dashoffset 0.2s ease-out';
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          node.style.transition = 'opacity 0.4s ease-out';
+          node.style.opacity = '0';
+        });
       });
     };
 
-    const updateAnimation = (raw) => {
-      applyTransitions();
+    // Lerp-based animation state — no CSS transitions, pure RAF
+    let targetRaw = 0;
+    let currentRaw = 0;
+    let animLoopRunning = false;
+    const LERP = 0.12;
+
+    const applyValues = (raw) => {
       const upper = Math.min(1, raw * 2);
+      const lower = Math.min(1, Math.max(0, (raw - 0.35) * 2.5));
+
       if (upper > upperMaxRef.current) {
         upperMaxRef.current = upper;
-        el.querySelectorAll('.fill-path-blue').forEach(p => { p.style.strokeDashoffset = (1 - upper).toString(); });
-        el.querySelectorAll('.fill-line-blue').forEach(line => {
-          line.style.transition = 'opacity 0.3s ease-out';
-          line.style.opacity = upper.toString();
-        });
+        const offset = (1 - upper).toString();
+        el.querySelectorAll('.fill-path-blue').forEach(p => { p.setAttribute('stroke-dashoffset', offset); });
+        el.querySelectorAll('.fill-line-blue').forEach(line => { line.style.opacity = upper.toString(); });
       }
       if (upper >= 1 && !upperFlashedRef.current) {
         upperFlashedRef.current = true;
         triggerFlash(el.querySelector('.flash-blue'));
       }
-      const lower = Math.min(1, Math.max(0, (raw - 0.35) * 2.5));
       if (lower > 0 && !lowerStartedRef.current) {
         lowerStartedRef.current = true;
         triggerFlash(el.querySelector('.flash-gold-origin'));
       }
       if (lower > lowerMaxRef.current) {
         lowerMaxRef.current = lower;
-        el.querySelectorAll('.fill-path-gold').forEach(p => { p.style.strokeDashoffset = (1 - lower).toString(); });
-        // Animate centered vertical connector line
-        el.querySelectorAll('.fill-line-gold').forEach(line => {
-          line.style.transition = 'opacity 0.3s ease-out';
-          line.style.opacity = lower.toString();
-        });
+        const offset = (1 - lower).toString();
+        el.querySelectorAll('.fill-path-gold').forEach(p => { p.setAttribute('stroke-dashoffset', offset); });
+        el.querySelectorAll('.fill-line-gold').forEach(line => { line.style.opacity = lower.toString(); });
       }
       if (lower >= 1 && !lowerFlashedRef.current) {
         lowerFlashedRef.current = true;
@@ -169,19 +167,42 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
       }
     };
 
+    // Continuous RAF loop — lerps currentRaw toward targetRaw each frame
+    const tick = () => {
+      if (!el.isConnected) { animLoopRunning = false; return; }
+      const diff = targetRaw - currentRaw;
+      if (Math.abs(diff) < 0.0005) {
+        currentRaw = targetRaw;
+        animLoopRunning = false;
+      } else {
+        currentRaw += diff * LERP;
+        requestAnimationFrame(tick);
+      }
+      applyValues(currentRaw);
+    };
+
+    const ensureAnimLoop = () => {
+      if (!animLoopRunning) {
+        animLoopRunning = true;
+        requestAnimationFrame(tick);
+      }
+    };
+
+    // Scroll handler — just sets the target, RAF loop does the rest
     const handleScroll = () => {
       const rect = el.getBoundingClientRect();
       const vh = window.innerHeight;
       if (rect.top > vh) return;
       if (initialTopRef.current === null) initialTopRef.current = rect.top;
       const scrollDist = Math.max(0, initialTopRef.current - rect.top);
-      updateAnimation(scrollDist / 500);
+      targetRaw = scrollDist / 500;
+      ensureAnimLoop();
     };
 
     scrollTarget.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
 
-    // Desktop: auto-animate when tree is visible. PWA/mobile: scroll-driven only.
+    // Desktop: auto-animate when tree is visible (direct drive, no lerp needed)
     const autoTimer = setTimeout(() => {
       if (lowerMaxRef.current >= 1) return;
       const treeRect = el.getBoundingClientRect();
@@ -192,7 +213,9 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
           if (!el.isConnected) return;
           if (!startTime) startTime = ts;
           const raw = Math.min(1, (ts - startTime) / 2500);
-          updateAnimation(raw);
+          currentRaw = raw;
+          targetRaw = raw;
+          applyValues(raw);
           if (raw < 1) autoFrameRef.current = requestAnimationFrame(animate);
         };
         autoFrameRef.current = requestAnimationFrame(animate);
@@ -203,6 +226,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
       scrollTarget.removeEventListener('scroll', handleScroll);
       clearTimeout(autoTimer);
       if (autoFrameRef.current) cancelAnimationFrame(autoFrameRef.current);
+      animLoopRunning = false;
       upperMaxRef.current = 0; lowerMaxRef.current = 0;
       upperFlashedRef.current = false; lowerStartedRef.current = false; lowerFlashedRef.current = false;
       initialTopRef.current = null;
@@ -239,7 +263,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               className="absolute pointer-events-none overflow-visible"
               viewBox={`0 0 ${vbW} ${vbH}`}
               preserveAspectRatio="none"
-              style={{ top: 0, left: 0, width: '100%', height: '100%', zIndex: 1 }}
+              style={{ top: 0, left: 0, width: '100%', height: '100%', zIndex: 1, willChange: 'transform', transform: 'translateZ(0)' }}
               dangerouslySetInnerHTML={{ __html: (() => {
                 const gradColor1 = isLight ? '#3B82F6' : '#60A5FA';
                 const gradColor2 = isLight ? '#2563EB' : '#93C5FD';
@@ -366,7 +390,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
               className="absolute pointer-events-none overflow-visible"
               viewBox={`0 0 ${vbW} ${vbH}`}
               preserveAspectRatio="none"
-              style={{ top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}
+              style={{ top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, willChange: 'transform', transform: 'translateZ(0)' }}
               dangerouslySetInnerHTML={{ __html: (() => {
                 const blurDev = isLight ? 1.5 : 2;
                 const sw = isLight ? 0.6 : 0.5;
