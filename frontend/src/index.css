@@ -1206,3 +1206,15 @@
   from { transform: translateY(-100%); opacity: 0; }
   to   { transform: translateY(0);     opacity: 1; }
 }
+
+
+/* ── iOS Safe Area: Platform-wide protection ────────────────── */
+/* Component-level collisionPadding in select.jsx, dropdown-menu.jsx, and popover.jsx
+   prevents Radix popper content from rendering behind the iOS status bar.
+   This CSS rule is an additional visual safety net for edge cases. */
+@supports (padding: env(safe-area-inset-top)) {
+  /* Ensure any fixed-position overlay content respects the top safe area */
+  .ios-safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}

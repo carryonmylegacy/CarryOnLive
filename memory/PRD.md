@@ -133,6 +133,7 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **SVG in JSX**: Platform's Babel plugin wraps dynamic JSX expressions (`{arr.map(...)}`, `{(() => { ... })()}`) inside SVG elements in a `<span>`, breaking SVG rendering. Use `dangerouslySetInnerHTML` for any dynamic SVG content.
 - **FamilyTree.js**: DO NOT modify styling unless explicitly instructed. Extremely sensitive area.
 - **Onboarding Flow (March 23, 2026)**: Simplified to 4 steps max. Address removed from signup — prompted at EGA with link to Settings. Beneficiary enrollment removed from signup — now first Getting Started step.
+- **iOS Safe Area (March 23, 2026)**: Platform-wide fix — all Radix UI popper components (Select, DropdownMenu, Popover) use `collisionPadding` via `getSafeAreaTop()` to prevent dropdown content from rendering behind the iOS status bar/Dynamic Island. Dialog and Sheet components also respect safe area insets. Utility at `/app/frontend/src/lib/safeArea.js`.
 
 ## Signup Flow (Simplified March 2026)
 - **Benefactor**: Name+Gender+DOB → Role → Special Eligibility → Credentials (4 steps)
