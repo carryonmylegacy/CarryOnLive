@@ -275,7 +275,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
             />
 
             {/* Estate nodes — two columns with wide center gap */}
-            <div className="relative grid px-1" style={{ gridTemplateColumns: '1fr 1fr', columnGap: '4%', rowGap: 10, justifyItems: 'center', zIndex: 2 }}>
+            <div className="relative grid" style={{ gridTemplateColumns: '1fr 1fr', columnGap: 0, rowGap: 10, justifyItems: 'center', zIndex: 2, paddingLeft: '2%', paddingRight: '2%' }}>
               {benEstates.map((est, idx) => (
                 <div key={est.id} style={benEstates.length % 2 !== 0 && idx === benEstates.length - 1 ? { gridColumn: '1 / -1' } : undefined}>
                   <TreeNode
@@ -303,16 +303,16 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
       {/* Root node (benefactor) with halo orb + trunk flares */}
       <div className="flex flex-col items-center mt-3">
         <div className="relative" style={{ overflow: 'visible' }}>
-          {/* Halo orb — circular glow wrapping around Pete, blue top half, gold bottom half */}
+          {/* Halo — tall ellipse tapering at trunk tips, wide around Pete */}
           <div className="absolute pointer-events-none" style={{
-            width: 120, height: 120,
+            width: 100, height: 180,
             left: '50%', top: 30,
             transform: 'translate(-50%, -50%)',
             borderRadius: '50%',
             background: isLight
-              ? 'radial-gradient(circle at 50% 30%, rgba(59,130,246,0.35) 0%, rgba(59,130,246,0.10) 40%, transparent 70%), radial-gradient(circle at 50% 70%, rgba(184,134,11,0.30) 0%, rgba(184,134,11,0.08) 40%, transparent 70%)'
-              : 'radial-gradient(circle at 50% 30%, rgba(100,160,255,0.40) 0%, rgba(100,160,255,0.10) 40%, transparent 70%), radial-gradient(circle at 50% 70%, rgba(212,175,55,0.35) 0%, rgba(212,175,55,0.08) 40%, transparent 70%)',
-            filter: 'blur(3px)',
+              ? 'radial-gradient(ellipse at 50% 12%, rgba(59,130,246,0.35) 0%, rgba(59,130,246,0.06) 35%, transparent 55%), radial-gradient(ellipse at 50% 88%, rgba(184,134,11,0.30) 0%, rgba(184,134,11,0.05) 35%, transparent 55%)'
+              : 'radial-gradient(ellipse at 50% 12%, rgba(100,160,255,0.38) 0%, rgba(100,160,255,0.08) 35%, transparent 55%), radial-gradient(ellipse at 50% 88%, rgba(212,175,55,0.33) 0%, rgba(212,175,55,0.06) 35%, transparent 55%)',
+            filter: 'blur(2px)',
             zIndex: 0,
           }} />
           <div style={{ position: 'relative', zIndex: 1 }}>
