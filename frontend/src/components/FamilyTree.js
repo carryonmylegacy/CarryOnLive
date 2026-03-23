@@ -172,15 +172,12 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
     scrollTarget.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
 
-    // Desktop fallback: auto-animate when tree is visible and not enough scroll room
+    // Desktop: auto-animate when tree is visible. PWA/mobile: scroll-driven only.
     const autoTimer = setTimeout(() => {
       if (lowerMaxRef.current >= 1) return;
       const treeRect = el.getBoundingClientRect();
-      const scrollable = scrollTarget === window
-        ? document.documentElement.scrollHeight > window.innerHeight + 100
-        : scrollTarget.scrollHeight > scrollTarget.clientHeight + 100;
-      // Auto-fire if tree is visible and page doesn't have significant scroll room
-      if (treeRect.top < window.innerHeight * 0.8 && !scrollable) {
+      const isDesktop = window.innerWidth >= 1024;
+      if (isDesktop && treeRect.top < window.innerHeight) {
         let startTime = null;
         const animate = (ts) => {
           if (!el.isConnected) return;
