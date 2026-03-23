@@ -706,46 +706,8 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                   />
 
                   {connectedEstates.length > 0 && (() => {
-                    const n = connectedEstates.length;
-                    const vbW = 300;
-                    const vbH = 80;
-                    const cx = vbW / 2;
-                    const leftTarget = vbW * 0.25;
-                    const rightTarget = vbW * 0.75;
-                    const strokesPerBundle = 5;
-                    const spread = 4;
-                    const gradId = `bg-${benUser.id}`;
-                    const filtId = `bgGlow-${benUser.id}`;
-                    const svgH = Math.min(80, 40 + n * 8);
-                    const svgHtml = (() => {
-                      let s = `<defs>
-                        <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.5" />
-                          <stop offset="100%" stop-color="#A78BFA" stop-opacity="0.12" />
-                        </linearGradient>
-                        <filter id="${filtId}" x="-50%" y="-50%" width="200%" height="200%">
-                          <feGaussianBlur stdDeviation="2.5" result="blur" />
-                          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                        </filter>
-                      </defs>`;
-                      for (let i = 0; i < strokesPerBundle; i++) {
-                        const offset = (i - (strokesPerBundle - 1) / 2) * spread;
-                        const xoL = leftTarget + offset;
-                        const cp1xL = cx + (xoL - cx) * 0.35;
-                        s += `<path d="M ${cx},0 C ${cp1xL},22 ${xoL},48 ${xoL},78" fill="none" stroke="url(#${gradId})" stroke-width="1.2" filter="url(#${filtId})" />`;
-                        const xoR = rightTarget + offset;
-                        const cp1xR = cx + (xoR - cx) * 0.35;
-                        s += `<path d="M ${cx},0 C ${cp1xR},22 ${xoR},48 ${xoR},78" fill="none" stroke="url(#${gradId})" stroke-width="1.2" filter="url(#${filtId})" />`;
-                      }
-                      return s;
-                    })();
                     return (
                     <div className="flex flex-col items-center w-full">
-                      <div className="flex justify-center" style={{ marginTop: -2, marginBottom: -6 }}>
-                        <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '90%', height: svgH }} className="overflow-visible"
-                          dangerouslySetInnerHTML={{ __html: svgHtml }}
-                        />
-                      </div>
                       <div className="flex justify-center gap-5 flex-wrap pt-1">
                         {connectedEstates.map((estate, idx) => (
                           <div key={`${estate.owner.id}-${idx}`} className="flex flex-col items-center">
@@ -822,48 +784,8 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                 />
 
                 {sortedBens.length > 0 && (() => {
-                  const n = sortedBens.length;
-                  const vbW = 300;
-                  const vbH = 80;
-                  const cx = vbW / 2;
-                  const leftTarget = vbW * 0.25;
-                  const rightTarget = vbW * 0.75;
-                  const strokesPerBundle = 5;
-                  const spread = 4;
-                  const maxArcs = Math.min(n, 6);
-                  const gradId = `ag-${key}`;
-                  const filtId = `agGlow-${key}`;
-                  const svgH = Math.min(80, 40 + maxArcs * 8);
-                  const svgHtml = (() => {
-                    let s = `<defs>
-                      <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#d4af37" stop-opacity="0.5" />
-                        <stop offset="100%" stop-color="#FFD700" stop-opacity="0.12" />
-                      </linearGradient>
-                      <filter id="${filtId}" x="-50%" y="-50%" width="200%" height="200%">
-                        <feGaussianBlur stdDeviation="2.5" result="blur" />
-                        <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                      </filter>
-                    </defs>`;
-                    for (let i = 0; i < strokesPerBundle; i++) {
-                      const offset = (i - (strokesPerBundle - 1) / 2) * spread;
-                      const xoL = leftTarget + offset;
-                      const cp1xL = cx + (xoL - cx) * 0.35;
-                      s += `<path d="M ${cx},0 C ${cp1xL},22 ${xoL},48 ${xoL},78" fill="none" stroke="url(#${gradId})" stroke-width="1.2" filter="url(#${filtId})" />`;
-                      const xoR = rightTarget + offset;
-                      const cp1xR = cx + (xoR - cx) * 0.35;
-                      s += `<path d="M ${cx},0 C ${cp1xR},22 ${xoR},48 ${xoR},78" fill="none" stroke="url(#${gradId})" stroke-width="1.2" filter="url(#${filtId})" />`;
-                    }
-                    return s;
-                  })();
-
                   return (
                   <div className="flex flex-col items-center w-full">
-                    <div className="flex justify-center" style={{ marginTop: -2, marginBottom: -6 }}>
-                      <svg viewBox={`0 0 ${vbW} ${vbH}`} preserveAspectRatio="xMidYMid meet" style={{ width: '90%', height: svgH }} className="overflow-visible"
-                        dangerouslySetInnerHTML={{ __html: svgHtml }}
-                      />
-                    </div>
                     <div className="flex justify-center gap-5 flex-wrap pt-1">
                       {sortedBens.map((ben) => {
                         const color = getBenNodeColor(ben);
