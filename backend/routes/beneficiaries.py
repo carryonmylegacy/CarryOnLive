@@ -613,6 +613,13 @@ async def update_beneficiary(
         "avatar_color": data.avatar_color,
         "initials": initials,
         "is_stub": False,
+        "mm_access": data.mm_access,
+        "ega_access": data.ega_access,
+        "sdv_access": data.sdv_access,
+        "iac_access": data.iac_access,
+        "ffn_access": data.ffn_access,
+        "dav_access": data.dav_access,
+        "dts_access": data.dts_access,
     }
 
     await db.beneficiaries.update_one({"id": beneficiary_id}, {"$set": update_data})

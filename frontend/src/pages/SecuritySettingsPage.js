@@ -13,7 +13,7 @@ const SecuritySettingsPage = () => {
           Security Settings
         </h1>
         <p className="text-[var(--t4)] mt-1 text-sm sm:text-base">
-          Configure Triple Lock protection for each section of your estate
+          Configure Triple Lock protection for each estate section
         </p>
       </div>
 

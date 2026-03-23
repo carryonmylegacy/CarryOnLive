@@ -342,7 +342,7 @@ const ChecklistPage = () => {
       {/* Info + Actions */}
       <div className="rounded-xl p-4" style={{ background: 'rgba(37,99,235,0.05)', border: '1px solid rgba(37,99,235,0.1)' }}>
         <p className="text-sm text-[var(--t4)] leading-relaxed">
-          Create the step-by-step checklist your beneficiaries should follow after your transition. Include contact names, phone numbers, and specific instructions. The more detail you provide, the easier it will be for your loved ones.
+          Create the checklist your beneficiaries should follow after your transition. Include contacts, instructions, and details.
         </p>
       </div>
 

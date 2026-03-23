@@ -8,6 +8,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
+import { Switch } from '../components/ui/switch';
 import { toast } from '../utils/toast';
 import { cachedGet } from '../utils/apiCache';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
@@ -102,6 +103,13 @@ const mapBeneficiaryToForm = (beneficiary) => ({
   ssnLastFour: beneficiary.ssn_last_four || '',
   notes: beneficiary.notes || '',
   avatarColor: beneficiary.avatar_color || avatarColors[0],
+  mmAccess: beneficiary.mm_access !== false,
+  egaAccess: beneficiary.ega_access !== false,
+  sdvAccess: beneficiary.sdv_access !== false,
+  iacAccess: beneficiary.iac_access !== false,
+  ffnAccess: beneficiary.ffn_access !== false,
+  davAccess: beneficiary.dav_access !== false,
+  dtsAccess: beneficiary.dts_access !== false,
 });
 
 export default function EditBeneficiaryPage() {
@@ -219,6 +227,13 @@ export default function EditBeneficiaryPage() {
         ssn_last_four: form.ssnLastFour || null,
         notes: form.notes || null,
         avatar_color: form.avatarColor,
+        mm_access: form.mmAccess,
+        ega_access: form.egaAccess,
+        sdv_access: form.sdvAccess,
+        iac_access: form.iacAccess,
+        ffn_access: form.ffnAccess,
+        dav_access: form.davAccess,
+        dts_access: form.dtsAccess,
       }, getAuthHeaders());
 
       await uploadPhoto();
@@ -489,6 +504,33 @@ export default function EditBeneficiaryPage() {
                   <Label className="text-[#94a3b8]">Notes / Special Instructions</Label>
                   <Textarea value={form.notes} onChange={(event) => updateField('notes', event.target.value)} placeholder="Any special notes about this beneficiary..." className="input-field min-h-[120px]" data-testid="edit-beneficiary-notes-input" />
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Feature Access Toggles */}
+            <Card className="glass-card animate-bounce-tile" data-testid="edit-beneficiary-feature-access">
+              <CardHeader>
+                <CardTitle className="text-base text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Feature Access</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {[
+                  { key: 'mmAccess', label: 'Milestone Messages (MM)' },
+                  { key: 'egaAccess', label: 'Estate Guardian AI (EGA)' },
+                  { key: 'sdvAccess', label: 'Secure Document Vault (SDV)' },
+                  { key: 'iacAccess', label: 'Immediate Action Checklist (IAC)' },
+                  { key: 'ffnAccess', label: 'Family & Friends Notification (FFN)' },
+                  { key: 'davAccess', label: 'Digital Access Vault (DAV)' },
+                  { key: 'dtsAccess', label: 'Designated Trustee Services (DTS)' },
+                ].map(({ key, label }) => (
+                  <div key={key} className="flex items-center justify-between py-1">
+                    <span className="text-sm text-[var(--t3)]">{label}</span>
+                    <Switch
+                      checked={form[key]}
+                      onCheckedChange={(v) => updateField(key, v)}
+                      data-testid={`edit-beneficiary-toggle-${key}`}
+                    />
+                  </div>
+                ))}
               </CardContent>
             </Card>
 

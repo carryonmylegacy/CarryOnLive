@@ -594,7 +594,7 @@ const BeneficiariesPage = () => {
               <div>
                 <p className="text-sm text-[var(--t)] font-semibold">Succession Hierarchy</p>
                 <p className="text-xs text-[var(--t3)] leading-relaxed mt-0.5">
-                  Drag to reorder. The top position is your Primary Beneficiary (trustee). If they become unavailable, the next in line is automatically promoted.
+                  Drag to set succession order. Top position = Primary Beneficiary (trustee).
                 </p>
               </div>
             </div>

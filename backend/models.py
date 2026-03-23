@@ -124,6 +124,14 @@ class Beneficiary(BaseModel):
     invitation_status: str = "pending"  # pending, sent, accepted
     invitation_token: Optional[str] = None
     invitation_sent_at: Optional[str] = None
+    # Feature access toggles — benefactor controls which sections each beneficiary can access
+    mm_access: bool = True  # Milestone Messages
+    ega_access: bool = True  # Estate Guardian AI
+    sdv_access: bool = True  # Secure Document Vault
+    iac_access: bool = True  # Immediate Action Checklist
+    ffn_access: bool = True  # Family & Friends Notification
+    dav_access: bool = True  # Digital Access Vault
+    dts_access: bool = True  # Designated Trustee Services
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
@@ -146,6 +154,13 @@ class BeneficiaryCreate(BaseModel):
     ssn_last_four: Optional[str] = None
     notes: Optional[str] = None
     avatar_color: str = "#d4af37"
+    mm_access: bool = True
+    ega_access: bool = True
+    sdv_access: bool = True
+    iac_access: bool = True
+    ffn_access: bool = True
+    dav_access: bool = True
+    dts_access: bool = True
 
 
 class Document(BaseModel):

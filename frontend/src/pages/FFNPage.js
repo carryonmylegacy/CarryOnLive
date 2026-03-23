@@ -131,7 +131,7 @@ export default function FFNPage() {
             <Users className="w-5 h-5 text-[#ec4899] mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-sm text-[var(--t3)] leading-relaxed">
-                List the people you'd like your beneficiaries to contact and notify of your passing.
+                List who your beneficiaries should notify of your passing.
                 This is not handled by CarryOn — it's a reference list for your family to use when the time comes.
               </p>
               <p className="text-xs text-[var(--t5)] mt-1">
