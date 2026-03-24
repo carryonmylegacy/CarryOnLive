@@ -601,10 +601,6 @@ const DashboardPage = () => {
         
         <div className="flex justify-center gap-3 lg:gap-8 mt-16 lg:mt-28">
           <div className="flex items-center gap-1.5 lg:gap-2">
-            <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#2563eb]" />
-            <span className="text-[var(--t3)] text-xs lg:text-base font-semibold">{docsPercent}% Docs</span>
-          </div>
-          <div className="flex items-center gap-1.5 lg:gap-2">
             <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#8b5cf6]" />
             <span className="text-[var(--t3)] text-xs lg:text-base font-semibold">{msgsPercent}% Messages</span>
           </div>
@@ -612,19 +608,15 @@ const DashboardPage = () => {
             <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#f97316]" />
             <span className="text-[var(--t3)] text-xs lg:text-base font-semibold">{checklistPercent}% Checklist</span>
           </div>
+          <div className="flex items-center gap-1.5 lg:gap-2">
+            <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#2563eb]" />
+            <span className="text-[var(--t3)] text-xs lg:text-base font-semibold">{docsPercent}% Docs</span>
+          </div>
         </div>
       </div>
 
       {/* Stat Cards */}
       <div className="grid grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4 mb-4">
-        <StatCard 
-          icon={FolderLock}
-          value={stats.documents}
-          label="Secure Document Vault"
-          cardClass="stat-card-vault"
-          onClick={() => navigate('/vault')}
-          sectionKey="vault"
-        />
         <StatCard 
           icon={MessageSquare}
           value={stats.messages}
@@ -640,6 +632,14 @@ const DashboardPage = () => {
           cardClass="stat-card-checklist"
           onClick={() => navigate('/checklist')}
           sectionKey="checklist"
+        />
+        <StatCard 
+          icon={FolderLock}
+          value={stats.documents}
+          label="Secure Document Vault (SDV)"
+          cardClass="stat-card-vault"
+          onClick={() => navigate('/vault')}
+          sectionKey="vault"
         />
         {egaRunning && (
           <div className="col-span-3 lg:col-span-4 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold"
@@ -675,42 +675,8 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* Bottom Section - Vault, Messages & Checklist Previews */}
+      {/* Bottom Section - Messages, Checklist & Vault Previews */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Secure Document Vault Preview - Blue */}
-        <div 
-          className="glass-card p-4 lg:p-6 border-l-4 border-l-[#2563eb] transition-transform duration-150 cursor-pointer active:scale-[0.98] lg:hover:scale-[1.02] lg:hover:shadow-[0_12px_36px_-6px_rgba(37,99,235,0.3)]"
-          data-testid="preview-vault"
-          onClick={() => navigate('/vault')}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <FolderLock className="w-5 h-5 text-[#2563eb]" />
-              <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">Secure Document Vault</h3>
-            </div>
-            <span className="text-[var(--t4)] text-sm">
-              {stats.documents > 0 ? `${(stats.documents * 0.5).toFixed(0)} MB` : '0 MB'} / 10 GB
-            </span>
-          </div>
-          <div className="h-2 bg-[var(--b)] rounded-full overflow-hidden">
-            <div 
-              className="h-full rounded-full transition-all"
-              style={{ 
-                background: 'linear-gradient(90deg, #2563eb, #1e3a8a)',
-                width: `${Math.min(100, (stats.documents * 0.5 / 10000) * 100)}%` 
-              }}
-            />
-          </div>
-          <p className="text-[var(--t4)] text-sm mt-2">{stats.documents} document{stats.documents !== 1 ? 's' : ''} encrypted</p>
-          <button 
-            onClick={() => navigate('/vault')}
-            className="mt-2 text-[#2563eb] hover:text-[#3b82f6] text-base font-medium flex items-center gap-1"
-            data-testid="preview-vault-link"
-          >
-            View All Documents <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
-
         {/* Milestone Messages Preview - Purple */}
         <div 
           className="glass-card p-4 lg:p-6 border-l-4 border-l-[#8b5cf6] transition-transform duration-150 cursor-pointer active:scale-[0.98] lg:hover:scale-[1.02] lg:hover:shadow-[0_12px_36px_-6px_rgba(139,92,246,0.3)]"
@@ -798,6 +764,40 @@ const DashboardPage = () => {
             data-testid="preview-checklist-link"
           >
             View Full Checklist <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Secure Document Vault Preview - Blue */}
+        <div 
+          className="glass-card p-4 lg:p-6 border-l-4 border-l-[#2563eb] transition-transform duration-150 cursor-pointer active:scale-[0.98] lg:hover:scale-[1.02] lg:hover:shadow-[0_12px_36px_-6px_rgba(37,99,235,0.3)]"
+          data-testid="preview-vault"
+          onClick={() => navigate('/vault')}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <FolderLock className="w-5 h-5 text-[#2563eb]" />
+              <h3 className="text-lg lg:text-xl font-semibold text-[var(--t)]">Secure Document Vault (SDV)</h3>
+            </div>
+            <span className="text-[var(--t4)] text-sm">
+              {stats.documents > 0 ? `${(stats.documents * 0.5).toFixed(0)} MB` : '0 MB'} / 10 GB
+            </span>
+          </div>
+          <div className="h-2 bg-[var(--b)] rounded-full overflow-hidden">
+            <div 
+              className="h-full rounded-full transition-all"
+              style={{ 
+                background: 'linear-gradient(90deg, #2563eb, #1e3a8a)',
+                width: `${Math.min(100, (stats.documents * 0.5 / 10000) * 100)}%` 
+              }}
+            />
+          </div>
+          <p className="text-[var(--t4)] text-sm mt-2">{stats.documents} document{stats.documents !== 1 ? 's' : ''} encrypted</p>
+          <button 
+            onClick={() => navigate('/vault')}
+            className="mt-2 text-[#2563eb] hover:text-[#3b82f6] text-base font-medium flex items-center gap-1"
+            data-testid="preview-vault-link"
+          >
+            View All Documents <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </div>
