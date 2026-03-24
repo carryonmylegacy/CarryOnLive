@@ -122,8 +122,8 @@ async def get_current_user(
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
 
-    # Single-session enforcement — admin and dev sessions exempt
-    if user.get("role") != "admin" and not payload.get("dev_session"):
+    # Single-session enforcement — admin, session_exempt, and dev sessions exempt
+    if user.get("role") != "admin" and not user.get("session_exempt") and not payload.get("dev_session"):
         token_session = payload.get("session_id")
         active_session = user.get("active_session_id")
         if token_session and active_session and token_session != active_session:
