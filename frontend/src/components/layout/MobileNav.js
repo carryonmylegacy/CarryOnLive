@@ -316,8 +316,8 @@ const MobileNav = () => {
       if (!devOpen) fetchDevConfig();
       return;
     }
-    // Non-admin: tap logo goes to dashboard
-    navigate('/dashboard');
+    // Non-admin: tap logo goes to dashboard of current portal
+    navigate(window.location.pathname.startsWith('/beneficiary') ? '/beneficiary' : '/dashboard');
   };
 
   const handleLogout = () => {
