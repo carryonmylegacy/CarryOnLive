@@ -12,7 +12,9 @@ import os
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
+if not BASE_URL:
+    raise ValueError("REACT_APP_BACKEND_URL environment variable is required")
 
 # Test credentials
 ADMIN_EMAIL = "info@carryon.us"
