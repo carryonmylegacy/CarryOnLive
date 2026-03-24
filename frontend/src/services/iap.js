@@ -48,16 +48,19 @@ export const IAP_PRODUCTS = {
 
 const ALL_PRODUCT_IDS = Object.values(IAP_PRODUCTS);
 
-let NativePurchases = null;
+let NativePurchasesPlugin = null;
+let PURCHASE_TYPE = null;
 
 async function getPurchasesPlugin() {
   if (!isNative) return null;
-  if (NativePurchases) return NativePurchases;
+  if (NativePurchasesPlugin) return NativePurchasesPlugin;
   try {
     const mod = await import('@capgo/native-purchases');
-    NativePurchases = mod.NativePurchases;
-    return NativePurchases;
-  } catch {
+    NativePurchasesPlugin = mod.NativePurchases;
+    PURCHASE_TYPE = mod.PURCHASE_TYPE;
+    return NativePurchasesPlugin;
+  } catch (err) {
+    console.error('[IAP] Failed to load native-purchases plugin:', err);
     return null;
   }
 }
@@ -68,7 +71,8 @@ export async function isIAPAvailable() {
   try {
     const { isBillingSupported } = await plugin.isBillingSupported();
     return isBillingSupported;
-  } catch {
+  } catch (err) {
+    console.error('[IAP] isBillingSupported check failed:', err);
     return false;
   }
 }
@@ -77,7 +81,10 @@ export async function getIAPProducts() {
   const plugin = await getPurchasesPlugin();
   if (!plugin) return [];
   try {
-    const { products } = await plugin.getProducts({ productIds: ALL_PRODUCT_IDS });
+    const { products } = await plugin.getProducts({
+      productIdentifiers: ALL_PRODUCT_IDS,
+      productType: PURCHASE_TYPE?.SUBS || 'SUBS',
+    });
     return products.map(p => ({
       productId: p.identifier,
       title: p.title,
@@ -87,7 +94,7 @@ export async function getIAPProducts() {
       currency: p.currencyCode,
     }));
   } catch (err) {
-    console.error('Failed to fetch IAP products:', err);
+    console.error('[IAP] Failed to fetch products:', err);
     return [];
   }
 }
@@ -95,13 +102,24 @@ export async function getIAPProducts() {
 export async function purchaseIAP(productId) {
   const plugin = await getPurchasesPlugin();
   if (!plugin) throw new Error('IAP not available');
-  
+
+  console.log('[IAP] Starting purchase for:', productId);
+
   try {
-    const result = await plugin.purchaseProduct({
-      productIdentifier: productId,
-      productType: 'AUTO_RENEWABLE_SUBSCRIPTION',
-    });
-    
+    // Wrap purchase in a timeout so it never hangs indefinitely
+    const result = await Promise.race([
+      plugin.purchaseProduct({
+        productIdentifier: productId,
+        productType: PURCHASE_TYPE?.SUBS || 'SUBS',
+        quantity: 1,
+      }),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Purchase timed out. Please try again.')), 120000)
+      ),
+    ]);
+
+    console.log('[IAP] Purchase completed, validating with server...');
+
     // Send receipt + transaction to backend for server-side Apple verification
     const token = localStorage.getItem('carryon_token');
     const res = await fetch(`${API_URL}/subscriptions/validate-apple-receipt`, {
@@ -116,15 +134,19 @@ export async function purchaseIAP(productId) {
         product_id: productId,
       }),
     });
-    
+
     if (!res.ok) {
       const err = await res.json();
-      throw new Error(err.detail || 'Validation failed');
+      throw new Error(err.detail || 'Server validation failed');
     }
-    
+
+    console.log('[IAP] Server validation successful');
     return await res.json();
   } catch (err) {
-    if (err.message?.includes('userCancelled') || err.message?.includes('cancelled')) {
+    console.error('[IAP] Purchase error:', err);
+    // Check for user cancellation (various plugin error formats)
+    const msg = (err.message || err.code || '').toLowerCase();
+    if (msg.includes('cancel') || msg.includes('e_user_cancelled')) {
       return { cancelled: true };
     }
     throw err;
@@ -134,19 +156,22 @@ export async function purchaseIAP(productId) {
 export async function restoreIAPPurchases() {
   const plugin = await getPurchasesPlugin();
   if (!plugin) throw new Error('IAP not available');
-  
+
   try {
+    console.log('[IAP] Restoring purchases...');
     await plugin.restorePurchases();
-    
+
     // Re-validate with backend
     const token = localStorage.getItem('carryon_token');
     await fetch(`${API_URL}/subscriptions/sync-apple`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
     });
-    
+
+    console.log('[IAP] Restore complete');
     return { success: true };
   } catch (err) {
+    console.error('[IAP] Restore failed:', err);
     throw err;
   }
 }
