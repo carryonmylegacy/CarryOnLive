@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { ToggleLeft, Users, DollarSign, Loader2, Search, Plus, Trash2, Copy, Check, Briefcase } from 'lucide-react';
+import { ToggleLeft, Users, DollarSign, Loader2, Search, Plus, Trash2, Copy, Check, Briefcase, RotateCcw } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -18,6 +18,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
   const [editingUser, setEditingUser] = useState(null);
   const [discountInput, setDiscountInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [resettingUser, setResettingUser] = useState(null);
   // B2B codes
   const [b2bCodes, setB2bCodes] = useState([]);
   const [showNewCode, setShowNewCode] = useState(false);
@@ -97,6 +98,28 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2000);
+  };
+
+  const resetSubscription = async (userId, userEmail, expireTrial = false) => {
+    const modeLabel = expireTrial
+      ? 'RESET + EXPIRE TRIAL (for App Store Review)'
+      : 'RESET to Fresh Trial';
+    const extraNote = expireTrial
+      ? '\n\nTrial will be set to EXPIRED — user will see the paywall/IAP flow immediately.'
+      : '\n\nUser will get a fresh 30-day trial.';
+    if (!window.confirm(`${modeLabel} for ${userEmail}?\n\nThis will:\n- Delete all subscription records\n- Delete Apple IAP transactions\n- Delete payment history\n- Remove free access / discounts\n- Clear beta acceptance${extraNote}\n\nThis action cannot be undone.`)) return;
+    setResettingUser(userId);
+    try {
+      const res = await axios.post(`${API_URL}/admin/reset-subscription/${userId}`, 
+        { expire_trial: expireTrial }, 
+        { headers: { ...headers, 'Content-Type': 'application/json' } });
+      toast.success(res.data.message || 'Subscription reset');
+      setEditingUser(null);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to reset subscription');
+    }
+    setResettingUser(null);
   };
 
   if (loading) return <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-[var(--gold)]" /></div>;
@@ -368,6 +391,32 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
                         </Button>
                       </div>
                       <Button size="sm" variant="outline" className="text-xs border-[var(--b)]" onClick={() => setEditingUser(null)}>Done</Button>
+                      {!operatorMode && (
+                        <div className="flex items-center gap-2 ml-auto">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs border-[#F59E0B]/40 text-[#F59E0B] hover:bg-[#F59E0B]/10"
+                            onClick={() => resetSubscription(u.id, u.email, false)}
+                            disabled={resettingUser === u.id}
+                            data-testid={`reset-sub-trial-${u.id}`}
+                          >
+                            {resettingUser === u.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RotateCcw className="w-3 h-3 mr-1" />}
+                            Reset (Fresh Trial)
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs border-[#EF4444]/40 text-[#EF4444] hover:bg-[#EF4444]/10"
+                            onClick={() => resetSubscription(u.id, u.email, true)}
+                            disabled={resettingUser === u.id}
+                            data-testid={`reset-sub-expired-${u.id}`}
+                          >
+                            {resettingUser === u.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RotateCcw className="w-3 h-3 mr-1" />}
+                            Reset (Expired Trial)
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <button onClick={() => { setEditingUser(u.id); setDiscountInput(override.custom_discount?.toString() || ''); }} className="text-xs text-[var(--bl3)] mt-1 font-bold">

@@ -1020,6 +1020,109 @@ async def update_admin_user_subscription(
     }
 
 
+@router.post("/admin/reset-subscription/{user_id}")
+async def admin_reset_subscription(
+    user_id: str,
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    """Reset a user to pre-subscription, first-day-of-trial state.
+    Clears all subscription, payment, and Apple transaction records.
+    Admin (founder) only.
+
+    Optional JSON body: { "expire_trial": true } — sets trial_ends_at to
+    yesterday so the user immediately sees the paywall (for App Store review).
+    """
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Parse optional body
+    expire_trial = False
+    try:
+        body = await request.json()
+        expire_trial = body.get("expire_trial", False)
+    except Exception:
+        pass
+
+    from routes.subscriptions.plans import TRIAL_DURATION_DAYS
+
+    now = datetime.now(timezone.utc)
+    if expire_trial:
+        # Set trial to yesterday so user immediately sees the paywall
+        new_trial_end = now - timedelta(days=1)
+    else:
+        new_trial_end = now + timedelta(days=TRIAL_DURATION_DAYS)
+
+    # 1. Delete subscription record
+    sub_del = await db.user_subscriptions.delete_many({"user_id": user_id})
+
+    # 2. Delete Apple IAP transaction records (prevents replay-attack blocks)
+    apple_del = await db.apple_transactions.delete_many({"user_id": user_id})
+
+    # 3. Delete payment transaction records
+    pay_del = await db.payment_transactions.delete_many({"user_id": user_id})
+
+    # 4. Delete subscription overrides (free access, discounts)
+    override_del = await db.subscription_overrides.delete_many({"user_id": user_id})
+
+    # 5. Reset trial and clear beta_accepted_at
+    await db.users.update_one(
+        {"id": user_id},
+        {
+            "$set": {
+                "trial_ends_at": new_trial_end.isoformat(),
+            },
+            "$unset": {
+                "beta_accepted_at": "",
+            },
+        },
+    )
+
+    # 6. Log the reset for audit
+    await db.admin_audit_log.insert_one(
+        {
+            "action": "subscription_reset",
+            "target_user_id": user_id,
+            "target_email": user.get("email", ""),
+            "performed_by": current_user["id"],
+            "performed_at": now.isoformat(),
+            "details": {
+                "subscriptions_deleted": sub_del.deleted_count,
+                "apple_transactions_deleted": apple_del.deleted_count,
+                "payment_transactions_deleted": pay_del.deleted_count,
+                "overrides_deleted": override_del.deleted_count,
+                "new_trial_ends_at": new_trial_end.isoformat(),
+                "trial_expired": expire_trial,
+            },
+        }
+    )
+
+    logger.info(
+        f"Admin {current_user['id']} reset subscription for user {user_id} "
+        f"({user.get('email', '')}): subs={sub_del.deleted_count}, "
+        f"apple_txns={apple_del.deleted_count}, payments={pay_del.deleted_count}, "
+        f"trial_expired={expire_trial}"
+    )
+
+    return {
+        "success": True,
+        "message": f"Subscription fully reset for {user.get('email', user_id)}"
+        + (" (trial expired — paywall active)" if expire_trial else " (fresh 30-day trial)"),
+        "details": {
+            "subscriptions_cleared": sub_del.deleted_count,
+            "apple_transactions_cleared": apple_del.deleted_count,
+            "payment_transactions_cleared": pay_del.deleted_count,
+            "overrides_cleared": override_del.deleted_count,
+            "new_trial_ends_at": new_trial_end.isoformat(),
+            "trial_expired": expire_trial,
+        },
+    }
+
+
 @router.put("/admin/plans/{plan_id}/price")
 async def update_plan_price(
     plan_id: str,

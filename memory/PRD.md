@@ -24,6 +24,26 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (March 24, 2026 — Session 24: Admin Subscription Reset + Apple Review Fix)
+
+#### App Store Rejection (2.1 Information Needed — March 24, 2026)
+Apple rejected the build because the demo account `info@carryon.us` had an active subscription. They need to experience the full purchase flow (IAP). Built an admin tool to reset any user's subscription state.
+
+- **Admin Reset Subscription Endpoint** (`POST /api/admin/reset-subscription/{user_id}`): Clears all subscription records, Apple IAP transactions, payment transactions, subscription overrides, and resets the user's trial. Two modes:
+  - **Fresh Trial** (default): Sets `trial_ends_at` to now + 30 days
+  - **Expired Trial** (`expire_trial: true`): Sets `trial_ends_at` to yesterday so user immediately hits the paywall
+  - Also clears `beta_accepted_at`
+  - Full audit logging in `admin_audit_log` collection
+- **Frontend Reset Buttons**: Added to Admin > Subs > User Subscription Overrides section. Two buttons per user: "Reset (Fresh Trial)" and "Reset (Expired Trial)"
+- **Railway Build Fix**: Removed `litellm==1.80.0` pin from `requirements.txt` that was failing deployment. `litellm` is a transitive dependency of `emergentintegrations` and will auto-install.
+
+#### CRITICAL: Apple Review Workflow
+To prepare for Apple review:
+1. Go to Admin > Subs > toggle Beta Mode OFF
+2. Search for demo account > click Manage > click "Reset (Expired Trial)"
+3. This ensures the reviewer sees the IAP paywall immediately upon login
+4. After review passes, toggle Beta Mode back ON
+
 ### Completed (March 23, 2026 — Session 23: Settings Address UX Enhancement)
 
 #### App Store Submission Note (March 23, 2026 ~11 PM)
