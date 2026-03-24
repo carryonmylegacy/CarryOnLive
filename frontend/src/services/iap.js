@@ -49,7 +49,7 @@ export const IAP_PRODUCTS = {
 const ALL_PRODUCT_IDS = Object.values(IAP_PRODUCTS);
 
 let NativePurchasesPlugin = null;
-let PURCHASE_TYPE = null;
+let PURCHASE_TYPE_ENUM = null;
 
 async function getPurchasesPlugin() {
   if (!isNative) return null;
@@ -57,7 +57,8 @@ async function getPurchasesPlugin() {
   try {
     const mod = await import('@capgo/native-purchases');
     NativePurchasesPlugin = mod.NativePurchases;
-    PURCHASE_TYPE = mod.PURCHASE_TYPE;
+    PURCHASE_TYPE_ENUM = mod.PURCHASE_TYPE;
+    console.log('[IAP] Plugin loaded, PURCHASE_TYPE:', PURCHASE_TYPE_ENUM);
     return NativePurchasesPlugin;
   } catch (err) {
     console.error('[IAP] Failed to load native-purchases plugin:', err);
@@ -70,6 +71,7 @@ export async function isIAPAvailable() {
   if (!plugin) return false;
   try {
     const { isBillingSupported } = await plugin.isBillingSupported();
+    console.log('[IAP] isBillingSupported:', isBillingSupported);
     return isBillingSupported;
   } catch (err) {
     console.error('[IAP] isBillingSupported check failed:', err);
@@ -81,10 +83,12 @@ export async function getIAPProducts() {
   const plugin = await getPurchasesPlugin();
   if (!plugin) return [];
   try {
+    const subsType = PURCHASE_TYPE_ENUM?.SUBS || 'subs';
     const { products } = await plugin.getProducts({
       productIdentifiers: ALL_PRODUCT_IDS,
-      productType: PURCHASE_TYPE?.SUBS || 'SUBS',
+      productType: subsType,
     });
+    console.log('[IAP] Fetched', products.length, 'products');
     return products.map(p => ({
       productId: p.identifier,
       title: p.title,
@@ -103,14 +107,15 @@ export async function purchaseIAP(productId) {
   const plugin = await getPurchasesPlugin();
   if (!plugin) throw new Error('IAP not available');
 
-  console.log('[IAP] Starting purchase for:', productId);
+  const subsType = PURCHASE_TYPE_ENUM?.SUBS || 'subs';
+  console.log('[IAP] Starting purchase for:', productId, 'type:', subsType);
 
   try {
-    // Wrap purchase in a timeout so it never hangs indefinitely
-    const result = await Promise.race([
+    // Wrap in a timeout so it never hangs indefinitely (2 min)
+    const transaction = await Promise.race([
       plugin.purchaseProduct({
         productIdentifier: productId,
-        productType: PURCHASE_TYPE?.SUBS || 'SUBS',
+        productType: subsType,
         quantity: 1,
       }),
       new Promise((_, reject) =>
@@ -118,7 +123,13 @@ export async function purchaseIAP(productId) {
       ),
     ]);
 
-    console.log('[IAP] Purchase completed, validating with server...');
+    console.log('[IAP] Purchase completed, transaction:', {
+      transactionId: transaction.transactionId,
+      productIdentifier: transaction.productIdentifier,
+      hasReceipt: !!transaction.receipt,
+      hasJws: !!transaction.jwsRepresentation,
+      environment: transaction.environment,
+    });
 
     // Send receipt + transaction to backend for server-side Apple verification
     const token = localStorage.getItem('carryon_token');
@@ -129,15 +140,15 @@ export async function purchaseIAP(productId) {
         'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
-        receipt: result.receipt || '',
-        transaction_id: result.transactionIdentifier,
+        receipt: transaction.receipt || '',
+        transaction_id: transaction.transactionId,
         product_id: productId,
       }),
     });
 
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.detail || 'Server validation failed');
+      const errData = await res.json();
+      throw new Error(errData.detail || 'Server validation failed');
     }
 
     console.log('[IAP] Server validation successful');

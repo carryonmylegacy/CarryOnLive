@@ -1308,14 +1308,23 @@ async def validate_apple_receipt(
         verification = await verify_apple_receipt_with_server(receipt_data)
         apple_status = verification.get("status", -1)
         if apple_status != 0:
-            logger.warning(f"Apple receipt verification failed for user {current_user['id']}: status={apple_status}")
-            # Status 0 = valid, anything else is invalid
-            # Allow sandbox receipts during review (status codes 21007/21008 handled above)
-            if apple_status not in (0,):
-                raise HTTPException(
-                    status_code=400,
-                    detail="Receipt verification failed with Apple",
-                )
+            logger.warning(
+                f"Apple receipt verification status={apple_status} for user "
+                f"{current_user['id']}, product={product_id}, txn={transaction_id}"
+            )
+            raise HTTPException(
+                status_code=400,
+                detail="Receipt verification failed with Apple",
+            )
+        logger.info(f"Apple receipt verified successfully for user {current_user['id']}")
+    else:
+        # No receipt data or no shared secret — trust the StoreKit 2 transaction
+        # (StoreKit 2 transactions are already verified by the OS before delivery)
+        logger.info(
+            f"Skipping server receipt validation for user {current_user['id']} "
+            f"(receipt={'present' if receipt_data else 'empty'}, "
+            f"secret={'set' if apple_shared_secret else 'missing'})"
+        )
 
     billing_cycle = "annual" if "annual" in product_id else "quarterly" if "quarterly" in product_id else "monthly"
 
