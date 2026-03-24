@@ -2,23 +2,47 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { resolvePhotoUrl } from '../../utils/photoUrl';
 
 // ── Ring mapping ───────────────────────────────────────────────
+// The `relation` field stores how the BENEFACTOR labelled the beneficiary
+// (e.g. "Son" means "this beneficiary is my son").
+// We INVERT to get the benefactor's role FROM THE BENEFICIARY's perspective:
+//   Benefactor says "Son"       → benefactor is the beneficiary's PARENT       → Ring 1
+//   Benefactor says "Grandfather"→ benefactor is the beneficiary's GRANDCHILD  → Ring 1
+//
+// Ring 0  — Spouse & Parents (your makers + your mate)
+// Ring 1  — Children, Siblings, Grandparents (products / makers-of-makers)
+// Ring 2  — Grandchildren, Nieces/Nephews, Aunts/Uncles, In-laws
+// Ring 3  — Great-grandparents/children, Friend, Other
 const getOrbitLevel = (relation) => {
   const raw = (relation || '').toLowerCase().trim();
+  // Handle slash-separated values like "Son/Daughter" — check both parts
   const parts = raw.includes('/') ? raw.split('/').map(p => p.trim()) : [raw];
-  const r = parts[0];
-  if (parts.some(p => p.includes('great-grand') || p.includes('great grand'))) return 3;
+  const r = parts[0]; // primary for substring checks
+
+  // Great-grand checks FIRST (they contain substrings of shorter words)
+  if (parts.some(p => p.includes('great-grand') || p.includes('great grand'))) {
+    return 3;
+  }
+
+  // Ring 0: Spouse & Parents (your makers + your mate)
   const ring0 = ['spouse', 'wife', 'husband', 'partner', 'parent', 'mother', 'father', 'mom', 'dad'];
   if (parts.some(p => ring0.includes(p))) return 0;
+
+  // Ring 1: Children, Siblings, Grandparents
   const ring1 = ['son', 'daughter', 'child', 'children', 'sibling', 'brother', 'sister',
     'grandparent', 'grandmother', 'grandfather', 'grandma', 'grandpa'];
   if (parts.some(p => ring1.includes(p))) return 1;
+
+  // Ring 2: Grandchildren, Nieces, Nephews, In-laws, Aunts, Uncles
   const ring2 = ['grandchild', 'grandson', 'granddaughter', 'nephew', 'niece', 'uncle', 'aunt'];
   if (parts.some(p => ring2.includes(p))) return 2;
   if (r.includes('in-law') || r.includes('in law')) return 2;
+
+  // Ring 3: Non-family & distant
   if (parts.some(p => ['friend', 'other'].includes(p))) return 3;
   return 2;
 };
 
+// Visual style for each ring level
 const orbitColors = [
   ['linear-gradient(135deg, #D4AF37, #F5D76E)', 'rgba(212,175,55,0.3)'],
   ['linear-gradient(135deg, #6D28D9, #A855F7)', 'rgba(139,92,246,0.3)'],
@@ -33,17 +57,6 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, o
   const wrapRef = useRef(null);
   const containerRef = useRef(null);
   const [availWidth, setAvailWidth] = useState(0);
-
-  // Refs for direct DOM rotation (no React re-renders per frame)
-  const ringRefs = useRef([]);
-  const groupRefs = useRef([]);
-  const nodeCounterRefs = useRef([]);
-  const angleRef = useRef(0);
-  const velRef = useRef(0.2);
-  const dragRef = useRef(false);
-  const lastARef = useRef(0);
-  const lastTRef = useRef(0);
-  const clickGuard = useRef(false);
 
   useEffect(() => {
     if (!wrapRef.current) return;
@@ -65,9 +78,11 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, o
   const maxOrbitLevel = Math.max(...Object.keys(orbitGroups).map(Number), 0);
   const numRings = maxOrbitLevel + 1;
 
+  // ── Adaptive node sizing constants ─────────────────────────
   const MIN_NODE = 28;
   const MIN_GAP = 4;
 
+  // Derive all dimensions from the measured container width
   const w = Math.min(availWidth || 400, 560);
   const isCompact = w < 380;
   const ballSize = isCompact ? 36 : w < 500 ? 46 : 50;
@@ -76,9 +91,14 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, o
   const maxOuterR = w / 2 - edgePad;
   const baseOrbitR = centerSize / 2 + ballSize * 0.6;
 
+  // Progressive spacing with soft minimum gap
   const softMinGap = Math.max(ballSize * 0.6, 24);
-  const evenSpacing = numRings > 1 ? (maxOuterR - baseOrbitR) / numRings : maxOuterR - baseOrbitR;
+  const evenSpacing =
+    numRings > 1
+      ? (maxOuterR - baseOrbitR) / numRings
+      : maxOuterR - baseOrbitR;
 
+  // Build ring radii
   const orbitRadii = [];
   for (let i = 0; i < numRings; i++) {
     const t = numRings > 1 ? i / (numRings - 1) : 0;
@@ -88,6 +108,7 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, o
     orbitRadii.push(Math.max(targetR, minR));
   }
 
+  // Scale ring positions if needed
   if (orbitRadii.length > 0 && orbitRadii[orbitRadii.length - 1] > maxOuterR) {
     const scale = (maxOuterR - baseOrbitR) / (orbitRadii[orbitRadii.length - 1] - baseOrbitR);
     const snapshot = [...orbitRadii];
@@ -96,24 +117,21 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, o
     }
   }
 
+  // Container height
   const outerR = orbitRadii[maxOrbitLevel] || baseOrbitR;
   const containerHeight = (outerR + ballSize / 2 + 4) * 2;
   const containerWidth = w;
   const cx = containerWidth / 2;
   const cy = containerHeight / 2;
 
-  // Precompute rotation speeds per ring level for the animation loop
-  const levelKeys = Object.keys(orbitGroups).map(Number).sort((a, b) => a - b);
-  const ringSpeedsRef = useRef([]);
-  const groupSpeedsRef = useRef([]);
+  // ── Drag / spin state ──────────────────────────────────────
+  const angleRef = useRef(0);
+  const velRef = useRef(0.2);
+  const dragRef = useRef(false);
+  const lastARef = useRef(0);
+  const lastTRef = useRef(0);
+  const clickGuard = useRef(false);
 
-  // Update speed arrays when layout changes
-  useEffect(() => {
-    ringSpeedsRef.current = Array.from({ length: numRings }, (_, level) => 1 - level * 0.1);
-    groupSpeedsRef.current = levelKeys.map(level => 1 - level * 0.15);
-  }, [numRings, levelKeys.join(',')]);
-
-  // ── Drag helpers ───────────────────────────────────────────
   const getAngle = useCallback(
     (px, py) => {
       if (!containerRef.current) return 0;
@@ -123,7 +141,7 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, o
     [cx, cy],
   );
 
-  // ── Animation loop — direct DOM, zero React re-renders ────
+  // ── Animation loop — direct DOM manipulation, no React re-renders ──
   useEffect(() => {
     const baseSpeed = 0.2;
     let raf;
@@ -138,26 +156,19 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, o
       angleRef.current += velRef.current;
       const a = angleRef.current;
 
-      // Update ring track rotations
-      ringRefs.current.forEach((el, i) => {
-        if (el) {
-          const speed = ringSpeedsRef.current[i] ?? 1;
-          el.style.transform = `rotate(${a * speed}deg)`;
-        }
-      });
-
-      // Update group rotations + counter-rotate individual nodes
-      groupRefs.current.forEach((el, i) => {
-        if (el) {
-          const speed = groupSpeedsRef.current[i] ?? 1;
-          el.style.transform = `rotate(${a * speed}deg)`;
-        }
-      });
-      nodeCounterRefs.current.forEach((el) => {
-        if (el?.el && el.speed !== undefined) {
-          el.el.style.transform = `rotate(${-a * el.speed}deg)`;
-        }
-      });
+      // Apply transforms directly to DOM via data attributes — zero re-renders
+      const c = containerRef.current;
+      if (c) {
+        c.querySelectorAll('[data-ring-speed]').forEach(el => {
+          el.style.transform = `rotate(${a * parseFloat(el.dataset.ringSpeed)}deg)`;
+        });
+        c.querySelectorAll('[data-group-speed]').forEach(el => {
+          el.style.transform = `rotate(${a * parseFloat(el.dataset.groupSpeed)}deg)`;
+        });
+        c.querySelectorAll('[data-counter-speed]').forEach(el => {
+          el.style.transform = `rotate(${-a * parseFloat(el.dataset.counterSpeed)}deg)`;
+        });
+      }
 
       raf = requestAnimationFrame(tick);
     };
@@ -194,7 +205,9 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, o
     [getAngle],
   );
 
-  const onUp = () => { dragRef.current = false; };
+  const onUp = () => {
+    dragRef.current = false;
+  };
 
   useEffect(() => {
     window.addEventListener('mousemove', onMove);
@@ -209,6 +222,7 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, o
     };
   }, [onMove]);
 
+  // ── Adaptive node sizing ─────────────────────────────────
   const getNodeSizeForRing = (memberCount, orbitRadius) => {
     if (memberCount <= 1) return ballSize;
     const circumference = 2 * Math.PI * orbitRadius;
@@ -217,11 +231,12 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, o
     return Math.max(Math.floor(circumference / memberCount - MIN_GAP), MIN_NODE);
   };
 
+  // ── Position helpers ───────────────────────────────────────
   const getPositionsForOrbit = (memberCount, orbitRadius, level = 0, nodeSize) => {
     const sz = nodeSize || ballSize;
     const positions = [];
     const angleStep = 360 / Math.max(memberCount, 1);
-    const startAngle = 90 + level * 51;
+    const startAngle = 90 + level * 51; // golden-angle-ish stagger
     for (let i = 0; i < memberCount; i++) {
       const angle = startAngle + i * angleStep;
       positions.push({
@@ -233,16 +248,11 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, o
     return positions;
   };
 
-  // Reset ref arrays when layout changes
-  ringRefs.current = [];
-  groupRefs.current = [];
-  nodeCounterRefs.current = [];
-
+  // ── Render ─────────────────────────────────────────────────
   if (!availWidth) {
+    // First render — just measure
     return <div ref={wrapRef} style={{ width: '100%', height: 80 }} data-testid="orbit-visualization" />;
   }
-
-  let groupIdx = 0;
 
   return (
     <div ref={wrapRef} style={{ width: '100%' }} data-testid="orbit-visualization">
@@ -261,17 +271,18 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, o
         onMouseDown={onDown}
         onTouchStart={onDown}
       >
-        {/* Orbit track rings */}
+        {/* Orbit track rings — only render levels that exist */}
         {Array.from({ length: numRings }, (_, level) => {
           const orbitR = orbitRadii[level] || baseOrbitR;
           const hasMembers = orbitGroups[level]?.length > 0;
           const [, ringColor] = orbitColors[level] || orbitColors[0];
+          const ringSpeed = 1 - level * 0.1;
 
           return (
             <div
               key={`orbit-ring-${level}`}
               data-testid={`orbit-ring-${level}`}
-              ref={(el) => { ringRefs.current[level] = el; }}
+              data-ring-speed={ringSpeed}
               style={{
                 position: 'absolute',
                 left: cx - orbitR,
@@ -289,7 +300,7 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, o
           );
         })}
 
-        {/* Center node */}
+        {/* Center node (beneficiary) */}
         <div
           onClick={() => onCenterClick?.()}
           style={{
@@ -343,7 +354,7 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, o
           </div>
         </div>
 
-        {/* Orbiting members */}
+        {/* Orbiting members grouped by ring level */}
         {Object.entries(orbitGroups).map(([levelStr, levelMembers]) => {
           const level = parseInt(levelStr);
           const orbitR = orbitRadii[level] || baseOrbitR;
@@ -351,12 +362,11 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, o
           const positions = getPositionsForOrbit(levelMembers.length, orbitR, level, nodeSize);
           const [gradient] = orbitColors[level] || orbitColors[0];
           const rotationSpeed = 1 - level * 0.15;
-          const gi = groupIdx++;
 
           return (
             <div
               key={`orbit-group-${level}`}
-              ref={(el) => { groupRefs.current[gi] = el; }}
+              data-group-speed={rotationSpeed}
               style={{
                 position: 'absolute',
                 inset: 0,
@@ -393,9 +403,7 @@ const OrbitVisualization = ({ estates, userInitials, userPhoto, onEstateClick, o
                     }}
                   >
                     <div
-                      ref={(el) => {
-                        if (el) nodeCounterRefs.current.push({ el, speed: rotationSpeed });
-                      }}
+                      data-counter-speed={rotationSpeed}
                       style={{
                         display: 'flex',
                         flexDirection: 'column',
