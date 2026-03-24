@@ -25,6 +25,16 @@ A full-stack estate planning application allowing benefactors to manage digital 
 ## What's Been Implemented
 
 ### Completed (March 23, 2026 — Session 23: Settings Address UX Enhancement)
+
+#### App Store Submission Note (March 23, 2026 ~11 PM)
+**PASS-DOWN: App resubmitted to App Store Connect for second review.** This submission addressed all rejection issues from the first review. The submitted iOS binary is a frozen Capacitor bundle — frontend changes here do NOT affect it. Backend changes deployed to Railway COULD affect it if they break existing API contracts. All changes going forward must be backward-compatible until the review clears. Do NOT push Capgo OTA updates until App Store approval is confirmed.
+
+#### Additional Estate Onboarding (March 24, 2026)
+- When an existing benefactor creates a 2nd, 3rd, or Nth estate (via Beneficiary portal "Create a Benefactor Account" OR sidebar "+" new estate), their onboarding progress is marked as `celebration_shown: true` so the Getting Started 7-step overlay is skipped
+- Beneficiary-only users creating their FIRST benefactor estate still get the full first-time experience (simplified signup + Getting Started overlay)
+- The longer onboarding flow in `CreateEstatePage.js` (with beneficiary addition steps) is preserved for additional estates — this is intentional differentiation from the simplified 4-step new-user signup
+- Backend change only: `routes/estates.py` `/accounts/create-estate` endpoint — fully backward-compatible with submitted app build
+
 - **Gold Highlighted Address Box**: When user navigates to `/settings?editAddress=true` (triggered by Guardian page address gate), the address input fields (Street, Apt, City, State, ZIP) are wrapped in a gold-bordered rounded box (`border-2 border-[var(--gold)] rounded-xl bg-[var(--gold)]/5 p-4`) with helper text "Please enter your address below".
 - **Auto-Scroll to Save**: After user finishes typing in the ZIP code field and blurs it, the page auto-scrolls up to bring the Save button into view using `scrollIntoView({ behavior: 'smooth', block: 'center' })` via a `useRef`.
 - **Onboarding Return Flow**: When user arrives at Settings via Getting Started → Guardian address gate, `fromOnboarding=true` is passed in the URL. After saving address, user is automatically redirected to `/dashboard?triggerStep=review_readiness` which triggers the Step 4 guided overlay ("Consult the Estate Guardian") so they can proceed directly to EGA.

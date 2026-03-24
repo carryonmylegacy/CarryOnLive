@@ -533,6 +533,16 @@ async def create_estate_for_existing_user(data: CreateEstateRequest, current_use
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    # If user already owns a real estate, this is an additional estate —
+    # mark onboarding as graduated so Getting Started won't show again
+    remaining_estate = await db.estates.find_one({"owner_id": current_user["id"]}, {"_id": 0, "id": 1})
+    if remaining_estate:
+        await db.onboarding_progress.update_one(
+            {"user_id": current_user["id"]},
+            {"$set": {"celebration_shown": True, "dismissed": True}},
+            upsert=True,
+        )
+
     now = datetime.now(timezone.utc)
     last_name = user.get("last_name", user.get("name", "").split()[-1] if user.get("name") else "Family")
 
