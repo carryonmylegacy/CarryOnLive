@@ -772,17 +772,18 @@ async def toggle_session_exempt(user_id: str, current_user: dict = Depends(get_c
     await db.users.update_one({"id": user_id}, {"$set": {"session_exempt": new_val}})
     if new_val:
         await db.failed_logins.delete_many({"email": user_id})
-    await db.activity_log.insert_one({
-        "id": str(uuid4()),
-        "action": "session_exempt_toggle",
-        "actor_id": current_user["id"],
-        "actor_name": current_user.get("name", "Admin"),
-        "target_id": user_id,
-        "details": f"{'Enabled' if new_val else 'Disabled'} session exemption for {user.get('name', user_id)}",
-        "created_at": datetime.now(timezone.utc).isoformat(),
-    })
+    await db.activity_log.insert_one(
+        {
+            "id": str(uuid4()),
+            "action": "session_exempt_toggle",
+            "actor_id": current_user["id"],
+            "actor_name": current_user.get("name", "Admin"),
+            "target_id": user_id,
+            "details": f"{'Enabled' if new_val else 'Disabled'} session exemption for {user.get('name', user_id)}",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
     return {"session_exempt": new_val}
-
 
 
 @router.get("/admin/activity")
