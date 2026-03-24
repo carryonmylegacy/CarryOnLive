@@ -55,7 +55,7 @@ async def create_session_token(user_id, email, role):
     token = create_token(user_id, email, role, session_id)
     # Admin and session_exempt users are exempt from single-session enforcement
     if role != "admin":
-        user_doc = await db.users.find_one({"id": user_id}, {"_id": 0, "session_exempt": 1})
+        user_doc = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "session_exempt": 1})
         if not (user_doc and user_doc.get("session_exempt")):
             await db.users.update_one(
                 {"id": user_id},
