@@ -295,7 +295,7 @@ export const SubscriptionManagement = ({
           setSubscribing(null);
           return;
         }
-        const iapId = `us.carryon.app.${planId}_${billing}`;
+        const iapId = `us.carryon.app.v2.${planId}_${billing}`;
         const result = await purchaseIAP(iapId);
         if (result.cancelled) {
           setSubscribing(null);
@@ -351,7 +351,7 @@ export const SubscriptionManagement = ({
           setSubscribing(null);
           return;
         }
-        const iapId = `us.carryon.app.${planId}_${billing}`;
+        const iapId = `us.carryon.app.v2.${planId}_${billing}`;
         const result = await purchaseIAP(iapId);
         if (result.cancelled) {
           setSubscribing(null);
@@ -409,7 +409,7 @@ export const SubscriptionManagement = ({
           setChangingBilling(false);
           return;
         }
-        const iapId = `us.carryon.app.${currentPlanId}_${billing}`;
+        const iapId = `us.carryon.app.v2.${currentPlanId}_${billing}`;
         const result = await purchaseIAP(iapId);
         if (result.cancelled) {
           setChangingBilling(false);

@@ -138,7 +138,7 @@ class TestAppleReceiptValidation:
         response = requests.post(
             f"{BASE_URL}/api/subscriptions/validate-apple-receipt",
             headers=headers,
-            json={"product_id": "us.carryon.app.premium_monthly"},
+            json={"product_id": "us.carryon.app.v2.premium_monthly"},
         )
         assert response.status_code == 400
         data = response.json()
@@ -194,7 +194,7 @@ class TestAppleReceiptValidation:
             headers=headers,
             json={
                 "transaction_id": f"test_valid_format_{os.urandom(4).hex()}",
-                "product_id": "us.carryon.app.premium_monthly",
+                "product_id": "us.carryon.app.v2.premium_monthly",
                 "receipt": "invalid_receipt_data",
             },
         )
