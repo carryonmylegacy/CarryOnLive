@@ -127,8 +127,8 @@ async def login(data: UserLogin, request: Request):
     """Login — verifies credentials, then sends OTP unless user has a daily trust token."""
     client_ip = get_client_ip(request)
 
-    # Check for account lockout (10 failed attempts in 3 minutes) — skip for admin accounts
-    lockout_window = (datetime.now(timezone.utc) - timedelta(minutes=3)).isoformat()
+    # Check for account lockout (25 failed attempts in 5 minutes) — skip for admin accounts
+    lockout_window = (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat()
     lockout_email = data.email.strip().lower()
     # Pre-check if this is an admin or session-exempt account — exempt from lockout
     # Check both email and username since login supports either
@@ -148,18 +148,18 @@ async def login(data: UserLogin, request: Request):
                 "timestamp": {"$gte": lockout_window},
             }
         )
-        if recent_failures >= 10:
+        if recent_failures >= 25:
             # Find the oldest failure in this window to calculate remaining lockout
             oldest_failure = await db.failed_logins.find_one(
                 {"email": lockout_email, "timestamp": {"$gte": lockout_window}},
                 {"_id": 0, "id": 1, "timestamp": 1},
                 sort=[("timestamp", 1)],
             )
-            retry_after = 180  # 3 minutes default
+            retry_after = 300  # 5 minutes default
             if oldest_failure and oldest_failure.get("timestamp"):
                 try:
                     oldest_ts = datetime.fromisoformat(oldest_failure["timestamp"].replace("Z", "+00:00"))
-                    unlock_at = oldest_ts + timedelta(minutes=3)
+                    unlock_at = oldest_ts + timedelta(minutes=5)
                     retry_after = max(1, int((unlock_at - datetime.now(timezone.utc)).total_seconds()))
                 except (ValueError, TypeError):
                     pass
