@@ -125,7 +125,7 @@ const SupportChatPage = () => {
           </div>
         </div>
         <button
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate(-1)}
           className="px-4 py-2 rounded-lg text-sm font-bold transition-transform hover:scale-105 flex-shrink-0"
           style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
           data-testid="support-back-button"

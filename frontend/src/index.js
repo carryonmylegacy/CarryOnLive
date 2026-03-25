@@ -1,7 +1,3 @@
-// PWA swipe-back guard — MUST be the very first import so its popstate
-// listener registers before React Router's listener.
-import './pwaSwipeGuard';
-
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";

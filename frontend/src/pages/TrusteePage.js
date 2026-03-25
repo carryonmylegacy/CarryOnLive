@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { cachedGet } from '../utils/apiCache';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import {
@@ -233,7 +232,6 @@ const PaymentForm = ({ task, onPaymentSaved, getAuthHeaders }) => {
 };
 
 const TrusteePage = () => {
-  const navigate = useNavigate();
   const { getAuthHeaders, subscriptionStatus } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [view, setView] = useState('list');
@@ -427,7 +425,7 @@ const TrusteePage = () => {
               DTS is a premium feature that becomes available with an active subscription. Your free trial gives you full access to explore every other part of CarryOn — when you're ready, choose a plan to unlock DTS.
             </p>
             <button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => window.history.back()}
               className="px-8 py-3 rounded-xl text-sm font-bold transition-transform active:scale-95"
               style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
               data-testid="dts-trial-gate-ok"
