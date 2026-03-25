@@ -32,55 +32,57 @@ const STEP_NAMES = ['interests', 'family', 'plan', 'cta', 'referral'];
 
 /* Shared frosted glass panel style */
 const glassPanel = {
-  background: 'rgba(255, 255, 255, 0.72)',
-  backdropFilter: 'blur(24px) saturate(1.6)',
-  WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
-  borderRadius: '1.5rem',
-  border: '1px solid rgba(255,255,255,0.5)',
-  boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.6)',
+  background: 'rgba(255, 255, 255, 0.82)',
+  backdropFilter: 'blur(20px) saturate(1.4)',
+  WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
+  borderRadius: '1.75rem',
+  border: '1px solid rgba(255,255,255,0.7)',
+  boxShadow: '0 20px 60px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.15), 0 2px 6px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -1px 0 rgba(0,0,0,0.03)',
 };
 
 /* 3D gold button style */
 const goldBtn = {
-  background: 'linear-gradient(180deg, #e8c84a 0%, #d4af37 50%, #b8962e 100%)',
+  background: 'linear-gradient(180deg, #f0d860 0%, #e0c040 30%, #d4af37 60%, #b8962e 100%)',
   color: '#1a1200',
   borderRadius: '0.875rem',
-  fontWeight: 700,
+  fontWeight: 800,
   fontSize: '0.9375rem',
   letterSpacing: '0.01em',
-  border: '1px solid rgba(212,175,55,0.6)',
-  boxShadow: '0 4px 12px rgba(180,140,40,0.35), 0 2px 4px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,230,130,0.5)',
-  transition: 'all 0.2s ease',
+  border: '1px solid rgba(180,140,40,0.4)',
+  boxShadow: '0 6px 16px rgba(180,140,40,0.4), 0 3px 6px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,240,160,0.7), inset 0 -2px 0 rgba(140,100,20,0.2)',
+  transition: 'all 0.15s ease',
+  textShadow: '0 1px 0 rgba(255,255,255,0.3)',
 };
 
 const goldBtnDisabled = {
   ...goldBtn,
-  opacity: 0.45,
+  opacity: 0.4,
   cursor: 'not-allowed',
-  boxShadow: 'none',
+  boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
+  textShadow: 'none',
 };
 
 /* Option pill (unselected) */
 const pillBase = {
-  background: 'rgba(255,255,255,0.7)',
-  border: '1.5px solid rgba(0,0,0,0.08)',
+  background: 'rgba(255,255,255,0.75)',
+  border: '1.5px solid rgba(0,0,0,0.07)',
   borderRadius: '0.875rem',
   color: '#334155',
-  fontWeight: 600,
+  fontWeight: 700,
   fontSize: '0.875rem',
-  boxShadow: '0 2px 6px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.8)',
-  transition: 'all 0.2s ease',
+  boxShadow: '0 3px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -1px 0 rgba(0,0,0,0.02)',
+  transition: 'all 0.15s ease',
 };
 
 const pillSelected = {
-  background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.08))',
-  border: '2px solid #d4af37',
+  background: 'linear-gradient(135deg, rgba(240,216,96,0.2), rgba(212,175,55,0.1))',
+  border: '2.5px solid #d4af37',
   borderRadius: '0.875rem',
   color: '#1a1200',
-  fontWeight: 700,
+  fontWeight: 800,
   fontSize: '0.875rem',
-  boxShadow: '0 3px 12px rgba(212,175,55,0.2), inset 0 1px 0 rgba(255,230,130,0.3)',
-  transition: 'all 0.2s ease',
+  boxShadow: '0 4px 14px rgba(212,175,55,0.25), 0 2px 4px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,240,160,0.4), inset 0 -1px 0 rgba(140,100,20,0.05)',
+  transition: 'all 0.15s ease',
 };
 
 export default function GetStartedPage() {
@@ -265,13 +267,13 @@ export default function GetStartedPage() {
       {/* Google Font */}
       <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 
-      {/* American flag background — exact duplicate of home page hero */}
+      {/* American flag background — brighter, more vivid */}
       <div className="fixed inset-0 z-0">
-        <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ opacity: 0.85 }} />
+        <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ opacity: 1, filter: 'brightness(1.3) contrast(1.05) saturate(1.1)' }} />
       </div>
-      {/* Dark gradient overlay — same as home page */}
-      <div className="fixed inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.05) 0%, rgba(11,18,33,0.45) 70%, #0E1829 100%)' }} />
-      {/* Radial accent — same as home page */}
+      {/* Lighter gradient overlay — lets more flag color through */}
+      <div className="fixed inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.0) 0%, rgba(11,18,33,0.15) 60%, rgba(14,24,41,0.45) 100%)' }} />
+      {/* Radial accent */}
       <div className="fixed inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 70% 50% at 35% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
 
       {/* Content */}
