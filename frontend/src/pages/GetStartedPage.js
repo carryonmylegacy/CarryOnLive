@@ -110,38 +110,27 @@ export default function GetStartedPage() {
   const [referralEmail, setReferralEmail] = useState('');
   const confettiFired = useRef(false);
 
-  // Gold confetti celebration when user reaches the CTA screen
+  // Fireworks celebration when user reaches the CTA screen
   useEffect(() => {
     if (step === 4 && !confettiFired.current) {
       confettiFired.current = true;
-      const gold = ['#d4af37', '#e8c84a', '#f0d860', '#b8962e', '#c9a84c'];
-      const end = Date.now() + 1800;
-      const frame = () => {
-        confetti({
-          particleCount: 3,
-          angle: 60,
-          spread: 55,
-          origin: { x: 0, y: 0.6 },
-          colors: gold,
-          ticks: 200,
-          gravity: 0.8,
-          scalar: 1.1,
-          drift: 0.1,
-        });
-        confetti({
-          particleCount: 3,
-          angle: 120,
-          spread: 55,
-          origin: { x: 1, y: 0.6 },
-          colors: gold,
-          ticks: 200,
-          gravity: 0.8,
-          scalar: 1.1,
-          drift: -0.1,
-        });
-        if (Date.now() < end) requestAnimationFrame(frame);
+      const palettes = [
+        ['#ffffff', '#e8e8e8', '#f5f5f5'],
+        ['#b22234', '#d4364a', '#ff4d63'],
+        ['#3c3b6e', '#4a4d9e', '#5e62c4'],
+        ['#d4af37', '#e8c84a', '#f0d860'],
+      ];
+      const burst = (x, y) => {
+        const colors = palettes[Math.floor(Math.random() * palettes.length)];
+        confetti({ particleCount: 60, spread: 360, startVelocity: 30, origin: { x, y }, colors, ticks: 160, gravity: 1.2, scalar: 0.9, shapes: ['circle'] });
+        confetti({ particleCount: 20, spread: 360, startVelocity: 15, origin: { x, y }, colors, ticks: 120, gravity: 1.0, scalar: 0.6, shapes: ['circle'] });
       };
-      frame();
+      const schedule = [
+        [200, 0.25, 0.2], [400, 0.75, 0.15], [700, 0.5, 0.25],
+        [1000, 0.3, 0.3], [1200, 0.7, 0.2], [1500, 0.5, 0.15],
+        [1800, 0.2, 0.25], [2000, 0.8, 0.3],
+      ];
+      schedule.forEach(([delay, x, y]) => setTimeout(() => burst(x, y), delay));
     }
   }, [step]);
 

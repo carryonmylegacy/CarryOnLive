@@ -32,11 +32,11 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ### Completed (March 25, 2026 — Session 28: Funnel Skip Sensitivity + Summary Refinement)
 
-#### Confetti Celebration on CTA Screen (March 25, 2026)
-Added a gold-themed confetti burst when the user reaches Step 4 (CTA) after completing their personalized plan:
-- Uses `canvas-confetti` (1.9.4) for performant, lightweight particle effects
-- Gold palette matching the app aesthetic: `#d4af37`, `#e8c84a`, `#f0d860`, `#b8962e`, `#c9a84c`
-- Fires from both sides of the screen for ~1.8 seconds
+#### Fireworks Celebration on CTA Screen (March 25, 2026)
+Added an American flag-themed fireworks display when the user reaches Step 4 (CTA) after completing their personalized plan:
+- Uses `canvas-confetti` (1.9.4) with firework-style 360° bursts from randomized sky positions
+- 8 staggered bursts over ~2 seconds, each with 80 particles (60 fast + 20 slow inner ring)
+- Red/white/blue/gold color palettes matching the American flag motif and app aesthetic
 - Fires only once per funnel session (ref-guarded)
 - Reinforces the accomplishment of building a personalized plan and boosts trial conversion
 
