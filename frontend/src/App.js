@@ -348,32 +348,15 @@ function App() {
     }).catch(() => {});
   }, []);
 
-  // PWA: Block left-edge swipe-to-go-back gesture (horizontal only)
+  // PWA: Prevent swipe-back by converting all history pushes to replaces.
+  // With only 1 history entry, the iOS swipe-back gesture has nowhere to go.
   useEffect(() => {
     if (!isPWA()) return;
-    let startX = 0;
-    let startY = 0;
-    let decided = false;
-    const onTouchStart = (e) => {
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
-      decided = false;
+    const originalPushState = window.history.pushState.bind(window.history);
+    window.history.pushState = (state, unused, url) => {
+      window.history.replaceState(state, unused, url);
     };
-    const onTouchMove = (e) => {
-      if (startX > 20 || decided) return;
-      const dx = Math.abs(e.touches[0].clientX - startX);
-      const dy = Math.abs(e.touches[0].clientY - startY);
-      if (dx < 5 && dy < 5) return; // not enough movement to decide
-      decided = true;
-      if (dx > dy) e.preventDefault(); // horizontal swipe from left edge → block
-      // vertical scroll from left edge → allow (no preventDefault)
-    };
-    document.addEventListener('touchstart', onTouchStart, { passive: true });
-    document.addEventListener('touchmove', onTouchMove, { passive: false });
-    return () => {
-      document.removeEventListener('touchstart', onTouchStart);
-      document.removeEventListener('touchmove', onTouchMove);
-    };
+    return () => { window.history.pushState = originalPushState; };
   }, []);
 
   // Initialize Capgo live updates and native optimizations
