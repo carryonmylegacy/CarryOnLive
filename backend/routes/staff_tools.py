@@ -585,7 +585,8 @@ async def _build_integrations_data():
                 {"label": "Pixel ID", "value": "", "verified": False, "sensitive": True},
                 {"label": "Events Tracked", "value": "ViewContent, Lead, CompleteRegistration", "verified": True},
                 {"label": "Integration", "value": "Funnel page (/get-started)", "verified": True},
-                {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
+                {"label": "Login ID", "value": "708890017", "sensitive": True, "verified": True},
+                {"label": "Login Password", "value": "CarryOntheWisdom!1", "sensitive": True, "verified": True},
             ],
         },
     ]
