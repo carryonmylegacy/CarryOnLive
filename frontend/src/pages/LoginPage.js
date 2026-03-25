@@ -452,30 +452,42 @@ const LoginPage = () => {
     };
 
     return (
-      <div className="min-h-screen flex flex-col items-center px-5 pt-[8vh] pb-8 overflow-y-auto" style={{
-        background: 'linear-gradient(168deg, #080e1a 0%, #0d1627 30%, #111d35 60%, #0a1122 100%)',
+      <div className="flex flex-col items-center justify-center px-5 relative overflow-y-auto" style={{
+        minHeight: '100dvh',
         opacity: exiting ? 0 : 1,
         transition: 'opacity 0.45s ease',
         WebkitOverflowScrolling: 'touch',
+        paddingTop: 'max(1.5rem, env(safe-area-inset-top, 1.5rem))',
+        paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom, 1.5rem))',
       }} data-testid="pwa-login-view">
-        <img src="/carryon-logo.png" alt="CarryOn" className="w-[200px] h-auto mb-6" />
+        {/* Flag background */}
+        <div className="fixed inset-0 z-0">
+          <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ filter: 'brightness(1.3) contrast(1.05) saturate(1.1)' }} />
+        </div>
+        <div className="fixed inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.15) 0%, rgba(11,18,33,0.35) 40%, rgba(14,24,41,0.6) 100%)' }} />
+        <div className="fixed inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 90% 80% at 20% 80%, rgba(255,255,255,0.08) 0%, transparent 60%)' }} />
+        <div className="fixed inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 80% 70% at 85% 85%, rgba(255,255,255,0.10) 0%, transparent 55%)' }} />
 
-        <div className="w-full max-w-sm rounded-2xl p-6 relative" style={{
-          background: 'linear-gradient(160deg, rgba(17,27,48,0.97), rgba(13,22,40,0.99))',
-          border: '1px solid rgba(212,175,55,0.12)',
-          boxShadow: '0 8px 80px rgba(0,0,0,0.5)',
-        }}>
-          <div className="absolute top-0 left-6 right-6 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
-          <h2 className="text-white text-lg font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Sign In</h2>
-          <p className="text-white/70 text-sm font-semibold mb-4">Access your CarryOn account</p>
-          <form onSubmit={handleLogin} className="space-y-3">
-            <div>
-              <label className="text-white/80 text-sm font-bold mb-1 block">Username or Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#334155]" />
-                <Input type="text" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Username or Email" required autoComplete="username"
-                  onFocus={scrollInputIntoView}
-                  className="h-10 pl-10 bg-[#0B1627] border-[#1A2D48] text-white placeholder:text-[#2A3C55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-lg text-sm" data-testid="login-email-pwa" />
+        {/* Content */}
+        <div className="relative z-10 flex flex-col items-center w-full max-w-sm">
+          <img src="/carryon-logo.png" alt="CarryOn" className="w-[200px] h-auto mb-5" />
+
+          <div className="w-full rounded-2xl p-6 relative" style={{
+            background: 'linear-gradient(160deg, rgba(17,27,48,0.97), rgba(13,22,40,0.99))',
+            border: '1px solid rgba(212,175,55,0.12)',
+            boxShadow: '0 8px 80px rgba(0,0,0,0.5)',
+          }}>
+            <div className="absolute top-0 left-6 right-6 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
+            <h2 className="text-white text-lg font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Sign In</h2>
+            <p className="text-white/70 text-sm font-semibold mb-4">Access your CarryOn account</p>
+            <form onSubmit={handleLogin} className="space-y-3">
+              <div>
+                <label className="text-white/80 text-sm font-bold mb-1 block">Username or Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#334155]" />
+                  <Input type="text" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Username or Email" required autoComplete="username"
+                    onFocus={scrollInputIntoView}
+                    className="h-10 pl-10 bg-[#0B1627] border-[#1A2D48] text-white placeholder:text-[#2A3C55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-lg text-sm" data-testid="login-email-pwa" />
               </div>
             </div>
             <div>
@@ -544,21 +556,23 @@ const LoginPage = () => {
               <button onClick={() => navigateWithFade('/get-started')} className="animate-pulse-fast hover:brightness-110 active:scale-[0.97] cursor-pointer" data-testid="new-here-pwa"
                 style={{
                   background: 'linear-gradient(180deg, #f0d860 0%, #d4af37 100%)',
-                  color: '#1a1200', fontWeight: 800, fontSize: '0.75rem',
-                  padding: '0.4rem 1rem', borderRadius: '0.5rem',
+                  color: '#1a1200', fontWeight: 800, fontSize: '0.8125rem',
+                  padding: '0.5rem 1.25rem', borderRadius: '0.625rem',
                   boxShadow: '0 3px 10px rgba(180,140,40,0.3), inset 0 1px 0 rgba(255,240,160,0.5)',
                 }}>
-                New to estate planning? See what CarryOn can do!
+                New to estate planning?<br/>See what CarryOn can do!
               </button>
             </div>
           </div>
         </div>
 
-        {/* Visit Homepage — opens in device browser */}
-        <button onClick={() => window.open('/home', '_blank')} className="mt-4 flex items-center gap-1.5 text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors" data-testid="visit-homepage-pwa">
-          <ExternalLink className="w-3.5 h-3.5" />
-          Visit Homepage
-        </button>
+          {/* Visit Homepage — opens in device browser */}
+          <button onClick={() => window.open('/home', '_blank')} className="mt-4 w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.97] transition-transform" data-testid="visit-homepage-pwa"
+            style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#e2e8f0', backdropFilter: 'blur(8px)' }}>
+            <ExternalLink className="w-3.5 h-3.5" />
+            Visit Homepage
+          </button>
+        </div>
 
         {/* OTP Modal */}
         {showOtpModal && (
