@@ -679,13 +679,6 @@ export default function GetStartedPage() {
                       ))}
                     </>
                   )}
-                  <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', margin: '0.25rem 0' }} />
-                  <div className="flex items-center gap-3">
-                    <div style={{ width: '1.25rem', height: '1.25rem', borderRadius: '50%', background: 'linear-gradient(135deg, #d4af37, #e8c84a)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 4px rgba(212,175,55,0.3)' }}>
-                      <Check className="w-3 h-3 text-white" />
-                    </div>
-                    <span style={{ fontWeight: 700, fontSize: '0.875rem', color: '#334155' }}>Up to 3 beneficiaries</span>
-                  </div>
                 </div>
 
                 <button
