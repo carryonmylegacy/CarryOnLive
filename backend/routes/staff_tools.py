@@ -589,9 +589,56 @@ async def _build_integrations_data():
                 {"label": "Login Password", "value": "CarryOntheWisdom!1", "sensitive": True, "verified": True},
             ],
         },
+        {
+            "id": "social_instagram",
+            "name": "Instagram",
+            "status": "active",
+            "category": "analytics",
+            "dashboard_url": "https://instagram.com/Carryonfamilyready",
+            "cost_monthly": 0.00,
+            "cost_note": "$0/mo (organic) + ad spend budget",
+            "cost_verified": True,
+            "details": [
+                {"label": "Purpose", "value": "Video reels, brand awareness, funnel acquisition", "verified": True},
+                {"label": "Handle", "value": "@Carryonfamilyready", "verified": True},
+                {"label": "Username", "value": "Carryonfamilyready", "sensitive": True, "verified": True},
+                {"label": "Password", "value": "CarryOntheWisdom1!", "sensitive": True, "verified": True},
+                {"label": "Funnel Link", "value": "carryon.us/get-started?utm_source=instagram&utm_medium=reels&utm_campaign=VIDEO_NAME", "verified": True},
+            ],
+        },
+        {
+            "id": "social_facebook",
+            "name": "Facebook Business",
+            "status": "active",
+            "category": "analytics",
+            "dashboard_url": "https://business.facebook.com",
+            "cost_monthly": 0.00,
+            "cost_note": "$0/mo (organic) + ad spend budget",
+            "cost_verified": True,
+            "details": [
+                {"label": "Purpose", "value": "Paid ads, boosted posts, funnel acquisition", "verified": True},
+                {"label": "Login Phone", "value": "703-889-0017", "sensitive": True, "verified": True},
+                {"label": "Password", "value": "CarryOntheWisdom!1", "sensitive": True, "verified": True},
+                {"label": "Funnel Link", "value": "carryon.us/get-started?utm_source=facebook&utm_medium=reels&utm_campaign=VIDEO_NAME", "verified": True},
+            ],
+        },
+        {
+            "id": "social_linkedin",
+            "name": "LinkedIn",
+            "status": "active",
+            "category": "analytics",
+            "dashboard_url": "https://linkedin.com",
+            "cost_monthly": 0.00,
+            "cost_note": "$0/mo (organic) + ad spend budget",
+            "cost_verified": True,
+            "details": [
+                {"label": "Purpose", "value": "Professional audience, sponsored posts, funnel acquisition", "verified": True},
+                {"label": "Email", "value": "Cos@carryontechnologies.com", "sensitive": True, "verified": True},
+                {"label": "Password", "value": "CarryOntheWisdom1!", "sensitive": True, "verified": True},
+                {"label": "Funnel Link", "value": "carryon.us/get-started?utm_source=linkedin&utm_medium=feed&utm_campaign=VIDEO_NAME", "verified": True},
+            ],
+        },
     ]
-
-    # Add capacity limits per integration (max users each can support)
     capacity_map = {
         "resend": {
             "max_users": 8000,
@@ -662,7 +709,7 @@ async def _build_integrations_data():
     }
 
     # Self-hosted have no user limits
-    for i_id in ["webauthn", "vapid", "jwt", "voice_biometrics", "pdf_tools", "capacitor", "firebase", "meta_pixel"]:
+    for i_id in ["webauthn", "vapid", "jwt", "voice_biometrics", "pdf_tools", "capacitor", "firebase", "meta_pixel", "social_instagram", "social_facebook", "social_linkedin"]:
         capacity_map[i_id] = {
             "max_users": 999999,
             "reason": "Self-hosted, no external limit",

@@ -16,6 +16,7 @@ const iconMap = {
   google_places: MapPin, webauthn: Key, vapid: Bell, jwt: Shield,
   voice_biometrics: Mic, pdf_tools: FileText,
   firebase: BarChart3, meta_pixel: Crosshair,
+  social_instagram: Globe, social_facebook: Globe, social_linkedin: Globe,
 };
 
 const CATEGORIES = [
