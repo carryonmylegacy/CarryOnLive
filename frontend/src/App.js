@@ -5,7 +5,6 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { SectionLockProvider } from './components/security/SectionLock';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { isNative } from './services/native';
-import { isPWA } from './utils/pwaDetect';
 import SubscriptionPaywall from './components/SubscriptionPaywall';
 import DashboardLayout from './components/layout/DashboardLayout';
 import ShareUploadModal from './components/ShareUploadModal';
@@ -346,17 +345,6 @@ function App() {
       StatusBar.setOverlaysWebView({ overlay: true });
       StatusBar.setStyle({ style: Style.Dark });
     }).catch(() => {});
-  }, []);
-
-  // PWA: Prevent swipe-back by converting all history pushes to replaces.
-  // With only 1 history entry, the iOS swipe-back gesture has nowhere to go.
-  useEffect(() => {
-    if (!isPWA()) return;
-    const originalPushState = window.history.pushState.bind(window.history);
-    window.history.pushState = (state, unused, url) => {
-      window.history.replaceState(state, unused, url);
-    };
-    return () => { window.history.pushState = originalPushState; };
   }, []);
 
   // Initialize Capgo live updates and native optimizations
