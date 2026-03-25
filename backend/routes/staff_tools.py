@@ -541,6 +541,44 @@ async def _build_integrations_data():
                 {"label": "Libraries", "value": "fpdf2, pdfplumber, Pillow", "verified": True},
             ],
         },
+        {
+            "id": "firebase",
+            "name": "Firebase Analytics",
+            "status": "active",
+            "category": "analytics",
+            "dashboard_url": "https://console.firebase.google.com/project/carryon-74e7e/analytics",
+            "cost_monthly": 0.00,
+            "cost_note": "$0/mo (Spark free tier — unlimited analytics events)",
+            "cost_verified": True,
+            "details": [
+                {"label": "Purpose", "value": "Funnel analytics, demographics, retention curves", "verified": True},
+                {"label": "Plan", "value": "Spark (Free)", "verified": True},
+                {"label": "Project ID", "value": "carryon-74e7e", "verified": True},
+                {"label": "App ID", "value": "1:986105602287:web:28d212431b9d445d907b1a", "verified": True},
+                {"label": "Measurement ID", "value": "G-60D910V279", "verified": True},
+                {"label": "Auth Domain", "value": "carryon-74e7e.firebaseapp.com", "verified": True},
+                {"label": "API Key", "value": "AIzaSyAuc7mMRJMr5qLsusi-_XRItoRbYoaYXrY", "sensitive": True, "verified": True},
+                {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
+            ],
+        },
+        {
+            "id": "meta_pixel",
+            "name": "Meta Pixel",
+            "status": "blocked",
+            "category": "analytics",
+            "dashboard_url": "https://business.facebook.com/events_manager",
+            "cost_monthly": 0.00,
+            "cost_note": "$0/mo (free — revenue comes from ad spend)",
+            "cost_verified": True,
+            "details": [
+                {"label": "Purpose", "value": "Ad conversion tracking, retargeting, audience optimization", "verified": True},
+                {"label": "Plan", "value": "Free (included with Meta Business Suite)", "verified": True},
+                {"label": "Pixel ID", "value": "", "verified": False, "sensitive": True},
+                {"label": "Events Tracked", "value": "ViewContent, Lead, CompleteRegistration", "verified": True},
+                {"label": "Integration", "value": "Funnel page (/get-started)", "verified": True},
+                {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
+            ],
+        },
     ]
 
     # Add capacity limits per integration (max users each can support)
@@ -614,7 +652,7 @@ async def _build_integrations_data():
     }
 
     # Self-hosted have no user limits
-    for i_id in ["webauthn", "vapid", "jwt", "voice_biometrics", "pdf_tools", "capacitor"]:
+    for i_id in ["webauthn", "vapid", "jwt", "voice_biometrics", "pdf_tools", "capacitor", "firebase", "meta_pixel"]:
         capacity_map[i_id] = {
             "max_users": 999999,
             "reason": "Self-hosted, no external limit",

@@ -4,7 +4,7 @@ import axios from 'axios';
 import { Lock, ExternalLink, Eye, EyeOff, Shield, Database, CreditCard, Mail, Bot, Cloud,
   MessageSquare, MapPin, Bell, Key, Smartphone, Mic, FileText, Puzzle, Server, Globe,
   RefreshCw, Download, DollarSign, AlertTriangle, CheckCircle2, Users, Gauge, ArrowUpCircle,
-  Activity, HardDrive, TrendingUp, Pencil, X } from 'lucide-react';
+  Activity, HardDrive, TrendingUp, Pencil, X, BarChart3, Crosshair } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
@@ -15,6 +15,7 @@ const iconMap = {
   twilio: MessageSquare, capgo: RefreshCw, capacitor: Smartphone,
   google_places: MapPin, webauthn: Key, vapid: Bell, jwt: Shield,
   voice_biometrics: Mic, pdf_tools: FileText,
+  firebase: BarChart3, meta_pixel: Crosshair,
 };
 
 const CATEGORIES = [
@@ -22,6 +23,7 @@ const CATEGORIES = [
   { key: 'infrastructure', label: 'Infrastructure' },
   { key: 'payments', label: 'Payments' },
   { key: 'ai_communication', label: 'AI & Comms' },
+  { key: 'analytics', label: 'Analytics' },
   { key: 'native_updates', label: 'Native & Updates' },
   { key: 'security_auth', label: 'Security' },
   { key: 'local_processing', label: 'Local' },
