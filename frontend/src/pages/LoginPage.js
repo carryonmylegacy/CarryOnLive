@@ -356,8 +356,8 @@ const LoginPage = () => {
             </>
           )}
           <div className="mt-5 flex items-center justify-between">
-            <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-medium">Create Account</button>
-            <span className="text-[#94A3B8] text-xs cursor-pointer hover:text-[#d4af37] transition-colors"
+            <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-bold">Create Account</button>
+            <span className="text-[#94A3B8] text-sm font-bold cursor-pointer hover:text-[#d4af37] transition-colors"
               data-testid="forgot-password-link"
               onClick={() => { setForgotMode(true); setForgotEmail(email); setForgotStep(1); setForgotMsg(''); setForgotError(false); }}>Forgot Password?</span>
           </div>
@@ -584,8 +584,8 @@ const LoginPage = () => {
                     </>
                   )}
                   <div className="mt-5 flex items-center justify-between">
-                    <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-medium hover:text-[#fcd34d] transition-colors">Create Account</button>
-                    <span className="text-[#94A3B8] text-xs cursor-pointer hover:text-[#d4af37] transition-colors"
+                    <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-bold hover:text-[#fcd34d] transition-colors">Create Account</button>
+                    <span className="text-[#94A3B8] text-sm font-bold cursor-pointer hover:text-[#d4af37] transition-colors"
                       data-testid="forgot-password-link-web"
                       onClick={() => { setForgotMode(true); setForgotEmail(email); setForgotStep(1); setForgotMsg(''); setForgotError(false); }}>Forgot Password?</span>
                   </div>
