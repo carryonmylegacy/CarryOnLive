@@ -644,21 +644,48 @@ export default function GetStartedPage() {
                   ))}
                 </div>
 
-                {/* What's included */}
+                {/* What's included — personalized */}
                 <div style={{
                   background: 'rgba(255,255,255,0.7)', borderRadius: '1rem',
                   border: '1px solid rgba(0,0,0,0.05)', padding: '1.25rem',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                 }} className="space-y-2.5 mb-6">
-                  <h3 style={{ fontWeight: 800, fontSize: '0.6875rem', color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Your trial includes</h3>
-                  {['Secure document vault', 'Milestone messages', 'AI estate guardian', 'Action checklists', 'Digital credential vault', 'Up to 3 beneficiaries'].map(item => (
-                    <div key={item} className="flex items-center gap-3">
-                      <div style={{ width: '1.25rem', height: '1.25rem', borderRadius: '50%', background: 'linear-gradient(135deg, #d4af37, #e8c84a)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 4px rgba(212,175,55,0.3)' }}>
-                        <Check className="w-3 h-3 text-white" />
-                      </div>
-                      <span style={{ fontWeight: 700, fontSize: '0.875rem', color: '#334155' }}>{item}</span>
+                  {keptFeatures.length > 0 && (
+                    <>
+                      <h3 style={{ fontWeight: 800, fontSize: '0.6875rem', color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Your picks</h3>
+                      {FEATURES.filter(f => keptFeatures.includes(f.id)).map(f => (
+                        <div key={f.id} className="flex items-center gap-3">
+                          <div style={{ width: '1.25rem', height: '1.25rem', borderRadius: '50%', background: 'linear-gradient(135deg, #d4af37, #e8c84a)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 4px rgba(212,175,55,0.3)' }}>
+                            <Check className="w-3 h-3 text-white" />
+                          </div>
+                          <span style={{ fontWeight: 700, fontSize: '0.875rem', color: '#334155' }}>{f.title}</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  {FEATURES.filter(f => !keptFeatures.includes(f.id)).length > 0 && (
+                    <>
+                      {keptFeatures.length > 0 && <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', margin: '0.25rem 0' }} />}
+                      <h3 style={{ fontWeight: 800, fontSize: '0.6875rem', color: '#cbd5e1', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                        {keptFeatures.length > 0 ? 'Also included' : 'Your trial includes'}
+                      </h3>
+                      {FEATURES.filter(f => !keptFeatures.includes(f.id)).map(f => (
+                        <div key={f.id} className="flex items-center gap-3">
+                          <div style={{ width: '1.25rem', height: '1.25rem', borderRadius: '50%', background: 'rgba(148,163,184,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <Check className="w-3 h-3" style={{ color: '#94a3b8' }} />
+                          </div>
+                          <span style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#94a3b8' }}>{f.title}</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', margin: '0.25rem 0' }} />
+                  <div className="flex items-center gap-3">
+                    <div style={{ width: '1.25rem', height: '1.25rem', borderRadius: '50%', background: 'linear-gradient(135deg, #d4af37, #e8c84a)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 4px rgba(212,175,55,0.3)' }}>
+                      <Check className="w-3 h-3 text-white" />
                     </div>
-                  ))}
+                    <span style={{ fontWeight: 700, fontSize: '0.875rem', color: '#334155' }}>Up to 3 beneficiaries</span>
+                  </div>
                 </div>
 
                 <button
