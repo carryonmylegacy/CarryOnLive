@@ -382,9 +382,9 @@ async def login(data: UserLogin, request: Request):
         masked_phone = f"***-***-{ph[-4:]}" if len(ph) >= 4 else "***"
 
     return {
-        "message": "OTP sent via SMS" if sms_sent else (
-            "OTP sent to your email" if email_sent else "Verification required — check your email or resend code"
-        ),
+        "message": "OTP sent via SMS"
+        if sms_sent
+        else ("OTP sent to your email" if email_sent else "Verification required — check your email or resend code"),
         "otp_required": True,
         "email_sent": email_sent,
         "sms_sent": sms_sent,
@@ -846,7 +846,9 @@ class ResendOTPRequest(BaseModel):
 @router.post("/auth/resend-otp")
 async def resend_otp(data: ResendOTPRequest):
     """Resend OTP code to the user's email or phone. Rate-limited to prevent abuse."""
-    user = await db.users.find_one({"email": data.email}, {"_id": 0, "id": 1, "name": 1, "sms_otp_enabled": 1, "sms_phone_number": 1})
+    user = await db.users.find_one(
+        {"email": data.email}, {"_id": 0, "id": 1, "name": 1, "sms_otp_enabled": 1, "sms_phone_number": 1}
+    )
     if not user:
         # Don't reveal whether the email exists
         return {"message": "If an account exists, a new code has been sent."}
@@ -1258,6 +1260,7 @@ class SMSOTPSetupRequest(BaseModel):
 async def sms_otp_setup(data: SMSOTPSetupRequest, current_user: dict = Depends(get_current_user)):
     """Send a verification OTP to the user's phone number to set up SMS 2FA."""
     import re
+
     phone = re.sub(r"[^\d+]", "", data.phone_number.strip())
     if not phone.startswith("+"):
         phone = f"+1{phone}"  # Default to US
@@ -1269,12 +1272,14 @@ async def sms_otp_setup(data: SMSOTPSetupRequest, current_user: dict = Depends(g
     otp_code = generate_otp()
     await db.sms_otp_verifications.update_one(
         {"user_id": current_user["id"]},
-        {"$set": {
-            "phone_number": phone,
-            "otp": otp_code,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "verified": False,
-        }},
+        {
+            "$set": {
+                "phone_number": phone,
+                "otp": otp_code,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "verified": False,
+            }
+        },
         upsert=True,
     )
 
@@ -1308,11 +1313,13 @@ async def sms_otp_verify(data: SMSOTPVerifyRequest, current_user: dict = Depends
     # Enable SMS OTP on the user record
     await db.users.update_one(
         {"id": current_user["id"]},
-        {"$set": {
-            "sms_otp_enabled": True,
-            "sms_phone_number": record["phone_number"],
-            "sms_otp_setup_at": datetime.now(timezone.utc).isoformat(),
-        }},
+        {
+            "$set": {
+                "sms_otp_enabled": True,
+                "sms_phone_number": record["phone_number"],
+                "sms_otp_setup_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
     )
     # Clean up verification record
     await db.sms_otp_verifications.delete_one({"user_id": current_user["id"]})
@@ -1358,7 +1365,6 @@ async def sms_otp_status(current_user: dict = Depends(get_current_user)):
     phone = user.get("sms_phone_number", "") if user else ""
     masked = f"***-***-{phone[-4:]}" if phone and len(phone) >= 4 else None
     return {"sms_otp_enabled": enabled, "masked_phone": masked}
-
 
 
 class ForgotPasswordRequest(BaseModel):

@@ -35,6 +35,21 @@ Benefactors toggle 7 feature flags per beneficiary (mm_access, ega_access, sdv_a
 - **Sidebar.js + MobileNav.js**: Navigation items filtered via `filterByFeatureAccess()` — hidden links for disabled features
 - **localStorage**: `beneficiary_feature_access` stored by TransitionGate for nav components; cleaned up on context exit
 
+#### Twilio SMS OTP Integration (March 24, 2026)
+Full SMS-based two-factor authentication using Twilio. Users can set up SMS 2FA from Settings, and choose SMS vs Email on the login OTP screen.
+
+- **Backend Endpoints**:
+  - `GET /api/auth/sms-otp-status` — Returns current SMS OTP status and masked phone
+  - `POST /api/auth/sms-otp-setup` — Sends verification SMS to provided phone (requires consent checkbox)
+  - `POST /api/auth/sms-otp-verify` — Verifies phone OTP and enables SMS 2FA on user record
+  - `DELETE /api/auth/sms-otp` — Disables SMS 2FA and removes phone number
+- **Modified Endpoints**:
+  - `POST /api/auth/login` — Now returns `otp_method`, `has_sms`, `masked_phone` when user has SMS enabled; sends OTP via SMS first, falls back to email
+  - `POST /api/auth/resend-otp` — Accepts `method` parameter (`email` or `sms`)
+- **Frontend — Settings Page**: SMS setup flow under Security card: phone input → consent checkbox → verification code → enabled. Only shows when 2FA is enabled.
+- **Frontend — Login OTP Modal**: Shows SMS/Email toggle buttons when user has SMS enabled. Displays correct description based on delivery method. Resend button respects selected method.
+- **IMPORTANT**: Twilio A2P 10DLC campaign currently FAILED — SMS delivery blocked by carriers until campaign is approved. User is resubmitting with corrected CTA and opt-in info.
+
 #### IAP Fix Hardening (March 24, 2026)
 - Added 10s timeout to `isIAPAvailable()` — previously no timeout, could hang forever
 - Added 15s timeout to `getIAPProducts()` — prevent Store fetch hang
