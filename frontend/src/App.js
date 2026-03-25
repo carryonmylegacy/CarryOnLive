@@ -74,6 +74,8 @@ const GetStartedPage = lazy(() => import('./pages/GetStartedPage'));
 
 const AboutPage = lazy(() => import('./pages/AboutPage'));
 
+const HomePage = lazy(() => import('./pages/HomePage'));
+
 // Loading fallback
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
@@ -239,6 +241,7 @@ function AppRoutes() {
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/about" element={<AboutPage />} />
+      <Route path="/home" element={<HomePage />} />
       <Route path="/get-started" element={<GetStartedPage />} />
 
       {/* Invitation Accept Route - Public */}

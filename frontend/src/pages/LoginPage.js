@@ -2,11 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import { Mail, Lock, Eye, EyeOff, Loader2, Shield, Users, ChevronRight, ChevronDown, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Trash2, ClipboardCheck, MessageSquare, Key, Layers, Smartphone, MapPin, ShieldAlert, ArrowUpDown, SlidersHorizontal } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, Shield, Users, ChevronRight, ChevronDown, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Trash2, ClipboardCheck, MessageSquare, Key, Layers, Smartphone, MapPin, ShieldAlert, ArrowUpDown, SlidersHorizontal, ExternalLink } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { toast } from '../utils/toast';
 import { isNative } from '../services/native';
+import { isPWA, isMobileBrowser } from '../utils/pwaDetect';
+import PWAInstallGuide from '../components/PWAInstallGuide';
 import SealedAccountScreen from '../components/SealedAccountScreen';
 import { haptics } from '../utils/haptics';
 import { API_URL } from '../config';
@@ -74,6 +76,10 @@ const LoginPage = () => {
   const [forgotMsg, setForgotMsg] = useState('');
   const [forgotError, setForgotError] = useState(false);
   const [activeSessionWarning, setActiveSessionWarning] = useState(null);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
+  const [installBannerDismissed, setInstallBannerDismissed] = useState(() => !!localStorage.getItem('carryon_install_dismissed'));
+  const isPWAMode = isPWA();
+  const isMobileNonPWA = isMobileBrowser();
 
   const navigateWithFade = (path) => {
     setExiting(true);
@@ -422,6 +428,216 @@ const LoginPage = () => {
                       setForgotError(false);
                       setTimeout(() => { setForgotMode(false); setForgotStep(1); setForgotOtp(''); setForgotNewPw(''); setForgotConfirmPw(''); setForgotMsg(''); setForgotError(false); }, 2000);
                     } catch (err) { setForgotMsg(err.response?.data?.detail || 'Reset failed. Please try again.'); setForgotError(true); }
+                    finally { setForgotLoading(false); }
+                  }} className="w-full py-3 rounded-xl text-sm font-bold mb-3 mt-2" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', opacity: !forgotOtp || !forgotNewPw || forgotNewPw !== forgotConfirmPw || forgotLoading ? 0.5 : 1 }}>
+                    {forgotLoading ? 'Resetting...' : 'Reset Password'}
+                  </button>
+                </>
+              )}
+              <button onClick={() => { setForgotMode(false); setForgotStep(1); setForgotMsg(''); setForgotError(false); }}
+                className="w-full text-center text-xs text-[#475569] hover:text-[#94a3b8]">Cancel</button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ─── PWA STANDALONE MODE — clean login, no marketing, no scroll ───
+  if (isPWAMode) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-5 py-8" style={{
+        background: 'linear-gradient(168deg, #080e1a 0%, #0d1627 30%, #111d35 60%, #0a1122 100%)',
+        opacity: exiting ? 0 : 1,
+        transition: 'opacity 0.45s ease',
+      }} data-testid="pwa-login-view">
+        <img src="/carryon-logo.png" alt="CarryOn" className="w-[120px] h-auto mb-2" />
+        <p className="text-white/40 text-xs font-semibold mb-5 tracking-widest uppercase" style={{ fontFamily: 'Outfit, sans-serif' }}>CarryOn&#8482;</p>
+
+        <div className="w-full max-w-sm rounded-2xl p-6 relative" style={{
+          background: 'linear-gradient(160deg, rgba(17,27,48,0.97), rgba(13,22,40,0.99))',
+          border: '1px solid rgba(212,175,55,0.12)',
+          boxShadow: '0 8px 80px rgba(0,0,0,0.5)',
+        }}>
+          <div className="absolute top-0 left-6 right-6 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
+          <h2 className="text-white text-lg font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Sign In</h2>
+          <p className="text-white/70 text-sm font-semibold mb-4">Access your CarryOn account</p>
+          <form onSubmit={handleLogin} className="space-y-3">
+            <div>
+              <label className="text-white/80 text-sm font-bold mb-1 block">Username or Email</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#334155]" />
+                <Input type="text" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Username or Email" required autoComplete="username"
+                  className="h-10 pl-10 bg-[#0B1627] border-[#1A2D48] text-white placeholder:text-[#2A3C55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-lg text-sm" data-testid="login-email-pwa" />
+              </div>
+            </div>
+            <div>
+              <label className="text-white/80 text-sm font-bold mb-1 block">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#334155]" />
+                <Input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" required autoComplete="current-password"
+                  className="h-10 pl-10 pr-10 bg-[#0B1627] border-[#1A2D48] text-white placeholder:text-[#2A3C55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-lg text-sm" data-testid="login-password-pwa" />
+                <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#334155] hover:text-[#7b879e] transition-colors">
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            {lockoutSeconds > 0 && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-2.5 text-center">
+                <p className="text-red-400 text-xs font-semibold">Account temporarily locked</p>
+                <p className="text-red-300/80 text-[11px] mt-0.5">Try again in <span className="font-bold text-red-300 tabular-nums">{Math.floor(lockoutSeconds / 60)}:{String(lockoutSeconds % 60).padStart(2, '0')}</span></p>
+              </div>
+            )}
+            {activeSessionWarning && (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-2.5 text-center">
+                <p className="text-amber-400 text-xs font-semibold">Signed in elsewhere</p>
+                <p className="text-amber-300/80 text-[11px] mt-1">{activeSessionWarning}</p>
+                <button type="button" onClick={(e) => { setActiveSessionWarning(null); handleLogin(e, true); }}
+                  className="mt-2 w-full h-9 rounded-lg text-xs font-bold transition-all active:scale-[0.97]"
+                  style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)', color: '#d4af37' }}
+                  data-testid="force-login-pwa">
+                  {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto" /> : 'Sign In Here Instead'}
+                </button>
+              </div>
+            )}
+            <Button type="submit" disabled={loading || lockoutSeconds > 0} className="w-full h-10 rounded-lg font-bold text-sm" data-testid="login-submit-pwa"
+              style={{ background: lockoutSeconds > 0 ? '#374151' : 'linear-gradient(135deg, #d4af37, #b8962e)', color: lockoutSeconds > 0 ? '#6b7280' : '#0B1221' }}>
+              {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Signing In...</> : lockoutSeconds > 0 ? `Locked (${Math.floor(lockoutSeconds / 60)}:${String(lockoutSeconds % 60).padStart(2, '0')})` : 'Sign In'}
+            </Button>
+          </form>
+          {passkeyAvailable && (
+            <>
+              <div className="flex items-center gap-3 my-3">
+                <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                <span className="text-[#334155] text-[11px] uppercase tracking-widest font-medium">or</span>
+                <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+              </div>
+              <button onClick={handlePasskeyLogin} disabled={passkeyLoading}
+                className="w-full h-10 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-all"
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#e2e8f0' }}
+                data-testid="login-passkey-pwa">
+                {passkeyLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-[#d4af37]" />}
+                Sign in with Passkey
+              </button>
+            </>
+          )}
+          <div className="mt-3.5 flex items-center justify-between">
+            <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-bold hover:text-[#fcd34d] transition-colors" data-testid="create-account-pwa">Create Account</button>
+            <span className="text-[#94A3B8] text-sm font-bold cursor-pointer hover:text-[#d4af37] transition-colors"
+              data-testid="forgot-password-pwa"
+              onClick={() => { setForgotMode(true); setForgotEmail(email); setForgotStep(1); setForgotMsg(''); setForgotError(false); }}>Forgot Password?</span>
+          </div>
+          <div className="mt-3.5 pt-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+            <div className="flex items-center justify-center gap-2">
+              <Shield className="w-3 h-3 text-[#10b981]" />
+              <span className="text-white/80 text-xs font-bold">Bank-grade security &middot; 256-bit SSL</span>
+            </div>
+            <div className="mt-2 text-center">
+              <button onClick={() => navigateWithFade('/get-started')} className="animate-pulse-fast hover:brightness-110 active:scale-[0.97] cursor-pointer" data-testid="new-here-pwa"
+                style={{
+                  background: 'linear-gradient(180deg, #f0d860 0%, #d4af37 100%)',
+                  color: '#1a1200', fontWeight: 800, fontSize: '0.75rem',
+                  padding: '0.4rem 1rem', borderRadius: '0.5rem',
+                  boxShadow: '0 3px 10px rgba(180,140,40,0.3), inset 0 1px 0 rgba(255,240,160,0.5)',
+                }}>
+                New to estate planning? See what CarryOn can do!
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Visit Homepage — opens in device browser */}
+        <button onClick={() => window.open('/home', '_blank')} className="mt-4 flex items-center gap-1.5 text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors" data-testid="visit-homepage-pwa">
+          <ExternalLink className="w-3.5 h-3.5" />
+          Visit Homepage
+        </button>
+
+        {/* OTP Modal */}
+        {showOtpModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+            <div className="w-full max-w-md rounded-2xl p-7" style={{ background: 'linear-gradient(145deg, rgba(20,30,52,0.98), rgba(15,22,41,1))', border: '1px solid rgba(212,175,55,0.15)' }}>
+              <h3 className="text-white text-lg font-semibold mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Two-Factor Authentication</h3>
+              <p className="text-[#6b7a90] text-sm mb-5">
+                {otpMethod === 'sms' ? `Enter the 6-digit code sent to ${maskedPhone || 'your phone'}` : 'Enter the 6-digit code sent to your email'}
+              </p>
+              <Input type="text" inputMode="numeric" maxLength={6} value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="000000" className="h-14 text-center text-2xl tracking-[0.4em] font-mono bg-[#0D1829] border-[#1E3048] text-white focus:border-[#d4af37] rounded-lg mb-4" data-testid="otp-input-pwa" autoFocus />
+              {hasSmsOtp && (
+                <div className="flex items-center gap-2 mb-4 p-2 rounded-lg" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.1)' }}>
+                  <span className="text-[#6b7a90] text-xs">Send code via:</span>
+                  <button onClick={() => handleResendOtp('sms')} disabled={resendCooldown > 0}
+                    className={`text-xs px-3 py-1 rounded-full transition-all ${otpMethod === 'sms' ? 'bg-[#d4af37] text-[#0B1221] font-semibold' : 'text-[#6b7a90] hover:text-white'}`}>SMS {maskedPhone ? `(${maskedPhone})` : ''}</button>
+                  <button onClick={() => handleResendOtp('email')} disabled={resendCooldown > 0}
+                    className={`text-xs px-3 py-1 rounded-full transition-all ${otpMethod === 'email' ? 'bg-[#d4af37] text-[#0B1221] font-semibold' : 'text-[#6b7a90] hover:text-white'}`}>Email</button>
+                </div>
+              )}
+              <label className="flex items-center gap-3 mb-4 cursor-pointer select-none group">
+                <button type="button" onClick={() => setTrustToday(!trustToday)}
+                  className={`flex-shrink-0 w-5 h-5 rounded border-2 transition-all flex items-center justify-center ${trustToday ? 'bg-[#d4af37] border-[#d4af37]' : 'border-[#334155] group-hover:border-[#7b879e]'}`}>
+                  {trustToday && <svg className="w-3 h-3 text-[#0B1221]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                </button>
+                <span className="text-[#7b879e] text-sm leading-snug">Skip OTP for the rest of today<span className="block text-[#475569] text-xs mt-0.5">Resets at midnight Eastern Time</span></span>
+              </label>
+              <Button onClick={handleVerifyOtp} disabled={loading || otp.length !== 6} className="w-full h-11 rounded-lg font-semibold" data-testid="otp-verify-pwa"
+                style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#0B1221' }}>
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify & Sign In'}
+              </Button>
+              <div className="flex items-center justify-between mt-3">
+                <button onClick={() => setShowOtpModal(false)} className="text-[#6b7a90] text-sm hover:text-white transition-colors">Cancel</button>
+                <button onClick={() => handleResendOtp()} disabled={resendCooldown > 0}
+                  className={`text-sm transition-colors ${resendCooldown > 0 ? 'text-[#334155]' : 'text-[#d4af37] hover:text-[#e8c54a]'}`}>
+                  {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Forgot Password Modal */}
+        {forgotMode && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
+            <div className="w-full max-w-sm rounded-2xl p-6" style={{ background: '#152238', border: '1px solid rgba(212,175,55,0.5)', boxShadow: '0 0 60px rgba(212,175,55,0.08), 0 8px 40px rgba(0,0,0,0.6)' }}>
+              <h2 className="text-lg font-bold text-white mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Reset Password</h2>
+              {forgotStep === 1 ? (
+                <>
+                  <p className="text-xs text-[#94A3B8] mb-4">Enter your email and we&apos;ll send you a reset code.</p>
+                  <input type="email" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
+                    placeholder="Email address" className="w-full px-4 py-3 rounded-xl text-sm mb-3 bg-[#0a1128] border border-[#1e293b] text-white" data-testid="forgot-email-pwa" />
+                  {forgotMsg && <p className={`text-xs mb-3 ${forgotError ? 'text-red-400' : 'text-[#22C993]'}`}>{forgotMsg}</p>}
+                  <button disabled={!forgotEmail || forgotLoading} onClick={async () => {
+                    setForgotLoading(true);
+                    try {
+                      const res = await axios.post(`${API_URL}/auth/forgot-password`, { email: forgotEmail });
+                      setForgotMsg(res.data.message);
+                      setForgotError(false);
+                      setForgotStep(2);
+                    } catch (err) { setForgotMsg(err.response?.data?.detail || 'Failed to send code.'); setForgotError(true); }
+                    finally { setForgotLoading(false); }
+                  }} className="w-full py-3 rounded-xl text-sm font-bold mb-3" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', opacity: !forgotEmail || forgotLoading ? 0.5 : 1 }}>
+                    {forgotLoading ? 'Sending...' : 'Send Reset Code'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-[#94A3B8] mb-4">Enter the code sent to {forgotEmail} and your new password.</p>
+                  <input type="text" value={forgotOtp} onChange={e => setForgotOtp(e.target.value)}
+                    placeholder="6-digit code" maxLength={6} className="w-full px-4 py-3 rounded-xl text-sm mb-3 bg-[#0a1128] border border-[#1e293b] text-white text-center tracking-[0.3em]" />
+                  <input type="password" value={forgotNewPw} onChange={e => setForgotNewPw(e.target.value)}
+                    placeholder="New password (8+ characters)" className="w-full px-4 py-3 rounded-xl text-sm mb-3 bg-[#0a1128] border border-[#1e293b] text-white" />
+                  <input type="password" value={forgotConfirmPw} onChange={e => setForgotConfirmPw(e.target.value)}
+                    placeholder="Confirm new password" className={`w-full px-4 py-3 rounded-xl text-sm mb-1 bg-[#0a1128] border text-white ${forgotConfirmPw && forgotNewPw !== forgotConfirmPw ? 'border-red-500' : 'border-[#1e293b]'}`} />
+                  {forgotConfirmPw && forgotNewPw !== forgotConfirmPw && (
+                    <p className="text-red-400 text-xs mb-2">* Passwords do not match</p>
+                  )}
+                  {forgotMsg && <p className={`text-xs mb-3 ${forgotError ? 'text-red-400' : 'text-[#22C993]'}`}>{forgotMsg}</p>}
+                  <button disabled={!forgotOtp || !forgotNewPw || forgotNewPw !== forgotConfirmPw || forgotLoading} onClick={async () => {
+                    setForgotLoading(true);
+                    try {
+                      const res = await axios.post(`${API_URL}/auth/reset-password`, { email: forgotEmail, otp: forgotOtp, new_password: forgotNewPw });
+                      setForgotMsg(res.data.message);
+                      setForgotError(false);
+                      setTimeout(() => { setForgotMode(false); setForgotStep(1); setForgotOtp(''); setForgotNewPw(''); setForgotConfirmPw(''); setForgotMsg(''); setForgotError(false); }, 2000);
+                    } catch (err) { setForgotMsg(err.response?.data?.detail || 'Reset failed.'); setForgotError(true); }
                     finally { setForgotLoading(false); }
                   }} className="w-full py-3 rounded-xl text-sm font-bold mb-3 mt-2" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a', opacity: !forgotOtp || !forgotNewPw || forgotNewPw !== forgotConfirmPw || forgotLoading ? 0.5 : 1 }}>
                     {forgotLoading ? 'Resetting...' : 'Reset Password'}
@@ -965,6 +1181,29 @@ const LoginPage = () => {
           <p className="text-center text-[#2A3C55] text-xs mt-6">&copy; {new Date().getFullYear()} CarryOn Technologies LLC. All rights reserved.</p>
         </div>
       </footer>
+
+      {/* Option C: Mobile browser "Add to Home Screen" banner */}
+      {isMobileNonPWA && !installBannerDismissed && (
+        <div className="fixed bottom-0 left-0 right-0 z-[90] p-3 safe-area-pb" style={{ background: 'linear-gradient(180deg, transparent, rgba(8,14,26,0.95) 20%)', paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }} data-testid="install-banner">
+          <div className="max-w-sm mx-auto rounded-xl p-3.5 flex items-center gap-3" style={{ background: 'rgba(17,27,48,0.95)', border: '1px solid rgba(212,175,55,0.2)', backdropFilter: 'blur(12px)' }}>
+            <img src="/carryon-logo.png" alt="" className="w-8 h-8 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-white text-sm font-semibold leading-tight">Get the CarryOn App</p>
+              <p className="text-[#6b7a90] text-[11px]">Add to your home screen &mdash; no download needed</p>
+            </div>
+            <button onClick={() => setShowInstallGuide(true)} className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95"
+              style={{ background: '#d4af37', color: '#0B1221' }} data-testid="install-banner-cta">
+              Install
+            </button>
+            <button onClick={() => { localStorage.setItem('carryon_install_dismissed', '1'); setInstallBannerDismissed(true); }} className="flex-shrink-0 text-[#475569] hover:text-white p-1" data-testid="install-banner-dismiss">
+              <span className="text-lg leading-none">&times;</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* PWA Install Guide Modal */}
+      <PWAInstallGuide open={showInstallGuide} onClose={() => setShowInstallGuide(false)} />
 
       {/* OTP MODAL */}
       {showOtpModal && (
