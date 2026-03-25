@@ -118,6 +118,34 @@ const VaultPage = () => {
   const [saving, setSaving] = useState(false);
   const [globalDragOver, setGlobalDragOver] = useState(false);
   const dragCounterRef = useRef(0);
+  const uploadNameRef = useRef(null);
+  const pendingDropFocusRef = useRef(false);
+
+  // Allowed file types — PDFs and images (multiple MIME variants for cross-browser/OS compat)
+  const allowedExts = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'heif', 'webp', 'tiff', 'tif'];
+  const allowedMimes = [
+    'application/pdf', 'application/x-pdf', 'application/acrobat', 'application/vnd.pdf',
+    'image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif', 'image/webp', 'image/tiff',
+  ];
+
+  const isFileAllowed = (file) => {
+    const ext = (file.name.match(/\.([a-z0-9]+)\s*$/i)?.[1] || '').toLowerCase();
+    if (allowedExts.includes(ext)) return true;
+    if (allowedMimes.includes(file.type)) return true;
+    if (!file.type || file.type === 'application/octet-stream') {
+      return allowedExts.includes(ext);
+    }
+    return false;
+  };
+
+  // Auto-focus Document Name input after drop opens the upload panel
+  useEffect(() => {
+    if (showUploadModal && pendingDropFocusRef.current) {
+      pendingDropFocusRef.current = false;
+      const timer = setTimeout(() => uploadNameRef.current?.focus?.(), 350);
+      return () => clearTimeout(timer);
+    }
+  }, [showUploadModal]);
 
   // Global drag-and-drop: drop a file anywhere on the page → opens Upload panel
   useEffect(() => {
@@ -136,21 +164,19 @@ const VaultPage = () => {
       e.preventDefault();
       dragCounterRef.current = 0;
       setGlobalDragOver(false);
-      if (showUploadModal) return; // Already in upload panel, let the inner handler deal with it
+      if (showUploadModal) return;
       const file = e.dataTransfer?.files?.[0];
       if (!file) return;
-      const ext = file.name.split('.').pop().toLowerCase();
-      const allowedExts = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'heif', 'webp', 'tiff', 'tif'];
-      const allowedMimes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif', 'image/webp', 'image/tiff'];
-      if (!allowedMimes.includes(file.type) && !allowedExts.includes(ext)) {
+      if (!isFileAllowed(file)) {
         toast.error('Only PDFs and images accepted. No editable document formats (.doc, .docx, .pages, etc.).');
         return;
       }
       setUploadFile(file);
       const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
       setUploadName(nameWithoutExt);
+      pendingDropFocusRef.current = true;
       setShowUploadModal(true);
-      toast.success(`"${file.name}" ready — review details and tap Upload`);
+      toast.success(`"${file.name}" ready — name your document and tap Upload`);
     };
     const el = document.getElementById('main-content') || document.body;
     el.addEventListener('dragenter', onDragEnter);
@@ -871,6 +897,7 @@ const VaultPage = () => {
             <div className="space-y-2">
               <Label className="text-[#94a3b8]">Document Name <span className="text-red-400">*</span></Label>
               <Input
+                ref={uploadNameRef}
                 value={uploadName}
                 onChange={(e) => setUploadName(e.target.value)}
                 placeholder="e.g., Last Will & Testament"
@@ -967,10 +994,7 @@ const VaultPage = () => {
                   e.currentTarget.style.borderColor = '';
                   const file = e.dataTransfer.files[0];
                   if (file) {
-                    const ext = file.name.split('.').pop().toLowerCase();
-                    const allowedExts = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'heif', 'webp', 'tiff', 'tif'];
-                    const allowedMimes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif', 'image/webp', 'image/tiff'];
-                    if (!allowedMimes.includes(file.type) && !allowedExts.includes(ext)) {
+                    if (!isFileAllowed(file)) {
                       toast.error('Only PDFs and images accepted. No editable document formats (.doc, .docx, .pages, etc.).');
                       return;
                     }
@@ -987,7 +1011,7 @@ const VaultPage = () => {
                   type="file"
                   id="file-upload"
                   className="hidden"
-                  accept="application/pdf,image/jpeg,image/png,image/heic,image/heif,image/webp,image/tiff"
+                  accept="application/pdf,application/x-pdf,.pdf,image/jpeg,image/png,image/heic,image/heif,image/webp,image/tiff"
                   onChange={(e) => {
                     const file = e.target.files[0];
                     if (file) {

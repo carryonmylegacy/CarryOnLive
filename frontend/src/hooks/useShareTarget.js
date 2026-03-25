@@ -9,6 +9,9 @@ import { API_URL } from '../config';
 // Accepted file types — PDFs and images only (no editable formats)
 const ACCEPTED_TYPES = [
   'application/pdf',
+  'application/x-pdf',
+  'application/acrobat',
+  'application/vnd.pdf',
   'image/jpeg',
   'image/jpg',
   'image/png',

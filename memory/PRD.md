@@ -146,6 +146,17 @@ Full SMS-based two-factor authentication using Twilio. Users can set up SMS 2FA 
 ### P0
 - **SVG Family Tree Visual Overhaul**: COMPLETED (Session 17+18+19+20)
 
+### Completed (March 25, 2026 — Session 29: SDV Drag-and-Drop Fix)
+
+#### Secure Document Vault Drag-and-Drop PDF Fix (March 25, 2026)
+Fixed drag-and-drop file rejection for PDFs in the Secure Document Vault:
+- **Root cause**: File type validation only recognized `application/pdf` MIME type. Some browsers/OS combos report PDFs as `application/x-pdf`, `application/acrobat`, or `application/vnd.pdf`. Extension parsing via `split('.').pop()` also failed on filenames with trailing whitespace.
+- **Fix**: Replaced inline validation with centralized `isFileAllowed()` function using regex-based extension extraction (`/\.([a-z0-9]+)\s*$/i`) and expanded MIME list. Applied to both global page drop handler and inner upload panel drop zone.
+- **Auto-focus**: Added `uploadNameRef` + `pendingDropFocusRef` so the Document Name input auto-focuses 350ms after the upload panel opens from a drag-drop, matching user expectation of cursor-ready input.
+- **Share target**: Updated `useShareTarget.js` ACCEPTED_TYPES with same expanded MIME list.
+- **File input**: Updated `accept` attribute to include `.pdf` extension fallback and `application/x-pdf`.
+- All 50 housekeeping checks pass.
+
 ### P1
 - **Share Extension Setup**: Re-add the Share Extension target in Xcode per `/app/memory/SHARE_EXTENSION_SETUP.md`
 - **iOS Live Updates**: Test Capgo OTA update flow end-to-end
