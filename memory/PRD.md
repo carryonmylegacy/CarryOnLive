@@ -206,7 +206,7 @@ To prepare for Apple review:
 - **Settings Page UI Glitch**: Investigate FOUC/suspense boundary issues
 - **Readiness Scoring Policy Page**: Informational page under Account section
 - **Scalability Enhancements**: Horizontal scaling, background workers, CDN
-- **Refactor Large Files**: Break down LoginPage.js, SettingsPage.js, TrusteePage.js
+- **IAP Logic Consolidation (P2)**: Extract shared IAP purchase logic from SubscriptionPaywall.js and SubscriptionManagement.js into a single useIAPPurchase hook
 - **Twilio SMS OTP**: A2P campaign resubmitted March 24, 2026. Check back mid-April 2026.
 
 ## Key API Endpoints
