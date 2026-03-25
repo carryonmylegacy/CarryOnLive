@@ -36,7 +36,7 @@ workflows:
   ios-build:
     name: CarryOn iOS Build
     max_build_duration: 45
-    instance_type: mac_mini_m2
+    instance_type: mac_mini_m4
     integrations:
       app_store_connect: CarryOn-ASC-Key
     environment:
