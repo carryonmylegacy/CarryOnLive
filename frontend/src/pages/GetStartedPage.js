@@ -271,9 +271,12 @@ export default function GetStartedPage() {
       <div className="fixed inset-0 z-0">
         <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ opacity: 1, filter: 'brightness(1.3) contrast(1.05) saturate(1.1)' }} />
       </div>
-      {/* Lighter gradient overlay — lets more flag color through */}
-      <div className="fixed inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.0) 0%, rgba(11,18,33,0.15) 60%, rgba(14,24,41,0.45) 100%)' }} />
-      {/* Radial accent */}
+      {/* Minimal gradient — just enough to anchor the bottom, much lighter overall */}
+      <div className="fixed inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.0) 0%, rgba(11,18,33,0.05) 50%, rgba(14,24,41,0.25) 100%)' }} />
+      {/* Lift the left side and bottom — counterbalance the upper-right light source */}
+      <div className="fixed inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 90% 80% at 20% 80%, rgba(255,255,255,0.12) 0%, transparent 60%)' }} />
+      <div className="fixed inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 80% 60% at 10% 50%, rgba(255,255,255,0.08) 0%, transparent 50%)' }} />
+      {/* Gold accent */}
       <div className="fixed inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 70% 50% at 35% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
 
       {/* Content */}
