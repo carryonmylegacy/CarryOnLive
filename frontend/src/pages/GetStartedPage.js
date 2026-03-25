@@ -536,7 +536,7 @@ export default function GetStartedPage() {
                       boxShadow: '0 2px 8px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.8)',
                     }} className="p-3 sm:p-4 text-center">
                       <div style={{ fontWeight: 900, fontSize: '1.125rem', color: '#b8962e' }}>{stat.value}</div>
-                      <div style={{ fontWeight: 600, fontSize: '0.625rem', color: '#94a3b8', marginTop: '0.25rem' }}>{stat.label}</div>
+                      <div style={{ fontWeight: 600, fontSize: '0.6875rem', color: '#94a3b8', marginTop: '0.25rem' }}>{stat.label}</div>
                     </div>
                   ))}
                 </div>
