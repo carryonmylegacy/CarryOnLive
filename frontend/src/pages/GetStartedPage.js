@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ArrowLeft, ArrowRight, ChevronRight, Check, X, Users, Shield, FileText, Heart, Key, UserCheck, Send, Sparkles } from 'lucide-react';
 import { initFirebase, trackEvent, trackPixel } from '../services/firebase';
 import { API_URL } from '../config';
 import axios from 'axios';
+import confetti from 'canvas-confetti';
 
 const INTERESTS = [
   { id: 'protect_family', label: 'Protect my family', icon: Shield },
@@ -107,6 +108,42 @@ export default function GetStartedPage() {
   const [skippedFeature, setSkippedFeature] = useState(null);
   // Step 5
   const [referralEmail, setReferralEmail] = useState('');
+  const confettiFired = useRef(false);
+
+  // Gold confetti celebration when user reaches the CTA screen
+  useEffect(() => {
+    if (step === 4 && !confettiFired.current) {
+      confettiFired.current = true;
+      const gold = ['#d4af37', '#e8c84a', '#f0d860', '#b8962e', '#c9a84c'];
+      const end = Date.now() + 1800;
+      const frame = () => {
+        confetti({
+          particleCount: 3,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0, y: 0.6 },
+          colors: gold,
+          ticks: 200,
+          gravity: 0.8,
+          scalar: 1.1,
+          drift: 0.1,
+        });
+        confetti({
+          particleCount: 3,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1, y: 0.6 },
+          colors: gold,
+          ticks: 200,
+          gravity: 0.8,
+          scalar: 1.1,
+          drift: -0.1,
+        });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      };
+      frame();
+    }
+  }, [step]);
 
   // Redirect logged-in users
   useEffect(() => {

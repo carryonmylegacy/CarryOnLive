@@ -32,6 +32,14 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ### Completed (March 25, 2026 — Session 28: Funnel Skip Sensitivity + Summary Refinement)
 
+#### Confetti Celebration on CTA Screen (March 25, 2026)
+Added a gold-themed confetti burst when the user reaches Step 4 (CTA) after completing their personalized plan:
+- Uses `canvas-confetti` (1.9.4) for performant, lightweight particle effects
+- Gold palette matching the app aesthetic: `#d4af37`, `#e8c84a`, `#f0d860`, `#b8962e`, `#c9a84c`
+- Fires from both sides of the screen for ~1.8 seconds
+- Fires only once per funnel session (ref-guarded)
+- Reinforces the accomplishment of building a personalized plan and boosts trial conversion
+
 #### Funnel "Skip" Visual Feedback & Summary Refinement (March 25, 2026)
 Improved the funnel's feature card interaction to provide clear visual feedback and a respectful, personalized summary:
 
