@@ -320,7 +320,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
 
         {/* Header */}
         <div className="text-center mb-8 max-w-lg animate-fade-in">
-          <img src="/carryon-logo.jpg" alt="CarryOn" className="w-[120px] h-auto mx-auto mb-4" />
+          <img src="/carryon-logo.png" alt="CarryOn" className="w-[120px] h-auto mx-auto mb-4" />
 
           {trial.trial_expired ? (
             <>

@@ -267,7 +267,7 @@ const LoginPage = () => {
   if (biometricLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#0E1829' }}>
-        <img src="/carryon-logo.jpg" alt="CarryOn" className="w-32 h-auto opacity-60" />
+        <img src="/carryon-logo.png" alt="CarryOn" className="w-32 h-auto opacity-60" />
       </div>
     );
   }
@@ -291,7 +291,7 @@ const LoginPage = () => {
         overscrollBehavior: 'none',
         touchAction: 'none',
       }}>
-        <img src="/carryon-logo.jpg" alt="CarryOn" className="w-[180px] h-auto mb-8" />
+        <img src="/carryon-logo.png" alt="CarryOn" className="w-[180px] h-auto mb-8" />
         <div className="w-full max-w-sm rounded-2xl p-7 relative" style={{
           background: 'linear-gradient(160deg, rgba(17,27,48,0.97), rgba(13,22,40,0.99))',
           border: '1px solid rgba(212,175,55,0.12)',
@@ -441,7 +441,7 @@ const LoginPage = () => {
       {/* NAV BAR */}
       <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(14,165,233,0.06)', background: 'rgba(11,18,33,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
-          <img src="/carryon-logo.jpg" alt="CarryOn" className="h-12" />
+          <img src="/carryon-logo.png" alt="CarryOn" className="h-12" />
           <div className="hidden md:flex items-center gap-8">
             {[
               { label: 'Features', href: '#features' },
@@ -479,25 +479,25 @@ const LoginPage = () => {
             <RevealSection delay={0.1} className="hidden lg:block">
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 lg:gap-8">
                 <div className="flex-shrink-0">
-                  <img src="/carryon-logo.jpg" alt="CarryOn" className="w-[200px] lg:w-[260px] h-auto" />
+                  <img src="/carryon-logo.png" alt="CarryOn" className="w-[200px] lg:w-[260px] h-auto" />
                 </div>
                 <div className="text-center sm:text-left flex-1 sm:pt-2">
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-[1.08] mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-[1.08] mb-3" style={{ fontFamily: 'Outfit, sans-serif', textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>
                     Every American Family.
-                    <span className="block text-[#d4af37] mt-1">Ready.</span>
+                    <span className="block text-[#d4af37] mt-1" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>Ready.</span>
                   </h1>
-                  <p className="text-[#7b879e] text-sm lg:text-base max-w-sm leading-relaxed mb-5">
+                  <p className="text-white/80 text-sm lg:text-base max-w-sm leading-relaxed mb-5" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
                     Secure your estate plan with AI-powered estate planning. Protect what matters, guide who you love.
                   </p>
                   <div className="flex items-center gap-4 justify-center sm:justify-start mb-4">
                     {['AES-256 Encrypted', 'Per-Estate Keys', '2FA Protected'].map(badge => (
                       <div key={badge} className="flex items-center gap-1.5">
                         <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
-                        <span className="text-[#475569] text-xs">{badge}</span>
+                        <span className="text-white/60 text-xs" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>{badge}</span>
                       </div>
                     ))}
                   </div>
-                  <a href="#about" className="inline-flex items-center gap-2 text-[#475569] text-sm hover:text-[#d4af37] transition-colors">
+                  <a href="#about" className="inline-flex items-center gap-2 text-white/50 text-sm hover:text-[#d4af37] transition-colors" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
                     Scroll to explore <ChevronDown className="w-4 h-4 animate-bounce" />
                   </a>
                 </div>
@@ -599,23 +599,23 @@ const LoginPage = () => {
             <div className="lg:hidden col-span-full">
               <RevealSection delay={0.5}>
                 <div className="flex flex-col items-center text-center mt-2">
-                  <img src="/carryon-logo.jpg" alt="CarryOn" className="w-[160px] h-auto mb-4" />
-                  <h2 className="text-2xl font-bold text-white leading-[1.08] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                  <img src="/carryon-logo.png" alt="CarryOn" className="w-[160px] h-auto mb-4" />
+                  <h2 className="text-2xl font-bold text-white leading-[1.08] mb-2" style={{ fontFamily: 'Outfit, sans-serif', textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>
                     Every American Family.
-                    <span className="block text-[#d4af37] mt-1">Ready.</span>
+                    <span className="block text-[#d4af37] mt-1" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>Ready.</span>
                   </h2>
-                  <p className="text-[#7b879e] text-sm max-w-xs leading-relaxed mb-4">
+                  <p className="text-white/80 text-sm max-w-xs leading-relaxed mb-4" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
                     Secure your estate plan with AI-powered estate planning. Protect what matters, guide who you love.
                   </p>
                   <div className="flex items-center gap-3 justify-center mb-3">
                     {['AES-256 Encrypted', 'Per-Estate Keys', '2FA Protected'].map(badge => (
                       <div key={badge} className="flex items-center gap-1.5">
                         <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
-                        <span className="text-[#475569] text-xs">{badge}</span>
+                        <span className="text-white/60 text-xs" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>{badge}</span>
                       </div>
                     ))}
                   </div>
-                  <a href="#about" className="inline-flex items-center gap-2 text-[#475569] text-lg hover:text-[#d4af37] transition-colors pb-24">
+                  <a href="#about" className="inline-flex items-center gap-2 text-white/50 text-lg hover:text-[#d4af37] transition-colors pb-24" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
                     Scroll to explore <ChevronDown className="w-6 h-6 animate-bounce" />
                   </a>
                 </div>
@@ -932,7 +932,7 @@ const LoginPage = () => {
       <footer className="relative z-[80] py-10" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-            <img src="/carryon-logo.jpg" alt="CarryOn" className="h-8 opacity-60" />
+            <img src="/carryon-logo.png" alt="CarryOn" className="h-8 opacity-60" />
             <div className="flex items-center gap-6">
               <a href="/privacy" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid="login-footer-privacy-link">Privacy Policy</a>
               <a href="/terms" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid="login-footer-terms-link">Terms of Service</a>

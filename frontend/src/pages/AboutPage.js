@@ -38,7 +38,7 @@ const AboutPage = () => {
       <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(14,165,233,0.06)', background: 'rgba(11,18,33,0.97)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           <a href="/login" className="flex items-center">
-            <img src="/carryon-logo.jpg" alt="CarryOn" className="h-12" />
+            <img src="/carryon-logo.png" alt="CarryOn" className="h-12" />
           </a>
           <div className="hidden md:flex items-center gap-8">
             <a href="/login#features" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">Features</a>
@@ -278,7 +278,7 @@ const AboutPage = () => {
       <footer className="relative z-[60] py-10" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-            <a href="/login"><img src="/carryon-logo.jpg" alt="CarryOn" className="h-8 opacity-60" /></a>
+            <a href="/login"><img src="/carryon-logo.png" alt="CarryOn" className="h-8 opacity-60" /></a>
             <div className="flex items-center gap-6">
               <a href="/privacy" className="text-[#3a4a63] text-xs hover:text-[#7b879e] transition-colors">Privacy Policy</a>
               <a href="/terms" className="text-[#3a4a63] text-xs hover:text-[#7b879e] transition-colors">Terms of Service</a>
