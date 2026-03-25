@@ -496,16 +496,16 @@ const LoginPage = () => {
                   <p className="text-white/80 text-sm lg:text-base max-w-lg leading-relaxed mb-5" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
                     Secure your estate plan with AI-powered estate planning. Protect what matters, guide who you love.
                   </p>
-                  <div className="flex items-center gap-4 justify-center sm:justify-start mb-4">
+                  <div className="flex items-center gap-5 justify-center sm:justify-start mb-5">
                     {['AES-256 Encrypted', 'Per-Estate Keys', '2FA Protected'].map(badge => (
-                      <div key={badge} className="flex items-center gap-1.5">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
-                        <span className="text-white/60 text-xs" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>{badge}</span>
+                      <div key={badge} className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-[#10b981]" />
+                        <span className="text-white/70 text-sm font-medium" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>{badge}</span>
                       </div>
                     ))}
                   </div>
-                  <a href="#about" className="inline-flex items-center gap-2 text-white/50 text-sm hover:text-[#d4af37] transition-colors" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
-                    Scroll to explore <ChevronDown className="w-4 h-4 animate-bounce" />
+                  <a href="#about" className="inline-flex items-center gap-2 text-white/60 text-base font-medium hover:text-[#d4af37] transition-colors" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
+                    Scroll to explore <ChevronDown className="w-5 h-5 animate-bounce" />
                   </a>
                 </div>
               </div>
@@ -621,16 +621,16 @@ const LoginPage = () => {
                   <p className="text-white/80 text-sm max-w-xs leading-relaxed mb-4" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
                     Secure your estate plan with AI-powered estate planning. Protect what matters, guide who you love.
                   </p>
-                  <div className="flex items-center gap-3 justify-center mb-3">
+                  <div className="flex items-center gap-4 justify-center mb-4">
                     {['AES-256 Encrypted', 'Per-Estate Keys', '2FA Protected'].map(badge => (
-                      <div key={badge} className="flex items-center gap-1.5">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
-                        <span className="text-white/60 text-xs" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>{badge}</span>
+                      <div key={badge} className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-[#10b981]" />
+                        <span className="text-white/70 text-sm font-medium" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>{badge}</span>
                       </div>
                     ))}
                   </div>
-                  <a href="#about" className="inline-flex items-center gap-2 text-white/50 text-lg hover:text-[#d4af37] transition-colors pb-24" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
-                    Scroll to explore <ChevronDown className="w-6 h-6 animate-bounce" />
+                  <a href="#about" className="inline-flex items-center gap-2 text-white/60 text-base font-medium hover:text-[#d4af37] transition-colors pb-24" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
+                    Scroll to explore <ChevronDown className="w-5 h-5 animate-bounce" />
                   </a>
                 </div>
               </RevealSection>
