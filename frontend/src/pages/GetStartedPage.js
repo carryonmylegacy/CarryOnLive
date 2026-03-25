@@ -2,8 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ArrowLeft, ArrowRight, ChevronRight, Check, X, Users, Shield, FileText, Heart, Key, UserCheck, Send, Sparkles } from 'lucide-react';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
 import { initFirebase, trackEvent, trackPixel } from '../services/firebase';
 import { API_URL } from '../config';
 import axios from 'axios';
@@ -31,6 +29,59 @@ const FEATURES = [
 ];
 
 const STEP_NAMES = ['interests', 'family', 'plan', 'cta', 'referral'];
+
+/* Shared frosted glass panel style */
+const glassPanel = {
+  background: 'rgba(255, 255, 255, 0.72)',
+  backdropFilter: 'blur(24px) saturate(1.6)',
+  WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
+  borderRadius: '1.5rem',
+  border: '1px solid rgba(255,255,255,0.5)',
+  boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.6)',
+};
+
+/* 3D gold button style */
+const goldBtn = {
+  background: 'linear-gradient(180deg, #e8c84a 0%, #d4af37 50%, #b8962e 100%)',
+  color: '#1a1200',
+  borderRadius: '0.875rem',
+  fontWeight: 700,
+  fontSize: '0.9375rem',
+  letterSpacing: '0.01em',
+  border: '1px solid rgba(212,175,55,0.6)',
+  boxShadow: '0 4px 12px rgba(180,140,40,0.35), 0 2px 4px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,230,130,0.5)',
+  transition: 'all 0.2s ease',
+};
+
+const goldBtnDisabled = {
+  ...goldBtn,
+  opacity: 0.45,
+  cursor: 'not-allowed',
+  boxShadow: 'none',
+};
+
+/* Option pill (unselected) */
+const pillBase = {
+  background: 'rgba(255,255,255,0.7)',
+  border: '1.5px solid rgba(0,0,0,0.08)',
+  borderRadius: '0.875rem',
+  color: '#334155',
+  fontWeight: 600,
+  fontSize: '0.875rem',
+  boxShadow: '0 2px 6px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.8)',
+  transition: 'all 0.2s ease',
+};
+
+const pillSelected = {
+  background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.08))',
+  border: '2px solid #d4af37',
+  borderRadius: '0.875rem',
+  color: '#1a1200',
+  fontWeight: 700,
+  fontSize: '0.875rem',
+  boxShadow: '0 3px 12px rgba(212,175,55,0.2), inset 0 1px 0 rgba(255,230,130,0.3)',
+  transition: 'all 0.2s ease',
+};
 
 export default function GetStartedPage() {
   const navigate = useNavigate();
@@ -61,13 +112,12 @@ export default function GetStartedPage() {
 
   // Check returning visitor
   useEffect(() => {
-    const completed = localStorage.getItem('carryon_funnel_completed');
     const hasToken = localStorage.getItem('carryon_token');
     if (hasToken) {
       navigate('/dashboard', { replace: true });
       return;
     }
-    // Returning visitor who completed funnel but didn't sign up — jump to CTA
+    const completed = localStorage.getItem('carryon_funnel_completed');
     if (completed) {
       const completedAt = parseInt(completed, 10);
       const sevenDays = 7 * 24 * 60 * 60 * 1000;
@@ -111,7 +161,6 @@ export default function GetStartedPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Relevant features based on interests
   const relevantFeatures = FEATURES.filter(f =>
     f.for.some(tag => selectedInterests.includes(tag))
   );
@@ -136,7 +185,6 @@ export default function GetStartedPage() {
     if (step === 1 && selectedInterests.length === 0) return;
     if (step === 2 && (!familySize || !estateStatus || !urgency)) return;
 
-    // Record current step
     if (step === 1) {
       await recordStep(1, 'interests', selectedInterests);
     } else if (step === 2) {
@@ -186,7 +234,6 @@ export default function GetStartedPage() {
     }
 
     localStorage.setItem('carryon_funnel_completed', Date.now().toString());
-    // Navigate to signup with funnel context
     navigate('/signup', {
       state: {
         from_funnel: true,
@@ -207,307 +254,386 @@ export default function GetStartedPage() {
   const handleFeatureDecision = (featureId, keep) => {
     setFeatureDecisions(prev => ({ ...prev, [featureId]: keep }));
     if (keep) setKeptFeatures(prev => [...prev, featureId]);
-    // Always advance to next feature (or past the end to show Continue button)
     setCurrentFeatureIdx(i => i + 1);
   };
 
-  // Progress bar
   const progress = (step / 5) * 100;
 
   return (
-    <div className="min-h-screen bg-[#080e1a] text-white flex flex-col" data-testid="get-started-page">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 sm:px-6 pt-4 pb-2">
-        <div className="flex items-center gap-2">
-          {step > 1 && (
-            <button onClick={handleBack} className="p-2 rounded-lg hover:bg-white/5 transition-colors" data-testid="funnel-back-btn">
-              <ArrowLeft className="w-5 h-5 text-[#94a3b8]" />
-            </button>
-          )}
-          <span className="text-sm text-[#94a3b8] font-medium">Step {step} of 5</span>
-        </div>
-        <button onClick={() => navigate('/login')} className="text-sm text-[#94a3b8] hover:text-white transition-colors" data-testid="funnel-login-link">
-          Already have an account?
-        </button>
+    <div className="min-h-screen relative overflow-hidden" data-testid="get-started-page" style={{ fontFamily: "'Nunito', 'Segoe UI', system-ui, -apple-system, sans-serif" }}>
+
+      {/* Google Font */}
+      <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+
+      {/* American flag background — same as login page */}
+      <div className="fixed inset-0 z-0">
+        <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ opacity: 0.85 }} />
       </div>
+      {/* Soft gradient to help readability without making it dark */}
+      <div className="fixed inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(240,235,220,0.35) 40%, rgba(255,250,240,0.5) 100%)' }} />
 
-      {/* Progress bar */}
-      <div className="px-4 sm:px-6 pb-4">
-        <div className="h-1 bg-[#1a2744] rounded-full overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-[#d4af37] to-[#f0d060] rounded-full transition-all duration-500"
-            style={{ width: `${progress}%` }}
-            data-testid="funnel-progress-bar"
-          />
+      {/* Content */}
+      <div className="relative z-10 min-h-screen flex flex-col">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 sm:px-8 pt-5 pb-2">
+          <div className="flex items-center gap-3">
+            {step > 1 && (
+              <button onClick={handleBack} data-testid="funnel-back-btn"
+                style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(12px)', borderRadius: '0.75rem', border: '1px solid rgba(255,255,255,0.5)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+                className="p-2.5 hover:bg-white/80 transition-colors">
+                <ArrowLeft className="w-5 h-5 text-[#334155]" />
+              </button>
+            )}
+            <span style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(12px)', borderRadius: '2rem', padding: '0.375rem 1rem', border: '1px solid rgba(255,255,255,0.5)', boxShadow: '0 2px 6px rgba(0,0,0,0.06)', fontWeight: 700, fontSize: '0.8125rem', color: '#475569' }}>
+              Step {step} of 5
+            </span>
+          </div>
+          <button onClick={() => navigate('/login')} data-testid="funnel-login-link"
+            style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(12px)', borderRadius: '2rem', padding: '0.375rem 1rem', border: '1px solid rgba(255,255,255,0.5)', boxShadow: '0 2px 6px rgba(0,0,0,0.06)', fontWeight: 700, fontSize: '0.8125rem', color: '#475569', transition: 'all 0.2s' }}
+            className="hover:bg-white/80">
+            Already have an account?
+          </button>
         </div>
-      </div>
 
-      {/* Content area */}
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 pb-8">
-        <div className="w-full max-w-lg">
+        {/* Progress bar */}
+        <div className="px-4 sm:px-8 pb-5 pt-1">
+          <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.5)', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.08)', border: '1px solid rgba(255,255,255,0.4)' }}>
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #d4af37, #e8c84a, #d4af37)', boxShadow: '0 0 8px rgba(212,175,55,0.4)' }}
+              data-testid="funnel-progress-bar"
+            />
+          </div>
+        </div>
 
-          {/* STEP 1: Interests */}
-          {step === 1 && (
-            <div className="space-y-8 animate-in fade-in duration-500" data-testid="funnel-step-1">
-              <div className="text-center space-y-3">
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">What matters most to you?</h1>
-                <p className="text-[#94a3b8] text-sm sm:text-base">Select everything that applies. We'll personalize your experience.</p>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {INTERESTS.map(item => {
-                  const selected = selectedInterests.includes(item.id);
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => toggleInterest(item.id)}
-                      data-testid={`interest-${item.id}`}
-                      className={`flex flex-col items-center gap-2 p-4 sm:p-5 rounded-xl border transition-all duration-200 text-center ${
-                        selected
-                          ? 'border-[#d4af37] bg-[#d4af37]/10 text-white shadow-[0_0_20px_rgba(212,175,55,0.15)]'
-                          : 'border-[#1e293b] bg-[#0f1729] text-[#94a3b8] hover:border-[#2a3c55] hover:bg-[#111f34]'
-                      }`}
-                    >
-                      <Icon className={`w-6 h-6 ${selected ? 'text-[#d4af37]' : 'text-[#475569]'}`} />
-                      <span className="text-xs sm:text-sm font-medium leading-tight">{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <Button
-                onClick={handleNext}
-                disabled={selectedInterests.length === 0}
-                className="w-full h-12 rounded-xl font-semibold text-sm bg-gradient-to-r from-[#d4af37] to-[#b8962e] text-[#080e1a] hover:from-[#e0c050] hover:to-[#c8a63e] disabled:opacity-40 disabled:cursor-not-allowed"
-                data-testid="funnel-next-btn"
-              >
-                Continue <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-          )}
+        {/* Main content */}
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-8 pb-10">
+          <div className="w-full max-w-lg">
 
-          {/* STEP 2: Family */}
-          {step === 2 && (
-            <div className="space-y-6 animate-in fade-in duration-500" data-testid="funnel-step-2">
-              <div className="text-center space-y-3">
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Tell us about your family</h1>
-                <p className="text-[#94a3b8] text-sm sm:text-base">This helps us tailor your estate readiness plan.</p>
-              </div>
-
-              <div className="space-y-5">
-                <div className="space-y-2">
-                  <label className="text-xs text-[#94a3b8] font-medium uppercase tracking-wider">Family Size</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {FAMILY_SIZES.map(s => (
-                      <button key={s} onClick={() => setFamilySize(s)} data-testid={`family-${s.replace(/\s/g, '-').toLowerCase()}`}
-                        className={`px-3 py-3 rounded-lg text-sm font-medium border transition-all ${familySize === s ? 'border-[#d4af37] bg-[#d4af37]/10 text-white' : 'border-[#1e293b] bg-[#0f1729] text-[#94a3b8] hover:border-[#2a3c55]'}`}
-                      >{s}</button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs text-[#94a3b8] font-medium uppercase tracking-wider">Estate Planning Status</label>
-                  <div className="flex flex-col gap-2">
-                    {ESTATE_STATUS.map(s => (
-                      <button key={s} onClick={() => setEstateStatus(s)} data-testid={`estate-${s.replace(/\s/g, '-').toLowerCase()}`}
-                        className={`px-4 py-3 rounded-lg text-sm font-medium border text-left transition-all ${estateStatus === s ? 'border-[#d4af37] bg-[#d4af37]/10 text-white' : 'border-[#1e293b] bg-[#0f1729] text-[#94a3b8] hover:border-[#2a3c55]'}`}
-                      >{s}</button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs text-[#94a3b8] font-medium uppercase tracking-wider">How urgent?</label>
-                  <div className="flex flex-col gap-2">
-                    {URGENCY.map(s => (
-                      <button key={s} onClick={() => setUrgency(s)} data-testid={`urgency-${s.replace(/\s/g, '-').toLowerCase()}`}
-                        className={`px-4 py-3 rounded-lg text-sm font-medium border text-left transition-all ${urgency === s ? 'border-[#d4af37] bg-[#d4af37]/10 text-white' : 'border-[#1e293b] bg-[#0f1729] text-[#94a3b8] hover:border-[#2a3c55]'}`}
-                      >{s}</button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <Button
-                onClick={handleNext}
-                disabled={!familySize || !estateStatus || !urgency}
-                className="w-full h-12 rounded-xl font-semibold text-sm bg-gradient-to-r from-[#d4af37] to-[#b8962e] text-[#080e1a] hover:from-[#e0c050] hover:to-[#c8a63e] disabled:opacity-40 disabled:cursor-not-allowed"
-                data-testid="funnel-next-btn"
-              >
-                See My Plan <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-          )}
-
-          {/* STEP 3: Feature cards */}
-          {step === 3 && (
-            <div className="space-y-6 animate-in fade-in duration-500" data-testid="funnel-step-3">
-              <div className="text-center space-y-3">
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Your Estate Readiness Plan</h1>
-                <p className="text-[#94a3b8] text-sm sm:text-base">
-                  {currentFeatureIdx < featuresToShow.length
-                    ? `Feature ${currentFeatureIdx + 1} of ${featuresToShow.length} — interested?`
-                    : 'Review complete!'}
-                </p>
-              </div>
-
-              {currentFeatureIdx < featuresToShow.length ? (
-                <div className="relative">
-                  <div className="bg-[#0f1729] border border-[#1e293b] rounded-2xl p-6 sm:p-8 space-y-4" data-testid={`feature-card-${featuresToShow[currentFeatureIdx].id}`}>
-                    <h3 className="text-lg sm:text-xl font-bold text-white">{featuresToShow[currentFeatureIdx].title}</h3>
-                    <p className="text-[#94a3b8] text-sm sm:text-base leading-relaxed">{featuresToShow[currentFeatureIdx].desc}</p>
-                    <div className="flex gap-3 pt-2">
-                      <Button
-                        onClick={() => handleFeatureDecision(featuresToShow[currentFeatureIdx].id, false)}
-                        variant="outline"
-                        className="flex-1 h-11 rounded-xl border-[#1e293b] bg-transparent text-[#94a3b8] hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400"
-                        data-testid="feature-skip-btn"
-                      >
-                        <X className="w-4 h-4 mr-2" /> Skip
-                      </Button>
-                      <Button
-                        onClick={() => handleFeatureDecision(featuresToShow[currentFeatureIdx].id, true)}
-                        className="flex-1 h-11 rounded-xl bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/30 hover:bg-[#d4af37]/30"
-                        data-testid="feature-keep-btn"
-                      >
-                        <Check className="w-4 h-4 mr-2" /> I want this
-                      </Button>
-                    </div>
-                  </div>
-                  {/* Card stack visual */}
-                  {currentFeatureIdx < featuresToShow.length - 1 && (
-                    <div className="absolute -bottom-2 left-2 right-2 h-4 bg-[#0f1729]/60 border border-[#1e293b]/50 rounded-b-2xl -z-10" />
-                  )}
-                </div>
-              ) : (
-                <div className="text-center space-y-4">
-                  <div className="text-5xl">
-                    <Sparkles className="w-12 h-12 mx-auto text-[#d4af37]" />
-                  </div>
-                  <p className="text-[#94a3b8]">
-                    You kept <span className="text-white font-semibold">{keptFeatures.length}</span> features.
-                    Your personalized plan is ready.
+            {/* STEP 1: Interests */}
+            {step === 1 && (
+              <div style={glassPanel} className="p-6 sm:p-8 animate-in fade-in duration-500" data-testid="funnel-step-1">
+                <div className="text-center space-y-2 mb-6">
+                  <h1 style={{ fontWeight: 900, fontSize: '1.625rem', color: '#1e293b', letterSpacing: '-0.01em', lineHeight: 1.2 }}>
+                    What matters most to you?
+                  </h1>
+                  <p style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#64748b' }}>
+                    Select everything that applies. We'll personalize your experience.
                   </p>
                 </div>
-              )}
-
-              {currentFeatureIdx >= featuresToShow.length && (
-                <Button
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                  {INTERESTS.map(item => {
+                    const selected = selectedInterests.includes(item.id);
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => toggleInterest(item.id)}
+                        data-testid={`interest-${item.id}`}
+                        style={selected ? pillSelected : pillBase}
+                        className="flex flex-col items-center gap-2 p-4 sm:p-5 text-center cursor-pointer hover:shadow-md active:scale-[0.97]"
+                      >
+                        <Icon className="w-6 h-6" style={{ color: selected ? '#b8962e' : '#94a3b8' }} />
+                        <span style={{ fontSize: '0.8125rem', lineHeight: 1.3 }}>{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
                   onClick={handleNext}
-                  className="w-full h-12 rounded-xl font-semibold text-sm bg-gradient-to-r from-[#d4af37] to-[#b8962e] text-[#080e1a] hover:from-[#e0c050] hover:to-[#c8a63e]"
+                  disabled={selectedInterests.length === 0}
+                  style={selectedInterests.length === 0 ? goldBtnDisabled : goldBtn}
+                  className="w-full h-12 flex items-center justify-center gap-2 active:scale-[0.98] hover:brightness-105"
                   data-testid="funnel-next-btn"
                 >
-                  Continue <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              )}
-            </div>
-          )}
-
-          {/* STEP 4: CTA */}
-          {step === 4 && (
-            <div className="space-y-8 animate-in fade-in duration-500" data-testid="funnel-step-4">
-              <div className="text-center space-y-4">
-                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
-                  Every American Family.
-                  <br />
-                  <span className="text-[#d4af37]">Ready.</span>
-                </h1>
-                <p className="text-[#94a3b8] text-sm sm:text-base max-w-md mx-auto">
-                  Join families across the country who are securing their legacy with CarryOn.
-                  Start your free 30-day trial today.
-                </p>
+                  Continue <ArrowRight className="w-4 h-4" />
+                </button>
               </div>
+            )}
 
-              {/* Social proof */}
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { value: '130+', label: 'Families Protected' },
-                  { value: 'AES-256', label: 'Bank-Grade Encryption' },
-                  { value: '30 days', label: 'Free Trial' },
-                ].map(stat => (
-                  <div key={stat.label} className="bg-[#0f1729] border border-[#1e293b] rounded-xl p-3 sm:p-4 text-center">
-                    <div className="text-lg sm:text-xl font-bold text-[#d4af37]">{stat.value}</div>
-                    <div className="text-[10px] sm:text-xs text-[#94a3b8] mt-1">{stat.label}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* What's included */}
-              <div className="bg-[#0f1729] border border-[#1e293b] rounded-xl p-5 space-y-3">
-                <h3 className="text-sm font-semibold text-[#94a3b8] uppercase tracking-wider">Your trial includes</h3>
-                {['Secure document vault', 'Milestone messages', 'AI estate guardian', 'Action checklists', 'Digital credential vault', 'Up to 3 beneficiaries'].map(item => (
-                  <div key={item} className="flex items-center gap-3">
-                    <Check className="w-4 h-4 text-[#d4af37] flex-shrink-0" />
-                    <span className="text-sm text-white">{item}</span>
-                  </div>
-                ))}
-              </div>
-
-              <Button
-                onClick={handleStartTrial}
-                disabled={loading}
-                className="w-full h-14 rounded-xl font-bold text-base bg-gradient-to-r from-[#d4af37] to-[#b8962e] text-[#080e1a] hover:from-[#e0c050] hover:to-[#c8a63e] shadow-[0_4px_20px_rgba(212,175,55,0.3)]"
-                data-testid="funnel-start-trial-btn"
-              >
-                Start My Free Trial <ChevronRight className="w-5 h-5 ml-1" />
-              </Button>
-
-              <p className="text-center text-[10px] sm:text-xs text-[#475569]">
-                No credit card required. Cancel anytime.
-              </p>
-            </div>
-          )}
-
-          {/* STEP 5: Referral */}
-          {step === 5 && (
-            <div className="space-y-8 animate-in fade-in duration-500" data-testid="funnel-step-5">
-              <div className="text-center space-y-4">
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Bring Your Family Along</h1>
-                <p className="text-[#94a3b8] text-sm sm:text-base max-w-md mx-auto">
-                  Invite a family member and you'll <span className="text-white font-semibold">both</span> get
-                  <span className="text-[#d4af37] font-semibold"> +7 bonus days</span> on your trial.
-                </p>
-              </div>
-
-              <div className="bg-[#0f1729] border border-[#1e293b] rounded-xl p-6 space-y-4">
-                <div className="flex items-center gap-3 text-[#d4af37]">
-                  <Send className="w-5 h-5" />
-                  <span className="text-sm font-semibold">Send an invite</span>
+            {/* STEP 2: Family */}
+            {step === 2 && (
+              <div style={glassPanel} className="p-6 sm:p-8 animate-in fade-in duration-500" data-testid="funnel-step-2">
+                <div className="text-center space-y-2 mb-6">
+                  <h1 style={{ fontWeight: 900, fontSize: '1.625rem', color: '#1e293b', letterSpacing: '-0.01em' }}>
+                    Tell us about your family
+                  </h1>
+                  <p style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#64748b' }}>
+                    This helps us tailor your estate readiness plan.
+                  </p>
                 </div>
-                <Input
-                  type="email"
-                  placeholder="Family member's email"
-                  value={referralEmail}
-                  onChange={e => setReferralEmail(e.target.value)}
-                  className="h-12 bg-[#080e1a] border-[#1e293b] text-white placeholder:text-[#475569] rounded-xl focus:border-[#d4af37] focus:ring-[#d4af37]/20"
-                  data-testid="referral-email-input"
-                />
-                <Button
-                  onClick={handleReferral}
-                  disabled={!referralEmail || !referralEmail.includes('@') || loading}
-                  className="w-full h-12 rounded-xl font-semibold text-sm bg-gradient-to-r from-[#d4af37] to-[#b8962e] text-[#080e1a] hover:from-[#e0c050] hover:to-[#c8a63e] disabled:opacity-40"
-                  data-testid="referral-send-btn"
+
+                <div className="space-y-5 mb-6">
+                  <div className="space-y-2">
+                    <label style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Family Size</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {FAMILY_SIZES.map(s => (
+                        <button key={s} onClick={() => setFamilySize(s)} data-testid={`family-${s.replace(/\s/g, '-').toLowerCase()}`}
+                          style={familySize === s ? pillSelected : pillBase}
+                          className="px-3 py-3 text-center cursor-pointer hover:shadow-md active:scale-[0.97]"
+                        >{s}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Estate Planning Status</label>
+                    <div className="flex flex-col gap-2">
+                      {ESTATE_STATUS.map(s => (
+                        <button key={s} onClick={() => setEstateStatus(s)} data-testid={`estate-${s.replace(/\s/g, '-').toLowerCase()}`}
+                          style={estateStatus === s ? pillSelected : pillBase}
+                          className="px-4 py-3 text-left cursor-pointer hover:shadow-md active:scale-[0.97]"
+                        >{s}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase' }}>How urgent?</label>
+                    <div className="flex flex-col gap-2">
+                      {URGENCY.map(s => (
+                        <button key={s} onClick={() => setUrgency(s)} data-testid={`urgency-${s.replace(/\s/g, '-').toLowerCase()}`}
+                          style={urgency === s ? pillSelected : pillBase}
+                          className="px-4 py-3 text-left cursor-pointer hover:shadow-md active:scale-[0.97]"
+                        >{s}</button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleNext}
+                  disabled={!familySize || !estateStatus || !urgency}
+                  style={(!familySize || !estateStatus || !urgency) ? goldBtnDisabled : goldBtn}
+                  className="w-full h-12 flex items-center justify-center gap-2 active:scale-[0.98] hover:brightness-105"
+                  data-testid="funnel-next-btn"
                 >
-                  Send Invite & Continue <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
+                  See My Plan <ArrowRight className="w-4 h-4" />
+                </button>
               </div>
+            )}
 
-              <button
-                onClick={handleSkipReferral}
-                className="w-full text-center text-sm text-[#475569] hover:text-[#94a3b8] transition-colors py-2"
-                data-testid="referral-skip-btn"
-              >
-                Skip for now — I'll invite them later
-              </button>
-            </div>
-          )}
+            {/* STEP 3: Feature cards */}
+            {step === 3 && (
+              <div style={glassPanel} className="p-6 sm:p-8 animate-in fade-in duration-500" data-testid="funnel-step-3">
+                <div className="text-center space-y-2 mb-6">
+                  <h1 style={{ fontWeight: 900, fontSize: '1.625rem', color: '#1e293b' }}>
+                    Your Estate Readiness Plan
+                  </h1>
+                  <p style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#64748b' }}>
+                    {currentFeatureIdx < featuresToShow.length
+                      ? `Feature ${currentFeatureIdx + 1} of ${featuresToShow.length} — interested?`
+                      : 'Review complete!'}
+                  </p>
+                </div>
 
+                {currentFeatureIdx < featuresToShow.length ? (
+                  <div className="relative mb-6">
+                    <div data-testid={`feature-card-${featuresToShow[currentFeatureIdx].id}`}
+                      style={{
+                        background: 'rgba(255,255,255,0.85)',
+                        borderRadius: '1.25rem',
+                        border: '1px solid rgba(0,0,0,0.06)',
+                        boxShadow: '0 6px 24px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)',
+                      }}
+                      className="p-6 sm:p-8 space-y-4"
+                    >
+                      <h3 style={{ fontWeight: 800, fontSize: '1.25rem', color: '#1e293b' }}>{featuresToShow[currentFeatureIdx].title}</h3>
+                      <p style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#64748b', lineHeight: 1.6 }}>{featuresToShow[currentFeatureIdx].desc}</p>
+                      <div className="flex gap-3 pt-2">
+                        <button
+                          onClick={() => handleFeatureDecision(featuresToShow[currentFeatureIdx].id, false)}
+                          data-testid="feature-skip-btn"
+                          style={{
+                            flex: 1, height: '2.75rem', borderRadius: '0.875rem',
+                            background: 'rgba(255,255,255,0.8)', border: '1.5px solid rgba(0,0,0,0.08)',
+                            color: '#94a3b8', fontWeight: 700, fontSize: '0.875rem',
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.8)',
+                            transition: 'all 0.2s',
+                          }}
+                          className="flex items-center justify-center gap-2 hover:border-red-300 hover:text-red-400 hover:bg-red-50/50 active:scale-[0.97] cursor-pointer"
+                        >
+                          <X className="w-4 h-4" /> Skip
+                        </button>
+                        <button
+                          onClick={() => handleFeatureDecision(featuresToShow[currentFeatureIdx].id, true)}
+                          data-testid="feature-keep-btn"
+                          style={{
+                            flex: 1, height: '2.75rem', borderRadius: '0.875rem',
+                            background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.08))',
+                            border: '2px solid #d4af37', color: '#8a6d1b', fontWeight: 700, fontSize: '0.875rem',
+                            boxShadow: '0 3px 12px rgba(212,175,55,0.15), inset 0 1px 0 rgba(255,230,130,0.3)',
+                            transition: 'all 0.2s',
+                          }}
+                          className="flex items-center justify-center gap-2 hover:bg-[#d4af37]/20 active:scale-[0.97] cursor-pointer"
+                        >
+                          <Check className="w-4 h-4" /> I want this
+                        </button>
+                      </div>
+                    </div>
+                    {currentFeatureIdx < featuresToShow.length - 1 && (
+                      <div className="absolute -bottom-2 left-3 right-3 h-4 rounded-b-2xl -z-10" style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.3)' }} />
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center space-y-4 mb-6 py-4">
+                    <Sparkles className="w-12 h-12 mx-auto" style={{ color: '#d4af37' }} />
+                    <p style={{ fontWeight: 700, fontSize: '1rem', color: '#475569' }}>
+                      You kept <span style={{ color: '#1e293b', fontWeight: 900 }}>{keptFeatures.length}</span> features.
+                      Your personalized plan is ready.
+                    </p>
+                  </div>
+                )}
+
+                {currentFeatureIdx >= featuresToShow.length && (
+                  <button
+                    onClick={handleNext}
+                    style={goldBtn}
+                    className="w-full h-12 flex items-center justify-center gap-2 active:scale-[0.98] hover:brightness-105 cursor-pointer"
+                    data-testid="funnel-next-btn"
+                  >
+                    Continue <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* STEP 4: CTA */}
+            {step === 4 && (
+              <div style={glassPanel} className="p-6 sm:p-8 animate-in fade-in duration-500" data-testid="funnel-step-4">
+                <div className="text-center space-y-3 mb-6">
+                  <h1 style={{ fontWeight: 900, fontSize: '2rem', color: '#1e293b', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+                    Every American Family.
+                    <br />
+                    <span style={{ color: '#b8962e' }}>Ready.</span>
+                  </h1>
+                  <p style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#64748b', maxWidth: '28rem', margin: '0 auto' }}>
+                    Join families across the country who are securing their legacy with CarryOn.
+                    Start your free 30-day trial today.
+                  </p>
+                </div>
+
+                {/* Social proof */}
+                <div className="grid grid-cols-3 gap-3 mb-6">
+                  {[
+                    { value: '130+', label: 'Families Protected' },
+                    { value: 'AES-256', label: 'Bank-Grade Encryption' },
+                    { value: '30 days', label: 'Free Trial' },
+                  ].map(stat => (
+                    <div key={stat.label} style={{
+                      background: 'rgba(255,255,255,0.7)', borderRadius: '1rem',
+                      border: '1px solid rgba(0,0,0,0.05)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.8)',
+                    }} className="p-3 sm:p-4 text-center">
+                      <div style={{ fontWeight: 900, fontSize: '1.125rem', color: '#b8962e' }}>{stat.value}</div>
+                      <div style={{ fontWeight: 600, fontSize: '0.625rem', color: '#94a3b8', marginTop: '0.25rem' }}>{stat.label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* What's included */}
+                <div style={{
+                  background: 'rgba(255,255,255,0.7)', borderRadius: '1rem',
+                  border: '1px solid rgba(0,0,0,0.05)', padding: '1.25rem',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                }} className="space-y-2.5 mb-6">
+                  <h3 style={{ fontWeight: 800, fontSize: '0.6875rem', color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Your trial includes</h3>
+                  {['Secure document vault', 'Milestone messages', 'AI estate guardian', 'Action checklists', 'Digital credential vault', 'Up to 3 beneficiaries'].map(item => (
+                    <div key={item} className="flex items-center gap-3">
+                      <div style={{ width: '1.25rem', height: '1.25rem', borderRadius: '50%', background: 'linear-gradient(135deg, #d4af37, #e8c84a)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 4px rgba(212,175,55,0.3)' }}>
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                      <span style={{ fontWeight: 700, fontSize: '0.875rem', color: '#334155' }}>{item}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  onClick={handleStartTrial}
+                  disabled={loading}
+                  style={{ ...goldBtn, height: '3.25rem', fontSize: '1rem', boxShadow: '0 6px 20px rgba(180,140,40,0.35), 0 3px 8px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,230,130,0.5)' }}
+                  className="w-full flex items-center justify-center gap-2 active:scale-[0.98] hover:brightness-105 cursor-pointer"
+                  data-testid="funnel-start-trial-btn"
+                >
+                  Start My Free Trial <ChevronRight className="w-5 h-5" />
+                </button>
+
+                <p style={{ fontWeight: 600, fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center', marginTop: '0.75rem' }}>
+                  No credit card required. Cancel anytime.
+                </p>
+              </div>
+            )}
+
+            {/* STEP 5: Referral */}
+            {step === 5 && (
+              <div style={glassPanel} className="p-6 sm:p-8 animate-in fade-in duration-500" data-testid="funnel-step-5">
+                <div className="text-center space-y-3 mb-6">
+                  <h1 style={{ fontWeight: 900, fontSize: '1.625rem', color: '#1e293b' }}>
+                    Bring Your Family Along
+                  </h1>
+                  <p style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#64748b', maxWidth: '28rem', margin: '0 auto' }}>
+                    Invite a family member and you'll <span style={{ color: '#1e293b', fontWeight: 800 }}>both</span> get
+                    <span style={{ color: '#b8962e', fontWeight: 800 }}> +7 bonus days</span> on your trial.
+                  </p>
+                </div>
+
+                <div style={{
+                  background: 'rgba(255,255,255,0.7)', borderRadius: '1rem',
+                  border: '1px solid rgba(0,0,0,0.05)', padding: '1.5rem',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                }} className="space-y-4 mb-4">
+                  <div className="flex items-center gap-3">
+                    <Send className="w-5 h-5" style={{ color: '#b8962e' }} />
+                    <span style={{ fontWeight: 800, fontSize: '0.875rem', color: '#334155' }}>Send an invite</span>
+                  </div>
+                  <input
+                    type="email"
+                    placeholder="Family member's email"
+                    value={referralEmail}
+                    onChange={e => setReferralEmail(e.target.value)}
+                    data-testid="referral-email-input"
+                    style={{
+                      width: '100%', height: '3rem', borderRadius: '0.875rem',
+                      background: 'rgba(255,255,255,0.8)', border: '1.5px solid rgba(0,0,0,0.08)',
+                      padding: '0 1rem', fontWeight: 600, fontSize: '0.9375rem', color: '#334155',
+                      outline: 'none', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.04)',
+                      transition: 'border-color 0.2s',
+                    }}
+                    onFocus={e => e.target.style.borderColor = '#d4af37'}
+                    onBlur={e => e.target.style.borderColor = 'rgba(0,0,0,0.08)'}
+                  />
+                  <button
+                    onClick={handleReferral}
+                    disabled={!referralEmail || !referralEmail.includes('@') || loading}
+                    style={(!referralEmail || !referralEmail.includes('@') || loading) ? goldBtnDisabled : goldBtn}
+                    className="w-full h-12 flex items-center justify-center gap-2 active:scale-[0.98] hover:brightness-105 cursor-pointer"
+                    data-testid="referral-send-btn"
+                  >
+                    Send Invite & Continue <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <button
+                  onClick={handleSkipReferral}
+                  data-testid="referral-skip-btn"
+                  style={{ fontWeight: 700, fontSize: '0.875rem', color: '#94a3b8', transition: 'color 0.2s' }}
+                  className="w-full text-center py-2 hover:text-[#64748b] cursor-pointer"
+                >
+                  Skip for now — I'll invite them later
+                </button>
+              </div>
+            )}
+
+          </div>
         </div>
-      </div>
 
-      {/* Bottom branding */}
-      <div className="text-center pb-6">
-        <span className="text-xs text-[#1e293b]">CarryOn™ · Every American Family. Ready.</span>
+        {/* Bottom branding */}
+        <div className="text-center pb-6">
+          <span style={{ fontWeight: 700, fontSize: '0.6875rem', color: 'rgba(255,255,255,0.5)' }}>
+            CarryOn &mdash; Every American Family. Ready.
+          </span>
+        </div>
       </div>
     </div>
   );
