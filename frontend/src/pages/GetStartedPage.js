@@ -265,12 +265,14 @@ export default function GetStartedPage() {
       {/* Google Font */}
       <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 
-      {/* American flag background — same as login page */}
+      {/* American flag background — exact duplicate of home page hero */}
       <div className="fixed inset-0 z-0">
         <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ opacity: 0.85 }} />
       </div>
-      {/* Soft gradient to help readability without making it dark */}
-      <div className="fixed inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(240,235,220,0.35) 40%, rgba(255,250,240,0.5) 100%)' }} />
+      {/* Dark gradient overlay — same as home page */}
+      <div className="fixed inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.05) 0%, rgba(11,18,33,0.45) 70%, #0E1829 100%)' }} />
+      {/* Radial accent — same as home page */}
+      <div className="fixed inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 70% 50% at 35% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
 
       {/* Content */}
       <div className="relative z-10 min-h-screen flex flex-col">
