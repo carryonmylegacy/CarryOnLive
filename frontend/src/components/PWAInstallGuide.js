@@ -14,8 +14,8 @@ const ToolbarMini = () => (
       <span className="text-white/40 text-[11px]">carryon.us</span>
     </div>
     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 3v5h-5"/></svg>
-    <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ border: '2px solid #d4af37', background: 'rgba(212,175,55,0.15)' }}>
-      <MoreHorizontal className="w-4 h-4 text-[#d4af37]" />
+    <div className="w-8 h-8 rounded-full flex items-center justify-center animate-pulse-fast" style={{ border: '2px solid rgba(255,255,255,0.8)', background: 'rgba(255,255,255,0.1)' }}>
+      <MoreHorizontal className="w-4 h-4 text-white/90" />
     </div>
   </div>
 );
@@ -23,10 +23,10 @@ const ToolbarMini = () => (
 /* ── iOS-accurate ••• popup menu (dark, matches actual iOS) ── */
 const DotMenuMini = () => (
   <div className="rounded-xl overflow-hidden mx-auto" style={{ background: '#2c2c2e', maxWidth: '260px' }}>
-    <div className="flex items-center gap-2.5 px-3.5 py-2.5" style={{ background: 'rgba(212,175,55,0.12)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d4af37" strokeWidth="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-      <span className="text-[#d4af37] text-sm font-medium flex-1">Share</span>
-      <span className="text-[#d4af37] text-[11px]">tap this</span>
+    <div className="flex items-center gap-2.5 px-3.5 py-2.5 animate-pulse-fast" style={{ background: 'rgba(255,255,255,0.1)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+      <span className="text-white text-sm font-medium flex-1">Share</span>
+      <span className="text-white/70 text-[11px]">tap this</span>
     </div>
     <div className="flex items-center gap-2.5 px-3.5 py-2 opacity-40" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
@@ -73,7 +73,7 @@ const ShareSheetMini = () => (
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1c1c1e" strokeWidth="1.5"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
         <span className="text-sm">Add to Bookmarks</span>
       </div>
-      <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg mx-1 my-0.5" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)' }}>
+      <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg mx-1 my-0.5 animate-pulse-fast" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)' }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d4af37" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
         <span className="text-[#9a7b1a] text-sm font-semibold flex-1">Add to Home Screen</span>
         <span className="text-[#9a7b1a] text-[11px] font-medium">tap this</span>
@@ -92,7 +92,7 @@ const AddConfirmMini = () => (
     <div className="flex items-center justify-between px-3.5 py-2.5" style={{ borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
       <span className="text-[#007AFF] text-sm">Cancel</span>
       <span className="text-[#1c1c1e] text-sm font-semibold">Add to Home Screen</span>
-      <span className="text-white text-sm font-bold px-3 py-1 rounded-full" style={{ background: '#007AFF', boxShadow: '0 0 8px rgba(0,122,255,0.4)' }}>Add</span>
+      <span className="text-white text-sm font-bold px-3 py-1 rounded-full animate-pulse-fast" style={{ background: '#007AFF', boxShadow: '0 0 8px rgba(0,122,255,0.4)' }}>Add</span>
     </div>
     <div className="flex items-center gap-3 px-3.5 py-3">
       <img src="/carryon-logo.png" alt="" className="w-10 h-10 rounded-xl" style={{ border: '1px solid rgba(0,0,0,0.08)' }} />
