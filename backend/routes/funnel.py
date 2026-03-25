@@ -3,7 +3,7 @@ from datetime import datetime, timezone, timedelta
 import uuid
 import httpx
 
-from config import db, logger
+from config import db
 from routes.auth import get_current_user
 
 router = APIRouter()
@@ -170,9 +170,7 @@ async def funnel_convert(request: Request):
     )
 
     # Handle referral bonus: extend trial for both referrer and referred
-    session = await db.funnel_sessions.find_one(
-        {"session_id": session_id}, {"_id": 0, "referral_email": 1}
-    )
+    session = await db.funnel_sessions.find_one({"session_id": session_id}, {"_id": 0, "referral_email": 1})
     referral_email = session.get("referral_email") if session else None
 
     if referral_email:
@@ -222,32 +220,42 @@ async def funnel_analytics(user=Depends(get_current_user)):
     # By UTM source
     source_pipeline = [
         {"$match": {"utm_source": {"$ne": ""}}},
-        {"$group": {
-            "_id": "$utm_source",
-            "total": {"$sum": 1},
-            "completed": {"$sum": {"$cond": ["$completed", 1, 0]}},
-            "converted": {"$sum": {"$cond": ["$converted", 1, 0]}},
-        }},
+        {
+            "$group": {
+                "_id": "$utm_source",
+                "total": {"$sum": 1},
+                "completed": {"$sum": {"$cond": ["$completed", 1, 0]}},
+                "converted": {"$sum": {"$cond": ["$converted", 1, 0]}},
+            }
+        },
         {"$sort": {"total": -1}},
         {"$limit": 20},
     ]
     sources = await db.funnel_sessions.aggregate(source_pipeline).to_list(20)
-    by_source = [{"source": s["_id"], "total": s["total"], "completed": s["completed"], "converted": s["converted"]} for s in sources]
+    by_source = [
+        {"source": s["_id"], "total": s["total"], "completed": s["completed"], "converted": s["converted"]}
+        for s in sources
+    ]
 
     # By campaign
     campaign_pipeline = [
         {"$match": {"utm_campaign": {"$ne": ""}}},
-        {"$group": {
-            "_id": "$utm_campaign",
-            "total": {"$sum": 1},
-            "completed": {"$sum": {"$cond": ["$completed", 1, 0]}},
-            "converted": {"$sum": {"$cond": ["$converted", 1, 0]}},
-        }},
+        {
+            "$group": {
+                "_id": "$utm_campaign",
+                "total": {"$sum": 1},
+                "completed": {"$sum": {"$cond": ["$completed", 1, 0]}},
+                "converted": {"$sum": {"$cond": ["$converted", 1, 0]}},
+            }
+        },
         {"$sort": {"total": -1}},
         {"$limit": 20},
     ]
     campaigns = await db.funnel_sessions.aggregate(campaign_pipeline).to_list(20)
-    by_campaign = [{"campaign": c["_id"], "total": c["total"], "completed": c["completed"], "converted": c["converted"]} for c in campaigns]
+    by_campaign = [
+        {"campaign": c["_id"], "total": c["total"], "completed": c["completed"], "converted": c["converted"]}
+        for c in campaigns
+    ]
 
     # By device type
     device_pipeline = [
@@ -259,11 +267,13 @@ async def funnel_analytics(user=Depends(get_current_user)):
     # By geography (top 10 states)
     geo_pipeline = [
         {"$match": {"demographics.state": {"$ne": ""}}},
-        {"$group": {
-            "_id": "$demographics.state",
-            "total": {"$sum": 1},
-            "converted": {"$sum": {"$cond": ["$converted", 1, 0]}},
-        }},
+        {
+            "$group": {
+                "_id": "$demographics.state",
+                "total": {"$sum": 1},
+                "converted": {"$sum": {"$cond": ["$converted", 1, 0]}},
+            }
+        },
         {"$sort": {"total": -1}},
         {"$limit": 10},
     ]
@@ -282,11 +292,27 @@ async def funnel_analytics(user=Depends(get_current_user)):
     by_interest = [{"interest": i["_id"], "count": i["count"]} for i in interests_raw]
 
     # Recent sessions (last 10)
-    recent = await db.funnel_sessions.find(
-        {}, {"_id": 0, "session_id": 1, "utm_source": 1, "utm_campaign": 1, "device_type": 1,
-             "demographics": 1, "completed": 1, "converted": 1, "drop_off_step": 1,
-             "referral_email": 1, "created_at": 1}
-    ).sort("created_at", -1).limit(10).to_list(10)
+    recent = (
+        await db.funnel_sessions.find(
+            {},
+            {
+                "_id": 0,
+                "session_id": 1,
+                "utm_source": 1,
+                "utm_campaign": 1,
+                "device_type": 1,
+                "demographics": 1,
+                "completed": 1,
+                "converted": 1,
+                "drop_off_step": 1,
+                "referral_email": 1,
+                "created_at": 1,
+            },
+        )
+        .sort("created_at", -1)
+        .limit(10)
+        .to_list(10)
+    )
 
     # Referral stats
     referrals_sent = await db.funnel_sessions.count_documents({"referral_email": {"$ne": None}})

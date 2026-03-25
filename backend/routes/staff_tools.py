@@ -557,7 +557,12 @@ async def _build_integrations_data():
                 {"label": "App ID", "value": "1:986105602287:web:28d212431b9d445d907b1a", "verified": True},
                 {"label": "Measurement ID", "value": "G-60D910V279", "verified": True},
                 {"label": "Auth Domain", "value": "carryon-74e7e.firebaseapp.com", "verified": True},
-                {"label": "API Key", "value": "AIzaSyAuc7mMRJMr5qLsusi-_XRItoRbYoaYXrY", "sensitive": True, "verified": True},
+                {
+                    "label": "API Key",
+                    "value": "AIzaSyAuc7mMRJMr5qLsusi-_XRItoRbYoaYXrY",
+                    "sensitive": True,
+                    "verified": True,
+                },
                 {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
             ],
         },
@@ -571,7 +576,11 @@ async def _build_integrations_data():
             "cost_note": "$0/mo (free — revenue comes from ad spend)",
             "cost_verified": True,
             "details": [
-                {"label": "Purpose", "value": "Ad conversion tracking, retargeting, audience optimization", "verified": True},
+                {
+                    "label": "Purpose",
+                    "value": "Ad conversion tracking, retargeting, audience optimization",
+                    "verified": True,
+                },
                 {"label": "Plan", "value": "Free (included with Meta Business Suite)", "verified": True},
                 {"label": "Pixel ID", "value": "", "verified": False, "sensitive": True},
                 {"label": "Events Tracked", "value": "ViewContent, Lead, CompleteRegistration", "verified": True},

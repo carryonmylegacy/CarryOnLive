@@ -30,7 +30,29 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
-### Completed (March 25, 2026 — Session 27: IAP Logic Consolidation + Backlog Cleanup)
+### Completed (March 25, 2026 — Session 27: Acquisition Funnel + IAP Consolidation)
+
+#### Social Media Acquisition Funnel (March 25, 2026)
+Full campaign attribution and conversion tracking system for social media ad campaigns:
+
+- **Frontend — `/get-started` funnel page** (`GetStartedPage.js`): 5-screen mobile-first onboarding flow
+  - Screen 1: Interest selection (6 bubbles: protect family, organize docs, plan unexpected, guide beneficiaries, digital credentials, I'm a beneficiary)
+  - Screen 2: Family qualification (family size, estate status, urgency)
+  - Screen 3: Personalized feature cards with keep/skip interaction
+  - Screen 4: CTA with social proof stats and "Start Free Trial" button
+  - Screen 5: Referral — invite family member for +7 days trial bonus for both parties
+- **Backend — Funnel API** (`/app/backend/routes/funnel.py`):
+  - `POST /api/funnel/start` — Creates anonymous session, captures UTMs, IP geolocation via ip-api.com
+  - `POST /api/funnel/step` — Records step completion with user selections
+  - `POST /api/funnel/complete` — Marks funnel as completed, stores referral email
+  - `POST /api/funnel/convert` — Links funnel session to user after signup, extends trial +7 days for referral
+  - `GET /api/admin/funnel/analytics` — Aggregated analytics: drop-offs, by source, by campaign, by device, by state, by interest, referrals, recent sessions
+- **Firebase Analytics** (`/app/frontend/src/services/firebase.js`): Initialized on funnel mount, fires events at each step for demographics, retention, and audience insights
+- **Meta Pixel**: Placeholder ready — fires `ViewContent`, `Lead`, `CompleteRegistration` events. Will activate when Pixel ID is provided.
+- **Admin Funnel Tab**: New tab in Founder portal with full analytics dashboard (drop-off waterfall, source/campaign comparison, device breakdown, geographic heatmap, interest clustering, referral stats, recent sessions table)
+- **Login Page**: Added subtle "New to estate planning? See what CarryOn can do →" link on both mobile and desktop
+- **Safeguards**: Logged-in users redirect to dashboard, returning non-converted visitors restart at CTA (Screen 4), 7-day reset for fresh funnel experience
+- **Integrations Tab**: Added Firebase Analytics (active, free) and Meta Pixel (blocked, awaiting Pixel ID) tiles to admin Integrations tab under new "Analytics" category
 
 #### IAP Logic Consolidation (March 25, 2026)
 Extracted duplicated Apple In-App Purchase logic from `SubscriptionPaywall.js` and `SubscriptionManagement.js` into a single `useIAPPurchase` custom hook at `/app/frontend/src/hooks/useIAPPurchase.js`:
