@@ -1,180 +1,420 @@
-<analysis>**original_problem_statement**:
-The user initiated this session to fix a critical Apple App Store rejection where the In-App Purchase (IAP) flow was non-functional. The debugging process revealed this was due to a missing Paid Applications Agreement in App Store Connect, an administrative blocker on Apple's side.
+<analysis>**original_problem_statement**: 
+The user initially requested to implement a pending task: consolidating Apple IAP logic into a custom  hook. Following that, the user requested the creation of a multi-step pre-signup onboarding funnel () to capture social media campaign traffic. This funnel needed to capture UTM parameters, track drop-offs, and gather demographic data. The user wanted the funnel integrated with Firebase Analytics and Meta Pixel. Later, the user requested a UI overhaul of the funnel and other landing pages to use a consistent, brightened American flag background with light-mode frosted glass panels, and to update the funnel's feature-selection summary screen to be more sensitive and respectful of features the user chose to Skip.
 
-While waiting for Apple, the user requested work on several high-priority backlog items:
-1.  **Beneficiary Portal Feature Enforcement**: A critical security and business logic feature to ensure beneficiaries can only access features explicitly granted to them by the benefactor.
-2.  **Twilio SMS OTP Integration**: Adding SMS as a two-factor authentication method. This uncovered another blocker: a failed A2P 10DLC campaign registration with Twilio. The agent diagnosed the failure reasons and provided the user with exact copy to resubmit the campaign for approval.
-3.  **Feature Access Summary Card**: A new UI element on the beneficiary dashboard to clearly communicate what features a beneficiary has access to post-transition.
-4.  ** Refactoring**: A major code quality improvement to break down a monolithic 1,600+ line file into smaller, maintainable components.
-5.  **Landing Page UI Tweak**: A minor cosmetic change to lighten the background of the landing page hero section to improve visibility.
+PRODUCT REQUIREMENTS:
+1. IAP Logic Consolidation: Move duplicated IAP code into .
+2. Social Media Funnel: Create  with 5 steps, integrating Meta Pixel and Firebase. Track sessions in MongoDB.
+3. UI Redesign: Apply a vivid, clear American flag background with bright lighting and light-mode frosted glass panels across the funnel, login, create estate, and FFN pages.
+4. Funnel Refinement: Add visual feedback for the Skip button and rewrite the final summary screen to validate user choices while gently offering skipped features as a free trial bonus.
 
-**User's preferred language**: English
+**User's preferred language**: English (INSTRUCT next agent to respond in English only)
 
-**what currently exists?**
-The application is in a stable state with significant new functionality implemented and tested. Two major features (Beneficiary Feature Enforcement and Twilio SMS OTP) are fully coded but are blocked by external administrative processes (Apple App Store agreement and Twilio campaign approval, respectively). A major refactoring of the  has dramatically improved code maintainability without introducing regressions. The codebase is clean and passes all 50 automated housekeeping checks.
+**what currently exists?** 
+The application has a fully functional, mobile-first 5-step acquisition funnel at . It successfully captures UTMs, links to a MongoDB  collection, and fires events to both Firebase Analytics and Meta Pixel (which are fully configured and secured via  and GCP restrictions). The Admin portal features a new Funnel Analytics tab for real-time tracking, and the Integrations tab securely stores social media and analytics credentials. The UI across the Funnel, Login, Create Estate, and FFN pages has been unified with a brightened, high-quality American flag background and frosted glass light-mode elements.
 
 **Last working item**:
-- **Last item agent was working**: Lightening the background of the hero section on the landing page () to improve the visibility of the American flag image. The agent modified the opacity and gradient overlay values.
-- **Status**: IN PROGRESS
-- **Agent Testing Done**: N
-- **Which testing method agent to use?**: screenshot tool (to visually verify the cosmetic change on the  page).
-- **User Testing Done**: N
+    - Last item agent was working: Updating the  funnel to provide visual feedback (a brief flash/highlight) when the user taps Skip on a feature card, and refactoring the final summary screen to show a personalized, respectful breakdown of kept vs skipped features.
+    - Status: IN PROGRESS
+    - Agent Testing Done: N
+    - Which testing method agent to use? screenshot tool (to verify the visual feedback of the Skip button and the layout/verbiage of the new Summary screen).
+    - User Testing Done: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Verify landing page background change (P0)**
-    -   **Description**: The agent implemented code to lighten the landing page hero and section backgrounds but did not verify the visual result.
-    -   **Next debug checklist**:
-        1.  Run a frontend build (yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.).
-        2.  Use the  on the  page.
-        3.  Visually confirm the background is lighter.
-    -   **Status**: IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?**: Frontend
-
--   **Issue 2: Apple IAP flow is non-functional (P0 - BLOCKED)**
-    -   **Description**: The entire IAP flow is blocked because the user's Apple Developer account is missing an active Paid Applications Agreement. The code has been hardened with timeouts and correct product IDs, but cannot function until Apple approves the agreement.
-    -   **Status**: BLOCKED (on user action with Apple).
-    -   **Is recurring issue?**: Y
-    -   **Should Test frontend/backend/both after fix?**: Both (requires a new TestFlight build by the user).
-    -   **Blocked on other issue**: User needs to finalize legal agreements with Apple.
-
--   **Issue 3: Twilio SMS OTP delivery is failing (P0 - BLOCKED)**
-    -   **Description**: The SMS OTP feature is fully implemented, but messages are not being delivered because the user's A2P 10DLC campaign registration was rejected by Twilio.
-    -   **Status**: BLOCKED (on Twilio campaign approval).
-    -   **Is recurring issue?**: N
-    -   **Should Test frontend/backend/both after fix?**: Backend (by sending a test SMS after campaign approval).
-    -   **Blocked on other issue**: User needs to wait for Twilio to approve the resubmitted campaign.
-
--   **Issue 4: Orbiting Estates UI Performance (P1)**
-    -   **Description**: From a previous fork, the user reported that the orbiting estates visualization was extremely slow. A fix was implemented but its effectiveness was never confirmed by the user.
-    -   **Status**: USER VERIFICATION PENDING
-    -   **Is recurring issue?**: Y
-    -   **Should Test frontend/backend/both after fix?**: Frontend
+  Issue 1: Test and verify the Funnel Skip visual feedback and summary UI (P0)
+  Issue 2: Apple IAP flow is non-functional (P0 - BLOCKED)
+  Issue 3: Twilio SMS OTP delivery is failing (P0 - BLOCKED)
+  
+  Issues Detail:
+  - Issue 1: 
+     - Attempted fixes: The agent just applied code changes via  to  but did not execute visual tests or compile checks yet.
+     - Next debug checklist: Start frontend server, navigate to , skip a feature, and capture a screenshot of the resulting summary screen to ensure UI rendering is correct and verbiage matches the user's intent.
+     - Why fix this issue and what will be achieved with the fix? Completes the user's latest request for improved sensitivity in the funnel flow.
+     - Status: TESTING PENDING
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix? Frontend
+     - Blocked on other issue: None
+  - Issue 2: 
+     - Attempted fixes: Code is fully implemented.
+     - Next debug checklist: Await user action with Apple.
+     - Why fix this issue and what will be achieved with the fix? Enables monetization via native iOS app.
+     - Status: BLOCKED
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? Both
+     - Blocked on other issue: User's Apple Developer Paid Applications Agreement approval.
+  - Issue 3: 
+     - Attempted fixes: Code is fully implemented.
+     - Next debug checklist: Await user action with Twilio.
+     - Why fix this issue and what will be achieved with the fix? Enables SMS OTP for authentication.
+     - Status: BLOCKED
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix? Backend
+     - Blocked on other issue: User's A2P 10DLC campaign approval from Twilio.
 
 **In progress Task List**:
-(None)
+  Task 1: Finalize Funnel UI Sensitivity adjustments (P0)
+  
+ Task Detail:
+  - Task 1: 
+     - Where to resume: Agent just finished editing . Resume by verifying compilation, taking a screenshot of the skip interaction and the summary page, running  if necessary, and executing 
+==========================================
+  CarryOn™ Housekeeping Protocol
+  + SOC 2 Compliance Audit
+==========================================
+
+[1mPRE-FLIGHT: Auto-fix lint & formatting[0m
+------------------------------------------
+  ruff format .................. [0;32mFIXED[0m
+
+[1mSECTION A: Standard Housekeeping[0m
+------------------------------------------
+1.  Backend ruff check ............ [0;32mPASS[0m
+2.  Backend ruff format ........... [0;32mPASS[0m
+3.  Frontend ESLint (errors) ...... [0;32mPASS[0m
+4.  Frontend build ................ [0;32mPASS[0m
+5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: a65ad51aa8c9)
+6.  MongoDB _id leak scan ......... [0;32mPASS[0m
+7.  Hardcoded secrets scan ........ [0;32mPASS[0m
+8.  Sensitive console.log scan .... [0;32mPASS[0m
+9.  Deprecated datetime scan ...... [0;32mPASS[0m
+10. Backend health check .......... [0;32mPASS[0m
+11. Unprotected endpoint audit .... [0;32mPASS[0m (39 route files audited)
+
+[1mSECTION B: SOC 2 Compliance Audit[0m
+------------------------------------------
+12. [CC6.1] Auth guard coverage ... [0;32mPASS[0m
+13. [CC6.1] Encryption at rest .... [0;32mPASS[0m (AES-256-GCM only, no legacy Fernet in routes)
+14. [CC6.1] Password hashing ...... [0;32mPASS[0m
+15. [CC7.2] Audit trail coverage .. [0;32mPASS[0m (all sensitive routes have audit logging)
+16. [CC7.2] Audit integrity hash .. [0;32mPASS[0m (SHA-256 integrity hash on all audit entries)
+17. [CC7.2] Audit immutability .... [0;32mPASS[0m (append-only — no update/delete on audit_trail)
+18. [CC7.2] Token blacklist ....... [0;32mPASS[0m (token blacklisting active)
+19. [CC7.2] Session enforcement ... [0;32mPASS[0m (single-session enforcement active)
+20. [CC7.2] OTP expiry check ...... [0;32mPASS[0m (10-minute OTP expiry enforced)
+21. [CC7.2] Account lockout ....... [0;32mPASS[0m (5-attempt lockout with 15-min window)
+22. [PI1.1] GDPR data export ...... [0;32mPASS[0m (endpoint exists — HTTP 403)
+23. [PI1.1] GDPR data deletion ... [0;32mPASS[0m (right to erasure endpoint present)
+24. [PI1.1] Consent management ... [0;32mPASS[0m (consent management endpoints present)
+25. [CC8.1] Soft-delete standard .. [0;32mPASS[0m (10 hard deletes — reviewed)
+26. [A1.2]  Error reporter ........ [0;32mPASS[0m (global error reporter active)
+27. [A1.2]  Error logging endpoint  [0;32mPASS[0m (error reporting endpoint operational)
+28. [CC6.1] Sensitive access log .. [0;32mPASS[0m (sensitive access logging indexed)
+29. [CC7.2] Rate limiting ......... [0;32mPASS[0m (rate limiting middleware active)
+30. [CC6.1] CORS configuration .... [0;32mPASS[0m (CORS configured, no wildcard)
+31. [CC6.1] Security headers ...... [0;32mPASS[0m (security headers middleware active)
+32. [CC7.2] DB indexes verified ... [0;32mPASS[0m (49 indexes defined)
+33. [CC8.1] Env fallback scan ...... [0;32mPASS[0m
+34. [A1.2] Recent backend logs ..... [0;32mPASS[0m
+35. [CC8.1] Route editor audit ..... [0;32mPASS[0m
+36. [A1.2]  Deploy start commands .. [0;32mPASS[0m (no shell built-ins in start commands)
+37. [A1.2]  Deploy healthcheck ..... [0;32mPASS[0m (healthcheckPath = "/api/health")
+38. [A1.2]  Mongo projection safety  [0;32mPASS[0m
+
+[1mSECTION C: iOS / App Store Readiness[0m
+------------------------------------------
+39. [iOS]   Capacitor sync ......... [0;32mPASS[0m (11 plugins for iOS)
+40. [iOS]   Native purchases plugin  [0;32mPASS[0m (package.json + Capacitor + Podfile, v^8.1.2)
+41. [iOS]   IAP product IDs ........ [0;32mPASS[0m (37 products, no duplicates)
+42. [iOS]   Stripe gated on iOS .... [0;32mPASS[0m (all Stripe redirects gated behind isNative)
+43. [iOS]   IAP imports present .... [0;32mPASS[0m (iap/useIAPPurchase + native imported in both subscription components)
+44. [iOS]   Apple disclosures ...... [0;32mPASS[0m (auto-renew, 24h cancel, Terms, Privacy, Restore)
+45. [iOS]   Entitlements XML ....... [0;32mPASS[0m
+46. [iOS]   Info.plist XML ......... [0;32mPASS[0m
+47. [iOS]   Podfile complete ....... [0;32mPASS[0m (13 pods defined)
+48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 56 JS bundles)
+49. [iOS]   codemagic.yaml ......... [0;32mPASS[0m (ios-build + pod install + cap sync + TestFlight)
+50. [iOS]   Min font size (11px) ... [0;32mPASS[0m (no fonts below 11px)
+
+[1mSECTION D: Post-Check Verification[0m
+------------------------------------------
+R1. Lint & format verified ...... [0;36mINFO[0m (clean after pre-flight)
+
+==========================================
+  [0;32mALL CHECKS PASSED[0m — codebase is clean
+  [0;32mREADY TO PUSH[0m — CodeMagic → TestFlight → App Store
+==========================================
+
+Safety reminder: Do NOT run yarn add/remove.
+To fix ruff format: cd /app/backend && ruff format .
+
+SOC 2 Trust Service Criteria Reference:
+  CC6.1  Logical access security
+  CC7.2  System monitoring & audit
+  CC8.1  Change management
+  A1.2   System availability
+  PI1.1  Privacy (GDPR) before finishing.
+     - What will be achieved with this? Closes out the final UI refinement for the social media funnel.
+     - Status: TESTING PENDING
+     - Should Test frontend/backend/both after fix? Frontend
+     - Blocked on something: No
 
 **Upcoming and Future Tasks**
--   **Upcoming Tasks**:
-    -   (P1) **Share Extension Setup**: Wire up the existing  to allow sharing content from other iOS apps into CarryOn, using the notes in .
-    -   (P1) **Video Playback on Milestone Page**: Investigate and fix the recurring issue where video playback fails on Safari/iOS. The user noted it hasn't been a problem recently, but it remains unresolved.
-    -   (P1) **iOS Live Updates (Post-Approval)**: Set up and test Capgo for over-the-air updates. The user has agreed this should only be done *after* the initial app version is approved by the App Store.
-
--   **Future Tasks**:
-    -   (P2) **Settings Page UI Glitch**: Investigate a potential Flash of Unstyled Content (FOUC) on the settings page.
-    -   (P2) **Readiness Scoring Policy Page**: Create an informational page explaining how the estate readiness score is calculated.
-    -   (P2) **IAP logic consolidation**: Refactor duplicated IAP logic from  and  into a single custom hook () to improve maintainability.
+    Upcoming Tasks:
+    - (P1) Share Extension Setup: Wire up  for iOS (/app/memory/SHARE_EXTENSION_SETUP.md).
+    - (P1) iOS Live Updates (Capgo): Set up over-the-air updates (Post App Store approval).
+    Future Tasks:
+    - (P2) Readiness Scoring Policy Page: Create an informational page explaining how the estate readiness score is calculated.
+    - (P2) Scalability Enhancements.
 
 **Completed work in this session**
--   **Twilio SMS OTP Integration (DONE - Blocked)**: Fully implemented SMS as a 2FA option. This included backend endpoints in  for setup/verification/disable, and frontend UI in  and . Diagnosed the failed A2P 10DLC campaign as the root cause of delivery failure.
--   ** Refactoring (DONE)**: Successfully refactored the monolithic 1,626-line  into 7 self-contained components, reducing the parent file to 153 lines (a 90.6% reduction) and improving maintainability.
--   **Beneficiary Portal Feature Enforcement (DONE)**: Implemented and tested logic to ensure beneficiaries only see the UI and navigation for features granted to them by the benefactor.
--   **Feature Access Summary Card (DONE)**: Added a new UI card to the  that clearly lists the features a beneficiary has access to post-transition.
--   **IAP Hardening & Diagnosis (DONE)**: Added timeout protection to all IAP functions in  to prevent the UI from hanging. Diagnosed the root cause of IAP failure as the missing Paid Applications Agreement in App Store Connect.
--   **PRD Update (DONE)**: Updated  to reflect the status of the Twilio A2P campaign registration.
+- IAP Logic Consolidation into  hook (DONE)
+- Social Media Acquisition Funnel () creation with MongoDB session tracking (DONE)
+- Admin Funnel Analytics Tab (DONE)
+- Firebase Analytics and Meta Pixel integration (DONE)
+- Admin Integrations Tab updated to store Firebase, Meta Pixel, IG, FB, and LinkedIn credentials (DONE)
+- Funnel UI Redesign: Light mode, rounded fonts, 3D buttons, vivid American flag background (DONE)
+- Applied the new vivid American flag background to Login, Create Estate, and FFN pages (DONE)
+- Google API Key (Firebase) Security: Moved to  and restricted in GCP (DONE)
+- Housekeeping script: Fixed pre-existing sub-11px font and Mongo projection warnings (DONE)
+- Created instructional guide  for the marketing assistant (DONE)
 
 **Earlier issues found/mentioned but not fixed**
--   **Issue 1: Orbiting Estates UI Performance**
-    -   **Debug checklist**: Ask user to test on the  page and report if the animation is still laggy or frozen. If it is, use the screenshot tool to check for console errors.
-    -   **Why to solve this issue?**: It's a core UX feature of the beneficiary portal that was previously reported as broken.
-    -   **Should Test frontend/backend/both after fix?**: Frontend
-    -   **Is recurring issue?**: Y
+None. Orbiting Estates UI Performance, Video Playback on Milestone Page, and Settings Page UI Glitch were explicitly crossed off the list by the user at the start of the session.
 
 **Known issue recurrence from previous fork**
--   **Issue**: Video playback on Milestone Page
--   **Recurrence count**: 5
--   **Status**: NOT STARTED
--   **Issue**: Orbiting Estates UI Performance
--   **Recurrence count**: 2
--   **Status**: USER VERIFICATION PENDING
+  - Issue recurrence in previous fork: Apple IAP block / Twilio block
+  - Recurrence count: 1
+  - Status: BLOCKED
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Large-Scale React Refactoring**: Safely decomposing a monolithic 1600+ line component () into smaller, self-contained, stateful components without introducing regressions. This involved careful state and prop management and was verified with baseline screenshots and build checks.
--   **Twilio A2P 10DLC Debugging**: Programmatically interacting with the Twilio API to diagnose that a  campaign registration (due to incorrect CTA and opt-in descriptions) was the root cause for SMS delivery error .
--   **Feature Flag Enforcement (Frontend)**: Using a centralized permission-fetching component () to control UI visibility and navigation across multiple components (, , ) based on a  object.
--   **Defensive Programming (IAP)**: Wrapping asynchronous native plugin calls () in a  with a  to prevent the application from hanging indefinitely if the native layer fails to respond.
+- **Frontend**: React, Tailwind CSS (heavy inline styling for funnel UI), Shadcn/UI.
+- **Backend**: FastAPI, Motor (Async MongoDB).
+- **Analytics**: Firebase Analytics for automatic demographics/devices, Meta Pixel for ad conversions, custom MongoDB collections for funnel session drop-off tracking.
 
 **key DB schema**
--   **users**: This collection was logically extended to support SMS OTP. While no migration was run, the new code expects the following fields to be set on a user document when SMS OTP is enabled:
-    -   : (String) The user's E.164 formatted phone number.
-    -   : (Boolean)
-    -   : (String) The secret used to generate OTPs, stored to validate verification attempts.
+  - : {session_id, utm_source, utm_medium, utm_campaign, ip_address, device_type, steps (array), completed, converted_user_id, demographics}
 
 **changes in tech stack**
-None.
+  - Added  web SDK for analytics.
+  - Added  tracking via .
 
 **All files of reference**
--   **/app/frontend/src/pages/SettingsPage.js**: The primary file that was refactored.
--   **/app/frontend/src/components/settings/**: The new directory containing the 7 extracted components.
--   **/app/backend/routes/auth.py**: Contains all new backend logic for SMS OTP.
--   **/app/frontend/src/pages/LoginPage.js**: Contains the UI for choosing OTP method (Email/SMS) and the updated hero background styling.
--   **/app/frontend/src/pages/beneficiary/BeneficiaryDashboardPage.js**: The location of the new Feature Access Summary card and where feature enforcement was implemented.
--   **/app/services/iap.js**: Location of the IAP hardening fixes (timeout implementation).
--   **/app/memory/PRD.md**: Contains project requirements and was updated with the Twilio campaign status.
+  - : Main funnel UI. Edited last to handle Skip visual feedback.
+  - : Admin dashboard for the funnel.
+  - : Backend routing for the funnel endpoints.
+  - : Marketing guide created for the user's assistant.
+  - : Build configuration, now includes Firebase and Meta Pixel env vars.
 
 **Areas that need refactoring**:
--   The user was informed about consolidating IAP logic into a custom hook but did not prioritize it.
--   The user explicitly requested **not** to refactor other large files like  and  at this time due to the perceived risk.
+  - The UI inline styles in  and  are quite heavy and could eventually be abstracted into Tailwind classes or reusable components.
 
 **key api endpoints**
--   **SMS OTP Endpoints (New)**:
-    -   : Initiates phone number verification.
-    -   : Completes phone number verification.
-    -   : Disables SMS OTP for the user.
-    -   : Retrieves the user's current SMS OTP status.
--   **Modified Endpoints**:
-    -   : Modified to handle an  payload.
-    -   : Modified to handle an  payload.
-    -   : Modified to include the  object in its response.
+  - : Initiates tracking session.
+  - : Logs completion of a funnel step.
+  - : Converts the funnel session.
+  - : Aggregates drop-offs, conversions, and campaign sources.
 
 **Critical Info for New Agent**
--   The two highest priority features, **Apple IAP** and **Twilio SMS OTP**, are functionally complete but **BLOCKED** by external administrative issues. Do not attempt to debug the code for these features. Your main role is to wait for the user's signal that these external blockers are resolved and then guide them through testing.
--   The immediate next action is to verify the last change: the lightening of the landing page background. Use the screenshot tool on the  page to confirm the visual effect.
--   The  issue from the previous fork is still outstanding and requires user verification. Once the immediate task is done, you should ask the user to check the  page on a TestFlight build and report on the performance.
+- **CRITICAL RULE**: The user has a **zero-tolerance policy** for code quality. Before ANY finish tool call, you MUST run 
+==========================================
+  CarryOn™ Housekeeping Protocol
+  + SOC 2 Compliance Audit
+==========================================
+
+[1mPRE-FLIGHT: Auto-fix lint & formatting[0m
+------------------------------------------
+  [0;36mINFO[0m No fixes needed — already clean
+
+[1mSECTION A: Standard Housekeeping[0m
+------------------------------------------
+1.  Backend ruff check ............ [0;32mPASS[0m
+2.  Backend ruff format ........... [0;32mPASS[0m
+3.  Frontend ESLint (errors) ...... [0;32mPASS[0m
+4.  Frontend build ................ [0;32mPASS[0m
+5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: a65ad51aa8c9)
+6.  MongoDB _id leak scan ......... [0;32mPASS[0m
+7.  Hardcoded secrets scan ........ [0;32mPASS[0m
+8.  Sensitive console.log scan .... [0;32mPASS[0m
+9.  Deprecated datetime scan ...... [0;32mPASS[0m
+10. Backend health check .......... [0;32mPASS[0m
+11. Unprotected endpoint audit .... [0;32mPASS[0m (39 route files audited)
+
+[1mSECTION B: SOC 2 Compliance Audit[0m
+------------------------------------------
+12. [CC6.1] Auth guard coverage ... [0;32mPASS[0m
+13. [CC6.1] Encryption at rest .... [0;32mPASS[0m (AES-256-GCM only, no legacy Fernet in routes)
+14. [CC6.1] Password hashing ...... [0;32mPASS[0m
+15. [CC7.2] Audit trail coverage .. [0;32mPASS[0m (all sensitive routes have audit logging)
+16. [CC7.2] Audit integrity hash .. [0;32mPASS[0m (SHA-256 integrity hash on all audit entries)
+17. [CC7.2] Audit immutability .... [0;32mPASS[0m (append-only — no update/delete on audit_trail)
+18. [CC7.2] Token blacklist ....... [0;32mPASS[0m (token blacklisting active)
+19. [CC7.2] Session enforcement ... [0;32mPASS[0m (single-session enforcement active)
+20. [CC7.2] OTP expiry check ...... [0;32mPASS[0m (10-minute OTP expiry enforced)
+21. [CC7.2] Account lockout ....... [0;32mPASS[0m (5-attempt lockout with 15-min window)
+22. [PI1.1] GDPR data export ...... [0;32mPASS[0m (endpoint exists — HTTP 403)
+23. [PI1.1] GDPR data deletion ... [0;32mPASS[0m (right to erasure endpoint present)
+24. [PI1.1] Consent management ... [0;32mPASS[0m (consent management endpoints present)
+25. [CC8.1] Soft-delete standard .. [0;32mPASS[0m (10 hard deletes — reviewed)
+26. [A1.2]  Error reporter ........ [0;32mPASS[0m (global error reporter active)
+27. [A1.2]  Error logging endpoint  [0;32mPASS[0m (error reporting endpoint operational)
+28. [CC6.1] Sensitive access log .. [0;32mPASS[0m (sensitive access logging indexed)
+29. [CC7.2] Rate limiting ......... [0;32mPASS[0m (rate limiting middleware active)
+30. [CC6.1] CORS configuration .... [0;32mPASS[0m (CORS configured, no wildcard)
+31. [CC6.1] Security headers ...... [0;32mPASS[0m (security headers middleware active)
+32. [CC7.2] DB indexes verified ... [0;32mPASS[0m (49 indexes defined)
+33. [CC8.1] Env fallback scan ...... [0;32mPASS[0m
+34. [A1.2] Recent backend logs ..... [0;32mPASS[0m
+35. [CC8.1] Route editor audit ..... [0;32mPASS[0m
+36. [A1.2]  Deploy start commands .. [0;32mPASS[0m (no shell built-ins in start commands)
+37. [A1.2]  Deploy healthcheck ..... [0;32mPASS[0m (healthcheckPath = "/api/health")
+38. [A1.2]  Mongo projection safety  [0;32mPASS[0m
+
+[1mSECTION C: iOS / App Store Readiness[0m
+------------------------------------------
+39. [iOS]   Capacitor sync ......... [0;32mPASS[0m (11 plugins for iOS)
+40. [iOS]   Native purchases plugin  [0;32mPASS[0m (package.json + Capacitor + Podfile, v^8.1.2)
+41. [iOS]   IAP product IDs ........ [0;32mPASS[0m (37 products, no duplicates)
+42. [iOS]   Stripe gated on iOS .... [0;32mPASS[0m (all Stripe redirects gated behind isNative)
+43. [iOS]   IAP imports present .... [0;32mPASS[0m (iap/useIAPPurchase + native imported in both subscription components)
+44. [iOS]   Apple disclosures ...... [0;32mPASS[0m (auto-renew, 24h cancel, Terms, Privacy, Restore)
+45. [iOS]   Entitlements XML ....... [0;32mPASS[0m
+46. [iOS]   Info.plist XML ......... [0;32mPASS[0m
+47. [iOS]   Podfile complete ....... [0;32mPASS[0m (13 pods defined)
+48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 56 JS bundles)
+49. [iOS]   codemagic.yaml ......... [0;32mPASS[0m (ios-build + pod install + cap sync + TestFlight)
+50. [iOS]   Min font size (11px) ... [0;32mPASS[0m (no fonts below 11px)
+
+[1mSECTION D: Post-Check Verification[0m
+------------------------------------------
+R1. Lint & format verified ...... [0;36mINFO[0m (clean after pre-flight)
+
+==========================================
+  [0;32mALL CHECKS PASSED[0m — codebase is clean
+  [0;32mREADY TO PUSH[0m — CodeMagic → TestFlight → App Store
+==========================================
+
+Safety reminder: Do NOT run yarn add/remove.
+To fix ruff format: cd /app/backend && ruff format .
+
+SOC 2 Trust Service Criteria Reference:
+  CC6.1  Logical access security
+  CC7.2  System monitoring & audit
+  CC8.1  Change management
+  A1.2   System availability
+  PI1.1  Privacy (GDPR) and ensure all 50 checks pass and the git directory is clean.
+- Firebase and Meta Pixel IDs are loaded via environment variables ( and ). DO NOT hardcode them.
+- Apple IAP and Twilio SMS OTP features are complete but administratively blocked. Do not attempt to debug them.
 
 **documents and test reports created in this job**
--   
--   
--   
+  - 
+  - 
 
-**Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: Requested to update the PRD about the Twilio campaign resubmission and to lighten the landing page hero background. Also asked for clarification on IAP logic consolidation and questioned why other large files were listed for refactoring. (Status: In Progress)
-2.  **Assistant**: Explained the concepts, removed the other refactoring tasks from the plan, updated the PRD, and began work on lightening the hero background. (Status: Done)
-3.  **User**: Agreed to refactor  but urged extreme caution. (Status: Done)
-4.  **Assistant**: Acknowledged the user's concern and began the refactoring process by taking a baseline screenshot. (Status: Done)
-5.  **User**: Asked about how Rollback works across forks and the benefits of the refactoring. (Status: Done)
-6.  **Assistant**: Explained that Rollback is persistent and detailed the benefits of refactoring (maintainability, future speed, lower cost). (Status: Done)
-7.  **User**: Agreed to the  refactoring plan. (Status: Done)
-8.  **Assistant**: Outlined the refactoring plan: extracting 7 cards from the 1625-line . (Status: Done)
-9.  **User**: Asked for a percentage guarantee that the refactoring would not break anything. (Status: Done)
-10. **Assistant**: Gave a 95% confidence rating, explained the 5% risk, and highlighted that the Rollback feature provides a 100% safety net. (Status: Done)
+**Last 10 User Messages and any pending HUMAN messages** 
+1. **User**: Asked how to view the email guide.
+2. **Agent**: Pasted the email guide into the chat and asked if social media credentials should be added to the Integrations tab.
+3. **User**: Yes, absolutely please!
+4. **Agent**: Added the credentials and executed bash to confirm.
+5. **User**: Noticed the funnel Skip button lacked visual feedback, and requested a softer, more respectful summary screen that highlights kept features while offering skipped ones as a free trial bonus. (Pending task validation).
 
 **Project Health Check:**
--   **Broken**: None
--   **Mocked**: None
--   **Blocked**: Apple In-App Purchases (awaiting user's Paid Applications Agreement with Apple), Twilio SMS OTP (awaiting user's A2P 10DLC Campaign approval from Twilio).
+  - Broken: None
+  - Mocked: None
+  - Blocked: Apple In-App Purchases, Twilio SMS OTP
 
 **3rd Party Integrations**
--   **@capgo/native-purchases**: v8.2.2. Code is now hardened with timeouts. **Blocked** by Apple administrative issue.
--   **CodeMagic**: Using  instance type. No issues this session.
--   **Stripe**: No changes. Requires User API Key.
--   **Resend**: No changes. Requires User API Key.
--   **Twilio SMS**: v9.10.2. Feature is fully implemented. **Blocked** by A2P 10DLC campaign approval. Requires User API Key.
--   **xAI (Grok)**: No changes. Uses Emergent LLM Key.
+  - Firebase Analytics (Analytics) — requires User config keys (Stored in .env/codemagic)
+  - Meta Pixel (Analytics) — requires User Pixel ID (Stored in .env/codemagic)
+  - @capgo/native-purchases (v8.2.2) — Blocked by Apple
+  - Twilio SMS (v9.10.2) — Blocked by Twilio A2P
+  - Stripe (Payments) — requires User API Key
+  - Resend (Email) — requires User API Key
+  - xAI (Grok) — uses Emergent LLM Key
 
 **Testing status**
--   **Testing agent used after significant changes**: YES. Used for Beneficiary Feature Enforcement and Twilio SMS OTP. It found and fixed one bug in the SMS OTP implementation.
--   **Troubleshoot agent used after agent stuck in loop**: NO
--   **Test files created**: None.
--   **Known regressions**: None. The  refactoring was verified against a baseline screenshot and passed all build/lint checks.
+  - Testing agent used after significant changes: YES (for initial funnel implementation).
+  - Troubleshoot agent used after agent stuck in loop: NO
+  - Test files created: None.
+  - Known regressions: None.
 
 **Credentials to test flow:**
--   **Apple Review Demo Account**:  / 
--   This account's subscription status can be reset via the admin panel to test IAP flows once the Apple agreement is active.
+  - App:  / 
 
 **What agent forgot to execute**
--   The agent implemented the CSS change to lighten the landing page background but did not run a build or use the screenshot tool to visually verify the change was successful and looked correct.
--   The agent did not follow up on the outstanding  performance issue from the previous fork.</analysis>
+The agent modified the  file to add visual feedback to the Skip button and refactor the summary screen, but **did not start the frontend server, capture a screenshot, or run testing/housekeeping** before context ran out. The next agent MUST verify this specific UI change visually using the screenshot tool and run 
+==========================================
+  CarryOn™ Housekeeping Protocol
+  + SOC 2 Compliance Audit
+==========================================
+
+[1mPRE-FLIGHT: Auto-fix lint & formatting[0m
+------------------------------------------
+  [0;36mINFO[0m No fixes needed — already clean
+
+[1mSECTION A: Standard Housekeeping[0m
+------------------------------------------
+1.  Backend ruff check ............ [0;32mPASS[0m
+2.  Backend ruff format ........... [0;32mPASS[0m
+3.  Frontend ESLint (errors) ...... [0;32mPASS[0m
+4.  Frontend build ................ [0;32mPASS[0m
+5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: a65ad51aa8c9)
+6.  MongoDB _id leak scan ......... [0;32mPASS[0m
+7.  Hardcoded secrets scan ........ [0;32mPASS[0m
+8.  Sensitive console.log scan .... [0;32mPASS[0m
+9.  Deprecated datetime scan ...... [0;32mPASS[0m
+10. Backend health check .......... [0;32mPASS[0m
+11. Unprotected endpoint audit .... [0;32mPASS[0m (39 route files audited)
+
+[1mSECTION B: SOC 2 Compliance Audit[0m
+------------------------------------------
+12. [CC6.1] Auth guard coverage ... [0;32mPASS[0m
+13. [CC6.1] Encryption at rest .... [0;32mPASS[0m (AES-256-GCM only, no legacy Fernet in routes)
+14. [CC6.1] Password hashing ...... [0;32mPASS[0m
+15. [CC7.2] Audit trail coverage .. [0;32mPASS[0m (all sensitive routes have audit logging)
+16. [CC7.2] Audit integrity hash .. [0;32mPASS[0m (SHA-256 integrity hash on all audit entries)
+17. [CC7.2] Audit immutability .... [0;32mPASS[0m (append-only — no update/delete on audit_trail)
+18. [CC7.2] Token blacklist ....... [0;32mPASS[0m (token blacklisting active)
+19. [CC7.2] Session enforcement ... [0;32mPASS[0m (single-session enforcement active)
+20. [CC7.2] OTP expiry check ...... [0;32mPASS[0m (10-minute OTP expiry enforced)
+21. [CC7.2] Account lockout ....... [0;32mPASS[0m (5-attempt lockout with 15-min window)
+22. [PI1.1] GDPR data export ...... [0;32mPASS[0m (endpoint exists — HTTP 403)
+23. [PI1.1] GDPR data deletion ... [0;32mPASS[0m (right to erasure endpoint present)
+24. [PI1.1] Consent management ... [0;32mPASS[0m (consent management endpoints present)
+25. [CC8.1] Soft-delete standard .. [0;32mPASS[0m (10 hard deletes — reviewed)
+26. [A1.2]  Error reporter ........ [0;32mPASS[0m (global error reporter active)
+27. [A1.2]  Error logging endpoint  [0;32mPASS[0m (error reporting endpoint operational)
+28. [CC6.1] Sensitive access log .. [0;32mPASS[0m (sensitive access logging indexed)
+29. [CC7.2] Rate limiting ......... [0;32mPASS[0m (rate limiting middleware active)
+30. [CC6.1] CORS configuration .... [0;32mPASS[0m (CORS configured, no wildcard)
+31. [CC6.1] Security headers ...... [0;32mPASS[0m (security headers middleware active)
+32. [CC7.2] DB indexes verified ... [0;32mPASS[0m (49 indexes defined)
+33. [CC8.1] Env fallback scan ...... [0;32mPASS[0m
+34. [A1.2] Recent backend logs ..... [0;32mPASS[0m
+35. [CC8.1] Route editor audit ..... [0;32mPASS[0m
+36. [A1.2]  Deploy start commands .. [0;32mPASS[0m (no shell built-ins in start commands)
+37. [A1.2]  Deploy healthcheck ..... [0;32mPASS[0m (healthcheckPath = "/api/health")
+38. [A1.2]  Mongo projection safety  [0;32mPASS[0m
+
+[1mSECTION C: iOS / App Store Readiness[0m
+------------------------------------------
+39. [iOS]   Capacitor sync ......... [0;32mPASS[0m (11 plugins for iOS)
+40. [iOS]   Native purchases plugin  [0;32mPASS[0m (package.json + Capacitor + Podfile, v^8.1.2)
+41. [iOS]   IAP product IDs ........ [0;32mPASS[0m (37 products, no duplicates)
+42. [iOS]   Stripe gated on iOS .... [0;32mPASS[0m (all Stripe redirects gated behind isNative)
+43. [iOS]   IAP imports present .... [0;32mPASS[0m (iap/useIAPPurchase + native imported in both subscription components)
+44. [iOS]   Apple disclosures ...... [0;32mPASS[0m (auto-renew, 24h cancel, Terms, Privacy, Restore)
+45. [iOS]   Entitlements XML ....... [0;32mPASS[0m
+46. [iOS]   Info.plist XML ......... [0;32mPASS[0m
+47. [iOS]   Podfile complete ....... [0;32mPASS[0m (13 pods defined)
+48. [iOS]   Frontend build output .. [0;31mFAIL[0m (no build output — run yarn build first)
+49. [iOS]   codemagic.yaml ......... [0;32mPASS[0m (ios-build + pod install + cap sync + TestFlight)
+50. [iOS]   Min font size (11px) ... [0;32mPASS[0m (no fonts below 11px)
+
+[1mSECTION D: Post-Check Verification[0m
+------------------------------------------
+R1. Lint & format verified ...... [0;36mINFO[0m (clean after pre-flight)
+
+==========================================
+  [0;31m1 iOS / APP STORE ISSUE(S)[0m — do NOT push until fixed
+==========================================
+
+Safety reminder: Do NOT run yarn add/remove.
+To fix ruff format: cd /app/backend && ruff format .
+
+SOC 2 Trust Service Criteria Reference:
+  CC6.1  Logical access security
+  CC7.2  System monitoring & audit
+  CC8.1  Change management
+  A1.2   System availability
+  PI1.1  Privacy (GDPR) before finishing.</analysis>

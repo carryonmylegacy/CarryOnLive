@@ -30,6 +30,18 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (March 25, 2026 — Session 28: Funnel Skip Sensitivity + Summary Refinement)
+
+#### Funnel "Skip" Visual Feedback & Summary Refinement (March 25, 2026)
+Improved the funnel's feature card interaction to provide clear visual feedback and a respectful, personalized summary:
+
+- **Skip Visual Feedback**: When tapping "Not for me", the current card now dims (60% opacity), scales down (0.97), and shifts to a warm-pink tint before transitioning to the next card after 450ms. Fixed a bug where the flash incorrectly showed on the *next* card instead of the one being skipped.
+- **Summary Screen Rewrite**: After all feature decisions, the summary now shows:
+  - **Top section**: Features the user kept, with a gold sparkles icon and confident message: "Your plan is built around these"
+  - **Below separator**: Gently lists skipped features with warm copy: "And just in case you change your mind, these are included free during your trial — so you can experience them firsthand."
+  - **Edge case**: If all features are skipped, shows: "All of our features are included free during your trial — explore everything and decide what fits."
+- Tone validates user choices, reflects them back, and presents skipped features as a gift — not a correction or upsell.
+
 ### Completed (March 25, 2026 — Session 27: Acquisition Funnel + IAP Consolidation)
 
 #### Social Media Acquisition Funnel (March 25, 2026)

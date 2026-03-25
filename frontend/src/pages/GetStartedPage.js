@@ -104,6 +104,7 @@ export default function GetStartedPage() {
   const [keptFeatures, setKeptFeatures] = useState([]);
   const [currentFeatureIdx, setCurrentFeatureIdx] = useState(0);
   const [featureDecisions, setFeatureDecisions] = useState({});
+  const [skippedFeature, setSkippedFeature] = useState(null);
   // Step 5
   const [referralEmail, setReferralEmail] = useState('');
 
@@ -255,8 +256,17 @@ export default function GetStartedPage() {
 
   const handleFeatureDecision = (featureId, keep) => {
     setFeatureDecisions(prev => ({ ...prev, [featureId]: keep }));
-    if (keep) setKeptFeatures(prev => [...prev, featureId]);
-    setCurrentFeatureIdx(i => i + 1);
+    if (keep) {
+      setKeptFeatures(prev => [...prev, featureId]);
+      setCurrentFeatureIdx(i => i + 1);
+    } else {
+      // Flash the current card, then advance after the animation
+      setSkippedFeature(featureId);
+      setTimeout(() => {
+        setSkippedFeature(null);
+        setCurrentFeatureIdx(i => i + 1);
+      }, 450);
+    }
   };
 
   const progress = (step / 5) * 100;
@@ -441,10 +451,13 @@ export default function GetStartedPage() {
                   <div className="relative mb-6">
                     <div data-testid={`feature-card-${featuresToShow[currentFeatureIdx].id}`}
                       style={{
-                        background: 'rgba(255,255,255,0.85)',
+                        background: skippedFeature === featuresToShow[currentFeatureIdx].id ? 'rgba(240,225,225,0.9)' : 'rgba(255,255,255,0.85)',
                         borderRadius: '1.25rem',
-                        border: '1px solid rgba(0,0,0,0.06)',
+                        border: skippedFeature === featuresToShow[currentFeatureIdx].id ? '1px solid rgba(200,160,160,0.25)' : '1px solid rgba(0,0,0,0.06)',
                         boxShadow: '0 6px 24px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)',
+                        transition: 'all 0.3s ease',
+                        opacity: skippedFeature === featuresToShow[currentFeatureIdx].id ? 0.6 : 1,
+                        transform: skippedFeature === featuresToShow[currentFeatureIdx].id ? 'scale(0.97)' : 'scale(1)',
                       }}
                       className="p-6 sm:p-8 space-y-4"
                     >
@@ -459,11 +472,11 @@ export default function GetStartedPage() {
                             background: 'rgba(255,255,255,0.8)', border: '1.5px solid rgba(0,0,0,0.08)',
                             color: '#94a3b8', fontWeight: 700, fontSize: '0.875rem',
                             boxShadow: '0 2px 6px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.8)',
-                            transition: 'all 0.2s',
+                            transition: 'all 0.15s',
                           }}
-                          className="flex items-center justify-center gap-2 hover:border-red-300 hover:text-red-400 hover:bg-red-50/50 active:scale-[0.97] cursor-pointer"
+                          className="flex items-center justify-center gap-2 hover:border-red-300 hover:text-red-400 hover:bg-red-50/50 active:scale-[0.97] active:bg-red-50 active:border-red-400 active:text-red-500 cursor-pointer"
                         >
-                          <X className="w-4 h-4" /> Skip
+                          <X className="w-4 h-4" /> Not for me
                         </button>
                         <button
                           onClick={() => handleFeatureDecision(featuresToShow[currentFeatureIdx].id, true)}
@@ -473,7 +486,7 @@ export default function GetStartedPage() {
                             background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.08))',
                             border: '2px solid #d4af37', color: '#8a6d1b', fontWeight: 700, fontSize: '0.875rem',
                             boxShadow: '0 3px 12px rgba(212,175,55,0.15), inset 0 1px 0 rgba(255,230,130,0.3)',
-                            transition: 'all 0.2s',
+                            transition: 'all 0.15s',
                           }}
                           className="flex items-center justify-center gap-2 hover:bg-[#d4af37]/20 active:scale-[0.97] cursor-pointer"
                         >
@@ -485,15 +498,62 @@ export default function GetStartedPage() {
                       <div className="absolute -bottom-2 left-3 right-3 h-4 rounded-b-2xl -z-10" style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.3)' }} />
                     )}
                   </div>
-                ) : (
-                  <div className="text-center space-y-4 mb-6 py-4">
-                    <Sparkles className="w-12 h-12 mx-auto" style={{ color: '#d4af37' }} />
-                    <p style={{ fontWeight: 700, fontSize: '1rem', color: '#475569' }}>
-                      You kept <span style={{ color: '#1e293b', fontWeight: 900 }}>{keptFeatures.length}</span> features.
-                      Your personalized plan is ready.
-                    </p>
-                  </div>
-                )}
+                ) : (() => {
+                  const kept = featuresToShow.filter(f => keptFeatures.includes(f.id));
+                  const skipped = featuresToShow.filter(f => !keptFeatures.includes(f.id));
+                  return (
+                    <div className="space-y-5 mb-6 animate-in fade-in duration-500">
+                      {/* Features they chose */}
+                      {kept.length > 0 && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-3">
+                            <Sparkles className="w-5 h-5" style={{ color: '#d4af37' }} />
+                            <h3 style={{ fontWeight: 800, fontSize: '1rem', color: '#1e293b' }}>
+                              Your plan is built around {kept.length === 1 ? 'this' : 'these'}
+                            </h3>
+                          </div>
+                          <div className="space-y-2">
+                            {kept.map(f => (
+                              <div key={f.id} className="flex items-center gap-3 py-2.5 px-3.5" style={{
+                                background: 'linear-gradient(135deg, rgba(212,175,55,0.1), rgba(212,175,55,0.04))',
+                                borderRadius: '0.75rem', border: '1px solid rgba(212,175,55,0.2)',
+                              }}>
+                                <div style={{ width: '1.5rem', height: '1.5rem', borderRadius: '50%', background: 'linear-gradient(135deg, #d4af37, #e8c84a)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 4px rgba(212,175,55,0.3)' }}>
+                                  <Check className="w-3.5 h-3.5 text-white" />
+                                </div>
+                                <span style={{ fontWeight: 700, fontSize: '0.875rem', color: '#1e293b' }}>{f.title}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Separator + skipped features */}
+                      {skipped.length > 0 && (
+                        <div>
+                          <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', margin: '0.5rem 0' }} />
+                          <p style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#94a3b8', marginTop: '0.75rem', marginBottom: '0.75rem', lineHeight: 1.5 }}>
+                            {kept.length > 0
+                              ? "And just in case you change your mind, these are included free during your trial — so you can experience them firsthand."
+                              : "All of our features are included free during your trial — explore everything and decide what fits."}
+                          </p>
+                          <div className="space-y-1.5">
+                            {skipped.map(f => (
+                              <div key={f.id} className="flex items-center gap-3 py-2 px-3.5" style={{
+                                background: 'rgba(255,255,255,0.5)', borderRadius: '0.75rem',
+                              }}>
+                                <div style={{ width: '1.25rem', height: '1.25rem', borderRadius: '50%', background: 'rgba(148,163,184,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                  <Check className="w-3 h-3" style={{ color: '#94a3b8' }} />
+                                </div>
+                                <span style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#64748b' }}>{f.title}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {currentFeatureIdx >= featuresToShow.length && (
                   <button

@@ -10,7 +10,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://perfect-code-2.preview.emergentagent.com")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://estate-signup-1.preview.emergentagent.com")
 
 # Expected step order and configuration
 EXPECTED_STEPS = [
