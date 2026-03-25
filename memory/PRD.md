@@ -26,7 +26,17 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ### Completed (March 24, 2026 — Session 25: Beneficiary Feature Enforcement + IAP Hardening)
 
-#### Beneficiary Portal Feature Enforcement (P1 — March 24, 2026)
+#### SettingsPage.js Refactoring (March 25, 2026)
+Extracted 1,626-line monolith into 7 self-contained component files + a 153-line layout shell:
+
+- `ProfileCard.js` (269 lines) — Profile photo, display name, username, password
+- `SecurityCard.js` (269 lines) — Passkey, 2FA toggle, SMS OTP setup/verify/disable
+- `PersonalInfoCard.js` (230 lines) — Name, phone, DOB, gender, marital status, address
+- `EstatePhotoCard.js` (146 lines) — Estate photo and name editing
+- `AppearanceCard.js` (87 lines) — Theme, auto-logout, onboarding guide toggle
+- `DigestCard.js` (272 lines) — Estate Health Digest preferences, frequency, sections, recipients
+- `PrivacyCard.js` (295 lines) — GDPR consent, data export, retention policy, account deletion
+- Each component manages its own state and data fetching. Zero visual or behavioral changes.
 Benefactors toggle 7 feature flags per beneficiary (mm_access, ega_access, sdv_access, iac_access, ffn_access, dav_access, dts_access). Previously, beneficiary portal showed everything regardless. Now fully enforced:
 
 - **Backend**: `GET /api/beneficiary/my-permissions/{estate_id}` now returns `feature_access` object with all 7 flags from the beneficiary record
