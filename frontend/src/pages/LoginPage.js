@@ -61,6 +61,9 @@ const LoginPage = () => {
   const [passkeyAvailable, setPasskeyAvailable] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [sealedAccount, setSealedAccount] = useState(null);
+  const [otpMethod, setOtpMethod] = useState('email'); // 'email' or 'sms'
+  const [hasSmsOtp, setHasSmsOtp] = useState(false);
+  const [maskedPhone, setMaskedPhone] = useState(null);
   const [forgotMode, setForgotMode] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotOtp, setForgotOtp] = useState('');
@@ -176,6 +179,15 @@ const LoginPage = () => {
       if (result.direct) {
         await completeLogin(result);
       } else {
+        // Capture SMS OTP info from login response
+        if (result.has_sms) {
+          setHasSmsOtp(true);
+          setOtpMethod(result.otp_method || 'sms');
+          setMaskedPhone(result.masked_phone || null);
+        } else {
+          setHasSmsOtp(false);
+          setOtpMethod('email');
+        }
         setShowOtpModal(true);
       }
     } catch (error) {
@@ -205,14 +217,19 @@ const LoginPage = () => {
     }
   };
 
-  const handleResendOtp = async () => {
+  const handleResendOtp = async (method) => {
     if (resendCooldown > 0) return;
+    const sendMethod = method || otpMethod;
     try {
-      const result = await resendOtp(email);
-      if (result.email_sent === false) {
-        toast.error('Failed to send code — please try again');
+      const result = await resendOtp(email, sendMethod);
+      if (result.sms_sent) {
+        setOtpMethod('sms');
+        toast.success('Code sent via SMS');
+      } else if (result.email_sent) {
+        setOtpMethod('email');
+        toast.success('Code sent via email');
       } else {
-        // toast removed
+        toast.error('Failed to send code — please try again');
       }
       setResendCooldown(30);
       const interval = setInterval(() => {
@@ -923,10 +940,35 @@ const LoginPage = () => {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="w-full max-w-md rounded-2xl p-8" style={{ background: 'linear-gradient(145deg, rgba(20,30,52,0.98), rgba(15,22,41,1))', border: '1px solid rgba(212,175,55,0.15)' }}>
             <h3 className="text-white text-xl font-semibold mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>Two-Factor Authentication</h3>
-            <p className="text-[#6b7a90] text-sm mb-6">Enter the 6-digit code sent to your email</p>
+            <p className="text-[#6b7a90] text-sm mb-6">
+              {otpMethod === 'sms'
+                ? `Enter the 6-digit code sent to ${maskedPhone || 'your phone'}`
+                : 'Enter the 6-digit code sent to your email'}
+            </p>
             <Input type="text" inputMode="numeric" maxLength={6} value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
               placeholder="000000" className="h-14 text-center text-2xl tracking-[0.4em] font-mono bg-[#0D1829] border-[#1E3048] text-white focus:border-[#d4af37] rounded-lg mb-4" data-testid="otp-input" autoFocus />
             
+            {/* SMS/Email toggle when user has both options */}
+            {hasSmsOtp && (
+              <div className="flex items-center gap-2 mb-4 p-2 rounded-lg" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.1)' }}>
+                <span className="text-[#6b7a90] text-xs">Send code via:</span>
+                <button
+                  onClick={() => handleResendOtp('sms')}
+                  disabled={resendCooldown > 0}
+                  className={`text-xs px-3 py-1 rounded-full transition-all ${otpMethod === 'sms' ? 'bg-[#d4af37] text-[#0B1221] font-semibold' : 'text-[#6b7a90] hover:text-white'}`}
+                  data-testid="otp-method-sms">
+                  SMS {maskedPhone ? `(${maskedPhone})` : ''}
+                </button>
+                <button
+                  onClick={() => handleResendOtp('email')}
+                  disabled={resendCooldown > 0}
+                  className={`text-xs px-3 py-1 rounded-full transition-all ${otpMethod === 'email' ? 'bg-[#d4af37] text-[#0B1221] font-semibold' : 'text-[#6b7a90] hover:text-white'}`}
+                  data-testid="otp-method-email">
+                  Email
+                </button>
+              </div>
+            )}
+
             {/* Trust today option */}
             <label className="flex items-center gap-3 mb-5 cursor-pointer select-none group" data-testid="trust-today-label">
               <button type="button" onClick={() => setTrustToday(!trustToday)}
@@ -947,7 +989,7 @@ const LoginPage = () => {
             </Button>
             <div className="flex items-center justify-between mt-3">
               <button onClick={() => setShowOtpModal(false)} className="text-[#6b7a90] text-sm hover:text-white transition-colors" data-testid="otp-cancel-button">Cancel</button>
-              <button onClick={handleResendOtp} disabled={resendCooldown > 0}
+              <button onClick={() => handleResendOtp()} disabled={resendCooldown > 0}
                 className={`text-sm transition-colors ${resendCooldown > 0 ? 'text-[#334155] cursor-not-allowed' : 'text-[#d4af37] hover:text-[#e8c54a]'}`}
                 data-testid="otp-resend-button">
                 {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}

@@ -109,8 +109,8 @@ export const AuthProvider = ({ children }) => {
     return userData;
   };
 
-  const resendOtp = async (email) => {
-    const response = await axios.post(`${API_URL}/auth/resend-otp`, { email });
+  const resendOtp = async (email, method = 'email') => {
+    const response = await axios.post(`${API_URL}/auth/resend-otp`, { email, method });
     return response.data;
   };
 

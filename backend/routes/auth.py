@@ -19,6 +19,7 @@ from utils import (
     get_current_user,
     hash_password,
     send_otp_email,
+    send_otp_sms,
     verify_password,
 )
 from services.encryption import generate_estate_salt
@@ -355,19 +356,41 @@ async def login(data: UserLogin, request: Request):
         upsert=True,
     )
 
-    # Send OTP via email
+    # Send OTP via email or SMS based on user preference
     email_sent = False
-    try:
-        email_sent = await send_otp_email(otp_target_email, otp_code, user["name"].split()[0])
-    except Exception:
-        logger.warning(f"OTP email send failed for {data.email} — OTP still stored")
+    sms_sent = False
+    otp_method = "email"
+    if user.get("sms_otp_enabled") and user.get("sms_phone_number"):
+        otp_method = "sms"
+        try:
+            sms_sent = await send_otp_sms(user["sms_phone_number"], otp_code)
+        except Exception:
+            logger.warning(f"OTP SMS send failed for {data.email} — falling back to email")
+        if not sms_sent:
+            otp_method = "email"
+
+    if otp_method == "email":
+        try:
+            email_sent = await send_otp_email(otp_target_email, otp_code, user["name"].split()[0])
+        except Exception:
+            logger.warning(f"OTP email send failed for {data.email} — OTP still stored")
+
+    # Mask the phone for the frontend
+    masked_phone = None
+    if user.get("sms_phone_number"):
+        ph = user["sms_phone_number"]
+        masked_phone = f"***-***-{ph[-4:]}" if len(ph) >= 4 else "***"
 
     return {
-        "message": "OTP sent to your email"
-        if email_sent
-        else "Verification required — check your email or resend code",
+        "message": "OTP sent via SMS" if sms_sent else (
+            "OTP sent to your email" if email_sent else "Verification required — check your email or resend code"
+        ),
         "otp_required": True,
         "email_sent": email_sent,
+        "sms_sent": sms_sent,
+        "otp_method": otp_method,
+        "has_sms": bool(user.get("sms_otp_enabled")),
+        "masked_phone": masked_phone,
     }
 
 
@@ -817,12 +840,13 @@ async def verify_password_endpoint(data: VerifyPasswordRequest):
 
 class ResendOTPRequest(BaseModel):
     email: str
+    method: str = "email"  # "email" or "sms"
 
 
 @router.post("/auth/resend-otp")
 async def resend_otp(data: ResendOTPRequest):
-    """Resend OTP code to the user's email. Rate-limited to prevent abuse."""
-    user = await db.users.find_one({"email": data.email}, {"_id": 0, "id": 1, "name": 1})
+    """Resend OTP code to the user's email or phone. Rate-limited to prevent abuse."""
+    user = await db.users.find_one({"email": data.email}, {"_id": 0, "id": 1, "name": 1, "sms_otp_enabled": 1, "sms_phone_number": 1})
     if not user:
         # Don't reveal whether the email exists
         return {"message": "If an account exists, a new code has been sent."}
@@ -839,17 +863,30 @@ async def resend_otp(data: ResendOTPRequest):
         upsert=True,
     )
 
-    email_sent = False
-    try:
-        email_sent = await send_otp_email(data.email, otp_code, user["name"].split()[0])
-    except Exception:
-        logger.warning(f"Resend OTP email failed for {data.email}")
+    sent = False
+    method_used = data.method
+    if data.method == "sms" and user.get("sms_otp_enabled") and user.get("sms_phone_number"):
+        try:
+            sent = await send_otp_sms(user["sms_phone_number"], otp_code)
+        except Exception:
+            logger.warning(f"Resend OTP SMS failed for {data.email}")
+        if not sent:
+            method_used = "email"
+
+    if method_used == "email" or not sent:
+        try:
+            sent = await send_otp_email(data.email, otp_code, user["name"].split()[0])
+            method_used = "email"
+        except Exception:
+            logger.warning(f"Resend OTP email failed for {data.email}")
 
     return {
-        "message": "A new verification code has been sent to your email."
-        if email_sent
+        "message": f"A new verification code has been sent via {'SMS' if method_used == 'sms' else 'email'}."
+        if sent
         else "Failed to send code — please try again.",
-        "email_sent": email_sent,
+        "email_sent": sent and method_used == "email",
+        "sms_sent": sent and method_used == "sms",
+        "otp_method": method_used,
     }
 
 
@@ -1207,6 +1244,121 @@ async def get_2fa_preference(current_user: dict = Depends(get_current_user)):
         "otp_enabled": user.get("otp_enabled", True),
         "global_disabled": global_disabled,
     }
+
+
+# ===================== SMS OTP SETUP =====================
+
+
+class SMSOTPSetupRequest(BaseModel):
+    phone_number: str
+    sms_consent: bool = False
+
+
+@router.post("/auth/sms-otp-setup")
+async def sms_otp_setup(data: SMSOTPSetupRequest, current_user: dict = Depends(get_current_user)):
+    """Send a verification OTP to the user's phone number to set up SMS 2FA."""
+    import re
+    phone = re.sub(r"[^\d+]", "", data.phone_number.strip())
+    if not phone.startswith("+"):
+        phone = f"+1{phone}"  # Default to US
+    if len(phone) < 10:
+        raise HTTPException(status_code=400, detail="Invalid phone number")
+    if not data.sms_consent:
+        raise HTTPException(status_code=400, detail="You must consent to receive SMS verification codes")
+
+    otp_code = generate_otp()
+    await db.sms_otp_verifications.update_one(
+        {"user_id": current_user["id"]},
+        {"$set": {
+            "phone_number": phone,
+            "otp": otp_code,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "verified": False,
+        }},
+        upsert=True,
+    )
+
+    sms_sent = await send_otp_sms(phone, otp_code)
+    if not sms_sent:
+        raise HTTPException(status_code=500, detail="Failed to send SMS. Please check your phone number and try again.")
+
+    masked = f"***-***-{phone[-4:]}" if len(phone) >= 4 else "***"
+    return {"message": f"Verification code sent to {masked}", "masked_phone": masked}
+
+
+class SMSOTPVerifyRequest(BaseModel):
+    otp: str
+
+
+@router.post("/auth/sms-otp-verify")
+async def sms_otp_verify(data: SMSOTPVerifyRequest, current_user: dict = Depends(get_current_user)):
+    """Verify the phone number OTP and enable SMS 2FA."""
+    record = await db.sms_otp_verifications.find_one({"user_id": current_user["id"]}, {"_id": 0})
+    if not record:
+        raise HTTPException(status_code=400, detail="No pending phone verification. Please start setup again.")
+
+    # Check expiry (10 minutes)
+    created = datetime.fromisoformat(record["created_at"])
+    if datetime.now(timezone.utc) - created > timedelta(minutes=10):
+        raise HTTPException(status_code=400, detail="Verification code expired. Please request a new one.")
+
+    if record["otp"] != data.otp:
+        raise HTTPException(status_code=400, detail="Invalid verification code")
+
+    # Enable SMS OTP on the user record
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$set": {
+            "sms_otp_enabled": True,
+            "sms_phone_number": record["phone_number"],
+            "sms_otp_setup_at": datetime.now(timezone.utc).isoformat(),
+        }},
+    )
+    # Clean up verification record
+    await db.sms_otp_verifications.delete_one({"user_id": current_user["id"]})
+
+    await log_audit_event(
+        actor_id=current_user["id"],
+        actor_email=current_user["email"],
+        actor_role=current_user["role"],
+        action="sms_otp_enabled",
+        category="auth",
+        details={"phone_last4": record["phone_number"][-4:]},
+    )
+
+    return {"message": "SMS verification enabled successfully", "sms_otp_enabled": True}
+
+
+@router.delete("/auth/sms-otp")
+async def sms_otp_disable(current_user: dict = Depends(get_current_user)):
+    """Disable SMS 2FA and remove phone number."""
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$unset": {"sms_otp_enabled": "", "sms_phone_number": "", "sms_otp_setup_at": ""}},
+    )
+    await db.sms_otp_verifications.delete_many({"user_id": current_user["id"]})
+
+    await log_audit_event(
+        actor_id=current_user["id"],
+        actor_email=current_user["email"],
+        actor_role=current_user["role"],
+        action="sms_otp_disabled",
+        category="auth",
+        details={},
+    )
+
+    return {"message": "SMS verification disabled", "sms_otp_enabled": False}
+
+
+@router.get("/auth/sms-otp-status")
+async def sms_otp_status(current_user: dict = Depends(get_current_user)):
+    """Get the current SMS OTP status for the user."""
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "sms_otp_enabled": 1, "sms_phone_number": 1})
+    enabled = user.get("sms_otp_enabled", False) if user else False
+    phone = user.get("sms_phone_number", "") if user else ""
+    masked = f"***-***-{phone[-4:]}" if phone and len(phone) >= 4 else None
+    return {"sms_otp_enabled": enabled, "masked_phone": masked}
+
 
 
 class ForgotPasswordRequest(BaseModel):
