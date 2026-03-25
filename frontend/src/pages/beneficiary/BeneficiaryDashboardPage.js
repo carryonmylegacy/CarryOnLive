@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
-import { Lock, FolderLock, MessageSquare, CheckSquare, ChevronRight, ChevronLeft, Users, Settings } from 'lucide-react';
+import { Lock, FolderLock, MessageSquare, CheckSquare, ChevronRight, ChevronLeft, Users, Settings, Sparkles, KeyRound, Bell, Scale, Info } from 'lucide-react';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Switch } from '../../components/ui/switch';
 import { API_URL } from '../../config';
@@ -260,6 +260,46 @@ const BeneficiaryDashboardPage = () => {
         </div>
         )}
       </div>
+
+      {/* Feature Access Summary */}
+      {myPerms?.feature_access && (() => {
+        const FEATURE_INFO = [
+          { key: 'mm_access', icon: MessageSquare, label: 'Milestone Messages', desc: 'Personal messages left for you at meaningful life moments', color: '#7C3AED' },
+          { key: 'sdv_access', icon: FolderLock, label: 'Secure Document Vault', desc: 'Important documents sealed and preserved for you', color: '#2563EB' },
+          { key: 'iac_access', icon: CheckSquare, label: 'Immediate Action Checklist', desc: 'Step-by-step guidance for actions to take during this time', color: '#D97706' },
+          { key: 'ega_access', icon: Sparkles, label: 'Estate Guardian AI', desc: 'AI assistant with knowledge of this estate plan', color: '#10B981' },
+          { key: 'dav_access', icon: KeyRound, label: 'Digital Access Vault', desc: 'Digital account credentials and access information', color: '#EC4899' },
+          { key: 'ffn_access', icon: Bell, label: 'Family & Friends Notification', desc: 'Coordinated notifications to family and friends', color: '#F59E0B' },
+          { key: 'dts_access', icon: Scale, label: 'Designated Trustee Services', desc: 'Trustee coordination and legal service referrals', color: '#6366F1' },
+        ];
+        const enabled = FEATURE_INFO.filter(f => myPerms.feature_access[f.key] !== false);
+        if (enabled.length === 0) return null;
+        return (
+          <div className="glass-card p-4 lg:p-5 mb-4" style={{ borderLeft: '3px solid var(--gold)' }} data-testid="feature-access-summary">
+            <div className="flex items-center gap-2 mb-1">
+              <Info className="w-4 h-4 text-[var(--gold)]" />
+              <h3 className="font-bold text-[var(--t)] text-sm">Your Estate Access</h3>
+            </div>
+            <p className="text-xs text-[var(--t5)] mb-3">
+              {benefactorFirst} authorized the following for you.
+              {!myPerms.is_primary && ' Contact the primary beneficiary to request changes.'}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {enabled.map(f => (
+                <div key={f.key} className="flex items-center gap-3 p-2.5 rounded-lg" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${f.color}18` }}>
+                    <f.icon className="w-4 h-4" style={{ color: f.color }} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold text-[var(--t2)]">{f.label}</div>
+                    <div className="text-[11px] text-[var(--t5)] leading-tight">{f.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Primary Beneficiary: Manage Permissions for other beneficiaries */}
       {myPerms?.is_primary && otherBens.length > 0 && (
