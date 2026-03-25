@@ -493,7 +493,7 @@ const LoginPage = () => {
                     Every American Family.
                     <span className="block text-[#d4af37] mt-1" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>Ready.</span>
                   </h1>
-                  <p className="text-white/80 text-sm lg:text-base max-w-sm leading-relaxed mb-5" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
+                  <p className="text-white/80 text-sm lg:text-base max-w-lg leading-relaxed mb-5" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
                     Secure your estate plan with AI-powered estate planning. Protect what matters, guide who you love.
                   </p>
                   <div className="flex items-center gap-4 justify-center sm:justify-start mb-4">
