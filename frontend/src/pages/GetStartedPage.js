@@ -323,10 +323,10 @@ export default function GetStartedPage() {
       <div className="fixed inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 70% 50% at 35% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
 
       {/* Content */}
-      <div className="relative z-10 min-h-screen flex flex-col">
+      <div className="relative z-10 flex flex-col" style={{ minHeight: '100dvh' }}>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-4 sm:px-8 pt-5 pb-2">
+        <div className="flex items-center justify-between px-4 sm:px-8 pb-2" style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top, 1.25rem))' }}>
           <div className="flex items-center gap-3">
             {step > 1 && (
               <button onClick={handleBack} data-testid="funnel-back-btn"
@@ -358,7 +358,7 @@ export default function GetStartedPage() {
         </div>
 
         {/* Main content */}
-        <div className="flex-1 flex items-center justify-center px-4 sm:px-8 pb-10">
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-8 pb-6 overflow-y-auto">
           <div className="w-full max-w-lg">
 
             {/* STEP 1: Interests */}
