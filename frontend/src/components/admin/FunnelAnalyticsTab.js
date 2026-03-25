@@ -69,7 +69,7 @@ export const FunnelAnalyticsTab = ({ getAuthHeaders }) => {
         ].map(m => (
           <div key={m.label} className="bg-[#0f1729] border border-[#1e293b] rounded-xl p-4 text-center">
             <div className={`text-xl font-bold ${m.color}`}>{m.value}</div>
-            <div className="text-[10px] text-[#94a3b8] mt-1">{m.label}</div>
+            <div className="text-[11px] text-[#94a3b8] mt-1">{m.label}</div>
           </div>
         ))}
       </div>

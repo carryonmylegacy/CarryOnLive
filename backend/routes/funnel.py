@@ -170,7 +170,7 @@ async def funnel_convert(request: Request):
     )
 
     # Handle referral bonus: extend trial for both referrer and referred
-    session = await db.funnel_sessions.find_one({"session_id": session_id}, {"_id": 0, "referral_email": 1})
+    session = await db.funnel_sessions.find_one({"session_id": session_id}, {"_id": 0})
     referral_email = session.get("referral_email") if session else None
 
     if referral_email:

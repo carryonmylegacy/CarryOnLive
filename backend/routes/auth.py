@@ -1360,7 +1360,9 @@ async def sms_otp_disable(current_user: dict = Depends(get_current_user)):
 @router.get("/auth/sms-otp-status")
 async def sms_otp_status(current_user: dict = Depends(get_current_user)):
     """Get the current SMS OTP status for the user."""
-    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "sms_otp_enabled": 1, "sms_phone_number": 1})
+    user = await db.users.find_one(
+        {"id": current_user["id"]}, {"_id": 0, "id": 1, "sms_otp_enabled": 1, "sms_phone_number": 1}
+    )
     enabled = user.get("sms_otp_enabled", False) if user else False
     phone = user.get("sms_phone_number", "") if user else ""
     masked = f"***-***-{phone[-4:]}" if phone and len(phone) >= 4 else None
