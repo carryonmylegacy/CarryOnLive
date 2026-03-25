@@ -5,7 +5,8 @@ import {
   Crown, Star, Heart, Award, ArrowRight, Users, Mail, Sparkles
 } from 'lucide-react';
 import { isNative } from '../../services/native';
-import { purchaseIAP, isIAPAvailable, restoreIAPPurchases } from '../../services/iap';
+import { restoreIAPPurchases } from '../../services/iap';
+import { useIAPPurchase } from '../../hooks/useIAPPurchase';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -125,6 +126,8 @@ export const SubscriptionManagement = ({
   const [uploadingVerification, setUploadingVerification] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState(null);
   const [changingBilling, setChangingBilling] = useState(false);
+
+  const { purchaseWithIAP } = useIAPPurchase();
 
   // Portal-aware: show beneficiary plans only when in the beneficiary portal,
   // show benefactor plans when in the benefactor portal (even for multi-role users)
@@ -289,15 +292,8 @@ export const SubscriptionManagement = ({
     try {
       // Native iOS app → Apple In-App Purchase (MUST use IAP — Apple Guideline 3.1.1)
       if (isNative) {
-        const iapAvailable = await isIAPAvailable();
-        if (!iapAvailable) {
-          toast.error('In-App Purchase is not available. Please restart the app and try again.');
-          setSubscribing(null);
-          return;
-        }
-        const iapId = `us.carryon.app.v2.${planId}_${billing}`;
-        const result = await purchaseIAP(iapId);
-        if (result.cancelled) {
+        const iapResult = await purchaseWithIAP(planId, billing);
+        if (iapResult.cancelled) {
           setSubscribing(null);
           return;
         }
@@ -345,15 +341,8 @@ export const SubscriptionManagement = ({
     if (isNative) {
       setSubscribing(planId);
       try {
-        const iapAvailable = await isIAPAvailable();
-        if (!iapAvailable) {
-          toast.error('In-App Purchase is not available. Please restart the app and try again.');
-          setSubscribing(null);
-          return;
-        }
-        const iapId = `us.carryon.app.v2.${planId}_${billing}`;
-        const result = await purchaseIAP(iapId);
-        if (result.cancelled) {
+        const iapResult = await purchaseWithIAP(planId, billing);
+        if (iapResult.cancelled) {
           setSubscribing(null);
           return;
         }
@@ -403,15 +392,8 @@ export const SubscriptionManagement = ({
     if (isNative) {
       setChangingBilling(true);
       try {
-        const iapAvailable = await isIAPAvailable();
-        if (!iapAvailable) {
-          toast.error('In-App Purchase is not available. Please restart the app and try again.');
-          setChangingBilling(false);
-          return;
-        }
-        const iapId = `us.carryon.app.v2.${currentPlanId}_${billing}`;
-        const result = await purchaseIAP(iapId);
-        if (result.cancelled) {
+        const iapResult = await purchaseWithIAP(currentPlanId, billing);
+        if (iapResult.cancelled) {
           setChangingBilling(false);
           return;
         }

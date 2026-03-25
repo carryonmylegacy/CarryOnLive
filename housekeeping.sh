@@ -648,7 +648,7 @@ echo -n "43. [iOS]   IAP imports present .... "
 IAP_IMPORT_OK=1
 for f in /app/frontend/src/components/settings/SubscriptionManagement.js /app/frontend/src/components/SubscriptionPaywall.js; do
   [ ! -f "$f" ] && continue
-  if ! grep -q "from.*services/iap" "$f" 2>/dev/null; then
+  if ! grep -q "from.*services/iap\|from.*hooks/useIAPPurchase" "$f" 2>/dev/null; then
     IAP_IMPORT_OK=0
   fi
   if ! grep -q "from.*services/native" "$f" 2>/dev/null; then
@@ -656,7 +656,7 @@ for f in /app/frontend/src/components/settings/SubscriptionManagement.js /app/fr
   fi
 done
 if [ "$IAP_IMPORT_OK" = "1" ]; then
-  echo -e "$PASS (iap + native imported in both subscription components)"
+  echo -e "$PASS (iap/useIAPPurchase + native imported in both subscription components)"
 else
   echo -e "$FAIL (missing IAP or native imports in subscription components)"
   IOS_ISSUES=$((IOS_ISSUES + 1))

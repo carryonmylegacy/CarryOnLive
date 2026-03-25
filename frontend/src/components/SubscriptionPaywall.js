@@ -7,8 +7,8 @@ import {
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from '../utils/toast';
-import { isNative, platform } from '../services/native';
-import { isIAPAvailable, purchaseIAP, restoreIAPPurchases, IAP_PRODUCTS } from '../services/iap';
+import { isNative } from '../services/native';
+import { useIAPPurchase } from '../hooks/useIAPPurchase';
 import { API_URL } from '../config';
 
 const TIER_ICONS = {
@@ -45,17 +45,9 @@ export default function SubscriptionPaywall({ onDismiss }) {
   const [showFamilyInfo, setShowFamilyInfo] = useState(false);
   const [confirmingPayment, setConfirmingPayment] = useState(false);
 
-  const [useAppleIAP, setUseAppleIAP] = useState(false);
-  const [restoringPurchases, setRestoringPurchases] = useState(false);
+  const { useAppleIAP, restoringPurchases, purchaseWithIAP, restoreWithIAP } = useIAPPurchase();
 
   const headers = { Authorization: `Bearer ${token}` };
-
-  // Check if Apple IAP is available (native iOS only)
-  useEffect(() => {
-    if (isNative && platform === 'ios') {
-      isIAPAvailable().then(available => setUseAppleIAP(available));
-    }
-  }, []);
 
   // Handle post-payment redirect — check session_id in URL
   useEffect(() => {
@@ -142,20 +134,8 @@ export default function SubscriptionPaywall({ onDismiss }) {
     try {
       // Native iOS: MUST use Apple In-App Purchase (Apple Guideline 3.1.1)
       if (isNative) {
-        if (!useAppleIAP) {
-          toast.error('In-App Purchase is not available. Please restart the app and try again.');
-          setCheckoutLoading(false);
-          return;
-        }
-        const productKey = `${plan.id}_${billing}`;
-        const productId = IAP_PRODUCTS[productKey];
-        if (!productId) {
-          toast.error(`No IAP product configured for ${plan.name} (${billing})`);
-          setCheckoutLoading(false);
-          return;
-        }
-        const result = await purchaseIAP(productId);
-        if (result.cancelled) {
+        const iapResult = await purchaseWithIAP(plan.id, billing);
+        if (iapResult.cancelled) {
           setCheckoutLoading(false);
           return;
         }
@@ -185,18 +165,11 @@ export default function SubscriptionPaywall({ onDismiss }) {
   };
 
   const handleRestorePurchases = async () => {
-    setRestoringPurchases(true);
-    try {
-      const result = await restoreIAPPurchases();
-      if (result.success) {
-        toast.success('Purchases restored successfully');
-        await refreshSubscription();
-        fetchData();
-      }
-    } catch (err) {
-      toast.error('Failed to restore purchases');
+    const result = await restoreWithIAP();
+    if (result.success) {
+      await refreshSubscription();
+      fetchData();
     }
-    setRestoringPurchases(false);
   };
 
   const handleVerificationUpload = async () => {
