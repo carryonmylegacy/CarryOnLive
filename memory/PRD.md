@@ -1,5 +1,9 @@
 # CarryOn - Estate Planning Application
 
+## ZERO TOLERANCE: Perfect Code Every Push
+**This is the #1 rule of this project. No exceptions. No excuses.**
+Every push to GitHub must be production-perfect. No artifacts, no hanging chads, no "it's just a small thing." Fix everything proactively — dirty git diffs, stale files, unused imports, console.logs, TODO comments, version drift, lock file noise — before declaring anything ready to push. The agent must catch and resolve ALL of these without being told. This project did not get here by accepting little bullshit things along the way. The standard is perfection. Every. Single. Time.
+
 ## Original Problem Statement
 A full-stack estate planning application allowing benefactors to manage digital estates, beneficiaries, documents, and messages. Features role-based access (admin, benefactor, beneficiary), invitation system, orbit visualization for family connections, and Stripe/IAP subscriptions.
 
