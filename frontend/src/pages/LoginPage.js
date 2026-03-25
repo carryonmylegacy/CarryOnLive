@@ -560,7 +560,7 @@ const LoginPage = () => {
                         </button>
                       </div>
                     )}
-                    <Button type="submit" disabled={loading || lockoutSeconds > 0} className="w-full h-11 rounded-lg font-semibold text-sm" data-testid="login-submit-button"
+                    <Button type="submit" disabled={loading || lockoutSeconds > 0} className="w-full h-12 rounded-lg font-bold text-base" data-testid="login-submit-button"
                       style={{ background: lockoutSeconds > 0 ? '#374151' : 'linear-gradient(135deg, #d4af37, #b8962e)', color: lockoutSeconds > 0 ? '#6b7280' : '#0B1221' }}>
                       {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Signing In...</> : lockoutSeconds > 0 ? `Locked (${Math.floor(lockoutSeconds / 60)}:${String(lockoutSeconds % 60).padStart(2, '0')})` : 'Sign In'}
                     </Button>
