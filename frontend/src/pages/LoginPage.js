@@ -445,14 +445,20 @@ const LoginPage = () => {
 
   // ─── PWA STANDALONE MODE — clean login, no marketing, no scroll ───
   if (isPWAMode) {
+    const scrollInputIntoView = (e) => {
+      setTimeout(() => {
+        e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 350);
+    };
+
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-5 py-8" style={{
+      <div className="min-h-screen flex flex-col items-center px-5 pt-[8vh] pb-8 overflow-y-auto" style={{
         background: 'linear-gradient(168deg, #080e1a 0%, #0d1627 30%, #111d35 60%, #0a1122 100%)',
         opacity: exiting ? 0 : 1,
         transition: 'opacity 0.45s ease',
+        WebkitOverflowScrolling: 'touch',
       }} data-testid="pwa-login-view">
-        <img src="/carryon-logo.png" alt="CarryOn" className="w-[120px] h-auto mb-2" />
-        <p className="text-white/40 text-xs font-semibold mb-5 tracking-widest uppercase" style={{ fontFamily: 'Outfit, sans-serif' }}>CarryOn&#8482;</p>
+        <img src="/carryon-logo.png" alt="CarryOn" className="w-[200px] h-auto mb-6" />
 
         <div className="w-full max-w-sm rounded-2xl p-6 relative" style={{
           background: 'linear-gradient(160deg, rgba(17,27,48,0.97), rgba(13,22,40,0.99))',
@@ -468,6 +474,7 @@ const LoginPage = () => {
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#334155]" />
                 <Input type="text" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Username or Email" required autoComplete="username"
+                  onFocus={scrollInputIntoView}
                   className="h-10 pl-10 bg-[#0B1627] border-[#1A2D48] text-white placeholder:text-[#2A3C55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-lg text-sm" data-testid="login-email-pwa" />
               </div>
             </div>
@@ -476,6 +483,7 @@ const LoginPage = () => {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#334155]" />
                 <Input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" required autoComplete="current-password"
+                  onFocus={scrollInputIntoView}
                   className="h-10 pl-10 pr-10 bg-[#0B1627] border-[#1A2D48] text-white placeholder:text-[#2A3C55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-lg text-sm" data-testid="login-password-pwa" />
                 <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#334155] hover:text-[#7b879e] transition-colors">
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
