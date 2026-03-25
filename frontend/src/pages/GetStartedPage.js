@@ -105,7 +105,6 @@ export default function GetStartedPage() {
   const [keptFeatures, setKeptFeatures] = useState([]);
   const [currentFeatureIdx, setCurrentFeatureIdx] = useState(0);
   const [featureDecisions, setFeatureDecisions] = useState({});
-  const [skippedFeature, setSkippedFeature] = useState(null);
   // Step 5
   const [referralEmail, setReferralEmail] = useState('');
   const confettiFired = useRef(false);
@@ -284,15 +283,22 @@ export default function GetStartedPage() {
     setFeatureDecisions(prev => ({ ...prev, [featureId]: keep }));
     if (keep) {
       setKeptFeatures(prev => [...prev, featureId]);
-      setCurrentFeatureIdx(i => i + 1);
-    } else {
-      // Flash the current card, then advance after the animation
-      setSkippedFeature(featureId);
-      setTimeout(() => {
-        setSkippedFeature(null);
-        setCurrentFeatureIdx(i => i + 1);
-      }, 450);
     }
+    setCurrentFeatureIdx(i => i + 1);
+  };
+
+  const handleFeatureBack = () => {
+    if (currentFeatureIdx <= 0) return;
+    const prevIdx = currentFeatureIdx - 1;
+    const prevFeature = featuresToShow[prevIdx];
+    // Undo the previous decision
+    setFeatureDecisions(prev => {
+      const next = { ...prev };
+      delete next[prevFeature.id];
+      return next;
+    });
+    setKeptFeatures(prev => prev.filter(id => id !== prevFeature.id));
+    setCurrentFeatureIdx(prevIdx);
   };
 
   const progress = (step / 5) * 100;
@@ -477,16 +483,27 @@ export default function GetStartedPage() {
                   <div className="relative mb-6">
                     <div data-testid={`feature-card-${featuresToShow[currentFeatureIdx].id}`}
                       style={{
-                        background: skippedFeature === featuresToShow[currentFeatureIdx].id ? 'rgba(235,235,235,0.95)' : 'rgba(255,255,255,0.95)',
+                        background: 'rgba(255,255,255,0.95)',
                         borderRadius: '1.25rem',
-                        border: skippedFeature === featuresToShow[currentFeatureIdx].id ? '1px solid rgba(180,180,180,0.25)' : '1px solid rgba(0,0,0,0.06)',
+                        border: '1px solid rgba(0,0,0,0.06)',
                         boxShadow: '0 6px 24px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)',
-                        transition: 'all 0.3s ease',
-                        opacity: skippedFeature === featuresToShow[currentFeatureIdx].id ? 0.6 : 1,
-                        transform: skippedFeature === featuresToShow[currentFeatureIdx].id ? 'scale(0.97)' : 'scale(1)',
                       }}
                       className="p-6 sm:p-8 space-y-4"
                     >
+                      {currentFeatureIdx > 0 && (
+                        <button
+                          onClick={handleFeatureBack}
+                          data-testid="feature-back-btn"
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
+                            fontSize: '0.8125rem', fontWeight: 700, color: '#94a3b8',
+                            transition: 'color 0.15s',
+                          }}
+                          className="hover:text-slate-600 cursor-pointer active:text-slate-700"
+                        >
+                          <ArrowLeft className="w-3.5 h-3.5" /> Change previous answer
+                        </button>
+                      )}
                       <h3 style={{ fontWeight: 800, fontSize: '1.25rem', color: '#1e293b' }}>{featuresToShow[currentFeatureIdx].title}</h3>
                       <p style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#64748b', lineHeight: 1.6 }}>{featuresToShow[currentFeatureIdx].desc}</p>
                       <div className="flex gap-3 pt-2">
