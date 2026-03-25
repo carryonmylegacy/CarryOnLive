@@ -1,152 +1,160 @@
 <analysis>**original_problem_statement**:
-The user initially wanted to improve the UX for the address input flow on the Settings page. Over the course of the session, the user made several additional requests:
-1.  After a user saves their address during the Getting Started flow, they should be taken back to the dashboard where Step 4 (Consult the Estate Guardian) automatically pops up.
-2.  Fix the skip logic for optional steps in the Getting Started flow: correct the explanatory text and ensure skipping one optional step advances to the next, instead of exiting the flow.
-3.  Fix the desktop notification panel, which was being cut off by the sidebar, so that it pops out as a proper overlay.
-4.  Run a full housekeeping pass to fix all linter warnings (both Python and JS) and validate the iOS project for an App Store submission.
-5.  Address multiple account lockout/rate-limiting issues that were frustrating the user during testing.
-6.  Create a comprehensive platform and pricing description for business analysis.
-7.  Calculate the estimated monthly operating cost for 15,000 subscribers.
-8.  Implement a new rule: users who already have a benefactor account should skip the Getting Started guided overlay when they create additional estates.
-9.  Fix a critical bug where the  flag was not working, causing multi-session users to be kicked out.
+The user's primary goal in this session was to resolve an Apple App Store rejection. The reviewer could not test the In-App Purchase (IAP) flow. This led to a series of requests:
+1.  Create an admin tool to reset a user's subscription status, allowing for the creation of a demo account with an expired trial to force the paywall for reviewers.
+2.  Fix a Railway build failure caused by a Python dependency ().
+3.  Run a comprehensive housekeeping script and fix any reported issues to ensure a clean codebase for resubmission.
+4.  Address several UI/UX bugs and requests reported by the user during the session, including:
+    *   An Unanswered Messages tile showing an incorrect count.
+    *   Severe performance degradation in the orbiting estates UI.
+    *   Reordering tiles and navigation items on the benefactor dashboard.
+    *   Making the main logo a home button for the current portal.
+5.  Diagnose and fix the root cause of the IAP flow hanging on TestFlight, which involved multiple rounds of debugging, including fixing incorrect API parameters and product IDs.
+6.  Investigate and resolve a CodeMagic build that was stuck in the queued state.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is in a stable and clean state. Numerous UX and bug fixes have been implemented. The settings page address flow is enhanced with a gold highlight and auto-scroll. The Getting Started onboarding flow is more robust, correctly handling skips and automatically triggering Step 4 after the address gate detour. The notification panel now renders correctly on desktop. The codebase is clean, with all linter warnings resolved. The account lockout and IP-based rate-limiting systems have been adjusted to be less aggressive during testing. Critically, the multi-session () feature now works as intended, preventing exempt users (like admins or reviewers) from being logged out by another session. The logic to differentiate between a first-time benefactor and an experienced benefactor creating additional estates is now in place.
+The application is in a state where a critical bug in the Apple In-App Purchase flow has been identified and a fix has been implemented. The fix involved correcting API parameters, updating all product IDs to match App Store Connect, and changing the IAP plugin import from dynamic to static. An admin tool to reset user subscriptions for testing purposes has been successfully built and tested. The codebase is clean, having passed a 50-point housekeeping and SOC 2 compliance audit script. Several other UI bugs and feature requests, such as UI element reordering and fixing the logo navigation, have also been completed.
 
 **Last working item**:
-- **Last item agent was working**: Fixing a critical bug where users with the  flag were still being kicked out when a new session was initiated. The agent identified and fixed issues in two separate locations: the session token creation logic ( in ) and the session validation logic ( in ), neither of which were respecting the  flag.
+- **Last item agent was working**: Fixing the Apple In-App Purchase (IAP) flow, where purchase buttons were stuck on a Processing... spinner indefinitely in the TestFlight build. The root cause was identified as a dynamic  of the  plugin, which can hang on native Capacitor builds. The agent refactored  to use a static import instead.
 - **Status**: USER VERIFICATION PENDING
-- **Agent Testing Done**: Y
-- **Which testing method agent to use?** NA (Testing is complete)
+- **Agent Testing Done**: N (This fix requires a native iOS build and cannot be tested in the development environment).
+- **Which testing method agent to use?** Manual testing by the user is required on a new TestFlight build.
 - **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-Issue 1: (From previous fork) Beneficiary Portal Feature Enforcement (P1)
-- Attempted fixes: None.
-- Next debug checklist: Check  dashboard/hub pages. Implement conditional rendering logic to hide/show feature tiles based on benefactor-set toggles (, , etc.) stored on the beneficiary record.
-- Why fix this issue and what will be achieved with the fix? The backend and benefactor UI support toggling feature access for beneficiaries, but the beneficiary's own portal does not yet enforce these restrictions. This is a core feature for benefactor control.
-- Status: NOT STARTED
-- Is recurring issue? N
-- Should Test frontend/backend/both after fix? Both
-- Blocked on other issue: None
+-   **Issue 1: Orbiting Estates UI Performance (P0)**
+    -   **Description**: The user reported that the orbiting estates visualization on the beneficiary dashboard was extremely slow and laggy. An initial fix caused it to freeze completely. A second fix was implemented, but its effectiveness was never confirmed by the user.
+    -   **Attempted fixes**:
+        1.  (Failed) A refactor to use  for direct DOM manipulation caused the component to freeze.
+        2.  (Implemented, unverified) A simpler fix using  on  attributes inside the animation loop to bypass React re-renders. This is the current state of the code in .
+    -   **Next debug checklist**:
+        1.  Ask the user to test the beneficiary dashboard on the latest TestFlight build to see if the performance is restored.
+        2.  If it's still broken, use the screenshot tool on the  page to check for console errors.
+        3.  Re-examine  for any subtle bugs in the animation loop logic.
+    -   **Why fix this issue?**: This is a core, high-visibility UX feature of the beneficiary portal that is currently broken.
+    -   **Status**: USER VERIFICATION PENDING
+    -   **Is recurring issue?**: Y
+    -   **Should Test frontend/backend/both after fix?**: Frontend
+
+-   **Issue 2: Beneficiary Portal Feature Enforcement (P1)**
+    -   **Description**: (From previous fork) The beneficiary portal UI does not yet enforce feature restrictions (e.g., ) set by the benefactor.
+    -   **Next debug checklist**: Implement conditional rendering logic in the beneficiary-facing pages (e.g., ) based on the feature flags present on the beneficiary's user record.
+    -   **Why fix this issue?**: This is a core business logic feature required for benefactor control over their estate.
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: Both
 
 **In progress Task List**:
 (None)
 
 **Upcoming and Future Tasks**
-Upcoming Tasks:
-- (P1) Video Playback on Milestone Page: Recurring issue from previous forks. Ensure the media player handles Object Storage URLs properly on Safari/iOS.
-- (P1) Share Extension Setup: Wire the existing  as a target in the Xcode project and test file sharing into the app. Use instructions in .
-- (P1) iOS Live Updates: Setup and test Capgo for over-the-air updates.
+-   **Upcoming Tasks**:
+    -   (P1) Video Playback on Milestone Page: Recurring issue where the media player fails on Safari/iOS.
+    -   (P1) Share Extension Setup: Wire up the  using .
+    -   (P1) iOS Live Updates: Set up and test Capgo for over-the-air updates.
 
-Future Tasks:
-- (P2) Settings Page UI Glitch: Investigate potential Flash of Unstyled Content (FOUC) or React suspense boundary issues on mount.
-- (P2) Readiness Scoring Policy Page: Create an informational page under the Account section explaining the readiness score.
-- (P2) Refactoring: Componentize large page files like , , , , and .
-- (P2) Twilio SMS OTP Integration: Implement this once the A2P 10DLC approval process is complete.
+-   **Future Tasks**:
+    -   (P2) Settings Page UI Glitch: Investigate potential Flash of Unstyled Content (FOUC).
+    -   (P2) Readiness Scoring Policy Page: Create an informational page.
+    -   (P2) Refactoring: Componentize large page files (, , etc.).
+    -   (P2) Twilio SMS OTP Integration.
 
 **Completed work in this session**
-- **Settings Page UX Enhancement** (DONE): Added a gold highlighted box around address fields and an auto-scroll-to-save feature when  is present.
-- **Getting Started Return Flow** (DONE): After saving an address during onboarding, the user is redirected to the dashboard, which now automatically shows the Step 4 Consult the Estate Guardian overlay.
-- **Getting Started Skip Logic** (DONE): Corrected the skip text for the succession step and fixed the flow to advance to the next step instead of exiting.
-- **Platform Resilience** (DONE): Added a  to a readiness API call to prevent a single failing promise from breaking the entire  in the dashboard's data fetching logic.
-- **Backend Bug Fix** (DONE): Fixed a  crash in the readiness calculation service.
-- **Notification Panel UI Fix** (DONE): Changed panel positioning from  to  on desktop, allowing it to render as an overlay outside the confines of the sidebar.
-- **Account Lockout Leniency** (DONE): Adjusted the failed password lockout from 10 attempts/3 mins to 25 attempts/5 mins.
-- **IP Rate Limiting Leniency** (DONE): Significantly increased the API rate limits in the global middleware to prevent test accounts from being throttled.
-- **Multi-Session Login Fix** (DONE): Corrected the logic in  and  to properly respect the  flag, allowing multiple simultaneous logins for designated accounts.
-- **Onboarding for Additional Estates** (DONE): Implemented backend logic to mark a user's onboarding as graduated () when they create a second (or subsequent) benefactor estate, preventing the Getting Started overlay from reappearing.
-- **Housekeeping & Linting** (DONE): Fixed all Python (All checks passed! and 132 files left unchanged) and JavaScript () warnings across the codebase.
-- **Documentation Generation** (DONE): Created comprehensive platform and pricing descriptions in .
+-   **Apple IAP Flow Fix (USER VERIFICATION PENDING)**: Identified and fixed multiple critical bugs preventing IAP from working on TestFlight.
+    -   Corrected all product IDs to include the  prefix in , , and .
+    -   Corrected API parameters (, ) for the  plugin.
+    -   Changed the plugin import in  from dynamic to static to prevent the app from hanging.
+-   **Admin Subscription Reset Tool (DONE)**: Created a new endpoint  and a corresponding UI in the admin panel to completely reset a user's subscription and trial status, with an option to set the trial as expired for App Store review testing.
+-   **Full Housekeeping Pass (DONE)**: Ran the 50-point  script multiple times and fixed all reported issues, including a minor  warning.
+-   **Dashboard & Nav Reordering (DONE)**: Reordered tiles on the benefactor dashboard () and navigation links in the sidebar () and mobile menu () per user request.
+-   **Logo Navigation Fix (DONE)**: Updated the top-left logo to navigate users to the appropriate dashboard ( or ) based on their current location.
+-   **CodeMagic Build Fix (DONE)**: Changed the  in  to  to resolve a build queue blockage.
+-   **Railway Build Fix (DONE)**: Resolved a build failure by removing the explicit version pin for the  dependency in .
+-   **Unanswered Messages Tile Fix (DONE)**: Cleared old test messages from the  collection in the database to correct the count on the founder dashboard.
 
 **Earlier issues found/mentioned but not fixed**
 None.
 
 **Known issue recurrence from previous fork**
-- Issue recurrence in previous fork: Video playback on Milestone Page
-- Recurrence count: 4
-- Status: NOT STARTED
+-   **Issue**: Video playback on Milestone Page
+-   **Recurrence count**: 4
+-   **Status**: NOT STARTED
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Multi-Session Management**: A  boolean flag on the  collection is now correctly used to bypass single-session enforcement in both the session token creation () and session validation middleware ().
-- **Conditional Onboarding**: Onboarding flow is now conditional based on user experience. A check for  determines if a user is creating their first or an additional estate. For additional estates,  is set to  on the  document, preventing the Getting Started overlay.
-- **Robust API Fetching**: Using  on individual promises within a  array prevents a single network failure from rejecting the entire batch, making the UI more resilient.
-- **UI Overlay Positioning**: For UI elements that need to break out of a parent container with , using  and calculating coordinates dynamically with  is the correct approach.
-- **Distinguishing Lockout Types**: The platform has two distinct security mechanisms: a user-account-based lockout for failed passwords and a global, IP-based rate limiter for API requests. Both needed to be adjusted to accommodate testing.
+-   **Apple IAP with Capacitor**: A deep debugging session on the  plugin revealed critical implementation details:
+    -   Product IDs in the code must *exactly* match App Store Connect.
+    -   The plugin's API parameters (, ) must be used correctly.
+    -   Dynamic imports () of Capacitor plugins can hang on native builds; static imports are safer.
+-   **Admin Tooling**: A new secure admin endpoint was created to modify user data for testing and support purposes, demonstrating how to add internal tools safely.
+-   **Build & CI/CD Debugging**: The session involved diagnosing and fixing issues at multiple stages of the deployment pipeline, from local dependency resolution (Railway) to CI build queueing (CodeMagic).
 
 **key DB schema**
-- : 
-- : 
+No new collections or major schema changes were made. The admin reset tool interacts with the , , , and  collections.
 
 **changes in tech stack**
 None.
 
 **All files of reference**
--  (Fixed multi-session login)
--  (Fixed multi-session login)
--  (Implemented conditional onboarding graduation)
--  (Adjusted global rate limits)
--  (Implemented triggered overlay and resilient data fetching)
--  (Implemented address UX enhancements)
--  (Fixed desktop UI positioning)
+-    (Primary file for the IAP fix)
+-    (Location of the new admin reset endpoint)
+-    (Contains the backend mapping of IAP product IDs)
+-    (File for dashboard UI reordering)
+-    (File for sidebar reordering)
+-    (File for the unverified performance fix)
+-    (CI/CD configuration file that was modified)
 
 **Areas that need refactoring**:
--  continues to grow and desperately needs to be split into smaller components.
-- The onboarding progress logic is per-user but checks a specific (the first) estate's data. This could be confusing for multi-estate users and might be a candidate for future refactoring to be explicitly tied to the currently selected estate.
+-   The IAP logic is split between  and . Consolidating this into a custom hook could reduce redundancy and prevent future bugs.
 
 **key api endpoints**
-- : Authentication endpoint, subject to both account lockout and IP rate limits.
-- : Retrieves user's onboarding status. Now effectively disabled for users with .
-- : Creates a new estate and now triggers the onboarding graduation logic for existing benefactors.
+-    (New): Resets a user's subscription, clears related transactions, and sets a new trial period.
 
 **Critical Info for New Agent**
-- **App Store Submission is LIVE**: The user has resubmitted the app to the App Store. The agent MUST flag any requested changes that could impact the functionality of the submitted build. This is a critical constraint. Backend changes are live, but frontend changes require a new build or a Capgo OTA push, which the user controls.
-- The user is extremely sensitive to login/lockout/session issues. Any work in , , or related middleware must be done with extreme care and thorough testing.
-- The distinction between the first-time benefactor and experienced benefactor onboarding flows is now a core business rule. Do not change this logic without explicit user confirmation.
+-   **The top priority is to confirm the IAP fix with the user.** The user needs to create a new TestFlight build with the latest code and test the purchase flow. You cannot test this yourself. Ask the user for the result of their test as soon as they have it.
+-   **The second priority is to confirm the  performance fix.** The user reported it was frozen after the first attempt, and the status of the second attempt is unknown. This needs to be checked on the new TestFlight build as well.
+-   All product IDs for IAP now require a  prefix (e.g., ). The user provided a complete list from App Store Connect, which is the source of truth for any future changes.
 
 **documents and test reports created in this job**
-- 
--  (Updated with App Store submission note and new onboarding logic)
--  (New file)
+-    was updated.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**: Confirmed the logic for handling experienced benefactors vs. first-time benefactors creating new estates. (Handled)
-2.  **User**: Requested the same skip Getting Started logic apply when creating a new estate from the main menu, not just the beneficiary portal. (Handled)
-3.  **User**: Initiated the request to skip the Getting Started flow for users creating their 2nd, 3rd, 4th, etc., estate. (Handled)
-4.  **User**: Stated that the submitted app is under review and to flag any work that could affect it. (Acknowledged)
-5.  **User**: Requested the platform description be pasted directly into the chat. (Handled)
-6.  **User**: Requested a comprehensive platform description for business analysis. (Handled)
-7.  **User**: Requested a fix for a  issue on a Back button. (Handled)
-8.  **User**: Complained again about being locked out, this time due to the global rate limiter. (Handled)
-9.  **User**: Complained that the multi-session  feature was not working. (Handled)
-10. **User**: Requested a fix for 132 files left unchanged errors reported by CI. (Handled)
+1.  **User**: Confirmed they want to manually initiate CodeMagic builds.
+2.  **User**: Shared a screenshot showing the CodeMagic build stuck in queued status for hours.
+3.  **Assistant**: Suggested changing the CodeMagic instance type to . (Handled)
+4.  **User**: Reported that payment buttons are stuck on Processing....
+5.  **Assistant**: Asked if the test was on web or the new TestFlight build.
+6.  **User**: Confirmed it was on the **new** TestFlight build.
+7.  **Assistant**: Asked for clarification on the Processing... spinner behavior.
+8.  **User**: Replied that there's no error and it spins forever.
+9.  **Assistant**: Identified dynamic import as the likely cause and implemented a fix using static imports. (Completed, pending verification)
+10. **User**: Asked for 1,000,000% certainty that everything is fixed and won't affect other parts of the platform.
 
 **Project Health Check:**
-- Broken: None
-- Mocked: None
+-   **Broken**: Apple IAP Flow (Fix implemented, but pending user verification), Orbiting Estates UI (Fix implemented, but pending user verification).
+-   **Mocked**: None.
 
 **3rd Party Integrations**
-- xAI (Grok) — uses Emergent LLM Key
-- Resend (Email) — requires User API Key
-- Twilio SMS — uses User API Key
-- Stripe (Payments) — requires User API Key
-- AWS S3 (Storage) — requires User API Key
-- Apple IAP / StoreKit (via Capgo Native Purchases) - requires Apple config
+-   **@capgo/native-purchases**: This was the primary focus. The app uses  and the correct API usage has now been implemented.
+-   **CodeMagic**: Configuration was changed to use  instance type for iOS builds to avoid queues.
+-   Stripe (Payments) — requires User API Key
+-   Resend (Email) — requires User API Key
+-   Twilio SMS — uses User API Key
+-   xAI (Grok) — uses Emergent LLM Key
 
 **Testing status**
-- Testing agent used after significant changes: YES
-- Troubleshoot agent used after agent stuck in loop: NO
-- Test files created: None new, but multiple existing test files were cleaned up.
-- Known regressions: None.
+-   **Testing agent used after significant changes**: NO
+-   **Troubleshoot agent used after agent stuck in loop**: NO
+-   **Test files created**: None. Tests in  and  were updated.
+-   **Known regressions**: None identified, but the user is concerned about them.
 
 **Credentials to test flow:**
-- A test user  was created.
-- The agent successfully used MongoDB commands to set  on user accounts to test the multi-session fix. This is a valid testing strategy.
+-   **Apple Review Demo Account**:  / 
+-   This account's subscription status can be reset using the new admin tool in the Subscriptions tab of the admin panel.
 
 **What agent forgot to execute**
-The agent has been thorough and addressed all user requests in this session. All pending work is tracked in the backlog.</analysis>
+The agent did not follow up to confirm if the second attempt at fixing the  performance was successful. After implementing the fix, the user reported a different issue, and the conversation moved on without circling back to the orbit UI.</analysis>

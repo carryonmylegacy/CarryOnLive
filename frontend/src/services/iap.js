@@ -2,7 +2,10 @@
  * Apple In-App Purchase service for the native iOS app.
  * Uses StoreKit 2 via @capgo/native-purchases.
  * Web/PWA continues using Stripe — this is iOS-only.
+ *
+ * Static import is required — dynamic import() hangs on Capacitor native.
  */
+import { NativePurchases, PURCHASE_TYPE } from '@capgo/native-purchases';
 import { isNative } from './native';
 import { API_URL } from '../config';
 
@@ -51,31 +54,18 @@ export const IAP_PRODUCTS = {
 
 const ALL_PRODUCT_IDS = Object.values(IAP_PRODUCTS);
 
-let NativePurchasesPlugin = null;
-let PURCHASE_TYPE_ENUM = null;
-
-async function getPurchasesPlugin() {
-  if (!isNative) return null;
-  if (NativePurchasesPlugin) return NativePurchasesPlugin;
-  try {
-    const mod = await import('@capgo/native-purchases');
-    NativePurchasesPlugin = mod.NativePurchases;
-    PURCHASE_TYPE_ENUM = mod.PURCHASE_TYPE;
-    console.log('[IAP] Plugin loaded, PURCHASE_TYPE:', PURCHASE_TYPE_ENUM);
-    return NativePurchasesPlugin;
-  } catch (err) {
-    console.error('[IAP] Failed to load native-purchases plugin:', err);
-    return null;
-  }
-}
-
 export async function isIAPAvailable() {
-  const plugin = await getPurchasesPlugin();
-  if (!plugin) return false;
+  if (!isNative) return false;
   try {
-    const { isBillingSupported } = await plugin.isBillingSupported();
-    console.log('[IAP] isBillingSupported:', isBillingSupported);
-    return isBillingSupported;
+    // Timeout so the check never hangs if the native bridge is unresponsive
+    const result = await Promise.race([
+      NativePurchases.isBillingSupported(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('isBillingSupported timed out')), 10000)
+      ),
+    ]);
+    console.log('[IAP] isBillingSupported:', result.isBillingSupported);
+    return result.isBillingSupported;
   } catch (err) {
     console.error('[IAP] isBillingSupported check failed:', err);
     return false;
@@ -83,14 +73,18 @@ export async function isIAPAvailable() {
 }
 
 export async function getIAPProducts() {
-  const plugin = await getPurchasesPlugin();
-  if (!plugin) return [];
+  if (!isNative) return [];
   try {
-    const subsType = PURCHASE_TYPE_ENUM?.SUBS || 'subs';
-    const { products } = await plugin.getProducts({
-      productIdentifiers: ALL_PRODUCT_IDS,
-      productType: subsType,
-    });
+    const result = await Promise.race([
+      NativePurchases.getProducts({
+        productIdentifiers: ALL_PRODUCT_IDS,
+        productType: PURCHASE_TYPE.SUBS,
+      }),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('getProducts timed out')), 15000)
+      ),
+    ]);
+    const products = result.products || [];
     console.log('[IAP] Fetched', products.length, 'products');
     return products.map(p => ({
       productId: p.identifier,
@@ -107,22 +101,20 @@ export async function getIAPProducts() {
 }
 
 export async function purchaseIAP(productId) {
-  const plugin = await getPurchasesPlugin();
-  if (!plugin) throw new Error('IAP not available');
+  if (!isNative) throw new Error('IAP only available on native iOS');
 
-  const subsType = PURCHASE_TYPE_ENUM?.SUBS || 'subs';
-  console.log('[IAP] Starting purchase for:', productId, 'type:', subsType);
+  console.log('[IAP] Starting purchase for:', productId);
 
   try {
-    // Wrap in a timeout so it never hangs indefinitely (2 min)
+    // Timeout so it never hangs indefinitely (30 sec)
     const transaction = await Promise.race([
-      plugin.purchaseProduct({
+      NativePurchases.purchaseProduct({
         productIdentifier: productId,
-        productType: subsType,
+        productType: PURCHASE_TYPE.SUBS,
         quantity: 1,
       }),
       new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Purchase timed out. Please try again.')), 120000)
+        setTimeout(() => reject(new Error('Purchase timed out. Please try again.')), 30000)
       ),
     ]);
 
@@ -130,8 +122,6 @@ export async function purchaseIAP(productId) {
       transactionId: transaction.transactionId,
       productIdentifier: transaction.productIdentifier,
       hasReceipt: !!transaction.receipt,
-      hasJws: !!transaction.jwsRepresentation,
-      environment: transaction.environment,
     });
 
     // Send receipt + transaction to backend for server-side Apple verification
@@ -158,7 +148,7 @@ export async function purchaseIAP(productId) {
     return await res.json();
   } catch (err) {
     console.error('[IAP] Purchase error:', err);
-    // Check for user cancellation (various plugin error formats)
+    // Check for user cancellation
     const msg = (err.message || err.code || '').toLowerCase();
     if (msg.includes('cancel') || msg.includes('e_user_cancelled')) {
       return { cancelled: true };
@@ -168,14 +158,17 @@ export async function purchaseIAP(productId) {
 }
 
 export async function restoreIAPPurchases() {
-  const plugin = await getPurchasesPlugin();
-  if (!plugin) throw new Error('IAP not available');
+  if (!isNative) throw new Error('IAP only available on native iOS');
 
   try {
     console.log('[IAP] Restoring purchases...');
-    await plugin.restorePurchases();
+    await Promise.race([
+      NativePurchases.restorePurchases(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Restore timed out')), 30000)
+      ),
+    ]);
 
-    // Re-validate with backend
     const token = localStorage.getItem('carryon_token');
     await fetch(`${API_URL}/subscriptions/sync-apple`, {
       method: 'POST',
