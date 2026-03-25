@@ -148,10 +148,26 @@ export async function purchaseIAP(productId) {
     return await res.json();
   } catch (err) {
     console.error('[IAP] Purchase error:', err);
-    // Check for user cancellation
     const msg = (err.message || err.code || '').toLowerCase();
+    // Check for user cancellation
     if (msg.includes('cancel') || msg.includes('e_user_cancelled')) {
       return { cancelled: true };
+    }
+    // If StoreKit can't find the product, run diagnostics
+    if (msg.includes('cannot find product')) {
+      console.warn('[IAP] Product not found in Store. Running diagnostics...');
+      try {
+        const diag = await getIAPProducts();
+        console.log('[IAP] Store returned', diag.length, 'products:', diag.map(p => p.productId));
+      } catch (diagErr) {
+        console.error('[IAP] Diagnostic fetch also failed:', diagErr);
+      }
+      throw new Error(
+        `Product "${productId}" not found in the App Store. ` +
+        'Please check: (1) Paid Applications Agreement is active in App Store Connect, ' +
+        '(2) Products are in "Ready to Submit" or "Approved" status, ' +
+        '(3) Try again in a few minutes — new products can take time to propagate.'
+      );
     }
     throw err;
   }
