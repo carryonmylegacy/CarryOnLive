@@ -10,7 +10,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://get-started-flow.preview.emergentagent.com")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://grandma-proof-app.preview.emergentagent.com")
 
 # Expected step order and configuration
 EXPECTED_STEPS = [

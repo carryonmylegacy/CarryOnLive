@@ -1,3 +1,7 @@
+// PWA swipe-back guard — MUST be the very first import so its popstate
+// listener registers before React Router's listener.
+import './pwaSwipeGuard';
+
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
@@ -38,17 +42,6 @@ if (typeof EventTarget !== 'undefined') {
   };
 }
 
-// PWA: Prevent swipe-back navigation by converting pushState → replaceState.
-// Must run BEFORE React Router initializes so it captures the patched version.
-// With only 1 history entry, the iOS swipe-back gesture has nowhere to go.
-(function() {
-  const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-  if (!isPWA) return;
-  const originalReplaceState = window.history.replaceState.bind(window.history);
-  window.history.pushState = function(state, title, url) {
-    return originalReplaceState(state, title, url);
-  };
-})();
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(

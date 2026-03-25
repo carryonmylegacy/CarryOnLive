@@ -30,6 +30,16 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (March 25, 2026 — Session 29: PWA Swipe-Back Guard)
+
+#### PWA iOS Swipe-Back Prevention (March 25, 2026)
+Implemented a robust "History Trap" pattern to prevent the iOS swipe-back gesture from navigating backward in PWA standalone mode:
+- **`pwaSwipeGuard.js`**: Wraps `pushState`/`replaceState` to track the "real" current URL. On any `popstate` event (triggered by swipe-back), captures the event in the capture phase with `stopImmediatePropagation()` (fires before React Router's listener) and pushes the tracked URL back, trapping the user on the current page.
+- **Removed broken monkey-patch**: Deleted the `pushState → replaceState` override from `index.js` that was causing erratic multi-page backward jumps.
+- **Fixed `navigate(-1)` calls**: Replaced 4 instances of `navigate(-1)` / `history.back()` with explicit route navigation (`navigate('/settings')`, `navigate('/dashboard')`) so in-app back buttons work correctly with the guard active.
+- **Files changed**: `pwaSwipeGuard.js` (rewritten), `index.js` (cleaned), `SubscriptionPage.js`, `SecuritySettingsPage.js`, `SupportChatPage.js`, `TrusteePage.js`
+- **Testing note**: Playwright cannot simulate iOS system-level swipe gestures; user must verify on their actual iOS device from a Home Screen bookmark.
+
 ### Completed (March 25, 2026 — Session 28: Funnel Skip Sensitivity + Summary Refinement)
 
 #### Fireworks Celebration on CTA Screen (March 25, 2026)

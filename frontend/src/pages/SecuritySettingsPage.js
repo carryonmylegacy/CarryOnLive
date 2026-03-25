@@ -19,7 +19,7 @@ const SecuritySettingsPage = () => {
           </p>
         </div>
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/settings')}
           className="px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-transform hover:scale-105"
           style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
           data-testid="security-settings-back-button"

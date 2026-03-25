@@ -1,123 +1,36 @@
 <analysis>**original_problem_statement**: 
-The user requested the creation of a multi-step pre-signup onboarding funnel () to capture social media campaign traffic, integrated with Firebase Analytics and Meta Pixel. Following the initial build, the user requested an extensive UI/UX overhaul of the funnel and landing pages. This included a vivid American flag background, highly respectful and personalized summary screens, interactive 3D buttons with specific hover/depress physics, the removal of all hardcoded account limits, the implementation of a celebration animation (fireworks), the conversion of their trademarked logo into a transparent PNG, and a massive typography overhaul on the login/landing page to ensure readability and engagement.
+The user requested the creation of a grandma-proof PWA installation flow. This included segregating the login page so that PWA users see a clean, distraction-free login () while mobile/desktop browser users see the full marketing landing page (now moved to ). The user also required highly visual, iOS-accurate instructions for adding the app to the home screen, UI refinements for the PWA login screen (flag background, scrolling above the keyboard, safe-area inset fixes), and the prevention of the iOS Safari swipe-back gesture when using the PWA. Earlier, the user also requested a fix for PDF drag-and-drop rejection in the Secure Document Vault.
 
 PRODUCT REQUIREMENTS:
-1. Social Media Funnel: 5-step funnel tracking sessions to MongoDB.
-2. Funnel Refinement: Dynamic summary screen validating user Kept vs Skipped features. Interactive buttons with identical 3D depress/hover physics. Back button to change previous answers.
-3. Animations: American flag-themed fireworks upon reaching the CTA summary screen.
-4. Branding & UI: Use the user's specific trademarked logo (processed to have a transparent exterior). Overhaul landing page typography (larger labels, bolding, text shadows, pulsing CTAs) for maximum visibility against the background. 
-5. Zero account limits: Remove any mention of beneficiary limits.
+1. PWA Detection & Segregation:  check to conditionally render a minimal login screen vs marketing screen.
+2. iOS-Accurate Install Guide: Visual mockups of Safari's actual menus (Light theme, ••• button, Share sheet, Add button) with strong blue pulsating indicators.
+3. PWA Swipe-Back Prevention: Block the native iOS left-to-right swipe-to-go-back gesture in standalone mode.
+4. Vault PDF Uploads: Allow PDF mime-types in the drag-and-drop zone and auto-focus the document name input.
 
 **User's preferred language**: English (INSTRUCT next agent to respond in English only)
 
 **what currently exists?** 
-A fully functional, responsive 5-step acquisition funnel at  with MongoDB tracking and Firebase/Meta integration. The funnel features unified 3D interaction buttons, a dynamic Your Trial Includes personalized summary, and a custom firework animation. The landing page () features the user's official trademarked logo (with a transparent background) and completely revamped typography with text-shadows, pulsing gold CTAs, and enlarged labels for high readability. Apple IAP and Twilio SMS features are built but blocked pending third-party administrative approval.
+A fully functional multi-step funnel, a Secure Document Vault with working PDF drag-and-drop, a segregated PWA login experience (minimal vs full marketing ), and a visually accurate iOS PWA installation guide with pulsing blue targets. The app correctly adjusts for iOS safe-area insets. However, the attempt to block the iOS swipe-back gesture in PWA mode is currently failing, and the user reports it sometimes skips back 2-3 screens.
 
 **Last working item**:
-    - Last item agent was working: Increasing the scale of the logo and hero text specifically for the mobile/PWA view ( section) on the  so it matches the proportion of the sections below it.
+    - Last item agent was working: Implementing a new strategy to block the iOS PWA swipe-back gesture. After  and  monkey-patching failed, the agent created  to attempt a  event interception strategy.
     - Status: IN PROGRESS
     - Agent Testing Done: N
-    - Which testing method agent to use? screenshot tool (to verify mobile layout proportions) followed by manual script execution.
+    - Which testing method agent to use? manual testing by screenshot/device simulation (Note: Playwright desktop cannot easily simulate iOS system-level swipe gestures; coordinate with the user to test on their actual device).
     - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  Issue 1: Verify PWA/Mobile Hero layout and run Housekeeping (P0)
+  Issue 1: PWA iOS Swipe-Back Prevention is failing (P0)
   Issue 2: Apple IAP flow is non-functional (P0 - BLOCKED)
   Issue 3: Twilio SMS OTP delivery is failing (P0 - BLOCKED)
   
   Issues Detail:
   - Issue 1: 
-     - Attempted fixes: The agent updated the Tailwind classes in  to scale the logo ( to ) and text sizes, but context ended before testing or running the strict housekeeping script.
-     - Next debug checklist: Start frontend server, navigate to , capture a mobile-viewport screenshot to verify logo/text proportions. Then, run 
-==========================================
-  CarryOn™ Housekeeping Protocol
-  + SOC 2 Compliance Audit
-==========================================
-
-[1mPRE-FLIGHT: Auto-fix lint & formatting[0m
-------------------------------------------
-  [0;36mINFO[0m No fixes needed — already clean
-
-[1mSECTION A: Standard Housekeeping[0m
-------------------------------------------
-1.  Backend ruff check ............ [0;32mPASS[0m
-2.  Backend ruff format ........... [0;32mPASS[0m
-3.  Frontend ESLint (errors) ...... [0;32mPASS[0m
-4.  Frontend build ................ [0;32mPASS[0m
-5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: eb9c37fcc7f5)
-6.  MongoDB _id leak scan ......... [0;32mPASS[0m
-7.  Hardcoded secrets scan ........ [0;32mPASS[0m
-8.  Sensitive console.log scan .... [0;32mPASS[0m
-9.  Deprecated datetime scan ...... [0;32mPASS[0m
-10. Backend health check .......... [0;32mPASS[0m
-11. Unprotected endpoint audit .... [0;32mPASS[0m (39 route files audited)
-
-[1mSECTION B: SOC 2 Compliance Audit[0m
-------------------------------------------
-12. [CC6.1] Auth guard coverage ... [0;32mPASS[0m
-13. [CC6.1] Encryption at rest .... [0;32mPASS[0m (AES-256-GCM only, no legacy Fernet in routes)
-14. [CC6.1] Password hashing ...... [0;32mPASS[0m
-15. [CC7.2] Audit trail coverage .. [0;32mPASS[0m (all sensitive routes have audit logging)
-16. [CC7.2] Audit integrity hash .. [0;32mPASS[0m (SHA-256 integrity hash on all audit entries)
-17. [CC7.2] Audit immutability .... [0;32mPASS[0m (append-only — no update/delete on audit_trail)
-18. [CC7.2] Token blacklist ....... [0;32mPASS[0m (token blacklisting active)
-19. [CC7.2] Session enforcement ... [0;32mPASS[0m (single-session enforcement active)
-20. [CC7.2] OTP expiry check ...... [0;32mPASS[0m (10-minute OTP expiry enforced)
-21. [CC7.2] Account lockout ....... [0;32mPASS[0m (5-attempt lockout with 15-min window)
-22. [PI1.1] GDPR data export ...... [0;32mPASS[0m (endpoint exists — HTTP 403)
-23. [PI1.1] GDPR data deletion ... [0;32mPASS[0m (right to erasure endpoint present)
-24. [PI1.1] Consent management ... [0;32mPASS[0m (consent management endpoints present)
-25. [CC8.1] Soft-delete standard .. [0;32mPASS[0m (10 hard deletes — reviewed)
-26. [A1.2]  Error reporter ........ [0;32mPASS[0m (global error reporter active)
-27. [A1.2]  Error logging endpoint  [0;32mPASS[0m (error reporting endpoint operational)
-28. [CC6.1] Sensitive access log .. [0;32mPASS[0m (sensitive access logging indexed)
-29. [CC7.2] Rate limiting ......... [0;32mPASS[0m (rate limiting middleware active)
-30. [CC6.1] CORS configuration .... [0;32mPASS[0m (CORS configured, no wildcard)
-31. [CC6.1] Security headers ...... [0;32mPASS[0m (security headers middleware active)
-32. [CC7.2] DB indexes verified ... [0;32mPASS[0m (49 indexes defined)
-33. [CC8.1] Env fallback scan ...... [0;32mPASS[0m
-34. [A1.2] Recent backend logs ..... [0;32mPASS[0m
-35. [CC8.1] Route editor audit ..... [0;32mPASS[0m
-36. [A1.2]  Deploy start commands .. [0;32mPASS[0m (no shell built-ins in start commands)
-37. [A1.2]  Deploy healthcheck ..... [0;32mPASS[0m (healthcheckPath = "/api/health")
-38. [A1.2]  Mongo projection safety  [0;32mPASS[0m
-
-[1mSECTION C: iOS / App Store Readiness[0m
-------------------------------------------
-39. [iOS]   Capacitor sync ......... [0;32mPASS[0m (11 plugins for iOS)
-40. [iOS]   Native purchases plugin  [0;32mPASS[0m (package.json + Capacitor + Podfile, v^8.1.2)
-41. [iOS]   IAP product IDs ........ [0;32mPASS[0m (37 products, no duplicates)
-42. [iOS]   Stripe gated on iOS .... [0;32mPASS[0m (all Stripe redirects gated behind isNative)
-43. [iOS]   IAP imports present .... [0;32mPASS[0m (iap/useIAPPurchase + native imported in both subscription components)
-44. [iOS]   Apple disclosures ...... [0;32mPASS[0m (auto-renew, 24h cancel, Terms, Privacy, Restore)
-45. [iOS]   Entitlements XML ....... [0;32mPASS[0m
-46. [iOS]   Info.plist XML ......... [0;32mPASS[0m
-47. [iOS]   Podfile complete ....... [0;32mPASS[0m (13 pods defined)
-48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 56 JS bundles)
-49. [iOS]   codemagic.yaml ......... [0;32mPASS[0m (ios-build + pod install + cap sync + TestFlight)
-50. [iOS]   Min font size (11px) ... [0;32mPASS[0m (no fonts below 11px)
-
-[1mSECTION D: Post-Check Verification[0m
-------------------------------------------
-R1. Lint & format verified ...... [0;36mINFO[0m (clean after pre-flight)
-
-==========================================
-  [0;32mALL CHECKS PASSED[0m — codebase is clean
-  [0;32mREADY TO PUSH[0m — CodeMagic → TestFlight → App Store
-==========================================
-
-Safety reminder: Do NOT run yarn add/remove.
-To fix ruff format: cd /app/backend && ruff format .
-
-SOC 2 Trust Service Criteria Reference:
-  CC6.1  Logical access security
-  CC7.2  System monitoring & audit
-  CC8.1  Change management
-  A1.2   System availability
-  PI1.1  Privacy (GDPR) to ensure compliance.
-     - Why fix this issue and what will be achieved with the fix? Ensures the mobile layout is visually balanced and that the codebase passes the user's zero-tolerance compliance checks.
-     - Status: TESTING PENDING
-     - Is recurring issue? N
+     - Attempted fixes: Agent tried  on  starting from the left edge (failed: iOS intercepts first). Agent tried monkey-patching  in  and  (failed: React Router internals bypass it, resulting in erratic multi-page swipe backs).
+     - Next debug checklist: Implement the logic inside  using a  event listener that pushes a dummy state forward immediately to trap the user, or strictly enforce a  when  is true. Remove the failed monkey-patch from .
+     - Why fix this issue and what will be achieved with the fix? Stops the PWA from feeling like a browser by preventing accidental backward navigation.
+     - Status: IN PROGRESS
+     - Is recurring issue? Y
      - Should Test frontend/backend/both after fix? Frontend
      - Blocked on other issue: None
   - Issue 2: 
@@ -138,99 +51,13 @@ SOC 2 Trust Service Criteria Reference:
      - Blocked on other issue: User's A2P 10DLC campaign approval from Twilio.
 
 **In progress Task List**:
-  Task 1: Finalize Landing Page Mobile Typography & Housekeeping (P0)
+  Task 1: Finalize PWA Swipe Guard Implementation (P0)
   
  Task Detail:
   - Task 1: 
-     - Where to resume: Agent just finished editing lines 610-650 in . Resume by visually verifying the mobile landing page UI and executing 
-==========================================
-  CarryOn™ Housekeeping Protocol
-  + SOC 2 Compliance Audit
-==========================================
-
-[1mPRE-FLIGHT: Auto-fix lint & formatting[0m
-------------------------------------------
-  [0;36mINFO[0m No fixes needed — already clean
-
-[1mSECTION A: Standard Housekeeping[0m
-------------------------------------------
-1.  Backend ruff check ............ [0;32mPASS[0m
-2.  Backend ruff format ........... [0;32mPASS[0m
-3.  Frontend ESLint (errors) ...... [0;32mPASS[0m
-4.  Frontend build ................ [0;32mPASS[0m
-5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: eb9c37fcc7f5)
-6.  MongoDB _id leak scan ......... [0;32mPASS[0m
-7.  Hardcoded secrets scan ........ [0;32mPASS[0m
-8.  Sensitive console.log scan .... [0;32mPASS[0m
-9.  Deprecated datetime scan ...... [0;32mPASS[0m
-10. Backend health check .......... [0;32mPASS[0m
-11. Unprotected endpoint audit .... [0;32mPASS[0m (39 route files audited)
-
-[1mSECTION B: SOC 2 Compliance Audit[0m
-------------------------------------------
-12. [CC6.1] Auth guard coverage ... [0;32mPASS[0m
-13. [CC6.1] Encryption at rest .... [0;32mPASS[0m (AES-256-GCM only, no legacy Fernet in routes)
-14. [CC6.1] Password hashing ...... [0;32mPASS[0m
-15. [CC7.2] Audit trail coverage .. [0;32mPASS[0m (all sensitive routes have audit logging)
-16. [CC7.2] Audit integrity hash .. [0;32mPASS[0m (SHA-256 integrity hash on all audit entries)
-17. [CC7.2] Audit immutability .... [0;32mPASS[0m (append-only — no update/delete on audit_trail)
-18. [CC7.2] Token blacklist ....... [0;32mPASS[0m (token blacklisting active)
-19. [CC7.2] Session enforcement ... [0;32mPASS[0m (single-session enforcement active)
-20. [CC7.2] OTP expiry check ...... [0;32mPASS[0m (10-minute OTP expiry enforced)
-21. [CC7.2] Account lockout ....... [0;32mPASS[0m (5-attempt lockout with 15-min window)
-22. [PI1.1] GDPR data export ...... [0;32mPASS[0m (endpoint exists — HTTP 403)
-23. [PI1.1] GDPR data deletion ... [0;32mPASS[0m (right to erasure endpoint present)
-24. [PI1.1] Consent management ... [0;32mPASS[0m (consent management endpoints present)
-25. [CC8.1] Soft-delete standard .. [0;32mPASS[0m (10 hard deletes — reviewed)
-26. [A1.2]  Error reporter ........ [0;32mPASS[0m (global error reporter active)
-27. [A1.2]  Error logging endpoint  [0;32mPASS[0m (error reporting endpoint operational)
-28. [CC6.1] Sensitive access log .. [0;32mPASS[0m (sensitive access logging indexed)
-29. [CC7.2] Rate limiting ......... [0;32mPASS[0m (rate limiting middleware active)
-30. [CC6.1] CORS configuration .... [0;32mPASS[0m (CORS configured, no wildcard)
-31. [CC6.1] Security headers ...... [0;32mPASS[0m (security headers middleware active)
-32. [CC7.2] DB indexes verified ... [0;32mPASS[0m (49 indexes defined)
-33. [CC8.1] Env fallback scan ...... [0;32mPASS[0m
-34. [A1.2] Recent backend logs ..... [0;32mPASS[0m
-35. [CC8.1] Route editor audit ..... [0;32mPASS[0m
-36. [A1.2]  Deploy start commands .. [0;32mPASS[0m (no shell built-ins in start commands)
-37. [A1.2]  Deploy healthcheck ..... [0;32mPASS[0m (healthcheckPath = "/api/health")
-38. [A1.2]  Mongo projection safety  [0;32mPASS[0m
-
-[1mSECTION C: iOS / App Store Readiness[0m
-------------------------------------------
-39. [iOS]   Capacitor sync ......... [0;32mPASS[0m (11 plugins for iOS)
-40. [iOS]   Native purchases plugin  [0;32mPASS[0m (package.json + Capacitor + Podfile, v^8.1.2)
-41. [iOS]   IAP product IDs ........ [0;32mPASS[0m (37 products, no duplicates)
-42. [iOS]   Stripe gated on iOS .... [0;32mPASS[0m (all Stripe redirects gated behind isNative)
-43. [iOS]   IAP imports present .... [0;32mPASS[0m (iap/useIAPPurchase + native imported in both subscription components)
-44. [iOS]   Apple disclosures ...... [0;32mPASS[0m (auto-renew, 24h cancel, Terms, Privacy, Restore)
-45. [iOS]   Entitlements XML ....... [0;32mPASS[0m
-46. [iOS]   Info.plist XML ......... [0;32mPASS[0m
-47. [iOS]   Podfile complete ....... [0;32mPASS[0m (13 pods defined)
-48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 56 JS bundles)
-49. [iOS]   codemagic.yaml ......... [0;32mPASS[0m (ios-build + pod install + cap sync + TestFlight)
-50. [iOS]   Min font size (11px) ... [0;32mPASS[0m (no fonts below 11px)
-
-[1mSECTION D: Post-Check Verification[0m
-------------------------------------------
-R1. Lint & format verified ...... [0;36mINFO[0m (clean after pre-flight)
-
-==========================================
-  [0;32mALL CHECKS PASSED[0m — codebase is clean
-  [0;32mREADY TO PUSH[0m — CodeMagic → TestFlight → App Store
-==========================================
-
-Safety reminder: Do NOT run yarn add/remove.
-To fix ruff format: cd /app/backend && ruff format .
-
-SOC 2 Trust Service Criteria Reference:
-  CC6.1  Logical access security
-  CC7.2  System monitoring & audit
-  CC8.1  Change management
-  A1.2   System availability
-  PI1.1  Privacy (GDPR).
-     - What will be achieved with this? Closes out the landing page UI overhaul.
-     - Status: TESTING PENDING
+     - Where to resume: The file  was just created. Add the  interception logic to it, import it into  or , and remove the old failed  override from .
+     - What will be achieved with this? Prevents the iOS swipe-back bug.
+     - Status: IN PROGRESS
      - Should Test frontend/backend/both after fix? Frontend
      - Blocked on something: No
 
@@ -243,53 +70,49 @@ SOC 2 Trust Service Criteria Reference:
     - (P2) Scalability Enhancements.
 
 **Completed work in this session**
-- Replaced funnel summary confetti with Red/White/Blue/Gold Firework animations (DONE)
-- Unified interaction physics for feature cards: both Skip and Keep buttons have identical hover-lift and click-depress 3D styles (DONE)
-- Implemented Funnel Back / Change previous answer button and removed step delays (DONE)
-- Fixed bug where interests survey artificially limited the amount of feature cards shown (DONE)
-- Made funnel Step 4 CTA list dynamic based on user's exact kept vs skipped choices (DONE)
-- Completely removed Up to 3 beneficiaries limits text (DONE)
-- Programmatically extracted User's trademarked logo to a transparent PNG while preserving interior navy background (DONE)
-- Landing page typography overhaul: Pulsing CTAs, larger inputs, text-shadows, and layout spacing (DONE)
+- Fixed Secure Document Vault PDF rejection by expanding MIME type validation (, etc.) (DONE)
+- Added auto-focus () to Document Name field upon dropping a file in Vault (DONE)
+- Split Desktop/PWA login: Created  for marketing, stripped  down for PWA mode (DONE)
+- Built  with light-theme, iOS-accurate visual mockups and strong blue glowing pulsates for action buttons (DONE)
+- Fixed PWA Funnel overlapping iOS status bar using  and  (DONE)
+- Implemented keyboard-aware scrolling for PWA Login using  &  (DONE)
 
 **Earlier issues found/mentioned but not fixed**
-None. Agent successfully addressed all styling, interaction, and logic bugs raised by the user in this session.
+None.
 
 **Known issue recurrence from previous fork**
-  - Issue recurrence in previous fork: Apple IAP block / Twilio block
-  - Recurrence count: 2
-  - Status: BLOCKED
+  - Issue recurrence in previous fork: Apple IAP block / Twilio block (Count: 3).
+  - PWA Swipe-Back blocking failed 3 times this session.
+  - Status: BLOCKED / IN PROGRESS
 
 **Code Architecture**
-animate-pulse-fast
+
 
 **Key Technical Concepts**
-- **Frontend**: React, Tailwind CSS,  (for fireworks), Shadcn/UI.
+- **Frontend**: React, Tailwind CSS, PWA detection (), viewport units (), History API manipulation.
 - **Backend**: FastAPI, Motor (Async MongoDB).
-- **Image Processing**: Python PIL/Pillow used in-container to flood-fill and extract transparencies from JPGs.
 
 **key DB schema**
-  - : {session_id, utm_source, utm_medium, utm_campaign, ip_address, device_type, steps (array), completed, converted_user_id, demographics}
+  - : {session_id, utm_source, utm_medium, utm_campaign, ip_address, device_type, steps, completed, converted_user_id}
 
 **changes in tech stack**
-  - Added  to  for Step 4 animations.
+  - None
 
 **All files of reference**
-  - : Funnel logic, button physics, dynamic summaries.
-  - : Landing page typography and transparent logo implementation.
-  - : Updated to include  animation.
-  - : The finalized, perfectly processed trademarked logo.
+  -  (NEW - needs implementation)
+  -  (Contains broken  hack to remove)
+  - 
+  - 
 
 **Areas that need refactoring**:
-  - The UI inline styles in  and  are extremely dense. Extensive use of  overlays could be abstracted into Tailwind classes or CSS variables for maintainability.
+  - The monkey-patch for  currently sitting in  is failing and causing multiple-page jumps. It needs to be removed in favor of the new  strategy.
 
 **key api endpoints**
-  - : Initiates tracking session.
-  - : Logs completion of a funnel step.
-  - : Converts the funnel session.
+  - 
+  - 
 
 **Critical Info for New Agent**
-- **CRITICAL RULE**: The user has a **zero-tolerance policy** for code quality. Before ANY finish tool call, you MUST run 
+- **CRITICAL RULE**: The user has a zero-tolerance policy for code quality. Before ANY finish tool call, you MUST run 
 ==========================================
   CarryOn™ Housekeeping Protocol
   + SOC 2 Compliance Audit
@@ -354,7 +177,7 @@ animate-pulse-fast
 45. [iOS]   Entitlements XML ....... [0;32mPASS[0m
 46. [iOS]   Info.plist XML ......... [0;32mPASS[0m
 47. [iOS]   Podfile complete ....... [0;32mPASS[0m (13 pods defined)
-48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 56 JS bundles)
+48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 57 JS bundles)
 49. [iOS]   codemagic.yaml ......... [0;32mPASS[0m (ios-build + pod install + cap sync + TestFlight)
 50. [iOS]   Min font size (11px) ... [0;32mPASS[0m (no fonts below 11px)
 
@@ -376,132 +199,46 @@ SOC 2 Trust Service Criteria Reference:
   CC8.1  Change management
   A1.2   System availability
   PI1.1  Privacy (GDPR) and ensure all 50 checks pass.
-- **Logo Preservation**: The  was painstakingly generated via python script from the user's actual trademarked file. Do not replace it with an AI-generated image.
-- Apple IAP and Twilio SMS OTP features are complete but administratively blocked. Do not attempt to debug them.
+- PWA Swipe-back is notoriously difficult to prevent on iOS. The user is actively testing on their device from a Home Screen bookmark. You must write a robust solution (like forcefully pushing state forward on  or enforcing  for PWAs) rather than relying on standard DOM events.
+- Apple IAP and Twilio SMS OTP features are administratively blocked. Do not attempt to debug them.
 
 **documents and test reports created in this job**
-  -  (Updated)
+  - 
+  - 
+  - 
 
 **Last 10 User Messages and any pending HUMAN messages** 
-1. **User**: Asked for the Scroll to explore text to be larger, bolder, and in its own frosted tile.
-2. **Agent**: Placed it in a frosted tile and enlarged it.
-3. **User**: Asked to shrink the wide pane of glass so it hugs the text.
-4. **Agent**: Used  to shrink the tile.
-5. **User**: Asked to add an exclamation mark to the CTA and make it pulse faster.
-6. **Agent**: Updated  with  and applied it.
-7. **User**: Asked to enlarge and bold the Username or Email and Password labels.
-8. **Agent**: Updated the labels to be bold and whiter.
-9. **User**: Asked to make Create Account, Forgot Password?, and Bank-grade security text the same bold size.
-10. **User**: Noted that in PWA/mobile view, the logo and hero text are too small compared to the content below them. Requested they be scaled up. (Agent applied code fix, but testing/housekeeping is pending).
+1. **User**: Provided screenshots showing PWA login issues (logo small, instructions dark/incorrect).
+2. **Agent**: Updated install guide and enlarged logo.
+3. **User**: Funnel formatting got messed up (overlapping top iOS status bar).
+4. **Agent**: Fixed safe-area-inset and .
+5. **User**: Make install mockups light theme, add flag background to PWA login, slide up on keyboard.
+6. **Agent**: Implemented light theme mockups and keyboard scrolling.
+7. **User**: Make pulsating glows stronger (blue), make instruction text white, add + to step 3.
+8. **Agent**: Updated styles with strong blue box-shadow glows.
+9. **User**: Prevent left swipe on PWA from navigating back as if it was a web browser.
+10. **User**: Testing swipe-back... It's still doing it, sometimes taking me back 2-3 screens. (Agent created  right before context ended).
 
 **Project Health Check:**
-  - Broken: None
+  - Broken: PWA swipe-back gesture block
   - Mocked: None
-  - Blocked: Apple In-App Purchases, Twilio SMS OTP
+  - Blocked: Apple IAP, Twilio SMS
 
 **3rd Party Integrations**
-  - Firebase Analytics (Analytics) — requires User config keys (Stored in .env/codemagic)
-  - Meta Pixel (Analytics) — requires User Pixel ID (Stored in .env/codemagic)
-  - @capgo/native-purchases (v8.2.2) — Blocked by Apple
-  - Twilio SMS (v9.10.2) — Blocked by Twilio A2P
+  - Firebase Analytics (Analytics) — requires User config keys
+  - Meta Pixel (Analytics) — requires User Pixel ID
   - Stripe (Payments) — requires User API Key
-  - Resend (Email) — requires User API Key
-  - xAI (Grok) — uses Emergent LLM Key
+  - Twilio SMS (v9.10.2) — Blocked by Twilio A2P
+  - @capgo/native-purchases (v8.2.2) — Blocked by Apple
 
 **Testing status**
-  - Testing agent used after significant changes: NO (Extensive UI overhauls were done relying entirely on manual Screenshot Tool testing. Testing agent should be run if further funnel logic is touched).
+  - Testing agent used after significant changes: YES (For initial PWA login split).
   - Troubleshoot agent used after agent stuck in loop: NO
-  - Test files created: None.
-  - Known regressions: None.
+  - Test files created: 
+  - Known regressions: Monkey-patch in  causes erratic multi-page backward jumps.
 
 **Credentials to test flow:**
   - App:  / 
 
 **What agent forgot to execute**
-The agent modified the  (mobile) section of  to increase the size of the logo and hero text, but the context limit was reached before the agent could **capture a mobile screenshot** to verify the proportions and **run the mandatory 
-==========================================
-  CarryOn™ Housekeeping Protocol
-  + SOC 2 Compliance Audit
-==========================================
-
-[1mPRE-FLIGHT: Auto-fix lint & formatting[0m
-------------------------------------------
-  [0;36mINFO[0m No fixes needed — already clean
-
-[1mSECTION A: Standard Housekeeping[0m
-------------------------------------------
-1.  Backend ruff check ............ [0;32mPASS[0m
-2.  Backend ruff format ........... [0;32mPASS[0m
-3.  Frontend ESLint (errors) ...... [0;32mPASS[0m
-4.  Frontend build ................ [0;32mPASS[0m
-5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: eb9c37fcc7f5)
-6.  MongoDB _id leak scan ......... [0;32mPASS[0m
-7.  Hardcoded secrets scan ........ [0;32mPASS[0m
-8.  Sensitive console.log scan .... [0;32mPASS[0m
-9.  Deprecated datetime scan ...... [0;32mPASS[0m
-10. Backend health check .......... [0;32mPASS[0m
-11. Unprotected endpoint audit .... [0;32mPASS[0m (39 route files audited)
-
-[1mSECTION B: SOC 2 Compliance Audit[0m
-------------------------------------------
-12. [CC6.1] Auth guard coverage ... [0;32mPASS[0m
-13. [CC6.1] Encryption at rest .... [0;32mPASS[0m (AES-256-GCM only, no legacy Fernet in routes)
-14. [CC6.1] Password hashing ...... [0;32mPASS[0m
-15. [CC7.2] Audit trail coverage .. [0;32mPASS[0m (all sensitive routes have audit logging)
-16. [CC7.2] Audit integrity hash .. [0;32mPASS[0m (SHA-256 integrity hash on all audit entries)
-17. [CC7.2] Audit immutability .... [0;32mPASS[0m (append-only — no update/delete on audit_trail)
-18. [CC7.2] Token blacklist ....... [0;32mPASS[0m (token blacklisting active)
-19. [CC7.2] Session enforcement ... [0;32mPASS[0m (single-session enforcement active)
-20. [CC7.2] OTP expiry check ...... [0;32mPASS[0m (10-minute OTP expiry enforced)
-21. [CC7.2] Account lockout ....... [0;32mPASS[0m (5-attempt lockout with 15-min window)
-22. [PI1.1] GDPR data export ...... [0;32mPASS[0m (endpoint exists — HTTP 403)
-23. [PI1.1] GDPR data deletion ... [0;32mPASS[0m (right to erasure endpoint present)
-24. [PI1.1] Consent management ... [0;32mPASS[0m (consent management endpoints present)
-25. [CC8.1] Soft-delete standard .. [0;32mPASS[0m (10 hard deletes — reviewed)
-26. [A1.2]  Error reporter ........ [0;32mPASS[0m (global error reporter active)
-27. [A1.2]  Error logging endpoint  [0;32mPASS[0m (error reporting endpoint operational)
-28. [CC6.1] Sensitive access log .. [0;32mPASS[0m (sensitive access logging indexed)
-29. [CC7.2] Rate limiting ......... [0;32mPASS[0m (rate limiting middleware active)
-30. [CC6.1] CORS configuration .... [0;32mPASS[0m (CORS configured, no wildcard)
-31. [CC6.1] Security headers ...... [0;32mPASS[0m (security headers middleware active)
-32. [CC7.2] DB indexes verified ... [0;32mPASS[0m (49 indexes defined)
-33. [CC8.1] Env fallback scan ...... [0;32mPASS[0m
-34. [A1.2] Recent backend logs ..... [0;32mPASS[0m
-35. [CC8.1] Route editor audit ..... [0;32mPASS[0m
-36. [A1.2]  Deploy start commands .. [0;32mPASS[0m (no shell built-ins in start commands)
-37. [A1.2]  Deploy healthcheck ..... [0;32mPASS[0m (healthcheckPath = "/api/health")
-38. [A1.2]  Mongo projection safety  [0;32mPASS[0m
-
-[1mSECTION C: iOS / App Store Readiness[0m
-------------------------------------------
-39. [iOS]   Capacitor sync ......... [0;32mPASS[0m (11 plugins for iOS)
-40. [iOS]   Native purchases plugin  [0;32mPASS[0m (package.json + Capacitor + Podfile, v^8.1.2)
-41. [iOS]   IAP product IDs ........ [0;32mPASS[0m (37 products, no duplicates)
-42. [iOS]   Stripe gated on iOS .... [0;32mPASS[0m (all Stripe redirects gated behind isNative)
-43. [iOS]   IAP imports present .... [0;32mPASS[0m (iap/useIAPPurchase + native imported in both subscription components)
-44. [iOS]   Apple disclosures ...... [0;32mPASS[0m (auto-renew, 24h cancel, Terms, Privacy, Restore)
-45. [iOS]   Entitlements XML ....... [0;32mPASS[0m
-46. [iOS]   Info.plist XML ......... [0;32mPASS[0m
-47. [iOS]   Podfile complete ....... [0;32mPASS[0m (13 pods defined)
-48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 56 JS bundles)
-49. [iOS]   codemagic.yaml ......... [0;32mPASS[0m (ios-build + pod install + cap sync + TestFlight)
-50. [iOS]   Min font size (11px) ... [0;32mPASS[0m (no fonts below 11px)
-
-[1mSECTION D: Post-Check Verification[0m
-------------------------------------------
-R1. Lint & format verified ...... [0;36mINFO[0m (clean after pre-flight)
-
-==========================================
-  [0;32mALL CHECKS PASSED[0m — codebase is clean
-  [0;32mREADY TO PUSH[0m — CodeMagic → TestFlight → App Store
-==========================================
-
-Safety reminder: Do NOT run yarn add/remove.
-To fix ruff format: cd /app/backend && ruff format .
-
-SOC 2 Trust Service Criteria Reference:
-  CC6.1  Logical access security
-  CC7.2  System monitoring & audit
-  CC8.1  Change management
-  A1.2   System availability
-  PI1.1  Privacy (GDPR) script**. The next agent MUST complete these verification steps before moving on.</analysis>
+The agent realized the  patch was failing and created  to implement a  interception approach, but the context limit was hit before they could write any code into the file or integrate it into /. Ensure you remove the broken patch from  and properly implement the guard.</analysis>
