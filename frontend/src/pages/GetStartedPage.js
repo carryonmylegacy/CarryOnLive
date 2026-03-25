@@ -189,10 +189,7 @@ export default function GetStartedPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const relevantFeatures = FEATURES.filter(f =>
-    f.for.some(tag => selectedInterests.includes(tag))
-  );
-  const featuresToShow = relevantFeatures.length > 0 ? relevantFeatures : FEATURES;
+  const featuresToShow = FEATURES;
 
   const recordStep = useCallback(async (stepNum, name, selections) => {
     trackEvent(`funnel_step_${stepNum}_complete`, { step_name: name, ...selections });
@@ -282,7 +279,9 @@ export default function GetStartedPage() {
   const handleFeatureDecision = (featureId, keep) => {
     setFeatureDecisions(prev => ({ ...prev, [featureId]: keep }));
     if (keep) {
-      setKeptFeatures(prev => [...prev, featureId]);
+      setKeptFeatures(prev => prev.includes(featureId) ? prev : [...prev, featureId]);
+    } else {
+      setKeptFeatures(prev => prev.filter(id => id !== featureId));
     }
     setCurrentFeatureIdx(i => i + 1);
   };
