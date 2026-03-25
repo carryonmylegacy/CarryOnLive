@@ -24,6 +24,24 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (March 24, 2026 — Session 25: Beneficiary Feature Enforcement + IAP Hardening)
+
+#### Beneficiary Portal Feature Enforcement (P1 — March 24, 2026)
+Benefactors toggle 7 feature flags per beneficiary (mm_access, ega_access, sdv_access, iac_access, ffn_access, dav_access, dts_access). Previously, beneficiary portal showed everything regardless. Now fully enforced:
+
+- **Backend**: `GET /api/beneficiary/my-permissions/{estate_id}` now returns `feature_access` object with all 7 flags from the beneficiary record
+- **TransitionGate.js**: Blocks navigation to denied sections (e.g., `/beneficiary/vault` if `sdv_access=false`) and redirects to `/beneficiary/dashboard`
+- **BeneficiaryDashboardPage.js**: Stat cards and preview sections conditionally rendered based on `myPerms.feature_access`. Also optimized: permissions fetched once instead of twice.
+- **Sidebar.js + MobileNav.js**: Navigation items filtered via `filterByFeatureAccess()` — hidden links for disabled features
+- **localStorage**: `beneficiary_feature_access` stored by TransitionGate for nav components; cleaned up on context exit
+
+#### IAP Fix Hardening (March 24, 2026)
+- Added 10s timeout to `isIAPAvailable()` — previously no timeout, could hang forever
+- Added 15s timeout to `getIAPProducts()` — prevent Store fetch hang
+- Added 30s timeout to `restoreIAPPurchases()` — prevent restore hang
+- Enhanced error diagnostics: when StoreKit can't find a product, logs available products and shows actionable guidance
+- **Root cause of "Cannot find product" error identified**: User's Apple Developer account lacks a Paid Applications Agreement. Only a Free Apps Agreement exists. Without it, StoreKit returns no products. User is resolving with Apple.
+
 ### Completed (March 24, 2026 — Session 24: Admin Subscription Reset + Apple Review Fix)
 
 #### App Store Rejection (2.1 Information Needed — March 24, 2026)

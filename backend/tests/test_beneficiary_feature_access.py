@@ -58,10 +58,7 @@ class TestMyPermissionsFeatureAccess:
     def test_my_permissions_endpoint_exists(self, auth_token, estate_id):
         """Test that my-permissions endpoint exists and responds"""
         headers = {"Authorization": f"Bearer {auth_token}"}
-        response = requests.get(
-            f"{BASE_URL}/api/beneficiary/my-permissions/{estate_id}",
-            headers=headers
-        )
+        response = requests.get(f"{BASE_URL}/api/beneficiary/my-permissions/{estate_id}", headers=headers)
         # Benefactor is not a beneficiary, so should return 404
         # This confirms the endpoint exists and is working
         assert response.status_code in [200, 404]
@@ -79,15 +76,23 @@ class TestFeatureAccessCodeReview:
 
         # Check that feature_access is returned in the response
         assert "feature_access" in content, "feature_access not found in section_permissions.py"
-        
+
         # Check all 7 feature flags are present
-        feature_flags = ["mm_access", "ega_access", "sdv_access", "iac_access", "ffn_access", "dav_access", "dts_access"]
+        feature_flags = [
+            "mm_access",
+            "ega_access",
+            "sdv_access",
+            "iac_access",
+            "ffn_access",
+            "dav_access",
+            "dts_access",
+        ]
         for flag in feature_flags:
             assert flag in content, f"{flag} not found in section_permissions.py"
-        
+
         # Check that feature_access is included in the return statement
         assert '"feature_access": feature_access' in content or "'feature_access': feature_access" in content
-        
+
         print("PASS: section_permissions.py returns feature_access with all 7 flags")
 
     def test_transition_gate_checks_feature_access(self):
@@ -98,20 +103,20 @@ class TestFeatureAccessCodeReview:
 
         # Check SECTION_TO_FEATURE mapping exists
         assert "SECTION_TO_FEATURE" in content, "SECTION_TO_FEATURE mapping not found"
-        
+
         # Check that it maps sections to feature flags
         assert "vault: 'sdv_access'" in content or 'vault: "sdv_access"' in content
         assert "messages: 'mm_access'" in content or 'messages: "mm_access"' in content
         assert "checklist: 'iac_access'" in content or 'checklist: "iac_access"' in content
         assert "guardian: 'ega_access'" in content or 'guardian: "ega_access"' in content
-        
+
         # Check that feature_access is stored in localStorage
         assert "beneficiary_feature_access" in content
         assert "localStorage.setItem" in content
-        
+
         # Check that feature access is checked for navigation
         assert "feature_access[featureFlag] === false" in content
-        
+
         print("PASS: TransitionGate.js correctly checks feature_access for navigation blocking")
 
     def test_beneficiary_dashboard_conditional_rendering(self):
@@ -122,20 +127,20 @@ class TestFeatureAccessCodeReview:
 
         # Check that feature_access is used for conditional rendering
         assert "myPerms?.feature_access" in content, "feature_access not used in conditional rendering"
-        
+
         # Check specific feature flags are checked
         assert "iac_access" in content, "iac_access not checked in dashboard"
         assert "sdv_access" in content, "sdv_access not checked in dashboard"
         assert "mm_access" in content, "mm_access not checked in dashboard"
-        
+
         # Check that stat cards are conditionally rendered
         assert "feature_access?.iac_access !== false" in content or "feature_access.iac_access !== false" in content
         assert "feature_access?.sdv_access !== false" in content or "feature_access.sdv_access !== false" in content
         assert "feature_access?.mm_access !== false" in content or "feature_access.mm_access !== false" in content
-        
+
         # Check that feature_access is stored in localStorage
         assert "beneficiary_feature_access" in content
-        
+
         print("PASS: BeneficiaryDashboardPage.js conditionally renders based on feature_access")
 
     def test_sidebar_filters_by_feature_access(self):
@@ -146,17 +151,17 @@ class TestFeatureAccessCodeReview:
 
         # Check that filterByFeatureAccess function exists
         assert "filterByFeatureAccess" in content, "filterByFeatureAccess function not found"
-        
+
         # Check that NAV_FEATURE_MAP exists
         assert "NAV_FEATURE_MAP" in content, "NAV_FEATURE_MAP not found"
-        
+
         # Check that feature access is read from localStorage
         assert "beneficiary_feature_access" in content
         assert "localStorage.getItem" in content
-        
+
         # Check that beneficiary nav items are filtered
         assert "filterByFeatureAccess([" in content
-        
+
         print("PASS: Sidebar.js filters nav items based on feature_access")
 
     def test_mobile_nav_filters_by_feature_access(self):
@@ -167,20 +172,20 @@ class TestFeatureAccessCodeReview:
 
         # Check that filterByFeatureAccess function exists
         assert "filterByFeatureAccess" in content, "filterByFeatureAccess function not found"
-        
+
         # Check that NAV_FEATURE_MAP exists
         assert "NAV_FEATURE_MAP" in content, "NAV_FEATURE_MAP not found"
-        
+
         # Check that feature access is read from localStorage
         assert "beneficiary_feature_access" in content
         assert "localStorage.getItem" in content
-        
+
         # Check that beneficiary nav items are filtered
         assert "filterByFeatureAccess([" in content
-        
+
         # Check that bottom nav is also filtered
         assert "beneficiaryBottomNav = filterByFeatureAccess" in content
-        
+
         print("PASS: MobileNav.js filters nav items based on feature_access")
 
     def test_localstorage_cleanup_on_context_exit(self):
@@ -189,42 +194,42 @@ class TestFeatureAccessCodeReview:
         sidebar_path = "/app/frontend/src/components/layout/Sidebar.js"
         with open(sidebar_path, "r") as f:
             sidebar_content = f.read()
-        
+
         # Check MobileNav.js for cleanup
         mobile_nav_path = "/app/frontend/src/components/layout/MobileNav.js"
         with open(mobile_nav_path, "r") as f:
             mobile_nav_content = f.read()
-        
+
         # Check BeneficiaryDashboardPage.js for cleanup
         dashboard_path = "/app/frontend/src/pages/beneficiary/BeneficiaryDashboardPage.js"
         with open(dashboard_path, "r") as f:
             dashboard_content = f.read()
-        
+
         # Check TransitionGate.js for cleanup
         gate_path = "/app/frontend/src/components/TransitionGate.js"
         with open(gate_path, "r") as f:
             gate_content = f.read()
-        
+
         # Verify cleanup happens in at least one location
         cleanup_found = False
         cleanup_locations = []
-        
+
         if "localStorage.removeItem('beneficiary_feature_access')" in sidebar_content:
             cleanup_found = True
             cleanup_locations.append("Sidebar.js")
-        
+
         if "localStorage.removeItem('beneficiary_feature_access')" in mobile_nav_content:
             cleanup_found = True
             cleanup_locations.append("MobileNav.js")
-        
+
         if "localStorage.removeItem('beneficiary_feature_access')" in dashboard_content:
             cleanup_found = True
             cleanup_locations.append("BeneficiaryDashboardPage.js")
-        
+
         if "localStorage.removeItem('beneficiary_feature_access')" in gate_content:
             cleanup_found = True
             cleanup_locations.append("TransitionGate.js")
-        
+
         assert cleanup_found, "beneficiary_feature_access cleanup not found in any file"
         print(f"PASS: beneficiary_feature_access cleanup found in: {', '.join(cleanup_locations)}")
 
@@ -249,7 +254,7 @@ class TestFeatureAccessAPIStructure:
         file_path = "/app/backend/routes/section_permissions.py"
         with open(file_path, "r") as f:
             content = f.read()
-        
+
         # Check that feature flags are read from beneficiary record with defaults
         assert 'ben.get("mm_access", True)' in content or "ben.get('mm_access', True)" in content
         assert 'ben.get("ega_access", True)' in content or "ben.get('ega_access', True)" in content
@@ -258,7 +263,7 @@ class TestFeatureAccessAPIStructure:
         assert 'ben.get("ffn_access", True)' in content or "ben.get('ffn_access', True)" in content
         assert 'ben.get("dav_access", True)' in content or "ben.get('dav_access', True)" in content
         assert 'ben.get("dts_access", True)' in content or "ben.get('dts_access', True)" in content
-        
+
         print("PASS: Backend reads feature flags from beneficiary record with True defaults")
 
 
