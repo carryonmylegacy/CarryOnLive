@@ -5,6 +5,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { SectionLockProvider } from './components/security/SectionLock';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { isNative } from './services/native';
+import { isPWA } from './utils/pwaDetect';
 import SubscriptionPaywall from './components/SubscriptionPaywall';
 import DashboardLayout from './components/layout/DashboardLayout';
 import ShareUploadModal from './components/ShareUploadModal';
@@ -345,6 +346,22 @@ function App() {
       StatusBar.setOverlaysWebView({ overlay: true });
       StatusBar.setStyle({ style: Style.Dark });
     }).catch(() => {});
+  }, []);
+
+  // PWA: Block left-edge swipe-to-go-back gesture
+  useEffect(() => {
+    if (!isPWA()) return;
+    let startX = 0;
+    const onTouchStart = (e) => { startX = e.touches[0].clientX; };
+    const onTouchMove = (e) => {
+      if (startX < 30) e.preventDefault();
+    };
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+    return () => {
+      document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchmove', onTouchMove);
+    };
   }, []);
 
   // Initialize Capgo live updates and native optimizations
