@@ -5,36 +5,36 @@ const isIOSDevice = () => /iPhone|iPad|iPod/.test(navigator.userAgent);
 const isAndroidDevice = () => /Android/.test(navigator.userAgent);
 const isSafariBrowser = () => /Safari/.test(navigator.userAgent) && !/Chrome|CriOS|FxiOS/.test(navigator.userAgent);
 
-/* ── iOS-accurate Safari toolbar mockup (dark, matches actual Safari) ── */
+/* ── Safari toolbar mockup (light, matches iOS Light Mode) ── */
 const ToolbarMini = () => (
-  <div className="rounded-2xl p-2 flex items-center gap-2 mx-auto" style={{ background: '#2c2c2e', maxWidth: '280px' }}>
-    <span className="text-white/30 text-sm px-1">&lsaquo;</span>
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18"/></svg>
-    <div className="flex-1 rounded-full px-2.5 py-1" style={{ background: '#1c1c1e' }}>
-      <span className="text-white/40 text-[11px]">carryon.us</span>
+  <div className="rounded-2xl p-2 flex items-center gap-2 mx-auto" style={{ background: '#f2f2f7', maxWidth: '280px', border: '1px solid rgba(0,0,0,0.08)' }}>
+    <span className="text-[#8e8e93] text-sm px-1">&lsaquo;</span>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18"/></svg>
+    <div className="flex-1 rounded-full px-2.5 py-1" style={{ background: '#e5e5ea' }}>
+      <span className="text-[#8e8e93] text-[11px]">carryon.us</span>
     </div>
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 3v5h-5"/></svg>
-    <div className="w-8 h-8 rounded-full flex items-center justify-center animate-pulse-fast" style={{ border: '2px solid rgba(255,255,255,0.8)', background: 'rgba(255,255,255,0.1)' }}>
-      <MoreHorizontal className="w-4 h-4 text-white/90" />
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" strokeWidth="2"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 3v5h-5"/></svg>
+    <div className="w-8 h-8 rounded-full flex items-center justify-center animate-pulse-fast" style={{ border: '2px solid #007AFF', background: 'rgba(0,122,255,0.1)' }}>
+      <MoreHorizontal className="w-4 h-4 text-[#007AFF]" />
     </div>
   </div>
 );
 
-/* ── iOS-accurate ••• popup menu (dark, matches actual iOS) ── */
+/* ── ••• popup menu (light, matches iOS Light Mode) ── */
 const DotMenuMini = () => (
-  <div className="rounded-xl overflow-hidden mx-auto" style={{ background: '#2c2c2e', maxWidth: '260px' }}>
-    <div className="flex items-center gap-2.5 px-3.5 py-2.5 animate-pulse-fast" style={{ background: 'rgba(255,255,255,0.1)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-      <span className="text-white text-sm font-medium flex-1">Share</span>
-      <span className="text-white/70 text-[11px]">tap this</span>
+  <div className="rounded-xl overflow-hidden mx-auto" style={{ background: '#ffffff', maxWidth: '260px', border: '1px solid rgba(0,0,0,0.08)' }}>
+    <div className="flex items-center gap-2.5 px-3.5 py-2.5 animate-pulse-fast" style={{ background: 'rgba(0,122,255,0.08)', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#007AFF" strokeWidth="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+      <span className="text-[#007AFF] text-sm font-medium flex-1">Share</span>
+      <span className="text-[#007AFF] text-[11px]">tap this</span>
     </div>
-    <div className="flex items-center gap-2.5 px-3.5 py-2 opacity-40" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
-      <span className="text-white text-sm">Add to Bookmarks</span>
+    <div className="flex items-center gap-2.5 px-3.5 py-2 opacity-50" style={{ borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1c1c1e" strokeWidth="1.5"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+      <span className="text-[#1c1c1e] text-sm">Add to Bookmarks</span>
     </div>
-    <div className="flex items-center gap-2.5 px-3.5 py-2 opacity-40">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
-      <span className="text-white text-sm">Add Bookmark to...</span>
+    <div className="flex items-center gap-2.5 px-3.5 py-2 opacity-50">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1c1c1e" strokeWidth="1.5"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      <span className="text-[#1c1c1e] text-sm">Add Bookmark to...</span>
     </div>
   </div>
 );
