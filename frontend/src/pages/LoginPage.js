@@ -364,7 +364,7 @@ const LoginPage = () => {
           <div className="mt-5 pt-4 border-t flex flex-col items-center gap-2" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
             <div className="flex items-center gap-2">
               <Shield className="w-3.5 h-3.5 text-[#10b981]" />
-              <span className="text-[#475569] text-xs">Bank-grade security · 256-bit SSL</span>
+              <span className="text-white/80 text-sm font-bold">Bank-grade security · 256-bit SSL</span>
             </div>
             <button onClick={() => navigateWithFade('/get-started')} className="animate-pulse-fast hover:brightness-110 active:scale-[0.97] cursor-pointer" data-testid="new-here-link-mobile"
               style={{
@@ -592,7 +592,7 @@ const LoginPage = () => {
                   <div className="mt-6 pt-5 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
                     <div className="flex items-center justify-center gap-2">
                       <Shield className="w-3.5 h-3.5 text-[#10b981]" />
-                      <span className="text-[#475569] text-xs">Bank-grade security &middot; 256-bit SSL</span>
+                      <span className="text-white/80 text-sm font-bold">Bank-grade security &middot; 256-bit SSL</span>
                     </div>
                     <div className="mt-3 text-center">
                       <button onClick={() => navigateWithFade('/get-started')} className="animate-pulse-fast hover:brightness-110 active:scale-[0.97] cursor-pointer" data-testid="new-here-link"
