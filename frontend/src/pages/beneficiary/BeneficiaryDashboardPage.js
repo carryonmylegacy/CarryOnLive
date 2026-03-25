@@ -44,16 +44,28 @@ const BeneficiaryDashboardPage = () => {
       const allEstatesRes = await axios.get(`${API_URL}/estates`, getAuthHeaders()).catch(() => ({ data: [] }));
       setAllEstates(allEstatesRes.data);
 
-      const estateRes = await axios.get(`${API_URL}/estates/${estateId}`, getAuthHeaders());
+      const [estateRes, permRes] = await Promise.all([
+        axios.get(`${API_URL}/estates/${estateId}`, getAuthHeaders()),
+        axios.get(`${API_URL}/beneficiary/my-permissions/${estateId}`, getAuthHeaders()),
+      ]);
+
       // Authoritative check via death certificate (not estate.status)
-      const permRes = await axios.get(`${API_URL}/beneficiary/my-permissions/${estateId}`, getAuthHeaders());
       if (!permRes.data.is_transitioned) { navigate('/beneficiary/pre'); return; }
       setEstate(estateRes.data);
+      setMyPerms(permRes.data);
 
+      // Store feature access for navigation components
+      if (permRes.data.feature_access) {
+        localStorage.setItem('beneficiary_feature_access', JSON.stringify(permRes.data.feature_access));
+      }
+
+      const fa = permRes.data.feature_access || {};
+
+      // Only fetch data for sections the beneficiary has access to
       const [docsRes, msgsRes, clRes] = await Promise.all([
-        axios.get(`${API_URL}/documents/${estateId}`, getAuthHeaders()),
-        axios.get(`${API_URL}/messages/${estateId}`, getAuthHeaders()),
-        axios.get(`${API_URL}/checklists/${estateId}`, getAuthHeaders()),
+        fa.sdv_access !== false ? axios.get(`${API_URL}/documents/${estateId}`, getAuthHeaders()) : { data: [] },
+        fa.mm_access !== false ? axios.get(`${API_URL}/messages/${estateId}`, getAuthHeaders()) : { data: [] },
+        fa.iac_access !== false ? axios.get(`${API_URL}/checklists/${estateId}`, getAuthHeaders()) : { data: [] },
       ]);
       setDocuments(docsRes.data);
       setMessages(msgsRes.data);
@@ -62,25 +74,24 @@ const BeneficiaryDashboardPage = () => {
         documents: docsRes.data.length,
         messages: msgsRes.data.length,
         checklists: clRes.data.length,
-        checklistsDone: clRes.data.filter(c => c.is_completed).length,
+        checklistsDone: (clRes.data || []).filter(c => c.is_completed).length,
       });
 
-      // Fetch my permissions and all beneficiary permissions (if primary)
-      try {
-        const permRes = await axios.get(`${API_URL}/beneficiary/my-permissions/${estateId}`, getAuthHeaders());
-        setMyPerms(permRes.data);
-        if (permRes.data.is_primary) {
+      // Fetch all beneficiary permissions if primary (for manage panel)
+      if (permRes.data.is_primary) {
+        try {
           const [allPermsRes, bensRes] = await Promise.all([
             axios.get(`${API_URL}/estate/${estateId}/section-permissions`, getAuthHeaders()),
             axios.get(`${API_URL}/beneficiaries/${estateId}`, getAuthHeaders()),
           ]);
           setAllPerms(allPermsRes.data || []);
           setOtherBens((bensRes.data || []).filter(b => b.user_id !== user?.id));
-        }
-      } catch { /* permissions endpoint may not exist for older estates */ }
+        } catch { /* permissions endpoint may not exist for older estates */ }
+      }
     } catch (err) {
       if (err.response?.status === 404 || err.response?.status === 403) {
         localStorage.removeItem('beneficiary_estate_id');
+        localStorage.removeItem('beneficiary_feature_access');
         navigate('/beneficiary');
         return;
       }
@@ -129,7 +140,7 @@ const BeneficiaryDashboardPage = () => {
           </p>
         </div>
         <button
-          onClick={() => { localStorage.removeItem('beneficiary_estate_id'); navigate('/beneficiary'); }}
+          onClick={() => { localStorage.removeItem('beneficiary_estate_id'); localStorage.removeItem('beneficiary_feature_access'); navigate('/beneficiary'); }}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shrink-0"
           style={{ background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.35)', color: '#60A5FA' }}
           data-testid="back-to-all-estates"
@@ -140,6 +151,7 @@ const BeneficiaryDashboardPage = () => {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-3 gap-3 lg:gap-4 mb-5">
+        {(myPerms?.feature_access?.iac_access !== false) && (
         <div
           className="rounded-2xl p-4 lg:p-6 cursor-pointer transition-all hover:scale-[1.02] flex flex-col items-center justify-center text-white"
           style={{ background: 'linear-gradient(135deg, #78350F, #B45309, #D97706)', boxShadow: '0 12px 48px -4px rgba(217,119,6,0.5), 0 2px 0 0 rgba(255,210,130,0.25) inset, 0 -6px 16px rgba(0,0,0,0.3) inset', border: '1px solid rgba(251,191,36,0.2)' }}
@@ -152,6 +164,8 @@ const BeneficiaryDashboardPage = () => {
           </div>
           <div className="text-xs lg:text-sm opacity-85 text-center font-bold">Immediate Action<br />Checklist</div>
         </div>
+        )}
+        {(myPerms?.feature_access?.sdv_access !== false) && (
         <div
           className="rounded-2xl p-4 lg:p-6 cursor-pointer transition-all hover:scale-[1.02] flex flex-col items-center justify-center text-white"
           style={{ background: 'linear-gradient(135deg, #1E3A8A, #1D4ED8, #2563EB)', boxShadow: '0 12px 48px -4px rgba(37,99,235,0.5), 0 2px 0 0 rgba(147,197,253,0.25) inset, 0 -6px 16px rgba(0,0,0,0.3) inset', border: '1px solid rgba(96,165,250,0.2)' }}
@@ -164,6 +178,8 @@ const BeneficiaryDashboardPage = () => {
           </div>
           <div className="text-xs lg:text-sm opacity-85 text-center font-bold">Secure Document<br />Vault</div>
         </div>
+        )}
+        {(myPerms?.feature_access?.mm_access !== false) && (
         <div
           className="rounded-2xl p-4 lg:p-6 cursor-pointer transition-all hover:scale-[1.02] flex flex-col items-center justify-center text-white"
           style={{ background: 'linear-gradient(135deg, #4C1D95, #6D28D9, #7C3AED)', boxShadow: '0 12px 48px -4px rgba(124,58,237,0.5), 0 2px 0 0 rgba(196,181,253,0.25) inset, 0 -6px 16px rgba(0,0,0,0.3) inset', border: '1px solid rgba(167,139,250,0.2)' }}
@@ -176,11 +192,13 @@ const BeneficiaryDashboardPage = () => {
           </div>
           <div className="text-xs lg:text-sm opacity-85 text-center font-bold">Milestone<br />Messages</div>
         </div>
+        )}
       </div>
 
       {/* Preview Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Checklist Preview */}
+        {(myPerms?.feature_access?.iac_access !== false) && (
         <div className="glass-card p-4 lg:p-5" style={{ borderLeft: '3px solid var(--yw)' }}>
           <h3 className="font-bold text-[var(--yw)] mb-3">Immediate Action Checklist (IAC)</h3>
           <div className="h-2 bg-[var(--b)] rounded-full overflow-hidden mb-3">
@@ -196,8 +214,10 @@ const BeneficiaryDashboardPage = () => {
             View All <ChevronRight className="w-4 h-4" />
           </button>
         </div>
+        )}
 
         {/* Vault Preview */}
+        {(myPerms?.feature_access?.sdv_access !== false) && (
         <div className="glass-card p-4 lg:p-5" style={{ borderLeft: '3px solid var(--bl2)' }}>
           <div className="flex justify-between mb-3">
             <h3 className="font-bold text-[var(--bl2)]">Secure Document Vault</h3>
@@ -214,8 +234,10 @@ const BeneficiaryDashboardPage = () => {
             View All <ChevronRight className="w-4 h-4" />
           </button>
         </div>
+        )}
 
         {/* Messages Preview */}
+        {(myPerms?.feature_access?.mm_access !== false) && (
         <div className="glass-card p-4 lg:p-5 lg:col-span-2" style={{ borderLeft: '3px solid var(--pr2)' }}>
           <div className="flex justify-between mb-3">
             <h3 className="font-bold text-[var(--pr2)]">Milestone Messages (MM)</h3>
@@ -236,6 +258,7 @@ const BeneficiaryDashboardPage = () => {
             View All <ChevronRight className="w-4 h-4" />
           </button>
         </div>
+        )}
       </div>
 
       {/* Primary Beneficiary: Manage Permissions for other beneficiaries */}

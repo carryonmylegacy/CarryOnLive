@@ -234,6 +234,7 @@ const MobileNav = () => {
           localStorage.setItem('carryon_token', adminToken);
           localStorage.removeItem('selected_estate_id');
           localStorage.removeItem('beneficiary_estate_id');
+          localStorage.removeItem('beneficiary_feature_access');
           localStorage.setItem('dev_switcher_admin_session', 'true');
           localStorage.setItem('dev_switcher_active_role', account.role);
           window.location.href = account.redirect;
@@ -344,14 +345,34 @@ const MobileNav = () => {
     { to: '/timeline', icon: Clock, label: 'Estate Plan Timeline' },
   ];
 
-  const beneficiaryLegacyItems = [
+  // Get feature access flags from localStorage (set by TransitionGate/Dashboard)
+  const featureAccess = (() => {
+    try { return JSON.parse(localStorage.getItem('beneficiary_feature_access') || '{}'); }
+    catch { return {}; }
+  })();
+
+  // Map nav routes to feature access flags
+  const NAV_FEATURE_MAP = {
+    '/beneficiary/vault': 'sdv_access',
+    '/beneficiary/guardian': 'ega_access',
+    '/beneficiary/checklist': 'iac_access',
+    '/beneficiary/messages': 'mm_access',
+  };
+
+  const filterByFeatureAccess = (items) =>
+    items.filter(item => {
+      const flag = NAV_FEATURE_MAP[item.to];
+      return !flag || featureAccess[flag] !== false;
+    });
+
+  const beneficiaryLegacyItems = filterByFeatureAccess([
     { to: '/beneficiary', icon: Home, label: 'Dashboard' },
     { to: '/beneficiary/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
     { to: '/beneficiary/guardian', icon: Sparkles, label: 'Estate Guardian (EGA)' },
     { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
     { to: '/beneficiary/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
     { to: '/beneficiary/milestone', icon: Gift, label: 'Report Milestone' },
-  ];
+  ]);
 
   // Staff portals — tool shortcuts in hamburger menu
   const adminMenuItems = [
@@ -416,13 +437,13 @@ const MobileNav = () => {
     { to: '/vault', icon: FolderLock, label: 'Vault' },
   ];
 
-  const beneficiaryBottomNav = [
+  const beneficiaryBottomNav = filterByFeatureAccess([
     { to: '/beneficiary/vault', icon: FolderLock, label: 'Vault' },
     { to: '/beneficiary/guardian', icon: Sparkles, label: 'Guardian' },
     { to: '/beneficiary', icon: Home, label: 'Dashboard', isCenter: true },
     { to: '/beneficiary/messages', icon: MessageSquare, label: 'Messages' },
     { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Checklist' },
-  ];
+  ]);
 
   const adminBottomNav = [
     { id: 'admin-tvt', to: '/admin/transition', icon: FileKey, label: 'TVT' },
@@ -768,6 +789,7 @@ const MobileNav = () => {
                                         setMobileEstatePicker(false);
                                         localStorage.setItem('selected_estate_id', estate.id);
                                         localStorage.removeItem('beneficiary_estate_id');
+          localStorage.removeItem('beneficiary_feature_access');
                                         localStorage.setItem('carryon_last_portal', 'benefactor');
                                         clearCache();
                                         navigate('/dashboard');
@@ -824,6 +846,7 @@ const MobileNav = () => {
                             setOpen(false);
                             localStorage.removeItem('selected_estate_id');
                             localStorage.removeItem('beneficiary_estate_id');
+          localStorage.removeItem('beneficiary_feature_access');
                             localStorage.setItem('carryon_last_portal', 'beneficiary');
                             clearCache();
                             navigate('/beneficiary');

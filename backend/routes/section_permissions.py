@@ -81,10 +81,22 @@ async def get_my_section_permissions(estate_id: str, current_user: dict = Depend
     perms = await db.section_permissions.find_one({"estate_id": estate_id, "beneficiary_id": ben["id"]}, {"_id": 0})
     sections = perms["sections"] if perms else {s: True for s in ALL_SECTIONS}
 
+    # Benefactor-set feature access flags (stored on the beneficiary record)
+    feature_access = {
+        "mm_access": ben.get("mm_access", True),
+        "ega_access": ben.get("ega_access", True),
+        "sdv_access": ben.get("sdv_access", True),
+        "iac_access": ben.get("iac_access", True),
+        "ffn_access": ben.get("ffn_access", True),
+        "dav_access": ben.get("dav_access", True),
+        "dts_access": ben.get("dts_access", True),
+    }
+
     return {
         "is_transitioned": is_transitioned,
         "is_primary": ben.get("is_primary", False),
         "sections": sections,
+        "feature_access": feature_access,
     }
 
 

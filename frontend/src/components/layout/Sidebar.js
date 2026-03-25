@@ -155,6 +155,7 @@ const Sidebar = () => {
           localStorage.setItem('carryon_token', adminToken);
           localStorage.removeItem('selected_estate_id');
           localStorage.removeItem('beneficiary_estate_id');
+          localStorage.removeItem('beneficiary_feature_access');
           localStorage.setItem('dev_switcher_admin_session', 'true');
           localStorage.setItem('dev_switcher_active_role', account.role);
           window.location.href = account.redirect;
@@ -259,17 +260,37 @@ const Sidebar = () => {
     }
   ];
 
+  // Get feature access flags from localStorage (set by TransitionGate/Dashboard)
+  const featureAccess = (() => {
+    try { return JSON.parse(localStorage.getItem('beneficiary_feature_access') || '{}'); }
+    catch { return {}; }
+  })();
+
+  // Map nav routes to feature access flags
+  const NAV_FEATURE_MAP = {
+    '/beneficiary/vault': 'sdv_access',
+    '/beneficiary/guardian': 'ega_access',
+    '/beneficiary/checklist': 'iac_access',
+    '/beneficiary/messages': 'mm_access',
+  };
+
+  const filterByFeatureAccess = (items) =>
+    items.filter(item => {
+      const flag = NAV_FEATURE_MAP[item.to];
+      return !flag || featureAccess[flag] !== false;
+    });
+
   const beneficiaryNavSections = [
     {
       title: 'ESTATE PLAN ACCESS',
-      items: [
+      items: filterByFeatureAccess([
         { to: '/beneficiary', icon: LayoutDashboard, label: 'Dashboard' },
         { to: '/beneficiary/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
         { to: '/beneficiary/guardian', icon: Sparkles, label: 'Estate Guardian (EGA)' },
         { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
         { to: '/beneficiary/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
         { to: '/beneficiary/milestone', icon: Home, label: 'Report Milestone' },
-      ]
+      ])
     },
     {
       title: 'ACCOUNT',
@@ -605,6 +626,7 @@ const Sidebar = () => {
                             onClick={() => {
                               localStorage.setItem('selected_estate_id', estate.id);
                               localStorage.removeItem('beneficiary_estate_id');
+          localStorage.removeItem('beneficiary_feature_access');
                               localStorage.setItem('carryon_last_portal', 'benefactor');
                               setEstatePickerOpen(false);
                               clearCache();
@@ -664,6 +686,7 @@ const Sidebar = () => {
                   <button onClick={() => {
                     localStorage.removeItem('selected_estate_id');
                     localStorage.removeItem('beneficiary_estate_id');
+          localStorage.removeItem('beneficiary_feature_access');
                     localStorage.setItem('carryon_last_portal', 'beneficiary');
                     clearCache();
                     navigate('/beneficiary');
