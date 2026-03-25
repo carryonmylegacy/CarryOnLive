@@ -348,13 +348,25 @@ function App() {
     }).catch(() => {});
   }, []);
 
-  // PWA: Block left-edge swipe-to-go-back gesture
+  // PWA: Block left-edge swipe-to-go-back gesture (horizontal only)
   useEffect(() => {
     if (!isPWA()) return;
     let startX = 0;
-    const onTouchStart = (e) => { startX = e.touches[0].clientX; };
+    let startY = 0;
+    let decided = false;
+    const onTouchStart = (e) => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      decided = false;
+    };
     const onTouchMove = (e) => {
-      if (startX < 30) e.preventDefault();
+      if (startX > 20 || decided) return;
+      const dx = Math.abs(e.touches[0].clientX - startX);
+      const dy = Math.abs(e.touches[0].clientY - startY);
+      if (dx < 5 && dy < 5) return; // not enough movement to decide
+      decided = true;
+      if (dx > dy) e.preventDefault(); // horizontal swipe from left edge → block
+      // vertical scroll from left edge → allow (no preventDefault)
     };
     document.addEventListener('touchstart', onTouchStart, { passive: true });
     document.addEventListener('touchmove', onTouchMove, { passive: false });
