@@ -569,7 +569,7 @@ async def _build_integrations_data():
         {
             "id": "meta_pixel",
             "name": "Meta Pixel",
-            "status": "blocked",
+            "status": "active",
             "category": "analytics",
             "dashboard_url": "https://business.facebook.com/events_manager",
             "cost_monthly": 0.00,
@@ -582,7 +582,7 @@ async def _build_integrations_data():
                     "verified": True,
                 },
                 {"label": "Plan", "value": "Free (included with Meta Business Suite)", "verified": True},
-                {"label": "Pixel ID", "value": "", "verified": False, "sensitive": True},
+                {"label": "Pixel ID", "value": "1406242844851058", "verified": True, "sensitive": True},
                 {"label": "Events Tracked", "value": "ViewContent, Lead, CompleteRegistration", "verified": True},
                 {"label": "Integration", "value": "Funnel page (/get-started)", "verified": True},
                 {"label": "Login ID", "value": "708890017", "sensitive": True, "verified": True},
