@@ -523,10 +523,10 @@ const LoginPage = () => {
                 }}>
                   <div className="absolute top-0 left-8 right-8 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
                   <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Sign In</h2>
-                  <p className="text-[#475569] text-sm mb-6">Access your CarryOn account</p>
+                  <p className="text-white/70 text-sm font-semibold mb-6">Access your CarryOn account</p>
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div>
-                      <label className="text-[#7b879e] text-xs font-medium mb-1.5 block">Username or Email</label>
+                      <label className="text-white/80 text-sm font-bold mb-1.5 block">Username or Email</label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#334155]" />
                         <Input type="text" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Username or Email" required autoComplete="username"
@@ -534,7 +534,7 @@ const LoginPage = () => {
                       </div>
                     </div>
                     <div>
-                      <label className="text-[#7b879e] text-xs font-medium mb-1.5 block">Password</label>
+                      <label className="text-white/80 text-sm font-bold mb-1.5 block">Password</label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#334155]" />
                         <Input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" required autoComplete="current-password"
