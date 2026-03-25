@@ -24,6 +24,17 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (March 25, 2026 — Session 26: Landing Page Background Lightening)
+
+#### Landing Page Hero & Section Backgrounds (March 25, 2026)
+Lightened the landing page to make the American flag hero image more visible and all scrolling sections slightly lighter:
+- **Hero flag**: Increased opacity from `0.7` to `0.85` and reduced dark gradient overlay from `0.2/0.7` to `0.05/0.45`
+- **Section backgrounds**: Changed base color from `#0B1221` to `#0E1829` across all sections (About, Features, Platform, Security, CTA)
+- **Gradient sections**: Changed from `#0F1A2E/#0B1221` to `#111F34/#0E1829` (Reframe, Platform Features, Three Steps)
+- **Texture overlays**: Slightly increased opacity on texture images so they show through more
+- **Section gradient overlays**: Reduced opacity values by ~15-20% across all sections
+- No content, layout, or functionality changes — purely cosmetic background lightening.
+
 ### Completed (March 24, 2026 — Session 25: Beneficiary Feature Enforcement + IAP Hardening)
 
 #### SettingsPage.js Refactoring (March 25, 2026)
@@ -58,7 +69,7 @@ Full SMS-based two-factor authentication using Twilio. Users can set up SMS 2FA 
   - `POST /api/auth/resend-otp` — Accepts `method` parameter (`email` or `sms`)
 - **Frontend — Settings Page**: SMS setup flow under Security card: phone input → consent checkbox → verification code → enabled. Only shows when 2FA is enabled.
 - **Frontend — Login OTP Modal**: Shows SMS/Email toggle buttons when user has SMS enabled. Displays correct description based on delivery method. Resend button respects selected method.
-- **IMPORTANT**: Twilio A2P 10DLC campaign currently FAILED — SMS delivery blocked by carriers until campaign is approved. User is resubmitting with corrected CTA and opt-in info.
+- **IMPORTANT**: Twilio A2P 10DLC campaign resubmitted on March 24, 2026 with corrected CTA, opt-in flow, and differentiated message samples. Check back with Twilio in 2-3 weeks (mid-April 2026) for approval status. Once approved, SMS OTP delivery will go live.
 
 #### IAP Fix Hardening (March 24, 2026)
 - Added 10s timeout to `isIAPAvailable()` — previously no timeout, could hang forever
@@ -196,7 +207,7 @@ To prepare for Apple review:
 - **Readiness Scoring Policy Page**: Informational page under Account section
 - **Scalability Enhancements**: Horizontal scaling, background workers, CDN
 - **Refactor Large Files**: Break down LoginPage.js, SettingsPage.js, TrusteePage.js
-- **Twilio SMS OTP**: Blocked on A2P 10DLC approval
+- **Twilio SMS OTP**: A2P campaign resubmitted March 24, 2026. Check back mid-April 2026.
 
 ## Key API Endpoints
 - `POST /api/security/verify/{section_id}` — validates PIN/Password/Question combos

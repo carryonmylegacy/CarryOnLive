@@ -266,7 +266,7 @@ const LoginPage = () => {
   // Show nothing while checking biometric
   if (biometricLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0B1221' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0E1829' }}>
         <img src="/carryon-logo.jpg" alt="CarryOn" className="w-32 h-auto opacity-60" />
       </div>
     );
@@ -427,7 +427,7 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen" style={{
-      background: '#0B1221',
+      background: '#0E1829',
       opacity: exiting ? 0 : 1,
       ...(exiting ? { transform: 'scale(0.98)' } : {}),
       transition: 'opacity 0.45s ease, transform 0.45s ease',
@@ -456,11 +456,11 @@ const LoginPage = () => {
       {/* ═══════════════════ HERO — FLAG BG + LOGO + LOGIN ═══════════════════ */}
       <section className="min-h-screen flex items-start sm:items-center relative overflow-hidden" style={{ paddingTop: 'calc(5rem + env(safe-area-inset-top, 0px))' }}>
         {/* Flag background that fades on scroll */}
-        <div className="absolute inset-0 z-0" style={{ opacity: flagOpacity * 0.5 }}>
+        <div className="absolute inset-0 z-0" style={{ opacity: flagOpacity * 0.85 }}>
           <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" />
         </div>
         {/* Dark gradient overlay */}
-        <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.4) 0%, rgba(11,18,33,0.85) 70%, #0B1221 100%)' }} />
+        <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.05) 0%, rgba(11,18,33,0.45) 70%, #0E1829 100%)' }} />
         {/* Radial accent */}
         <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 70% 50% at 35% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
 
@@ -614,9 +614,9 @@ const LoginPage = () => {
 
       {/* ═══════════════════ ABOUT — family roots ═══════════════════ */}
       <section id="about" className="relative z-10 -mt-2">
-        <div className="rounded-t-[2.5rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: '#0B1221', boxShadow: '0 -20px 60px rgba(0,0,0,0.5)' }}>
-          <div className="absolute inset-0 opacity-[0.2]" style={{ backgroundImage: 'url(/texture-roots.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 40%, rgba(212,175,55,0.03) 0%, transparent 60%), linear-gradient(180deg, rgba(11,18,33,0.5) 0%, rgba(11,18,33,0.95) 100%)' }} />
+        <div className="rounded-t-[2.5rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: '#0E1829', boxShadow: '0 -20px 60px rgba(0,0,0,0.5)' }}>
+          <div className="absolute inset-0 opacity-[0.25]" style={{ backgroundImage: 'url(/texture-roots.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
+          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 40%, rgba(212,175,55,0.03) 0%, transparent 60%), linear-gradient(180deg, rgba(14,24,41,0.35) 0%, rgba(14,24,41,0.85) 100%)' }} />
           <RevealSection className="max-w-[800px] mx-auto px-6 text-center relative z-10">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Your Family.<br />Ready for Anything.
@@ -639,9 +639,9 @@ const LoginPage = () => {
 
       {/* ═══════════════════ REFRAME — slides over previous ═══════════════════ */}
       <section className="relative z-20 -mt-1">
-        <div className="rounded-t-[2rem] py-20 lg:py-28 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0F1A2E, #0B1221)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
-          <div className="absolute inset-0 opacity-[0.25]" style={{ backgroundImage: 'url(/texture-warmth.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(10,22,40,0.6) 0%, rgba(11,18,33,0.95) 100%)' }} />
+        <div className="rounded-t-[2rem] py-20 lg:py-28 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #111F34, #0E1829)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+          <div className="absolute inset-0 opacity-[0.3]" style={{ backgroundImage: 'url(/texture-warmth.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(14,24,41,0.45) 0%, rgba(14,24,41,0.85) 100%)' }} />
           <RevealSection className="max-w-[800px] mx-auto px-6 text-center relative z-10">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6 leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Family Readiness Isn&apos;t Planning for Death.<br />
@@ -661,9 +661,9 @@ const LoginPage = () => {
 
       {/* ═══════════════════ FOUR FEATURES — staggered cards ═══════════════════ */}
       <section id="features" className="relative z-30 -mt-1">
-        <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: '#0B1221', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
-          <div className="absolute inset-0 opacity-[0.12]" style={{ backgroundImage: 'url(/texture-circuit.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.55) 0%, rgba(11,18,33,0.9) 100%)' }} />
+        <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: '#0E1829', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+          <div className="absolute inset-0 opacity-[0.16]" style={{ backgroundImage: 'url(/texture-circuit.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(14,24,41,0.4) 0%, rgba(14,24,41,0.8) 100%)' }} />
           <div className="max-w-[1100px] mx-auto px-6 relative z-10">
             <RevealSection>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white text-center mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
@@ -725,9 +725,9 @@ const LoginPage = () => {
 
       {/* ═══════════════════ PLATFORM FEATURES — compact grid ═══════════════════ */}
       <section className="relative z-[35] -mt-1">
-        <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0F1A2E, #0B1221)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
-          <div className="absolute inset-0 opacity-[0.15]" style={{ backgroundImage: 'url(/texture-warmth.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(10,22,40,0.6) 0%, rgba(11,18,33,0.92) 100%)' }} />
+        <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #111F34, #0E1829)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+          <div className="absolute inset-0 opacity-[0.2]" style={{ backgroundImage: 'url(/texture-warmth.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(14,24,41,0.45) 0%, rgba(14,24,41,0.82) 100%)' }} />
           <div className="max-w-[1100px] mx-auto px-6 relative z-10">
             <RevealSection>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white text-center mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
@@ -790,8 +790,8 @@ const LoginPage = () => {
 
       {/* ═══════════════════ THREE STEPS — slides over ═══════════════════ */}
       <section id="steps" className="relative z-40 -mt-1">
-        <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0F1A2E, #0B1221)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
-          <div className="absolute inset-0 opacity-[0.2]" style={{ backgroundImage: 'url(/texture-pathway.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
+        <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #111F34, #0E1829)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+          <div className="absolute inset-0 opacity-[0.25]" style={{ backgroundImage: 'url(/texture-pathway.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
           <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 30%, rgba(212,175,55,0.03) 0%, transparent 70%)' }} />
           <div className="max-w-[800px] mx-auto px-6 text-center relative z-10">
             <RevealSection>
@@ -826,9 +826,9 @@ const LoginPage = () => {
 
       {/* ═══════════════════ SECURITY — slides over ═══════════════════ */}
       <section id="security" className="relative z-50 -mt-1">
-        <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: '#0B1221', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
-          <div className="absolute inset-0 opacity-[0.3]" style={{ backgroundImage: 'url(/texture-family.png)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.5) 0%, rgba(11,18,33,0.85) 100%)' }} />
+        <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: '#0E1829', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+          <div className="absolute inset-0 opacity-[0.35]" style={{ backgroundImage: 'url(/texture-family.png)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(14,24,41,0.35) 0%, rgba(14,24,41,0.75) 100%)' }} />
           <div className="max-w-[1100px] mx-auto px-6 text-center relative z-10">
             <RevealSection>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
@@ -862,9 +862,9 @@ const LoginPage = () => {
 
       {/* ═══════════════════ HOSPICE ═══════════════════ */}
       <section className="relative z-[60] -mt-1">
-        <div className="rounded-t-[2rem] py-20 lg:py-24 relative overflow-hidden" style={{ background: '#0F1A2E', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
-          <div className="absolute inset-0 opacity-[0.25]" style={{ backgroundImage: 'url(/texture-pulse.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 80% at 50% 50%, rgba(15,26,46,0.5) 0%, rgba(15,26,46,0.85) 60%, #0F1A2E 100%)' }} />
+        <div className="rounded-t-[2rem] py-20 lg:py-24 relative overflow-hidden" style={{ background: '#111F34', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+          <div className="absolute inset-0 opacity-[0.3]" style={{ backgroundImage: 'url(/texture-pulse.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
+          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 80% at 50% 50%, rgba(17,31,52,0.4) 0%, rgba(17,31,52,0.75) 60%, #111F34 100%)' }} />
           <RevealSection className="max-w-[800px] mx-auto px-6 relative z-10">
             <div className="rounded-2xl p-8 lg:p-12 text-center transition-all duration-700 hover:border-[#d4af37]/40" style={{ border: '1px solid rgba(212,175,55,0.25)', background: 'rgba(212,175,55,0.03)' }}>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#d4af37] mb-5" style={{ fontFamily: 'Outfit, sans-serif' }}>
@@ -899,7 +899,7 @@ const LoginPage = () => {
 
       {/* ═══════════════════ FINAL CTA ═══════════════════ */}
       <section className="relative z-[70] -mt-1">
-        <div className="rounded-t-[2rem] py-24 lg:py-32" style={{ background: '#0B1221', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+        <div className="rounded-t-[2rem] py-24 lg:py-32" style={{ background: '#0E1829', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
           <RevealSection className="max-w-[600px] mx-auto px-6 text-center">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-5" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Readiness Starts Today.
