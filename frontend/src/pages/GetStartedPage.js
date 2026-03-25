@@ -495,12 +495,12 @@ export default function GetStartedPage() {
                           data-testid="feature-skip-btn"
                           style={{
                             flex: 1, height: '2.75rem', borderRadius: '0.875rem',
-                            background: 'rgba(255,255,255,0.8)', border: '1.5px solid rgba(0,0,0,0.1)',
-                            color: '#94a3b8', fontWeight: 700, fontSize: '0.875rem',
-                            boxShadow: '0 3px 6px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
-                            transition: 'all 0.1s ease',
+                            background: 'rgba(255,255,255,0.85)', border: '1.5px solid rgba(0,0,0,0.08)',
+                            color: '#64748b', fontWeight: 700, fontSize: '0.875rem',
+                            boxShadow: '0 4px 6px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
+                            transition: 'transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease',
                           }}
-                          className="flex items-center justify-center gap-2 hover:bg-slate-50 hover:border-slate-200 hover:text-slate-500 active:translate-y-[2px] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] active:bg-slate-100 active:border-slate-300 active:text-slate-600 cursor-pointer"
+                          className="flex items-center justify-center gap-2 cursor-pointer hover:-translate-y-[1px] hover:shadow-[0_6px_12px_rgba(0,0,0,0.1),0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] hover:bg-white active:translate-y-[2px] active:shadow-[0_1px_1px_rgba(0,0,0,0.04),inset_0_2px_4px_rgba(0,0,0,0.08)] active:bg-[#f1f5f9]"
                         >
                           <X className="w-4 h-4" /> Not for me
                         </button>
@@ -509,12 +509,12 @@ export default function GetStartedPage() {
                           data-testid="feature-keep-btn"
                           style={{
                             flex: 1, height: '2.75rem', borderRadius: '0.875rem',
-                            background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.08))',
-                            border: '2px solid #d4af37', color: '#8a6d1b', fontWeight: 700, fontSize: '0.875rem',
-                            boxShadow: '0 3px 10px rgba(212,175,55,0.2), 0 1px 3px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,230,130,0.4)',
-                            transition: 'all 0.1s ease',
+                            background: 'rgba(255,255,255,0.85)', border: '1.5px solid rgba(0,0,0,0.08)',
+                            color: '#64748b', fontWeight: 700, fontSize: '0.875rem',
+                            boxShadow: '0 4px 6px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
+                            transition: 'transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease',
                           }}
-                          className="flex items-center justify-center gap-2 hover:bg-[#d4af37]/20 active:translate-y-[2px] active:shadow-[inset_0_2px_4px_rgba(140,100,20,0.2)] active:bg-[#d4af37]/25 cursor-pointer"
+                          className="flex items-center justify-center gap-2 cursor-pointer hover:-translate-y-[1px] hover:shadow-[0_6px_12px_rgba(0,0,0,0.1),0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] hover:bg-white active:translate-y-[2px] active:shadow-[0_1px_1px_rgba(0,0,0,0.04),inset_0_2px_4px_rgba(0,0,0,0.08)] active:bg-[#f1f5f9]"
                         >
                           <Check className="w-4 h-4" /> I want this
                         </button>
