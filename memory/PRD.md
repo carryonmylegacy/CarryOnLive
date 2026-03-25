@@ -148,7 +148,15 @@ Full SMS-based two-factor authentication using Twilio. Users can set up SMS 2FA 
 
 ### Completed (March 25, 2026 — Session 29: SDV Drag-and-Drop Fix)
 
-#### Secure Document Vault Drag-and-Drop PDF Fix (March 25, 2026)
+#### PWA Login Flow + Homepage Split (March 25, 2026)
+Implemented PWA-optimized login architecture for App Store-less launch:
+- **`/login` in PWA standalone mode**: Clean login-only view — CarryOn logo, "CarryOn™" text, login card (same form, OTP, forgot password), and "Visit Homepage" button that opens Safari via `window.open('/home', '_blank')`
+- **`/login` on desktop/mobile browser**: Full marketing experience exactly as before — completely unchanged
+- **`/home` (new page)**: Standalone marketing landing page with all content (About, Reframe, Features, Platform, Steps, Security, Hospice, CTA, Footer). Centered hero with "Get Started" and "Sign In" CTAs. Nav bar with "Sign In" link.
+- **Option B (post-login)**: PWAInstallGuide modal fires 2s after first login from mobile browser. Step-by-step walkthrough auto-detects iOS Safari, iOS Chrome, or Android Chrome and shows platform-specific instructions. "Can't find it?" expandable for Safari top-bar users.
+- **Option C (login banner)**: Persistent bottom banner on `/login` for mobile Safari/Chrome users (not PWA). "Get the CarryOn App — Install" with dismiss option. Uses localStorage to remember dismissal.
+- **PWA detection**: `display-mode: standalone` media query + `navigator.standalone` fallback.
+- All 50 housekeeping checks pass. Testing agent: 100% pass (8/8 tests).
 Fixed drag-and-drop file rejection for PDFs in the Secure Document Vault:
 - **Root cause**: File type validation only recognized `application/pdf` MIME type. Some browsers/OS combos report PDFs as `application/x-pdf`, `application/acrobat`, or `application/vnd.pdf`. Extension parsing via `split('.').pop()` also failed on filenames with trailing whitespace.
 - **Fix**: Replaced inline validation with centralized `isFileAllowed()` function using regex-based extension extraction (`/\.([a-z0-9]+)\s*$/i`) and expanded MIME list. Applied to both global page drop handler and inner upload panel drop zone.
