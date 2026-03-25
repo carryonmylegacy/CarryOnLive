@@ -366,8 +366,15 @@ const LoginPage = () => {
               <Shield className="w-3.5 h-3.5 text-[#10b981]" />
               <span className="text-[#475569] text-xs">Bank-grade security · 256-bit SSL</span>
             </div>
-            <button onClick={() => navigateWithFade('/get-started')} className="text-[#d4af37] text-sm font-bold hover:text-[#fcd34d] transition-colors animate-pulse" data-testid="new-here-link-mobile">
-              New to estate planning? See what CarryOn can do &rarr;
+            <button onClick={() => navigateWithFade('/get-started')} className="animate-pulse hover:brightness-110 active:scale-[0.97] cursor-pointer" data-testid="new-here-link-mobile"
+              style={{
+                background: 'linear-gradient(180deg, #f0d860 0%, #d4af37 100%)',
+                color: '#1a1200', fontWeight: 800, fontSize: '0.8125rem',
+                padding: '0.5rem 1.25rem', borderRadius: '0.625rem',
+                boxShadow: '0 3px 10px rgba(180,140,40,0.3), inset 0 1px 0 rgba(255,240,160,0.5)',
+                transition: 'transform 0.12s ease, box-shadow 0.12s ease',
+              }}>
+              New to estate planning? See what CarryOn can do
             </button>
           </div>
         </div>
@@ -586,8 +593,15 @@ const LoginPage = () => {
                       <span className="text-[#475569] text-xs">Bank-grade security &middot; 256-bit SSL</span>
                     </div>
                     <div className="mt-3 text-center">
-                      <button onClick={() => navigateWithFade('/get-started')} className="text-[#d4af37] text-sm font-bold hover:text-[#fcd34d] transition-colors animate-pulse" data-testid="new-here-link">
-                        New to estate planning? See what CarryOn can do &rarr;
+                      <button onClick={() => navigateWithFade('/get-started')} className="animate-pulse hover:brightness-110 active:scale-[0.97] cursor-pointer" data-testid="new-here-link"
+                        style={{
+                          background: 'linear-gradient(180deg, #f0d860 0%, #d4af37 100%)',
+                          color: '#1a1200', fontWeight: 800, fontSize: '0.8125rem',
+                          padding: '0.5rem 1.25rem', borderRadius: '0.625rem',
+                          boxShadow: '0 3px 10px rgba(180,140,40,0.3), inset 0 1px 0 rgba(255,240,160,0.5)',
+                          transition: 'transform 0.12s ease, box-shadow 0.12s ease',
+                        }}>
+                        New to estate planning? See what CarryOn can do
                       </button>
                     </div>
                   </div>
