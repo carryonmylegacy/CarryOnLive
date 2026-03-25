@@ -1,0 +1,89 @@
+{
+  "summary": "Tested Social Media Campaign Acquisition Funnel feature. Fixed 3 bugs: (1) Backend funnel.py returning Flask-style tuples instead of FastAPI HTTPException, (2) Frontend GetStartedPage.js feature card navigation not advancing past last feature, (3) FunnelAnalyticsTab.js incorrect auth header nesting. All 14 backend tests pass. Full funnel flow works end-to-end.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_funnel_feature.py",
+    "/app/test_reports/pytest/funnel_feature_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "FIXED: Backend funnel.py was returning Flask-style tuples (dict, status_code) instead of using FastAPI HTTPException for error responses",
+    "FIXED: Frontend GetStartedPage.js handleFeatureDecision() was not advancing currentFeatureIdx past the last feature, preventing Continue button from appearing",
+    "FIXED: FunnelAnalyticsTab.js was using { headers: getAuthHeaders() } but getAuthHeaders() already returns { headers: {...} }, causing nested headers"
+  ],
+  "updated_files": [
+    "/app/backend/routes/funnel.py",
+    "/app/frontend/src/pages/GetStartedPage.js",
+    "/app/frontend/src/components/admin/FunnelAnalyticsTab.js"
+  ],
+  "success_rate": {
+    "backend": "100% (14/14 tests passed)",
+    "frontend": "100% (all flows tested successfully)"
+  },
+  "test_credentials": {
+    "admin": {
+      "email": "info@carryon.us",
+      "password": "Demo1234!"
+    }
+  },
+  "seed_data_creation": "Test funnel sessions created during backend tests (35 total sessions in DB)",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Funnel feature is fully functional. Backend endpoints: POST /api/funnel/start, POST /api/funnel/step, POST /api/funnel/complete, POST /api/funnel/convert, GET /api/admin/funnel/analytics. Frontend: /get-started is a 5-step funnel (interests, family, features, CTA, referral). Admin Funnel tab shows analytics. Login page has 'New here?' link. Logged-in users are redirected from /get-started to /dashboard.",
+  "tests_executed": {
+    "backend": {
+      "funnel_start_creates_session": "PASS",
+      "funnel_start_without_utm_params": "PASS",
+      "funnel_start_returns_geo_data": "PASS",
+      "funnel_step_records_interests": "PASS",
+      "funnel_step_records_family": "PASS",
+      "funnel_step_requires_session_id": "PASS",
+      "funnel_complete_marks_session": "PASS",
+      "funnel_complete_with_referral": "PASS",
+      "funnel_complete_requires_session_id": "PASS",
+      "funnel_convert_links_user": "PASS",
+      "funnel_convert_requires_both_ids": "PASS",
+      "analytics_requires_auth": "PASS",
+      "analytics_returns_data": "PASS",
+      "complete_funnel_flow": "PASS"
+    },
+    "frontend": {
+      "get_started_page_loads": "PASS",
+      "step1_interests_selection": "PASS - 6 bubbles, gold highlight on selection, Continue enables",
+      "step2_family_selection": "PASS - All 3 options required for Continue",
+      "step3_feature_cards": "PASS - Skip/Keep buttons work, Continue appears after all reviewed",
+      "step4_cta_screen": "PASS - Social proof stats visible, Start Trial button works",
+      "step5_referral_screen": "PASS - Email input, Skip option, +7 days bonus text",
+      "funnel_completes_to_signup": "PASS - Navigates to /signup after completion",
+      "login_new_here_link": "PASS - Link visible, navigates to /get-started",
+      "admin_funnel_analytics_tab": "PASS - All metrics displayed correctly",
+      "logged_in_redirect": "PASS - Redirects from /get-started to /dashboard",
+      "progress_bar_advances": "PASS - Progress bar width increases with each step"
+    }
+  },
+  "bugs_fixed": [
+    {
+      "file": "/app/backend/routes/funnel.py",
+      "issue": "Flask-style tuple returns instead of FastAPI HTTPException",
+      "fix": "Changed 'return {\"error\": \"...\"}, 400' to 'raise HTTPException(status_code=400, detail=\"...\")'"
+    },
+    {
+      "file": "/app/frontend/src/pages/GetStartedPage.js",
+      "issue": "handleFeatureDecision() only advanced index if currentFeatureIdx < length-1, preventing Continue button from appearing",
+      "fix": "Changed to always increment: setCurrentFeatureIdx(i => i + 1)"
+    },
+    {
+      "file": "/app/frontend/src/components/admin/FunnelAnalyticsTab.js",
+      "issue": "Nested headers object: { headers: getAuthHeaders() } where getAuthHeaders() returns { headers: {...} }",
+      "fix": "Changed to: axios.get(url, getAuthHeaders())"
+    }
+  ]
+}

@@ -70,6 +70,8 @@ const BeneficiarySettingsPage = lazy(() => import('./pages/beneficiary/Beneficia
 
 const CreateEstatePage = lazy(() => import('./pages/CreateEstatePage'));
 
+const GetStartedPage = lazy(() => import('./pages/GetStartedPage'));
+
 const AboutPage = lazy(() => import('./pages/AboutPage'));
 
 // Loading fallback
@@ -237,6 +239,7 @@ function AppRoutes() {
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/about" element={<AboutPage />} />
+      <Route path="/get-started" element={<GetStartedPage />} />
 
       {/* Invitation Accept Route - Public */}
       <Route path="/accept-invitation/:token" element={<AcceptInvitationPage />} />

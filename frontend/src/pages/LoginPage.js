@@ -361,9 +361,14 @@ const LoginPage = () => {
               data-testid="forgot-password-link"
               onClick={() => { setForgotMode(true); setForgotEmail(email); setForgotStep(1); setForgotMsg(''); setForgotError(false); }}>Forgot Password?</span>
           </div>
-          <div className="mt-5 pt-4 border-t flex items-center justify-center gap-2" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-            <Shield className="w-3.5 h-3.5 text-[#10b981]" />
-            <span className="text-[#475569] text-xs">Bank-grade security · 256-bit SSL</span>
+          <div className="mt-5 pt-4 border-t flex flex-col items-center gap-2" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+            <div className="flex items-center gap-2">
+              <Shield className="w-3.5 h-3.5 text-[#10b981]" />
+              <span className="text-[#475569] text-xs">Bank-grade security · 256-bit SSL</span>
+            </div>
+            <button onClick={() => navigateWithFade('/get-started')} className="text-[#94a3b8] text-xs hover:text-[#d4af37] transition-colors" data-testid="new-here-link-mobile">
+              New to estate planning? See what CarryOn can do &rarr;
+            </button>
           </div>
         </div>
         {forgotMode && (
@@ -576,6 +581,11 @@ const LoginPage = () => {
                     <div className="flex items-center justify-center gap-2">
                       <Shield className="w-3.5 h-3.5 text-[#10b981]" />
                       <span className="text-[#475569] text-xs">Bank-grade security &middot; 256-bit SSL</span>
+                    </div>
+                    <div className="mt-3 text-center">
+                      <button onClick={() => navigateWithFade('/get-started')} className="text-[#94a3b8] text-xs hover:text-[#d4af37] transition-colors" data-testid="new-here-link">
+                        New to estate planning? See what CarryOn can do &rarr;
+                      </button>
                     </div>
                   </div>
                 </div>
