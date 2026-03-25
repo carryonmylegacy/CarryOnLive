@@ -477,9 +477,9 @@ export default function GetStartedPage() {
                   <div className="relative mb-6">
                     <div data-testid={`feature-card-${featuresToShow[currentFeatureIdx].id}`}
                       style={{
-                        background: skippedFeature === featuresToShow[currentFeatureIdx].id ? 'rgba(240,225,225,0.9)' : 'rgba(255,255,255,0.85)',
+                        background: skippedFeature === featuresToShow[currentFeatureIdx].id ? 'rgba(235,235,235,0.9)' : 'rgba(255,255,255,0.85)',
                         borderRadius: '1.25rem',
-                        border: skippedFeature === featuresToShow[currentFeatureIdx].id ? '1px solid rgba(200,160,160,0.25)' : '1px solid rgba(0,0,0,0.06)',
+                        border: skippedFeature === featuresToShow[currentFeatureIdx].id ? '1px solid rgba(180,180,180,0.25)' : '1px solid rgba(0,0,0,0.06)',
                         boxShadow: '0 6px 24px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)',
                         transition: 'all 0.3s ease',
                         opacity: skippedFeature === featuresToShow[currentFeatureIdx].id ? 0.6 : 1,
@@ -495,12 +495,12 @@ export default function GetStartedPage() {
                           data-testid="feature-skip-btn"
                           style={{
                             flex: 1, height: '2.75rem', borderRadius: '0.875rem',
-                            background: 'rgba(255,255,255,0.8)', border: '1.5px solid rgba(0,0,0,0.08)',
+                            background: 'rgba(255,255,255,0.8)', border: '1.5px solid rgba(0,0,0,0.1)',
                             color: '#94a3b8', fontWeight: 700, fontSize: '0.875rem',
-                            boxShadow: '0 2px 6px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.8)',
-                            transition: 'all 0.15s',
+                            boxShadow: '0 3px 6px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
+                            transition: 'all 0.1s ease',
                           }}
-                          className="flex items-center justify-center gap-2 hover:border-red-300 hover:text-red-400 hover:bg-red-50/50 active:scale-[0.97] active:bg-red-50 active:border-red-400 active:text-red-500 cursor-pointer"
+                          className="flex items-center justify-center gap-2 hover:bg-slate-50 hover:border-slate-200 hover:text-slate-500 active:translate-y-[2px] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] active:bg-slate-100 active:border-slate-300 active:text-slate-600 cursor-pointer"
                         >
                           <X className="w-4 h-4" /> Not for me
                         </button>
@@ -511,10 +511,10 @@ export default function GetStartedPage() {
                             flex: 1, height: '2.75rem', borderRadius: '0.875rem',
                             background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.08))',
                             border: '2px solid #d4af37', color: '#8a6d1b', fontWeight: 700, fontSize: '0.875rem',
-                            boxShadow: '0 3px 12px rgba(212,175,55,0.15), inset 0 1px 0 rgba(255,230,130,0.3)',
-                            transition: 'all 0.15s',
+                            boxShadow: '0 3px 10px rgba(212,175,55,0.2), 0 1px 3px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,230,130,0.4)',
+                            transition: 'all 0.1s ease',
                           }}
-                          className="flex items-center justify-center gap-2 hover:bg-[#d4af37]/20 active:scale-[0.97] cursor-pointer"
+                          className="flex items-center justify-center gap-2 hover:bg-[#d4af37]/20 active:translate-y-[2px] active:shadow-[inset_0_2px_4px_rgba(140,100,20,0.2)] active:bg-[#d4af37]/25 cursor-pointer"
                         >
                           <Check className="w-4 h-4" /> I want this
                         </button>
