@@ -6,9 +6,11 @@ MRR trend, new signups, trial conversions, churn summary, and tier breakdown.
 
 import asyncio
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 
 import resend
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 
 from config import RESEND_API_KEY, SENDER_EMAIL, db, logger
 from utils import get_current_user
@@ -347,4 +349,293 @@ async def preview_analytics_digest(current_user: dict = Depends(get_current_user
 
     data = await gather_weekly_analytics()
     html = build_analytics_digest_html(data)
+    return {"html": html, "data": data}
+
+
+# ── SOC 2 Audit Digest ──────────────────────────────────────────────
+
+
+async def gather_audit_digest_data():
+    """Collect SOC 2 audit data for the past 7 days."""
+    now = datetime.now(timezone.utc)
+    week_ago = (now - timedelta(days=7)).isoformat()
+
+    total_events = await db.audit_trail.count_documents({"timestamp": {"$gte": week_ago}})
+    failed_logins = await db.audit_trail.count_documents({"action": "login_failed", "timestamp": {"$gte": week_ago}})
+    critical_events = await db.audit_trail.count_documents({"severity": "critical", "timestamp": {"$gte": week_ago}})
+    warning_events = await db.audit_trail.count_documents({"severity": "warning", "timestamp": {"$gte": week_ago}})
+    data_access_events = await db.audit_trail.count_documents(
+        {"category": "data_access", "timestamp": {"$gte": week_ago}}
+    )
+    password_changes = await db.audit_trail.count_documents(
+        {"action": "password_change", "timestamp": {"$gte": week_ago}}
+    )
+
+    # Top 5 failed login IPs
+    pipeline = [
+        {"$match": {"action": "login_failed", "timestamp": {"$gte": week_ago}}},
+        {"$group": {"_id": "$ip_address", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 5},
+    ]
+    top_failed_ips = await db.audit_trail.aggregate(pipeline).to_list(5)
+
+    # Top 5 active users by audit events
+    pipeline = [
+        {"$match": {"timestamp": {"$gte": week_ago}, "actor_email": {"$ne": ""}}},
+        {"$group": {"_id": "$actor_email", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 5},
+    ]
+    top_actors = await db.audit_trail.aggregate(pipeline).to_list(5)
+
+    # Daily event counts for sparkline
+    daily_counts = []
+    for i in range(7):
+        day = now - timedelta(days=6 - i)
+        ds = day.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+        de = day.replace(hour=23, minute=59, second=59).isoformat()
+        c = await db.audit_trail.count_documents({"timestamp": {"$gte": ds, "$lte": de}})
+        daily_counts.append({"day": day.strftime("%a"), "count": c})
+
+    return {
+        "total_events": total_events,
+        "failed_logins": failed_logins,
+        "critical_events": critical_events,
+        "warning_events": warning_events,
+        "data_access_events": data_access_events,
+        "password_changes": password_changes,
+        "top_failed_ips": [{"ip": r["_id"], "count": r["count"]} for r in top_failed_ips],
+        "top_actors": [{"email": r["_id"], "count": r["count"]} for r in top_actors],
+        "daily_counts": daily_counts,
+        "period_start": week_ago,
+        "period_end": now.isoformat(),
+    }
+
+
+def build_audit_digest_html(data, app_url="https://app.carryon.us"):
+    """Build HTML email for weekly SOC 2 audit digest."""
+    failed_color = "#ef4444" if data["failed_logins"] > 0 else "#22C993"
+    critical_color = "#ef4444" if data["critical_events"] > 0 else "#22C993"
+
+    # Sparkline bars
+    max_count = max((d["count"] for d in data["daily_counts"]), default=1) or 1
+    bars_html = ""
+    for d in data["daily_counts"]:
+        h = max(4, int((d["count"] / max_count) * 40))
+        bars_html += f'<td style="padding:0 2px;vertical-align:bottom;text-align:center"><div style="background:#d4af37;width:20px;height:{h}px;border-radius:3px 3px 0 0;margin:0 auto"></div><div style="font-size:10px;color:#8895A7;margin-top:2px">{d["day"]}</div></td>'
+
+    # Failed IPs table
+    ips_html = ""
+    for ip_data in data["top_failed_ips"][:5]:
+        ips_html += f'<tr><td style="padding:6px 12px;border-bottom:1px solid #1e293b;color:#e2e8f0;font-family:monospace;font-size:13px">{ip_data["ip"]}</td><td style="padding:6px 12px;border-bottom:1px solid #1e293b;color:#ef4444;font-weight:700;text-align:right">{ip_data["count"]}</td></tr>'
+
+    # Top actors table
+    actors_html = ""
+    for actor in data["top_actors"][:5]:
+        actors_html += f'<tr><td style="padding:6px 12px;border-bottom:1px solid #1e293b;color:#e2e8f0;font-size:13px">{actor["email"]}</td><td style="padding:6px 12px;border-bottom:1px solid #1e293b;color:#d4af37;font-weight:700;text-align:right">{actor["count"]}</td></tr>'
+
+    return f"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>CarryOn SOC 2 Audit Digest</title></head>
+<body style="margin:0;padding:0;background:#0b1120;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#0b1120;padding:20px 0"><tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#0f1629;border-radius:16px;overflow:hidden;border:1px solid #1e293b">
+  <!-- Header -->
+  <tr><td style="background:linear-gradient(135deg,#0f1629,#1a1f3a);padding:32px 40px;text-align:center">
+    <div style="font-size:28px;font-weight:800;color:#d4af37;letter-spacing:-0.5px">CarryOn&#8482;</div>
+    <div style="font-size:14px;color:#8895A7;margin-top:4px;letter-spacing:2px;text-transform:uppercase">SOC 2 Audit Digest</div>
+    <div style="font-size:12px;color:#525C72;margin-top:8px">{
+        datetime.now(timezone.utc).strftime("%B %d, %Y")
+    } &mdash; Past 7 Days</div>
+  </td></tr>
+
+  <!-- Key Metrics -->
+  <tr><td style="padding:24px 40px">
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td width="33%" style="text-align:center;padding:12px">
+          <div style="font-size:32px;font-weight:800;color:#e2e8f0">{data["total_events"]}</div>
+          <div style="font-size:11px;color:#8895A7;text-transform:uppercase;letter-spacing:1px;margin-top:4px">Total Events</div>
+        </td>
+        <td width="33%" style="text-align:center;padding:12px">
+          <div style="font-size:32px;font-weight:800;color:{failed_color}">{data["failed_logins"]}</div>
+          <div style="font-size:11px;color:#8895A7;text-transform:uppercase;letter-spacing:1px;margin-top:4px">Failed Logins</div>
+        </td>
+        <td width="33%" style="text-align:center;padding:12px">
+          <div style="font-size:32px;font-weight:800;color:{critical_color}">{data["critical_events"]}</div>
+          <div style="font-size:11px;color:#8895A7;text-transform:uppercase;letter-spacing:1px;margin-top:4px">Critical Events</div>
+        </td>
+      </tr>
+      <tr>
+        <td width="33%" style="text-align:center;padding:12px">
+          <div style="font-size:32px;font-weight:800;color:#F59E0B">{data["warning_events"]}</div>
+          <div style="font-size:11px;color:#8895A7;text-transform:uppercase;letter-spacing:1px;margin-top:4px">Warnings</div>
+        </td>
+        <td width="33%" style="text-align:center;padding:12px">
+          <div style="font-size:32px;font-weight:800;color:#60A5FA">{data["data_access_events"]}</div>
+          <div style="font-size:11px;color:#8895A7;text-transform:uppercase;letter-spacing:1px;margin-top:4px">Data Access</div>
+        </td>
+        <td width="33%" style="text-align:center;padding:12px">
+          <div style="font-size:32px;font-weight:800;color:#e2e8f0">{data["password_changes"]}</div>
+          <div style="font-size:11px;color:#8895A7;text-transform:uppercase;letter-spacing:1px;margin-top:4px">Password Changes</div>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+
+  <!-- Daily Activity Sparkline -->
+  <tr><td style="padding:0 40px 24px">
+    <div style="font-size:12px;font-weight:700;color:#8895A7;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Daily Activity</div>
+    <table cellpadding="0" cellspacing="0" style="width:100%"><tr>{bars_html}</tr></table>
+  </td></tr>
+
+  <!-- Failed Login IPs -->
+  {
+        ""
+        if not data["top_failed_ips"]
+        else f'''<tr><td style="padding:0 40px 24px">
+    <div style="font-size:12px;font-weight:700;color:#8895A7;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Top Failed Login IPs</div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #1e293b;border-radius:8px;overflow:hidden">
+      <tr><td style="padding:8px 12px;background:#1a1f3a;color:#8895A7;font-size:11px;font-weight:700;text-transform:uppercase">IP Address</td><td style="padding:8px 12px;background:#1a1f3a;color:#8895A7;font-size:11px;font-weight:700;text-transform:uppercase;text-align:right">Attempts</td></tr>
+      {ips_html}
+    </table>
+  </td></tr>'''
+    }
+
+  <!-- Top Active Users -->
+  {
+        ""
+        if not data["top_actors"]
+        else f'''<tr><td style="padding:0 40px 24px">
+    <div style="font-size:12px;font-weight:700;color:#8895A7;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Most Active Users</div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #1e293b;border-radius:8px;overflow:hidden">
+      <tr><td style="padding:8px 12px;background:#1a1f3a;color:#8895A7;font-size:11px;font-weight:700;text-transform:uppercase">User</td><td style="padding:8px 12px;background:#1a1f3a;color:#8895A7;font-size:11px;font-weight:700;text-transform:uppercase;text-align:right">Events</td></tr>
+      {actors_html}
+    </table>
+  </td></tr>'''
+    }
+
+  <!-- CTA -->
+  <tr><td style="padding:0 40px 32px;text-align:center">
+    <a href="{
+        app_url
+    }/admin/audit" style="display:inline-block;background:#d4af37;color:#0b1120;padding:12px 32px;border-radius:8px;font-weight:700;text-decoration:none;font-size:14px">View Full Audit Trail</a>
+  </td></tr>
+
+  <!-- Footer -->
+  <tr><td style="padding:20px 40px;background:#0a0e1a;text-align:center;border-top:1px solid #1e293b">
+    <div style="font-size:11px;color:#525C72">CarryOn&#8482; SOC 2 Compliance &mdash; Automated weekly audit summary</div>
+    <div style="font-size:11px;color:#525C72;margin-top:4px">1-year log retention &bull; SHA-256 integrity hashing &bull; Append-only audit trail</div>
+  </td></tr>
+</table>
+</td></tr></table>
+</body></html>"""
+
+
+async def send_audit_digest():
+    """Send weekly SOC 2 audit digest to founder."""
+    if not RESEND_API_KEY:
+        logger.warning("Audit digest skipped — RESEND_API_KEY not configured")
+        return {"sent": 0, "reason": "no_api_key"}
+
+    # Check founder preferences
+    prefs = await db.founder_email_prefs.find_one({"_id": "global"})
+    if prefs and not prefs.get("audit_digest_enabled", True):
+        return {"sent": 0, "reason": "disabled"}
+
+    admins = await db.users.find({"role": "admin"}, {"_id": 0, "id": 1, "email": 1}).to_list(10)
+    if not admins:
+        return {"sent": 0, "reason": "no_admins"}
+
+    data = await gather_audit_digest_data()
+    html = build_audit_digest_html(data)
+    subject = f"CarryOn&#8482; SOC 2 Audit Digest — {datetime.now(timezone.utc).strftime('%b %d, %Y')}"
+
+    recipients = [a["email"] for a in admins]
+    # Add additional recipients from preferences
+    if prefs and prefs.get("audit_digest_recipients"):
+        recipients.extend(prefs["audit_digest_recipients"])
+
+    sent = 0
+    for email in recipients:
+        try:
+            await asyncio.to_thread(
+                resend.Emails.send,
+                {
+                    "from": SENDER_EMAIL,
+                    "to": [email],
+                    "subject": subject,
+                    "html": html,
+                },
+            )
+            sent += 1
+        except Exception as e:
+            logger.error(f"Failed to send audit digest to {email}: {e}")
+
+    return {"sent": sent, "data": data}
+
+
+# ── Founder Email Preferences ────────────────────────────────────────
+
+
+class FounderEmailPrefs(BaseModel):
+    analytics_digest_enabled: Optional[bool] = None
+    analytics_digest_frequency: Optional[str] = None
+    audit_digest_enabled: Optional[bool] = None
+    audit_digest_frequency: Optional[str] = None
+    audit_digest_recipients: Optional[list] = None
+    security_alerts_enabled: Optional[bool] = None
+
+
+@router.get("/admin/email-preferences")
+async def get_founder_email_prefs(current_user: dict = Depends(get_current_user)):
+    """Get founder email preferences."""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    prefs = await db.founder_email_prefs.find_one({"_id": "global"})
+    defaults = {
+        "analytics_digest_enabled": True,
+        "analytics_digest_frequency": "weekly",
+        "audit_digest_enabled": True,
+        "audit_digest_frequency": "weekly",
+        "audit_digest_recipients": [],
+        "security_alerts_enabled": True,
+    }
+    if prefs:
+        prefs.pop("_id", None)
+        return {**defaults, **prefs}
+    return defaults
+
+
+@router.put("/admin/email-preferences")
+async def update_founder_email_prefs(data: FounderEmailPrefs, current_user: dict = Depends(get_current_user)):
+    """Update founder email preferences."""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    updates = {k: v for k, v in data.dict().items() if v is not None}
+    if not updates:
+        return {"ok": True}
+    await db.founder_email_prefs.update_one(
+        {"_id": "global"},
+        {"$set": updates},
+        upsert=True,
+    )
+    return {"ok": True, **updates}
+
+
+@router.post("/admin/audit-digest/send")
+async def trigger_audit_digest(current_user: dict = Depends(get_current_user)):
+    """Manually trigger the SOC 2 audit digest email (admin only)."""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    result = await send_audit_digest()
+    return {"success": True, **result}
+
+
+@router.get("/admin/audit-digest/preview")
+async def preview_audit_digest(current_user: dict = Depends(get_current_user)):
+    """Preview the SOC 2 audit digest email HTML (admin only)."""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    data = await gather_audit_digest_data()
+    html = build_audit_digest_html(data)
     return {"html": html, "data": data}

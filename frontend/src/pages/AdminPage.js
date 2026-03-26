@@ -6,7 +6,7 @@ import {
   Shield, Users, FileKey, Loader2,
   Headphones, CreditCard, Activity, Settings,
  CheckSquare, AlertTriangle, Clock, TrendingUp, Trash2,
-  Megaphone, HeartPulse, Search, StickyNote, BookOpen, Gift, Zap, Puzzle
+  Megaphone, HeartPulse, Search, StickyNote, BookOpen, Gift, Zap, Puzzle, Mail
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { toast } from '../utils/toast';
@@ -45,6 +45,7 @@ import { EstateHealthTab } from '../components/admin/EstateHealthTab';
 import { IntegrationsTab } from '../components/admin/IntegrationsTab';
 import { FunnelAnalyticsTab } from '../components/admin/FunnelAnalyticsTab';
 import { BetaTestingTab } from '../components/admin/BetaTestingTab';
+import { FounderEmailsTab } from '../components/admin/FounderEmailsTab';
 import { API_URL } from '../config';
 
 const TAB_CONFIG = [
@@ -70,6 +71,7 @@ const TAB_CONFIG = [
   { key: 'funnel', label: 'Funnel', icon: TrendingUp, path: '/admin/funnel' },
   { key: 'beta-testing', label: 'Beta Testing', icon: Zap, path: '/admin/beta-testing' },
   { key: 'p1-settings', label: 'P1 Contact', icon: AlertTriangle, path: '/admin/p1-settings' },
+  { key: 'founder-emails', label: 'Emails', icon: Mail, path: '/admin/founder-emails' },
   { key: 'ops-dashboard', label: 'Ops Dashboard', icon: Activity, path: '/admin/ops-dashboard' },
   { key: 'milestones', label: 'Milestones', icon: CheckSquare, path: '/admin/milestones' },
   // Operator sidebar features
@@ -107,6 +109,7 @@ const PATH_TO_TAB = {
   '/admin/integrations': 'integrations',
   '/admin/funnel': 'funnel',
   '/admin/beta-testing': 'beta-testing',
+  '/admin/founder-emails': 'founder-emails',
   '/admin/ops-dashboard': 'ops-dashboard',
   '/admin/milestones': 'milestones',
   '/admin/trials': 'trials',
@@ -341,6 +344,7 @@ const AdminPage = ({ operatorMode = false }) => {
       {effectiveTab === 'integrations' && !operatorMode && <IntegrationsTab getAuthHeaders={getAuthHeaders} />}
       {effectiveTab === 'funnel' && !operatorMode && <FunnelAnalyticsTab getAuthHeaders={getAuthHeaders} />}
       {effectiveTab === 'beta-testing' && !operatorMode && <BetaTestingTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'founder-emails' && !operatorMode && <FounderEmailsTab getAuthHeaders={getAuthHeaders} />}
       {/* New Operator features */}
       {effectiveTab === 'my-activity' && operatorMode && <MyActivityTab getAuthHeaders={getAuthHeaders} />}
       {effectiveTab === 'search' && operatorMode && <QuickSearchTab getAuthHeaders={getAuthHeaders} />}

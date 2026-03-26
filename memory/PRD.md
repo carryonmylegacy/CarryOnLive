@@ -43,6 +43,12 @@ A full-stack estate planning application allowing benefactors to manage digital 
 6. **Automated Data Retention**: TTL index on `audit_trail.stored_at` (365 days auto-expiry). Daily `data_retention_scheduler` purges expired OTP trust, stale failed logins (7d), old OTP codes (1h), and blacklisted tokens (30d).
 7. **Security Headers**: Already production-grade — HSTS (preload), CSP, X-Frame-Options DENY, X-Content-Type-Options nosniff, COOP, CORP, Permissions-Policy, Cache-Control on API routes. No changes needed.
 
+#### SOC 2 Weekly Audit Digest + Founder Email Management (March 26, 2026)
+- **Weekly SOC 2 Audit Digest email**: Auto-sent every Monday with analytics digest. Includes: total events, failed logins, critical/warning counts, data access patterns, password changes, top failed login IPs, most active users, daily activity sparkline chart.
+- **Founder Email Management tab**: New `Emails` tab in Admin page with toggle controls for: Weekly Analytics Digest, SOC 2 Audit Digest, Security Alerts. Each has Send Now / Preview buttons. Audit digest supports additional recipients (e.g., external auditors).
+- **Endpoints**: `GET/PUT /admin/email-preferences`, `POST /admin/audit-digest/send`, `GET /admin/audit-digest/preview`
+- **Scheduler**: `send_audit_digest()` runs alongside `send_admin_analytics_digest()` in weekly scheduler, respects founder enable/disable preferences.
+
 #### Sidebar Portal Label Redesign (March 25, 2026)
 Restructured the sidebar logo/branding area in DashboardLayout:
 - **Layout**: Portal label (e.g., "FOUNDER PORTAL", "BENEFICIARY PORTAL") now sits beneath both the logo icon AND "CarryOn™" text, spanning the full width

@@ -36,6 +36,14 @@ async def weekly_digest_scheduler():
         except Exception as e:
             logger.error(f"Admin analytics digest failed: {e}")
 
+        try:
+            from routes.admin_digest import send_audit_digest
+
+            audit_result = await send_audit_digest()
+            logger.info(f"SOC 2 audit digest sent: {audit_result}")
+        except Exception as e:
+            logger.error(f"SOC 2 audit digest failed: {e}")
+
 
 async def daily_dob_check_scheduler():
     """Run DOB-based subscription event checks once daily."""
