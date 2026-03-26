@@ -387,6 +387,84 @@ async def get_audit_trail(
     return {"total": total, "entries": entries}
 
 
+@router.get("/founder/audit-trail/export")
+async def export_audit_trail(
+    category: str = Query(""),
+    severity: str = Query(""),
+    days: int = Query(30, le=365),
+    current_user: dict = Depends(get_current_user),
+):
+    """Export audit trail as CSV — founder only. SOC 2 CC7.2."""
+    require_founder(current_user)
+    import csv
+    import io
+    from datetime import timedelta
+    from fastapi.responses import StreamingResponse
+
+    query = {}
+    if category:
+        query["category"] = category
+    if severity:
+        query["severity"] = severity
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    query["timestamp"] = {"$gte": cutoff}
+
+    entries = await db.audit_trail.find(query, {"_id": 0, "stored_at": 0}).sort("timestamp", -1).to_list(10000)
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(
+        [
+            "timestamp",
+            "actor_id",
+            "actor_email",
+            "actor_role",
+            "action",
+            "category",
+            "resource_type",
+            "resource_id",
+            "severity",
+            "ip_address",
+            "integrity_hash",
+            "details",
+        ]
+    )
+    for e in entries:
+        writer.writerow(
+            [
+                e.get("timestamp", ""),
+                e.get("actor_id", ""),
+                e.get("actor_email", ""),
+                e.get("actor_role", ""),
+                e.get("action", ""),
+                e.get("category", ""),
+                e.get("resource_type", ""),
+                e.get("resource_id", ""),
+                e.get("severity", ""),
+                e.get("ip_address", ""),
+                e.get("integrity_hash", ""),
+                e.get("details", ""),
+            ]
+        )
+
+    await log_audit_event(
+        actor_id=current_user["id"],
+        actor_email=current_user["email"],
+        actor_role=current_user["role"],
+        action="audit_trail_export",
+        category="system",
+        severity="info",
+        details={"days": days, "entries": len(entries)},
+    )
+
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=carryon_audit_trail_{days}d.csv"},
+    )
+
+
 # ── P1 Contact Settings (Founder only) ──────────────────────────────
 
 

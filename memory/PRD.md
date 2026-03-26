@@ -32,6 +32,17 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ### Completed (March 25, 2026 — Session 29: Sidebar Portal Label Redesign + PWA Cleanup)
 
+### Completed (March 26, 2026 — Session 29: SOC 2 Type 2 Hardening)
+
+#### SOC 2 Compliance — 7-Item Implementation (March 26, 2026)
+1. **Comprehensive Audit Logging**: Added `login_failed` audit events (warning severity) with IP address and reason. Added `stored_at` datetime field for TTL. All audit entries include SHA-256 integrity hashing.
+2. **Session Management Hardening**: Password change now revokes ALL active sessions via `revoke_all_user_tokens()` and clears `active_session_id` / `last_login_at`. Single-session enforcement already existed.
+3. **API Rate Limiting**: Already comprehensive — no changes per user request (120/min auth, 60/min moderate, 300/min general).
+4. **Data Access Logging**: Added audit logging for beneficiary list views (`beneficiary_list_view` / `data_access` category), digital wallet access (`digital_wallet_view` / `data_access` category) with entry counts and access type.
+5. **Admin Activity Trail**: Added CSV export endpoint (`GET /founder/audit-trail/export`) with configurable date range (30d/365d) and category/severity filters. Export button added to AuditTrailTab UI. Added `data_access` filter category.
+6. **Automated Data Retention**: TTL index on `audit_trail.stored_at` (365 days auto-expiry). Daily `data_retention_scheduler` purges expired OTP trust, stale failed logins (7d), old OTP codes (1h), and blacklisted tokens (30d).
+7. **Security Headers**: Already production-grade — HSTS (preload), CSP, X-Frame-Options DENY, X-Content-Type-Options nosniff, COOP, CORP, Permissions-Policy, Cache-Control on API routes. No changes needed.
+
 #### Sidebar Portal Label Redesign (March 25, 2026)
 Restructured the sidebar logo/branding area in DashboardLayout:
 - **Layout**: Portal label (e.g., "FOUNDER PORTAL", "BENEFICIARY PORTAL") now sits beneath both the logo icon AND "CarryOn™" text, spanning the full width

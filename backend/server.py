@@ -52,7 +52,7 @@ from routes.photos import router as photos_router
 from routes.beta import router as beta_router
 from routes.ffn import router as ffn_router
 from routes.funnel import router as funnel_router
-from schedulers import daily_dob_check_scheduler, weekly_digest_scheduler
+from schedulers import daily_dob_check_scheduler, data_retention_scheduler, weekly_digest_scheduler
 
 
 # ===================== LIFECYCLE =====================
@@ -126,6 +126,11 @@ async def lifespan(app):
         await db.activity_log.create_index("user_id")
         await db.notifications.create_index("user_id")
         await db.notifications.create_index([("user_id", 1), ("read", 1)])
+        # SOC 2: TTL index for 1-year audit log retention
+        await db.audit_trail.create_index("stored_at", expireAfterSeconds=365 * 24 * 3600)
+        await db.audit_trail.create_index("timestamp")
+        await db.audit_trail.create_index("actor_id")
+        await db.audit_trail.create_index("category")
         logger.info("Database indexes created/verified")
     except Exception as e:
         logger.warning(f"Index creation warning (may already exist): {e}")
@@ -134,6 +139,7 @@ async def lifespan(app):
     reminder_task = asyncio.create_task(trial_reminder_scheduler())
     dob_task = asyncio.create_task(daily_dob_check_scheduler())
     billing_task = asyncio.create_task(billing_lifecycle_scheduler())
+    retention_task = asyncio.create_task(data_retention_scheduler())
 
     # Warm up xAI connection + start periodic keepalive
     from routes.guardian import warmup_xai
@@ -145,6 +151,7 @@ async def lifespan(app):
     reminder_task.cancel()
     dob_task.cancel()
     billing_task.cancel()
+    retention_task.cancel()
     # Cancel xAI keepalive if running
     from routes.guardian import _xai_keepalive_task as ka_task
 

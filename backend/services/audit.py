@@ -56,6 +56,7 @@ async def log_audit_event(
 
     canonical = json.dumps(entry, sort_keys=True)
     entry["integrity_hash"] = hashlib.sha256(canonical.encode()).hexdigest()
+    entry["stored_at"] = now  # datetime for MongoDB TTL index (added after hash)
 
     await db.audit_trail.insert_one(entry)
 

@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 import resend
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from pydantic import BaseModel
 
 from config import RESEND_API_KEY, SENDER_EMAIL, db, logger
@@ -22,6 +22,7 @@ from utils import (
     update_estate_readiness,
 )
 from services.photo_urls import resolve_photo_url
+from services.audit import log_audit_event, get_client_ip
 
 router = APIRouter()
 
@@ -29,7 +30,7 @@ router = APIRouter()
 
 
 @router.get("/beneficiaries/{estate_id}")
-async def get_beneficiaries(estate_id: str, current_user: dict = Depends(get_current_user)):
+async def get_beneficiaries(estate_id: str, request: Request = None, current_user: dict = Depends(get_current_user)):
     """List all beneficiaries for an estate, sorted by sort_order."""
     beneficiaries = await db.beneficiaries.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(100)
     # Normalize dob → date_of_birth for legacy records
@@ -63,6 +64,18 @@ async def get_beneficiaries(estate_id: str, current_user: dict = Depends(get_cur
     for b in beneficiaries:
         if b.get("photo_url"):
             b["photo_url"] = resolve_photo_url(b["photo_url"])
+    # SOC 2 CC6.1: Audit sensitive data access
+    await log_audit_event(
+        actor_id=current_user["id"],
+        actor_email=current_user.get("email", ""),
+        actor_role=current_user.get("role", ""),
+        action="beneficiary_list_view",
+        category="data_access",
+        resource_type="beneficiaries",
+        resource_id=estate_id,
+        ip_address=get_client_ip(request) if request else "",
+        severity="info",
+    )
     return beneficiaries
 
 

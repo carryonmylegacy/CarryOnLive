@@ -199,6 +199,17 @@ async def login(data: UserLogin, request: Request):
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         )
+        # SOC 2 CC6.1: Audit log for failed login
+        await log_audit_event(
+            actor_id="",
+            actor_email=login_lower,
+            actor_role="",
+            action="login_failed",
+            category="auth",
+            ip_address=client_ip,
+            severity="warning",
+            details={"reason": "invalid_credentials"},
+        )
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     # Clear failed attempts on successful login
@@ -1197,6 +1208,15 @@ async def change_password(
 
     new_hash = hash_password(data.new_password)
     await db.users.update_one({"id": current_user["id"]}, {"$set": {"password": new_hash}})
+
+    # SOC 2 CC6.1: Revoke all other sessions on password change
+    from services.token_blacklist import revoke_all_user_tokens
+
+    await revoke_all_user_tokens(current_user["id"])
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {"$unset": {"active_session_id": "", "last_login_at": ""}},
+    )
 
     await log_audit_event(
         actor_id=current_user["id"],

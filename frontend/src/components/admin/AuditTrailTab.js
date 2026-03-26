@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Shield, Loader2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Shield, Loader2, Search, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
@@ -16,6 +16,7 @@ export const AuditTrailTab = ({ getAuthHeaders }) => {
   const [entries, setEntries] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [offset, setOffset] = useState(0);
   const [categoryFilter, setCategoryFilter] = useState('');
   const [severityFilter, setSeverityFilter] = useState('');
@@ -35,6 +36,26 @@ export const AuditTrailTab = ({ getAuthHeaders }) => {
     finally { setLoading(false); }
   };
 
+  const handleExport = async (days = 30) => {
+    setExporting(true);
+    try {
+      const params = new URLSearchParams({ days });
+      if (categoryFilter) params.set('category', categoryFilter);
+      if (severityFilter) params.set('severity', severityFilter);
+      const res = await axios.get(`${API_URL}/founder/audit-trail/export?${params}`, {
+        ...getAuthHeaders(),
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `carryon_audit_trail_${days}d.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch {}
+    finally { setExporting(false); }
+  };
+
   useEffect(() => { fetchEntries(); }, [offset, categoryFilter, severityFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = searchQuery
@@ -47,7 +68,19 @@ export const AuditTrailTab = ({ getAuthHeaders }) => {
         <h3 className="text-sm font-bold text-[var(--t)] uppercase tracking-wider flex items-center gap-2">
           <Shield className="w-4 h-4 text-[var(--gold)]" /> SOC 2 Audit Trail
         </h3>
-        <span className="text-xs text-[var(--t5)]">{total} events logged</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-[var(--t5)]">{total} events logged</span>
+          <Button size="sm" variant="outline" disabled={exporting}
+            onClick={() => handleExport(30)} data-testid="audit-export-30d"
+            className="text-xs border-[var(--b)] text-[var(--t)] h-7">
+            <Download className="w-3 h-3 mr-1" /> {exporting ? 'Exporting...' : '30d CSV'}
+          </Button>
+          <Button size="sm" variant="outline" disabled={exporting}
+            onClick={() => handleExport(365)} data-testid="audit-export-365d"
+            className="text-xs border-[var(--b)] text-[var(--t)] h-7">
+            <Download className="w-3 h-3 mr-1" /> 1yr CSV
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -61,6 +94,7 @@ export const AuditTrailTab = ({ getAuthHeaders }) => {
           className="h-9 px-3 rounded-lg text-xs bg-[var(--s)] border border-[var(--b)] text-[var(--t)]">
           <option value="">All categories</option>
           <option value="auth">Auth</option>
+          <option value="data_access">Data Access</option>
           <option value="tvt">TVT</option>
           <option value="dts">DTS</option>
           <option value="support">Support</option>

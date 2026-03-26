@@ -4,13 +4,13 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from config import db
 from guards import require_benefactor_role
 from services.encryption import decrypt_field, encrypt_field, get_estate_salt
-from services.audit import audit_log
+from services.audit import audit_log, log_audit_event, get_client_ip
 from utils import get_current_user
 
 router = APIRouter()
@@ -53,7 +53,7 @@ class DigitalWalletUpdate(BaseModel):
 
 
 @router.get("/digital-wallet/{estate_id}")
-async def get_digital_wallet(estate_id: str, current_user: dict = Depends(get_current_user)):
+async def get_digital_wallet(estate_id: str, request: Request = None, current_user: dict = Depends(get_current_user)):
     """List all digital wallet entries for an estate."""
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
     if not estate:
@@ -81,6 +81,19 @@ async def get_digital_wallet(estate_id: str, current_user: dict = Depends(get_cu
                     entry["additional_access"] = decrypt_field(entry["encrypted_additional"], estate_salt)
                 except Exception:
                     entry["additional_access"] = ""
+        # SOC 2 CC6.1: Audit sensitive data access
+        await log_audit_event(
+            actor_id=current_user["id"],
+            actor_email=current_user.get("email", ""),
+            actor_role=current_user.get("role", ""),
+            action="digital_wallet_view",
+            category="data_access",
+            resource_type="digital_wallet",
+            resource_id=estate_id,
+            ip_address=get_client_ip(request) if request else "",
+            severity="info",
+            details={"entry_count": len(entries)},
+        )
         return entries
     elif is_transitioned:
         # Beneficiary sees only entries assigned to them
@@ -96,6 +109,19 @@ async def get_digital_wallet(estate_id: str, current_user: dict = Depends(get_cu
                     entry["additional_access"] = decrypt_field(entry["encrypted_additional"], estate_salt)
                 except Exception:
                     entry["additional_access"] = ""
+        # SOC 2 CC6.1: Audit sensitive data access (beneficiary)
+        await log_audit_event(
+            actor_id=current_user["id"],
+            actor_email=current_user.get("email", ""),
+            actor_role=current_user.get("role", ""),
+            action="digital_wallet_view",
+            category="data_access",
+            resource_type="digital_wallet",
+            resource_id=estate_id,
+            ip_address=get_client_ip(request) if request else "",
+            severity="info",
+            details={"entry_count": len(my_entries), "access_type": "beneficiary"},
+        )
         return my_entries
     else:
         raise HTTPException(status_code=403, detail="Access denied")
