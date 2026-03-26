@@ -384,27 +384,25 @@ const Sidebar = () => {
       <div className="sb-logo" style={{ cursor: 'pointer' }}
         onClick={() => { if (isAdminSession) { setDevOpen(!devOpen); if (!devOpen) fetchDevConfig(); } else { navigate(window.location.pathname.startsWith('/beneficiary') ? '/beneficiary' : '/dashboard'); } }}
         data-testid="sidebar-logo">
-        <img 
-          src="/carryon-app-icon.jpg" 
-          alt="CarryOn™" 
-          className="sb-logo-img"
-          onError={(e) => {
-            e.target.style.display = 'none';
-            e.target.nextSibling.style.display = 'flex';
-          }}
-        />
-        <div 
-          className="sb-avatar" 
-          style={{ display: 'none', width: '42px', height: '42px', borderRadius: '10px' }}
-        >
-          <Shield className="w-5 h-5" />
-        </div>
-        {!collapsed && (
-          <div className="sb-logo-text">
-            <span className="sb-logo-title">CarryOn™</span>
-            <span className="sb-logo-subtitle">{getRoleLabel()}</span>
+        <div className="sb-logo-top">
+          <img 
+            src="/carryon-app-icon.jpg" 
+            alt="CarryOn™" 
+            className="sb-logo-img"
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
+          />
+          <div 
+            className="sb-avatar" 
+            style={{ display: 'none', width: '42px', height: '42px', borderRadius: '10px' }}
+          >
+            <Shield className="w-5 h-5" />
           </div>
-        )}
+          {!collapsed && <span className="sb-logo-title">CarryOn™</span>}
+        </div>
+        {!collapsed && <span className="sb-logo-subtitle" data-testid="sidebar-portal-label">{getRoleLabel()}</span>}
       </div>
 
       {/* Dev Portal Switcher Panel — founder only, floating overlay */}

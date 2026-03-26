@@ -30,7 +30,14 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
-### Completed (March 25, 2026 — Session 29: PWA Swipe-Back Guard Removal)
+### Completed (March 25, 2026 — Session 29: Sidebar Portal Label Redesign + PWA Cleanup)
+
+#### Sidebar Portal Label Redesign (March 25, 2026)
+Restructured the sidebar logo/branding area in DashboardLayout:
+- **Layout**: Portal label (e.g., "FOUNDER PORTAL", "BENEFICIARY PORTAL") now sits beneath both the logo icon AND "CarryOn™" text, spanning the full width
+- **Styling**: Portal label is now bold (800 weight), white text (dark theme) / dark navy (light theme), 15px font size with uppercase tracking
+- **CarryOn™ alignment**: Text is now vertically centered on the logo icon via flexbox
+- **Structure**: Added `.sb-logo-top` wrapper div for the logo+title row; subtitle moved outside as a direct child of `.sb-logo`
 
 #### PWA iOS Swipe-Back — Abandoned (March 25, 2026)
 After 4+ attempts across multiple sessions (touchmove blocking, pushState→replaceState monkey-patch, popstate interception with history trap), confirmed that iOS intercepts the swipe-back gesture at the system level before any web JavaScript can handle it. All swipe-back prevention code has been removed to keep the codebase clean. This is a known iOS WebKit limitation with no web-level workaround.
