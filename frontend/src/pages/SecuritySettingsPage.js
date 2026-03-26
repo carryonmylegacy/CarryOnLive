@@ -21,6 +21,7 @@ const AUTO_LOGOUT_OPTIONS = [
   { value: '10', label: '10 minutes' },
   { value: '15', label: '15 minutes' },
   { value: '30', label: '30 minutes' },
+  { value: 'midnight', label: 'Daily (Midnight)' },
 ];
 
 const SecuritySettingsPage = () => {
@@ -100,7 +101,7 @@ const SecuritySettingsPage = () => {
   const handleAutoLogoutChange = (value) => {
     setAutoLogoutMinutes(value);
     localStorage.setItem('carryon_auto_logout_minutes', value);
-    toast.success(value === '0' ? 'Auto-logout set to instant on app leave' : `Auto-logout set to ${value} minutes`);
+    toast.success(value === '0' ? 'Auto-logout set to instant on app leave' : value === 'midnight' ? 'Auto-logout set to daily at midnight' : `Auto-logout set to ${value} minutes`);
   };
 
   return (

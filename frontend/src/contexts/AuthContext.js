@@ -136,10 +136,34 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Auto-logout when app is backgrounded for longer than user's timeout setting
+  // Also handles 'midnight' mode — logs out at local midnight
   useEffect(() => {
     let bgTimer = null;
+    let midnightTimer = null;
+
+    const scheduleMidnightLogout = () => {
+      const now = new Date();
+      const midnight = new Date(now);
+      midnight.setHours(24, 0, 0, 0);
+      const msUntilMidnight = midnight.getTime() - now.getTime();
+      midnightTimer = setTimeout(() => {
+        localStorage.removeItem('carryon_token');
+        sessionStorage.removeItem('trial_banner_dismissed');
+        setToken(null);
+        setUser(null);
+        window.location.href = '/login';
+      }, msUntilMidnight);
+    };
+
+    const setting = localStorage.getItem('carryon_auto_logout_minutes') || '5';
+
+    if (setting === 'midnight' && token) {
+      scheduleMidnightLogout();
+    }
+
     const handleVisibility = () => {
-      const mins = parseInt(localStorage.getItem('carryon_auto_logout_minutes') || '5', 10);
+      if (setting === 'midnight') return; // midnight mode doesn't use bg timer
+      const mins = parseInt(setting, 10);
       if (document.hidden && token) {
         if (mins === 0) {
           // Instant logout on app leave
@@ -165,6 +189,7 @@ export const AuthProvider = ({ children }) => {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibility);
       if (bgTimer) clearTimeout(bgTimer);
+      if (midnightTimer) clearTimeout(midnightTimer);
     };
   }, [token]);
 

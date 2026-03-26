@@ -36,7 +36,8 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 #### Security Settings Consolidation (March 26, 2026)
 - **Moved Account Security** (Passkey, 2FA, SMS OTP) from general Settings page to dedicated Security Settings page
-- **Added Auto-Logout Timer** to Security Settings page with options: On App Leave (Instant), 1, 3, 5, 10, 15, 30 minutes
+- **Added Auto-Logout Timer** to Security Settings page with options: On App Leave (Instant), 1, 3, 5, 10, 15, 30 minutes, Daily (Midnight)
+- **Daily (Midnight) auto-logout**: Calculates ms until local midnight and schedules a logout timer. Resets each session.
 - **Removed auto-logout** from AppearanceCard (was previously under Appearance settings)
 - **AuthContext updated** to handle `0` value for instant logout on app leave (triggers immediately on `visibilitychange` hidden)
 - **Settings page** now shows a navigation card linking to Security Settings instead of inline security controls
