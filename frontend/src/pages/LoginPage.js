@@ -380,7 +380,7 @@ const LoginPage = () => {
                 boxShadow: '0 3px 10px rgba(180,140,40,0.3), inset 0 1px 0 rgba(255,240,160,0.5)',
                 transition: 'transform 0.12s ease, box-shadow 0.12s ease',
               }}>
-              New to estate planning? See what CarryOn can do
+              New to estate planning?<br/>See what CarryOn can do
             </button>
           </div>
         </div>
