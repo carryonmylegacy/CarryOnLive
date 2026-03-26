@@ -1,39 +1,31 @@
 <analysis>**original_problem_statement**: 
-The user requested the creation of a grandma-proof PWA installation flow. This included segregating the login page so that PWA users see a clean, distraction-free login () while mobile/desktop browser users see the full marketing landing page (now moved to ). The user also required highly visual, iOS-accurate instructions for adding the app to the home screen, UI refinements for the PWA login screen (flag background, scrolling above the keyboard, safe-area inset fixes), and the prevention of the iOS Safari swipe-back gesture when using the PWA. Earlier, the user also requested a fix for PDF drag-and-drop rejection in the Secure Document Vault.
-
-PRODUCT REQUIREMENTS:
-1. PWA Detection & Segregation:  check to conditionally render a minimal login screen vs marketing screen.
-2. iOS-Accurate Install Guide: Visual mockups of Safari's actual menus (Light theme, ••• button, Share sheet, Add button) with strong blue pulsating indicators.
-3. PWA Swipe-Back Prevention: Block the native iOS left-to-right swipe-to-go-back gesture in standalone mode.
-4. Vault PDF Uploads: Allow PDF mime-types in the drag-and-drop zone and auto-focus the document name input.
+The user originally requested a segregated PWA login experience and a fix for PWA iOS swipe-back gestures. 
+**New requests in this session**: 
+1. Revert and abandon all attempts to block the PWA swipe-back gesture (it failed in iOS system level).
+2. Redesign the Sidebar/MobileNav branding: Make the portal label (e.g., FOUNDER PORTAL) bold, white, and stretch beneath the logo and CarryOn™. Add ESTATE PLAN ACCESS titles to menus and increase font sizes for section headers.
+3. Fix a CodeMagic CI/CD build failure related to a missing  variable group.
+4. Fix a bug where the PWA Install Guide was erroneously displaying inside the TestFlight (Capacitor native) app.
+5. Implement SOC 2 Type 2 compliance controls (Audit logging, session revocation, rate limits, access logging, etc.).
+6. Create an automated Weekly SOC 2 Audit Digest email and a Founder Emails management tab to toggle periodic emails.
 
 **User's preferred language**: English (INSTRUCT next agent to respond in English only)
 
 **what currently exists?** 
-A fully functional multi-step funnel, a Secure Document Vault with working PDF drag-and-drop, a segregated PWA login experience (minimal vs full marketing ), and a visually accurate iOS PWA installation guide with pulsing blue targets. The app correctly adjusts for iOS safe-area insets. However, the attempt to block the iOS swipe-back gesture in PWA mode is currently failing, and the user reports it sometimes skips back 2-3 screens.
+A fully functional React/FastAPI/MongoDB application with a multi-step funnel, secure document vault, segregated PWA web/mobile experiences, and robust role-based access control. The app now features a fully functioning SOC 2 Type 2 compliance backend infrastructure, including append-only hashed audit logs, automatic session revocation on password changes, audit logging for sensitive data access, and an automated weekly digest system controlled via a new Founder Emails management UI. The UI sidebar has been structurally redesigned for better branding visibility.
 
 **Last working item**:
-    - Last item agent was working: Implementing a new strategy to block the iOS PWA swipe-back gesture. After  and  monkey-patching failed, the agent created  to attempt a  event interception strategy.
-    - Status: IN PROGRESS
-    - Agent Testing Done: N
-    - Which testing method agent to use? manual testing by screenshot/device simulation (Note: Playwright desktop cannot easily simulate iOS system-level swipe gestures; coordinate with the user to test on their actual device).
+    - Last item agent was working: Building the Weekly SOC 2 Audit Digest email and the frontend  in the Admin panel.
+    - Status: NONE (Agent completed the task and used the finish tool successfully).
+    - Agent Testing Done: Y
+    - Which testing method agent to use? NA 
     - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  Issue 1: PWA iOS Swipe-Back Prevention is failing (P0)
-  Issue 2: Apple IAP flow is non-functional (P0 - BLOCKED)
-  Issue 3: Twilio SMS OTP delivery is failing (P0 - BLOCKED)
+  Issue 1: Apple IAP flow is non-functional (P0 - BLOCKED)
+  Issue 2: Twilio SMS OTP delivery is failing (P0 - BLOCKED)
   
   Issues Detail:
   - Issue 1: 
-     - Attempted fixes: Agent tried  on  starting from the left edge (failed: iOS intercepts first). Agent tried monkey-patching  in  and  (failed: React Router internals bypass it, resulting in erratic multi-page swipe backs).
-     - Next debug checklist: Implement the logic inside  using a  event listener that pushes a dummy state forward immediately to trap the user, or strictly enforce a  when  is true. Remove the failed monkey-patch from .
-     - Why fix this issue and what will be achieved with the fix? Stops the PWA from feeling like a browser by preventing accidental backward navigation.
-     - Status: IN PROGRESS
-     - Is recurring issue? Y
-     - Should Test frontend/backend/both after fix? Frontend
-     - Blocked on other issue: None
-  - Issue 2: 
      - Attempted fixes: Code is fully implemented.
      - Next debug checklist: Await user action with Apple.
      - Why fix this issue and what will be achieved with the fix? Enables monetization via native iOS app.
@@ -41,7 +33,7 @@ A fully functional multi-step funnel, a Secure Document Vault with working PDF d
      - Is recurring issue? Y
      - Should Test frontend/backend/both after fix? Both
      - Blocked on other issue: User's Apple Developer Paid Applications Agreement approval.
-  - Issue 3: 
+  - Issue 2: 
      - Attempted fixes: Code is fully implemented.
      - Next debug checklist: Await user action with Twilio.
      - Why fix this issue and what will be achieved with the fix? Enables SMS OTP for authentication.
@@ -51,15 +43,7 @@ A fully functional multi-step funnel, a Secure Document Vault with working PDF d
      - Blocked on other issue: User's A2P 10DLC campaign approval from Twilio.
 
 **In progress Task List**:
-  Task 1: Finalize PWA Swipe Guard Implementation (P0)
-  
- Task Detail:
-  - Task 1: 
-     - Where to resume: The file  was just created. Add the  interception logic to it, import it into  or , and remove the old failed  override from .
-     - What will be achieved with this? Prevents the iOS swipe-back bug.
-     - Status: IN PROGRESS
-     - Should Test frontend/backend/both after fix? Frontend
-     - Blocked on something: No
+  None
 
 **Upcoming and Future Tasks**
     Upcoming Tasks:
@@ -70,44 +54,49 @@ A fully functional multi-step funnel, a Secure Document Vault with working PDF d
     - (P2) Scalability Enhancements.
 
 **Completed work in this session**
-- Fixed Secure Document Vault PDF rejection by expanding MIME type validation (, etc.) (DONE)
-- Added auto-focus () to Document Name field upon dropping a file in Vault (DONE)
-- Split Desktop/PWA login: Created  for marketing, stripped  down for PWA mode (DONE)
-- Built  with light-theme, iOS-accurate visual mockups and strong blue glowing pulsates for action buttons (DONE)
-- Fixed PWA Funnel overlapping iOS status bar using  and  (DONE)
-- Implemented keyboard-aware scrolling for PWA Login using  &  (DONE)
+- Removed all  code and restored native browser history behavior per user request (DONE)
+- Redesigned Sidebar and MobileNav branding (Enlarged logo, centered CarryOn™, stretched bold portal labels) (DONE)
+- Increased font sizes and added missing ESTATE PLAN ACCESS section headers in navigation (DONE)
+- Aligned SWITCH VIEW formatting with other nav section headers (DONE)
+- Fixed  build error by removing the undefined  group reference (DONE)
+- Fixed PWA Install Guide erroneously showing in Capacitor native apps by updating  logic (DONE)
+- Implemented 7 SOC 2 Type 2 compliance features: Audit Trail TTL (1 year), Session revocation on password change, Audit logging for Beneficiary/Digital Wallet access, Failed login audit logs, CSV Export for Audit Trail (DONE)
+- Implemented automated Weekly SOC 2 Audit Digest email (DONE)
+- Built  in Admin Page for toggling Analytics/Audit digest emails (DONE)
 
 **Earlier issues found/mentioned but not fixed**
 None.
 
 **Known issue recurrence from previous fork**
-  - Issue recurrence in previous fork: Apple IAP block / Twilio block (Count: 3).
-  - PWA Swipe-Back blocking failed 3 times this session.
-  - Status: BLOCKED / IN PROGRESS
+  - Issue recurrence in previous fork: Apple IAP block / Twilio block (Count: 4).
+  - Status: BLOCKED
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Frontend**: React, Tailwind CSS, PWA detection (), viewport units (), History API manipulation.
-- **Backend**: FastAPI, Motor (Async MongoDB).
+- **Frontend**: React, Tailwind CSS, Capacitor Native detection ().
+- **Backend**: FastAPI, Motor (Async MongoDB), Append-only immutable Audit Logging with SHA-256 integrity hashing, Resend (for automated email digests).
 
 **key DB schema**
-  - : {session_id, utm_source, utm_medium, utm_campaign, ip_address, device_type, steps, completed, converted_user_id}
+  - : {timestamp, actor_id, actor_email, actor_role, action, category, resource_type, resource_id, severity, ip_address, integrity_hash, details}. *Now has a 365-day TTL index*.
 
 **changes in tech stack**
   - None
 
 **All files of reference**
-  -  (NEW - needs implementation)
-  -  (Contains broken  hack to remove)
+  - 
+  - 
+  - 
+  - 
   - 
   - 
 
 **Areas that need refactoring**:
-  - The monkey-patch for  currently sitting in  is failing and causing multiple-page jumps. It needs to be removed in favor of the new  strategy.
+  - Codebase is currently clean. Passed rigorous 50-step custom housekeeping lint/format checks.
 
 **key api endpoints**
+  -  (New CSV Export)
   - 
   - 
 
@@ -158,7 +147,7 @@ None.
 29. [CC7.2] Rate limiting ......... [0;32mPASS[0m (rate limiting middleware active)
 30. [CC6.1] CORS configuration .... [0;32mPASS[0m (CORS configured, no wildcard)
 31. [CC6.1] Security headers ...... [0;32mPASS[0m (security headers middleware active)
-32. [CC7.2] DB indexes verified ... [0;32mPASS[0m (49 indexes defined)
+32. [CC7.2] DB indexes verified ... [0;32mPASS[0m (53 indexes defined)
 33. [CC8.1] Env fallback scan ...... [0;32mPASS[0m
 34. [A1.2] Recent backend logs ..... [0;32mPASS[0m
 35. [CC8.1] Route editor audit ..... [0;32mPASS[0m
@@ -199,28 +188,28 @@ SOC 2 Trust Service Criteria Reference:
   CC8.1  Change management
   A1.2   System availability
   PI1.1  Privacy (GDPR) and ensure all 50 checks pass.
-- PWA Swipe-back is notoriously difficult to prevent on iOS. The user is actively testing on their device from a Home Screen bookmark. You must write a robust solution (like forcefully pushing state forward on  or enforcing  for PWAs) rather than relying on standard DOM events.
+- **PWA Swipe-Back**: The user explicitly ordered to abandon attempts to block the iOS swipe-back gesture. Do not attempt to re-implement  or modify  for this.
+- **Native vs PWA**: The app is compiled to a native iOS app via Capacitor (TestFlight). Ensure any PWA-specific UI (like installation prompts) uses  checks so they don't bleed into the App Store build.
+- **SOC 2 Compliance**: Ensure any new endpoints that access or modify sensitive data (Estates, Beneficiaries, Vault, Wallets) include a call to  from .
 - Apple IAP and Twilio SMS OTP features are administratively blocked. Do not attempt to debug them.
 
 **documents and test reports created in this job**
-  - 
-  - 
-  - 
+  -  (Updated)
 
 **Last 10 User Messages and any pending HUMAN messages** 
-1. **User**: Provided screenshots showing PWA login issues (logo small, instructions dark/incorrect).
-2. **Agent**: Updated install guide and enlarged logo.
-3. **User**: Funnel formatting got messed up (overlapping top iOS status bar).
-4. **Agent**: Fixed safe-area-inset and .
-5. **User**: Make install mockups light theme, add flag background to PWA login, slide up on keyboard.
-6. **Agent**: Implemented light theme mockups and keyboard scrolling.
-7. **User**: Make pulsating glows stronger (blue), make instruction text white, add + to step 3.
-8. **Agent**: Updated styles with strong blue box-shadow glows.
-9. **User**: Prevent left swipe on PWA from navigating back as if it was a web browser.
-10. **User**: Testing swipe-back... It's still doing it, sometimes taking me back 2-3 screens. (Agent created  right before context ended).
+1. **User**: Confirmed CodeMagic yaml fix (Option A).
+2. **User**: Reported PWA Install Guide was showing up inside the TestFlight native app.
+3. **Agent**: Fixed  logic to exclude native Capacitor environments.
+4. **User**: Asked how hard it is to make the platform SOC 2 Type 2 compliant.
+5. **Agent**: Proposed 7 code-level implementations (Audit logs, session hardening, rate limits, access logging, etc.).
+6. **User**: I want you to do 1 through 7!
+7. **Agent**: Asked clarification questions via  regarding log retention lengths and rate limit tweaks.
+8. **User**: Answered: 1 year retention, 1 session per user, no rate limit changes, apply to both admin/user.
+9. **Agent**: Implemented all 7 backend SOC 2 requirements. Suggested adding a weekly audit email.
+10. **User**: Yes. Institute the weekly audit email thing. Give me a page to manage all my periodic email updates in my Founder page...
 
 **Project Health Check:**
-  - Broken: PWA swipe-back gesture block
+  - Broken: None
   - Mocked: None
   - Blocked: Apple IAP, Twilio SMS
 
@@ -230,15 +219,16 @@ SOC 2 Trust Service Criteria Reference:
   - Stripe (Payments) — requires User API Key
   - Twilio SMS (v9.10.2) — Blocked by Twilio A2P
   - @capgo/native-purchases (v8.2.2) — Blocked by Apple
+  - Resend (Emails) — uses User API Key
 
 **Testing status**
-  - Testing agent used after significant changes: YES (For initial PWA login split).
+  - Testing agent used after significant changes: NO (Self-tested via scripts/screenshots to conserve context)
   - Troubleshoot agent used after agent stuck in loop: NO
-  - Test files created: 
-  - Known regressions: Monkey-patch in  causes erratic multi-page backward jumps.
+  - Test files created: None this session
+  - Known regressions: None
 
 **Credentials to test flow:**
   - App:  / 
 
 **What agent forgot to execute**
-The agent realized the  patch was failing and created  to implement a  interception approach, but the context limit was hit before they could write any code into the file or integrate it into /. Ensure you remove the broken patch from  and properly implement the guard.</analysis>
+None. Agent successfully completed all feature requests and bug fixes, including the extensive SOC 2 backend hardening.</analysis>

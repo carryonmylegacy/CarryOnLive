@@ -2,14 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
-import { Shield, LogOut, Loader2 } from 'lucide-react';
+import { Shield, LogOut, Loader2, ShieldCheck } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Switch } from '../components/ui/switch';
 import { Button } from '../components/ui/button';
 import { SubscriptionManagement } from '../components/settings/SubscriptionManagement';
 import NotificationSettings from '../components/NotificationSettings';
 import ProfileCard from '../components/settings/ProfileCard';
-import SecurityCard from '../components/settings/SecurityCard';
 import PersonalInfoCard from '../components/settings/PersonalInfoCard';
 import EstatePhotoCard from '../components/settings/EstatePhotoCard';
 import AppearanceCard from '../components/settings/AppearanceCard';
@@ -76,7 +75,25 @@ const SettingsPage = () => {
       )}
 
       <ProfileCard />
-      <SecurityCard />
+
+      {/* Security Settings Link */}
+      <Card className="glass-card cursor-pointer hover:border-[var(--gold)]/30 transition-colors" onClick={() => navigate('/security-settings')} data-testid="settings-security-link">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.1)' }}>
+                <ShieldCheck className="w-5 h-5 text-[var(--gold)]" />
+              </div>
+              <div>
+                <h4 className="text-[var(--t)] font-bold">Security Settings</h4>
+                <p className="text-[var(--t5)] text-sm">2FA, passkeys, auto-logout, vault locks</p>
+              </div>
+            </div>
+            <svg className="w-5 h-5 text-[var(--t4)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+          </div>
+        </CardContent>
+      </Card>
+
       <PersonalInfoCard initialEditAddress={editAddress || fromOnboarding} />
 
       {/* Subscription Management */}

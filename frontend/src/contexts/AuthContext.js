@@ -141,13 +141,22 @@ export const AuthProvider = ({ children }) => {
     const handleVisibility = () => {
       const mins = parseInt(localStorage.getItem('carryon_auto_logout_minutes') || '5', 10);
       if (document.hidden && token) {
-        bgTimer = setTimeout(() => {
+        if (mins === 0) {
+          // Instant logout on app leave
           localStorage.removeItem('carryon_token');
           sessionStorage.removeItem('trial_banner_dismissed');
           setToken(null);
           setUser(null);
           window.location.href = '/login';
-        }, mins * 60 * 1000);
+        } else {
+          bgTimer = setTimeout(() => {
+            localStorage.removeItem('carryon_token');
+            sessionStorage.removeItem('trial_banner_dismissed');
+            setToken(null);
+            setUser(null);
+            window.location.href = '/login';
+          }, mins * 60 * 1000);
+        }
       } else if (bgTimer) {
         clearTimeout(bgTimer);
       }

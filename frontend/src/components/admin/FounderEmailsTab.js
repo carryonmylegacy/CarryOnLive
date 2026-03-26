@@ -215,18 +215,19 @@ export const FounderEmailsTab = ({ getAuthHeaders }) => {
 
       {/* Email Preview Modal */}
       {previewHtml && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => { setPreviewHtml(''); setPreviewType(''); }}>
-          <div className="bg-[var(--card)] rounded-xl border border-[var(--b)] w-full max-w-2xl max-h-[80vh] overflow-auto"
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => { setPreviewHtml(''); setPreviewType(''); }}>
+          <div className="rounded-xl border border-[var(--b)] w-full max-w-2xl max-h-[85vh] overflow-auto"
+            style={{ background: '#0b1120' }}
             onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-[var(--b)]">
-              <h3 className="text-[var(--t)] font-bold text-sm uppercase tracking-wider">
+            <div className="flex items-center justify-between p-4 border-b border-[var(--b)] sticky top-0 z-10" style={{ background: '#0b1120' }}>
+              <h3 className="text-white font-bold text-sm uppercase tracking-wider">
                 {previewType === 'analytics' ? 'Analytics Digest Preview' : 'Audit Digest Preview'}
               </h3>
-              <Button size="sm" variant="ghost" onClick={() => { setPreviewHtml(''); setPreviewType(''); }}
-                className="text-[var(--t5)]" data-testid="close-email-preview">Close</Button>
+              <Button size="sm" variant="outline" onClick={() => { setPreviewHtml(''); setPreviewType(''); }}
+                className="border-[var(--b)] text-white hover:bg-white/10 font-bold" data-testid="close-email-preview">Close</Button>
             </div>
-            <div className="p-2">
-              <iframe srcDoc={previewHtml} title="Email Preview" className="w-full border-0 rounded-lg" style={{ height: '600px' }} />
+            <div className="p-2 overflow-x-auto">
+              <iframe srcDoc={previewHtml} title="Email Preview" className="w-full border-0 rounded-lg" style={{ minWidth: '320px', height: '600px' }} />
             </div>
           </div>
         </div>
