@@ -609,19 +609,19 @@ const MobileNav = () => {
                     sectionTitle = 'ESTATE PLAN ACCESS';
                   } else if (user?.role === 'beneficiary' && user?.is_also_benefactor && !isOnBeneficiary) {
                     menuItems = myLegacyItems;
-                    sectionTitle = '';
+                    sectionTitle = 'ESTATE PLAN ACCESS';
                   } else if (user?.role === 'benefactor' && isOnBeneficiary) {
                     menuItems = beneficiaryLegacyItems;
                     sectionTitle = 'ESTATE PLAN ACCESS';
                   } else {
                     menuItems = myLegacyItems;
-                    sectionTitle = '';
+                    sectionTitle = 'ESTATE PLAN ACCESS';
                   }
                   return menuItems.length > 0 && (
                 <div className="mb-6">
                   <h3 
-                    className="text-xs font-semibold tracking-wider uppercase mb-3 px-2"
-                    style={{ color: theme === 'dark' ? '#525C72' : '#64748B' }}
+                    className="text-sm font-bold tracking-wider uppercase mb-3 px-2"
+                    style={{ color: theme === 'dark' ? '#8895A7' : '#475569' }}
                   >
                     {sectionTitle}
                   </h3>
@@ -669,8 +669,8 @@ const MobileNav = () => {
                 {accountItems.length > 0 && (
                 <div className="mb-6">
                   <h3 
-                    className="text-xs font-semibold tracking-wider uppercase mb-3 px-2"
-                    style={{ color: theme === 'dark' ? '#525C72' : '#64748B' }}
+                    className="text-sm font-bold tracking-wider uppercase mb-3 px-2"
+                    style={{ color: theme === 'dark' ? '#8895A7' : '#475569' }}
                   >
                     ACCOUNT
                   </h3>

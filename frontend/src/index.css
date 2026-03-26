@@ -289,8 +289,8 @@
   }
 
   .sb.collapsed .sb-logo-img {
-    width: 36px;
-    height: 36px;
+    width: 42px;
+    height: 42px;
   }
 
   .sb.collapsed .nav-section {
@@ -333,29 +333,29 @@
   .sb-logo-top {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
   }
   
   .sb-logo-img {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
+    width: 54px;
+    height: 54px;
+    border-radius: 12px;
     object-fit: cover;
   }
   
   .sb-logo-title {
     font-family: var(--sans);
-    font-size: 18px;
+    font-size: 28px;
     font-weight: 700;
     color: #E0AD2B;
     letter-spacing: -0.02em;
   }
   
   .sb-logo-subtitle {
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 800;
     color: #FFFFFF;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     margin-top: 6px;
   }
@@ -366,10 +366,10 @@
   }
   
   .nav-section-title {
-    font-size: 11px;
-    font-weight: 600;
-    color: #525C72;
-    letter-spacing: 0.1em;
+    font-size: 14px;
+    font-weight: 700;
+    color: #8895A7;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     padding: 0 12px;
     margin-bottom: 8px;
@@ -763,7 +763,7 @@
   }
   
   [data-theme="light"] .nav-section-title {
-    color: #64748B;
+    color: #475569;
   }
   
   [data-theme="light"] .nav-item {

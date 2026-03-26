@@ -235,7 +235,7 @@ const Sidebar = () => {
   // Navigation structure matching prototype
   const benefactorNavSections = [
     {
-      title: '',
+      title: 'ESTATE PLAN ACCESS',
       items: [
         { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
         { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },

@@ -35,9 +35,11 @@ A full-stack estate planning application allowing benefactors to manage digital 
 #### Sidebar Portal Label Redesign (March 25, 2026)
 Restructured the sidebar logo/branding area in DashboardLayout:
 - **Layout**: Portal label (e.g., "FOUNDER PORTAL", "BENEFICIARY PORTAL") now sits beneath both the logo icon AND "CarryOn™" text, spanning the full width
-- **Styling**: Portal label is now bold (800 weight), white text (dark theme) / dark navy (light theme), 15px font size with uppercase tracking
+- **Sizing**: Logo enlarged to 54px, CarryOn™ to 28px, portal label to 16px bold white — all sized to stretch the full sidebar width
 - **CarryOn™ alignment**: Text is now vertically centered on the logo icon via flexbox
-- **Structure**: Added `.sb-logo-top` wrapper div for the logo+title row; subtitle moved outside as a direct child of `.sb-logo`
+- **Section titles**: "ESTATE PLAN ACCESS" added to benefactor nav (matching beneficiary), all section titles ("ESTATE PLAN ACCESS", "ACCOUNT", "TOOLS") increased to 14px bold for proper visibility across all portals
+- **MobileNav**: Same section title updates applied — benefactor menus now show "ESTATE PLAN ACCESS", section titles enlarged to `text-sm font-bold`
+- **Light mode**: Portal label uses dark navy (#0F172A), section titles use (#475569)
 
 #### PWA iOS Swipe-Back — Abandoned (March 25, 2026)
 After 4+ attempts across multiple sessions (touchmove blocking, pushState→replaceState monkey-patch, popstate interception with history trap), confirmed that iOS intercepts the swipe-back gesture at the system level before any web JavaScript can handle it. All swipe-back prevention code has been removed to keep the codebase clean. This is a known iOS WebKit limitation with no web-level workaround.
