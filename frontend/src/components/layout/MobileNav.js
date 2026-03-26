@@ -749,7 +749,7 @@ const MobileNav = () => {
                     || (ownedEstates.length > 0 ? ownedEstates[0].id : null);
                   return (
                     <div className="mb-2">
-                      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--t5)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 8, paddingLeft: 4 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: theme === 'dark' ? '#8895A7' : '#475569', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 8, paddingLeft: 4 }}>
                         Switch View
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>

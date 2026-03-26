@@ -561,7 +561,7 @@ const Sidebar = () => {
           return (
             <>
               {!collapsed && (
-                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--t5)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 6, paddingLeft: 4 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#8895A7', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 6, paddingLeft: 4 }}>
                   Switch View
                 </div>
               )}
