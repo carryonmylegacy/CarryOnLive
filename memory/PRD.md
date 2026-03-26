@@ -32,6 +32,21 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ### Completed (March 25, 2026 — Session 29: Sidebar Portal Label Redesign + PWA Cleanup)
 
+### Completed (March 26, 2026 — Session 30: Security Settings Consolidation + Email Preview Fixes)
+
+#### Security Settings Consolidation (March 26, 2026)
+- **Moved Account Security** (Passkey, 2FA, SMS OTP) from general Settings page to dedicated Security Settings page
+- **Added Auto-Logout Timer** to Security Settings page with options: On App Leave (Instant), 1, 3, 5, 10, 15, 30 minutes
+- **Removed auto-logout** from AppearanceCard (was previously under Appearance settings)
+- **AuthContext updated** to handle `0` value for instant logout on app leave (triggers immediately on `visibilitychange` hidden)
+- **Settings page** now shows a navigation card linking to Security Settings instead of inline security controls
+
+#### Email Preview Modal Fixes (March 26, 2026)
+- **Opaque background**: Changed modal overlay from transparent `bg-black/60` + `bg-[var(--card)]` to solid `bg-black/80` + `#0b1120`
+- **Visible Close button**: Changed from ghost variant to outlined button with white text
+- **Sticky header**: Preview modal header sticks to top when scrolling
+- **Responsive Audit Digest**: Changed email HTML from fixed `width=600` to `max-width:600px`, reduced padding from 40px to 20px for mobile-friendly rendering
+
 ### Completed (March 26, 2026 — Session 29: SOC 2 Type 2 Hardening)
 
 #### SOC 2 Compliance — 7-Item Implementation (March 26, 2026)
