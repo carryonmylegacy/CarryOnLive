@@ -21,8 +21,6 @@ import {
 import TrialBanner from '../components/TrialBanner';
 import BillingStatusBanner from '../components/BillingStatusBanner';
 import OnboardingWizard from '../components/OnboardingWizard';
-import PWAInstallGuide from '../components/PWAInstallGuide';
-import { isMobileBrowser } from '../utils/pwaDetect';
 import { API_URL } from '../config';
 
 const DashboardPage = () => {
@@ -45,18 +43,6 @@ const DashboardPage = () => {
   const [egaRunning, setEgaRunning] = useState(false);
   const guidedDismissedRef = useRef(false);
   const lastCompletedAtRef = useRef(null);
-  const [showPWAInstall, setShowPWAInstall] = useState(false);
-
-  // Option B: Show PWA install guide on first login from mobile browser
-  useEffect(() => {
-    if (isMobileBrowser() && !localStorage.getItem('carryon_pwa_prompt_shown')) {
-      const timer = setTimeout(() => {
-        setShowPWAInstall(true);
-        localStorage.setItem('carryon_pwa_prompt_shown', '1');
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, []);
 
   const handleCelebrationDismiss = () => {
     setShowCelebration(false);
@@ -868,7 +854,6 @@ const DashboardPage = () => {
         </div>
       )}
       {renderGuidedOverlay()}
-      <PWAInstallGuide open={showPWAInstall} onClose={() => setShowPWAInstall(false)} />
     </div>
   );
 };
