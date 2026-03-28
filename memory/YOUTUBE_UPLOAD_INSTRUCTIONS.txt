@@ -1,0 +1,36 @@
+CarryOn — YouTube Video Upload Instructions
+=============================================
+
+Hi Suzan! We need to upload a video to YouTube so it can be embedded on the CarryOn website. Here's exactly what to do:
+
+
+STEP 1: Create a YouTube Account (if needed)
+---------------------------------------------
+1. Go to youtube.com in your browser
+2. Click "Sign In" in the top right
+3. Sign in with a Google account (or create one — you can use an existing Gmail like info@carryon.us)
+4. Once signed in, click your profile icon (top right) then "Create a channel"
+5. Name the channel "CarryOn" and click Create
+
+
+STEP 2: Upload the Video
+--------------------------
+1. Click the "+" (Create) button at the top of YouTube then "Upload video"
+2. Select the file: CarryOn Video 1.mov
+3. While it uploads, fill in these details:
+   - Title: CarryOn — Estate Planning Made Simple
+   - Description: Protect what matters. Guide who you love. CarryOn estate planning.
+   - Thumbnail: You can let YouTube auto-generate one, or upload a custom image later
+4. Under "Audience" select "No, it's not made for kids"
+5. Click "Next" through the Video Elements and Checks screens
+6. On the "Visibility" screen select "Unlisted"
+   - This means the video won't appear in YouTube search — only people with the direct link (or our website embed) can see it
+7. Click "Publish"
+
+
+STEP 3: Send the Video Link to Barnet
+---------------------------------------
+1. After publishing, YouTube will show you the video URL — it looks like: https://www.youtube.com/watch?v=XXXXXXXXXXX
+2. Copy that URL and send it to Barnet
+
+That's it! The whole process takes about 5 minutes (plus upload time for the video file).
