@@ -722,9 +722,12 @@ const LoginPage = () => {
             ))}
             <button onClick={() => setShowFounderModal(true)} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300" data-testid="nav-founder-btn">Founder</button>
           </div>
-          <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
-            Open Account <ChevronRight className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-3 sm:gap-4">
+            <button onClick={() => setShowFounderModal(true)} className="md:hidden text-[#6b7a90] text-xs font-medium hover:text-[#d4af37] transition-colors" data-testid="nav-founder-btn-mobile">Founder</button>
+            <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
+              Open Account <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -1448,35 +1451,35 @@ const LoginPage = () => {
 
       {/* ═══════════════════ FOUNDER ACCESS REQUEST MODAL ═══════════════════ */}
       {showFounderModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center px-4" data-testid="founder-request-modal">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center px-4" style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} data-testid="founder-request-modal">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => { setShowFounderModal(false); setFounderReqStatus(''); }} />
-          <div className="relative z-10 w-full max-w-md rounded-2xl p-8" style={{ background: 'rgba(13,27,42,0.8)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(212,175,55,0.12)', boxShadow: '0 32px 80px rgba(0,0,0,0.6)' }}>
-            <button onClick={() => { setShowFounderModal(false); setFounderReqStatus(''); }} className="absolute top-4 right-4 text-[#6b7a90] hover:text-white transition-colors" data-testid="founder-modal-close">
+          <div className="relative z-10 w-full max-w-md rounded-2xl p-6 sm:p-8 max-h-[90vh] overflow-y-auto" style={{ background: 'rgba(13,27,42,0.8)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(212,175,55,0.12)', boxShadow: '0 32px 80px rgba(0,0,0,0.6)' }}>
+            <button onClick={() => { setShowFounderModal(false); setFounderReqStatus(''); }} className="absolute top-3 right-3 sm:top-4 sm:right-4 text-[#6b7a90] hover:text-white transition-colors p-1" data-testid="founder-modal-close">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
             {!founderReqStatus ? (
               <>
-                <div className="text-center mb-6">
-                  <h2 className="text-xl font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>Meet the Founder</h2>
-                  <p className="text-[#9aa5b4] text-sm mt-2 leading-relaxed">
+                <div className="text-center mb-5 sm:mb-6">
+                  <h2 className="text-lg sm:text-xl font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>Meet the Founder</h2>
+                  <p className="text-[#9aa5b4] text-xs sm:text-sm mt-2 leading-relaxed">
                     Interested in learning more about the founder of CarryOn&trade; and what inspired him to build it? Request access below, and you&apos;ll be notified when your request is approved.
                   </p>
                 </div>
                 <form onSubmit={handleFounderRequest} className="space-y-3">
                   <input type="text" value={founderReqName} onChange={e => setFounderReqName(e.target.value)} placeholder="Your name" required
-                    className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#4a5568]" style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)' }} data-testid="founder-req-name" />
+                    className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#4a5568]" style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)', fontSize: '16px' }} data-testid="founder-req-name" />
                   <input type="email" value={founderReqEmail} onChange={e => setFounderReqEmail(e.target.value)} placeholder="Your email" required
-                    className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#4a5568]" style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)' }} data-testid="founder-req-email" />
+                    className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#4a5568]" style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)', fontSize: '16px' }} data-testid="founder-req-email" />
                   <textarea value={founderReqMsg} onChange={e => setFounderReqMsg(e.target.value)} placeholder="Why are you interested? (optional)" rows={3}
-                    className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#4a5568] resize-none" style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)' }} data-testid="founder-req-message" />
+                    className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#4a5568] resize-none" style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)', fontSize: '16px' }} data-testid="founder-req-message" />
                   <button type="submit" disabled={founderReqLoading}
-                    className="w-full py-2.5 rounded-lg font-semibold text-sm transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full py-3 rounded-lg font-semibold text-sm transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                     style={{ background: '#d4af37', color: '#0d1b2a' }} data-testid="founder-req-submit">
                     {founderReqLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Request Access'}
                   </button>
                 </form>
                 <div className="mt-4 text-center">
-                  <button onClick={() => navigateWithFade('/founder-about')} className="text-[#6b7a90] text-xs hover:text-[#d4af37] transition-colors" data-testid="founder-already-approved">
+                  <button onClick={() => navigateWithFade('/founder-about')} className="text-[#6b7a90] text-xs hover:text-[#d4af37] transition-colors py-1" data-testid="founder-already-approved">
                     Already have access? Sign in here &rarr;
                   </button>
                 </div>
@@ -1488,8 +1491,8 @@ const LoginPage = () => {
                     <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)' }}>
                       <Shield className="w-7 h-7 text-[#22c55e]" />
                     </div>
-                    <h3 className="text-lg font-bold text-white mb-2">Request Submitted</h3>
-                    <p className="text-[#9aa5b4] text-sm leading-relaxed">The founder will review your request. You&apos;ll receive your access credentials via email once approved.</p>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-2">Request Submitted</h3>
+                    <p className="text-[#9aa5b4] text-xs sm:text-sm leading-relaxed">The founder will review your request. You&apos;ll receive your access credentials via email once approved.</p>
                   </>
                 )}
                 {founderReqStatus === 'already_pending' && (
@@ -1497,8 +1500,8 @@ const LoginPage = () => {
                     <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
                       <Shield className="w-7 h-7 text-[#d4af37]" />
                     </div>
-                    <h3 className="text-lg font-bold text-white mb-2">Request Already Pending</h3>
-                    <p className="text-[#9aa5b4] text-sm leading-relaxed">You already have a pending request. The founder will review it shortly.</p>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-2">Request Already Pending</h3>
+                    <p className="text-[#9aa5b4] text-xs sm:text-sm leading-relaxed">You already have a pending request. The founder will review it shortly.</p>
                   </>
                 )}
                 {founderReqStatus === 'error' && (
@@ -1506,12 +1509,12 @@ const LoginPage = () => {
                     <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
                       <Shield className="w-7 h-7 text-[#ef4444]" />
                     </div>
-                    <h3 className="text-lg font-bold text-white mb-2">Something Went Wrong</h3>
-                    <p className="text-[#9aa5b4] text-sm">Please try again later.</p>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-2">Something Went Wrong</h3>
+                    <p className="text-[#9aa5b4] text-xs sm:text-sm">Please try again later.</p>
                   </>
                 )}
                 <button onClick={() => { setShowFounderModal(false); setFounderReqStatus(''); setFounderReqName(''); setFounderReqEmail(''); setFounderReqMsg(''); }}
-                  className="mt-5 px-6 py-2 rounded-lg text-sm font-semibold text-[#9aa5b4] hover:text-white transition-colors" style={{ border: '1px solid rgba(14,165,233,0.1)' }}>
+                  className="mt-5 px-6 py-2.5 rounded-lg text-sm font-semibold text-[#9aa5b4] hover:text-white transition-colors" style={{ border: '1px solid rgba(14,165,233,0.1)' }}>
                   Close
                 </button>
               </div>

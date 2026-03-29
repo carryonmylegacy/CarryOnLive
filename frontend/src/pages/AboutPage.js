@@ -35,7 +35,7 @@ const AboutPage = () => {
     <div className="min-h-screen" style={{ background: '#0d1b2a' }}>
 
       {/* NAV BAR */}
-      <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(30,48,80,0.3)', background: 'rgba(13,27,42,0.97)' }}>
+      <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(30,48,80,0.3)', background: 'rgba(13,27,42,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           <a href="/login" className="flex items-center">
             <img src="/carryon-logo.png" alt="CarryOn" className="h-12" />
@@ -53,7 +53,7 @@ const AboutPage = () => {
       </nav>
 
       {/* HERO */}
-      <section className="pt-32 pb-20 lg:pt-40 lg:pb-28 relative overflow-hidden">
+      <section className="pb-20 lg:pb-28 relative overflow-hidden" style={{ paddingTop: 'calc(8rem + env(safe-area-inset-top, 0px))' }}>
         <div className="absolute inset-0 z-0">
           <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ filter: 'brightness(1.3) contrast(1.05) saturate(1.1)' }} />
         </div>

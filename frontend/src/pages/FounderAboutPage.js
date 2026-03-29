@@ -70,7 +70,7 @@ const FounderAboutPage = () => {
   // Loading state (token verification)
   if (status === 'verifying') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: '#0d1b2a' }} data-testid="founder-page-loading">
+      <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: '#0d1b2a', paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} data-testid="founder-page-loading">
         <Loader2 className="w-10 h-10 text-[#d4af37] animate-spin mb-4" />
         <p className="text-[#9aa5b4] text-sm">Verifying your invitation...</p>
       </div>
@@ -80,21 +80,21 @@ const FounderAboutPage = () => {
   // Login form (no token — email + password access)
   if (status === 'login') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 relative" style={{ background: '#0d1b2a' }} data-testid="founder-page-login">
+      <div className="min-h-screen flex flex-col items-center justify-center px-5 relative" style={{ background: '#0d1b2a', paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} data-testid="founder-page-login">
         <div className="absolute inset-0 z-0">
           <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ filter: 'brightness(0.4) contrast(1.05) saturate(0.8)' }} />
         </div>
         <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(13,27,42,0.6) 0%, rgba(13,27,42,0.85) 100%)' }} />
 
         <div className="relative z-10 w-full max-w-sm">
-          <div className="rounded-2xl p-8" style={{ background: 'rgba(13,27,42,0.75)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(212,175,55,0.12)', boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}>
-            <div className="text-center mb-6">
-              <Lock className="w-8 h-8 text-[#d4af37] mx-auto mb-3" />
-              <h1 className="text-xl font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>About the Founder</h1>
-              <p className="text-[#9aa5b4] text-sm mt-1">Enter your credentials to view</p>
+          <div className="rounded-2xl p-6 sm:p-8" style={{ background: 'rgba(13,27,42,0.75)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(212,175,55,0.12)', boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}>
+            <div className="text-center mb-5 sm:mb-6">
+              <Lock className="w-7 h-7 sm:w-8 sm:h-8 text-[#d4af37] mx-auto mb-3" />
+              <h1 className="text-lg sm:text-xl font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>About the Founder</h1>
+              <p className="text-[#9aa5b4] text-xs sm:text-sm mt-1">Enter your credentials to view</p>
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-3 sm:space-y-4">
               <div>
                 <label className="text-[#9aa5b4] text-xs font-medium block mb-1.5">Email</label>
                 <input
@@ -103,7 +103,7 @@ const FounderAboutPage = () => {
                   onChange={e => setEmail(e.target.value)}
                   placeholder="your@email.com"
                   className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#4a5568]"
-                  style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)' }}
+                  style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)', fontSize: '16px' }}
                   data-testid="founder-login-email"
                   required
                 />
@@ -117,14 +117,14 @@ const FounderAboutPage = () => {
                     onChange={e => setPassword(e.target.value)}
                     placeholder="Enter password"
                     className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#4a5568] pr-10"
-                    style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)' }}
+                    style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)', fontSize: '16px' }}
                     data-testid="founder-login-password"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b7a90] hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b7a90] hover:text-white transition-colors p-1"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -138,7 +138,7 @@ const FounderAboutPage = () => {
               <button
                 type="submit"
                 disabled={loginLoading}
-                className="w-full py-2.5 rounded-lg font-semibold text-sm transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-lg font-semibold text-sm transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                 style={{ background: '#d4af37', color: '#0d1b2a' }}
                 data-testid="founder-login-submit"
               >
@@ -149,7 +149,7 @@ const FounderAboutPage = () => {
 
           <button
             onClick={() => navigate('/about')}
-            className="mt-4 text-[#6b7a90] text-xs hover:text-[#d4af37] transition-colors mx-auto block"
+            className="mt-4 text-[#6b7a90] text-xs hover:text-[#d4af37] transition-colors mx-auto block py-2"
           >
             &larr; Back to About CarryOn
           </button>
@@ -168,13 +168,13 @@ const FounderAboutPage = () => {
     };
 
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: '#0d1b2a' }} data-testid="founder-page-denied">
+      <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: '#0d1b2a', paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} data-testid="founder-page-denied">
         <div className="max-w-md text-center">
-          <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)' }}>
-            <ShieldX className="w-9 h-9 text-[#d4af37]" />
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-5 sm:mb-6" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)' }}>
+            <ShieldX className="w-7 h-7 sm:w-9 sm:h-9 text-[#d4af37]" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>Access Restricted</h1>
-          <p className="text-[#9aa5b4] text-base mb-8 leading-relaxed">{messages[reason] || messages.error}</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-white mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>Access Restricted</h1>
+          <p className="text-[#9aa5b4] text-sm sm:text-base mb-8 leading-relaxed">{messages[reason] || messages.error}</p>
           <button
             onClick={() => navigate('/about')}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm transition-all hover:brightness-110 active:scale-95"
