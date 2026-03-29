@@ -1,6 +1,7 @@
 """CarryOn™ Backend — Founder Page Invite Routes
 
-Single-use, revocable invite tokens for the private "About the Founder" page.
+Reusable, revocable invite tokens for the private "About the Founder" page.
+Each link works for unlimited visits until explicitly revoked by the admin.
 Managed by the admin (Founder) via the Admin portal.
 """
 
@@ -22,7 +23,7 @@ class CreateInviteRequest(BaseModel):
 
 @router.post("/founder/invites")
 async def create_invite(body: CreateInviteRequest, current_user: dict = Depends(get_current_user)):
-    """Generate a single-use invite token for the Founder page — admin only."""
+    """Generate a reusable invite token for the Founder page — admin only."""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
 
@@ -31,9 +32,8 @@ async def create_invite(body: CreateInviteRequest, current_user: dict = Depends(
         "token": token,
         "note": body.note.strip(),
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "used": False,
-        "used_at": None,
-        "used_by_ip": None,
+        "views": 0,
+        "last_viewed_at": None,
         "revoked": False,
     }
     await db.founder_invites.insert_one(invite)
@@ -67,38 +67,20 @@ async def revoke_invite(token: str, current_user: dict = Depends(get_current_use
 
 
 @router.get("/founder-about/verify/{token}")
-async def verify_invite(token: str):
-    """Public endpoint — verify if an invite token is valid."""
+async def verify_invite(token: str, request: Request):
+    """Public endpoint — verify if an invite token is valid. Tracks views."""
     invite = await db.founder_invites.find_one({"token": token}, {"_id": 0})
     if not invite:
         return {"valid": False, "reason": "not_found"}
     if invite.get("revoked"):
         return {"valid": False, "reason": "revoked"}
-    if invite.get("used"):
-        return {"valid": False, "reason": "already_used"}
-    return {"valid": True}
 
-
-@router.post("/founder-about/use/{token}")
-async def use_invite(token: str, request: Request):
-    """Public endpoint — mark an invite token as used (single-use)."""
-    invite = await db.founder_invites.find_one({"token": token}, {"_id": 0})
-    if not invite:
-        raise HTTPException(status_code=404, detail="Invite not found")
-    if invite.get("revoked"):
-        raise HTTPException(status_code=403, detail="This invite has been revoked")
-    if invite.get("used"):
-        raise HTTPException(status_code=403, detail="This invite has already been used")
-
-    client_ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown")
+    # Track view count (non-blocking analytics)
     await db.founder_invites.update_one(
         {"token": token},
         {
-            "$set": {
-                "used": True,
-                "used_at": datetime.now(timezone.utc).isoformat(),
-                "used_by_ip": client_ip.split(",")[0].strip(),
-            }
+            "$inc": {"views": 1},
+            "$set": {"last_viewed_at": datetime.now(timezone.utc).isoformat()},
         },
     )
-    return {"status": "used"}
+    return {"valid": True}

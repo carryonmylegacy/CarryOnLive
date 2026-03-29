@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Copy, Trash2, Loader2, Link2, CheckCircle, XCircle, Clock, Plus } from 'lucide-react';
+import { Copy, Trash2, Loader2, Link2, CheckCircle, XCircle, Plus } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
@@ -75,14 +75,9 @@ export const FounderInvitesTab = () => {
         <XCircle className="w-3 h-3" /> Revoked
       </span>
     );
-    if (invite.used) return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold" style={{ background: 'rgba(34,197,94,0.12)', color: '#4ade80' }}>
-        <CheckCircle className="w-3 h-3" /> Used
-      </span>
-    );
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold" style={{ background: 'rgba(212,175,55,0.12)', color: '#d4af37' }}>
-        <Clock className="w-3 h-3" /> Active
+        <CheckCircle className="w-3 h-3" /> Active
       </span>
     );
   };
@@ -94,8 +89,8 @@ export const FounderInvitesTab = () => {
     } catch { return '—'; }
   };
 
-  const activeCount = invites.filter(i => !i.revoked && !i.used).length;
-  const usedCount = invites.filter(i => i.used).length;
+  const activeCount = invites.filter(i => !i.revoked).length;
+  const totalViews = invites.reduce((sum, i) => sum + (i.views || 0), 0);
 
   if (loading) {
     return (
@@ -112,7 +107,7 @@ export const FounderInvitesTab = () => {
         {[
           { label: 'Total', value: invites.length, color: '#94a3b8' },
           { label: 'Active', value: activeCount, color: '#d4af37' },
-          { label: 'Used', value: usedCount, color: '#4ade80' },
+          { label: 'Views', value: totalViews, color: '#4ade80' },
         ].map(({ label, value, color }) => (
           <Card key={label} className="border-0" style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
             <CardContent className="p-3 text-center">
@@ -179,13 +174,13 @@ export const FounderInvitesTab = () => {
                     <p className="text-[#4a5568] text-[10px] font-mono truncate">{invite.token}</p>
                     <div className="flex gap-3 mt-1">
                       <span className="text-[#6b7a90] text-[10px]">Created {formatDate(invite.created_at)}</span>
-                      {invite.used_at && (
-                        <span className="text-[#6b7a90] text-[10px]">Used {formatDate(invite.used_at)}</span>
+                      {(invite.views || 0) > 0 && (
+                        <span className="text-[#6b7a90] text-[10px]">{invite.views} view{invite.views !== 1 ? 's' : ''}</span>
                       )}
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    {!invite.revoked && !invite.used && (
+                    {!invite.revoked && (
                       <button
                         onClick={() => copyLink(invite.token)}
                         className="p-2 rounded-lg transition-colors hover:bg-white/5"

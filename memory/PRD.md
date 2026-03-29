@@ -42,16 +42,17 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **New FounderAboutPage.js** component at `/founder-about/:token` route
 - Renders the original `CarryOn_Founder.html` (11MB with 7 base64 embedded images) via iframe — all embedded styles/backgrounds preserved exactly as provided
 - **Token verification flow**: verifying → valid (show iframe) → invalid (show Access Restricted with specific reason)
-- Access denied states: not_found, revoked, already_used, no_token, error — each with tailored messaging
+- Access denied states: not_found, revoked, no_token, error — each with tailored messaging
 - "Visit About CarryOn" fallback button on denied pages
 
 #### Founder Invite System (Backend)
-- **New collection**: `founder_invites` — token, note, created_at, used, used_at, used_by_ip, revoked
-- **POST /api/founder/invites** — admin-only, generates single-use UUID invite token
+- **New collection**: `founder_invites` — token, note, created_at, views, last_viewed_at, revoked
+- **Reusable links**: Each invite link works for unlimited visits until explicitly revoked
+- **View tracking**: Each visit increments a view counter with last-viewed timestamp
+- **POST /api/founder/invites** — admin-only, generates reusable UUID invite token
 - **GET /api/founder/invites** — admin-only, lists all invites sorted by newest
 - **DELETE /api/founder/invites/:token** — admin-only, revokes an invite
-- **GET /api/founder-about/verify/:token** — public, validates invite status
-- **POST /api/founder-about/use/:token** — public, marks invite as used (single-use, records IP)
+- **GET /api/founder-about/verify/:token** — public, validates invite status + tracks view
 
 #### Admin Panel Invites Tab
 - **New FounderInvitesTab** component added to Admin page at `/admin/founder-invites`

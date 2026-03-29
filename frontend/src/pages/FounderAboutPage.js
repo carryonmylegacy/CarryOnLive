@@ -9,7 +9,6 @@ const FounderAboutPage = () => {
   const [status, setStatus] = useState('verifying'); // verifying | valid | invalid
   const [reason, setReason] = useState('');
   const iframeRef = useRef(null);
-  const markedUsed = useRef(false);
 
   useEffect(() => {
     if (!token) {
@@ -24,11 +23,6 @@ const FounderAboutPage = () => {
         const data = await res.json();
         if (data.valid) {
           setStatus('valid');
-          // Mark as used (single-use) — fire and forget
-          if (!markedUsed.current) {
-            markedUsed.current = true;
-            fetch(`${API_URL}/founder-about/use/${token}`, { method: 'POST' }).catch(() => {});
-          }
         } else {
           setStatus('invalid');
           setReason(data.reason || 'unknown');
