@@ -8,7 +8,7 @@ Two access methods for the private "About the Founder" page:
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from config import db, logger
@@ -115,9 +115,7 @@ async def submit_access_request(body: SubmitAccessRequest):
         raise HTTPException(status_code=400, detail="Name and email are required")
 
     # Prevent duplicate pending requests from same email
-    existing = await db.founder_access_requests.find_one(
-        {"email": email, "status": "pending"}, {"_id": 0}
-    )
+    existing = await db.founder_access_requests.find_one({"email": email, "status": "pending"}, {"_id": 0})
     if existing:
         return {"status": "already_pending"}
 
@@ -173,9 +171,9 @@ async def list_access_requests(current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
 
-    requests = await db.founder_access_requests.find(
-        {}, {"_id": 0, "password_hash": 0}
-    ).sort("created_at", -1).to_list(500)
+    requests = (
+        await db.founder_access_requests.find({}, {"_id": 0, "password_hash": 0}).sort("created_at", -1).to_list(500)
+    )
     return requests
 
 
@@ -194,11 +192,13 @@ async def approve_request(request_id: str, body: ApproveRequestBody, current_use
 
     await db.founder_access_requests.update_one(
         {"request_id": request_id},
-        {"$set": {
-            "status": "approved",
-            "password_hash": hash_password(body.password),
-            "reviewed_at": datetime.now(timezone.utc).isoformat(),
-        }},
+        {
+            "$set": {
+                "status": "approved",
+                "password_hash": hash_password(body.password),
+                "reviewed_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
     )
     return {"status": "approved"}
 
@@ -211,10 +211,12 @@ async def deny_request(request_id: str, current_user: dict = Depends(get_current
 
     result = await db.founder_access_requests.update_one(
         {"request_id": request_id},
-        {"$set": {
-            "status": "denied",
-            "reviewed_at": datetime.now(timezone.utc).isoformat(),
-        }},
+        {
+            "$set": {
+                "status": "denied",
+                "reviewed_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Request not found")
@@ -229,10 +231,12 @@ async def revoke_request_access(request_id: str, current_user: dict = Depends(ge
 
     result = await db.founder_access_requests.update_one(
         {"request_id": request_id},
-        {"$set": {
-            "status": "revoked",
-            "reviewed_at": datetime.now(timezone.utc).isoformat(),
-        }},
+        {
+            "$set": {
+                "status": "revoked",
+                "reviewed_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Request not found")

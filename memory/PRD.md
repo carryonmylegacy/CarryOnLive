@@ -46,13 +46,37 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - "Visit About CarryOn" fallback button on denied pages
 
 #### Founder Invite System (Backend)
-- **New collection**: `founder_invites` — token, note, created_at, views, last_viewed_at, revoked
-- **Reusable links**: Each invite link works for unlimited visits until explicitly revoked
-- **View tracking**: Each visit increments a view counter with last-viewed timestamp
-- **POST /api/founder/invites** — admin-only, generates reusable UUID invite token
-- **GET /api/founder/invites** — admin-only, lists all invites sorted by newest
-- **DELETE /api/founder/invites/:token** — admin-only, revokes an invite
-- **GET /api/founder-about/verify/:token** — public, validates invite status + tracks view
+- **Two separate collections**: `founder_invites` (token links) and `founder_access_requests` (request-based access)
+- **Invite Links** — reusable, revocable tokens:
+  - POST /api/founder/invites, GET /api/founder/invites, DELETE /api/founder/invites/:token
+  - GET /api/founder-about/verify/:token — validates + tracks views
+- **Access Requests** — request → admin approval with password → email+password login:
+  - POST /api/founder/requests — public, submit request + email notification to admin
+  - GET /api/founder/requests — admin lists all requests
+  - POST /api/founder/requests/:id/approve — admin sets password
+  - POST /api/founder/requests/:id/deny — admin denies
+  - POST /api/founder/requests/:id/revoke — admin revokes approved access
+  - POST /api/founder-about/login — public, email+password verification (reusable until revoked)
+
+#### "Founder" Nav Button & Request Modal
+- **"Founder" button** added to homepage header nav (right of "About")
+- Opens a **frosted glass overlay** on the hero flag background
+- Request form: name, email, optional message
+- Duplicate pending request detection
+- Success/already-pending/error states with branded UI
+- "Already have access? Sign in here" link → /founder-about login form
+
+#### Founder Page Login (/founder-about)
+- Email + password login form (no OTP required)
+- Frosted glass card over darkened flag background
+- Password visibility toggle
+- Error messages for wrong password, no access, etc.
+
+#### Admin Panel Invites Tab (Updated)
+- **Two sections**: Invite Links + Access Requests
+- Access Requests show: pending (with approve/deny), approved (with revoke), denied, revoked
+- Admin sets password manually when approving
+- View count tracking for both invite links and approved requests
 
 #### Admin Panel Invites Tab
 - **New FounderInvitesTab** component added to Admin page at `/admin/founder-invites`
