@@ -761,6 +761,247 @@ else
 fi
 
 echo ""
+
+# ══════════════════════════════════════════════════════════════
+# SECTION E: MOBILE / PWA / iOS UX COMPLIANCE
+# Catches common rendering, safe-area, zoom, and touch issues
+# that break the experience on iPhones, iPads, and PWA mode.
+# ══════════════════════════════════════════════════════════════
+echo -e "${BOLD}SECTION E: Mobile / PWA / iOS UX Compliance${NC}"
+echo "------------------------------------------"
+MOBILE_ISSUES=0
+
+# ── E1. viewport-fit=cover in index.html ─────────────────────────────
+echo -n "51. [PWA]   viewport-fit=cover ..... "
+if grep -q "viewport-fit=cover" /app/frontend/public/index.html 2>/dev/null; then
+  echo -e "$PASS"
+else
+  echo -e "$FAIL (index.html missing viewport-fit=cover — safe-area-inset-* will not work)"
+  echo "    Fix: <meta name=\"viewport\" content=\"..., viewport-fit=cover\" />"
+  MOBILE_ISSUES=$((MOBILE_ISSUES + 1))
+fi
+
+# ── E2. Fixed top-0 navs must have safe-area-inset-top ───────────────
+echo -n "52. [PWA]   Fixed nav safe-area .... "
+FIXED_NAV_ISSUES=0
+FIXED_NAV_DETAILS=""
+cd /app/frontend/src
+for f in $(grep -rl "fixed top-0" --include="*.js" --include="*.jsx" 2>/dev/null); do
+  fname=$(echo "$f" | sed 's|.*/src/||')
+  # For each fixed top-0 element, check if safe-area-inset-top is nearby
+  while IFS= read -r line_num; do
+    # Check surrounding 3 lines for safe-area
+    CONTEXT=$(sed -n "$((line_num-1)),$((line_num+3))p" "$f" 2>/dev/null)
+    if ! echo "$CONTEXT" | grep -q "safe-area-inset-top"; then
+      FIXED_NAV_ISSUES=$((FIXED_NAV_ISSUES + 1))
+      FIXED_NAV_DETAILS="${FIXED_NAV_DETAILS}  ${fname}:${line_num}\n"
+    fi
+  done < <(grep -n "fixed top-0" "$f" 2>/dev/null | cut -d: -f1)
+done
+if [ "$FIXED_NAV_ISSUES" = "0" ]; then
+  echo -e "$PASS"
+else
+  echo -e "$FAIL ($FIXED_NAV_ISSUES fixed top-0 element(s) missing paddingTop: env(safe-area-inset-top))"
+  echo -e "$FIXED_NAV_DETAILS"
+  MOBILE_ISSUES=$((MOBILE_ISSUES + 1))
+fi
+
+# ── E3. Full-screen page containers need safe-area padding ───────────
+echo -n "53. [PWA]   Page safe-area insets .. "
+PAGE_SA_ISSUES=0
+PAGE_SA_DETAILS=""
+for f in /app/frontend/src/pages/*.js; do
+  [ ! -f "$f" ] && continue
+  fname=$(basename "$f")
+  # Skip pages that are always rendered inside an authenticated layout with its own safe-area
+  # Only check pages that render their own full-screen container
+  HAS_MINSCREEN=$(grep -c "min-h-screen" "$f" 2>/dev/null || true)
+  HAS_SAFE_AREA=$(grep -c "safe-area-inset" "$f" 2>/dev/null || true)
+  HAS_FIXED_NAV=$(grep -c "fixed top-0" "$f" 2>/dev/null || true)
+  if [ "$HAS_MINSCREEN" -gt 0 ] 2>/dev/null && [ "$HAS_FIXED_NAV" -gt 0 ] 2>/dev/null && [ "$HAS_SAFE_AREA" = "0" ]; then
+    PAGE_SA_ISSUES=$((PAGE_SA_ISSUES + 1))
+    PAGE_SA_DETAILS="${PAGE_SA_DETAILS}  ${fname} — has fixed nav + min-h-screen but no safe-area-inset\n"
+  fi
+done
+if [ "$PAGE_SA_ISSUES" = "0" ]; then
+  echo -e "$PASS"
+else
+  echo -e "$FAIL ($PAGE_SA_ISSUES page(s) with fixed nav missing safe-area padding)"
+  echo -e "$PAGE_SA_DETAILS"
+  MOBILE_ISSUES=$((MOBILE_ISSUES + 1))
+fi
+
+# ── E4. Input fields need fontSize >= 16px to prevent iOS zoom ───────
+echo -n "54. [iOS]   Input font-size zoom ... "
+INPUT_ZOOM_ISSUES=0
+INPUT_ZOOM_DETAILS=""
+cd /app/frontend/src
+# Find input/textarea elements that don't have fontSize: '16px' or text-base (16px)
+# Only check pages and components that have text input fields
+for f in $(grep -rl '<input\|<textarea' --include="*.js" --include="*.jsx" 2>/dev/null | grep -v node_modules | grep -v "components/ui/"); do
+  fname=$(echo "$f" | sed 's|.*/src/||')
+  # Count text-type inputs (not checkbox, radio, hidden, file)
+  TEXT_INPUTS=$(grep -cE '<input[^>]*(type="text"|type="email"|type="password"|type="search"|type="tel"|type="url"|placeholder=)' "$f" 2>/dev/null || true)
+  TEXTAREAS=$(grep -c '<textarea' "$f" 2>/dev/null || true)
+  TOTAL_INPUTS=$(( ${TEXT_INPUTS:-0} + ${TEXTAREAS:-0} ))
+  if [ "$TOTAL_INPUTS" = "0" ]; then continue; fi
+  # Check if fontSize 16 is applied (either inline style or className text-base)
+  FONT16_COUNT=$(grep -cE "fontSize.*16|fontSize.*'16px'|text-base" "$f" 2>/dev/null || true)
+  if [ "${FONT16_COUNT:-0}" -lt "$TOTAL_INPUTS" ]; then
+    # More nuanced: check each input individually
+    while IFS= read -r line_num; do
+      LINE=$(sed -n "${line_num}p" "$f" 2>/dev/null)
+      NEXT_LINE=$(sed -n "$((line_num+1))p" "$f" 2>/dev/null)
+      COMBINED="${LINE} ${NEXT_LINE}"
+      if ! echo "$COMBINED" | grep -qE "fontSize.*16|text-base"; then
+        # Check style prop on same or adjacent line
+        STYLE_CONTEXT=$(sed -n "$((line_num-2)),$((line_num+2))p" "$f" 2>/dev/null)
+        if ! echo "$STYLE_CONTEXT" | grep -qE "fontSize.*16"; then
+          INPUT_ZOOM_ISSUES=$((INPUT_ZOOM_ISSUES + 1))
+          INPUT_ZOOM_DETAILS="${INPUT_ZOOM_DETAILS}  ${fname}:${line_num}\n"
+        fi
+      fi
+    done < <(grep -nE '<input[^>]*(type="text"|type="email"|type="password"|type="search"|type="tel"|type="url"|placeholder=)|<textarea' "$f" 2>/dev/null | cut -d: -f1)
+  fi
+done
+if [ "$INPUT_ZOOM_ISSUES" = "0" ]; then
+  echo -e "$PASS (all text inputs use fontSize >= 16px)"
+else
+  echo -e "$WARN ($INPUT_ZOOM_ISSUES input(s) may cause iOS auto-zoom — add fontSize: '16px' or className text-base)"
+  echo -e "$INPUT_ZOOM_DETAILS" | head -10
+  MOBILE_ISSUES=$((MOBILE_ISSUES + 1))
+fi
+
+# ── E5. Modals need scroll safety for small screens ──────────────────
+echo -n "55. [PWA]   Modal scroll safety .... "
+MODAL_SCROLL_ISSUES=0
+MODAL_SCROLL_DETAILS=""
+cd /app/frontend/src
+# Find fixed modals/overlays and check for overflow handling
+for f in $(grep -rl "fixed inset-0" --include="*.js" --include="*.jsx" 2>/dev/null | grep -v node_modules | grep -v "components/ui/"); do
+  fname=$(echo "$f" | sed 's|.*/src/||')
+  # For each fixed inset-0 (modal backdrop), check if the modal content has overflow handling
+  MODAL_BACKDROPS=$(grep -c "fixed inset-0" "$f" 2>/dev/null || true)
+  OVERFLOW_SCROLLS=$(grep -cE "overflow-y-auto|overflow-auto|max-h-\[" "$f" 2>/dev/null || true)
+  if [ "${MODAL_BACKDROPS:-0}" -gt 0 ] && [ "${OVERFLOW_SCROLLS:-0}" = "0" ]; then
+    MODAL_SCROLL_ISSUES=$((MODAL_SCROLL_ISSUES + 1))
+    MODAL_SCROLL_DETAILS="${MODAL_SCROLL_DETAILS}  ${fname} — modal(s) without overflow-y-auto / max-h constraint\n"
+  fi
+done
+if [ "$MODAL_SCROLL_ISSUES" = "0" ]; then
+  echo -e "$PASS"
+else
+  echo -e "$WARN ($MODAL_SCROLL_ISSUES file(s) with modals that may overflow on small screens)"
+  echo -e "$MODAL_SCROLL_DETAILS" | head -5
+  MOBILE_ISSUES=$((MOBILE_ISSUES + 1))
+fi
+
+# ── E6. Touch targets minimum 44px ──────────────────────────────────
+echo -n "56. [iOS]   Touch target size ...... "
+TOUCH_ISSUES=0
+cd /app/frontend/src
+# Find dangerously small interactive elements: buttons/links with only p-1 or p-0.5 and no other padding
+TINY_BUTTONS=$(grep -rnE '<button[^>]*(className="[^"]*\bp-1\b|className="[^"]*\bp-0\.5)' --include="*.js" --include="*.jsx" 2>/dev/null | grep -v "node_modules\|components/ui/" | wc -l)
+TINY_ICON_BTNS=$(grep -rnE 'className="[^"]*\bp-1\b[^"]*"[^>]*>' --include="*.js" --include="*.jsx" 2>/dev/null | grep -v "node_modules\|components/ui/" | grep -c "onClick\|button" || echo "0")
+if [ "$TINY_BUTTONS" -le 3 ]; then
+  echo -e "$PASS"
+else
+  echo -e "$WARN ($TINY_BUTTONS small touch targets (p-1/p-0.5) — Apple HIG recommends 44px min)"
+  MOBILE_ISSUES=$((MOBILE_ISSUES + 1))
+fi
+
+# ── E7. Horizontal overflow prevention ───────────────────────────────
+echo -n "57. [PWA]   Horizontal overflow .... "
+cd /app/frontend/src
+# Check for common overflow-x culprits: fixed width > 100vw, w-screen without overflow-hidden
+OVERFLOW_X_ISSUES=0
+# Check if root/body has overflow-x prevention
+ROOT_OVERFLOW=$(grep -cl "overflow-x-hidden\|overflow-hidden\|overflow.*hidden" /app/frontend/src/index.css /app/frontend/src/App.css 2>/dev/null | wc -l)
+if [ "$ROOT_OVERFLOW" -gt 0 ]; then
+  echo -e "$PASS (overflow-x contained at root level)"
+else
+  # Check inline on App.js wrapper
+  APP_OVERFLOW=$(grep -c "overflow.*hidden\|overflow-x" /app/frontend/src/App.js 2>/dev/null || true)
+  if [ "${APP_OVERFLOW:-0}" -gt 0 ]; then
+    echo -e "$PASS (overflow-x contained in App.js)"
+  else
+    echo -e "$WARN (no global overflow-x:hidden — horizontal scroll may appear on mobile)"
+    MOBILE_ISSUES=$((MOBILE_ISSUES + 1))
+  fi
+fi
+
+# ── E8. Fixed bottom elements need safe-area-inset-bottom ────────────
+echo -n "58. [PWA]   Fixed bottom safe-area . "
+FIXED_BOT_ISSUES=0
+FIXED_BOT_DETAILS=""
+cd /app/frontend/src
+for f in $(grep -rl "fixed bottom-0" --include="*.js" --include="*.jsx" 2>/dev/null | grep -v node_modules | grep -v "components/ui/"); do
+  fname=$(echo "$f" | sed 's|.*/src/||')
+  while IFS= read -r line_num; do
+    CONTEXT=$(sed -n "$((line_num-1)),$((line_num+3))p" "$f" 2>/dev/null)
+    if ! echo "$CONTEXT" | grep -q "safe-area-inset-bottom\|safe-area-pb"; then
+      FIXED_BOT_ISSUES=$((FIXED_BOT_ISSUES + 1))
+      FIXED_BOT_DETAILS="${FIXED_BOT_DETAILS}  ${fname}:${line_num}\n"
+    fi
+  done < <(grep -n "fixed bottom-0" "$f" 2>/dev/null | cut -d: -f1)
+done
+if [ "$FIXED_BOT_ISSUES" = "0" ]; then
+  echo -e "$PASS"
+else
+  echo -e "$FAIL ($FIXED_BOT_ISSUES fixed bottom-0 element(s) missing safe-area-inset-bottom)"
+  echo -e "$FIXED_BOT_DETAILS" | head -5
+  MOBILE_ISSUES=$((MOBILE_ISSUES + 1))
+fi
+
+# ── E9. Responsive padding on page containers ────────────────────────
+echo -n "59. [PWA]   Responsive padding ..... "
+# Check pages for hardcoded large padding that doesn't scale
+PADDING_ISSUES=0
+cd /app/frontend/src/pages
+for f in *.js; do
+  [ ! -f "$f" ] && continue
+  # Detect px-10, px-12+ without responsive prefix (sm:/md:/lg:)
+  LARGE_FIXED_PAD=$(grep -cE '\bpx-[89]\b|\bpx-1[0-9]\b|\bpx-2[0-9]\b' "$f" 2>/dev/null || true)
+  if [ "${LARGE_FIXED_PAD:-0}" -gt 0 ]; then
+    RESPONSIVE_PAD=$(grep -cE 'sm:px-|md:px-|lg:px-' "$f" 2>/dev/null || true)
+    if [ "${RESPONSIVE_PAD:-0}" = "0" ] && [ "${LARGE_FIXED_PAD:-0}" -gt 2 ]; then
+      PADDING_ISSUES=$((PADDING_ISSUES + 1))
+    fi
+  fi
+done
+if [ "$PADDING_ISSUES" = "0" ]; then
+  echo -e "$PASS"
+else
+  echo -e "$WARN ($PADDING_ISSUES page(s) with large fixed padding — may crowd content on mobile)"
+  MOBILE_ISSUES=$((MOBILE_ISSUES + 1))
+fi
+
+# ── E10. PWA manifest & theme color ──────────────────────────────────
+echo -n "60. [PWA]   Manifest & theme ....... "
+PWA_OK=1
+PWA_DETAILS=""
+if [ ! -f "/app/frontend/public/manifest.json" ]; then
+  PWA_OK=0; PWA_DETAILS="manifest.json missing"
+else
+  # Check for required PWA fields
+  for field in "name" "short_name" "start_url" "display" "theme_color" "background_color"; do
+    if ! grep -q "\"$field\"" /app/frontend/public/manifest.json 2>/dev/null; then
+      PWA_OK=0; PWA_DETAILS="${PWA_DETAILS} missing ${field},"
+    fi
+  done
+fi
+# Check theme-color meta tag in index.html
+if ! grep -q 'name="theme-color"' /app/frontend/public/index.html 2>/dev/null; then
+  PWA_OK=0; PWA_DETAILS="${PWA_DETAILS} no theme-color meta tag"
+fi
+if [ "$PWA_OK" = "1" ]; then
+  echo -e "$PASS"
+else
+  echo -e "$FAIL (${PWA_DETAILS})"
+  MOBILE_ISSUES=$((MOBILE_ISSUES + 1))
+fi
+
+echo ""
 echo -e "${BOLD}SECTION D: Post-Check Verification${NC}"
 echo "------------------------------------------"
 
@@ -790,7 +1031,7 @@ echo ""
 # SUMMARY
 # ══════════════════════════════════════════════════════════════
 echo "=========================================="
-TOTAL_ISSUES=$((ISSUES + SOC2_ISSUES + IOS_ISSUES))
+TOTAL_ISSUES=$((ISSUES + SOC2_ISSUES + IOS_ISSUES + MOBILE_ISSUES))
 if [ "$TOTAL_ISSUES" = "0" ]; then
   echo -e "  ${GREEN}ALL CHECKS PASSED${NC} — codebase is clean"
   echo -e "  ${GREEN}READY TO PUSH${NC} — CodeMagic → TestFlight → App Store"
@@ -803,6 +1044,9 @@ else
   fi
   if [ "$IOS_ISSUES" -gt 0 ]; then
     echo -e "  ${RED}$IOS_ISSUES iOS / APP STORE ISSUE(S)${NC} — do NOT push until fixed"
+  fi
+  if [ "$MOBILE_ISSUES" -gt 0 ]; then
+    echo -e "  ${YELLOW}$MOBILE_ISSUES MOBILE / PWA UX ISSUE(S)${NC} — fix before deploy"
   fi
 fi
 if [ "$REPAIRS" -gt 0 ]; then
@@ -819,4 +1063,11 @@ echo "  CC7.2  System monitoring & audit"
 echo "  CC8.1  Change management"
 echo "  A1.2   System availability"
 echo "  PI1.1  Privacy (GDPR)"
+echo ""
+echo "Mobile / PWA / iOS UX Reference:"
+echo "  E1-E3  Safe-area insets (viewport, nav, pages)"
+echo "  E4     Input zoom prevention (fontSize >= 16px)"
+echo "  E5-E6  Modal scroll + touch target sizing"
+echo "  E7-E8  Overflow + bottom bar safe-area"
+echo "  E9-E10 Responsive padding + PWA manifest"
 echo ""
