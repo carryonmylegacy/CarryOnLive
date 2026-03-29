@@ -30,6 +30,37 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (March 29, 2026 — Session: Public About & Invite-Only Founder Pages)
+
+#### Public "About for Everyone" Page
+- **Improved backgrounds** on the existing AboutPage.js: warmer color palette (#0d1b2a), enhanced radial gradients with golden accents, better section layering
+- Updated section backgrounds across hero, mission/vision, values, who we are, and CTA sections
+- Updated nav bar border to match the warmer theme
+- "About" header nav link continues to point to `/about`
+
+#### Invite-Only "About the Founder" Page
+- **New FounderAboutPage.js** component at `/founder-about/:token` route
+- Renders the original `CarryOn_Founder.html` (11MB with 7 base64 embedded images) via iframe — all embedded styles/backgrounds preserved exactly as provided
+- **Token verification flow**: verifying → valid (show iframe) → invalid (show Access Restricted with specific reason)
+- Access denied states: not_found, revoked, already_used, no_token, error — each with tailored messaging
+- "Visit About CarryOn" fallback button on denied pages
+
+#### Founder Invite System (Backend)
+- **New collection**: `founder_invites` — token, note, created_at, used, used_at, used_by_ip, revoked
+- **POST /api/founder/invites** — admin-only, generates single-use UUID invite token
+- **GET /api/founder/invites** — admin-only, lists all invites sorted by newest
+- **DELETE /api/founder/invites/:token** — admin-only, revokes an invite
+- **GET /api/founder-about/verify/:token** — public, validates invite status
+- **POST /api/founder-about/use/:token** — public, marks invite as used (single-use, records IP)
+
+#### Admin Panel Invites Tab
+- **New FounderInvitesTab** component added to Admin page at `/admin/founder-invites`
+- Stats dashboard: Total / Active / Used invite counts
+- Generate Invite Link form with optional note (e.g., recipient name)
+- Invite list with status badges (Active/Used/Revoked), copy link, revoke actions
+- Tab added to TAB_CONFIG with Gift icon
+
+
 ### Completed (March 25, 2026 — Session 29: Sidebar Portal Label Redesign + PWA Cleanup)
 
 ### Completed (March 26, 2026 — Session 30: Security Settings Consolidation + Email Preview Fixes)
