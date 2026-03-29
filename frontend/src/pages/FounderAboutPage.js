@@ -94,16 +94,19 @@ const FounderAboutPage = () => {
               <p className="text-[#9aa5b4] text-xs sm:text-sm mt-1">Enter your credentials to view</p>
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-3 sm:space-y-4">
+            <form onSubmit={handleLogin} className="space-y-3 sm:space-y-4" autoComplete="off" data-form-type="other">
               <div>
                 <label className="text-[#9aa5b4] text-xs font-medium block mb-1.5">Email</label>
                 <input
-                  type="email"
+                  type="text"
+                  inputMode="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="your@email.com"
                   className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#4a5568]"
                   style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)', fontSize: '16px' }}
+                  autoComplete="one-time-code"
+                  name="founder_access_contact"
                   data-testid="founder-login-email"
                   required
                 />
@@ -118,6 +121,8 @@ const FounderAboutPage = () => {
                     placeholder="Enter password"
                     className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#4a5568] pr-10"
                     style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)', fontSize: '16px' }}
+                    autoComplete="new-password"
+                    name="founder_access_key"
                     data-testid="founder-login-password"
                     required
                   />

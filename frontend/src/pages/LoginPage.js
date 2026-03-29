@@ -1468,12 +1468,12 @@ const LoginPage = () => {
                     Interested in learning more about the founder of CarryOn&trade; and what inspired him to build it? Request access below, and you&apos;ll be notified when your request is approved.
                   </p>
                 </div>
-                <form onSubmit={handleFounderRequest} className="space-y-3" autoComplete="off">
-                  <input type="text" value={founderReqName} onChange={e => setFounderReqName(e.target.value)} placeholder="Your name" required autoComplete="off"
+                <form onSubmit={handleFounderRequest} className="space-y-3" autoComplete="off" data-form-type="other">
+                  <input type="text" value={founderReqName} onChange={e => setFounderReqName(e.target.value)} placeholder="Your name" required autoComplete="one-time-code" name="founder_visitor_name"
                     className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#4a5568]" style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)', fontSize: '16px' }} data-testid="founder-req-name" />
-                  <input type="email" value={founderReqEmail} onChange={e => setFounderReqEmail(e.target.value)} placeholder="Your email" required autoComplete="off"
+                  <input type="text" inputMode="email" value={founderReqEmail} onChange={e => setFounderReqEmail(e.target.value)} placeholder="Your email" required autoComplete="one-time-code" name="founder_visitor_contact"
                     className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#4a5568]" style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)', fontSize: '16px' }} data-testid="founder-req-email" />
-                  <textarea value={founderReqMsg} onChange={e => setFounderReqMsg(e.target.value)} placeholder="Why are you interested? (optional)" rows={3} autoComplete="off"
+                  <textarea value={founderReqMsg} onChange={e => setFounderReqMsg(e.target.value)} placeholder="Why are you interested? (optional)" rows={3} autoComplete="one-time-code" name="founder_visitor_note"
                     className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#4a5568] resize-none" style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)', fontSize: '16px' }} data-testid="founder-req-message" />
                   <button type="submit" disabled={founderReqLoading}
                     className="w-full py-3 rounded-lg font-semibold text-sm transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
