@@ -883,13 +883,18 @@ const LoginPage = () => {
 
       {/* ═══════════════════ VIDEO — See CarryOn in Action ═══════════════════ */}
       <section className="relative z-10 -mt-2">
-        <div className="rounded-t-[2.5rem] py-16 lg:py-24 relative overflow-hidden" style={{ background: '#0a1120', boxShadow: '0 -20px 60px rgba(0,0,0,0.5)' }}>
-          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(212,175,55,0.04) 0%, transparent 60%)' }} />
+        <div className="py-16 lg:py-24 relative overflow-hidden">
+          {/* Flag background continuation */}
+          <div className="absolute inset-0 z-0">
+            <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ filter: 'brightness(0.7) contrast(1.05) saturate(0.9)' }} />
+          </div>
+          <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.75) 0%, rgba(11,18,33,0.6) 40%, rgba(11,18,33,0.8) 100%)' }} />
+          <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
           <RevealSection className="max-w-[900px] mx-auto px-6 text-center relative z-10">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
               See CarryOn in Action
             </h2>
-            <p className="text-[#7b879e] text-sm lg:text-base mb-8">
+            <p className="text-white/60 text-sm lg:text-base mb-8">
               Learn how CarryOn&#8482; keeps your family ready for anything.
             </p>
             <div className="relative rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(212,175,55,0.05)' }}>
