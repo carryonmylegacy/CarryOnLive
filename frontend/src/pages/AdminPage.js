@@ -51,6 +51,7 @@ import { API_URL } from '../config';
 
 const TAB_CONFIG = [
   { key: 'users', label: 'Users', icon: Users, path: '/admin/users' },
+  { key: 'founder-invites', label: 'Invites', icon: Gift, path: '/admin/founder-invites' },
   { key: 'transition', label: 'TVT', icon: FileKey, path: '/admin/transition' },
   { key: 'dts', label: 'DTS', icon: Shield, path: '/admin/dts' },
   { key: 'support', label: 'Support', icon: Headphones, path: '/admin/support' },
@@ -73,7 +74,6 @@ const TAB_CONFIG = [
   { key: 'beta-testing', label: 'Beta Testing', icon: Zap, path: '/admin/beta-testing' },
   { key: 'p1-settings', label: 'P1 Contact', icon: AlertTriangle, path: '/admin/p1-settings' },
   { key: 'founder-emails', label: 'Emails', icon: Mail, path: '/admin/founder-emails' },
-  { key: 'founder-invites', label: 'Invites', icon: Gift, path: '/admin/founder-invites' },
   { key: 'ops-dashboard', label: 'Ops Dashboard', icon: Activity, path: '/admin/ops-dashboard' },
   { key: 'milestones', label: 'Milestones', icon: CheckSquare, path: '/admin/milestones' },
   // Operator sidebar features
@@ -149,6 +149,7 @@ const AdminPage = ({ operatorMode = false }) => {
   const [dashEvents, setDashEvents] = useState(null);
   const [teamTasks, setTeamTasks] = useState(null);
   const [revenue, setRevenue] = useState(null);
+  const [pendingAccessReqs, setPendingAccessReqs] = useState(0);
   const [loading, setLoading] = useState(true);
   const [, setOtpDisabled] = useState(false);
   const [cleaning, setCleaning] = useState(false);
@@ -197,16 +198,19 @@ const AdminPage = ({ operatorMode = false }) => {
           if (results[3]?.data) setOpsDash(results[3].data);
           if (results[4]?.data) setTeamTasks(results[4].data);
         } else {
-          const [usersRes, statsRes, settingsRes, revenueRes] = await Promise.all([
+          const [usersRes, statsRes, settingsRes, revenueRes, accessReqsRes] = await Promise.all([
             axios.get(`${API_URL}/admin/users`, getAuthHeaders()),
             axios.get(`${API_URL}/admin/stats`, getAuthHeaders()),
             axios.get(`${API_URL}/admin/platform-settings`, getAuthHeaders()).catch(() => ({ data: {} })),
             axios.get(`${API_URL}/admin/revenue-metrics`, getAuthHeaders()).catch(() => ({ data: null })),
+            axios.get(`${API_URL}/founder/requests`, getAuthHeaders()).catch(() => ({ data: [] })),
           ]);
           setUsers(usersRes.data);
           setStats(statsRes.data);
           setOtpDisabled(settingsRes.data?.otp_disabled || false);
           setRevenue(revenueRes.data);
+          const pending = Array.isArray(accessReqsRes.data) ? accessReqsRes.data.filter(r => r.status === 'pending').length : 0;
+          setPendingAccessReqs(pending);
         }
       } catch (err) { console.error(err); }
       finally { setLoading(false); }
@@ -319,6 +323,9 @@ const AdminPage = ({ operatorMode = false }) => {
               effectiveTab === t.key ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'
             }`} data-testid={`admin-tab-${t.key}`}>
             <t.icon className="w-3.5 h-3.5" /> {t.label}
+            {t.key === 'founder-invites' && pendingAccessReqs > 0 && (
+              <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none" style={{ background: '#ef4444', color: '#fff' }}>{pendingAccessReqs}</span>
+            )}
           </button>
         ))}
       </div>
