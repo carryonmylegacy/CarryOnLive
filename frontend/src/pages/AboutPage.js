@@ -45,10 +45,14 @@ const AboutPage = () => {
             <a href="/login#security" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">Security</a>
             <a href="/login#steps" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">How It Works</a>
             <span className="text-[#d4af37] text-sm font-medium">About</span>
+            <a href="/founder-about" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">Founder</a>
           </div>
-          <a href="/login" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
-            <ChevronLeft className="w-3.5 h-3.5" /> Sign In
-          </a>
+          <div className="flex items-center gap-3">
+            <a href="/founder-about" className="md:hidden text-[#6b7a90] text-xs font-medium hover:text-[#d4af37] transition-colors">Founder</a>
+            <a href="/login" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
+              <ChevronLeft className="w-3.5 h-3.5" /> Sign In
+            </a>
+          </div>
         </div>
       </nav>
 
