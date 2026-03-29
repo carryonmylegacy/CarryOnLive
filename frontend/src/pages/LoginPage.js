@@ -881,6 +881,33 @@ const LoginPage = () => {
         </div>
       </section>
 
+      {/* ═══════════════════ VIDEO — See CarryOn in Action ═══════════════════ */}
+      <section className="relative z-10 -mt-2">
+        <div className="rounded-t-[2.5rem] py-16 lg:py-24 relative overflow-hidden" style={{ background: '#0a1120', boxShadow: '0 -20px 60px rgba(0,0,0,0.5)' }}>
+          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(212,175,55,0.04) 0%, transparent 60%)' }} />
+          <RevealSection className="max-w-[900px] mx-auto px-6 text-center relative z-10">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              See CarryOn in Action
+            </h2>
+            <p className="text-[#7b879e] text-sm lg:text-base mb-8">
+              Learn how CarryOn&#8482; keeps your family ready for anything.
+            </p>
+            <div className="relative rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(212,175,55,0.05)' }}>
+              <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
+                <iframe
+                  src="https://www.youtube.com/embed/EhU-jojs1jk?rel=0&modestbranding=1&color=white"
+                  title="CarryOn — Estate Planning Made Simple"
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  data-testid="homepage-video"
+                />
+              </div>
+            </div>
+          </RevealSection>
+        </div>
+      </section>
+
       {/* ═══════════════════ ABOUT — family roots ═══════════════════ */}
       <section id="about" className="relative z-10 -mt-2">
         <div className="rounded-t-[2.5rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: '#0E1829', boxShadow: '0 -20px 60px rgba(0,0,0,0.5)' }}>
