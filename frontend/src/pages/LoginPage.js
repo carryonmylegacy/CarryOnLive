@@ -1451,6 +1451,9 @@ const LoginPage = () => {
         <div className="fixed inset-0 z-[60] flex items-center justify-center px-4" data-testid="founder-request-modal">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => { setShowFounderModal(false); setFounderReqStatus(''); }} />
           <div className="relative z-10 w-full max-w-md rounded-2xl p-8" style={{ background: 'rgba(13,27,42,0.8)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(212,175,55,0.12)', boxShadow: '0 32px 80px rgba(0,0,0,0.6)' }}>
+            <button onClick={() => { setShowFounderModal(false); setFounderReqStatus(''); }} className="absolute top-4 right-4 text-[#6b7a90] hover:text-white transition-colors" data-testid="founder-modal-close">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
             {!founderReqStatus ? (
               <>
                 <div className="text-center mb-6">
