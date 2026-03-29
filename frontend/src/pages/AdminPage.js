@@ -46,6 +46,7 @@ import { IntegrationsTab } from '../components/admin/IntegrationsTab';
 import { FunnelAnalyticsTab } from '../components/admin/FunnelAnalyticsTab';
 import { BetaTestingTab } from '../components/admin/BetaTestingTab';
 import { FounderEmailsTab } from '../components/admin/FounderEmailsTab';
+import { FounderInvitesTab } from '../components/admin/FounderInvitesTab';
 import { API_URL } from '../config';
 
 const TAB_CONFIG = [
@@ -72,6 +73,7 @@ const TAB_CONFIG = [
   { key: 'beta-testing', label: 'Beta Testing', icon: Zap, path: '/admin/beta-testing' },
   { key: 'p1-settings', label: 'P1 Contact', icon: AlertTriangle, path: '/admin/p1-settings' },
   { key: 'founder-emails', label: 'Emails', icon: Mail, path: '/admin/founder-emails' },
+  { key: 'founder-invites', label: 'Invites', icon: Gift, path: '/admin/founder-invites' },
   { key: 'ops-dashboard', label: 'Ops Dashboard', icon: Activity, path: '/admin/ops-dashboard' },
   { key: 'milestones', label: 'Milestones', icon: CheckSquare, path: '/admin/milestones' },
   // Operator sidebar features
@@ -110,6 +112,7 @@ const PATH_TO_TAB = {
   '/admin/funnel': 'funnel',
   '/admin/beta-testing': 'beta-testing',
   '/admin/founder-emails': 'founder-emails',
+  '/admin/founder-invites': 'founder-invites',
   '/admin/ops-dashboard': 'ops-dashboard',
   '/admin/milestones': 'milestones',
   '/admin/trials': 'trials',
@@ -345,6 +348,7 @@ const AdminPage = ({ operatorMode = false }) => {
       {effectiveTab === 'funnel' && !operatorMode && <FunnelAnalyticsTab getAuthHeaders={getAuthHeaders} />}
       {effectiveTab === 'beta-testing' && !operatorMode && <BetaTestingTab getAuthHeaders={getAuthHeaders} />}
       {effectiveTab === 'founder-emails' && !operatorMode && <FounderEmailsTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'founder-invites' && !operatorMode && <FounderInvitesTab />}
       {/* New Operator features */}
       {effectiveTab === 'my-activity' && operatorMode && <MyActivityTab getAuthHeaders={getAuthHeaders} />}
       {effectiveTab === 'search' && operatorMode && <QuickSearchTab getAuthHeaders={getAuthHeaders} />}

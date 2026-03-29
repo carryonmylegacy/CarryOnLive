@@ -52,6 +52,7 @@ from routes.photos import router as photos_router
 from routes.beta import router as beta_router
 from routes.ffn import router as ffn_router
 from routes.funnel import router as funnel_router
+from routes.founder_invites import router as founder_invites_router
 from schedulers import daily_dob_check_scheduler, data_retention_scheduler, weekly_digest_scheduler
 
 
@@ -204,6 +205,7 @@ api_router.include_router(photos_router)
 api_router.include_router(beta_router)
 api_router.include_router(ffn_router)
 api_router.include_router(funnel_router)
+api_router.include_router(founder_invites_router)
 
 
 BUILD_HASH = "2026-03-10T17:05:00Z-fix-welcome-redirect"
