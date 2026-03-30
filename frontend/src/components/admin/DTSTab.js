@@ -118,7 +118,7 @@ export const DTSTab = ({ getAuthHeaders }) => {
   const renderDeleteModal = () => {
     if (!deleteTarget) return null;
     return (
-      <div className="fixed inset-0 z-[999] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
+      <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 overflow-y-auto" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
         <div className="w-full max-w-sm rounded-2xl p-6 space-y-4 animate-fade-in"
           style={{
             background: 'linear-gradient(135deg, rgba(212,175,55,0.08) 0%, rgba(15,22,41,0.98) 40%)',

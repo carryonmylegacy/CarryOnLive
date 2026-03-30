@@ -438,7 +438,7 @@ const ChecklistPage = () => {
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder="Provide step-by-step details, policy numbers, reference codes, etc."
               rows={3}
-              className="w-full px-3 py-2.5 rounded-lg bg-[var(--b)] border border-[var(--b2)] text-[var(--t)] text-sm focus:outline-none focus:border-[var(--gold)] resize-none"
+              className="w-full px-3 py-2.5 rounded-lg bg-[var(--b)] border border-[var(--b2)] text-[var(--t)] text-base focus:outline-none focus:border-[var(--gold)] resize-none"
             />
           </div>
 
@@ -731,7 +731,7 @@ const ChecklistPage = () => {
               onChange={(e) => setFeedbackText(e.target.value)}
               placeholder="e.g., Already handled, not relevant, too vague..."
               rows={3}
-              className="w-full px-3 py-2.5 rounded-lg bg-[var(--b)] border border-[var(--b2)] text-[var(--t)] text-sm focus:outline-none focus:border-[var(--gold)] resize-none mb-4"
+              className="w-full px-3 py-2.5 rounded-lg bg-[var(--b)] border border-[var(--b2)] text-[var(--t)] text-base focus:outline-none focus:border-[var(--gold)] resize-none mb-4"
             />
             <div className="flex gap-2">
               <button onClick={submitRejection} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold" style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: 'white' }}>

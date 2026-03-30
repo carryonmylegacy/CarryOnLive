@@ -642,7 +642,7 @@ export default function EditMilestoneMessagePage() {
             )}
 
             {showRecordingOverlay && (
-              <div className="fixed inset-0 z-[200] flex flex-col bg-black" data-testid="edit-message-recording-overlay">
+              <div className="fixed inset-0 z-[200] flex flex-col bg-black overflow-y-auto" data-testid="edit-message-recording-overlay">
                 <div className="relative flex-1">
                   <video ref={videoRef} className="h-full w-full object-cover" muted playsInline style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }} />
                   {countdown !== null && (

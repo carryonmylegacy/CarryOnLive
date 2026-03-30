@@ -601,7 +601,7 @@ const SectionConfig = ({ section, settings: s, questions, headers, onUpdate }) =
 
       {/* Master Key Verification Modal */}
       {showMasterKeyModal && createPortal(
-        <div className="fixed inset-0 z-[99999] bg-black/60 flex items-center justify-center px-4" onClick={() => { setShowMasterKeyModal(false); setPendingToggle(null); }}>
+        <div className="fixed inset-0 z-[99999] bg-black/60 flex items-center justify-center px-4 overflow-y-auto" onClick={() => { setShowMasterKeyModal(false); setPendingToggle(null); }}>
           <div className="rounded-2xl p-6 max-w-sm w-full border border-[var(--b2)]" style={{ background: 'var(--bg)' }} onClick={e => e.stopPropagation()} data-testid="master-key-verify-modal">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-[var(--gold)]/10 flex items-center justify-center">

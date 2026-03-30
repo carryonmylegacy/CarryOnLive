@@ -67,7 +67,7 @@ export const AnnouncementsTab = ({ getAuthHeaders }) => {
         <Card className="glass-card">
           <CardContent className="p-4 space-y-3">
             <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })}
-              placeholder="Announcement title" className="w-full px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-sm" data-testid="announcement-title-input" />
+              placeholder="Announcement title" className="w-full px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-base" data-testid="announcement-title-input" />
             <textarea value={form.body} onChange={e => setForm({ ...form, body: e.target.value })}
               placeholder="Announcement body..." rows={3} className="w-full px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-sm resize-none" data-testid="announcement-body-input" />
             <div className="flex gap-3">

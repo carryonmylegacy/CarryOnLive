@@ -124,7 +124,7 @@ const MilestoneReportPage = () => {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Tell us about this milestone..."
-                className="input-field w-full rounded-lg p-3 min-h-[80px] bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-sm"
+                className="input-field w-full rounded-lg p-3 min-h-[80px] bg-[var(--s)] border border-[var(--b)] text-[var(--t)] text-base"
                 data-testid="milestone-desc"
               />
             </div>

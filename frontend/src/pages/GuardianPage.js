@@ -782,7 +782,7 @@ const GuardianPage = () => {
                 onChange={(e) => setLandingInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleLandingSubmit(e); } }}
                 placeholder="Ask anything about your estate plan..."
-                className="w-full bg-transparent text-sm text-[var(--t)] placeholder:text-[var(--t5)] outline-none resize-none px-1 py-2"
+                className="w-full bg-transparent text-base text-[var(--t)] placeholder:text-[var(--t5)] outline-none resize-none px-1 py-2"
                 rows={3}
                 style={{ overflow: 'auto', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.15) transparent' }}
                 data-testid="landing-input"
@@ -1082,7 +1082,7 @@ const GuardianPage = () => {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (input.trim() && !loading) { sendMessage(input); } } }}
               placeholder="Ask about your estate plan..."
-              className="w-full bg-transparent text-sm text-[var(--t)] placeholder:text-[var(--t5)] outline-none resize-none py-1.5"
+              className="w-full bg-transparent text-base text-[var(--t)] placeholder:text-[var(--t5)] outline-none resize-none py-1.5"
               rows={3}
               style={{ overflow: 'auto', scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.15) transparent' }}
               disabled={loading}

@@ -252,7 +252,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
             <Input placeholder="Title (e.g. TVT Reviewer, Support Lead)" value={form.title} onChange={f('title')}
               className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" />
             <textarea placeholder="Notes (internal reference only)" value={form.notes} onChange={f('notes')}
-              className="w-full h-20 px-3 py-2 rounded-lg text-sm bg-[var(--s)] border border-[var(--b)] text-[var(--t)] resize-none" />
+              className="w-full h-20 px-3 py-2 rounded-lg text-base bg-[var(--s)] border border-[var(--b)] text-[var(--t)] resize-none" />
             <Button className="w-full" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
               disabled={creating} onClick={handleCreate} data-testid="create-operator-submit">
               {creating ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
@@ -308,7 +308,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
             <Input placeholder="Title" value={editForm.title || ''} onChange={ef('title')}
               className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" data-testid="edit-title" />
             <textarea placeholder="Notes" value={editForm.notes || ''} onChange={ef('notes')}
-              className="w-full h-16 px-3 py-2 rounded-lg text-sm bg-[var(--s)] border border-[var(--b)] text-[var(--t)] resize-none" />
+              className="w-full h-16 px-3 py-2 rounded-lg text-base bg-[var(--s)] border border-[var(--b)] text-[var(--t)] resize-none" />
             <div className="flex gap-3 mt-2">
               <Button variant="outline" className="flex-1 border-[var(--b)] text-[var(--t)]"
                 onClick={() => setEditTarget(null)}>Cancel</Button>

@@ -24,7 +24,7 @@ export default function BetaWelcomeModal({ onAccepted }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center" data-testid="beta-welcome-modal">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto" data-testid="beta-welcome-modal">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 

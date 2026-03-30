@@ -30,6 +30,12 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (March 30, 2026 — Mobile/PWA UX Compliance Fixes)
+- **Fixed all Section E housekeeping checks** (10/10 PASS):
+  - Check 52: Added `safe-area-inset-top` to `toast.jsx`, `MobileNav.js`, `NetworkStatusBanner.js`
+  - Check 54: Fixed 14 inputs/textareas across 12 files from `text-sm` to `text-base` (16px) to prevent iOS auto-zoom
+  - Check 55: Added `overflow-y-auto` to 15 modal backdrop containers across the app for scroll safety on small screens
+
 ### Completed (March 30, 2026 — Sort Fix in Admin/Ops Users Tab)
 - **Fixed sort dropdown** in UsersTab (shared by Founder Portal and Ops Portal): hierarchy (tree) view and graph (visual tree) view now respect the user's sort selection (First Name, Last Name, Date Created, Birthday, Most/Least Beneficiaries). Previously these views always hardcoded age-based sorting regardless of dropdown selection.
 - **iOS zoom prevention**: Fixed sort `<select>` element font-size from 11px to 16px to prevent iOS auto-zoom on focus.

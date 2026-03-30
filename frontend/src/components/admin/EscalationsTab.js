@@ -82,9 +82,9 @@ export const EscalationsTab = ({ getAuthHeaders, isFounder = false }) => {
         <Card className="glass-card">
           <CardContent className="p-4 space-y-3">
             <input value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })}
-              placeholder="Subject" className="w-full px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-sm" data-testid="escalation-subject" />
+              placeholder="Subject" className="w-full px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-base" data-testid="escalation-subject" />
             <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
-              placeholder="Describe the issue that requires founder attention..." rows={3} className="w-full px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-sm resize-none" data-testid="escalation-description" />
+              placeholder="Describe the issue that requires founder attention..." rows={3} className="w-full px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-base resize-none" data-testid="escalation-description" />
             <div className="flex gap-3">
               <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}
                 className="px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-xs">

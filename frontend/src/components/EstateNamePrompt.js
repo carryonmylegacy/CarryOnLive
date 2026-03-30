@@ -39,7 +39,7 @@ export default function EstateNamePrompt({ estateId, currentName, onComplete }) 
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center" data-testid="estate-name-prompt">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto" data-testid="estate-name-prompt">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
       <div className="relative z-10 w-full max-w-md mx-4 rounded-2xl border border-[var(--b)] bg-[var(--card)] p-6 shadow-2xl">
         <h2 className="text-xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>

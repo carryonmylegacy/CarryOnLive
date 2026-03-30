@@ -44,9 +44,9 @@ const NetworkStatusBanner = () => {
     <div
       className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold transition-all"
       style={{
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)',
         background: online ? '#059669' : '#DC2626',
         color: '#fff',
-        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)',
         animation: 'slideDown 0.3s ease-out',
       }}
       data-testid="network-status-banner"

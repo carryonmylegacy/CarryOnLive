@@ -477,7 +477,7 @@ const MobileNav = () => {
   return (
     <>
       {/* Top Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 w-full mobile-header z-50">
+      <header className="lg:hidden fixed top-0 left-0 w-full mobile-header z-50" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="min-h-[3rem] flex items-center justify-between px-4 py-1">
           <div className="flex items-center gap-3 relative"
             onTouchStart={handleLogoTouchStart}

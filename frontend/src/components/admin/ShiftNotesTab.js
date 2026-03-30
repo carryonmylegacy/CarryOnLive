@@ -67,7 +67,7 @@ export const ShiftNotesTab = ({ getAuthHeaders }) => {
           <CardContent className="p-4 space-y-3">
             <textarea value={form.content} onChange={e => setForm({ ...form, content: e.target.value })}
               placeholder="Leave a note for the next operator on shift..." rows={3}
-              className="w-full px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-sm resize-none" data-testid="shift-note-content" />
+              className="w-full px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-base resize-none" data-testid="shift-note-content" />
             <div className="flex gap-3">
               <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}
                 className="px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-xs">

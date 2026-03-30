@@ -69,7 +69,7 @@ export const ReturnPopup = ({ step, beneficiaryNames, onReturn, onAlternate, onA
   const Icon = v.icon;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6"
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 overflow-y-auto"
       style={{ animation: 'returnPopupFadeIn 0.5s ease forwards' }}>
       <style>{`
         @keyframes returnPopupFadeIn {
@@ -119,7 +119,7 @@ export const ReturnPopup = ({ step, beneficiaryNames, onReturn, onAlternate, onA
  * All tiles fade in, then this overlay fades in on top.
  */
 export const ActivationCelebration = ({ onDismiss }) => (
-  <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 cursor-pointer"
+  <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 cursor-pointer overflow-y-auto"
     onClick={onDismiss}
     style={{ animation: 'fadeInSlow 1.5s ease forwards' }}>
     <style>{`

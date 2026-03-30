@@ -415,7 +415,7 @@ const DashboardPage = () => {
     };
 
     return (
-      <div className="fixed inset-0 z-[150] flex items-center justify-center" data-testid="guided-overlay"
+      <div className="fixed inset-0 z-[150] flex items-center justify-center overflow-y-auto" data-testid="guided-overlay"
         style={{ animation: 'guidedOverlayIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
         <style>{`
           @keyframes guidedOverlayIn {
@@ -802,7 +802,7 @@ const DashboardPage = () => {
         </div>
       </div>
       {showCelebration && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center" data-testid="celebration-overlay"
+        <div className="fixed inset-0 z-[150] flex items-center justify-center overflow-y-auto" data-testid="celebration-overlay"
           style={{ animation: 'guidedOverlayIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
           <style>{`
             @keyframes celebrationBounce {

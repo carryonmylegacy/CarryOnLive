@@ -155,7 +155,7 @@ export const FounderInvitesTab = () => {
           <CardContent className="p-4">
             <div className="flex gap-2">
               <input type="text" value={note} onChange={e => setNote(e.target.value)} placeholder="Optional note (e.g., recipient name)"
-                className="flex-1 px-3 py-2 rounded-lg text-sm text-white placeholder-[#4a5568]" style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)' }} data-testid="invite-note-input" />
+                className="flex-1 px-3 py-2 rounded-lg text-base text-white placeholder-[#4a5568]" style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)' }} data-testid="invite-note-input" />
               <button onClick={createInvite} disabled={creating}
                 className="px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5 transition-all hover:brightness-110 active:scale-95 disabled:opacity-50"
                 style={{ background: '#d4af37', color: '#0d1b2a' }} data-testid="create-invite-btn">

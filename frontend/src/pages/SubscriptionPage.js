@@ -63,7 +63,7 @@ const SubscriptionPage = () => {
     <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6 animate-fade-in max-w-4xl mx-auto" data-testid="subscription-page">
       {/* Payment confirmation overlay */}
       {confirmingPayment && (
-        <div className="fixed inset-0 z-50 bg-[#0a0e1a]/80 flex items-center justify-center flex-col gap-3">
+        <div className="fixed inset-0 z-50 bg-[#0a0e1a]/80 flex items-center justify-center flex-col gap-3 overflow-y-auto">
           <Loader2 className="w-8 h-8 text-[var(--gold)] animate-spin" />
           <p className="text-[var(--t4)] text-sm">Confirming your payment...</p>
         </div>

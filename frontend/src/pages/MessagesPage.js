@@ -79,7 +79,7 @@ const VideoPlaybackModal = ({ url, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80" onClick={onClose}>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 overflow-y-auto" onClick={onClose}>
       <div className="relative max-w-2xl w-full" onClick={handleTap} style={{ borderRadius: '16px', overflow: 'hidden' }}>
         <video ref={videoRef} src={url} autoPlay playsInline className="w-full rounded-2xl" style={{ maxHeight: '80vh', display: 'block' }} />
         {/* Auto-fading controls overlay */}
@@ -867,7 +867,7 @@ const MessagesPage = () => {
 
             {/* Fullscreen Video Recording Overlay */}
             {showRecordingOverlay && (
-              <div className="fixed inset-0 z-[200] bg-black flex flex-col" data-testid="video-recording-overlay">
+              <div className="fixed inset-0 z-[200] bg-black flex flex-col overflow-y-auto" data-testid="video-recording-overlay">
                 {/* Camera feed */}
                 <div className="flex-1 relative">
                   <video

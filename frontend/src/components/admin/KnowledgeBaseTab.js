@@ -99,7 +99,7 @@ export const KnowledgeBaseTab = ({ getAuthHeaders, isFounder = false }) => {
         <Card className="glass-card">
           <CardContent className="p-4 space-y-3">
             <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })}
-              placeholder="Article title" className="w-full px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-sm" data-testid="kb-title-input" />
+              placeholder="Article title" className="w-full px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-base" data-testid="kb-title-input" />
             <textarea value={form.content} onChange={e => setForm({ ...form, content: e.target.value })}
               placeholder="Write the SOP or procedure..." rows={8}
               className="w-full px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-sm resize-none font-mono" data-testid="kb-content-input" />

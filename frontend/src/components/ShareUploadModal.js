@@ -29,7 +29,7 @@ const ShareUploadModal = ({ pendingShare, categories, uploading, onUpload, onCan
   if (!pendingShare) return null;
 
   return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 overflow-y-auto">
       <div className="absolute inset-0 bg-black/70" onClick={onCancel} />
       <div className="relative rounded-2xl p-6 max-w-sm w-full" style={{ background: 'var(--bg2, #0F1629)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 25px 60px rgba(0,0,0,0.6)' }}>
         <button onClick={onCancel} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/50 active:scale-90">

@@ -138,7 +138,7 @@ const AmberAlert = ({ alert, onAcknowledge }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto"
       style={{ background: 'rgba(0, 0, 0, 0.92)' }}
       data-testid="amber-alert-overlay"
     >

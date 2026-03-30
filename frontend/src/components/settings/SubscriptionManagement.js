@@ -861,7 +861,7 @@ export const SubscriptionManagement = ({
 
       {/* Verification Upload Modal */}
       {showVerification && (
-        <div className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4" data-testid="verification-modal">
+        <div className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4 overflow-y-auto" data-testid="verification-modal">
           <div className="w-full max-w-md rounded-2xl p-6 space-y-5 glass-card" style={{
             border: '1px solid var(--b)',
             boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
