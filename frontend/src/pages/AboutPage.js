@@ -37,8 +37,8 @@ const AboutPage = () => {
       {/* NAV BAR */}
       <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(30,48,80,0.3)', background: 'rgba(13,27,42,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
-          <a href="/login" className="flex items-center">
-            <img src="/carryon-logo.png" alt="CarryOn" className="h-12" />
+          <a href="/login" className="flex items-center" data-testid="about-logo">
+            <img src="/carryon-logo.png" alt="CarryOn" className="h-12 cursor-pointer" />
           </a>
           <div className="hidden md:flex items-center gap-8">
             <a href="/login#features" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">Features</a>
