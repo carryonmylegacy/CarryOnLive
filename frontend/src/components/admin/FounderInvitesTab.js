@@ -183,10 +183,10 @@ export const FounderInvitesTab = () => {
                         )}
                         {invite.note && <span className="text-white text-xs font-medium truncate">{invite.note}</span>}
                       </div>
-                      <p className="text-[#4a5568] text-[10px] font-mono truncate">{invite.token}</p>
+                      <p className="text-[#4a5568] text-[11px] font-mono truncate">{invite.token}</p>
                       <div className="flex gap-3 mt-1">
-                        <span className="text-[#6b7a90] text-[10px]">Created {formatDate(invite.created_at)}</span>
-                        {(invite.views || 0) > 0 && <span className="text-[#6b7a90] text-[10px]">{invite.views} view{invite.views !== 1 ? 's' : ''}</span>}
+                        <span className="text-[#6b7a90] text-[11px]">Created {formatDate(invite.created_at)}</span>
+                        {(invite.views || 0) > 0 && <span className="text-[#6b7a90] text-[11px]">{invite.views} view{invite.views !== 1 ? 's' : ''}</span>}
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
@@ -215,7 +215,7 @@ export const FounderInvitesTab = () => {
           <UserCheck className="w-4 h-4 text-[#d4af37]" /> Access Requests
           <span className="text-[#6b7a90] text-xs font-normal ml-1">— visitors who requested access</span>
           {pendingRequests > 0 && (
-            <span className="ml-auto px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: 'rgba(234,179,8,0.15)', color: '#eab308' }}>
+            <span className="ml-auto px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: 'rgba(234,179,8,0.15)', color: '#eab308' }}>
               {pendingRequests} pending
             </span>
           )}
@@ -258,8 +258,8 @@ export const FounderInvitesTab = () => {
                       <p className="text-[#6b7a90] text-xs">{req.email}</p>
                       {req.message && <p className="text-[#9aa5b4] text-xs mt-1.5 italic">&ldquo;{req.message}&rdquo;</p>}
                       <div className="flex gap-3 mt-1.5">
-                        <span className="text-[#4a5568] text-[10px]">Requested {formatDate(req.created_at)}</span>
-                        {(req.views || 0) > 0 && <span className="text-[#4a5568] text-[10px]">{req.views} view{req.views !== 1 ? 's' : ''}</span>}
+                        <span className="text-[#4a5568] text-[11px]">Requested {formatDate(req.created_at)}</span>
+                        {(req.views || 0) > 0 && <span className="text-[#4a5568] text-[11px]">{req.views} view{req.views !== 1 ? 's' : ''}</span>}
                       </div>
                     </div>
                   </div>

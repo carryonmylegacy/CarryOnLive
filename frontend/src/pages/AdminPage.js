@@ -324,7 +324,7 @@ const AdminPage = ({ operatorMode = false }) => {
             }`} data-testid={`admin-tab-${t.key}`}>
             <t.icon className="w-3.5 h-3.5" /> {t.label}
             {t.key === 'founder-invites' && pendingAccessReqs > 0 && (
-              <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none" style={{ background: '#ef4444', color: '#fff' }}>{pendingAccessReqs}</span>
+              <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-[11px] font-bold leading-none" style={{ background: '#ef4444', color: '#fff' }}>{pendingAccessReqs}</span>
             )}
           </button>
         ))}

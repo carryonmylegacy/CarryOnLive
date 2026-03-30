@@ -32,6 +32,7 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ### Completed (March 30, 2026 — Mobile/PWA UX Compliance Fixes)
 - **Fixed all Section E housekeeping checks** (10/10 PASS):
+  - Check 50: Fixed 7 sub-11px font instances (`text-[9px]`→`text-[11px]`, `text-[10px]`→`text-[11px]`) in AdminPage.js and FounderInvitesTab.js
   - Check 52: Added `safe-area-inset-top` to `toast.jsx`, `MobileNav.js`, `NetworkStatusBanner.js`
   - Check 54: Fixed 14 inputs/textareas across 12 files from `text-sm` to `text-base` (16px) to prevent iOS auto-zoom
   - Check 55: Added `overflow-y-auto` to 15 modal backdrop containers across the app for scroll safety on small screens
