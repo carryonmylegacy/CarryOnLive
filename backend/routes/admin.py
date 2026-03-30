@@ -915,7 +915,6 @@ async def get_public_site_content():
     return {"homepage_video_id": settings.get("homepage_video_id", "EhU-jojs1jk")}
 
 
-
 @router.get("/admin/platform-settings")
 async def get_platform_settings(current_user: dict = Depends(get_current_user)):
     """Get platform-wide settings (admin only)."""
