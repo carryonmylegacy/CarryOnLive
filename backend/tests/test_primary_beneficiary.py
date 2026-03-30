@@ -15,7 +15,7 @@ import pytest
 import requests
 from pymongo import MongoClient
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://invite-only-7.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://founder-access-3.preview.emergentagent.com").rstrip("/")
 
 
 @pytest.fixture(scope="module")

@@ -326,6 +326,39 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     return age;
   };
 
+  // Sort estate entries based on sortBy preference (shared by hierarchy + graph views)
+  const sortEstateEntries = (entries) => {
+    return [...entries].sort((a, b) => {
+      if (sortBy === 'first_name') {
+        return (a.owner.first_name || a.owner.name?.split(' ')[0] || '').localeCompare(b.owner.first_name || b.owner.name?.split(' ')[0] || '');
+      }
+      if (sortBy === 'last_name') {
+        const aLast = a.owner.last_name || (a.owner.name?.split(' ').slice(1).join(' ')) || '';
+        const bLast = b.owner.last_name || (b.owner.name?.split(' ').slice(1).join(' ')) || '';
+        return aLast.localeCompare(bLast);
+      }
+      if (sortBy === 'date_created') {
+        return (a.owner.created_at || '').localeCompare(b.owner.created_at || '');
+      }
+      if (sortBy === 'birthday') {
+        const aDob = a.owner.date_of_birth || '';
+        const bDob = b.owner.date_of_birth || '';
+        if (!aDob && !bDob) return 0;
+        if (!aDob) return 1;
+        if (!bDob) return -1;
+        return aDob.localeCompare(bDob);
+      }
+      if (sortBy === 'most_beneficiaries') {
+        return (b.beneficiaries?.length || b.bens?.length || 0) - (a.beneficiaries?.length || a.bens?.length || 0);
+      }
+      if (sortBy === 'least_beneficiaries') {
+        return (a.beneficiaries?.length || a.bens?.length || 0) - (b.beneficiaries?.length || b.bens?.length || 0);
+      }
+      // Default: sort by age (youngest first)
+      return getAge(a.owner.date_of_birth) - getAge(b.owner.date_of_birth);
+    });
+  };
+
   // Beneficiary-centric view: shows each beneficiary as root with connected estates underneath
   const renderBeneficiaryCentricView = () => {
     // Build reverse map: beneficiary email → estates/benefactors they belong to
@@ -486,12 +519,8 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     });
     const orphans = beneficiaryUsers.filter(u => !shownBenIds.has(u.id));
 
-    // Sort estates by owner age (youngest first)
-    const sortedEstates = [...estateEntries].sort((a, b) => {
-      const ageA = getAge(a.owner.date_of_birth);
-      const ageB = getAge(b.owner.date_of_birth);
-      return ageA - ageB;
-    });
+    // Sort estates based on user's sort preference
+    const sortedEstates = sortEstateEntries(estateEntries);
 
     return (
       <div className="space-y-3">
@@ -603,7 +632,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
               Unlinked Beneficiaries ({orphans.length})
             </p>
             <div className="space-y-2">
-              {orphans.sort((a, b) => (a.name || '').localeCompare(b.name || '')).map(u => <UserRow key={u.id} u={u} />)}
+              {orphans.map(u => <UserRow key={u.id} u={u} />)}
             </div>
           </div>
         )}
@@ -634,7 +663,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
         estateEntries.push({ key: owner.id, owner, estateName: `${owner.name}'s Estate`, bens: owner.linked_beneficiaries || [] });
       }
     });
-    const estates = estateEntries.sort((a, b) => getAge(a.owner.date_of_birth) - getAge(b.owner.date_of_birth));
+    const estates = sortEstateEntries(estateEntries);
 
     const getInit = (n) => n?.name ? n.name.split(' ').map(x => x[0]).join('').toUpperCase().slice(0, 2) : '??';
     const benAge = (b) => { const a = getAge(b.date_of_birth || b.dob); return a < 999 ? a : null; };
@@ -937,7 +966,8 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="text-[11px] sm:text-xs font-bold bg-[var(--s)] border border-[var(--b)] text-[var(--t)] rounded-md px-1.5 py-1 outline-none cursor-pointer"
+              className="text-xs font-bold bg-[var(--s)] border border-[var(--b)] text-[var(--t)] rounded-md px-1.5 py-1 outline-none cursor-pointer"
+              style={{ fontSize: '16px' }}
               data-testid="admin-sort-by"
             >
               <option value="default">Default</option>

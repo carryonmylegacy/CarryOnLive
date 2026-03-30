@@ -30,6 +30,10 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (March 30, 2026 — Sort Fix in Admin/Ops Users Tab)
+- **Fixed sort dropdown** in UsersTab (shared by Founder Portal and Ops Portal): hierarchy (tree) view and graph (visual tree) view now respect the user's sort selection (First Name, Last Name, Date Created, Birthday, Most/Least Beneficiaries). Previously these views always hardcoded age-based sorting regardless of dropdown selection.
+- **iOS zoom prevention**: Fixed sort `<select>` element font-size from 11px to 16px to prevent iOS auto-zoom on focus.
+
 ### Completed (March 29, 2026 — Session: Public About & Invite-Only Founder Pages)
 
 #### Public "About for Everyone" Page
