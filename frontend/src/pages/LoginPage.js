@@ -137,6 +137,14 @@ const LoginPage = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  /* fetch homepage video ID */
+  const [homepageVideoId, setHomepageVideoId] = useState('EhU-jojs1jk');
+  useEffect(() => {
+    axios.get(`${API_URL}/public/site-content`).then(r => {
+      if (r.data?.homepage_video_id) setHomepageVideoId(r.data.homepage_video_id);
+    }).catch(() => {});
+  }, []);
+
   const completeLogin = async (result) => {
     // Biometric prompt only on native Capacitor app
     try {
@@ -904,7 +912,7 @@ const LoginPage = () => {
             <div className="relative rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(212,175,55,0.05)' }}>
               <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
                 <iframe
-                  src="https://www.youtube.com/embed/EhU-jojs1jk?rel=0&modestbranding=1&color=white"
+                  src={`https://www.youtube.com/embed/${homepageVideoId}?rel=0&modestbranding=1&color=white`}
                   title="CarryOn — Estate Planning Made Simple"
                   style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

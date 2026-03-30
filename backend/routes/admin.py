@@ -908,6 +908,14 @@ async def get_trial_users(current_user: dict = Depends(get_current_user)):
     return trial_users
 
 
+@router.get("/public/site-content")
+async def get_public_site_content():
+    """Public endpoint — returns non-sensitive site content settings (video ID, etc.)."""
+    settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0}) or {}
+    return {"homepage_video_id": settings.get("homepage_video_id", "EhU-jojs1jk")}
+
+
+
 @router.get("/admin/platform-settings")
 async def get_platform_settings(current_user: dict = Depends(get_current_user)):
     """Get platform-wide settings (admin only)."""
@@ -924,7 +932,7 @@ async def update_platform_settings(data: dict, current_user: dict = Depends(get_
     all users' otp_enabled is reset to True."""
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
-    allowed_keys = {"otp_disabled"}
+    allowed_keys = {"otp_disabled", "homepage_video_id"}
     update = {k: v for k, v in data.items() if k in allowed_keys}
     if update:
         # Check if we're turning 2FA ON (otp_disabled going from True to False)
