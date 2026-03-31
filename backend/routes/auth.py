@@ -1063,6 +1063,13 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     # Check if user owns any estates (for beneficiaries who created estates)
     owns_estate = await db.estates.find_one({"owner_id": current_user["id"]}, {"_id": 0, "id": 1})
 
+    # Fetch session timeout policy for staff users
+    session_timeout = None
+    if current_user.get("role") in ("admin", "operator"):
+        from routes.admin.session_policy import get_session_timeout_for_user
+
+        session_timeout = await get_session_timeout_for_user(user_doc)
+
     return {
         "id": current_user["id"],
         "email": current_user["email"],
@@ -1071,6 +1078,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "created_at": current_user["created_at"],
         "photo_url": resolve_photo_url(photo),
         "operator_role": current_user.get("operator_role", ""),
+        "admin_scope": user_doc.get("admin_scope", ""),
         "is_also_benefactor": user_doc.get("is_also_benefactor", False) or bool(owns_estate),
         "is_also_beneficiary": user_doc.get("is_also_beneficiary", False),
         "first_name": user_doc.get("first_name", ""),
@@ -1091,6 +1099,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "hide_benefactor_reminder": user_doc.get("hide_benefactor_reminder", False),
         "otp_enabled": user_doc.get("otp_enabled", True),
         "primary_estate_id": user_doc.get("primary_estate_id", ""),
+        "session_timeout_minutes": session_timeout,
     }
 
 

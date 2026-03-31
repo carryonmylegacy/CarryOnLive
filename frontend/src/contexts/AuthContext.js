@@ -158,9 +158,11 @@ export const AuthProvider = ({ children }) => {
 
   // Auto-logout when app is backgrounded for longer than user's timeout setting
   // Also handles 'midnight' mode — logs out at local midnight
+  // Server-mandated session timeout (from session policy) overrides user preference
   useEffect(() => {
     let bgTimer = null;
     let midnightTimer = null;
+    let inactivityTimer = null;
 
     const scheduleMidnightLogout = () => {
       const now = new Date();
@@ -177,6 +179,28 @@ export const AuthProvider = ({ children }) => {
     };
 
     const setting = localStorage.getItem('carryon_auto_logout_minutes') || '5';
+    const serverTimeout = user?.session_timeout_minutes;
+
+    // Server-mandated inactivity timeout for staff
+    if (serverTimeout && token) {
+      const resetInactivity = () => {
+        if (inactivityTimer) clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(() => {
+          localStorage.removeItem('carryon_token');
+          sessionStorage.removeItem('trial_banner_dismissed');
+          setToken(null);
+          setUser(null);
+          window.location.href = '/login';
+        }, serverTimeout * 60 * 1000);
+      };
+      resetInactivity();
+      const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+      events.forEach(e => document.addEventListener(e, resetInactivity));
+      return () => {
+        events.forEach(e => document.removeEventListener(e, resetInactivity));
+        if (inactivityTimer) clearTimeout(inactivityTimer);
+      };
+    }
 
     if (setting === 'midnight' && token) {
       scheduleMidnightLogout();

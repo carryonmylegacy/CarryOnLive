@@ -54,6 +54,9 @@ from routes.ffn import router as ffn_router
 from routes.feature_gates import router as feature_gates_router
 from routes.funnel import router as funnel_router
 from routes.founder_invites import router as founder_invites_router
+from routes.shift_scheduling import router as shift_scheduling_router
+from routes.team_chat import router as team_chat_router
+from routes.training_tracker import router as training_tracker_router
 from routes.ws_notifications import router as ws_router, sla_checker_loop
 from schedulers import (
     daily_dob_check_scheduler,
@@ -140,6 +143,17 @@ async def lifespan(app):
         await db.audit_trail.create_index("timestamp")
         await db.audit_trail.create_index("actor_id")
         await db.audit_trail.create_index("category")
+        # Team chat indexes
+        await db.team_messages.create_index([("channel_id", 1), ("created_at", -1)])
+        await db.team_messages.create_index("sender_id")
+        await db.team_channels.create_index("members")
+        await db.team_channel_reads.create_index([("channel_id", 1), ("user_id", 1)], unique=True)
+        # Shift scheduling indexes
+        await db.shift_schedules.create_index([("operator_id", 1), ("date", 1)])
+        await db.shift_schedules.create_index("date")
+        # Training tracker indexes
+        await db.training_completions.create_index([("user_id", 1), ("module_id", 1)], unique=True)
+        await db.training_modules.create_index("order")
         logger.info("Database indexes created/verified")
     except Exception as e:
         logger.warning(f"Index creation warning (may already exist): {e}")
@@ -221,6 +235,9 @@ api_router.include_router(beta_router)
 api_router.include_router(ffn_router)
 api_router.include_router(funnel_router)
 api_router.include_router(founder_invites_router)
+api_router.include_router(shift_scheduling_router)
+api_router.include_router(team_chat_router)
+api_router.include_router(training_tracker_router)
 api_router.include_router(ws_router)
 
 

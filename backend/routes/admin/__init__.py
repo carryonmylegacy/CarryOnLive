@@ -16,6 +16,7 @@ from .maintenance import router as maintenance_router
 from .platform import router as platform_router
 from .scoped_roles import router as scoped_roles_router
 from .security_scan import router as security_scan_router
+from .session_policy import router as session_policy_router
 from .task_management import router as task_management_router
 from .users import router as users_router
 
@@ -33,4 +34,5 @@ router.include_router(ip_whitelist_router)
 router.include_router(bulk_ops_router)
 router.include_router(canned_responses_router)
 router.include_router(maintenance_router)
+router.include_router(session_policy_router)
 router.include_router(task_management_router)
