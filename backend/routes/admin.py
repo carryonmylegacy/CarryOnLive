@@ -1764,10 +1764,10 @@ async def get_grace_periods(
 
     # Enrich with user/estate info
     for p in periods:
-        user = await db.users.find_one({"id": p["user_id"]}, {"_id": 0, "name": 1, "email": 1})
+        user = await db.users.find_one({"id": p["user_id"]}, {"_id": 0, "id": 1, "name": 1, "email": 1})
         p["user_name"] = (user or {}).get("name", "Unknown")
         p["user_email"] = (user or {}).get("email", "")
-        estate = await db.estates.find_one({"id": p["estate_id"]}, {"_id": 0, "name": 1})
+        estate = await db.estates.find_one({"id": p["estate_id"]}, {"_id": 0, "id": 1, "name": 1})
         p["estate_name"] = (estate or {}).get("name", "Unknown Estate")
 
     return periods
@@ -1845,7 +1845,7 @@ async def execute_mm_purge_endpoint(
     # Verify password
     from utils import verify_password
 
-    user_record = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "password_hash": 1})
+    user_record = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "id": 1, "password_hash": 1})
     if not user_record or not verify_password(password, user_record["password_hash"]):
         raise HTTPException(status_code=403, detail="Password verification failed")
 
