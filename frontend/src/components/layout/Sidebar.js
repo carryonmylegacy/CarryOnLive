@@ -150,6 +150,12 @@ const Sidebar = () => {
     { scope: 'platform_health', label: 'Platform Health', desc: 'System, Operators, Integrations', color: '#F59E0B' },
   ];
 
+  // Check portal visibility from dev config (default: visible)
+  const pv = devConfig?.portal_visibility || {};
+  const isPortalOn = (key) => pv[key] !== false;
+
+  const visibleScopePreviews = SCOPE_PREVIEWS.filter(sp => isPortalOn(sp.scope));
+
   const handleScopePreview = (scope) => {
     setUser(prev => ({ ...prev, admin_scope: scope }));
     setDevOpen(false);
@@ -466,7 +472,7 @@ const Sidebar = () => {
                 </div>
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                {devAccounts.filter(a => !a.isOperator).map(acc => {
+                {devAccounts.filter(a => !a.isOperator && (a.role === 'admin' || a.role === 'ops_view' ? isPortalOn(a.role === 'ops_view' ? 'operations' : 'founder') : isPortalOn(a.role))).map(acc => {
                   const devActiveRole = localStorage.getItem('dev_switcher_active_role');
                   const isActive = acc.role === 'admin'
                     ? user?.role === 'admin' && (!devActiveRole || devActiveRole === 'admin')
@@ -505,7 +511,7 @@ const Sidebar = () => {
                 })}
               </div>
               {/* Scope Preview — admin only, shown right after main portals */}
-              {user?.role === 'admin' && (
+              {user?.role === 'admin' && visibleScopePreviews.length > 0 && (
                 <div style={{ marginTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10 }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 6, paddingLeft: 2 }}>
                     Admin Scope Preview
@@ -525,7 +531,7 @@ const Sidebar = () => {
                         <div style={{ fontSize: 11, fontWeight: 700, color: '#d4af37' }}>Restore Founder View</div>
                       </div>
                     )}
-                    {SCOPE_PREVIEWS.map(sp => {
+                    {visibleScopePreviews.map(sp => {
                       const isActive = user?.admin_scope === sp.scope;
                       return (
                         <div key={sp.scope}

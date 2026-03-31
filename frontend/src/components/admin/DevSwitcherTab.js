@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Settings, AlertTriangle, Loader2, Eye, UserCog } from 'lucide-react';
+import { Settings, AlertTriangle, Loader2, Eye, UserCog, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -20,6 +20,18 @@ const PORTAL_SCOPES = [
   { value: 'operator_worker', label: 'Ops Worker', desc: 'Work queues only', color: '#64748B' },
 ];
 
+// Portals that can appear in the logo portal switcher
+const SWITCHABLE_PORTALS = [
+  { key: 'benefactor', label: 'Benefactor Portal', desc: 'View as a benefactor user', color: '#2563eb' },
+  { key: 'beneficiary', label: 'Beneficiary Portal', desc: 'View as a beneficiary user', color: '#8b5cf6' },
+  { key: 'founder', label: 'Founder Portal', desc: 'Full admin access (always on)', color: '#d4af37', locked: true },
+  { key: 'operations', label: 'Operations Portal', desc: 'View as operator', color: '#3B82F6' },
+  { key: 'finance', label: 'Finance Admin', desc: 'Scoped to revenue & subscriptions', color: '#22C993' },
+  { key: 'compliance', label: 'Compliance Admin', desc: 'Scoped to audit & estate health', color: '#3B82F6' },
+  { key: 'marketing', label: 'Marketing Admin', desc: 'Scoped to funnel & content', color: '#B794F6' },
+  { key: 'platform_health', label: 'Platform Health', desc: 'Scoped to system & operators', color: '#F59E0B' },
+];
+
 export const DevSwitcherTab = ({ users, getAuthHeaders }) => {
   const { user, setUser } = useAuth();
   const [config, setConfig] = useState({
@@ -29,8 +41,10 @@ export const DevSwitcherTab = ({ users, getAuthHeaders }) => {
     beneficiary_password: '',
     enabled: true
   });
+  const [portalVisibility, setPortalVisibility] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingVisibility, setSavingVisibility] = useState(false);
   const [currentScope, setCurrentScope] = useState(user?.admin_scope || 'founder');
 
   useEffect(() => {
@@ -46,6 +60,7 @@ export const DevSwitcherTab = ({ users, getAuthHeaders }) => {
         beneficiary_email: res.data.beneficiary_email || '',
         enabled: res.data.enabled
       }));
+      setPortalVisibility(res.data.portal_visibility || {});
     } catch (err) {
       console.error('Failed to fetch config:', err);
     } finally {
@@ -89,6 +104,26 @@ export const DevSwitcherTab = ({ users, getAuthHeaders }) => {
     if (window.location.pathname.startsWith('/ops')) {
       window.location.href = '/admin';
     }
+  };
+
+  const handleVisibilityToggle = async (portalKey) => {
+    const updated = { ...portalVisibility, [portalKey]: !isPortalVisible(portalKey) };
+    setPortalVisibility(updated);
+    setSavingVisibility(true);
+    try {
+      await axios.put(`${API_URL}/admin/dev-switcher/portal-visibility`, { portal_visibility: updated }, getAuthHeaders());
+      toast.success(`${SWITCHABLE_PORTALS.find(p => p.key === portalKey)?.label || portalKey} ${updated[portalKey] ? 'shown' : 'hidden'} in switcher`);
+    } catch {
+      toast.error('Failed to update visibility');
+      setPortalVisibility(prev => ({ ...prev, [portalKey]: !updated[portalKey] }));
+    } finally {
+      setSavingVisibility(false);
+    }
+  };
+
+  const isPortalVisible = (key) => {
+    if (key === 'founder') return true; // Founder always visible
+    return portalVisibility[key] !== false; // Default to visible
   };
 
   const benefactors = users.filter(u => u.role === 'benefactor' || u.is_also_benefactor);
@@ -146,6 +181,51 @@ export const DevSwitcherTab = ({ users, getAuthHeaders }) => {
                 </div>
                 <p className="text-[var(--t5)] text-[11px]">{s.desc}</p>
               </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Portal Switcher Visibility ── */}
+      <Card className="glass-card" style={{ border: '2px solid rgba(59,130,246,0.2)' }}>
+        <CardContent className="p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <UserCog className="w-5 h-5 text-[#3B82F6]" />
+            <h3 className="font-bold text-[var(--t)]">Portal Switcher Visibility</h3>
+          </div>
+          <p className="text-xs text-[var(--t5)]">
+            Toggle which portals appear when you click the logo. Founder Portal is always visible.
+          </p>
+          <div className="space-y-2">
+            {SWITCHABLE_PORTALS.map(portal => (
+              <div
+                key={portal.key}
+                className="flex items-center justify-between p-3 rounded-lg"
+                style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+                data-testid={`visibility-${portal.key}`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-8 rounded-full" style={{ background: portal.color }} />
+                  <div>
+                    <span className="text-sm font-bold text-[var(--t)]">{portal.label}</span>
+                    <p className="text-[11px] text-[var(--t5)]">{portal.desc}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => !portal.locked && handleVisibilityToggle(portal.key)}
+                  disabled={portal.locked || savingVisibility}
+                  className="flex items-center"
+                  data-testid={`visibility-toggle-${portal.key}`}
+                >
+                  {portal.locked ? (
+                    <ToggleRight className="w-8 h-8 text-[#d4af37] opacity-50" />
+                  ) : isPortalVisible(portal.key) ? (
+                    <ToggleRight className="w-8 h-8 text-[#22C993]" />
+                  ) : (
+                    <ToggleLeft className="w-8 h-8 text-[var(--t5)]" />
+                  )}
+                </button>
+              </div>
             ))}
           </div>
         </CardContent>

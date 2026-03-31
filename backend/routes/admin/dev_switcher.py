@@ -15,6 +15,11 @@ class DevSwitcherConfig(BaseModel):
     beneficiary_email: str = ""
     beneficiary_password: str = ""
     enabled: bool = True
+    portal_visibility: dict = {}
+
+
+class PortalVisibilityUpdate(BaseModel):
+    portal_visibility: dict
 
 
 @router.get("/admin/dev-switcher")
@@ -39,6 +44,7 @@ async def get_dev_switcher_config(current_user: dict = Depends(require_admin)):
         "beneficiary_email": config.get("beneficiary_email", ""),
         "beneficiary_configured": bool(config.get("beneficiary_password")),
         "enabled": config.get("enabled", True),
+        "portal_visibility": config.get("portal_visibility", {}),
     }
 
 
@@ -77,6 +83,8 @@ async def update_dev_switcher_config(data: DevSwitcherConfig, current_user: dict
         "beneficiary_email": data.beneficiary_email,
         "enabled": data.enabled,
     }
+    if data.portal_visibility:
+        update_fields["portal_visibility"] = data.portal_visibility
     # Only update passwords if provided (don't clear with empty string)
     if data.benefactor_password:
         update_fields["benefactor_password"] = data.benefactor_password
@@ -92,6 +100,17 @@ async def update_dev_switcher_config(data: DevSwitcherConfig, current_user: dict
     return {"message": "Dev switcher config updated"}
 
 
+@router.put("/admin/dev-switcher/portal-visibility")
+async def update_portal_visibility(data: PortalVisibilityUpdate, current_user: dict = Depends(require_admin)):
+    """Update which portals are visible in the logo portal switcher — admin only."""
+    await db.dev_config.update_one(
+        {"id": "dev_switcher"},
+        {"$set": {"portal_visibility": data.portal_visibility}},
+        upsert=True,
+    )
+    return {"message": "Portal visibility updated", "portal_visibility": data.portal_visibility}
+
+
 @router.get("/dev-switcher/config")
 async def get_public_dev_switcher_config():
     """Get dev switcher config for frontend — only returns enabled status and emails (never passwords)"""
@@ -101,6 +120,7 @@ async def get_public_dev_switcher_config():
 
     return {
         "enabled": config.get("enabled", True),
+        "portal_visibility": config.get("portal_visibility", {}),
         "benefactor": {
             "email": config.get("benefactor_email", ""),
         }
