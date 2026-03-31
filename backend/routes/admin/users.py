@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 import bcrypt
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from config import db
 from guards import require_admin, require_staff
@@ -262,3 +262,29 @@ async def get_activity_log(current_user: dict = Depends(require_admin)):
     # Sort all activities by timestamp descending
     activities.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
     return activities[:50]
+
+
+@router.put("/admin/user/{user_id}/tier")
+async def set_user_tier(user_id: str, request: Request, current_user: dict = Depends(require_admin)):
+    """Set the verified_tier on a user (Founder only).
+
+    This controls which feature-gate tier applies to the user
+    when they have no active Stripe subscription.
+    """
+    body = await request.json()
+    tier = body.get("tier")
+
+    valid_tiers = ["premium", "standard", "base", "new_adult", "military", "hospice", "veteran", "enterprise", ""]
+    if tier is not None and tier not in valid_tiers:
+        raise HTTPException(status_code=400, detail=f"Invalid tier: {tier}")
+
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if tier == "" or tier is None:
+        await db.users.update_one({"id": user_id}, {"$unset": {"verified_tier": ""}})
+    else:
+        await db.users.update_one({"id": user_id}, {"$set": {"verified_tier": tier}})
+
+    return {"success": True, "verified_tier": tier if tier else None}

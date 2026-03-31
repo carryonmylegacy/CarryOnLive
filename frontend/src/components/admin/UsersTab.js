@@ -34,6 +34,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
   const [deleting, setDeleting] = useState(false);
   const [togglingBeta, setTogglingBeta] = useState(null);
   const [togglingExempt, setTogglingExempt] = useState(null);
+  const [settingTier, setSettingTier] = useState(null);
   const [sortBy, setSortBy] = useState('default');
 
   const handleToggleBeta = async (userId, currentBeta) => {
@@ -58,6 +59,18 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
       toast.error(err.response?.data?.detail || 'Failed to toggle session exemption');
     }
     setTogglingExempt(null);
+  };
+
+  const handleSetTier = async (userId, tier) => {
+    setSettingTier(userId);
+    try {
+      await axios.put(`${API_URL}/admin/user/${userId}/tier`, { tier }, { ...getAuthHeaders(), headers: { ...getAuthHeaders().headers, 'Content-Type': 'application/json' } });
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, verified_tier: tier || undefined } : u));
+      toast.success(tier ? `Tier set to ${tier}` : 'Tier removed');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to set tier');
+    }
+    setSettingTier(null);
   };
 
   const filteredUsers = users
@@ -176,6 +189,37 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                   </span>
                   <span className="text-[11px] text-[var(--t5)] capitalize">{u.subscription.billing_cycle || 'monthly'}</span>
                   {u.subscription.beta_plan && <span className="text-[11px] text-purple-400">(beta)</span>}
+                </div>
+              )}
+              {/* Tier selector — Founder only, for users without active subscriptions */}
+              {!operatorMode && (u.role === 'benefactor' || u.role === 'beneficiary') && (
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <select
+                    value={u.verified_tier || ''}
+                    onChange={(e) => handleSetTier(u.id, e.target.value)}
+                    disabled={settingTier === u.id}
+                    className="text-[11px] px-1.5 py-0.5 rounded font-semibold capitalize cursor-pointer"
+                    style={{
+                      background: u.verified_tier ? 'rgba(212,175,55,0.1)' : 'rgba(100,116,139,0.1)',
+                      color: u.verified_tier ? '#d4af37' : 'var(--t5)',
+                      border: '1px solid rgba(212,175,55,0.15)',
+                      outline: 'none',
+                      fontSize: '11px',
+                      minWidth: 80,
+                    }}
+                    data-testid={`tier-select-${u.id}`}
+                    title="Feature gate tier — determines which features this user sees"
+                  >
+                    <option value="">No Tier</option>
+                    <option value="premium">Premium</option>
+                    <option value="standard">Standard</option>
+                    <option value="base">Base</option>
+                    <option value="new_adult">New Adult</option>
+                    <option value="military">Military</option>
+                    <option value="hospice">Hospice</option>
+                    <option value="veteran">Veteran</option>
+                    <option value="enterprise">Enterprise</option>
+                  </select>
                 </div>
               )}
             </div>
