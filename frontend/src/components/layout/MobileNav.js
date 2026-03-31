@@ -40,7 +40,7 @@ import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import NotificationBell from '../NotificationBell';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
-import { filterNavByFeatures, isFeatureEnabled } from '../../utils/featureGates';
+import { filterNavByFeatures } from '../../utils/featureGates';
 
 const BASE_URL = process.env.REACT_APP_BACKEND_URL;
 

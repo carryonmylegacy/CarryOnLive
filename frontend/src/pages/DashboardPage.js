@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { cachedGet } from '../utils/apiCache';
-import { isFeatureKeyEnabled } from '../utils/featureGates';
+import { isFeatureKeyEnabled, isFeatureEnabled } from '../utils/featureGates';
 import { 
   FolderLock, 
   MessageSquare, 
@@ -149,6 +149,8 @@ const DashboardPage = () => {
   // Poll for EGA IAC generation task status (real-time updates)
   useEffect(() => {
     if (!estate?.id) return;
+    // Skip polling when EGA is gated for this user's tier
+    if (!isFeatureKeyEnabled('ega', enabledFeatures)) return;
     let active = true;
     const poll = async () => {
       try {
@@ -172,7 +174,7 @@ const DashboardPage = () => {
     poll();
     const interval = setInterval(poll, 4000);
     return () => { active = false; clearInterval(interval); };
-  }, [estate?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [estate?.id, enabledFeatures]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const completedTasks = checklists.filter(c => c.is_completed).length;
   const totalTasks = checklists.length || 5;
@@ -317,6 +319,11 @@ const DashboardPage = () => {
       designate_primary: '/beneficiaries',
       add_credential: '/digital-wallet',
     };
+
+    // Skip guided step if the feature is gated for the user's tier
+    const stepRoute = STEP_ROUTES[guidedStep.key];
+    if (stepRoute && !isFeatureEnabled(stepRoute, enabledFeatures)) return null;
+
     const STEP_ICONS = {
       add_beneficiary: Users,
       create_message: MessageSquare,
@@ -601,18 +608,24 @@ const DashboardPage = () => {
         <SpeedometerGauge score={readinessScore} />
         
         <div className="flex justify-center gap-3 lg:gap-8 mt-16 lg:mt-28">
+          {isFeatureKeyEnabled('mm', enabledFeatures) && (
           <div className="flex items-center gap-1.5 lg:gap-2">
             <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#8b5cf6]" />
             <span className="text-[var(--t3)] text-xs lg:text-base font-semibold">{msgsPercent}% Messages</span>
           </div>
+          )}
+          {isFeatureKeyEnabled('iac', enabledFeatures) && (
           <div className="flex items-center gap-1.5 lg:gap-2">
             <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#f97316]" />
             <span className="text-[var(--t3)] text-xs lg:text-base font-semibold">{checklistPercent}% Checklist</span>
           </div>
+          )}
+          {isFeatureKeyEnabled('sdv', enabledFeatures) && (
           <div className="flex items-center gap-1.5 lg:gap-2">
             <span className="w-3 h-1.5 lg:w-4 lg:h-2 rounded-full bg-[#2563eb]" />
             <span className="text-[var(--t3)] text-xs lg:text-base font-semibold">{docsPercent}% Docs</span>
           </div>
+          )}
         </div>
       </div>
 

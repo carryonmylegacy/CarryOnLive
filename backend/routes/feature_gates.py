@@ -155,31 +155,14 @@ async def publish_feature_gates(request: Request, current_user: dict = Depends(r
 async def get_user_enabled_features(current_user: dict = Depends(get_current_user)):
     """Return list of feature keys enabled for the current user's tier.
 
-    During beta mode, trial, or free access → all features enabled.
-    Otherwise, checks the user's active subscription plan against feature gates.
-    For beneficiaries post-transition: uses the benefactor's tier (not their own).
+    Feature gates are a VISIBILITY decision, not a payment decision.
+    Beta mode / free access / trial control whether users need to pay.
+    Feature gates control what users can see.  These are orthogonal.
+    Therefore: beta_mode, free_access, trial do NOT bypass feature gates.
     """
-    user_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
 
     # Admin / operator → everything
     if current_user.get("role") in ("admin", "operator"):
-        return {"enabled_features": FEATURE_KEYS, "all_enabled": True}
-
-    # Check beta mode
-    settings = await db.subscription_settings.find_one({"_id": "global"}, {"_id": 0})
-    if (settings or {}).get("beta_mode"):
-        return {"enabled_features": FEATURE_KEYS, "all_enabled": True}
-
-    # Check free access / beta tester
-    override = await db.subscription_overrides.find_one({"user_id": current_user["id"]}, {"_id": 0})
-    if (override and override.get("free_access")) or (user_doc or {}).get("is_beta_tester"):
-        return {"enabled_features": FEATURE_KEYS, "all_enabled": True}
-
-    # Check trial
-    from routes.subscriptions.plans import calculate_trial_status
-
-    trial = calculate_trial_status(user_doc) if user_doc else {}
-    if trial.get("trial_active"):
         return {"enabled_features": FEATURE_KEYS, "all_enabled": True}
 
     # Determine the user's effective tier
@@ -195,7 +178,7 @@ async def get_user_enabled_features(current_user: dict = Depends(get_current_use
         if benefactor_tier:
             effective_tier = benefactor_tier
 
-    # No tier → all features (paywall handles access control)
+    # No tier determined → all features (paywall handles access control)
     if not effective_tier:
         return {"enabled_features": FEATURE_KEYS, "all_enabled": True}
 

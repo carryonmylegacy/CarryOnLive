@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Progress } from '../components/ui/progress';
 import { API_URL } from '../config';
+import { isFeatureEnabled } from '../utils/featureGates';
 
 const STEP_CONFIG = {
   add_beneficiary: { icon: Users, color: '#3b82f6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)', route: '/beneficiaries', label: 'Add a Beneficiary', desc: 'Add the people who matter most to your estate' },
@@ -20,7 +21,7 @@ const STEP_CONFIG = {
 };
 
 const OnboardingWizard = ({ onAllComplete }) => {
-  const { user, getAuthHeaders } = useAuth();
+  const { user, getAuthHeaders, enabledFeatures } = useAuth();
   const navigate = useNavigate();
   const [progress, setProgress] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -109,7 +110,10 @@ const OnboardingWizard = ({ onAllComplete }) => {
   if (manuallyDismissed && !showAll) return null;
 
   // Determine which steps to show
-  const allSteps = progress.steps || [];
+  const allSteps = (progress.steps || []).filter(s => {
+    const config = STEP_CONFIG[s.key];
+    return !config || isFeatureEnabled(config.route, enabledFeatures);
+  });
   const incompleteSteps = allSteps.filter(s => !s.completed || popping[s.key]);
   const allComplete = incompleteSteps.length === 0 && allSteps.length > 0;
 
