@@ -5,7 +5,7 @@ import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
 import axios from 'axios';
 
-export const FounderInvitesTab = () => {
+export const FounderInvitesTab = ({ onPendingChange }) => {
   const [invites, setInvites] = useState([]);
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -71,7 +71,11 @@ export const FounderInvitesTab = () => {
     setApproving(prev => ({ ...prev, [requestId]: true }));
     try {
       await axios.post(`${API_URL}/founder/requests/${requestId}/approve`, { password: pw }, getAuth());
-      setRequests(prev => prev.map(r => r.request_id === requestId ? { ...r, status: 'approved' } : r));
+      setRequests(prev => {
+        const updated = prev.map(r => r.request_id === requestId ? { ...r, status: 'approved' } : r);
+        onPendingChange?.(updated.filter(r => r.status === 'pending').length);
+        return updated;
+      });
       setApprovePasswords(prev => { const n = { ...prev }; delete n[requestId]; return n; });
       toast.success('Access approved — share the password with the requester');
     } catch { toast.error('Failed to approve'); }
@@ -81,7 +85,11 @@ export const FounderInvitesTab = () => {
   const denyRequest = async (requestId) => {
     try {
       await axios.post(`${API_URL}/founder/requests/${requestId}/deny`, {}, getAuth());
-      setRequests(prev => prev.map(r => r.request_id === requestId ? { ...r, status: 'denied' } : r));
+      setRequests(prev => {
+        const updated = prev.map(r => r.request_id === requestId ? { ...r, status: 'denied' } : r);
+        onPendingChange?.(updated.filter(r => r.status === 'pending').length);
+        return updated;
+      });
       toast.success('Request denied');
     } catch { toast.error('Failed to deny'); }
   };
@@ -89,7 +97,11 @@ export const FounderInvitesTab = () => {
   const revokeAccess = async (requestId) => {
     try {
       await axios.post(`${API_URL}/founder/requests/${requestId}/revoke`, {}, getAuth());
-      setRequests(prev => prev.map(r => r.request_id === requestId ? { ...r, status: 'revoked' } : r));
+      setRequests(prev => {
+        const updated = prev.map(r => r.request_id === requestId ? { ...r, status: 'revoked' } : r);
+        onPendingChange?.(updated.filter(r => r.status === 'pending').length);
+        return updated;
+      });
       toast.success('Access revoked');
     } catch { toast.error('Failed to revoke'); }
   };

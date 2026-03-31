@@ -165,9 +165,18 @@ async def get_user_enabled_features(current_user: dict = Depends(get_current_use
     if current_user.get("role") in ("admin", "operator"):
         return {"enabled_features": FEATURE_KEYS, "all_enabled": True}
 
-    # Determine the user's effective tier
+    # Determine the user's effective tier (subscription > verified_tier)
     effective_tier = None
     sub = await db.user_subscriptions.find_one({"user_id": current_user["id"]}, {"_id": 0})
+
+    if sub and sub.get("status") in ("active", "past_due"):
+        effective_tier = sub.get("plan_id")
+
+    # Fallback: check verified_tier on user document
+    if not effective_tier:
+        user_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "id": 1, "verified_tier": 1})
+        if user_doc and user_doc.get("verified_tier"):
+            effective_tier = user_doc["verified_tier"]
 
     if sub and sub.get("status") in ("active", "past_due"):
         effective_tier = sub.get("plan_id")

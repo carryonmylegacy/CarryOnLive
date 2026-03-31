@@ -361,7 +361,7 @@ const AdminPage = ({ operatorMode = false }) => {
       {effectiveTab === 'funnel' && !operatorMode && <FunnelAnalyticsTab getAuthHeaders={getAuthHeaders} />}
       {effectiveTab === 'beta-testing' && !operatorMode && <BetaTestingTab getAuthHeaders={getAuthHeaders} />}
       {effectiveTab === 'founder-emails' && !operatorMode && <FounderEmailsTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'founder-invites' && !operatorMode && <FounderInvitesTab />}
+      {effectiveTab === 'founder-invites' && !operatorMode && <FounderInvitesTab onPendingChange={setPendingAccessReqs} />}
       {effectiveTab === 'site-content' && !operatorMode && <SiteContentTab getAuthHeaders={getAuthHeaders} />}
       {effectiveTab === 'grace-periods' && <GracePeriodsTab getAuthHeaders={getAuthHeaders} />}
       {/* New Operator features */}
