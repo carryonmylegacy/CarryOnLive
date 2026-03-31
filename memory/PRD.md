@@ -29,8 +29,30 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **family_plans**: fpo_user_id, members[], $1/mo benefactor discount, $3.49 flat beneficiary rate
 - **digest_preferences**: user_id, frequency, content toggles, additional recipients
 - **platform_settings**: _id="global", otp_disabled (master switch)
+- **subscription_settings**: _id="global", feature_gates (per-feature per-tier boolean map), feature_gates_published_at, feature_gates_published_by
 
 ## What's Been Implemented
+
+### Completed (March 31, 2026 — Feature Gating System)
+
+**Per-Tier Feature Gating for Subscription Management**
+- Admin-controlled visibility gating per subscription tier (Founder Admin Portal → Subs tab)
+- 9 platform features gateable: Beneficiaries, MM, IAC, SDV, EGA, FFN, DAV, DTS, Timeline
+- Dashboard always visible (exempt from gating)
+- Core features (MM, SDV, IAC) marked with CORE badge, default to ON
+- All features start as explicitly toggled ON (not hard-coded)
+- Save & Publish workflow — changes don't take effect until published with confirmation
+- Global toggle per feature — turn a feature ON/OFF across ALL tiers at once
+- Unpublished changes banner with Discard button
+- Backend API enforcement via `GET /api/subscriptions/enabled-features`
+- Data preservation — toggling off only hides, never deletes user data
+- Beneficiary post-transition access governed by benefactor's tier
+- Beta mode / trial / free access bypass — all features enabled
+- Route-level protection — gated routes redirect to dashboard
+- Navigation filtering in Sidebar.js, MobileNav.js (bottom nav + hamburger menu)
+- Dashboard stat cards + preview sections conditionally hidden
+- New files: `routes/feature_gates.py`, `FeatureGatesCard.js`, `featureGates.js`
+- Test coverage: 9/9 backend, full frontend validation
 
 ### Completed (March 31, 2026 — Codebase Refactoring for Efficiency)
 
