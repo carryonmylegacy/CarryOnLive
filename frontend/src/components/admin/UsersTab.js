@@ -205,7 +205,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                 <div className="flex flex-col gap-1 mt-1">
                   {(u.estate_groups || []).map(g => (
                     <div key={g.estate_id} className="flex items-center gap-1.5">
-                      <span className="text-[11px] text-[var(--t5)] truncate" style={{ maxWidth: 120 }}>
+                      <span className="text-[11px] text-[var(--t5)]" style={{ whiteSpace: 'nowrap' }}>
                         {g.estate_name}:
                       </span>
                       <select
