@@ -1,20 +1,24 @@
 <analysis>**original_problem_statement**: 
-The user requested the ability to toggle platform features on and off for specific subscription tiers from the Founder Admin Portal (Subs tab). If a feature is toggled off, it must completely disappear from the UX (menus, dashboards, onboarding flows) for users on that tier. Core functions (Milestone Messages, Safe Deposit Vault, Important Accounts & Contacts) should default to ON.
-PRODUCT REQUIREMENTS: 
-1. Create a Founder-only UI matrix to toggle 9 features across 8 tiers. 
-2. Apply these visibility gates globally across the frontend and backend without relying on active Stripe subscriptions for beta/demo users (tier must be assignable internally). 
-3. Support multi-estate benefactors (one email, multiple accounts) by making tier assignments **estate-specific**.
+The user requested a massive structural overhaul of the platform's administrative controls.
+PRODUCT REQUIREMENTS:
+1. **Multi-Admin Scoped Access**: Create distinct admin roles (Finance, Marketing, Compliance, Platform Health) while ensuring the Founder Admin retains absolute (God) control over everything.
+2. **IP Whitelisting**: Implement per-account, Founder-controlled IP restrictions for admin logins.
+3. **Escalation Management**: Allow Managers to resolve issues within their scope, but grant Founder Admin complete visibility and veto/undo power over all escalations.
+4. **Dynamic Paywall Feature Gates**: Ensure that when the Founder toggles features on/off in the Subs tab, the subscription wall (for both benefactors and beneficiaries) instantly updates its feature list to reflect those changes. 
+5. **Admin Portal Reorganization**: Group the myriad of Founder controls into logical domain sections (Operations, Finance, Marketing, Compliance, Platform).
+6. **Real-time Queue Alerts**: Implement WebSocket push notifications for managers when support tickets or tasks breach SLA deadlines.
+7. **Dev Switcher Enhancements**: Ensure the Founder Admin can switch into and preview every type of portal (Benefactor, Beneficiary, etc.).
 
 **User's preferred language**: English (INSTRUCT next agent to respond in English only)
 
 **what currently exists?** 
-A production-ready React/FastAPI/MongoDB estate planning app. In this session, a comprehensive Feature Gating system was successfully implemented. Feature visibility is now dictated by the active Estate's  (or Stripe ). The UI dynamically hides gated features from navbars, stat cards, onboarding wizards, and guided flows. Additionally, an iOS WKWebView rendering bug on the Admin delete modal was patched. The codebase maintains a perfect 60/60 on housekeeping checks and 100% clean ruff linting.
+A production-ready React/FastAPI/MongoDB estate planning application. It features a highly structured, SOC 2-compliant backend with robust auth, billing, and notification services. The Admin portal has just undergone a major restructuring into 6 distinct organizational tabs (Operations, Finance, Marketing, Compliance, Platform, and Dev Switcher), enforcing scoped access based on . Real-time WebSocket architecture is established. The codebase strictly adheres to an internal 60/60 housekeeping validation suite and is 100% ruff-compliant.
 
 **Last working item**: 
-    - Last item agent was working: Fixing an iOS TestFlight (WKWebView / Safari) rendering bug where deleting a user from the Admin portal caused the screen to go blank. The issue was traced to  blocking the DOM repaint when the React state updated behind the modal. The agent fixed it by closing the modal first, adding a 50ms timeout, and then updating the user list state.
-    - Status: USER VERIFICATION PENDING
-    - Agent Testing Done: Y (Logic/code path verified)
-    - Which testing method agent to use? NA (Testing is already done; awaiting user manual test on TestFlight)
+    - Last item agent was working: Adding Real-Time WebSocket Notifications () with a background SLA checker for support queues, and configuring the Dev Switcher to utilize  to simulate viewing the portal from any user's perspective.
+    - Status: COMPLETED
+    - Agent Testing Done: Y
+    - Which testing method agent to use? testing_agent_v3_fork (Report:  showed 100% pass rate)
     - User Testing Done: N
 
 **All Pending/In progress Issue list**: 
@@ -52,70 +56,70 @@ A production-ready React/FastAPI/MongoDB estate planning app. In this session, a
     - 🟢 (P2) Scalability Enhancements.
 
 **Completed work in this session**
-- Built Feature Gating System: Backend () and Admin UI ().
-- Fixed UX Leaks: Wrapped Readiness Score breakdown, OnboardingWizard steps, Guided Flow overlay, and EGA polling logic with feature gate checks so nothing leaks if a feature is off.
-- Refactored Tier Architecture: Shifted  assignment from the User document to the **Estate** document to support users who manage multiple estates under a single login.
-- Added UI to  allowing Founder to manually set tiers for demo/beta accounts per estate without triggering Stripe.
-- Fixed an Admin notification bug where the Invites tab badge didn't update dynamically upon approving/denying requests.
-- Fixed an iOS TestFlight blank screen bug when deleting users from the Admin portal.
+- Multi-Admin Scoped Access (DONE)
+- IP Whitelisting for Admin Logins (DONE)
+- Escalation Resolution and Founder Veto (DONE)
+- Dynamic Feature Gates on Paywalls (DONE)
+- Admin Portal Reorganization (Operations, Finance, Marketing, Compliance, Platform) (DONE)
+- Real-Time WebSocket SLA Alerts (DONE)
+- Dev Switcher Cross-Portal Preview (DONE)
 
 **Earlier issues found/mentioned but not fixed**
 - None.
 
 **Known issue recurrence from previous fork**
   - Issue recurrence in previous fork: Apple IAP block / Twilio block.
-  - Recurrence count: 10
+  - Recurrence count: 11
   - Status: BLOCKED
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Estate-Level Feature Gating**: Feature visibility is driven by . It checks the active , retrieves the estate's  (or falls back to the user's active Stripe ), and compares it against a global gating matrix stored in the database.
-- **Render Repainting (iOS/WKWebView)**: State updates that remove elements beneath a blurred backdrop modal can cause blank screens on iOS. Modals must be closed (unmounting the blur) *before* the underlying list state is updated via a short timeout.
+- **Admin Scope Authority:** The JWT payload and  model now include . Access to certain backend endpoints and frontend admin tabs are gated conditionally based on this scope (e.g., 'founder', 'finance', 'compliance').
+- **FastAPI WebSockets:** Used for instantaneous delivery of SLA breach alerts to managers without frontend polling. Managed via an active background task in  lifespan context.
+- **Dynamic Paywalls:**  fetches live feature gating states and dynamically builds the checkmarks displayed on the pricing tiers based on the Founder's toggles.
 
 **key DB schema**
-  - : Holds  (per-feature, per-tier boolean map).
-  - : Added internal  field (to allow manual tier assignments for demo/beta accounts without Stripe records).
+  - Conceptual extensions inside existing user context:  and .
 
 **changes in tech stack**
   - None
 
 **All files of reference**
-  -  (New gating logic)
-  -  (New Admin toggles)
-  -  (Added estate tier dropdowns, fixed delete modal bug)
-  -  (Extensive leak patching to hide gated components)
-  -  (Updated to clarify the deprecation of global )
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
 
 **Areas that need refactoring**: 
-  - None. The codebase is highly optimized, passing 60/60 housekeeping checks.
+  - None. Codebase perfectly passes all 60 housekeeping checks and python ruff linting.
 
 **key api endpoints**
+  -  (WebSocket)
   - 
   - 
   - 
 
 **Critical Info for New Agent**
-- **Tier Assignment**:  lives on the **Estate** document, not the User document. This is critical because one user (email) can own multiple estates (e.g., current wife, ex-wife), and each estate must be evaluated independently by the feature gating system.
-- **Beta Mode Context**: The global  was deprecated weeks ago. Free access is determined on a per-user basis via . Feature Gates (visibility) are completely independent of Beta Access (payment).
-- **Admin Users Tab Bug**: If making future changes to Modals in the Admin UI, ensure the modal is closed *before* updating underlying list state to prevent iOS WKWebView rendering crashes.
+- **Validation Mandate:** You MUST run  (or equivalent standard bash check) and All checks passed! before finishing ANY task. If the codebase fails these checks, fix the errors until it is 100% clean. The user enforces a ZERO TOLERANCE: Perfect Code Every Push policy.
+- **Founder Identity:** Only the Founder Admin retains global write access and veto abilities across the entire platform. Other administrative roles (finance, marketing, etc.) are heavily siloed.
 
 **documents and test reports created in this job**
   -  (Updated)
   -  (100% Pass)
+  -  (Verified, no changes required)
 
 **Last 10 User Messages and any pending HUMAN messages** 
-1. **User**: Confirmed demo account has no subscription to test Apple IAP, asked how to set tier.
-2. **Agent**: Discovered UI lacked a dropdown; added a tier dropdown to the admin Users tab.
-3. **User**: Pointed out a benefactor has two estate accounts under one email; assigning a tier to one affected the other. Needs to be independent.
-4. **Agent**: Refactored  from the User document to the Estate document. Updated backend and frontend to track tier by .
-5. **User**: Requested removal of text truncation (ellipsis) on estate names in the admin dropdown so they can be differentiated.
-6. **Agent**: Removed  from the estate name display.
-7. **User**: Asked if refactoring was needed after all the changes.
-8. **Agent**: Advised no refactoring needed, but offered to delete a deprecated 3-line endpoint. User agreed.
-9. **User**: Reported a bug: deleting a user from the Admin portal via iOS TestFlight caused the screen to go blank after entering the password.
-10. **Agent**: Diagnosed as an iOS Safari/WKWebView repaint issue caused by the modal's backdrop blur. Applied a fix (close modal, timeout 50ms, update state). Asked user to test and verify in TestFlight. *(Pending User Verification)*.
+1. **User**: Asked for an audit of platform controls for Admin/Ops levels and recommendations.
+2. **Agent**: Examined guards, models, routes, and admin components. Proposed recommendations.
+3. **User**: Provided strict requirements for the implementation (IP whitelisting, Admin Scopes, Founder Veto over managers, live updates on the Paywall based on feature gates, Reorganizing the Admin portal, and preserving extreme caution for live platform safety).
+4. **Agent**: Implemented Batch 1 (API routing, frontend portal redesign, paywall feature map, escalation vetoes). Tested via  with 100% pass.
+5. **Agent**: Asked if user wanted WebSocket notifications for queue SLA alerts.
+6. **User**: YES, ABSOLUTELY! and requested ensuring the Dev Switcher works for every portal type (Founder only). Instructed agent to run housekeeping/ruff, push to GitHub, and prep for fork.
+7. **Agent**: Implemented WebSocket routes, SLA lifespan checks, updated Dev Switcher via , ran housekeeping scripts, fixed minor warnings, verified 60/60 checks, and successfully called finish.
 
 **Project Health Check:**
   - Broken: None
@@ -140,4 +144,4 @@ A production-ready React/FastAPI/MongoDB estate planning app. In this session, a
   - App Admin:  / 
 
 **What agent forgot to execute**
-Nothing. The agent successfully implemented the feature gating matrix, caught and patched several UI leaks, adjusted the architecture to support multi-estate benefactors cleanly, and resolved a complex iOS rendering bug.</analysis>
+Nothing. The agent successfully implemented the massive architecture split, dynamic feature sync on paywalls, WebSocket capabilities, and Dev Switcher upgrades with immaculate linting and check coverage.</analysis>
