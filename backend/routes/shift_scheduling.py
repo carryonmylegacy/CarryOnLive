@@ -102,7 +102,12 @@ async def create_shift(
         raise HTTPException(status_code=404, detail="Operator not found")
 
     existing = await db.shift_schedules.find_one(
-        {"operator_id": data.operator_id, "date": data.date, "shift_type": data.shift_type, "status": {"$ne": "cancelled"}},
+        {
+            "operator_id": data.operator_id,
+            "date": data.date,
+            "shift_type": data.shift_type,
+            "status": {"$ne": "cancelled"},
+        },
         {"_id": 0},
     )
     if existing:
@@ -198,12 +203,10 @@ async def get_shift_summary(
     week_end_date = datetime.fromisoformat(week_start).date() + timedelta(days=6)
     week_end = week_end_date.isoformat()
 
-    shifts = (
-        await db.shift_schedules.find(
-            {"date": {"$gte": week_start, "$lte": week_end}, "status": {"$ne": "cancelled"}},
-            {"_id": 0},
-        ).to_list(200)
-    )
+    shifts = await db.shift_schedules.find(
+        {"date": {"$gte": week_start, "$lte": week_end}, "status": {"$ne": "cancelled"}},
+        {"_id": 0},
+    ).to_list(200)
 
     by_date = {}
     for s in shifts:

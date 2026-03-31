@@ -68,12 +68,10 @@ async def get_channels(current_user: dict = Depends(require_staff)):
 
         channels.append({**ch, "unread_count": unread, "last_message": preview})
 
-    dm_channels = (
-        await db.team_channels.find(
-            {"type": "direct", "members": current_user["id"]},
-            {"_id": 0},
-        ).to_list(50)
-    )
+    dm_channels = await db.team_channels.find(
+        {"type": "direct", "members": current_user["id"]},
+        {"_id": 0},
+    ).to_list(50)
 
     for dm in dm_channels:
         other_ids = [m for m in dm.get("members", []) if m != current_user["id"]]
@@ -113,9 +111,7 @@ async def get_channels(current_user: dict = Depends(require_staff)):
                 "id": dm["id"],
                 "name": other_user["name"] if other_user else "Direct Message",
                 "type": "direct",
-                "recipient_role": (
-                    other_user.get("operator_role") or other_user.get("role", "") if other_user else ""
-                ),
+                "recipient_role": (other_user.get("operator_role") or other_user.get("role", "") if other_user else ""),
                 "unread_count": unread,
                 "last_message": preview,
             }
@@ -136,12 +132,7 @@ async def get_messages(
     if before:
         query["created_at"] = {"$lt": before}
 
-    messages = (
-        await db.team_messages.find(query, {"_id": 0})
-        .sort("created_at", -1)
-        .limit(limit)
-        .to_list(limit)
-    )
+    messages = await db.team_messages.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
 
     now = datetime.now(timezone.utc).isoformat()
     await db.team_channel_reads.update_one(
@@ -250,10 +241,8 @@ async def create_direct_channel(
 @router.get("/team/staff")
 async def get_staff_members(current_user: dict = Depends(require_staff)):
     """Get all staff members for DM recipient selection."""
-    staff = (
-        await db.users.find(
-            {"role": {"$in": ["admin", "operator"]}, "id": {"$ne": current_user["id"]}},
-            {"_id": 0, "id": 1, "name": 1, "role": 1, "operator_role": 1},
-        ).to_list(100)
-    )
+    staff = await db.users.find(
+        {"role": {"$in": ["admin", "operator"]}, "id": {"$ne": current_user["id"]}},
+        {"_id": 0, "id": 1, "name": 1, "role": 1, "operator_role": 1},
+    ).to_list(100)
     return staff

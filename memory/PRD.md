@@ -36,6 +36,72 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (March 31, 2026 — Phase 2 & Phase 3 Operations Overhaul)
+
+**Phase 2: Admin Session Inactivity Timeout**
+- Founder-controlled session timeout policies per role type (Admin, Manager, Worker, Benefactor, Beneficiary)
+- `GET/PUT /api/admin/session-policy` — CRUD endpoints (Founder only)
+- Each role can be independently enabled/disabled with configurable timeout (1-1440 minutes)
+- `session_timeout_minutes` returned in `GET /api/auth/me` for client-side enforcement
+- AuthContext integration: server-mandated timeout overrides user preferences
+- Frontend: `SessionPolicyTab.js` with toggle switches and timeout dropdown per role
+- Founder can exempt themselves by leaving Admin timeout disabled
+
+**Phase 2: Queue Age Alerts UI**
+- `QueueAlertsPanel.js` — notification bell in admin/ops header
+- Real-time WebSocket connection to `/api/ws/notifications`
+- Visual badge showing unread SLA breach and queue overflow count
+- Dropdown panel with alert history, timestamps, dismiss/clear actions
+- Connection status indicator (green=live, red=reconnecting)
+- Auto-reconnect on disconnect with 5s backoff
+- Toast-style alert categorization: SLA breach (red), queue overflow (amber)
+
+**Phase 2: Internal Messaging / Team Chat**
+- `routes/team_chat.py` — Full messaging backend
+- 6 predefined system channels: General, Operations, Finance, Marketing, Compliance, Platform
+- Direct message channels between any two staff members
+- `GET /api/team/channels` — channels with unread count and last message preview
+- `POST /api/team/messages` — send message (max 2000 chars)
+- `GET /api/team/messages/{channel_id}` — paginated messages in chronological order
+- `POST /api/team/channels/direct` — create or get DM channel
+- `GET /api/team/staff` — list staff members for DM selection
+- WebSocket real-time delivery: system channels broadcast to all staff, DMs sent to recipient only
+- Read tracking: `team_channel_reads` collection with per-user per-channel last_read_at
+- Frontend: `TeamChatTab.js` with channel sidebar, message area, role badges, DM creation
+- DB indexes: `(channel_id, created_at)`, `sender_id`, `members`, `(channel_id, user_id)` unique
+
+**Phase 3: Shift Scheduling**
+- `routes/shift_scheduling.py` — shift management system
+- Shift types: Day (6AM-2PM), Evening (2PM-10PM), Night (10PM-6AM), On-Call
+- `POST /api/ops/shifts` — create shift (managers/admins only)
+- `GET /api/ops/shifts` — list shifts with operator name enrichment
+- `PUT /api/ops/shifts/{id}` — update status (workers can confirm own, managers can edit any)
+- `DELETE /api/ops/shifts/{id}` — cancel shift (managers/admins only)
+- `GET /api/ops/shifts/summary` — weekly coverage summary (7-day breakdown by shift type)
+- Duplicate shift detection (same operator + date + type)
+- Shift statuses: scheduled, confirmed, completed, cancelled
+- Frontend: `ShiftScheduleTab.js` with weekly calendar grid, Add Shift form, color-coded cards
+- DB indexes: `(operator_id, date)`, `date`
+
+**Phase 3: Training Completion Tracker**
+- `routes/training_tracker.py` — training module tracking
+- `GET /api/ops/training/modules` — modules with per-user completion status
+- `POST /api/ops/training/complete` — mark module as completed
+- `DELETE /api/ops/training/complete/{module_id}` — unmark completion
+- `GET /api/ops/training/team-progress` — team-wide progress percentages (managers only)
+- `POST /api/ops/training/modules` — create training module (managers only)
+- Auto-seeds from Knowledge Base articles if no training_modules exist
+- Certification badge when operator reaches 100% completion
+- Frontend: `TrainingTrackerTab.js` with progress bar, team compliance view, checklist UI
+- DB indexes: `(user_id, module_id)` unique, `order`
+
+**Phase 3: Mobile-Optimized Ops View**
+- Enhanced tab bar for operator mode: larger touch targets (44px min height), bigger text/icons
+- `active:scale-[0.97]` press feedback on all tab buttons
+- Touch-friendly shift cards and training module buttons
+- Responsive layouts across all new components (grid breakpoints, flexible widths)
+- All inputs use `fontSize: 16px` to prevent iOS auto-zoom
+
 ### Completed (March 31, 2026 — Platform Controls Overhaul)
 
 **Admin Portal Reorganization**
@@ -468,6 +534,7 @@ Fixed drag-and-drop file rejection for PDFs in the Secure Document Vault:
 - **Scalability Enhancements**: Horizontal scaling, background workers, CDN
 - **Readiness Scoring Policy Page**: Informational page under Account section
 - **Twilio SMS OTP**: A2P campaign resubmitted March 24, 2026. Check back mid-April 2026.
+- **Shift Swap Requests**: Operators request shift swaps with teammate approval workflow
 
 ## Key API Endpoints
 - `POST /api/security/verify/{section_id}` — validates PIN/Password/Question combos
