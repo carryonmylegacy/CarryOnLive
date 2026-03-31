@@ -61,12 +61,21 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     setTogglingExempt(null);
   };
 
-  const handleSetTier = async (userId, tier) => {
-    setSettingTier(userId);
+  const handleSetEstateTier = async (estateId, tier, ownerUserId) => {
+    setSettingTier(estateId);
     try {
-      await axios.put(`${API_URL}/admin/user/${userId}/tier`, { tier }, { ...getAuthHeaders(), headers: { ...getAuthHeaders().headers, 'Content-Type': 'application/json' } });
-      setUsers(prev => prev.map(u => u.id === userId ? { ...u, verified_tier: tier || undefined } : u));
-      toast.success(tier ? `Tier set to ${tier}` : 'Tier removed');
+      await axios.put(`${API_URL}/admin/estate/${estateId}/tier`, { tier }, { ...getAuthHeaders(), headers: { ...getAuthHeaders().headers, 'Content-Type': 'application/json' } });
+      // Update estate_groups in the local state
+      setUsers(prev => prev.map(u => {
+        if (u.id !== ownerUserId) return u;
+        return {
+          ...u,
+          estate_groups: (u.estate_groups || []).map(g =>
+            g.estate_id === estateId ? { ...g, verified_tier: tier || undefined } : g
+          ),
+        };
+      }));
+      toast.success(tier ? `Estate tier set to ${tier}` : 'Estate tier removed');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to set tier');
     }
@@ -191,35 +200,42 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                   {u.subscription.beta_plan && <span className="text-[11px] text-purple-400">(beta)</span>}
                 </div>
               )}
-              {/* Tier selector — Founder only, for users without active subscriptions */}
-              {!operatorMode && (u.role === 'benefactor' || u.role === 'beneficiary') && (
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <select
-                    value={u.verified_tier || ''}
-                    onChange={(e) => handleSetTier(u.id, e.target.value)}
-                    disabled={settingTier === u.id}
-                    className="text-[11px] px-1.5 py-0.5 rounded font-semibold capitalize cursor-pointer"
-                    style={{
-                      background: u.verified_tier ? 'rgba(212,175,55,0.1)' : 'rgba(100,116,139,0.1)',
-                      color: u.verified_tier ? '#d4af37' : 'var(--t5)',
-                      border: '1px solid rgba(212,175,55,0.15)',
-                      outline: 'none',
-                      fontSize: '11px',
-                      minWidth: 80,
-                    }}
-                    data-testid={`tier-select-${u.id}`}
-                    title="Feature gate tier — determines which features this user sees"
-                  >
-                    <option value="">No Tier</option>
-                    <option value="premium">Premium</option>
-                    <option value="standard">Standard</option>
-                    <option value="base">Base</option>
-                    <option value="new_adult">New Adult</option>
-                    <option value="military">Military</option>
-                    <option value="hospice">Hospice</option>
-                    <option value="veteran">Veteran</option>
-                    <option value="enterprise">Enterprise</option>
-                  </select>
+              {/* Per-estate tier selectors — Founder only */}
+              {!operatorMode && (u.role === 'benefactor' || u.is_also_benefactor) && (u.estate_groups || []).length > 0 && (
+                <div className="flex flex-col gap-1 mt-1">
+                  {(u.estate_groups || []).map(g => (
+                    <div key={g.estate_id} className="flex items-center gap-1.5">
+                      <span className="text-[11px] text-[var(--t5)] truncate" style={{ maxWidth: 120 }}>
+                        {g.estate_name}:
+                      </span>
+                      <select
+                        value={g.verified_tier || ''}
+                        onChange={(e) => handleSetEstateTier(g.estate_id, e.target.value, u.id)}
+                        disabled={settingTier === g.estate_id}
+                        className="text-[11px] px-1.5 py-0.5 rounded font-semibold capitalize cursor-pointer"
+                        style={{
+                          background: g.verified_tier ? 'rgba(212,175,55,0.1)' : 'rgba(100,116,139,0.1)',
+                          color: g.verified_tier ? '#d4af37' : 'var(--t5)',
+                          border: '1px solid rgba(212,175,55,0.15)',
+                          outline: 'none',
+                          fontSize: '11px',
+                          minWidth: 80,
+                        }}
+                        data-testid={`tier-select-${g.estate_id}`}
+                        title={`Feature gate tier for ${g.estate_name}`}
+                      >
+                        <option value="">No Tier</option>
+                        <option value="premium">Premium</option>
+                        <option value="standard">Standard</option>
+                        <option value="base">Base</option>
+                        <option value="new_adult">New Adult</option>
+                        <option value="military">Military</option>
+                        <option value="hospice">Hospice</option>
+                        <option value="veteran">Veteran</option>
+                        <option value="enterprise">Enterprise</option>
+                      </select>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

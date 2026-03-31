@@ -152,42 +152,61 @@ async def publish_feature_gates(request: Request, current_user: dict = Depends(r
 
 
 @router.get("/subscriptions/enabled-features")
-async def get_user_enabled_features(current_user: dict = Depends(get_current_user)):
+async def get_user_enabled_features(
+    estate_id: str = None,
+    current_user: dict = Depends(get_current_user),
+):
     """Return list of feature keys enabled for the current user's tier.
 
     Feature gates are a VISIBILITY decision, not a payment decision.
     Per-user beta access / free overrides / trial control whether users pay.
     Feature gates control what users can SEE.  These are orthogonal.
-    Therefore: per-user beta, free_access, trial do NOT bypass feature gates.
+
+    Tier resolution order:
+    1. Active subscription plan_id  (Stripe)
+    2. Estate-level verified_tier   (admin-assigned, per-account)
+    3. User-level verified_tier     (legacy fallback)
+    4. No tier → all features       (paywall handles access separately)
     """
 
     # Admin / operator → everything
     if current_user.get("role") in ("admin", "operator"):
         return {"enabled_features": FEATURE_KEYS, "all_enabled": True}
 
-    # Determine the user's effective tier (subscription > verified_tier)
     effective_tier = None
-    sub = await db.user_subscriptions.find_one({"user_id": current_user["id"]}, {"_id": 0})
 
+    # 1. Check active subscription
+    sub = await db.user_subscriptions.find_one({"user_id": current_user["id"]}, {"_id": 0})
     if sub and sub.get("status") in ("active", "past_due"):
         effective_tier = sub.get("plan_id")
 
-    # Fallback: check verified_tier on user document
+    # 2. Check estate-level verified_tier
+    if not effective_tier and estate_id:
+        estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "verified_tier": 1})
+        if estate and estate.get("verified_tier"):
+            effective_tier = estate["verified_tier"]
+
+    # 3. No estate_id supplied — find any owned estate with a tier
+    if not effective_tier and not estate_id:
+        user_estate = await db.estates.find_one(
+            {"owner_id": current_user["id"], "verified_tier": {"$exists": True, "$ne": ""}},
+            {"_id": 0, "id": 1, "verified_tier": 1},
+        )
+        if user_estate and user_estate.get("verified_tier"):
+            effective_tier = user_estate["verified_tier"]
+
+    # 4. Legacy: user-level verified_tier
     if not effective_tier:
         user_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "id": 1, "verified_tier": 1})
         if user_doc and user_doc.get("verified_tier"):
             effective_tier = user_doc["verified_tier"]
 
-    if sub and sub.get("status") in ("active", "past_due"):
-        effective_tier = sub.get("plan_id")
-
-    # Beneficiary post-transition: use benefactor's tier
-    if current_user.get("role") == "beneficiary":
-        benefactor_tier = await _get_benefactor_tier(current_user)
+    # Beneficiary post-transition: use the estate's tier
+    if current_user.get("role") == "beneficiary" and not effective_tier:
+        benefactor_tier = await _get_benefactor_tier(current_user, estate_id)
         if benefactor_tier:
             effective_tier = benefactor_tier
 
-    # No tier determined → all features (paywall handles access control)
     if not effective_tier:
         return {"enabled_features": FEATURE_KEYS, "all_enabled": True}
 
@@ -196,19 +215,33 @@ async def get_user_enabled_features(current_user: dict = Depends(get_current_use
     return {"enabled_features": enabled, "all_enabled": len(enabled) == len(FEATURE_KEYS)}
 
 
-async def _get_benefactor_tier(current_user: dict) -> str | None:
-    """For a beneficiary, find the benefactor's subscription tier."""
-    ben_link = await db.beneficiaries.find_one({"user_id": current_user["id"]}, {"_id": 0, "id": 1, "estate_id": 1})
-    if not ben_link:
-        ben_link = await db.beneficiaries.find_one(
-            {"email": current_user.get("email")}, {"_id": 0, "id": 1, "estate_id": 1}
-        )
-    if not ben_link or not ben_link.get("estate_id"):
-        return None
+async def _get_benefactor_tier(current_user: dict, estate_id: str = None) -> str | None:
+    """For a beneficiary, find the benefactor estate's tier.
 
-    estate = await db.estates.find_one({"id": ben_link["estate_id"]}, {"_id": 0, "id": 1, "owner_id": 1, "status": 1})
+    Priority: estate.verified_tier > benefactor subscription > benefactor user.verified_tier
+    """
+    target_estate_id = estate_id
+
+    if not target_estate_id:
+        ben_link = await db.beneficiaries.find_one({"user_id": current_user["id"]}, {"_id": 0, "id": 1, "estate_id": 1})
+        if not ben_link:
+            ben_link = await db.beneficiaries.find_one(
+                {"email": current_user.get("email")}, {"_id": 0, "id": 1, "estate_id": 1}
+            )
+        if not ben_link or not ben_link.get("estate_id"):
+            return None
+        target_estate_id = ben_link["estate_id"]
+
+    estate = await db.estates.find_one(
+        {"id": target_estate_id},
+        {"_id": 0, "id": 1, "owner_id": 1, "verified_tier": 1},
+    )
     if not estate:
         return None
+
+    # Estate-level tier takes priority
+    if estate.get("verified_tier"):
+        return estate["verified_tier"]
 
     benefactor_id = estate.get("owner_id")
     if not benefactor_id:

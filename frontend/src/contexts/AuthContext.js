@@ -24,14 +24,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const fetchEnabledFeatures = async (authToken) => {
+  const fetchEnabledFeatures = async (authToken, estateId = null) => {
     try {
-      const res = await axios.get(`${API_URL}/subscriptions/enabled-features`, {
+      const params = estateId ? `?estate_id=${estateId}` : '';
+      const res = await axios.get(`${API_URL}/subscriptions/enabled-features${params}`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       setEnabledFeatures(res.data?.enabled_features || null);
     } catch (err) {
       console.error('Enabled features fetch error:', err);
+    }
+  };
+
+  const refreshEnabledFeatures = async (estateId = null) => {
+    if (token) {
+      await fetchEnabledFeatures(token, estateId);
     }
   };
 
@@ -69,7 +76,8 @@ export const AuthProvider = ({ children }) => {
             is_also_beneficiary: userData.is_also_beneficiary || false,
           });
           await fetchSubscriptionStatus(token);
-          await fetchEnabledFeatures(token);
+          const savedEstateId = localStorage.getItem('selected_estate_id');
+          await fetchEnabledFeatures(token, savedEstateId);
         } catch (error) {
           console.error('Auth init error:', error);
           logout();
@@ -270,6 +278,7 @@ export const AuthProvider = ({ children }) => {
       getAuthHeaders,
       refreshSubscription,
       refreshUser,
+      refreshEnabledFeatures,
       isAuthenticated: !!user
     }}>
       {children}

@@ -25,7 +25,7 @@ import OnboardingWizard from '../components/OnboardingWizard';
 import { API_URL } from '../config';
 
 const DashboardPage = () => {
-  const { user, getAuthHeaders, enabledFeatures } = useAuth();
+  const { user, getAuthHeaders, enabledFeatures, refreshEnabledFeatures } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [estates, setEstates] = useState([]);
@@ -83,6 +83,7 @@ const DashboardPage = () => {
           || ownedEstates[0];
         localStorage.setItem('selected_estate_id', selectedEstate.id);
         setEstate(selectedEstate);
+        refreshEnabledFeatures(selectedEstate.id);
       }
     } catch (error) { console.error('Fetch estates error:', error); setLoading(false); }
   };

@@ -18,7 +18,9 @@ async def get_all_users(current_user: dict = Depends(require_staff)):
     users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
 
     # Build estate owner -> beneficiaries map (supports multiple estates per owner)
-    estates = await db.estates.find({}, {"_id": 0, "id": 1, "owner_id": 1, "name": 1}).to_list(10000)
+    estates = await db.estates.find({}, {"_id": 0, "id": 1, "owner_id": 1, "name": 1, "verified_tier": 1}).to_list(
+        10000
+    )
     estates_by_owner = {}
     for e in estates:
         if e.get("id") and e.get("owner_id"):
@@ -76,6 +78,7 @@ async def get_all_users(current_user: dict = Depends(require_staff)):
                     {
                         "estate_id": eid,
                         "estate_name": estate_info["name"] if estate_info else "Estate",
+                        "verified_tier": estate_info.get("verified_tier") if estate_info else None,
                         "beneficiaries": bens,
                     }
                 )
@@ -266,10 +269,17 @@ async def get_activity_log(current_user: dict = Depends(require_admin)):
 
 @router.put("/admin/user/{user_id}/tier")
 async def set_user_tier(user_id: str, request: Request, current_user: dict = Depends(require_admin)):
-    """Set the verified_tier on a user (Founder only).
+    """DEPRECATED — use PUT /admin/estate/{estate_id}/tier instead."""
+    return {"success": False, "detail": "Use /admin/estate/{estate_id}/tier instead"}
 
-    This controls which feature-gate tier applies to the user
-    when they have no active Stripe subscription.
+
+@router.put("/admin/estate/{estate_id}/tier")
+async def set_estate_tier(estate_id: str, request: Request, current_user: dict = Depends(require_admin)):
+    """Set the verified_tier on an estate (Founder only).
+
+    Each estate (benefactor account) can have its own tier assignment,
+    which controls feature-gate visibility for that estate's owner
+    and its beneficiaries.
     """
     body = await request.json()
     tier = body.get("tier")
@@ -278,13 +288,13 @@ async def set_user_tier(user_id: str, request: Request, current_user: dict = Dep
     if tier is not None and tier not in valid_tiers:
         raise HTTPException(status_code=400, detail=f"Invalid tier: {tier}")
 
-    user = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1})
+    if not estate:
+        raise HTTPException(status_code=404, detail="Estate not found")
 
     if tier == "" or tier is None:
-        await db.users.update_one({"id": user_id}, {"$unset": {"verified_tier": ""}})
+        await db.estates.update_one({"id": estate_id}, {"$unset": {"verified_tier": ""}})
     else:
-        await db.users.update_one({"id": user_id}, {"$set": {"verified_tier": tier}})
+        await db.estates.update_one({"id": estate_id}, {"$set": {"verified_tier": tier}})
 
-    return {"success": True, "verified_tier": tier if tier else None}
+    return {"success": True, "estate_id": estate_id, "verified_tier": tier if tier else None}
