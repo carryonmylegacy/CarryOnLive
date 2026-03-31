@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { AlertTriangle, Plus, Loader2 } from 'lucide-react';
+import { AlertTriangle, Plus, Loader2, Undo2 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
@@ -12,7 +12,7 @@ const PRIORITY_STYLES = {
   critical: { color: '#EF4444', bg: 'rgba(239,68,68,0.1)', label: 'Critical' },
 };
 
-export const EscalationsTab = ({ getAuthHeaders, isFounder = false }) => {
+export const EscalationsTab = ({ getAuthHeaders, isFounder = false, isManager = false }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -20,7 +20,12 @@ export const EscalationsTab = ({ getAuthHeaders, isFounder = false }) => {
   const [saving, setSaving] = useState(false);
   const [resolveId, setResolveId] = useState(null);
   const [resolveNote, setResolveNote] = useState('');
+  const [vetoId, setVetoId] = useState(null);
+  const [vetoNote, setVetoNote] = useState('');
   const [filter, setFilter] = useState('');
+
+  const canResolve = isFounder || isManager;
+  const canCreate = !isFounder; // Operators create, founder/manager views
 
   const fetch_ = async () => {
     try {
@@ -56,12 +61,25 @@ export const EscalationsTab = ({ getAuthHeaders, isFounder = false }) => {
     } catch { toast.error('Failed to resolve'); }
   };
 
+  const handleVeto = async () => {
+    if (!vetoNote.trim()) return toast.error('Veto reason required');
+    try {
+      await axios.put(`${API_URL}/ops/escalations/${vetoId}/veto`, { veto_note: vetoNote }, getAuthHeaders());
+      toast.success('Resolution vetoed — escalation reopened');
+      setVetoId(null);
+      setVetoNote('');
+      fetch_();
+    } catch { toast.error('Failed to veto'); }
+  };
+
   if (loading) return <div className="text-center py-12"><Loader2 className="w-6 h-6 animate-spin mx-auto text-[var(--t4)]" /></div>;
 
   return (
     <div className="space-y-4" data-testid="escalations-tab">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h2 className="text-lg font-bold text-[var(--t)]">{isFounder ? 'Escalations from Operators' : 'My Escalations'}</h2>
+        <h2 className="text-lg font-bold text-[var(--t)]">
+          {isFounder ? 'All Escalations' : isManager ? 'Team Escalations' : 'My Escalations'}
+        </h2>
         <div className="flex items-center gap-2">
           <select value={filter} onChange={e => setFilter(e.target.value)}
             className="px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-xs">
@@ -69,7 +87,7 @@ export const EscalationsTab = ({ getAuthHeaders, isFounder = false }) => {
             <option value="open">Open</option>
             <option value="resolved">Resolved</option>
           </select>
-          {!isFounder && (
+          {canCreate && (
             <button onClick={() => setShowForm(!showForm)}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-[var(--gold)] text-[#0F1629]" data-testid="new-escalation-btn">
               <Plus className="w-3.5 h-3.5" /> Escalate
@@ -84,7 +102,7 @@ export const EscalationsTab = ({ getAuthHeaders, isFounder = false }) => {
             <input value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })}
               placeholder="Subject" className="w-full px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-base" data-testid="escalation-subject" />
             <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
-              placeholder="Describe the issue that requires founder attention..." rows={3} className="w-full px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-base resize-none" data-testid="escalation-description" />
+              placeholder="Describe the issue..." rows={3} className="w-full px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-base resize-none" data-testid="escalation-description" />
             <div className="flex gap-3">
               <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}
                 className="px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-xs">
@@ -128,29 +146,70 @@ export const EscalationsTab = ({ getAuthHeaders, isFounder = false }) => {
                         {isOpen ? 'Open' : 'Resolved'}
                       </span>
                       {item.related_type && <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-[var(--s)] text-[var(--t5)] capitalize">{item.related_type}</span>}
+                      {item.vetoed && <span className="text-[11px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>Vetoed</span>}
                     </div>
                     <p className="text-xs text-[var(--t3)] mb-2">{item.description}</p>
-                    <p className="text-[11px] text-[var(--t5)]">By {item.created_by_name} · {new Date(item.created_at).toLocaleString()}</p>
+                    <p className="text-[11px] text-[var(--t5)]">By {item.created_by_name} &middot; {new Date(item.created_at).toLocaleString()}</p>
+
+                    {/* Veto notice */}
+                    {item.vetoed && item.veto_note && (
+                      <div className="mt-2 p-2 rounded-lg" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
+                        <p className="text-[11px] font-bold text-red-400 mb-0.5">Founder Veto:</p>
+                        <p className="text-xs text-[var(--t3)]">{item.veto_note}</p>
+                        {item.previous_resolution && (
+                          <p className="text-[11px] text-[var(--t5)] mt-1">Previous resolution by {item.previous_resolved_by}: "{item.previous_resolution}"</p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Resolution */}
                     {item.resolution_note && (
                       <div className="mt-2 p-2 rounded-lg" style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.15)' }}>
                         <p className="text-[11px] font-bold text-[#22C55E] mb-0.5">Resolution:</p>
                         <p className="text-xs text-[var(--t3)]">{item.resolution_note}</p>
-                        <p className="text-[11px] text-[var(--t5)] mt-1">By {item.resolved_by_name} · {new Date(item.resolved_at).toLocaleString()}</p>
+                        <p className="text-[11px] text-[var(--t5)] mt-1">
+                          By {item.resolved_by_name}
+                          {item.resolved_by_role === 'manager' && <span className="text-[#F59E0B]"> (Manager)</span>}
+                          {item.resolved_by_role === 'admin' && <span className="text-[#d4af37]"> (Founder)</span>}
+                          &middot; {new Date(item.resolved_at).toLocaleString()}
+                        </p>
                       </div>
                     )}
                   </div>
-                  {isFounder && isOpen && (
-                    <button onClick={() => setResolveId(resolveId === item.id ? null : item.id)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#22C55E] text-white flex-shrink-0" data-testid={`resolve-escalation-${item.id}`}>
-                      Resolve
-                    </button>
-                  )}
+                  <div className="flex flex-col gap-1.5 flex-shrink-0">
+                    {/* Resolve button — visible to managers and founders on open items */}
+                    {canResolve && isOpen && (
+                      <button onClick={() => setResolveId(resolveId === item.id ? null : item.id)}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#22C55E] text-white" data-testid={`resolve-escalation-${item.id}`}>
+                        Resolve
+                      </button>
+                    )}
+                    {/* Veto button — founder only on resolved items */}
+                    {isFounder && !isOpen && (
+                      <button onClick={() => setVetoId(vetoId === item.id ? null : item.id)}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}
+                        data-testid={`veto-escalation-${item.id}`}>
+                        <Undo2 className="w-3 h-3" /> Veto
+                      </button>
+                    )}
+                  </div>
                 </div>
+
+                {/* Resolve input */}
                 {resolveId === item.id && (
                   <div className="mt-3 flex gap-2">
                     <input value={resolveNote} onChange={e => setResolveNote(e.target.value)}
                       placeholder="Resolution note..." className="flex-1 px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-xs" data-testid="resolve-note-input" />
                     <button onClick={handleResolve} className="px-3 py-2 rounded-lg bg-[#22C55E] text-white text-xs font-bold" data-testid="confirm-resolve-btn">Confirm</button>
+                  </div>
+                )}
+
+                {/* Veto input */}
+                {vetoId === item.id && (
+                  <div className="mt-3 flex gap-2">
+                    <input value={vetoNote} onChange={e => setVetoNote(e.target.value)}
+                      placeholder="Reason for overriding this resolution..." className="flex-1 px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-xs" data-testid="veto-note-input" />
+                    <button onClick={handleVeto} className="px-3 py-2 rounded-lg text-white text-xs font-bold" style={{ background: '#ef4444' }} data-testid="confirm-veto-btn">Override</button>
                   </div>
                 )}
               </CardContent>

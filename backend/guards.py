@@ -137,3 +137,19 @@ async def require_staff(current_user: dict = Depends(get_current_user)):
     if current_user["role"] not in ("admin", "operator"):
         raise HTTPException(status_code=403, detail="Staff access required")
     return current_user
+
+
+def require_admin_scope(current_user: dict, allowed_scopes: list[str]):
+    """Check if admin has one of the allowed scopes.
+    Founder ('founder' scope) always passes.
+    Use for scoped admin access control."""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    scope = current_user.get("admin_scope", "founder")
+    if scope == "founder":
+        return  # Founder is God — always passes
+    if scope not in allowed_scopes:
+        raise HTTPException(
+            status_code=403,
+            detail=f"This section requires one of: {', '.join(allowed_scopes)} access",
+        )

@@ -63,6 +63,7 @@ class UserResponse(BaseModel):
     created_at: str
     photo_url: str = ""
     operator_role: str = ""
+    admin_scope: str = ""
     is_also_benefactor: bool = False
     is_also_beneficiary: bool = False
     is_beta_tester: bool = False

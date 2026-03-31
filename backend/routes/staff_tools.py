@@ -1490,7 +1490,7 @@ async def quick_search(
 
 
 # ══════════════════════════════════════════════════════════
-# ESCALATIONS (Operator creates, Founder sees/resolves)
+# ESCALATIONS (Operator creates, Manager/Founder resolves, Founder vetoes)
 # ══════════════════════════════════════════════════════════
 
 
@@ -1524,6 +1524,10 @@ async def create_escalation(
         "resolved_at": None,
         "resolved_by": None,
         "resolution_note": None,
+        "vetoed": False,
+        "veto_note": None,
+        "vetoed_by": None,
+        "vetoed_at": None,
     }
     await db.escalations.insert_one(escalation)
     await log_audit_event(
@@ -1550,8 +1554,8 @@ async def list_escalations(
     query = {}
     if status:
         query["status"] = status
-    # Operators see their own; founders see all
-    if current_user.get("role") == "operator":
+    # Managers see all escalations (for oversight); Workers see only their own
+    if current_user.get("role") == "operator" and current_user.get("operator_role") != "manager":
         query["created_by"] = current_user["id"]
     items = await db.escalations.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
     return items
@@ -1568,8 +1572,18 @@ async def resolve_escalation(
     request: Request,
     current_user: dict = Depends(get_current_user),
 ):
-    require_founder(current_user)
+    """Resolve an escalation. Managers and Founders can resolve."""
+    # Allow both admin AND managers to resolve
+    if current_user.get("role") == "admin":
+        pass  # Founder can always resolve
+    elif current_user.get("role") == "operator" and current_user.get("operator_role") == "manager":
+        pass  # Managers can resolve within their scope
+    else:
+        raise HTTPException(status_code=403, detail="Manager or Founder access required")
+
     now = datetime.now(timezone.utc)
+    resolver_role = "admin" if current_user.get("role") == "admin" else "manager"
+
     result = await db.escalations.update_one(
         {"id": escalation_id, "status": "open"},
         {
@@ -1578,6 +1592,7 @@ async def resolve_escalation(
                 "resolved_at": now.isoformat(),
                 "resolved_by": current_user["id"],
                 "resolved_by_name": current_user.get("name", current_user["email"]),
+                "resolved_by_role": resolver_role,
                 "resolution_note": data.resolution_note,
             }
         },
@@ -1587,16 +1602,75 @@ async def resolve_escalation(
     await log_audit_event(
         actor_id=current_user["id"],
         actor_email=current_user["email"],
-        actor_role="admin",
+        actor_role=current_user.get("role", "operator"),
         action="escalation_resolve",
         category="operations",
         resource_type="escalation",
         resource_id=escalation_id,
-        details={"resolution_note": data.resolution_note[:200]},
+        details={"resolution_note": data.resolution_note[:200], "resolver_role": resolver_role},
         ip_address=get_client_ip(request),
         severity="info",
     )
     return {"resolved": True}
+
+
+class EscalationVeto(BaseModel):
+    veto_note: str
+
+
+@router.put("/ops/escalations/{escalation_id}/veto")
+async def veto_escalation(
+    escalation_id: str,
+    data: EscalationVeto,
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    """Founder vetoes/undoes a manager's resolution. Reopens the escalation."""
+    require_founder(current_user)
+    now = datetime.now(timezone.utc)
+
+    esc = await db.escalations.find_one({"id": escalation_id}, {"_id": 0})
+    if not esc:
+        raise HTTPException(status_code=404, detail="Escalation not found")
+
+    if esc.get("status") != "resolved":
+        raise HTTPException(status_code=400, detail="Can only veto resolved escalations")
+
+    await db.escalations.update_one(
+        {"id": escalation_id},
+        {
+            "$set": {
+                "status": "open",
+                "vetoed": True,
+                "veto_note": data.veto_note,
+                "vetoed_by": current_user["id"],
+                "vetoed_by_name": current_user.get("name", current_user["email"]),
+                "vetoed_at": now.isoformat(),
+                "previous_resolution": esc.get("resolution_note"),
+                "previous_resolved_by": esc.get("resolved_by_name"),
+            },
+            "$unset": {
+                "resolved_at": "",
+                "resolved_by": "",
+                "resolved_by_name": "",
+                "resolution_note": "",
+            },
+        },
+    )
+
+    await log_audit_event(
+        actor_id=current_user["id"],
+        actor_email=current_user["email"],
+        actor_role="admin",
+        action="escalation_veto",
+        category="operations",
+        resource_type="escalation",
+        resource_id=escalation_id,
+        details={"veto_note": data.veto_note[:200]},
+        ip_address=get_client_ip(request),
+        severity="warning",
+    )
+    return {"vetoed": True}
 
 
 # ══════════════════════════════════════════════════════════

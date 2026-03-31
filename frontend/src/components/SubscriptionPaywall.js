@@ -88,6 +88,8 @@ export default function SubscriptionPaywall({ onDismiss }) {
     }
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const [tierFeatures, setTierFeatures] = useState({});
+
   const fetchData = useCallback(async () => {
     try {
       const [plansRes, statusRes] = await Promise.all([
@@ -96,6 +98,9 @@ export default function SubscriptionPaywall({ onDismiss }) {
       ]);
       setPlans(plansRes.data.plans || []);
       setSubStatus(statusRes.data);
+      if (plansRes.data.tier_features) {
+        setTierFeatures(plansRes.data.tier_features);
+      }
     } catch (err) {
       console.error('Failed to load subscription data:', err);
     }
@@ -527,9 +532,13 @@ export default function SubscriptionPaywall({ onDismiss }) {
                   {/* Divider */}
                   <div className="h-px mb-4" style={{ background: `linear-gradient(90deg, transparent, ${colors.accent}30, transparent)` }} />
 
-                  {/* Features */}
+                  {/* Features — dynamic from feature gates + static plan features */}
                   <div className="space-y-2.5 mb-5">
-                    {(plan.features || []).map((f, i) => (
+                    {/* Show dynamic platform features from gates if available, else fall back to static */}
+                    {(tierFeatures[plan.id] && tierFeatures[plan.id].length > 0
+                      ? tierFeatures[plan.id]
+                      : (plan.features || [])
+                    ).map((f, i) => (
                       <div key={i} className="flex items-start gap-2.5 text-sm">
                         <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" 
                           style={{ background: `${colors.accent}15` }}>

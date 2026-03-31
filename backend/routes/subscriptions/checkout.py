@@ -33,13 +33,29 @@ stripe.api_key = os.environ.get("STRIPE_API_KEY")
 
 @router.get("/subscriptions/plans")
 async def get_subscription_plans():
-    """Get available subscription plans (public)"""
+    """Get available subscription plans (public) with dynamic feature gates."""
     settings = await get_subscription_settings()
+
+    # Include feature gate data so the paywall shows real-time enabled features per tier
+    from routes.feature_gates import get_feature_gates, PLATFORM_FEATURES, TIER_IDS
+
+    gates = await get_feature_gates()
+    # Build per-tier enabled feature labels
+    tier_features = {}
+    for tid in TIER_IDS:
+        enabled_labels = []
+        for f in PLATFORM_FEATURES:
+            tier_gates = gates.get(f["key"], {})
+            if tier_gates.get(tid, True):
+                enabled_labels.append(f["label"])
+        tier_features[tid] = enabled_labels
+
     return {
         "plans": settings.get("plans", DEFAULT_PLANS),
         "beneficiary_plans": settings.get("beneficiary_plans", BENEFICIARY_PLANS),
         "beta_mode": settings.get("beta_mode", True),
         "family_plan_enabled": settings.get("family_plan_enabled", True),
+        "tier_features": tier_features,
     }
 
 

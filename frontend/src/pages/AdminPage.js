@@ -5,8 +5,9 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   Shield, Users, FileKey, Loader2,
   Headphones, CreditCard, Activity, Settings,
- CheckSquare, AlertTriangle, Clock, TrendingUp, Trash2,
-  Megaphone, HeartPulse, Search, StickyNote, BookOpen, Gift, Zap, Puzzle, Mail, Film, Hourglass
+  CheckSquare, AlertTriangle, Clock, TrendingUp, Trash2,
+  Megaphone, HeartPulse, Search, StickyNote, BookOpen, Gift, Zap, Puzzle, Mail, Film, Hourglass,
+  Globe, UserCog, Power, MessageSquare, BarChart3, Download
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { toast } from '../utils/toast';
@@ -49,43 +50,111 @@ import { FounderEmailsTab } from '../components/admin/FounderEmailsTab';
 import { FounderInvitesTab } from '../components/admin/FounderInvitesTab';
 import { SiteContentTab } from '../components/admin/SiteContentTab';
 import { GracePeriodsTab } from '../components/admin/GracePeriodsTab';
+import { IPWhitelistTab } from '../components/admin/IPWhitelistTab';
+import { ScopedAdminsTab } from '../components/admin/ScopedAdminsTab';
+import { MaintenanceModeTab } from '../components/admin/MaintenanceModeTab';
+import { CannedResponsesTab } from '../components/admin/CannedResponsesTab';
+import { PerformanceTab } from '../components/admin/PerformanceTab';
 import { API_URL } from '../config';
 
-const TAB_CONFIG = [
-  { key: 'users', label: 'Users', icon: Users, path: '/admin/users' },
-  { key: 'founder-invites', label: 'Invites', icon: Gift, path: '/admin/founder-invites' },
-  { key: 'transition', label: 'TVT', icon: FileKey, path: '/admin/transition' },
-  { key: 'dts', label: 'DTS', icon: Shield, path: '/admin/dts' },
-  { key: 'support', label: 'Support', icon: Headphones, path: '/admin/support' },
-  { key: 'subscriptions', label: 'Subs', icon: CreditCard, path: '/admin/subscriptions' },
-  { key: 'verifications', label: 'Verify', icon: FileKey, path: '/admin/verifications' },
-  { key: 'analytics', label: 'Analytics', icon: Activity, path: '/admin/analytics' },
-  { key: 'launch', label: 'Launch', icon: TrendingUp, path: '/admin/launch' },
-  { key: 'activity', label: 'Activity', icon: Activity, path: '/admin/activity' },
-  { key: 'operators', label: 'Operators', icon: Users, path: '/admin/operators' },
-  { key: 'audit', label: 'Audit Trail', icon: Shield, path: '/admin/audit' },
-  { key: 'dev-switcher', label: 'Dev', icon: Settings, path: '/admin/dev-switcher' },
-  // Founder-only sidebar features
-  { key: 'announcements', label: 'Announcements', icon: Megaphone, path: '/admin/announcements' },
-  { key: 'system-health', label: 'System Health', icon: HeartPulse, path: '/admin/system-health' },
-  { key: 'escalations', label: 'Escalations', icon: AlertTriangle, path: '/admin/escalations' },
-  { key: 'knowledge-base', label: 'Knowledge Base', icon: BookOpen, path: '/admin/knowledge-base' },
-  { key: 'estate-health', label: 'Estate Health', icon: HeartPulse, path: '/admin/estate-health' },
-  { key: 'integrations', label: 'Integrations', icon: Puzzle, path: '/admin/integrations' },
-  { key: 'funnel', label: 'Funnel', icon: TrendingUp, path: '/admin/funnel' },
-  { key: 'beta-testing', label: 'Beta Testing', icon: Zap, path: '/admin/beta-testing' },
-  { key: 'p1-settings', label: 'P1 Contact', icon: AlertTriangle, path: '/admin/p1-settings' },
-  { key: 'founder-emails', label: 'Emails', icon: Mail, path: '/admin/founder-emails' },
-  { key: 'site-content', label: 'Site Content', icon: Film, path: '/admin/site-content' },
-  { key: 'grace-periods', label: 'Grace Periods', icon: Hourglass, path: '/admin/grace-periods' },
-  { key: 'ops-dashboard', label: 'Ops Dashboard', icon: Activity, path: '/admin/ops-dashboard' },
-  { key: 'milestones', label: 'Milestones', icon: CheckSquare, path: '/admin/milestones' },
-  // Operator sidebar features
+// ── Section-based tab organization ────────────────────────
+// Each section has a label, scopes (which admin scopes can see it), and tabs
+const FOUNDER_SECTIONS = [
+  {
+    section: 'Operations',
+    scopes: ['founder'],
+    tabs: [
+      { key: 'users', label: 'Users', icon: Users, path: '/admin/users' },
+      { key: 'founder-invites', label: 'Invites', icon: Gift, path: '/admin/founder-invites' },
+      { key: 'transition', label: 'TVT', icon: FileKey, path: '/admin/transition' },
+      { key: 'dts', label: 'DTS', icon: Shield, path: '/admin/dts' },
+      { key: 'support', label: 'Support', icon: Headphones, path: '/admin/support' },
+      { key: 'verifications', label: 'Verify', icon: FileKey, path: '/admin/verifications' },
+      { key: 'milestones', label: 'Milestones', icon: CheckSquare, path: '/admin/milestones' },
+      { key: 'escalations', label: 'Escalations', icon: AlertTriangle, path: '/admin/escalations' },
+      { key: 'ops-dashboard', label: 'Ops Dashboard', icon: Activity, path: '/admin/ops-dashboard' },
+      { key: 'canned-responses', label: 'Templates', icon: MessageSquare, path: '/admin/canned-responses' },
+    ],
+  },
+  {
+    section: 'Finance',
+    scopes: ['founder', 'finance'],
+    tabs: [
+      { key: 'subscriptions', label: 'Subs', icon: CreditCard, path: '/admin/subscriptions' },
+      { key: 'analytics', label: 'Revenue', icon: Activity, path: '/admin/analytics' },
+      { key: 'launch', label: 'Launch', icon: TrendingUp, path: '/admin/launch' },
+      { key: 'grace-periods', label: 'Grace Periods', icon: Hourglass, path: '/admin/grace-periods' },
+      { key: 'trials', label: 'Trials', icon: Clock, path: '/admin/trials' },
+    ],
+  },
+  {
+    section: 'Marketing',
+    scopes: ['founder', 'marketing'],
+    tabs: [
+      { key: 'funnel', label: 'Funnel', icon: TrendingUp, path: '/admin/funnel' },
+      { key: 'beta-testing', label: 'Beta Testing', icon: Zap, path: '/admin/beta-testing' },
+      { key: 'site-content', label: 'Site Content', icon: Film, path: '/admin/site-content' },
+      { key: 'founder-emails', label: 'Emails', icon: Mail, path: '/admin/founder-emails' },
+      { key: 'announcements', label: 'Announcements', icon: Megaphone, path: '/admin/announcements' },
+    ],
+  },
+  {
+    section: 'Compliance',
+    scopes: ['founder', 'compliance'],
+    tabs: [
+      { key: 'audit', label: 'Audit Trail', icon: Shield, path: '/admin/audit' },
+      { key: 'estate-health', label: 'Estate Health', icon: HeartPulse, path: '/admin/estate-health' },
+      { key: 'activity', label: 'Activity Log', icon: Activity, path: '/admin/activity' },
+    ],
+  },
+  {
+    section: 'Platform',
+    scopes: ['founder', 'platform_health'],
+    tabs: [
+      { key: 'system-health', label: 'System Health', icon: HeartPulse, path: '/admin/system-health' },
+      { key: 'operators', label: 'Operators', icon: Users, path: '/admin/operators' },
+      { key: 'integrations', label: 'Integrations', icon: Puzzle, path: '/admin/integrations' },
+      { key: 'p1-settings', label: 'P1 Contact', icon: AlertTriangle, path: '/admin/p1-settings' },
+      { key: 'knowledge-base', label: 'Knowledge Base', icon: BookOpen, path: '/admin/knowledge-base' },
+      { key: 'performance', label: 'Performance', icon: BarChart3, path: '/admin/performance' },
+    ],
+  },
+  {
+    section: 'Admin',
+    scopes: ['founder'],
+    tabs: [
+      { key: 'scoped-admins', label: 'Admin Accounts', icon: UserCog, path: '/admin/scoped-admins' },
+      { key: 'ip-whitelist', label: 'IP Whitelist', icon: Globe, path: '/admin/ip-whitelist' },
+      { key: 'maintenance', label: 'Maintenance', icon: Power, path: '/admin/maintenance' },
+      { key: 'dev-switcher', label: 'Dev Switcher', icon: Settings, path: '/admin/dev-switcher' },
+    ],
+  },
+];
+
+// Operator-mode tabs (unchanged structure)
+const OPERATOR_TABS = [
+  { key: 'transition', label: 'TVT', icon: FileKey, path: '/ops/transition' },
+  { key: 'dts', label: 'DTS', icon: Shield, path: '/ops/dts' },
+  { key: 'support', label: 'Support', icon: Headphones, path: '/ops/support' },
+  { key: 'verifications', label: 'Verify', icon: FileKey, path: '/ops/verifications' },
+  { key: 'milestones', label: 'Milestones', icon: CheckSquare, path: '/ops/milestones' },
+  { key: 'users', label: 'Users', icon: Users, path: '/ops/users' },
+  { key: 'trials', label: 'Trials', icon: Clock, path: '/ops/trials' },
+  { key: 'estate-health', label: 'Estate Health', icon: HeartPulse, path: '/ops/estate-health' },
+  { key: 'system-health', label: 'System', icon: HeartPulse, path: '/ops/system-health' },
+  { key: 'canned-responses', label: 'Templates', icon: MessageSquare, path: '/ops/canned-responses' },
   { key: 'my-activity', label: 'My Activity', icon: Clock, path: '/ops/my-activity' },
+  { key: 'performance', label: 'My Stats', icon: BarChart3, path: '/ops/performance' },
   { key: 'search', label: 'Search', icon: Search, path: '/ops/search' },
   { key: 'ops-escalations', label: 'Escalate', icon: AlertTriangle, path: '/ops/escalations' },
   { key: 'shift-notes', label: 'Shift Notes', icon: StickyNote, path: '/ops/shift-notes' },
   { key: 'ops-kb', label: 'SOPs', icon: BookOpen, path: '/ops/knowledge-base' },
+];
+
+const MANAGER_EXTRA_TABS = [
+  { key: 'operators', label: 'Team', icon: Users, path: '/ops/operators' },
+  { key: 'ops-dashboard', label: 'Dashboard', icon: Activity, path: '/ops/ops-dashboard' },
+  { key: 'subscriptions', label: 'Subs', icon: CreditCard, path: '/ops/subscriptions' },
 ];
 
 const PATH_TO_TAB = {
@@ -100,12 +169,6 @@ const PATH_TO_TAB = {
   '/admin/activity': 'activity',
   '/admin/operators': 'operators',
   '/admin/audit': 'audit',
-  // Operations portal paths map to the same tabs
-  '/ops/transition': 'transition',
-  '/ops/dts': 'dts',
-  '/ops/support': 'support',
-  '/ops/verifications': 'verifications',
-  // New sidebar features
   '/admin/announcements': 'announcements',
   '/admin/system-health': 'system-health',
   '/admin/escalations': 'escalations',
@@ -122,6 +185,17 @@ const PATH_TO_TAB = {
   '/admin/ops-dashboard': 'ops-dashboard',
   '/admin/milestones': 'milestones',
   '/admin/trials': 'trials',
+  '/admin/scoped-admins': 'scoped-admins',
+  '/admin/ip-whitelist': 'ip-whitelist',
+  '/admin/maintenance': 'maintenance',
+  '/admin/canned-responses': 'canned-responses',
+  '/admin/performance': 'performance',
+  '/admin/launch': 'launch',
+  // Operations portal paths
+  '/ops/transition': 'transition',
+  '/ops/dts': 'dts',
+  '/ops/support': 'support',
+  '/ops/verifications': 'verifications',
   '/ops/my-activity': 'my-activity',
   '/ops/search': 'search',
   '/ops/escalations': 'ops-escalations',
@@ -136,6 +210,8 @@ const PATH_TO_TAB = {
   '/ops/estate-health': 'estate-health',
   '/ops/subscriptions': 'subscriptions',
   '/ops/system-health': 'system-health',
+  '/ops/canned-responses': 'canned-responses',
+  '/ops/performance': 'performance',
 };
 
 const AdminPage = ({ operatorMode = false }) => {
@@ -144,7 +220,6 @@ const AdminPage = ({ operatorMode = false }) => {
   const navigate = useNavigate();
   const defaultOpsTab = user?.operator_role === 'manager' ? 'ops-dashboard' : 'transition';
   const tab = PATH_TO_TAB[location.pathname] || (operatorMode ? defaultOpsTab : 'users');
-  // If founder lands on /admin with no specific tab, default to users
   const effectiveTab = (!operatorMode && location.pathname === '/admin') ? 'users' : tab;
 
   useScrollLock(effectiveTab);
@@ -160,6 +235,11 @@ const AdminPage = ({ operatorMode = false }) => {
   const [, setOtpDisabled] = useState(false);
   const [cleaning, setCleaning] = useState(false);
 
+  // Admin scope: founder sees all, scoped admins see only their sections
+  const adminScope = user?.admin_scope || 'founder';
+  const isFounder = adminScope === 'founder';
+  const isManager = user?.operator_role === 'manager';
+
   const handleCleanup = async () => {
     setCleaning(true);
     try {
@@ -168,7 +248,6 @@ const AdminPage = ({ operatorMode = false }) => {
       const total = Object.values(d).reduce((a, b) => a + b, 0);
       if (total > 0) {
         toast.success(`Cleaned up ${total} orphaned record(s)`);
-        // Refresh stats
         const [statsRes, usersRes] = await Promise.all([
           axios.get(`${API_URL}/admin/stats`, getAuthHeaders()),
           axios.get(`${API_URL}/admin/users`, getAuthHeaders()),
@@ -186,13 +265,11 @@ const AdminPage = ({ operatorMode = false }) => {
     const fetchData = async () => {
       try {
         if (operatorMode) {
-          // Operators need stats + users (for Users tab) + dashboard events
           const fetches = [
             axios.get(`${API_URL}/admin/stats`, getAuthHeaders()),
             axios.get(`${API_URL}/admin/users`, getAuthHeaders()),
             axios.get(`${API_URL}/ops/dashboard-events`, getAuthHeaders()).catch(() => ({ data: null })),
           ];
-          // Manager also gets ops dashboard + team tasks
           if (user?.operator_role === 'manager') {
             fetches.push(axios.get(`${API_URL}/ops/dashboard`, getAuthHeaders()).catch(() => ({ data: null })));
             fetches.push(axios.get(`${API_URL}/ops/team-tasks`, getAuthHeaders()).catch(() => ({ data: null })));
@@ -231,7 +308,6 @@ const AdminPage = ({ operatorMode = false }) => {
     } catch {}
   };
 
-  // Poll stats every 30s so new requests "pop in" for operators
   useEffect(() => {
     if (!operatorMode) return;
     const poll = setInterval(async () => {
@@ -268,15 +344,63 @@ const AdminPage = ({ operatorMode = false }) => {
 
   if (loading) return <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6"><Skeleton className="h-12 w-64 bg-[var(--s)]" /></div>;
 
+  // Build visible tabs for founder/scoped admin mode
+  const getVisibleFounderTabs = () => {
+    const tabs = [];
+    FOUNDER_SECTIONS.forEach(section => {
+      if (section.scopes.includes(adminScope)) {
+        tabs.push({ sectionLabel: section.section });
+        section.tabs.forEach(t => tabs.push(t));
+      }
+    });
+    return tabs;
+  };
+
+  // Build visible tabs for operator mode
+  const getVisibleOperatorTabs = () => {
+    const tabs = [...OPERATOR_TABS];
+    if (isManager || user?.role === 'admin') {
+      tabs.push(...MANAGER_EXTRA_TABS);
+    }
+    return tabs;
+  };
+
+  const visibleTabs = operatorMode ? getVisibleOperatorTabs() : getVisibleFounderTabs();
+
+  // Section colors for visual grouping
+  const sectionColors = {
+    'Operations': '#d4af37',
+    'Finance': '#22C993',
+    'Marketing': '#B794F6',
+    'Compliance': '#3B82F6',
+    'Platform': '#F59E0B',
+    'Admin': '#ef4444',
+  };
+
+  // Dashboard title based on scope
+  const getDashboardTitle = () => {
+    if (operatorMode) return 'Operations Dashboard';
+    if (isFounder) return 'Founder Dashboard';
+    const labels = { finance: 'Finance', compliance: 'Compliance', marketing: 'Marketing', platform_health: 'Platform Health' };
+    return `${labels[adminScope] || 'Admin'} Dashboard`;
+  };
+
   return (
     <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in max-w-full overflow-x-hidden" data-testid="admin-dashboard">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>{operatorMode ? 'Operations Dashboard' : 'Founder Dashboard'}</h1>
-          <p className="text-xs sm:text-sm text-[var(--t5)]">{operatorMode ? 'Transition Verification · Customer Service · Trustee Services' : 'Platform Management · Transition Verification · Trustee Services'}</p>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>{getDashboardTitle()}</h1>
+          <p className="text-xs sm:text-sm text-[var(--t5)]">
+            {operatorMode
+              ? 'Transition Verification \u00B7 Customer Service \u00B7 Trustee Services'
+              : isFounder
+                ? 'Operations \u00B7 Finance \u00B7 Marketing \u00B7 Compliance \u00B7 Platform'
+                : `Scoped access \u2014 ${adminScope.replace('_', ' ')}`
+            }
+          </p>
         </div>
-        {!operatorMode && (
+        {!operatorMode && isFounder && (
         <button
           onClick={handleCleanup}
           disabled={cleaning}
@@ -291,88 +415,93 @@ const AdminPage = ({ operatorMode = false }) => {
         )}
       </div>
 
-      {/* Revenue Analytics — founder only */}
-      {!operatorMode && <RevenuePanel revenue={revenue} />}
+      {/* Revenue Analytics — founder and finance only */}
+      {!operatorMode && (isFounder || adminScope === 'finance') && <RevenuePanel revenue={revenue} />}
 
       {/* Operator Work Queue Tiles */}
       {operatorMode && <OpsWorkTiles stats={stats} dashEvents={dashEvents} />}
 
       {/* Manager: Team Activity Overview */}
-      {operatorMode && user?.operator_role === 'manager' && (
+      {operatorMode && (isManager || user?.role === 'admin') && (
         <TeamActivitySection teamTasks={teamTasks} opsDash={opsDash} />
       )}
 
-      {/* Action Required — Founder only */}
-      {!operatorMode && <ActionRequired stats={stats} navigate={navigate} />}
+      {/* Action Required — founder only */}
+      {!operatorMode && isFounder && <ActionRequired stats={stats} navigate={navigate} />}
 
-      {/* Platform Overview — founder only */}
-      {!operatorMode && stats && <PlatformOverview stats={stats} />}
+      {/* Platform Overview — founder and platform_health only */}
+      {!operatorMode && (isFounder || adminScope === 'platform_health') && stats && <PlatformOverview stats={stats} />}
 
-      {/* Code Health — founder only */}
-      {!operatorMode && <CodeHealthTile getAuthHeaders={getAuthHeaders} />}
+      {/* Code Health — founder and platform_health only */}
+      {!operatorMode && (isFounder || adminScope === 'platform_health') && <CodeHealthTile getAuthHeaders={getAuthHeaders} />}
 
-      {/* Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide" data-testid="admin-tab-bar" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-        {TAB_CONFIG.filter(t => {
-          if (operatorMode) {
-            // Operators: work queues + operator tools
-            const opsTabs = ['transition', 'dts', 'support', 'verifications', 'milestones', 'users', 'trials', 'system-health', 'estate-health', 'my-activity', 'search', 'ops-escalations', 'shift-notes', 'ops-kb'];
-            // Managers and Founders also get team management + dashboard + subscriptions
-            if (user?.operator_role === 'manager' || user?.role === 'admin') opsTabs.push('operators', 'ops-dashboard', 'subscriptions');
-            return opsTabs.includes(t.key);
+      {/* Tabs — with section labels for founder view */}
+      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide items-center" data-testid="admin-tab-bar" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        {visibleTabs.map((t, i) => {
+          if (t.sectionLabel) {
+            return (
+              <span key={`section-${t.sectionLabel}`}
+                className={`text-[10px] font-bold uppercase tracking-wider whitespace-nowrap flex-shrink-0 ${i > 0 ? 'ml-2' : ''} mr-1`}
+                style={{ color: sectionColors[t.sectionLabel] || 'var(--t5)' }}>
+                {t.sectionLabel}
+              </span>
+            );
           }
-          // Founder: all except operator-specific tabs
-          return !['my-activity', 'search', 'ops-escalations', 'shift-notes', 'ops-kb'].includes(t.key);
-        }).map(t => (
-          <button key={t.key} onClick={() => navigate(operatorMode ? t.path.replace('/admin', '/ops') : t.path)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
-              effectiveTab === t.key ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'
-            }`} data-testid={`admin-tab-${t.key}`}>
-            <t.icon className="w-3.5 h-3.5" /> {t.label}
-            {t.key === 'founder-invites' && pendingAccessReqs > 0 && (
-              <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-[11px] font-bold leading-none" style={{ background: '#ef4444', color: '#fff' }}>{pendingAccessReqs}</span>
-            )}
-          </button>
-        ))}
+          return (
+            <button key={t.key} onClick={() => navigate(t.path)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
+                effectiveTab === t.key ? 'bg-[var(--gold)] text-[#0F1629]' : 'bg-[var(--s)] text-[var(--t4)]'
+              }`} data-testid={`admin-tab-${t.key}`}>
+              <t.icon className="w-3.5 h-3.5" /> {t.label}
+              {t.key === 'founder-invites' && pendingAccessReqs > 0 && (
+                <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-[11px] font-bold leading-none" style={{ background: '#ef4444', color: '#fff' }}>{pendingAccessReqs}</span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Tab Content — min-height ensures scroll position is preserved when switching tabs */}
+      {/* Tab Content */}
       <div style={{ minHeight: '100vh' }}>
-      {effectiveTab === 'users' && <UsersTab users={users} setUsers={setUsers} currentUserId={user?.id} getAuthHeaders={getAuthHeaders} operatorMode={operatorMode} />}
-      {effectiveTab === 'transition' && <TransitionTab getAuthHeaders={getAuthHeaders} onStatsChange={refreshStats} />}
-      {effectiveTab === 'dts' && <DTSTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'support' && <SupportTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'subscriptions' && <SubscriptionsTab getAuthHeaders={getAuthHeaders} users={users} operatorMode={operatorMode} />}
-      {effectiveTab === 'verifications' && <VerificationsTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'analytics' && <AnalyticsTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'launch' && <LaunchMetricsTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'activity' && <ActivityTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'operators' && (!operatorMode || user?.operator_role === 'manager') && <OperatorsTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'audit' && !operatorMode && <AuditTrailTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'dev-switcher' && !operatorMode && <DevSwitcherTab users={users} getAuthHeaders={getAuthHeaders} />}
-      {/* New Founder features */}
-      {effectiveTab === 'announcements' && !operatorMode && <AnnouncementsTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'system-health' && <SystemHealthTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'escalations' && !operatorMode && <EscalationsTab getAuthHeaders={getAuthHeaders} isFounder={true} />}
-      {effectiveTab === 'knowledge-base' && !operatorMode && <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={true} />}
-      {effectiveTab === 'p1-settings' && !operatorMode && <P1ContactSettingsTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'estate-health' && <EstateHealthTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'integrations' && !operatorMode && <IntegrationsTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'funnel' && !operatorMode && <FunnelAnalyticsTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'beta-testing' && !operatorMode && <BetaTestingTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'founder-emails' && !operatorMode && <FounderEmailsTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'founder-invites' && !operatorMode && <FounderInvitesTab onPendingChange={setPendingAccessReqs} />}
-      {effectiveTab === 'site-content' && !operatorMode && <SiteContentTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'grace-periods' && <GracePeriodsTab getAuthHeaders={getAuthHeaders} />}
-      {/* New Operator features */}
-      {effectiveTab === 'my-activity' && operatorMode && <MyActivityTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'search' && operatorMode && <QuickSearchTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'ops-escalations' && operatorMode && <EscalationsTab getAuthHeaders={getAuthHeaders} isFounder={false} />}
-      {effectiveTab === 'shift-notes' && operatorMode && <ShiftNotesTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'ops-kb' && operatorMode && <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={false} />}
-      {effectiveTab === 'ops-dashboard' && <OpsDashboardTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'milestones' && <MilestoneDeliveriesTab getAuthHeaders={getAuthHeaders} />}
-      {effectiveTab === 'trials' && <TrialUsersTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'users' && <UsersTab users={users} setUsers={setUsers} currentUserId={user?.id} getAuthHeaders={getAuthHeaders} operatorMode={operatorMode} />}
+        {effectiveTab === 'transition' && <TransitionTab getAuthHeaders={getAuthHeaders} onStatsChange={refreshStats} />}
+        {effectiveTab === 'dts' && <DTSTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'support' && <SupportTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'subscriptions' && <SubscriptionsTab getAuthHeaders={getAuthHeaders} users={users} operatorMode={operatorMode} />}
+        {effectiveTab === 'verifications' && <VerificationsTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'analytics' && <AnalyticsTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'launch' && <LaunchMetricsTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'activity' && <ActivityTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'operators' && <OperatorsTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'audit' && <AuditTrailTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'dev-switcher' && <DevSwitcherTab users={users} getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'announcements' && <AnnouncementsTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'system-health' && <SystemHealthTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'escalations' && <EscalationsTab getAuthHeaders={getAuthHeaders} isFounder={isFounder} isManager={isManager} />}
+        {effectiveTab === 'knowledge-base' && <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={true} />}
+        {effectiveTab === 'p1-settings' && <P1ContactSettingsTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'estate-health' && <EstateHealthTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'integrations' && <IntegrationsTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'funnel' && <FunnelAnalyticsTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'beta-testing' && <BetaTestingTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'founder-emails' && <FounderEmailsTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'founder-invites' && <FounderInvitesTab onPendingChange={setPendingAccessReqs} />}
+        {effectiveTab === 'site-content' && <SiteContentTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'grace-periods' && <GracePeriodsTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'trials' && <TrialUsersTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'scoped-admins' && <ScopedAdminsTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'ip-whitelist' && <IPWhitelistTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'maintenance' && <MaintenanceModeTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'canned-responses' && <CannedResponsesTab getAuthHeaders={getAuthHeaders} isManager={isFounder || isManager} />}
+        {effectiveTab === 'performance' && <PerformanceTab getAuthHeaders={getAuthHeaders} />}
+        {/* Operator-specific tabs */}
+        {effectiveTab === 'my-activity' && operatorMode && <MyActivityTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'search' && operatorMode && <QuickSearchTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'ops-escalations' && operatorMode && <EscalationsTab getAuthHeaders={getAuthHeaders} isFounder={false} isManager={isManager} />}
+        {effectiveTab === 'shift-notes' && operatorMode && <ShiftNotesTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'ops-kb' && operatorMode && <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={false} />}
+        {effectiveTab === 'ops-dashboard' && <OpsDashboardTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'milestones' && <MilestoneDeliveriesTab getAuthHeaders={getAuthHeaders} />}
       </div>
     </div>
   );

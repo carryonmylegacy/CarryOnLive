@@ -1,0 +1,198 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { UserCog, Plus, Loader2, Trash2, Pencil, Shield } from 'lucide-react';
+import { Card, CardContent } from '../ui/card';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { toast } from '../../utils/toast';
+import { API_URL } from '../../config';
+
+const SCOPE_OPTIONS = [
+  { value: 'founder', label: 'Founder Admin', desc: 'Full platform access — sees and controls everything', color: '#d4af37' },
+  { value: 'finance', label: 'Finance Admin', desc: 'Revenue, Subscriptions, Grace Periods, Analytics', color: '#22C993' },
+  { value: 'compliance', label: 'Compliance Admin', desc: 'Audit Trail, Security, Estate Health', color: '#3B82F6' },
+  { value: 'marketing', label: 'Marketing Admin', desc: 'Funnel, Beta Testing, Site Content, Emails, Invites', color: '#B794F6' },
+  { value: 'platform_health', label: 'Platform Health Admin', desc: 'System Health, Operators, Integrations, Announcements', color: '#F59E0B' },
+];
+
+export const ScopedAdminsTab = ({ getAuthHeaders }) => {
+  const [admins, setAdmins] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ email: '', password: '', first_name: '', last_name: '', admin_scope: 'finance' });
+  const [editForm, setEditForm] = useState({ admin_scope: '', first_name: '', last_name: '', password: '' });
+
+  const headers = getAuthHeaders()?.headers || {};
+
+  const fetch_ = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/admin/scoped-admins`, { headers });
+      setAdmins(res.data);
+    } catch { toast.error('Failed to load admins'); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { fetch_(); }, []); // eslint-disable-line
+
+  const handleCreate = async () => {
+    if (!form.email || !form.password || !form.first_name) {
+      toast.error('Email, password, and first name are required');
+      return;
+    }
+    setSaving(true);
+    try {
+      await axios.post(`${API_URL}/admin/scoped-admins`, form, {
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
+      toast.success('Admin created');
+      setShowCreate(false);
+      setForm({ email: '', password: '', first_name: '', last_name: '', admin_scope: 'finance' });
+      fetch_();
+    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to create admin'); }
+    finally { setSaving(false); }
+  };
+
+  const handleUpdate = async (id) => {
+    setSaving(true);
+    try {
+      const payload = {};
+      if (editForm.admin_scope) payload.admin_scope = editForm.admin_scope;
+      if (editForm.first_name) payload.first_name = editForm.first_name;
+      if (editForm.last_name) payload.last_name = editForm.last_name;
+      if (editForm.password) payload.password = editForm.password;
+      await axios.put(`${API_URL}/admin/scoped-admins/${id}`, payload, {
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
+      toast.success('Admin updated');
+      setEditId(null);
+      fetch_();
+    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update'); }
+    finally { setSaving(false); }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this admin account?')) return;
+    try {
+      await axios.delete(`${API_URL}/admin/scoped-admins/${id}`, { headers });
+      toast.success('Admin deleted');
+      fetch_();
+    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to delete'); }
+  };
+
+  if (loading) return <div className="text-center py-12"><Loader2 className="w-6 h-6 animate-spin mx-auto text-[var(--t4)]" /></div>;
+
+  return (
+    <div className="space-y-4" data-testid="scoped-admins-tab">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-[var(--t)]">Admin Accounts</h2>
+          <p className="text-xs text-[var(--t5)]">Create scoped admin accounts with limited portal access</p>
+        </div>
+        <Button onClick={() => setShowCreate(!showCreate)} size="sm" className="gold-button text-xs" data-testid="create-admin-btn">
+          <Plus className="w-3 h-3 mr-1" /> New Admin
+        </Button>
+      </div>
+
+      {showCreate && (
+        <Card className="glass-card">
+          <CardContent className="p-4 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <Input value={form.first_name} onChange={e => setForm({...form, first_name: e.target.value})}
+                placeholder="First Name" className="text-sm" data-testid="admin-first-name" />
+              <Input value={form.last_name} onChange={e => setForm({...form, last_name: e.target.value})}
+                placeholder="Last Name" className="text-sm" data-testid="admin-last-name" />
+            </div>
+            <Input value={form.email} onChange={e => setForm({...form, email: e.target.value})}
+              placeholder="Email" type="email" className="text-sm" data-testid="admin-email" />
+            <Input value={form.password} onChange={e => setForm({...form, password: e.target.value})}
+              placeholder="Password" type="password" className="text-sm" data-testid="admin-password" />
+            <div>
+              <p className="text-xs text-[var(--t5)] mb-2">Admin Scope:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {SCOPE_OPTIONS.filter(s => s.value !== 'founder').map(s => (
+                  <button key={s.value}
+                    onClick={() => setForm({...form, admin_scope: s.value})}
+                    className={`p-2.5 rounded-xl text-left transition-all text-xs ${
+                      form.admin_scope === s.value
+                        ? 'border-2'
+                        : 'bg-[var(--s)] border border-[var(--b)]'
+                    }`}
+                    style={form.admin_scope === s.value ? { borderColor: s.color, background: `${s.color}10` } : {}}
+                    data-testid={`scope-option-${s.value}`}
+                  >
+                    <span className="font-bold text-[var(--t)]">{s.label}</span>
+                    <p className="text-[var(--t5)] text-[11px] mt-0.5">{s.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button onClick={() => setShowCreate(false)} variant="ghost" size="sm" className="text-xs">Cancel</Button>
+              <Button onClick={handleCreate} disabled={saving} size="sm" className="gold-button text-xs" data-testid="submit-create-admin">
+                {saving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} Create Admin
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {admins.map(admin => {
+        const scope = SCOPE_OPTIONS.find(s => s.value === admin.admin_scope) || SCOPE_OPTIONS[0];
+        const isEditing = editId === admin.id;
+        return (
+          <Card key={admin.id} className="glass-card" data-testid={`admin-card-${admin.id}`}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${scope.color}15`, border: `1px solid ${scope.color}30` }}>
+                    {scope.value === 'founder' ? <Shield className="w-4 h-4" style={{ color: scope.color }} /> : <UserCog className="w-4 h-4" style={{ color: scope.color }} />}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-[var(--t)]">{admin.name}</p>
+                    <p className="text-[11px] text-[var(--t5)]">{admin.email}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] px-2 py-1 rounded-full font-bold" style={{ background: `${scope.color}15`, color: scope.color }}>
+                    {scope.label}
+                  </span>
+                  {scope.value !== 'founder' && (
+                    <>
+                      <button onClick={() => { setEditId(isEditing ? null : admin.id); setEditForm({ admin_scope: admin.admin_scope, first_name: admin.first_name || '', last_name: admin.last_name || '', password: '' }); }}
+                        className="p-1.5 rounded-lg text-[var(--t5)] hover:text-[var(--t3)] transition-colors" data-testid={`edit-admin-${admin.id}`}>
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => handleDelete(admin.id)}
+                        className="p-1.5 rounded-lg text-[var(--t5)] hover:text-red-400 transition-colors" data-testid={`delete-admin-${admin.id}`}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+              {isEditing && (
+                <div className="mt-3 pt-3 space-y-2" style={{ borderTop: '1px solid var(--b)' }}>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input value={editForm.first_name} onChange={e => setEditForm({...editForm, first_name: e.target.value})} placeholder="First Name" className="text-xs" />
+                    <Input value={editForm.last_name} onChange={e => setEditForm({...editForm, last_name: e.target.value})} placeholder="Last Name" className="text-xs" />
+                  </div>
+                  <Input value={editForm.password} onChange={e => setEditForm({...editForm, password: e.target.value})} placeholder="New password (leave blank to keep)" type="password" className="text-xs" />
+                  <select value={editForm.admin_scope} onChange={e => setEditForm({...editForm, admin_scope: e.target.value})}
+                    className="w-full px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-xs">
+                    {SCOPE_OPTIONS.filter(s => s.value !== 'founder').map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                  </select>
+                  <div className="flex gap-2 justify-end">
+                    <Button onClick={() => setEditId(null)} variant="ghost" size="sm" className="text-xs">Cancel</Button>
+                    <Button onClick={() => handleUpdate(admin.id)} disabled={saving} size="sm" className="gold-button text-xs">Save</Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
+};

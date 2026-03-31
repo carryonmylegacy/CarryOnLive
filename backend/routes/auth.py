@@ -36,6 +36,7 @@ def _user_response(user: dict, owns_estate: bool = False) -> UserResponse:
         created_at=user["created_at"],
         photo_url=resolve_photo_url(user.get("photo_url", "")),
         operator_role=user.get("operator_role", ""),
+        admin_scope=user.get("admin_scope", ""),
         is_also_benefactor=user.get("is_also_benefactor", False) or owns_estate,
         is_also_beneficiary=user.get("is_also_beneficiary", False) or False,
         is_beta_tester=user.get("is_beta_tester", False),
@@ -214,6 +215,30 @@ async def login(data: UserLogin, request: Request):
 
     # Clear failed attempts on successful login
     await db.failed_logins.delete_many({"email": login_lower})
+
+    # ── IP Whitelist enforcement ──
+    from routes.admin.ip_whitelist import check_ip_whitelist
+
+    ip_allowed = await check_ip_whitelist(
+        user.get("role", ""),
+        user.get("operator_role", ""),
+        client_ip,
+    )
+    if not ip_allowed:
+        await log_audit_event(
+            actor_id=user["id"],
+            actor_email=user["email"],
+            actor_role=user.get("role", ""),
+            action="login_ip_blocked",
+            category="auth",
+            ip_address=client_ip,
+            severity="critical",
+            details={"reason": "ip_not_whitelisted"},
+        )
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied: Your IP address is not authorized for this account type.",
+        )
 
     # ── Single-session enforcement at login time ──
     # If user already has an active session and didn't request force, block login.
