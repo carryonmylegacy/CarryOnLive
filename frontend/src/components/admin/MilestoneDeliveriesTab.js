@@ -11,7 +11,8 @@ import { API_URL } from '../../config';
 
 const statusConfig = {
   pending_review: { label: 'Pending Review', color: '#F59E0B', icon: Clock },
-  approved: { label: 'Approved', color: '#22C993', icon: CheckCircle2 },
+  approved: { label: 'Delivered', color: '#22C993', icon: CheckCircle2 },
+  scheduled: { label: 'Scheduled', color: '#3B82F6', icon: Calendar },
   rejected: { label: 'Rejected', color: '#EF4444', icon: XCircle },
 };
 
@@ -55,14 +56,18 @@ export const MilestoneDeliveriesTab = ({ getAuthHeaders }) => {
     finally { setDetailLoading(false); }
   };
 
-  const handleReview = async (deliveryId, action, notes = '') => {
+  const handleReview = async (deliveryId, action, notes = '', scheduledDate = null) => {
     setReviewLoading(true);
     try {
+      const payload = { action, notes };
+      if (action === 'schedule' && scheduledDate) payload.scheduled_date = scheduledDate;
       await axios.post(`${API_URL}/milestones/deliveries/${deliveryId}/review`,
-        { action, notes }, getAuthHeaders());
-      toast.success(action === 'approve'
-        ? 'Message approved and delivered to beneficiary'
-        : 'Delivery rejected');
+        payload, getAuthHeaders());
+      toast.success(
+        action === 'approve' ? 'Message delivered to beneficiary now'
+        : action === 'schedule' ? `Message scheduled for delivery on ${scheduledDate}`
+        : 'Delivery rejected'
+      );
       setSelectedDelivery(null);
       setDetailData(null);
       fetchDeliveries();
@@ -180,22 +185,34 @@ export const MilestoneDeliveriesTab = ({ getAuthHeaders }) => {
                 <CardContent className="p-5">
                   <h3 className="font-bold text-[var(--t)] mb-3">Review Decision</h3>
                   <p className="text-xs text-[var(--t4)] mb-4">
-                    Confirm the automated match is correct and approve delivery, or reject if the match is incorrect.
+                    Confirm the automated match is correct. You can deliver immediately, schedule for the event date, or reject.
                   </p>
-                  <div className="flex gap-3">
-                    <Button
-                      className="flex-1 font-bold"
-                      style={{ background: 'linear-gradient(135deg, #22C993, #16A34A)', color: 'white' }}
-                      disabled={reviewLoading}
-                      onClick={() => handleReview(selectedDelivery.id, 'approve')}
-                      data-testid="milestone-approve-btn"
-                    >
-                      {reviewLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <CheckCircle2 className="w-4 h-4 mr-1" />}
-                      Approve & Deliver
-                    </Button>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex gap-3">
+                      <Button
+                        className="flex-1 font-bold"
+                        style={{ background: 'linear-gradient(135deg, #22C993, #16A34A)', color: 'white' }}
+                        disabled={reviewLoading}
+                        onClick={() => handleReview(selectedDelivery.id, 'approve')}
+                        data-testid="milestone-approve-btn"
+                      >
+                        {reviewLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <CheckCircle2 className="w-4 h-4 mr-1" />}
+                        Send Now
+                      </Button>
+                      <Button
+                        className="flex-1 font-bold"
+                        style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', color: 'white' }}
+                        disabled={reviewLoading || !selectedDelivery.event_date}
+                        onClick={() => handleReview(selectedDelivery.id, 'schedule', '', selectedDelivery.event_date)}
+                        data-testid="milestone-schedule-btn"
+                      >
+                        {reviewLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Calendar className="w-4 h-4 mr-1" />}
+                        Send on {selectedDelivery.event_date ? new Date(selectedDelivery.event_date + 'T00:00:00').toLocaleDateString() : 'Event Date'}
+                      </Button>
+                    </div>
                     <Button
                       variant="outline"
-                      className="flex-1 font-bold border-[var(--rd)]/30 text-[var(--rd)]"
+                      className="font-bold border-[var(--rd)]/30 text-[var(--rd)]"
                       disabled={reviewLoading}
                       onClick={() => handleReview(selectedDelivery.id, 'reject')}
                       data-testid="milestone-reject-btn"
@@ -203,6 +220,21 @@ export const MilestoneDeliveriesTab = ({ getAuthHeaders }) => {
                       <XCircle className="w-4 h-4 mr-1" /> Reject
                     </Button>
                   </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Scheduled */}
+            {selectedDelivery.status === 'scheduled' && (
+              <Card className="glass-card" style={{ borderLeft: '3px solid #3B82F6' }}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="w-4 h-4 text-[#3B82F6]" />
+                    <span className="text-[var(--t)] font-bold">Scheduled for delivery on {new Date(selectedDelivery.scheduled_date + 'T00:00:00').toLocaleDateString()}</span>
+                  </div>
+                  {selectedDelivery.reviewed_by_name && (
+                    <p className="text-xs text-[var(--t5)] mt-1">by {selectedDelivery.reviewed_by_name} on {new Date(selectedDelivery.reviewed_at).toLocaleString()}</p>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -250,22 +282,19 @@ export const MilestoneDeliveriesTab = ({ getAuthHeaders }) => {
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-4 gap-2">
           {[
-            { label: 'Pending', count: stats.pending, color: '#F59E0B' },
-            { label: 'Approved', count: stats.approved, color: '#22C993' },
-            { label: 'Rejected', count: stats.rejected, color: '#EF4444' },
+            { label: 'Pending', count: stats.pending, color: '#F59E0B', filter: 'pending_review' },
+            { label: 'Scheduled', count: stats.scheduled, color: '#3B82F6', filter: 'scheduled' },
+            { label: 'Delivered', count: stats.approved, color: '#22C993', filter: 'approved' },
+            { label: 'Rejected', count: stats.rejected, color: '#EF4444', filter: 'rejected' },
           ].map(s => (
             <div key={s.label} className="rounded-xl p-3 text-center cursor-pointer"
               style={{
-                background: filter === s.label.toLowerCase().replace(' ', '_')
-                  ? `${s.color}12` : 'var(--s)',
-                border: `1px solid ${filter === s.label.toLowerCase().replace(' ', '_')
-                  ? `${s.color}30` : 'var(--b)'}`,
+                background: filter === s.filter ? `${s.color}12` : 'var(--s)',
+                border: `1px solid ${filter === s.filter ? `${s.color}30` : 'var(--b)'}`,
               }}
-              onClick={() => setFilter(
-                s.label === 'Pending' ? 'pending_review' : s.label.toLowerCase()
-              )}
+              onClick={() => setFilter(s.filter)}
               data-testid={`milestone-filter-${s.label.toLowerCase()}`}>
               <div className="text-xl font-bold text-[var(--t)]">{s.count}</div>
               <div className="text-[11px] font-bold" style={{ color: s.color }}>{s.label}</div>
@@ -311,6 +340,9 @@ export const MilestoneDeliveriesTab = ({ getAuthHeaders }) => {
                     <span className="flex items-center gap-1"><User className="w-3 h-3" /> {d.beneficiary_name}</span>
                     <span className="flex items-center gap-1"><Gift className="w-3 h-3" /> {d.event_type}</span>
                     <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {new Date(d.event_date).toLocaleDateString()}</span>
+                    {d.status === 'scheduled' && d.scheduled_date && (
+                      <span className="flex items-center gap-1 text-[#3B82F6] font-bold">Delivers {new Date(d.scheduled_date + 'T00:00:00').toLocaleDateString()}</span>
+                    )}
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-[var(--t5)] flex-shrink-0" />

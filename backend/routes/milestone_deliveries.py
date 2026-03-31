@@ -1,7 +1,7 @@
 """CarryOn™ — Milestone Delivery Review Workflow
 
 Workers review automated milestone message matches before delivery.
-Flow: Beneficiary reports milestone → System finds matches → Worker reviews → Approves/Rejects → Delivers
+Flow: Beneficiary reports milestone → System finds matches → Worker reviews → Approves/Rejects/Schedules → Delivers
 """
 
 import asyncio
@@ -55,13 +55,15 @@ async def get_delivery_stats(current_user: dict = Depends(get_current_user)):
 
     pending = await db.milestone_deliveries.count_documents({"status": "pending_review"})
     approved = await db.milestone_deliveries.count_documents({"status": "approved"})
+    scheduled = await db.milestone_deliveries.count_documents({"status": "scheduled"})
     rejected = await db.milestone_deliveries.count_documents({"status": "rejected"})
 
     return {
         "pending": pending,
         "approved": approved,
+        "scheduled": scheduled,
         "rejected": rejected,
-        "total": pending + approved + rejected,
+        "total": pending + approved + scheduled + rejected,
     }
 
 
@@ -112,8 +114,9 @@ async def get_delivery_detail(
 
 
 class DeliveryReviewRequest(BaseModel):
-    action: str  # "approve" or "reject"
+    action: str  # "approve", "reject", or "schedule"
     notes: Optional[str] = None
+    scheduled_date: Optional[str] = None  # ISO date for scheduled delivery
 
 
 @router.post("/milestones/deliveries/{delivery_id}/review")
@@ -122,17 +125,42 @@ async def review_delivery(
     data: DeliveryReviewRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    """Approve or reject a pending milestone delivery."""
+    """Approve (send now), schedule (send on date), or reject a pending milestone delivery."""
     require_staff(current_user)
 
-    if data.action not in ("approve", "reject"):
-        raise HTTPException(status_code=400, detail="Action must be 'approve' or 'reject'")
+    if data.action not in ("approve", "reject", "schedule"):
+        raise HTTPException(status_code=400, detail="Action must be 'approve', 'reject', or 'schedule'")
 
     delivery = await db.milestone_deliveries.find_one({"id": delivery_id, "status": "pending_review"}, {"_id": 0})
     if not delivery:
         raise HTTPException(status_code=404, detail="Pending delivery not found")
 
     now = datetime.now(timezone.utc)
+
+    if data.action == "schedule":
+        if not data.scheduled_date:
+            raise HTTPException(status_code=400, detail="scheduled_date is required for schedule action")
+
+        await db.milestone_deliveries.update_one(
+            {"id": delivery_id},
+            {
+                "$set": {
+                    "status": "scheduled",
+                    "scheduled_date": data.scheduled_date,
+                    "reviewed_by": current_user["id"],
+                    "reviewed_by_name": current_user.get("name", ""),
+                    "reviewed_at": now.isoformat(),
+                    "review_notes": data.notes,
+                }
+            },
+        )
+
+        return {
+            "status": "scheduled",
+            "scheduled_date": data.scheduled_date,
+            "message": f"Message scheduled for delivery on {data.scheduled_date}",
+        }
+
     new_status = "approved" if data.action == "approve" else "rejected"
 
     await db.milestone_deliveries.update_one(
@@ -149,7 +177,7 @@ async def review_delivery(
     )
 
     if data.action == "approve":
-        # Deliver the message
+        # Deliver the message immediately
         await db.messages.update_one(
             {"id": delivery["message_id"]},
             {
@@ -181,3 +209,60 @@ async def review_delivery(
             "status": "rejected",
             "message": "Delivery rejected — message will not be delivered",
         }
+
+
+@router.post("/milestones/process-scheduled")
+async def process_scheduled_deliveries(current_user: dict = Depends(get_current_user)):
+    """Process all scheduled deliveries whose date has arrived. Staff only.
+    This can be called daily via cron, or manually from the admin panel."""
+    require_staff(current_user)
+
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    scheduled = await db.milestone_deliveries.find(
+        {"status": "scheduled", "scheduled_date": {"$lte": today}},
+        {"_id": 0},
+    ).to_list(500)
+
+    delivered_count = 0
+    now = datetime.now(timezone.utc)
+
+    for delivery in scheduled:
+        # Deliver the message
+        await db.messages.update_one(
+            {"id": delivery["message_id"]},
+            {
+                "$set": {
+                    "is_delivered": True,
+                    "delivered_at": now.isoformat(),
+                    "delivered_via": "scheduled_milestone",
+                    "milestone_report_id": delivery["milestone_report_id"],
+                    "delivered_by": delivery.get("reviewed_by", "system"),
+                }
+            },
+        )
+
+        # Update delivery status
+        await db.milestone_deliveries.update_one(
+            {"id": delivery["id"]},
+            {"$set": {"status": "approved", "delivered_at": now.isoformat()}},
+        )
+
+        # Notify the beneficiary
+        asyncio.create_task(
+            notify.beneficiary(
+                delivery["beneficiary_id"],
+                "New Milestone Message Unlocked",
+                f"A milestone message '{delivery.get('message_title', 'Message')}' has been delivered to you.",
+                url="/beneficiary/messages",
+                priority="high",
+                metadata={"message_id": delivery["message_id"]},
+            )
+        )
+
+        delivered_count += 1
+
+    return {
+        "processed": delivered_count,
+        "message": f"{delivered_count} scheduled delivery(ies) processed.",
+    }

@@ -557,6 +557,17 @@ async def report_milestone(data: MilestoneReportCreate, current_user: dict = Dep
     if current_user["role"] != "beneficiary":
         raise HTTPException(status_code=403, detail="Only beneficiaries can report milestones")
 
+    # Enforce subscription: beneficiary must have an active subscription to report new milestones
+    # (Delivered messages remain accessible forever regardless of subscription status)
+    from guards import get_subscription_access
+
+    access = await get_subscription_access(current_user)
+    if not access.get("has_access"):
+        raise HTTPException(
+            status_code=403,
+            detail="An active subscription is required to report milestones. Your previously delivered messages remain accessible.",
+        )
+
     report = MilestoneReport(
         estate_id=data.estate_id,
         beneficiary_id=current_user["id"],

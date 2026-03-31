@@ -99,3 +99,68 @@ async def data_retention_scheduler():
         except Exception as e:
             logger.error(f"Data retention cleanup failed: {e}")
         await asyncio.sleep(86400)  # Run daily
+
+
+async def milestone_delivery_scheduler():
+    """Check for scheduled milestone deliveries daily at 9 AM EST (14:00 UTC)."""
+    from datetime import datetime, timezone
+
+    from config import db
+    from services.notifications import notify
+
+    while True:
+        now = datetime.now(timezone.utc)
+        # Target 14:00 UTC (9 AM EST)
+        target_hour = 14
+        if now.hour >= target_hour:
+            wait_hours = 24 - (now.hour - target_hour)
+        else:
+            wait_hours = target_hour - now.hour
+        wait_seconds = wait_hours * 3600 - now.minute * 60 - now.second
+        logger.info(f"Milestone delivery scheduler: next check in {wait_seconds / 3600:.1f}h")
+        await asyncio.sleep(max(60, wait_seconds))
+
+        try:
+            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            scheduled = await db.milestone_deliveries.find(
+                {"status": "scheduled", "scheduled_date": {"$lte": today}},
+                {"_id": 0},
+            ).to_list(500)
+
+            delivered = 0
+            delivery_time = datetime.now(timezone.utc)
+
+            for delivery in scheduled:
+                await db.messages.update_one(
+                    {"id": delivery["message_id"]},
+                    {
+                        "$set": {
+                            "is_delivered": True,
+                            "delivered_at": delivery_time.isoformat(),
+                            "delivered_via": "scheduled_milestone",
+                            "milestone_report_id": delivery["milestone_report_id"],
+                            "delivered_by": delivery.get("reviewed_by", "system"),
+                        }
+                    },
+                )
+                await db.milestone_deliveries.update_one(
+                    {"id": delivery["id"]},
+                    {"$set": {"status": "approved", "delivered_at": delivery_time.isoformat()}},
+                )
+                try:
+                    await notify.beneficiary(
+                        delivery["beneficiary_id"],
+                        "New Milestone Message Unlocked",
+                        f"A milestone message '{delivery.get('message_title', 'Message')}' has been delivered to you.",
+                        url="/beneficiary/messages",
+                        priority="high",
+                        metadata={"message_id": delivery["message_id"]},
+                    )
+                except Exception:
+                    pass
+                delivered += 1
+
+            if delivered:
+                logger.info(f"Milestone scheduler: delivered {delivered} scheduled message(s)")
+        except Exception as e:
+            logger.error(f"Milestone delivery scheduler failed: {e}")

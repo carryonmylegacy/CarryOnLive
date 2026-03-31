@@ -53,7 +53,12 @@ from routes.beta import router as beta_router
 from routes.ffn import router as ffn_router
 from routes.funnel import router as funnel_router
 from routes.founder_invites import router as founder_invites_router
-from schedulers import daily_dob_check_scheduler, data_retention_scheduler, weekly_digest_scheduler
+from schedulers import (
+    daily_dob_check_scheduler,
+    data_retention_scheduler,
+    weekly_digest_scheduler,
+    milestone_delivery_scheduler,
+)
 
 
 # ===================== LIFECYCLE =====================
@@ -141,6 +146,7 @@ async def lifespan(app):
     dob_task = asyncio.create_task(daily_dob_check_scheduler())
     billing_task = asyncio.create_task(billing_lifecycle_scheduler())
     retention_task = asyncio.create_task(data_retention_scheduler())
+    asyncio.create_task(milestone_delivery_scheduler())
 
     # Warm up xAI connection + start periodic keepalive
     from routes.guardian import warmup_xai

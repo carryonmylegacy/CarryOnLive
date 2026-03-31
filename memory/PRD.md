@@ -30,6 +30,12 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (March 31, 2026 — Scheduled Milestone Delivery + Subscription Gate)
+- **"Send on Date Requested" feature**: Staff can now choose "Send Now" (immediate delivery) or "Send on [Event Date]" (scheduled delivery) when reviewing milestone message matches. A background scheduler runs daily at 9 AM EST to process due deliveries automatically.
+- **Subscription gate on milestone reports**: Beneficiaries must have an active subscription to submit new milestone reports. Previously delivered messages remain accessible forever regardless of subscription status.
+- **New "Scheduled" status**: Added to delivery pipeline with blue visual indicator in admin stats.
+- **Manual trigger endpoint**: `POST /api/milestones/process-scheduled` allows staff to manually trigger scheduled delivery processing.
+
 ### Completed (March 30, 2026 — Mobile/PWA UX Compliance Fixes)
 - **Fixed all Section E housekeeping checks** (10/10 PASS):
   - Check 50: Fixed 7 sub-11px font instances (`text-[9px]`→`text-[11px]`, `text-[10px]`→`text-[11px]`) in AdminPage.js and FounderInvitesTab.js
