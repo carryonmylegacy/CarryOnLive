@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 
 from config import db
+from guards import require_admin, require_staff
 from models import DeathCertificate, MilestoneReport, MilestoneReportCreate
 from services.audit import get_client_ip, log_audit_event
 from services.encryption import encrypt_aes256, get_estate_salt
@@ -97,10 +98,8 @@ async def upload_death_certificate(
 
 
 @router.get("/transition/certificates")
-async def get_pending_certificates(current_user: dict = Depends(get_current_user)):
+async def get_pending_certificates(current_user: dict = Depends(require_staff)):
     """List pending death certificates for admin review."""
-    if current_user["role"] not in ("admin", "operator"):
-        raise HTTPException(status_code=403, detail="Only admins can view pending certificates")
 
     certificates = await db.death_certificates.find({"status": "pending"}, {"_id": 0, "file_data": 0}).to_list(100)
     return certificates
@@ -110,11 +109,9 @@ async def get_pending_certificates(current_user: dict = Depends(get_current_user
 async def begin_review(
     certificate_id: str,
     request: Request,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_staff),
 ):
     """TVT member opens and begins reviewing a certificate"""
-    if current_user["role"] not in ("admin", "operator"):
-        raise HTTPException(status_code=403, detail="Only TVT members can review certificates")
     cert = await db.death_certificates.find_one({"id": certificate_id}, {"_id": 0})
     if not cert:
         raise HTTPException(status_code=404, detail="Certificate not found")
@@ -148,11 +145,9 @@ async def begin_review(
 async def approve_death_certificate(
     certificate_id: str,
     request: Request,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_staff),
 ):
     """Approve or reject a death certificate."""
-    if current_user["role"] not in ("admin", "operator"):
-        raise HTTPException(status_code=403, detail="Only authorized personnel can approve certificates")
 
     certificate = await db.death_certificates.find_one({"id": certificate_id}, {"_id": 0})
     if not certificate:
@@ -458,13 +453,10 @@ async def _send_succession_email(user_id: str, name: str, estate_name: str):
 async def delete_certificate(
     certificate_id: str,
     admin_password: str = "",
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_admin),
 ):
     """Delete a transition certificate and REVERSE the transition — admin only, requires password."""
     import bcrypt
-
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin only")
 
     # Verify admin password
     if not admin_password:

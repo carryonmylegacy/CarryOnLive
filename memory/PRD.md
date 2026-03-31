@@ -47,8 +47,8 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 **DRY Access Control Guards**
 - Added `require_admin` and `require_staff` dependency guards to `guards.py`
-- Applied across 14 route files, eliminating ~37 inline role checks
-- Guard files converted: `admin/`, `founder_invites.py`, `beta.py`, `dts.py`, `compliance.py`
+- Applied across 17 route files, eliminating ~51 inline role checks
+- Guard files converted: `admin/`, `founder_invites.py`, `beta.py`, `dts.py`, `compliance.py`, `admin_digest.py`, `support.py`, `transition.py`
 
 **.gitignore Cleanup**
 - Reduced from 947 lines (290+ duplicate blocks) to 85 clean lines

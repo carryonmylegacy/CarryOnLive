@@ -9,11 +9,11 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import resend
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from config import RESEND_API_KEY, SENDER_EMAIL, db, logger
-from utils import get_current_user
+from guards import require_admin
 
 router = APIRouter()
 
@@ -332,20 +332,16 @@ async def send_admin_analytics_digest():
 
 
 @router.post("/admin/analytics-digest/send")
-async def trigger_analytics_digest(current_user: dict = Depends(get_current_user)):
+async def trigger_analytics_digest(current_user: dict = Depends(require_admin)):
     """Manually trigger the weekly analytics digest email (admin only)"""
-    if current_user.get("role") != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
 
     result = await send_admin_analytics_digest()
     return {"success": True, **result}
 
 
 @router.get("/admin/analytics-digest/preview")
-async def preview_analytics_digest(current_user: dict = Depends(get_current_user)):
+async def preview_analytics_digest(current_user: dict = Depends(require_admin)):
     """Preview the analytics digest email HTML (admin only)"""
-    if current_user.get("role") != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
 
     data = await gather_weekly_analytics()
     html = build_analytics_digest_html(data)
@@ -587,10 +583,8 @@ class FounderEmailPrefs(BaseModel):
 
 
 @router.get("/admin/email-preferences")
-async def get_founder_email_prefs(current_user: dict = Depends(get_current_user)):
+async def get_founder_email_prefs(current_user: dict = Depends(require_admin)):
     """Get founder email preferences."""
-    if current_user.get("role") != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
     prefs = await db.founder_email_prefs.find_one({"_id": "global"})
     defaults = {
         "analytics_digest_enabled": True,
@@ -607,10 +601,8 @@ async def get_founder_email_prefs(current_user: dict = Depends(get_current_user)
 
 
 @router.put("/admin/email-preferences")
-async def update_founder_email_prefs(data: FounderEmailPrefs, current_user: dict = Depends(get_current_user)):
+async def update_founder_email_prefs(data: FounderEmailPrefs, current_user: dict = Depends(require_admin)):
     """Update founder email preferences."""
-    if current_user.get("role") != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
     updates = {k: v for k, v in data.dict().items() if v is not None}
     if not updates:
         return {"ok": True}
@@ -623,19 +615,15 @@ async def update_founder_email_prefs(data: FounderEmailPrefs, current_user: dict
 
 
 @router.post("/admin/audit-digest/send")
-async def trigger_audit_digest(current_user: dict = Depends(get_current_user)):
+async def trigger_audit_digest(current_user: dict = Depends(require_admin)):
     """Manually trigger the SOC 2 audit digest email (admin only)."""
-    if current_user.get("role") != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
     result = await send_audit_digest()
     return {"success": True, **result}
 
 
 @router.get("/admin/audit-digest/preview")
-async def preview_audit_digest(current_user: dict = Depends(get_current_user)):
+async def preview_audit_digest(current_user: dict = Depends(require_admin)):
     """Preview the SOC 2 audit digest email HTML (admin only)."""
-    if current_user.get("role") != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
     data = await gather_audit_digest_data()
     html = build_audit_digest_html(data)
     return {"html": html, "data": data}

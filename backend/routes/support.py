@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from config import db
+from guards import require_admin, require_staff
 from utils import get_current_user, send_push_notification, send_push_to_all_admins
 
 router = APIRouter()
@@ -122,10 +123,8 @@ async def get_my_support_messages(current_user: dict = Depends(get_current_user)
 
 
 @router.get("/support/messages/{conversation_id}")
-async def get_conversation_messages(conversation_id: str, current_user: dict = Depends(get_current_user)):
+async def get_conversation_messages(conversation_id: str, current_user: dict = Depends(require_staff)):
     """Admin/Operator: Get messages for a specific conversation"""
-    if current_user["role"] not in ("admin", "operator"):
-        raise HTTPException(status_code=403, detail="Admin access required")
 
     messages = (
         await db.support_messages.find({"conversation_id": conversation_id}, {"_id": 0})
@@ -147,11 +146,9 @@ async def get_conversation_messages(conversation_id: str, current_user: dict = D
 
 
 @router.get("/support/conversations")
-async def get_all_conversations(include_deleted: bool = False, current_user: dict = Depends(get_current_user)):
+async def get_all_conversations(include_deleted: bool = False, current_user: dict = Depends(require_staff)):
     """Admin: Get all support conversations with latest message.
     include_deleted=true shows soft-deleted conversations (founder only)."""
-    if current_user["role"] not in ("admin", "operator"):
-        raise HTTPException(status_code=403, detail="Admin access required")
 
     # Build match stage — exclude soft-deleted unless founder requests them
     match_stage = {}
@@ -239,10 +236,8 @@ async def get_unread_support_count(current_user: dict = Depends(get_current_user
 
 
 @router.delete("/admin/support/conversation/{conversation_id}")
-async def delete_support_conversation(conversation_id: str, current_user: dict = Depends(get_current_user)):
+async def delete_support_conversation(conversation_id: str, current_user: dict = Depends(require_staff)):
     """Soft-delete all messages in a support conversation — admin/operator."""
-    if current_user["role"] not in ("admin", "operator"):
-        raise HTTPException(status_code=403, detail="Admin or operator only")
     # Soft-delete: mark messages as deleted instead of removing them
     await db.support_messages.update_many(
         {"conversation_id": conversation_id},
@@ -259,10 +254,8 @@ async def delete_support_conversation(conversation_id: str, current_user: dict =
 
 
 @router.post("/admin/support/conversation/{conversation_id}/restore")
-async def restore_support_conversation(conversation_id: str, current_user: dict = Depends(get_current_user)):
+async def restore_support_conversation(conversation_id: str, current_user: dict = Depends(require_admin)):
     """Restore a soft-deleted support conversation — founder (admin) only."""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Only the Founder can restore deleted items")
     result = await db.support_messages.update_many(
         {"conversation_id": conversation_id, "soft_deleted": True},
         {
