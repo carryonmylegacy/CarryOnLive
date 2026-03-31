@@ -121,3 +121,19 @@ def require_benefactor_role(current_user: dict, action: str = "perform this acti
 def is_benefactor_or_admin(current_user: dict):
     """Check if user is a benefactor, is_also_benefactor, or admin. Returns bool."""
     return current_user["role"] in ("benefactor", "admin") or current_user.get("is_also_benefactor")
+
+
+async def require_admin(current_user: dict = Depends(get_current_user)):
+    """Dependency that ensures the current user is an admin.
+    Use as: current_user: dict = Depends(require_admin)"""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return current_user
+
+
+async def require_staff(current_user: dict = Depends(get_current_user)):
+    """Dependency that ensures the current user is admin or operator.
+    Use as: current_user: dict = Depends(require_staff)"""
+    if current_user["role"] not in ("admin", "operator"):
+        raise HTTPException(status_code=403, detail="Staff access required")
+    return current_user

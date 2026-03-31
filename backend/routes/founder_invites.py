@@ -12,7 +12,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from config import db, logger
-from utils import get_current_user, hash_password, verify_password
+from guards import require_admin
+from utils import hash_password, verify_password
 
 router = APIRouter()
 
@@ -25,10 +26,8 @@ class CreateInviteRequest(BaseModel):
 
 
 @router.post("/founder/invites")
-async def create_invite(body: CreateInviteRequest, current_user: dict = Depends(get_current_user)):
+async def create_invite(body: CreateInviteRequest, current_user: dict = Depends(require_admin)):
     """Generate a reusable invite token for the Founder page — admin only."""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
 
     token = str(uuid4())
     invite = {
@@ -45,20 +44,16 @@ async def create_invite(body: CreateInviteRequest, current_user: dict = Depends(
 
 
 @router.get("/founder/invites")
-async def list_invites(current_user: dict = Depends(get_current_user)):
+async def list_invites(current_user: dict = Depends(require_admin)):
     """List all founder page invites — admin only."""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
 
     invites = await db.founder_invites.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
     return invites
 
 
 @router.delete("/founder/invites/{token}")
-async def revoke_invite(token: str, current_user: dict = Depends(get_current_user)):
+async def revoke_invite(token: str, current_user: dict = Depends(require_admin)):
     """Revoke an invite token — admin only."""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
 
     result = await db.founder_invites.update_one(
         {"token": token},
@@ -166,10 +161,8 @@ async def submit_access_request(body: SubmitAccessRequest):
 
 
 @router.get("/founder/requests")
-async def list_access_requests(current_user: dict = Depends(get_current_user)):
+async def list_access_requests(current_user: dict = Depends(require_admin)):
     """List all access requests — admin only."""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
 
     requests = (
         await db.founder_access_requests.find({}, {"_id": 0, "password_hash": 0}).sort("created_at", -1).to_list(500)
@@ -178,10 +171,8 @@ async def list_access_requests(current_user: dict = Depends(get_current_user)):
 
 
 @router.post("/founder/requests/{request_id}/approve")
-async def approve_request(request_id: str, body: ApproveRequestBody, current_user: dict = Depends(get_current_user)):
+async def approve_request(request_id: str, body: ApproveRequestBody, current_user: dict = Depends(require_admin)):
     """Approve an access request and set a password — admin only."""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
 
     if len(body.password) < 4:
         raise HTTPException(status_code=400, detail="Password must be at least 4 characters")
@@ -204,10 +195,8 @@ async def approve_request(request_id: str, body: ApproveRequestBody, current_use
 
 
 @router.post("/founder/requests/{request_id}/deny")
-async def deny_request(request_id: str, current_user: dict = Depends(get_current_user)):
+async def deny_request(request_id: str, current_user: dict = Depends(require_admin)):
     """Deny an access request — admin only."""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
 
     result = await db.founder_access_requests.update_one(
         {"request_id": request_id},
@@ -224,10 +213,8 @@ async def deny_request(request_id: str, current_user: dict = Depends(get_current
 
 
 @router.post("/founder/requests/{request_id}/revoke")
-async def revoke_request_access(request_id: str, current_user: dict = Depends(get_current_user)):
+async def revoke_request_access(request_id: str, current_user: dict = Depends(require_admin)):
     """Revoke an approved request — admin only."""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
 
     result = await db.founder_access_requests.update_one(
         {"request_id": request_id},

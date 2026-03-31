@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from config import db, logger
+from guards import require_admin
 from utils import get_current_user
 
 router = APIRouter()
@@ -24,10 +25,8 @@ class BetaToggleRequest(BaseModel):
 
 
 @router.put("/admin/user/{user_id}/beta")
-async def toggle_user_beta(user_id: str, data: BetaToggleRequest, current_user: dict = Depends(get_current_user)):
+async def toggle_user_beta(user_id: str, data: BetaToggleRequest, current_user: dict = Depends(require_admin)):
     """Toggle beta tester status for a specific user — admin only."""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
 
     user = await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "name": 1, "email": 1})
     if not user:
@@ -68,10 +67,8 @@ async def toggle_user_beta(user_id: str, data: BetaToggleRequest, current_user: 
 
 
 @router.get("/admin/beta-users")
-async def get_beta_users(current_user: dict = Depends(get_current_user)):
+async def get_beta_users(current_user: dict = Depends(require_admin)):
     """Get all users with beta tester status — admin only."""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
 
     beta_users = await db.users.find(
         {"is_beta_tester": True},
@@ -157,10 +154,8 @@ async def submit_beta_feedback(
 
 
 @router.get("/admin/beta-tickets")
-async def get_beta_tickets(current_user: dict = Depends(get_current_user)):
+async def get_beta_tickets(current_user: dict = Depends(require_admin)):
     """Get all beta feedback tickets — admin only."""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
 
     tickets = (
         await db.beta_tickets.find(
@@ -178,12 +173,8 @@ class TicketStatusUpdate(BaseModel):
 
 
 @router.put("/admin/beta-tickets/{ticket_id}/status")
-async def update_ticket_status(
-    ticket_id: str, data: TicketStatusUpdate, current_user: dict = Depends(get_current_user)
-):
+async def update_ticket_status(ticket_id: str, data: TicketStatusUpdate, current_user: dict = Depends(require_admin)):
     """Update beta ticket status — admin only."""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
 
     if data.status not in ("open", "accepted", "complete", "rejected"):
         raise HTTPException(status_code=400, detail="Invalid status")

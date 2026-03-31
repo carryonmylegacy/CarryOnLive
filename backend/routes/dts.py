@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel, Field
 
 from config import db
-from guards import require_benefactor_role
+from guards import require_admin, require_benefactor_role, require_staff
 from services.audit import audit_log
 from services.encryption import decrypt_aes256, get_estate_salt
 from utils import get_current_user, log_activity, send_push_notification
@@ -94,10 +94,8 @@ async def create_dts_task(data: DTSTaskCreate, current_user: dict = Depends(get_
 
 
 @router.get("/dts/tasks/all")
-async def get_all_dts_tasks(include_deleted: bool = False, current_user: dict = Depends(get_current_user)):
+async def get_all_dts_tasks(include_deleted: bool = False, current_user: dict = Depends(require_staff)):
     """Admin gets all DTS tasks across all estates"""
-    if current_user["role"] not in ("admin", "operator"):
-        raise HTTPException(status_code=403, detail="Admin access required")
     query = {}
     if not (include_deleted and current_user["role"] == "admin"):
         query["soft_deleted"] = {"$ne": True}
@@ -125,10 +123,8 @@ async def get_dts_task(task_id: str, current_user: dict = Depends(get_current_us
 
 
 @router.post("/dts/tasks/{task_id}/quote")
-async def submit_dts_quote(task_id: str, data: DTSQuoteCreate, current_user: dict = Depends(get_current_user)):
+async def submit_dts_quote(task_id: str, data: DTSQuoteCreate, current_user: dict = Depends(require_admin)):
     """Admin/DTS team submits a quote for a task"""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Only DTS team can submit quotes")
 
     task = await db.dts_tasks.find_one({"id": task_id}, {"_id": 0})
     if not task:
@@ -253,10 +249,8 @@ async def approve_dts_task(task_id: str, current_user: dict = Depends(get_curren
 
 
 @router.post("/dts/tasks/{task_id}/status")
-async def update_dts_status(task_id: str, task_status: str, current_user: dict = Depends(get_current_user)):
+async def update_dts_status(task_id: str, task_status: str, current_user: dict = Depends(require_staff)):
     """Admin/Manager updates task status"""
-    if current_user["role"] not in ("admin", "operator"):
-        raise HTTPException(status_code=403, detail="Only staff can update status")
     valid = ["submitted", "quoted", "approved", "ready", "executed", "destroyed"]
     if task_status not in valid:
         raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {valid}")
@@ -452,11 +446,9 @@ async def delete_dts_task(
 @router.post("/dts/tasks/{task_id}/restore")
 async def restore_dts_task(
     task_id: str,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_admin),
 ):
     """Restore a soft-deleted DTS task — founder (admin) only."""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Only the Founder can restore deleted items")
 
     task = await db.dts_tasks.find_one({"id": task_id, "soft_deleted": True}, {"_id": 0})
     if not task:
@@ -489,10 +481,8 @@ async def restore_dts_task(
 
 
 @router.get("/transition/certificates/all")
-async def get_all_certificates(include_deleted: bool = False, current_user: dict = Depends(get_current_user)):
+async def get_all_certificates(include_deleted: bool = False, current_user: dict = Depends(require_staff)):
     """Get all certificates with full details for verification team"""
-    if current_user["role"] not in ("admin", "operator"):
-        raise HTTPException(status_code=403, detail="Admin access required")
     query = {}
     if not (include_deleted and current_user["role"] == "admin"):
         query["soft_deleted"] = {"$ne": True}
@@ -517,13 +507,10 @@ async def get_all_certificates(include_deleted: bool = False, current_user: dict
 async def soft_delete_certificate(
     certificate_id: str,
     data: dict = None,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_staff),
 ):
     """Soft-delete a transition certificate (operator or admin). Requires password."""
     import bcrypt
-
-    if current_user["role"] not in ("admin", "operator"):
-        raise HTTPException(status_code=403, detail="Admin or operator only")
 
     # Verify password
     admin_password = (data or {}).get("admin_password", "")
@@ -554,11 +541,9 @@ async def soft_delete_certificate(
 @router.post("/transition/certificates/{certificate_id}/restore")
 async def restore_certificate(
     certificate_id: str,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_admin),
 ):
     """Restore a soft-deleted certificate — founder (admin) only."""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Only the Founder can restore deleted items")
 
     cert = await db.death_certificates.find_one({"id": certificate_id, "soft_deleted": True}, {"_id": 0})
     if not cert:
@@ -579,10 +564,8 @@ async def restore_certificate(
 
 
 @router.get("/transition/certificate/{cert_id}/document")
-async def get_certificate_document(cert_id: str, current_user: dict = Depends(get_current_user)):
+async def get_certificate_document(cert_id: str, current_user: dict = Depends(require_admin)):
     """Download/view the actual death certificate document — decrypts AES-256-GCM"""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
     cert = await db.death_certificates.find_one({"id": cert_id}, {"_id": 0})
     if not cert or not cert.get("file_data"):
         raise HTTPException(status_code=404, detail="Certificate not found")
@@ -620,10 +603,8 @@ async def get_certificate_document(cert_id: str, current_user: dict = Depends(ge
 
 
 @router.post("/transition/reject/{certificate_id}")
-async def reject_death_certificate(certificate_id: str, current_user: dict = Depends(get_current_user)):
+async def reject_death_certificate(certificate_id: str, current_user: dict = Depends(require_admin)):
     """Reject a death certificate"""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Only admins can reject certificates")
     cert = await db.death_certificates.find_one({"id": certificate_id}, {"_id": 0})
     if not cert:
         raise HTTPException(status_code=404, detail="Certificate not found")

@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from config import db
+from guards import require_admin
 from utils import get_current_user
 
 router = APIRouter()
@@ -284,10 +285,8 @@ class IncidentReport(BaseModel):
 
 
 @router.post("/compliance/incident")
-async def report_security_incident(data: IncidentReport, current_user: dict = Depends(get_current_user)):
+async def report_security_incident(data: IncidentReport, current_user: dict = Depends(require_admin)):
     """SOC 2: Log a security incident for investigation."""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
 
     incident_id = str(uuid.uuid4())
     await db.security_incidents.insert_one(
@@ -305,10 +304,8 @@ async def report_security_incident(data: IncidentReport, current_user: dict = De
 
 
 @router.get("/compliance/incidents")
-async def get_security_incidents(current_user: dict = Depends(get_current_user)):
+async def get_security_incidents(current_user: dict = Depends(require_admin)):
     """SOC 2: View security incidents (admin only)."""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
 
     incidents = await db.security_incidents.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
     return {"incidents": incidents}
@@ -318,10 +315,8 @@ async def get_security_incidents(current_user: dict = Depends(get_current_user))
 
 
 @router.get("/admin/deletion-requests")
-async def get_deletion_requests(current_user: dict = Depends(get_current_user)):
+async def get_deletion_requests(current_user: dict = Depends(require_admin)):
     """Admin: View pending account deletion requests."""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
 
     requests = await db.deletion_requests.find({}, {"_id": 0}).sort("requested_at", -1).to_list(200)
     return {"requests": requests}

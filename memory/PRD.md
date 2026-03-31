@@ -4,7 +4,7 @@
 **This is the #1 rule of this project. No exceptions. No excuses.**
 Every push to GitHub must be production-perfect. No artifacts, no hanging chads, no "it's just a small thing." Fix everything proactively — dirty git diffs, stale files, unused imports, console.logs, TODO comments, version drift, lock file noise — before declaring anything ready to push. The agent must catch and resolve ALL of these without being told. This project did not get here by accepting little bullshit things along the way. The standard is perfection. Every. Single. Time.
 
-**MANDATORY: Before EVERY push, run `bash /app/housekeeping.sh` — the 50-check CarryOn Housekeeping Protocol + SOC 2 Compliance Audit. ALL 50 checks must PASS. Do NOT tell the user "ready to push" without running this script first. No exceptions. Ever.**
+**MANDATORY: Before EVERY push, run `bash /app/housekeeping.sh` — the 60-check CarryOn Housekeeping Protocol + SOC 2 Compliance Audit. ALL 60 checks must PASS. Do NOT tell the user "ready to push" without running this script first. No exceptions. Ever.**
 
 ## Original Problem Statement
 A full-stack estate planning application allowing benefactors to manage digital estates, beneficiaries, documents, and messages. Features role-based access (admin, benefactor, beneficiary), invitation system, orbit visualization for family connections, and Stripe/IAP subscriptions.
@@ -15,6 +15,8 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **Auth**: JWT-based with optional OTP, supports login via username or email
 - **Storage**: AWS S3 for documents AND photos (presigned URLs)
 - **Integrations**: xAI (Grok), Stripe, Apple IAP, AWS S3, Resend, Google Places, Capgo, CodeMagic, Railway, Vercel
+- **Admin Routes**: Modular `routes/admin/` package (users, analytics, security_scan, estate_health, platform, grace_periods, dev_switcher)
+- **Guards**: `guards.py` exports `require_admin`, `require_staff`, `require_benefactor_role`, `get_current_user` for DRY access control
 
 ## CRITICAL: User Deployment & Testing Workflow
 **The user ALWAYS pushes to GitHub, deploys through Railway (backend) and Vercel (frontend), and tests EXCLUSIVELY on their production site (carryon.us) via iOS/PWA. NEVER suggest "check the preview URL" or "push to GitHub to see changes" — they already do this every time. All code changes MUST work in production deployment. Do not reference the preview environment when discussing what the user sees.**
@@ -29,6 +31,35 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **platform_settings**: _id="global", otp_disabled (master switch)
 
 ## What's Been Implemented
+
+### Completed (March 31, 2026 — Codebase Refactoring for Efficiency)
+
+**Admin Route Module Split (1866 → 7 focused files)**
+- Split monolithic `routes/admin.py` into clean `routes/admin/` package:
+  - `users.py` (264 lines) — User CRUD, role management, session exemptions, activity log
+  - `analytics.py` (351 lines) — Stats, revenue metrics, launch metrics, trial users
+  - `security_scan.py` (357 lines) — SOC 2 security scan audit
+  - `estate_health.py` (433 lines) — Estate health, diagnostics, ghost/orphan cleanup
+  - `platform.py` (209 lines) — Platform settings, site content, code health, photo migration
+  - `grace_periods.py` (111 lines) — Grace period management
+  - `dev_switcher.py` (114 lines) — Dev switcher configuration
+  - `__init__.py` (24 lines) — Combines all sub-routers
+
+**DRY Access Control Guards**
+- Added `require_admin` and `require_staff` dependency guards to `guards.py`
+- Applied across 14 route files, eliminating ~37 inline role checks
+- Guard files converted: `admin/`, `founder_invites.py`, `beta.py`, `dts.py`, `compliance.py`
+
+**.gitignore Cleanup**
+- Reduced from 947 lines (290+ duplicate blocks) to 85 clean lines
+- Added `test_reports/` exclusion
+
+**Disk Cleanup**
+- Purged `__pycache__/` directories (~1.4 MB)
+- Cleared `node_modules/.cache/` (~1.5 GB)
+- Removed 142 stale test reports (kept latest 5)
+
+**Verification: All 60 housekeeping checks PASS, 148 Python files ruff clean, all 14 admin endpoints verified**
 
 **Grace Period Admin Tab**
 - Added "Grace Periods" tab to Admin/Ops portal with stats (Active, On Hold, Files Purged, Completed, All)
