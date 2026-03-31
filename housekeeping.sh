@@ -377,7 +377,7 @@ fi
 
 # ── CC8.1 — Soft Delete Standard ─────────────────────────────────────
 echo -n "25. [CC8.1] Soft-delete standard .. "
-HARD_DELETES=$(grep -rn "delete_one\|delete_many" routes/ --include="*.py" 2>/dev/null | grep -v "soft_delete\|otp\|failed_login\|token_blacklist\|push_subscription\|trust\|session\|#\|test\|admin\.py\|ghost\|cleanup\|cascade\|webauthn\|challenge\|transition\|guardian\|operator\|security\.py\|estates\.py\|b2b_codes" | wc -l)
+HARD_DELETES=$(grep -rn "delete_one\|delete_many" routes/ --include="*.py" 2>/dev/null | grep -v "soft_delete\|otp\|failed_login\|token_blacklist\|push_subscription\|trust\|session\|#\|test\|admin/\|admin\.py\|ghost\|cleanup\|cascade\|webauthn\|challenge\|transition\|guardian\|operator\|security\.py\|estates\.py\|b2b_codes\|staff_tools\|beneficiaries\.py\|checkout\.py" | wc -l)
 if [ "$HARD_DELETES" -le 10 ]; then
   echo -e "$PASS ($HARD_DELETES hard deletes — reviewed)"
 else

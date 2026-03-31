@@ -185,7 +185,7 @@ export const FeatureGatesCard = ({ getAuthHeaders }) => {
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-[var(--t)] text-sm">{f.label}</span>
                         {f.core && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded font-bold flex items-center gap-0.5"
+                          <span className="text-[11px] px-1.5 py-0.5 rounded font-bold flex items-center gap-0.5"
                             style={{ background: 'rgba(34,201,147,0.12)', color: '#22C993' }}
                             title="Core feature — defaults to ON for all tiers">
                             <Shield className="w-2.5 h-2.5" />
