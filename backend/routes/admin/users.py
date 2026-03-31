@@ -267,12 +267,6 @@ async def get_activity_log(current_user: dict = Depends(require_admin)):
     return activities[:50]
 
 
-@router.put("/admin/user/{user_id}/tier")
-async def set_user_tier(user_id: str, request: Request, current_user: dict = Depends(require_admin)):
-    """DEPRECATED — use PUT /admin/estate/{estate_id}/tier instead."""
-    return {"success": False, "detail": "Use /admin/estate/{estate_id}/tier instead"}
-
-
 @router.put("/admin/estate/{estate_id}/tier")
 async def set_estate_tier(estate_id: str, request: Request, current_user: dict = Depends(require_admin)):
     """Set the verified_tier on an estate (Founder only).
