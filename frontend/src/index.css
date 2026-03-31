@@ -7,11 +7,11 @@
 @layer base {
   :root {
     /* ===== DARK MODE (Default) — 2026 Calming Teal/Navy + Warm Gold ===== */
-    --bg: #0E1628;
-    --bg2: #121D33;
-    --bg3: #17253C;
-    --content-bg: #0E1628;
-    --notification-bg: rgba(14, 22, 40, 0.92);
+    --bg: #111A2E;
+    --bg2: #152136;
+    --bg3: #1A2840;
+    --content-bg: #111A2E;
+    --notification-bg: rgba(17, 26, 46, 0.92);
     
     /* Surface & Border Colors — subtle glass depth */
     --s: rgba(255,255,255,0.055);
@@ -63,11 +63,11 @@
     --card-beneficiaries: linear-gradient(135deg, #0D9488 0%, #0F766E 100%);
     
     /* Glass card — liquid glass effect */
-    --glass-bg: rgba(14,22,40,0.78);
+    --glass-bg: rgba(17,26,46,0.78);
     --glass-border: rgba(255,255,255,0.09);
     
     /* Mobile nav */
-    --mobile-nav-bg: #0E1628;
+    --mobile-nav-bg: #111A2E;
     --mobile-nav-text: #475569;
     --mobile-nav-active: #D4A537;
     --header-shadow: 0 4px 24px -4px rgba(0,0,0,0.45);
@@ -91,7 +91,7 @@
     --sidebar-width: 260px;
 
     /* Guided overlay / frosted glass */
-    --guided-overlay-bg: rgba(10,18,32,0.75);
+    --guided-overlay-bg: rgba(13,21,36,0.75);
     --guided-title: #ffffff;
     --guided-desc: #94a3b8;
     --guided-muted: rgba(255,255,255,0.4);
@@ -100,11 +100,11 @@
     --guided-skip-border: rgba(255,255,255,0.06);
     
     /* Shadcn Variables — teal primary, warm gold accent */
-    --background: 221 40% 11%;
+    --background: 221 38% 12%;
     --foreground: 214 32% 95%;
-    --card: 221 38% 13%;
+    --card: 221 36% 14%;
     --card-foreground: 214 32% 95%;
-    --popover: 221 38% 11%;
+    --popover: 221 36% 12%;
     --popover-foreground: 214 32% 95%;
     --primary: 199 89% 48%;
     --primary-foreground: 0 0% 100%;
@@ -267,7 +267,7 @@
     top: 0;
     height: 100vh;
     width: var(--sidebar-width);
-    background: linear-gradient(180deg, rgba(22,32,56,0.99) 0%, rgba(12,19,34,1) 100%);
+    background: linear-gradient(180deg, rgba(24,35,60,0.99) 0%, rgba(15,22,38,1) 100%);
     border-right: 1px solid rgba(255,255,255,0.07);
     box-shadow: 6px 0 36px -4px rgba(0,0,0,0.6), 1px 0 0 rgba(255,255,255,0.04);
     display: flex;
@@ -630,7 +630,7 @@
   
   /* Glass Card - Adapts to theme */
   .glass-card {
-    background: linear-gradient(168deg, rgba(18,30,52,0.96) 0%, rgba(14,22,40,0.94) 100%);
+    background: linear-gradient(168deg, rgba(21,33,56,0.96) 0%, rgba(17,26,46,0.94) 100%);
     border: 1px solid rgba(14,165,233,0.10);
     border-top: 1px solid rgba(255,255,255,0.10);
     border-radius: 16px;
@@ -674,7 +674,7 @@
   [data-testid="readiness-card"] {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    background: linear-gradient(180deg, rgba(18,30,52,0.94) 0%, rgba(14,22,40,0.97) 100%);
+    background: linear-gradient(180deg, rgba(21,33,56,0.94) 0%, rgba(17,26,46,0.97) 100%);
     box-shadow: 
       0 1px 0 0 rgba(255,255,255,0.08) inset,
       0 16px 56px -8px rgba(0,0,0,0.6),

@@ -573,7 +573,9 @@ const DashboardPage = () => {
         transition: 'opacity 0.5s ease',
       }}>
       {/* Trial Banner */}
-      <TrialBanner onUpgrade={() => navigate('/subscription')} />
+      <div className="mb-5">
+        <TrialBanner onUpgrade={() => navigate('/subscription')} />
+      </div>
       {/* Billing Status Banner — Grace Period or Dormant */}
       <BillingStatusBanner onUpdatePayment={() => navigate('/settings')} />
 
