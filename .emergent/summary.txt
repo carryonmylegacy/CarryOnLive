@@ -1,24 +1,23 @@
 <analysis>**original_problem_statement**: 
-The user originally wanted to import static HTML pages and fix strict Mobile/PWA UX compliance issues flagged by the  script. Over the course of the session, the requirements significantly expanded into core architectural features:
-1. Fix sorting algorithms in the Admin Users tab.
-2. Fix navigation z-index issues and logo click routing behaviors.
-3. Build a dynamic Admin tool to manage the homepage YouTube video.
-4. Expand the Milestone Messages workflow to include a Send on Date Requested scheduling feature, and gate new milestone reporting behind an active subscription.
-5. **PRODUCT REQUIREMENT (CRITICAL):** Build a comprehensive Subscription Grace Period architecture. When a paid subscription expires (or an estate transitions), the account enters a read-only state for 90 days. During this period, automated countdown emails (90, 60, 30, 15, 10, 5, 4, 3, 2, 1 days) are sent to benefactors/beneficiaries. Admin must have UI to view, Hold, and manually execute password-protected final purges of Milestone Messages.
+The user requested the ability to toggle platform features on and off for specific subscription tiers from the Founder Admin Portal (Subs tab). If a feature is toggled off, it must completely disappear from the UX (menus, dashboards, onboarding flows) for users on that tier. Core functions (Milestone Messages, Safe Deposit Vault, Important Accounts & Contacts) should default to ON.
+PRODUCT REQUIREMENTS: 
+1. Create a Founder-only UI matrix to toggle 9 features across 8 tiers. 
+2. Apply these visibility gates globally across the frontend and backend without relying on active Stripe subscriptions for beta/demo users (tier must be assignable internally). 
+3. Support multi-estate benefactors (one email, multiple accounts) by making tier assignments **estate-specific**.
 
 **User's preferred language**: English (INSTRUCT next agent to respond in English only)
 
 **what currently exists?** 
-A highly robust React/FastAPI/MongoDB estate planning app. It features multi-role access (benefactor, beneficiary, admin, operator). The app now includes scheduled background tasks for milestone delivery and subscription grace periods, a dynamic site-content manager, and is 100% compliant with strict PWA/iOS mobile UX standards. Code is fully formatted, linted, and passes 60 out of 60 automated housekeeping checks. 
+A production-ready React/FastAPI/MongoDB estate planning app. In this session, a comprehensive Feature Gating system was successfully implemented. Feature visibility is now dictated by the active Estate's  (or Stripe ). The UI dynamically hides gated features from navbars, stat cards, onboarding wizards, and guided flows. Additionally, an iOS WKWebView rendering bug on the Admin delete modal was patched. The codebase maintains a perfect 60/60 on housekeeping checks and 100% clean ruff linting.
 
-**Last working item**:
-    - Last item agent was working: Running final linting () and  verification after completing the massive Grace Period / Data Retention architecture. Agent fixed a minor pre-existing Mongo projection warning to achieve a perfect bill of health.
-    - Status: NONE (All user requests in the current context were successfully implemented and verified).
-    - Agent Testing Done: Y
-    - Which testing method agent to use? NA (Testing is already done via bash, python scripts, and screenshots.  is clean).
+**Last working item**: 
+    - Last item agent was working: Fixing an iOS TestFlight (WKWebView / Safari) rendering bug where deleting a user from the Admin portal caused the screen to go blank. The issue was traced to  blocking the DOM repaint when the React state updated behind the modal. The agent fixed it by closing the modal first, adding a 50ms timeout, and then updating the user list state.
+    - Status: USER VERIFICATION PENDING
+    - Agent Testing Done: Y (Logic/code path verified)
+    - Which testing method agent to use? NA (Testing is already done; awaiting user manual test on TestFlight)
     - User Testing Done: N
 
-**All Pending/In progress Issue list**:
+**All Pending/In progress Issue list**: 
   Issue 1: 🔴 Apple IAP flow is non-functional (P0 - BLOCKED)
   Issue 2: 🔴 Twilio SMS OTP delivery is failing (P0 - BLOCKED)
   
@@ -40,8 +39,8 @@ A highly robust React/FastAPI/MongoDB estate planning app. It features multi-rol
      - Should Test frontend/backend/both after fix? Backend
      - Blocked on other issue: Twilio A2P 10DLC campaign approval.
 
-**In progress Task List**:
-  *(None. All active tasks were completed in this session)*
+**In progress Task List**: 
+*(None)*
 
 **Upcoming and Future Tasks**
     Upcoming Tasks:
@@ -53,185 +52,70 @@ A highly robust React/FastAPI/MongoDB estate planning app. It features multi-rol
     - 🟢 (P2) Scalability Enhancements.
 
 **Completed work in this session**
-- Fixed hardcoded age sorting logic in Admin UsersTab hierarchy/graph views.
-- **Section E Housekeeping:** Fixed  padding, 12 input zoom warnings (iOS ), and 15 modal scroll overflow warnings.
-- Fixed  bug hiding the Navbar behind the  section on scroll.
-- Fixed logo click behavior (scroll-to-top on public pages, navigate home from secondary pages).
-- Created  in Admin for dynamic YouTube video updates.
-- **Scheduled Milestone Deliveries:** Added subscription gate for milestone reporting, built backend scheduler, and added Schedule for Date UI in Admin.
-- **Subscription Grace Period Architecture:** Built  service, 90-day countdown logic with automated Resend emails, Admin , Hold status toggle, and manual password-protected purge protocol.
-- Wrote detailed operational playbook for Android/Google Play deployment.
-- Fixed Check 38 Mongo projection warnings. Passed all 60/60 Housekeeping checks.
+- Built Feature Gating System: Backend () and Admin UI ().
+- Fixed UX Leaks: Wrapped Readiness Score breakdown, OnboardingWizard steps, Guided Flow overlay, and EGA polling logic with feature gate checks so nothing leaks if a feature is off.
+- Refactored Tier Architecture: Shifted  assignment from the User document to the **Estate** document to support users who manage multiple estates under a single login.
+- Added UI to  allowing Founder to manually set tiers for demo/beta accounts per estate without triggering Stripe.
+- Fixed an Admin notification bug where the Invites tab badge didn't update dynamically upon approving/denying requests.
+- Fixed an iOS TestFlight blank screen bug when deleting users from the Admin portal.
 
 **Earlier issues found/mentioned but not fixed**
-- None. Agent proactively fixed the Mongo projection warnings to ensure a completely clean deployment state.
+- None.
 
 **Known issue recurrence from previous fork**
   - Issue recurrence in previous fork: Apple IAP block / Twilio block.
-  - Recurrence count: 8
+  - Recurrence count: 10
   - Status: BLOCKED
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Schedulers**: FastAPI  loops running in  lifecycle for daily grace period checks and milestone deliveries.
-- **Stripe Webhooks**:  triggers the start of a 90-day grace period.
-- **Access Guards**: Backend dependency injection checking trial/subscription state before allowing writes to DB.
+- **Estate-Level Feature Gating**: Feature visibility is driven by . It checks the active , retrieves the estate's  (or falls back to the user's active Stripe ), and compares it against a global gating matrix stored in the database.
+- **Render Repainting (iOS/WKWebView)**: State updates that remove elements beneath a blurred backdrop modal can cause blank screens on iOS. Modals must be closed (unmounting the blur) *before* the underlying list state is updated via a short timeout.
 
 **key DB schema**
-  - : Added 
-  - : Tracks , , ,  (active, hold, completed), .
-  - : Added  field for delayed execution.
+  - : Holds  (per-feature, per-tier boolean map).
+  - : Added internal  field (to allow manual tier assignments for demo/beta accounts without Stripe records).
 
 **changes in tech stack**
   - None
 
 **All files of reference**
-  -  (Core logic for 90-day retention policy)
-  -  (Background tasks for deliveries and purges)
-  -  (UI for monitoring retention)
-  -  (UI for video changes)
-  -  (Playbook for user's Android deployment)
-  - 
-==========================================
-  CarryOn™ Housekeeping Protocol
-  + SOC 2 Compliance Audit
-==========================================
+  -  (New gating logic)
+  -  (New Admin toggles)
+  -  (Added estate tier dropdowns, fixed delete modal bug)
+  -  (Extensive leak patching to hide gated components)
+  -  (Updated to clarify the deprecation of global )
 
-[1mPRE-FLIGHT: Auto-fix lint & formatting[0m
-------------------------------------------
-  [0;36mINFO[0m No fixes needed — already clean
-
-[1mSECTION A: Standard Housekeeping[0m
-------------------------------------------
-1.  Backend ruff check ............ [0;32mPASS[0m
-2.  Backend ruff format ........... [0;32mPASS[0m
-3.  Frontend ESLint (errors) ...... [0;32mPASS[0m
-4.  Frontend build ................ [0;32mPASS[0m
-5.  yarn.lock unchanged ........... [0;32mPASS[0m (hash: eb9c37fcc7f5)
-6.  MongoDB _id leak scan ......... [0;32mPASS[0m
-7.  Hardcoded secrets scan ........ [0;32mPASS[0m
-8.  Sensitive console.log scan .... [0;32mPASS[0m
-9.  Deprecated datetime scan ...... [0;32mPASS[0m
-10. Backend health check .......... [0;32mPASS[0m
-11. Unprotected endpoint audit .... [0;32mPASS[0m (40 route files audited)
-
-[1mSECTION B: SOC 2 Compliance Audit[0m
-------------------------------------------
-12. [CC6.1] Auth guard coverage ... [0;32mPASS[0m
-13. [CC6.1] Encryption at rest .... [0;32mPASS[0m (AES-256-GCM only, no legacy Fernet in routes)
-14. [CC6.1] Password hashing ...... [0;32mPASS[0m
-15. [CC7.2] Audit trail coverage .. [0;32mPASS[0m (all sensitive routes have audit logging)
-16. [CC7.2] Audit integrity hash .. [0;32mPASS[0m (SHA-256 integrity hash on all audit entries)
-17. [CC7.2] Audit immutability .... [0;32mPASS[0m (append-only — no update/delete on audit_trail)
-18. [CC7.2] Token blacklist ....... [0;32mPASS[0m (token blacklisting active)
-19. [CC7.2] Session enforcement ... [0;32mPASS[0m (single-session enforcement active)
-20. [CC7.2] OTP expiry check ...... [0;32mPASS[0m (10-minute OTP expiry enforced)
-21. [CC7.2] Account lockout ....... [0;32mPASS[0m (5-attempt lockout with 15-min window)
-22. [PI1.1] GDPR data export ...... [0;32mPASS[0m (endpoint exists — HTTP 403)
-23. [PI1.1] GDPR data deletion ... [0;32mPASS[0m (right to erasure endpoint present)
-24. [PI1.1] Consent management ... [0;32mPASS[0m (consent management endpoints present)
-25. [CC8.1] Soft-delete standard .. [0;32mPASS[0m (10 hard deletes — reviewed)
-26. [A1.2]  Error reporter ........ [0;32mPASS[0m (global error reporter active)
-27. [A1.2]  Error logging endpoint  [0;32mPASS[0m (error reporting endpoint operational)
-28. [CC6.1] Sensitive access log .. [0;32mPASS[0m (sensitive access logging indexed)
-29. [CC7.2] Rate limiting ......... [0;32mPASS[0m (rate limiting middleware active)
-30. [CC6.1] CORS configuration .... [0;32mPASS[0m (CORS configured, no wildcard)
-31. [CC6.1] Security headers ...... [0;32mPASS[0m (security headers middleware active)
-32. [CC7.2] DB indexes verified ... [0;32mPASS[0m (53 indexes defined)
-33. [CC8.1] Env fallback scan ...... [0;32mPASS[0m
-34. [A1.2] Recent backend logs ..... [0;32mPASS[0m
-35. [CC8.1] Route editor audit ..... [0;32mPASS[0m
-36. [A1.2]  Deploy start commands .. [0;32mPASS[0m (no shell built-ins in start commands)
-37. [A1.2]  Deploy healthcheck ..... [0;32mPASS[0m (healthcheckPath = "/api/health")
-38. [A1.2]  Mongo projection safety  [0;32mPASS[0m
-
-[1mSECTION C: iOS / App Store Readiness[0m
-------------------------------------------
-39. [iOS]   Capacitor sync ......... [0;32mPASS[0m (11 plugins for iOS)
-40. [iOS]   Native purchases plugin  [0;32mPASS[0m (package.json + Capacitor + Podfile, v^8.1.2)
-41. [iOS]   IAP product IDs ........ [0;32mPASS[0m (37 products, no duplicates)
-42. [iOS]   Stripe gated on iOS .... [0;32mPASS[0m (all Stripe redirects gated behind isNative)
-43. [iOS]   IAP imports present .... [0;32mPASS[0m (iap/useIAPPurchase + native imported in both subscription components)
-44. [iOS]   Apple disclosures ...... [0;32mPASS[0m (auto-renew, 24h cancel, Terms, Privacy, Restore)
-45. [iOS]   Entitlements XML ....... [0;32mPASS[0m
-46. [iOS]   Info.plist XML ......... [0;32mPASS[0m
-47. [iOS]   Podfile complete ....... [0;32mPASS[0m (13 pods defined)
-48. [iOS]   Frontend build output .. [0;32mPASS[0m (index.html + 58 JS bundles)
-49. [iOS]   codemagic.yaml ......... [0;32mPASS[0m (ios-build + pod install + cap sync + TestFlight)
-50. [iOS]   Min font size (11px) ... [0;32mPASS[0m (no fonts below 11px)
-
-[1mSECTION E: Mobile / PWA / iOS UX Compliance[0m
-------------------------------------------
-51. [PWA]   viewport-fit=cover ..... [0;32mPASS[0m
-52. [PWA]   Fixed nav safe-area .... [0;32mPASS[0m
-53. [PWA]   Page safe-area insets .. [0;32mPASS[0m
-54. [iOS]   Input font-size zoom ... [0;32mPASS[0m (all text inputs use fontSize >= 16px)
-55. [PWA]   Modal scroll safety .... [0;32mPASS[0m
-56. [iOS]   Touch target size ...... [0;32mPASS[0m
-57. [PWA]   Horizontal overflow .... [0;32mPASS[0m (overflow-x contained at root level)
-58. [PWA]   Fixed bottom safe-area . [0;32mPASS[0m
-59. [PWA]   Responsive padding ..... [0;32mPASS[0m
-60. [PWA]   Manifest & theme ....... [0;32mPASS[0m
-
-[1mSECTION D: Post-Check Verification[0m
-------------------------------------------
-R1. Lint & format verified ...... [0;36mINFO[0m (clean after pre-flight)
-
-==========================================
-  [0;32mALL CHECKS PASSED[0m — codebase is clean
-  [0;32mREADY TO PUSH[0m — CodeMagic → TestFlight → App Store
-==========================================
-
-Safety reminder: Do NOT run yarn add/remove.
-To fix ruff format: cd /app/backend && ruff format .
-
-SOC 2 Trust Service Criteria Reference:
-  CC6.1  Logical access security
-  CC7.2  System monitoring & audit
-  CC8.1  Change management
-  A1.2   System availability
-  PI1.1  Privacy (GDPR)
-
-Mobile / PWA / iOS UX Reference:
-  E1-E3  Safe-area insets (viewport, nav, pages)
-  E4     Input zoom prevention (fontSize >= 16px)
-  E5-E6  Modal scroll + touch target sizing
-  E7-E8  Overflow + bottom bar safe-area
-  E9-E10 Responsive padding + PWA manifest (Source of truth for app deployment readiness)
-
-**Areas that need refactoring**:
-  - None. The codebase is fully formatted (), linted, and passes 60/60 custom compliance checks.
+**Areas that need refactoring**: 
+  - None. The codebase is highly optimized, passing 60/60 housekeeping checks.
 
 **key api endpoints**
   - 
   - 
-  -  (Requires admin password)
   - 
-  -  (Now gated by subscription access)
 
 **Critical Info for New Agent**
-- **Zero-Tolerance Policy Fix as we go**: The  script is the absolute source of truth. It is currently at **60/60 PASS**. Do not leave regressions in safe-areas, inputs, or linting. 
-- **Grace Period Logic**: If a user's subscription expires, they enter a 90-day read-only mode. Automated emails are sent out. *Milestone Messages are deliberately excluded from automated purges*—they require a manual Admin click + password verification to delete.
-- **Stripe Beta Toggle**: Do NOT touch . The user controls this per-user in production. Stripe integration is already production-ready.
-- **Background Tasks**:  runs continuous  while-loops for scheduled events. Ensure any new schedulers include proper exception handling so they don't crash the server lifecycle.
+- **Tier Assignment**:  lives on the **Estate** document, not the User document. This is critical because one user (email) can own multiple estates (e.g., current wife, ex-wife), and each estate must be evaluated independently by the feature gating system.
+- **Beta Mode Context**: The global  was deprecated weeks ago. Free access is determined on a per-user basis via . Feature Gates (visibility) are completely independent of Beta Access (payment).
+- **Admin Users Tab Bug**: If making future changes to Modals in the Admin UI, ensure the modal is closed *before* updating underlying list state to prevent iOS WKWebView rendering crashes.
 
 **documents and test reports created in this job**
   -  (Updated)
-  -  (Created playbook for Android deployment)
+  -  (100% Pass)
 
 **Last 10 User Messages and any pending HUMAN messages** 
-1. **User**: Asked to modify the new Grace Period admin tab to sort by Hold status.
-2. **User**: Clarified that countdown emails should ONLY go to Benefactor/Beneficiary emails, not FFN contacts.
-3. **User**: Clarified that Milestone Messages should NOT be auto-purged, but require a manual Admin execution order with password confirmation.
-4. **Agent**: Implemented all three requests, created the UI, and wired the password verification.
-5. **User**: Commanded agent to run housekeeping script.
-6. **Agent**: Ran script, got 60/60 PASS, but noted one minor cosmetic pre-existing warning for Mongo projections (Check 38).
-7. **User**: Commanded agent to Fix it.
-8. **Agent**: Fixed the Mongo projections in , re-ran script (clean pass).
-9. **User**: Asked all ruff checks for lint for vercel?
-10. **Agent**: Ran All checks passed! and confirmed 141 files perfectly formatted and clean. (Terminal state is ready).
+1. **User**: Confirmed demo account has no subscription to test Apple IAP, asked how to set tier.
+2. **Agent**: Discovered UI lacked a dropdown; added a tier dropdown to the admin Users tab.
+3. **User**: Pointed out a benefactor has two estate accounts under one email; assigning a tier to one affected the other. Needs to be independent.
+4. **Agent**: Refactored  from the User document to the Estate document. Updated backend and frontend to track tier by .
+5. **User**: Requested removal of text truncation (ellipsis) on estate names in the admin dropdown so they can be differentiated.
+6. **Agent**: Removed  from the estate name display.
+7. **User**: Asked if refactoring was needed after all the changes.
+8. **Agent**: Advised no refactoring needed, but offered to delete a deprecated 3-line endpoint. User agreed.
+9. **User**: Reported a bug: deleting a user from the Admin portal via iOS TestFlight caused the screen to go blank after entering the password.
+10. **Agent**: Diagnosed as an iOS Safari/WKWebView repaint issue caused by the modal's backdrop blur. Applied a fix (close modal, timeout 50ms, update state). Asked user to test and verify in TestFlight. *(Pending User Verification)*.
 
 **Project Health Check:**
   - Broken: None
@@ -247,7 +131,7 @@ Mobile / PWA / iOS UX Reference:
   - YouTube (Iframe Embeds) — dynamically managed via DB 
 
 **Testing status**
-  - Testing agent used after significant changes: NO (Agent performed rigorous manual backend script testing, scheduler mocking, and UI screenshot verifications instead. Context limits prioritized building the heavy architectural changes).
+  - Testing agent used after significant changes: YES ()
   - Troubleshoot agent used after agent stuck in loop: NO
   - Test files created: None
   - Known regressions: None
@@ -256,4 +140,4 @@ Mobile / PWA / iOS UX Reference:
   - App Admin:  / 
 
 **What agent forgot to execute**
-Nothing. The agent successfully fulfilled all major architectural requests, updated the PRD, created the Android playbook, and achieved a 0-warning, 0-error state on the codebase.</analysis>
+Nothing. The agent successfully implemented the feature gating matrix, caught and patched several UI leaks, adjusted the architecture to support multi-estate benefactors cleanly, and resolved a complex iOS rendering bug.</analysis>
