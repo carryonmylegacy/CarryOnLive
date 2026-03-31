@@ -365,6 +365,15 @@ async def gather_estate_context(estate_id: str, include_doc_content: bool = Fals
 @router.post("/chat/guardian", response_model=ChatResponse)
 async def chat_with_guardian(data: ChatRequest, current_user: dict = Depends(get_current_user)):
     """Send a message to the Estate Guardian AI."""
+    from guards import get_subscription_access
+
+    access = await get_subscription_access(current_user)
+    if not access["has_access"]:
+        raise HTTPException(
+            status_code=403,
+            detail="An active subscription is required to query Estate Guardian AI.",
+        )
+
     if not xai_client:
         raise HTTPException(status_code=500, detail="AI service not configured")
 

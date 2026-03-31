@@ -164,3 +164,39 @@ async def milestone_delivery_scheduler():
                 logger.info(f"Milestone scheduler: delivered {delivered} scheduled message(s)")
         except Exception as e:
             logger.error(f"Milestone delivery scheduler failed: {e}")
+
+
+async def grace_period_scheduler():
+    """Daily check: send countdown emails and auto-purge expired grace periods."""
+    from datetime import datetime, timezone
+
+    from services.grace_period import process_countdown_emails, get_purge_eligible, execute_purge
+
+    while True:
+        # Run daily at 10 AM EST (15:00 UTC)
+        now = datetime.now(timezone.utc)
+        target_hour = 15
+        if now.hour >= target_hour:
+            wait_hours = 24 - (now.hour - target_hour)
+        else:
+            wait_hours = target_hour - now.hour
+        wait_seconds = wait_hours * 3600 - now.minute * 60 - now.second
+        logger.info(f"Grace period scheduler: next check in {wait_seconds / 3600:.1f}h")
+        await asyncio.sleep(max(60, wait_seconds))
+
+        try:
+            # Send countdown emails
+            processed = await process_countdown_emails()
+            logger.info(f"Grace period scheduler: checked {processed} active grace period(s)")
+
+            # Auto-purge expired grace periods (no hold)
+            eligible = await get_purge_eligible()
+            for gp in eligible:
+                try:
+                    purged = await execute_purge(gp["id"])
+                    logger.info(f"Grace period auto-purge: {gp['id']} — {purged} files purged")
+                except Exception as e:
+                    logger.error(f"Grace period auto-purge failed for {gp['id']}: {e}")
+
+        except Exception as e:
+            logger.error(f"Grace period scheduler failed: {e}")

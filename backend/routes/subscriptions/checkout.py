@@ -371,6 +371,13 @@ async def get_checkout_status(session_id: str, current_user: dict = Depends(get_
                 upsert=True,
             )
 
+            # Cancel any active grace periods — user re-subscribed
+            from services.grace_period import cancel_grace_period
+
+            user_estates = await db.estates.find({"owner_id": txn["user_id"]}, {"_id": 0, "id": 1}).to_list(50)
+            for est in user_estates:
+                await cancel_grace_period(est["id"], txn["user_id"], "re-subscribed")
+
     return {
         "status": checkout_status.status,
         "payment_status": checkout_status.payment_status,
@@ -494,6 +501,21 @@ async def stripe_webhook(request: Request):
                     from services.billing_lifecycle import handle_payment_failed
 
                     await handle_payment_failed(user["id"])
+
+                    # Create grace period for each estate owned by this user
+                    from services.grace_period import create_grace_period
+
+                    estates = await db.estates.find(
+                        {"owner_id": user["id"]},
+                        {"_id": 0, "id": 1, "is_transitioned": 1},
+                    ).to_list(50)
+                    for est in estates:
+                        await create_grace_period(
+                            estate_id=est["id"],
+                            user_id=user["id"],
+                            trigger="subscription_expired",
+                            is_transitioned=est.get("is_transitioned", False),
+                        )
 
     except Exception as e:
         logger.error(f"Webhook fallback error: {e}")

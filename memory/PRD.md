@@ -30,6 +30,33 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (March 31, 2026 — Subscription Access Architecture + Grace Period System)
+
+**Phase 1: Subscription Access Guards**
+- Added guards to FFN (create/update), Guardian AI chat, Beneficiary creation
+- Documents upload, Messages create, Checklist, Transition, Milestone reports already guarded
+- Expired users can still VIEW/DOWNLOAD but cannot CREATE/UPLOAD
+
+**Phase 2: 90-Day Grace Period System**
+- `services/grace_period.py`: Core service managing the entire grace period lifecycle
+- Triggers: subscription_expired, trial_ended, transition_hospice
+- Auto-pause for transitioned estates until staff confirms
+- Admin "hold" button to pause purge indefinitely
+- Re-subscription cancels grace period and restores full access
+- Countdown emails at 90, 60, 30, 15, 10, 5, 4, 3, 2, 1 days to ALL estate-associated emails
+- Daily scheduler (10 AM EST) for countdown processing and auto-purge
+
+**Phase 3: Data Purge with Audit Trail**
+- Removes file content (S3) but preserves metadata in `purge_records` collection
+- Milestone Messages are NEVER purged (only eligibility to report new milestones revoked)
+- Full audit trail for every purged file
+- Admin-only manual purge trigger endpoint
+
+**Milestone Delivery Audit**
+- Full audit logging for all milestone delivery actions (approve/schedule/reject)
+- Staff notifications (P3 alerts) confirming delivery
+- Scheduled delivery also audited when auto-executed by scheduler
+
 ### Completed (March 31, 2026 — Scheduled Milestone Delivery + Subscription Gate)
 - **"Send on Date Requested" feature**: Staff can now choose "Send Now" (immediate delivery) or "Send on [Event Date]" (scheduled delivery) when reviewing milestone message matches. A background scheduler runs daily at 9 AM EST to process due deliveries automatically.
 - **Subscription gate on milestone reports**: Beneficiaries must have an active subscription to submit new milestone reports. Previously delivered messages remain accessible forever regardless of subscription status.

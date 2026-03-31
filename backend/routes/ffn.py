@@ -57,6 +57,12 @@ async def get_ffn_contacts(estate_id: str, current_user: dict = Depends(get_curr
 @router.post("/ffn/{estate_id}")
 async def create_ffn_contact(estate_id: str, data: FFNContactCreate, current_user: dict = Depends(get_current_user)):
     """Add a new FFN contact."""
+    from guards import get_subscription_access
+
+    access = await get_subscription_access(current_user)
+    if not access["has_access"]:
+        raise HTTPException(status_code=403, detail="An active subscription is required to add FFN contacts.")
+
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1})
     if not estate:
         raise HTTPException(status_code=404, detail="Estate not found")
@@ -87,6 +93,12 @@ async def create_ffn_contact(estate_id: str, data: FFNContactCreate, current_use
 @router.put("/ffn/{contact_id}")
 async def update_ffn_contact(contact_id: str, data: FFNContactUpdate, current_user: dict = Depends(get_current_user)):
     """Update an existing FFN contact."""
+    from guards import get_subscription_access
+
+    access = await get_subscription_access(current_user)
+    if not access["has_access"]:
+        raise HTTPException(status_code=403, detail="An active subscription is required to edit FFN contacts.")
+
     contact = await db.ffn_contacts.find_one({"id": contact_id, "deleted_at": None}, {"_id": 0})
     if not contact:
         raise HTTPException(status_code=404, detail="Contact not found")

@@ -84,6 +84,12 @@ async def create_beneficiary(data: BeneficiaryCreate, current_user: dict = Depen
     """Add a new beneficiary to the estate."""
     require_benefactor_role(current_user, "add beneficiaries")
 
+    from guards import get_subscription_access
+
+    access = await get_subscription_access(current_user)
+    if not access["has_access"]:
+        raise HTTPException(status_code=403, detail="An active subscription is required to add beneficiaries.")
+
     # Build full name from parts
     name_parts = [data.first_name]
     if data.middle_name:
