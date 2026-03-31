@@ -156,9 +156,9 @@ async def get_user_enabled_features(current_user: dict = Depends(get_current_use
     """Return list of feature keys enabled for the current user's tier.
 
     Feature gates are a VISIBILITY decision, not a payment decision.
-    Beta mode / free access / trial control whether users need to pay.
-    Feature gates control what users can see.  These are orthogonal.
-    Therefore: beta_mode, free_access, trial do NOT bypass feature gates.
+    Per-user beta access / free overrides / trial control whether users pay.
+    Feature gates control what users can SEE.  These are orthogonal.
+    Therefore: per-user beta, free_access, trial do NOT bypass feature gates.
     """
 
     # Admin / operator → everything

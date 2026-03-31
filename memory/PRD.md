@@ -18,6 +18,9 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **Admin Routes**: Modular `routes/admin/` package (users, analytics, security_scan, estate_health, platform, grace_periods, dev_switcher)
 - **Guards**: `guards.py` exports `require_admin`, `require_staff`, `require_benefactor_role`, `get_current_user` for DRY access control
 
+## CRITICAL: Beta Access Model
+**There is NO global `beta_mode` toggle.** Beta access is controlled per-user via the `is_beta_tester` flag on individual benefactor and beneficiary accounts. Each user gets a beta tile at initial login as part of the onboarding workflow. The global `beta_mode` field in `subscription_settings` is legacy/deprecated — do NOT add new code that checks it. Always use the per-user `is_beta_tester` flag for beta-related logic.
+
 ## CRITICAL: User Deployment & Testing Workflow
 **The user ALWAYS pushes to GitHub, deploys through Railway (backend) and Vercel (frontend), and tests EXCLUSIVELY on their production site (carryon.us) via iOS/PWA. NEVER suggest "check the preview URL" or "push to GitHub to see changes" — they already do this every time. All code changes MUST work in production deployment. Do not reference the preview environment when discussing what the user sees.**
 
@@ -47,7 +50,7 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - Backend API enforcement via `GET /api/subscriptions/enabled-features`
 - Data preservation — toggling off only hides, never deletes user data
 - Beneficiary post-transition access governed by benefactor's tier
-- Beta mode / trial / free access bypass — all features enabled
+- Feature gates are VISIBILITY-only (orthogonal to payment/beta). Per-user `is_beta_tester` flags and free-access overrides do NOT bypass feature gates.
 - Route-level protection — gated routes redirect to dashboard
 - Navigation filtering in Sidebar.js, MobileNav.js (bottom nav + hamburger menu)
 - Dashboard stat cards + preview sections conditionally hidden
