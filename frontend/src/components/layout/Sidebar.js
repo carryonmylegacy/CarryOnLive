@@ -80,7 +80,7 @@ const OtpToggle = ({ collapsed }) => {
 };
 
 const Sidebar = () => {
-  const { user, logout, refreshUser, enabledFeatures } = useAuth();
+  const { user, logout, refreshUser, enabledFeatures, setUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [benEstates, setBenEstates] = useState([]);
@@ -142,6 +142,27 @@ const Sidebar = () => {
       });
     });
   }
+
+  const SCOPE_PREVIEWS = [
+    { scope: 'finance', label: 'Finance Admin', desc: 'Revenue, Subs, Grace Periods', color: '#22C993' },
+    { scope: 'compliance', label: 'Compliance Admin', desc: 'Audit, Security, Estate Health', color: '#3B82F6' },
+    { scope: 'marketing', label: 'Marketing Admin', desc: 'Funnel, Beta, Site Content, Emails', color: '#B794F6' },
+    { scope: 'platform_health', label: 'Platform Health', desc: 'System, Operators, Integrations', color: '#F59E0B' },
+  ];
+
+  const handleScopePreview = (scope) => {
+    setUser(prev => ({ ...prev, admin_scope: scope }));
+    setDevOpen(false);
+    toast.success(`Viewing as: ${SCOPE_PREVIEWS.find(s => s.scope === scope)?.label || scope}`);
+    navigate('/admin');
+  };
+
+  const handleRestoreFounder = () => {
+    setUser(prev => ({ ...prev, admin_scope: 'founder' }));
+    setDevOpen(false);
+    toast.success('Restored Founder view');
+    if (window.location.pathname.startsWith('/ops')) navigate('/admin');
+  };
 
   const handleDevSwitch = async (account) => {
     setDevSwitching(account.role);
@@ -372,7 +393,14 @@ const Sidebar = () => {
     if (user?.role === 'beneficiary' && isBenefactorContext) return 'BENEFACTOR PORTAL';
     if (user?.role === 'beneficiary') return 'BENEFICIARY PORTAL';
     if (user?.role === 'admin' && window.location.pathname.startsWith('/ops')) return 'OPERATIONS';
-    if (user?.role === 'admin') return 'FOUNDER PORTAL';
+    if (user?.role === 'admin') {
+      const scope = user?.admin_scope || 'founder';
+      if (scope === 'finance') return 'FINANCE ADMIN';
+      if (scope === 'compliance') return 'COMPLIANCE ADMIN';
+      if (scope === 'marketing') return 'MARKETING ADMIN';
+      if (scope === 'platform_health') return 'PLATFORM ADMIN';
+      return 'FOUNDER PORTAL';
+    }
     if (user?.role === 'operator' && user?.operator_role === 'manager') return 'OPS MANAGER';
     if (user?.role === 'operator') return 'OPERATIONS';
     if (user?.role === 'benefactor' && window.location.pathname.startsWith('/beneficiary')) return 'BENEFICIARY PORTAL';
@@ -412,9 +440,10 @@ const Sidebar = () => {
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99 }}
             onClick={() => setDevOpen(false)} />
           <div style={{
-            position: 'fixed', top: 70, left: 8, width: 280,
+            position: 'fixed', top: 70, left: 8, width: 280, maxHeight: 'calc(100vh - 100px)',
             background: '#0F1629', border: '1px solid rgba(245,158,11,0.3)',
             borderRadius: 12, boxShadow: '0 12px 40px rgba(0,0,0,0.6)', zIndex: 100,
+            overflowY: 'auto',
           }}>
             <div style={{ padding: '12px 14px' }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 8 }}>
@@ -437,7 +466,7 @@ const Sidebar = () => {
                 </div>
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                {devAccounts.map(acc => {
+                {devAccounts.filter(a => !a.isOperator).map(acc => {
                   const devActiveRole = localStorage.getItem('dev_switcher_active_role');
                   const isActive = acc.role === 'admin'
                     ? user?.role === 'admin' && (!devActiveRole || devActiveRole === 'admin')
@@ -475,6 +504,90 @@ const Sidebar = () => {
                   );
                 })}
               </div>
+              {/* Scope Preview — admin only, shown right after main portals */}
+              {user?.role === 'admin' && (
+                <div style={{ marginTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 6, paddingLeft: 2 }}>
+                    Admin Scope Preview
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {user?.admin_scope !== 'founder' && (
+                      <div
+                        onClick={(e) => { e.stopPropagation(); handleRestoreFounder(); }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
+                          background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)',
+                          borderRadius: 8, cursor: 'pointer', transition: 'all .15s',
+                        }}
+                        data-testid="scope-restore-founder"
+                      >
+                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#d4af37', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#0F1629' }}>F</div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: '#d4af37' }}>Restore Founder View</div>
+                      </div>
+                    )}
+                    {SCOPE_PREVIEWS.map(sp => {
+                      const isActive = user?.admin_scope === sp.scope;
+                      return (
+                        <div key={sp.scope}
+                          onClick={(e) => { e.stopPropagation(); if (!isActive) handleScopePreview(sp.scope); }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
+                            background: isActive ? `${sp.color}12` : 'rgba(255,255,255,0.02)',
+                            border: `1px solid ${isActive ? `${sp.color}40` : 'rgba(255,255,255,0.04)'}`,
+                            borderRadius: 8, cursor: isActive ? 'default' : 'pointer', transition: 'all .15s',
+                          }}
+                          data-testid={`scope-${sp.scope}`}
+                        >
+                          <div style={{ width: 22, height: 22, borderRadius: '50%', background: sp.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'white' }}>{sp.label[0]}</div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: isActive ? sp.color : '#CBD5E1' }}>{sp.label}</div>
+                            <div style={{ fontSize: 9, color: '#525C72' }}>{sp.desc}</div>
+                          </div>
+                          {isActive && <span style={{ fontSize: 9, color: sp.color, flexShrink: 0 }}>Active</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {/* Operator accounts — at the bottom */}
+              {devAccounts.filter(a => a.isOperator).length > 0 && (
+                <div style={{ marginTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 6, paddingLeft: 2 }}>
+                    Operator Accounts
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {devAccounts.filter(a => a.isOperator).map(acc => {
+                      const devActiveRole = localStorage.getItem('dev_switcher_active_role');
+                      const isActive = devActiveRole ? acc.role === devActiveRole && user?.email === acc.email : false;
+                      return (
+                        <div key={acc.role}
+                          onClick={(e) => { e.stopPropagation(); if (!isActive && !devSwitching) handleDevSwitch(acc); }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
+                            background: isActive ? 'rgba(224,173,43,0.1)' : 'rgba(255,255,255,0.02)',
+                            border: `1px solid ${isActive ? 'rgba(224,173,43,0.3)' : 'rgba(255,255,255,0.04)'}`,
+                            borderRadius: 8, cursor: isActive || devSwitching ? 'default' : 'pointer',
+                            transition: 'all .15s', opacity: devSwitching ? 0.5 : 1,
+                          }}
+                          data-testid={`dev-switch-${acc.role}`}>
+                          <div style={{
+                            width: 22, height: 22, borderRadius: '50%', background: acc.color,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 9, fontWeight: 700, color: 'white', flexShrink: 0,
+                          }}>
+                            {acc.label[0]}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 11, fontWeight: 600, color: isActive ? '#F0C95C' : '#CBD5E1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{acc.label}</div>
+                          </div>
+                          {devSwitching === acc.role && <div className="w-3 h-3 border-2 border-[#F0C95C] border-t-transparent rounded-full animate-spin" />}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <div style={{ marginTop: 8, fontSize: 10, color: '#525C72', textAlign: 'center' }}>No OTP required · Instant switch</div>
             </div>
           </div>
