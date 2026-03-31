@@ -7,11 +7,12 @@ Flow: Beneficiary reports milestone → System finds matches → Worker reviews 
 import asyncio
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 from typing import Optional
 
 from config import db
+from services.audit import get_client_ip, log_audit_event
 from services.notifications import notify
 from utils import get_current_user
 
@@ -123,6 +124,7 @@ class DeliveryReviewRequest(BaseModel):
 async def review_delivery(
     delivery_id: str,
     data: DeliveryReviewRequest,
+    request: Request,
     current_user: dict = Depends(get_current_user),
 ):
     """Approve (send now), schedule (send on date), or reject a pending milestone delivery."""
@@ -136,6 +138,7 @@ async def review_delivery(
         raise HTTPException(status_code=404, detail="Pending delivery not found")
 
     now = datetime.now(timezone.utc)
+    ip = get_client_ip(request)
 
     if data.action == "schedule":
         if not data.scheduled_date:
@@ -153,6 +156,39 @@ async def review_delivery(
                     "review_notes": data.notes,
                 }
             },
+        )
+
+        # Audit log
+        await log_audit_event(
+            actor_id=current_user["id"],
+            actor_email=current_user.get("email", ""),
+            actor_role=current_user.get("role", ""),
+            action="milestone_delivery_scheduled",
+            category="milestone",
+            resource_type="milestone_delivery",
+            resource_id=delivery_id,
+            details={
+                "message_id": delivery["message_id"],
+                "message_title": delivery.get("message_title", ""),
+                "beneficiary_id": delivery["beneficiary_id"],
+                "beneficiary_name": delivery.get("beneficiary_name", ""),
+                "event_type": delivery.get("event_type", ""),
+                "scheduled_date": data.scheduled_date,
+            },
+            ip_address=ip,
+            severity="info",
+        )
+
+        # Notify all staff
+        asyncio.create_task(
+            notify.p4_alert(
+                "Milestone Delivery Scheduled",
+                f"{current_user.get('name', 'Staff')} scheduled milestone message "
+                f"'{delivery.get('message_title', 'Message')}' for {delivery.get('beneficiary_name', 'beneficiary')} "
+                f"— delivery on {data.scheduled_date}.",
+                url="/ops/milestones",
+                metadata={"delivery_id": delivery_id, "scheduled_date": data.scheduled_date},
+            )
         )
 
         return {
@@ -191,6 +227,27 @@ async def review_delivery(
             },
         )
 
+        # Audit log — delivery confirmed
+        await log_audit_event(
+            actor_id=current_user["id"],
+            actor_email=current_user.get("email", ""),
+            actor_role=current_user.get("role", ""),
+            action="milestone_message_delivered",
+            category="milestone",
+            resource_type="milestone_delivery",
+            resource_id=delivery_id,
+            details={
+                "message_id": delivery["message_id"],
+                "message_title": delivery.get("message_title", ""),
+                "beneficiary_id": delivery["beneficiary_id"],
+                "beneficiary_name": delivery.get("beneficiary_name", ""),
+                "event_type": delivery.get("event_type", ""),
+                "delivery_method": "immediate",
+            },
+            ip_address=ip,
+            severity="info",
+        )
+
         # Notify the beneficiary
         asyncio.create_task(
             notify.beneficiary(
@@ -203,8 +260,40 @@ async def review_delivery(
             )
         )
 
+        # Notify all staff — confirmation of delivery
+        asyncio.create_task(
+            notify.p3_alert(
+                "Milestone Message Delivered",
+                f"{current_user.get('name', 'Staff')} approved and delivered milestone message "
+                f"'{delivery.get('message_title', 'Message')}' to {delivery.get('beneficiary_name', 'beneficiary')}.",
+                url="/ops/milestones",
+                metadata={"delivery_id": delivery_id, "message_id": delivery["message_id"]},
+            )
+        )
+
         return {"status": "approved", "message": "Message delivered to beneficiary"}
     else:
+        # Audit log — rejection
+        await log_audit_event(
+            actor_id=current_user["id"],
+            actor_email=current_user.get("email", ""),
+            actor_role=current_user.get("role", ""),
+            action="milestone_delivery_rejected",
+            category="milestone",
+            resource_type="milestone_delivery",
+            resource_id=delivery_id,
+            details={
+                "message_id": delivery["message_id"],
+                "message_title": delivery.get("message_title", ""),
+                "beneficiary_id": delivery["beneficiary_id"],
+                "beneficiary_name": delivery.get("beneficiary_name", ""),
+                "event_type": delivery.get("event_type", ""),
+                "rejection_notes": data.notes,
+            },
+            ip_address=ip,
+            severity="info",
+        )
+
         return {
             "status": "rejected",
             "message": "Delivery rejected — message will not be delivered",
@@ -248,6 +337,29 @@ async def process_scheduled_deliveries(current_user: dict = Depends(get_current_
             {"$set": {"status": "approved", "delivered_at": now.isoformat()}},
         )
 
+        # Audit log — scheduled delivery executed
+        await log_audit_event(
+            actor_id="system",
+            actor_email="system@carryon.us",
+            actor_role="system",
+            action="milestone_message_delivered",
+            category="milestone",
+            resource_type="milestone_delivery",
+            resource_id=delivery["id"],
+            details={
+                "message_id": delivery["message_id"],
+                "message_title": delivery.get("message_title", ""),
+                "beneficiary_id": delivery["beneficiary_id"],
+                "beneficiary_name": delivery.get("beneficiary_name", ""),
+                "event_type": delivery.get("event_type", ""),
+                "delivery_method": "scheduled",
+                "scheduled_date": delivery.get("scheduled_date", ""),
+                "originally_approved_by": delivery.get("reviewed_by", ""),
+            },
+            ip_address="",
+            severity="info",
+        )
+
         # Notify the beneficiary
         asyncio.create_task(
             notify.beneficiary(
@@ -257,6 +369,17 @@ async def process_scheduled_deliveries(current_user: dict = Depends(get_current_
                 url="/beneficiary/messages",
                 priority="high",
                 metadata={"message_id": delivery["message_id"]},
+            )
+        )
+
+        # Notify staff — scheduled delivery completed
+        asyncio.create_task(
+            notify.p4_alert(
+                "Scheduled Milestone Delivered",
+                f"Scheduled milestone message '{delivery.get('message_title', 'Message')}' "
+                f"has been automatically delivered to {delivery.get('beneficiary_name', 'beneficiary')}.",
+                url="/ops/milestones",
+                metadata={"delivery_id": delivery["id"], "message_id": delivery["message_id"]},
             )
         )
 
