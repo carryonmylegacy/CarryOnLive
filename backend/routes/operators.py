@@ -15,25 +15,11 @@ from pydantic import BaseModel
 from typing import Optional
 
 from config import db
+from guards import check_founder_role as require_founder, check_manager_or_admin as require_founder_or_manager
 from services.audit import get_client_ip, log_audit_event
 from utils import get_current_user
 
 router = APIRouter()
-
-
-def require_founder(current_user: dict):
-    """Only the founder (role=admin) can manage operators."""
-    if current_user.get("role") != "admin":
-        raise HTTPException(status_code=403, detail="Founder access required")
-
-
-def require_founder_or_manager(current_user: dict):
-    """Founder or Operations Manager can manage workers."""
-    if current_user.get("role") == "admin":
-        return
-    if current_user.get("role") == "operator" and current_user.get("operator_role") == "manager":
-        return
-    raise HTTPException(status_code=403, detail="Manager or Founder access required")
 
 
 # ── Operator CRUD ────────────────────────────────────────────────────

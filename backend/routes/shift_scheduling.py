@@ -307,12 +307,20 @@ async def create_swap_request(
     target_shift_info = ""
     if data.target_shift_id:
         target_shift = await db.shift_schedules.find_one(
-            {"id": data.target_shift_id, "operator_id": data.target_operator_id, "status": {"$nin": ["cancelled", "completed"]}},
+            {
+                "id": data.target_shift_id,
+                "operator_id": data.target_operator_id,
+                "status": {"$nin": ["cancelled", "completed"]},
+            },
             {"_id": 0},
         )
         if not target_shift:
-            raise HTTPException(status_code=404, detail="Target shift not found or doesn't belong to the target operator")
-        target_shift_info = f"{SHIFT_LABELS.get(target_shift['shift_type'], target_shift['shift_type'])} on {target_shift['date']}"
+            raise HTTPException(
+                status_code=404, detail="Target shift not found or doesn't belong to the target operator"
+            )
+        target_shift_info = (
+            f"{SHIFT_LABELS.get(target_shift['shift_type'], target_shift['shift_type'])} on {target_shift['date']}"
+        )
 
     now = datetime.now(timezone.utc).isoformat()
     req_id = str(uuid4())

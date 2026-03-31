@@ -13,22 +13,10 @@ from pydantic import BaseModel
 from typing import Optional
 
 from config import db
+from guards import check_staff_role as require_staff, check_manager_or_admin as require_manager_or_founder
 from utils import get_current_user
 
 router = APIRouter()
-
-
-def require_staff(user: dict):
-    if user.get("role") not in ("admin", "operator"):
-        raise HTTPException(status_code=403, detail="Staff access required")
-
-
-def require_manager_or_founder(user: dict):
-    if user.get("role") == "admin":
-        return
-    if user.get("role") == "operator" and user.get("operator_role") == "manager":
-        return
-    raise HTTPException(status_code=403, detail="Manager or Founder access required")
 
 
 class CannedResponseCreate(BaseModel):

@@ -153,3 +153,23 @@ def require_admin_scope(current_user: dict, allowed_scopes: list[str]):
             status_code=403,
             detail=f"This section requires one of: {', '.join(allowed_scopes)} access",
         )
+
+
+def check_staff_role(user: dict):
+    """Inline staff role check — use when user is already resolved via get_current_user.
+    Raises 403 if user is not admin or operator."""
+    if user.get("role") not in ("admin", "operator"):
+        raise HTTPException(status_code=403, detail="Staff access required")
+
+
+def check_founder_role(user: dict):
+    """Inline founder role check — use when user is already resolved.
+    Raises 403 if user is not admin."""
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Founder access required")
+
+
+def check_manager_or_admin(user: dict):
+    """Inline check for manager or admin role."""
+    if user.get("role") != "admin" and user.get("operator_role") != "manager":
+        raise HTTPException(status_code=403, detail="Manager or admin access required")

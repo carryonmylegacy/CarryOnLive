@@ -12,16 +12,12 @@ from pydantic import BaseModel
 from typing import Optional
 
 from config import db
+from guards import check_staff_role as require_staff
 from services.audit import get_client_ip, log_audit_event
 from services.notifications import notify
 from utils import get_current_user
 
 router = APIRouter()
-
-
-def require_staff(user: dict):
-    if user.get("role") not in ("admin", "operator"):
-        raise HTTPException(status_code=403, detail="Staff access required")
 
 
 @router.get("/milestones/deliveries")

@@ -15,20 +15,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 
 from config import db
+from guards import check_staff_role as require_staff, check_founder_role as require_founder
 from services.audit import get_client_ip, log_audit_event
 from utils import get_current_user
 
 router = APIRouter()
-
-
-def require_staff(user: dict):
-    if user.get("role") not in ("admin", "operator"):
-        raise HTTPException(status_code=403, detail="Staff access required")
-
-
-def require_founder(user: dict):
-    if user.get("role") != "admin":
-        raise HTTPException(status_code=403, detail="Founder access required")
 
 
 # ══════════════════════════════════════════════════════════
