@@ -338,7 +338,7 @@ async def create_swap_request(
     await db.shift_swap_requests.insert_one({k: v for k, v in swap_request.items()})
 
     # Notify target operator and managers via WebSocket
-    from routes.ws_notifications import send_to_user, broadcast_to_staff
+    from routes.ws_notifications import send_to_user
 
     await send_to_user(
         data.target_operator_id,

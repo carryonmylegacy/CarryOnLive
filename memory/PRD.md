@@ -80,8 +80,15 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - `GET /api/ops/shifts/summary` — weekly coverage summary (7-day breakdown by shift type)
 - Duplicate shift detection (same operator + date + type)
 - Shift statuses: scheduled, confirmed, completed, cancelled
-- Frontend: `ShiftScheduleTab.js` with weekly calendar grid, Add Shift form, color-coded cards
-- DB indexes: `(operator_id, date)`, `date`
+- **Shift Swap Requests**:
+  - `POST /api/ops/shifts/swap-requests` — operator requests a swap with target operator
+  - `GET /api/ops/shifts/swap-requests` — list requests (own for workers, all for managers)
+  - `PUT /api/ops/shifts/swap-requests/{id}` — manager approves (reassigns both shifts) or denies
+  - Duplicate pending request detection (409), self-swap prevention (400)
+  - Real-time WebSocket notifications to target operator and requester on action
+  - Frontend: swap button on shift cards, inline target selection, pending requests panel with approve/deny
+- Frontend: `ShiftScheduleTab.js` with weekly calendar grid, Add Shift form, color-coded cards, swap UI
+- DB indexes: `(operator_id, date)`, `date`, `shift_swap_requests.status/requester_id/target_operator_id`
 
 **Phase 3: Training Completion Tracker**
 - `routes/training_tracker.py` — training module tracking
@@ -534,7 +541,6 @@ Fixed drag-and-drop file rejection for PDFs in the Secure Document Vault:
 - **Scalability Enhancements**: Horizontal scaling, background workers, CDN
 - **Readiness Scoring Policy Page**: Informational page under Account section
 - **Twilio SMS OTP**: A2P campaign resubmitted March 24, 2026. Check back mid-April 2026.
-- **Shift Swap Requests**: Operators request shift swaps with teammate approval workflow
 
 ## Key API Endpoints
 - `POST /api/security/verify/{section_id}` — validates PIN/Password/Question combos
