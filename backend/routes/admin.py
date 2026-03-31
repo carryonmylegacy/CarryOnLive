@@ -1811,9 +1811,9 @@ async def execute_grace_period_purge(
     gp_id: str,
     current_user: dict = Depends(get_current_user),
 ):
-    """Manually execute purge for an expired grace period. Admin only."""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required for purge")
+    """Execute file purge for an expired grace period. Admin/Ops only. Does NOT purge Milestone Messages."""
+    if current_user["role"] not in ("admin", "operator"):
+        raise HTTPException(status_code=403, detail="Admin/Ops access required for purge")
 
     gp = await db.grace_periods.find_one({"id": gp_id}, {"_id": 0})
     if not gp:
@@ -1824,4 +1824,43 @@ async def execute_grace_period_purge(
     from services.grace_period import execute_purge
 
     count = await execute_purge(gp_id, current_user["id"])
-    return {"status": "purged", "files_purged": count}
+    return {"status": "files_purged", "files_purged": count, "mm_purge_pending": True}
+
+
+@router.post("/admin/grace-periods/{gp_id}/purge-mm")
+async def execute_mm_purge_endpoint(
+    gp_id: str,
+    data: dict,
+    current_user: dict = Depends(get_current_user),
+):
+    """Final purge: Remove undelivered Milestone Messages. Admin/Ops only.
+    Requires password confirmation. This is the LAST and irreversible action."""
+    if current_user["role"] not in ("admin", "operator"):
+        raise HTTPException(status_code=403, detail="Admin/Ops access required")
+
+    password = data.get("password")
+    if not password:
+        raise HTTPException(status_code=400, detail="Password confirmation required")
+
+    # Verify password
+    from utils import verify_password
+
+    user_record = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "password_hash": 1})
+    if not user_record or not verify_password(password, user_record["password_hash"]):
+        raise HTTPException(status_code=403, detail="Password verification failed")
+
+    gp = await db.grace_periods.find_one({"id": gp_id}, {"_id": 0})
+    if not gp:
+        raise HTTPException(status_code=404, detail="Grace period not found")
+    if gp.get("hold_active"):
+        raise HTTPException(status_code=400, detail="Cannot purge — hold is active")
+    if gp.get("status") not in ("files_purged", "active"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Grace period status must be 'files_purged' to purge MMs, current: {gp.get('status')}",
+        )
+
+    from services.grace_period import execute_mm_purge
+
+    count = await execute_mm_purge(gp_id, current_user)
+    return {"status": "completed", "messages_purged": count}

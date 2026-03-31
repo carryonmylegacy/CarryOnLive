@@ -30,6 +30,12 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+**Grace Period Admin Tab**
+- Added "Grace Periods" tab to Admin/Ops portal with stats (Active, On Hold, Files Purged, Completed, All)
+- "Sort by Hold" toggle to surface held estates at top
+- Inline actions: Confirm (for auto-paused transitioned estates), Place/Remove Hold, Purge Files, Purge MMs
+- MM Purge requires password confirmation (final, irreversible action)
+
 ### Completed (March 31, 2026 — Subscription Access Architecture + Grace Period System)
 
 **Phase 1: Subscription Access Guards**

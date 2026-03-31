@@ -262,7 +262,7 @@ async def execute_purge(grace_period_id: str, staff_id: str = "system"):
     """Purge file content for an expired grace period.
 
     - Removes file content (S3 objects) but keeps metadata records
-    - Does NOT purge Milestone Messages
+    - Does NOT purge Milestone Messages — those require separate admin approval
     - Logs every purged file for audit
     """
     gp = await db.grace_periods.find_one({"id": grace_period_id}, {"_id": 0})
@@ -273,9 +273,9 @@ async def execute_purge(grace_period_id: str, staff_id: str = "system"):
     now = datetime.now(timezone.utc)
     purged_count = 0
 
-    # Get all documents in the estate (NOT milestone messages)
+    # Get all documents in the estate (EXCLUDING milestone messages)
     documents = await db.documents.find(
-        {"estate_id": estate_id},
+        {"estate_id": estate_id, "purged": {"$ne": True}},
         {"_id": 0, "id": 1, "name": 1, "file_size": 1, "created_at": 1, "s3_key": 1},
     ).to_list(1000)
 
@@ -320,14 +320,15 @@ async def execute_purge(grace_period_id: str, staff_id: str = "system"):
         )
         purged_count += 1
 
-    # Mark grace period as completed
+    # Mark grace period as files-purged (MM purge still requires separate admin action)
     await db.grace_periods.update_one(
         {"id": grace_period_id},
         {
             "$set": {
-                "status": "completed",
-                "completed_at": now.isoformat(),
+                "status": "files_purged",
+                "files_purged_at": now.isoformat(),
                 "purged_count": purged_count,
+                "mm_purge_pending": True,
             }
         },
     )
@@ -351,8 +352,101 @@ async def execute_purge(grace_period_id: str, staff_id: str = "system"):
     return purged_count
 
 
+async def execute_mm_purge(grace_period_id: str, staff_user: dict):
+    """Final purge: Remove undelivered Milestone Messages for a transitioned estate.
+
+    This is the LAST purge action for any estate. Requires:
+    - Admin/Ops role
+    - Password already verified by the calling endpoint
+    - Grace period must have files already purged
+    """
+    gp = await db.grace_periods.find_one({"id": grace_period_id}, {"_id": 0})
+    if not gp:
+        return 0
+
+    estate_id = gp["estate_id"]
+    now = datetime.now(timezone.utc)
+    purged_count = 0
+
+    # Only purge UNDELIVERED milestone messages for this estate
+    undelivered_msgs = await db.messages.find(
+        {"estate_id": estate_id, "is_delivered": {"$ne": True}, "purged": {"$ne": True}},
+        {"_id": 0, "id": 1, "title": 1, "message_type": 1, "created_at": 1, "recipients": 1},
+    ).to_list(500)
+
+    for msg in undelivered_msgs:
+        # Create purge record
+        purge_record = {
+            "id": str(uuid.uuid4()),
+            "grace_period_id": grace_period_id,
+            "estate_id": estate_id,
+            "user_id": gp["user_id"],
+            "resource_type": "milestone_message",
+            "resource_id": msg["id"],
+            "original_filename": msg.get("title", "Untitled Message"),
+            "message_type": msg.get("message_type", ""),
+            "recipients": msg.get("recipients", []),
+            "uploaded_at": msg.get("created_at", ""),
+            "purged_at": now.isoformat(),
+            "purged_by": staff_user["id"],
+        }
+        await db.purge_records.insert_one(purge_record)
+
+        # Remove content but keep metadata
+        await db.messages.update_one(
+            {"id": msg["id"]},
+            {
+                "$set": {
+                    "purged": True,
+                    "purged_at": now.isoformat(),
+                    "purged_by": staff_user["id"],
+                    "file_data": None,
+                    "text_content": None,
+                    "s3_key": None,
+                }
+            },
+        )
+        purged_count += 1
+
+    # Mark grace period as fully completed
+    await db.grace_periods.update_one(
+        {"id": grace_period_id},
+        {
+            "$set": {
+                "status": "completed",
+                "completed_at": now.isoformat(),
+                "mm_purge_pending": False,
+                "mm_purged_count": purged_count,
+                "mm_purged_by": staff_user["id"],
+                "mm_purged_by_name": staff_user.get("name", ""),
+            }
+        },
+    )
+
+    await log_audit_event(
+        actor_id=staff_user["id"],
+        actor_email=staff_user.get("email", ""),
+        actor_role=staff_user.get("role", ""),
+        action="milestone_messages_purged",
+        category="subscription",
+        resource_type="grace_period",
+        resource_id=grace_period_id,
+        details={
+            "estate_id": estate_id,
+            "messages_purged": purged_count,
+        },
+        severity="critical",
+    )
+
+    logger.info(
+        f"MM purge completed: grace_period={grace_period_id} estate={estate_id} "
+        f"messages={purged_count} by={staff_user.get('name', staff_user['id'])}"
+    )
+    return purged_count
+
+
 async def _gather_estate_emails(estate_id: str, user_id: str):
-    """Gather ALL emails associated with an estate for notifications."""
+    """Gather Benefactor and Beneficiary emails associated with an estate. NOT FFN contacts."""
     emails = set()
 
     # Benefactor email
@@ -379,15 +473,6 @@ async def _gather_estate_emails(estate_id: str, user_id: str):
             ben_user = await db.users.find_one({"id": b["user_id"]}, {"_id": 0, "email": 1})
             if ben_user and ben_user.get("email"):
                 emails.add(ben_user["email"])
-
-    # FFN contacts
-    ffn_contacts = await db.ffn_contacts.find(
-        {"estate_id": estate_id, "deleted_at": None},
-        {"_id": 0, "email": 1},
-    ).to_list(100)
-    for c in ffn_contacts:
-        if c.get("email"):
-            emails.add(c["email"])
 
     return list(emails)
 

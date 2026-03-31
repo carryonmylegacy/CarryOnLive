@@ -6,7 +6,7 @@ import {
   Shield, Users, FileKey, Loader2,
   Headphones, CreditCard, Activity, Settings,
  CheckSquare, AlertTriangle, Clock, TrendingUp, Trash2,
-  Megaphone, HeartPulse, Search, StickyNote, BookOpen, Gift, Zap, Puzzle, Mail, Film
+  Megaphone, HeartPulse, Search, StickyNote, BookOpen, Gift, Zap, Puzzle, Mail, Film, Hourglass
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { toast } from '../utils/toast';
@@ -48,6 +48,7 @@ import { BetaTestingTab } from '../components/admin/BetaTestingTab';
 import { FounderEmailsTab } from '../components/admin/FounderEmailsTab';
 import { FounderInvitesTab } from '../components/admin/FounderInvitesTab';
 import { SiteContentTab } from '../components/admin/SiteContentTab';
+import { GracePeriodsTab } from '../components/admin/GracePeriodsTab';
 import { API_URL } from '../config';
 
 const TAB_CONFIG = [
@@ -76,6 +77,7 @@ const TAB_CONFIG = [
   { key: 'p1-settings', label: 'P1 Contact', icon: AlertTriangle, path: '/admin/p1-settings' },
   { key: 'founder-emails', label: 'Emails', icon: Mail, path: '/admin/founder-emails' },
   { key: 'site-content', label: 'Site Content', icon: Film, path: '/admin/site-content' },
+  { key: 'grace-periods', label: 'Grace Periods', icon: Hourglass, path: '/admin/grace-periods' },
   { key: 'ops-dashboard', label: 'Ops Dashboard', icon: Activity, path: '/admin/ops-dashboard' },
   { key: 'milestones', label: 'Milestones', icon: CheckSquare, path: '/admin/milestones' },
   // Operator sidebar features
@@ -116,6 +118,7 @@ const PATH_TO_TAB = {
   '/admin/founder-emails': 'founder-emails',
   '/admin/founder-invites': 'founder-invites',
   '/admin/site-content': 'site-content',
+  '/admin/grace-periods': 'grace-periods',
   '/admin/ops-dashboard': 'ops-dashboard',
   '/admin/milestones': 'milestones',
   '/admin/trials': 'trials',
@@ -360,6 +363,7 @@ const AdminPage = ({ operatorMode = false }) => {
       {effectiveTab === 'founder-emails' && !operatorMode && <FounderEmailsTab getAuthHeaders={getAuthHeaders} />}
       {effectiveTab === 'founder-invites' && !operatorMode && <FounderInvitesTab />}
       {effectiveTab === 'site-content' && !operatorMode && <SiteContentTab getAuthHeaders={getAuthHeaders} />}
+      {effectiveTab === 'grace-periods' && <GracePeriodsTab getAuthHeaders={getAuthHeaders} />}
       {/* New Operator features */}
       {effectiveTab === 'my-activity' && operatorMode && <MyActivityTab getAuthHeaders={getAuthHeaders} />}
       {effectiveTab === 'search' && operatorMode && <QuickSearchTab getAuthHeaders={getAuthHeaders} />}
