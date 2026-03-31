@@ -83,3 +83,7 @@ android-sdk/
 
 # Test reports (generated)
 test_reports/
+-e 
+# Environment files
+*.env
+*.env.*
