@@ -135,11 +135,17 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     if (!deleteTarget || !deletePassword.trim()) return;
     setDeleting(true);
     try {
-      await axios.delete(`${API_URL}/admin/users/${deleteTarget.id}?admin_password=${encodeURIComponent(deletePassword)}`, getAuthHeaders());
-      setUsers(prev => prev.filter(u => u.id !== deleteTarget.id));
-      toast.success(`${deleteTarget.name} and all associated data deleted`);
+      const targetId = deleteTarget.id;
+      const targetName = deleteTarget.name;
+      await axios.delete(`${API_URL}/admin/users/${targetId}?admin_password=${encodeURIComponent(deletePassword)}`, getAuthHeaders());
+      // Close modal FIRST so iOS Safari repaints the underlying content
       setDeleteTarget(null);
       setDeletePassword('');
+      toast.success(`${targetName} and all associated data deleted`);
+      // Update user list after modal is gone (prevents iOS blank-screen rendering bug)
+      setTimeout(() => {
+        setUsers(prev => prev.filter(u => u.id !== targetId));
+      }, 50);
     } catch (err) {
       const msg = err.response?.data?.detail || 'Failed to delete';
       toast.error(msg);
