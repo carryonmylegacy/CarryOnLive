@@ -8,6 +8,7 @@ import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
+import { FeatureGatesCard } from './FeatureGatesCard';
 
 export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }) => {
   const [settings, setSettings] = useState(null);
@@ -284,6 +285,11 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
           </div>
         </CardContent>
       </Card>
+      )}
+
+      {/* Feature Gates — Founder only */}
+      {!operatorMode && (
+        <FeatureGatesCard getAuthHeaders={getAuthHeaders} />
       )}
 
       {/* Per-User Overrides */}

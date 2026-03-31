@@ -11,6 +11,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [pendingEmail, setPendingEmail] = useState(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+  const [enabledFeatures, setEnabledFeatures] = useState(null);
 
   const fetchSubscriptionStatus = async (authToken) => {
     try {
@@ -20,6 +21,17 @@ export const AuthProvider = ({ children }) => {
       setSubscriptionStatus(res.data);
     } catch (err) {
       console.error('Subscription status fetch error:', err);
+    }
+  };
+
+  const fetchEnabledFeatures = async (authToken) => {
+    try {
+      const res = await axios.get(`${API_URL}/subscriptions/enabled-features`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      setEnabledFeatures(res.data?.enabled_features || null);
+    } catch (err) {
+      console.error('Enabled features fetch error:', err);
     }
   };
 
@@ -57,6 +69,7 @@ export const AuthProvider = ({ children }) => {
             is_also_beneficiary: userData.is_also_beneficiary || false,
           });
           await fetchSubscriptionStatus(token);
+          await fetchEnabledFeatures(token);
         } catch (error) {
           console.error('Auth init error:', error);
           logout();
@@ -217,7 +230,10 @@ export const AuthProvider = ({ children }) => {
   });
 
   const refreshSubscription = async () => {
-    if (token) await fetchSubscriptionStatus(token);
+    if (token) {
+      await fetchSubscriptionStatus(token);
+      await fetchEnabledFeatures(token);
+    }
   };
 
   const refreshUser = async () => {
@@ -244,6 +260,7 @@ export const AuthProvider = ({ children }) => {
       loading,
       pendingEmail,
       subscriptionStatus,
+      enabledFeatures,
       login,
       loginWithToken,
       verifyOtp,

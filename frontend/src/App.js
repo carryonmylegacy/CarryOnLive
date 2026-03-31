@@ -14,6 +14,7 @@ import NotificationContainer from './components/AppNotification';
 import { AmberAlertProvider } from './components/AmberAlert';
 import { initErrorReporter, reportError } from './utils/errorReporter';
 import { checkForUpdates } from './utils/versionCheck';
+import { isFeatureEnabled } from './utils/featureGates';
 import { Loader2 } from 'lucide-react';
 
 const CARRYON_BUILD = '2026-03-10T20:30:00Z-fix-portal-paywall';
@@ -110,7 +111,7 @@ class RouteErrorBoundary extends React.Component {
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { user, loading, isAuthenticated, subscriptionStatus } = useAuth();
+  const { user, loading, isAuthenticated, subscriptionStatus, enabledFeatures } = useAuth();
   const [showPaywall, setShowPaywall] = useState(() => sessionStorage.getItem('paywall_dismissed') === 'true');
 
   if (loading) {
@@ -158,6 +159,14 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   //   - Beneficiary portal → no paywall here (handled separately in beneficiary settings)
   //   - /create-estate → no paywall (onboarding must complete first)
   const currentPath = window.location.pathname;
+
+  // Feature gate enforcement — redirect to dashboard if the route's feature is gated
+  if (user?.role !== 'admin' && user?.role !== 'operator') {
+    if (!isFeatureEnabled(currentPath, enabledFeatures)) {
+      return <Navigate to="/dashboard" replace />;
+    }
+  }
+
   const isOnBeneficiaryRoute = currentPath.startsWith('/beneficiary');
   const isOnCreateEstate = currentPath === '/create-estate';
   const isOnSettings = currentPath === '/settings' || currentPath === '/security-settings';

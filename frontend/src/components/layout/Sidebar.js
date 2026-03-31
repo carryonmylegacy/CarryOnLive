@@ -41,6 +41,7 @@ import { Switch } from '../ui/switch';
 import { toast } from '../../utils/toast';
 import NotificationBell from '../NotificationBell';
 import { API_URL } from '../../config';
+import { filterNavByFeatures } from '../../utils/featureGates';
 
 const BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -79,7 +80,7 @@ const OtpToggle = ({ collapsed }) => {
 };
 
 const Sidebar = () => {
-  const { user, logout, refreshUser } = useAuth();
+  const { user, logout, refreshUser, enabledFeatures } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [benEstates, setBenEstates] = useState([]);
@@ -236,7 +237,7 @@ const Sidebar = () => {
   const benefactorNavSections = [
     {
       title: 'ESTATE PLAN ACCESS',
-      items: [
+      items: filterNavByFeatures([
         { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
         { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
         { to: '/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
@@ -247,7 +248,7 @@ const Sidebar = () => {
         { to: '/digital-wallet', icon: KeyRound, label: 'Digital Access Vault (DAV)' },
         { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
         { to: '/timeline', icon: Clock, label: 'Estate Plan Timeline' },
-      ]
+      ], enabledFeatures)
     },
     {
       title: 'ACCOUNT',

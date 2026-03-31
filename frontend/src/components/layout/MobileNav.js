@@ -40,6 +40,7 @@ import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import NotificationBell from '../NotificationBell';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
+import { filterNavByFeatures, isFeatureEnabled } from '../../utils/featureGates';
 
 const BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -148,7 +149,7 @@ const DebugValues = () => {
 };
 
 const MobileNav = () => {
-  const { user, logout, refreshUser } = useAuth();
+  const { user, logout, refreshUser, enabledFeatures } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -332,7 +333,7 @@ const MobileNav = () => {
   };
 
   // Navigation structure matching prototype - with sections
-  const myLegacyItems = [
+  const myLegacyItems = filterNavByFeatures([
     { to: '/dashboard', icon: Home, label: 'Dashboard' },
     { to: '/beneficiaries', icon: Users, label: 'Beneficiaries' },
     { to: '/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
@@ -343,7 +344,7 @@ const MobileNav = () => {
     { to: '/digital-wallet', icon: KeyRound, label: 'Digital Access Vault (DAV)' },
     { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
     { to: '/timeline', icon: Clock, label: 'Estate Plan Timeline' },
-  ];
+  ], enabledFeatures);
 
   // Get feature access flags from localStorage (set by TransitionGate/Dashboard)
   const featureAccess = (() => {
@@ -429,13 +430,13 @@ const MobileNav = () => {
   const accountItems = getAccountItems();
 
   // Bottom nav for benefactor - 5 items with Home in center
-  const benefactorBottomNav = [
+  const benefactorBottomNav = filterNavByFeatures([
     { to: '/beneficiaries', icon: Users, label: 'Benefic.' },
     { to: '/messages', icon: MessageSquare, label: 'Milestone' },
     { to: '/dashboard', icon: Home, label: 'Dashboard', isCenter: true },
     { to: '/guardian', icon: Sparkles, label: 'Guardian' },
     { to: '/vault', icon: FolderLock, label: 'Vault' },
-  ];
+  ], enabledFeatures);
 
   const beneficiaryBottomNav = filterByFeatureAccess([
     { to: '/beneficiary/vault', icon: FolderLock, label: 'Vault' },

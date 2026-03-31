@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { cachedGet } from '../utils/apiCache';
+import { isFeatureKeyEnabled } from '../utils/featureGates';
 import { 
   FolderLock, 
   MessageSquare, 
@@ -24,7 +25,7 @@ import OnboardingWizard from '../components/OnboardingWizard';
 import { API_URL } from '../config';
 
 const DashboardPage = () => {
-  const { user, getAuthHeaders } = useAuth();
+  const { user, getAuthHeaders, enabledFeatures } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [estates, setEstates] = useState([]);
@@ -617,6 +618,7 @@ const DashboardPage = () => {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4 mb-4">
+        {isFeatureKeyEnabled('mm', enabledFeatures) && (
         <StatCard 
           icon={MessageSquare}
           value={stats.messages}
@@ -625,6 +627,8 @@ const DashboardPage = () => {
           onClick={() => navigate('/messages')}
           sectionKey="messages"
         />
+        )}
+        {isFeatureKeyEnabled('iac', enabledFeatures) && (
         <StatCard 
           icon={CheckSquare}
           value={totalTasks}
@@ -633,6 +637,8 @@ const DashboardPage = () => {
           onClick={() => navigate('/checklist')}
           sectionKey="checklist"
         />
+        )}
+        {isFeatureKeyEnabled('sdv', enabledFeatures) && (
         <StatCard 
           icon={FolderLock}
           value={stats.documents}
@@ -641,7 +647,8 @@ const DashboardPage = () => {
           onClick={() => navigate('/vault')}
           sectionKey="vault"
         />
-        {egaRunning && (
+        )}
+        {egaRunning && isFeatureKeyEnabled('ega', enabledFeatures) && (
           <div className="col-span-3 lg:col-span-4 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold"
             style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.15)', color: '#d4af37' }}
             data-testid="ega-running-banner">
@@ -649,6 +656,7 @@ const DashboardPage = () => {
             Estate Guardian is generating IAC items — counts will update automatically
           </div>
         )}
+        {isFeatureKeyEnabled('beneficiaries', enabledFeatures) && (
         <StatCard 
           icon={Users}
           value={stats.beneficiaries}
@@ -658,9 +666,11 @@ const DashboardPage = () => {
           className="hidden lg:block"
           sectionKey="beneficiaries"
         />
+        )}
       </div>
 
       {/* Mobile only - Beneficiaries full width */}
+      {isFeatureKeyEnabled('beneficiaries', enabledFeatures) && (
       <div className="lg:hidden mb-4">
         <div 
           className="stat-card-beneficiaries rounded-2xl p-4 cursor-pointer transition-transform duration-150 active:scale-[0.96] lg:hover:scale-[1.02] flex flex-col items-center justify-center"
@@ -674,10 +684,12 @@ const DashboardPage = () => {
           <span className="opacity-80 text-base lg:text-lg font-bold text-center">Beneficiaries</span>
         </div>
       </div>
+      )}
 
       {/* Bottom Section - Messages, Checklist & Vault Previews */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Milestone Messages Preview - Purple */}
+        {isFeatureKeyEnabled('mm', enabledFeatures) && (
         <div 
           className="glass-card p-4 lg:p-6 border-l-4 border-l-[#8b5cf6] transition-transform duration-150 cursor-pointer active:scale-[0.98] lg:hover:scale-[1.02] lg:hover:shadow-[0_12px_36px_-6px_rgba(139,92,246,0.3)]"
           data-testid="preview-messages"
@@ -711,8 +723,10 @@ const DashboardPage = () => {
             Create Message <ChevronRight className="w-5 h-5" />
           </button>
         </div>
+        )}
 
         {/* Immediate Action Checklist Preview - Orange */}
+        {isFeatureKeyEnabled('iac', enabledFeatures) && (
         <div 
           className="glass-card p-4 lg:p-6 border-l-4 border-l-[#f97316] transition-transform duration-150 cursor-pointer active:scale-[0.98] lg:hover:scale-[1.02] lg:hover:shadow-[0_12px_36px_-6px_rgba(249,115,22,0.3)]"
           data-testid="preview-checklist"
@@ -766,8 +780,10 @@ const DashboardPage = () => {
             View Full Checklist <ChevronRight className="w-5 h-5" />
           </button>
         </div>
+        )}
 
         {/* Secure Document Vault Preview - Blue */}
+        {isFeatureKeyEnabled('sdv', enabledFeatures) && (
         <div 
           className="glass-card p-4 lg:p-6 border-l-4 border-l-[#2563eb] transition-transform duration-150 cursor-pointer active:scale-[0.98] lg:hover:scale-[1.02] lg:hover:shadow-[0_12px_36px_-6px_rgba(37,99,235,0.3)]"
           data-testid="preview-vault"
@@ -800,6 +816,7 @@ const DashboardPage = () => {
             View All Documents <ChevronRight className="w-5 h-5" />
           </button>
         </div>
+        )}
       </div>
       {showCelebration && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center overflow-y-auto" data-testid="celebration-overlay"

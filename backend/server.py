@@ -51,6 +51,7 @@ from routes.milestone_deliveries import router as milestone_deliveries_router
 from routes.photos import router as photos_router
 from routes.beta import router as beta_router
 from routes.ffn import router as ffn_router
+from routes.feature_gates import router as feature_gates_router
 from routes.funnel import router as funnel_router
 from routes.founder_invites import router as founder_invites_router
 from schedulers import (
@@ -206,6 +207,7 @@ api_router.include_router(errors_router)
 api_router.include_router(section_permissions_router)
 api_router.include_router(operators_router)
 api_router.include_router(staff_tools_router)
+api_router.include_router(feature_gates_router)
 api_router.include_router(notifications_router)
 api_router.include_router(ops_dashboard_router)
 api_router.include_router(milestone_deliveries_router)
