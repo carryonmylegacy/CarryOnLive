@@ -54,6 +54,7 @@ from routes.ffn import router as ffn_router
 from routes.feature_gates import router as feature_gates_router
 from routes.funnel import router as funnel_router
 from routes.founder_invites import router as founder_invites_router
+from routes.ws_notifications import router as ws_router, sla_checker_loop
 from schedulers import (
     daily_dob_check_scheduler,
     data_retention_scheduler,
@@ -156,12 +157,16 @@ async def lifespan(app):
 
     asyncio.create_task(warmup_xai())
 
+    # Start real-time SLA breach checker (every 60s)
+    sla_task = asyncio.create_task(sla_checker_loop())
+
     yield
     digest_task.cancel()
     reminder_task.cancel()
     dob_task.cancel()
     billing_task.cancel()
     retention_task.cancel()
+    sla_task.cancel()
     # Cancel xAI keepalive if running
     from routes.guardian import _xai_keepalive_task as ka_task
 
@@ -216,6 +221,7 @@ api_router.include_router(beta_router)
 api_router.include_router(ffn_router)
 api_router.include_router(funnel_router)
 api_router.include_router(founder_invites_router)
+api_router.include_router(ws_router)
 
 
 BUILD_HASH = "2026-03-10T17:05:00Z-fix-welcome-redirect"

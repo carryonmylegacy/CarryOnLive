@@ -441,7 +441,7 @@ const AdminPage = ({ operatorMode = false }) => {
           if (t.sectionLabel) {
             return (
               <span key={`section-${t.sectionLabel}`}
-                className={`text-[10px] font-bold uppercase tracking-wider whitespace-nowrap flex-shrink-0 ${i > 0 ? 'ml-2' : ''} mr-1`}
+                className={`text-[11px] font-bold uppercase tracking-wider whitespace-nowrap flex-shrink-0 ${i > 0 ? 'ml-2' : ''} mr-1`}
                 style={{ color: sectionColors[t.sectionLabel] || 'var(--t5)' }}>
                 {t.sectionLabel}
               </span>

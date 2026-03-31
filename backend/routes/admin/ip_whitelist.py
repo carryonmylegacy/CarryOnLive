@@ -43,14 +43,16 @@ async def get_ip_whitelist(current_user: dict = Depends(require_admin)):
     configs = []
     for at in ACCOUNT_TYPES:
         doc = await db.ip_whitelist.find_one({"account_type": at}, {"_id": 0})
-        configs.append({
-            "account_type": at,
-            "label": ACCOUNT_TYPE_LABELS.get(at, at),
-            "enabled": doc.get("enabled", False) if doc else False,
-            "allowed_ips": doc.get("allowed_ips", []) if doc else [],
-            "notes": doc.get("notes", "") if doc else "",
-            "updated_at": doc.get("updated_at", "") if doc else "",
-        })
+        configs.append(
+            {
+                "account_type": at,
+                "label": ACCOUNT_TYPE_LABELS.get(at, at),
+                "enabled": doc.get("enabled", False) if doc else False,
+                "allowed_ips": doc.get("allowed_ips", []) if doc else [],
+                "notes": doc.get("notes", "") if doc else "",
+                "updated_at": doc.get("updated_at", "") if doc else "",
+            }
+        )
 
     return configs
 

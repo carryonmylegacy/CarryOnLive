@@ -107,26 +107,38 @@ async def export_users_csv(current_user: dict = Depends(require_admin)):
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow([
-        "id", "email", "name", "role", "operator_role", "admin_scope",
-        "created_at", "last_login_at", "is_beta_tester", "trial_ends_at",
-        "special_status",
-    ])
+    writer.writerow(
+        [
+            "id",
+            "email",
+            "name",
+            "role",
+            "operator_role",
+            "admin_scope",
+            "created_at",
+            "last_login_at",
+            "is_beta_tester",
+            "trial_ends_at",
+            "special_status",
+        ]
+    )
 
     for u in users:
-        writer.writerow([
-            u.get("id", ""),
-            u.get("email", ""),
-            u.get("name", ""),
-            u.get("role", ""),
-            u.get("operator_role", ""),
-            u.get("admin_scope", ""),
-            u.get("created_at", ""),
-            u.get("last_login_at", ""),
-            u.get("is_beta_tester", False),
-            u.get("trial_ends_at", ""),
-            ",".join(u.get("special_status", []) or []),
-        ])
+        writer.writerow(
+            [
+                u.get("id", ""),
+                u.get("email", ""),
+                u.get("name", ""),
+                u.get("role", ""),
+                u.get("operator_role", ""),
+                u.get("admin_scope", ""),
+                u.get("created_at", ""),
+                u.get("last_login_at", ""),
+                u.get("is_beta_tester", False),
+                u.get("trial_ends_at", ""),
+                ",".join(u.get("special_status", []) or []),
+            ]
+        )
 
     await log_audit_event(
         actor_id=current_user["id"],
@@ -164,25 +176,36 @@ async def export_subscriptions_csv(current_user: dict = Depends(require_admin)):
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow([
-        "user_id", "email", "name", "plan_id", "plan_name",
-        "billing_cycle", "status", "amount", "created_at",
-    ])
+    writer.writerow(
+        [
+            "user_id",
+            "email",
+            "name",
+            "plan_id",
+            "plan_name",
+            "billing_cycle",
+            "status",
+            "amount",
+            "created_at",
+        ]
+    )
 
     for s in subs:
         uid = s.get("user_id", "")
         info = user_emails.get(uid, {})
-        writer.writerow([
-            uid,
-            info.get("email", ""),
-            info.get("name", ""),
-            s.get("plan_id", ""),
-            s.get("plan_name", ""),
-            s.get("billing_cycle", ""),
-            s.get("status", ""),
-            s.get("amount", 0),
-            s.get("created_at", ""),
-        ])
+        writer.writerow(
+            [
+                uid,
+                info.get("email", ""),
+                info.get("name", ""),
+                s.get("plan_id", ""),
+                s.get("plan_name", ""),
+                s.get("billing_cycle", ""),
+                s.get("status", ""),
+                s.get("amount", 0),
+                s.get("created_at", ""),
+            ]
+        )
 
     output.seek(0)
     now_str = datetime.now(timezone.utc).strftime("%Y%m%d")

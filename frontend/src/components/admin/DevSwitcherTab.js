@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Settings, AlertTriangle, Loader2 } from 'lucide-react';
+import { Settings, AlertTriangle, Loader2, Eye, UserCog } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -8,8 +8,20 @@ import { Label } from '../ui/label';
 import { Skeleton } from '../ui/skeleton';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
+import { useAuth } from '../../contexts/AuthContext';
+
+const PORTAL_SCOPES = [
+  { value: 'founder', label: 'Founder Admin', desc: 'Full access — all sections visible', color: '#d4af37' },
+  { value: 'finance', label: 'Finance Admin', desc: 'Revenue, Subscriptions, Grace Periods, Analytics', color: '#22C993' },
+  { value: 'compliance', label: 'Compliance Admin', desc: 'Audit Trail, Security, Estate Health', color: '#3B82F6' },
+  { value: 'marketing', label: 'Marketing Admin', desc: 'Funnel, Beta Testing, Site Content, Emails, Invites', color: '#B794F6' },
+  { value: 'platform_health', label: 'Platform Health Admin', desc: 'System Health, Operators, Integrations', color: '#F59E0B' },
+  { value: 'operator_manager', label: 'Ops Manager', desc: 'Team management + work queues', color: '#ef4444' },
+  { value: 'operator_worker', label: 'Ops Worker', desc: 'Work queues only', color: '#64748B' },
+];
 
 export const DevSwitcherTab = ({ users, getAuthHeaders }) => {
+  const { user, setUser } = useAuth();
   const [config, setConfig] = useState({
     benefactor_email: '',
     benefactor_password: '',
@@ -19,6 +31,7 @@ export const DevSwitcherTab = ({ users, getAuthHeaders }) => {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [currentScope, setCurrentScope] = useState(user?.admin_scope || 'founder');
 
   useEffect(() => {
     fetchConfig();
@@ -52,6 +65,32 @@ export const DevSwitcherTab = ({ users, getAuthHeaders }) => {
     }
   };
 
+  const handleScopePreview = (scope) => {
+    if (scope === currentScope) return;
+    setCurrentScope(scope);
+
+    if (scope === 'operator_manager' || scope === 'operator_worker') {
+      // Navigate to ops portal to preview operator views
+      const opRole = scope === 'operator_manager' ? 'manager' : 'worker';
+      setUser(prev => ({ ...prev, admin_scope: 'founder', _preview_role: 'operator', _preview_operator_role: opRole }));
+      toast.success(`Previewing as: ${scope === 'operator_manager' ? 'Ops Manager' : 'Ops Worker'}. Navigate to /ops to see their view.`);
+      window.location.href = '/ops/transition';
+    } else {
+      // Preview as scoped admin
+      setUser(prev => ({ ...prev, admin_scope: scope, _preview_role: null }));
+      toast.success(`Viewing portal as: ${PORTAL_SCOPES.find(s => s.value === scope)?.label || scope}`);
+    }
+  };
+
+  const resetToFounder = () => {
+    setCurrentScope('founder');
+    setUser(prev => ({ ...prev, admin_scope: 'founder', _preview_role: null, _preview_operator_role: null }));
+    toast.success('Restored to Founder Admin view');
+    if (window.location.pathname.startsWith('/ops')) {
+      window.location.href = '/admin';
+    }
+  };
+
   const benefactors = users.filter(u => u.role === 'benefactor' || u.is_also_benefactor);
   const beneficiaries = users.filter(u => u.role === 'beneficiary' || u.is_also_beneficiary);
 
@@ -65,10 +104,54 @@ export const DevSwitcherTab = ({ users, getAuthHeaders }) => {
         <Settings className="w-6 h-6 text-[var(--gold)]" />
         <div>
           <h2 className="text-xl font-bold text-[var(--t)]">Dev Switcher Configuration</h2>
-          <p className="text-sm text-[var(--t5)]">Configure which accounts appear in the DEV portal switcher</p>
+          <p className="text-sm text-[var(--t5)]">Configure portal switching + preview different admin views</p>
         </div>
       </div>
 
+      {/* ── Portal Preview ── */}
+      <Card className="glass-card" style={{ border: '2px solid rgba(212,175,55,0.2)' }}>
+        <CardContent className="p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Eye className="w-5 h-5 text-[var(--gold)]" />
+              <h3 className="font-bold text-[var(--t)]">View Portal As</h3>
+            </div>
+            {currentScope !== 'founder' && (
+              <button onClick={resetToFounder}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--gold)] text-[#0F1629]"
+                data-testid="restore-founder-view">
+                Restore Founder View
+              </button>
+            )}
+          </div>
+          <p className="text-xs text-[var(--t5)]">
+            Preview how each admin scope sees the portal. Only affects your current view — no database changes.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {PORTAL_SCOPES.map(s => (
+              <button key={s.value}
+                onClick={() => handleScopePreview(s.value)}
+                className={`p-3 rounded-xl text-left transition-all text-xs border ${
+                  currentScope === s.value
+                    ? 'border-2'
+                    : 'bg-[var(--s)] border-[var(--b)] hover:border-[var(--t5)]'
+                }`}
+                style={currentScope === s.value ? { borderColor: s.color, background: `${s.color}10` } : {}}
+                data-testid={`preview-scope-${s.value}`}
+              >
+                <div className="flex items-center gap-2 mb-0.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: s.color }} />
+                  <span className="font-bold text-[var(--t)]">{s.label}</span>
+                  {currentScope === s.value && <span className="text-[11px] ml-auto font-bold" style={{ color: s.color }}>ACTIVE</span>}
+                </div>
+                <p className="text-[var(--t5)] text-[11px]">{s.desc}</p>
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Dev Account Switching ── */}
       <Card className="glass-card">
         <CardContent className="p-6 space-y-6">
           {/* Benefactor Selection */}

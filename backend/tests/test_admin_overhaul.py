@@ -153,7 +153,7 @@ class TestAdminOverhaul:
         # Get current state
         response = self.session.get(f"{BASE_URL}/api/admin/maintenance-mode")
         assert response.status_code == 200
-        current = response.json()
+        response.json()
 
         # Toggle to enabled (briefly)
         response = self.session.put(

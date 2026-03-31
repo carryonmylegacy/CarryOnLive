@@ -107,6 +107,21 @@ A full-stack estate planning application allowing benefactors to manage digital 
 **New Admin Tabs**
 - IP Whitelist tab, Scoped Admins tab, Maintenance Mode tab, Canned Responses (Templates) tab, Performance tab
 
+**Real-Time WebSocket Notifications**
+- WebSocket endpoint: `/api/ws/notifications` (JWT-authenticated)
+- Background SLA breach checker runs every 60 seconds
+- Instant alerts broadcast to all connected staff when SLA deadlines are breached
+- Queue overflow alerts when open items exceed configurable thresholds (support=10, dts=5, tvt=5, verification=10)
+- Heartbeat/ping-pong to maintain connection health
+- Persistent notifications also created via existing notification system
+
+**Dev Switcher Portal Preview**
+- "View Portal As" section added to Dev Switcher tab (Founder only)
+- One-click preview of all admin scope views: Finance, Compliance, Marketing, Platform Health
+- One-click preview of operator views: Ops Manager, Ops Worker
+- "Restore Founder View" button to return to God mode
+- No database changes — purely client-side scope override for preview
+
 ### Completed (March 31, 2026 — Feature Gating System)
 
 **Per-Tier Feature Gating for Subscription Management**

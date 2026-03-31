@@ -14,7 +14,6 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
-from typing import Optional
 
 from config import db
 from services.audit import get_client_ip, log_audit_event
@@ -323,22 +322,34 @@ async def get_customer_context(
     doc_count = await db.documents.count_documents({"estate_id": {"$in": estate_ids}})
 
     # Get recent support conversations
-    support = await db.support_conversations.find(
-        {"user_id": user_id, "deleted_at": {"$exists": False}},
-        {"_id": 0, "id": 1, "subject": 1, "status": 1, "created_at": 1, "priority": 1},
-    ).sort("created_at", -1).to_list(5)
+    support = (
+        await db.support_conversations.find(
+            {"user_id": user_id, "deleted_at": {"$exists": False}},
+            {"_id": 0, "id": 1, "subject": 1, "status": 1, "created_at": 1, "priority": 1},
+        )
+        .sort("created_at", -1)
+        .to_list(5)
+    )
 
     # DTS tasks
-    dts = await db.dts_tasks.find(
-        {"user_id": user_id, "soft_deleted": {"$ne": True}},
-        {"_id": 0, "id": 1, "title": 1, "status": 1, "task_type": 1, "created_at": 1},
-    ).sort("created_at", -1).to_list(5)
+    dts = (
+        await db.dts_tasks.find(
+            {"user_id": user_id, "soft_deleted": {"$ne": True}},
+            {"_id": 0, "id": 1, "title": 1, "status": 1, "task_type": 1, "created_at": 1},
+        )
+        .sort("created_at", -1)
+        .to_list(5)
+    )
 
     # Recent activity
-    activity = await db.audit_trail.find(
-        {"actor_id": user_id},
-        {"_id": 0, "action": 1, "category": 1, "timestamp": 1},
-    ).sort("timestamp", -1).to_list(10)
+    activity = (
+        await db.audit_trail.find(
+            {"actor_id": user_id},
+            {"_id": 0, "action": 1, "category": 1, "timestamp": 1},
+        )
+        .sort("timestamp", -1)
+        .to_list(10)
+    )
 
     # Login history
     last_login = user.get("last_login_at", "")
@@ -402,32 +413,54 @@ async def get_worker_performance(
 
     # Tasks completed (across all task types)
     tasks_resolved = 0
-    for coll_name in ["support_conversations", "dts_tasks", "death_certificates", "milestone_deliveries", "tier_verifications"]:
-        count = await db[coll_name].count_documents({
-            "claimed_by": target_id,
-            "$or": [
-                {"status": {"$in": ["resolved", "completed", "approved", "executed", "verified"]}},
-            ],
-        })
+    for coll_name in [
+        "support_conversations",
+        "dts_tasks",
+        "death_certificates",
+        "milestone_deliveries",
+        "tier_verifications",
+    ]:
+        count = await db[coll_name].count_documents(
+            {
+                "claimed_by": target_id,
+                "$or": [
+                    {"status": {"$in": ["resolved", "completed", "approved", "executed", "verified"]}},
+                ],
+            }
+        )
         tasks_resolved += count
 
     # Active tasks
     tasks_active = 0
-    for coll_name in ["support_conversations", "dts_tasks", "death_certificates", "milestone_deliveries", "tier_verifications"]:
-        count = await db[coll_name].count_documents({
-            "claimed_by": target_id,
-            "status": {"$nin": ["resolved", "completed", "approved", "executed", "verified", "rejected", "destroyed"]},
-        })
+    for coll_name in [
+        "support_conversations",
+        "dts_tasks",
+        "death_certificates",
+        "milestone_deliveries",
+        "tier_verifications",
+    ]:
+        count = await db[coll_name].count_documents(
+            {
+                "claimed_by": target_id,
+                "status": {
+                    "$nin": ["resolved", "completed", "approved", "executed", "verified", "rejected", "destroyed"]
+                },
+            }
+        )
         tasks_active += count
 
     # SLA breaches
     sla_breaches = 0
     for coll_name in ["support_conversations", "dts_tasks", "death_certificates", "milestone_deliveries"]:
-        count = await db[coll_name].count_documents({
-            "claimed_by": target_id,
-            "sla_deadline": {"$lt": now.isoformat()},
-            "status": {"$nin": ["resolved", "completed", "approved", "executed", "verified", "rejected", "destroyed"]},
-        })
+        count = await db[coll_name].count_documents(
+            {
+                "claimed_by": target_id,
+                "sla_deadline": {"$lt": now.isoformat()},
+                "status": {
+                    "$nin": ["resolved", "completed", "approved", "executed", "verified", "rejected", "destroyed"]
+                },
+            }
+        )
         sla_breaches += count
 
     # Get operator info

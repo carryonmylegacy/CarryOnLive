@@ -113,7 +113,7 @@ export const CannedResponsesTab = ({ getAuthHeaders, isManager = false }) => {
               placeholder="Template title" className="text-sm" data-testid="template-title" />
             <textarea value={form.body} onChange={e => setForm({...form, body: e.target.value})}
               placeholder="Response body..." rows={4}
-              className="w-full px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-sm resize-none"
+              className="w-full px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-base resize-none"
               data-testid="template-body" />
             <select value={form.category} onChange={e => setForm({...form, category: e.target.value})}
               className="px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-xs">
@@ -145,7 +145,7 @@ export const CannedResponsesTab = ({ getAuthHeaders, isManager = false }) => {
                   <div className="space-y-3">
                     <Input value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="Title" className="text-sm" />
                     <textarea value={form.body} onChange={e => setForm({...form, body: e.target.value})} rows={3}
-                      className="w-full px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-sm resize-none" />
+                      className="w-full px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-base resize-none" />
                     <div className="flex gap-2 justify-end">
                       <Button onClick={() => setEditId(null)} variant="ghost" size="sm" className="text-xs">Cancel</Button>
                       <Button onClick={() => handleUpdate(item.id)} disabled={saving} size="sm" className="gold-button text-xs">Save</Button>

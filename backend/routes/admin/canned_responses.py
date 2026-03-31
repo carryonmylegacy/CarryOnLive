@@ -49,10 +49,14 @@ class CannedResponseUpdate(BaseModel):
 async def list_canned_responses(current_user: dict = Depends(get_current_user)):
     """List all canned response templates."""
     require_staff(current_user)
-    items = await db.canned_responses.find(
-        {"deleted": {"$ne": True}},
-        {"_id": 0},
-    ).sort("category", 1).to_list(200)
+    items = (
+        await db.canned_responses.find(
+            {"deleted": {"$ne": True}},
+            {"_id": 0},
+        )
+        .sort("category", 1)
+        .to_list(200)
+    )
     return items
 
 
