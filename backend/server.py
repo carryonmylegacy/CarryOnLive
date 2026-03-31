@@ -151,6 +151,9 @@ async def lifespan(app):
         # Shift scheduling indexes
         await db.shift_schedules.create_index([("operator_id", 1), ("date", 1)])
         await db.shift_schedules.create_index("date")
+        await db.shift_swap_requests.create_index("status")
+        await db.shift_swap_requests.create_index("requester_id")
+        await db.shift_swap_requests.create_index("target_operator_id")
         # Training tracker indexes
         await db.training_completions.create_index([("user_id", 1), ("module_id", 1)], unique=True)
         await db.training_modules.create_index("order")

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { Calendar, Plus, ChevronLeft, ChevronRight, Loader2, X, Check, Clock } from 'lucide-react';
+import { Calendar, Plus, ChevronLeft, ChevronRight, Loader2, X, Check, Clock, ArrowLeftRight, ChevronDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { toast } from '../../utils/toast';
 import { useAuth } from '../../contexts/AuthContext';
@@ -30,6 +30,11 @@ export const ShiftScheduleTab = ({ getAuthHeaders }) => {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ operator_id: '', shift_type: 'day', date: '', notes: '' });
   const [saving, setSaving] = useState(false);
+  const [swapRequests, setSwapRequests] = useState([]);
+  const [showSwapForm, setShowSwapForm] = useState(null);
+  const [swapTarget, setSwapTarget] = useState('');
+  const [swapReason, setSwapReason] = useState('');
+  const [showSwaps, setShowSwaps] = useState(false);
 
   const isManagerOrAdmin = user?.role === 'admin' || user?.operator_role === 'manager';
 
@@ -53,15 +58,17 @@ export const ShiftScheduleTab = ({ getAuthHeaders }) => {
       endDate.setDate(endDate.getDate() + 6);
       const endStr = endDate.toISOString().split('T')[0];
 
-      const [shiftsRes, summaryRes, staffRes] = await Promise.all([
+      const [shiftsRes, summaryRes, staffRes, swapsRes] = await Promise.all([
         axios.get(`${API_URL}/ops/shifts?start_date=${weekStart}&end_date=${endStr}`, getAuthHeaders()),
         axios.get(`${API_URL}/ops/shifts/summary?week_start=${weekStart}`, getAuthHeaders()),
         isManagerOrAdmin ? axios.get(`${API_URL}/team/staff`, getAuthHeaders()) : Promise.resolve({ data: [] }),
+        axios.get(`${API_URL}/ops/shifts/swap-requests?status_filter=pending`, getAuthHeaders()).catch(() => ({ data: [] })),
       ]);
 
       setShifts(shiftsRes.data);
       setSummary(summaryRes.data);
       setStaff(staffRes.data);
+      setSwapRequests(swapsRes.data);
     } catch {
       toast.error('Failed to load schedule');
     } finally {
@@ -110,6 +117,41 @@ export const ShiftScheduleTab = ({ getAuthHeaders }) => {
       fetchData();
     } catch {
       toast.error('Failed to cancel shift');
+    }
+  };
+
+  const handleSwapRequest = async (shiftId) => {
+    if (!swapTarget) return toast.error('Select an operator to swap with');
+    setSaving(true);
+    try {
+      await axios.post(
+        `${API_URL}/ops/shifts/swap-requests`,
+        { shift_id: shiftId, target_operator_id: swapTarget, reason: swapReason },
+        getAuthHeaders()
+      );
+      toast.success('Swap request sent');
+      setShowSwapForm(null);
+      setSwapTarget('');
+      setSwapReason('');
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to send swap request');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSwapAction = async (requestId, action) => {
+    try {
+      await axios.put(
+        `${API_URL}/ops/shifts/swap-requests/${requestId}`,
+        { action },
+        getAuthHeaders()
+      );
+      toast.success(`Swap ${action === 'approve' ? 'approved' : 'denied'}`);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to process swap');
     }
   };
 
@@ -233,6 +275,67 @@ export const ShiftScheduleTab = ({ getAuthHeaders }) => {
         </div>
       )}
 
+      {/* Pending Swap Requests */}
+      {swapRequests.length > 0 && (
+        <Card className="glass-card">
+          <CardHeader className="pb-2 cursor-pointer" onClick={() => setShowSwaps(!showSwaps)}>
+            <CardTitle className="flex items-center justify-between text-sm text-[var(--t)]">
+              <div className="flex items-center gap-2">
+                <ArrowLeftRight className="w-4 h-4 text-[#B794F6]" />
+                Pending Swap Requests
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold text-white bg-[#B794F6] leading-none">
+                  {swapRequests.length}
+                </span>
+              </div>
+              <ChevronDown className={`w-4 h-4 transition-transform ${showSwaps ? 'rotate-180' : ''}`} />
+            </CardTitle>
+          </CardHeader>
+          {showSwaps && (
+            <CardContent className="space-y-2 pt-0">
+              {swapRequests.map(req => (
+                <div
+                  key={req.id}
+                  className="p-3 rounded-lg flex items-center gap-3 flex-wrap"
+                  style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+                  data-testid={`swap-request-${req.id}`}
+                >
+                  <ArrowLeftRight className="w-4 h-4 text-[#B794F6] flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-[var(--t)]">
+                      <span className="font-bold">{req.requester_name}</span>
+                      {' wants to swap with '}
+                      <span className="font-bold">{req.target_operator_name}</span>
+                    </p>
+                    <p className="text-xs text-[var(--t5)] mt-0.5">
+                      {req.shift_label} on {formatDate(req.shift_date)}
+                      {req.reason && <span> &mdash; {req.reason}</span>}
+                    </p>
+                  </div>
+                  {isManagerOrAdmin && (
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => handleSwapAction(req.id, 'approve')}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[#22C993] hover:bg-[#1db882] transition-colors"
+                        data-testid={`approve-swap-${req.id}`}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => handleSwapAction(req.id, 'deny')}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[#ef4444] hover:bg-[#dc3535] transition-colors"
+                        data-testid={`deny-swap-${req.id}`}
+                      >
+                        Deny
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </CardContent>
+          )}
+        </Card>
+      )}
+
       {/* Shifts List */}
       {loading ? (
         <div className="flex justify-center py-8">
@@ -272,6 +375,7 @@ export const ShiftScheduleTab = ({ getAuthHeaders }) => {
                   </div>
                   <div className="flex items-center gap-1.5">
                     {isOwnShift && shift.status === 'scheduled' && (
+                      <>
                       <button
                         onClick={() => handleStatusUpdate(shift.id, 'confirmed')}
                         className="p-1.5 rounded hover:bg-[var(--s)]"
@@ -279,6 +383,25 @@ export const ShiftScheduleTab = ({ getAuthHeaders }) => {
                         data-testid={`confirm-shift-${shift.id}`}
                       >
                         <Check className="w-4 h-4 text-[#22C993]" />
+                      </button>
+                      <button
+                        onClick={() => { setShowSwapForm(showSwapForm === shift.id ? null : shift.id); setSwapTarget(''); setSwapReason(''); }}
+                        className="p-1.5 rounded hover:bg-[var(--s)]"
+                        title="Request swap"
+                        data-testid={`swap-btn-${shift.id}`}
+                      >
+                        <ArrowLeftRight className="w-4 h-4 text-[#B794F6]" />
+                      </button>
+                      </>
+                    )}
+                    {!isOwnShift && shift.status === 'scheduled' && (
+                      <button
+                        onClick={() => { setShowSwapForm(showSwapForm === shift.id ? null : shift.id); setSwapTarget(''); setSwapReason(''); }}
+                        className="p-1.5 rounded hover:bg-[var(--s)]"
+                        title="Request swap"
+                        data-testid={`swap-btn-${shift.id}`}
+                      >
+                        <ArrowLeftRight className="w-4 h-4 text-[#B794F6]" />
                       </button>
                     )}
                     {isManagerOrAdmin && shift.status !== 'completed' && (
@@ -301,6 +424,39 @@ export const ShiftScheduleTab = ({ getAuthHeaders }) => {
                     )}
                   </div>
                 </CardContent>
+                {showSwapForm === shift.id && (
+                  <div className="px-3 pb-3 flex gap-2 flex-wrap" style={{ borderTop: '1px solid var(--b)', paddingTop: '12px' }}>
+                    <select
+                      value={swapTarget}
+                      onChange={e => setSwapTarget(e.target.value)}
+                      className="flex-1 min-w-[140px] px-3 py-2 rounded-lg text-sm bg-[var(--s)] text-[var(--t)]"
+                      style={{ border: '1px solid var(--b)', fontSize: '16px' }}
+                      data-testid={`swap-target-${shift.id}`}
+                    >
+                      <option value="">Swap with...</option>
+                      {staff.filter(s => s.id !== shift.operator_id).map(s => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      value={swapReason}
+                      onChange={e => setSwapReason(e.target.value)}
+                      placeholder="Reason (optional)"
+                      className="flex-1 min-w-[120px] px-3 py-2 rounded-lg text-sm bg-[var(--s)] text-[var(--t)] placeholder-[var(--t5)]"
+                      style={{ border: '1px solid var(--b)', fontSize: '16px' }}
+                    />
+                    <button
+                      onClick={() => handleSwapRequest(shift.id)}
+                      disabled={saving || !swapTarget}
+                      className="px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-40"
+                      style={{ background: '#B794F6', color: '#0F1629' }}
+                      data-testid={`submit-swap-${shift.id}`}
+                    >
+                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Request Swap'}
+                    </button>
+                  </div>
+                )}
               </Card>
             );
           })}

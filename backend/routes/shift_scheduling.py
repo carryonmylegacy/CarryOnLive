@@ -228,3 +228,203 @@ async def get_shift_summary(
         current += timedelta(days=1)
 
     return {"week_start": week_start, "summary": summary}
+
+
+# ── Shift Swap Requests ───────────────────────────────────
+
+
+class SwapRequestCreate(BaseModel):
+    shift_id: str
+    target_operator_id: str
+    target_shift_id: Optional[str] = None
+    reason: Optional[str] = None
+
+
+class SwapRequestAction(BaseModel):
+    action: str  # approve or deny
+    notes: Optional[str] = None
+
+
+@router.get("/ops/shifts/swap-requests")
+async def get_swap_requests(
+    status_filter: Optional[str] = Query(None),
+    current_user: dict = Depends(require_staff),
+):
+    """Get swap requests. Workers see their own, managers/admins see all."""
+    is_manager_or_admin = current_user.get("role") == "admin" or current_user.get("operator_role") == "manager"
+
+    query = {}
+    if not is_manager_or_admin:
+        query["$or"] = [
+            {"requester_id": current_user["id"]},
+            {"target_operator_id": current_user["id"]},
+        ]
+    if status_filter:
+        query["status"] = status_filter
+
+    requests = await db.shift_swap_requests.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return requests
+
+
+@router.post("/ops/shifts/swap-requests")
+async def create_swap_request(
+    data: SwapRequestCreate,
+    current_user: dict = Depends(require_staff),
+):
+    """Request a shift swap with another operator."""
+    # Verify the requesting shift exists and belongs to user
+    my_shift = await db.shift_schedules.find_one(
+        {"id": data.shift_id, "status": {"$nin": ["cancelled", "completed"]}},
+        {"_id": 0},
+    )
+    if not my_shift:
+        raise HTTPException(status_code=404, detail="Shift not found")
+    if my_shift["operator_id"] != current_user["id"]:
+        is_manager_or_admin = current_user.get("role") == "admin" or current_user.get("operator_role") == "manager"
+        if not is_manager_or_admin:
+            raise HTTPException(status_code=403, detail="You can only request swaps for your own shifts")
+
+    # Verify target operator exists
+    target = await db.users.find_one(
+        {"id": data.target_operator_id, "role": {"$in": ["admin", "operator"]}},
+        {"_id": 0, "id": 1, "name": 1},
+    )
+    if not target:
+        raise HTTPException(status_code=404, detail="Target operator not found")
+
+    if data.target_operator_id == current_user["id"]:
+        raise HTTPException(status_code=400, detail="Cannot swap with yourself")
+
+    # Check for duplicate pending request
+    existing = await db.shift_swap_requests.find_one(
+        {"shift_id": data.shift_id, "target_operator_id": data.target_operator_id, "status": "pending"},
+        {"_id": 0},
+    )
+    if existing:
+        raise HTTPException(status_code=409, detail="A swap request already exists for this shift and operator")
+
+    # Verify target shift if specified
+    target_shift_info = ""
+    if data.target_shift_id:
+        target_shift = await db.shift_schedules.find_one(
+            {"id": data.target_shift_id, "operator_id": data.target_operator_id, "status": {"$nin": ["cancelled", "completed"]}},
+            {"_id": 0},
+        )
+        if not target_shift:
+            raise HTTPException(status_code=404, detail="Target shift not found or doesn't belong to the target operator")
+        target_shift_info = f"{SHIFT_LABELS.get(target_shift['shift_type'], target_shift['shift_type'])} on {target_shift['date']}"
+
+    now = datetime.now(timezone.utc).isoformat()
+    req_id = str(uuid4())
+
+    swap_request = {
+        "id": req_id,
+        "shift_id": data.shift_id,
+        "shift_date": my_shift["date"],
+        "shift_type": my_shift["shift_type"],
+        "shift_label": my_shift.get("shift_label", SHIFT_LABELS.get(my_shift["shift_type"], "")),
+        "requester_id": current_user["id"],
+        "requester_name": current_user.get("name", "Unknown"),
+        "target_operator_id": data.target_operator_id,
+        "target_operator_name": target["name"],
+        "target_shift_id": data.target_shift_id or "",
+        "target_shift_info": target_shift_info,
+        "reason": data.reason or "",
+        "status": "pending",
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    await db.shift_swap_requests.insert_one({k: v for k, v in swap_request.items()})
+
+    # Notify target operator and managers via WebSocket
+    from routes.ws_notifications import send_to_user, broadcast_to_staff
+
+    await send_to_user(
+        data.target_operator_id,
+        {
+            "type": "swap_request",
+            "message": f"{current_user.get('name', 'An operator')} wants to swap shifts with you",
+            "swap_id": req_id,
+        },
+    )
+
+    return swap_request
+
+
+@router.put("/ops/shifts/swap-requests/{request_id}")
+async def action_swap_request(
+    request_id: str,
+    data: SwapRequestAction,
+    current_user: dict = Depends(require_staff),
+):
+    """Approve or deny a shift swap request. Managers/admins only."""
+    is_manager_or_admin = current_user.get("role") == "admin" or current_user.get("operator_role") == "manager"
+    if not is_manager_or_admin:
+        raise HTTPException(status_code=403, detail="Only managers can approve/deny swap requests")
+
+    if data.action not in ("approve", "deny"):
+        raise HTTPException(status_code=400, detail="Action must be 'approve' or 'deny'")
+
+    swap_req = await db.shift_swap_requests.find_one({"id": request_id, "status": "pending"}, {"_id": 0})
+    if not swap_req:
+        raise HTTPException(status_code=404, detail="Swap request not found or already actioned")
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    if data.action == "approve":
+        # Perform the swap — reassign the requester's shift to the target
+        await db.shift_schedules.update_one(
+            {"id": swap_req["shift_id"]},
+            {
+                "$set": {
+                    "operator_id": swap_req["target_operator_id"],
+                    "operator_name": swap_req["target_operator_name"],
+                    "updated_at": now,
+                    "notes": f"Swapped from {swap_req['requester_name']}",
+                }
+            },
+        )
+
+        # If a target shift was specified, swap it back to the requester
+        if swap_req.get("target_shift_id"):
+            await db.shift_schedules.update_one(
+                {"id": swap_req["target_shift_id"]},
+                {
+                    "$set": {
+                        "operator_id": swap_req["requester_id"],
+                        "operator_name": swap_req["requester_name"],
+                        "updated_at": now,
+                        "notes": f"Swapped from {swap_req['target_operator_name']}",
+                    }
+                },
+            )
+
+    await db.shift_swap_requests.update_one(
+        {"id": request_id},
+        {
+            "$set": {
+                "status": "approved" if data.action == "approve" else "denied",
+                "actioned_by": current_user["id"],
+                "actioned_by_name": current_user.get("name", ""),
+                "action_notes": data.notes or "",
+                "updated_at": now,
+            }
+        },
+    )
+
+    # Notify requester
+    from routes.ws_notifications import send_to_user
+
+    status_label = "approved" if data.action == "approve" else "denied"
+    await send_to_user(
+        swap_req["requester_id"],
+        {
+            "type": "swap_result",
+            "message": f"Your shift swap request has been {status_label}",
+            "swap_id": request_id,
+            "status": status_label,
+        },
+    )
+
+    return {"success": True, "status": status_label}
