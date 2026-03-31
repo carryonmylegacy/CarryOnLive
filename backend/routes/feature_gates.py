@@ -171,9 +171,7 @@ async def get_user_enabled_features(current_user: dict = Depends(get_current_use
         return {"enabled_features": FEATURE_KEYS, "all_enabled": True}
 
     # Check free access / beta tester
-    override = await db.subscription_overrides.find_one(
-        {"user_id": current_user["id"]}, {"_id": 0}
-    )
+    override = await db.subscription_overrides.find_one({"user_id": current_user["id"]}, {"_id": 0})
     if (override and override.get("free_access")) or (user_doc or {}).get("is_beta_tester"):
         return {"enabled_features": FEATURE_KEYS, "all_enabled": True}
 
@@ -186,9 +184,7 @@ async def get_user_enabled_features(current_user: dict = Depends(get_current_use
 
     # Determine the user's effective tier
     effective_tier = None
-    sub = await db.user_subscriptions.find_one(
-        {"user_id": current_user["id"]}, {"_id": 0}
-    )
+    sub = await db.user_subscriptions.find_one({"user_id": current_user["id"]}, {"_id": 0})
 
     if sub and sub.get("status") in ("active", "past_due"):
         effective_tier = sub.get("plan_id")
@@ -210,19 +206,15 @@ async def get_user_enabled_features(current_user: dict = Depends(get_current_use
 
 async def _get_benefactor_tier(current_user: dict) -> str | None:
     """For a beneficiary, find the benefactor's subscription tier."""
-    ben_link = await db.beneficiaries.find_one(
-        {"user_id": current_user["id"]}, {"_id": 0, "estate_id": 1}
-    )
+    ben_link = await db.beneficiaries.find_one({"user_id": current_user["id"]}, {"_id": 0, "id": 1, "estate_id": 1})
     if not ben_link:
         ben_link = await db.beneficiaries.find_one(
-            {"email": current_user.get("email")}, {"_id": 0, "estate_id": 1}
+            {"email": current_user.get("email")}, {"_id": 0, "id": 1, "estate_id": 1}
         )
     if not ben_link or not ben_link.get("estate_id"):
         return None
 
-    estate = await db.estates.find_one(
-        {"id": ben_link["estate_id"]}, {"_id": 0, "owner_id": 1, "status": 1}
-    )
+    estate = await db.estates.find_one({"id": ben_link["estate_id"]}, {"_id": 0, "id": 1, "owner_id": 1, "status": 1})
     if not estate:
         return None
 
@@ -230,15 +222,11 @@ async def _get_benefactor_tier(current_user: dict) -> str | None:
     if not benefactor_id:
         return None
 
-    ben_sub = await db.user_subscriptions.find_one(
-        {"user_id": benefactor_id}, {"_id": 0, "plan_id": 1}
-    )
+    ben_sub = await db.user_subscriptions.find_one({"user_id": benefactor_id}, {"_id": 0, "id": 1, "plan_id": 1})
     if ben_sub and ben_sub.get("plan_id"):
         return ben_sub["plan_id"]
 
-    benefactor_user = await db.users.find_one(
-        {"id": benefactor_id}, {"_id": 0, "verified_tier": 1}
-    )
+    benefactor_user = await db.users.find_one({"id": benefactor_id}, {"_id": 0, "id": 1, "verified_tier": 1})
     if benefactor_user and benefactor_user.get("verified_tier"):
         return benefactor_user["verified_tier"]
 
