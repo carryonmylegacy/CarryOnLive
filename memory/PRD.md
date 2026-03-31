@@ -15,8 +15,8 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **Auth**: JWT-based with optional OTP, supports login via username or email
 - **Storage**: AWS S3 for documents AND photos (presigned URLs)
 - **Integrations**: xAI (Grok), Stripe, Apple IAP, AWS S3, Resend, Google Places, Capgo, CodeMagic, Railway, Vercel
-- **Admin Routes**: Modular `routes/admin/` package (users, analytics, security_scan, estate_health, platform, grace_periods, dev_switcher)
-- **Guards**: `guards.py` exports `require_admin`, `require_staff`, `require_benefactor_role`, `get_current_user` for DRY access control
+- **Admin Routes**: Modular `routes/admin/` package (users, analytics, security_scan, estate_health, platform, grace_periods, dev_switcher, scoped_roles, ip_whitelist, bulk_ops, canned_responses, maintenance, task_management)
+- **Guards**: `guards.py` exports `require_admin`, `require_staff`, `require_benefactor_role`, `require_admin_scope`, `get_current_user` for DRY access control
 
 ## CRITICAL: Beta Access Model
 **There is NO global `beta_mode` toggle.** Beta access is controlled per-user via the `is_beta_tester` flag on individual benefactor and beneficiary accounts. Each user gets a beta tile at initial login as part of the onboarding workflow. The global `beta_mode` field in `subscription_settings` is legacy/deprecated — do NOT add new code that checks it. Always use the per-user `is_beta_tester` flag for beta-related logic.
@@ -35,6 +35,77 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **subscription_settings**: _id="global", feature_gates (per-feature per-tier boolean map), feature_gates_published_at, feature_gates_published_by
 
 ## What's Been Implemented
+
+### Completed (March 31, 2026 — Platform Controls Overhaul)
+
+**Admin Portal Reorganization**
+- Tabs organized into 6 labeled sections: Operations, Finance, Marketing, Compliance, Platform, Admin
+- Section labels visible in tab bar with color-coded dividers (gold/green/purple/blue/amber/red)
+- Scoped admin filtering — non-founder admins see only their relevant sections
+
+**Scoped Admin Roles**
+- New model field: `admin_scope` (founder | finance | compliance | marketing | platform_health)
+- `founder` = God mode — sees and controls everything
+- CRUD endpoints: GET/POST/PUT/DELETE `/api/admin/scoped-admins`
+- Founder cannot be demoted or deleted by other admins
+- New guard: `require_admin_scope(user, allowed_scopes)` — founder always passes
+
+**IP Whitelist per Account Type**
+- Selectable per account type (Admin, Ops Manager, Ops Worker, Benefactor, Beneficiary)
+- Toggle ON/OFF per type, managed by Founder only
+- CRUD endpoints: GET/PUT `/api/admin/ip-whitelist`
+- Enforcement at login: `check_ip_whitelist()` called after password verification
+- Supports exact IP, prefix match, and wildcard
+
+**Manager Escalation Resolution + Founder Veto**
+- Managers can now resolve escalations (previously founder-only)
+- Resolution tracks resolver role (admin vs manager)
+- New endpoint: PUT `/api/ops/escalations/{id}/veto` — Founder can veto/undo manager resolutions
+- Vetoed escalations reopen with history of previous resolution
+
+**Task Assignment & Claiming System**
+- POST `/api/ops/tasks/claim` — Worker self-assigns from queue
+- POST `/api/ops/tasks/unclaim` — Release task back to queue
+- POST `/api/ops/tasks/assign` — Manager assigns to specific operator
+- PUT `/api/ops/tasks/prioritize` — Manual priority setting (1-5)
+- SLA tracking: configurable per task type (support=4h, dts=24h, tvt=48h, etc.)
+- SLA deadline set on claim/assignment
+
+**Customer Context Panel**
+- GET `/api/ops/customer-context/{user_id}` — Consolidated user view
+- Shows: user info, estates, beneficiaries, documents count, recent support, DTS, activity
+- Frontend component: `CustomerContextPanel.js`
+
+**Bulk Operations**
+- POST `/api/admin/bulk/assign-tier` — Bulk assign tier to multiple estates
+- POST `/api/admin/bulk/toggle-beta` — Bulk toggle beta tester flag
+- GET `/api/admin/export/users` — CSV export of all users
+- GET `/api/admin/export/subscriptions` — CSV export of all subscriptions
+
+**Platform Maintenance Mode**
+- GET/PUT `/api/admin/maintenance-mode` — Toggle maintenance mode (Founder only)
+- GET `/api/public/maintenance-status` — Public endpoint (no auth) for status check
+- Shows message + estimated end time when active
+
+**Canned Response Templates**
+- CRUD endpoints: GET/POST/PUT/DELETE `/api/ops/canned-responses`
+- Categories: general, billing, technical, onboarding, transition
+- Usage tracking (use_count incremented on copy)
+- Manager/Founder create/edit/delete; Workers read and copy
+
+**Worker Performance Metrics**
+- GET `/api/ops/performance` — Actions, tasks resolved/active, SLA breaches, avg/day
+- Filterable by time range (7/14/30/60/90 days)
+- Workers see own metrics; Managers see any operator's metrics
+- Frontend: `PerformanceTab.js` with stat cards and category breakdown
+
+**Subscription Paywall Dynamic Feature Listing**
+- `/api/subscriptions/plans` now returns `tier_features` — dynamic list from feature gates
+- Paywall shows real-time enabled features per tier (updates immediately after Save & Publish)
+- Falls back to static plan features if no gates configured
+
+**New Admin Tabs**
+- IP Whitelist tab, Scoped Admins tab, Maintenance Mode tab, Canned Responses (Templates) tab, Performance tab
 
 ### Completed (March 31, 2026 — Feature Gating System)
 
