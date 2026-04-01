@@ -249,17 +249,15 @@ const MobileNav = () => {
   const mobileVisibleScopes = SCOPE_PREVIEWS.filter(sp => isMobilePortalOn(sp.scope));
 
   const handleMobileScopePreview = (scope) => {
-    setUser(prev => ({ ...prev, admin_scope: [scope] }));
     setDevOpen(false);
     toast.success(`Viewing as: ${SCOPE_PREVIEWS.find(s => s.scope === scope)?.label || scope}`);
-    navigate('/admin');
+    navigate(`/admin?scope=${scope}`);
   };
 
   const handleMobileRestoreFounder = () => {
-    setUser(prev => ({ ...prev, admin_scope: ['founder'] }));
     setDevOpen(false);
     toast.success('Restored Founder view');
-    if (window.location.pathname.startsWith('/ops')) navigate('/admin');
+    navigate('/admin');
   };
 
   const handleDevSwitch = async (account) => {
@@ -608,7 +606,7 @@ const MobileNav = () => {
                         Admin Scope Preview
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        {!hasScope(user?.admin_scope, 'founder') && (
+                        {new URLSearchParams(window.location.search).get('scope') && (
                           <div
                             onClick={(e) => { e.stopPropagation(); handleMobileRestoreFounder(); }}
                             style={{
@@ -623,7 +621,8 @@ const MobileNav = () => {
                           </div>
                         )}
                         {mobileVisibleScopes.map(sp => {
-                          const isActive = hasScope(user?.admin_scope, sp.scope);
+                          const activeScopeParam = new URLSearchParams(window.location.search).get('scope');
+                          const isActive = activeScopeParam === sp.scope;
                           return (
                             <div key={sp.scope}
                               onClick={(e) => { e.stopPropagation(); if (!isActive) handleMobileScopePreview(sp.scope); }}
@@ -871,22 +870,17 @@ const MobileNav = () => {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         {visiblePortals.map(portal => {
                           const isActive = portal.scope === 'founder'
-                            ? activeViewScope.includes('founder') && activeViewScope.length <= 1 && !currentPath.startsWith('/ops')
-                            : (activeViewScope.includes(portal.scope) || (portal.altScope && activeViewScope.includes(portal.altScope))) && !activeViewScope.includes('founder');
+                            ? !new URLSearchParams(window.location.search).get('scope') && !currentPath.startsWith('/ops')
+                            : new URLSearchParams(window.location.search).get('scope') === portal.scope || (portal.altScope && new URLSearchParams(window.location.search).get('scope') === portal.altScope);
                           return (
                             <button
                               key={portal.scope}
                               onClick={() => {
                                 setOpen(false);
                                 if (portal.scope === 'founder') {
-                                  setUser(prev => ({ ...prev, admin_scope: ['founder'] }));
-                                  if (currentPath.startsWith('/ops')) navigate('/admin');
-                                } else {
-                                  const scopeToSet = portal.altScope
-                                    ? [portal.scope, portal.altScope].filter(s => scopes.includes(s) || isFounder)
-                                    : [portal.scope];
-                                  setUser(prev => ({ ...prev, admin_scope: scopeToSet.length > 0 ? scopeToSet : [portal.scope] }));
                                   navigate('/admin');
+                                } else {
+                                  navigate(`/admin?scope=${portal.scope}`);
                                 }
                               }}
                               data-testid={`mobile-portal-btn-${portal.scope}`}
