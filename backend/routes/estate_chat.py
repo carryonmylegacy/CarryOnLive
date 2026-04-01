@@ -677,3 +677,44 @@ async def get_unread_total(current_user: dict = Depends(get_current_user)):
             q["created_at"] = {"$gt": last_read_at}
         total += await db.estate_messages.count_documents(q)
     return {"total": total}
+
+
+@router.get("/estate-chat/search")
+async def search_messages(
+    q: str = Query(..., min_length=1, max_length=200),
+    current_user: dict = Depends(get_current_user),
+):
+    """Search messages across all user's estate channels by keyword."""
+    estate_ids = await _get_user_estate_ids(current_user["id"])
+    if not estate_ids:
+        return []
+    channels = await db.estate_channels.find(
+        {"estate_id": {"$in": estate_ids}, "members": current_user["id"]},
+        {"_id": 0, "id": 1, "name": 1, "type": 1, "estate_id": 1, "members": 1},
+    ).to_list(200)
+    if not channels:
+        return []
+    channel_ids = [c["id"] for c in channels]
+    channel_map = {c["id"]: c for c in channels}
+    results = (
+        await db.estate_messages.find(
+            {"channel_id": {"$in": channel_ids}, "content": {"$regex": q, "$options": "i"}},
+            {"_id": 0},
+        )
+        .sort("created_at", -1)
+        .limit(30)
+        .to_list(30)
+    )
+    # Enrich with channel info
+    for msg in results:
+        ch = channel_map.get(msg.get("channel_id", ""), {})
+        msg["channel_name"] = ch.get("name", "")
+        msg["channel_type"] = ch.get("type", "")
+        # For DMs, resolve the other person's name
+        if ch.get("type") == "direct":
+            other_ids = [m for m in ch.get("members", []) if m != current_user["id"]]
+            if other_ids:
+                other = await db.users.find_one({"id": other_ids[0]}, {"_id": 0, "id": 1, "name": 1})
+                if other:
+                    msg["channel_name"] = other["name"]
+    return results

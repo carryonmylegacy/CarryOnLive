@@ -22,6 +22,7 @@ import {
   FileText,
   Image,
   Download,
+  Search,
 } from 'lucide-react';
 
 const ECT_POLL_INTERVAL = 8000;
@@ -60,6 +61,11 @@ export default function EstateChatPage() {
   const [pinnedMsgs, setPinnedMsgs] = useState([]);
   const [showPinned, setShowPinned] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const searchTimerRef = useRef(null);
   const typingTimerRef = useRef(null);
   const lastTypingSentRef = useRef(0);
 
@@ -194,6 +200,29 @@ export default function EstateChatPage() {
         await fetchChannels();
       }
     } catch {} finally { setUploading(false); }
+  };
+
+  const handleSearch = (value) => {
+    setSearchQuery(value);
+    clearTimeout(searchTimerRef.current);
+    if (!value.trim()) { setSearchResults([]); setSearching(false); return; }
+    setSearching(true);
+    searchTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`${API_URL}/estate-chat/search?q=${encodeURIComponent(value.trim())}`, { headers });
+        if (res.ok) setSearchResults(await res.json());
+      } catch {} finally { setSearching(false); }
+    }, 400);
+  };
+
+  const jumpToMessage = (msg) => {
+    const ch = channels.find(c => c.id === msg.channel_id);
+    if (ch) {
+      setShowSearch(false);
+      setSearchQuery('');
+      setSearchResults([]);
+      openChannel(ch);
+    }
   };
 
   const sendMessage = async () => {
@@ -397,16 +426,73 @@ export default function EstateChatPage() {
     >
       <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <h2 className="text-lg font-bold" style={{ color: '#F1F3F8' }}>Estate Chat</h2>
-        <button
-          onClick={() => setShowNewChat(true)}
-          className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-105"
-          data-testid="ect-new-chat-btn"
-          style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }}
-        >
-          <Plus className="w-5 h-5" style={{ color: '#080e1a' }} />
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowSearch(!showSearch)}
+            className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-105"
+            data-testid="ect-search-btn"
+            style={{ background: showSearch ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.06)' }}
+          >
+            <Search className="w-5 h-5" style={{ color: showSearch ? '#d4af37' : '#7B879E' }} />
+          </button>
+          <button
+            onClick={() => setShowNewChat(true)}
+            className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-105"
+            data-testid="ect-new-chat-btn"
+            style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }}
+          >
+            <Plus className="w-5 h-5" style={{ color: '#080e1a' }} />
+          </button>
+        </div>
       </div>
+      {/* Search bar */}
+      {showSearch && (
+        <div className="px-3 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <input
+            value={searchQuery}
+            onChange={(e) => handleSearch(e.target.value)}
+            placeholder="Search messages..."
+            autoFocus
+            className="w-full rounded-xl px-3 py-2.5 text-base"
+            data-testid="ect-search-input"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#F1F3F8', fontSize: '16px', outline: 'none' }}
+          />
+        </div>
+      )}
       <div className="flex-1 overflow-y-auto p-2">
+        {/* Search results */}
+        {showSearch && searchQuery.trim() ? (
+          <div>
+            {searching && (
+              <div className="flex justify-center py-6">
+                <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#d4af37' }} />
+              </div>
+            )}
+            {!searching && searchResults.length === 0 && searchQuery.trim() && (
+              <div className="text-center py-8">
+                <Search className="w-8 h-8 mx-auto mb-2" style={{ color: '#525C72' }} />
+                <p className="text-sm" style={{ color: '#7B879E' }}>No messages found</p>
+              </div>
+            )}
+            {searchResults.map(sr => (
+              <button key={sr.id} onClick={() => jumpToMessage(sr)}
+                className="w-full text-left p-3 rounded-xl mb-1 transition-all"
+                data-testid={`search-result-${sr.id}`}
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="flex items-center gap-1.5 mb-1">
+                  {getChannelIcon(sr.channel_type)}
+                  <span className="text-[11px] font-semibold" style={{ color: '#d4af37' }}>{sr.channel_name || 'Chat'}</span>
+                  <span className="text-[11px] ml-auto" style={{ color: '#525C72' }}>
+                    {new Date(sr.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="text-xs font-semibold mb-0.5" style={{ color: '#A0AABF' }}>{sr.sender_name}</div>
+                <p className="text-sm truncate" style={{ color: '#F1F3F8' }}>{sr.content}</p>
+              </button>
+            ))}
+          </div>
+        ) : (
+        <>
         {channels.length === 0 && (
           <div className="text-center py-12 px-4">
             <MessageCircle className="w-12 h-12 mx-auto mb-3" style={{ color: '#525C72' }} />
@@ -446,6 +532,8 @@ export default function EstateChatPage() {
             </div>
           </button>
         ))}
+        </>
+        )}
       </div>
     </div>
   );
