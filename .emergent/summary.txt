@@ -1,23 +1,22 @@
 <analysis>**original_problem_statement**: 
-The user requested the implementation of Phase 2 (Admin session inactivity timeout, queue age alerts UI, internal messaging/team chat) and Phase 3 (Shift scheduling, training completion tracker, mobile-optimized ops view) of the admin platform overhaul.
-Subsequent requests included:
-1. Adding Shift Swap functionality for operators.
-2. A comprehensive pressure test and backend refactoring (DRY cleanup).
-3. Ensuring Scope Previews (Finance, Compliance, etc.) show up in the Portal Switcher when clicking the logo, and allowing the Founder to toggle visibility of these portals via the Dev Switcher tab.
-4. Correcting a bug where the portal switcher changes weren't propagating to the Mobile viewport ().
-5. Adjusting the Light Mode and Dark Mode CSS variables to lighten dark mode, darken light mode, and improve glass-card contrast. 
-6. Changing  logic so a single admin can hold multiple scopes simultaneously (e.g., ).
+The user requested several major platform enhancements and bug fixes:
+1. Allow assigning multiple admin/operator roles (e.g., Operations Manager + Marketing Admin + Finance Admin) to a single existing user account.
+2. Change the portal navigation UI from a dropdown to stacked, distinct buttons above the Sign Out button (similar to benefactor/beneficiary portal switching).
+3. Fix a bug where the Founder Portal view was truncated upon login and required manually restoring the view via the logo. Fix navigation bugs where clicking tabs within a scoped portal dropped the scope.
+4. Add the ability for Benefactors to download their Milestone Messages (Text to PDF, Video to video file, Voice to audio file).
+5. Add the ability for Beneficiaries to download their generated IAC (Plan of Action) from their Guardian page.
+6. Add a beneficiary selector on SDV (Secure Document Vault) tiles so a benefactor can designate which specific beneficiaries get access to which documents, including a bulk designation mode.
 
 **User's preferred language**: English (INSTRUCT next agent to respond in English only)
 
 **what currently exists?** 
-A heavily fortified, SOC 2-compliant, multi-role full-stack application (React, FastAPI, MongoDB). It features highly complex administrative controls, real-time WebSockets, shift scheduling, internal team chat, and a sophisticated Dev Switcher that allows the Founder to simulate any app scope (Benefactor, Finance Admin, Operations, etc.). The codebase strictly adheres to an internal 60/60 housekeeping validation suite and is 100% ruff-compliant. 
+A heavily fortified, SOC 2-compliant, multi-role full-stack application (React, FastAPI, MongoDB) featuring highly complex administrative controls, real-time WebSockets, shift scheduling, internal team chat, and a sophisticated Dev Switcher. The platform uses URL query parameters for robust scope-based portal navigation, supports granular Secure Document Vault (SDV) access controls per beneficiary, and has downloadable AI-driven IAC (Plan of Action) reports. The codebase strictly adheres to an internal 60/60 housekeeping validation suite and is 100% ruff-compliant.
 
 **Last working item**: 
-    - Last item agent was working: Converting the  property from a single string to an array (allowing multiple admin roles per user) and updating the  UI to use multi-select checkboxes. 
+    - Last item agent was working: Implemented the Bulk Beneficiary Designation mode for SDV documents (allowing benefactors to assign access to multiple vault items simultaneously), followed by a complete Housekeeping (60/60) and Ruff check.
     - Status: COMPLETED
     - Agent Testing Done: Y
-    - Which testing method agent to use? manual testing by python scripts/curl, testing_agent_v3_fork (used heavily prior for full platform pressure testing).
+    - Which testing method agent to use? testing_agent_v3_fork (used for backend and frontend validation across 4 iterations), manual bash scripts.
     - User Testing Done: N
 
 **All Pending/In progress Issue list**: 
@@ -55,85 +54,80 @@ A heavily fortified, SOC 2-compliant, multi-role full-stack application (React, 
     - 🟢 (P2) Scalability Enhancements.
 
 **Completed work in this session**
-- Phase 2: Admin session inactivity timeouts, WebSocket Queue alerts UI, Internal Team Chat (DONE)
-- Phase 3: Shift Scheduling, Training Completion Tracker, Mobile-Optimized Ops View (DONE)
-- Shift Swap requests (Approval/Denial flows) (DONE)
-- Refactoring: DRY violation fixes in backend API guards ( deduplication) (DONE)
-- Portal Switcher Visibility Toggles (Dev Switcher UI to dictate what appears in navigation) (DONE)
-- Desktop/Mobile layout parity for Portal Switcher dropdown (DONE)
-- CSS Color adjustments (Lighter Dark Mode, Darker Light Mode, enhanced glass-card shadows) (DONE)
-- Multi-Scope Admin roles (Array-based ) (DONE)
+- **Unified Admin Accounts**: Modified backend routes to gracefully merge  roles when attempting to create an admin for an existing operator email (,  added as valid scopes). (DONE)
+- **Section Members Tab**: Added a dedicated sub-tab so Founders can see all members authorized for specific admin sections. (DONE)
+- **Portal Switcher Redesign**: Replaced the dropdown portal switcher with stacked buttons in both desktop  and . (DONE)
+- **Robust Portal Navigation (URL-Based)**: Fixed the truncated Founder Dashboard bug and scope-dropping bug.  is no longer improperly mutated in React context. Portal switching now relies purely on URL query params (), naturally preserving state across tabs and properly restoring the full Founder view upon navigation to . (DONE)
+- **Milestone Message Downloads**: Added  and frontend UI for downloading text (as PDF), video, and voice messages. (DONE)
+- **Beneficiary IAC Download**: Added backend support and a download button to  for IAC (Plan of Action) exports. (DONE)
+- **SDV Beneficiary Designation**: Added backend endpoint () and frontend UI on vault tiles to restrict document access to specific beneficiaries. Implemented a robust Bulk Select Mode for mass designations. (DONE)
+- **Housekeeping**: Fixed sub-11px font compliance for iOS across 7 files. Ran and passed 60/60 Housekeeping and Ruff validations. (DONE)
 
 **Earlier issues found/mentioned but not fixed**
-- None. All user constraints and bugs raised were addressed and verified.
+- None. All issues raised were addressed and passed validations.
 
 **Known issue recurrence from previous fork**
   - Issue recurrence in previous fork: Apple IAP block / Twilio block.
-  - Recurrence count: 12
+  - Recurrence count: 13
   - Status: BLOCKED
 
 **Code Architecture**
-require_staffis_founder_scope
+PUT /api/documents/{doc_id}/designate-beneficiariesGET /api/messages/{msg_id}/download
 
 **Key Technical Concepts**
-- **Multi-Scope Authority**: The  is now an array (). Checking scopes requires intersection checks rather than strict string matching. The  helper in  gracefully handles both string and list evaluations to maintain backward compatibility.
-- **Desktop vs. Mobile Rendering Parity**: The application relies heavily on  for Desktop and  for mobile layouts. Updates to global navigation flows (like the Portal Switcher) must be explicitly implemented in both files.
-- **Glass-Card CSS**: The application UI runs on extensive variable-based CSS definitions (, ) paired with  classes to produce an upscale frosted appearance. These were tweaked to provide higher contrast.
+- **URL-Driven Portal Scoping**: The application used to mutate the  directly in React state, causing aggressive regressions on PWA resume and lost scopes during tab changes. It now uses the  parameter via  which is passed into endpoints and preserves context cleanly.
+- **SDV Bulk Beneficiary Designation**: Managed directly in . Employs a specific array configuration where  strictly equates to all beneficiaries rather than mapping individual IDs, while specific selections map as .
+- **Milestone Downloads**: Video uses Cloudfront signed URLs, Voice downloads raw /, and Text dynamically generates an FPDF compilation on the backend using .
 
 **key DB schema**
-  - :  field modified from string to list of strings.
-  -  & : Channels and messages for the internal ops chat.
-  -  & : Shift calendaring and operator swap lifecycle tracking.
-  -  & : Internal ops training tracking.
-  - : Added  dictionary.
+  - :  is maintained properly as a strict list. Operator scopes like  and  are normalized.
+  - : Now supports the  field (List of Strings;  or  defaults to all beneficiaries).
 
 **changes in tech stack**
   - None
 
 **All files of reference**
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  -  (Admin account role merging)
+  -  (Auth state preservation)
+  -  (URL-based portal switcher routing)
+  -  &  (Stacked portal navigation buttons)
+  -  (SDV Beneficiary Designation)
+  -  (SDV Bulk Designation frontend)
+  -  (Message downloads)
 
 **Areas that need refactoring**: 
-  - None. An active codebase refactor was performed to remove inline redundant dependencies ( definitions). 60/60 bash validations pass perfectly.
+  - None.
 
 **key api endpoints**
-  -  (Now includes )
-  -  (Now accepts arrays for )
-  -  
-  -  (Returns  as a list)
+  -  (New)
+  -  (New)
+  -  (Now extended for beneficiary consumption)
 
 **Critical Info for New Agent**
-- **Array-Based Scopes**: Remember that  is now an Array. Do not use strict equality (). Use the helper functions in  () or properly check arrays.
-- **Zero Tolerance Policy**: The codebase requires running  and All checks passed! before marking tasks as complete. No exceptions.
-- **Navigation Parity**: Any changes requested to the Top Bar, Header, or Sidebar must always be audited in both  and .
+- **DO NOT mutate  in frontend React context.** Scope navigation strictly uses the URL  query param format.
+- If adding any PDF generation, ensure text passes through the custom  utility located in the codebase to prevent  character encoding crashes.
+- Any change to global navigation (Sidebar) MUST be replicated precisely in .
+- Always run the strict Housekeeping suite  and ensure a 60/60 pass rate before task completion.
 
 **documents and test reports created in this job**
-  - 
-  - 
+  -  (Backend tests: Unified Scoped Admins)
+  -  (Frontend tests: Stacked Portal Navigation)
+  -  (Frontend tests: URL Query Param Navigation Architecture)
+  -  (Backend tests: Milestone Downloads, IAC Export, SDV Designation)
   - 
   - 
 
 **Last 10 User Messages and any pending HUMAN messages** 
-1. **User**: Added shift swap request idea.
-2. **Agent**: Implemented shift swap feature and verified backend/frontend.
-3. **User**: Requested comprehensive pressure testing on ops/admin platforms and refactoring for efficiency.
-4. **Agent**: Ran  across all 37 tabs and 47 routes (100% pass), then consolidated duplicated backend route protections into .
-5. **User**: Noticed new scopes weren't showing up in the logo portal switcher dropdown.
-6. **Agent**: Added scope previews into the  dropdown menu.
-7. **User**: Asked if they could toggle portal switcher items on/off via the Dev Switcher tab.
-8. **Agent**: Added visibility toggles to  and wired them to the sidebar config.
-9. **User**: Mentioned the portals were STILL not visible when tapping the logo.
-10. **Agent**: Identified the issue was on Mobile. Replicated sidebar portal switcher logic to .
-11. **User**: Asked to tweak Light Mode and Dark Mode backgrounds and card contrast globally, and to fix spacing above the Dashboard Welcome title.
-12. **Agent**: Tuned  variables globally and adjusted padding in . 
-13. **User**: I want the ability for one person to have multiple admin accounts assigned or authorized to them. (Changing admin scopes to arrays).
-14. **Agent**: Altered schema, routes, guards, and UI to support lists for , passing 60/60 checks.
+1. **User**: Added details for Bulk SDV Beneficiary selector.
+2. **Agent**: Refactored  bug to use URL queries, fixed tab state drops.
+3. **User**: Pressure test this from every direction... Make sure it works.
+4. **Agent**: Ran iteration 37 against 19 paths; 100% passed.
+5. **User**: Requested 3 new features: Download Milestone Messages, Download IAC on Beneficiary side, SDV Beneficiary Selector tiles.
+6. **Agent**: Planned implementation, checked existing document handling/PDF generation flows, requested confirmation.
+7. **User**: Confirmed plan, added detail that Beneficiary Selector must be persistent checkboxes (not a dropdown) defaulting to All.
+8. **Agent**: Built backend  and  endpoints, updated , added UI. Passed iteration 38. Proposed Bulk Designation.
+9. **User**: Sure, implement the bulk designation mode. Then conduct a full housekeeping script and ruff check for vercel.
+10. **Agent**: Added bulk checkbox UI to , wired mass-update handler, ran Housekeeping (60/60) & Ruff. Finished.
 
 **Project Health Check:**
   - Broken: None
@@ -149,13 +143,13 @@ require_staffis_founder_scope
   - YouTube (Iframe Embeds) — dynamically managed via DB 
 
 **Testing status**
-  - Testing agent used after significant changes: YES (, , )
+  - Testing agent used after significant changes: YES (, , , )
   - Troubleshoot agent used after agent stuck in loop: NO
-  - Test files created: 
+  - Test files created: None explicitly created by main agent, all tested via test subagent scripts.
   - Known regressions: None
 
 **Credentials to test flow:**
   - App Admin:  / 
 
 **What agent forgot to execute**
-Nothing. The agent successfully addressed the massive Phase 2 and 3 additions, refactored the backend successfully without regressions, navigated subtle layout bugs on mobile vs. desktop, and transitioned the core authorization framework to support overlapping array scopes seamlessly.</analysis>
+Nothing. The agent successfully addressed complex architectural bugs stemming from React state mutation by shifting to robust URL query parameter-based scoping, completed three major feature sets (Downloads, IAC, SDV Designation), and ensured full adherence to the strict 60/60 compliance checks.</analysis>
