@@ -36,6 +36,14 @@ PLATFORM_FEATURES = [
     {"key": "dav", "label": "Digital Access Vault (DAV)", "route": "/digital-wallet", "core": False},
     {"key": "dts", "label": "Designated Trustee Services (DTS)", "route": "/trustee", "core": False},
     {"key": "timeline", "label": "Estate Plan Timeline", "route": "/timeline", "core": False},
+    {"key": "ect", "label": "Estate Chat (ECT)", "route": "/estate-chat", "core": False, "default_off": True},
+    {
+        "key": "ccp",
+        "label": "Connected Protocol (CCP)",
+        "route": "/connected-protocol",
+        "core": False,
+        "default_off": True,
+    },
 ]
 
 FEATURE_KEYS = [f["key"] for f in PLATFORM_FEATURES]
@@ -54,8 +62,8 @@ TIER_IDS = [
 
 
 def _build_default_gates() -> dict:
-    """Build the default feature gates: every feature ON for every tier."""
-    return {f["key"]: {tid: True for tid in TIER_IDS} for f in PLATFORM_FEATURES}
+    """Build the default feature gates: every feature ON for every tier, except default_off features."""
+    return {f["key"]: {tid: not f.get("default_off", False) for tid in TIER_IDS} for f in PLATFORM_FEATURES}
 
 
 async def get_feature_gates() -> dict:

@@ -342,7 +342,7 @@ const Sidebar = () => {
   const beneficiaryNavSections = [
     {
       title: 'ESTATE PLAN ACCESS',
-      items: filterByFeatureAccess([
+      items: filterNavByFeatures(filterByFeatureAccess([
         { to: '/beneficiary', icon: LayoutDashboard, label: 'Dashboard' },
         { to: '/beneficiary/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
         { to: '/beneficiary/guardian', icon: Sparkles, label: 'Estate Guardian (EGA)' },
@@ -351,7 +351,7 @@ const Sidebar = () => {
         { to: '/beneficiary/milestone', icon: Home, label: 'Report Milestone' },
         { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Estate Chat (ECT)', badge: ectUnread },
         { to: '/beneficiary/connected-protocol', icon: Shield, label: 'Connected Protocol (CCP)' },
-      ])
+      ]), enabledFeatures)
     },
     {
       title: 'ACCOUNT',

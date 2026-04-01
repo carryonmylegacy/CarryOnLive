@@ -300,7 +300,7 @@ export default function EstateChatPage() {
 
   // New Chat Modal
   const newChatModal = showNewChat && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto" style={{ background: 'rgba(0,0,0,0.7)' }}>
       <div className="w-full max-w-md rounded-2xl p-6 overflow-y-auto" style={{ background: '#0F1629', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '80vh' }}>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-bold" style={{ color: '#F1F3F8' }}>New Conversation</h3>
@@ -805,7 +805,7 @@ export default function EstateChatPage() {
   );
 
   return (
-    <div data-testid="estate-chat-page" className="h-[calc(100vh-64px)] lg:h-[calc(100vh-32px)] flex" style={{ background: 'var(--bg)' }}>
+    <div data-testid="estate-chat-page" className="flex" style={{ background: 'var(--bg)', height: 'calc(100vh - 64px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))' }}>
       {/* Desktop: side-by-side layout */}
       <div className="hidden lg:flex w-full">
         <div style={{ width: 340, minWidth: 340 }}>{channelPanel}</div>

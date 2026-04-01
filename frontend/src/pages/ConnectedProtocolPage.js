@@ -234,7 +234,7 @@ export default function ConnectedProtocolPage() {
   if (view === 'active' && activeEmergency) {
     const snap = activeEmergency.plan_snapshot || {};
     return (
-      <div data-testid="ccp-active-view" className="max-w-2xl mx-auto px-4 py-6 space-y-5">
+      <div data-testid="ccp-active-view" className="max-w-2xl mx-auto px-4 py-6 pb-28 sm:pb-6 space-y-5">
         {/* Emergency Header */}
         <div className="rounded-2xl p-5 text-center" style={{
           background: activeEmergency.is_drill ? 'rgba(59,123,247,0.12)' : 'rgba(240,82,82,0.12)',
@@ -330,7 +330,7 @@ export default function ConnectedProtocolPage() {
   // ===================== CHECK-IN VIEW =====================
   if (view === 'checkin' && activeEmergency) {
     return (
-      <div data-testid="ccp-checkin-view" className="max-w-lg mx-auto px-4 py-6 space-y-4">
+      <div data-testid="ccp-checkin-view" className="max-w-lg mx-auto px-4 py-6 pb-28 sm:pb-6 space-y-4">
         <button onClick={() => setView('active')} className="flex items-center gap-2 text-sm font-semibold mb-2" style={{ color: '#A0AABF' }}>
           <ArrowLeft className="w-4 h-4" />Back to Status Board
         </button>
@@ -408,7 +408,7 @@ export default function ConnectedProtocolPage() {
   // ===================== PLAN EDITOR VIEW =====================
   if (view === 'plan-edit' && editPlan) {
     return (
-      <div data-testid="ccp-plan-edit" className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+      <div data-testid="ccp-plan-edit" className="max-w-2xl mx-auto px-4 py-6 pb-28 sm:pb-6 space-y-4">
         <button onClick={() => { setEditPlan(null); setView('plans'); }} className="flex items-center gap-2 text-sm font-semibold mb-2" style={{ color: '#A0AABF' }}>
           <ArrowLeft className="w-4 h-4" />Back to Plans
         </button>
@@ -512,7 +512,7 @@ export default function ConnectedProtocolPage() {
   // ===================== PLANS LIST VIEW =====================
   if (view === 'plans') {
     return (
-      <div data-testid="ccp-plans-list" className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+      <div data-testid="ccp-plans-list" className="max-w-2xl mx-auto px-4 py-6 pb-28 sm:pb-6 space-y-4">
         <button onClick={() => setView('home')} className="flex items-center gap-2 text-sm font-semibold mb-2" style={{ color: '#A0AABF' }}>
           <ArrowLeft className="w-4 h-4" />Back
         </button>
@@ -574,7 +574,7 @@ export default function ConnectedProtocolPage() {
   // ===================== HISTORY VIEW =====================
   if (view === 'history') {
     return (
-      <div data-testid="ccp-history" className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+      <div data-testid="ccp-history" className="max-w-2xl mx-auto px-4 py-6 pb-28 sm:pb-6 space-y-4">
         <button onClick={() => setView('home')} className="flex items-center gap-2 text-sm font-semibold mb-2" style={{ color: '#A0AABF' }}>
           <ArrowLeft className="w-4 h-4" />Back
         </button>
@@ -602,7 +602,7 @@ export default function ConnectedProtocolPage() {
 
   // ===================== HOME VIEW — Big Bubble Buttons =====================
   return (
-    <div data-testid="ccp-home" className="max-w-lg mx-auto px-4 py-6 space-y-5">
+    <div data-testid="ccp-home" className="max-w-lg mx-auto px-4 py-6 pb-28 sm:pb-6 space-y-5">
       <div className="text-center mb-6">
         <Shield className="w-14 h-14 mx-auto mb-3" style={{ color: '#d4af37' }} />
         <h1 className="text-2xl font-bold" style={{ color: '#F1F3F8' }}>Connected Protocol</h1>

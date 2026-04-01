@@ -17,6 +17,10 @@ const ROUTE_TO_FEATURE = {
   '/digital-wallet': 'dav',
   '/trustee': 'dts',
   '/timeline': 'timeline',
+  '/estate-chat': 'ect',
+  '/connected-protocol': 'ccp',
+  '/beneficiary/estate-chat': 'ect',
+  '/beneficiary/connected-protocol': 'ccp',
 };
 
 /**

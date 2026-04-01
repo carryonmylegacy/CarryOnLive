@@ -422,7 +422,7 @@ const MobileNav = () => {
       return !flag || featureAccess[flag] !== false;
     });
 
-  const beneficiaryLegacyItems = filterByFeatureAccess([
+  const beneficiaryLegacyItems = filterNavByFeatures(filterByFeatureAccess([
     { to: '/beneficiary', icon: Home, label: 'Dashboard' },
     { to: '/beneficiary/vault', icon: FolderLock, label: 'Secure Document Vault (SDV)' },
     { to: '/beneficiary/guardian', icon: Sparkles, label: 'Estate Guardian (EGA)' },
@@ -431,7 +431,7 @@ const MobileNav = () => {
     { to: '/beneficiary/milestone', icon: Gift, label: 'Report Milestone' },
     { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Estate Chat (ECT)', badge: ectUnread },
     { to: '/beneficiary/connected-protocol', icon: Shield, label: 'Connected Protocol (CCP)' },
-  ]);
+  ]), enabledFeatures);
 
   // Staff portals — tool shortcuts in hamburger menu
   const adminMenuItems = [
