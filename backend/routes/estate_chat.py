@@ -334,6 +334,40 @@ async def get_read_status(
     return result
 
 
+@router.post("/estate-chat/channels/{channel_id}/typing")
+async def send_typing(
+    channel_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Signal that the user is typing in a channel. Heartbeat — call every ~3s."""
+    channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0, "members": 1})
+    if not channel or current_user["id"] not in channel.get("members", []):
+        return {"ok": True}  # Silently ignore — no error for typing heartbeat
+    now = datetime.now(timezone.utc).isoformat()
+    await db.estate_typing.update_one(
+        {"channel_id": channel_id, "user_id": current_user["id"]},
+        {"$set": {"user_name": current_user.get("name", ""), "updated_at": now}},
+        upsert=True,
+    )
+    return {"ok": True}
+
+
+@router.get("/estate-chat/channels/{channel_id}/typing")
+async def get_typing(
+    channel_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Get who is currently typing in a channel (active within last 5 seconds)."""
+    from datetime import timedelta
+
+    cutoff = (datetime.now(timezone.utc) - timedelta(seconds=5)).isoformat()
+    typers = await db.estate_typing.find(
+        {"channel_id": channel_id, "updated_at": {"$gt": cutoff}, "user_id": {"$ne": current_user["id"]}},
+        {"_id": 0, "user_id": 1, "user_name": 1},
+    ).to_list(20)
+    return typers
+
+
 @router.post("/estate-chat/channels/{channel_id}/messages")
 async def send_message(
     channel_id: str,
@@ -368,6 +402,8 @@ async def send_message(
         {"$set": {"last_read_at": now}},
         upsert=True,
     )
+    # Clear typing indicator on send
+    await db.estate_typing.delete_one({"channel_id": channel_id, "user_id": current_user["id"]})
     return message
 
 

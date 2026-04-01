@@ -41,6 +41,9 @@ export default function EstateChatPage() {
   const [newChatEstate, setNewChatEstate] = useState('');
   const [newChatType, setNewChatType] = useState('direct');
   const [readStatus, setReadStatus] = useState([]);
+  const [typers, setTypers] = useState([]);
+  const typingTimerRef = useRef(null);
+  const lastTypingSentRef = useRef(0);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -89,11 +92,23 @@ export default function EstateChatPage() {
   useEffect(() => {
     if (!activeChannel) return;
     fetchMessages(activeChannel.id);
-    pollRef.current = setInterval(() => {
-      fetchMessages(activeChannel.id);
-      fetchChannels();
-    }, ECT_POLL_INTERVAL);
-    return () => clearInterval(pollRef.current);
+    // Fast typing poll (every 2s), slower message poll (every 8s)
+    let msgCount = 0;
+    const poll = setInterval(() => {
+      // Fetch typing indicators every tick
+      fetch(`${API_URL}/estate-chat/channels/${activeChannel.id}/typing`, { headers })
+        .then(r => r.ok ? r.json() : [])
+        .then(d => setTypers(d || []))
+        .catch(() => {});
+      // Fetch messages every 4th tick (~8s)
+      msgCount++;
+      if (msgCount % 4 === 0) {
+        fetchMessages(activeChannel.id);
+        fetchChannels();
+      }
+    }, 2000);
+    pollRef.current = poll;
+    return () => clearInterval(poll);
   }, [activeChannel?.id]);
 
   // Auto-select estate if only one
@@ -105,7 +120,21 @@ export default function EstateChatPage() {
     setActiveChannel(ch);
     setShowChannelList(false);
     setMsgLoading(true);
+    setTypers([]);
     fetchMessages(ch.id).then(() => setMsgLoading(false));
+  };
+
+  const sendTypingHeartbeat = () => {
+    if (!activeChannel) return;
+    const now = Date.now();
+    if (now - lastTypingSentRef.current < 3000) return; // Throttle to every 3s
+    lastTypingSentRef.current = now;
+    fetch(`${API_URL}/estate-chat/channels/${activeChannel.id}/typing`, { method: 'POST', headers }).catch(() => {});
+  };
+
+  const handleDraftChange = (e) => {
+    setDraft(e.target.value);
+    sendTypingHeartbeat();
   };
 
   const sendMessage = async () => {
@@ -464,11 +493,27 @@ export default function EstateChatPage() {
 
       {/* Input */}
       <div className="p-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        {/* Typing indicator */}
+        {typers.length > 0 && (
+          <div className="px-2 pb-1.5 flex items-center gap-1.5" data-testid="typing-indicator">
+            <div className="flex gap-0.5">
+              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#d4af37', animationDelay: '0ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#d4af37', animationDelay: '150ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#d4af37', animationDelay: '300ms' }} />
+            </div>
+            <span className="text-xs" style={{ color: '#A0AABF' }}>
+              {typers.length === 1
+                ? `${typers[0].user_name} is typing...`
+                : `${typers.map(t => t.user_name).join(', ')} are typing...`
+              }
+            </span>
+          </div>
+        )}
         <div className="flex items-center gap-2">
           <input
             ref={inputRef}
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={handleDraftChange}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
             placeholder="Type a message..."
             className="flex-1 rounded-xl px-4 py-3 text-base"
