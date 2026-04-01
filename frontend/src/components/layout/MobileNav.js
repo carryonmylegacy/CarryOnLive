@@ -44,6 +44,19 @@ import { filterNavByFeatures } from '../../utils/featureGates';
 
 const BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
+// Normalize admin_scope to an array regardless of input format
+const scopeArr = (raw) => Array.isArray(raw) ? raw : (raw ? [raw] : []);
+const hasScope = (raw, target) => scopeArr(raw).includes(target);
+
+const ADMIN_PORTALS = [
+  { scope: 'founder', label: 'Founder Portal', color: '#d4af37' },
+  { scope: 'ops_manager', label: 'Operations Portal', color: '#E87040', altScope: 'ops_team' },
+  { scope: 'finance', label: 'Finance Portal', color: '#22C993' },
+  { scope: 'compliance', label: 'Compliance Portal', color: '#3B82F6' },
+  { scope: 'marketing', label: 'Marketing Portal', color: '#B794F6' },
+  { scope: 'platform_health', label: 'Platform Portal', color: '#F59E0B' },
+];
+
 const MobileOtpToggle = () => {
   const [otpDisabled, setOtpDisabled] = useState(false);
   useEffect(() => {
@@ -236,14 +249,14 @@ const MobileNav = () => {
   const mobileVisibleScopes = SCOPE_PREVIEWS.filter(sp => isMobilePortalOn(sp.scope));
 
   const handleMobileScopePreview = (scope) => {
-    setUser(prev => ({ ...prev, admin_scope: scope }));
+    setUser(prev => ({ ...prev, admin_scope: [scope] }));
     setDevOpen(false);
     toast.success(`Viewing as: ${SCOPE_PREVIEWS.find(s => s.scope === scope)?.label || scope}`);
     navigate('/admin');
   };
 
   const handleMobileRestoreFounder = () => {
-    setUser(prev => ({ ...prev, admin_scope: 'founder' }));
+    setUser(prev => ({ ...prev, admin_scope: ['founder'] }));
     setDevOpen(false);
     toast.success('Restored Founder view');
     if (window.location.pathname.startsWith('/ops')) navigate('/admin');
@@ -595,7 +608,7 @@ const MobileNav = () => {
                         Admin Scope Preview
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        {user?.admin_scope !== 'founder' && (
+                        {!hasScope(user?.admin_scope, 'founder') && (
                           <div
                             onClick={(e) => { e.stopPropagation(); handleMobileRestoreFounder(); }}
                             style={{
@@ -610,7 +623,7 @@ const MobileNav = () => {
                           </div>
                         )}
                         {mobileVisibleScopes.map(sp => {
-                          const isActive = user?.admin_scope === sp.scope;
+                          const isActive = hasScope(user?.admin_scope, sp.scope);
                           return (
                             <div key={sp.scope}
                               onClick={(e) => { e.stopPropagation(); if (!isActive) handleMobileScopePreview(sp.scope); }}
@@ -840,7 +853,62 @@ const MobileNav = () => {
                 {/* ── Separator ── */}
                 <div style={{ width: '100%', height: 1, background: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)', margin: '8px 0' }} />
 
-                {/* Switch View — Portal Pills */}
+                {/* Admin Portal Buttons — stacked above Sign Out */}
+                {(user?.role === 'admin' || user?.role === 'operator') && (() => {
+                  const scopes = scopeArr(user?.admin_scope);
+                  const isFounder = scopes.includes('founder');
+                  const visiblePortals = isFounder
+                    ? ADMIN_PORTALS
+                    : ADMIN_PORTALS.filter(p => scopes.includes(p.scope) || (p.altScope && scopes.includes(p.altScope)));
+                  if (visiblePortals.length < 1) return null;
+                  const currentPath = window.location.pathname;
+                  const activeViewScope = scopes;
+                  return (
+                    <div className="mb-2">
+                      <div style={{ fontSize: 14, fontWeight: 700, color: theme === 'dark' ? '#8895A7' : '#475569', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 8, paddingLeft: 4 }}>
+                        {visiblePortals.length > 1 ? 'Switch Portal' : 'My Portal'}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {visiblePortals.map(portal => {
+                          const isActive = portal.scope === 'founder'
+                            ? activeViewScope.includes('founder') && activeViewScope.length <= 1 && !currentPath.startsWith('/ops')
+                            : (activeViewScope.includes(portal.scope) || (portal.altScope && activeViewScope.includes(portal.altScope))) && !activeViewScope.includes('founder');
+                          return (
+                            <button
+                              key={portal.scope}
+                              onClick={() => {
+                                setOpen(false);
+                                if (portal.scope === 'founder') {
+                                  setUser(prev => ({ ...prev, admin_scope: ['founder'] }));
+                                  if (currentPath.startsWith('/ops')) navigate('/admin');
+                                } else {
+                                  const scopeToSet = portal.altScope
+                                    ? [portal.scope, portal.altScope].filter(s => scopes.includes(s) || isFounder)
+                                    : [portal.scope];
+                                  setUser(prev => ({ ...prev, admin_scope: scopeToSet.length > 0 ? scopeToSet : [portal.scope] }));
+                                  navigate('/admin');
+                                }
+                              }}
+                              data-testid={`mobile-portal-btn-${portal.scope}`}
+                              className="w-full flex flex-col items-center px-4 py-3 rounded-xl transition-all"
+                              style={{
+                                border: `1px solid ${isActive ? `${portal.color}40` : theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                                color: isActive ? portal.color : theme === 'dark' ? '#A0AABF' : '#475569',
+                                backgroundColor: isActive ? `${portal.color}15` : theme === 'dark' ? 'var(--b)' : 'rgba(0,0,0,0.05)',
+                                fontWeight: isActive ? 700 : undefined,
+                                gap: 2,
+                              }}
+                            >
+                              <span className="font-semibold text-sm">{portal.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Switch View — Portal Pills (Benefactor/Beneficiary) */}
                 {(() => {
                   const ownedEstates = mobileEstates.filter(e => e.user_role_in_estate === 'owner');
                   const beneficiaryEstates = mobileEstates.filter(e => e.user_role_in_estate === 'beneficiary' || e.is_beneficiary_estate);

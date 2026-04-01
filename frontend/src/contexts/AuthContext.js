@@ -91,6 +91,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password, otpMethod = 'email', phone = null, forceLogin = false) => {
     // Clear dev switcher session on normal login
     localStorage.removeItem('dev_switcher_admin_session');
+    localStorage.removeItem('dev_switcher_active_role');
     // Clear API data cache to ensure fresh data on new session
     clearCache();
     const payload = { email, password, otp_method: otpMethod, force_login: forceLogin };

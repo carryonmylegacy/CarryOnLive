@@ -69,7 +69,7 @@ import { API_URL } from '../config';
 const FOUNDER_SECTIONS = [
   {
     section: 'Operations',
-    scopes: ['founder'],
+    scopes: ['founder', 'ops_manager', 'ops_team'],
     tabs: [
       { key: 'users', label: 'Users', icon: Users, path: '/admin/users' },
       { key: 'founder-invites', label: 'Invites', icon: Gift, path: '/admin/founder-invites' },

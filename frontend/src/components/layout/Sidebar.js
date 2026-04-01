@@ -79,6 +79,19 @@ const OtpToggle = ({ collapsed }) => {
   );
 };
 
+// Normalize admin_scope to an array regardless of input format
+const scopeArr = (raw) => Array.isArray(raw) ? raw : (raw ? [raw] : []);
+const hasScope = (raw, target) => scopeArr(raw).includes(target);
+
+const ADMIN_PORTALS = [
+  { scope: 'founder', label: 'Founder Portal', color: '#d4af37' },
+  { scope: 'ops_manager', label: 'Operations Portal', color: '#E87040', altScope: 'ops_team' },
+  { scope: 'finance', label: 'Finance Portal', color: '#22C993' },
+  { scope: 'compliance', label: 'Compliance Portal', color: '#3B82F6' },
+  { scope: 'marketing', label: 'Marketing Portal', color: '#B794F6' },
+  { scope: 'platform_health', label: 'Platform Portal', color: '#F59E0B' },
+];
+
 const Sidebar = () => {
   const { user, logout, refreshUser, enabledFeatures, setUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -157,14 +170,14 @@ const Sidebar = () => {
   const visibleScopePreviews = SCOPE_PREVIEWS.filter(sp => isPortalOn(sp.scope));
 
   const handleScopePreview = (scope) => {
-    setUser(prev => ({ ...prev, admin_scope: scope }));
+    setUser(prev => ({ ...prev, admin_scope: [scope] }));
     setDevOpen(false);
     toast.success(`Viewing as: ${SCOPE_PREVIEWS.find(s => s.scope === scope)?.label || scope}`);
     navigate('/admin');
   };
 
   const handleRestoreFounder = () => {
-    setUser(prev => ({ ...prev, admin_scope: 'founder' }));
+    setUser(prev => ({ ...prev, admin_scope: ['founder'] }));
     setDevOpen(false);
     toast.success('Restored Founder view');
     if (window.location.pathname.startsWith('/ops')) navigate('/admin');
@@ -516,7 +529,7 @@ const Sidebar = () => {
                     Admin Scope Preview
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    {user?.admin_scope !== 'founder' && (
+                    {!hasScope(user?.admin_scope, 'founder') && (
                       <div
                         onClick={(e) => { e.stopPropagation(); handleRestoreFounder(); }}
                         style={{
@@ -531,7 +544,7 @@ const Sidebar = () => {
                       </div>
                     )}
                     {visibleScopePreviews.map(sp => {
-                      const isActive = user?.admin_scope === sp.scope;
+                      const isActive = hasScope(user?.admin_scope, sp.scope);
                       return (
                         <div key={sp.scope}
                           onClick={(e) => { e.stopPropagation(); if (!isActive) handleScopePreview(sp.scope); }}
@@ -665,7 +678,72 @@ const Sidebar = () => {
         {/* ── Separator ── */}
         <div style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.08)', margin: '2px 0' }} />
 
-        {/* Switch View — Portal Pills */}
+        {/* Admin Portal Buttons — stacked above Sign Out */}
+        {user?.role === 'admin' && (() => {
+          const scopes = scopeArr(user?.admin_scope);
+          const isFounder = scopes.includes('founder');
+          const visiblePortals = isFounder
+            ? ADMIN_PORTALS
+            : ADMIN_PORTALS.filter(p => scopes.includes(p.scope) || (p.altScope && scopes.includes(p.altScope)));
+          if (visiblePortals.length < 1) return null;
+          const currentPath = window.location.pathname;
+          const activeViewScope = scopes;
+          return (
+            <>
+              {!collapsed && (
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#8895A7', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 6, paddingLeft: 4 }}>
+                  {visiblePortals.length > 1 ? 'Switch Portal' : 'My Portal'}
+                </div>
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {visiblePortals.map(portal => {
+                  const isActive = portal.scope === 'founder'
+                    ? activeViewScope.includes('founder') && activeViewScope.length <= 1 && !currentPath.startsWith('/ops')
+                    : (activeViewScope.includes(portal.scope) || (portal.altScope && activeViewScope.includes(portal.altScope))) && !activeViewScope.includes('founder');
+                  return (
+                    <button
+                      key={portal.scope}
+                      onClick={() => {
+                        if (portal.scope === 'founder') {
+                          setUser(prev => ({ ...prev, admin_scope: ['founder'] }));
+                          if (currentPath.startsWith('/ops')) navigate('/admin');
+                        } else {
+                          const scopeToSet = portal.altScope
+                            ? [portal.scope, portal.altScope].filter(s => scopes.includes(s) || isFounder)
+                            : [portal.scope];
+                          setUser(prev => ({ ...prev, admin_scope: scopeToSet.length > 0 ? scopeToSet : [portal.scope] }));
+                          navigate('/admin');
+                        }
+                      }}
+                      data-testid={`portal-btn-${portal.scope}`}
+                      className={`sb-pill w-full ${collapsed ? 'justify-center' : ''}`}
+                      style={{
+                        background: isActive
+                          ? `${portal.color}15`
+                          : undefined,
+                        borderColor: isActive ? `${portal.color}40` : undefined,
+                        color: isActive ? portal.color : undefined,
+                        fontWeight: isActive ? 700 : undefined,
+                        padding: collapsed ? undefined : '10px 16px',
+                        flexDirection: collapsed ? undefined : 'column',
+                        alignItems: collapsed ? undefined : 'center',
+                        gap: collapsed ? undefined : 2,
+                      }}
+                    >
+                      {collapsed ? (
+                        <Shield className="w-[18px] h-[18px]" style={{ color: isActive ? portal.color : undefined }} />
+                      ) : (
+                        <span style={{ fontWeight: 600, fontSize: 14 }}>{portal.label}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          );
+        })()}
+
+        {/* Switch View — Portal Pills (Benefactor/Beneficiary) */}
         {(() => {
           const ownedEstates = benEstates.filter(e => e.user_role_in_estate === 'owner');
           const beneficiaryEstates = benEstates.filter(e => e.user_role_in_estate === 'beneficiary' || e.is_beneficiary_estate);
