@@ -26,7 +26,8 @@ import {
   Star,
   Pencil,
   CalendarDays,
-  SwitchCamera
+  SwitchCamera,
+  Download
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -497,6 +498,44 @@ const MessagesPage = () => {
     }
   };
 
+  const handleDownload = async (msg) => {
+    try {
+      const msgType = msg.message_type || 'text';
+      if (msgType === 'video' && msg.video_url) {
+        // Download video file directly
+        const res = await axios.get(`${API_URL}/messages/video/${msg.video_url}`, {
+          ...getAuthHeaders(), responseType: 'blob',
+        });
+        const url = URL.createObjectURL(res.data);
+        const a = document.createElement('a'); a.href = url;
+        a.download = `${(msg.title || 'video').replace(/[^a-zA-Z0-9 _-]/g, '')}.webm`;
+        a.click(); URL.revokeObjectURL(url);
+      } else if (msgType === 'voice' && msg.voice_url) {
+        const res = await axios.get(`${API_URL}/messages/voice/${msg.voice_url}`, {
+          ...getAuthHeaders(), responseType: 'blob',
+        });
+        const url = URL.createObjectURL(res.data);
+        const a = document.createElement('a'); a.href = url;
+        a.download = `${(msg.title || 'voice').replace(/[^a-zA-Z0-9 _-]/g, '')}.webm`;
+        a.click(); URL.revokeObjectURL(url);
+      } else {
+        // Text message → PDF
+        const res = await axios.get(`${API_URL}/messages/${msg.id}/download`, {
+          ...getAuthHeaders(), responseType: 'blob',
+        });
+        const url = URL.createObjectURL(res.data);
+        const a = document.createElement('a'); a.href = url;
+        a.download = `${(msg.title || 'message').replace(/[^a-zA-Z0-9 _-]/g, '')}.pdf`;
+        a.click(); URL.revokeObjectURL(url);
+      }
+      toast.success('Download started');
+    } catch {
+      toast.error('Failed to download');
+    }
+  };
+
+
+
   const resetForm = () => {
     setTitle('');
     setContent('');
@@ -741,6 +780,16 @@ const MessagesPage = () => {
                             <Button
                               variant="ghost"
                               size="sm"
+                              className="text-[#22C993]"
+                              onClick={() => handleDownload(msg)}
+                              data-testid={`download-message-${msg.id}`}
+                              aria-label="Download message"
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               className="text-[#ef4444]"
                               onClick={() => handleDelete(msg.id)}
                               aria-label="Delete message"
@@ -748,6 +797,18 @@ const MessagesPage = () => {
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
+                        )}
+                        {user?.role !== 'benefactor' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-[#22C993]"
+                            onClick={() => handleDownload(msg)}
+                            data-testid={`download-message-${msg.id}`}
+                            aria-label="Download message"
+                          >
+                            <Download className="w-4 h-4" />
+                          </Button>
                         )}
                       </div>
                     </CardContent>

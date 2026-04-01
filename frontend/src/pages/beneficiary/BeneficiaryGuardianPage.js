@@ -2,13 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../contexts/AuthContext';
 import {
-  Bot, Send, User, Loader2, Sparkles, Lock
+  Bot, Send, User, Loader2, Sparkles, Lock, Download
 } from 'lucide-react';
 import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { ScrollArea } from '../../components/ui/scroll-area';
 import { API_URL } from '../../config';
+import { toast } from '../../utils/toast';
+import { downloadFile } from '../../utils/downloadFile';
 
 const BeneficiaryGuardianPage = () => {
   const { user, getAuthHeaders } = useAuth();
@@ -46,6 +48,19 @@ const BeneficiaryGuardianPage = () => {
     } catch (err) { console.error(err); }
   };
 
+  const handleIacDownload = async () => {
+    try {
+      const res = await axios.post(`${API_URL}/guardian/beneficiary-export-checklist`, {}, {
+        ...getAuthHeaders(), responseType: 'blob',
+      });
+      downloadFile(res.data, `CarryOn_IAC_${new Date().toISOString().slice(0, 10)}.pdf`);
+      toast.success('IAC downloaded');
+    } catch {
+      toast.error('Failed to download IAC');
+    }
+  };
+
+
   const sendMessage = async (text) => {
     if (!text.trim()) return;
     setMessages(prev => [...prev, { role: 'user', content: text }]);
@@ -80,9 +95,18 @@ const BeneficiaryGuardianPage = () => {
             <p className="text-xs text-[var(--t5)]">50-State Estate Law Brain · Vault-Analyzed · Read-Only</p>
           </div>
         </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs gap-1.5"
+            onClick={handleIacDownload}
+            data-testid="beneficiary-iac-download"
+          >
+            <Download className="w-3.5 h-3.5" /> Download IAC
+          </Button>
+        </div>
       </div>
-
-      {/* Sealed notice + Disclaimer */}
       <div className="flex flex-col sm:flex-row gap-2 mb-3">
         <div className="flex-1 rounded-xl p-2.5 flex items-center gap-2" style={{ background: 'rgba(37,99,235,0.05)', border: '1px solid rgba(37,99,235,0.1)' }}>
           <Lock className="w-4 h-4 text-[#7AABFD] flex-shrink-0" />

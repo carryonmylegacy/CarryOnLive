@@ -490,3 +490,131 @@ async def delete_message(message_id: str, current_user: dict = Depends(get_curre
     )
 
     return {"message": "Message deleted"}
+
+
+@router.get("/messages/{message_id}/download")
+async def download_message(message_id: str, current_user: dict = Depends(get_current_user)):
+    """Download a milestone message as a file.
+
+    - text → PDF
+    - voice → webm audio redirect
+    - video → mp4/webm redirect
+    """
+    message = await db.messages.find_one({"id": message_id}, {"_id": 0})
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+
+    estate = await db.estates.find_one({"id": message["estate_id"]}, {"_id": 0})
+    is_owner = estate and estate["owner_id"] == current_user["id"]
+    is_ben = estate and current_user["id"] in estate.get("beneficiaries", [])
+    is_admin = current_user["role"] in ("admin", "operator")
+    if not (is_owner or is_ben or is_admin):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    estate_salt = await get_estate_salt(message["estate_id"])
+    decrypted = await _decrypt_message(message, estate_salt)
+
+    msg_type = decrypted.get("message_type", "text")
+
+    if msg_type == "video" and decrypted.get("video_url"):
+        # Redirect to the existing video endpoint for streaming download
+        from fastapi.responses import RedirectResponse
+
+        return RedirectResponse(url=f"/api/messages/video/{decrypted['video_url']}")
+
+    if msg_type == "voice" and decrypted.get("voice_url"):
+        from fastapi.responses import RedirectResponse
+
+        return RedirectResponse(url=f"/api/messages/voice/{decrypted['voice_url']}")
+
+    # Text messages → generate a simple PDF
+    title = decrypted.get("title", "Milestone Message")
+    content = decrypted.get("content", "")
+    created = decrypted.get("created_at", "")
+
+    pdf_bytes = _build_text_pdf(title, content, created, estate.get("name", ""))
+
+    await audit_log(
+        action="message.download",
+        user_id=current_user["id"],
+        resource_type="message",
+        resource_id=message_id,
+        estate_id=message.get("estate_id"),
+    )
+
+    safe_title = "".join(c for c in title if c.isalnum() or c in " _-")[:40].strip() or "message"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{safe_title}.pdf"'},
+    )
+
+
+def _build_text_pdf(title: str, content: str, created: str, estate_name: str) -> bytes:
+    """Build a minimal PDF from message text — no external libraries needed."""
+    import io
+    import textwrap
+
+    # Minimal PDF builder
+    buf = io.BytesIO()
+
+    def w(s: str):
+        buf.write(s.encode("latin-1", errors="replace"))
+
+    w("%PDF-1.4\n")
+
+    # Catalog
+    w("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n")
+    # Pages
+    w("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n")
+    # Font
+    w("4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n")
+    w("5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj\n")
+
+    # Build content stream
+    lines = []
+    y = 750
+    lines.append(f"BT /F2 18 Tf {72} {y} Td ({_pdf_escape(title)}) Tj ET")
+    y -= 28
+    if estate_name:
+        lines.append(f"BT /F1 11 Tf {72} {y} Td (Estate: {_pdf_escape(estate_name)}) Tj ET")
+        y -= 18
+    if created:
+        display_date = created[:10] if len(created) >= 10 else created
+        lines.append(f"BT /F1 11 Tf {72} {y} Td (Date: {_pdf_escape(display_date)}) Tj ET")
+        y -= 18
+    y -= 12  # spacing
+
+    # Wrap content text
+    wrapped = textwrap.wrap(content, width=80)
+    for line in wrapped:
+        if y < 60:
+            break
+        lines.append(f"BT /F1 12 Tf {72} {y} Td ({_pdf_escape(line)}) Tj ET")
+        y -= 16
+
+    stream = "\n".join(lines)
+    stream_len = len(stream.encode("latin-1", errors="replace"))
+
+    w(f"6 0 obj\n<< /Length {stream_len} >>\nstream\n{stream}\nendstream\nendobj\n")
+
+    # Page
+    w(
+        "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+        "/Contents 6 0 R /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> >>\nendobj\n"
+    )
+
+    xref_offset = buf.tell()
+    w("xref\n0 7\n")
+    w("0000000000 65535 f \n")
+    # Approximate offsets — PDF readers are tolerant of minor offsets
+    for i in range(1, 7):
+        w(f"{i:010d} 00000 n \n")
+    w(f"trailer\n<< /Root 1 0 R /Size 7 >>\nstartxref\n{xref_offset}\n%%EOF\n")
+
+    return buf.getvalue()
+
+
+def _pdf_escape(text: str) -> str:
+    """Escape special PDF string characters."""
+    return text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")

@@ -29,7 +29,10 @@ import {
   Search,
   FolderLock,
   Edit2,
-  Heart
+  Heart,
+  Users,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -117,6 +120,8 @@ const VaultPage = () => {
   const [editNotes, setEditNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [globalDragOver, setGlobalDragOver] = useState(false);
+  const [beneficiaries, setBeneficiaries] = useState([]);
+  const [expandedDesignation, setExpandedDesignation] = useState(null);
   const dragCounterRef = useRef(0);
   const uploadNameRef = useRef(null);
   const pendingDropFocusRef = useRef(false);
@@ -205,6 +210,11 @@ const VaultPage = () => {
         setEstate(selected);
         const docsRes = await axios.get(`${API_URL}/documents/${selected.id}`, getAuthHeaders()).catch(() => ({ data: [] }));
         setDocuments(Array.isArray(docsRes.data) ? docsRes.data : []);
+        // Fetch beneficiaries for SDV designation
+        try {
+          const benRes = await axios.get(`${API_URL}/beneficiaries/${selected.id}`, getAuthHeaders());
+          setBeneficiaries(Array.isArray(benRes.data) ? benRes.data : []);
+        } catch { setBeneficiaries([]); }
       }
     } catch (error) {
       console.error('Fetch error:', error);
@@ -310,6 +320,46 @@ const VaultPage = () => {
       setUnlocking(false);
     }
   };
+
+  const handleDesignateBeneficiaries = async (docId, beneficiaryIds) => {
+    try {
+      await axios.put(`${API_URL}/documents/${docId}/designate-beneficiaries`,
+        { beneficiary_ids: beneficiaryIds },
+        { ...getAuthHeaders(), headers: { ...getAuthHeaders().headers, 'Content-Type': 'application/json' } }
+      );
+      // Update local state
+      setDocuments(prev => prev.map(d =>
+        d.id === docId ? { ...d, designated_beneficiaries: beneficiaryIds } : d
+      ));
+      toast.success('Beneficiary access updated');
+    } catch {
+      toast.error('Failed to update beneficiary access');
+    }
+  };
+
+  const toggleBeneficiaryForDoc = (docId, benId, currentDesignation) => {
+    const current = currentDesignation || ['all'];
+    const isAll = current.includes('all');
+    if (benId === 'all') {
+      handleDesignateBeneficiaries(docId, ['all']);
+      return;
+    }
+    let newList;
+    if (isAll) {
+      // Switching from "all" to specific — select all EXCEPT the one being unchecked
+      newList = beneficiaries.map(b => b.id).filter(id => id !== benId);
+    } else if (current.includes(benId)) {
+      newList = current.filter(id => id !== benId);
+      if (newList.length === 0) newList = ['all']; // Can't have empty — default to all
+    } else {
+      newList = [...current, benId];
+      // If all are now selected, set back to "all"
+      if (newList.length === beneficiaries.length) newList = ['all'];
+    }
+    handleDesignateBeneficiaries(docId, newList);
+  };
+
+
 
   const handleSetLock = async () => {
     if (!selectedDoc || !newLockPassword || newLockPassword.length < 4) {
@@ -876,6 +926,57 @@ const VaultPage = () => {
                         )}
                       </div>
                       </div>
+                      {/* Beneficiary Designation */}
+                      {user?.role === 'benefactor' && beneficiaries.length > 0 && (
+                        <div className="mt-2 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                          <button
+                            className="flex items-center gap-1.5 w-full text-left text-[11px] text-[var(--t5)] hover:text-[var(--t4)] transition-colors"
+                            onClick={(e) => { e.stopPropagation(); setExpandedDesignation(expandedDesignation === doc.id ? null : doc.id); }}
+                            data-testid={`designation-toggle-${doc.id}`}
+                          >
+                            <Users className="w-3.5 h-3.5" />
+                            <span className="font-medium">
+                              {(!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all'))
+                                ? 'All beneficiaries'
+                                : `${doc.designated_beneficiaries.length} of ${beneficiaries.length} beneficiaries`}
+                            </span>
+                            {expandedDesignation === doc.id
+                              ? <ChevronUp className="w-3 h-3 ml-auto" />
+                              : <ChevronDown className="w-3 h-3 ml-auto" />}
+                          </button>
+                          {expandedDesignation === doc.id && (
+                            <div className="mt-1.5 space-y-1" onClick={(e) => e.stopPropagation()}>
+                              <label className="flex items-center gap-2 py-1 px-1.5 rounded text-[11px] cursor-pointer hover:bg-white/5">
+                                <input
+                                  type="checkbox"
+                                  checked={!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all')}
+                                  onChange={() => toggleBeneficiaryForDoc(doc.id, 'all', doc.designated_beneficiaries)}
+                                  className="rounded accent-[#d4af37]"
+                                  data-testid={`designation-all-${doc.id}`}
+                                />
+                                <span className="font-bold text-[var(--t4)]">Select All</span>
+                              </label>
+                              {beneficiaries.map(ben => {
+                                const designation = doc.designated_beneficiaries || ['all'];
+                                const isAll = designation.includes('all');
+                                const isSelected = isAll || designation.includes(ben.id);
+                                return (
+                                  <label key={ben.id} className="flex items-center gap-2 py-1 px-1.5 rounded text-[11px] cursor-pointer hover:bg-white/5">
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onChange={() => toggleBeneficiaryForDoc(doc.id, ben.id, doc.designated_beneficiaries)}
+                                      className="rounded accent-[#d4af37]"
+                                      data-testid={`designation-ben-${ben.id}-${doc.id}`}
+                                    />
+                                    <span className="text-[var(--t4)]">{ben.first_name} {ben.last_name}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 );
