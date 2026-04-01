@@ -28,6 +28,8 @@ from services.photo_urls import resolve_photo_url
 
 def _user_response(user: dict, owns_estate: bool = False) -> UserResponse:
     """Build a UserResponse from a DB user dict, including multi-role flags."""
+    raw_scope = user.get("admin_scope", "")
+    scope_val = raw_scope if isinstance(raw_scope, list) else ([raw_scope] if raw_scope else [])
     return UserResponse(
         id=user["id"],
         email=user["email"],
@@ -36,7 +38,7 @@ def _user_response(user: dict, owns_estate: bool = False) -> UserResponse:
         created_at=user["created_at"],
         photo_url=resolve_photo_url(user.get("photo_url", "")),
         operator_role=user.get("operator_role", ""),
-        admin_scope=user.get("admin_scope", ""),
+        admin_scope=scope_val,
         is_also_benefactor=user.get("is_also_benefactor", False) or owns_estate,
         is_also_beneficiary=user.get("is_also_beneficiary", False) or False,
         is_beta_tester=user.get("is_beta_tester", False),
@@ -1078,7 +1080,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "created_at": current_user["created_at"],
         "photo_url": resolve_photo_url(photo),
         "operator_role": current_user.get("operator_role", ""),
-        "admin_scope": user_doc.get("admin_scope", ""),
+        "admin_scope": user_doc.get("admin_scope", "") if isinstance(user_doc.get("admin_scope"), list) else ([user_doc["admin_scope"]] if user_doc.get("admin_scope") else []),
         "is_also_benefactor": user_doc.get("is_also_benefactor", False) or bool(owns_estate),
         "is_also_beneficiary": user_doc.get("is_also_beneficiary", False),
         "first_name": user_doc.get("first_name", ""),

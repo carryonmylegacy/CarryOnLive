@@ -256,8 +256,10 @@ const AdminPage = ({ operatorMode = false }) => {
   const [cleaning, setCleaning] = useState(false);
 
   // Admin scope: founder sees all, scoped admins see only their sections
-  const adminScope = user?.admin_scope || 'founder';
-  const isFounder = adminScope === 'founder';
+  // admin_scope is now an array (backwards-compatible with legacy string)
+  const rawScope = user?.admin_scope || 'founder';
+  const adminScopes = Array.isArray(rawScope) ? rawScope : [rawScope].filter(Boolean);
+  const isFounder = adminScopes.includes('founder');
   const isManager = user?.operator_role === 'manager';
 
   const handleCleanup = async () => {
@@ -368,7 +370,7 @@ const AdminPage = ({ operatorMode = false }) => {
   const getVisibleFounderTabs = () => {
     const tabs = [];
     FOUNDER_SECTIONS.forEach(section => {
-      if (section.scopes.includes(adminScope)) {
+      if (section.scopes.some(s => adminScopes.includes(s))) {
         tabs.push({ sectionLabel: section.section });
         section.tabs.forEach(t => tabs.push(t));
       }
@@ -402,7 +404,8 @@ const AdminPage = ({ operatorMode = false }) => {
     if (operatorMode) return 'Operations Dashboard';
     if (isFounder) return 'Founder Dashboard';
     const labels = { finance: 'Finance', compliance: 'Compliance', marketing: 'Marketing', platform_health: 'Platform Health' };
-    return `${labels[adminScope] || 'Admin'} Dashboard`;
+    const scopeNames = adminScopes.map(s => labels[s] || s).join(' + ');
+    return `${scopeNames} Dashboard`;
   };
 
   return (
@@ -416,7 +419,7 @@ const AdminPage = ({ operatorMode = false }) => {
               ? 'Transition Verification \u00B7 Customer Service \u00B7 Trustee Services'
               : isFounder
                 ? 'Operations \u00B7 Finance \u00B7 Marketing \u00B7 Compliance \u00B7 Platform'
-                : `Scoped access \u2014 ${adminScope.replace('_', ' ')}`
+                : `Scoped access \u2014 ${adminScopes.join(', ').replace(/_/g, ' ')}`
             }
           </p>
         </div>
@@ -440,7 +443,7 @@ const AdminPage = ({ operatorMode = false }) => {
       </div>
 
       {/* Revenue Analytics — founder and finance only */}
-      {!operatorMode && (isFounder || adminScope === 'finance') && <RevenuePanel revenue={revenue} />}
+      {!operatorMode && (isFounder || adminScopes.includes('finance')) && <RevenuePanel revenue={revenue} />}
 
       {/* Operator Work Queue Tiles */}
       {operatorMode && <OpsWorkTiles stats={stats} dashEvents={dashEvents} />}
@@ -454,10 +457,10 @@ const AdminPage = ({ operatorMode = false }) => {
       {!operatorMode && isFounder && <ActionRequired stats={stats} navigate={navigate} />}
 
       {/* Platform Overview — founder and platform_health only */}
-      {!operatorMode && (isFounder || adminScope === 'platform_health') && stats && <PlatformOverview stats={stats} />}
+      {!operatorMode && (isFounder || adminScopes.includes('platform_health')) && stats && <PlatformOverview stats={stats} />}
 
       {/* Code Health — founder and platform_health only */}
-      {!operatorMode && (isFounder || adminScope === 'platform_health') && <CodeHealthTile getAuthHeaders={getAuthHeaders} />}
+      {!operatorMode && (isFounder || adminScopes.includes('platform_health')) && <CodeHealthTile getAuthHeaders={getAuthHeaders} />}
 
       {/* Tabs — with section labels for founder view */}
       <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide items-center" data-testid="admin-tab-bar" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>

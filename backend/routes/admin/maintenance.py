@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from config import db
-from guards import require_admin
+from guards import require_admin, is_founder_scope
 from services.audit import get_client_ip, log_audit_event
 
 router = APIRouter()
@@ -46,7 +46,7 @@ async def toggle_maintenance_mode(
     current_user: dict = Depends(require_admin),
 ):
     """Toggle maintenance mode. Founder only."""
-    if current_user.get("admin_scope", "founder") != "founder":
+    if not is_founder_scope(current_user):
         raise HTTPException(status_code=403, detail="Founder access required")
 
     now = datetime.now(timezone.utc).isoformat()

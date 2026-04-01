@@ -400,12 +400,11 @@ const Sidebar = () => {
     if (user?.role === 'beneficiary') return 'BENEFICIARY PORTAL';
     if (user?.role === 'admin' && window.location.pathname.startsWith('/ops')) return 'OPERATIONS';
     if (user?.role === 'admin') {
-      const scope = user?.admin_scope || 'founder';
-      if (scope === 'finance') return 'FINANCE ADMIN';
-      if (scope === 'compliance') return 'COMPLIANCE ADMIN';
-      if (scope === 'marketing') return 'MARKETING ADMIN';
-      if (scope === 'platform_health') return 'PLATFORM ADMIN';
-      return 'FOUNDER PORTAL';
+      const raw = user?.admin_scope || 'founder';
+      const scopes = Array.isArray(raw) ? raw : [raw];
+      if (scopes.includes('founder')) return 'FOUNDER PORTAL';
+      const labels = { finance: 'FINANCE', compliance: 'COMPLIANCE', marketing: 'MARKETING', platform_health: 'PLATFORM' };
+      return scopes.map(s => labels[s] || s.toUpperCase()).join(' + ') + ' ADMIN';
     }
     if (user?.role === 'operator' && user?.operator_role === 'manager') return 'OPS MANAGER';
     if (user?.role === 'operator') return 'OPERATIONS';

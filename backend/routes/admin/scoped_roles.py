@@ -20,7 +20,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 
 from config import db
-from guards import require_admin
+from guards import require_admin, is_founder_scope
 from services.audit import get_client_ip, log_audit_event
 
 router = APIRouter()
@@ -36,16 +36,25 @@ SCOPE_LABELS = {
 }
 
 
+def normalize_scopes(raw):
+    """Convert admin_scope from legacy string or list to a list."""
+    if isinstance(raw, list):
+        return raw
+    if isinstance(raw, str) and raw:
+        return [raw]
+    return ["founder"]
+
+
 class CreateScopedAdminRequest(BaseModel):
     email: EmailStr
     password: str
     first_name: str
     last_name: str
-    admin_scope: str
+    admin_scope: str | list[str]
 
 
 class UpdateScopedAdminRequest(BaseModel):
-    admin_scope: Optional[str] = None
+    admin_scope: str | list[str] | None = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     password: Optional[str] = None
@@ -54,7 +63,7 @@ class UpdateScopedAdminRequest(BaseModel):
 @router.get("/admin/scoped-admins")
 async def list_scoped_admins(current_user: dict = Depends(require_admin)):
     """List all admin accounts with their scopes. Founder only."""
-    if current_user.get("admin_scope", "founder") != "founder":
+    if not is_founder_scope(current_user):
         raise HTTPException(status_code=403, detail="Founder access required")
 
     admins = await db.users.find(
@@ -63,8 +72,9 @@ async def list_scoped_admins(current_user: dict = Depends(require_admin)):
     ).to_list(100)
 
     for a in admins:
-        a["admin_scope"] = a.get("admin_scope", "founder")
-        a["scope_label"] = SCOPE_LABELS.get(a["admin_scope"], a["admin_scope"])
+        scopes = normalize_scopes(a.get("admin_scope"))
+        a["admin_scope"] = scopes
+        a["scope_label"] = ", ".join(SCOPE_LABELS.get(s, s) for s in scopes)
 
     return admins
 
@@ -76,11 +86,13 @@ async def create_scoped_admin(
     current_user: dict = Depends(require_admin),
 ):
     """Create a scoped admin account. Founder only."""
-    if current_user.get("admin_scope", "founder") != "founder":
+    if not is_founder_scope(current_user):
         raise HTTPException(status_code=403, detail="Only Founder Admin can create scoped admins")
 
-    if data.admin_scope not in VALID_SCOPES:
-        raise HTTPException(status_code=400, detail=f"Invalid scope. Must be one of: {', '.join(VALID_SCOPES)}")
+    scopes = data.admin_scope if isinstance(data.admin_scope, list) else [data.admin_scope]
+    for s in scopes:
+        if s not in VALID_SCOPES:
+            raise HTTPException(status_code=400, detail=f"Invalid scope '{s}'. Must be one of: {', '.join(VALID_SCOPES)}")
 
     normalized_email = data.email.lower().strip()
     existing = await db.users.find_one({"email": normalized_email}, {"_id": 0, "id": 1})
@@ -99,7 +111,7 @@ async def create_scoped_admin(
         "last_name": data.last_name,
         "password": hashed,
         "role": "admin",
-        "admin_scope": data.admin_scope,
+        "admin_scope": scopes,
         "created_at": now.isoformat(),
         "created_by": current_user["id"],
     }
@@ -113,7 +125,7 @@ async def create_scoped_admin(
         category="user_mgmt",
         resource_type="user",
         resource_id=admin_user["id"],
-        details={"scope": data.admin_scope, "name": full_name},
+        details={"scope": scopes, "name": full_name},
         ip_address=get_client_ip(request),
         severity="critical",
     )
@@ -122,8 +134,8 @@ async def create_scoped_admin(
         "id": admin_user["id"],
         "email": normalized_email,
         "name": full_name,
-        "admin_scope": data.admin_scope,
-        "scope_label": SCOPE_LABELS.get(data.admin_scope, data.admin_scope),
+        "admin_scope": scopes,
+        "scope_label": ", ".join(SCOPE_LABELS.get(s, s) for s in scopes),
     }
 
 
@@ -135,23 +147,26 @@ async def update_scoped_admin(
     current_user: dict = Depends(require_admin),
 ):
     """Update a scoped admin's scope or credentials. Founder only."""
-    if current_user.get("admin_scope", "founder") != "founder":
+    if not is_founder_scope(current_user):
         raise HTTPException(status_code=403, detail="Only Founder Admin can modify scoped admins")
 
     target = await db.users.find_one({"id": admin_id, "role": "admin"}, {"_id": 0})
     if not target:
         raise HTTPException(status_code=404, detail="Admin not found")
 
-    if target.get("admin_scope", "founder") == "founder" and admin_id != current_user["id"]:
+    target_scopes = normalize_scopes(target.get("admin_scope"))
+    if "founder" in target_scopes and admin_id != current_user["id"]:
         raise HTTPException(status_code=403, detail="Cannot modify another Founder Admin")
 
     update = {}
     if data.admin_scope is not None:
-        if data.admin_scope not in VALID_SCOPES:
-            raise HTTPException(status_code=400, detail=f"Invalid scope: {data.admin_scope}")
-        if admin_id == current_user["id"] and data.admin_scope != "founder":
+        new_scopes = data.admin_scope if isinstance(data.admin_scope, list) else [data.admin_scope]
+        for s in new_scopes:
+            if s not in VALID_SCOPES:
+                raise HTTPException(status_code=400, detail=f"Invalid scope: {s}")
+        if admin_id == current_user["id"] and "founder" not in new_scopes:
             raise HTTPException(status_code=400, detail="Cannot demote yourself from Founder")
-        update["admin_scope"] = data.admin_scope
+        update["admin_scope"] = new_scopes
 
     if data.first_name is not None:
         update["first_name"] = data.first_name
@@ -192,7 +207,7 @@ async def delete_scoped_admin(
     current_user: dict = Depends(require_admin),
 ):
     """Delete a scoped admin. Founder only. Cannot delete self or other founders."""
-    if current_user.get("admin_scope", "founder") != "founder":
+    if not is_founder_scope(current_user):
         raise HTTPException(status_code=403, detail="Only Founder Admin can delete scoped admins")
 
     if admin_id == current_user["id"]:
@@ -202,7 +217,8 @@ async def delete_scoped_admin(
     if not target:
         raise HTTPException(status_code=404, detail="Admin not found")
 
-    if target.get("admin_scope", "founder") == "founder":
+    target_scopes = normalize_scopes(target.get("admin_scope"))
+    if "founder" in target_scopes:
         raise HTTPException(status_code=403, detail="Cannot delete a Founder Admin")
 
     await db.users.delete_one({"id": admin_id})

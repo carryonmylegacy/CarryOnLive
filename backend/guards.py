@@ -142,13 +142,14 @@ async def require_staff(current_user: dict = Depends(get_current_user)):
 def require_admin_scope(current_user: dict, allowed_scopes: list[str]):
     """Check if admin has one of the allowed scopes.
     Founder ('founder' scope) always passes.
-    Use for scoped admin access control."""
+    Supports both legacy string and new array admin_scope format."""
     if current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
-    scope = current_user.get("admin_scope", "founder")
-    if scope == "founder":
+    raw = current_user.get("admin_scope", "founder")
+    user_scopes = raw if isinstance(raw, list) else [raw] if raw else ["founder"]
+    if "founder" in user_scopes:
         return  # Founder is God — always passes
-    if scope not in allowed_scopes:
+    if not any(s in allowed_scopes for s in user_scopes):
         raise HTTPException(
             status_code=403,
             detail=f"This section requires one of: {', '.join(allowed_scopes)} access",
@@ -167,6 +168,13 @@ def check_founder_role(user: dict):
     Raises 403 if user is not admin."""
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Founder access required")
+
+
+def is_founder_scope(user: dict) -> bool:
+    """Check if admin has founder scope. Handles both string and array formats."""
+    raw = user.get("admin_scope", "founder")
+    scopes = raw if isinstance(raw, list) else [raw] if raw else ["founder"]
+    return "founder" in scopes
 
 
 def check_manager_or_admin(user: dict):

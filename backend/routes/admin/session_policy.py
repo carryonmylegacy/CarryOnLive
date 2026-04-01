@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from config import db
-from guards import require_admin
+from guards import require_admin, is_founder_scope
 
 router = APIRouter()
 
@@ -33,7 +33,7 @@ class SessionPolicyUpdate(BaseModel):
 @router.get("/admin/session-policy")
 async def get_session_policies(current_user: dict = Depends(require_admin)):
     """Get session timeout policies for all role types. Founder only."""
-    if current_user.get("admin_scope", "founder") != "founder":
+    if not is_founder_scope(current_user):
         raise HTTPException(status_code=403, detail="Founder access required")
 
     doc = await db.session_policies.find_one({"_id": "global"}, {"_id": 0})
@@ -60,7 +60,7 @@ async def update_session_policy(
     current_user: dict = Depends(require_admin),
 ):
     """Update session timeout policy for a specific role type. Founder only."""
-    if current_user.get("admin_scope", "founder") != "founder":
+    if not is_founder_scope(current_user):
         raise HTTPException(status_code=403, detail="Founder access required")
 
     if data.role_type not in DEFAULT_POLICIES:

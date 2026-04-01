@@ -27,6 +27,12 @@ ACCOUNT_TYPE_LABELS = {
 }
 
 
+def _require_founder(user):
+    from guards import is_founder_scope
+    if not is_founder_scope(user):
+        raise HTTPException(status_code=403, detail="Founder access required")
+
+
 class IPWhitelistUpdate(BaseModel):
     account_type: str
     enabled: bool
@@ -37,8 +43,7 @@ class IPWhitelistUpdate(BaseModel):
 @router.get("/admin/ip-whitelist")
 async def get_ip_whitelist(current_user: dict = Depends(require_admin)):
     """Get IP whitelist settings for all account types. Founder only."""
-    if current_user.get("admin_scope", "founder") != "founder":
-        raise HTTPException(status_code=403, detail="Founder access required")
+    _require_founder(current_user)
 
     configs = []
     for at in ACCOUNT_TYPES:
@@ -64,8 +69,7 @@ async def update_ip_whitelist(
     current_user: dict = Depends(require_admin),
 ):
     """Update IP whitelist for a specific account type. Founder only."""
-    if current_user.get("admin_scope", "founder") != "founder":
-        raise HTTPException(status_code=403, detail="Founder access required")
+    _require_founder(current_user)
 
     if data.account_type not in ACCOUNT_TYPES:
         raise HTTPException(status_code=400, detail=f"Invalid account type: {data.account_type}")

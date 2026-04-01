@@ -21,8 +21,8 @@ export const ScopedAdminsTab = ({ getAuthHeaders }) => {
   const [showCreate, setShowCreate] = useState(false);
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ email: '', password: '', first_name: '', last_name: '', admin_scope: 'finance' });
-  const [editForm, setEditForm] = useState({ admin_scope: '', first_name: '', last_name: '', password: '' });
+  const [form, setForm] = useState({ email: '', password: '', first_name: '', last_name: '', admin_scope: ['finance'] });
+  const [editForm, setEditForm] = useState({ admin_scope: [], first_name: '', last_name: '', password: '' });
 
   const headers = getAuthHeaders()?.headers || {};
 
@@ -41,6 +41,10 @@ export const ScopedAdminsTab = ({ getAuthHeaders }) => {
       toast.error('Email, password, and first name are required');
       return;
     }
+    if (!form.admin_scope || form.admin_scope.length === 0) {
+      toast.error('Select at least one admin scope');
+      return;
+    }
     setSaving(true);
     try {
       await axios.post(`${API_URL}/admin/scoped-admins`, form, {
@@ -48,7 +52,7 @@ export const ScopedAdminsTab = ({ getAuthHeaders }) => {
       });
       toast.success('Admin created');
       setShowCreate(false);
-      setForm({ email: '', password: '', first_name: '', last_name: '', admin_scope: 'finance' });
+      setForm({ email: '', password: '', first_name: '', last_name: '', admin_scope: ['finance'] });
       fetch_();
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed to create admin'); }
     finally { setSaving(false); }
@@ -109,23 +113,33 @@ export const ScopedAdminsTab = ({ getAuthHeaders }) => {
             <Input value={form.password} onChange={e => setForm({...form, password: e.target.value})}
               placeholder="Password" type="password" className="text-sm" data-testid="admin-password" />
             <div>
-              <p className="text-xs text-[var(--t5)] mb-2">Admin Scope:</p>
+              <p className="text-xs text-[var(--t5)] mb-2">Admin Scope(s) — select one or more:</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {SCOPE_OPTIONS.filter(s => s.value !== 'founder').map(s => (
-                  <button key={s.value}
-                    onClick={() => setForm({...form, admin_scope: s.value})}
-                    className={`p-2.5 rounded-xl text-left transition-all text-xs ${
-                      form.admin_scope === s.value
-                        ? 'border-2'
-                        : 'bg-[var(--s)] border border-[var(--b)]'
-                    }`}
-                    style={form.admin_scope === s.value ? { borderColor: s.color, background: `${s.color}10` } : {}}
-                    data-testid={`scope-option-${s.value}`}
-                  >
-                    <span className="font-bold text-[var(--t)]">{s.label}</span>
-                    <p className="text-[var(--t5)] text-[11px] mt-0.5">{s.desc}</p>
-                  </button>
-                ))}
+                {SCOPE_OPTIONS.filter(s => s.value !== 'founder').map(s => {
+                  const selected = (form.admin_scope || []).includes(s.value);
+                  return (
+                    <button key={s.value}
+                      onClick={() => {
+                        const scopes = form.admin_scope || [];
+                        setForm({...form, admin_scope: selected ? scopes.filter(v => v !== s.value) : [...scopes, s.value]});
+                      }}
+                      className={`p-2.5 rounded-xl text-left transition-all text-xs ${
+                        selected ? 'border-2' : 'bg-[var(--s)] border border-[var(--b)]'
+                      }`}
+                      style={selected ? { borderColor: s.color, background: `${s.color}10` } : {}}
+                      data-testid={`scope-option-${s.value}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${selected ? '' : 'border-[var(--t5)]'}`}
+                          style={selected ? { borderColor: s.color, background: s.color } : {}}>
+                          {selected && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                        </div>
+                        <span className="font-bold text-[var(--t)]">{s.label}</span>
+                      </div>
+                      <p className="text-[var(--t5)] text-[11px] mt-0.5 ml-6">{s.desc}</p>
+                    </button>
+                  );
+                })}
               </div>
             </div>
             <div className="flex gap-2 justify-end">
@@ -139,28 +153,35 @@ export const ScopedAdminsTab = ({ getAuthHeaders }) => {
       )}
 
       {admins.map(admin => {
-        const scope = SCOPE_OPTIONS.find(s => s.value === admin.admin_scope) || SCOPE_OPTIONS[0];
+        const scopes = Array.isArray(admin.admin_scope) ? admin.admin_scope : [admin.admin_scope || 'founder'];
+        const primaryScope = SCOPE_OPTIONS.find(s => scopes.includes(s.value)) || SCOPE_OPTIONS[0];
+        const isFounderAdmin = scopes.includes('founder');
         const isEditing = editId === admin.id;
         return (
           <Card key={admin.id} className="glass-card" data-testid={`admin-card-${admin.id}`}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${scope.color}15`, border: `1px solid ${scope.color}30` }}>
-                    {scope.value === 'founder' ? <Shield className="w-4 h-4" style={{ color: scope.color }} /> : <UserCog className="w-4 h-4" style={{ color: scope.color }} />}
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${primaryScope.color}15`, border: `1px solid ${primaryScope.color}30` }}>
+                    {isFounderAdmin ? <Shield className="w-4 h-4" style={{ color: primaryScope.color }} /> : <UserCog className="w-4 h-4" style={{ color: primaryScope.color }} />}
                   </div>
                   <div>
                     <p className="text-sm font-bold text-[var(--t)]">{admin.name}</p>
                     <p className="text-[11px] text-[var(--t5)]">{admin.email}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] px-2 py-1 rounded-full font-bold" style={{ background: `${scope.color}15`, color: scope.color }}>
-                    {scope.label}
-                  </span>
-                  {scope.value !== 'founder' && (
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  {scopes.map(s => {
+                    const sc = SCOPE_OPTIONS.find(o => o.value === s) || { label: s, color: '#888' };
+                    return (
+                      <span key={s} className="text-[11px] px-2 py-1 rounded-full font-bold" style={{ background: `${sc.color}15`, color: sc.color }}>
+                        {sc.label}
+                      </span>
+                    );
+                  })}
+                  {!isFounderAdmin && (
                     <>
-                      <button onClick={() => { setEditId(isEditing ? null : admin.id); setEditForm({ admin_scope: admin.admin_scope, first_name: admin.first_name || '', last_name: admin.last_name || '', password: '' }); }}
+                      <button onClick={() => { setEditId(isEditing ? null : admin.id); setEditForm({ admin_scope: scopes, first_name: admin.first_name || '', last_name: admin.last_name || '', password: '' }); }}
                         className="p-1.5 rounded-lg text-[var(--t5)] hover:text-[var(--t3)] transition-colors" data-testid={`edit-admin-${admin.id}`}>
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
@@ -179,10 +200,28 @@ export const ScopedAdminsTab = ({ getAuthHeaders }) => {
                     <Input value={editForm.last_name} onChange={e => setEditForm({...editForm, last_name: e.target.value})} placeholder="Last Name" className="text-xs" />
                   </div>
                   <Input value={editForm.password} onChange={e => setEditForm({...editForm, password: e.target.value})} placeholder="New password (leave blank to keep)" type="password" className="text-xs" />
-                  <select value={editForm.admin_scope} onChange={e => setEditForm({...editForm, admin_scope: e.target.value})}
-                    className="w-full px-3 py-2 rounded-lg bg-[var(--bg2)] border border-[var(--b)] text-[var(--t)] text-xs">
-                    {SCOPE_OPTIONS.filter(s => s.value !== 'founder').map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                  </select>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {SCOPE_OPTIONS.filter(s => s.value !== 'founder').map(s => {
+                      const checked = (editForm.admin_scope || []).includes(s.value);
+                      return (
+                        <button key={s.value}
+                          onClick={() => {
+                            const cur = editForm.admin_scope || [];
+                            setEditForm({...editForm, admin_scope: checked ? cur.filter(v => v !== s.value) : [...cur, s.value]});
+                          }}
+                          className={`p-2 rounded-lg text-left text-[11px] transition-all ${checked ? 'border' : 'bg-[var(--s)] border border-[var(--b)]'}`}
+                          style={checked ? { borderColor: s.color, background: `${s.color}10` } : {}}>
+                          <div className="flex items-center gap-1.5">
+                            <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center flex-shrink-0`}
+                              style={checked ? { borderColor: s.color, background: s.color } : { borderColor: 'var(--t5)' }}>
+                              {checked && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                            </div>
+                            <span className="font-bold text-[var(--t)]">{s.label}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                   <div className="flex gap-2 justify-end">
                     <Button onClick={() => setEditId(null)} variant="ghost" size="sm" className="text-xs">Cancel</Button>
                     <Button onClick={() => handleUpdate(admin.id)} disabled={saving} size="sm" className="gold-button text-xs">Save</Button>
