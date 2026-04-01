@@ -61,6 +61,7 @@ import { TeamChatTab } from '../components/admin/TeamChatTab';
 import { QueueAlertsPanel } from '../components/admin/QueueAlertsPanel';
 import { ShiftScheduleTab } from '../components/admin/ShiftScheduleTab';
 import { TrainingTrackerTab } from '../components/admin/TrainingTrackerTab';
+import { SectionMembersTab } from '../components/admin/SectionMembersTab';
 import { API_URL } from '../config';
 
 // ── Section-based tab organization ────────────────────────
@@ -81,6 +82,7 @@ const FOUNDER_SECTIONS = [
       { key: 'ops-dashboard', label: 'Ops Dashboard', icon: Activity, path: '/admin/ops-dashboard' },
       { key: 'canned-responses', label: 'Templates', icon: MessageSquare, path: '/admin/canned-responses' },
       { key: 'team-chat', label: 'Team Chat', icon: MessageSquare, path: '/admin/team-chat' },
+      { key: 'ops-members', label: 'Members', icon: UserCog, path: '/admin/ops-members' },
     ],
   },
   {
@@ -92,6 +94,7 @@ const FOUNDER_SECTIONS = [
       { key: 'launch', label: 'Launch', icon: TrendingUp, path: '/admin/launch' },
       { key: 'grace-periods', label: 'Grace Periods', icon: Hourglass, path: '/admin/grace-periods' },
       { key: 'trials', label: 'Trials', icon: Clock, path: '/admin/trials' },
+      { key: 'finance-members', label: 'Members', icon: UserCog, path: '/admin/finance-members' },
     ],
   },
   {
@@ -103,6 +106,7 @@ const FOUNDER_SECTIONS = [
       { key: 'site-content', label: 'Site Content', icon: Film, path: '/admin/site-content' },
       { key: 'founder-emails', label: 'Emails', icon: Mail, path: '/admin/founder-emails' },
       { key: 'announcements', label: 'Announcements', icon: Megaphone, path: '/admin/announcements' },
+      { key: 'marketing-members', label: 'Members', icon: UserCog, path: '/admin/marketing-members' },
     ],
   },
   {
@@ -112,6 +116,7 @@ const FOUNDER_SECTIONS = [
       { key: 'audit', label: 'Audit Trail', icon: Shield, path: '/admin/audit' },
       { key: 'estate-health', label: 'Estate Health', icon: HeartPulse, path: '/admin/estate-health' },
       { key: 'activity', label: 'Activity Log', icon: Activity, path: '/admin/activity' },
+      { key: 'compliance-members', label: 'Members', icon: UserCog, path: '/admin/compliance-members' },
     ],
   },
   {
@@ -126,6 +131,7 @@ const FOUNDER_SECTIONS = [
       { key: 'performance', label: 'Performance', icon: BarChart3, path: '/admin/performance' },
       { key: 'shifts', label: 'Schedules', icon: Calendar, path: '/admin/shifts' },
       { key: 'training', label: 'Training', icon: GraduationCap, path: '/admin/training' },
+      { key: 'platform-members', label: 'Members', icon: UserCog, path: '/admin/platform-members' },
     ],
   },
   {
@@ -208,6 +214,11 @@ const PATH_TO_TAB = {
   '/admin/session-policy': 'session-policy',
   '/admin/shifts': 'shifts',
   '/admin/training': 'training',
+  '/admin/ops-members': 'ops-members',
+  '/admin/finance-members': 'finance-members',
+  '/admin/marketing-members': 'marketing-members',
+  '/admin/compliance-members': 'compliance-members',
+  '/admin/platform-members': 'platform-members',
   // Operations portal paths
   '/ops/transition': 'transition',
   '/ops/dts': 'dts',
@@ -527,6 +538,12 @@ const AdminPage = ({ operatorMode = false }) => {
         {effectiveTab === 'session-policy' && <SessionPolicyTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'shifts' && <ShiftScheduleTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'training' && <TrainingTrackerTab getAuthHeaders={getAuthHeaders} />}
+        {/* Section Members tabs */}
+        {effectiveTab === 'ops-members' && <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['ops_manager', 'ops_team']} sectionLabel="Operations" />}
+        {effectiveTab === 'finance-members' && <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['finance']} sectionLabel="Finance" />}
+        {effectiveTab === 'marketing-members' && <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['marketing']} sectionLabel="Marketing" />}
+        {effectiveTab === 'compliance-members' && <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['compliance']} sectionLabel="Compliance" />}
+        {effectiveTab === 'platform-members' && <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['platform_health']} sectionLabel="Platform" />}
         {/* Operator-specific tabs */}
         {effectiveTab === 'my-activity' && operatorMode && <MyActivityTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'search' && operatorMode && <QuickSearchTab getAuthHeaders={getAuthHeaders} />}

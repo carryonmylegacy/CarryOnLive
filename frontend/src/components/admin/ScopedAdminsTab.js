@@ -13,6 +13,8 @@ const SCOPE_OPTIONS = [
   { value: 'compliance', label: 'Compliance Admin', desc: 'Audit Trail, Security, Estate Health', color: '#3B82F6' },
   { value: 'marketing', label: 'Marketing Admin', desc: 'Funnel, Beta Testing, Site Content, Emails, Invites', color: '#B794F6' },
   { value: 'platform_health', label: 'Platform Health Admin', desc: 'System Health, Operators, Integrations, Announcements', color: '#F59E0B' },
+  { value: 'ops_manager', label: 'Operations Manager', desc: 'Full operations access — team, dashboard, scheduling', color: '#E87040' },
+  { value: 'ops_team', label: 'Operations Team Member', desc: 'Transitions, support, verifications, shift work', color: '#64B5F6' },
 ];
 
 export const ScopedAdminsTab = ({ getAuthHeaders }) => {
@@ -47,10 +49,10 @@ export const ScopedAdminsTab = ({ getAuthHeaders }) => {
     }
     setSaving(true);
     try {
-      await axios.post(`${API_URL}/admin/scoped-admins`, form, {
+      const res = await axios.post(`${API_URL}/admin/scoped-admins`, form, {
         headers: { ...headers, 'Content-Type': 'application/json' },
       });
-      toast.success('Admin created');
+      toast.success(res.data.merged ? 'Scopes merged into existing account' : 'Admin created');
       setShowCreate(false);
       setForm({ email: '', password: '', first_name: '', last_name: '', admin_scope: ['finance'] });
       fetch_();
@@ -167,7 +169,12 @@ export const ScopedAdminsTab = ({ getAuthHeaders }) => {
                   </div>
                   <div>
                     <p className="text-sm font-bold text-[var(--t)]">{admin.name}</p>
-                    <p className="text-[11px] text-[var(--t5)]">{admin.email}</p>
+                    <p className="text-[11px] text-[var(--t5)]">
+                      {admin.email}
+                      {admin.role === 'operator' && (
+                        <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}>OPERATOR</span>
+                      )}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap justify-end">

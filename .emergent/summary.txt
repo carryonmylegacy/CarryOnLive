@@ -1,24 +1,23 @@
 <analysis>**original_problem_statement**: 
-The user requested a massive structural overhaul of the platform's administrative controls.
-PRODUCT REQUIREMENTS:
-1. **Multi-Admin Scoped Access**: Create distinct admin roles (Finance, Marketing, Compliance, Platform Health) while ensuring the Founder Admin retains absolute (God) control over everything.
-2. **IP Whitelisting**: Implement per-account, Founder-controlled IP restrictions for admin logins.
-3. **Escalation Management**: Allow Managers to resolve issues within their scope, but grant Founder Admin complete visibility and veto/undo power over all escalations.
-4. **Dynamic Paywall Feature Gates**: Ensure that when the Founder toggles features on/off in the Subs tab, the subscription wall (for both benefactors and beneficiaries) instantly updates its feature list to reflect those changes. 
-5. **Admin Portal Reorganization**: Group the myriad of Founder controls into logical domain sections (Operations, Finance, Marketing, Compliance, Platform).
-6. **Real-time Queue Alerts**: Implement WebSocket push notifications for managers when support tickets or tasks breach SLA deadlines.
-7. **Dev Switcher Enhancements**: Ensure the Founder Admin can switch into and preview every type of portal (Benefactor, Beneficiary, etc.).
+The user requested the implementation of Phase 2 (Admin session inactivity timeout, queue age alerts UI, internal messaging/team chat) and Phase 3 (Shift scheduling, training completion tracker, mobile-optimized ops view) of the admin platform overhaul.
+Subsequent requests included:
+1. Adding Shift Swap functionality for operators.
+2. A comprehensive pressure test and backend refactoring (DRY cleanup).
+3. Ensuring Scope Previews (Finance, Compliance, etc.) show up in the Portal Switcher when clicking the logo, and allowing the Founder to toggle visibility of these portals via the Dev Switcher tab.
+4. Correcting a bug where the portal switcher changes weren't propagating to the Mobile viewport ().
+5. Adjusting the Light Mode and Dark Mode CSS variables to lighten dark mode, darken light mode, and improve glass-card contrast. 
+6. Changing  logic so a single admin can hold multiple scopes simultaneously (e.g., ).
 
 **User's preferred language**: English (INSTRUCT next agent to respond in English only)
 
 **what currently exists?** 
-A production-ready React/FastAPI/MongoDB estate planning application. It features a highly structured, SOC 2-compliant backend with robust auth, billing, and notification services. The Admin portal has just undergone a major restructuring into 6 distinct organizational tabs (Operations, Finance, Marketing, Compliance, Platform, and Dev Switcher), enforcing scoped access based on . Real-time WebSocket architecture is established. The codebase strictly adheres to an internal 60/60 housekeeping validation suite and is 100% ruff-compliant.
+A heavily fortified, SOC 2-compliant, multi-role full-stack application (React, FastAPI, MongoDB). It features highly complex administrative controls, real-time WebSockets, shift scheduling, internal team chat, and a sophisticated Dev Switcher that allows the Founder to simulate any app scope (Benefactor, Finance Admin, Operations, etc.). The codebase strictly adheres to an internal 60/60 housekeeping validation suite and is 100% ruff-compliant. 
 
 **Last working item**: 
-    - Last item agent was working: Adding Real-Time WebSocket Notifications () with a background SLA checker for support queues, and configuring the Dev Switcher to utilize  to simulate viewing the portal from any user's perspective.
+    - Last item agent was working: Converting the  property from a single string to an array (allowing multiple admin roles per user) and updating the  UI to use multi-select checkboxes. 
     - Status: COMPLETED
     - Agent Testing Done: Y
-    - Which testing method agent to use? testing_agent_v3_fork (Report:  showed 100% pass rate)
+    - Which testing method agent to use? manual testing by python scripts/curl, testing_agent_v3_fork (used heavily prior for full platform pressure testing).
     - User Testing Done: N
 
 **All Pending/In progress Issue list**: 
@@ -48,40 +47,45 @@ A production-ready React/FastAPI/MongoDB estate planning application. It feature
 
 **Upcoming and Future Tasks**
     Upcoming Tasks:
-    - 🔴 (P0) Google Play Store Launch: User/CoS needs to execute the operational steps outlined in  (create Play account, generate keystore, upload to CodeMagic). No code changes required.
-    - 🟡 (P1) Share Extension Setup: Wire up  for iOS ().
+    - 🔴 (P0) Google Play Store Launch: User/CoS needs to execute operational steps in . No code changes required.
+    - 🟡 (P1) Share Extension Setup: Wire up iOS Extension ().
     - 🟡 (P1) iOS Live Updates (Capgo): Set up over-the-air updates (Post App Store approval).
     Future Tasks:
-    - 🟢 (P2) Readiness Scoring Policy Page: Create an informational page explaining how the estate readiness score is calculated.
+    - 🟢 (P2) Readiness Scoring Policy Page: Informational page explaining how the estate readiness score is calculated.
     - 🟢 (P2) Scalability Enhancements.
 
 **Completed work in this session**
-- Multi-Admin Scoped Access (DONE)
-- IP Whitelisting for Admin Logins (DONE)
-- Escalation Resolution and Founder Veto (DONE)
-- Dynamic Feature Gates on Paywalls (DONE)
-- Admin Portal Reorganization (Operations, Finance, Marketing, Compliance, Platform) (DONE)
-- Real-Time WebSocket SLA Alerts (DONE)
-- Dev Switcher Cross-Portal Preview (DONE)
+- Phase 2: Admin session inactivity timeouts, WebSocket Queue alerts UI, Internal Team Chat (DONE)
+- Phase 3: Shift Scheduling, Training Completion Tracker, Mobile-Optimized Ops View (DONE)
+- Shift Swap requests (Approval/Denial flows) (DONE)
+- Refactoring: DRY violation fixes in backend API guards ( deduplication) (DONE)
+- Portal Switcher Visibility Toggles (Dev Switcher UI to dictate what appears in navigation) (DONE)
+- Desktop/Mobile layout parity for Portal Switcher dropdown (DONE)
+- CSS Color adjustments (Lighter Dark Mode, Darker Light Mode, enhanced glass-card shadows) (DONE)
+- Multi-Scope Admin roles (Array-based ) (DONE)
 
 **Earlier issues found/mentioned but not fixed**
-- None.
+- None. All user constraints and bugs raised were addressed and verified.
 
 **Known issue recurrence from previous fork**
   - Issue recurrence in previous fork: Apple IAP block / Twilio block.
-  - Recurrence count: 11
+  - Recurrence count: 12
   - Status: BLOCKED
 
 **Code Architecture**
-
+require_staffis_founder_scope
 
 **Key Technical Concepts**
-- **Admin Scope Authority:** The JWT payload and  model now include . Access to certain backend endpoints and frontend admin tabs are gated conditionally based on this scope (e.g., 'founder', 'finance', 'compliance').
-- **FastAPI WebSockets:** Used for instantaneous delivery of SLA breach alerts to managers without frontend polling. Managed via an active background task in  lifespan context.
-- **Dynamic Paywalls:**  fetches live feature gating states and dynamically builds the checkmarks displayed on the pricing tiers based on the Founder's toggles.
+- **Multi-Scope Authority**: The  is now an array (). Checking scopes requires intersection checks rather than strict string matching. The  helper in  gracefully handles both string and list evaluations to maintain backward compatibility.
+- **Desktop vs. Mobile Rendering Parity**: The application relies heavily on  for Desktop and  for mobile layouts. Updates to global navigation flows (like the Portal Switcher) must be explicitly implemented in both files.
+- **Glass-Card CSS**: The application UI runs on extensive variable-based CSS definitions (, ) paired with  classes to produce an upscale frosted appearance. These were tweaked to provide higher contrast.
 
 **key DB schema**
-  - Conceptual extensions inside existing user context:  and .
+  - :  field modified from string to list of strings.
+  -  & : Channels and messages for the internal ops chat.
+  -  & : Shift calendaring and operator swap lifecycle tracking.
+  -  & : Internal ops training tracking.
+  - : Added  dictionary.
 
 **changes in tech stack**
   - None
@@ -93,33 +97,43 @@ A production-ready React/FastAPI/MongoDB estate planning application. It feature
   - 
   - 
   - 
+  - 
 
 **Areas that need refactoring**: 
-  - None. Codebase perfectly passes all 60 housekeeping checks and python ruff linting.
+  - None. An active codebase refactor was performed to remove inline redundant dependencies ( definitions). 60/60 bash validations pass perfectly.
 
 **key api endpoints**
-  -  (WebSocket)
-  - 
-  - 
-  - 
+  -  (Now includes )
+  -  (Now accepts arrays for )
+  -  
+  -  (Returns  as a list)
 
 **Critical Info for New Agent**
-- **Validation Mandate:** You MUST run  (or equivalent standard bash check) and All checks passed! before finishing ANY task. If the codebase fails these checks, fix the errors until it is 100% clean. The user enforces a ZERO TOLERANCE: Perfect Code Every Push policy.
-- **Founder Identity:** Only the Founder Admin retains global write access and veto abilities across the entire platform. Other administrative roles (finance, marketing, etc.) are heavily siloed.
+- **Array-Based Scopes**: Remember that  is now an Array. Do not use strict equality (). Use the helper functions in  () or properly check arrays.
+- **Zero Tolerance Policy**: The codebase requires running  and All checks passed! before marking tasks as complete. No exceptions.
+- **Navigation Parity**: Any changes requested to the Top Bar, Header, or Sidebar must always be audited in both  and .
 
 **documents and test reports created in this job**
-  -  (Updated)
-  -  (100% Pass)
-  -  (Verified, no changes required)
+  - 
+  - 
+  - 
+  - 
 
 **Last 10 User Messages and any pending HUMAN messages** 
-1. **User**: Asked for an audit of platform controls for Admin/Ops levels and recommendations.
-2. **Agent**: Examined guards, models, routes, and admin components. Proposed recommendations.
-3. **User**: Provided strict requirements for the implementation (IP whitelisting, Admin Scopes, Founder Veto over managers, live updates on the Paywall based on feature gates, Reorganizing the Admin portal, and preserving extreme caution for live platform safety).
-4. **Agent**: Implemented Batch 1 (API routing, frontend portal redesign, paywall feature map, escalation vetoes). Tested via  with 100% pass.
-5. **Agent**: Asked if user wanted WebSocket notifications for queue SLA alerts.
-6. **User**: YES, ABSOLUTELY! and requested ensuring the Dev Switcher works for every portal type (Founder only). Instructed agent to run housekeeping/ruff, push to GitHub, and prep for fork.
-7. **Agent**: Implemented WebSocket routes, SLA lifespan checks, updated Dev Switcher via , ran housekeeping scripts, fixed minor warnings, verified 60/60 checks, and successfully called finish.
+1. **User**: Added shift swap request idea.
+2. **Agent**: Implemented shift swap feature and verified backend/frontend.
+3. **User**: Requested comprehensive pressure testing on ops/admin platforms and refactoring for efficiency.
+4. **Agent**: Ran  across all 37 tabs and 47 routes (100% pass), then consolidated duplicated backend route protections into .
+5. **User**: Noticed new scopes weren't showing up in the logo portal switcher dropdown.
+6. **Agent**: Added scope previews into the  dropdown menu.
+7. **User**: Asked if they could toggle portal switcher items on/off via the Dev Switcher tab.
+8. **Agent**: Added visibility toggles to  and wired them to the sidebar config.
+9. **User**: Mentioned the portals were STILL not visible when tapping the logo.
+10. **Agent**: Identified the issue was on Mobile. Replicated sidebar portal switcher logic to .
+11. **User**: Asked to tweak Light Mode and Dark Mode backgrounds and card contrast globally, and to fix spacing above the Dashboard Welcome title.
+12. **Agent**: Tuned  variables globally and adjusted padding in . 
+13. **User**: I want the ability for one person to have multiple admin accounts assigned or authorized to them. (Changing admin scopes to arrays).
+14. **Agent**: Altered schema, routes, guards, and UI to support lists for , passing 60/60 checks.
 
 **Project Health Check:**
   - Broken: None
@@ -135,13 +149,13 @@ A production-ready React/FastAPI/MongoDB estate planning application. It feature
   - YouTube (Iframe Embeds) — dynamically managed via DB 
 
 **Testing status**
-  - Testing agent used after significant changes: YES ()
+  - Testing agent used after significant changes: YES (, , )
   - Troubleshoot agent used after agent stuck in loop: NO
-  - Test files created: None
+  - Test files created: 
   - Known regressions: None
 
 **Credentials to test flow:**
   - App Admin:  / 
 
 **What agent forgot to execute**
-Nothing. The agent successfully implemented the massive architecture split, dynamic feature sync on paywalls, WebSocket capabilities, and Dev Switcher upgrades with immaculate linting and check coverage.</analysis>
+Nothing. The agent successfully addressed the massive Phase 2 and 3 additions, refactored the backend successfully without regressions, navigated subtle layout bugs on mobile vs. desktop, and transitioned the core authorization framework to support overlapping array scopes seamlessly.</analysis>

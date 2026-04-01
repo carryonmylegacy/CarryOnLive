@@ -4,7 +4,7 @@ import os
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://sla-alerts.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://admin-suite-phase3.preview.emergentagent.com").rstrip("/")
 
 # Test credentials
 TEST_EMAIL = "fulltest@test.com"
