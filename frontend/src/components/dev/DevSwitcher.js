@@ -189,7 +189,7 @@ const DevSwitcher = () => {
                 <Settings className="w-3 h-3" />
                 Not Configured
               </div>
-              <div style={{ fontSize: 10, color: '#94A3B8' }}>
+              <div style={{ fontSize: 11, color: '#94A3B8' }}>
                 Go to Admin → Dev Switcher to assign benefactor/beneficiary accounts for quick switching.
               </div>
             </div>
@@ -234,16 +234,16 @@ const DevSwitcher = () => {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: isActive ? '#F0C95C' : '#E2E8F0' }}>{acc.label}</div>
-                    <div style={{ fontSize: 10, color: '#64748B' }}>{acc.email || (acc.role === 'admin' ? 'Restore admin session' : 'Not configured')}</div>
+                    <div style={{ fontSize: 11, color: '#64748B' }}>{acc.email || (acc.role === 'admin' ? 'Restore admin session' : 'Not configured')}</div>
                   </div>
-                  {isActive && <span style={{ fontSize: 10, color: '#F0C95C' }}>Active</span>}
+                  {isActive && <span style={{ fontSize: 11, color: '#F0C95C' }}>Active</span>}
                   {switching === acc.role && <div className="w-4 h-4 border-2 border-[#F0C95C] border-t-transparent rounded-full animate-spin" />}
                 </div>
               );
             })}
           </div>
 
-          <div style={{ marginTop: 10, fontSize: 10, color: '#525C72', textAlign: 'center' }}>
+          <div style={{ marginTop: 10, fontSize: 11, color: '#525C72', textAlign: 'center' }}>
             No OTP required · Instant switch
           </div>
         </div>

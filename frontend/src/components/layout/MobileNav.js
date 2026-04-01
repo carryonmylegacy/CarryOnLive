@@ -136,26 +136,26 @@ const DebugValues = () => {
 
   return (
     <div>
-      <div style={{ fontSize: '10px', color: '#E0AD2B', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '8px' }}>Top Spacing</div>
+      <div style={{ fontSize: '11px', color: '#E0AD2B', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '8px' }}>Top Spacing</div>
       {row('safe-area-inset-top (CSS)', vals.sat)}
       {row('safe-area-inset-top (measured)', measuredTop, true)}
       {row('Header paddingTop', vals.headerPt)}
       {row('Header total height', vals.headerH + 'px')}
       <div style={{ height: 12 }} />
-      <div style={{ fontSize: '10px', color: '#E0AD2B', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '8px' }}>Bottom Spacing</div>
+      <div style={{ fontSize: '11px', color: '#E0AD2B', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '8px' }}>Bottom Spacing</div>
       {row('safe-area-inset-bottom (CSS)', vals.sab)}
       {row('safe-area-inset-bottom (measured)', measuredBottom, true)}
       {row('Bottom Nav height', vals.bottomNavH + 'px')}
       {row('Bottom Nav paddingBottom', vals.bottomNavPb)}
       <div style={{ height: 12 }} />
-      <div style={{ fontSize: '10px', color: '#E0AD2B', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '8px' }}>Device</div>
+      <div style={{ fontSize: '11px', color: '#E0AD2B', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: '8px' }}>Device</div>
       {row('viewport-fit=cover?', vals.viewportCovers)}
       {row('Native app?', vals.isNativeApp)}
       {row('DPR', vals.dpr)}
       {row('Screen', `${vals.screenW}x${vals.screenH}`)}
       {row('Viewport', `${vals.innerW}x${vals.innerH}`)}
       <div style={{ marginTop: '8px', padding: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px' }}>
-        <span style={{ color: '#aaa', fontSize: '10px', wordBreak: 'break-all' }}>{vals.ua}</span>
+        <span style={{ color: '#aaa', fontSize: '11px', wordBreak: 'break-all' }}>{vals.ua}</span>
       </div>
     </div>
   );
@@ -559,7 +559,7 @@ const MobileNav = () => {
                   {!devConfig?.benefactor?.email && !devConfig?.beneficiary?.email && (
                     <div style={{ padding: 10, background: 'rgba(245,158,11,0.1)', borderRadius: 8, marginBottom: 8, border: '1px dashed rgba(245,158,11,0.3)' }}>
                       <div style={{ fontSize: 11, color: '#F59E0B', marginBottom: 4 }}>Not Configured</div>
-                      <div style={{ fontSize: 10, color: '#94A3B8' }}>Go to Admin → Dev Switcher to assign accounts.</div>
+                      <div style={{ fontSize: 11, color: '#94A3B8' }}>Go to Admin → Dev Switcher to assign accounts.</div>
                     </div>
                   )}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
@@ -593,9 +593,9 @@ const MobileNav = () => {
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 12, fontWeight: 700, color: isActive ? '#F0C95C' : '#E2E8F0' }}>{acc.label}</div>
-                            <div style={{ fontSize: 10, color: '#64748B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{acc.email || (acc.role === 'admin' ? 'Restore admin session' : acc.role === 'ops_view' ? 'View as operator' : 'Not configured')}</div>
+                            <div style={{ fontSize: 11, color: '#64748B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{acc.email || (acc.role === 'admin' ? 'Restore admin session' : acc.role === 'ops_view' ? 'View as operator' : 'Not configured')}</div>
                           </div>
-                          {isActive && <span style={{ fontSize: 10, color: '#F0C95C', flexShrink: 0 }}>Active</span>}
+                          {isActive && <span style={{ fontSize: 11, color: '#F0C95C', flexShrink: 0 }}>Active</span>}
                           {devSwitching === acc.role && <div className="w-4 h-4 border-2 border-[#F0C95C] border-t-transparent rounded-full animate-spin" />}
                         </div>
                       );
@@ -604,7 +604,7 @@ const MobileNav = () => {
                   {/* Admin Scope Preview — mobile */}
                   {user?.role === 'admin' && mobileVisibleScopes.length > 0 && (
                     <div style={{ marginTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10 }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 6, paddingLeft: 2 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 6, paddingLeft: 2 }}>
                         Admin Scope Preview
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -618,7 +618,7 @@ const MobileNav = () => {
                             }}
                             data-testid="mobile-scope-restore-founder"
                           >
-                            <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#d4af37', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#0F1629' }}>F</div>
+                            <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#d4af37', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#0F1629' }}>F</div>
                             <div style={{ fontSize: 11, fontWeight: 700, color: '#d4af37' }}>Restore Founder View</div>
                           </div>
                         )}
@@ -635,12 +635,12 @@ const MobileNav = () => {
                               }}
                               data-testid={`mobile-scope-${sp.scope}`}
                             >
-                              <div style={{ width: 22, height: 22, borderRadius: '50%', background: sp.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'white' }}>{sp.label[0]}</div>
+                              <div style={{ width: 22, height: 22, borderRadius: '50%', background: sp.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'white' }}>{sp.label[0]}</div>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontSize: 11, fontWeight: 700, color: isActive ? sp.color : '#CBD5E1' }}>{sp.label}</div>
-                                <div style={{ fontSize: 9, color: '#525C72' }}>{sp.desc}</div>
+                                <div style={{ fontSize: 11, color: '#525C72' }}>{sp.desc}</div>
                               </div>
-                              {isActive && <span style={{ fontSize: 9, color: sp.color, flexShrink: 0 }}>Active</span>}
+                              {isActive && <span style={{ fontSize: 11, color: sp.color, flexShrink: 0 }}>Active</span>}
                             </div>
                           );
                         })}
@@ -650,7 +650,7 @@ const MobileNav = () => {
                   {/* Operator accounts — at bottom */}
                   {devAccounts.filter(a => a.isOperator).length > 0 && (
                     <div style={{ marginTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10 }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 6, paddingLeft: 2 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 6, paddingLeft: 2 }}>
                         Operator Accounts
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -668,7 +668,7 @@ const MobileNav = () => {
                                 opacity: devSwitching ? 0.5 : 1,
                               }}
                               data-testid={`mobile-dev-switch-${acc.role}`}>
-                              <div style={{ width: 22, height: 22, borderRadius: '50%', background: acc.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'white' }}>{acc.label[0]}</div>
+                              <div style={{ width: 22, height: 22, borderRadius: '50%', background: acc.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'white' }}>{acc.label[0]}</div>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontSize: 11, fontWeight: 600, color: isActive ? '#F0C95C' : '#CBD5E1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{acc.label}</div>
                               </div>
@@ -678,7 +678,7 @@ const MobileNav = () => {
                       </div>
                     </div>
                   )}
-                  <div style={{ marginTop: 8, fontSize: 10, color: '#525C72', textAlign: 'center' }}>No OTP required · Instant switch</div>
+                  <div style={{ marginTop: 8, fontSize: 11, color: '#525C72', textAlign: 'center' }}>No OTP required · Instant switch</div>
                 </div>
               </div>
             </>
@@ -1034,7 +1034,7 @@ const MobileNav = () => {
                             gap: 2,
                           }}>
                             <span className="font-semibold text-sm">My Beneficiary Portal</span>
-                            {beneficiaryEstates.length > 1 && <span style={{ fontSize: 10, opacity: 0.5 }}>{beneficiaryEstates.length} estates</span>}
+                            {beneficiaryEstates.length > 1 && <span style={{ fontSize: 11, opacity: 0.5 }}>{beneficiaryEstates.length} estates</span>}
                           </button>
                         )}
                       </div>

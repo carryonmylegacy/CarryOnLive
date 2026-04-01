@@ -172,7 +172,7 @@ export const ScopedAdminsTab = ({ getAuthHeaders }) => {
                     <p className="text-[11px] text-[var(--t5)]">
                       {admin.email}
                       {admin.role === 'operator' && (
-                        <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}>OPERATOR</span>
+                        <span className="ml-1.5 px-1.5 py-0.5 rounded text-[11px] font-bold" style={{ background: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}>OPERATOR</span>
                       )}
                     </p>
                   </div>

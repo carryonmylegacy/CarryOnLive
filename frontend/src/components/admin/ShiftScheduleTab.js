@@ -283,7 +283,7 @@ export const ShiftScheduleTab = ({ getAuthHeaders }) => {
               <div className="flex items-center gap-2">
                 <ArrowLeftRight className="w-4 h-4 text-[#B794F6]" />
                 Pending Swap Requests
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold text-white bg-[#B794F6] leading-none">
+                <span className="px-1.5 py-0.5 rounded-full text-[11px] font-bold text-white bg-[#B794F6] leading-none">
                   {swapRequests.length}
                 </span>
               </div>
@@ -361,10 +361,10 @@ export const ShiftScheduleTab = ({ getAuthHeaders }) => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-bold text-[var(--t)]">{shift.operator_name}</span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded font-bold" style={{ color: shiftStyle.text, background: shiftStyle.bg }}>
+                      <span className="text-[11px] px-1.5 py-0.5 rounded font-bold" style={{ color: shiftStyle.text, background: shiftStyle.bg }}>
                         {shiftStyle.label}
                       </span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ color: statusStyle.color, background: `${statusStyle.color}15` }}>
+                      <span className="text-[11px] px-1.5 py-0.5 rounded" style={{ color: statusStyle.color, background: `${statusStyle.color}15` }}>
                         {statusStyle.label}
                       </span>
                     </div>

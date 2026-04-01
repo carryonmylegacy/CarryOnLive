@@ -478,7 +478,7 @@ const Sidebar = () => {
                   <div style={{ fontSize: 11, color: '#F59E0B', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <Settings className="w-3 h-3" /> Not Configured
                   </div>
-                  <div style={{ fontSize: 10, color: '#94A3B8' }}>
+                  <div style={{ fontSize: 11, color: '#94A3B8' }}>
                     Go to Admin → Dev Switcher to assign accounts for quick switching.
                   </div>
                 </div>
@@ -514,9 +514,9 @@ const Sidebar = () => {
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 12, fontWeight: 700, color: isActive ? '#F0C95C' : '#E2E8F0' }}>{acc.label}</div>
-                        <div style={{ fontSize: 10, color: '#64748B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{acc.email || (acc.role === 'admin' ? 'Restore admin session' : acc.role === 'ops_view' ? 'View as operator' : 'Not configured')}</div>
+                        <div style={{ fontSize: 11, color: '#64748B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{acc.email || (acc.role === 'admin' ? 'Restore admin session' : acc.role === 'ops_view' ? 'View as operator' : 'Not configured')}</div>
                       </div>
-                      {isActive && <span style={{ fontSize: 10, color: '#F0C95C', flexShrink: 0 }}>Active</span>}
+                      {isActive && <span style={{ fontSize: 11, color: '#F0C95C', flexShrink: 0 }}>Active</span>}
                       {devSwitching === acc.role && <div className="w-4 h-4 border-2 border-[#F0C95C] border-t-transparent rounded-full animate-spin" />}
                     </div>
                   );
@@ -525,7 +525,7 @@ const Sidebar = () => {
               {/* Scope Preview — admin only, shown right after main portals */}
               {user?.role === 'admin' && visibleScopePreviews.length > 0 && (
                 <div style={{ marginTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 6, paddingLeft: 2 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 6, paddingLeft: 2 }}>
                     Admin Scope Preview
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -539,7 +539,7 @@ const Sidebar = () => {
                         }}
                         data-testid="scope-restore-founder"
                       >
-                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#d4af37', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#0F1629' }}>F</div>
+                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#d4af37', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#0F1629' }}>F</div>
                         <div style={{ fontSize: 11, fontWeight: 700, color: '#d4af37' }}>Restore Founder View</div>
                       </div>
                     )}
@@ -556,12 +556,12 @@ const Sidebar = () => {
                           }}
                           data-testid={`scope-${sp.scope}`}
                         >
-                          <div style={{ width: 22, height: 22, borderRadius: '50%', background: sp.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'white' }}>{sp.label[0]}</div>
+                          <div style={{ width: 22, height: 22, borderRadius: '50%', background: sp.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'white' }}>{sp.label[0]}</div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 11, fontWeight: 700, color: isActive ? sp.color : '#CBD5E1' }}>{sp.label}</div>
-                            <div style={{ fontSize: 9, color: '#525C72' }}>{sp.desc}</div>
+                            <div style={{ fontSize: 11, color: '#525C72' }}>{sp.desc}</div>
                           </div>
-                          {isActive && <span style={{ fontSize: 9, color: sp.color, flexShrink: 0 }}>Active</span>}
+                          {isActive && <span style={{ fontSize: 11, color: sp.color, flexShrink: 0 }}>Active</span>}
                         </div>
                       );
                     })}
@@ -571,7 +571,7 @@ const Sidebar = () => {
               {/* Operator accounts — at the bottom */}
               {devAccounts.filter(a => a.isOperator).length > 0 && (
                 <div style={{ marginTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 6, paddingLeft: 2 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 6, paddingLeft: 2 }}>
                     Operator Accounts
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -592,7 +592,7 @@ const Sidebar = () => {
                           <div style={{
                             width: 22, height: 22, borderRadius: '50%', background: acc.color,
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 9, fontWeight: 700, color: 'white', flexShrink: 0,
+                            fontSize: 11, fontWeight: 700, color: 'white', flexShrink: 0,
                           }}>
                             {acc.label[0]}
                           </div>
@@ -606,7 +606,7 @@ const Sidebar = () => {
                   </div>
                 </div>
               )}
-              <div style={{ marginTop: 8, fontSize: 10, color: '#525C72', textAlign: 'center' }}>No OTP required · Instant switch</div>
+              <div style={{ marginTop: 8, fontSize: 11, color: '#525C72', textAlign: 'center' }}>No OTP required · Instant switch</div>
             </div>
           </div>
         </>
@@ -908,7 +908,7 @@ const Sidebar = () => {
                     ) : (
                       <>
                         <span style={{ fontWeight: 600, fontSize: 14 }}>My Beneficiary Portal</span>
-                        {beneficiaryEstates.length > 1 && <span style={{ fontSize: 10, opacity: 0.5 }}>{beneficiaryEstates.length} estates</span>}
+                        {beneficiaryEstates.length > 1 && <span style={{ fontSize: 11, opacity: 0.5 }}>{beneficiaryEstates.length} estates</span>}
                       </>
                     )}
                   </button>

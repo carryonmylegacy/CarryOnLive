@@ -102,8 +102,8 @@ export const AnalyticsTab = ({ getAuthHeaders }) => {
               <ResponsiveContainer>
                 <LineChart data={stats.signup_trend}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--b)" />
-                  <XAxis dataKey="date" tick={{ fill: '#525C72', fontSize: 10 }} interval="preserveStartEnd" />
-                  <YAxis tick={{ fill: '#525C72', fontSize: 10 }} allowDecimals={false} />
+                  <XAxis dataKey="date" tick={{ fill: '#525C72', fontSize: 11 }} interval="preserveStartEnd" />
+                  <YAxis tick={{ fill: '#525C72', fontSize: 11 }} allowDecimals={false} />
                   <Tooltip content={<CustomTooltip />} />
                   <Line type="monotone" dataKey="signups" stroke="#d4af37" strokeWidth={2} dot={{ fill: '#d4af37', r: 2.5 }} activeDot={{ r: 5 }} />
                 </LineChart>
@@ -154,8 +154,8 @@ export const AnalyticsTab = ({ getAuthHeaders }) => {
               <ResponsiveContainer>
                 <BarChart data={tierBarData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--b)" />
-                  <XAxis dataKey="tier" tick={{ fill: '#525C72', fontSize: 10 }} />
-                  <YAxis tick={{ fill: '#525C72', fontSize: 10 }} allowDecimals={false} />
+                  <XAxis dataKey="tier" tick={{ fill: '#525C72', fontSize: 11 }} />
+                  <YAxis tick={{ fill: '#525C72', fontSize: 11 }} allowDecimals={false} />
                   <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="count" name="Subscribers" radius={[6, 6, 0, 0]}>
                     {tierBarData.map((entry, i) => (
@@ -179,8 +179,8 @@ export const AnalyticsTab = ({ getAuthHeaders }) => {
               <ResponsiveContainer>
                 <BarChart data={stats.revenue_by_tier.filter(r => r.revenue > 0 || r.subscribers > 0)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--b)" />
-                  <XAxis dataKey="tier" tick={{ fill: '#525C72', fontSize: 10 }} />
-                  <YAxis tick={{ fill: '#525C72', fontSize: 10 }} tickFormatter={(v) => `$${v}`} />
+                  <XAxis dataKey="tier" tick={{ fill: '#525C72', fontSize: 11 }} />
+                  <YAxis tick={{ fill: '#525C72', fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
                   <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="revenue" name="$ Revenue" radius={[6, 6, 0, 0]}>
                     {stats.revenue_by_tier.map((entry, i) => (

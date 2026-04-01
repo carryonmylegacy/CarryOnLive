@@ -211,7 +211,7 @@ export const TeamChatTab = ({ getAuthHeaders }) => {
                 {ch.name}
               </span>
               {ch.unread_count > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold text-white bg-[#ef4444] leading-none">
+                <span className="px-1.5 py-0.5 rounded-full text-[11px] font-bold text-white bg-[#ef4444] leading-none">
                   {ch.unread_count}
                 </span>
               )}
@@ -238,7 +238,7 @@ export const TeamChatTab = ({ getAuthHeaders }) => {
                     {ch.name}
                   </span>
                   {ch.unread_count > 0 && (
-                    <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold text-white bg-[#ef4444] leading-none">
+                    <span className="px-1.5 py-0.5 rounded-full text-[11px] font-bold text-white bg-[#ef4444] leading-none">
                       {ch.unread_count}
                     </span>
                   )}
@@ -261,7 +261,7 @@ export const TeamChatTab = ({ getAuthHeaders }) => {
                   >
                     <User className="w-3.5 h-3.5 text-[var(--t5)]" />
                     <span className="text-sm text-[var(--t4)] truncate flex-1">{s.name}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded" style={{
+                    <span className="text-[11px] px-1.5 py-0.5 rounded" style={{
                       color: ROLE_BADGES[s.operator_role || s.role]?.color || '#888',
                       background: `${ROLE_BADGES[s.operator_role || s.role]?.color || '#888'}15`,
                     }}>
@@ -319,13 +319,13 @@ export const TeamChatTab = ({ getAuthHeaders }) => {
                       <div className={`max-w-[75%] ${isOwn ? 'items-end' : 'items-start'}`}>
                         <div className={`flex items-center gap-2 mb-0.5 ${isOwn ? 'flex-row-reverse' : ''}`}>
                           <span className="text-[11px] font-bold text-[var(--t4)]">{msg.sender_name}</span>
-                          <span className="text-[10px] px-1 py-0.5 rounded" style={{
+                          <span className="text-[11px] px-1 py-0.5 rounded" style={{
                             color: badge.color,
                             background: `${badge.color}15`,
                           }}>
                             {badge.label}
                           </span>
-                          <span className="text-[10px] text-[var(--t5)]">{formatTime(msg.created_at)}</span>
+                          <span className="text-[11px] text-[var(--t5)]">{formatTime(msg.created_at)}</span>
                         </div>
                         <div
                           className="px-3 py-2 rounded-xl text-sm"

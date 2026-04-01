@@ -130,7 +130,7 @@ export const TrainingTrackerTab = ({ getAuthHeaders }) => {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-bold text-[var(--t)] truncate">{member.name}</span>
                       {member.certified && <Award className="w-3.5 h-3.5 text-[#d4af37]" />}
-                      <span className="text-[10px] text-[var(--t5)]">{member.role}</span>
+                      <span className="text-[11px] text-[var(--t5)]">{member.role}</span>
                     </div>
                     <div className="w-full h-1.5 rounded-full bg-[var(--bg)] mt-1">
                       <div
@@ -192,13 +192,13 @@ export const TrainingTrackerTab = ({ getAuthHeaders }) => {
                     )}
                   </div>
                   <span
-                    className="text-[10px] px-1.5 py-0.5 rounded flex-shrink-0"
+                    className="text-[11px] px-1.5 py-0.5 rounded flex-shrink-0"
                     style={{ color: catStyle.color, background: `${catStyle.color}15` }}
                   >
                     {catStyle.label}
                   </span>
                   {mod.completed && mod.completed_at && (
-                    <span className="text-[10px] text-[var(--t5)] flex-shrink-0">
+                    <span className="text-[11px] text-[var(--t5)] flex-shrink-0">
                       {new Date(mod.completed_at).toLocaleDateString()}
                     </span>
                   )}
