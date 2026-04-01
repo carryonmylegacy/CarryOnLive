@@ -122,6 +122,8 @@ const VaultPage = () => {
   const [globalDragOver, setGlobalDragOver] = useState(false);
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [expandedDesignation, setExpandedDesignation] = useState(null);
+  const [bulkMode, setBulkMode] = useState(false);
+  const [bulkSelected, setBulkSelected] = useState([]);
   const dragCounterRef = useRef(0);
   const uploadNameRef = useRef(null);
   const pendingDropFocusRef = useRef(false);
@@ -357,6 +359,30 @@ const VaultPage = () => {
       if (newList.length === beneficiaries.length) newList = ['all'];
     }
     handleDesignateBeneficiaries(docId, newList);
+  };
+
+  const handleBulkDesignate = async (beneficiaryIds) => {
+    if (bulkSelected.length === 0) { toast.error('Select documents first'); return; }
+    let successCount = 0;
+    for (const docId of bulkSelected) {
+      try {
+        await axios.put(`${API_URL}/documents/${docId}/designate-beneficiaries`,
+          { beneficiary_ids: beneficiaryIds },
+          { ...getAuthHeaders(), headers: { ...getAuthHeaders().headers, 'Content-Type': 'application/json' } }
+        );
+        successCount++;
+      } catch { /* continue with remaining */ }
+    }
+    setDocuments(prev => prev.map(d =>
+      bulkSelected.includes(d.id) ? { ...d, designated_beneficiaries: beneficiaryIds } : d
+    ));
+    toast.success(`Updated ${successCount} of ${bulkSelected.length} documents`);
+    setBulkMode(false);
+    setBulkSelected([]);
+  };
+
+  const toggleBulkSelect = (docId) => {
+    setBulkSelected(prev => prev.includes(docId) ? prev.filter(id => id !== docId) : [...prev, docId]);
   };
 
 
@@ -808,15 +834,99 @@ const VaultPage = () => {
               </CardContent>
             </Card>
           ) : (
+            <>
+            {/* Bulk Designation Toolbar */}
+            {user?.role === 'benefactor' && beneficiaries.length > 0 && (
+              <div className="mb-4">
+                {!bulkMode ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs gap-1.5 border-[var(--gold)] text-[var(--gold)]"
+                    onClick={() => { setBulkMode(true); setBulkSelected([]); }}
+                    data-testid="bulk-designation-start"
+                  >
+                    <Users className="w-3.5 h-3.5" /> Bulk Assign Beneficiaries
+                  </Button>
+                ) : (
+                  <Card className="glass-card">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-[var(--gold)]" />
+                          <span className="text-sm font-bold text-[var(--t)]">Bulk Assign Beneficiaries</span>
+                          <span className="text-xs text-[var(--t5)]">({bulkSelected.length} selected)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs text-[var(--t5)]"
+                            onClick={() => setBulkSelected(bulkSelected.length === filteredDocs.length ? [] : filteredDocs.map(d => d.id))}
+                          >
+                            {bulkSelected.length === filteredDocs.length ? 'Deselect All' : 'Select All Docs'}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs text-[#ef4444]"
+                            onClick={() => { setBulkMode(false); setBulkSelected([]); }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                      {bulkSelected.length > 0 && (
+                        <div className="flex flex-wrap gap-2 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                          <Button
+                            size="sm"
+                            className="text-xs gap-1 gold-button"
+                            onClick={() => handleBulkDesignate(['all'])}
+                            data-testid="bulk-designate-all"
+                          >
+                            All Beneficiaries
+                          </Button>
+                          {beneficiaries.map(ben => (
+                            <Button
+                              key={ben.id}
+                              variant="outline"
+                              size="sm"
+                              className="text-xs gap-1"
+                              onClick={() => handleBulkDesignate([ben.id])}
+                              data-testid={`bulk-designate-${ben.id}`}
+                            >
+                              {ben.first_name} {ben.last_name} Only
+                            </Button>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredDocs.map((doc) => {
                 return (
                   <Card
                     key={doc.id}
-                    className="glass-card relative overflow-hidden group cursor-pointer"
-                    onClick={() => doc.is_locked ? (setSelectedDoc(doc), setShowLockModal(true)) : handlePreview(doc)}
+                    className={`glass-card relative overflow-hidden group cursor-pointer ${bulkMode && bulkSelected.includes(doc.id) ? 'ring-2 ring-[var(--gold)]' : ''}`}
+                    onClick={() => bulkMode ? toggleBulkSelect(doc.id) : (doc.is_locked ? (setSelectedDoc(doc), setShowLockModal(true)) : handlePreview(doc))}
                     data-testid={`document-${doc.id}`}
                   >
+                    {/* Bulk selection checkbox */}
+                    {bulkMode && (
+                      <div className="absolute top-2 left-2 z-10">
+                        <input
+                          type="checkbox"
+                          checked={bulkSelected.includes(doc.id)}
+                          onChange={() => toggleBulkSelect(doc.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-5 h-5 rounded accent-[#d4af37] cursor-pointer"
+                          data-testid={`bulk-select-${doc.id}`}
+                        />
+                      </div>
+                    )}
                     {/* Lock Overlay */}
                     {doc.is_locked && (
                       <div className="lock-overlay">
@@ -982,6 +1092,7 @@ const VaultPage = () => {
                 );
               })}
             </div>
+            </>
           )}
         </TabsContent>
       </Tabs>
