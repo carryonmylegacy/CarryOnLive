@@ -15,6 +15,7 @@ import {
   Loader2,
   X,
   Check,
+  CheckCheck,
   ChevronDown,
 } from 'lucide-react';
 
@@ -39,6 +40,7 @@ export default function EstateChatPage() {
   const [groupName, setGroupName] = useState('');
   const [newChatEstate, setNewChatEstate] = useState('');
   const [newChatType, setNewChatType] = useState('direct');
+  const [readStatus, setReadStatus] = useState([]);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -60,11 +62,17 @@ export default function EstateChatPage() {
 
   const fetchMessages = useCallback(async (channelId) => {
     try {
-      const res = await fetch(`${API_URL}/estate-chat/channels/${channelId}/messages`, { headers });
-      if (res.ok) {
-        const data = await res.json();
+      const [msgRes, readRes] = await Promise.all([
+        fetch(`${API_URL}/estate-chat/channels/${channelId}/messages`, { headers }),
+        fetch(`${API_URL}/estate-chat/channels/${channelId}/read-status`, { headers }),
+      ]);
+      if (msgRes.ok) {
+        const data = await msgRes.json();
         setMessages(data);
         setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      }
+      if (readRes.ok) {
+        setReadStatus(await readRes.json());
       }
     } catch {}
   }, []);
@@ -401,8 +409,22 @@ export default function EstateChatPage() {
             <p className="text-sm" style={{ color: '#7B879E' }}>No messages yet. Say hello!</p>
           </div>
         )}
-        {messages.map(msg => {
+        {messages.map((msg, msgIdx) => {
           const isMe = msg.sender_id === user?.id;
+          // Read receipt: for my messages, check who has read past this message
+          const isLastMyMsg = isMe && (msgIdx === messages.length - 1 || messages[msgIdx + 1]?.sender_id !== user?.id);
+          let readByCount = 0;
+          let readByNames = [];
+          if (isMe && isLastMyMsg && readStatus.length > 0) {
+            for (const r of readStatus) {
+              if (r.last_read_at && r.last_read_at >= msg.created_at) {
+                readByCount++;
+                readByNames.push(r.name);
+              }
+            }
+          }
+          const totalOthers = readStatus.length;
+          const isDM = activeChannel?.type === 'direct';
           return (
             <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
               <div className="max-w-[80%]">
@@ -421,8 +443,17 @@ export default function EstateChatPage() {
                 >
                   {msg.content}
                 </div>
-                <div className={`text-[11px] mt-0.5 ${isMe ? 'text-right mr-1' : 'ml-1'}`} style={{ color: '#525C72' }}>
-                  {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                <div className={`text-[11px] mt-0.5 flex items-center gap-1.5 ${isMe ? 'justify-end mr-1' : 'ml-1'}`} style={{ color: '#525C72' }}>
+                  <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  {isMe && isLastMyMsg && readByCount > 0 && (
+                    <span className="flex items-center gap-0.5" style={{ color: '#3B7BF7' }} data-testid="read-receipt">
+                      <CheckCheck className="w-3.5 h-3.5" />
+                      {isDM ? '' : <span className="text-[11px]">{readByCount === totalOthers ? 'All' : readByCount}</span>}
+                    </span>
+                  )}
+                  {isMe && isLastMyMsg && readByCount === 0 && (
+                    <span style={{ color: '#525C72' }}><Check className="w-3 h-3" /></span>
+                  )}
                 </div>
               </div>
             </div>

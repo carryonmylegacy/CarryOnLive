@@ -306,6 +306,34 @@ async def get_messages(
     return messages[::-1]
 
 
+@router.get("/estate-chat/channels/{channel_id}/read-status")
+async def get_read_status(
+    channel_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Get read timestamps for all members of a channel (for read receipts)."""
+    channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0})
+    if not channel:
+        raise HTTPException(status_code=404, detail="Channel not found")
+    if current_user["id"] not in channel.get("members", []):
+        raise HTTPException(status_code=403, detail="Not a member of this channel")
+    reads = await db.estate_channel_reads.find({"channel_id": channel_id}, {"_id": 0}).to_list(100)
+    read_map = {r["user_id"]: r.get("last_read_at", "") for r in reads}
+    # Enrich with member names
+    member_ids = [m for m in channel.get("members", []) if m != current_user["id"]]
+    users = await db.users.find({"id": {"$in": member_ids}}, {"_id": 0, "id": 1, "name": 1}).to_list(100)
+    result = []
+    for u in users:
+        result.append(
+            {
+                "user_id": u["id"],
+                "name": u.get("name", "Unknown"),
+                "last_read_at": read_map.get(u["id"], ""),
+            }
+        )
+    return result
+
+
 @router.post("/estate-chat/channels/{channel_id}/messages")
 async def send_message(
     channel_id: str,
