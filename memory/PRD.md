@@ -59,6 +59,28 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - Applied consistent scope derivation logic across CREATE, UPDATE, and DELETE endpoints
 - Test report: `iteration_35.json` — 16/16 tests passed (100%)
 
+### Completed (April 1, 2026 — Portal Buttons + Truncated Founder View Fix)
+
+**Admin Portal Buttons (above Sign Out)**
+- Added stacked portal buttons in the sidebar under "SWITCH PORTAL" label for admin users
+- Each authorized scope maps to a clickable portal button: Founder, Operations, Finance, Compliance, Marketing, Platform
+- `ops_manager` and `ops_team` merged into single "Operations Portal" button (using `altScope` config)
+- Clicking a portal button switches the tab bar to show only that section's tabs
+- Clicking "Founder Portal" restores the full view with all sections
+- Same buttons added to MobileNav slide-out menu for mobile parity
+- Buttons styled consistently with existing benefactor/beneficiary portal pills
+
+**Bug Fix: Truncated Founder Page on Login**
+- Root cause: `admin_scope` comparisons used string equality (`!== 'founder'`, `=== sp.scope`) while the API now returns arrays `['founder']`
+- Fixed with `scopeArr()` and `hasScope()` helpers that properly normalize admin_scope to arrays
+- `handleScopePreview` and `handleRestoreFounder` now set admin_scope as arrays (`[scope]`) instead of strings
+- AuthContext `login()` now clears `dev_switcher_active_role` to prevent stale PWA state
+- Operations section in AdminPage now includes `ops_manager`/`ops_team` in its scopes array
+- All fixes applied to BOTH `Sidebar.js` and `MobileNav.js`
+- Test report: `iteration_36.json` — 10/10 frontend tests passed (100%)
+
+
+
 
 
 ### Completed (March 31, 2026 — Pressure Test + DRY Refactor)
