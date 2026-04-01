@@ -58,6 +58,7 @@ from routes.shift_scheduling import router as shift_scheduling_router
 from routes.team_chat import router as team_chat_router
 from routes.estate_chat import router as estate_chat_router
 from routes.connected_protocol import router as ccp_router
+from routes.notification_prefs import router as notification_prefs_router
 from routes.training_tracker import router as training_tracker_router
 from routes.ws_notifications import router as ws_router, sla_checker_loop
 from schedulers import (
@@ -168,6 +169,9 @@ async def lifespan(app):
         await db.emergency_plans.create_index("estate_id")
         await db.emergency_activations.create_index([("estate_id", 1), ("status", 1)])
         await db.member_checkins.create_index([("activation_id", 1), ("user_id", 1)])
+        # Notification preferences indexes
+        await db.notification_preferences.create_index("user_id", unique=True)
+        await db.notification_categories.create_index("order")
         logger.info("Database indexes created/verified")
     except Exception as e:
         logger.warning(f"Index creation warning (may already exist): {e}")
@@ -253,6 +257,7 @@ api_router.include_router(shift_scheduling_router)
 api_router.include_router(team_chat_router)
 api_router.include_router(estate_chat_router)
 api_router.include_router(ccp_router)
+api_router.include_router(notification_prefs_router)
 api_router.include_router(training_tracker_router)
 api_router.include_router(ws_router)
 

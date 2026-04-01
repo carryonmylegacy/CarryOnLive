@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import { API_URL } from '../config';
 import {
   Shield, Users, FileKey, Loader2,
   Headphones, CreditCard, Activity, Settings,
   CheckSquare, AlertTriangle, Clock, TrendingUp, Trash2,
   Megaphone, HeartPulse, Search, StickyNote, BookOpen, Gift, Zap, Puzzle, Mail, Film, Hourglass,
   Globe, UserCog, Power, MessageSquare, BarChart3, Download,
-  Calendar, GraduationCap
+  Calendar, GraduationCap, Bell
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { toast } from '../utils/toast';
@@ -62,7 +63,7 @@ import { QueueAlertsPanel } from '../components/admin/QueueAlertsPanel';
 import { ShiftScheduleTab } from '../components/admin/ShiftScheduleTab';
 import { TrainingTrackerTab } from '../components/admin/TrainingTrackerTab';
 import { SectionMembersTab } from '../components/admin/SectionMembersTab';
-import { API_URL } from '../config';
+import { NotificationCategoriesTab } from '../components/admin/NotificationCategoriesTab';
 
 // ── Section-based tab organization ────────────────────────
 // Each section has a label, scopes (which admin scopes can see it), and tabs
@@ -143,6 +144,7 @@ const FOUNDER_SECTIONS = [
       { key: 'session-policy', label: 'Session Policy', icon: Clock, path: '/admin/session-policy' },
       { key: 'maintenance', label: 'Maintenance', icon: Power, path: '/admin/maintenance' },
       { key: 'dev-switcher', label: 'Dev Switcher', icon: Settings, path: '/admin/dev-switcher' },
+      { key: 'notification-categories', label: 'Notifications', icon: Bell, path: '/admin/notification-categories' },
     ],
   },
 ];
@@ -214,6 +216,7 @@ const PATH_TO_TAB = {
   '/admin/session-policy': 'session-policy',
   '/admin/shifts': 'shifts',
   '/admin/training': 'training',
+  '/admin/notification-categories': 'notification-categories',
   '/admin/ops-members': 'ops-members',
   '/admin/finance-members': 'finance-members',
   '/admin/marketing-members': 'marketing-members',
@@ -548,6 +551,7 @@ const AdminPage = ({ operatorMode = false }) => {
         {effectiveTab === 'session-policy' && <SessionPolicyTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'shifts' && <ShiftScheduleTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'training' && <TrainingTrackerTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'notification-categories' && <NotificationCategoriesTab getAuthHeaders={getAuthHeaders} />}
         {/* Section Members tabs */}
         {effectiveTab === 'ops-members' && <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['ops_manager', 'ops_team']} sectionLabel="Operations" />}
         {effectiveTab === 'finance-members' && <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['finance']} sectionLabel="Finance" />}

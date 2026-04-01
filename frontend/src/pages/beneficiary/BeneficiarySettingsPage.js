@@ -10,6 +10,7 @@ import { Switch } from '../../components/ui/switch';
 import { Separator } from '../../components/ui/separator';
 import { SubscriptionManagement } from '../../components/settings/SubscriptionManagement';
 import NotificationSettings from '../../components/NotificationSettings';
+import { NotificationPrefsCard } from '../../components/settings/NotificationPrefsCard';
 import { PhotoPicker } from '../../components/PhotoPicker';
 import { API_URL } from '../../config';
 
@@ -145,6 +146,9 @@ const BeneficiarySettingsPage = () => {
 
       {/* Push Notifications */}
       <NotificationSettings getAuthHeaders={() => getAuthHeaders()} />
+
+      {/* Notification Preferences (granular category controls) */}
+      <NotificationPrefsCard />
 
       {/* Subscription — uses the shared SubscriptionManagement component */}
       <SubscriptionManagement

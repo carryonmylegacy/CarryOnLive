@@ -24,6 +24,15 @@ PLAN_TYPES = ["natural_disaster", "national_emergency", "medical_emergency", "in
 CHECKIN_STATUSES = ["safe", "evacuating", "at_rendezvous", "need_help", "sheltering", "other"]
 
 
+async def _notify_if_allowed(user_id: str, title: str, body: str, url: str):
+    """Send push notification only if user has emergency_alerts enabled."""
+    from routes.notification_prefs import should_notify
+    from utils import send_push_notification
+
+    if await should_notify(user_id, "emergency_alerts"):
+        await send_push_notification(user_id, title, body, url, "ccp-alert", "emergency")
+
+
 class PlanCreate(BaseModel):
     estate_id: str
     name: str
@@ -243,6 +252,17 @@ async def activate_plan(data: ActivatePlanRequest, current_user: dict = Depends(
         },
     }
     await db.emergency_activations.insert_one({k: v for k, v in activation.items()})
+    # Send push notifications to all estate members
+    import asyncio
+
+    members = await _get_estate_members(plan["estate_id"])
+    prefix = "[DRILL] " if data.is_drill else ""
+    title = f"{prefix}Emergency Protocol Activated"
+    body = f"{current_user.get('name', 'Benefactor')} activated: {plan['name']}"
+    nav_url = "/connected-protocol"
+    for m in members:
+        if m["id"] != current_user["id"]:
+            asyncio.create_task(_notify_if_allowed(m["id"], title, body, nav_url))
     return activation
 
 
@@ -288,6 +308,15 @@ async def deactivate(
             for c in checkins
         ],
     }
+    # Notify all members that emergency has been deactivated
+    import asyncio
+
+    prefix = "[DRILL] " if activation.get("is_drill") else ""
+    title = f"{prefix}Emergency Protocol Deactivated"
+    body = f"{activation.get('plan_name', 'Emergency')} has been stood down"
+    for m in members:
+        if m["id"] != current_user["id"]:
+            asyncio.create_task(_notify_if_allowed(m["id"], title, body, "/connected-protocol"))
     return {"success": True, "summary": summary}
 
 
@@ -378,4 +407,20 @@ async def check_in(data: CheckInRequest, current_user: dict = Depends(get_curren
         "created_at": now,
     }
     await db.member_checkins.insert_one({k: v for k, v in checkin.items()})
+    # Notify the benefactor when a member checks in
+    import asyncio
+
+    estate = await db.estates.find_one(
+        {"id": activation["estate_id"]}, {"_id": 0, "owner_id": 1}
+    )
+    if estate and estate["owner_id"] != current_user["id"]:
+        status_label = data.status.replace("_", " ").upper()
+        asyncio.create_task(
+            _notify_if_allowed(
+                estate["owner_id"],
+                "Member Check-In",
+                f"{current_user.get('name', 'Member')} checked in: {status_label}",
+                "/connected-protocol",
+            )
+        )
     return checkin

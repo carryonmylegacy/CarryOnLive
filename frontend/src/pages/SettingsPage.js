@@ -8,6 +8,7 @@ import { Switch } from '../components/ui/switch';
 import { Button } from '../components/ui/button';
 import { SubscriptionManagement } from '../components/settings/SubscriptionManagement';
 import NotificationSettings from '../components/NotificationSettings';
+import { NotificationPrefsCard } from '../components/settings/NotificationPrefsCard';
 import ProfileCard from '../components/settings/ProfileCard';
 import PersonalInfoCard from '../components/settings/PersonalInfoCard';
 import EstatePhotoCard from '../components/settings/EstatePhotoCard';
@@ -132,6 +133,9 @@ const SettingsPage = () => {
 
       {/* Notification Settings (push notifications) */}
       <NotificationSettings getAuthHeaders={getAuthHeaders} />
+
+      {/* Notification Preferences (granular category controls) */}
+      <NotificationPrefsCard />
 
       <DigestCard />
 
