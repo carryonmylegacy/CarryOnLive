@@ -36,10 +36,10 @@ PLATFORM_FEATURES = [
     {"key": "dav", "label": "Digital Access Vault (DAV)", "route": "/digital-wallet", "core": False},
     {"key": "dts", "label": "Designated Trustee Services (DTS)", "route": "/trustee", "core": False},
     {"key": "timeline", "label": "Estate Plan Timeline", "route": "/timeline", "core": False},
-    {"key": "ect", "label": "Estate Chat (ECT)", "route": "/estate-chat", "core": False, "default_off": True},
+    {"key": "ect", "label": "Estate Comms (ECT)", "route": "/estate-chat", "core": False, "default_off": True},
     {
         "key": "ccp",
-        "label": "Connected Protocol (CCP)",
+        "label": "Contingency Protocols (CCP)",
         "route": "/connected-protocol",
         "core": False,
         "default_off": True,

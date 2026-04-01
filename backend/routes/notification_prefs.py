@@ -28,7 +28,7 @@ DEFAULT_CATEGORIES = [
     },
     {
         "id": "estate_chat",
-        "label": "Estate Chat (ECT)",
+        "label": "Estate Comms (ECT)",
         "description": "New messages in estate conversations",
         "default_enabled": True,
         "is_critical": False,

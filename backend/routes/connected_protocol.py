@@ -1,4 +1,4 @@
-"""CarryOn™ — CarryOn Connected Protocol (CCP)
+"""CarryOn™ — CarryOn Contingency Protocols (CCP)
 
 Family disaster planning tool. Features:
   - Emergency Plans: CRUD for pre-built disaster response plans

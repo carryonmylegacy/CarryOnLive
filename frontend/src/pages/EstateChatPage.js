@@ -434,7 +434,7 @@ export default function EstateChatPage() {
       style={{ width: '100%', maxWidth: '100%', borderRight: '1px solid rgba(255,255,255,0.06)' }}
     >
       <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <h2 className="text-lg font-bold" style={{ color: '#F1F3F8' }}>Estate Chat</h2>
+        <h2 className="text-lg font-bold" style={{ color: '#F1F3F8' }}>Estate Comms</h2>
         <div className="flex gap-2">
           <button
             onClick={() => setShowSearch(!showSearch)}
@@ -865,7 +865,7 @@ export default function EstateChatPage() {
             <div className="text-center mb-5">
               <Shield className="w-12 h-12 mx-auto mb-3" style={{ color: '#d4af37' }} />
               <h2 className="text-xl font-bold" style={{ color: '#F1F3F8' }}>The Most Private Chat You'll Ever Use</h2>
-              <p className="text-sm mt-2" style={{ color: '#A0AABF' }}>Estate Chat isn't like other messaging apps. Here's why.</p>
+              <p className="text-sm mt-2" style={{ color: '#A0AABF' }}>Estate Comms isn't like other messaging apps. Here's why.</p>
             </div>
             <div className="space-y-3 mb-6">
               {[

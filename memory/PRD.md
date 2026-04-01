@@ -56,9 +56,9 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - Security intro glass panel on first ECT use explaining closed-network privacy model
 - Collapsible "Why ECT is different" info section in channel list with 5 privacy points
 
-### Completed (April 1, 2026 — Estate Chat Tool + Connected Protocol)
+### Completed (April 1, 2026 — Estate Communication Tool + Contingency Protocols)
 
-**Estate Chat Tool (ECT)**
+**Estate Communication Tool (ECT)**
 - New `routes/estate_chat.py` with 8 endpoints for secure estate member messaging
 - Three channel types: Circle (auto-created per estate), Group (benefactor-created), Direct (1:1)
 - `GET /api/estate-chat/contacts` — returns all connected members across estates, grouped by estate
@@ -70,10 +70,10 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - `GET /api/estate-chat/unread-total` — total unread count for badge display
 - Frontend: `EstateChatPage.js` with split-panel layout (channel list + message area), member picker modal, polling
 - DB collections: `estate_channels`, `estate_messages`, `estate_channel_reads` with performance indexes
-- Added to both benefactor and beneficiary sidebar/mobile nav as "Estate Chat (ECT)"
+- Added to both benefactor and beneficiary sidebar/mobile nav as "Estate Comms (ECT)"
 - Test report: `iteration_39.json` — 26/26 tests passed (100%)
 
-**CarryOn Connected Protocol (CCP)**
+**CarryOn Contingency Protocols (CCP)**
 - New `routes/connected_protocol.py` with 9 endpoints for family disaster planning
 - Emergency Plans CRUD: Create, read, update, soft-delete plans with types (natural_disaster, national_emergency, medical_emergency, infrastructure_failure, custom)
 - Plan Builder: Rendezvous points (name + address), communication plan, resource/supply locations, instructions
@@ -85,13 +85,13 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - Activation History: View past emergencies and drills
 - Frontend: `ConnectedProtocolPage.js` with crisis-friendly big bubble buttons (80px+ touch targets), color-coded status indicators
 - DB collections: `emergency_plans`, `emergency_activations`, `member_checkins` with indexes
-- Added to both benefactor and beneficiary sidebar/mobile nav as "Connected Protocol (CCP)"
+- Added to both benefactor and beneficiary sidebar/mobile nav as "Contingency Protocols (CCP)"
 - iOS compliance: All font sizes >= 11px, proper touch targets
 - Housekeeping: 60/60 PASS, Ruff clean
 
 **Push Notifications + Notification Preferences**
 - New `routes/notification_prefs.py` — Per-user notification preferences with admin-managed categories
-- 5 default categories auto-seeded: Emergency Alerts (CCP) [CRITICAL], Estate Chat (ECT), Estate Updates, Milestone Messages, System
+- 5 default categories auto-seeded: Emergency Alerts (CCP) [CRITICAL], Estate Comms (ECT), Estate Updates, Milestone Messages, System
 - All toggles ON by default; master on/off toggle to disable all notifications
 - `GET /api/notification-prefs` — returns user prefs + available categories, auto-creates if missing
 - `PUT /api/notification-prefs` — update master toggle and/or individual category toggles

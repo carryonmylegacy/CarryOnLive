@@ -1,4 +1,4 @@
-"""CarryOn™ — Estate Chat Tool (ECT)
+"""CarryOn™ — Estate Communication Tool (ECT)
 
 Secure, private messaging between estate members (benefactors + beneficiaries).
 Three channel types:
