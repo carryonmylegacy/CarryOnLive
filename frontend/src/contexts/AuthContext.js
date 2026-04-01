@@ -74,6 +74,7 @@ export const AuthProvider = ({ children }) => {
             ...userData,
             is_also_benefactor: userData.is_also_benefactor || false,
             is_also_beneficiary: userData.is_also_beneficiary || false,
+            _serverScope: userData.admin_scope,
           });
           await fetchSubscriptionStatus(token);
           const savedEstateId = localStorage.getItem('selected_estate_id');
@@ -112,7 +113,7 @@ export const AuthProvider = ({ children }) => {
     if (data.access_token) {
       localStorage.setItem('carryon_token', data.access_token);
       setToken(data.access_token);
-      setUser(data.user);
+      setUser({ ...data.user, _serverScope: data.user.admin_scope });
       setPendingEmail(null);
       return { direct: true, user: data.user };
     }
@@ -126,7 +127,7 @@ export const AuthProvider = ({ children }) => {
     const { access_token, user: userData } = response.data;
     localStorage.setItem('carryon_token', access_token);
     setToken(access_token);
-    setUser(userData);
+    setUser({ ...userData, _serverScope: userData.admin_scope });
     setPendingEmail(null);
     return userData;
   };
@@ -244,7 +245,7 @@ export const AuthProvider = ({ children }) => {
     const { access_token, user: userData } = response.data;
     localStorage.setItem('carryon_token', access_token);
     setToken(access_token);
-    setUser(userData);
+    setUser({ ...userData, _serverScope: userData.admin_scope });
     setPendingEmail(null);
     return userData;
   };

@@ -246,7 +246,7 @@ const PATH_TO_TAB = {
 };
 
 const AdminPage = ({ operatorMode = false }) => {
-  const { user, getAuthHeaders } = useAuth();
+  const { user, setUser, getAuthHeaders } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const defaultOpsTab = user?.operator_role === 'manager' ? 'ops-dashboard' : 'transition';
@@ -268,6 +268,18 @@ const AdminPage = ({ operatorMode = false }) => {
 
   // Admin scope: founder sees all, scoped admins see only their sections
   // admin_scope is now an array (backwards-compatible with legacy string)
+  // On mount, always reset to server scope to clear stale scope previews
+  useEffect(() => {
+    if (user?._serverScope && user?.role === 'admin') {
+      const serverScopes = Array.isArray(user._serverScope) ? user._serverScope : [user._serverScope];
+      const currentScopes = Array.isArray(user.admin_scope) ? user.admin_scope : [user.admin_scope];
+      // Only reset if current scope differs from server scope (stale preview)
+      if (JSON.stringify(currentScopes) !== JSON.stringify(serverScopes)) {
+        setUser(prev => prev ? { ...prev, admin_scope: serverScopes } : prev);
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const rawScope = user?.admin_scope || 'founder';
   const adminScopes = Array.isArray(rawScope) ? rawScope : [rawScope].filter(Boolean);
   const isFounder = adminScopes.includes('founder');
