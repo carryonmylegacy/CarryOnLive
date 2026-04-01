@@ -18,6 +18,10 @@ import {
   CheckCheck,
   ChevronDown,
   Pin,
+  Paperclip,
+  FileText,
+  Image,
+  Download,
 } from 'lucide-react';
 
 const ECT_POLL_INTERVAL = 8000;
@@ -55,11 +59,13 @@ export default function EstateChatPage() {
   const [reactingMsgId, setReactingMsgId] = useState(null);
   const [pinnedMsgs, setPinnedMsgs] = useState([]);
   const [showPinned, setShowPinned] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const typingTimerRef = useRef(null);
   const lastTypingSentRef = useRef(0);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
   const pollRef = useRef(null);
 
   const fetchChannels = useCallback(async () => {
@@ -170,6 +176,24 @@ export default function EstateChatPage() {
       setReactingMsgId(null);
       if (activeChannel) await fetchMessages(activeChannel.id);
     } catch {}
+  };
+
+  const uploadFile = async (file) => {
+    if (!activeChannel || !file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`${API_URL}/estate-chat/channels/${activeChannel.id}/upload`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      if (res.ok) {
+        await fetchMessages(activeChannel.id);
+        await fetchChannels();
+      }
+    } catch {} finally { setUploading(false); }
   };
 
   const sendMessage = async () => {
@@ -535,7 +559,36 @@ export default function EstateChatPage() {
                   }}
                 >
                   {msg.pinned && <Pin className="w-3 h-3 inline mr-1" style={{ color: '#d4af37' }} />}
-                  {msg.content}
+                  {msg.attachment ? (
+                    msg.message_type === 'image' ? (
+                      <div>
+                        <img
+                          src={`${API_URL}/estate-chat/files/${msg.attachment.file_id}`}
+                          alt={msg.attachment.file_name}
+                          className="rounded-xl max-w-full max-h-[240px] object-cover mb-1"
+                          style={{ cursor: 'pointer' }}
+                          onClick={(e) => { e.stopPropagation(); window.open(`${API_URL}/estate-chat/files/${msg.attachment.file_id}`, '_blank'); }}
+                          data-testid={`chat-image-${msg.id}`}
+                        />
+                        <span className="text-xs" style={{ color: '#A0AABF' }}>{msg.attachment.file_name}</span>
+                      </div>
+                    ) : (
+                      <a
+                        href={`${API_URL}/estate-chat/files/${msg.attachment.file_id}`}
+                        target="_blank" rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-2 py-1"
+                        data-testid={`chat-file-${msg.id}`}
+                      >
+                        <FileText className="w-5 h-5 flex-shrink-0" style={{ color: '#3B7BF7' }} />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-semibold truncate" style={{ color: '#F1F3F8' }}>{msg.attachment.file_name}</div>
+                          <div className="text-[11px]" style={{ color: '#7B879E' }}>{(msg.attachment.file_size / 1024).toFixed(0)} KB</div>
+                        </div>
+                        <Download className="w-4 h-4 flex-shrink-0" style={{ color: '#7B879E' }} />
+                      </a>
+                    )
+                  ) : msg.content}
                 </div>
                 {/* Reaction picker */}
                 {reactingMsgId === msg.id && (
@@ -623,6 +676,19 @@ export default function EstateChatPage() {
           </div>
         )}
         <div className="flex items-center gap-2">
+          <input type="file" ref={fileInputRef} className="hidden"
+            accept="image/*,.pdf,.doc,.docx,.txt"
+            onChange={(e) => { if (e.target.files?.[0]) uploadFile(e.target.files[0]); e.target.value = ''; }}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="w-11 h-11 rounded-full flex items-center justify-center transition-all flex-shrink-0"
+            data-testid="ect-attach-btn"
+            style={{ background: 'rgba(255,255,255,0.06)' }}
+          >
+            {uploading ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#d4af37' }} /> : <Paperclip className="w-5 h-5" style={{ color: '#7B879E' }} />}
+          </button>
           <input
             ref={inputRef}
             value={draft}

@@ -10,7 +10,7 @@ Three channel types:
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 from typing import Optional
 
@@ -510,6 +510,106 @@ async def get_pinned(
         .to_list(20)
     )
     return pinned
+
+
+ALLOWED_FILE_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain",
+}
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+
+
+@router.post("/estate-chat/channels/{channel_id}/upload")
+async def upload_attachment(
+    channel_id: str,
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
+):
+    """Upload a file/image and send it as a message attachment."""
+    channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0})
+    if not channel:
+        raise HTTPException(status_code=404, detail="Channel not found")
+    if current_user["id"] not in channel.get("members", []):
+        raise HTTPException(status_code=403, detail="Not a member of this channel")
+    if file.content_type not in ALLOWED_FILE_TYPES:
+        raise HTTPException(status_code=400, detail="File type not allowed")
+    data = await file.read()
+    if len(data) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="File too large (max 10 MB)")
+    file_id = str(uuid4())
+    storage_key = f"chat/{channel.get('estate_id', 'unknown')}/{file_id}"
+    try:
+        from services.storage import storage
+
+        await storage.upload_raw(data, storage_key, file.content_type or "application/octet-stream")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Failed to store file")
+    now = datetime.now(timezone.utc).isoformat()
+    is_image = file.content_type and file.content_type.startswith("image/")
+    message = {
+        "id": str(uuid4()),
+        "channel_id": channel_id,
+        "estate_id": channel.get("estate_id", ""),
+        "sender_id": current_user["id"],
+        "sender_name": current_user.get("name", "Unknown"),
+        "content": file.filename or "Attachment",
+        "message_type": "image" if is_image else "file",
+        "attachment": {
+            "file_id": file_id,
+            "file_name": file.filename or "file",
+            "file_type": file.content_type or "",
+            "file_size": len(data),
+            "storage_key": storage_key,
+        },
+        "reactions": [],
+        "created_at": now,
+    }
+    await db.estate_messages.insert_one({k: v for k, v in message.items()})
+    await db.estate_channel_reads.update_one(
+        {"channel_id": channel_id, "user_id": current_user["id"]},
+        {"$set": {"last_read_at": now}},
+        upsert=True,
+    )
+    await db.estate_typing.delete_one({"channel_id": channel_id, "user_id": current_user["id"]})
+    return message
+
+
+@router.get("/estate-chat/files/{file_id}")
+async def serve_chat_file(
+    file_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Serve a chat attachment file."""
+    from fastapi.responses import Response
+    from services.storage import storage
+
+    msg = await db.estate_messages.find_one(
+        {"attachment.file_id": file_id}, {"_id": 0, "channel_id": 1, "attachment": 1}
+    )
+    if not msg:
+        raise HTTPException(status_code=404, detail="File not found")
+    channel = await db.estate_channels.find_one({"id": msg["channel_id"]}, {"_id": 0, "members": 1})
+    if not channel or current_user["id"] not in channel.get("members", []):
+        raise HTTPException(status_code=403, detail="Access denied")
+    att = msg.get("attachment", {})
+    try:
+        data = await storage.download_raw(att["storage_key"])
+    except Exception:
+        raise HTTPException(status_code=404, detail="File not found in storage")
+    return Response(
+        content=data,
+        media_type=att.get("file_type", "application/octet-stream"),
+        headers={
+            "Content-Disposition": f'inline; filename="{att.get("file_name", "file")}"',
+            "Cache-Control": "private, max-age=3600",
+        },
+    )
 
 
 @router.put("/estate-chat/channels/{channel_id}/members")
