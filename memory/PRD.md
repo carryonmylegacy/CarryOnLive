@@ -36,6 +36,31 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (April 1, 2026 — Unified Admin Accounts + Ops Scopes + Section Members)
+
+**Unified Admin Account Management**
+- Added `ops_manager` and `ops_team` as valid admin scopes in `VALID_SCOPES` and `SCOPE_LABELS`
+- Admin Accounts tab (ScopedAdminsTab) now includes checkboxes for Operations Manager and Operations Team Member
+- The create endpoint now MERGES scopes when email already exists (instead of rejecting with 400 "Email already in use")
+- Operators are automatically upgraded to admin role when scopes are assigned via the Admin Accounts tab
+- The scoped admins list now returns BOTH admin and operator accounts for unified management
+- Operators without explicit `admin_scope` get scope derived from `operator_role` (manager→ops_manager, worker→ops_team)
+- Email field accepts both emails and usernames (changed from EmailStr to str) to support operator usernames
+- OPERATOR badge displayed on operator-role users in the admin list
+
+**Section Members Tabs**
+- Added "Members" tab to each portal section: Operations, Finance, Marketing, Compliance, Platform
+- New `SectionMembersTab` component shows all users with access to a specific section
+- Founder users appear in all section member views (they have universal access)
+- Scope badges highlight which scopes are active for the current section
+
+**Bug Fix: normalize_scopes Default**
+- Fixed `normalize_scopes()` defaulting to `["founder"]` for operators without explicit admin_scope
+- Applied consistent scope derivation logic across CREATE, UPDATE, and DELETE endpoints
+- Test report: `iteration_35.json` — 16/16 tests passed (100%)
+
+
+
 ### Completed (March 31, 2026 — Pressure Test + DRY Refactor)
 
 **Full Platform Pressure Test**
