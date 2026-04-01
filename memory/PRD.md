@@ -69,6 +69,20 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - iOS compliance: All font sizes >= 11px, proper touch targets
 - Housekeeping: 60/60 PASS, Ruff clean
 
+**Push Notifications + Notification Preferences**
+- New `routes/notification_prefs.py` — Per-user notification preferences with admin-managed categories
+- 5 default categories auto-seeded: Emergency Alerts (CCP) [CRITICAL], Estate Chat (ECT), Estate Updates, Milestone Messages, System
+- All toggles ON by default; master on/off toggle to disable all notifications
+- `GET /api/notification-prefs` — returns user prefs + available categories, auto-creates if missing
+- `PUT /api/notification-prefs` — update master toggle and/or individual category toggles
+- Admin CRUD: `GET/POST/PUT/DELETE /api/admin/notification-categories` — Founder can add, edit, reorder, or remove categories
+- New categories added by admin automatically appear in all users' Settings with configured defaults
+- CCP push integration: activate sends to all members, deactivate sends to all members, check-in sends to benefactor
+- All push calls respect user preferences via `should_notify()` helper
+- Frontend: `NotificationPrefsCard.js` added to both benefactor and beneficiary Settings pages
+- Frontend: `NotificationCategoriesTab.js` added to Admin → Admin section as "Notifications" tab
+- Test report: `iteration_40.json` — 20/20 tests passed (100%)
+
 ### Completed (April 1, 2026 — Unified Admin Accounts + Ops Scopes + Section Members)
 
 **Unified Admin Account Management**

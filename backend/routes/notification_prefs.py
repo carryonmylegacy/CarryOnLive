@@ -5,7 +5,6 @@ Admin-managed notification categories (Founder can add/edit/remove categories).
 """
 
 from datetime import datetime, timezone
-from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -70,17 +69,13 @@ async def _ensure_categories() -> list[dict]:
         for cat in DEFAULT_CATEGORIES:
             doc = {**cat, "created_at": now, "updated_at": now, "deleted_at": None}
             await db.notification_categories.insert_one({k: v for k, v in doc.items()})
-    cats = await db.notification_categories.find(
-        {"deleted_at": None}, {"_id": 0}
-    ).sort("order", 1).to_list(50)
+    cats = await db.notification_categories.find({"deleted_at": None}, {"_id": 0}).sort("order", 1).to_list(50)
     return cats
 
 
 async def _get_user_prefs(user_id: str) -> dict:
     """Get user's notification preferences, creating defaults if needed."""
-    prefs = await db.notification_preferences.find_one(
-        {"user_id": user_id}, {"_id": 0}
-    )
+    prefs = await db.notification_preferences.find_one({"user_id": user_id}, {"_id": 0})
     if prefs:
         return prefs
     categories = await _ensure_categories()
@@ -146,14 +141,10 @@ async def update_prefs(
         updates["master_enabled"] = data.master_enabled
     if data.toggles is not None:
         # Merge with existing toggles
-        existing = await db.notification_preferences.find_one(
-            {"user_id": current_user["id"]}, {"_id": 0, "toggles": 1}
-        )
+        existing = await db.notification_preferences.find_one({"user_id": current_user["id"]}, {"_id": 0, "toggles": 1})
         merged = {**(existing or {}).get("toggles", {}), **data.toggles}
         updates["toggles"] = merged
-    await db.notification_preferences.update_one(
-        {"user_id": current_user["id"]}, {"$set": updates}
-    )
+    await db.notification_preferences.update_one({"user_id": current_user["id"]}, {"$set": updates})
     return {"success": True}
 
 
@@ -192,9 +183,7 @@ async def create_category(
         raise HTTPException(status_code=400, detail="Label is required")
     # Auto-generate ID from label
     cat_id = data.label.strip().lower().replace(" ", "_").replace("(", "").replace(")", "")
-    existing = await db.notification_categories.find_one(
-        {"id": cat_id, "deleted_at": None}, {"_id": 0}
-    )
+    existing = await db.notification_categories.find_one({"id": cat_id, "deleted_at": None}, {"_id": 0})
     if existing:
         raise HTTPException(status_code=409, detail="Category with this name already exists")
     max_order = await db.notification_categories.find_one(
@@ -224,9 +213,7 @@ async def update_category(
     current_user: dict = Depends(require_admin),
 ):
     """Admin: Update a notification category."""
-    cat = await db.notification_categories.find_one(
-        {"id": category_id, "deleted_at": None}, {"_id": 0}
-    )
+    cat = await db.notification_categories.find_one({"id": category_id, "deleted_at": None}, {"_id": 0})
     if not cat:
         raise HTTPException(status_code=404, detail="Category not found")
     updates = {"updated_at": datetime.now(timezone.utc).isoformat()}
@@ -234,12 +221,8 @@ async def update_category(
         val = getattr(data, field)
         if val is not None:
             updates[field] = val.strip() if isinstance(val, str) else val
-    await db.notification_categories.update_one(
-        {"id": category_id}, {"$set": updates}
-    )
-    updated = await db.notification_categories.find_one(
-        {"id": category_id}, {"_id": 0}
-    )
+    await db.notification_categories.update_one({"id": category_id}, {"$set": updates})
+    updated = await db.notification_categories.find_one({"id": category_id}, {"_id": 0})
     return updated
 
 
@@ -249,9 +232,7 @@ async def delete_category(
     current_user: dict = Depends(require_admin),
 ):
     """Admin: Soft-delete a notification category."""
-    cat = await db.notification_categories.find_one(
-        {"id": category_id, "deleted_at": None}, {"_id": 0}
-    )
+    cat = await db.notification_categories.find_one({"id": category_id, "deleted_at": None}, {"_id": 0})
     if not cat:
         raise HTTPException(status_code=404, detail="Category not found")
     await db.notification_categories.update_one(

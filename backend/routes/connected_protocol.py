@@ -410,9 +410,7 @@ async def check_in(data: CheckInRequest, current_user: dict = Depends(get_curren
     # Notify the benefactor when a member checks in
     import asyncio
 
-    estate = await db.estates.find_one(
-        {"id": activation["estate_id"]}, {"_id": 0, "owner_id": 1}
-    )
+    estate = await db.estates.find_one({"id": activation["estate_id"]}, {"_id": 0, "owner_id": 1})
     if estate and estate["owner_id"] != current_user["id"]:
         status_label = data.status.replace("_", " ").upper()
         asyncio.create_task(
