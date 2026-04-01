@@ -1080,7 +1080,9 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "created_at": current_user["created_at"],
         "photo_url": resolve_photo_url(photo),
         "operator_role": current_user.get("operator_role", ""),
-        "admin_scope": user_doc.get("admin_scope", "") if isinstance(user_doc.get("admin_scope"), list) else ([user_doc["admin_scope"]] if user_doc.get("admin_scope") else []),
+        "admin_scope": user_doc.get("admin_scope", "")
+        if isinstance(user_doc.get("admin_scope"), list)
+        else ([user_doc["admin_scope"]] if user_doc.get("admin_scope") else []),
         "is_also_benefactor": user_doc.get("is_also_benefactor", False) or bool(owns_estate),
         "is_also_beneficiary": user_doc.get("is_also_beneficiary", False),
         "first_name": user_doc.get("first_name", ""),

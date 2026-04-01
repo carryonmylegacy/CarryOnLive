@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 
 import bcrypt
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import Optional
 
 from config import db
@@ -26,8 +26,13 @@ from services.audit import get_client_ip, log_audit_event
 router = APIRouter()
 
 VALID_SCOPES = [
-    "founder", "finance", "compliance", "marketing", "platform_health",
-    "ops_manager", "ops_team",
+    "founder",
+    "finance",
+    "compliance",
+    "marketing",
+    "platform_health",
+    "ops_manager",
+    "ops_team",
 ]
 
 SCOPE_LABELS = {
@@ -102,7 +107,9 @@ async def create_scoped_admin(
     scopes = data.admin_scope if isinstance(data.admin_scope, list) else [data.admin_scope]
     for s in scopes:
         if s not in VALID_SCOPES:
-            raise HTTPException(status_code=400, detail=f"Invalid scope '{s}'. Must be one of: {', '.join(VALID_SCOPES)}")
+            raise HTTPException(
+                status_code=400, detail=f"Invalid scope '{s}'. Must be one of: {', '.join(VALID_SCOPES)}"
+            )
 
     normalized_email = data.email.lower().strip()
     existing = await db.users.find_one({"email": normalized_email}, {"_id": 0})
@@ -204,7 +211,8 @@ async def update_scoped_admin(
         raise HTTPException(status_code=403, detail="Only Founder Admin can modify scoped admins")
 
     target = await db.users.find_one(
-        {"id": admin_id, "role": {"$in": ["admin", "operator"]}}, {"_id": 0},
+        {"id": admin_id, "role": {"$in": ["admin", "operator"]}},
+        {"_id": 0},
     )
     if not target:
         raise HTTPException(status_code=404, detail="Admin not found")
@@ -217,7 +225,7 @@ async def update_scoped_admin(
         target_scopes = ["ops_manager"] if op_role == "manager" else ["ops_team"]
     else:
         target_scopes = ["founder"]  # Default for admins without scope
-    
+
     if "founder" in target_scopes and admin_id != current_user["id"]:
         raise HTTPException(status_code=403, detail="Cannot modify another Founder Admin")
 
@@ -294,7 +302,7 @@ async def delete_scoped_admin(
         target_scopes = ["ops_manager"] if op_role == "manager" else ["ops_team"]
     else:
         target_scopes = ["founder"]  # Default for admins without scope
-    
+
     if "founder" in target_scopes:
         raise HTTPException(status_code=403, detail="Cannot delete a Founder Admin")
 

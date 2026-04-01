@@ -29,6 +29,7 @@ ACCOUNT_TYPE_LABELS = {
 
 def _require_founder(user):
     from guards import is_founder_scope
+
     if not is_founder_scope(user):
         raise HTTPException(status_code=403, detail="Founder access required")
 
