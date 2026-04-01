@@ -171,6 +171,7 @@ const MobileNav = () => {
   const longPressTimerRef = React.useRef(null);
   const [mobileEstates, setMobileEstates] = useState([]);
   const [mobileEstatePicker, setMobileEstatePicker] = useState(false);
+  const [ectUnread, setEctUnread] = useState(0);
 
   // Fetch estates for portal switching
   React.useEffect(() => {
@@ -184,6 +185,22 @@ const MobileNav = () => {
         });
       }
     }
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Poll ECT unread count for badge
+  React.useEffect(() => {
+    if (user?.role === 'admin' || user?.role === 'operator') return;
+    const fetchUnread = () => {
+      const tk = localStorage.getItem('carryon_token');
+      if (!tk) return;
+      fetch(`${BASE_URL}/api/estate-chat/unread-total`, { headers: { Authorization: `Bearer ${tk}` } })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setEctUnread(d.total || 0); })
+        .catch(() => {});
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Dev portal switcher (founder only)
@@ -381,7 +398,7 @@ const MobileNav = () => {
     { to: '/digital-wallet', icon: KeyRound, label: 'Digital Access Vault (DAV)' },
     { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
     { to: '/timeline', icon: Clock, label: 'Estate Plan Timeline' },
-    { to: '/estate-chat', icon: MessageCircle, label: 'Estate Chat (ECT)' },
+    { to: '/estate-chat', icon: MessageCircle, label: 'Estate Chat (ECT)', badge: ectUnread },
     { to: '/connected-protocol', icon: Shield, label: 'Connected Protocol (CCP)' },
   ], enabledFeatures);
 
@@ -412,7 +429,7 @@ const MobileNav = () => {
     { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
     { to: '/beneficiary/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
     { to: '/beneficiary/milestone', icon: Gift, label: 'Report Milestone' },
-    { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Estate Chat (ECT)' },
+    { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Estate Chat (ECT)', badge: ectUnread },
     { to: '/beneficiary/connected-protocol', icon: Shield, label: 'Connected Protocol (CCP)' },
   ]);
 
@@ -769,6 +786,11 @@ const MobileNav = () => {
                         >
                           <item.icon className="w-5 h-5" />
                           <span>{item.label}</span>
+                          {item.badge > 0 && (
+                            <span className="ml-auto min-w-[20px] h-5 rounded-full flex items-center justify-center text-[11px] font-bold px-1.5" style={{ background: '#d4af37', color: '#080e1a' }} data-testid="ect-unread-badge-mobile">
+                              {item.badge > 99 ? '99+' : item.badge}
+                            </span>
+                          )}
                         </NavLink>
                         {idx < menuItems.length - 1 && (
                           <div className="flex justify-center">
