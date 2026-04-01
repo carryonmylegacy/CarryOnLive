@@ -27,6 +27,11 @@ import {
   Zap,
   Edit,
   Trash2,
+  FolderLock,
+  Heart,
+  KeyRound,
+  ExternalLink,
+  Mail,
 } from 'lucide-react';
 
 const STATUS_CONFIG = {
@@ -66,6 +71,8 @@ export default function ConnectedProtocolPage() {
   const [checkinNote, setCheckinNote] = useState('');
   const [checkinLocation, setCheckinLocation] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [linkedResources, setLinkedResources] = useState({ documents: [], ffn_contacts: [], dav_entries: [] });
+  const [availableResources, setAvailableResources] = useState({ documents: [], ffn_contacts: [], dav_entries: [] });
 
   const isBenefactor = user?.role === 'benefactor' || user?.is_also_benefactor;
 
@@ -94,6 +101,29 @@ export default function ConnectedProtocolPage() {
     } catch {}
   }, [estateId]);
 
+  const fetchLinkedResources = useCallback(async () => {
+    if (!estateId) return;
+    try {
+      const res = await fetch(`${API_URL}/ccp/active/${estateId}/linked-resources`, { headers });
+      if (res.ok) setLinkedResources(await res.json());
+    } catch {}
+  }, [estateId]);
+
+  const fetchAvailableResources = useCallback(async () => {
+    if (!estateId) return;
+    try {
+      const [docsRes, ffnRes, davRes] = await Promise.all([
+        fetch(`${API_URL}/documents/${estateId}`, { headers }),
+        fetch(`${API_URL}/ffn/${estateId}`, { headers }),
+        fetch(`${API_URL}/digital-wallet/${estateId}`, { headers }),
+      ]);
+      const docs = docsRes.ok ? await docsRes.json() : [];
+      const ffn = ffnRes.ok ? await ffnRes.json() : [];
+      const dav = davRes.ok ? await davRes.json() : [];
+      setAvailableResources({ documents: Array.isArray(docs) ? docs : docs.documents || [], ffn_contacts: ffn, dav_entries: dav });
+    } catch {}
+  }, [estateId]);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -113,6 +143,7 @@ export default function ConnectedProtocolPage() {
   useEffect(() => {
     if (!loading && activeEmergency && view === 'home') {
       setView('active');
+      fetchLinkedResources();
     }
   }, [loading, activeEmergency]);
 
@@ -127,6 +158,7 @@ export default function ConnectedProtocolPage() {
       });
       if (res.ok) {
         await fetchActive();
+        await fetchLinkedResources();
         setView('active');
       } else {
         const err = await res.json();
@@ -305,6 +337,102 @@ export default function ConnectedProtocolPage() {
 
         {/* Plan Details - Collapsible */}
         <PlanDetails snap={snap} />
+
+        {/* Linked Resources — Quick Access */}
+        {(linkedResources.documents.length > 0 || linkedResources.ffn_contacts.length > 0 || linkedResources.dav_entries.length > 0) && (
+          <div className="space-y-3">
+            <h3 className="text-sm font-bold" style={{ color: '#A0AABF' }}>EMERGENCY RESOURCES</h3>
+
+            {/* SDV Documents */}
+            {linkedResources.documents.length > 0 && (
+              <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(59,123,247,0.2)' }}>
+                <div className="flex items-center gap-2 px-4 py-2.5" style={{ background: 'rgba(59,123,247,0.08)' }}>
+                  <FolderLock className="w-4 h-4" style={{ color: '#3B7BF7' }} />
+                  <span className="text-xs font-bold" style={{ color: '#3B7BF7' }}>DOCUMENTS (SDV)</span>
+                </div>
+                <div className="p-2 space-y-1">
+                  {linkedResources.documents.map(doc => (
+                    <a key={doc.id} href={`/vault`} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 rounded-xl transition-all active:scale-[0.97]"
+                      data-testid={`ccp-doc-${doc.id}`}
+                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <FileText className="w-5 h-5 flex-shrink-0" style={{ color: '#3B7BF7' }} />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold truncate" style={{ color: '#F1F3F8' }}>{doc.name}</div>
+                        <div className="text-xs" style={{ color: '#7B879E' }}>{doc.category} · {doc.file_type}</div>
+                      </div>
+                      <ExternalLink className="w-4 h-4 flex-shrink-0" style={{ color: '#525C72' }} />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* FFN Contacts */}
+            {linkedResources.ffn_contacts.length > 0 && (
+              <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(34,201,147,0.2)' }}>
+                <div className="flex items-center gap-2 px-4 py-2.5" style={{ background: 'rgba(34,201,147,0.08)' }}>
+                  <Heart className="w-4 h-4" style={{ color: '#22C993' }} />
+                  <span className="text-xs font-bold" style={{ color: '#22C993' }}>TRUSTED CONTACTS (FFN)</span>
+                </div>
+                <div className="p-2 space-y-1">
+                  {linkedResources.ffn_contacts.map(fc => (
+                    <div key={fc.id} className="flex items-center gap-3 p-3 rounded-xl"
+                      data-testid={`ccp-ffn-${fc.id}`}
+                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: 'rgba(34,201,147,0.15)', color: '#22C993' }}>
+                        {fc.name?.charAt(0) || '?'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold" style={{ color: '#F1F3F8' }}>{fc.name}</div>
+                        <div className="text-xs" style={{ color: '#7B879E' }}>{fc.relationship}</div>
+                      </div>
+                      <div className="flex gap-1.5 flex-shrink-0">
+                        {fc.phone && (
+                          <a href={`tel:${fc.phone}`} className="w-9 h-9 rounded-full flex items-center justify-center active:scale-[0.95]"
+                            style={{ background: 'rgba(34,201,147,0.15)' }}>
+                            <Phone className="w-4 h-4" style={{ color: '#22C993' }} />
+                          </a>
+                        )}
+                        {fc.email && (
+                          <a href={`mailto:${fc.email}`} className="w-9 h-9 rounded-full flex items-center justify-center active:scale-[0.95]"
+                            style={{ background: 'rgba(59,123,247,0.15)' }}>
+                            <Mail className="w-4 h-4" style={{ color: '#3B7BF7' }} />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* DAV Entries */}
+            {linkedResources.dav_entries.length > 0 && (
+              <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(183,148,246,0.2)' }}>
+                <div className="flex items-center gap-2 px-4 py-2.5" style={{ background: 'rgba(183,148,246,0.08)' }}>
+                  <KeyRound className="w-4 h-4" style={{ color: '#B794F6' }} />
+                  <span className="text-xs font-bold" style={{ color: '#B794F6' }}>DIGITAL CREDENTIALS (DAV)</span>
+                </div>
+                <div className="p-2 space-y-1">
+                  {linkedResources.dav_entries.map(dav => (
+                    <a key={dav.id} href={`/digital-wallet`} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 rounded-xl transition-all active:scale-[0.97]"
+                      data-testid={`ccp-dav-${dav.id}`}
+                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <KeyRound className="w-5 h-5 flex-shrink-0" style={{ color: '#B794F6' }} />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold truncate" style={{ color: '#F1F3F8' }}>{dav.account_name}</div>
+                        <div className="text-xs" style={{ color: '#7B879E' }}>{dav.category} · {dav.login_username}</div>
+                      </div>
+                      <ExternalLink className="w-4 h-4 flex-shrink-0" style={{ color: '#525C72' }} />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Deactivate - Benefactor only */}
         {isBenefactor && (
@@ -498,6 +626,26 @@ export default function ConnectedProtocolPage() {
             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#F1F3F8', fontSize: '16px' }} />
         </div>
 
+        {/* Link Resources */}
+        <ResourceLinker
+          label="Link Documents (SDV)" icon={FolderLock} color="#3B7BF7"
+          available={availableResources.documents} idField="id" nameField="name" subtitleField="category"
+          selected={editPlan.linked_document_ids || []}
+          onChange={(ids) => setEditPlan({ ...editPlan, linked_document_ids: ids })}
+        />
+        <ResourceLinker
+          label="Link Contacts (FFN)" icon={Heart} color="#22C993"
+          available={availableResources.ffn_contacts} idField="id" nameField="name" subtitleField="relationship"
+          selected={editPlan.linked_ffn_contact_ids || []}
+          onChange={(ids) => setEditPlan({ ...editPlan, linked_ffn_contact_ids: ids })}
+        />
+        <ResourceLinker
+          label="Link Credentials (DAV)" icon={KeyRound} color="#B794F6"
+          available={availableResources.dav_entries} idField="id" nameField="account_name" subtitleField="category"
+          selected={editPlan.linked_dav_entry_ids || []}
+          onChange={(ids) => setEditPlan({ ...editPlan, linked_dav_entry_ids: ids })}
+        />
+
         {/* Save */}
         <button onClick={savePlan} disabled={submitting || !editPlan.name?.trim()}
           className="w-full py-4 rounded-2xl text-base font-bold transition-all active:scale-[0.97]"
@@ -519,7 +667,7 @@ export default function ConnectedProtocolPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold" style={{ color: '#F1F3F8' }}>Emergency Plans</h2>
           {isBenefactor && (
-            <button onClick={() => { setEditPlan({ name: '', plan_type: 'custom', rendezvous_points: [], communication_plan: '', resource_locations: [], instructions: '' }); setView('plan-edit'); }}
+            <button onClick={() => { setEditPlan({ name: '', plan_type: 'custom', rendezvous_points: [], communication_plan: '', resource_locations: [], instructions: '', linked_document_ids: [], linked_ffn_contact_ids: [], linked_dav_entry_ids: [] }); fetchAvailableResources(); setView('plan-edit'); }}
               className="w-10 h-10 rounded-full flex items-center justify-center" data-testid="ccp-new-plan-btn"
               style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }}>
               <Plus className="w-5 h-5" style={{ color: '#080e1a' }} />
@@ -541,7 +689,7 @@ export default function ConnectedProtocolPage() {
               </div>
               {isBenefactor && (
                 <div className="flex gap-1.5">
-                  <button onClick={() => { setEditPlan(p); setView('plan-edit'); }} className="w-8 h-8 rounded-lg flex items-center justify-center" data-testid={`ccp-edit-${p.id}`}
+                  <button onClick={() => { setEditPlan(p); fetchAvailableResources(); setView('plan-edit'); }} className="w-8 h-8 rounded-lg flex items-center justify-center" data-testid={`ccp-edit-${p.id}`}
                     style={{ background: 'rgba(255,255,255,0.05)' }}><Edit className="w-4 h-4" style={{ color: '#A0AABF' }} /></button>
                   <button onClick={() => deletePlan(p.id)} className="w-8 h-8 rounded-lg flex items-center justify-center" data-testid={`ccp-delete-${p.id}`}
                     style={{ background: 'rgba(240,82,82,0.1)' }}><Trash2 className="w-4 h-4" style={{ color: '#F05252' }} /></button>
@@ -694,6 +842,45 @@ function PlanDetails({ snap }) {
               <p className="text-sm ml-6 whitespace-pre-wrap" style={{ color: '#D8DEE9' }}>{snap.instructions}</p>
             </div>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+function ResourceLinker({ label, icon: Icon, color, available, idField, nameField, subtitleField, selected, onChange }) {
+  const [open, setOpen] = useState(false);
+  if (!available || available.length === 0) return null;
+  const toggle = (id) => {
+    onChange(selected.includes(id) ? selected.filter(x => x !== id) : [...selected, id]);
+  };
+  return (
+    <div>
+      <button onClick={() => setOpen(!open)} className="flex items-center gap-2 text-sm font-semibold py-2" style={{ color }} data-testid={`ccp-link-${label.split(' ')[1]?.toLowerCase() || 'res'}`}>
+        <Icon className="w-4 h-4" />
+        {label} ({selected.length}/{available.length})
+        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="space-y-1 mb-3">
+          {available.map(item => {
+            const id = item[idField];
+            const isSelected = selected.includes(id);
+            return (
+              <button key={id} onClick={() => toggle(id)}
+                className="w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all"
+                style={{ background: isSelected ? `${color}15` : 'rgba(255,255,255,0.02)', border: `1px solid ${isSelected ? `${color}40` : 'rgba(255,255,255,0.05)'}` }}>
+                <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0" style={{ background: isSelected ? color : 'rgba(255,255,255,0.08)' }}>
+                  {isSelected && <Check className="w-3 h-3" style={{ color: '#080e1a' }} />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold truncate" style={{ color: '#F1F3F8' }}>{item[nameField]}</div>
+                  {subtitleField && item[subtitleField] && <div className="text-xs" style={{ color: '#7B879E' }}>{item[subtitleField]}</div>}
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

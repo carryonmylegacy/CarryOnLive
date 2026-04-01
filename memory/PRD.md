@@ -36,6 +36,26 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (April 1, 2026 — CCP Phase 2 + FFN Chat Integration)
+
+**CCP Phase 2: Linked SDV/FFN/DAV Access from Active Emergency**
+- New `GET /api/ccp/active/{estate_id}/linked-resources` endpoint resolves linked document, FFN contact, and DAV entry IDs into full details
+- Active emergency view now shows "EMERGENCY RESOURCES" section with three color-coded cards:
+  - Documents (SDV) — blue, with links to vault
+  - Trusted Contacts (FFN) — green, with tap-to-call and tap-to-email buttons
+  - Digital Credentials (DAV) — purple, with links to digital wallet
+- Plan editor now includes `ResourceLinker` component for each resource type (SDV/FFN/DAV) with checkbox-based selection
+- Resources are snapshotted at activation time and displayed during the emergency
+
+**FFN Integration into Estate Chat**
+- FFN contacts now appear in ECT member picker with orange "EXTERNAL" badge
+- Any estate member can include FFN contacts in group chats or DMs
+- Messages to channels containing FFN contacts are delivered via email (Resend) and SMS (Twilio)
+- Emails include estate name, sender name, other participants, and CarryOn branding
+- SMS includes estate name and sender with 140-char message preview
+- Security intro glass panel on first ECT use explaining closed-network privacy model
+- Collapsible "Why ECT is different" info section in channel list with 5 privacy points
+
 ### Completed (April 1, 2026 — Estate Chat Tool + Connected Protocol)
 
 **Estate Chat Tool (ECT)**
@@ -679,6 +699,9 @@ Fixed drag-and-drop file rejection for PDFs in the Secure Document Vault:
 - **Scalability Enhancements**: Horizontal scaling, background workers, CDN
 - **Readiness Scoring Policy Page**: Informational page under Account section
 - **Twilio SMS OTP**: A2P campaign resubmitted March 24, 2026. Check back mid-April 2026.
+
+### P3
+- **ECT Security Comparison Landing Page**: Public page at `/security` with visual comparison table (CarryOn ECT vs Signal vs WhatsApp vs iMessage). Covers: closed network, no phone required, owner-controlled access, zero data mining, metadata privacy. For marketing/acquisition funnel use.
 
 ## Key API Endpoints
 - `POST /api/security/verify/{section_id}` — validates PIN/Password/Question combos

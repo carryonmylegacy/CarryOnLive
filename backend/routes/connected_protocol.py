@@ -366,6 +366,45 @@ async def get_active_emergency(estate_id: str, current_user: dict = Depends(get_
     }
 
 
+@router.get("/ccp/active/{estate_id}/linked-resources")
+async def get_linked_resources(estate_id: str, current_user: dict = Depends(get_current_user)):
+    """Get resolved linked SDV documents, FFN contacts, and DAV entries for the active emergency."""
+    if not await _is_estate_member(current_user["id"], estate_id):
+        raise HTTPException(status_code=403, detail="Not a member of this estate")
+    activation = await db.emergency_activations.find_one({"estate_id": estate_id, "status": "active"}, {"_id": 0})
+    if not activation:
+        return {"documents": [], "ffn_contacts": [], "dav_entries": []}
+    snap = activation.get("plan_snapshot", {})
+    # Resolve SDV documents
+    doc_ids = snap.get("linked_document_ids", [])
+    documents = []
+    if doc_ids:
+        docs = await db.documents.find(
+            {"id": {"$in": doc_ids}, "estate_id": estate_id},
+            {"_id": 0, "id": 1, "name": 1, "category": 1, "file_type": 1, "file_size": 1},
+        ).to_list(50)
+        documents = docs
+    # Resolve FFN contacts
+    ffn_ids = snap.get("linked_ffn_contact_ids", [])
+    ffn_contacts = []
+    if ffn_ids:
+        contacts = await db.ffn_contacts.find(
+            {"id": {"$in": ffn_ids}, "estate_id": estate_id, "deleted_at": None},
+            {"_id": 0, "id": 1, "name": 1, "phone": 1, "email": 1, "relationship": 1, "address": 1},
+        ).to_list(50)
+        ffn_contacts = contacts
+    # Resolve DAV entries
+    dav_ids = snap.get("linked_dav_entry_ids", [])
+    dav_entries = []
+    if dav_ids:
+        entries = await db.digital_wallet.find(
+            {"id": {"$in": dav_ids}, "estate_id": estate_id},
+            {"_id": 0, "id": 1, "account_name": 1, "login_username": 1, "category": 1, "notes": 1},
+        ).to_list(50)
+        dav_entries = entries
+    return {"documents": documents, "ffn_contacts": ffn_contacts, "dav_entries": dav_entries}
+
+
 @router.get("/ccp/history/{estate_id}")
 async def get_activation_history(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Get past activations for an estate."""
