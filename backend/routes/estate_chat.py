@@ -20,6 +20,121 @@ from utils import get_current_user
 router = APIRouter()
 
 
+async def _deliver_to_ffn(channel: dict, sender_name: str, content: str, estate_name: str = ""):
+    """Send email/SMS to FFN contacts in a channel."""
+    import asyncio
+
+    ffn_ids = [m.replace("ffn_", "") for m in channel.get("members", []) if m.startswith("ffn_")]
+    if not ffn_ids:
+        return
+    ffn_contacts = await db.ffn_contacts.find(
+        {"id": {"$in": ffn_ids}, "deleted_at": None},
+        {"_id": 0, "id": 1, "name": 1, "email": 1, "phone": 1},
+    ).to_list(50)
+    # Build member list for context
+    platform_ids = [m for m in channel.get("members", []) if not m.startswith("ffn_")]
+    platform_names = []
+    if platform_ids:
+        users = await db.users.find({"id": {"$in": platform_ids}}, {"_id": 0, "id": 1, "name": 1}).to_list(50)
+        platform_names = [u["name"] for u in users]
+    others_text = ""
+    if len(platform_names) > 1:
+        other_names = [n for n in platform_names if n != sender_name]
+        if other_names:
+            others_text = f" (also in this conversation: {', '.join(other_names[:5])})"
+    ch_type = channel.get("type", "group")
+    ch_label = channel.get("name", "Group Chat") if ch_type == "group" else "Estate Chat"
+    for fc in ffn_contacts:
+        # Email delivery
+        if fc.get("email"):
+            asyncio.create_task(
+                _send_ffn_email(
+                    fc["email"],
+                    fc["name"],
+                    sender_name,
+                    content,
+                    estate_name,
+                    ch_label,
+                    others_text,
+                )
+            )
+        # SMS delivery
+        if fc.get("phone"):
+            asyncio.create_task(
+                _send_ffn_sms(
+                    fc["phone"],
+                    sender_name,
+                    content,
+                    estate_name,
+                )
+            )
+
+
+async def _send_ffn_email(
+    to_email: str,
+    to_name: str,
+    sender_name: str,
+    content: str,
+    estate_name: str,
+    channel_name: str,
+    others_text: str,
+):
+    """Send a chat message notification email to an FFN contact."""
+    import asyncio
+
+    import resend
+
+    from config import RESEND_API_KEY, SENDER_EMAIL, logger
+
+    if not RESEND_API_KEY or not SENDER_EMAIL:
+        return
+    subject = f"{sender_name} from {estate_name or 'CarryOn'} sent you a message"
+    html = f"""<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:24px;background:#0F1629;color:#F1F3F8;border-radius:12px;">
+<div style="text-align:center;margin-bottom:16px;">
+<strong style="color:#d4af37;font-size:18px;">CarryOn™ Estate Chat</strong>
+</div>
+<div style="background:rgba(255,255,255,0.05);padding:16px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);">
+<p style="margin:0 0 8px;color:#d4af37;font-size:13px;font-weight:600;">{sender_name} · {estate_name or "Estate"}{others_text}</p>
+<p style="margin:0;font-size:15px;color:#F1F3F8;">{content}</p>
+</div>
+<p style="margin:16px 0 0;font-size:12px;color:#7B879E;text-align:center;">
+This message was sent via {channel_name} on CarryOn™. You are receiving this because you are a trusted contact of the {estate_name or ""} estate.
+</p>
+</div>"""
+    try:
+        await asyncio.to_thread(
+            resend.Emails.send,
+            {
+                "from": SENDER_EMAIL,
+                "to": [to_email],
+                "subject": subject,
+                "html": html,
+            },
+        )
+    except Exception as e:
+        logger.warning(f"FFN email delivery failed to {to_email}: {e}")
+
+
+async def _send_ffn_sms(phone: str, sender_name: str, content: str, estate_name: str):
+    """Send a chat message SMS to an FFN contact."""
+    import asyncio
+
+    from config import TWILIO_PHONE_NUMBER, logger, twilio_client
+
+    if not twilio_client or not TWILIO_PHONE_NUMBER:
+        return
+    body = f"[CarryOn {estate_name or 'Estate'}] {sender_name}: {content[:140]}"
+    try:
+        await asyncio.to_thread(
+            twilio_client.messages.create,
+            body=body,
+            from_=TWILIO_PHONE_NUMBER,
+            to=phone,
+        )
+    except Exception as e:
+        logger.warning(f"FFN SMS delivery failed to {phone}: {e}")
+
+
 class CreateChannelRequest(BaseModel):
     estate_id: str
     name: Optional[str] = None
@@ -187,6 +302,24 @@ async def get_contacts(current_user: dict = Depends(get_current_user)):
                 "members": members,
             }
         )
+        # Include FFN contacts as external members
+        ffn_contacts = await db.ffn_contacts.find(
+            {"estate_id": eid, "deleted_at": None},
+            {"_id": 0, "id": 1, "name": 1, "email": 1, "phone": 1, "relationship": 1},
+        ).to_list(100)
+        for fc in ffn_contacts:
+            result[-1]["members"].append(
+                {
+                    "id": f"ffn_{fc['id']}",
+                    "name": fc.get("name", "Unknown"),
+                    "photo_url": "",
+                    "role_in_estate": "ffn",
+                    "relation": fc.get("relationship", "FFN Contact"),
+                    "is_ffn": True,
+                    "email": fc.get("email", ""),
+                    "phone": fc.get("phone", ""),
+                }
+            )
     return result
 
 
@@ -425,6 +558,20 @@ async def send_message(
     )
     # Clear typing indicator on send
     await db.estate_typing.delete_one({"channel_id": channel_id, "user_id": current_user["id"]})
+    # Deliver to FFN contacts via email/SMS
+    ffn_members = [m for m in channel.get("members", []) if m.startswith("ffn_")]
+    if ffn_members:
+        import asyncio
+
+        estate = await db.estates.find_one({"id": channel.get("estate_id", "")}, {"_id": 0, "id": 1, "name": 1})
+        asyncio.create_task(
+            _deliver_to_ffn(
+                channel,
+                current_user.get("name", "Unknown"),
+                content,
+                estate.get("name", "") if estate else "",
+            )
+        )
     return message
 
 

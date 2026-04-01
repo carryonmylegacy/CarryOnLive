@@ -23,6 +23,8 @@ import {
   Image,
   Download,
   Search,
+  Shield,
+  Lock,
 } from 'lucide-react';
 
 const ECT_POLL_INTERVAL = 8000;
@@ -47,6 +49,8 @@ export default function EstateChatPage() {
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showSecurityIntro, setShowSecurityIntro] = useState(() => !localStorage.getItem('ect_security_seen'));
+  const [showSecurityInfo, setShowSecurityInfo] = useState(false);
   const [msgLoading, setMsgLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [showNewChat, setShowNewChat] = useState(false);
@@ -393,7 +397,12 @@ export default function EstateChatPage() {
                     {m.name?.charAt(0) || '?'}
                   </div>
                   <div className="flex-1 text-left">
-                    <div className="text-sm font-semibold" style={{ color: '#F1F3F8' }}>{m.name}</div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-semibold" style={{ color: '#F1F3F8' }}>{m.name}</span>
+                      {m.is_ffn && (
+                        <span className="text-[11px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(245,166,35,0.15)', color: '#F5A623' }}>EXTERNAL</span>
+                      )}
+                    </div>
                     <div className="text-xs" style={{ color: '#7B879E' }}>{m.relation || m.role_in_estate}</div>
                   </div>
                   {isSelected && <Check className="w-5 h-5" style={{ color: '#d4af37' }} />}
@@ -460,6 +469,31 @@ export default function EstateChatPage() {
         </div>
       )}
       <div className="flex-1 overflow-y-auto p-2">
+        {/* Security info — collapsible */}
+        <button onClick={() => setShowSecurityInfo(!showSecurityInfo)}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl mb-2 transition-all"
+          data-testid="ect-security-info-toggle"
+          style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}>
+          <Shield className="w-4 h-4" style={{ color: '#d4af37' }} />
+          <span className="text-xs font-bold" style={{ color: '#d4af37' }}>Why ECT is different</span>
+          <ChevronDown className={`w-3.5 h-3.5 ml-auto transition-transform ${showSecurityInfo ? 'rotate-180' : ''}`} style={{ color: '#d4af37' }} />
+        </button>
+        {showSecurityInfo && (
+          <div className="mb-3 rounded-xl p-3 space-y-2" style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.1)' }}>
+            {[
+              ['Closed Network', 'Only estate members can message you — no strangers, ever'],
+              ['No Phone Required', 'No numbers exposed, no contact scanning'],
+              ['Owner Controls Access', 'Benefactor decides who is in and out'],
+              ['Zero Data Mining', 'No ads, no tracking, no metadata sold'],
+              ['Trusted Contacts', 'FFN contacts receive via email/SMS — never see other messages'],
+            ].map(([t, d], i) => (
+              <div key={i} className="flex items-start gap-2">
+                <Check className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: '#22C993' }} />
+                <div><span className="text-xs font-bold" style={{ color: '#F1F3F8' }}>{t}</span><span className="text-xs" style={{ color: '#7B879E' }}> — {d}</span></div>
+              </div>
+            ))}
+          </div>
+        )}
         {/* Search results */}
         {showSearch && searchQuery.trim() ? (
           <div>
@@ -824,6 +858,43 @@ export default function EstateChatPage() {
         {showChannelList && !activeChannel ? channelPanel : messageArea}
       </div>
       {newChatModal}
+      {/* Security Intro Glass Panel — first use only */}
+      {showSecurityIntro && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 overflow-y-auto" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)' }}>
+          <div className="w-full max-w-md rounded-2xl p-6" data-testid="ect-security-intro" style={{ background: 'rgba(15,22,41,0.95)', border: '1px solid rgba(212,175,55,0.3)', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}>
+            <div className="text-center mb-5">
+              <Shield className="w-12 h-12 mx-auto mb-3" style={{ color: '#d4af37' }} />
+              <h2 className="text-xl font-bold" style={{ color: '#F1F3F8' }}>The Most Private Chat You'll Ever Use</h2>
+              <p className="text-sm mt-2" style={{ color: '#A0AABF' }}>Estate Chat isn't like other messaging apps. Here's why.</p>
+            </div>
+            <div className="space-y-3 mb-6">
+              {[
+                { icon: Lock, title: 'Closed Network', desc: 'No strangers can ever find you. Only people explicitly connected to your estate can message you.' },
+                { icon: Shield, title: 'No Phone Number Needed', desc: 'Your phone number is never exposed. No contact list scanning. No profile discovery by outsiders.' },
+                { icon: Users, title: 'Owner-Controlled Access', desc: 'The estate benefactor controls who is in and who is out. No one can add themselves.' },
+                { icon: X, title: 'Zero Data Mining', desc: 'No ads. No tracking. No metadata sold to third parties. Your conversations exist for your family — period.' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <item.icon className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#d4af37' }} />
+                  <div>
+                    <div className="text-sm font-bold" style={{ color: '#F1F3F8' }}>{item.title}</div>
+                    <div className="text-xs mt-0.5" style={{ color: '#7B879E' }}>{item.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-center mb-4" style={{ color: '#525C72' }}>
+              The most private messaging system isn't the one with the strongest lock — it's the one where strangers can never find the door.
+            </p>
+            <button
+              onClick={() => { setShowSecurityIntro(false); localStorage.setItem('ect_security_seen', '1'); }}
+              className="w-full py-3 rounded-xl text-base font-bold transition-all active:scale-[0.97]"
+              data-testid="ect-security-dismiss"
+              style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)', color: '#080e1a' }}
+            >I Understand — Start Chatting</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
