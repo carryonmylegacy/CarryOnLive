@@ -21,6 +21,15 @@ import {
 
 const ECT_POLL_INTERVAL = 8000;
 
+const REACTION_EMOJIS = {
+  thumbs_up: { display: '\uD83D\uDC4D', label: 'Thumbs Up' },
+  heart: { display: '\u2764\uFE0F', label: 'Heart' },
+  laugh: { display: '\uD83D\uDE02', label: 'Laugh' },
+  sad: { display: '\uD83D\uDE22', label: 'Sad' },
+  fire: { display: '\uD83D\uDD25', label: 'Fire' },
+  check: { display: '\u2705', label: 'Check' },
+};
+
 export default function EstateChatPage() {
   const { user } = useAuth();
   const token = localStorage.getItem('carryon_token');
@@ -42,6 +51,7 @@ export default function EstateChatPage() {
   const [newChatType, setNewChatType] = useState('direct');
   const [readStatus, setReadStatus] = useState([]);
   const [typers, setTypers] = useState([]);
+  const [reactingMsgId, setReactingMsgId] = useState(null);
   const typingTimerRef = useRef(null);
   const lastTypingSentRef = useRef(0);
 
@@ -135,6 +145,16 @@ export default function EstateChatPage() {
   const handleDraftChange = (e) => {
     setDraft(e.target.value);
     sendTypingHeartbeat();
+  };
+
+  const toggleReaction = async (messageId, emoji) => {
+    try {
+      await fetch(`${API_URL}/estate-chat/messages/${messageId}/react`, {
+        method: 'POST', headers, body: JSON.stringify({ emoji }),
+      });
+      setReactingMsgId(null);
+      if (activeChannel) await fetchMessages(activeChannel.id);
+    } catch {}
   };
 
   const sendMessage = async () => {
@@ -461,7 +481,8 @@ export default function EstateChatPage() {
                   <div className="text-[11px] font-semibold mb-1 ml-1" style={{ color: '#d4af37' }}>{msg.sender_name}</div>
                 )}
                 <div
-                  className="px-4 py-2.5 rounded-2xl text-sm"
+                  className="px-4 py-2.5 rounded-2xl text-sm cursor-pointer relative"
+                  onClick={() => setReactingMsgId(reactingMsgId === msg.id ? null : msg.id)}
                   style={{
                     background: isMe ? 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.1))' : 'rgba(255,255,255,0.05)',
                     border: `1px solid ${isMe ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`,
@@ -472,6 +493,45 @@ export default function EstateChatPage() {
                 >
                   {msg.content}
                 </div>
+                {/* Reaction picker */}
+                {reactingMsgId === msg.id && (
+                  <div className={`flex gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`} data-testid={`reaction-picker-${msg.id}`}>
+                    {Object.entries(REACTION_EMOJIS).map(([key, val]) => {
+                      const myReaction = (msg.reactions || []).some(r => r.emoji === key && r.user_id === user?.id);
+                      return (
+                        <button key={key} onClick={(e) => { e.stopPropagation(); toggleReaction(msg.id, key); }}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-base transition-all hover:scale-110 active:scale-95"
+                          style={{ background: myReaction ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)', border: myReaction ? '1px solid rgba(212,175,55,0.3)' : '1px solid transparent' }}
+                          title={val.label}>
+                          {val.display}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                {/* Reaction pills */}
+                {(msg.reactions || []).length > 0 && reactingMsgId !== msg.id && (
+                  <div className={`flex flex-wrap gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                    {Object.entries(
+                      (msg.reactions || []).reduce((acc, r) => { acc[r.emoji] = (acc[r.emoji] || []); acc[r.emoji].push(r); return acc; }, {})
+                    ).map(([emoji, reactors]) => {
+                      const myReaction = reactors.some(r => r.user_id === user?.id);
+                      const cfg = REACTION_EMOJIS[emoji];
+                      return (
+                        <button key={emoji} onClick={() => toggleReaction(msg.id, emoji)}
+                          className="flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[12px] transition-all"
+                          data-testid={`reaction-pill-${emoji}`}
+                          style={{
+                            background: myReaction ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.05)',
+                            border: `1px solid ${myReaction ? 'rgba(212,175,55,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                          }}>
+                          <span>{cfg?.display || emoji}</span>
+                          <span className="text-[11px] font-semibold" style={{ color: myReaction ? '#d4af37' : '#7B879E' }}>{reactors.length}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
                 <div className={`text-[11px] mt-0.5 flex items-center gap-1.5 ${isMe ? 'justify-end mr-1' : 'ml-1'}`} style={{ color: '#525C72' }}>
                   <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   {isMe && isLastMyMsg && readByCount > 0 && (

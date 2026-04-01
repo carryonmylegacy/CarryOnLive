@@ -166,6 +166,7 @@ async def lifespan(app):
         await db.estate_messages.create_index([("channel_id", 1), ("created_at", -1)])
         await db.estate_channel_reads.create_index([("channel_id", 1), ("user_id", 1)], unique=True)
         await db.estate_typing.create_index([("channel_id", 1), ("user_id", 1)], unique=True)
+        await db.estate_reactions.create_index("message_id")
         # CCP (Connected Protocol) indexes
         await db.emergency_plans.create_index("estate_id")
         await db.emergency_activations.create_index([("estate_id", 1), ("status", 1)])

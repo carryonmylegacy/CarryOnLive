@@ -31,6 +31,13 @@ class SendMessageRequest(BaseModel):
     content: str
 
 
+class ReactRequest(BaseModel):
+    emoji: str  # thumbs_up, heart, laugh, sad, fire, check
+
+
+VALID_REACTIONS = ["thumbs_up", "heart", "laugh", "sad", "fire", "check"]
+
+
 class UpdateMembersRequest(BaseModel):
     member_ids: list[str]
 
@@ -297,6 +304,20 @@ async def get_messages(
     if before:
         query["created_at"] = {"$lt": before}
     messages = await db.estate_messages.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    # Enrich messages with reactions
+    msg_ids = [m["id"] for m in messages]
+    if msg_ids:
+        reactions = await db.estate_reactions.find({"message_id": {"$in": msg_ids}}, {"_id": 0}).to_list(500)
+        react_map = {}
+        for r in reactions:
+            react_map.setdefault(r["message_id"], []).append(
+                {"emoji": r["emoji"], "user_id": r["user_id"], "user_name": r.get("user_name", "")}
+            )
+        for m in messages:
+            m["reactions"] = react_map.get(m["id"], [])
+    else:
+        for m in messages:
+            m["reactions"] = []
     now = datetime.now(timezone.utc).isoformat()
     await db.estate_channel_reads.update_one(
         {"channel_id": channel_id, "user_id": current_user["id"]},
@@ -405,6 +426,44 @@ async def send_message(
     # Clear typing indicator on send
     await db.estate_typing.delete_one({"channel_id": channel_id, "user_id": current_user["id"]})
     return message
+
+
+@router.post("/estate-chat/messages/{message_id}/react")
+async def toggle_reaction(
+    message_id: str,
+    data: ReactRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Toggle a reaction on a message. If already reacted with same emoji, removes it."""
+    if data.emoji not in VALID_REACTIONS:
+        raise HTTPException(status_code=400, detail=f"Invalid emoji. Must be one of: {VALID_REACTIONS}")
+    msg = await db.estate_messages.find_one({"id": message_id}, {"_id": 0, "channel_id": 1})
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    channel = await db.estate_channels.find_one({"id": msg["channel_id"]}, {"_id": 0, "members": 1})
+    if not channel or current_user["id"] not in channel.get("members", []):
+        raise HTTPException(status_code=403, detail="Not a member of this channel")
+    # Check if already reacted with this emoji
+    existing = await db.estate_reactions.find_one(
+        {"message_id": message_id, "user_id": current_user["id"], "emoji": data.emoji},
+        {"_id": 0},
+    )
+    if existing:
+        await db.estate_reactions.delete_one(
+            {"message_id": message_id, "user_id": current_user["id"], "emoji": data.emoji}
+        )
+        return {"action": "removed", "emoji": data.emoji}
+    now = datetime.now(timezone.utc).isoformat()
+    reaction = {
+        "id": str(uuid4()),
+        "message_id": message_id,
+        "user_id": current_user["id"],
+        "user_name": current_user.get("name", "Unknown"),
+        "emoji": data.emoji,
+        "created_at": now,
+    }
+    await db.estate_reactions.insert_one({k: v for k, v in reaction.items()})
+    return {"action": "added", "emoji": data.emoji}
 
 
 @router.put("/estate-chat/channels/{channel_id}/members")
