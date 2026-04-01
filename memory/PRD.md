@@ -59,6 +59,35 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - Applied consistent scope derivation logic across CREATE, UPDATE, and DELETE endpoints
 - Test report: `iteration_35.json` — 16/16 tests passed (100%)
 
+### Completed (April 1, 2026 — Milestone Downloads + IAC Export + SDV Beneficiary Designation)
+
+**Milestone Message Downloads**
+- New `GET /api/messages/{id}/download` endpoint
+- Text messages → generates PDF with title, date, content (minimal PDF builder, no dependencies)
+- Video messages → redirects to existing video blob endpoint for direct download
+- Voice messages → redirects to existing voice blob endpoint for direct download
+- Download button (green) added to each message card in MessagesPage.js
+- Available to both benefactors (alongside Edit/Delete) and beneficiaries (standalone)
+
+**IAC Download for Beneficiaries**
+- New `POST /api/guardian/beneficiary-export-checklist` endpoint
+- Finds estate via beneficiaries array (not owner_id)
+- Generates formatted PDF checklist with categories, checkmarks, readiness score
+- Includes disclaimer, estate name, benefactor name, state
+- Download IAC button added to BeneficiaryGuardianPage.js
+
+**SDV Beneficiary Designation**
+- New `PUT /api/documents/{id}/designate-beneficiaries` endpoint
+- Accepts `{ beneficiary_ids: ["all"] }` (default) or specific beneficiary IDs
+- `designated_beneficiaries` field stored on each document
+- Expandable checkbox list UI on each vault tile
+- Shows "Select All" + individual beneficiary checkboxes
+- "All beneficiaries" vs "X of Y beneficiaries" summary label
+- Beneficiary list fetched alongside documents on VaultPage load
+- Test report: `iteration_38.json` — 11/11 passed (100%)
+
+
+
 ### Completed (April 1, 2026 — Portal Buttons + Truncated Founder View Fix)
 
 **Admin Portal Buttons (above Sign Out)**

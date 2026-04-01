@@ -76,16 +76,16 @@ class TestMessageDownload:
         # First, get existing messages for the estate
         response = authenticated_client.get(f"{BASE_URL}/api/messages/{estate_id}")
         assert response.status_code == 200, f"Failed to get messages: {response.text}"
-        
+
         messages = response.json()
-        
+
         # Find a text message
         text_message = None
         for msg in messages:
             if msg.get("message_type") == "text":
                 text_message = msg
                 break
-        
+
         if not text_message:
             # Create a text message for testing
             create_response = authenticated_client.post(
@@ -103,29 +103,29 @@ class TestMessageDownload:
                 text_message = create_response.json()
             else:
                 pytest.skip(f"Could not create text message: {create_response.text}")
-        
+
         # Download the message
-        download_response = authenticated_client.get(
-            f"{BASE_URL}/api/messages/{text_message['id']}/download"
-        )
-        
+        download_response = authenticated_client.get(f"{BASE_URL}/api/messages/{text_message['id']}/download")
+
         assert download_response.status_code == 200, f"Download failed: {download_response.text}"
-        assert download_response.headers.get("Content-Type") == "application/pdf", \
+        assert download_response.headers.get("Content-Type") == "application/pdf", (
             f"Expected PDF content type, got: {download_response.headers.get('Content-Type')}"
+        )
         assert "Content-Disposition" in download_response.headers, "Missing Content-Disposition header"
-        assert "attachment" in download_response.headers.get("Content-Disposition", ""), \
+        assert "attachment" in download_response.headers.get("Content-Disposition", ""), (
             "Content-Disposition should indicate attachment"
-        
+        )
+
         # Verify PDF magic bytes
         content = download_response.content
-        assert content[:4] == b"%PDF", f"Response does not start with PDF magic bytes"
+        assert content[:4] == b"%PDF", "Response does not start with PDF magic bytes"
         print(f"✓ Text message download returns valid PDF ({len(content)} bytes)")
 
     def test_download_nonexistent_message_returns_404(self, authenticated_client):
         """Test that downloading a non-existent message returns 404"""
         fake_id = f"nonexistent_{uuid.uuid4().hex}"
         response = authenticated_client.get(f"{BASE_URL}/api/messages/{fake_id}/download")
-        
+
         assert response.status_code == 404, f"Expected 404, got {response.status_code}"
         print("✓ Non-existent message download returns 404")
 
@@ -134,31 +134,30 @@ class TestMessageDownload:
         # Get messages and find a video message
         response = authenticated_client.get(f"{BASE_URL}/api/messages/{estate_id}")
         assert response.status_code == 200
-        
+
         messages = response.json()
         video_message = None
         for msg in messages:
             if msg.get("message_type") == "video" and msg.get("video_url"):
                 video_message = msg
                 break
-        
+
         if not video_message:
             pytest.skip("No video message available for testing redirect")
-        
+
         # Download should redirect (307 or follow redirect)
         download_response = authenticated_client.get(
-            f"{BASE_URL}/api/messages/{video_message['id']}/download",
-            allow_redirects=False
+            f"{BASE_URL}/api/messages/{video_message['id']}/download", allow_redirects=False
         )
-        
+
         # Should be a redirect (307) or if followed, should return video content
-        assert download_response.status_code in [200, 307, 302], \
+        assert download_response.status_code in [200, 307, 302], (
             f"Expected redirect or video content, got {download_response.status_code}"
-        
+        )
+
         if download_response.status_code in [307, 302]:
             location = download_response.headers.get("Location", "")
-            assert "/api/messages/video/" in location, \
-                f"Redirect should point to video endpoint, got: {location}"
+            assert "/api/messages/video/" in location, f"Redirect should point to video endpoint, got: {location}"
             print(f"✓ Video message download redirects to: {location}")
         else:
             # If redirect was followed, check for video content type
@@ -170,29 +169,28 @@ class TestMessageDownload:
         """Test that downloading a voice message redirects to voice endpoint"""
         response = authenticated_client.get(f"{BASE_URL}/api/messages/{estate_id}")
         assert response.status_code == 200
-        
+
         messages = response.json()
         voice_message = None
         for msg in messages:
             if msg.get("message_type") == "voice" and msg.get("voice_url"):
                 voice_message = msg
                 break
-        
+
         if not voice_message:
             pytest.skip("No voice message available for testing redirect")
-        
+
         download_response = authenticated_client.get(
-            f"{BASE_URL}/api/messages/{voice_message['id']}/download",
-            allow_redirects=False
+            f"{BASE_URL}/api/messages/{voice_message['id']}/download", allow_redirects=False
         )
-        
-        assert download_response.status_code in [200, 307, 302], \
+
+        assert download_response.status_code in [200, 307, 302], (
             f"Expected redirect or audio content, got {download_response.status_code}"
-        
+        )
+
         if download_response.status_code in [307, 302]:
             location = download_response.headers.get("Location", "")
-            assert "/api/messages/voice/" in location, \
-                f"Redirect should point to voice endpoint, got: {location}"
+            assert "/api/messages/voice/" in location, f"Redirect should point to voice endpoint, got: {location}"
             print(f"✓ Voice message download redirects to: {location}")
         else:
             content_type = download_response.headers.get("Content-Type", "")
@@ -205,74 +203,74 @@ class TestDesignateBeneficiaries:
 
     def test_designate_all_beneficiaries(self, authenticated_client, estate_id):
         """Test designating 'all' beneficiaries for a document
-        
+
         Note: This test may return 403 if the authenticated user doesn't own the estate.
         The endpoint correctly requires estate ownership.
         """
         # Get documents for the estate
         response = authenticated_client.get(f"{BASE_URL}/api/documents/{estate_id}")
         assert response.status_code == 200, f"Failed to get documents: {response.text}"
-        
+
         documents = response.json()
         if not documents:
             pytest.skip("No documents available for testing")
-        
+
         doc_id = documents[0]["id"]
-        
+
         # Designate all beneficiaries
         designate_response = authenticated_client.put(
-            f"{BASE_URL}/api/documents/{doc_id}/designate-beneficiaries",
-            json={"beneficiary_ids": ["all"]}
+            f"{BASE_URL}/api/documents/{doc_id}/designate-beneficiaries", json={"beneficiary_ids": ["all"]}
         )
-        
+
         # 200 = success (user owns estate), 403 = user doesn't own estate (expected for admin viewing other estates)
         if designate_response.status_code == 403:
             # This is expected behavior - admin user doesn't own this estate
             data = designate_response.json()
-            assert "Access denied" in data.get("detail", ""), \
-                f"Expected access denied message, got: {data}"
+            assert "Access denied" in data.get("detail", ""), f"Expected access denied message, got: {data}"
             print(f"✓ Non-owner correctly gets 403 Access denied for document {doc_id}")
         elif designate_response.status_code == 200:
             data = designate_response.json()
             assert data.get("document_id") == doc_id, "Response should include document_id"
-            assert data.get("designated_beneficiaries") == ["all"], \
+            assert data.get("designated_beneficiaries") == ["all"], (
                 f"Expected ['all'], got: {data.get('designated_beneficiaries')}"
+            )
             print(f"✓ Successfully designated 'all' beneficiaries for document {doc_id}")
         else:
             pytest.fail(f"Unexpected status: {designate_response.status_code} - {designate_response.text}")
 
     def test_designate_specific_beneficiaries(self, authenticated_client, estate_id, beneficiary_ids):
         """Test designating specific beneficiary IDs for a document
-        
+
         Note: This test may return 403 if the authenticated user doesn't own the estate.
         """
         if not beneficiary_ids:
             pytest.skip("No beneficiaries available for testing")
-        
+
         # Get documents
         response = authenticated_client.get(f"{BASE_URL}/api/documents/{estate_id}")
         assert response.status_code == 200
-        
+
         documents = response.json()
         if not documents:
             pytest.skip("No documents available for testing")
-        
+
         doc_id = documents[0]["id"]
-        
+
         # Designate specific beneficiaries
         designate_response = authenticated_client.put(
             f"{BASE_URL}/api/documents/{doc_id}/designate-beneficiaries",
-            json={"beneficiary_ids": beneficiary_ids[:2]}  # Use first 2 beneficiaries
+            json={"beneficiary_ids": beneficiary_ids[:2]},  # Use first 2 beneficiaries
         )
-        
+
         # 200 = success, 403 = user doesn't own estate
         if designate_response.status_code == 403:
-            print(f"✓ Non-owner correctly gets 403 for specific beneficiary designation")
+            print("✓ Non-owner correctly gets 403 for specific beneficiary designation")
         elif designate_response.status_code == 200:
             data = designate_response.json()
             assert data.get("document_id") == doc_id
-            assert data.get("designated_beneficiaries") == beneficiary_ids[:2], \
+            assert data.get("designated_beneficiaries") == beneficiary_ids[:2], (
                 f"Expected {beneficiary_ids[:2]}, got: {data.get('designated_beneficiaries')}"
+            )
             print(f"✓ Successfully designated specific beneficiaries: {beneficiary_ids[:2]}")
         else:
             pytest.fail(f"Unexpected status: {designate_response.status_code} - {designate_response.text}")
@@ -280,14 +278,12 @@ class TestDesignateBeneficiaries:
     def test_designate_nonexistent_document_returns_404(self, authenticated_client):
         """Test that designating beneficiaries for non-existent document returns 404"""
         fake_id = f"nonexistent_{uuid.uuid4().hex}"
-        
+
         response = authenticated_client.put(
-            f"{BASE_URL}/api/documents/{fake_id}/designate-beneficiaries",
-            json={"beneficiary_ids": ["all"]}
+            f"{BASE_URL}/api/documents/{fake_id}/designate-beneficiaries", json={"beneficiary_ids": ["all"]}
         )
-        
-        assert response.status_code == 404, \
-            f"Expected 404, got {response.status_code}: {response.text}"
+
+        assert response.status_code == 404, f"Expected 404, got {response.status_code}: {response.text}"
         print("✓ Non-existent document returns 404")
 
     def test_designate_without_auth_returns_401(self):
@@ -295,15 +291,13 @@ class TestDesignateBeneficiaries:
         # Create a fresh session without auth
         session = requests.Session()
         session.headers.update({"Content-Type": "application/json"})
-        
+
         response = session.put(
-            f"{BASE_URL}/api/documents/some-doc-id/designate-beneficiaries",
-            json={"beneficiary_ids": ["all"]}
+            f"{BASE_URL}/api/documents/some-doc-id/designate-beneficiaries", json={"beneficiary_ids": ["all"]}
         )
-        
+
         # Without auth, should get 401 or 403 or 404 (if doc not found first)
-        assert response.status_code in [401, 403, 404], \
-            f"Expected 401/403/404, got {response.status_code}"
+        assert response.status_code in [401, 403, 404], f"Expected 401/403/404, got {response.status_code}"
         print(f"✓ Unauthenticated request returns {response.status_code}")
 
 
@@ -312,21 +306,21 @@ class TestBeneficiaryExportChecklist:
 
     def test_beneficiary_export_checklist_for_benefactor(self, authenticated_client):
         """Test that benefactor (estate owner) can export checklist
-        
+
         The admin user (info@carryon.us) has is_also_beneficiary=true, so they
         should be able to export the checklist if they are a beneficiary of some estate.
         """
-        response = authenticated_client.post(
-            f"{BASE_URL}/api/guardian/beneficiary-export-checklist"
-        )
-        
+        response = authenticated_client.post(f"{BASE_URL}/api/guardian/beneficiary-export-checklist")
+
         # If the user is NOT a beneficiary of any estate, should return 404
         # If they ARE a beneficiary, should return PDF
         if response.status_code == 404:
             data = response.json()
-            assert "No estate found for this beneficiary" in data.get("detail", "") or \
-                   "No checklist items found" in data.get("detail", ""), \
+            assert "No estate found for this beneficiary" in data.get(
+                "detail", ""
+            ) or "No checklist items found" in data.get("detail", ""), (
                 f"Expected beneficiary/checklist not found message, got: {data}"
+            )
             print("✓ Non-beneficiary user or no checklist items correctly gets 404")
         elif response.status_code == 200:
             # User is also a beneficiary of some estate
@@ -343,14 +337,11 @@ class TestBeneficiaryExportChecklist:
         # Create a fresh session without auth
         session = requests.Session()
         session.headers.update({"Content-Type": "application/json"})
-        
-        response = session.post(
-            f"{BASE_URL}/api/guardian/beneficiary-export-checklist"
-        )
-        
+
+        response = session.post(f"{BASE_URL}/api/guardian/beneficiary-export-checklist")
+
         # Without auth, should get 401 or 403 or 404 (if endpoint checks auth first)
-        assert response.status_code in [401, 403, 404], \
-            f"Expected 401/403/404, got {response.status_code}"
+        assert response.status_code in [401, 403, 404], f"Expected 401/403/404, got {response.status_code}"
         print(f"✓ Unauthenticated request returns {response.status_code}")
 
 
@@ -363,9 +354,7 @@ class TestEndpointAvailability:
         response = authenticated_client.get(f"{BASE_URL}/api/messages/{estate_id}")
         if response.status_code == 200 and response.json():
             msg_id = response.json()[0]["id"]
-            download_response = authenticated_client.get(
-                f"{BASE_URL}/api/messages/{msg_id}/download"
-            )
+            download_response = authenticated_client.get(f"{BASE_URL}/api/messages/{msg_id}/download")
             # Should not be 404 "Not Found" for the route itself
             assert download_response.status_code != 405, "Method not allowed - endpoint may not exist"
             print(f"✓ Message download endpoint exists (status: {download_response.status_code})")
@@ -378,8 +367,7 @@ class TestEndpointAvailability:
         if response.status_code == 200 and response.json():
             doc_id = response.json()[0]["id"]
             designate_response = authenticated_client.put(
-                f"{BASE_URL}/api/documents/{doc_id}/designate-beneficiaries",
-                json={"beneficiary_ids": ["all"]}
+                f"{BASE_URL}/api/documents/{doc_id}/designate-beneficiaries", json={"beneficiary_ids": ["all"]}
             )
             assert designate_response.status_code != 405, "Method not allowed - endpoint may not exist"
             print(f"✓ Designate beneficiaries endpoint exists (status: {designate_response.status_code})")
@@ -388,9 +376,7 @@ class TestEndpointAvailability:
 
     def test_beneficiary_export_checklist_endpoint_exists(self, authenticated_client):
         """Verify the beneficiary export checklist endpoint is registered"""
-        response = authenticated_client.post(
-            f"{BASE_URL}/api/guardian/beneficiary-export-checklist"
-        )
+        response = authenticated_client.post(f"{BASE_URL}/api/guardian/beneficiary-export-checklist")
         # Should not be 405 Method Not Allowed
         assert response.status_code != 405, "Method not allowed - endpoint may not exist"
         print(f"✓ Beneficiary export checklist endpoint exists (status: {response.status_code})")
