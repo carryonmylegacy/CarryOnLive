@@ -249,9 +249,17 @@ const AdminPage = ({ operatorMode = false }) => {
   const { user, getAuthHeaders } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const scopeParam = new URLSearchParams(location.search).get('scope');
   const defaultOpsTab = user?.operator_role === 'manager' ? 'ops-dashboard' : 'transition';
-  const tab = PATH_TO_TAB[location.pathname] || (operatorMode ? defaultOpsTab : 'users');
-  const effectiveTab = (!operatorMode && location.pathname === '/admin') ? 'users' : tab;
+
+  // Default tab per scope — so scoped views land on their first tab, not Operations/Users
+  const SCOPE_DEFAULT_TAB = {
+    finance: 'subscriptions', compliance: 'audit', marketing: 'funnel',
+    platform_health: 'system-health', ops_manager: 'users', ops_team: 'users',
+  };
+  const defaultTab = operatorMode ? defaultOpsTab : (scopeParam ? SCOPE_DEFAULT_TAB[scopeParam] || 'users' : 'users');
+  const tab = PATH_TO_TAB[location.pathname] || defaultTab;
+  const effectiveTab = (!operatorMode && location.pathname === '/admin') ? defaultTab : tab;
 
   useScrollLock(effectiveTab);
 
@@ -268,7 +276,6 @@ const AdminPage = ({ operatorMode = false }) => {
 
   // Admin scope: founder sees all, scoped admins see only their sections
   // URL ?scope= param overrides the view (portal switching), otherwise use server scope
-  const scopeParam = new URLSearchParams(location.search).get('scope');
   const serverScope = user?.admin_scope || user?._serverScope || 'founder';
   const serverScopes = Array.isArray(serverScope) ? serverScope : (serverScope ? [serverScope] : ['founder']);
   // If URL has ?scope=finance, show only finance. If no param, show user's actual scopes.
@@ -417,7 +424,7 @@ const AdminPage = ({ operatorMode = false }) => {
   const getDashboardTitle = () => {
     if (operatorMode) return 'Operations Dashboard';
     if (isFounder) return 'Founder Dashboard';
-    const labels = { finance: 'Finance', compliance: 'Compliance', marketing: 'Marketing', platform_health: 'Platform Health' };
+    const labels = { finance: 'Finance', compliance: 'Compliance', marketing: 'Marketing', platform_health: 'Platform Health', ops_manager: 'Operations', ops_team: 'Operations' };
     const scopeNames = adminScopes.map(s => labels[s] || s).join(' + ');
     return `${scopeNames} Dashboard`;
   };
@@ -489,7 +496,7 @@ const AdminPage = ({ operatorMode = false }) => {
             );
           }
           return (
-            <button key={t.key} onClick={() => navigate(t.path)}
+            <button key={t.key} onClick={() => navigate(scopeParam ? `${t.path}?scope=${scopeParam}` : t.path)}
               className={`flex items-center gap-1.5 rounded-lg font-bold transition-all whitespace-nowrap flex-shrink-0 active:scale-[0.97] ${
                 operatorMode ? 'px-3.5 py-2.5 text-sm min-h-[44px]' : 'px-3 py-2 text-xs'
               } ${
