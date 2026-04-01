@@ -52,7 +52,7 @@ async def get_training_modules(current_user: dict = Depends(require_staff)):
     completions = {}
     async for comp in db.training_completions.find(
         {"user_id": current_user["id"]},
-        {"_id": 0, "module_id": 1, "completed_at": 1},
+        {"_id": 0, "id": 1, "module_id": 1, "completed_at": 1},
     ):
         completions[comp["module_id"]] = comp["completed_at"]
 

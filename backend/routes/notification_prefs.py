@@ -141,7 +141,9 @@ async def update_prefs(
         updates["master_enabled"] = data.master_enabled
     if data.toggles is not None:
         # Merge with existing toggles
-        existing = await db.notification_preferences.find_one({"user_id": current_user["id"]}, {"_id": 0, "toggles": 1})
+        existing = await db.notification_preferences.find_one(
+            {"user_id": current_user["id"]}, {"_id": 0, "id": 1, "toggles": 1}
+        )
         merged = {**(existing or {}).get("toggles", {}), **data.toggles}
         updates["toggles"] = merged
     await db.notification_preferences.update_one({"user_id": current_user["id"]}, {"$set": updates})
@@ -187,7 +189,7 @@ async def create_category(
     if existing:
         raise HTTPException(status_code=409, detail="Category with this name already exists")
     max_order = await db.notification_categories.find_one(
-        {"deleted_at": None}, {"_id": 0, "order": 1}, sort=[("order", -1)]
+        {"deleted_at": None}, {"_id": 0, "id": 1, "order": 1}, sort=[("order", -1)]
     )
     next_order = (max_order.get("order", 0) + 1) if max_order else 0
     now = datetime.now(timezone.utc).isoformat()

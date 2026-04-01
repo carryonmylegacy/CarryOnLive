@@ -77,12 +77,12 @@ class DeactivateRequest(BaseModel):
 
 
 async def _is_estate_owner(user_id: str, estate_id: str) -> bool:
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "owner_id": 1})
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1})
     return estate is not None and estate["owner_id"] == user_id
 
 
 async def _is_estate_member(user_id: str, estate_id: str) -> bool:
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "owner_id": 1, "beneficiaries": 1})
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1, "beneficiaries": 1})
     if not estate:
         return False
     return estate["owner_id"] == user_id or user_id in estate.get("beneficiaries", [])
@@ -90,7 +90,9 @@ async def _is_estate_member(user_id: str, estate_id: str) -> bool:
 
 async def _get_estate_members(estate_id: str) -> list[dict]:
     """Get all members of an estate with their info."""
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "owner_id": 1, "beneficiaries": 1, "name": 1})
+    estate = await db.estates.find_one(
+        {"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1, "beneficiaries": 1, "name": 1}
+    )
     if not estate:
         return []
     all_ids = list({estate["owner_id"]} | set(estate.get("beneficiaries", [])))
@@ -100,7 +102,7 @@ async def _get_estate_members(estate_id: str) -> list[dict]:
     ).to_list(100)
     ben_records = await db.beneficiaries.find(
         {"estate_id": estate_id, "user_id": {"$in": all_ids}, "deleted_at": None},
-        {"_id": 0, "user_id": 1, "relation": 1},
+        {"_id": 0, "id": 1, "user_id": 1, "relation": 1},
     ).to_list(100)
     relation_map = {b["user_id"]: b.get("relation", "") for b in ben_records}
     members = []
@@ -410,7 +412,7 @@ async def check_in(data: CheckInRequest, current_user: dict = Depends(get_curren
     # Notify the benefactor when a member checks in
     import asyncio
 
-    estate = await db.estates.find_one({"id": activation["estate_id"]}, {"_id": 0, "owner_id": 1})
+    estate = await db.estates.find_one({"id": activation["estate_id"]}, {"_id": 0, "id": 1, "owner_id": 1})
     if estate and estate["owner_id"] != current_user["id"]:
         status_label = data.status.replace("_", " ").upper()
         asyncio.create_task(

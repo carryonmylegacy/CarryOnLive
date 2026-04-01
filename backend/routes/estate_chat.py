@@ -54,7 +54,7 @@ async def _get_user_estate_ids(user_id: str) -> list[str]:
 
 async def _is_estate_member(user_id: str, estate_id: str) -> bool:
     """Check if user is owner or accepted beneficiary of an estate."""
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "owner_id": 1, "beneficiaries": 1})
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1, "beneficiaries": 1})
     if not estate:
         return False
     if estate["owner_id"] == user_id:
@@ -64,7 +64,7 @@ async def _is_estate_member(user_id: str, estate_id: str) -> bool:
 
 async def _is_estate_owner(user_id: str, estate_id: str) -> bool:
     """Check if user is the owner (benefactor) of an estate."""
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "owner_id": 1})
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1})
     return estate is not None and estate["owner_id"] == user_id
 
 
@@ -104,7 +104,7 @@ async def _enrich_channel(channel: dict, current_user_id: str) -> dict:
     unread = await db.estate_messages.count_documents(unread_query)
     last_msg = await db.estate_messages.find_one(
         {"channel_id": ch_id},
-        {"_id": 0, "content": 1, "sender_name": 1, "created_at": 1},
+        {"_id": 0, "id": 1, "content": 1, "sender_name": 1, "created_at": 1},
         sort=[("created_at", -1)],
     )
     preview = None
@@ -119,12 +119,12 @@ async def _enrich_channel(channel: dict, current_user_id: str) -> dict:
     if channel["type"] == "direct":
         other_ids = [m for m in channel.get("members", []) if m != current_user_id]
         if other_ids:
-            other = await db.users.find_one({"id": other_ids[0]}, {"_id": 0, "name": 1})
+            other = await db.users.find_one({"id": other_ids[0]}, {"_id": 0, "id": 1, "name": 1})
             if other:
                 display_name = other["name"]
     # Get estate name for the tag
     estate_name = ""
-    estate = await db.estates.find_one({"id": channel.get("estate_id", "")}, {"_id": 0, "name": 1})
+    estate = await db.estates.find_one({"id": channel.get("estate_id", "")}, {"_id": 0, "id": 1, "name": 1})
     if estate:
         estate_name = estate.get("name", "")
     return {
@@ -165,7 +165,7 @@ async def get_contacts(current_user: dict = Depends(get_current_user)):
         # Get relationship info from beneficiaries collection
         ben_records = await db.beneficiaries.find(
             {"estate_id": eid, "user_id": {"$in": all_member_ids}, "deleted_at": None},
-            {"_id": 0, "user_id": 1, "relation": 1},
+            {"_id": 0, "id": 1, "user_id": 1, "relation": 1},
         ).to_list(100)
         relation_map = {b["user_id"]: b.get("relation", "") for b in ben_records}
         members = []
@@ -361,7 +361,7 @@ async def send_typing(
     current_user: dict = Depends(get_current_user),
 ):
     """Signal that the user is typing in a channel. Heartbeat — call every ~3s."""
-    channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0, "members": 1})
+    channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0, "id": 1, "members": 1})
     if not channel or current_user["id"] not in channel.get("members", []):
         return {"ok": True}  # Silently ignore — no error for typing heartbeat
     now = datetime.now(timezone.utc).isoformat()
@@ -384,7 +384,7 @@ async def get_typing(
     cutoff = (datetime.now(timezone.utc) - timedelta(seconds=5)).isoformat()
     typers = await db.estate_typing.find(
         {"channel_id": channel_id, "updated_at": {"$gt": cutoff}, "user_id": {"$ne": current_user["id"]}},
-        {"_id": 0, "user_id": 1, "user_name": 1},
+        {"_id": 0, "id": 1, "user_id": 1, "user_name": 1},
     ).to_list(20)
     return typers
 
@@ -437,10 +437,10 @@ async def toggle_reaction(
     """Toggle a reaction on a message. If already reacted with same emoji, removes it."""
     if data.emoji not in VALID_REACTIONS:
         raise HTTPException(status_code=400, detail=f"Invalid emoji. Must be one of: {VALID_REACTIONS}")
-    msg = await db.estate_messages.find_one({"id": message_id}, {"_id": 0, "channel_id": 1})
+    msg = await db.estate_messages.find_one({"id": message_id}, {"_id": 0, "id": 1, "channel_id": 1})
     if not msg:
         raise HTTPException(status_code=404, detail="Message not found")
-    channel = await db.estate_channels.find_one({"id": msg["channel_id"]}, {"_id": 0, "members": 1})
+    channel = await db.estate_channels.find_one({"id": msg["channel_id"]}, {"_id": 0, "id": 1, "members": 1})
     if not channel or current_user["id"] not in channel.get("members", []):
         raise HTTPException(status_code=403, detail="Not a member of this channel")
     # Check if already reacted with this emoji
@@ -475,7 +475,9 @@ async def toggle_pin(
     msg = await db.estate_messages.find_one({"id": message_id}, {"_id": 0})
     if not msg:
         raise HTTPException(status_code=404, detail="Message not found")
-    channel = await db.estate_channels.find_one({"id": msg["channel_id"]}, {"_id": 0, "members": 1, "estate_id": 1})
+    channel = await db.estate_channels.find_one(
+        {"id": msg["channel_id"]}, {"_id": 0, "id": 1, "members": 1, "estate_id": 1}
+    )
     if not channel or current_user["id"] not in channel.get("members", []):
         raise HTTPException(status_code=403, detail="Not a member of this channel")
     if not await _is_estate_owner(current_user["id"], channel["estate_id"]):
@@ -501,7 +503,7 @@ async def get_pinned(
     current_user: dict = Depends(get_current_user),
 ):
     """Get all pinned messages in a channel."""
-    channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0, "members": 1})
+    channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0, "id": 1, "members": 1})
     if not channel or current_user["id"] not in channel.get("members", []):
         raise HTTPException(status_code=403, detail="Not a member of this channel")
     pinned = (
@@ -590,11 +592,11 @@ async def serve_chat_file(
     from services.storage import storage
 
     msg = await db.estate_messages.find_one(
-        {"attachment.file_id": file_id}, {"_id": 0, "channel_id": 1, "attachment": 1}
+        {"attachment.file_id": file_id}, {"_id": 0, "id": 1, "channel_id": 1, "attachment": 1}
     )
     if not msg:
         raise HTTPException(status_code=404, detail="File not found")
-    channel = await db.estate_channels.find_one({"id": msg["channel_id"]}, {"_id": 0, "members": 1})
+    channel = await db.estate_channels.find_one({"id": msg["channel_id"]}, {"_id": 0, "id": 1, "members": 1})
     if not channel or current_user["id"] not in channel.get("members", []):
         raise HTTPException(status_code=403, detail="Access denied")
     att = msg.get("attachment", {})
@@ -667,7 +669,7 @@ async def get_unread_total(current_user: dict = Depends(get_current_user)):
     for ch in channels:
         last_read = await db.estate_channel_reads.find_one(
             {"channel_id": ch["id"], "user_id": current_user["id"]},
-            {"_id": 0, "last_read_at": 1},
+            {"_id": 0, "id": 1, "last_read_at": 1},
         )
         last_read_at = last_read.get("last_read_at", "") if last_read else ""
         q = {"channel_id": ch["id"]}

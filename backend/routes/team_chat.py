@@ -55,7 +55,7 @@ async def get_channels(current_user: dict = Depends(require_staff)):
 
         last_msg = await db.team_messages.find_one(
             {"channel_id": ch["id"]},
-            {"_id": 0, "content": 1, "sender_name": 1, "created_at": 1},
+            {"_id": 0, "id": 1, "content": 1, "sender_name": 1, "created_at": 1},
             sort=[("created_at", -1)],
         )
         preview = None
@@ -79,7 +79,7 @@ async def get_channels(current_user: dict = Depends(require_staff)):
         if other_ids:
             other_user = await db.users.find_one(
                 {"id": other_ids[0]},
-                {"_id": 0, "name": 1, "role": 1, "operator_role": 1},
+                {"_id": 0, "id": 1, "name": 1, "role": 1, "operator_role": 1},
             )
 
         last_read = await db.team_channel_reads.find_one(
@@ -95,7 +95,7 @@ async def get_channels(current_user: dict = Depends(require_staff)):
 
         last_msg = await db.team_messages.find_one(
             {"channel_id": dm["id"]},
-            {"_id": 0, "content": 1, "sender_name": 1, "created_at": 1},
+            {"_id": 0, "id": 1, "content": 1, "sender_name": 1, "created_at": 1},
             sort=[("created_at", -1)],
         )
         preview = None
