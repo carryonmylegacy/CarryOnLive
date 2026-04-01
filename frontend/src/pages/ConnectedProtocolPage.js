@@ -293,7 +293,7 @@ export default function ConnectedProtocolPage() {
                     )}
                   </div>
                   {m.checked_in_at && (
-                    <span className="text-[10px]" style={{ color: '#525C72' }}>
+                    <span className="text-[11px]" style={{ color: '#525C72' }}>
                       {new Date(m.checked_in_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   )}
@@ -588,7 +588,7 @@ export default function ConnectedProtocolPage() {
         {history.map(h => (
           <div key={h.id} className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
             <div className="flex items-center gap-2 mb-1">
-              {h.is_drill && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(59,123,247,0.15)', color: '#3B7BF7' }}>DRILL</span>}
+              {h.is_drill && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(59,123,247,0.15)', color: '#3B7BF7' }}>DRILL</span>}
               <span className="text-sm font-bold" style={{ color: '#F1F3F8' }}>{h.plan_name}</span>
             </div>
             <p className="text-xs" style={{ color: '#7B879E' }}>

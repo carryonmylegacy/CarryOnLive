@@ -36,6 +36,39 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (April 1, 2026 — Estate Chat Tool + Connected Protocol)
+
+**Estate Chat Tool (ECT)**
+- New `routes/estate_chat.py` with 8 endpoints for secure estate member messaging
+- Three channel types: Circle (auto-created per estate), Group (benefactor-created), Direct (1:1)
+- `GET /api/estate-chat/contacts` — returns all connected members across estates, grouped by estate
+- `GET /api/estate-chat/channels` — lists all channels user belongs to with unread counts and previews
+- `POST /api/estate-chat/channels` — create group or direct message channels with estate membership validation
+- `GET/POST /api/estate-chat/channels/{id}/messages` — read/send messages with 2000 char limit
+- `PUT /api/estate-chat/channels/{id}/members` — update group members (benefactor only)
+- `DELETE /api/estate-chat/channels/{id}` — delete group channels (benefactor only, cannot delete circles/DMs)
+- `GET /api/estate-chat/unread-total` — total unread count for badge display
+- Frontend: `EstateChatPage.js` with split-panel layout (channel list + message area), member picker modal, polling
+- DB collections: `estate_channels`, `estate_messages`, `estate_channel_reads` with performance indexes
+- Added to both benefactor and beneficiary sidebar/mobile nav as "Estate Chat (ECT)"
+- Test report: `iteration_39.json` — 26/26 tests passed (100%)
+
+**CarryOn Connected Protocol (CCP)**
+- New `routes/connected_protocol.py` with 9 endpoints for family disaster planning
+- Emergency Plans CRUD: Create, read, update, soft-delete plans with types (natural_disaster, national_emergency, medical_emergency, infrastructure_failure, custom)
+- Plan Builder: Rendezvous points (name + address), communication plan, resource/supply locations, instructions
+- Plan Activation: One-tap activation with drill mode support. Prevents duplicate active emergencies per estate
+- Real-time Status Board: Shows all estate members with check-in status (Safe, Evacuating, At Rendezvous, Need Help, Sheltering, Other, Not Checked In)
+- Member Check-In: Status selection with optional notes and location description
+- Drill Feature: Practice runs clearly marked as drills
+- Deactivation: Generates summary report with all check-in history
+- Activation History: View past emergencies and drills
+- Frontend: `ConnectedProtocolPage.js` with crisis-friendly big bubble buttons (80px+ touch targets), color-coded status indicators
+- DB collections: `emergency_plans`, `emergency_activations`, `member_checkins` with indexes
+- Added to both benefactor and beneficiary sidebar/mobile nav as "Connected Protocol (CCP)"
+- iOS compliance: All font sizes >= 11px, proper touch targets
+- Housekeeping: 60/60 PASS, Ruff clean
+
 ### Completed (April 1, 2026 — Unified Admin Accounts + Ops Scopes + Section Members)
 
 **Unified Admin Account Management**
@@ -638,6 +671,12 @@ Fixed drag-and-drop file rejection for PDFs in the Secure Document Vault:
 - `GET /api/security/master-key-status` — checks if master key exists
 - `GET /api/guardian/iac-task-status` — polls for EGA IAC generation status (running/completed/error)
 - `POST /api/chat/guardian` — EGA AI chat with action support (generate_iac, analyze_vault, etc.)
+- `GET /api/estate-chat/channels` — lists ECT channels with unread counts (New)
+- `POST /api/estate-chat/channels` — creates ECT group/direct channels (New)
+- `GET /api/ccp/plans/{estate_id}` — lists CCP emergency plans (New)
+- `POST /api/ccp/activate` — activates emergency plan or drill (New)
+- `POST /api/ccp/checkin` — member check-in with status (New)
+- `GET /api/ccp/active/{estate_id}` — real-time status board (New)
 
 ## Critical Notes
 - **User Testing Protocol**: User NEVER tests on preview URL. Deploys via GitHub → Railway/Vercel → tests on iOS device.

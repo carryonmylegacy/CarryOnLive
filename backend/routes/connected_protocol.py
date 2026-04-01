@@ -11,7 +11,7 @@ Family disaster planning tool. Features:
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 
@@ -73,9 +73,7 @@ async def _is_estate_owner(user_id: str, estate_id: str) -> bool:
 
 
 async def _is_estate_member(user_id: str, estate_id: str) -> bool:
-    estate = await db.estates.find_one(
-        {"id": estate_id}, {"_id": 0, "owner_id": 1, "beneficiaries": 1}
-    )
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "owner_id": 1, "beneficiaries": 1})
     if not estate:
         return False
     return estate["owner_id"] == user_id or user_id in estate.get("beneficiaries", [])
@@ -83,9 +81,7 @@ async def _is_estate_member(user_id: str, estate_id: str) -> bool:
 
 async def _get_estate_members(estate_id: str) -> list[dict]:
     """Get all members of an estate with their info."""
-    estate = await db.estates.find_one(
-        {"id": estate_id}, {"_id": 0, "owner_id": 1, "beneficiaries": 1, "name": 1}
-    )
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "owner_id": 1, "beneficiaries": 1, "name": 1})
     if not estate:
         return []
     all_ids = list({estate["owner_id"]} | set(estate.get("beneficiaries", [])))
@@ -101,13 +97,15 @@ async def _get_estate_members(estate_id: str) -> list[dict]:
     members = []
     for u in users:
         is_owner = u["id"] == estate["owner_id"]
-        members.append({
-            "id": u["id"],
-            "name": u.get("name", "Unknown"),
-            "photo_url": u.get("photo_url", ""),
-            "role_in_estate": "benefactor" if is_owner else "beneficiary",
-            "relation": relation_map.get(u["id"], "benefactor" if is_owner else ""),
-        })
+        members.append(
+            {
+                "id": u["id"],
+                "name": u.get("name", "Unknown"),
+                "photo_url": u.get("photo_url", ""),
+                "role_in_estate": "benefactor" if is_owner else "beneficiary",
+                "relation": relation_map.get(u["id"], "benefactor" if is_owner else ""),
+            }
+        )
     return members
 
 
@@ -119,9 +117,11 @@ async def get_plans(estate_id: str, current_user: dict = Depends(get_current_use
     """Get all emergency plans for an estate."""
     if not await _is_estate_member(current_user["id"], estate_id):
         raise HTTPException(status_code=403, detail="Not a member of this estate")
-    plans = await db.emergency_plans.find(
-        {"estate_id": estate_id, "deleted_at": None}, {"_id": 0}
-    ).sort("created_at", -1).to_list(50)
+    plans = (
+        await db.emergency_plans.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0})
+        .sort("created_at", -1)
+        .to_list(50)
+    )
     return plans
 
 
@@ -165,7 +165,17 @@ async def update_plan(plan_id: str, data: PlanUpdate, current_user: dict = Depen
     if not await _is_estate_owner(current_user["id"], plan["estate_id"]):
         raise HTTPException(status_code=403, detail="Only the benefactor can update plans")
     updates = {}
-    for field in ["name", "plan_type", "rendezvous_points", "communication_plan", "resource_locations", "instructions", "linked_document_ids", "linked_ffn_contact_ids", "linked_dav_entry_ids"]:
+    for field in [
+        "name",
+        "plan_type",
+        "rendezvous_points",
+        "communication_plan",
+        "resource_locations",
+        "instructions",
+        "linked_document_ids",
+        "linked_ffn_contact_ids",
+        "linked_dav_entry_ids",
+    ]:
         val = getattr(data, field)
         if val is not None:
             updates[field] = val.strip() if isinstance(val, str) else val
@@ -202,11 +212,11 @@ async def activate_plan(data: ActivatePlanRequest, current_user: dict = Depends(
     if not await _is_estate_owner(current_user["id"], plan["estate_id"]):
         raise HTTPException(status_code=403, detail="Only the benefactor can activate plans")
     # Check for existing active activation on this estate
-    existing = await db.emergency_activations.find_one(
-        {"estate_id": plan["estate_id"], "status": "active"}, {"_id": 0}
-    )
+    existing = await db.emergency_activations.find_one({"estate_id": plan["estate_id"], "status": "active"}, {"_id": 0})
     if existing:
-        raise HTTPException(status_code=409, detail="An emergency is already active for this estate. Deactivate it first.")
+        raise HTTPException(
+            status_code=409, detail="An emergency is already active for this estate. Deactivate it first."
+        )
     now = datetime.now(timezone.utc).isoformat()
     activation = {
         "id": str(uuid4()),
@@ -243,9 +253,7 @@ async def deactivate(
     current_user: dict = Depends(get_current_user),
 ):
     """Deactivate an active emergency. Benefactor only."""
-    activation = await db.emergency_activations.find_one(
-        {"id": activation_id, "status": "active"}, {"_id": 0}
-    )
+    activation = await db.emergency_activations.find_one({"id": activation_id, "status": "active"}, {"_id": 0})
     if not activation:
         raise HTTPException(status_code=404, detail="Active emergency not found")
     if not await _is_estate_owner(current_user["id"], activation["estate_id"]):
@@ -256,9 +264,9 @@ async def deactivate(
         {"$set": {"status": "resolved", "deactivated_at": now, "deactivation_notes": data.notes or ""}},
     )
     # Build summary report
-    checkins = await db.member_checkins.find(
-        {"activation_id": activation_id}, {"_id": 0}
-    ).sort("created_at", -1).to_list(500)
+    checkins = (
+        await db.member_checkins.find({"activation_id": activation_id}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    )
     members = await _get_estate_members(activation["estate_id"])
     member_map = {m["id"]: m["name"] for m in members}
     summary = {
@@ -288,15 +296,15 @@ async def get_active_emergency(estate_id: str, current_user: dict = Depends(get_
     """Check if there's an active emergency for an estate."""
     if not await _is_estate_member(current_user["id"], estate_id):
         raise HTTPException(status_code=403, detail="Not a member of this estate")
-    activation = await db.emergency_activations.find_one(
-        {"estate_id": estate_id, "status": "active"}, {"_id": 0}
-    )
+    activation = await db.emergency_activations.find_one({"estate_id": estate_id, "status": "active"}, {"_id": 0})
     if not activation:
         return {"active": False}
     # Get all check-ins for this activation
-    checkins = await db.member_checkins.find(
-        {"activation_id": activation["id"]}, {"_id": 0}
-    ).sort("created_at", -1).to_list(500)
+    checkins = (
+        await db.member_checkins.find({"activation_id": activation["id"]}, {"_id": 0})
+        .sort("created_at", -1)
+        .to_list(500)
+    )
     # Get latest check-in per member
     latest_by_member = {}
     for c in checkins:
@@ -306,18 +314,20 @@ async def get_active_emergency(estate_id: str, current_user: dict = Depends(get_
     status_board = []
     for m in members:
         ci = latest_by_member.get(m["id"])
-        status_board.append({
-            "user_id": m["id"],
-            "name": m["name"],
-            "photo_url": m.get("photo_url", ""),
-            "relation": m.get("relation", ""),
-            "role_in_estate": m.get("role_in_estate", ""),
-            "status": ci["status"] if ci else "not_checked_in",
-            "status_note": ci.get("status_note", "") if ci else "",
-            "location_description": ci.get("location_description", "") if ci else "",
-            "location_address": ci.get("location_address", "") if ci else "",
-            "checked_in_at": ci["created_at"] if ci else None,
-        })
+        status_board.append(
+            {
+                "user_id": m["id"],
+                "name": m["name"],
+                "photo_url": m.get("photo_url", ""),
+                "relation": m.get("relation", ""),
+                "role_in_estate": m.get("role_in_estate", ""),
+                "status": ci["status"] if ci else "not_checked_in",
+                "status_note": ci.get("status_note", "") if ci else "",
+                "location_description": ci.get("location_description", "") if ci else "",
+                "location_address": ci.get("location_address", "") if ci else "",
+                "checked_in_at": ci["created_at"] if ci else None,
+            }
+        )
     return {
         "active": True,
         "activation": activation,
@@ -330,10 +340,14 @@ async def get_activation_history(estate_id: str, current_user: dict = Depends(ge
     """Get past activations for an estate."""
     if not await _is_estate_member(current_user["id"], estate_id):
         raise HTTPException(status_code=403, detail="Not a member of this estate")
-    activations = await db.emergency_activations.find(
-        {"estate_id": estate_id, "status": {"$ne": "active"}},
-        {"_id": 0},
-    ).sort("activated_at", -1).to_list(50)
+    activations = (
+        await db.emergency_activations.find(
+            {"estate_id": estate_id, "status": {"$ne": "active"}},
+            {"_id": 0},
+        )
+        .sort("activated_at", -1)
+        .to_list(50)
+    )
     return activations
 
 
@@ -345,9 +359,7 @@ async def check_in(data: CheckInRequest, current_user: dict = Depends(get_curren
     """Member checks in with their status during an active emergency."""
     if data.status not in CHECKIN_STATUSES:
         raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {CHECKIN_STATUSES}")
-    activation = await db.emergency_activations.find_one(
-        {"id": data.activation_id, "status": "active"}, {"_id": 0}
-    )
+    activation = await db.emergency_activations.find_one({"id": data.activation_id, "status": "active"}, {"_id": 0})
     if not activation:
         raise HTTPException(status_code=404, detail="No active emergency found")
     if not await _is_estate_member(current_user["id"], activation["estate_id"]):

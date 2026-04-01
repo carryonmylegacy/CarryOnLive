@@ -421,7 +421,7 @@ export default function EstateChatPage() {
                 >
                   {msg.content}
                 </div>
-                <div className={`text-[10px] mt-0.5 ${isMe ? 'text-right mr-1' : 'ml-1'}`} style={{ color: '#525C72' }}>
+                <div className={`text-[11px] mt-0.5 ${isMe ? 'text-right mr-1' : 'ml-1'}`} style={{ color: '#525C72' }}>
                   {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
               </div>

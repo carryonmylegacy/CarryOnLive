@@ -47,9 +47,7 @@ async def _get_user_estate_ids(user_id: str) -> list[str]:
 
 async def _is_estate_member(user_id: str, estate_id: str) -> bool:
     """Check if user is owner or accepted beneficiary of an estate."""
-    estate = await db.estates.find_one(
-        {"id": estate_id}, {"_id": 0, "owner_id": 1, "beneficiaries": 1}
-    )
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "owner_id": 1, "beneficiaries": 1})
     if not estate:
         return False
     if estate["owner_id"] == user_id:
@@ -59,17 +57,13 @@ async def _is_estate_member(user_id: str, estate_id: str) -> bool:
 
 async def _is_estate_owner(user_id: str, estate_id: str) -> bool:
     """Check if user is the owner (benefactor) of an estate."""
-    estate = await db.estates.find_one(
-        {"id": estate_id}, {"_id": 0, "owner_id": 1}
-    )
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "owner_id": 1})
     return estate is not None and estate["owner_id"] == user_id
 
 
 async def _ensure_circle(estate_id: str) -> dict:
     """Ensure a Circle channel exists for this estate; create if not."""
-    circle = await db.estate_channels.find_one(
-        {"estate_id": estate_id, "type": "circle"}, {"_id": 0}
-    )
+    circle = await db.estate_channels.find_one({"estate_id": estate_id, "type": "circle"}, {"_id": 0})
     if circle:
         return circle
     estate = await db.estates.find_one(
@@ -95,9 +89,7 @@ async def _ensure_circle(estate_id: str) -> dict:
 async def _enrich_channel(channel: dict, current_user_id: str) -> dict:
     """Add unread count, last message preview, and member names."""
     ch_id = channel["id"]
-    last_read = await db.estate_channel_reads.find_one(
-        {"channel_id": ch_id, "user_id": current_user_id}, {"_id": 0}
-    )
+    last_read = await db.estate_channel_reads.find_one({"channel_id": ch_id, "user_id": current_user_id}, {"_id": 0})
     last_read_at = last_read.get("last_read_at", "") if last_read else ""
     unread_query = {"channel_id": ch_id}
     if last_read_at:
@@ -120,16 +112,12 @@ async def _enrich_channel(channel: dict, current_user_id: str) -> dict:
     if channel["type"] == "direct":
         other_ids = [m for m in channel.get("members", []) if m != current_user_id]
         if other_ids:
-            other = await db.users.find_one(
-                {"id": other_ids[0]}, {"_id": 0, "name": 1}
-            )
+            other = await db.users.find_one({"id": other_ids[0]}, {"_id": 0, "name": 1})
             if other:
                 display_name = other["name"]
     # Get estate name for the tag
     estate_name = ""
-    estate = await db.estates.find_one(
-        {"id": channel.get("estate_id", "")}, {"_id": 0, "name": 1}
-    )
+    estate = await db.estates.find_one({"id": channel.get("estate_id", "")}, {"_id": 0, "name": 1})
     if estate:
         estate_name = estate.get("name", "")
     return {
@@ -159,9 +147,7 @@ async def get_contacts(current_user: dict = Depends(get_current_user)):
         )
         if not estate:
             continue
-        all_member_ids = list(
-            {estate["owner_id"]} | set(estate.get("beneficiaries", []))
-        )
+        all_member_ids = list({estate["owner_id"]} | set(estate.get("beneficiaries", [])))
         all_member_ids = [m for m in all_member_ids if m != current_user["id"]]
         if not all_member_ids:
             continue
@@ -178,18 +164,22 @@ async def get_contacts(current_user: dict = Depends(get_current_user)):
         members = []
         for u in users:
             is_owner = u["id"] == estate["owner_id"]
-            members.append({
-                "id": u["id"],
-                "name": u.get("name", "Unknown"),
-                "photo_url": u.get("photo_url", ""),
-                "role_in_estate": "benefactor" if is_owner else "beneficiary",
-                "relation": relation_map.get(u["id"], "benefactor" if is_owner else ""),
-            })
-        result.append({
-            "estate_id": eid,
-            "estate_name": estate.get("name", "Estate"),
-            "members": members,
-        })
+            members.append(
+                {
+                    "id": u["id"],
+                    "name": u.get("name", "Unknown"),
+                    "photo_url": u.get("photo_url", ""),
+                    "role_in_estate": "benefactor" if is_owner else "beneficiary",
+                    "relation": relation_map.get(u["id"], "benefactor" if is_owner else ""),
+                }
+            )
+        result.append(
+            {
+                "estate_id": eid,
+                "estate_name": estate.get("name", "Estate"),
+                "members": members,
+            }
+        )
     return result
 
 
@@ -209,16 +199,20 @@ async def get_channels(current_user: dict = Depends(get_current_user)):
     enriched = []
     for ch in channels:
         enriched.append(await _enrich_channel(ch, current_user["id"]))
+
     # Sort: circles first, then by last_message date descending
     def sort_key(c):
         type_order = {"circle": 0, "group": 1, "direct": 2}
         lm = c.get("last_message")
         ts = lm["created_at"] if lm else ""
         return (type_order.get(c["type"], 9), "" if ts else "z", ts)
-    enriched.sort(key=lambda c: (
-        {"circle": 0, "group": 1, "direct": 2}.get(c["type"], 9),
-        -(len(c.get("last_message", {}).get("created_at", "") or "0")),
-    ))
+
+    enriched.sort(
+        key=lambda c: (
+            {"circle": 0, "group": 1, "direct": 2}.get(c["type"], 9),
+            -(len(c.get("last_message", {}).get("created_at", "") or "0")),
+        )
+    )
     return enriched
 
 
@@ -294,9 +288,7 @@ async def get_messages(
     current_user: dict = Depends(get_current_user),
 ):
     """Get messages from a channel."""
-    channel = await db.estate_channels.find_one(
-        {"id": channel_id}, {"_id": 0}
-    )
+    channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0})
     if not channel:
         raise HTTPException(status_code=404, detail="Channel not found")
     if current_user["id"] not in channel.get("members", []):
@@ -304,12 +296,7 @@ async def get_messages(
     query = {"channel_id": channel_id}
     if before:
         query["created_at"] = {"$lt": before}
-    messages = (
-        await db.estate_messages.find(query, {"_id": 0})
-        .sort("created_at", -1)
-        .limit(limit)
-        .to_list(limit)
-    )
+    messages = await db.estate_messages.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
     now = datetime.now(timezone.utc).isoformat()
     await db.estate_channel_reads.update_one(
         {"channel_id": channel_id, "user_id": current_user["id"]},
@@ -331,9 +318,7 @@ async def send_message(
         raise HTTPException(status_code=400, detail="Message cannot be empty")
     if len(content) > 2000:
         raise HTTPException(status_code=400, detail="Message too long (max 2000 chars)")
-    channel = await db.estate_channels.find_one(
-        {"id": channel_id}, {"_id": 0}
-    )
+    channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0})
     if not channel:
         raise HTTPException(status_code=404, detail="Channel not found")
     if current_user["id"] not in channel.get("members", []):
@@ -365,9 +350,7 @@ async def update_members(
     current_user: dict = Depends(get_current_user),
 ):
     """Update members of a group channel. Benefactor only."""
-    channel = await db.estate_channels.find_one(
-        {"id": channel_id}, {"_id": 0}
-    )
+    channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0})
     if not channel:
         raise HTTPException(status_code=404, detail="Channel not found")
     if channel["type"] != "group":
@@ -378,9 +361,7 @@ async def update_members(
     for mid in data.member_ids:
         if not await _is_estate_member(mid, channel["estate_id"]):
             raise HTTPException(status_code=400, detail=f"User {mid} is not a member of this estate")
-    await db.estate_channels.update_one(
-        {"id": channel_id}, {"$set": {"members": new_members}}
-    )
+    await db.estate_channels.update_one({"id": channel_id}, {"$set": {"members": new_members}})
     return {"success": True, "members": new_members}
 
 
@@ -390,9 +371,7 @@ async def delete_channel(
     current_user: dict = Depends(get_current_user),
 ):
     """Delete a group channel. Benefactor only. Cannot delete circles or DMs."""
-    channel = await db.estate_channels.find_one(
-        {"id": channel_id}, {"_id": 0}
-    )
+    channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0})
     if not channel:
         raise HTTPException(status_code=404, detail="Channel not found")
     if channel["type"] != "group":
