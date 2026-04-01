@@ -466,6 +466,52 @@ async def toggle_reaction(
     return {"action": "added", "emoji": data.emoji}
 
 
+@router.post("/estate-chat/messages/{message_id}/pin")
+async def toggle_pin(
+    message_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Toggle pin on a message. Benefactor only."""
+    msg = await db.estate_messages.find_one({"id": message_id}, {"_id": 0})
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    channel = await db.estate_channels.find_one({"id": msg["channel_id"]}, {"_id": 0, "members": 1, "estate_id": 1})
+    if not channel or current_user["id"] not in channel.get("members", []):
+        raise HTTPException(status_code=403, detail="Not a member of this channel")
+    if not await _is_estate_owner(current_user["id"], channel["estate_id"]):
+        raise HTTPException(status_code=403, detail="Only the benefactor can pin messages")
+    is_pinned = msg.get("pinned", False)
+    now = datetime.now(timezone.utc).isoformat()
+    await db.estate_messages.update_one(
+        {"id": message_id},
+        {
+            "$set": {
+                "pinned": not is_pinned,
+                "pinned_at": now if not is_pinned else None,
+                "pinned_by": current_user["id"] if not is_pinned else None,
+            }
+        },
+    )
+    return {"pinned": not is_pinned}
+
+
+@router.get("/estate-chat/channels/{channel_id}/pinned")
+async def get_pinned(
+    channel_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    """Get all pinned messages in a channel."""
+    channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0, "members": 1})
+    if not channel or current_user["id"] not in channel.get("members", []):
+        raise HTTPException(status_code=403, detail="Not a member of this channel")
+    pinned = (
+        await db.estate_messages.find({"channel_id": channel_id, "pinned": True}, {"_id": 0})
+        .sort("pinned_at", -1)
+        .to_list(20)
+    )
+    return pinned
+
+
 @router.put("/estate-chat/channels/{channel_id}/members")
 async def update_members(
     channel_id: str,
