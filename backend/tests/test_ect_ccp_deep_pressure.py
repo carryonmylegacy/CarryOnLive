@@ -16,8 +16,6 @@ Test Data:
 import pytest
 import requests
 import os
-import time
-from uuid import uuid4
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 
@@ -72,7 +70,9 @@ def admin_headers(admin_token):
 def benefactor_token(api_client):
     """Get benefactor authentication token by creating a test session"""
     # First try to login as the benefactor
-    response = api_client.post(f"{BASE_URL}/api/auth/login", json={"email": "fulltest@test.com", "password": "Test1234!"})
+    response = api_client.post(
+        f"{BASE_URL}/api/auth/login", json={"email": "fulltest@test.com", "password": "Test1234!"}
+    )
     if response.status_code == 200:
         data = response.json()
         return data.get("access_token") or data.get("token")
@@ -88,6 +88,7 @@ def benefactor_headers(benefactor_token):
 
 # ===================== FEATURE GATES TESTS =====================
 
+
 class TestFeatureGates:
     """Test ECT/CCP feature gates functionality"""
 
@@ -96,19 +97,19 @@ class TestFeatureGates:
         response = api_client.get(f"{BASE_URL}/api/admin/feature-gates", headers=admin_headers)
         assert response.status_code == 200, f"Failed to get feature gates: {response.text}"
         data = response.json()
-        
+
         features = data.get("features", [])
         feature_keys = [f["key"] for f in features]
-        
+
         assert "ect" in feature_keys, "ECT not registered in PLATFORM_FEATURES"
         assert "ccp" in feature_keys, "CCP not registered in PLATFORM_FEATURES"
-        
+
         # Verify default_off is True for both
         ect_feature = next((f for f in features if f["key"] == "ect"), None)
         ccp_feature = next((f for f in features if f["key"] == "ccp"), None)
-        
-        assert ect_feature.get("default_off") == True, "ECT should have default_off=True"
-        assert ccp_feature.get("default_off") == True, "CCP should have default_off=True"
+
+        assert ect_feature.get("default_off"), "ECT should have default_off=True"
+        assert ccp_feature.get("default_off"), "CCP should have default_off=True"
         print("Feature gates: ECT and CCP registered with default_off=True")
 
     def test_feature_gates_default_off_for_all_tiers(self, api_client, admin_headers):
@@ -116,13 +117,13 @@ class TestFeatureGates:
         response = api_client.get(f"{BASE_URL}/api/admin/feature-gates", headers=admin_headers)
         assert response.status_code == 200
         data = response.json()
-        
+
         gates = data.get("gates", {})
         tiers = data.get("tiers", [])
-        
+
         for tier in tiers:
-            assert gates.get("ect", {}).get(tier) == False, f"ECT should be OFF for {tier}"
-            assert gates.get("ccp", {}).get(tier) == False, f"CCP should be OFF for {tier}"
+            assert not gates.get("ect", {}).get(tier), f"ECT should be OFF for {tier}"
+            assert not gates.get("ccp", {}).get(tier), f"CCP should be OFF for {tier}"
         print(f"Feature gates: ECT/CCP OFF for all {len(tiers)} tiers")
 
     def test_feature_gates_toggle_on_off(self, api_client, admin_headers):
@@ -132,34 +133,27 @@ class TestFeatureGates:
         assert response.status_code == 200
         data = response.json()
         gates = data.get("gates", {})
-        
+
         # Toggle ECT ON for premium tier
         gates["ect"]["premium"] = True
-        response = api_client.put(
-            f"{BASE_URL}/api/admin/feature-gates",
-            headers=admin_headers,
-            json={"gates": gates}
-        )
+        response = api_client.put(f"{BASE_URL}/api/admin/feature-gates", headers=admin_headers, json={"gates": gates})
         assert response.status_code == 200, f"Failed to toggle ECT on: {response.text}"
-        
+
         # Verify it's ON
         response = api_client.get(f"{BASE_URL}/api/admin/feature-gates", headers=admin_headers)
         assert response.status_code == 200
         updated_gates = response.json().get("gates", {})
-        assert updated_gates["ect"]["premium"] == True, "ECT should be ON for premium"
-        
+        assert updated_gates["ect"]["premium"], "ECT should be ON for premium"
+
         # Toggle back OFF
         gates["ect"]["premium"] = False
-        response = api_client.put(
-            f"{BASE_URL}/api/admin/feature-gates",
-            headers=admin_headers,
-            json={"gates": gates}
-        )
+        response = api_client.put(f"{BASE_URL}/api/admin/feature-gates", headers=admin_headers, json={"gates": gates})
         assert response.status_code == 200
         print("Feature gates: Toggle on/off working correctly")
 
 
 # ===================== ECT CONTACTS TESTS =====================
+
 
 class TestECTContacts:
     """Test ECT contacts endpoint"""
@@ -190,6 +184,7 @@ class TestECTContacts:
 
 # ===================== ECT CHANNELS TESTS =====================
 
+
 class TestECTChannels:
     """Test ECT channels CRUD operations"""
 
@@ -206,12 +201,7 @@ class TestECTChannels:
         response = api_client.post(
             f"{BASE_URL}/api/estate-chat/channels",
             headers=admin_headers,
-            json={
-                "estate_id": "nonexistent-estate",
-                "channel_type": "group",
-                "name": "Test Group",
-                "member_ids": []
-            }
+            json={"estate_id": "nonexistent-estate", "channel_type": "group", "name": "Test Group", "member_ids": []},
         )
         assert response.status_code == 403, f"Expected 403, got {response.status_code}"
         print("ECT channels: Non-member correctly rejected (403)")
@@ -226,8 +216,8 @@ class TestECTChannels:
             json={
                 "estate_id": TEST_ESTATE_ID,
                 "channel_type": "direct",
-                "member_ids": ["self-id"]  # Would be current user ID
-            }
+                "member_ids": ["self-id"],  # Would be current user ID
+            },
         )
         # Should be 403 (not member) or 400 (can't DM self)
         assert response.status_code in [400, 403], f"Expected 400/403, got {response.status_code}"
@@ -238,12 +228,7 @@ class TestECTChannels:
         response = api_client.post(
             f"{BASE_URL}/api/estate-chat/channels",
             headers=admin_headers,
-            json={
-                "estate_id": TEST_ESTATE_ID,
-                "channel_type": "invalid_type",
-                "name": "Test",
-                "member_ids": []
-            }
+            json={"estate_id": TEST_ESTATE_ID, "channel_type": "invalid_type", "name": "Test", "member_ids": []},
         )
         # Should be 400 (invalid type) or 403 (not member)
         assert response.status_code in [400, 403], f"Expected 400/403, got {response.status_code}"
@@ -252,10 +237,7 @@ class TestECTChannels:
     def test_delete_circle_channel_rejected(self, api_client, admin_headers):
         """Deleting a circle channel should return 400"""
         # Circle channels cannot be deleted
-        response = api_client.delete(
-            f"{BASE_URL}/api/estate-chat/channels/circle_test",
-            headers=admin_headers
-        )
+        response = api_client.delete(f"{BASE_URL}/api/estate-chat/channels/circle_test", headers=admin_headers)
         # Should be 404 (not found) or 400 (can't delete circle)
         assert response.status_code in [400, 404], f"Expected 400/404, got {response.status_code}"
         print("ECT channels: Circle deletion correctly rejected")
@@ -263,24 +245,20 @@ class TestECTChannels:
 
 # ===================== ECT MESSAGES TESTS =====================
 
+
 class TestECTMessages:
     """Test ECT message operations"""
 
     def test_get_messages_nonexistent_channel(self, api_client, admin_headers):
         """GET /api/estate-chat/channels/{id}/messages returns 404 for nonexistent"""
-        response = api_client.get(
-            f"{BASE_URL}/api/estate-chat/channels/nonexistent/messages",
-            headers=admin_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/estate-chat/channels/nonexistent/messages", headers=admin_headers)
         assert response.status_code == 404
         print("ECT messages: 404 for nonexistent channel")
 
     def test_send_empty_message_rejected(self, api_client, admin_headers):
         """Sending empty message should return 400"""
         response = api_client.post(
-            f"{BASE_URL}/api/estate-chat/channels/test-channel/messages",
-            headers=admin_headers,
-            json={"content": ""}
+            f"{BASE_URL}/api/estate-chat/channels/test-channel/messages", headers=admin_headers, json={"content": ""}
         )
         # Should be 400 (empty) or 404 (channel not found)
         assert response.status_code in [400, 404], f"Expected 400/404, got {response.status_code}"
@@ -292,7 +270,7 @@ class TestECTMessages:
         response = api_client.post(
             f"{BASE_URL}/api/estate-chat/channels/test-channel/messages",
             headers=admin_headers,
-            json={"content": long_content}
+            json={"content": long_content},
         )
         # Should be 400 (too long) or 404 (channel not found)
         assert response.status_code in [400, 404], f"Expected 400/404, got {response.status_code}"
@@ -300,6 +278,7 @@ class TestECTMessages:
 
 
 # ===================== ECT REACTIONS TESTS =====================
+
 
 class TestECTReactions:
     """Test ECT message reactions"""
@@ -309,7 +288,7 @@ class TestECTReactions:
         response = api_client.post(
             f"{BASE_URL}/api/estate-chat/messages/test-msg/react",
             headers=admin_headers,
-            json={"emoji": "invalid_emoji"}
+            json={"emoji": "invalid_emoji"},
         )
         # Should be 400 (invalid emoji) or 404 (message not found)
         assert response.status_code in [400, 404], f"Expected 400/404, got {response.status_code}"
@@ -322,7 +301,7 @@ class TestECTReactions:
             response = api_client.post(
                 f"{BASE_URL}/api/estate-chat/messages/nonexistent-msg/react",
                 headers=admin_headers,
-                json={"emoji": emoji}
+                json={"emoji": emoji},
             )
             # Should be 404 (message not found), not 400 (invalid emoji)
             assert response.status_code == 404, f"Emoji {emoji} should be valid, got {response.status_code}"
@@ -331,24 +310,19 @@ class TestECTReactions:
 
 # ===================== ECT PINNING TESTS =====================
 
+
 class TestECTPinning:
     """Test ECT message pinning (benefactor only)"""
 
     def test_pin_nonexistent_message(self, api_client, admin_headers):
         """Pinning nonexistent message returns 404"""
-        response = api_client.post(
-            f"{BASE_URL}/api/estate-chat/messages/nonexistent/pin",
-            headers=admin_headers
-        )
+        response = api_client.post(f"{BASE_URL}/api/estate-chat/messages/nonexistent/pin", headers=admin_headers)
         assert response.status_code == 404
         print("ECT pinning: 404 for nonexistent message")
 
     def test_get_pinned_messages(self, api_client, admin_headers):
         """GET /api/estate-chat/channels/{id}/pinned returns pinned messages"""
-        response = api_client.get(
-            f"{BASE_URL}/api/estate-chat/channels/nonexistent/pinned",
-            headers=admin_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/estate-chat/channels/nonexistent/pinned", headers=admin_headers)
         # Should be 403 (not member) or 404 (not found)
         assert response.status_code in [403, 404], f"Expected 403/404, got {response.status_code}"
         print("ECT pinning: Pinned endpoint accessible")
@@ -356,27 +330,22 @@ class TestECTPinning:
 
 # ===================== ECT TYPING INDICATORS TESTS =====================
 
+
 class TestECTTyping:
     """Test ECT typing indicators"""
 
     def test_send_typing_heartbeat(self, api_client, admin_headers):
         """POST /api/estate-chat/channels/{id}/typing sends typing heartbeat"""
-        response = api_client.post(
-            f"{BASE_URL}/api/estate-chat/channels/test-channel/typing",
-            headers=admin_headers
-        )
+        response = api_client.post(f"{BASE_URL}/api/estate-chat/channels/test-channel/typing", headers=admin_headers)
         # Typing endpoint is lenient - returns ok even for invalid channels
         assert response.status_code == 200
         data = response.json()
-        assert data.get("ok") == True
+        assert data.get("ok")
         print("ECT typing: Heartbeat endpoint working")
 
     def test_get_typing_users(self, api_client, admin_headers):
         """GET /api/estate-chat/channels/{id}/typing returns who is typing"""
-        response = api_client.get(
-            f"{BASE_URL}/api/estate-chat/channels/test-channel/typing",
-            headers=admin_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/estate-chat/channels/test-channel/typing", headers=admin_headers)
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
@@ -385,15 +354,13 @@ class TestECTTyping:
 
 # ===================== ECT READ STATUS TESTS =====================
 
+
 class TestECTReadStatus:
     """Test ECT read receipts"""
 
     def test_get_read_status(self, api_client, admin_headers):
         """GET /api/estate-chat/channels/{id}/read-status returns read receipts"""
-        response = api_client.get(
-            f"{BASE_URL}/api/estate-chat/channels/nonexistent/read-status",
-            headers=admin_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/estate-chat/channels/nonexistent/read-status", headers=admin_headers)
         # Should be 403 (not member) or 404 (not found)
         assert response.status_code in [403, 404]
         print("ECT read status: Endpoint accessible")
@@ -401,15 +368,13 @@ class TestECTReadStatus:
 
 # ===================== ECT UNREAD BADGE TESTS =====================
 
+
 class TestECTUnreadBadge:
     """Test ECT unread badge count"""
 
     def test_get_unread_total(self, api_client, admin_headers):
         """GET /api/estate-chat/unread-total returns badge count"""
-        response = api_client.get(
-            f"{BASE_URL}/api/estate-chat/unread-total",
-            headers=admin_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/estate-chat/unread-total", headers=admin_headers)
         assert response.status_code == 200
         data = response.json()
         assert "total" in data
@@ -419,15 +384,13 @@ class TestECTUnreadBadge:
 
 # ===================== ECT SEARCH TESTS =====================
 
+
 class TestECTSearch:
     """Test ECT message search"""
 
     def test_search_messages(self, api_client, admin_headers):
         """GET /api/estate-chat/search?q=keyword searches messages"""
-        response = api_client.get(
-            f"{BASE_URL}/api/estate-chat/search?q=test",
-            headers=admin_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/estate-chat/search?q=test", headers=admin_headers)
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
@@ -435,15 +398,13 @@ class TestECTSearch:
 
     def test_search_empty_query_rejected(self, api_client, admin_headers):
         """Search with empty query should return 422"""
-        response = api_client.get(
-            f"{BASE_URL}/api/estate-chat/search?q=",
-            headers=admin_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/estate-chat/search?q=", headers=admin_headers)
         assert response.status_code == 422, f"Expected 422, got {response.status_code}"
         print("ECT search: Empty query rejected (422)")
 
 
 # ===================== ECT FILE UPLOAD TESTS =====================
+
 
 class TestECTFileUpload:
     """Test ECT file upload"""
@@ -454,9 +415,7 @@ class TestECTFileUpload:
         files = {"file": ("test.txt", b"test content", "text/plain")}
         headers = {"Authorization": admin_headers["Authorization"]}
         response = api_client.post(
-            f"{BASE_URL}/api/estate-chat/channels/nonexistent/upload",
-            headers=headers,
-            files=files
+            f"{BASE_URL}/api/estate-chat/channels/nonexistent/upload", headers=headers, files=files
         )
         # 404 (channel not found) or 422 (validation error before channel check)
         assert response.status_code in [404, 422], f"Expected 404/422, got {response.status_code}"
@@ -464,25 +423,20 @@ class TestECTFileUpload:
 
     def test_serve_nonexistent_file(self, api_client, admin_headers):
         """GET /api/estate-chat/files/{id} returns 404 for nonexistent"""
-        response = api_client.get(
-            f"{BASE_URL}/api/estate-chat/files/nonexistent-file-id",
-            headers=admin_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/estate-chat/files/nonexistent-file-id", headers=admin_headers)
         assert response.status_code == 404
         print("ECT files: 404 for nonexistent file")
 
 
 # ===================== CCP PLANS CRUD TESTS =====================
 
+
 class TestCCPPlans:
     """Test CCP emergency plans CRUD"""
 
     def test_get_plans_requires_membership(self, api_client, admin_headers):
         """GET /api/ccp/plans/{estate_id} requires estate membership"""
-        response = api_client.get(
-            f"{BASE_URL}/api/ccp/plans/nonexistent-estate",
-            headers=admin_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/ccp/plans/nonexistent-estate", headers=admin_headers)
         assert response.status_code == 403
         print("CCP plans: Membership required (403)")
 
@@ -491,11 +445,7 @@ class TestCCPPlans:
         response = api_client.post(
             f"{BASE_URL}/api/ccp/plans",
             headers=admin_headers,
-            json={
-                "estate_id": TEST_ESTATE_ID,
-                "name": "Test Emergency Plan",
-                "plan_type": "natural_disaster"
-            }
+            json={"estate_id": TEST_ESTATE_ID, "name": "Test Emergency Plan", "plan_type": "natural_disaster"},
         )
         assert response.status_code == 403
         print("CCP plans: Ownership required for creation (403)")
@@ -505,11 +455,7 @@ class TestCCPPlans:
         response = api_client.post(
             f"{BASE_URL}/api/ccp/plans",
             headers=admin_headers,
-            json={
-                "estate_id": TEST_ESTATE_ID,
-                "name": "Test Plan",
-                "plan_type": "invalid_type"
-            }
+            json={"estate_id": TEST_ESTATE_ID, "name": "Test Plan", "plan_type": "invalid_type"},
         )
         # Should be 400 (invalid type) or 403 (not owner)
         assert response.status_code in [400, 403]
@@ -520,11 +466,7 @@ class TestCCPPlans:
         response = api_client.post(
             f"{BASE_URL}/api/ccp/plans",
             headers=admin_headers,
-            json={
-                "estate_id": TEST_ESTATE_ID,
-                "name": "",
-                "plan_type": "natural_disaster"
-            }
+            json={"estate_id": TEST_ESTATE_ID, "name": "", "plan_type": "natural_disaster"},
         )
         # Should be 400 (empty name) or 403 (not owner)
         assert response.status_code in [400, 403]
@@ -533,24 +475,20 @@ class TestCCPPlans:
     def test_update_nonexistent_plan(self, api_client, admin_headers):
         """PUT /api/ccp/plans/{id} returns 404 for nonexistent"""
         response = api_client.put(
-            f"{BASE_URL}/api/ccp/plans/nonexistent-plan",
-            headers=admin_headers,
-            json={"name": "Updated Name"}
+            f"{BASE_URL}/api/ccp/plans/nonexistent-plan", headers=admin_headers, json={"name": "Updated Name"}
         )
         assert response.status_code == 404
         print("CCP plans: 404 for nonexistent plan update")
 
     def test_delete_nonexistent_plan(self, api_client, admin_headers):
         """DELETE /api/ccp/plans/{id} returns 404 for nonexistent"""
-        response = api_client.delete(
-            f"{BASE_URL}/api/ccp/plans/nonexistent-plan",
-            headers=admin_headers
-        )
+        response = api_client.delete(f"{BASE_URL}/api/ccp/plans/nonexistent-plan", headers=admin_headers)
         assert response.status_code == 404
         print("CCP plans: 404 for nonexistent plan delete")
 
 
 # ===================== CCP ACTIVATION TESTS =====================
+
 
 class TestCCPActivation:
     """Test CCP plan activation and deactivation"""
@@ -560,7 +498,7 @@ class TestCCPActivation:
         response = api_client.post(
             f"{BASE_URL}/api/ccp/activate",
             headers=admin_headers,
-            json={"plan_id": "nonexistent-plan", "is_drill": False}
+            json={"plan_id": "nonexistent-plan", "is_drill": False},
         )
         assert response.status_code == 404
         print("CCP activation: 404 for nonexistent plan")
@@ -568,9 +506,7 @@ class TestCCPActivation:
     def test_deactivate_nonexistent(self, api_client, admin_headers):
         """POST /api/ccp/deactivate/{id} returns 404 for nonexistent"""
         response = api_client.post(
-            f"{BASE_URL}/api/ccp/deactivate/nonexistent-activation",
-            headers=admin_headers,
-            json={"notes": ""}
+            f"{BASE_URL}/api/ccp/deactivate/nonexistent-activation", headers=admin_headers, json={"notes": ""}
         )
         assert response.status_code == 404
         print("CCP deactivation: 404 for nonexistent activation")
@@ -578,29 +514,27 @@ class TestCCPActivation:
 
 # ===================== CCP ACTIVE EMERGENCY TESTS =====================
 
+
 class TestCCPActiveEmergency:
     """Test CCP active emergency status board"""
 
     def test_get_active_requires_membership(self, api_client, admin_headers):
         """GET /api/ccp/active/{estate_id} requires membership"""
-        response = api_client.get(
-            f"{BASE_URL}/api/ccp/active/nonexistent-estate",
-            headers=admin_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/ccp/active/nonexistent-estate", headers=admin_headers)
         assert response.status_code == 403
         print("CCP active: Membership required (403)")
 
     def test_get_linked_resources_requires_membership(self, api_client, admin_headers):
         """GET /api/ccp/active/{estate_id}/linked-resources requires membership"""
         response = api_client.get(
-            f"{BASE_URL}/api/ccp/active/nonexistent-estate/linked-resources",
-            headers=admin_headers
+            f"{BASE_URL}/api/ccp/active/nonexistent-estate/linked-resources", headers=admin_headers
         )
         assert response.status_code == 403
         print("CCP linked resources: Membership required (403)")
 
 
 # ===================== CCP CHECK-IN TESTS =====================
+
 
 class TestCCPCheckin:
     """Test CCP member check-in"""
@@ -610,10 +544,7 @@ class TestCCPCheckin:
         response = api_client.post(
             f"{BASE_URL}/api/ccp/checkin",
             headers=admin_headers,
-            json={
-                "activation_id": "nonexistent-activation",
-                "status": "safe"
-            }
+            json={"activation_id": "nonexistent-activation", "status": "safe"},
         )
         assert response.status_code == 404
         print("CCP checkin: 404 for nonexistent activation")
@@ -623,10 +554,7 @@ class TestCCPCheckin:
         response = api_client.post(
             f"{BASE_URL}/api/ccp/checkin",
             headers=admin_headers,
-            json={
-                "activation_id": "some-activation",
-                "status": "invalid_status"
-            }
+            json={"activation_id": "some-activation", "status": "invalid_status"},
         )
         # Should be 400 (invalid status) or 404 (activation not found)
         assert response.status_code in [400, 404]
@@ -638,10 +566,7 @@ class TestCCPCheckin:
             response = api_client.post(
                 f"{BASE_URL}/api/ccp/checkin",
                 headers=admin_headers,
-                json={
-                    "activation_id": "nonexistent-activation",
-                    "status": status
-                }
+                json={"activation_id": "nonexistent-activation", "status": status},
             )
             # Should be 404 (activation not found), not 400 (invalid status)
             assert response.status_code == 404, f"Status {status} should be valid, got {response.status_code}"
@@ -650,57 +575,52 @@ class TestCCPCheckin:
 
 # ===================== CCP HISTORY TESTS =====================
 
+
 class TestCCPHistory:
     """Test CCP activation history"""
 
     def test_get_history_requires_membership(self, api_client, admin_headers):
         """GET /api/ccp/history/{estate_id} requires membership"""
-        response = api_client.get(
-            f"{BASE_URL}/api/ccp/history/nonexistent-estate",
-            headers=admin_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/ccp/history/nonexistent-estate", headers=admin_headers)
         assert response.status_code == 403
         print("CCP history: Membership required (403)")
 
 
 # ===================== NOTIFICATION PREFERENCES TESTS =====================
 
+
 class TestNotificationPrefs:
     """Test notification preferences for CCP"""
 
     def test_get_notification_prefs(self, api_client, admin_headers):
         """GET /api/notification-prefs returns preferences with categories"""
-        response = api_client.get(
-            f"{BASE_URL}/api/notification-prefs",
-            headers=admin_headers
-        )
+        response = api_client.get(f"{BASE_URL}/api/notification-prefs", headers=admin_headers)
         assert response.status_code == 200
         data = response.json()
         assert "preferences" in data
         assert "categories" in data
-        
+
         # Verify emergency_alerts category exists
         categories = data.get("categories", [])
         cat_ids = [c["id"] for c in categories]
         assert "emergency_alerts" in cat_ids, "emergency_alerts category should exist"
-        
+
         # Verify emergency_alerts is critical
         emergency_cat = next((c for c in categories if c["id"] == "emergency_alerts"), None)
-        assert emergency_cat.get("is_critical") == True, "emergency_alerts should be critical"
+        assert emergency_cat.get("is_critical"), "emergency_alerts should be critical"
         print("Notification prefs: emergency_alerts category exists and is critical")
 
     def test_update_notification_prefs(self, api_client, admin_headers):
         """PUT /api/notification-prefs updates preferences"""
         response = api_client.put(
-            f"{BASE_URL}/api/notification-prefs",
-            headers=admin_headers,
-            json={"master_enabled": True}
+            f"{BASE_URL}/api/notification-prefs", headers=admin_headers, json={"master_enabled": True}
         )
         assert response.status_code == 200
         print("Notification prefs: Update working")
 
 
 # ===================== AUTHENTICATION TESTS =====================
+
 
 class TestAuthentication:
     """Test that all endpoints require authentication"""
@@ -736,7 +656,9 @@ class TestAuthentication:
                 response = api_client.get(f"{BASE_URL}{endpoint}")
             else:
                 response = api_client.post(f"{BASE_URL}{endpoint}", json={})
-            assert response.status_code in [401, 403, 422], f"{endpoint} should require auth, got {response.status_code}"
+            assert response.status_code in [401, 403, 422], (
+                f"{endpoint} should require auth, got {response.status_code}"
+            )
         print(f"CCP: All {len(endpoints)} endpoints require authentication")
 
 
