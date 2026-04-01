@@ -35,6 +35,7 @@ import {
   Heart,
   Star,
   Check,
+  MessageCircle,
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import NotificationBell from '../NotificationBell';
@@ -380,6 +381,8 @@ const MobileNav = () => {
     { to: '/digital-wallet', icon: KeyRound, label: 'Digital Access Vault (DAV)' },
     { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
     { to: '/timeline', icon: Clock, label: 'Estate Plan Timeline' },
+    { to: '/estate-chat', icon: MessageCircle, label: 'Estate Chat (ECT)' },
+    { to: '/connected-protocol', icon: Shield, label: 'Connected Protocol (CCP)' },
   ], enabledFeatures);
 
   // Get feature access flags from localStorage (set by TransitionGate/Dashboard)
@@ -409,6 +412,8 @@ const MobileNav = () => {
     { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
     { to: '/beneficiary/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
     { to: '/beneficiary/milestone', icon: Gift, label: 'Report Milestone' },
+    { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Estate Chat (ECT)' },
+    { to: '/beneficiary/connected-protocol', icon: Shield, label: 'Connected Protocol (CCP)' },
   ]);
 
   // Staff portals — tool shortcuts in hamburger menu

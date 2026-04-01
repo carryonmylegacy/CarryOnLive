@@ -43,6 +43,8 @@ const GuardianPage = lazy(() => import('./pages/GuardianPage'));
 const ChecklistPage = lazy(() => import('./pages/ChecklistPage'));
 const TrusteePage = lazy(() => import('./pages/TrusteePage'));
 const FFNPage = lazy(() => import('./pages/FFNPage'));
+const EstateChatPage = lazy(() => import('./pages/EstateChatPage'));
+const ConnectedProtocolPage = lazy(() => import('./pages/ConnectedProtocolPage'));
 const TransitionPage = lazy(() => import('./pages/TransitionPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
@@ -286,6 +288,8 @@ function AppRoutes() {
         <Route path="/transition" element={<TransitionPage />} />
         <Route path="/digital-wallet" element={<DigitalWalletPage />} />
         <Route path="/timeline" element={<LegacyTimelinePage />} />
+        <Route path="/estate-chat" element={<EstateChatPage />} />
+        <Route path="/connected-protocol" element={<ConnectedProtocolPage />} />
       </Route>
 
       {/* Beneficiary Routes */}
@@ -306,6 +310,8 @@ function AppRoutes() {
         <Route path="/beneficiary/subscription" element={<SubscriptionPage />} />
         <Route path="/beneficiary/upload-certificate" element={<UploadCertificatePage />} />
         <Route path="/beneficiary/condolence" element={<CondolencePage />} />
+        <Route path="/beneficiary/estate-chat" element={<EstateChatPage />} />
+        <Route path="/beneficiary/connected-protocol" element={<ConnectedProtocolPage />} />
       </Route>
 
       {/* Admin Routes */}

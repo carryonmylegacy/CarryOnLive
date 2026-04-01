@@ -35,7 +35,8 @@ import {
   Plus,
   Heart,
   Star,
-  Check
+  Check,
+  MessageCircle
 } from 'lucide-react';
 import { Switch } from '../ui/switch';
 import { toast } from '../../utils/toast';
@@ -286,6 +287,8 @@ const Sidebar = () => {
         { to: '/digital-wallet', icon: KeyRound, label: 'Digital Access Vault (DAV)' },
         { to: '/trustee', icon: Shield, label: 'Designated Trustee Services (DTS)' },
         { to: '/timeline', icon: Clock, label: 'Estate Plan Timeline' },
+        { to: '/estate-chat', icon: MessageCircle, label: 'Estate Chat (ECT)' },
+        { to: '/connected-protocol', icon: Shield, label: 'Connected Protocol (CCP)' },
       ], enabledFeatures)
     },
     {
@@ -329,6 +332,8 @@ const Sidebar = () => {
         { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Immediate Action Checklist (IAC)' },
         { to: '/beneficiary/messages', icon: MessageSquare, label: 'Milestone Messages (MM)' },
         { to: '/beneficiary/milestone', icon: Home, label: 'Report Milestone' },
+        { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Estate Chat (ECT)' },
+        { to: '/beneficiary/connected-protocol', icon: Shield, label: 'Connected Protocol (CCP)' },
       ])
     },
     {
