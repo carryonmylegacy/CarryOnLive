@@ -358,8 +358,7 @@ const VaultPage = () => {
       if (newList.length === 0) newList = ['all']; // Can't have empty — default to all
     } else {
       newList = [...current, benId];
-      // If all are now selected, set back to "all"
-      if (newList.length === beneficiaries.length) newList = ['all'];
+      // Don't auto-convert to "all" — keep individual IDs so Pre/Post toggles stay visible
     }
     handleDesignateBeneficiaries(docId, newList, currentDoc?.visibility_timing);
   };
@@ -1114,14 +1113,14 @@ const VaultPage = () => {
                                       onClick={() => toggleBeneficiaryForDoc(doc.id, ben.id, doc.designated_beneficiaries, doc)}
                                       data-testid={`designation-ben-${ben.id}-${doc.id}`}
                                     >
-                                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style={{
+                                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden" style={{
                                         background: isSelected
                                           ? 'linear-gradient(135deg, #d4af37, #F0C95C)'
                                           : 'rgba(255,255,255,0.08)',
                                         color: isSelected ? '#080e1a' : '#7B879E',
                                       }}>
-                                        {ben.profile_photo_url
-                                          ? <img src={ben.profile_photo_url} alt="" className="w-9 h-9 rounded-full object-cover" />
+                                        {ben.photo_url
+                                          ? <img src={ben.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" />
                                           : initials}
                                       </div>
                                       <div className="text-left flex-1 min-w-0">
