@@ -1074,23 +1074,23 @@ export default function EstateChatPage() {
             disabled={uploading || voiceRecorder.recording}
             className="w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
             data-testid="ect-attach-btn"
-            style={{ background: 'rgba(255,255,255,0.12)' }}
+            style={{ background: '#222B42' }}
           >
-            {uploading ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#d4af37' }} /> : <Paperclip className="w-5 h-5" style={{ color: '#A0AABF' }} />}
+            {uploading ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#d4af37' }} /> : <Paperclip className="w-5 h-5" style={{ color: '#C8D0E0' }} />}
           </button>
 
           {/* Voice recording state */}
           {voiceRecorder.recording ? (
             <div className="flex-1 flex items-center gap-3 rounded-2xl px-4 py-2.5" style={{
-              background: 'rgba(239,68,68,0.08)',
-              border: '1px solid rgba(239,68,68,0.25)',
+              background: '#2A1519',
+              border: '1px solid #5C2A2A',
             }}>
               <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ background: '#ef4444' }} />
               <span className="text-sm font-semibold" style={{ color: '#F1F3F8' }}>
                 {Math.floor(voiceRecorder.duration / 60)}:{(voiceRecorder.duration % 60).toString().padStart(2, '0')}
               </span>
               <span className="text-xs" style={{ color: '#A0AABF' }}>Recording...</span>
-              <button onClick={voiceRecorder.cancel} className="ml-auto p-2 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }} data-testid="ect-voice-cancel">
+              <button onClick={voiceRecorder.cancel} className="ml-auto p-2 rounded-full" style={{ background: '#1A1F2E' }} data-testid="ect-voice-cancel">
                 <X className="w-4 h-4" style={{ color: '#ef4444' }} />
               </button>
             </div>
@@ -1106,9 +1106,8 @@ export default function EstateChatPage() {
               className="flex-1 rounded-2xl px-4 py-2.5 text-base"
               data-testid="ect-message-input"
               style={{
-                background: 'rgba(255,255,255,0.14)',
-                border: '1.5px solid rgba(255,255,255,0.45)',
-                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.25), 0 1px 0 rgba(255,255,255,0.08)',
+                background: '#1E2840',
+                border: '2px solid #4A5575',
                 color: '#FFFFFF',
                 fontSize: '16px',
                 outline: 'none',
@@ -1141,9 +1140,9 @@ export default function EstateChatPage() {
               onClick={voiceRecorder.start}
               className="w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
               data-testid="ect-voice-btn"
-              style={{ background: 'rgba(255,255,255,0.12)' }}
+              style={{ background: '#222B42' }}
             >
-              <Mic className="w-5 h-5" style={{ color: '#A0AABF' }} />
+              <Mic className="w-5 h-5" style={{ color: '#C8D0E0' }} />
             </button>
           )}
         </div>
