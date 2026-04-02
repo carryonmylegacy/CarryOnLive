@@ -46,7 +46,7 @@ export const CustomerContextPanel = ({ userId, getAuthHeaders, onClose }) => {
             </div>
           </div>
           {onClose && (
-            <button onClick={onClose} className="p-1.5 rounded-lg text-[var(--t5)] hover:text-[var(--t3)]">
+            <button onClick={onClose} className="p-2 rounded-lg text-[var(--t5)] hover:text-[var(--t3)]">
               <X className="w-4 h-4" />
             </button>
           )}

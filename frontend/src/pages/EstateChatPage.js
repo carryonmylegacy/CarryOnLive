@@ -1044,7 +1044,7 @@ export default function EstateChatPage() {
                 {Math.floor(voiceRecorder.duration / 60)}:{(voiceRecorder.duration % 60).toString().padStart(2, '0')}
               </span>
               <span className="text-xs" style={{ color: '#A0AABF' }}>Recording...</span>
-              <button onClick={voiceRecorder.cancel} className="ml-auto p-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }} data-testid="ect-voice-cancel">
+              <button onClick={voiceRecorder.cancel} className="ml-auto p-2 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }} data-testid="ect-voice-cancel">
                 <X className="w-4 h-4" style={{ color: '#ef4444' }} />
               </button>
             </div>
