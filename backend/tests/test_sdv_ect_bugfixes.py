@@ -89,7 +89,7 @@ class TestSDVDocumentDownload:
         estates_response = requests.get(f"{BASE_URL}/api/estates", headers=auth_headers)
         if estates_response.status_code != 200 or not estates_response.json():
             pytest.skip("No estates available")
-        
+
         estate_id = estates_response.json()[0]["id"]
         response = requests.get(f"{BASE_URL}/api/documents/{estate_id}", headers=auth_headers)
         assert response.status_code == 200
@@ -103,60 +103,64 @@ class TestSDVDocumentDownload:
         estates_response = requests.get(f"{BASE_URL}/api/estates", headers=auth_headers)
         if estates_response.status_code != 200 or not estates_response.json():
             pytest.skip("No estates available")
-        
+
         estate_id = estates_response.json()[0]["id"]
-        
+
         # Get documents
         docs_response = requests.get(f"{BASE_URL}/api/documents/{estate_id}", headers=auth_headers)
         if docs_response.status_code != 200 or not docs_response.json():
             pytest.skip("No documents available")
-        
+
         documents = docs_response.json()
-        
+
         # Find an unlocked document to test
         unlocked_doc = None
         for doc in documents:
             if not doc.get("is_locked"):
                 unlocked_doc = doc
                 break
-        
+
         if not unlocked_doc:
             pytest.skip("No unlocked documents available for download test")
-        
+
         doc_id = unlocked_doc["id"]
         doc_name = unlocked_doc.get("name", "document")
         file_type = unlocked_doc.get("file_type", "")
-        
+
         # Test download endpoint
         response = requests.get(
             f"{BASE_URL}/api/documents/{doc_id}/download",
             headers=auth_headers,
             allow_redirects=True,
         )
-        
+
         # Check response - may be 403 if section locked
         if response.status_code == 403:
-            print(f"⚠ Document download blocked by section lock (expected behavior)")
+            print("⚠ Document download blocked by section lock (expected behavior)")
             return
-        
+
         assert response.status_code == 200, f"Download failed: {response.status_code}"
-        
+
         # Check Content-Disposition header
         content_disp = response.headers.get("Content-Disposition", "")
         print(f"Content-Disposition: {content_disp}")
-        
+
         # Verify filename has extension based on MIME type
         if "pdf" in file_type.lower():
-            assert ".pdf" in content_disp.lower() or doc_name.lower().endswith(".pdf"), \
-                f"PDF document should have .pdf extension in Content-Disposition"
+            assert ".pdf" in content_disp.lower() or doc_name.lower().endswith(".pdf"), (
+                "PDF document should have .pdf extension in Content-Disposition"
+            )
         elif "jpeg" in file_type.lower() or "jpg" in file_type.lower():
-            assert ".jpg" in content_disp.lower() or ".jpeg" in content_disp.lower() or \
-                   doc_name.lower().endswith((".jpg", ".jpeg")), \
-                f"JPEG document should have .jpg extension in Content-Disposition"
+            assert (
+                ".jpg" in content_disp.lower()
+                or ".jpeg" in content_disp.lower()
+                or doc_name.lower().endswith((".jpg", ".jpeg"))
+            ), "JPEG document should have .jpg extension in Content-Disposition"
         elif "png" in file_type.lower():
-            assert ".png" in content_disp.lower() or doc_name.lower().endswith(".png"), \
-                f"PNG document should have .png extension in Content-Disposition"
-        
+            assert ".png" in content_disp.lower() or doc_name.lower().endswith(".png"), (
+                "PNG document should have .png extension in Content-Disposition"
+            )
+
         print(f"✓ Document download returns proper Content-Disposition: {content_disp}")
 
 
@@ -170,7 +174,7 @@ class TestECTChannelList:
         channels = response.json()
         assert isinstance(channels, list)
         print(f"✓ Got {len(channels)} ECT channels")
-        
+
         # Verify channel structure
         if channels:
             channel = channels[0]
@@ -186,7 +190,7 @@ class TestECTChannelList:
         contacts = response.json()
         assert isinstance(contacts, list)
         print(f"✓ Got {len(contacts)} ECT contact groups")
-        
+
         # Verify contact structure
         if contacts:
             contact_group = contacts[0]
@@ -225,24 +229,24 @@ class TestECTChannelCRUD:
         contacts_response = requests.get(f"{BASE_URL}/api/estate-chat/contacts", headers=auth_headers)
         if contacts_response.status_code != 200 or not contacts_response.json():
             pytest.skip("No contacts available")
-        
+
         contacts = contacts_response.json()
         if not contacts or not contacts[0].get("members"):
             pytest.skip("No members available for DM")
-        
+
         estate_id = contacts[0]["estate_id"]
         members = contacts[0]["members"]
-        
+
         # Find a member that's not the current user
         other_member = None
         for m in members:
             if not m.get("is_ffn"):  # Skip FFN contacts
                 other_member = m
                 break
-        
+
         if not other_member:
             pytest.skip("No valid member found for DM test")
-        
+
         # Create DM channel
         response = requests.post(
             f"{BASE_URL}/api/estate-chat/channels",
@@ -253,7 +257,7 @@ class TestECTChannelCRUD:
             },
             headers=auth_headers,
         )
-        
+
         # May return existing channel or create new one
         assert response.status_code == 200, f"Create DM failed: {response.status_code} - {response.text}"
         channel = response.json()
@@ -267,9 +271,9 @@ class TestECTChannelCRUD:
         channels_response = requests.get(f"{BASE_URL}/api/estate-chat/channels", headers=auth_headers)
         if channels_response.status_code != 200 or not channels_response.json():
             pytest.skip("No channels available")
-        
+
         channel_id = channels_response.json()[0]["id"]
-        
+
         response = requests.get(
             f"{BASE_URL}/api/estate-chat/channels/{channel_id}/messages",
             headers=auth_headers,
@@ -285,9 +289,9 @@ class TestECTChannelCRUD:
         channels_response = requests.get(f"{BASE_URL}/api/estate-chat/channels", headers=auth_headers)
         if channels_response.status_code != 200 or not channels_response.json():
             pytest.skip("No channels available")
-        
+
         channel_id = channels_response.json()[0]["id"]
-        
+
         response = requests.get(
             f"{BASE_URL}/api/estate-chat/channels/{channel_id}/read-status",
             headers=auth_headers,
@@ -303,9 +307,9 @@ class TestECTChannelCRUD:
         channels_response = requests.get(f"{BASE_URL}/api/estate-chat/channels", headers=auth_headers)
         if channels_response.status_code != 200 or not channels_response.json():
             pytest.skip("No channels available")
-        
+
         channel_id = channels_response.json()[0]["id"]
-        
+
         response = requests.get(
             f"{BASE_URL}/api/estate-chat/channels/{channel_id}/pinned",
             headers=auth_headers,
@@ -325,16 +329,16 @@ class TestECTTypingIndicator:
         channels_response = requests.get(f"{BASE_URL}/api/estate-chat/channels", headers=auth_headers)
         if channels_response.status_code != 200 or not channels_response.json():
             pytest.skip("No channels available")
-        
+
         channel_id = channels_response.json()[0]["id"]
-        
+
         response = requests.post(
             f"{BASE_URL}/api/estate-chat/channels/{channel_id}/typing",
             headers=auth_headers,
         )
         assert response.status_code == 200
         data = response.json()
-        assert data.get("ok") == True
+        assert data.get("ok")
         print(f"✓ Sent typing indicator to channel {channel_id}")
 
     def test_get_typing_indicator(self, auth_headers):
@@ -343,9 +347,9 @@ class TestECTTypingIndicator:
         channels_response = requests.get(f"{BASE_URL}/api/estate-chat/channels", headers=auth_headers)
         if channels_response.status_code != 200 or not channels_response.json():
             pytest.skip("No channels available")
-        
+
         channel_id = channels_response.json()[0]["id"]
-        
+
         response = requests.get(
             f"{BASE_URL}/api/estate-chat/channels/{channel_id}/typing",
             headers=auth_headers,
