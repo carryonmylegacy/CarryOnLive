@@ -356,6 +356,13 @@ async def get_channels(current_user: dict = Depends(get_current_user)):
         {"estate_id": {"$in": estate_ids}, "members": current_user["id"]},
         {"_id": 0},
     ).to_list(200)
+    # Filter out channels this user has dismissed
+    dismissed = await db.estate_channel_dismissals.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0, "channel_id": 1},
+    ).to_list(500)
+    dismissed_ids = {d["channel_id"] for d in dismissed}
+    channels = [ch for ch in channels if ch["id"] not in dismissed_ids]
     enriched = []
     for ch in channels:
         enriched.append(await _enrich_channel(ch, current_user["id"]))
@@ -585,6 +592,8 @@ async def send_message(
     )
     # Clear typing indicator on send
     await db.estate_typing.delete_one({"channel_id": channel_id, "user_id": current_user["id"]})
+    # Un-dismiss channel for all members so they see new activity
+    await db.estate_channel_dismissals.delete_many({"channel_id": channel_id})
     # Deliver to FFN contacts via email/SMS
     ffn_members = [m for m in channel.get("members", []) if m.startswith("ffn_")]
     if ffn_members:
@@ -770,6 +779,8 @@ async def upload_attachment(
         upsert=True,
     )
     await db.estate_typing.delete_one({"channel_id": channel_id, "user_id": current_user["id"]})
+    # Un-dismiss channel for all members so they see new activity
+    await db.estate_channel_dismissals.delete_many({"channel_id": channel_id})
     return message
 
 
@@ -835,7 +846,7 @@ async def delete_channel(
     channel_id: str,
     current_user: dict = Depends(get_current_user),
 ):
-    """Delete a channel and its messages. Circle channels auto-recreate when the estate chat is next opened."""
+    """Delete a channel. Circle channels are dismissed (hidden) per-user; others are DB-deleted."""
     channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0})
     if not channel:
         raise HTTPException(status_code=404, detail="Channel not found")
@@ -846,8 +857,17 @@ async def delete_channel(
     is_member = user_id in channel.get("members", [])
     if not (is_owner or is_admin or is_member):
         raise HTTPException(status_code=403, detail="Not authorized to delete this channel")
-    await db.estate_channels.delete_one({"id": channel_id})
-    await db.estate_messages.delete_many({"channel_id": channel_id})
+    now = datetime.now(timezone.utc).isoformat()
+    # Always record dismissal so channel stays hidden for this user
+    await db.estate_channel_dismissals.update_one(
+        {"user_id": user_id, "channel_id": channel_id},
+        {"$set": {"user_id": user_id, "channel_id": channel_id, "dismissed_at": now}},
+        upsert=True,
+    )
+    # For non-circle channels, also hard-delete from DB
+    if channel.get("type") != "circle":
+        await db.estate_channels.delete_one({"id": channel_id})
+        await db.estate_messages.delete_many({"channel_id": channel_id})
     await db.estate_channel_reads.delete_many({"channel_id": channel_id})
     return {"success": True}
 
@@ -868,6 +888,7 @@ async def batch_delete_channels(
         raise HTTPException(status_code=400, detail="Cannot delete more than 50 channels at once")
     deleted = []
     failed = []
+    now = datetime.now(timezone.utc).isoformat()
     for ch_id in data.channel_ids:
         channel = await db.estate_channels.find_one({"id": ch_id}, {"_id": 0})
         if not channel:
@@ -880,8 +901,16 @@ async def batch_delete_channels(
         if not (is_owner or is_admin or is_member):
             failed.append({"id": ch_id, "reason": "Not authorized"})
             continue
-        await db.estate_channels.delete_one({"id": ch_id})
-        await db.estate_messages.delete_many({"channel_id": ch_id})
+        # Record dismissal so channel stays hidden for this user
+        await db.estate_channel_dismissals.update_one(
+            {"user_id": user_id, "channel_id": ch_id},
+            {"$set": {"user_id": user_id, "channel_id": ch_id, "dismissed_at": now}},
+            upsert=True,
+        )
+        # For non-circle channels, also hard-delete from DB
+        if channel.get("type") != "circle":
+            await db.estate_channels.delete_one({"id": ch_id})
+            await db.estate_messages.delete_many({"channel_id": ch_id})
         await db.estate_channel_reads.delete_many({"channel_id": ch_id})
         deleted.append(ch_id)
     return {"deleted": deleted, "failed": failed}
@@ -897,8 +926,16 @@ async def get_unread_total(current_user: dict = Depends(get_current_user)):
         {"estate_id": {"$in": estate_ids}, "members": current_user["id"]},
         {"_id": 0, "id": 1},
     ).to_list(200)
+    # Exclude dismissed channels from unread count
+    dismissed = await db.estate_channel_dismissals.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0, "channel_id": 1},
+    ).to_list(500)
+    dismissed_ids = {d["channel_id"] for d in dismissed}
     total = 0
     for ch in channels:
+        if ch["id"] in dismissed_ids:
+            continue
         last_read = await db.estate_channel_reads.find_one(
             {"channel_id": ch["id"], "user_id": current_user["id"]},
             {"_id": 0, "id": 1, "last_read_at": 1},

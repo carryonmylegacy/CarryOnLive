@@ -59,9 +59,10 @@ function promptToSave(file) {
         await navigator.share({ files: [file] });
         cleanup();
         resolve(true);
-      } catch (e) {
+      } catch {
+        // Any error from share (including user cancelling via AbortError) = not saved
         cleanup();
-        resolve(e.name === 'AbortError' ? true : false);
+        resolve(false);
       }
     });
 
