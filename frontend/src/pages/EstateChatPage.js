@@ -1048,8 +1048,7 @@ export default function EstateChatPage() {
 
       {/* ── Input Bar — solid, elevated, sits above keyboard ── */}
       <div className="flex-shrink-0" style={{
-        background: '#0B1222',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
+        background: '#151D30',
         paddingBottom: inputFocused ? '8px' : 'env(safe-area-inset-bottom, 0px)',
       }}>
         {/* Typing indicator */}
