@@ -308,6 +308,11 @@ const NotificationContainer = () => {
   useEffect(() => {
     return subscribe((notification) => {
       setNotifications(prev => {
+        // Suppress duplicate messages within 1.5s
+        const isDupe = prev.some(n =>
+          n.message === notification.message && (notification.timestamp - n.timestamp) < 1500
+        );
+        if (isDupe) return prev;
         // Limit visible notifications
         const next = [notification, ...prev].slice(0, MAX_VISIBLE + 2);
         return next;
@@ -336,12 +341,19 @@ const NotificationContainer = () => {
       }}
       data-testid="notification-container"
     >
-      {notifications.slice(0, MAX_VISIBLE).map((n) => (
-        <NotificationCard
-          key={n.id}
-          notification={n}
-          onDismiss={handleDismiss}
-        />
+      {notifications.slice(0, MAX_VISIBLE).map((n, idx) => (
+        <div key={n.id} style={{
+          transform: idx > 0 ? `scale(${1 - idx * 0.04})` : 'none',
+          opacity: idx > 0 ? 1 - idx * 0.15 : 1,
+          transformOrigin: 'top center',
+          marginTop: idx > 0 ? '-4px' : '0',
+          transition: 'transform 0.3s, opacity 0.3s',
+        }}>
+          <NotificationCard
+            notification={n}
+            onDismiss={handleDismiss}
+          />
+        </div>
       ))}
     </div>
   );

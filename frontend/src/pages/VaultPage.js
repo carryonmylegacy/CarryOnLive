@@ -123,8 +123,6 @@ const VaultPage = () => {
   const [globalDragOver, setGlobalDragOver] = useState(false);
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [expandedDesignation, setExpandedDesignation] = useState(null);
-  const [bulkMode, setBulkMode] = useState(false);
-  const [bulkSelected, setBulkSelected] = useState([]);
   const dragCounterRef = useRef(0);
   const uploadNameRef = useRef(null);
   const pendingDropFocusRef = useRef(false);
@@ -324,22 +322,26 @@ const VaultPage = () => {
     }
   };
 
+  const designateDebounceRef = useRef(null);
   const handleDesignateBeneficiaries = async (docId, beneficiaryIds, visibilityTiming) => {
-    try {
-      const payload = { beneficiary_ids: beneficiaryIds };
-      if (visibilityTiming) payload.visibility_timing = visibilityTiming;
-      await axios.put(`${API_URL}/documents/${docId}/designate-beneficiaries`,
-        payload,
-        { ...getAuthHeaders(), headers: { ...getAuthHeaders().headers, 'Content-Type': 'application/json' } }
-      );
-      // Update local state
-      setDocuments(prev => prev.map(d =>
-        d.id === docId ? { ...d, designated_beneficiaries: beneficiaryIds, visibility_timing: visibilityTiming || d.visibility_timing } : d
-      ));
-      toast.success('Beneficiary access updated');
-    } catch {
-      toast.error('Failed to update beneficiary access');
-    }
+    // Update local state immediately (optimistic)
+    setDocuments(prev => prev.map(d =>
+      d.id === docId ? { ...d, designated_beneficiaries: beneficiaryIds, visibility_timing: visibilityTiming || d.visibility_timing } : d
+    ));
+    // Debounce the API call — no toast spam
+    clearTimeout(designateDebounceRef.current);
+    designateDebounceRef.current = setTimeout(async () => {
+      try {
+        const payload = { beneficiary_ids: beneficiaryIds };
+        if (visibilityTiming) payload.visibility_timing = visibilityTiming;
+        await axios.put(`${API_URL}/documents/${docId}/designate-beneficiaries`,
+          payload,
+          { ...getAuthHeaders(), headers: { ...getAuthHeaders().headers, 'Content-Type': 'application/json' } }
+        );
+      } catch {
+        toast.error('Failed to update beneficiary access');
+      }
+    }, 800);
   };
 
   const toggleBeneficiaryForDoc = (docId, benId, currentDesignation, currentDoc) => {
@@ -374,29 +376,6 @@ const VaultPage = () => {
     handleDesignateBeneficiaries(docId, currentDoc?.designated_beneficiaries || ['all'], timing);
   };
 
-  const handleBulkDesignate = async (beneficiaryIds) => {
-    if (bulkSelected.length === 0) { toast.error('Select documents first'); return; }
-    let successCount = 0;
-    for (const docId of bulkSelected) {
-      try {
-        await axios.put(`${API_URL}/documents/${docId}/designate-beneficiaries`,
-          { beneficiary_ids: beneficiaryIds },
-          { ...getAuthHeaders(), headers: { ...getAuthHeaders().headers, 'Content-Type': 'application/json' } }
-        );
-        successCount++;
-      } catch { /* continue with remaining */ }
-    }
-    setDocuments(prev => prev.map(d =>
-      bulkSelected.includes(d.id) ? { ...d, designated_beneficiaries: beneficiaryIds } : d
-    ));
-    toast.success(`Updated ${successCount} of ${bulkSelected.length} documents`);
-    setBulkMode(false);
-    setBulkSelected([]);
-  };
-
-  const toggleBulkSelect = (docId) => {
-    setBulkSelected(prev => prev.includes(docId) ? prev.filter(id => id !== docId) : [...prev, docId]);
-  };
 
 
 
@@ -848,112 +827,15 @@ const VaultPage = () => {
             </Card>
           ) : (
             <>
-            {/* Bulk Designation Toolbar */}
-            {user?.role === 'benefactor' && beneficiaries.length > 0 && (
-              <div className="mb-4">
-                {!bulkMode ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-xs gap-1.5 border-[var(--gold)] text-[var(--gold)]"
-                    onClick={() => { setBulkMode(true); setBulkSelected([]); }}
-                    data-testid="bulk-designation-start"
-                  >
-                    <Users className="w-3.5 h-3.5" /> Bulk Assign
-                  </Button>
-                ) : (
-                  <Card className="glass-card">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <Users className="w-4 h-4 text-[var(--gold)]" />
-                          <span className="text-sm font-bold text-[var(--t)]">Bulk Assign</span>
-                          <span className="text-xs text-[var(--t5)]">({bulkSelected.length} selected)</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-xs text-[var(--t5)]"
-                            onClick={() => setBulkSelected(bulkSelected.length === filteredDocs.length ? [] : filteredDocs.map(d => d.id))}
-                          >
-                            {bulkSelected.length === filteredDocs.length ? 'Deselect All' : 'Select All'}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-xs text-[#ef4444]"
-                            onClick={() => { setBulkMode(false); setBulkSelected([]); }}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      </div>
-                      {bulkSelected.length > 0 && (
-                        <div className="space-y-2 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                          <p className="text-xs font-semibold mb-2" style={{ color: 'var(--t5)' }}>Assign {bulkSelected.length} document{bulkSelected.length !== 1 ? 's' : ''} to:</p>
-                          <button
-                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all"
-                            style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.35)' }}
-                            onClick={() => handleBulkDesignate(['all'])}
-                            data-testid="bulk-designate-all"
-                          >
-                            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#d4af37' }}>
-                              <Users className="w-4 h-4" style={{ color: '#080e1a' }} />
-                            </div>
-                            <span className="text-sm font-bold" style={{ color: '#F1F3F8' }}>All Beneficiaries</span>
-                          </button>
-                          {beneficiaries.map(ben => {
-                            const initials = `${ben.first_name?.charAt(0) || ''}${ben.last_name?.charAt(0) || ''}`;
-                            return (
-                              <button
-                                key={ben.id}
-                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all"
-                                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-                                onClick={() => handleBulkDesignate([ben.id])}
-                                data-testid={`bulk-designate-${ben.id}`}
-                              >
-                                <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)', color: '#A0AABF' }}>
-                                  {ben.photo_url
-                                    ? <img src={ben.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" />
-                                    : initials}
-                                </div>
-                                <div className="text-left flex-1 min-w-0">
-                                  <div className="text-sm font-semibold truncate" style={{ color: '#F1F3F8' }}>{ben.first_name} {ben.last_name}</div>
-                                  {ben.relation && <div className="text-xs" style={{ color: '#7B879E' }}>{ben.relation}</div>}
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredDocs.map((doc) => {
                 return (
                   <Card
                     key={doc.id}
-                    className={`glass-card relative overflow-hidden group cursor-pointer ${bulkMode && bulkSelected.includes(doc.id) ? 'ring-2 ring-[var(--gold)]' : ''}`}
-                    onClick={() => bulkMode ? toggleBulkSelect(doc.id) : (doc.is_locked ? (setSelectedDoc(doc), setShowLockModal(true)) : handlePreview(doc))}
+                    className="glass-card relative overflow-hidden group cursor-pointer"
+                    onClick={() => doc.is_locked ? (setSelectedDoc(doc), setShowLockModal(true)) : handlePreview(doc)}
                     data-testid={`document-${doc.id}`}
                   >
-                    {/* Bulk selection checkbox */}
-                    {bulkMode && (
-                      <div className="absolute top-2 left-2 z-10">
-                        <input
-                          type="checkbox"
-                          checked={bulkSelected.includes(doc.id)}
-                          onChange={() => toggleBulkSelect(doc.id)}
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-5 h-5 rounded accent-[#d4af37] cursor-pointer"
-                          data-testid={`bulk-select-${doc.id}`}
-                        />
-                      </div>
-                    )}
                     {/* Lock Overlay */}
                     {doc.is_locked && (
                       <div className="lock-overlay">
@@ -1063,24 +945,27 @@ const VaultPage = () => {
                         )}
                       </div>
                       </div>
-                      {/* Beneficiary Designation — simplified */}
+                      {/* Beneficiary Access */}
                       {user?.role === 'benefactor' && beneficiaries.length > 0 && (
                         <div className="mt-2 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                           <button
-                            className="flex items-center gap-2 w-full text-left text-sm font-semibold transition-colors"
-                            style={{ color: 'var(--t4)' }}
+                            className="flex items-center gap-2 w-full px-3 py-2 rounded-full transition-all"
+                            style={{
+                              background: 'rgba(255,255,255,0.05)',
+                              border: '1px solid rgba(255,255,255,0.15)',
+                            }}
                             onClick={(e) => { e.stopPropagation(); setExpandedDesignation(expandedDesignation === doc.id ? null : doc.id); }}
                             data-testid={`designation-toggle-${doc.id}`}
                           >
-                            <Users className="w-4 h-4" style={{ color: '#d4af37' }} />
-                            <span>
+                            <Users className="w-4 h-4" style={{ color: '#A0AABF' }} />
+                            <span className="text-sm font-semibold" style={{ color: '#D8DEE9' }}>
                               {(!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all'))
-                                ? 'All beneficiaries'
-                                : `${doc.designated_beneficiaries.length} of ${beneficiaries.length} beneficiaries`}
+                                ? `All ${beneficiaries.length} Beneficiaries`
+                                : `${doc.designated_beneficiaries.length} of ${beneficiaries.length} Beneficiaries`}
                             </span>
                             {expandedDesignation === doc.id
-                              ? <ChevronUp className="w-4 h-4 ml-auto" />
-                              : <ChevronDown className="w-4 h-4 ml-auto" />}
+                              ? <ChevronUp className="w-4 h-4 ml-auto" style={{ color: '#7B879E' }} />
+                              : <ChevronDown className="w-4 h-4 ml-auto" style={{ color: '#7B879E' }} />}
                           </button>
                           {expandedDesignation === doc.id && (
                             <div className="mt-3 space-y-1.5" onClick={(e) => e.stopPropagation()}>

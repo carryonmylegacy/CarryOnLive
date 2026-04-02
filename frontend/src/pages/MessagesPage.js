@@ -498,35 +498,48 @@ const MessagesPage = () => {
     }
   };
 
+  const triggerDownload = (blobOrUrl, filename) => {
+    // iOS PWA/Safari doesn't support a.click() blob downloads
+    // Use window.open for media, or create a visible link for files
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS) {
+      // On iOS, open blob in a new tab — user can long-press to save
+      const w = window.open(blobOrUrl, '_blank');
+      if (!w) {
+        // Popup blocked — fall back to replacing current page
+        window.location.href = blobOrUrl;
+      }
+    } else {
+      const a = document.createElement('a');
+      a.href = blobOrUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
+
   const handleDownload = async (msg) => {
     try {
       const msgType = msg.message_type || 'text';
       if (msgType === 'video' && msg.video_url) {
-        // Download video file directly
         const res = await axios.get(`${API_URL}/messages/video/${msg.video_url}`, {
           ...getAuthHeaders(), responseType: 'blob',
         });
-        const url = URL.createObjectURL(res.data);
-        const a = document.createElement('a'); a.href = url;
-        a.download = `${(msg.title || 'video').replace(/[^a-zA-Z0-9 _-]/g, '')}.webm`;
-        a.click(); URL.revokeObjectURL(url);
+        const url = URL.createObjectURL(new Blob([res.data], { type: res.data.type || 'video/webm' }));
+        triggerDownload(url, `${(msg.title || 'video').replace(/[^a-zA-Z0-9 _-]/g, '')}.webm`);
       } else if (msgType === 'voice' && msg.voice_url) {
         const res = await axios.get(`${API_URL}/messages/voice/${msg.voice_url}`, {
           ...getAuthHeaders(), responseType: 'blob',
         });
-        const url = URL.createObjectURL(res.data);
-        const a = document.createElement('a'); a.href = url;
-        a.download = `${(msg.title || 'voice').replace(/[^a-zA-Z0-9 _-]/g, '')}.webm`;
-        a.click(); URL.revokeObjectURL(url);
+        const url = URL.createObjectURL(new Blob([res.data], { type: res.data.type || 'audio/webm' }));
+        triggerDownload(url, `${(msg.title || 'voice').replace(/[^a-zA-Z0-9 _-]/g, '')}.webm`);
       } else {
-        // Text message → PDF
         const res = await axios.get(`${API_URL}/messages/${msg.id}/download`, {
           ...getAuthHeaders(), responseType: 'blob',
         });
-        const url = URL.createObjectURL(res.data);
-        const a = document.createElement('a'); a.href = url;
-        a.download = `${(msg.title || 'message').replace(/[^a-zA-Z0-9 _-]/g, '')}.pdf`;
-        a.click(); URL.revokeObjectURL(url);
+        const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+        triggerDownload(url, `${(msg.title || 'message').replace(/[^a-zA-Z0-9 _-]/g, '')}.pdf`);
       }
       toast.success('Download started');
     } catch {
