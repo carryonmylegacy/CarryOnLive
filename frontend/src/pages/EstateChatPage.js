@@ -1090,7 +1090,7 @@ export default function EstateChatPage() {
       {/* ── Input Bar — solid, elevated, sits above keyboard ── */}
       <div className="flex-shrink-0" style={{
         background: '#151D30',
-        paddingBottom: inputFocused ? '8px' : 'env(safe-area-inset-bottom, 0px)',
+        paddingBottom: (inputFocused && !voiceRecorder.recording && !voicePreview) ? '8px' : 'env(safe-area-inset-bottom, 0px)',
       }}>
         {/* Typing indicator */}
         {typers.length > 0 && (
@@ -1120,65 +1120,61 @@ export default function EstateChatPage() {
             {uploading ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#d4af37' }} /> : <Paperclip className="w-5 h-5" style={{ color: '#C8D0E0' }} />}
           </button>
 
-          {/* Voice recording / preview overlay (rendered on top of input) */}
-          {voiceRecorder.recording && (
-            <div className="flex-1 flex items-center gap-3 rounded-2xl px-4 py-2.5" style={{
-              background: '#2A1519',
-              border: '1px solid #5C2A2A',
-            }}>
-              <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ background: '#ef4444' }} />
-              <span className="text-sm font-semibold" style={{ color: '#F1F3F8' }}>
-                {Math.floor(voiceRecorder.duration / 60)}:{(voiceRecorder.duration % 60).toString().padStart(2, '0')}
-              </span>
-              <span className="text-xs" style={{ color: '#A0AABF' }}>Recording...</span>
-              <button onMouseDown={(e) => e.preventDefault()} onClick={stopAndPreview} className="ml-auto p-2 rounded-full" style={{ background: '#1A1F2E' }} data-testid="ect-voice-stop">
-                <Square className="w-4 h-4" style={{ color: '#F1F3F8', fill: '#F1F3F8' }} />
-              </button>
-              <button onMouseDown={(e) => e.preventDefault()} onClick={() => { voiceRecorder.cancel(); inputRef.current?.focus(); }} className="p-2 rounded-full" style={{ background: '#1A1F2E' }} data-testid="ect-voice-cancel">
-                <X className="w-4 h-4" style={{ color: '#ef4444' }} />
-              </button>
-            </div>
-          )}
-          {!voiceRecorder.recording && voicePreview && (
-            <div className="flex-1 flex items-center gap-2 rounded-2xl px-3 py-2" style={{
-              background: '#1A2235',
-              border: '1px solid #3A4560',
-            }}>
-              <audio src={voicePreview.url} controls className="h-8 flex-1" style={{ maxWidth: '100%', filter: 'invert(1) hue-rotate(180deg)', opacity: 0.8 }} />
-              <button onMouseDown={(e) => e.preventDefault()} onClick={() => { discardPreview(); inputRef.current?.focus(); }} className="p-2 rounded-full flex-shrink-0" style={{ background: '#1A1F2E' }} data-testid="ect-voice-discard">
-                <X className="w-4 h-4" style={{ color: '#ef4444' }} />
-              </button>
-            </div>
-          )}
-          {/* Input - always in DOM to keep keyboard alive; hidden during recording/preview */}
-          <input
-            ref={inputRef}
-            value={draft}
-            onChange={handleDraftChange}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-            onFocus={() => {
-              setInputFocused(true);
-              const fix = () => { const vv = window.visualViewport; const r = document.getElementById('ect-root'); if (vv && r && vv.height < window.innerHeight * 0.8) { r.style.height = `${vv.height}px`; r.style.bottom = 'auto'; r.style.transform = window.scrollY > 0 ? `translateY(${window.scrollY}px)` : ''; } };
-              setTimeout(fix, 300); setTimeout(fix, 600);
-            }}
-            onBlur={() => setInputFocused(false)}
-            placeholder="Type a message..."
-            className="rounded-2xl px-4 py-2.5 text-base"
-            data-testid="ect-message-input"
-            style={{
-              background: '#1E2840',
-              border: '2px solid #4A5575',
-              color: '#FFFFFF',
-              fontSize: '16px',
-              outline: 'none',
-              flex: (voiceRecorder.recording || voicePreview) ? undefined : 1,
-              position: (voiceRecorder.recording || voicePreview) ? 'absolute' : undefined,
-              opacity: (voiceRecorder.recording || voicePreview) ? 0 : 1,
-              pointerEvents: (voiceRecorder.recording || voicePreview) ? 'none' : undefined,
-              width: (voiceRecorder.recording || voicePreview) ? 1 : undefined,
-              height: (voiceRecorder.recording || voicePreview) ? 1 : undefined,
-            }}
-          />
+          {/* Input area with recording/preview overlay */}
+          <div className="flex-1 relative" style={{ minWidth: 0 }}>
+            <input
+              ref={inputRef}
+              value={draft}
+              onChange={handleDraftChange}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+              onFocus={() => {
+                setInputFocused(true);
+                const fix = () => { const vv = window.visualViewport; const r = document.getElementById('ect-root'); if (vv && r && vv.height < window.innerHeight * 0.8) { r.style.height = `${vv.height}px`; r.style.bottom = 'auto'; r.style.transform = window.scrollY > 0 ? `translateY(${window.scrollY}px)` : ''; } };
+                setTimeout(fix, 300); setTimeout(fix, 600);
+              }}
+              onBlur={() => setInputFocused(false)}
+              placeholder="Type a message..."
+              className="w-full rounded-2xl px-4 py-2.5 text-base"
+              data-testid="ect-message-input"
+              style={{
+                background: '#1E2840',
+                border: '2px solid #4A5575',
+                color: (voiceRecorder.recording || voicePreview) ? 'transparent' : '#FFFFFF',
+                fontSize: '16px',
+                outline: 'none',
+                caretColor: (voiceRecorder.recording || voicePreview) ? 'transparent' : undefined,
+              }}
+            />
+            {voiceRecorder.recording && (
+              <div className="absolute inset-0 flex items-center gap-3 rounded-2xl px-4" style={{
+                background: '#2A1519',
+                border: '1px solid #5C2A2A',
+              }}>
+                <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ background: '#ef4444' }} />
+                <span className="text-sm font-semibold" style={{ color: '#F1F3F8' }}>
+                  {Math.floor(voiceRecorder.duration / 60)}:{(voiceRecorder.duration % 60).toString().padStart(2, '0')}
+                </span>
+                <span className="text-xs" style={{ color: '#A0AABF' }}>Recording...</span>
+                <button onMouseDown={(e) => e.preventDefault()} onClick={stopAndPreview} className="ml-auto p-2 rounded-full" style={{ background: '#1A1F2E' }} data-testid="ect-voice-stop">
+                  <Square className="w-4 h-4" style={{ color: '#F1F3F8', fill: '#F1F3F8' }} />
+                </button>
+                <button onMouseDown={(e) => e.preventDefault()} onClick={() => { voiceRecorder.cancel(); inputRef.current?.focus(); }} className="p-2 rounded-full" style={{ background: '#1A1F2E' }} data-testid="ect-voice-cancel">
+                  <X className="w-4 h-4" style={{ color: '#ef4444' }} />
+                </button>
+              </div>
+            )}
+            {!voiceRecorder.recording && voicePreview && (
+              <div className="absolute inset-0 flex items-center gap-2 rounded-2xl px-3" style={{
+                background: '#1A2235',
+                border: '1px solid #3A4560',
+              }}>
+                <audio src={voicePreview.url} controls className="h-8 flex-1" style={{ maxWidth: '100%', filter: 'invert(1) hue-rotate(180deg)', opacity: 0.8 }} />
+                <button onMouseDown={(e) => e.preventDefault()} onClick={() => { discardPreview(); inputRef.current?.focus(); }} className="p-2 rounded-full flex-shrink-0" style={{ background: '#1A1F2E' }} data-testid="ect-voice-discard">
+                  <X className="w-4 h-4" style={{ color: '#ef4444' }} />
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Send / Voice toggle */}
           {draft.trim() ? (
@@ -1216,7 +1212,8 @@ export default function EstateChatPage() {
           ) : (
             <button
               onMouseDown={(e) => e.preventDefault()}
-              onClick={voiceRecorder.start}
+              onPointerDown={(e) => e.preventDefault()}
+              onClick={() => { voiceRecorder.start(); setTimeout(() => inputRef.current?.focus(), 150); }}
               className="w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0"
               data-testid="ect-voice-btn"
               style={{ background: '#222B42' }}
