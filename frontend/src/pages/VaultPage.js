@@ -422,77 +422,87 @@ const VaultPage = () => {
   const handleDownload = async (doc, password = null, backupCode = null) => {
     setDownloading(doc.id);
     try {
-      await platformDownload({
-        action: 'document',
-        params: {
-          document_id: doc.id,
-          ...(password ? { password } : {}),
-          ...(backupCode ? { backup_code: backupCode } : {}),
-        },
-        filename: doc.name || 'document',
-        onFallback: async () => {
-          let url = `${API_URL}/documents/${doc.id}/download`;
-          const params = [];
-          if (password) params.push(`password=${encodeURIComponent(password)}`);
-          if (backupCode) params.push(`backup_code=${encodeURIComponent(backupCode)}`);
-          if (params.length > 0) url += `?${params.join('&')}`;
+      // Build download URL
+      let url = `${API_URL}/documents/${doc.id}/download`;
+      const qp = [];
+      if (password) qp.push(`password=${encodeURIComponent(password)}`);
+      if (backupCode) qp.push(`backup_code=${encodeURIComponent(backupCode)}`);
+      if (qp.length > 0) url += `?${qp.join('&')}`;
 
-          const response = await axios.get(url, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('carryon_token')}` },
-            responseType: 'blob'
-          });
+      const authToken = localStorage.getItem('carryon_token');
 
-          // Native app: write to filesystem then open share sheet
-          try {
-            const { Capacitor } = await import('@capacitor/core');
-            if (Capacitor.isNativePlatform()) {
-              const { Filesystem, Directory } = await import('@capacitor/filesystem');
-              const { Share } = await import('@capacitor/share');
-              const reader = new FileReader();
-              const base64Data = await new Promise((resolve) => {
-                reader.onloadend = () => resolve(reader.result.split(',')[1]);
-                reader.readAsDataURL(response.data);
-              });
-              const fileName = doc.name || 'document';
-              const result = await Filesystem.writeFile({
-                path: fileName,
-                data: base64Data,
-                directory: Directory.Cache,
-              });
-              await Share.share({ title: doc.name, url: result.uri });
-              return;
-            }
-          } catch (nativeErr) {
-            const msg = nativeErr?.message || '';
-            if (!msg.toLowerCase().includes('cancel')) {
-              console.error('Native download fallback:', nativeErr);
-              toast.error('Could not save file. Please try again.');
-            }
-            return;
-          }
-
-          // Web/PWA: standard blob download
-          const blob = new Blob([response.data], { type: doc.file_type });
-          const downloadUrl = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = downloadUrl;
-          link.download = doc.name;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(downloadUrl);
-        },
+      // Direct fetch with JWT — works on all platforms
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${authToken}` },
       });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        const detail = errData?.detail || `HTTP ${res.status}`;
+        if (res.status === 401) {
+          setSelectedDoc(doc);
+          setShowLockModal(true);
+          return;
+        }
+        if (res.status === 403 && detail.toLowerCase().includes('locked')) {
+          setSelectedDoc(doc);
+          setShowLockModal(true);
+          return;
+        }
+        throw new Error(detail);
+      }
+
+      const blob = await res.blob();
+      const fileName = doc.name || 'document';
+      const contentType = res.headers.get('content-type') || doc.file_type || 'application/octet-stream';
+
+      // iOS PWA: use navigator.share if available
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+      if (isIOS && isPWA && navigator.canShare) {
+        const file = new File([blob], fileName, { type: contentType });
+        if (navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({ files: [file] });
+            toast.success('Saved');
+          } catch (shareErr) {
+            if (shareErr.name !== 'AbortError') throw shareErr;
+          }
+          return;
+        }
+      }
+
+      // Native app: Capacitor filesystem
+      try {
+        const { Capacitor } = await import('@capacitor/core');
+        if (Capacitor.isNativePlatform()) {
+          const { Filesystem, Directory } = await import('@capacitor/filesystem');
+          const { Share } = await import('@capacitor/share');
+          const reader = new FileReader();
+          const base64Data = await new Promise((resolve) => {
+            reader.onloadend = () => resolve(reader.result.split(',')[1]);
+            reader.readAsDataURL(blob);
+          });
+          const result = await Filesystem.writeFile({ path: fileName, data: base64Data, directory: Directory.Cache });
+          await Share.share({ title: doc.name, url: result.uri });
+          return;
+        }
+      } catch {} // eslint-disable-line no-empty
+
+      // Web: standard blob download
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+      toast.success('Document saved');
     } catch (error) {
       console.error('Download error:', error);
-      const msg = error?.message || '';
-      if (error?.response?.status === 401 || msg.includes('locked') || msg.includes('401')) {
-        setSelectedDoc(doc);
-        setShowLockModal(true);
-      } else {
-        // Show full error detail so we can debug
-        toast.error(`Download failed: ${msg || 'Unknown error'}`);
-      }
+      toast.error(error?.message || 'Download failed');
     } finally {
       setDownloading(null);
     }

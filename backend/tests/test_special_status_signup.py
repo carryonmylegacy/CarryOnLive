@@ -11,7 +11,7 @@ import time
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://ect-keyboard-fix.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://ect-chat-stable.preview.emergentagent.com").rstrip("/")
 
 
 class TestSpecialStatusRegistration:

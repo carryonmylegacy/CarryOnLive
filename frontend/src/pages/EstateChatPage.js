@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { API_URL } from '../config';
+import { toast } from 'sonner';
 import {
   MessageCircle,
   Send,
@@ -287,6 +288,9 @@ export default function EstateChatPage() {
   const voiceRecorder = useVoiceRecorder();
   const [voicePreview, setVoicePreview] = useState(null); // {blob, url}
   const [inputFocused, setInputFocused] = useState(false);
+  const [swipedChannel, setSwipedChannel] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const touchStartRef = useRef({ x: 0, y: 0 });
 
   // ── Hide bottom nav when in ECT ──
   useEffect(() => {
@@ -567,13 +571,21 @@ export default function EstateChatPage() {
   };
 
   const deleteChannel = async (chId) => {
-    if (!window.confirm('Delete this group channel?')) return;
     try {
-      await fetch(`${API_URL}/estate-chat/channels/${chId}`, { method: 'DELETE', headers });
-      setActiveChannel(null);
-      setShowChannelList(true);
-      await fetchChannels();
-    } catch {} // eslint-disable-line no-empty
+      const res = await fetch(`${API_URL}/estate-chat/channels/${chId}`, { method: 'DELETE', headers });
+      if (res.ok) {
+        setChannels(prev => prev.filter(c => c.id !== chId));
+        setActiveChannel(null);
+        setShowChannelList(true);
+        setDeleteConfirm(null);
+        setSwipedChannel(null);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.detail || 'Cannot delete this conversation');
+        setDeleteConfirm(null);
+        setSwipedChannel(null);
+      }
+    } catch { toast.error('Failed to delete'); setDeleteConfirm(null); setSwipedChannel(null); } // eslint-disable-line no-empty
   };
 
   const toggleMember = (id) => {
@@ -604,6 +616,22 @@ export default function EstateChatPage() {
       navigate(-1);
     }
   };
+
+  const handleTouchStart = (e, channelId) => {
+    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  };
+
+  const handleTouchEnd = (e, channelId) => {
+    const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
+    const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
+    if (Math.abs(dy) > Math.abs(dx)) return; // vertical scroll, ignore
+    if (dx < -60) {
+      setSwipedChannel(channelId);
+    } else if (dx > 30) {
+      setSwipedChannel(null);
+    }
+  };
+
 
   if (loading) {
     return (
@@ -851,16 +879,42 @@ export default function EstateChatPage() {
               </div>
             )}
             {channels.map(ch => (
-              <button
+              <div
                 key={ch.id}
-                onClick={() => openChannel(ch)}
-                className="w-full flex items-center gap-3 p-3 rounded-xl mb-1 transition-all text-left"
-                data-testid={`ect-channel-${ch.id}`}
-                style={{
-                  background: activeChannel?.id === ch.id ? 'rgba(212,175,55,0.1)' : 'transparent',
-                  border: activeChannel?.id === ch.id ? '1px solid rgba(212,175,55,0.2)' : '1px solid transparent',
-                }}
+                className="relative overflow-hidden rounded-xl mb-1"
+                onTouchStart={(e) => handleTouchStart(e, ch.id)}
+                onTouchEnd={(e) => handleTouchEnd(e, ch.id)}
               >
+                {/* Delete action (behind the card) */}
+                <div className="absolute inset-y-0 right-0 flex items-center" style={{
+                  width: '72px',
+                  background: '#dc2626',
+                  justifyContent: 'center',
+                  borderRadius: '12px',
+                  opacity: swipedChannel === ch.id ? 1 : 0,
+                  transition: 'opacity 0.15s ease',
+                }}>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setDeleteConfirm(ch); }}
+                    data-testid={`ect-channel-delete-${ch.id}`}
+                    className="w-full h-full flex items-center justify-center"
+                  >
+                    <Trash2 className="w-5 h-5" style={{ color: '#fff' }} />
+                  </button>
+                </div>
+                {/* Channel card */}
+                <button
+                  onClick={() => { if (swipedChannel === ch.id) { setSwipedChannel(null); } else { openChannel(ch); } }}
+                  className="w-full flex items-center gap-3 p-3 transition-transform text-left relative"
+                  data-testid={`ect-channel-${ch.id}`}
+                  style={{
+                    background: activeChannel?.id === ch.id ? 'rgba(212,175,55,0.1)' : 'var(--bg, #0B1120)',
+                    border: activeChannel?.id === ch.id ? '1px solid rgba(212,175,55,0.2)' : '1px solid transparent',
+                    borderRadius: '12px',
+                    transform: swipedChannel === ch.id ? 'translateX(-72px)' : 'translateX(0)',
+                    transition: 'transform 0.2s ease',
+                  }}
+                >
                 <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-sm font-bold" style={{ background: 'rgba(255,255,255,0.06)', color: '#A0AABF' }}>
                   {ch.type === 'direct' && ch.photo_url && ch.photo_url.startsWith('http')
                     ? <img src={ch.photo_url} alt="" className="w-10 h-10 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; }} />
@@ -884,7 +938,8 @@ export default function EstateChatPage() {
                     )}
                   </div>
                 </div>
-              </button>
+                </button>
+              </div>
             ))}
           </>
         )}
@@ -1277,6 +1332,32 @@ export default function EstateChatPage() {
       </div>
     </div>
     {newChatModal}
+    {/* Delete Confirmation */}
+    {deleteConfirm && (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }}>
+        <div className="w-full max-w-xs rounded-2xl p-6 text-center" style={{ background: '#0F1629', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <Trash2 className="w-10 h-10 mx-auto mb-3" style={{ color: '#dc2626' }} />
+          <h3 className="text-base font-bold mb-1" style={{ color: '#F1F3F8' }}>Delete Conversation</h3>
+          <p className="text-sm mb-5" style={{ color: '#7B879E' }}>
+            Delete <strong style={{ color: '#F1F3F8' }}>{deleteConfirm.name}</strong>? This removes all messages and cannot be undone.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => { setDeleteConfirm(null); setSwipedChannel(null); }}
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+              data-testid="ect-delete-cancel"
+              style={{ background: 'rgba(255,255,255,0.06)', color: '#A0AABF' }}
+            >Cancel</button>
+            <button
+              onClick={() => deleteChannel(deleteConfirm.id)}
+              className="flex-1 py-2.5 rounded-xl text-sm font-bold"
+              data-testid="ect-delete-confirm"
+              style={{ background: '#dc2626', color: '#fff' }}
+            >Delete</button>
+          </div>
+        </div>
+      </div>
+    )}
     {/* Security Intro Glass Panel */}
     {showSecurityIntro && (
       <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)', padding: '16px', paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
