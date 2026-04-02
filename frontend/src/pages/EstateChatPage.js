@@ -299,22 +299,20 @@ export default function EstateChatPage() {
     if (loading) return;
     const root = document.getElementById('ect-root');
     if (!root) return;
+    let rafId = 0;
     let lastH = 0;
     const sync = () => {
       const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
       if (Math.abs(h - lastH) > 1) { root.style.height = `${h}px`; lastH = h; }
       if (window.scrollY > 0) window.scrollTo(0, 0);
+      rafId = requestAnimationFrame(sync);
     };
-    sync();
+    rafId = requestAnimationFrame(sync);
     const vv = window.visualViewport;
     if (vv) { vv.addEventListener('resize', sync); vv.addEventListener('scroll', sync); }
-    window.addEventListener('scroll', sync);
-    // Poll fallback — iOS PWA standalone doesn't fire visualViewport events reliably
-    const poll = setInterval(sync, 200);
     return () => {
+      cancelAnimationFrame(rafId);
       if (vv) { vv.removeEventListener('resize', sync); vv.removeEventListener('scroll', sync); }
-      window.removeEventListener('scroll', sync);
-      clearInterval(poll);
       root.style.height = '';
     };
   }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1099,7 +1097,7 @@ export default function EstateChatPage() {
               value={draft}
               onChange={handleDraftChange}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-              onFocus={() => { setInputFocused(true); requestAnimationFrame(() => window.scrollTo(0, 0)); setTimeout(() => window.scrollTo(0, 0), 100); setTimeout(() => window.scrollTo(0, 0), 300); }}
+              onFocus={() => setInputFocused(true)}
               onBlur={() => setInputFocused(false)}
               placeholder="Type a message..."
               className="flex-1 rounded-2xl px-4 py-2.5 text-base"
