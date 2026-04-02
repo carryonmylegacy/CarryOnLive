@@ -59,10 +59,13 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **DO NOT**: Import toast from 'sonner' in pages — always use `../utils/toast`
 
 ### 7. ECT Swipe-to-Delete Channels
-- **Status**: FIXED (April 2, 2026) — backend permissions + CORS preflight fix + circle deletion enabled
-- **Circle channels**: Swipe-to-delete works for ALL channel types including circles. Circles auto-recreate via `ensure_estate_circle()` when the estate chat is next opened.
+- **Status**: RE-FIXED (April 2, 2026) — backend permissions + CORS preflight fix + circle deletion enabled + **dismissal tracking**
+- **Circle channels**: Swipe-to-delete works for ALL channel types. Circles are **dismissed per-user** (not hard-deleted) so they stay hidden even after `_ensure_circle()` auto-recreation. Non-circle channels are both dismissed AND hard-deleted.
+- **New collection**: `estate_channel_dismissals` — `{user_id, channel_id, dismissed_at}` — unique index on `(user_id, channel_id)`
+- **Un-dismiss**: When a new message is sent to a dismissed channel, all dismissals for that channel are cleared (channel reappears)
 - **Header trash icon**: Only shows for group channels (`activeChannel.type === 'group'`)
 - **DO NOT**: Re-add `if channel["type"] == "circle"` restriction on the backend
+- **DO NOT**: Hard-delete circle channels (they auto-recreate, defeating the purpose)
 
 ### 8. ECT Channel List Refresh on Back-out - IMPLEMENTED
 ### 9. CCP Plan PDF Download - CONFIRMED WORKING
