@@ -5,7 +5,8 @@
  *   1. Fetch the file as a blob through the download proxy (converts WebM→MP4)
  *   2. Use navigator.share() to present the native iOS share sheet
  *      → "Save Video" for MP4, "Save to Files" for PDFs/documents
- *   3. Graceful fallback if share API fails
+ *   3. If share fails (user activation expired after long fetch),
+ *      show a "Tap to Save" overlay to re-establish activation
  *
  * Desktop: Standard blob + <a download> via onFallback callback.
  * Capacitor Native: Filesystem write + native Share sheet.
@@ -21,6 +22,56 @@ export function isIOS() {
 
 // Guard against concurrent downloads
 let _downloadInProgress = false;
+
+/**
+ * Show a native DOM overlay prompting the user to tap "Save".
+ * This re-establishes user activation so navigator.share() can work
+ * even after a long fetch (e.g., 30s video conversion).
+ */
+function promptToSave(file) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.setAttribute('data-testid', 'save-prompt-overlay');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(8,14,26,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);';
+
+    const isVideo = file.type && file.type.startsWith('video/');
+    const icon = isVideo ? '\u25B6' : '\u2193';
+    const label = isVideo ? 'Video Ready' : 'File Ready';
+    const size = file.size > 1048576
+      ? `${(file.size / 1048576).toFixed(1)} MB`
+      : `${(file.size / 1024).toFixed(0)} KB`;
+
+    overlay.innerHTML = `
+      <div style="text-align:center;padding:32px 24px;max-width:320px;">
+        <div style="width:64px;height:64px;border-radius:50%;background:rgba(212,175,55,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px;color:#d4af37;">${icon}</div>
+        <p style="font-size:20px;font-weight:700;color:#F1F3F8;margin:0 0 6px;">${label}</p>
+        <p style="font-size:14px;color:#7B879E;margin:0 0 28px;">${file.name} (${size})</p>
+        <button id="__co_save_btn" data-testid="save-prompt-save-btn" style="width:100%;padding:16px;border:none;border-radius:14px;background:linear-gradient(135deg,#d4af37,#F0C95C);color:#080e1a;font-size:17px;font-weight:700;cursor:pointer;margin-bottom:12px;-webkit-tap-highlight-color:transparent;">Tap to Save</button>
+        <button id="__co_cancel_btn" data-testid="save-prompt-cancel-btn" style="width:100%;padding:14px;border:1px solid rgba(255,255,255,0.12);border-radius:14px;background:transparent;color:#7B879E;font-size:15px;cursor:pointer;-webkit-tap-highlight-color:transparent;">Cancel</button>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const cleanup = () => { if (overlay.parentNode) overlay.remove(); };
+
+    document.getElementById('__co_save_btn').addEventListener('click', async () => {
+      try {
+        await navigator.share({ files: [file] });
+        cleanup();
+        resolve(true);
+      } catch (e) {
+        cleanup();
+        resolve(e.name === 'AbortError' ? true : false);
+      }
+    });
+
+    document.getElementById('__co_cancel_btn').addEventListener('click', () => {
+      cleanup();
+      resolve(true); // treat cancel as handled (don't fall through to window.open)
+    });
+  });
+}
 
 /**
  * Platform-aware download — iOS gets native share sheet, desktop gets blob download.
@@ -87,20 +138,24 @@ export async function platformDownload({ action, params = {}, filename = 'downlo
 
     // Step 3: Use Web Share API — native iOS share sheet
     const file = new File([blob], finalFilename, { type: contentType });
+
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      // Try immediate share (works for small/fast files like PDFs)
       try {
         await navigator.share({ files: [file] });
         return;
       } catch (shareErr) {
         if (shareErr.name === 'AbortError') return; // User cancelled — OK
-        console.warn('Share failed, trying fallback:', shareErr);
+        // Share failed — likely user activation expired (large file / slow fetch).
+        // Show "Tap to Save" overlay to get a fresh user activation.
+        const handled = await promptToSave(file);
+        if (handled) return;
       }
+    } else {
+      // canShare returned false — show save prompt as primary path
+      const handled = await promptToSave(file);
+      if (handled) return;
     }
-
-    // Step 4: Fallback — open blob in new window (iOS will show its own viewer)
-    const blobUrl = URL.createObjectURL(blob);
-    window.open(blobUrl, '_blank');
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
 
   } finally {
     _downloadInProgress = false;
