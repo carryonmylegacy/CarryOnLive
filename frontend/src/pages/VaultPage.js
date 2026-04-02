@@ -44,7 +44,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Textarea } from '../components/ui/textarea';
 import { toast } from '../utils/toast';
-import { platformDownload } from '../utils/downloadFile';
+import { platformDownload, downloadFile as legacyDownloadFile } from '../utils/downloadFile';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
 import DocThumbnail from '../components/DocThumbnail';
@@ -443,101 +443,43 @@ const VaultPage = () => {
   const handleDownload = async (doc, password = null, backupCode = null) => {
     setDownloading(doc.id);
     try {
-      // Build download URL
-      let url = `${API_URL}/documents/${doc.id}/download`;
-      const qp = [];
-      if (password) qp.push(`password=${encodeURIComponent(password)}`);
-      if (backupCode) qp.push(`backup_code=${encodeURIComponent(backupCode)}`);
-      if (qp.length > 0) url += `?${qp.join('&')}`;
+      const fileName = resolveFileName(doc.name, doc.file_type);
+      const dlParams = { document_id: doc.id };
+      if (password) dlParams.password = password;
+      if (backupCode) dlParams.backup_code = backupCode;
 
-      const authToken = localStorage.getItem('carryon_token');
-      if (!authToken) {
-        toast.error('Session expired. Please log in again.');
-        return;
-      }
-
-      // Direct fetch with JWT — works on all platforms
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => null);
-        const detail = errData?.detail || `Server error (${res.status})`;
-        if (res.status === 401) {
-          setSelectedDoc(doc);
-          setShowLockModal(true);
-          return;
-        }
-        if (res.status === 403 && detail.toLowerCase().includes('locked')) {
-          setSelectedDoc(doc);
-          setShowLockModal(true);
-          return;
-        }
-        throw new Error(detail);
-      }
-
-      const blob = await res.blob();
-      if (blob.size < 10) throw new Error('Server returned an empty file');
-
-      const contentType = res.headers.get('content-type') || doc.file_type || 'application/octet-stream';
-      const fileName = resolveFileName(doc.name, contentType);
-
-      // iOS PWA: use navigator.share if available
-      const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-      const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-
-      if (isiOS && isPWA && navigator.canShare) {
-        const file = new File([blob], fileName, { type: contentType });
-        if (navigator.canShare({ files: [file] })) {
-          try {
-            await navigator.share({ files: [file] });
-            toast.success('Saved');
-          } catch (shareErr) {
-            if (shareErr.name === 'AbortError') return; // user cancelled
-            // Share failed (user activation expired) — open in new tab as fallback
-            const blobUrl = URL.createObjectURL(blob);
-            window.open(blobUrl, '_blank');
-            setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
-            toast.success('Opened in new tab');
+      const result = await platformDownload({
+        action: 'document',
+        params: dlParams,
+        filename: fileName,
+        onFallback: async () => {
+          // Non-iOS: direct fetch + blob download
+          let url = `${API_URL}/documents/${doc.id}/download`;
+          const qp = [];
+          if (password) qp.push(`password=${encodeURIComponent(password)}`);
+          if (backupCode) qp.push(`backup_code=${encodeURIComponent(backupCode)}`);
+          if (qp.length > 0) url += `?${qp.join('&')}`;
+          const authToken = localStorage.getItem('carryon_token');
+          const res = await fetch(url, { headers: { Authorization: `Bearer ${authToken}` } });
+          if (!res.ok) {
+            const errData = await res.json().catch(() => null);
+            throw new Error(errData?.detail || `Server error (${res.status})`);
           }
-          return;
-        }
+          const blob = await res.blob();
+          await legacyDownloadFile(blob, fileName);
+        },
+      });
+
+      if (result === 'shared' || result === 'saved') {
+        toast.success('Document saved');
       }
-
-      // Native app: Capacitor filesystem
-      try {
-        const { Capacitor } = await import('@capacitor/core');
-        if (Capacitor.isNativePlatform()) {
-          const { Filesystem, Directory } = await import('@capacitor/filesystem');
-          const { Share } = await import('@capacitor/share');
-          const reader = new FileReader();
-          const base64Data = await new Promise((resolve) => {
-            reader.onloadend = () => resolve(reader.result.split(',')[1]);
-            reader.readAsDataURL(blob);
-          });
-          const result = await Filesystem.writeFile({ path: fileName, data: base64Data, directory: Directory.Cache });
-          await Share.share({ title: doc.name, url: result.uri });
-          return;
-        }
-      } catch {} // eslint-disable-line no-empty
-
-      // Web: standard blob download
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(downloadUrl);
-      toast.success('Document saved');
     } catch (error) {
       console.error('SDV Download error:', error);
       const msg = error?.message || '';
-      if (msg.includes('locked') || msg.includes('Locked')) {
-        toast.error('Vault is locked. Unlock it first.');
-      } else if (msg.includes('Session expired') || msg.includes('401')) {
+      if (msg.includes('locked') || msg.includes('Locked') || msg.includes('403')) {
+        setSelectedDoc(doc);
+        setShowLockModal(true);
+      } else if (msg.includes('Not authenticated') || msg.includes('401')) {
         toast.error('Session expired. Please log in again.');
       } else {
         toast.error(msg || 'Download failed — check your connection and try again');

@@ -319,14 +319,18 @@ export default function EstateChatPage() {
     const vv = window.visualViewport;
     if (!vv) return;
     let kbOpen = false;
+
+    const resetStyles = () => {
+      kbOpen = false;
+      root.style.height = '';
+      root.style.transform = '';
+      window.scrollTo(0, 0);
+    };
+
     const sync = () => {
       // Skip keyboard handling entirely when on channel list (no active chat)
       if (!activeChannelRef.current) {
-        if (kbOpen) {
-          kbOpen = false;
-          root.style.height = '';
-          root.style.transform = '';
-        }
+        if (kbOpen) resetStyles();
         return;
       }
       const open = vv.height < window.innerHeight * 0.75;
@@ -335,9 +339,7 @@ export default function EstateChatPage() {
         if (kbOpen) {
           root.style.height = `${vv.height}px`;
         } else {
-          root.style.height = '';
-          root.style.transform = '';
-          window.scrollTo(0, 0);
+          resetStyles();
         }
       } else if (kbOpen) {
         root.style.height = `${vv.height}px`;
@@ -347,11 +349,26 @@ export default function EstateChatPage() {
         root.style.transform = `translateY(${window.scrollY}px)`;
       }
     };
+
+    // Safety: when input loses focus (keyboard closes), reset after a delay
+    const handleFocusOut = () => {
+      setTimeout(() => {
+        if (!activeChannelRef.current) return;
+        const el = document.activeElement;
+        const isInput = el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+        if (!isInput && kbOpen) {
+          resetStyles();
+        }
+      }, 400);
+    };
+
     vv.addEventListener('resize', sync);
     vv.addEventListener('scroll', sync);
+    root.addEventListener('focusout', handleFocusOut);
     return () => {
       vv.removeEventListener('resize', sync);
       vv.removeEventListener('scroll', sync);
+      root.removeEventListener('focusout', handleFocusOut);
       root.style.height = '';
       root.style.transform = '';
     };
@@ -1294,9 +1311,8 @@ export default function EstateChatPage() {
             </button>
           ) : (
             <button
-              onMouseDown={(e) => e.preventDefault()}
-              onPointerDown={(e) => e.preventDefault()}
               onClick={() => {
+                if (inputRef.current) inputRef.current.blur();
                 setInputFocused(false);
                 voiceRecorder.start();
               }}
