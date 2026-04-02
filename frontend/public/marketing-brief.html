@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CarryOn™ Platform Evolution — Marketing Brief</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap');
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #080e1a;
+    color: #D8DEE9;
+    line-height: 1.7;
+    padding: 40px 20px;
+  }
+  
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: #F1F3F8;
+    margin-bottom: 8px;
+    line-height: 1.2;
+  }
+  
+  h1 span { color: #d4af37; }
+  
+  .subtitle {
+    font-size: 16px;
+    color: #7B879E;
+    margin-bottom: 48px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  
+  h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #F1F3F8;
+    margin: 48px 0 12px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(212,175,55,0.2);
+  }
+  
+  h2:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+  
+  h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #d4af37;
+    margin: 32px 0 12px;
+  }
+  
+  p {
+    margin-bottom: 16px;
+    font-size: 15px;
+  }
+  
+  .highlight {
+    background: rgba(212,175,55,0.08);
+    border-left: 3px solid #d4af37;
+    padding: 16px 20px;
+    border-radius: 0 12px 12px 0;
+    margin: 24px 0;
+    font-weight: 600;
+    color: #F1F3F8;
+    font-size: 16px;
+  }
+  
+  .marketing-angle {
+    background: rgba(34,201,147,0.06);
+    border-left: 3px solid #22C993;
+    padding: 16px 20px;
+    border-radius: 0 12px 12px 0;
+    margin: 24px 0;
+  }
+  
+  .marketing-angle strong { color: #22C993; }
+  
+  ul {
+    list-style: none;
+    margin: 16px 0;
+    padding: 0;
+  }
+  
+  ul li {
+    position: relative;
+    padding: 12px 0 12px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 15px;
+  }
+  
+  ul li:last-child { border-bottom: none; }
+  
+  ul li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 20px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #d4af37;
+  }
+  
+  ul li strong { color: #F1F3F8; }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+  }
+  
+  th {
+    text-align: left;
+    padding: 12px 16px;
+    background: rgba(212,175,55,0.1);
+    color: #d4af37;
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid rgba(212,175,55,0.2);
+  }
+  
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    color: #D8DEE9;
+  }
+  
+  td:first-child { color: #F1F3F8; font-weight: 600; }
+  
+  tr:last-child td { border-bottom: none; }
+  
+  .talking-points {
+    counter-reset: tp;
+    list-style: none;
+    padding: 0;
+  }
+  
+  .talking-points li {
+    counter-increment: tp;
+    padding: 16px 0 16px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  
+  .talking-points li::before {
+    content: counter(tp);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #d4af37;
+    color: #080e1a;
+    font-weight: 700;
+    font-size: 13px;
+    margin-right: 12px;
+    position: static;
+  }
+  
+  .talking-points li strong { color: #d4af37; }
+  
+  .tagline {
+    font-size: 18px;
+    font-weight: 700;
+    color: #d4af37;
+  }
+  
+  .tagline em {
+    font-style: italic;
+    color: #A0AABF;
+    font-weight: 400;
+  }
+  
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212,175,55,0.3), transparent);
+    margin: 40px 0;
+  }
+  
+  .footer {
+    text-align: center;
+    color: #525C72;
+    font-size: 13px;
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  
+  @media print {
+    body { background: white; color: #1a1a1a; padding: 20px; }
+    h1, h2, h3, strong, td:first-child, ul li strong { color: #1a1a1a; }
+    h1 span, h3, .tagline, .talking-points li strong { color: #8B6914; }
+    .highlight { background: #f5f0e0; border-left-color: #8B6914; color: #1a1a1a; }
+    .marketing-angle { background: #e8f5ef; border-left-color: #0d7a4a; }
+    .marketing-angle strong { color: #0d7a4a; }
+    th { background: #f5f0e0; color: #8B6914; border-bottom-color: #8B6914; }
+    td, ul li, p, .subtitle { color: #333; }
+    .talking-points li::before { background: #8B6914; color: white; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>CarryOn<span>™</span> Platform Evolution</h1>
+<p class="subtitle">From Estate Planning to Holistic Family Readiness — Marketing Team Brief</p>
+
+<h2>The Shift</h2>
+
+<p>CarryOn™ started as a posthumous estate readiness platform — secure document vaults, beneficiary designations, transition workflows. That foundation hasn't gone anywhere. But with the addition of the <strong>Estate Communication Tool (ECT)</strong> and <strong>CarryOn Contingency Protocols (CCP)</strong>, the platform has fundamentally expanded its value proposition.</p>
+
+<div class="highlight">CarryOn™ is no longer just about what happens after you're gone. It's about protecting your family right now — today, tomorrow, and through every crisis in between.</div>
+
+<div class="divider"></div>
+
+<h2>CarryOn Contingency Protocols (CCP)</h2>
+<h3>Your Family's Emergency Playbook</h3>
+
+<p>Every family talks about "what we'd do if..." but almost none have a written, accessible, executable plan. CCP changes that.</p>
+
+<ul>
+  <li><strong>Custom Emergency Plans</strong> — Natural disasters, medical emergencies, infrastructure failures, national emergencies, or anything custom. Each plan includes rendezvous points, communication protocols, resource/supply locations, and step-by-step instructions.</li>
+  <li><strong>One-Tap Activation</strong> — When it's real, one tap activates the plan and alerts every estate member instantly. No group texts to coordinate. No "did you get my message?" anxiety.</li>
+  <li><strong>Real-Time Status Board</strong> — Every family member checks in with their status: Safe, Evacuating, At Rendezvous, Need Help, Sheltering. The benefactor sees everyone's status in real time with color-coded indicators and big, crisis-friendly touch targets designed for shaking hands and poor visibility.</li>
+  <li><strong>Drill Mode</strong> — Practice runs so your family actually knows the plan before they need it. Clearly marked as drills so no one panics.</li>
+  <li><strong>Linked Resources</strong> — Each plan links directly to relevant vault documents (insurance policies, medical directives), trusted contacts (attorneys, doctors, neighbors), and digital credentials. When the emergency is active, everything your family needs is one tap away.</li>
+</ul>
+
+<div class="marketing-angle"><strong>The marketing angle:</strong> Every American family needs this. FEMA recommends family emergency plans. Almost no one has one. CarryOn™ makes it effortless to build, practice, and execute — and it's already connected to the documents and contacts that matter most.</div>
+
+<div class="divider"></div>
+
+<h2>Estate Communication Tool (ECT)</h2>
+<h3>The Most Private Messaging Platform Your Family Will Ever Use</h3>
+
+<p>This isn't WhatsApp. This isn't Signal. This isn't iMessage. ECT is something fundamentally different, built on a philosophy that no other messaging platform follows:</p>
+
+<div class="highlight">The most private messaging system isn't the one with the strongest lock — it's the one where strangers can never find the door.</div>
+
+<p>Here's what makes ECT unlike anything else:</p>
+
+<ul>
+  <li><strong>Closed Network Architecture</strong> — There is no user directory. No phone number exposure. No contact list scanning. No profile discovery. No friend requests from strangers. The only people who can ever message you are people explicitly connected to your estate by the benefactor. Period.</li>
+  <li><strong>No Phone Required</strong> — This is critical and unlike every other messaging platform. ECT runs through the web. If you lose your phone in a hurricane, if your battery dies in an evacuation, if you're standing in a FEMA trailer with nothing but a borrowed laptop — you can log into CarryOn™ from any browser on any device connected to the internet and communicate with your family. A library computer. A neighbor's tablet. A hotel business center. <strong>Your communication lifeline doesn't die with your phone.</strong></li>
+  <li><strong>Owner-Controlled Access</strong> — The estate benefactor decides who is in the network. No one can add themselves. No one can invite outsiders. If someone shouldn't be in the conversation anymore, they're removed. Full stop.</li>
+  <li><strong>Zero Data Mining</strong> — No ads. No tracking. No metadata sold to third parties. No algorithmic analysis of your family's private conversations. Your messages exist for your family and no one else.</li>
+  <li><strong>Trusted External Contacts</strong> — Need your estate attorney or family doctor in the conversation? FFN (Friends, Family & Neighbors) contacts can be included in group chats with messages delivered via email and SMS — without ever exposing them to the platform's internal network or giving them access to anything beyond that conversation.</li>
+  <li><strong>iMessage-Grade UX</strong> — Voice messages with inline playback, authenticated file and photo sharing, read receipts with delivery indicators (Sent → Delivered → Read), real-time typing indicators, message reactions, pinned messages, and a polished input bar with frosted glass depth. This isn't a prototype chat widget bolted onto an estate tool. This is a messaging experience that stands shoulder-to-shoulder with the best consumer apps — but with privacy guarantees none of them can match.</li>
+</ul>
+
+<div class="marketing-angle"><strong>The marketing angle:</strong> In a world where every messaging app mines your data, exposes your phone number, and lets strangers find you — ECT is the anti-pattern. It's messaging built for families who have something worth protecting. And unlike Signal or WhatsApp, it doesn't require a phone to work. When disaster strikes, that distinction isn't a feature — it's a lifeline.</div>
+
+<div class="divider"></div>
+
+<h2>The Bigger Picture: Holistic Family Readiness</h2>
+
+<p>Here's the narrative arc for the brand:</p>
+
+<p class="tagline"><em>Before:</em> "CarryOn™ helps families prepare for life's final transition."</p>
+<p class="tagline"><em>Now:</em> "CarryOn™ is the family readiness platform — protecting what matters most, whether the emergency is a hurricane tonight or a transition decades from now."</p>
+
+<p>The Secure Document Vault, beneficiary designations, pre/post-transition access controls, digital wallet — all of that is still the bedrock. But now, with CCP and ECT layered on top, CarryOn™ serves families across the entire readiness spectrum:</p>
+
+<table>
+  <thead>
+    <tr><th>Scenario</th><th>CarryOn™ Feature</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Hurricane approaching</td><td>CCP: Activate family emergency plan, track everyone's status</td></tr>
+    <tr><td>Phone lost in evacuation</td><td>ECT: Log in from any browser, reach your family</td></tr>
+    <tr><td>Medical emergency</td><td>CCP: Linked medical directives + doctor contacts, one tap</td></tr>
+    <tr><td>Estate planning</td><td>SDV: Pre/post-transition document access per beneficiary</td></tr>
+    <tr><td>Daily family coordination</td><td>ECT: Private, secure, no-strangers messaging</td></tr>
+    <tr><td>After transition</td><td>SDV + IAC + MM: Full estate handoff with guided checklists</td></tr>
+  </tbody>
+</table>
+
+<div class="highlight">The competitive moat: No other platform combines estate planning, emergency preparedness, and private family communication in a single product. Individually, there are document vaults, there are emergency apps, there are messaging apps. But none of them talk to each other. CarryOn™ is the only platform where your emergency plan can link directly to your vault documents, your trusted contacts, and your family's private communication channel — all in one secure, encrypted, family-controlled ecosystem.</div>
+
+<div class="divider"></div>
+
+<h2>Key Talking Points for Marketing</h2>
+
+<ol class="talking-points">
+  <li><strong>"Not just after. Right now."</strong> — CarryOn™ protects families through every crisis, not just the final one.</li>
+  <li><strong>"Your phone dies. CarryOn™ doesn't."</strong> — Browser-based access means your family communication survives when your device doesn't.</li>
+  <li><strong>"The chat where strangers can't find the door."</strong> — No phone numbers, no directories, no discovery. Closed-network privacy by design.</li>
+  <li><strong>"One tap from plan to action."</strong> — Emergency plans that actually execute, with real-time family status tracking.</li>
+  <li><strong>"Your family's most important documents, contacts, and conversations — in one place."</strong> — The only platform that connects estate planning, emergency readiness, and private communication.</li>
+</ol>
+
+<div class="footer">
+  CarryOn™ — Internal Marketing Brief — April 2026
+</div>
+
+</div>
+</body>
+</html>
