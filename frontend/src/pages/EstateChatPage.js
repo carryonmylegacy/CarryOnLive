@@ -293,6 +293,26 @@ export default function EstateChatPage() {
     return () => document.body.classList.remove('ect-active');
   }, []);
 
+  // ── iOS PWA: resize #ect-root to visualViewport height so keyboard doesn't hide header ──
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const root = document.getElementById('ect-root');
+    if (!root) return;
+    const update = () => {
+      root.style.height = `${vv.height}px`;
+      window.scrollTo(0, 0);
+    };
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+      root.style.height = '';
+    };
+  }, []);
+
   const fetchChannels = useCallback(async () => {
     try {
       const res = await fetch(`${API_URL}/estate-chat/channels`, { headers });
@@ -317,7 +337,7 @@ export default function EstateChatPage() {
       if (msgRes.ok) {
         const data = await msgRes.json();
         setMessages(data);
-        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+        setTimeout(() => { const el = messagesEndRef.current?.parentElement; if (el) el.scrollTop = el.scrollHeight; }, 100);
       }
       if (readRes.ok) setReadStatus(await readRes.json());
       if (pinRes.ok) setPinnedMsgs(await pinRes.json());
@@ -1130,7 +1150,7 @@ export default function EstateChatPage() {
       top: 0,
       left: 0,
       right: 0,
-      bottom: 0,
+      height: '100%',
       zIndex: 45,
       overflow: 'hidden',
     }}>
