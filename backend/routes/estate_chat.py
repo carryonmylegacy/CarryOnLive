@@ -248,7 +248,7 @@ async def _enrich_channel(channel: dict, current_user_id: str) -> dict:
                             "deleted_at": None,
                             "photo_url": {"$exists": True, "$nin": [None, ""]},
                         },
-                        {"_id": 0, "photo_url": 1},
+                        {"_id": 0, "id": 1, "photo_url": 1},
                     )
                     if ben:
                         photo = ben.get("photo_url", "")
