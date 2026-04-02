@@ -500,19 +500,15 @@ const MessagesPage = () => {
   };
 
   const handleDownload = async (msg) => {
-    let toastId;
     try {
       const msgType = msg.message_type || 'text';
       const safeTitle = (msg.title || msgType).replace(/[^a-zA-Z0-9 _-]/g, '').trim() || 'message';
 
-      const onProgress = (stage, pct) => {
+      const onProgress = (stage) => {
         if (stage === 'preparing') {
-          toastId = toast.loading('Preparing download...');
-        } else if (stage === 'downloading') {
-          toast.loading(pct > 0 ? `Downloading... ${pct}%` : 'Downloading...', { id: toastId });
+          toast.info('Preparing download...');
         } else if (stage === 'ready') {
-          toast.dismiss(toastId);
-          toastId = undefined;
+          toast.info('Ready to save');
         }
       };
 
@@ -553,12 +549,11 @@ const MessagesPage = () => {
           },
         });
       }
-      if (toastId) toast.dismiss(toastId);
       if (result === 'shared' || result === 'saved') toast.success('Saved');
     } catch (err) {
-      if (toastId) toast.dismiss(toastId);
-      if (err?.name === 'AbortError') return; // User cancelled share sheet
-      toast.error('Failed to download');
+      if (err?.name === 'AbortError') return;
+      console.error('MM Download error:', err);
+      toast.error(err?.message || 'Failed to download');
     }
   };
 

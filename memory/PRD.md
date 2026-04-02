@@ -57,7 +57,12 @@ A full-stack estate planning application allowing benefactors to manage digital 
 ### 6. Text MM PDF Download (iOS PWA) - CONFIRMED WORKING
 ### 7. ECT Beneficiary Avatars - CONFIRMED WORKING
 ### 8. CCP Plan PDF Download - CONFIRMED WORKING
-### 9. MM Download Progress Indicators - IMPLEMENTED
+### 9. MM Download Progress Indicators — FIXED
+- **Status**: RE-FIXED (April 2, 2026) — `toast.loading()` TypeError crash
+- **Root cause was**: Custom toast utility (`utils/toast.js`) replaced sonner but did NOT implement `.loading()` or `.dismiss()` methods. MessagesPage called `toast.loading('Preparing download...')` which threw TypeError, caught by outer try/catch → showed `toast.error('Failed to download')`. **The download never even started.**
+- **Fix**: Added `loading` and `dismiss` shims to toast utility. Simplified MessagesPage onProgress to use `toast.info()` instead.
+- **Files**: `utils/toast.js`, `MessagesPage.js` (handleDownload)
+- **DO NOT**: Call `toast.loading()` or `toast.dismiss()` without verifying the toast utility supports them
 ### 10. ECT Channel List Refresh on Back-out - IMPLEMENTED
 ### 11. ECT Swipe-to-Delete Channels - IMPLEMENTED
 

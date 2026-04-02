@@ -13,4 +13,8 @@ export const toast = {
   success: (message) => notify.success(message),
   info: (message) => notify.info(message),
   warning: (message) => notify.warning(message),
+  /** Compatibility shim for sonner-style loading toasts */
+  loading: (message) => notify.info(message),
+  /** Compatibility shim — dismiss is a no-op (notifications auto-dismiss) */
+  dismiss: () => {},
 };

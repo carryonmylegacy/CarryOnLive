@@ -333,7 +333,12 @@ export default function EstateChatPage() {
         if (kbOpen) resetStyles();
         return;
       }
-      const open = vv.height < window.innerHeight * 0.75;
+
+      // Only detect keyboard when an input/textarea inside the chat is actually focused
+      const focused = document.activeElement;
+      const inputActive = focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA' || focused.isContentEditable);
+
+      const open = inputActive && vv.height < window.innerHeight * 0.75;
       if (open !== kbOpen) {
         kbOpen = open;
         if (kbOpen) {
@@ -344,7 +349,7 @@ export default function EstateChatPage() {
       } else if (kbOpen) {
         root.style.height = `${vv.height}px`;
       }
-      // Only compensate scroll when keyboard is open
+      // Only compensate scroll when keyboard is confirmed open
       if (kbOpen && window.scrollY > 0) {
         root.style.transform = `translateY(${window.scrollY}px)`;
       }
@@ -611,13 +616,20 @@ export default function EstateChatPage() {
         setShowChannelList(true);
         setDeleteConfirm(null);
         setSwipedChannel(null);
+        toast.success('Conversation deleted');
       } else {
         const err = await res.json().catch(() => ({}));
-        toast.error(err.detail || 'Cannot delete this conversation');
+        console.error('Delete channel API error:', res.status, err);
+        toast.error(err.detail || `Cannot delete (${res.status})`);
         setDeleteConfirm(null);
         setSwipedChannel(null);
       }
-    } catch { toast.error('Failed to delete'); setDeleteConfirm(null); setSwipedChannel(null); } // eslint-disable-line no-empty
+    } catch (e) {
+      console.error('Delete channel error:', e);
+      toast.error('Connection error — try again');
+      setDeleteConfirm(null);
+      setSwipedChannel(null);
+    }
   };
 
   const toggleMember = (id) => {
