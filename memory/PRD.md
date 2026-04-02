@@ -53,6 +53,12 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - iMessage Liquid Glass-style input bar: backdrop-blur(20px), elevated shadow, sits at bottom with safe-area padding
 - Correct height calculation — no more clipped headers or wasted space
 - All modals (new chat, security intro) work within the full-screen layout
+- Read receipts with three-state delivery indicators per message:
+  - **Sent** (single gray check) — message created
+  - **Delivered** (double gray check) — message fetched by recipient(s)
+  - **Read** (double blue check) — recipient opened the channel after message timestamp
+  - Group chats show count or "All" for partial/full reads
+  - Backend tracks `delivered_to` array per message via `$addToSet` on GET messages
 
 **Voice Message Recording**
 - Microphone button in ECT input bar (replaces send button when input is empty)

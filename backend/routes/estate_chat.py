@@ -448,6 +448,13 @@ async def get_messages(
             )
         for m in messages:
             m["reactions"] = react_map.get(m["id"], [])
+        # Mark messages as delivered to this user
+        other_user_msgs = [mid for mid, m in zip(msg_ids, messages) if m.get("sender_id") != current_user["id"]]
+        if other_user_msgs:
+            await db.estate_messages.update_many(
+                {"id": {"$in": other_user_msgs}, "delivered_to": {"$ne": current_user["id"]}},
+                {"$addToSet": {"delivered_to": current_user["id"]}},
+            )
     else:
         for m in messages:
             m["reactions"] = []
@@ -465,7 +472,7 @@ async def get_read_status(
     channel_id: str,
     current_user: dict = Depends(get_current_user),
 ):
-    """Get read timestamps for all members of a channel (for read receipts)."""
+    """Get read/delivered timestamps for all members of a channel (for receipts)."""
     channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0})
     if not channel:
         raise HTTPException(status_code=404, detail="Channel not found")

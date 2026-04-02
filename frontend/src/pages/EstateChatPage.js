@@ -864,15 +864,29 @@ export default function EstateChatPage() {
         )}
         {messages.map((msg, msgIdx) => {
           const isMe = msg.sender_id === user?.id;
-          const isLastMyMsg = isMe && (msgIdx === messages.length - 1 || messages[msgIdx + 1]?.sender_id !== user?.id);
-          let readByCount = 0;
-          if (isMe && isLastMyMsg && readStatus.length > 0) {
+          const isDM = activeChannel?.type === 'direct';
+          const totalOthers = readStatus.length;
+
+          // Receipt status for every outgoing message
+          let receiptStatus = 'sent'; // default: single gray check
+          if (isMe && totalOthers > 0) {
+            let readByCount = 0;
+            let deliveredToCount = 0;
+            const deliveredTo = msg.delivered_to || [];
             for (const r of readStatus) {
               if (r.last_read_at && r.last_read_at >= msg.created_at) readByCount++;
+              if (deliveredTo.includes(r.user_id)) deliveredToCount++;
             }
+            if (readByCount > 0) {
+              receiptStatus = readByCount >= totalOthers ? 'read_all' : 'read_partial';
+            } else if (deliveredToCount > 0) {
+              receiptStatus = deliveredToCount >= totalOthers ? 'delivered_all' : 'delivered_partial';
+            }
+            // Store counts for label
+            msg._readByCount = readByCount;
+            msg._deliveredToCount = deliveredToCount;
           }
-          const totalOthers = readStatus.length;
-          const isDM = activeChannel?.type === 'direct';
+
           return (
             <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
               <div className="max-w-[80%]">
@@ -949,16 +963,30 @@ export default function EstateChatPage() {
                     })}
                   </div>
                 )}
+                {/* Timestamp + Receipt indicators */}
                 <div className={`text-[11px] mt-0.5 flex items-center gap-1.5 ${isMe ? 'justify-end mr-1' : 'ml-1'}`} style={{ color: '#525C72' }}>
                   <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                  {isMe && isLastMyMsg && readByCount > 0 && (
-                    <span className="flex items-center gap-0.5" style={{ color: '#3B7BF7' }} data-testid="read-receipt">
-                      <CheckCheck className="w-3.5 h-3.5" />
-                      {isDM ? '' : <span className="text-[11px]">{readByCount === totalOthers ? 'All' : readByCount}</span>}
+                  {isMe && (receiptStatus === 'read_all' || receiptStatus === 'read_partial') && (
+                    <span className="flex items-center gap-0.5" data-testid="receipt-read">
+                      <CheckCheck className="w-3.5 h-3.5" style={{ color: '#3B7BF7' }} />
+                      {!isDM && receiptStatus === 'read_partial' && (
+                        <span className="text-[11px]" style={{ color: '#3B7BF7' }}>{msg._readByCount}</span>
+                      )}
+                      {!isDM && receiptStatus === 'read_all' && totalOthers > 1 && (
+                        <span className="text-[11px] font-semibold" style={{ color: '#3B7BF7' }}>All</span>
+                      )}
                     </span>
                   )}
-                  {isMe && isLastMyMsg && readByCount === 0 && (
-                    <span style={{ color: '#525C72' }}><Check className="w-3 h-3" /></span>
+                  {isMe && (receiptStatus === 'delivered_all' || receiptStatus === 'delivered_partial') && (
+                    <span className="flex items-center gap-0.5" data-testid="receipt-delivered">
+                      <CheckCheck className="w-3.5 h-3.5" style={{ color: '#7B879E' }} />
+                      {!isDM && receiptStatus === 'delivered_partial' && (
+                        <span className="text-[11px]" style={{ color: '#7B879E' }}>{msg._deliveredToCount}</span>
+                      )}
+                    </span>
+                  )}
+                  {isMe && receiptStatus === 'sent' && (
+                    <span data-testid="receipt-sent" style={{ color: '#525C72' }}><Check className="w-3 h-3" /></span>
                   )}
                 </div>
               </div>
