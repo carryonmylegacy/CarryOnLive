@@ -322,6 +322,7 @@ export default function EstateChatPage() {
 
     const resetStyles = () => {
       kbOpen = false;
+      root.style.transition = '';
       root.style.bottom = '0';
       root.style.transform = '';
       window.scrollTo(0, 0);
@@ -344,11 +345,8 @@ export default function EstateChatPage() {
         if (kbOpen) {
           // Shrink root from bottom to stay above keyboard
           const kbHeight = window.innerHeight - vv.height;
+          root.style.transition = 'bottom 0.15s ease-out';
           root.style.bottom = `${kbHeight}px`;
-          // iOS keyboard animates open — re-sync after short delays
-          // to catch the final settled position
-          setTimeout(sync, 100);
-          setTimeout(sync, 300);
         } else {
           resetStyles();
         }
@@ -693,6 +691,9 @@ export default function EstateChatPage() {
     const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
     const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
     if (Math.abs(dy) > Math.abs(dx)) return; // vertical scroll, ignore
+    // Don't allow swiping to delete circle channels (estate-wide chat)
+    const ch = channels.find(c => c.id === channelId);
+    if (ch?.type === 'circle') return;
     if (dx < -60) {
       setSwipedChannel(channelId);
     } else if (dx > 30) {

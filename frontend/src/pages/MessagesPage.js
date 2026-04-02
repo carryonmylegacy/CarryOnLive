@@ -146,6 +146,7 @@ const MessagesPage = () => {
   const [playingVideoUrl, setPlayingVideoUrl] = useState(null);
   const [loadingPlayback, setLoadingPlayback] = useState(false);
   const [showReturnPopup, setShowReturnPopup] = useState(false);
+  const [downloadingId, setDownloadingId] = useState(null);
   
   // Video recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -500,6 +501,7 @@ const MessagesPage = () => {
   };
 
   const handleDownload = async (msg) => {
+    setDownloadingId(msg.id);
     try {
       const msgType = msg.message_type || 'text';
       const safeTitle = (msg.title || msgType).replace(/[^a-zA-Z0-9 _-]/g, '').trim() || 'message';
@@ -549,6 +551,8 @@ const MessagesPage = () => {
       if (err?.name === 'AbortError') return;
       console.error('MM Download error:', err);
       toast.error(err?.message || 'Failed to download');
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -799,11 +803,14 @@ const MessagesPage = () => {
                               variant="ghost"
                               size="sm"
                               className="text-[#22C993]"
+                              disabled={downloadingId === msg.id}
                               onClick={(e) => { e.currentTarget.blur(); handleDownload(msg); }}
                               data-testid={`download-message-${msg.id}`}
                               aria-label="Download message"
                             >
-                              <Download className="w-4 h-4" />
+                              {downloadingId === msg.id
+                                ? <Loader2 className="w-4 h-4 animate-spin" />
+                                : <Download className="w-4 h-4" />}
                             </Button>
                             <Button
                               variant="ghost"
@@ -821,11 +828,14 @@ const MessagesPage = () => {
                             variant="ghost"
                             size="sm"
                             className="text-[#22C993]"
+                            disabled={downloadingId === msg.id}
                             onClick={(e) => { e.currentTarget.blur(); handleDownload(msg); }}
                             data-testid={`download-message-${msg.id}`}
                             aria-label="Download message"
                           >
-                            <Download className="w-4 h-4" />
+                            {downloadingId === msg.id
+                              ? <Loader2 className="w-4 h-4 animate-spin" />
+                              : <Download className="w-4 h-4" />}
                           </Button>
                         )}
                       </div>

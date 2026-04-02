@@ -32,12 +32,13 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **DO NOT**: Use `dict.get(key, {}).get(...)` pattern without `or {}` guard
 
 ### 3. ECT iOS Keyboard Handling
-- **Status**: RE-FIXED (April 2, 2026) — `top:0; bottom:0` + visualViewport + window scroll listener
-- **Approach**: `position:fixed; top:0; bottom:0` (no `100dvh`!) + visualViewport resize handler + `bottom` adjustment for keyboard + scroll compensation via transform + **window scroll listener** for iOS PWA scroll compensation + **delayed re-sync** (100ms, 300ms) when keyboard opens + **delayed scrollTo(0,0)** on input focus (150ms, 350ms)
+- **Status**: RE-FIXED (April 2, 2026) — `top:0; bottom:0` + visualViewport + window scroll listener + CSS transition
+- **Approach**: `position:fixed; top:0; bottom:0` (no `100dvh`!) + visualViewport resize handler + `bottom` adjustment for keyboard + scroll compensation via transform + **window scroll listener** for iOS PWA scroll compensation + **CSS `transition: bottom 0.15s ease-out`** to smooth keyboard animation + **delayed scrollTo(0,0)** on input focus (150ms, 350ms)
 - **DO NOT**: Use `height: 100dvh` — it's unreliable on iOS PWA standalone mode
 - **DO NOT**: Apply viewport transforms when on the channel list (no active chat)
 - **DO NOT**: Add `onMouseDown={e => e.preventDefault()}` on the mic button
 - **DO NOT**: Use `setInterval` polling, `body { position: fixed }`, or `overflow: hidden` on body/html
+- **DO NOT**: Use `setTimeout(sync, ...)` delayed re-syncs — they cause visible jitter as each fires at a different keyboard height
 
 ### 4. SDV Document Download via Download Proxy
 - **Status**: RE-FIXED (April 2, 2026) — `platformDownload` utility
@@ -47,8 +48,8 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **DO NOT**: Remove the `promptToSave` overlay from `downloadFile.js`
 
 ### 5. MM Download — Always promptToSave (no double-tap)
-- **Status**: RE-FIXED (April 2, 2026) — Removed initial `navigator.share()` attempt. On iOS PWA, always goes straight to `promptToSave` overlay, eliminating the "double-tap" problem where the first tap appeared to do nothing.
-- **Files**: `utils/downloadFile.js` (platformDownload → always promptToSave), `MessagesPage.js`
+- **Status**: RE-FIXED (April 2, 2026) — Removed initial `navigator.share()` attempt. Always goes straight to `promptToSave` overlay. Added **loading spinner** on download button during fetch.
+- **Files**: `utils/downloadFile.js` (platformDownload → always promptToSave), `MessagesPage.js` (downloadingId state + Loader2 spinner)
 - **DO NOT**: Add back `navigator.share()` before `promptToSave` — user gesture always expires during async download
 
 ### 6. ECT Toast Import
@@ -58,7 +59,9 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **DO NOT**: Import toast from 'sonner' in pages — always use `../utils/toast`
 
 ### 7. ECT Swipe-to-Delete Channels
-- **Status**: FIXED (April 2, 2026) — backend permissions + CORS preflight fix
+- **Status**: FIXED (April 2, 2026) — backend permissions + CORS preflight fix + **circle channels blocked from swipe-to-delete**
+- **Circle protection**: `handleTouchEnd` checks `ch?.type === 'circle'` and returns early, preventing swipe-to-delete on estate circle channels
+- **Header trash icon**: Already gated with `activeChannel.type === 'group'` only
 
 ### 8. ECT Channel List Refresh on Back-out - IMPLEMENTED
 ### 9. CCP Plan PDF Download - CONFIRMED WORKING
