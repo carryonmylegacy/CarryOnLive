@@ -498,20 +498,19 @@ const MessagesPage = () => {
     }
   };
 
-  const triggerDownload = async (blobUrl, filename, mimeType) => {
-    // Try navigator.share first (works on iOS Safari 15+)
+  const triggerDownload = async (blobUrl, filename, mimeType, blob) => {
+    // Try navigator.share first (iOS Safari — gives "Save Video", "Save to Files", etc.)
     if (navigator.share && navigator.canShare) {
       try {
-        const response = await fetch(blobUrl);
-        const blob = await response.blob();
-        const file = new File([blob], filename, { type: mimeType || blob.type });
+        const fileBlob = blob || await (await fetch(blobUrl)).blob();
+        const file = new File([fileBlob], filename, { type: mimeType || fileBlob.type });
         if (navigator.canShare({ files: [file] })) {
           await navigator.share({ files: [file], title: filename });
           return;
         }
       } catch (err) {
-        // User cancelled share or not supported — fall through
-        if (err.name === 'AbortError') return;
+        if (err.name === 'AbortError') return; // User cancelled
+        // Fall through to standard download
       }
     }
     // Standard download for desktop browsers
@@ -530,20 +529,29 @@ const MessagesPage = () => {
         const res = await axios.get(`${API_URL}/messages/video/${msg.video_url}`, {
           ...getAuthHeaders(), responseType: 'blob',
         });
-        const url = URL.createObjectURL(new Blob([res.data], { type: res.data.type || 'video/mp4' }));
-        await triggerDownload(url, `${(msg.title || 'video').replace(/[^a-zA-Z0-9 _-]/g, '')}.mp4`, 'video/mp4');
+        const actualType = res.data.type || 'video/mp4';
+        const ext = actualType.includes('mp4') ? 'mp4' : 'webm';
+        const blob = new Blob([res.data], { type: actualType });
+        const url = URL.createObjectURL(blob);
+        const safeName = `${(msg.title || 'video').replace(/[^a-zA-Z0-9 _-]/g, '')}.${ext}`;
+        await triggerDownload(url, safeName, actualType, blob);
       } else if (msgType === 'voice' && msg.voice_url) {
         const res = await axios.get(`${API_URL}/messages/voice/${msg.voice_url}`, {
           ...getAuthHeaders(), responseType: 'blob',
         });
-        const url = URL.createObjectURL(new Blob([res.data], { type: res.data.type || 'audio/mpeg' }));
-        await triggerDownload(url, `${(msg.title || 'voice').replace(/[^a-zA-Z0-9 _-]/g, '')}.mp3`, 'audio/mpeg');
+        const actualType = res.data.type || 'audio/mpeg';
+        const blob = new Blob([res.data], { type: actualType });
+        const url = URL.createObjectURL(blob);
+        const safeName = `${(msg.title || 'voice').replace(/[^a-zA-Z0-9 _-]/g, '')}.mp3`;
+        await triggerDownload(url, safeName, actualType, blob);
       } else {
         const res = await axios.get(`${API_URL}/messages/${msg.id}/download`, {
           ...getAuthHeaders(), responseType: 'blob',
         });
-        const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-        await triggerDownload(url, `${(msg.title || 'message').replace(/[^a-zA-Z0-9 _-]/g, '')}.pdf`, 'application/pdf');
+        const blob = new Blob([res.data], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const safeName = `${(msg.title || 'message').replace(/[^a-zA-Z0-9 _-]/g, '')}.pdf`;
+        await triggerDownload(url, safeName, 'application/pdf', blob);
       }
       toast.success('Download ready');
     } catch {
