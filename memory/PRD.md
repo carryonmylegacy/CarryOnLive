@@ -36,6 +36,38 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
+### Completed (April 2, 2026 — Universal iOS Download System + CCP Plan PDF)
+
+**Universal Download Proxy for iOS PWA**
+- New `services/download_tokens.py` — Short-lived (5-min) one-time-use download tokens for unauthenticated file serving
+- New `routes/downloads.py` with two endpoints:
+  - `POST /api/downloads/prepare` — Creates download token (requires JWT auth, validates 12 action types)
+  - `GET /api/downloads/{token}` — Serves file with `Content-Disposition: attachment` (no auth needed, token consumed on use)
+- Supports 12 action types: `message_pdf`, `message_video`, `message_voice`, `document`, `ega_checklist`, `ega_todo`, `ega_iac_report`, `ega_transcript`, `ega_plan`, `beneficiary_iac`, `ect_file`, `ccp_plan`
+- On iOS PWA, `window.location.href` to the download URL triggers the native iOS download tile from the bottom
+- On desktop/non-iOS, existing blob-based download continues as fallback
+- FFmpeg installed for server-side WebM→MP4 conversion (iOS Photos cannot save WebM)
+
+**Frontend: `platformDownload()` Utility**
+- New function in `downloadFile.js` detects iOS, creates download token, navigates to backend URL
+- Non-iOS platforms use the `onFallback` callback with existing blob download logic
+- Integrated into all 6 download pages:
+  - `MessagesPage.js` (MM videos, voice, text PDFs)
+  - `VaultPage.js` (SDV document downloads)
+  - `GuardianPage.js` (EGA: IAC checklist, to-do, IAC report, transcript, plan of action)
+  - `EstateChatPage.js` (ECT file attachments)
+  - `ConnectedProtocolPage.js` (CCP plan PDFs — NEW)
+  - `BeneficiaryGuardianPage.js` (Beneficiary IAC download)
+
+**CCP Plan PDF Download (New Feature)**
+- Benefactors can download/print any emergency plan as a formatted PDF
+- PDF includes: plan name, type, estate name, rendezvous points with addresses, communication plan, resource locations, and instructions
+- Printer icon button on each plan card in the plans list view (visible to both benefactors and beneficiaries)
+- CarryOn-branded PDF with color-coded sections matching the app's CCP color scheme
+- Footer disclaimer: "Keep printed copies in accessible locations known to all family members"
+
+**Housekeeping: 60/60 PASS**
+
 ### Completed (April 2, 2026 — SDV + ECT UX Overhaul)
 
 **SDV Beneficiary Selector Redesign**
