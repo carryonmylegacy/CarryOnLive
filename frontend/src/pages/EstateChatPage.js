@@ -278,33 +278,10 @@ export default function EstateChatPage() {
 
   const voiceRecorder = useVoiceRecorder();
 
-  // ── Handle iOS keyboard / visual viewport changes ──
+  // ── Hide bottom nav when in ECT ──
   useEffect(() => {
     document.body.classList.add('ect-active');
-
-    const container = document.getElementById('ect-root');
-    const handleResize = () => {
-      if (!container) return;
-      const vv = window.visualViewport;
-      if (vv) {
-        container.style.height = `${vv.height}px`;
-        container.style.top = `${vv.offsetTop}px`;
-      }
-    };
-
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleResize);
-      window.visualViewport.addEventListener('scroll', handleResize);
-      handleResize();
-    }
-
-    return () => {
-      document.body.classList.remove('ect-active');
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', handleResize);
-        window.visualViewport.removeEventListener('scroll', handleResize);
-      }
-    };
+    return () => document.body.classList.remove('ect-active');
   }, []);
 
   const fetchChannels = useCallback(async () => {
@@ -817,7 +794,7 @@ export default function EstateChatPage() {
 
   // ── Message Area ──
   const messageArea = activeChannel && (
-    <div className={`${!showChannelList || activeChannel ? 'flex' : 'hidden'} lg:flex flex-col h-full flex-1`}>
+    <div className={`${!showChannelList || activeChannel ? 'flex' : 'hidden'} lg:flex flex-col flex-1`} style={{ minHeight: 0, height: '100%' }}>
       {/* Header */}
       <div className="flex items-center gap-3 p-4 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <button
@@ -1019,13 +996,12 @@ export default function EstateChatPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* ── Input Bar — iMessage Liquid Glass style ── */}
+      {/* ── Input Bar — solid, elevated, sits above keyboard ── */}
       <div className="flex-shrink-0" style={{
-        background: 'rgba(15,22,41,0.85)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderTop: '1px solid rgba(255,255,255,0.1)',
-        boxShadow: '0 -4px 24px rgba(0,0,0,0.3)',
+        background: '#0B1222',
+        borderTop: '1px solid rgba(255,255,255,0.12)',
+        boxShadow: '0 -4px 20px rgba(0,0,0,0.4)',
+        paddingBottom: 'env(safe-area-inset-bottom, 4px)',
       }}>
         {/* Typing indicator */}
         {typers.length > 0 && (
@@ -1131,7 +1107,7 @@ export default function EstateChatPage() {
       top: 0,
       left: 0,
       right: 0,
-      height: '100dvh',
+      bottom: 0,
       zIndex: 45,
       overflow: 'hidden',
     }}>
