@@ -1113,7 +1113,11 @@ export default function EstateChatPage() {
               value={draft}
               onChange={handleDraftChange}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-              onFocus={() => setInputFocused(true)}
+              onFocus={() => {
+                setInputFocused(true);
+                const fix = () => { const vv = window.visualViewport; const r = document.getElementById('ect-root'); if (vv && r && vv.height < window.innerHeight * 0.8) { r.style.height = `${vv.height}px`; r.style.bottom = 'auto'; r.style.transform = window.scrollY > 0 ? `translateY(${window.scrollY}px)` : ''; } };
+                setTimeout(fix, 300); setTimeout(fix, 600);
+              }}
               onBlur={() => setInputFocused(false)}
               placeholder="Type a message..."
               className="flex-1 rounded-2xl px-4 py-2.5 text-base"
@@ -1201,7 +1205,7 @@ export default function EstateChatPage() {
     {newChatModal}
     {/* Security Intro Glass Panel */}
     {showSecurityIntro && (
-      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 overflow-y-auto" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)' }}>
+      <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto" style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)', padding: '16px', paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
         <div className="w-full max-w-md rounded-2xl p-6" data-testid="ect-security-intro" style={{ background: 'rgba(15,22,41,0.95)', border: '1px solid rgba(212,175,55,0.3)', boxShadow: '0 24px 64px rgba(0,0,0,0.5)' }}>
           <div className="text-center mb-5">
             <Shield className="w-12 h-12 mx-auto mb-3" style={{ color: '#d4af37' }} />
