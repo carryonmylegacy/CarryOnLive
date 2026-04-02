@@ -17,7 +17,7 @@ import requests
 import os
 import uuid
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://pwa-file-sharing.preview.emergentagent.com")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://pdf-export-bytes.preview.emergentagent.com")
 
 # Test credentials
 ADMIN_EMAIL = "info@carryon.us"

@@ -285,12 +285,41 @@ export default function EstateChatPage() {
   const fileInputRef = useRef(null);
 
   const voiceRecorder = useVoiceRecorder();
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   // ── Hide bottom nav when in ECT ──
   useEffect(() => {
     document.body.classList.add('ect-active');
     return () => document.body.classList.remove('ect-active');
   }, []);
+
+  // ── iOS Visual Viewport: keep ECT pinned to visible area, detect keyboard ──
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => {
+      const root = document.getElementById('ect-root');
+      if (root) {
+        root.style.height = `${vv.height}px`;
+        root.style.top = `${vv.offsetTop}px`;
+      }
+      setKeyboardVisible(vv.height < window.innerHeight * 0.82);
+    };
+    vv.addEventListener('resize', onResize);
+    vv.addEventListener('scroll', onResize);
+    onResize();
+    return () => {
+      vv.removeEventListener('resize', onResize);
+      vv.removeEventListener('scroll', onResize);
+    };
+  }, []);
+
+  // ── Scroll messages into view when keyboard opens ──
+  useEffect(() => {
+    if (keyboardVisible && activeChannel) {
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 150);
+    }
+  }, [keyboardVisible, activeChannel]);
 
   const fetchChannels = useCallback(async () => {
     try {
@@ -1016,13 +1045,10 @@ export default function EstateChatPage() {
 
       {/* ── Input Bar — solid, elevated, sits above keyboard ── */}
       <div className="flex-shrink-0" style={{
-        background: 'rgba(11,18,34,0.85)',
-        WebkitBackdropFilter: 'blur(20px)',
-        backdropFilter: 'blur(20px)',
+        background: '#0B1222',
         borderTop: '1.5px solid rgba(255,255,255,0.22)',
-        borderBottom: '1.5px solid rgba(255,255,255,0.10)',
-        boxShadow: '0 -6px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)',
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
+        paddingBottom: keyboardVisible ? '0px' : 'env(safe-area-inset-bottom, 0px)',
       }}>
         {/* Typing indicator */}
         {typers.length > 0 && (
@@ -1037,7 +1063,7 @@ export default function EstateChatPage() {
             </span>
           </div>
         )}
-        <div className="flex items-center gap-2 px-3 py-1.5">
+        <div className="flex items-center gap-2 px-3 py-1">
           <input type="file" ref={fileInputRef} className="hidden"
             accept="image/*,.pdf,.doc,.docx,.txt"
             onChange={(e) => { if (e.target.files?.[0]) uploadFile(e.target.files[0]); e.target.value = ''; }}
@@ -1077,9 +1103,9 @@ export default function EstateChatPage() {
               className="flex-1 rounded-2xl px-4 py-2.5 text-base"
               data-testid="ect-message-input"
               style={{
-                background: 'rgba(255,255,255,0.06)',
-                border: '1.5px solid rgba(255,255,255,0.18)',
-                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3), 0 0.5px 0 rgba(255,255,255,0.05)',
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.20)',
+                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.2)',
                 color: '#F1F3F8',
                 fontSize: '16px',
                 outline: 'none',
@@ -1129,7 +1155,7 @@ export default function EstateChatPage() {
       top: 0,
       left: 0,
       right: 0,
-      bottom: 0,
+      height: '100%',
       zIndex: 45,
       overflow: 'hidden',
     }}>

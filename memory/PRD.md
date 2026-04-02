@@ -83,7 +83,18 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **DO NOT**: Add code inside `execute_download()` function body via insert_text — use search_replace only.
 - **DO NOT**: Remove the download guard (`_downloadInProgress` flag) — prevents double-tap crashes.
 
-### 7. iOS PWA Download Utility (`downloadFile.js`)
+### 7. ECT iOS Keyboard / Visual Viewport Handling
+- **Status**: IMPLEMENTED (April 2, 2026)
+- **What**: `window.visualViewport` API dynamically resizes `#ect-root` to match the visible viewport height when the iOS keyboard opens. This keeps the chat header (back arrow + contact name) pinned at the top and the input bar flush against the keyboard.
+- **Keyboard detection**: `vv.height < window.innerHeight * 0.82` → `keyboardVisible` state
+- **Safe-area**: `env(safe-area-inset-bottom)` applied ONLY when keyboard is NOT visible (prevents 34px gap above keyboard)
+- **Input bar**: Solid background `#0B1222` (not translucent) to prevent faded appearance
+- **Files**: `EstateChatPage.js` (visualViewport useEffect, keyboardVisible state, input bar styles)
+- **DO NOT**: Revert to `bottom: 0` fixed positioning — iOS doesn't resize fixed elements for keyboard
+- **DO NOT**: Re-add `backdrop-filter: blur()` or translucent `rgba()` background on input bar — causes faded look on iOS
+- **DO NOT**: Remove the `visualViewport` resize listener — header will disappear behind keyboard without it
+
+### 8. iOS PWA Download Utility (`downloadFile.js`)
 - **Architecture**: `platformDownload()` is the SINGLE entry point for all iOS downloads
 - **Three-step flow**: (1) Try `navigator.share()` immediately (works for small files), (2) If fails, show `promptToSave()` overlay for fresh user activation, (3) User taps "Tap to Save" → share sheet
 - **DO NOT**: Add `window.open(blobUrl)` fallbacks — they just play videos instead of saving.

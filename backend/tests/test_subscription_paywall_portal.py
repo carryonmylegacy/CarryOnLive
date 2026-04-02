@@ -10,7 +10,7 @@ import os
 import pytest
 import requests
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://pwa-file-sharing.preview.emergentagent.com")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://pdf-export-bytes.preview.emergentagent.com")
 
 
 class TestSubscriptionPlansEndpoint:
@@ -127,7 +127,7 @@ class TestSubscriptionCheckout:
             json={
                 "plan_id": "premium",
                 "billing_cycle": "annual",
-                "origin_url": "https://pwa-file-sharing.preview.emergentagent.com",
+                "origin_url": "https://pdf-export-bytes.preview.emergentagent.com",
             },
             headers=headers,
         )
