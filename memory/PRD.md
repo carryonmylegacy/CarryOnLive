@@ -36,18 +36,18 @@ A full-stack estate planning application allowing benefactors to manage digital 
 
 ## What's Been Implemented
 
-### Completed (April 2, 2026 — iOS Downloads Fix v2 + ECT Avatars)
+### Completed (April 2, 2026 — iOS Downloads Fix v3 — ROOT CAUSE FOUND)
 
-**iOS Download Strategy (Revised)**
-- Root cause: `window.location.href` to cross-origin API (Railway) triggered SFSafariViewController popup in iOS PWA — replaced with blob fetch + `navigator.share()`
-- On iOS PWA: Fetches converted file blob via download proxy, then presents native iOS share sheet ("Save Video" for MP4, "Save to Files" for PDFs)
-- Added FFmpeg WebM→MP4 conversion to BOTH the download proxy AND the existing `video-dl` endpoint in `messages.py`
-- Detailed backend logging added to `_handle_message_video` for production debugging
+**Root Cause**: `insert_text` tool broke `execute_download` function by inserting diagnostic code IN THE MIDDLE of its body → function returned `null` for ALL downloads → blank screens & corrupt files.
 
-**ECT Beneficiary Avatars**
-- New chat member selection: Shows actual profile photo avatars with initials fallback, gold gradient when selected — matching SDV beneficiary style
-- Channel list: Direct message conversations show the other person's profile photo avatar
-- Backend `_enrich_channel` now returns `photo_url` for direct message channels
+**Fixes Applied**:
+- Restored `execute_download` function structure, ffmpeg-check placed BEFORE `{token}` route
+- Bundled FFmpeg via `imageio-ffmpeg` pip package (guaranteed libx264 codec)
+- Added `GET /api/downloads/ffmpeg-check` diagnostic endpoint
+- Download guard prevents double-click app freeze
+- Response validation catches server errors before passing to `navigator.share()`
+- ECT avatars: only render `<img>` for valid `http` URLs, `onError` fallback to initials
+- Channel list: initials for DMs without valid photo, group icons preserved
 
 ### Completed (April 2, 2026 — Universal iOS Download System + CCP Plan PDF)
 

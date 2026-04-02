@@ -2,45 +2,55 @@
  * Cross-platform file download utility.
  *
  * iOS PWA Strategy:
- *   1. Fetch the file as a blob through the download proxy (which converts WebM→MP4, etc.)
- *   2. Use navigator.share() to present the native iOS share sheet from the bottom
+ *   1. Fetch the file as a blob through the download proxy (converts WebM→MP4)
+ *   2. Use navigator.share() to present the native iOS share sheet
  *      → "Save Video" for MP4, "Save to Files" for PDFs/documents
- *   3. Falls back to <a download> blob approach if share API unavailable
+ *   3. Graceful fallback if share API fails
  *
- * Desktop:
- *   Uses standard blob + <a download> approach via the onFallback callback.
- *
- * Capacitor Native:
- *   Writes to filesystem + native Share sheet.
+ * Desktop: Standard blob + <a download> via onFallback callback.
+ * Capacitor Native: Filesystem write + native Share sheet.
  */
 
 import { API_URL } from '../config';
 
-/**
- * Detect iOS (Safari, PWA, or WebView).
- */
+/** Detect iOS (Safari, PWA, or WebView). */
 export function isIOS() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
 
+// Guard against concurrent downloads
+let _downloadInProgress = false;
+
 /**
- * Platform-aware download — iOS gets the native share sheet, desktop gets blob download.
+ * Platform-aware download — iOS gets native share sheet, desktop gets blob download.
  */
 export async function platformDownload({ action, params = {}, filename = 'download', onFallback }) {
-  // Native Capacitor app → use native fallback
+  // Prevent double-tap issues
+  if (_downloadInProgress) return;
+  _downloadInProgress = true;
+
   try {
-    const { Capacitor } = await import('@capacitor/core');
-    if (Capacitor.isNativePlatform()) {
+    // Native Capacitor app → use native fallback
+    try {
+      const { Capacitor } = await import('@capacitor/core');
+      if (Capacitor.isNativePlatform()) {
+        if (onFallback) await onFallback();
+        return;
+      }
+    } catch {
+      // Not a Capacitor app
+    }
+
+    if (!isIOS()) {
+      // Non-iOS: use provided fallback (existing blob download logic)
       if (onFallback) await onFallback();
       return;
     }
-  } catch {
-    // Not a Capacitor app
-  }
 
-  if (isIOS()) {
+    // ── iOS PWA path ──
     const authToken = localStorage.getItem('carryon_token');
+    if (!authToken) throw new Error('Not authenticated');
 
     // Step 1: Create a download token
     const prepRes = await fetch(`${API_URL}/downloads/prepare`, {
@@ -56,82 +66,70 @@ export async function platformDownload({ action, params = {}, filename = 'downlo
 
     // Step 2: Fetch the actual file blob (backend converts WebM→MP4 etc.)
     const fileRes = await fetch(`${API_URL}/downloads/${dt}`);
-    if (!fileRes.ok) throw new Error('Download failed');
+    if (!fileRes.ok) throw new Error(`Download failed (${fileRes.status})`);
+
     const blob = await fileRes.blob();
+    if (blob.size < 50) throw new Error('Downloaded file is too small — server error');
 
-    // Determine correct MIME type and filename
-    const contentType = blob.type || fileRes.headers.get('content-type') || 'application/octet-stream';
-    let finalFilename = filename;
-
-    // Fix filename extension to match actual content type
-    if (contentType.includes('mp4') && !finalFilename.endsWith('.mp4')) {
-      finalFilename = finalFilename.replace(/\.\w+$/, '.mp4');
-      if (!finalFilename.includes('.')) finalFilename += '.mp4';
-    } else if (contentType.includes('pdf') && !finalFilename.endsWith('.pdf')) {
-      finalFilename = finalFilename.replace(/\.\w+$/, '.pdf');
-      if (!finalFilename.includes('.')) finalFilename += '.pdf';
+    // Verify the response is the expected type (not an error JSON)
+    const contentType = fileRes.headers.get('content-type') || blob.type || 'application/octet-stream';
+    if (contentType.includes('application/json')) {
+      throw new Error('Server returned an error instead of a file');
     }
 
-    // Step 3: Use Web Share API — this opens the native iOS share sheet
+    // Fix filename extension to match actual content type
+    let finalFilename = filename;
+    if (contentType.includes('mp4') && !finalFilename.endsWith('.mp4')) {
+      finalFilename = finalFilename.replace(/\.[^.]+$/, '.mp4') || finalFilename + '.mp4';
+    } else if (contentType.includes('pdf') && !finalFilename.endsWith('.pdf')) {
+      finalFilename = finalFilename.replace(/\.[^.]+$/, '.pdf') || finalFilename + '.pdf';
+    }
+
+    // Step 3: Use Web Share API — native iOS share sheet
     const file = new File([blob], finalFilename, { type: contentType });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({ files: [file] });
         return;
       } catch (shareErr) {
-        // User cancelled share sheet — that's OK, not an error
-        if (shareErr.name === 'AbortError') return;
-        // Other share errors — fall through to blob download
+        if (shareErr.name === 'AbortError') return; // User cancelled — OK
+        console.warn('Share failed, trying fallback:', shareErr);
       }
     }
 
-    // Step 4: Fallback — blob URL + <a download>
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = finalFilename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-    return;
-  }
+    // Step 4: Fallback — open blob in new window (iOS will show its own viewer)
+    const blobUrl = URL.createObjectURL(blob);
+    window.open(blobUrl, '_blank');
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
 
-  // Non-iOS: use provided fallback (existing blob download logic)
-  if (onFallback) {
-    await onFallback();
+  } finally {
+    _downloadInProgress = false;
   }
 }
 
-/**
- * Legacy blob-based download for non-iOS web browsers.
- */
+/** Legacy blob-based download for non-iOS web browsers. */
 export async function downloadFile(blob, filename) {
-  // Try native path first
   try {
     const { Capacitor } = await import('@capacitor/core');
     if (Capacitor.isNativePlatform()) {
       const { Filesystem, Directory } = await import('@capacitor/filesystem');
       const { Share } = await import('@capacitor/share');
-
       const reader = new FileReader();
       const base64Data = await new Promise((resolve, reject) => {
         reader.onloadend = () => resolve(reader.result.split(',')[1]);
         reader.onerror = reject;
         reader.readAsDataURL(blob);
       });
-
       const result = await Filesystem.writeFile({
         path: filename,
         data: base64Data,
         directory: Directory.Documents,
       });
-
       await Share.share({ title: filename, url: result.uri });
       return;
     }
   } catch {
-    // Capacitor not available or native write failed — fall through to web download
+    // Capacitor not available — fall through
   }
 
   // Web fallback

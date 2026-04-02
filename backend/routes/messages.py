@@ -261,6 +261,13 @@ async def download_video_direct(video_id: str, dt: str = QueryParam(...)):
             import os
             import tempfile
 
+            try:
+                import imageio_ffmpeg
+
+                ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+            except ImportError:
+                ffmpeg_exe = "ffmpeg"
+
             inp_path = tempfile.mktemp(suffix=".webm")
             out_path = tempfile.mktemp(suffix=".mp4")
             try:
@@ -268,7 +275,7 @@ async def download_video_direct(video_id: str, dt: str = QueryParam(...)):
                     f.write(decrypted)
                 proc = subprocess.run(
                     [
-                        "ffmpeg",
+                        ffmpeg_exe,
                         "-y",
                         "-i",
                         inp_path,

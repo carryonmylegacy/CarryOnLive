@@ -50,6 +50,53 @@ async def prepare_download(data: PrepareRequest, current_user: dict = Depends(ge
     return {"token": token}
 
 
+@router.get("/downloads/ffmpeg-check")
+async def ffmpeg_check():
+    """Diagnostic: verify FFmpeg is available and has libx264 encoder."""
+    import os
+    import shutil
+
+    results = {}
+    sys_ffmpeg = shutil.which("ffmpeg")
+    results["system_ffmpeg"] = sys_ffmpeg or "NOT FOUND"
+    try:
+        import imageio_ffmpeg
+
+        bundled = imageio_ffmpeg.get_ffmpeg_exe()
+        results["bundled_ffmpeg"] = bundled
+    except ImportError:
+        results["bundled_ffmpeg"] = "imageio_ffmpeg NOT INSTALLED"
+
+    ffmpeg_exe = results.get("bundled_ffmpeg") if "NOT" not in str(results.get("bundled_ffmpeg", "NOT")) else sys_ffmpeg
+    if ffmpeg_exe:
+        try:
+            inp = tempfile.mktemp(suffix=".webm")
+            out = tempfile.mktemp(suffix=".mp4")
+            subprocess.run(
+                [ffmpeg_exe, "-y", "-f", "lavfi", "-i", "color=c=black:s=64x64:d=0.5", "-c:v", "libvpx", inp],
+                capture_output=True,
+                timeout=15,
+            )
+            proc = subprocess.run(
+                [ffmpeg_exe, "-y", "-i", inp, "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac", out],
+                capture_output=True,
+                timeout=15,
+            )
+            results["conversion_test"] = "PASS" if proc.returncode == 0 else f"FAIL: {proc.stderr.decode()[:300]}"
+            if proc.returncode == 0:
+                results["output_size"] = os.path.getsize(out)
+            for p in (inp, out):
+                try:
+                    os.unlink(p)
+                except OSError:
+                    pass
+        except Exception as e:
+            results["conversion_test"] = f"ERROR: {e}"
+    else:
+        results["conversion_test"] = "SKIPPED (no ffmpeg)"
+    return results
+
+
 @router.get("/downloads/{token}")
 async def execute_download(token: str):
     """Serve a file download using a one-time token. No JWT required."""
@@ -387,8 +434,16 @@ async def _handle_ccp_plan(user: dict, params: dict, filename: str) -> Response:
 
 
 def _convert_webm_to_mp4(webm_bytes: bytes) -> tuple[bytes, str]:
-    """Convert WebM video to MP4 (H.264) using ffmpeg for iOS compatibility."""
+    """Convert WebM video to MP4 (H.264) using bundled ffmpeg for iOS compatibility."""
     import os
+
+    # Use imageio-ffmpeg's bundled binary (guaranteed to include libx264)
+    try:
+        import imageio_ffmpeg
+
+        ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+    except ImportError:
+        ffmpeg_exe = "ffmpeg"
 
     inp_path = tempfile.mktemp(suffix=".webm")
     out_path = tempfile.mktemp(suffix=".mp4")
@@ -398,7 +453,7 @@ def _convert_webm_to_mp4(webm_bytes: bytes) -> tuple[bytes, str]:
 
         result = subprocess.run(
             [
-                "ffmpeg",
+                ffmpeg_exe,
                 "-y",
                 "-i",
                 inp_path,
@@ -420,10 +475,15 @@ def _convert_webm_to_mp4(webm_bytes: bytes) -> tuple[bytes, str]:
             timeout=120,
         )
         if result.returncode != 0:
-            raise RuntimeError(f"ffmpeg failed: {result.stderr.decode()[:500]}")
+            logger.error(f"FFmpeg stderr: {result.stderr.decode()[:500]}")
+            raise RuntimeError(f"ffmpeg exit {result.returncode}")
 
         with open(out_path, "rb") as f:
-            return f.read(), "video/mp4"
+            mp4_data = f.read()
+        if len(mp4_data) < 100:
+            raise RuntimeError("FFmpeg produced empty output")
+        logger.info(f"WebM->MP4 OK: {len(webm_bytes)}->{len(mp4_data)} bytes")
+        return mp4_data, "video/mp4"
     finally:
         for p in (inp_path, out_path):
             try:

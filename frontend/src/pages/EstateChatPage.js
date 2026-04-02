@@ -623,8 +623,8 @@ export default function EstateChatPage() {
                     background: isSelected ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(255,255,255,0.08)',
                     color: isSelected ? '#080e1a' : '#A0AABF',
                   }}>
-                    {m.photo_url
-                      ? <img src={m.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" />
+                    {m.photo_url && m.photo_url.startsWith('http')
+                      ? <img src={m.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; }} />
                       : initials}
                   </div>
                   <div className="flex-1 text-left min-w-0">
@@ -779,10 +779,12 @@ export default function EstateChatPage() {
                   border: activeChannel?.id === ch.id ? '1px solid rgba(212,175,55,0.2)' : '1px solid transparent',
                 }}
               >
-                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: ch.photo_url ? 'transparent' : 'rgba(255,255,255,0.06)' }}>
-                  {ch.type === 'direct' && ch.photo_url
-                    ? <img src={ch.photo_url} alt="" className="w-10 h-10 rounded-full object-cover" />
-                    : getChannelIcon(ch.type)}
+                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden text-sm font-bold" style={{ background: 'rgba(255,255,255,0.06)', color: '#A0AABF' }}>
+                  {ch.type === 'direct' && ch.photo_url && ch.photo_url.startsWith('http')
+                    ? <img src={ch.photo_url} alt="" className="w-10 h-10 rounded-full object-cover" onError={e => { e.target.style.display = 'none'; }} />
+                    : ch.type === 'direct'
+                      ? (ch.name?.charAt(0)?.toUpperCase() || '?')
+                      : getChannelIcon(ch.type)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
