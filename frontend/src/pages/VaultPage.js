@@ -123,7 +123,6 @@ const VaultPage = () => {
   const [globalDragOver, setGlobalDragOver] = useState(false);
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [expandedDesignation, setExpandedDesignation] = useState(null);
-  const [expandedTiming, setExpandedTiming] = useState({});
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkSelected, setBulkSelected] = useState([]);
   const dragCounterRef = useRef(0);
@@ -860,7 +859,7 @@ const VaultPage = () => {
                     onClick={() => { setBulkMode(true); setBulkSelected([]); }}
                     data-testid="bulk-designation-start"
                   >
-                    <Users className="w-3.5 h-3.5" /> Bulk Assign Beneficiaries
+                    <Users className="w-3.5 h-3.5" /> Bulk Assign
                   </Button>
                 ) : (
                   <Card className="glass-card">
@@ -1064,7 +1063,7 @@ const VaultPage = () => {
                         )}
                       </div>
                       </div>
-                      {/* Beneficiary Designation */}
+                      {/* Beneficiary Designation — simplified */}
                       {user?.role === 'benefactor' && beneficiaries.length > 0 && (
                         <div className="mt-2 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                           <button
@@ -1084,92 +1083,50 @@ const VaultPage = () => {
                               : <ChevronDown className="w-4 h-4 ml-auto" />}
                           </button>
                           {expandedDesignation === doc.id && (
-                            <div className="mt-3 space-y-2" onClick={(e) => e.stopPropagation()}>
-                              {/* Select All toggle + expand timing button */}
-                              <div className="flex items-center gap-2">
-                                <button
-                                  className="flex-1 flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all"
-                                  style={{
-                                    background: (!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all'))
-                                      ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.03)',
-                                    border: `1px solid ${(!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all'))
-                                      ? 'rgba(212,175,55,0.35)' : 'rgba(255,255,255,0.06)'}`,
-                                  }}
-                                  onClick={() => toggleBeneficiaryForDoc(doc.id, 'all', doc.designated_beneficiaries, doc)}
-                                  data-testid={`designation-all-${doc.id}`}
-                                >
-                                  <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{
-                                    background: (!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all'))
-                                      ? '#d4af37' : 'rgba(255,255,255,0.08)',
-                                  }}>
-                                    <Users className="w-4 h-4" style={{
-                                      color: (!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all'))
-                                        ? '#080e1a' : '#7B879E',
-                                    }} />
-                                  </div>
-                                  <span className="text-sm font-bold" style={{ color: '#F1F3F8' }}>Select All</span>
-                                  {(!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all')) && (
-                                    <Check className="w-5 h-5 ml-auto" style={{ color: '#d4af37' }} />
-                                  )}
-                                </button>
-                                <button
-                                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all"
-                                  style={{
-                                    background: expandedTiming[doc.id]
-                                      ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.06)',
-                                    border: `1px solid ${expandedTiming[doc.id]
-                                      ? 'rgba(212,175,55,0.35)' : 'rgba(255,255,255,0.08)'}`,
-                                    transform: expandedTiming[doc.id] ? 'rotate(45deg)' : 'none',
-                                  }}
-                                  onClick={() => setExpandedTiming(prev => ({ ...prev, [doc.id]: !prev[doc.id] }))}
-                                  data-testid={`timing-expand-${doc.id}`}
-                                  title="Configure Pre/Post-Transition access"
-                                >
-                                  <Plus className="w-5 h-5" style={{ color: expandedTiming[doc.id] ? '#d4af37' : '#7B879E' }} />
-                                </button>
-                              </div>
-                              {/* Individual beneficiaries */}
+                            <div className="mt-3 space-y-1.5" onClick={(e) => e.stopPropagation()}>
                               {beneficiaries.map(ben => {
                                 const designation = doc.designated_beneficiaries || ['all'];
                                 const isAll = designation.includes('all');
-                                const isSelected = isAll || designation.includes(ben.id);
+                                const isOn = isAll || designation.includes(ben.id);
                                 const timing = doc.visibility_timing?.[ben.id] || { pre: false, post: true };
                                 const initials = `${ben.first_name?.charAt(0) || ''}${ben.last_name?.charAt(0) || ''}`;
                                 return (
-                                  <div key={ben.id} className="rounded-xl overflow-hidden transition-all" style={{
-                                    background: isSelected ? 'rgba(212,175,55,0.08)' : 'rgba(255,255,255,0.02)',
-                                    border: `1px solid ${isSelected ? 'rgba(212,175,55,0.25)' : 'rgba(255,255,255,0.06)'}`,
+                                  <div key={ben.id} className="rounded-xl overflow-hidden" style={{
+                                    background: isOn ? 'rgba(212,175,55,0.06)' : 'rgba(255,255,255,0.02)',
+                                    border: `1px solid ${isOn ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.06)'}`,
                                   }}>
-                                    <button
-                                      className="w-full flex items-center gap-3 px-3 py-2.5 transition-all"
-                                      onClick={() => toggleBeneficiaryForDoc(doc.id, ben.id, doc.designated_beneficiaries, doc)}
-                                      data-testid={`designation-ben-${ben.id}-${doc.id}`}
-                                    >
-                                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 overflow-hidden" style={{
-                                        background: isSelected
-                                          ? 'linear-gradient(135deg, #d4af37, #F0C95C)'
-                                          : 'rgba(255,255,255,0.08)',
-                                        color: isSelected ? '#080e1a' : '#7B879E',
+                                    {/* Row: avatar + name + on/off switch */}
+                                    <div className="flex items-center gap-3 px-3 py-2">
+                                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 overflow-hidden" style={{
+                                        background: isOn ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(255,255,255,0.08)',
+                                        color: isOn ? '#080e1a' : '#7B879E',
                                       }}>
                                         {ben.photo_url
-                                          ? <img src={ben.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" />
+                                          ? <img src={ben.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" />
                                           : initials}
                                       </div>
-                                      <div className="text-left flex-1 min-w-0">
-                                        <div className="text-sm font-semibold truncate" style={{ color: '#F1F3F8' }}>
-                                          {ben.first_name} {ben.last_name}
-                                        </div>
-                                        {ben.relation && (
-                                          <div className="text-xs" style={{ color: '#7B879E' }}>{ben.relation}</div>
-                                        )}
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-sm font-semibold truncate" style={{ color: '#F1F3F8' }}>{ben.first_name} {ben.last_name}</div>
                                       </div>
-                                      {isSelected && <Check className="w-5 h-5 flex-shrink-0" style={{ color: '#d4af37' }} />}
-                                    </button>
-                                    {/* Pre/Post Transition Toggles — shown when expanded or individually selected */}
-                                    {isSelected && (expandedTiming[doc.id] || !isAll) && (
-                                      <div className="flex gap-2 px-3 pb-3 pt-1" onClick={(e) => e.stopPropagation()}>
+                                      {/* Toggle switch */}
+                                      <button
+                                        onClick={() => toggleBeneficiaryForDoc(doc.id, ben.id, doc.designated_beneficiaries, doc)}
+                                        className="w-11 h-6 rounded-full flex-shrink-0 relative transition-all"
+                                        data-testid={`designation-ben-${ben.id}-${doc.id}`}
+                                        style={{
+                                          background: isOn ? '#d4af37' : 'rgba(255,255,255,0.12)',
+                                        }}
+                                      >
+                                        <div className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all" style={{
+                                          left: isOn ? '22px' : '2px',
+                                        }} />
+                                      </button>
+                                    </div>
+                                    {/* Pre / Post row — always visible when ON */}
+                                    {isOn && (
+                                      <div className="flex gap-2 px-3 pb-2.5">
                                         <button
-                                          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all"
+                                          className="flex-1 py-1.5 rounded-lg text-xs font-bold text-center transition-all"
                                           onClick={() => toggleVisibilityTiming(doc.id, ben.id, 'pre', doc)}
                                           data-testid={`timing-pre-${ben.id}-${doc.id}`}
                                           style={{
@@ -1178,11 +1135,10 @@ const VaultPage = () => {
                                             color: timing.pre ? '#22C993' : '#525C72',
                                           }}
                                         >
-                                          {timing.pre && <Check className="w-3.5 h-3.5" />}
-                                          Pre-Transition
+                                          {timing.pre ? '\u2713 ' : ''}Pre-Transition
                                         </button>
                                         <button
-                                          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all"
+                                          className="flex-1 py-1.5 rounded-lg text-xs font-bold text-center transition-all"
                                           onClick={() => toggleVisibilityTiming(doc.id, ben.id, 'post', doc)}
                                           data-testid={`timing-post-${ben.id}-${doc.id}`}
                                           style={{
@@ -1191,8 +1147,7 @@ const VaultPage = () => {
                                             color: timing.post ? '#3B7BF7' : '#525C72',
                                           }}
                                         >
-                                          {timing.post && <Check className="w-3.5 h-3.5" />}
-                                          Post-Transition
+                                          {timing.post ? '\u2713 ' : ''}Post-Transition
                                         </button>
                                       </div>
                                     )}
