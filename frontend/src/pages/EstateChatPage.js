@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { API_URL } from '../config';
-import { toast } from 'sonner';
+import { toast } from '../utils/toast';
 import {
   MessageCircle,
   Send,
@@ -345,6 +345,10 @@ export default function EstateChatPage() {
           // Shrink root from bottom to stay above keyboard
           const kbHeight = window.innerHeight - vv.height;
           root.style.bottom = `${kbHeight}px`;
+          // iOS keyboard animates open — re-sync after short delays
+          // to catch the final settled position
+          setTimeout(sync, 100);
+          setTimeout(sync, 300);
         } else {
           resetStyles();
         }
@@ -371,12 +375,23 @@ export default function EstateChatPage() {
       }, 400);
     };
 
+    // Also listen to window scroll — iOS PWA can scroll the page behind our
+    // fixed root when the keyboard opens, and the visualViewport events may
+    // not fire for that scroll. This eliminates the "wiggle to fix" issue.
+    const handleWindowScroll = () => {
+      if (kbOpen && activeChannelRef.current && window.scrollY > 0) {
+        root.style.transform = `translateY(${window.scrollY}px)`;
+      }
+    };
+
     vv.addEventListener('resize', sync);
     vv.addEventListener('scroll', sync);
+    window.addEventListener('scroll', handleWindowScroll, { passive: true });
     root.addEventListener('focusout', handleFocusOut);
     return () => {
       vv.removeEventListener('resize', sync);
       vv.removeEventListener('scroll', sync);
+      window.removeEventListener('scroll', handleWindowScroll);
       root.removeEventListener('focusout', handleFocusOut);
       root.style.bottom = '0';
       root.style.transform = '';
@@ -1250,7 +1265,12 @@ export default function EstateChatPage() {
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
               onFocus={() => {
                 setInputFocused(true);
+                // iOS PWA scrolls the page when keyboard opens.
+                // Reset scroll immediately AND after the keyboard animation
+                // settles, so the fixed root stays aligned.
                 window.scrollTo(0, 0);
+                setTimeout(() => window.scrollTo(0, 0), 150);
+                setTimeout(() => window.scrollTo(0, 0), 350);
               }}
               onBlur={() => setInputFocused(false)}
               placeholder="Type a message..."

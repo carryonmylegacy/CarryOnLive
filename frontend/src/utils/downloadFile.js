@@ -161,24 +161,17 @@ export async function platformDownload({ action, params = {}, filename = 'downlo
       finalFilename = finalFilename.replace(/\.[^.]+$/, '.pdf') || finalFilename + '.pdf';
     }
 
-    // Step 3: Use Web Share API — native iOS share sheet
+    // Step 3: Present file to user via promptToSave overlay.
+    // On iOS PWA, navigator.share() requires a fresh user gesture. Since the
+    // async fetch above always burns the original gesture, we skip the initial
+    // share attempt entirely and go straight to the "Tap to Save" overlay.
+    // This eliminates the "double-tap" problem where the first tap appeared
+    // to do nothing because the share call failed silently.
     if (onProgress) onProgress('ready', 100);
     const file = new File([blob], finalFilename, { type: contentType });
 
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file] });
-        return 'shared';
-      } catch (shareErr) {
-        if (shareErr.name === 'AbortError') return 'cancelled';
-        // Share failed — likely user activation expired (large file / slow fetch).
-        const handled = await promptToSave(file);
-        return handled ? 'saved' : 'cancelled';
-      }
-    } else {
-      const handled = await promptToSave(file);
-      return handled ? 'saved' : 'cancelled';
-    }
+    const handled = await promptToSave(file);
+    return handled ? 'saved' : 'cancelled';
 
   } finally {
     _downloadInProgress = false;

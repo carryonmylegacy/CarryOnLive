@@ -62,6 +62,7 @@ from routes.downloads import router as downloads_router
 from routes.notification_prefs import router as notification_prefs_router
 from routes.training_tracker import router as training_tracker_router
 from routes.ws_notifications import router as ws_router, sla_checker_loop
+from routes.user_preferences import router as user_preferences_router
 from schedulers import (
     daily_dob_check_scheduler,
     data_retention_scheduler,
@@ -267,6 +268,7 @@ api_router.include_router(downloads_router)
 api_router.include_router(notification_prefs_router)
 api_router.include_router(training_tracker_router)
 api_router.include_router(ws_router)
+api_router.include_router(user_preferences_router)
 
 
 BUILD_HASH = "2026-03-10T17:05:00Z-fix-welcome-redirect"

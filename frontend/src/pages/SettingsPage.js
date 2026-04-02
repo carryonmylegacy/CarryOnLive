@@ -15,6 +15,7 @@ import EstatePhotoCard from '../components/settings/EstatePhotoCard';
 import AppearanceCard from '../components/settings/AppearanceCard';
 import DigestCard from '../components/settings/DigestCard';
 import PrivacyCard from '../components/settings/PrivacyCard';
+import DockCustomizer from '../components/DockCustomizer';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
 
@@ -130,6 +131,13 @@ const SettingsPage = () => {
       )}
 
       <AppearanceCard isStaff={isStaff} />
+
+      {/* Dock Customizer */}
+      <Card className="glass-card" data-testid="settings-dock-card">
+        <CardContent className="pt-5">
+          <DockCustomizer />
+        </CardContent>
+      </Card>
 
       {/* Notification Settings (push notifications) */}
       <NotificationSettings getAuthHeaders={getAuthHeaders} />

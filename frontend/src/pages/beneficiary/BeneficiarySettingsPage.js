@@ -13,6 +13,7 @@ import NotificationSettings from '../../components/NotificationSettings';
 import { NotificationPrefsCard } from '../../components/settings/NotificationPrefsCard';
 import { PhotoPicker } from '../../components/PhotoPicker';
 import { API_URL } from '../../config';
+import DockCustomizer from '../../components/DockCustomizer';
 
 const BeneficiarySettingsPage = () => {
   const { user, logout, getAuthHeaders, subscriptionStatus, refreshSubscription } = useAuth();
@@ -174,6 +175,13 @@ const BeneficiarySettingsPage = () => {
             </div>
             <Switch checked={theme === 'dark'} onCheckedChange={toggleTheme} />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Dock Customizer */}
+      <Card className="glass-card" data-testid="ben-settings-dock-card">
+        <CardContent className="pt-5">
+          <DockCustomizer />
         </CardContent>
       </Card>
 

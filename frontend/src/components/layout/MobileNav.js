@@ -45,6 +45,62 @@ import { filterNavByFeatures } from '../../utils/featureGates';
 
 const BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
+// ── Complete registry of all dock-eligible items by role group ──
+// Used by both the dock customizer (settings) and the bottom nav renderer.
+export const DOCK_REGISTRY = {
+  benefactor: [
+    { to: '/dashboard', icon: Home, label: 'Dashboard' },
+    { to: '/beneficiaries', icon: Users, label: 'Benefic.' },
+    { to: '/messages', icon: MessageSquare, label: 'Milestone' },
+    { to: '/vault', icon: FolderLock, label: 'Vault' },
+    { to: '/guardian', icon: Sparkles, label: 'Guardian' },
+    { to: '/checklist', icon: CheckSquare, label: 'Checklist' },
+    { to: '/ffn', icon: Heart, label: 'FFN' },
+    { to: '/digital-wallet', icon: KeyRound, label: 'Wallet' },
+    { to: '/trustee', icon: Shield, label: 'DTS' },
+    { to: '/timeline', icon: Clock, label: 'Timeline' },
+    { to: '/estate-chat', icon: MessageCircle, label: 'Chat' },
+    { to: '/connected-protocol', icon: Shield, label: 'CCP' },
+  ],
+  beneficiary: [
+    { to: '/beneficiary', icon: Home, label: 'Dashboard' },
+    { to: '/beneficiary/vault', icon: FolderLock, label: 'Vault' },
+    { to: '/beneficiary/guardian', icon: Sparkles, label: 'Guardian' },
+    { to: '/beneficiary/checklist', icon: CheckSquare, label: 'Checklist' },
+    { to: '/beneficiary/messages', icon: MessageSquare, label: 'Messages' },
+    { to: '/beneficiary/milestone', icon: Gift, label: 'Milestone' },
+    { to: '/beneficiary/estate-chat', icon: MessageCircle, label: 'Chat' },
+    { to: '/beneficiary/connected-protocol', icon: Shield, label: 'CCP' },
+  ],
+  admin: [
+    { to: '/admin', icon: Home, label: 'Dashboard' },
+    { to: '/admin/transition', icon: FileKey, label: 'TVT' },
+    { to: '/admin/support', icon: Headphones, label: 'Support' },
+    { to: '/admin/dts', icon: Shield, label: 'DTS' },
+    { to: '/admin/verifications', icon: ShieldCheck, label: 'Verify' },
+    { to: '/admin/announcements', icon: Megaphone, label: 'Announce' },
+    { to: '/admin/system-health', icon: HeartPulse, label: 'Health' },
+    { to: '/admin/escalations', icon: AlertTriangle, label: 'Escalate' },
+    { to: '/admin/knowledge-base', icon: BookOpen, label: 'KB' },
+    { to: '/settings', icon: Settings, label: 'Settings' },
+  ],
+  operator: [
+    { to: '/ops', icon: Home, label: 'Dashboard' },
+    { to: '/ops/transition', icon: FileKey, label: 'TVT' },
+    { to: '/ops/support', icon: Headphones, label: 'Support' },
+    { to: '/ops/dts', icon: Shield, label: 'DTS' },
+    { to: '/ops/verifications', icon: ShieldCheck, label: 'Verify' },
+    { to: '/ops/my-activity', icon: Clock, label: 'Activity' },
+    { to: '/ops/search', icon: Search, label: 'Search' },
+    { to: '/ops/escalations', icon: AlertTriangle, label: 'Escalate' },
+    { to: '/ops/shift-notes', icon: StickyNote, label: 'Notes' },
+    { to: '/ops/system-health', icon: HeartPulse, label: 'Health' },
+    { to: '/ops/estate-health', icon: HeartPulse, label: 'Estates' },
+    { to: '/ops/knowledge-base', icon: BookOpen, label: 'SOPs' },
+    { to: '/settings', icon: Settings, label: 'Settings' },
+  ],
+};
+
 // Normalize admin_scope to an array regardless of input format
 const scopeArr = (raw) => Array.isArray(raw) ? raw : (raw ? [raw] : []);
 const hasScope = (raw, target) => scopeArr(raw).includes(target);
@@ -172,6 +228,7 @@ const MobileNav = () => {
   const [mobileEstates, setMobileEstates] = useState([]);
   const [mobileEstatePicker, setMobileEstatePicker] = useState(false);
   const [ectUnread, setEctUnread] = useState(0);
+  const [customDockItems, setCustomDockItems] = useState(null); // null = not loaded yet
 
   // Fetch estates for portal switching
   React.useEffect(() => {
@@ -201,6 +258,16 @@ const MobileNav = () => {
     fetchUnread();
     const interval = setInterval(fetchUnread, 30000);
     return () => clearInterval(interval);
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch custom dock preferences
+  React.useEffect(() => {
+    const tk = localStorage.getItem('carryon_token');
+    if (!tk) return;
+    fetch(`${BASE_URL}/api/user-preferences/dock`, { headers: { Authorization: `Bearer ${tk}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d && d.items && d.items.length > 0) setCustomDockItems(d.items); })
+      .catch(() => {});
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Dev portal switcher (founder only)
@@ -520,17 +587,38 @@ const MobileNav = () => {
     { id: 'ops-verify', to: '/ops/verifications', icon: ShieldCheck, label: 'Verify' },
   ];
 
+  const getDockRoleKey = () => {
+    const path = window.location.pathname;
+    if (user?.role === 'admin' && path.startsWith('/ops')) return 'operator';
+    if (user?.role === 'admin') return 'admin';
+    if (user?.role === 'operator') return 'operator';
+    if (user?.role === 'beneficiary' && user?.is_also_benefactor && !path.startsWith('/beneficiary')) return 'benefactor';
+    if (user?.role === 'beneficiary') return 'beneficiary';
+    if (user?.role === 'benefactor' && path.startsWith('/beneficiary')) return 'beneficiary';
+    return 'benefactor';
+  };
+
   const getBottomNav = () => {
-    // Admin viewing ops portal should see operator bottom nav
-    if (user?.role === 'admin' && window.location.pathname.startsWith('/ops')) return operatorBottomNav;
-    if (user?.role === 'admin') return adminBottomNav;
-    if (user?.role === 'operator') return operatorBottomNav;
-    // Multi-role: beneficiary on benefactor routes
-    if (user?.role === 'beneficiary' && user?.is_also_benefactor && !window.location.pathname.startsWith('/beneficiary')) return benefactorBottomNav;
-    if (user?.role === 'beneficiary') return beneficiaryBottomNav;
-    // Benefactor on beneficiary routes
-    if (user?.role === 'benefactor' && window.location.pathname.startsWith('/beneficiary')) return beneficiaryBottomNav;
-    return benefactorBottomNav;
+    const roleKey = getDockRoleKey();
+    const defaultNavs = {
+      benefactor: benefactorBottomNav,
+      beneficiary: beneficiaryBottomNav,
+      admin: adminBottomNav,
+      operator: operatorBottomNav,
+    };
+
+    // If user has custom dock items, resolve them from the registry
+    if (customDockItems && customDockItems.length > 0) {
+      const registry = DOCK_REGISTRY[roleKey] || [];
+      const resolved = customDockItems
+        .map(route => registry.find(r => r.to === route))
+        .filter(Boolean)
+        .slice(0, 5);
+      // Only use custom items if we resolved at least 3 valid entries
+      if (resolved.length >= 3) return resolved;
+    }
+
+    return defaultNavs[roleKey] || benefactorBottomNav;
   };
 
   return (
