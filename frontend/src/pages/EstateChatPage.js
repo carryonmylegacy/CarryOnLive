@@ -294,35 +294,50 @@ export default function EstateChatPage() {
     return () => document.body.classList.remove('ect-active');
   }, []);
 
-  // ── iOS PWA: resize container to fit above keyboard ──
-  // Strategy: ONLY adjust height. No transforms. Prevent iOS page scroll aggressively.
+  // ── iOS PWA: compensate for keyboard scroll + resize to fit above keyboard ──
   useEffect(() => {
     if (loading) return;
     const root = document.getElementById('ect-root');
     if (!root) return;
     const vv = window.visualViewport;
     if (!vv) return;
-    let wasKbOpen = false;
+    let kbVisible = false;
+    let rafId = 0;
+    const applyScroll = () => {
+      if (!kbVisible) return;
+      root.style.transform = window.scrollY > 0 ? `translateY(${window.scrollY}px)` : '';
+    };
+    const onScroll = () => {
+      if (!kbVisible) return;
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(applyScroll);
+    };
     const sync = () => {
       const kbOpen = vv.height < window.innerHeight * 0.8;
       if (kbOpen) {
         root.style.height = `${vv.height}px`;
-        wasKbOpen = true;
-      } else if (wasKbOpen) {
+        root.style.bottom = 'auto';
+        kbVisible = true;
+        applyScroll();
+      } else if (kbVisible) {
+        kbVisible = false;
         root.style.height = '';
-        wasKbOpen = false;
+        root.style.bottom = '0';
+        root.style.transform = '';
+        window.scrollTo(0, 0);
+        setTimeout(() => { window.scrollTo(0, 0); root.style.transform = ''; }, 100);
+        setTimeout(() => { window.scrollTo(0, 0); root.style.transform = ''; }, 300);
       }
-      // Always kill iOS page scroll — the ect-root is fixed and fills the screen
-      if (window.scrollY !== 0) window.scrollTo(0, 0);
     };
     vv.addEventListener('resize', sync);
-    // Also catch any stray page scrolls iOS causes
-    const killScroll = () => { if (window.scrollY !== 0) window.scrollTo(0, 0); };
-    window.addEventListener('scroll', killScroll, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
     return () => {
       vv.removeEventListener('resize', sync);
-      window.removeEventListener('scroll', killScroll);
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(rafId);
       root.style.height = '';
+      root.style.bottom = '0';
+      root.style.transform = '';
     };
   }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -330,7 +345,7 @@ export default function EstateChatPage() {
   useEffect(() => {
     if (!activeChannel) return;
     const r = document.getElementById('ect-root');
-    if (r) r.style.height = '';
+    if (r) { r.style.transform = ''; r.style.height = ''; r.style.bottom = '0'; }
     window.scrollTo(0, 0);
     setInputFocused(false);
   }, [activeChannel]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -588,7 +603,7 @@ export default function EstateChatPage() {
       setShowChannelList(true);
       setInputFocused(false);
       const r = document.getElementById('ect-root');
-      if (r) r.style.height = '';
+      if (r) { r.style.transform = ''; r.style.height = ''; r.style.bottom = '0'; }
       window.scrollTo(0, 0);
       // Refresh channel list to show latest messages/new chats
       fetchChannels();

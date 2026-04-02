@@ -114,13 +114,19 @@ export async function platformDownload({ action, params = {}, filename = 'downlo
       },
       body: JSON.stringify({ action, params, filename }),
     });
-    if (!prepRes.ok) throw new Error('Failed to prepare download');
+    if (!prepRes.ok) {
+      const errBody = await prepRes.text().catch(() => '');
+      throw new Error(`Prepare failed (${prepRes.status}): ${errBody}`);
+    }
     const { token: dt } = await prepRes.json();
 
     // Step 2: Fetch the actual file blob with progress tracking
     if (onProgress) onProgress('downloading', 0);
     const fileRes = await fetch(`${API_URL}/downloads/${dt}`);
-    if (!fileRes.ok) throw new Error(`Download failed (${fileRes.status})`);
+    if (!fileRes.ok) {
+      const errBody = await fileRes.text().catch(() => '');
+      throw new Error(`Download failed (${fileRes.status}): ${errBody}`);
+    }
 
     let blob;
     const contentLength = parseInt(fileRes.headers.get('content-length') || '0', 10);
