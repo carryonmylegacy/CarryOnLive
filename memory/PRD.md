@@ -34,22 +34,24 @@ A full-stack estate planning application allowing benefactors to manage digital 
 - **DO NOT**: Use `dict.get(key, {}).get(...)` pattern without `or {}` guard
 
 ### 3. ECT iOS Keyboard Handling
-- **Status**: RE-FIXED (April 2, 2026) - Added activeChannelRef guard
+- **Status**: RE-FIXED (April 2, 2026) - Added activeChannelRef guard + focusout safety + mic button blur
 - **Approach**: `100dvh` CSS height + visualViewport resize handler + scroll compensation via transform
-- **Key change**: Keyboard handler now uses `activeChannelRef.current` to skip entirely when on channel list
+- **Key change**: Keyboard handler now uses `activeChannelRef.current` to skip entirely when on channel list. Added `focusout` listener as safety to reset styles when no input is focused. Mic button no longer prevents input blur.
 - **Key**: Only apply `translateY(scrollY)` when keyboard IS open AND activeChannel exists
 - **DO NOT**: Apply viewport transforms when on the channel list (no active chat)
+- **DO NOT**: Add `onMouseDown={e => e.preventDefault()}` on the mic button — it blocks keyboard dismiss
 - **DO NOT**: Use `setInterval` polling - causes scroll jank
 - **DO NOT**: Use `window.scrollTo(0,0)` on every scroll event - fights iOS
 - **DO NOT**: Use `body { position: fixed }` or `overflow: hidden` on body/html
 
-### 4. SDV Document Download with File Extension
-- **Status**: FIXED (April 2, 2026) - Added file extension to download filename
-- **Root cause was**: `doc.name` had no extension (e.g., "My Will" not "My Will.pdf"), iOS share sheet rejected extensionless files
-- **Fix**: Frontend `resolveFileName()` adds extension based on MIME type. Backend also adds extension in Content-Disposition header
-- **Files**: `VaultPage.js` (handleDownload + resolveFileName), `routes/documents.py` (download_document)
-- **DO NOT**: Return filenames without extensions in Content-Disposition
-- **DO NOT**: Revert to proxy-based downloads for SDV
+### 4. SDV Document Download via Download Proxy
+- **Status**: RE-FIXED (April 2, 2026) — Switched from direct fetch to `platformDownload` utility
+- **Root cause was**: Direct `fetch()` + `navigator.share()` fails on iOS PWA because user gesture expires during async fetch. The `promptToSave` overlay in `platformDownload` re-establishes user activation.
+- **Fix**: VaultPage now calls `platformDownload({ action: 'document', params: { document_id } })` which uses the MongoDB-backed download proxy tokens
+- **Files**: `VaultPage.js` (handleDownload), `downloadFile.js` (platformDownload + promptToSave), `downloads.py` (prepare + execute)
+- **DO NOT**: Use direct `fetch()` + `navigator.share()` for downloads on iOS — user activation expires
+- **DO NOT**: Revert to in-memory download tokens
+- **DO NOT**: Remove the `promptToSave` overlay from `downloadFile.js`
 
 ### 5. Video MM Download (iOS PWA) - CONFIRMED WORKING
 ### 6. Text MM PDF Download (iOS PWA) - CONFIRMED WORKING

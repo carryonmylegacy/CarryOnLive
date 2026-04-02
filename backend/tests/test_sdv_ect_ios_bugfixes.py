@@ -32,11 +32,10 @@ class TestDownloadProxy:
         """Login and get auth token."""
         self.session = requests.Session()
         self.session.headers.update({"Content-Type": "application/json"})
-        
+
         # Login
         login_res = self.session.post(
-            f"{BASE_URL}/api/auth/login",
-            json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}
+            f"{BASE_URL}/api/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}
         )
         if login_res.status_code == 200:
             data = login_res.json()
@@ -52,27 +51,23 @@ class TestDownloadProxy:
         estates_res = self.session.get(f"{BASE_URL}/api/estates")
         if estates_res.status_code != 200 or not estates_res.json():
             pytest.skip("No estates available for testing")
-        
+
         estate_id = estates_res.json()[0]["id"]
         docs_res = self.session.get(f"{BASE_URL}/api/documents/{estate_id}")
-        
+
         if docs_res.status_code != 200 or not docs_res.json():
             # Create a test document if none exist
             pytest.skip("No documents available for testing download proxy")
-        
+
         doc = docs_res.json()[0]
         doc_id = doc["id"]
-        
+
         # Test the download prepare endpoint
         prepare_res = self.session.post(
             f"{BASE_URL}/api/downloads/prepare",
-            json={
-                "action": "document",
-                "params": {"document_id": doc_id},
-                "filename": "test_document.pdf"
-            }
+            json={"action": "document", "params": {"document_id": doc_id}, "filename": "test_document.pdf"},
         )
-        
+
         assert prepare_res.status_code == 200, f"Expected 200, got {prepare_res.status_code}: {prepare_res.text}"
         data = prepare_res.json()
         assert "token" in data, f"Response should contain 'token': {data}"
@@ -82,14 +77,9 @@ class TestDownloadProxy:
     def test_download_prepare_invalid_action(self):
         """Test POST /api/downloads/prepare with invalid action returns 400."""
         prepare_res = self.session.post(
-            f"{BASE_URL}/api/downloads/prepare",
-            json={
-                "action": "invalid_action",
-                "params": {},
-                "filename": "test.pdf"
-            }
+            f"{BASE_URL}/api/downloads/prepare", json={"action": "invalid_action", "params": {}, "filename": "test.pdf"}
         )
-        
+
         assert prepare_res.status_code == 400, f"Expected 400 for invalid action, got {prepare_res.status_code}"
         print("PASS: Invalid action correctly rejected with 400")
 
@@ -99,39 +89,36 @@ class TestDownloadProxy:
         estates_res = self.session.get(f"{BASE_URL}/api/estates")
         if estates_res.status_code != 200 or not estates_res.json():
             pytest.skip("No estates available for testing")
-        
+
         estate_id = estates_res.json()[0]["id"]
         docs_res = self.session.get(f"{BASE_URL}/api/documents/{estate_id}")
-        
+
         if docs_res.status_code != 200 or not docs_res.json():
             pytest.skip("No documents available for testing download proxy")
-        
+
         doc = docs_res.json()[0]
         doc_id = doc["id"]
         doc_name = doc.get("name", "document")
-        
+
         # Create a download token
         prepare_res = self.session.post(
             f"{BASE_URL}/api/downloads/prepare",
-            json={
-                "action": "document",
-                "params": {"document_id": doc_id},
-                "filename": f"{doc_name}.pdf"
-            }
+            json={"action": "document", "params": {"document_id": doc_id}, "filename": f"{doc_name}.pdf"},
         )
-        
+
         assert prepare_res.status_code == 200
         token = prepare_res.json()["token"]
-        
+
         # Redeem the token (no auth required)
         download_res = requests.get(f"{BASE_URL}/api/downloads/{token}")
-        
+
         # Should return file or error if document is locked
         if download_res.status_code == 200:
             # Check Content-Disposition header
             content_disp = download_res.headers.get("Content-Disposition", "")
-            assert "attachment" in content_disp or "inline" in content_disp, \
+            assert "attachment" in content_disp or "inline" in content_disp, (
                 f"Expected Content-Disposition header, got: {content_disp}"
+            )
             print(f"PASS: Download token redeemed successfully, Content-Disposition: {content_disp}")
         elif download_res.status_code == 401:
             # Document might be locked
@@ -143,7 +130,7 @@ class TestDownloadProxy:
     def test_download_invalid_token(self):
         """Test GET /api/downloads/{token} with invalid token returns 401."""
         download_res = requests.get(f"{BASE_URL}/api/downloads/invalid_token_12345")
-        
+
         assert download_res.status_code == 401, f"Expected 401 for invalid token, got {download_res.status_code}"
         print("PASS: Invalid download token correctly rejected with 401")
 
@@ -156,11 +143,10 @@ class TestECTChannelDelete:
         """Login and get auth token."""
         self.session = requests.Session()
         self.session.headers.update({"Content-Type": "application/json"})
-        
+
         # Login
         login_res = self.session.post(
-            f"{BASE_URL}/api/auth/login",
-            json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}
+            f"{BASE_URL}/api/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}
         )
         if login_res.status_code == 200:
             data = login_res.json()
@@ -173,7 +159,7 @@ class TestECTChannelDelete:
     def test_get_channels_endpoint(self):
         """Test GET /api/estate-chat/channels returns list."""
         res = self.session.get(f"{BASE_URL}/api/estate-chat/channels")
-        
+
         assert res.status_code == 200, f"Expected 200, got {res.status_code}: {res.text}"
         data = res.json()
         assert isinstance(data, list), "Response should be a list"
@@ -182,7 +168,7 @@ class TestECTChannelDelete:
     def test_get_contacts_endpoint(self):
         """Test GET /api/estate-chat/contacts returns list."""
         res = self.session.get(f"{BASE_URL}/api/estate-chat/contacts")
-        
+
         assert res.status_code == 200, f"Expected 200, got {res.status_code}: {res.text}"
         data = res.json()
         assert isinstance(data, list), "Response should be a list"
@@ -194,19 +180,20 @@ class TestECTChannelDelete:
         channels_res = self.session.get(f"{BASE_URL}/api/estate-chat/channels")
         if channels_res.status_code != 200:
             pytest.skip("Cannot get channels")
-        
+
         channels = channels_res.json()
         circle_channel = next((c for c in channels if c.get("type") == "circle"), None)
-        
+
         if not circle_channel:
             pytest.skip("No circle channel found to test deletion rejection")
-        
+
         # Try to delete the circle - should be rejected
         delete_res = self.session.delete(f"{BASE_URL}/api/estate-chat/channels/{circle_channel['id']}")
-        
-        assert delete_res.status_code == 400, \
+
+        assert delete_res.status_code == 400, (
             f"Expected 400 for circle deletion, got {delete_res.status_code}: {delete_res.text}"
-        
+        )
+
         error_detail = delete_res.json().get("detail", "")
         assert "circle" in error_detail.lower(), f"Error should mention circle: {error_detail}"
         print(f"PASS: Circle channel deletion correctly rejected with 400: {error_detail}")
@@ -217,45 +204,42 @@ class TestECTChannelDelete:
         contacts_res = self.session.get(f"{BASE_URL}/api/estate-chat/contacts")
         if contacts_res.status_code != 200 or not contacts_res.json():
             pytest.skip("No contacts available for testing")
-        
+
         contacts = contacts_res.json()
         if not contacts or not contacts[0].get("members"):
             pytest.skip("No estate members available for DM test")
-        
+
         estate_id = contacts[0]["estate_id"]
         members = contacts[0]["members"]
-        
+
         # Find a member that's not the current user
         other_member = next((m for m in members if m["id"] != self.user_id), None)
         if not other_member:
             pytest.skip("No other member available for DM test")
-        
+
         # Create a direct channel
         create_res = self.session.post(
             f"{BASE_URL}/api/estate-chat/channels",
-            json={
-                "estate_id": estate_id,
-                "channel_type": "direct",
-                "member_ids": [other_member["id"]]
-            }
+            json={"estate_id": estate_id, "channel_type": "direct", "member_ids": [other_member["id"]]},
         )
-        
+
         if create_res.status_code not in [200, 201]:
             pytest.skip(f"Cannot create direct channel: {create_res.status_code} - {create_res.text}")
-        
+
         channel = create_res.json()
         channel_id = channel["id"]
         channel_type = channel.get("type")
-        
+
         assert channel_type == "direct", f"Expected direct channel, got {channel_type}"
         print(f"Created direct channel: {channel_id}")
-        
+
         # Now delete the direct channel - this should work after the fix
         delete_res = self.session.delete(f"{BASE_URL}/api/estate-chat/channels/{channel_id}")
-        
-        assert delete_res.status_code == 200, \
+
+        assert delete_res.status_code == 200, (
             f"Expected 200 for direct channel deletion, got {delete_res.status_code}: {delete_res.text}"
-        
+        )
+
         print(f"PASS: Direct channel {channel_id} deleted successfully")
 
     def test_create_and_delete_group_channel(self):
@@ -264,19 +248,19 @@ class TestECTChannelDelete:
         contacts_res = self.session.get(f"{BASE_URL}/api/estate-chat/contacts")
         if contacts_res.status_code != 200 or not contacts_res.json():
             pytest.skip("No contacts available for testing")
-        
+
         contacts = contacts_res.json()
         if not contacts or not contacts[0].get("members"):
             pytest.skip("No estate members available for group test")
-        
+
         estate_id = contacts[0]["estate_id"]
         members = contacts[0]["members"]
-        
+
         # Find members that are not the current user
         other_members = [m for m in members if m["id"] != self.user_id]
         if not other_members:
             pytest.skip("No other members available for group test")
-        
+
         # Create a group channel
         create_res = self.session.post(
             f"{BASE_URL}/api/estate-chat/channels",
@@ -284,26 +268,27 @@ class TestECTChannelDelete:
                 "estate_id": estate_id,
                 "channel_type": "group",
                 "name": "TEST_Group_For_Deletion",
-                "member_ids": [other_members[0]["id"]]
-            }
+                "member_ids": [other_members[0]["id"]],
+            },
         )
-        
+
         if create_res.status_code not in [200, 201]:
             pytest.skip(f"Cannot create group channel: {create_res.status_code} - {create_res.text}")
-        
+
         channel = create_res.json()
         channel_id = channel["id"]
         channel_type = channel.get("type")
-        
+
         assert channel_type == "group", f"Expected group channel, got {channel_type}"
         print(f"Created group channel: {channel_id}")
-        
+
         # Delete the group channel - this should work
         delete_res = self.session.delete(f"{BASE_URL}/api/estate-chat/channels/{channel_id}")
-        
-        assert delete_res.status_code == 200, \
+
+        assert delete_res.status_code == 200, (
             f"Expected 200 for group channel deletion, got {delete_res.status_code}: {delete_res.text}"
-        
+        )
+
         print(f"PASS: Group channel {channel_id} deleted successfully")
 
 
@@ -315,11 +300,10 @@ class TestECTFileDownload:
         """Login and get auth token."""
         self.session = requests.Session()
         self.session.headers.update({"Content-Type": "application/json"})
-        
+
         # Login
         login_res = self.session.post(
-            f"{BASE_URL}/api/auth/login",
-            json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}
+            f"{BASE_URL}/api/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}
         )
         if login_res.status_code == 200:
             data = login_res.json()
@@ -333,13 +317,9 @@ class TestECTFileDownload:
         # This tests that the action is recognized, even if we don't have a file_id
         prepare_res = self.session.post(
             f"{BASE_URL}/api/downloads/prepare",
-            json={
-                "action": "ect_file",
-                "params": {"file_id": "test_file_id"},
-                "filename": "test_file.pdf"
-            }
+            json={"action": "ect_file", "params": {"file_id": "test_file_id"}, "filename": "test_file.pdf"},
         )
-        
+
         # Should return 200 with token (the token redemption will fail if file doesn't exist)
         assert prepare_res.status_code == 200, f"Expected 200, got {prepare_res.status_code}: {prepare_res.text}"
         data = prepare_res.json()
@@ -361,9 +341,9 @@ class TestHealthAndAuth:
         res = requests.post(
             f"{BASE_URL}/api/auth/login",
             json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
-            headers={"Content-Type": "application/json"}
+            headers={"Content-Type": "application/json"},
         )
-        
+
         assert res.status_code == 200, f"Login failed: {res.status_code}"
         data = res.json()
         assert "access_token" in data or "token" in data, f"Response should contain token: {data.keys()}"
