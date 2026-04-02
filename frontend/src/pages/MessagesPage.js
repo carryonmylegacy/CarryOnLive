@@ -499,21 +499,42 @@ const MessagesPage = () => {
   };
 
   const triggerDownload = async (blobUrl, filename, mimeType, blob) => {
-    // Try navigator.share first (iOS Safari — gives "Save Video", "Save to Files", etc.)
-    if (navigator.share && navigator.canShare) {
-      try {
-        const fileBlob = blob || await (await fetch(blobUrl)).blob();
-        const file = new File([fileBlob], filename, { type: mimeType || fileBlob.type });
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], title: filename });
-          return;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isVideo = mimeType && mimeType.startsWith('video/');
+    const isPDF = mimeType === 'application/pdf';
+
+    if (isIOS) {
+      if (isVideo && navigator.share && navigator.canShare) {
+        // Video on iOS: use share sheet — shows "Save Video" for MP4
+        try {
+          const file = new File([blob], filename, { type: mimeType, lastModified: Date.now() });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file] });
+            return;
+          }
+        } catch (err) {
+          if (err.name === 'AbortError') return;
         }
-      } catch (err) {
-        if (err.name === 'AbortError') return; // User cancelled
-        // Fall through to standard download
       }
+      // PDF or fallback: open inline — Safari shows native PDF viewer / video player
+      // with its own share/download button
+      const w = window.open('', '_blank');
+      if (w) {
+        w.document.write(`<html><head><title>${filename}</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh">`);
+        if (isPDF) {
+          w.document.write(`<iframe src="${blobUrl}" style="width:100%;height:100vh;border:none"></iframe>`);
+        } else if (isVideo) {
+          w.document.write(`<video src="${blobUrl}" controls playsinline autoplay style="max-width:100%;max-height:100vh"></video>`);
+        } else {
+          w.document.write(`<iframe src="${blobUrl}" style="width:100%;height:100vh;border:none"></iframe>`);
+        }
+        w.document.write('</body></html>');
+        w.document.close();
+      }
+      return;
     }
-    // Standard download for desktop browsers
+
+    // Desktop: standard download
     const a = document.createElement('a');
     a.href = blobUrl;
     a.download = filename;
@@ -806,7 +827,7 @@ const MessagesPage = () => {
                               variant="ghost"
                               size="sm"
                               className="text-[#22C993]"
-                              onClick={() => handleDownload(msg)}
+                              onClick={(e) => { e.currentTarget.blur(); handleDownload(msg); }}
                               data-testid={`download-message-${msg.id}`}
                               aria-label="Download message"
                             >
@@ -828,7 +849,7 @@ const MessagesPage = () => {
                             variant="ghost"
                             size="sm"
                             className="text-[#22C993]"
-                            onClick={() => handleDownload(msg)}
+                            onClick={(e) => { e.currentTarget.blur(); handleDownload(msg); }}
                             data-testid={`download-message-${msg.id}`}
                             aria-label="Download message"
                           >
